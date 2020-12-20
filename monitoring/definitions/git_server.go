@@ -33,13 +33,16 @@ func GitServer() *monitoring.Container {
 						},
 						{
 							Name:            "running_git_commands",
-							Description:     "running git commands (signals load)",
+							Description:     "running git commands",
 							Query:           "max(src_gitserver_exec_running)",
 							DataMayNotExist: true,
 							Warning:         monitoring.Alert().GreaterOrEqual(50).For(2 * time.Minute),
 							Critical:        monitoring.Alert().GreaterOrEqual(100).For(5 * time.Minute),
 							PanelOptions:    monitoring.PanelOptions().LegendFormat("running commands"),
 							Owner:           monitoring.ObservableOwnerCloud,
+							Interpretation: `
+								A high value signals load.
+							`,
 							PossibleSolutions: `
 								- **Check if the problem may be an intermittent and temporary peak** using the "Container monitoring" section at the bottom of the Git Server dashboard.
 								- **Single container deployments:** Consider upgrading to a [Docker Compose deployment](../install/docker-compose/migrate.md) which offers better scalability and resource isolation.
@@ -77,7 +80,7 @@ func GitServer() *monitoring.Container {
 					}, {
 						{
 							Name:            "echo_command_duration_test",
-							Description:     "echo command duration test",
+							Description:     "echo test command duration",
 							Query:           "max(src_gitserver_echo_duration_seconds)",
 							DataMayNotExist: true,
 							NoAlert:         true,

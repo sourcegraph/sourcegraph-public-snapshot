@@ -44,7 +44,6 @@ func fprintSubtitle(w io.Writer, text string) {
 func fprintObservableHeader(w io.Writer, c *Container, o *Observable, headerLevel int) {
 	fmt.Fprint(w, strings.Repeat("#", headerLevel))
 	fmt.Fprintf(w, " %s: %s\n\n", c.Name, o.Name)
-	fprintSubtitle(w, fmt.Sprintf(`%s: %s`, o.Owner, o.Description))
 }
 
 var observableDocAnchorRemoveRegexp = regexp.MustCompile("(_low|_high)$")
@@ -69,8 +68,8 @@ func renderDocumentation(containers []*Container) (*documentation, error) {
 	fmt.Fprint(&docs.dashboards, dashboardsHeader)
 
 	for _, c := range containers {
-		fmt.Fprintf(&docs.dashboards, "## %s\n\n", c.Name)
-		fprintSubtitle(&docs.dashboards, fmt.Sprintf("%s: %s", c.Title, c.Description))
+		fmt.Fprintf(&docs.dashboards, "## %s\n\n", c.Title)
+		fprintSubtitle(&docs.dashboards, c.Description)
 
 		for _, g := range c.Groups {
 			// the "General" group is top-level
@@ -102,6 +101,7 @@ func (d *documentation) renderAlertSolutionEntry(c *Container, o Observable) err
 	}
 
 	fprintObservableHeader(&d.alertSolutions, c, &o, 2)
+	fprintSubtitle(&d.alertSolutions, fmt.Sprintf(`%s (%s)`, o.Description, o.Owner))
 
 	// Render descriptions of various levels of this alert
 	fmt.Fprintf(&d.alertSolutions, "**Descriptions:**\n\n")
@@ -149,6 +149,7 @@ func (d *documentation) renderAlertSolutionEntry(c *Container, o Observable) err
 
 func (d *documentation) renderDashboardPanelEntry(c *Container, o Observable) error {
 	fprintObservableHeader(&d.dashboards, c, &o, 4)
+	fmt.Fprintf(&d.dashboards, "This panel indicates %s (%s).\n\n", o.Description, o.Owner)
 	// render interpretation reference if available
 	if o.Interpretation != "" && o.Interpretation != "none" {
 		interpretation, _ := toMarkdown(o.Interpretation, false)

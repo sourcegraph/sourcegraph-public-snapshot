@@ -6,15 +6,15 @@ To learn more about Sourcegraph's metrics and how to view these dashboards, see 
 
 <!-- DO NOT EDIT: generated via: go generate ./monitoring -->
 
-## frontend
+## Frontend
 
-<p class="subtitle">Frontend: Serves all end-user browser and API requests.</p>
+<p class="subtitle">Serves all end-user browser and API requests.</p>
 
 ### frontend: Search at a glance
 
 #### frontend: 99th_percentile_search_request_duration
 
-<p class="subtitle">search: 99th percentile successful search request duration over 5m</p>
+This panel indicates 99th percentile successful search request duration over 5m (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-99th-percentile-search-request-duration) for relevant alerts.
 
@@ -22,7 +22,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: 90th_percentile_search_request_duration
 
-<p class="subtitle">search: 90th percentile successful search request duration over 5m</p>
+This panel indicates 90th percentile successful search request duration over 5m (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-90th-percentile-search-request-duration) for relevant alerts.
 
@@ -30,7 +30,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: hard_timeout_search_responses
 
-<p class="subtitle">search: hard timeout search responses every 5m</p>
+This panel indicates hard timeout search responses every 5m (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-hard-timeout-search-responses) for relevant alerts.
 
@@ -38,7 +38,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: hard_error_search_responses
 
-<p class="subtitle">search: hard error search responses every 5m</p>
+This panel indicates hard error search responses every 5m (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-hard-error-search-responses) for relevant alerts.
 
@@ -46,7 +46,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: partial_timeout_search_responses
 
-<p class="subtitle">search: partial timeout search responses every 5m</p>
+This panel indicates partial timeout search responses every 5m (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-partial-timeout-search-responses) for relevant alerts.
 
@@ -54,7 +54,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: search_alert_user_suggestions
 
-<p class="subtitle">search: search alert user suggestions shown every 5m</p>
+This panel indicates search alert user suggestions shown every 5m (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-search-alert-user-suggestions) for relevant alerts.
 
@@ -62,7 +62,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: page_load_latency
 
-<p class="subtitle">cloud: 90th percentile page load latency over all routes over 10m</p>
+This panel indicates 90th percentile page load latency over all routes over 10m (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-page-load-latency) for relevant alerts.
 
@@ -70,7 +70,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: blob_load_latency
 
-<p class="subtitle">cloud: 90th percentile blob load latency over 10m</p>
+This panel indicates 90th percentile blob load latency over 10m (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-blob-load-latency) for relevant alerts.
 
@@ -80,7 +80,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: 99th_percentile_search_codeintel_request_duration
 
-<p class="subtitle">code-intel: 99th percentile code-intel successful search request duration over 5m</p>
+This panel indicates 99th percentile code-intel successful search request duration over 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-99th-percentile-search-codeintel-request-duration) for relevant alerts.
 
@@ -88,7 +88,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: 90th_percentile_search_codeintel_request_duration
 
-<p class="subtitle">code-intel: 90th percentile code-intel successful search request duration over 5m</p>
+This panel indicates 90th percentile code-intel successful search request duration over 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-90th-percentile-search-codeintel-request-duration) for relevant alerts.
 
@@ -96,7 +96,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: hard_timeout_search_codeintel_responses
 
-<p class="subtitle">code-intel: hard timeout search code-intel responses every 5m</p>
+This panel indicates hard timeout search code-intel responses every 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-hard-timeout-search-codeintel-responses) for relevant alerts.
 
@@ -104,7 +104,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: hard_error_search_codeintel_responses
 
-<p class="subtitle">code-intel: hard error search code-intel responses every 5m</p>
+This panel indicates hard error search code-intel responses every 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-hard-error-search-codeintel-responses) for relevant alerts.
 
@@ -112,7 +112,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: partial_timeout_search_codeintel_responses
 
-<p class="subtitle">code-intel: partial timeout search code-intel responses every 5m</p>
+This panel indicates partial timeout search code-intel responses every 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-partial-timeout-search-codeintel-responses) for relevant alerts.
 
@@ -120,7 +120,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: search_codeintel_alert_user_suggestions
 
-<p class="subtitle">code-intel: search code-intel alert user suggestions shown every 5m</p>
+This panel indicates search code-intel alert user suggestions shown every 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-search-codeintel-alert-user-suggestions) for relevant alerts.
 
@@ -130,7 +130,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: 99th_percentile_search_api_request_duration
 
-<p class="subtitle">search: 99th percentile successful search API request duration over 5m</p>
+This panel indicates 99th percentile successful search API request duration over 5m (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-99th-percentile-search-api-request-duration) for relevant alerts.
 
@@ -138,7 +138,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: 90th_percentile_search_api_request_duration
 
-<p class="subtitle">search: 90th percentile successful search API request duration over 5m</p>
+This panel indicates 90th percentile successful search API request duration over 5m (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-90th-percentile-search-api-request-duration) for relevant alerts.
 
@@ -146,7 +146,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: hard_timeout_search_api_responses
 
-<p class="subtitle">search: hard timeout search API responses every 5m</p>
+This panel indicates hard timeout search API responses every 5m (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-hard-timeout-search-api-responses) for relevant alerts.
 
@@ -154,7 +154,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: hard_error_search_api_responses
 
-<p class="subtitle">search: hard error search API responses every 5m</p>
+This panel indicates hard error search API responses every 5m (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-hard-error-search-api-responses) for relevant alerts.
 
@@ -162,7 +162,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: partial_timeout_search_api_responses
 
-<p class="subtitle">search: partial timeout search API responses every 5m</p>
+This panel indicates partial timeout search API responses every 5m (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-partial-timeout-search-api-responses) for relevant alerts.
 
@@ -170,7 +170,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: search_api_alert_user_suggestions
 
-<p class="subtitle">search: search API alert user suggestions shown every 5m</p>
+This panel indicates search API alert user suggestions shown every 5m (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-search-api-alert-user-suggestions) for relevant alerts.
 
@@ -180,7 +180,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: codeintel_resolvers_99th_percentile_duration
 
-<p class="subtitle">code-intel: 99th percentile successful resolver duration over 5m</p>
+This panel indicates 99th percentile successful resolver duration over 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-codeintel-resolvers-99th-percentile-duration) for relevant alerts.
 
@@ -188,7 +188,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: codeintel_resolvers_errors
 
-<p class="subtitle">code-intel: resolver errors every 5m</p>
+This panel indicates resolver errors every 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-codeintel-resolvers-errors) for relevant alerts.
 
@@ -196,7 +196,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: codeintel_api_99th_percentile_duration
 
-<p class="subtitle">code-intel: 99th percentile successful codeintel API operation duration over 5m</p>
+This panel indicates 99th percentile successful codeintel API operation duration over 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-codeintel-api-99th-percentile-duration) for relevant alerts.
 
@@ -204,7 +204,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: codeintel_api_errors
 
-<p class="subtitle">code-intel: code intel API errors every 5m</p>
+This panel indicates code intel API errors every 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-codeintel-api-errors) for relevant alerts.
 
@@ -214,7 +214,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: codeintel_dbstore_99th_percentile_duration
 
-<p class="subtitle">code-intel: 99th percentile successful database store operation duration over 5m</p>
+This panel indicates 99th percentile successful database store operation duration over 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-codeintel-dbstore-99th-percentile-duration) for relevant alerts.
 
@@ -222,7 +222,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: codeintel_dbstore_errors
 
-<p class="subtitle">code-intel: database store errors every 5m</p>
+This panel indicates database store errors every 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-codeintel-dbstore-errors) for relevant alerts.
 
@@ -230,7 +230,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: codeintel_upload_workerstore_99th_percentile_duration
 
-<p class="subtitle">code-intel: 99th percentile successful upload worker store operation duration over 5m</p>
+This panel indicates 99th percentile successful upload worker store operation duration over 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-codeintel-upload-workerstore-99th-percentile-duration) for relevant alerts.
 
@@ -238,7 +238,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: codeintel_upload_workerstore_errors
 
-<p class="subtitle">code-intel: upload worker store errors every 5m</p>
+This panel indicates upload worker store errors every 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-codeintel-upload-workerstore-errors) for relevant alerts.
 
@@ -246,7 +246,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: codeintel_index_workerstore_99th_percentile_duration
 
-<p class="subtitle">code-intel: 99th percentile successful index worker store operation duration over 5m</p>
+This panel indicates 99th percentile successful index worker store operation duration over 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-codeintel-index-workerstore-99th-percentile-duration) for relevant alerts.
 
@@ -254,7 +254,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: codeintel_index_workerstore_errors
 
-<p class="subtitle">code-intel: index worker store errors every 5m</p>
+This panel indicates index worker store errors every 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-codeintel-index-workerstore-errors) for relevant alerts.
 
@@ -262,7 +262,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: codeintel_lsifstore_99th_percentile_duration
 
-<p class="subtitle">code-intel: 99th percentile successful LSIF store operation duration over 5m</p>
+This panel indicates 99th percentile successful LSIF store operation duration over 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-codeintel-lsifstore-99th-percentile-duration) for relevant alerts.
 
@@ -270,7 +270,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: codeintel_lsifstore_errors
 
-<p class="subtitle">code-intel: lSIF store errors every 5m</p>
+This panel indicates lSIF store errors every 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-codeintel-lsifstore-errors) for relevant alerts.
 
@@ -278,7 +278,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: codeintel_uploadstore_99th_percentile_duration
 
-<p class="subtitle">code-intel: 99th percentile successful upload store operation duration over 5m</p>
+This panel indicates 99th percentile successful upload store operation duration over 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-codeintel-uploadstore-99th-percentile-duration) for relevant alerts.
 
@@ -286,7 +286,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: codeintel_uploadstore_errors
 
-<p class="subtitle">code-intel: upload store errors every 5m</p>
+This panel indicates upload store errors every 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-codeintel-uploadstore-errors) for relevant alerts.
 
@@ -294,7 +294,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: codeintel_gitserverclient_99th_percentile_duration
 
-<p class="subtitle">code-intel: 99th percentile successful gitserver client operation duration over 5m</p>
+This panel indicates 99th percentile successful gitserver client operation duration over 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-codeintel-gitserverclient-99th-percentile-duration) for relevant alerts.
 
@@ -302,7 +302,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: codeintel_gitserverclient_errors
 
-<p class="subtitle">code-intel: gitserver client errors every 5m</p>
+This panel indicates gitserver client errors every 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-codeintel-gitserverclient-errors) for relevant alerts.
 
@@ -312,7 +312,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: codeintel_commit_graph_queue_size
 
-<p class="subtitle">code-intel: commit graph queue size</p>
+This panel indicates commit graph queue size (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-codeintel-commit-graph-queue-size) for relevant alerts.
 
@@ -320,7 +320,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: codeintel_commit_graph_queue_growth_rate
 
-<p class="subtitle">code-intel: commit graph queue growth rate over 30m</p>
+This panel indicates commit graph queue growth rate over 30m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-codeintel-commit-graph-queue-growth-rate) for relevant alerts.
 
@@ -328,7 +328,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: codeintel_commit_graph_updater_99th_percentile_duration
 
-<p class="subtitle">code-intel: 99th percentile successful commit graph updater operation duration over 5m</p>
+This panel indicates 99th percentile successful commit graph updater operation duration over 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-codeintel-commit-graph-updater-99th-percentile-duration) for relevant alerts.
 
@@ -336,7 +336,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: codeintel_commit_graph_updater_errors
 
-<p class="subtitle">code-intel: commit graph updater errors every 5m</p>
+This panel indicates commit graph updater errors every 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-codeintel-commit-graph-updater-errors) for relevant alerts.
 
@@ -346,7 +346,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: codeintel_janitor_errors
 
-<p class="subtitle">code-intel: janitor errors every 5m</p>
+This panel indicates janitor errors every 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-codeintel-janitor-errors) for relevant alerts.
 
@@ -354,25 +354,25 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: codeintel_upload_records_removed
 
-<p class="subtitle">code-intel: upload records expired or deleted every 5m</p>
+This panel indicates upload records expired or deleted every 5m (code-intel).
 
 <br />
 
 #### frontend: codeintel_index_records_removed
 
-<p class="subtitle">code-intel: index records expired or deleted every 5m</p>
+This panel indicates index records expired or deleted every 5m (code-intel).
 
 <br />
 
 #### frontend: codeintel_lsif_data_removed
 
-<p class="subtitle">code-intel: data for unreferenced upload records removed every 5m</p>
+This panel indicates data for unreferenced upload records removed every 5m (code-intel).
 
 <br />
 
 #### frontend: codeintel_background_upload_resets
 
-<p class="subtitle">code-intel: upload records re-queued (due to unresponsive worker) every 5m</p>
+This panel indicates upload records re-queued (due to unresponsive worker) every 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-codeintel-background-upload-resets) for relevant alerts.
 
@@ -380,7 +380,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: codeintel_background_upload_reset_failures
 
-<p class="subtitle">code-intel: upload records errored due to repeated reset every 5m</p>
+This panel indicates upload records errored due to repeated reset every 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-codeintel-background-upload-reset-failures) for relevant alerts.
 
@@ -388,7 +388,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: codeintel_background_index_resets
 
-<p class="subtitle">code-intel: index records re-queued (due to unresponsive indexer) every 5m</p>
+This panel indicates index records re-queued (due to unresponsive indexer) every 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-codeintel-background-index-resets) for relevant alerts.
 
@@ -396,7 +396,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: codeintel_background_index_reset_failures
 
-<p class="subtitle">code-intel: index records errored due to repeated reset every 5m</p>
+This panel indicates index records errored due to repeated reset every 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-codeintel-background-index-reset-failures) for relevant alerts.
 
@@ -406,13 +406,13 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: codeintel_indexing_99th_percentile_duration
 
-<p class="subtitle">code-intel: 99th percentile successful indexing operation duration over 5m</p>
+This panel indicates 99th percentile successful indexing operation duration over 5m (code-intel).
 
 <br />
 
 #### frontend: codeintel_indexing_errors
 
-<p class="subtitle">code-intel: indexing errors every 5m</p>
+This panel indicates indexing errors every 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-codeintel-indexing-errors) for relevant alerts.
 
@@ -422,7 +422,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: internal_indexed_search_error_responses
 
-<p class="subtitle">search: internal indexed search error responses every 5m</p>
+This panel indicates internal indexed search error responses every 5m (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-internal-indexed-search-error-responses) for relevant alerts.
 
@@ -430,7 +430,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: internal_unindexed_search_error_responses
 
-<p class="subtitle">search: internal unindexed search error responses every 5m</p>
+This panel indicates internal unindexed search error responses every 5m (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-internal-unindexed-search-error-responses) for relevant alerts.
 
@@ -438,7 +438,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: internal_api_error_responses
 
-<p class="subtitle">cloud: internal API error responses every 5m by route</p>
+This panel indicates internal API error responses every 5m by route (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-internal-api-error-responses) for relevant alerts.
 
@@ -446,7 +446,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: 99th_percentile_gitserver_duration
 
-<p class="subtitle">cloud: 99th percentile successful gitserver query duration over 5m</p>
+This panel indicates 99th percentile successful gitserver query duration over 5m (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-99th-percentile-gitserver-duration) for relevant alerts.
 
@@ -454,7 +454,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: gitserver_error_responses
 
-<p class="subtitle">cloud: gitserver error responses every 5m</p>
+This panel indicates gitserver error responses every 5m (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-gitserver-error-responses) for relevant alerts.
 
@@ -462,7 +462,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: observability_test_alert_warning
 
-<p class="subtitle">distribution: warning test alert metric</p>
+This panel indicates warning test alert metric (distribution).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-observability-test-alert-warning) for relevant alerts.
 
@@ -470,7 +470,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: observability_test_alert_critical
 
-<p class="subtitle">distribution: critical test alert metric</p>
+This panel indicates critical test alert metric (distribution).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-observability-test-alert-critical) for relevant alerts.
 
@@ -480,7 +480,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: container_cpu_usage
 
-<p class="subtitle">cloud: container cpu usage total (1m average) across all cores by instance</p>
+This panel indicates container cpu usage total (1m average) across all cores by instance (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-container-cpu-usage) for relevant alerts.
 
@@ -488,7 +488,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: container_memory_usage
 
-<p class="subtitle">cloud: container memory usage by instance</p>
+This panel indicates container memory usage by instance (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-container-memory-usage) for relevant alerts.
 
@@ -496,7 +496,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: container_restarts
 
-<p class="subtitle">cloud: container restarts every 5m by instance</p>
+This panel indicates container restarts every 5m by instance (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-container-restarts) for relevant alerts.
 
@@ -504,7 +504,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: fs_inodes_used
 
-<p class="subtitle">cloud: fs inodes in use by instance</p>
+This panel indicates fs inodes in use by instance (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-fs-inodes-used) for relevant alerts.
 
@@ -514,7 +514,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: provisioning_container_cpu_usage_long_term
 
-<p class="subtitle">cloud: container cpu usage total (90th percentile over 1d) across all cores by instance</p>
+This panel indicates container cpu usage total (90th percentile over 1d) across all cores by instance (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-provisioning-container-cpu-usage-long-term) for relevant alerts.
 
@@ -522,7 +522,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: provisioning_container_memory_usage_long_term
 
-<p class="subtitle">cloud: container memory usage (1d maximum) by instance</p>
+This panel indicates container memory usage (1d maximum) by instance (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-provisioning-container-memory-usage-long-term) for relevant alerts.
 
@@ -530,7 +530,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: provisioning_container_cpu_usage_short_term
 
-<p class="subtitle">cloud: container cpu usage total (5m maximum) across all cores by instance</p>
+This panel indicates container cpu usage total (5m maximum) across all cores by instance (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-provisioning-container-cpu-usage-short-term) for relevant alerts.
 
@@ -538,7 +538,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: provisioning_container_memory_usage_short_term
 
-<p class="subtitle">cloud: container memory usage (5m maximum) by instance</p>
+This panel indicates container memory usage (5m maximum) by instance (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-provisioning-container-memory-usage-short-term) for relevant alerts.
 
@@ -548,7 +548,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: go_goroutines
 
-<p class="subtitle">cloud: maximum active goroutines</p>
+This panel indicates maximum active goroutines (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-go-goroutines) for relevant alerts.
 
@@ -556,7 +556,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: go_gc_duration_seconds
 
-<p class="subtitle">cloud: maximum go garbage collection duration</p>
+This panel indicates maximum go garbage collection duration (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-go-gc-duration-seconds) for relevant alerts.
 
@@ -566,19 +566,19 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### frontend: pods_available_percentage
 
-<p class="subtitle">cloud: percentage pods available</p>
+This panel indicates percentage pods available (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-pods-available-percentage) for relevant alerts.
 
 <br />
 
-## gitserver
+## Git Server
 
-<p class="subtitle">Git Server: Stores, manages, and operates Git repositories.</p>
+<p class="subtitle">Stores, manages, and operates Git repositories.</p>
 
 #### gitserver: disk_space_remaining
 
-<p class="subtitle">cloud: disk space remaining by instance</p>
+This panel indicates disk space remaining by instance (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#gitserver-disk-space-remaining) for relevant alerts.
 
@@ -586,7 +586,9 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### gitserver: running_git_commands
 
-<p class="subtitle">cloud: running git commands (signals load)</p>
+This panel indicates running git commands (cloud).
+
+A high value signals load.
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#gitserver-running-git-commands) for relevant alerts.
 
@@ -594,7 +596,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### gitserver: repository_clone_queue_size
 
-<p class="subtitle">cloud: repository clone queue size</p>
+This panel indicates repository clone queue size (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#gitserver-repository-clone-queue-size) for relevant alerts.
 
@@ -602,7 +604,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### gitserver: repository_existence_check_queue_size
 
-<p class="subtitle">cloud: repository existence check queue size</p>
+This panel indicates repository existence check queue size (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#gitserver-repository-existence-check-queue-size) for relevant alerts.
 
@@ -610,7 +612,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### gitserver: echo_command_duration_test
 
-<p class="subtitle">cloud: echo command duration test</p>
+This panel indicates echo test command duration (cloud).
 
 A high value here is likely to indicate a problem, especially if consistently high.
 You can query for individual commands using `sum by (cmd)(src_gitserver_exec_running)` in Grafana (`/-/debug/grafana`) to see if a specific Git Server command might be spiking in frequency.
@@ -624,7 +626,7 @@ If this value is consistently high, consider the following:
 
 #### gitserver: frontend_internal_api_error_responses
 
-<p class="subtitle">cloud: frontend-internal API error responses every 5m by route</p>
+This panel indicates frontend-internal API error responses every 5m by route (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#gitserver-frontend-internal-api-error-responses) for relevant alerts.
 
@@ -634,7 +636,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### gitserver: container_cpu_usage
 
-<p class="subtitle">cloud: container cpu usage total (1m average) across all cores by instance</p>
+This panel indicates container cpu usage total (1m average) across all cores by instance (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#gitserver-container-cpu-usage) for relevant alerts.
 
@@ -642,7 +644,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### gitserver: container_memory_usage
 
-<p class="subtitle">cloud: container memory usage by instance</p>
+This panel indicates container memory usage by instance (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#gitserver-container-memory-usage) for relevant alerts.
 
@@ -650,7 +652,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### gitserver: container_restarts
 
-<p class="subtitle">cloud: container restarts every 5m by instance</p>
+This panel indicates container restarts every 5m by instance (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#gitserver-container-restarts) for relevant alerts.
 
@@ -658,7 +660,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### gitserver: fs_inodes_used
 
-<p class="subtitle">cloud: fs inodes in use by instance</p>
+This panel indicates fs inodes in use by instance (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#gitserver-fs-inodes-used) for relevant alerts.
 
@@ -666,7 +668,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### gitserver: fs_io_operations
 
-<p class="subtitle">cloud: filesystem reads and writes rate by instance over 1h</p>
+This panel indicates filesystem reads and writes rate by instance over 1h (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#gitserver-fs-io-operations) for relevant alerts.
 
@@ -676,7 +678,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### gitserver: provisioning_container_cpu_usage_long_term
 
-<p class="subtitle">cloud: container cpu usage total (90th percentile over 1d) across all cores by instance</p>
+This panel indicates container cpu usage total (90th percentile over 1d) across all cores by instance (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#gitserver-provisioning-container-cpu-usage-long-term) for relevant alerts.
 
@@ -684,7 +686,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### gitserver: provisioning_container_memory_usage_long_term
 
-<p class="subtitle">cloud: container memory usage (1d maximum) by instance</p>
+This panel indicates container memory usage (1d maximum) by instance (cloud).
 
 Git Server is expected to use up all the memory it is provided.
 
@@ -692,7 +694,7 @@ Git Server is expected to use up all the memory it is provided.
 
 #### gitserver: provisioning_container_cpu_usage_short_term
 
-<p class="subtitle">cloud: container cpu usage total (5m maximum) across all cores by instance</p>
+This panel indicates container cpu usage total (5m maximum) across all cores by instance (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#gitserver-provisioning-container-cpu-usage-short-term) for relevant alerts.
 
@@ -700,7 +702,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### gitserver: provisioning_container_memory_usage_short_term
 
-<p class="subtitle">cloud: container memory usage (5m maximum) by instance</p>
+This panel indicates container memory usage (5m maximum) by instance (cloud).
 
 Git Server is expected to use up all the memory it is provided.
 
@@ -710,7 +712,7 @@ Git Server is expected to use up all the memory it is provided.
 
 #### gitserver: go_goroutines
 
-<p class="subtitle">cloud: maximum active goroutines</p>
+This panel indicates maximum active goroutines (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#gitserver-go-goroutines) for relevant alerts.
 
@@ -718,7 +720,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### gitserver: go_gc_duration_seconds
 
-<p class="subtitle">cloud: maximum go garbage collection duration</p>
+This panel indicates maximum go garbage collection duration (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#gitserver-go-gc-duration-seconds) for relevant alerts.
 
@@ -728,21 +730,21 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### gitserver: pods_available_percentage
 
-<p class="subtitle">cloud: percentage pods available</p>
+This panel indicates percentage pods available (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#gitserver-pods-available-percentage) for relevant alerts.
 
 <br />
 
-## github-proxy
+## GitHub Proxy
 
-<p class="subtitle">GitHub Proxy: Proxies all requests to github.com, keeping track of and managing rate limits.</p>
+<p class="subtitle">Proxies all requests to github.com, keeping track of and managing rate limits.</p>
 
 ### github-proxy: GitHub API monitoring
 
 #### github-proxy: github_proxy_waiting_requests
 
-<p class="subtitle">cloud: number of requests waiting on the global mutex</p>
+This panel indicates number of requests waiting on the global mutex (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#github-proxy-github-proxy-waiting-requests) for relevant alerts.
 
@@ -752,7 +754,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### github-proxy: container_cpu_usage
 
-<p class="subtitle">cloud: container cpu usage total (1m average) across all cores by instance</p>
+This panel indicates container cpu usage total (1m average) across all cores by instance (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#github-proxy-container-cpu-usage) for relevant alerts.
 
@@ -760,7 +762,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### github-proxy: container_memory_usage
 
-<p class="subtitle">cloud: container memory usage by instance</p>
+This panel indicates container memory usage by instance (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#github-proxy-container-memory-usage) for relevant alerts.
 
@@ -768,7 +770,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### github-proxy: container_restarts
 
-<p class="subtitle">cloud: container restarts every 5m by instance</p>
+This panel indicates container restarts every 5m by instance (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#github-proxy-container-restarts) for relevant alerts.
 
@@ -776,7 +778,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### github-proxy: fs_inodes_used
 
-<p class="subtitle">cloud: fs inodes in use by instance</p>
+This panel indicates fs inodes in use by instance (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#github-proxy-fs-inodes-used) for relevant alerts.
 
@@ -786,7 +788,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### github-proxy: provisioning_container_cpu_usage_long_term
 
-<p class="subtitle">cloud: container cpu usage total (90th percentile over 1d) across all cores by instance</p>
+This panel indicates container cpu usage total (90th percentile over 1d) across all cores by instance (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#github-proxy-provisioning-container-cpu-usage-long-term) for relevant alerts.
 
@@ -794,7 +796,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### github-proxy: provisioning_container_memory_usage_long_term
 
-<p class="subtitle">cloud: container memory usage (1d maximum) by instance</p>
+This panel indicates container memory usage (1d maximum) by instance (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#github-proxy-provisioning-container-memory-usage-long-term) for relevant alerts.
 
@@ -802,7 +804,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### github-proxy: provisioning_container_cpu_usage_short_term
 
-<p class="subtitle">cloud: container cpu usage total (5m maximum) across all cores by instance</p>
+This panel indicates container cpu usage total (5m maximum) across all cores by instance (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#github-proxy-provisioning-container-cpu-usage-short-term) for relevant alerts.
 
@@ -810,7 +812,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### github-proxy: provisioning_container_memory_usage_short_term
 
-<p class="subtitle">cloud: container memory usage (5m maximum) by instance</p>
+This panel indicates container memory usage (5m maximum) by instance (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#github-proxy-provisioning-container-memory-usage-short-term) for relevant alerts.
 
@@ -820,7 +822,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### github-proxy: go_goroutines
 
-<p class="subtitle">cloud: maximum active goroutines</p>
+This panel indicates maximum active goroutines (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#github-proxy-go-goroutines) for relevant alerts.
 
@@ -828,7 +830,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### github-proxy: go_gc_duration_seconds
 
-<p class="subtitle">cloud: maximum go garbage collection duration</p>
+This panel indicates maximum go garbage collection duration (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#github-proxy-go-gc-duration-seconds) for relevant alerts.
 
@@ -838,21 +840,21 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### github-proxy: pods_available_percentage
 
-<p class="subtitle">cloud: percentage pods available</p>
+This panel indicates percentage pods available (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#github-proxy-pods-available-percentage) for relevant alerts.
 
 <br />
 
-## postgres
+## Postgres
 
-<p class="subtitle">Postgres: Metrics from postgres_exporter.</p>
+<p class="subtitle">Metrics from postgres_exporter.</p>
 
 ### postgres: Default postgres dashboard
 
 #### postgres: connections
 
-<p class="subtitle">cloud: connections</p>
+This panel indicates connections (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#postgres-connections) for relevant alerts.
 
@@ -860,7 +862,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### postgres: transactions
 
-<p class="subtitle">cloud: transaction durations</p>
+This panel indicates transaction durations (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#postgres-transactions) for relevant alerts.
 
@@ -870,7 +872,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### postgres: postgres_up
 
-<p class="subtitle">cloud: current db status</p>
+This panel indicates current db status (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#postgres-postgres-up) for relevant alerts.
 
@@ -878,7 +880,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### postgres: pg_exporter_err
 
-<p class="subtitle">cloud: errors scraping postgres exporter</p>
+This panel indicates errors scraping postgres exporter (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#postgres-pg-exporter-err) for relevant alerts.
 
@@ -886,7 +888,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### postgres: migration_in_progress
 
-<p class="subtitle">cloud: schema migration status (where 0 is no migration in progress)</p>
+This panel indicates schema migration status (where 0 is no migration in progress) (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#postgres-migration-in-progress) for relevant alerts.
 
@@ -896,7 +898,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### postgres: provisioning_container_cpu_usage_long_term
 
-<p class="subtitle">cloud: container cpu usage total (90th percentile over 1d) across all cores by instance</p>
+This panel indicates container cpu usage total (90th percentile over 1d) across all cores by instance (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#postgres-provisioning-container-cpu-usage-long-term) for relevant alerts.
 
@@ -904,7 +906,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### postgres: provisioning_container_memory_usage_long_term
 
-<p class="subtitle">cloud: container memory usage (1d maximum) by instance</p>
+This panel indicates container memory usage (1d maximum) by instance (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#postgres-provisioning-container-memory-usage-long-term) for relevant alerts.
 
@@ -912,7 +914,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### postgres: provisioning_container_cpu_usage_short_term
 
-<p class="subtitle">cloud: container cpu usage total (5m maximum) across all cores by instance</p>
+This panel indicates container cpu usage total (5m maximum) across all cores by instance (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#postgres-provisioning-container-cpu-usage-short-term) for relevant alerts.
 
@@ -920,7 +922,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### postgres: provisioning_container_memory_usage_short_term
 
-<p class="subtitle">cloud: container memory usage (5m maximum) by instance</p>
+This panel indicates container memory usage (5m maximum) by instance (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#postgres-provisioning-container-memory-usage-short-term) for relevant alerts.
 
@@ -928,7 +930,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### postgres: provisioning_container_cpu_usage_long_term
 
-<p class="subtitle">code-intel: container cpu usage total (90th percentile over 1d) across all cores by instance</p>
+This panel indicates container cpu usage total (90th percentile over 1d) across all cores by instance (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#postgres-provisioning-container-cpu-usage-long-term) for relevant alerts.
 
@@ -936,7 +938,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### postgres: provisioning_container_memory_usage_long_term
 
-<p class="subtitle">code-intel: container memory usage (1d maximum) by instance</p>
+This panel indicates container memory usage (1d maximum) by instance (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#postgres-provisioning-container-memory-usage-long-term) for relevant alerts.
 
@@ -944,7 +946,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### postgres: provisioning_container_cpu_usage_short_term
 
-<p class="subtitle">code-intel: container cpu usage total (5m maximum) across all cores by instance</p>
+This panel indicates container cpu usage total (5m maximum) across all cores by instance (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#postgres-provisioning-container-cpu-usage-short-term) for relevant alerts.
 
@@ -952,21 +954,21 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### postgres: provisioning_container_memory_usage_short_term
 
-<p class="subtitle">code-intel: container memory usage (5m maximum) by instance</p>
+This panel indicates container memory usage (5m maximum) by instance (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#postgres-provisioning-container-memory-usage-short-term) for relevant alerts.
 
 <br />
 
-## precise-code-intel-worker
+## Precise Code Intel Worker
 
-<p class="subtitle">Precise Code Intel Worker: Handles conversion of uploaded precise code intelligence bundles.</p>
+<p class="subtitle">Handles conversion of uploaded precise code intelligence bundles.</p>
 
 ### precise-code-intel-worker: Upload queue
 
 #### precise-code-intel-worker: upload_queue_size
 
-<p class="subtitle">code-intel: queue size</p>
+This panel indicates queue size (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#precise-code-intel-worker-upload-queue-size) for relevant alerts.
 
@@ -974,7 +976,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### precise-code-intel-worker: upload_queue_growth_rate
 
-<p class="subtitle">code-intel: queue growth rate over 30m</p>
+This panel indicates queue growth rate over 30m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#precise-code-intel-worker-upload-queue-growth-rate) for relevant alerts.
 
@@ -982,7 +984,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### precise-code-intel-worker: job_errors
 
-<p class="subtitle">code-intel: job errors errors every 5m</p>
+This panel indicates job errors errors every 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#precise-code-intel-worker-job-errors) for relevant alerts.
 
@@ -990,13 +992,13 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### precise-code-intel-worker: active_workers
 
-<p class="subtitle">code-intel: active workers processing uploads</p>
+This panel indicates active workers processing uploads (code-intel).
 
 <br />
 
 #### precise-code-intel-worker: active_jobs
 
-<p class="subtitle">code-intel: active jobs</p>
+This panel indicates active jobs (code-intel).
 
 <br />
 
@@ -1004,7 +1006,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### precise-code-intel-worker: job_99th_percentile_duration
 
-<p class="subtitle">code-intel: 99th percentile successful job duration over 5m</p>
+This panel indicates 99th percentile successful job duration over 5m (code-intel).
 
 <br />
 
@@ -1012,7 +1014,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### precise-code-intel-worker: codeintel_dbstore_99th_percentile_duration
 
-<p class="subtitle">code-intel: 99th percentile successful database store operation duration over 5m</p>
+This panel indicates 99th percentile successful database store operation duration over 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#precise-code-intel-worker-codeintel-dbstore-99th-percentile-duration) for relevant alerts.
 
@@ -1020,7 +1022,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### precise-code-intel-worker: codeintel_dbstore_errors
 
-<p class="subtitle">code-intel: database store errors every 5m</p>
+This panel indicates database store errors every 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#precise-code-intel-worker-codeintel-dbstore-errors) for relevant alerts.
 
@@ -1028,7 +1030,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### precise-code-intel-worker: codeintel_workerstore_99th_percentile_duration
 
-<p class="subtitle">code-intel: 99th percentile successful worker store operation duration over 5m</p>
+This panel indicates 99th percentile successful worker store operation duration over 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#precise-code-intel-worker-codeintel-workerstore-99th-percentile-duration) for relevant alerts.
 
@@ -1036,7 +1038,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### precise-code-intel-worker: codeintel_workerstore_errors
 
-<p class="subtitle">code-intel: worker store errors every 5m</p>
+This panel indicates worker store errors every 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#precise-code-intel-worker-codeintel-workerstore-errors) for relevant alerts.
 
@@ -1044,7 +1046,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### precise-code-intel-worker: codeintel_lsifstore_99th_percentile_duration
 
-<p class="subtitle">code-intel: 99th percentile successful LSIF store operation duration over 5m</p>
+This panel indicates 99th percentile successful LSIF store operation duration over 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#precise-code-intel-worker-codeintel-lsifstore-99th-percentile-duration) for relevant alerts.
 
@@ -1052,7 +1054,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### precise-code-intel-worker: codeintel_lsifstore_errors
 
-<p class="subtitle">code-intel: lSIF store errors every 5m</p>
+This panel indicates lSIF store errors every 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#precise-code-intel-worker-codeintel-lsifstore-errors) for relevant alerts.
 
@@ -1060,7 +1062,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### precise-code-intel-worker: codeintel_uploadstore_99th_percentile_duration
 
-<p class="subtitle">code-intel: 99th percentile successful upload store operation duration over 5m</p>
+This panel indicates 99th percentile successful upload store operation duration over 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#precise-code-intel-worker-codeintel-uploadstore-99th-percentile-duration) for relevant alerts.
 
@@ -1068,7 +1070,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### precise-code-intel-worker: codeintel_uploadstore_errors
 
-<p class="subtitle">code-intel: upload store errors every 5m</p>
+This panel indicates upload store errors every 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#precise-code-intel-worker-codeintel-uploadstore-errors) for relevant alerts.
 
@@ -1076,7 +1078,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### precise-code-intel-worker: codeintel_gitserverclient_99th_percentile_duration
 
-<p class="subtitle">code-intel: 99th percentile successful gitserver client operation duration over 5m</p>
+This panel indicates 99th percentile successful gitserver client operation duration over 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#precise-code-intel-worker-codeintel-gitserverclient-99th-percentile-duration) for relevant alerts.
 
@@ -1084,7 +1086,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### precise-code-intel-worker: codeintel_gitserverclient_errors
 
-<p class="subtitle">code-intel: gitserver client errors every 5m</p>
+This panel indicates gitserver client errors every 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#precise-code-intel-worker-codeintel-gitserverclient-errors) for relevant alerts.
 
@@ -1094,7 +1096,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### precise-code-intel-worker: frontend_internal_api_error_responses
 
-<p class="subtitle">code-intel: frontend-internal API error responses every 5m by route</p>
+This panel indicates frontend-internal API error responses every 5m by route (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#precise-code-intel-worker-frontend-internal-api-error-responses) for relevant alerts.
 
@@ -1104,7 +1106,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### precise-code-intel-worker: container_cpu_usage
 
-<p class="subtitle">code-intel: container cpu usage total (1m average) across all cores by instance</p>
+This panel indicates container cpu usage total (1m average) across all cores by instance (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#precise-code-intel-worker-container-cpu-usage) for relevant alerts.
 
@@ -1112,7 +1114,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### precise-code-intel-worker: container_memory_usage
 
-<p class="subtitle">code-intel: container memory usage by instance</p>
+This panel indicates container memory usage by instance (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#precise-code-intel-worker-container-memory-usage) for relevant alerts.
 
@@ -1120,7 +1122,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### precise-code-intel-worker: container_restarts
 
-<p class="subtitle">code-intel: container restarts every 5m by instance</p>
+This panel indicates container restarts every 5m by instance (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#precise-code-intel-worker-container-restarts) for relevant alerts.
 
@@ -1128,7 +1130,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### precise-code-intel-worker: fs_inodes_used
 
-<p class="subtitle">code-intel: fs inodes in use by instance</p>
+This panel indicates fs inodes in use by instance (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#precise-code-intel-worker-fs-inodes-used) for relevant alerts.
 
@@ -1138,7 +1140,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### precise-code-intel-worker: provisioning_container_cpu_usage_long_term
 
-<p class="subtitle">code-intel: container cpu usage total (90th percentile over 1d) across all cores by instance</p>
+This panel indicates container cpu usage total (90th percentile over 1d) across all cores by instance (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#precise-code-intel-worker-provisioning-container-cpu-usage-long-term) for relevant alerts.
 
@@ -1146,7 +1148,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### precise-code-intel-worker: provisioning_container_memory_usage_long_term
 
-<p class="subtitle">code-intel: container memory usage (1d maximum) by instance</p>
+This panel indicates container memory usage (1d maximum) by instance (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#precise-code-intel-worker-provisioning-container-memory-usage-long-term) for relevant alerts.
 
@@ -1154,7 +1156,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### precise-code-intel-worker: provisioning_container_cpu_usage_short_term
 
-<p class="subtitle">code-intel: container cpu usage total (5m maximum) across all cores by instance</p>
+This panel indicates container cpu usage total (5m maximum) across all cores by instance (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#precise-code-intel-worker-provisioning-container-cpu-usage-short-term) for relevant alerts.
 
@@ -1162,7 +1164,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### precise-code-intel-worker: provisioning_container_memory_usage_short_term
 
-<p class="subtitle">code-intel: container memory usage (5m maximum) by instance</p>
+This panel indicates container memory usage (5m maximum) by instance (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#precise-code-intel-worker-provisioning-container-memory-usage-short-term) for relevant alerts.
 
@@ -1172,7 +1174,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### precise-code-intel-worker: go_goroutines
 
-<p class="subtitle">code-intel: maximum active goroutines</p>
+This panel indicates maximum active goroutines (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#precise-code-intel-worker-go-goroutines) for relevant alerts.
 
@@ -1180,7 +1182,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### precise-code-intel-worker: go_gc_duration_seconds
 
-<p class="subtitle">code-intel: maximum go garbage collection duration</p>
+This panel indicates maximum go garbage collection duration (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#precise-code-intel-worker-go-gc-duration-seconds) for relevant alerts.
 
@@ -1190,19 +1192,19 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### precise-code-intel-worker: pods_available_percentage
 
-<p class="subtitle">code-intel: percentage pods available</p>
+This panel indicates percentage pods available (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#precise-code-intel-worker-pods-available-percentage) for relevant alerts.
 
 <br />
 
-## query-runner
+## Query Runner
 
-<p class="subtitle">Query Runner: Periodically runs saved searches and instructs the frontend to send out notifications.</p>
+<p class="subtitle">Periodically runs saved searches and instructs the frontend to send out notifications.</p>
 
 #### query-runner: frontend_internal_api_error_responses
 
-<p class="subtitle">search: frontend-internal API error responses every 5m by route</p>
+This panel indicates frontend-internal API error responses every 5m by route (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#query-runner-frontend-internal-api-error-responses) for relevant alerts.
 
@@ -1212,7 +1214,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### query-runner: container_memory_usage
 
-<p class="subtitle">search: container memory usage by instance</p>
+This panel indicates container memory usage by instance (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#query-runner-container-memory-usage) for relevant alerts.
 
@@ -1220,7 +1222,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### query-runner: container_cpu_usage
 
-<p class="subtitle">search: container cpu usage total (1m average) across all cores by instance</p>
+This panel indicates container cpu usage total (1m average) across all cores by instance (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#query-runner-container-cpu-usage) for relevant alerts.
 
@@ -1228,7 +1230,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### query-runner: container_restarts
 
-<p class="subtitle">search: container restarts every 5m by instance</p>
+This panel indicates container restarts every 5m by instance (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#query-runner-container-restarts) for relevant alerts.
 
@@ -1236,7 +1238,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### query-runner: fs_inodes_used
 
-<p class="subtitle">search: fs inodes in use by instance</p>
+This panel indicates fs inodes in use by instance (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#query-runner-fs-inodes-used) for relevant alerts.
 
@@ -1246,7 +1248,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### query-runner: provisioning_container_cpu_usage_long_term
 
-<p class="subtitle">search: container cpu usage total (90th percentile over 1d) across all cores by instance</p>
+This panel indicates container cpu usage total (90th percentile over 1d) across all cores by instance (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#query-runner-provisioning-container-cpu-usage-long-term) for relevant alerts.
 
@@ -1254,7 +1256,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### query-runner: provisioning_container_memory_usage_long_term
 
-<p class="subtitle">search: container memory usage (1d maximum) by instance</p>
+This panel indicates container memory usage (1d maximum) by instance (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#query-runner-provisioning-container-memory-usage-long-term) for relevant alerts.
 
@@ -1262,7 +1264,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### query-runner: provisioning_container_cpu_usage_short_term
 
-<p class="subtitle">search: container cpu usage total (5m maximum) across all cores by instance</p>
+This panel indicates container cpu usage total (5m maximum) across all cores by instance (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#query-runner-provisioning-container-cpu-usage-short-term) for relevant alerts.
 
@@ -1270,7 +1272,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### query-runner: provisioning_container_memory_usage_short_term
 
-<p class="subtitle">search: container memory usage (5m maximum) by instance</p>
+This panel indicates container memory usage (5m maximum) by instance (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#query-runner-provisioning-container-memory-usage-short-term) for relevant alerts.
 
@@ -1280,7 +1282,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### query-runner: go_goroutines
 
-<p class="subtitle">search: maximum active goroutines</p>
+This panel indicates maximum active goroutines (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#query-runner-go-goroutines) for relevant alerts.
 
@@ -1288,7 +1290,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### query-runner: go_gc_duration_seconds
 
-<p class="subtitle">search: maximum go garbage collection duration</p>
+This panel indicates maximum go garbage collection duration (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#query-runner-go-gc-duration-seconds) for relevant alerts.
 
@@ -1298,19 +1300,19 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### query-runner: pods_available_percentage
 
-<p class="subtitle">search: percentage pods available</p>
+This panel indicates percentage pods available (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#query-runner-pods-available-percentage) for relevant alerts.
 
 <br />
 
-## repo-updater
+## Repo Updater
 
-<p class="subtitle">Repo Updater: Manages interaction with code hosts, instructs Gitserver to update repositories.</p>
+<p class="subtitle">Manages interaction with code hosts, instructs Gitserver to update repositories.</p>
 
 #### repo-updater: frontend_internal_api_error_responses
 
-<p class="subtitle">cloud: frontend-internal API error responses every 5m by route</p>
+This panel indicates frontend-internal API error responses every 5m by route (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#repo-updater-frontend-internal-api-error-responses) for relevant alerts.
 
@@ -1320,7 +1322,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### repo-updater: syncer_sync_last_time
 
-<p class="subtitle">cloud: time since last sync</p>
+This panel indicates time since last sync (cloud).
 
 A high value here indicates issues synchronizing repository permissions.
 If the value is persistently high, make sure all external services have valid tokens.
@@ -1329,7 +1331,7 @@ If the value is persistently high, make sure all external services have valid to
 
 #### repo-updater: src_repoupdater_max_sync_backoff
 
-<p class="subtitle">cloud: time since oldest sync</p>
+This panel indicates time since oldest sync (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#repo-updater-src-repoupdater-max-sync-backoff) for relevant alerts.
 
@@ -1337,7 +1339,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### repo-updater: src_repoupdater_syncer_sync_errors_total
 
-<p class="subtitle">cloud: sync error rate</p>
+This panel indicates sync error rate (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#repo-updater-src-repoupdater-syncer-sync-errors-total) for relevant alerts.
 
@@ -1345,7 +1347,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### repo-updater: syncer_sync_start
 
-<p class="subtitle">cloud: sync was started</p>
+This panel indicates sync was started (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#repo-updater-syncer-sync-start) for relevant alerts.
 
@@ -1353,7 +1355,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### repo-updater: syncer_sync_duration
 
-<p class="subtitle">cloud: 95th repositories sync duration</p>
+This panel indicates 95th repositories sync duration (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#repo-updater-syncer-sync-duration) for relevant alerts.
 
@@ -1361,7 +1363,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### repo-updater: source_duration
 
-<p class="subtitle">cloud: 95th repositories source duration</p>
+This panel indicates 95th repositories source duration (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#repo-updater-source-duration) for relevant alerts.
 
@@ -1369,7 +1371,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### repo-updater: syncer_synced_repos
 
-<p class="subtitle">cloud: repositories synced</p>
+This panel indicates repositories synced (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#repo-updater-syncer-synced-repos) for relevant alerts.
 
@@ -1377,7 +1379,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### repo-updater: sourced_repos
 
-<p class="subtitle">cloud: repositories sourced</p>
+This panel indicates repositories sourced (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#repo-updater-sourced-repos) for relevant alerts.
 
@@ -1385,7 +1387,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### repo-updater: user_added_repos
 
-<p class="subtitle">cloud: total number of user added repos</p>
+This panel indicates total number of user added repos (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#repo-updater-user-added-repos) for relevant alerts.
 
@@ -1393,7 +1395,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### repo-updater: purge_failed
 
-<p class="subtitle">cloud: repositories purge failed</p>
+This panel indicates repositories purge failed (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#repo-updater-purge-failed) for relevant alerts.
 
@@ -1401,7 +1403,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### repo-updater: sched_auto_fetch
 
-<p class="subtitle">cloud: repositories scheduled due to hitting a deadline</p>
+This panel indicates repositories scheduled due to hitting a deadline (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#repo-updater-sched-auto-fetch) for relevant alerts.
 
@@ -1409,7 +1411,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### repo-updater: sched_manual_fetch
 
-<p class="subtitle">cloud: repositories scheduled due to user traffic</p>
+This panel indicates repositories scheduled due to user traffic (cloud).
 
 Check repo-updater logs if this value is persistently high.
 This does not indicate anything if there are no user added code hosts.
@@ -1418,7 +1420,7 @@ This does not indicate anything if there are no user added code hosts.
 
 #### repo-updater: sched_known_repos
 
-<p class="subtitle">cloud: repositories managed by the scheduler</p>
+This panel indicates repositories managed by the scheduler (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#repo-updater-sched-known-repos) for relevant alerts.
 
@@ -1426,7 +1428,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### repo-updater: sched_update_queue_length
 
-<p class="subtitle">cloud: rate of growth of update queue length over 5 minutes</p>
+This panel indicates rate of growth of update queue length over 5 minutes (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#repo-updater-sched-update-queue-length) for relevant alerts.
 
@@ -1434,7 +1436,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### repo-updater: sched_loops
 
-<p class="subtitle">cloud: scheduler loops</p>
+This panel indicates scheduler loops (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#repo-updater-sched-loops) for relevant alerts.
 
@@ -1442,7 +1444,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### repo-updater: sched_error
 
-<p class="subtitle">cloud: repositories schedule error rate</p>
+This panel indicates repositories schedule error rate (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#repo-updater-sched-error) for relevant alerts.
 
@@ -1452,7 +1454,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### repo-updater: perms_syncer_perms
 
-<p class="subtitle">cloud: time gap between least and most up to date permissions</p>
+This panel indicates time gap between least and most up to date permissions (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#repo-updater-perms-syncer-perms) for relevant alerts.
 
@@ -1460,7 +1462,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### repo-updater: perms_syncer_stale_perms
 
-<p class="subtitle">cloud: number of entities with stale permissions</p>
+This panel indicates number of entities with stale permissions (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#repo-updater-perms-syncer-stale-perms) for relevant alerts.
 
@@ -1468,7 +1470,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### repo-updater: perms_syncer_no_perms
 
-<p class="subtitle">cloud: number of entities with no permissions</p>
+This panel indicates number of entities with no permissions (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#repo-updater-perms-syncer-no-perms) for relevant alerts.
 
@@ -1476,7 +1478,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### repo-updater: perms_syncer_sync_duration
 
-<p class="subtitle">cloud: 95th permissions sync duration</p>
+This panel indicates 95th permissions sync duration (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#repo-updater-perms-syncer-sync-duration) for relevant alerts.
 
@@ -1484,7 +1486,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### repo-updater: perms_syncer_queue_size
 
-<p class="subtitle">cloud: permissions sync queued items</p>
+This panel indicates permissions sync queued items (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#repo-updater-perms-syncer-queue-size) for relevant alerts.
 
@@ -1492,7 +1494,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### repo-updater: perms_syncer_sync_errors
 
-<p class="subtitle">cloud: permissions sync error rate</p>
+This panel indicates permissions sync error rate (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#repo-updater-perms-syncer-sync-errors) for relevant alerts.
 
@@ -1502,7 +1504,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### repo-updater: src_repoupdater_external_services_total
 
-<p class="subtitle">cloud: the total number of external services</p>
+This panel indicates the total number of external services (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#repo-updater-src-repoupdater-external-services-total) for relevant alerts.
 
@@ -1510,7 +1512,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### repo-updater: src_repoupdater_user_external_services_total
 
-<p class="subtitle">cloud: the total number of user added external services</p>
+This panel indicates the total number of user added external services (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#repo-updater-src-repoupdater-user-external-services-total) for relevant alerts.
 
@@ -1518,7 +1520,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### repo-updater: repoupdater_queued_sync_jobs_total
 
-<p class="subtitle">cloud: the total number of queued sync jobs</p>
+This panel indicates the total number of queued sync jobs (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#repo-updater-repoupdater-queued-sync-jobs-total) for relevant alerts.
 
@@ -1526,7 +1528,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### repo-updater: repoupdater_completed_sync_jobs_total
 
-<p class="subtitle">cloud: the total number of completed sync jobs</p>
+This panel indicates the total number of completed sync jobs (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#repo-updater-repoupdater-completed-sync-jobs-total) for relevant alerts.
 
@@ -1534,7 +1536,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### repo-updater: repoupdater_errored_sync_jobs_total
 
-<p class="subtitle">cloud: the total number of errored sync jobs</p>
+This panel indicates the total number of errored sync jobs (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#repo-updater-repoupdater-errored-sync-jobs-total) for relevant alerts.
 
@@ -1542,7 +1544,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### repo-updater: github_graphql_rate_limit_remaining
 
-<p class="subtitle">cloud: remaining calls to GitHub graphql API before hitting the rate limit</p>
+This panel indicates remaining calls to GitHub graphql API before hitting the rate limit (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#repo-updater-github-graphql-rate-limit-remaining) for relevant alerts.
 
@@ -1550,7 +1552,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### repo-updater: github_rest_rate_limit_remaining
 
-<p class="subtitle">cloud: remaining calls to GitHub rest API before hitting the rate limit</p>
+This panel indicates remaining calls to GitHub rest API before hitting the rate limit (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#repo-updater-github-rest-rate-limit-remaining) for relevant alerts.
 
@@ -1558,7 +1560,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### repo-updater: github_search_rate_limit_remaining
 
-<p class="subtitle">cloud: remaining calls to GitHub search API before hitting the rate limit</p>
+This panel indicates remaining calls to GitHub search API before hitting the rate limit (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#repo-updater-github-search-rate-limit-remaining) for relevant alerts.
 
@@ -1566,7 +1568,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### repo-updater: gitlab_rest_rate_limit_remaining
 
-<p class="subtitle">cloud: remaining calls to GitLab rest API before hitting the rate limit</p>
+This panel indicates remaining calls to GitLab rest API before hitting the rate limit (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#repo-updater-gitlab-rest-rate-limit-remaining) for relevant alerts.
 
@@ -1576,7 +1578,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### repo-updater: container_cpu_usage
 
-<p class="subtitle">cloud: container cpu usage total (1m average) across all cores by instance</p>
+This panel indicates container cpu usage total (1m average) across all cores by instance (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#repo-updater-container-cpu-usage) for relevant alerts.
 
@@ -1584,7 +1586,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### repo-updater: container_memory_usage
 
-<p class="subtitle">cloud: container memory usage by instance</p>
+This panel indicates container memory usage by instance (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#repo-updater-container-memory-usage) for relevant alerts.
 
@@ -1592,7 +1594,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### repo-updater: container_restarts
 
-<p class="subtitle">cloud: container restarts every 5m by instance</p>
+This panel indicates container restarts every 5m by instance (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#repo-updater-container-restarts) for relevant alerts.
 
@@ -1600,7 +1602,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### repo-updater: fs_inodes_used
 
-<p class="subtitle">cloud: fs inodes in use by instance</p>
+This panel indicates fs inodes in use by instance (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#repo-updater-fs-inodes-used) for relevant alerts.
 
@@ -1610,7 +1612,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### repo-updater: provisioning_container_cpu_usage_long_term
 
-<p class="subtitle">cloud: container cpu usage total (90th percentile over 1d) across all cores by instance</p>
+This panel indicates container cpu usage total (90th percentile over 1d) across all cores by instance (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#repo-updater-provisioning-container-cpu-usage-long-term) for relevant alerts.
 
@@ -1618,7 +1620,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### repo-updater: provisioning_container_memory_usage_long_term
 
-<p class="subtitle">cloud: container memory usage (1d maximum) by instance</p>
+This panel indicates container memory usage (1d maximum) by instance (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#repo-updater-provisioning-container-memory-usage-long-term) for relevant alerts.
 
@@ -1626,7 +1628,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### repo-updater: provisioning_container_cpu_usage_short_term
 
-<p class="subtitle">cloud: container cpu usage total (5m maximum) across all cores by instance</p>
+This panel indicates container cpu usage total (5m maximum) across all cores by instance (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#repo-updater-provisioning-container-cpu-usage-short-term) for relevant alerts.
 
@@ -1634,7 +1636,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### repo-updater: provisioning_container_memory_usage_short_term
 
-<p class="subtitle">cloud: container memory usage (5m maximum) by instance</p>
+This panel indicates container memory usage (5m maximum) by instance (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#repo-updater-provisioning-container-memory-usage-short-term) for relevant alerts.
 
@@ -1644,7 +1646,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### repo-updater: go_goroutines
 
-<p class="subtitle">cloud: maximum active goroutines</p>
+This panel indicates maximum active goroutines (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#repo-updater-go-goroutines) for relevant alerts.
 
@@ -1652,7 +1654,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### repo-updater: go_gc_duration_seconds
 
-<p class="subtitle">cloud: maximum go garbage collection duration</p>
+This panel indicates maximum go garbage collection duration (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#repo-updater-go-gc-duration-seconds) for relevant alerts.
 
@@ -1662,19 +1664,19 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### repo-updater: pods_available_percentage
 
-<p class="subtitle">cloud: percentage pods available</p>
+This panel indicates percentage pods available (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#repo-updater-pods-available-percentage) for relevant alerts.
 
 <br />
 
-## searcher
+## Searcher
 
-<p class="subtitle">Searcher: Performs unindexed searches (diff and commit search, text search for unindexed branches).</p>
+<p class="subtitle">Performs unindexed searches (diff and commit search, text search for unindexed branches).</p>
 
 #### searcher: unindexed_search_request_errors
 
-<p class="subtitle">search: unindexed search request errors every 5m by code</p>
+This panel indicates unindexed search request errors every 5m by code (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#searcher-unindexed-search-request-errors) for relevant alerts.
 
@@ -1682,7 +1684,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### searcher: replica_traffic
 
-<p class="subtitle">search: requests per second over 10m</p>
+This panel indicates requests per second over 10m (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#searcher-replica-traffic) for relevant alerts.
 
@@ -1690,7 +1692,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### searcher: frontend_internal_api_error_responses
 
-<p class="subtitle">search: frontend-internal API error responses every 5m by route</p>
+This panel indicates frontend-internal API error responses every 5m by route (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#searcher-frontend-internal-api-error-responses) for relevant alerts.
 
@@ -1700,7 +1702,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### searcher: container_cpu_usage
 
-<p class="subtitle">search: container cpu usage total (1m average) across all cores by instance</p>
+This panel indicates container cpu usage total (1m average) across all cores by instance (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#searcher-container-cpu-usage) for relevant alerts.
 
@@ -1708,7 +1710,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### searcher: container_memory_usage
 
-<p class="subtitle">search: container memory usage by instance</p>
+This panel indicates container memory usage by instance (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#searcher-container-memory-usage) for relevant alerts.
 
@@ -1716,7 +1718,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### searcher: container_restarts
 
-<p class="subtitle">search: container restarts every 5m by instance</p>
+This panel indicates container restarts every 5m by instance (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#searcher-container-restarts) for relevant alerts.
 
@@ -1724,7 +1726,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### searcher: fs_inodes_used
 
-<p class="subtitle">search: fs inodes in use by instance</p>
+This panel indicates fs inodes in use by instance (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#searcher-fs-inodes-used) for relevant alerts.
 
@@ -1734,7 +1736,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### searcher: provisioning_container_cpu_usage_long_term
 
-<p class="subtitle">search: container cpu usage total (90th percentile over 1d) across all cores by instance</p>
+This panel indicates container cpu usage total (90th percentile over 1d) across all cores by instance (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#searcher-provisioning-container-cpu-usage-long-term) for relevant alerts.
 
@@ -1742,7 +1744,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### searcher: provisioning_container_memory_usage_long_term
 
-<p class="subtitle">search: container memory usage (1d maximum) by instance</p>
+This panel indicates container memory usage (1d maximum) by instance (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#searcher-provisioning-container-memory-usage-long-term) for relevant alerts.
 
@@ -1750,7 +1752,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### searcher: provisioning_container_cpu_usage_short_term
 
-<p class="subtitle">search: container cpu usage total (5m maximum) across all cores by instance</p>
+This panel indicates container cpu usage total (5m maximum) across all cores by instance (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#searcher-provisioning-container-cpu-usage-short-term) for relevant alerts.
 
@@ -1758,7 +1760,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### searcher: provisioning_container_memory_usage_short_term
 
-<p class="subtitle">search: container memory usage (5m maximum) by instance</p>
+This panel indicates container memory usage (5m maximum) by instance (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#searcher-provisioning-container-memory-usage-short-term) for relevant alerts.
 
@@ -1768,7 +1770,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### searcher: go_goroutines
 
-<p class="subtitle">search: maximum active goroutines</p>
+This panel indicates maximum active goroutines (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#searcher-go-goroutines) for relevant alerts.
 
@@ -1776,7 +1778,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### searcher: go_gc_duration_seconds
 
-<p class="subtitle">search: maximum go garbage collection duration</p>
+This panel indicates maximum go garbage collection duration (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#searcher-go-gc-duration-seconds) for relevant alerts.
 
@@ -1786,19 +1788,19 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### searcher: pods_available_percentage
 
-<p class="subtitle">search: percentage pods available</p>
+This panel indicates percentage pods available (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#searcher-pods-available-percentage) for relevant alerts.
 
 <br />
 
-## symbols
+## Symbols
 
-<p class="subtitle">Symbols: Handles symbol searches for unindexed branches.</p>
+<p class="subtitle">Handles symbol searches for unindexed branches.</p>
 
 #### symbols: store_fetch_failures
 
-<p class="subtitle">code-intel: store fetch failures every 5m</p>
+This panel indicates store fetch failures every 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#symbols-store-fetch-failures) for relevant alerts.
 
@@ -1806,7 +1808,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### symbols: current_fetch_queue_size
 
-<p class="subtitle">code-intel: current fetch queue size</p>
+This panel indicates current fetch queue size (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#symbols-current-fetch-queue-size) for relevant alerts.
 
@@ -1814,7 +1816,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### symbols: frontend_internal_api_error_responses
 
-<p class="subtitle">code-intel: frontend-internal API error responses every 5m by route</p>
+This panel indicates frontend-internal API error responses every 5m by route (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#symbols-frontend-internal-api-error-responses) for relevant alerts.
 
@@ -1824,7 +1826,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### symbols: container_cpu_usage
 
-<p class="subtitle">code-intel: container cpu usage total (1m average) across all cores by instance</p>
+This panel indicates container cpu usage total (1m average) across all cores by instance (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#symbols-container-cpu-usage) for relevant alerts.
 
@@ -1832,7 +1834,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### symbols: container_memory_usage
 
-<p class="subtitle">code-intel: container memory usage by instance</p>
+This panel indicates container memory usage by instance (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#symbols-container-memory-usage) for relevant alerts.
 
@@ -1840,7 +1842,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### symbols: container_restarts
 
-<p class="subtitle">code-intel: container restarts every 5m by instance</p>
+This panel indicates container restarts every 5m by instance (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#symbols-container-restarts) for relevant alerts.
 
@@ -1848,7 +1850,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### symbols: fs_inodes_used
 
-<p class="subtitle">code-intel: fs inodes in use by instance</p>
+This panel indicates fs inodes in use by instance (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#symbols-fs-inodes-used) for relevant alerts.
 
@@ -1858,7 +1860,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### symbols: provisioning_container_cpu_usage_long_term
 
-<p class="subtitle">code-intel: container cpu usage total (90th percentile over 1d) across all cores by instance</p>
+This panel indicates container cpu usage total (90th percentile over 1d) across all cores by instance (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#symbols-provisioning-container-cpu-usage-long-term) for relevant alerts.
 
@@ -1866,7 +1868,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### symbols: provisioning_container_memory_usage_long_term
 
-<p class="subtitle">code-intel: container memory usage (1d maximum) by instance</p>
+This panel indicates container memory usage (1d maximum) by instance (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#symbols-provisioning-container-memory-usage-long-term) for relevant alerts.
 
@@ -1874,7 +1876,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### symbols: provisioning_container_cpu_usage_short_term
 
-<p class="subtitle">code-intel: container cpu usage total (5m maximum) across all cores by instance</p>
+This panel indicates container cpu usage total (5m maximum) across all cores by instance (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#symbols-provisioning-container-cpu-usage-short-term) for relevant alerts.
 
@@ -1882,7 +1884,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### symbols: provisioning_container_memory_usage_short_term
 
-<p class="subtitle">code-intel: container memory usage (5m maximum) by instance</p>
+This panel indicates container memory usage (5m maximum) by instance (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#symbols-provisioning-container-memory-usage-short-term) for relevant alerts.
 
@@ -1892,7 +1894,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### symbols: go_goroutines
 
-<p class="subtitle">code-intel: maximum active goroutines</p>
+This panel indicates maximum active goroutines (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#symbols-go-goroutines) for relevant alerts.
 
@@ -1900,7 +1902,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### symbols: go_gc_duration_seconds
 
-<p class="subtitle">code-intel: maximum go garbage collection duration</p>
+This panel indicates maximum go garbage collection duration (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#symbols-go-gc-duration-seconds) for relevant alerts.
 
@@ -1910,37 +1912,37 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### symbols: pods_available_percentage
 
-<p class="subtitle">code-intel: percentage pods available</p>
+This panel indicates percentage pods available (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#symbols-pods-available-percentage) for relevant alerts.
 
 <br />
 
-## syntect-server
+## Syntect Server
 
-<p class="subtitle">Syntect Server: Handles syntax highlighting for code files.</p>
+<p class="subtitle">Handles syntax highlighting for code files.</p>
 
 #### syntect-server: syntax_highlighting_errors
 
-<p class="subtitle">cloud: syntax highlighting errors every 5m</p>
+This panel indicates syntax highlighting errors every 5m (cloud).
 
 <br />
 
 #### syntect-server: syntax_highlighting_timeouts
 
-<p class="subtitle">cloud: syntax highlighting timeouts every 5m</p>
+This panel indicates syntax highlighting timeouts every 5m (cloud).
 
 <br />
 
 #### syntect-server: syntax_highlighting_panics
 
-<p class="subtitle">cloud: syntax highlighting panics every 5m</p>
+This panel indicates syntax highlighting panics every 5m (cloud).
 
 <br />
 
 #### syntect-server: syntax_highlighting_worker_deaths
 
-<p class="subtitle">cloud: syntax highlighter worker deaths every 5m</p>
+This panel indicates syntax highlighter worker deaths every 5m (cloud).
 
 <br />
 
@@ -1948,7 +1950,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### syntect-server: container_cpu_usage
 
-<p class="subtitle">cloud: container cpu usage total (1m average) across all cores by instance</p>
+This panel indicates container cpu usage total (1m average) across all cores by instance (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#syntect-server-container-cpu-usage) for relevant alerts.
 
@@ -1956,7 +1958,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### syntect-server: container_memory_usage
 
-<p class="subtitle">cloud: container memory usage by instance</p>
+This panel indicates container memory usage by instance (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#syntect-server-container-memory-usage) for relevant alerts.
 
@@ -1964,7 +1966,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### syntect-server: container_restarts
 
-<p class="subtitle">cloud: container restarts every 5m by instance</p>
+This panel indicates container restarts every 5m by instance (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#syntect-server-container-restarts) for relevant alerts.
 
@@ -1972,7 +1974,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### syntect-server: fs_inodes_used
 
-<p class="subtitle">cloud: fs inodes in use by instance</p>
+This panel indicates fs inodes in use by instance (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#syntect-server-fs-inodes-used) for relevant alerts.
 
@@ -1982,7 +1984,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### syntect-server: provisioning_container_cpu_usage_long_term
 
-<p class="subtitle">cloud: container cpu usage total (90th percentile over 1d) across all cores by instance</p>
+This panel indicates container cpu usage total (90th percentile over 1d) across all cores by instance (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#syntect-server-provisioning-container-cpu-usage-long-term) for relevant alerts.
 
@@ -1990,7 +1992,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### syntect-server: provisioning_container_memory_usage_long_term
 
-<p class="subtitle">cloud: container memory usage (1d maximum) by instance</p>
+This panel indicates container memory usage (1d maximum) by instance (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#syntect-server-provisioning-container-memory-usage-long-term) for relevant alerts.
 
@@ -1998,7 +2000,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### syntect-server: provisioning_container_cpu_usage_short_term
 
-<p class="subtitle">cloud: container cpu usage total (5m maximum) across all cores by instance</p>
+This panel indicates container cpu usage total (5m maximum) across all cores by instance (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#syntect-server-provisioning-container-cpu-usage-short-term) for relevant alerts.
 
@@ -2006,7 +2008,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### syntect-server: provisioning_container_memory_usage_short_term
 
-<p class="subtitle">cloud: container memory usage (5m maximum) by instance</p>
+This panel indicates container memory usage (5m maximum) by instance (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#syntect-server-provisioning-container-memory-usage-short-term) for relevant alerts.
 
@@ -2016,19 +2018,19 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### syntect-server: pods_available_percentage
 
-<p class="subtitle">cloud: percentage pods available</p>
+This panel indicates percentage pods available (cloud).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#syntect-server-pods-available-percentage) for relevant alerts.
 
 <br />
 
-## zoekt-indexserver
+## Zoekt Index Server
 
-<p class="subtitle">Zoekt Index Server: Indexes repositories and populates the search index.</p>
+<p class="subtitle">Indexes repositories and populates the search index.</p>
 
 #### zoekt-indexserver: average_resolve_revision_duration
 
-<p class="subtitle">search: average resolve revision duration over 5m</p>
+This panel indicates average resolve revision duration over 5m (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#zoekt-indexserver-average-resolve-revision-duration) for relevant alerts.
 
@@ -2038,7 +2040,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### zoekt-indexserver: container_cpu_usage
 
-<p class="subtitle">search: container cpu usage total (1m average) across all cores by instance</p>
+This panel indicates container cpu usage total (1m average) across all cores by instance (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#zoekt-indexserver-container-cpu-usage) for relevant alerts.
 
@@ -2046,7 +2048,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### zoekt-indexserver: container_memory_usage
 
-<p class="subtitle">search: container memory usage by instance</p>
+This panel indicates container memory usage by instance (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#zoekt-indexserver-container-memory-usage) for relevant alerts.
 
@@ -2054,7 +2056,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### zoekt-indexserver: container_restarts
 
-<p class="subtitle">search: container restarts every 5m by instance</p>
+This panel indicates container restarts every 5m by instance (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#zoekt-indexserver-container-restarts) for relevant alerts.
 
@@ -2062,7 +2064,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### zoekt-indexserver: fs_inodes_used
 
-<p class="subtitle">search: fs inodes in use by instance</p>
+This panel indicates fs inodes in use by instance (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#zoekt-indexserver-fs-inodes-used) for relevant alerts.
 
@@ -2070,7 +2072,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### zoekt-indexserver: fs_io_operations
 
-<p class="subtitle">search: filesystem reads and writes rate by instance over 1h</p>
+This panel indicates filesystem reads and writes rate by instance over 1h (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#zoekt-indexserver-fs-io-operations) for relevant alerts.
 
@@ -2080,7 +2082,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### zoekt-indexserver: provisioning_container_cpu_usage_long_term
 
-<p class="subtitle">search: container cpu usage total (90th percentile over 1d) across all cores by instance</p>
+This panel indicates container cpu usage total (90th percentile over 1d) across all cores by instance (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#zoekt-indexserver-provisioning-container-cpu-usage-long-term) for relevant alerts.
 
@@ -2088,7 +2090,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### zoekt-indexserver: provisioning_container_memory_usage_long_term
 
-<p class="subtitle">search: container memory usage (1d maximum) by instance</p>
+This panel indicates container memory usage (1d maximum) by instance (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#zoekt-indexserver-provisioning-container-memory-usage-long-term) for relevant alerts.
 
@@ -2096,7 +2098,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### zoekt-indexserver: provisioning_container_cpu_usage_short_term
 
-<p class="subtitle">search: container cpu usage total (5m maximum) across all cores by instance</p>
+This panel indicates container cpu usage total (5m maximum) across all cores by instance (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#zoekt-indexserver-provisioning-container-cpu-usage-short-term) for relevant alerts.
 
@@ -2104,7 +2106,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### zoekt-indexserver: provisioning_container_memory_usage_short_term
 
-<p class="subtitle">search: container memory usage (5m maximum) by instance</p>
+This panel indicates container memory usage (5m maximum) by instance (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#zoekt-indexserver-provisioning-container-memory-usage-short-term) for relevant alerts.
 
@@ -2114,19 +2116,19 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### zoekt-indexserver: pods_available_percentage
 
-<p class="subtitle">search: percentage pods available</p>
+This panel indicates percentage pods available (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#zoekt-indexserver-pods-available-percentage) for relevant alerts.
 
 <br />
 
-## zoekt-webserver
+## Zoekt Web Server
 
-<p class="subtitle">Zoekt Web Server: Serves indexed search requests using the search index.</p>
+<p class="subtitle">Serves indexed search requests using the search index.</p>
 
 #### zoekt-webserver: indexed_search_request_errors
 
-<p class="subtitle">search: indexed search request errors every 5m by code</p>
+This panel indicates indexed search request errors every 5m by code (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#zoekt-webserver-indexed-search-request-errors) for relevant alerts.
 
@@ -2136,7 +2138,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### zoekt-webserver: container_cpu_usage
 
-<p class="subtitle">search: container cpu usage total (1m average) across all cores by instance</p>
+This panel indicates container cpu usage total (1m average) across all cores by instance (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#zoekt-webserver-container-cpu-usage) for relevant alerts.
 
@@ -2144,7 +2146,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### zoekt-webserver: container_memory_usage
 
-<p class="subtitle">search: container memory usage by instance</p>
+This panel indicates container memory usage by instance (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#zoekt-webserver-container-memory-usage) for relevant alerts.
 
@@ -2152,7 +2154,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### zoekt-webserver: container_restarts
 
-<p class="subtitle">search: container restarts every 5m by instance</p>
+This panel indicates container restarts every 5m by instance (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#zoekt-webserver-container-restarts) for relevant alerts.
 
@@ -2160,7 +2162,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### zoekt-webserver: fs_inodes_used
 
-<p class="subtitle">search: fs inodes in use by instance</p>
+This panel indicates fs inodes in use by instance (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#zoekt-webserver-fs-inodes-used) for relevant alerts.
 
@@ -2168,7 +2170,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### zoekt-webserver: fs_io_operations
 
-<p class="subtitle">search: filesystem reads and writes by instance rate over 1h</p>
+This panel indicates filesystem reads and writes by instance rate over 1h (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#zoekt-webserver-fs-io-operations) for relevant alerts.
 
@@ -2178,7 +2180,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### zoekt-webserver: provisioning_container_cpu_usage_long_term
 
-<p class="subtitle">search: container cpu usage total (90th percentile over 1d) across all cores by instance</p>
+This panel indicates container cpu usage total (90th percentile over 1d) across all cores by instance (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#zoekt-webserver-provisioning-container-cpu-usage-long-term) for relevant alerts.
 
@@ -2186,7 +2188,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### zoekt-webserver: provisioning_container_memory_usage_long_term
 
-<p class="subtitle">search: container memory usage (1d maximum) by instance</p>
+This panel indicates container memory usage (1d maximum) by instance (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#zoekt-webserver-provisioning-container-memory-usage-long-term) for relevant alerts.
 
@@ -2194,7 +2196,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### zoekt-webserver: provisioning_container_cpu_usage_short_term
 
-<p class="subtitle">search: container cpu usage total (5m maximum) across all cores by instance</p>
+This panel indicates container cpu usage total (5m maximum) across all cores by instance (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#zoekt-webserver-provisioning-container-cpu-usage-short-term) for relevant alerts.
 
@@ -2202,21 +2204,21 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### zoekt-webserver: provisioning_container_memory_usage_short_term
 
-<p class="subtitle">search: container memory usage (5m maximum) by instance</p>
+This panel indicates container memory usage (5m maximum) by instance (search).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#zoekt-webserver-provisioning-container-memory-usage-short-term) for relevant alerts.
 
 <br />
 
-## prometheus
+## Prometheus
 
-<p class="subtitle">Prometheus: Sourcegraph's all-in-one Prometheus and Alertmanager service.</p>
+<p class="subtitle">Sourcegraph's all-in-one Prometheus and Alertmanager service.</p>
 
 ### prometheus: Metrics
 
 #### prometheus: prometheus_metrics_bloat
 
-<p class="subtitle">distribution: prometheus metrics payload size</p>
+This panel indicates prometheus metrics payload size (distribution).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#prometheus-prometheus-metrics-bloat) for relevant alerts.
 
@@ -2226,7 +2228,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### prometheus: alertmanager_notifications_failed_total
 
-<p class="subtitle">distribution: failed alertmanager notifications over 1m</p>
+This panel indicates failed alertmanager notifications over 1m (distribution).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#prometheus-alertmanager-notifications-failed-total) for relevant alerts.
 
@@ -2236,7 +2238,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### prometheus: container_cpu_usage
 
-<p class="subtitle">distribution: container cpu usage total (1m average) across all cores by instance</p>
+This panel indicates container cpu usage total (1m average) across all cores by instance (distribution).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#prometheus-container-cpu-usage) for relevant alerts.
 
@@ -2244,7 +2246,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### prometheus: container_memory_usage
 
-<p class="subtitle">distribution: container memory usage by instance</p>
+This panel indicates container memory usage by instance (distribution).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#prometheus-container-memory-usage) for relevant alerts.
 
@@ -2252,7 +2254,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### prometheus: container_restarts
 
-<p class="subtitle">distribution: container restarts every 5m by instance</p>
+This panel indicates container restarts every 5m by instance (distribution).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#prometheus-container-restarts) for relevant alerts.
 
@@ -2260,7 +2262,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### prometheus: fs_inodes_used
 
-<p class="subtitle">distribution: fs inodes in use by instance</p>
+This panel indicates fs inodes in use by instance (distribution).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#prometheus-fs-inodes-used) for relevant alerts.
 
@@ -2270,7 +2272,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### prometheus: provisioning_container_cpu_usage_long_term
 
-<p class="subtitle">distribution: container cpu usage total (90th percentile over 1d) across all cores by instance</p>
+This panel indicates container cpu usage total (90th percentile over 1d) across all cores by instance (distribution).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#prometheus-provisioning-container-cpu-usage-long-term) for relevant alerts.
 
@@ -2278,7 +2280,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### prometheus: provisioning_container_memory_usage_long_term
 
-<p class="subtitle">distribution: container memory usage (1d maximum) by instance</p>
+This panel indicates container memory usage (1d maximum) by instance (distribution).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#prometheus-provisioning-container-memory-usage-long-term) for relevant alerts.
 
@@ -2286,7 +2288,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### prometheus: provisioning_container_cpu_usage_short_term
 
-<p class="subtitle">distribution: container cpu usage total (5m maximum) across all cores by instance</p>
+This panel indicates container cpu usage total (5m maximum) across all cores by instance (distribution).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#prometheus-provisioning-container-cpu-usage-short-term) for relevant alerts.
 
@@ -2294,7 +2296,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### prometheus: provisioning_container_memory_usage_short_term
 
-<p class="subtitle">distribution: container memory usage (5m maximum) by instance</p>
+This panel indicates container memory usage (5m maximum) by instance (distribution).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#prometheus-provisioning-container-memory-usage-short-term) for relevant alerts.
 
@@ -2304,21 +2306,21 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### prometheus: pods_available_percentage
 
-<p class="subtitle">distribution: percentage pods available</p>
+This panel indicates percentage pods available (distribution).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#prometheus-pods-available-percentage) for relevant alerts.
 
 <br />
 
-## executor-queue
+## Executor Queue
 
-<p class="subtitle">Executor Queue: Coordinates the executor work queues.</p>
+<p class="subtitle">Coordinates the executor work queues.</p>
 
 ### executor-queue: Code intelligence queue
 
 #### executor-queue: codeintel_queue_size
 
-<p class="subtitle">code-intel: queue size</p>
+This panel indicates queue size (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#executor-queue-codeintel-queue-size) for relevant alerts.
 
@@ -2326,7 +2328,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### executor-queue: codeintel_queue_growth_rate
 
-<p class="subtitle">code-intel: queue growth rate over 30m</p>
+This panel indicates queue growth rate over 30m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#executor-queue-codeintel-queue-growth-rate) for relevant alerts.
 
@@ -2334,7 +2336,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### executor-queue: codeintel_job_errors
 
-<p class="subtitle">code-intel: job errors every 5m</p>
+This panel indicates job errors every 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#executor-queue-codeintel-job-errors) for relevant alerts.
 
@@ -2342,13 +2344,13 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### executor-queue: codeintel_active_executors
 
-<p class="subtitle">code-intel: active executors processing codeintel jobs</p>
+This panel indicates active executors processing codeintel jobs (code-intel).
 
 <br />
 
 #### executor-queue: codeintel_active_jobs
 
-<p class="subtitle">code-intel: active jobs</p>
+This panel indicates active jobs (code-intel).
 
 <br />
 
@@ -2356,7 +2358,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### executor-queue: codeintel_workerstore_99th_percentile_duration
 
-<p class="subtitle">code-intel: 99th percentile successful worker store operation duration over 5m</p>
+This panel indicates 99th percentile successful worker store operation duration over 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#executor-queue-codeintel-workerstore-99th-percentile-duration) for relevant alerts.
 
@@ -2364,7 +2366,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### executor-queue: codeintel_workerstore_errors
 
-<p class="subtitle">code-intel: worker store errors every 5m</p>
+This panel indicates worker store errors every 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#executor-queue-codeintel-workerstore-errors) for relevant alerts.
 
@@ -2374,7 +2376,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### executor-queue: frontend_internal_api_error_responses
 
-<p class="subtitle">code-intel: frontend-internal API error responses every 5m by route</p>
+This panel indicates frontend-internal API error responses every 5m by route (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#executor-queue-frontend-internal-api-error-responses) for relevant alerts.
 
@@ -2384,7 +2386,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### executor-queue: container_cpu_usage
 
-<p class="subtitle">code-intel: container cpu usage total (1m average) across all cores by instance</p>
+This panel indicates container cpu usage total (1m average) across all cores by instance (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#executor-queue-container-cpu-usage) for relevant alerts.
 
@@ -2392,7 +2394,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### executor-queue: container_memory_usage
 
-<p class="subtitle">code-intel: container memory usage by instance</p>
+This panel indicates container memory usage by instance (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#executor-queue-container-memory-usage) for relevant alerts.
 
@@ -2400,7 +2402,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### executor-queue: container_restarts
 
-<p class="subtitle">code-intel: container restarts every 5m by instance</p>
+This panel indicates container restarts every 5m by instance (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#executor-queue-container-restarts) for relevant alerts.
 
@@ -2408,7 +2410,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### executor-queue: fs_inodes_used
 
-<p class="subtitle">code-intel: fs inodes in use by instance</p>
+This panel indicates fs inodes in use by instance (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#executor-queue-fs-inodes-used) for relevant alerts.
 
@@ -2418,7 +2420,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### executor-queue: provisioning_container_cpu_usage_long_term
 
-<p class="subtitle">code-intel: container cpu usage total (90th percentile over 1d) across all cores by instance</p>
+This panel indicates container cpu usage total (90th percentile over 1d) across all cores by instance (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#executor-queue-provisioning-container-cpu-usage-long-term) for relevant alerts.
 
@@ -2426,7 +2428,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### executor-queue: provisioning_container_memory_usage_long_term
 
-<p class="subtitle">code-intel: container memory usage (1d maximum) by instance</p>
+This panel indicates container memory usage (1d maximum) by instance (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#executor-queue-provisioning-container-memory-usage-long-term) for relevant alerts.
 
@@ -2434,7 +2436,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### executor-queue: provisioning_container_cpu_usage_short_term
 
-<p class="subtitle">code-intel: container cpu usage total (5m maximum) across all cores by instance</p>
+This panel indicates container cpu usage total (5m maximum) across all cores by instance (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#executor-queue-provisioning-container-cpu-usage-short-term) for relevant alerts.
 
@@ -2442,7 +2444,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### executor-queue: provisioning_container_memory_usage_short_term
 
-<p class="subtitle">code-intel: container memory usage (5m maximum) by instance</p>
+This panel indicates container memory usage (5m maximum) by instance (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#executor-queue-provisioning-container-memory-usage-short-term) for relevant alerts.
 
@@ -2452,7 +2454,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### executor-queue: go_goroutines
 
-<p class="subtitle">code-intel: maximum active goroutines</p>
+This panel indicates maximum active goroutines (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#executor-queue-go-goroutines) for relevant alerts.
 
@@ -2460,7 +2462,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### executor-queue: go_gc_duration_seconds
 
-<p class="subtitle">code-intel: maximum go garbage collection duration</p>
+This panel indicates maximum go garbage collection duration (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#executor-queue-go-gc-duration-seconds) for relevant alerts.
 
@@ -2470,33 +2472,33 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### executor-queue: pods_available_percentage
 
-<p class="subtitle">code-intel: percentage pods available</p>
+This panel indicates percentage pods available (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#executor-queue-pods-available-percentage) for relevant alerts.
 
 <br />
 
-## precise-code-intel-indexer
+## Precise Code Intel Indexer
 
-<p class="subtitle">Precise Code Intel Indexer: Executes jobs from the "codeintel" work queue.</p>
+<p class="subtitle">Executes jobs from the "codeintel" work queue.</p>
 
 ### precise-code-intel-indexer: Executor
 
 #### precise-code-intel-indexer: codeintel_job_99th_percentile_duration
 
-<p class="subtitle">code-intel: 99th percentile successful job duration over 5m</p>
+This panel indicates 99th percentile successful job duration over 5m (code-intel).
 
 <br />
 
 #### precise-code-intel-indexer: codeintel_active_handlers
 
-<p class="subtitle">code-intel: active handlers processing jobs</p>
+This panel indicates active handlers processing jobs (code-intel).
 
 <br />
 
 #### precise-code-intel-indexer: codeintel_job_errors
 
-<p class="subtitle">code-intel: job errors every 5m</p>
+This panel indicates job errors every 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#precise-code-intel-indexer-codeintel-job-errors) for relevant alerts.
 
@@ -2506,7 +2508,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### precise-code-intel-indexer: executor_apiclient_99th_percentile_duration
 
-<p class="subtitle">code-intel: 99th percentile successful API request duration over 5m</p>
+This panel indicates 99th percentile successful API request duration over 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#precise-code-intel-indexer-executor-apiclient-99th-percentile-duration) for relevant alerts.
 
@@ -2514,7 +2516,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### precise-code-intel-indexer: executor_apiclient_errors
 
-<p class="subtitle">code-intel: aPI errors every 5m</p>
+This panel indicates aPI errors every 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#precise-code-intel-indexer-executor-apiclient-errors) for relevant alerts.
 
@@ -2524,13 +2526,13 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### precise-code-intel-indexer: executor_setup_command_99th_percentile_duration
 
-<p class="subtitle">code-intel: 99th percentile successful setup command duration over 5m</p>
+This panel indicates 99th percentile successful setup command duration over 5m (code-intel).
 
 <br />
 
 #### precise-code-intel-indexer: executor_setup_command_errors
 
-<p class="subtitle">code-intel: setup command errors every 5m</p>
+This panel indicates setup command errors every 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#precise-code-intel-indexer-executor-setup-command-errors) for relevant alerts.
 
@@ -2538,13 +2540,13 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### precise-code-intel-indexer: executor_exec_command_99th_percentile_duration
 
-<p class="subtitle">code-intel: 99th percentile successful exec command duration over 5m</p>
+This panel indicates 99th percentile successful exec command duration over 5m (code-intel).
 
 <br />
 
 #### precise-code-intel-indexer: executor_exec_command_errors
 
-<p class="subtitle">code-intel: exec command errors every 5m</p>
+This panel indicates exec command errors every 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#precise-code-intel-indexer-executor-exec-command-errors) for relevant alerts.
 
@@ -2552,13 +2554,13 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### precise-code-intel-indexer: executor_teardown_command_99th_percentile_duration
 
-<p class="subtitle">code-intel: 99th percentile successful teardown command duration over 5m</p>
+This panel indicates 99th percentile successful teardown command duration over 5m (code-intel).
 
 <br />
 
 #### precise-code-intel-indexer: executor_teardown_command_errors
 
-<p class="subtitle">code-intel: teardown command errors every 5m</p>
+This panel indicates teardown command errors every 5m (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#precise-code-intel-indexer-executor-teardown-command-errors) for relevant alerts.
 
@@ -2568,7 +2570,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### precise-code-intel-indexer: container_cpu_usage
 
-<p class="subtitle">code-intel: container cpu usage total (1m average) across all cores by instance</p>
+This panel indicates container cpu usage total (1m average) across all cores by instance (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#precise-code-intel-indexer-container-cpu-usage) for relevant alerts.
 
@@ -2576,7 +2578,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### precise-code-intel-indexer: container_memory_usage
 
-<p class="subtitle">code-intel: container memory usage by instance</p>
+This panel indicates container memory usage by instance (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#precise-code-intel-indexer-container-memory-usage) for relevant alerts.
 
@@ -2584,7 +2586,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### precise-code-intel-indexer: container_restarts
 
-<p class="subtitle">code-intel: container restarts every 5m by instance</p>
+This panel indicates container restarts every 5m by instance (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#precise-code-intel-indexer-container-restarts) for relevant alerts.
 
@@ -2592,7 +2594,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### precise-code-intel-indexer: fs_inodes_used
 
-<p class="subtitle">code-intel: fs inodes in use by instance</p>
+This panel indicates fs inodes in use by instance (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#precise-code-intel-indexer-fs-inodes-used) for relevant alerts.
 
@@ -2602,7 +2604,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### precise-code-intel-indexer: provisioning_container_cpu_usage_long_term
 
-<p class="subtitle">code-intel: container cpu usage total (90th percentile over 1d) across all cores by instance</p>
+This panel indicates container cpu usage total (90th percentile over 1d) across all cores by instance (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#precise-code-intel-indexer-provisioning-container-cpu-usage-long-term) for relevant alerts.
 
@@ -2610,7 +2612,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### precise-code-intel-indexer: provisioning_container_memory_usage_long_term
 
-<p class="subtitle">code-intel: container memory usage (1d maximum) by instance</p>
+This panel indicates container memory usage (1d maximum) by instance (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#precise-code-intel-indexer-provisioning-container-memory-usage-long-term) for relevant alerts.
 
@@ -2618,7 +2620,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### precise-code-intel-indexer: provisioning_container_cpu_usage_short_term
 
-<p class="subtitle">code-intel: container cpu usage total (5m maximum) across all cores by instance</p>
+This panel indicates container cpu usage total (5m maximum) across all cores by instance (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#precise-code-intel-indexer-provisioning-container-cpu-usage-short-term) for relevant alerts.
 
@@ -2626,7 +2628,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### precise-code-intel-indexer: provisioning_container_memory_usage_short_term
 
-<p class="subtitle">code-intel: container memory usage (5m maximum) by instance</p>
+This panel indicates container memory usage (5m maximum) by instance (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#precise-code-intel-indexer-provisioning-container-memory-usage-short-term) for relevant alerts.
 
@@ -2636,7 +2638,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### precise-code-intel-indexer: go_goroutines
 
-<p class="subtitle">code-intel: maximum active goroutines</p>
+This panel indicates maximum active goroutines (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#precise-code-intel-indexer-go-goroutines) for relevant alerts.
 
@@ -2644,7 +2646,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### precise-code-intel-indexer: go_gc_duration_seconds
 
-<p class="subtitle">code-intel: maximum go garbage collection duration</p>
+This panel indicates maximum go garbage collection duration (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#precise-code-intel-indexer-go-gc-duration-seconds) for relevant alerts.
 
@@ -2654,7 +2656,7 @@ Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/obse
 
 #### precise-code-intel-indexer: pods_available_percentage
 
-<p class="subtitle">code-intel: percentage pods available</p>
+This panel indicates percentage pods available (code-intel).
 
 Refer to the [alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions#precise-code-intel-indexer-pods-available-percentage) for relevant alerts.
 
