@@ -6,7 +6,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -16,22 +15,9 @@ func TestRepoRefresh(t *testing.T) {
 	c := newTest()
 
 	enqueueRepoUpdateCount := map[api.RepoName]int{}
-	repoupdater.MockEnqueueRepoUpdate = func(ctx context.Context, repo gitserver.Repo) (*protocol.RepoUpdateResponse, error) {
-		if exp := "git@github.com:dummy-url"; repo.URL != exp {
-			t.Errorf("missing or incorrect clone URL, expected %q, got %q", exp, repo.URL)
-		}
-		enqueueRepoUpdateCount[repo.Name]++
+	repoupdater.MockEnqueueRepoUpdate = func(ctx context.Context, repo api.RepoName) (*protocol.RepoUpdateResponse, error) {
+		enqueueRepoUpdateCount[repo]++
 		return nil, nil
-	}
-	repoupdater.MockRepoLookup = func(args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
-		return &protocol.RepoLookupResult{
-			Repo: &protocol.RepoInfo{
-				Name: args.Repo,
-				VCS: protocol.VCSInfo{
-					URL: "git@github.com:dummy-url",
-				},
-			},
-		}, nil
 	}
 
 	backend.Mocks.Repos.GetByName = func(ctx context.Context, name api.RepoName) (*types.Repo, error) {

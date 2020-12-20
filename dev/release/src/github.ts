@@ -1,5 +1,5 @@
 import Octokit from '@octokit/rest'
-import { readLine, formatDate, timezoneLink } from './util'
+import { readLine, formatDate, timezoneLink, cacheFolder } from './util'
 import { promisify } from 'util'
 import * as semver from 'semver'
 import { mkdtemp as original_mkdtemp } from 'fs'
@@ -12,7 +12,7 @@ const mkdtemp = promisify(original_mkdtemp)
 export async function getAuthenticatedGitHubClient(): Promise<Octokit> {
     const githubPAT = await readLine(
         'Enter a GitHub personal access token with "repo" scope (https://github.com/settings/tokens/new): ',
-        '.secrets/github.txt'
+        `${cacheFolder}/github.txt`
     )
     const trimmedGithubPAT = githubPAT.trim()
     return new Octokit({ auth: trimmedGithubPAT })

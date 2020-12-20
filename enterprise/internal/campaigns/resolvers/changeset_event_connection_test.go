@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"testing"
 	"time"
@@ -11,14 +10,15 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
+	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
@@ -30,15 +30,16 @@ func TestChangesetEventConnectionResolver(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
-	userID := insertTestUser(t, dbconn.Global, "changeset-event-connection-resolver", true)
+	userID := ct.CreateTestUser(t, true).ID
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	store := ee.NewStoreWithClock(dbconn.Global, clock)
-	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	cstore := store.NewWithClock(dbconn.Global, clock)
+	repoStore := db.NewRepoStoreWith(cstore)
+	esStore := db.NewExternalServicesStoreWith(cstore)
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, rstore))
-	if err := rstore.InsertRepos(ctx, repo); err != nil {
+	repo := newGitHubTestRepo("github.com/sourcegraph/changeset-event-connection-test", newGitHubExternalService(t, esStore))
+	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 
@@ -46,7 +47,7 @@ func TestChangesetEventConnectionResolver(t *testing.T) {
 		NamespaceUserID: userID,
 		UserID:          userID,
 	}
-	if err := store.CreateCampaignSpec(ctx, spec); err != nil {
+	if err := cstore.CreateCampaignSpec(ctx, spec); err != nil {
 		t.Fatal(err)
 	}
 
@@ -58,18 +59,18 @@ func TestChangesetEventConnectionResolver(t *testing.T) {
 		LastAppliedAt:    time.Now(),
 		CampaignSpecID:   spec.ID,
 	}
-	if err := store.CreateCampaign(ctx, campaign); err != nil {
+	if err := cstore.CreateCampaign(ctx, campaign); err != nil {
 		t.Fatal(err)
 	}
 
-	changeset := createChangeset(t, ctx, store, testChangesetOpts{
-		repo:                repo.ID,
-		externalServiceType: "github",
-		publicationState:    campaigns.ChangesetPublicationStateUnpublished,
-		externalReviewState: campaigns.ChangesetReviewStatePending,
-		ownedByCampaign:     campaign.ID,
-		campaign:            campaign.ID,
-		metadata: &github.PullRequest{
+	changeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+		Repo:                repo.ID,
+		ExternalServiceType: "github",
+		PublicationState:    campaigns.ChangesetPublicationStateUnpublished,
+		ExternalReviewState: campaigns.ChangesetReviewStatePending,
+		OwnedByCampaign:     campaign.ID,
+		Campaign:            campaign.ID,
+		Metadata: &github.PullRequest{
 			TimelineItems: []github.TimelineItem{
 				{Type: "PullRequestCommit", Item: &github.PullRequestCommit{
 					Commit: github.Commit{
@@ -87,9 +88,15 @@ func TestChangesetEventConnectionResolver(t *testing.T) {
 		},
 	})
 
-	addChangeset(t, ctx, store, changeset, campaign.ID)
+	// Create ChangesetEvents from the timeline items in the metadata.
+	events := changeset.Events()
+	if err := cstore.UpsertChangesetEvents(ctx, events...); err != nil {
+		t.Fatal(err)
+	}
 
-	s, err := graphqlbackend.NewSchema(&Resolver{store: store}, nil, nil, nil)
+	addChangeset(t, ctx, cstore, changeset, campaign.ID)
+
+	s, err := graphqlbackend.NewSchema(&Resolver{store: cstore}, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -97,12 +104,12 @@ func TestChangesetEventConnectionResolver(t *testing.T) {
 	changesetAPIID := string(marshalChangesetID(changeset.ID))
 	nodes := []apitest.ChangesetEvent{
 		{
-			ID:        string(marshalChangesetEventID(1)),
+			ID:        string(marshalChangesetEventID(events[0].ID)),
 			Changeset: struct{ ID string }{ID: changesetAPIID},
 			CreatedAt: marshalDateTime(t, now),
 		},
 		{
-			ID:        string(marshalChangesetEventID(2)),
+			ID:        string(marshalChangesetEventID(events[1].ID)),
 			Changeset: struct{ ID string }{ID: changesetAPIID},
 			CreatedAt: marshalDateTime(t, now),
 		},

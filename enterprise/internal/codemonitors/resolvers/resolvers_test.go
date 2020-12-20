@@ -296,7 +296,7 @@ func TestQueryMonitor(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	schema, err := graphqlbackend.NewSchema(nil, nil, nil, r)
+	schema, err := graphqlbackend.NewSchema(nil, nil, nil, r, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -532,7 +532,7 @@ func TestEditCodeMonitor(t *testing.T) {
 
 	// Update the code monitor.
 	// We update all fields, delete one action, and add a new action.
-	schema, err := graphqlbackend.NewSchema(nil, nil, nil, r)
+	schema, err := graphqlbackend.NewSchema(nil, nil, nil, r, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

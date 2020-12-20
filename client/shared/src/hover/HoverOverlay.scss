@@ -95,9 +95,7 @@
         margin: 0;
         border-radius: 0;
         border: none;
-        &:not(:last-child) {
-            border-bottom: 1px solid var(--border-color);
-        }
+        border-bottom: 1px solid var(--border-color) !important; // !important is needed because some code host alert styles can define a different border with higher specifity
 
         // this is necessary otherwise single line alerts will render on two lines
         // if they are dismissible.

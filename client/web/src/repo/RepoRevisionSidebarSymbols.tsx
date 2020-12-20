@@ -4,12 +4,19 @@ import * as React from 'react'
 import { NavLink } from 'react-router-dom'
 import { Observable, Subject } from 'rxjs'
 import { distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
-import * as GQL from '../../../shared/src/graphql/schema'
 import { SymbolIcon } from '../../../shared/src/symbols/SymbolIcon'
 import { FilteredConnection } from '../components/FilteredConnection'
-import { fetchSymbols } from '../symbols/backend'
 import { parseBrowserRepoURL } from '../util/url'
 import { RevisionSpec } from '../../../shared/src/util/url'
+import { requestGraphQL } from '../backend/graphql'
+import { gql, dataOrThrowErrors } from '../../../shared/src/graphql/graphql'
+import {
+    Scalars,
+    SymbolConnectionFields,
+    SymbolNodeFields,
+    SymbolsResult,
+    SymbolsVariables,
+} from '../graphql-operations'
 
 function symbolIsActive(symbolLocation: string, currentLocation: H.Location): boolean {
     const current = parseBrowserRepoURL(H.createPath(currentLocation))
@@ -26,7 +33,7 @@ const symbolIsActiveTrue = (): boolean => true
 const symbolIsActiveFalse = (): boolean => false
 
 interface SymbolNodeProps {
-    node: GQL.ISymbol
+    node: SymbolNodeFields
     location: H.Location
 }
 
@@ -55,10 +62,10 @@ const SymbolNode: React.FunctionComponent<SymbolNodeProps> = ({ node, location }
     )
 }
 
-class FilteredSymbolsConnection extends FilteredConnection<GQL.ISymbol, Pick<SymbolNodeProps, 'location'>> {}
+class FilteredSymbolsConnection extends FilteredConnection<SymbolNodeFields, Pick<SymbolNodeProps, 'location'>> {}
 
 interface Props extends Partial<RevisionSpec> {
-    repoID: GQL.ID
+    repoID: Scalars['ID']
     history: H.History
     location: H.Location
     /** The path of the file or directory currently shown in the content area */
@@ -90,7 +97,7 @@ export class RepoRevisionSidebarSymbols extends React.PureComponent<Props> {
         )
     }
 
-    private fetchSymbols = (args: { first?: number; query?: string }): Observable<GQL.ISymbolConnection> =>
+    private fetchSymbols = (args: { first?: number; query?: string }): Observable<SymbolConnectionFields> =>
         this.componentUpdates.pipe(
             startWith(this.props),
             map(({ repoID, revision, activePath }) => ({ repoID, revision, activePath })),
@@ -103,4 +110,83 @@ export class RepoRevisionSidebarSymbols extends React.PureComponent<Props> {
                 })
             )
         )
+}
+
+/**
+ * Fetches symbols.
+ */
+function fetchSymbols(
+    repo: Scalars['ID'],
+    revision: string,
+    args: { first?: number; query?: string; includePatterns?: string[] }
+): Observable<SymbolConnectionFields> {
+    return requestGraphQL<SymbolsResult, SymbolsVariables>(
+        gql`
+            query Symbols($repo: ID!, $revision: String!, $first: Int, $query: String, $includePatterns: [String!]) {
+                node(id: $repo) {
+                    __typename
+                    ... on Repository {
+                        commit(rev: $revision) {
+                            symbols(first: $first, query: $query, includePatterns: $includePatterns) {
+                                ...SymbolConnectionFields
+                            }
+                        }
+                    }
+                }
+            }
+
+            fragment SymbolConnectionFields on SymbolConnection {
+                pageInfo {
+                    hasNextPage
+                }
+                nodes {
+                    ...SymbolNodeFields
+                }
+            }
+
+            fragment SymbolNodeFields on Symbol {
+                name
+                containerName
+                kind
+                language
+                location {
+                    resource {
+                        path
+                    }
+                    range {
+                        start {
+                            line
+                            character
+                        }
+                        end {
+                            line
+                            character
+                        }
+                    }
+                }
+                url
+            }
+        `,
+        {
+            repo,
+            revision,
+            first: args.first ?? null,
+            query: args.query ?? null,
+            includePatterns: args.includePatterns ?? null,
+        }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(({ node }) => {
+            if (!node) {
+                throw new Error(`Node ${repo} not found`)
+            }
+            if (node.__typename !== 'Repository') {
+                throw new Error(`Node is a ${node.__typename}, not a Repository`)
+            }
+            if (!node.commit?.symbols?.nodes) {
+                throw new Error('Could not resolve commit symbols for repository')
+            }
+            return node.commit.symbols
+        })
+    )
 }

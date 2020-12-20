@@ -12,6 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
@@ -193,20 +194,6 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			hasNamespace: true,
 			wantErr:      `field "rateLimit" is not allowed in a user-added external service`,
 		},
-		{
-			name:         "authorization required for GitHub",
-			kind:         extsvc.KindGitHub,
-			config:       `{"url": "https://github.com", "token": "abc", "repos": ["abc/testrepo"]}`,
-			hasNamespace: true,
-			wantErr:      "1 error occurred:\n\t* authorization required\n\n",
-		},
-		{
-			name:         "authorization required for GitLab",
-			kind:         extsvc.KindGitHub,
-			config:       `{"url": "https://gitlab.com", "token": "abc", "repos": ["abc/testrepo"]}`,
-			hasNamespace: true,
-			wantErr:      "1 error occurred:\n\t* authorization required\n\n",
-		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -233,6 +220,21 @@ func TestExternalServicesStore_Create(t *testing.T) {
 	}
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := context.Background()
+
+	envvar.MockSourcegraphDotComMode(true)
+	defer envvar.MockSourcegraphDotComMode(false)
+
+	user, err := Users.Create(ctx,
+		NewUser{
+			Email:           "alice@example.com",
+			Username:        "alice",
+			Password:        "password",
+			EmailIsVerified: true,
+		},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	// Create a new external service
 	confGet := func() *conf.Unified {
@@ -276,6 +278,27 @@ func TestExternalServicesStore_Create(t *testing.T) {
 }`,
 			},
 			wantUnrestricted: true,
+		},
+
+		{
+			name: "Cloud: auto-add authorization to user code host connections for GitHub",
+			externalService: &types.ExternalService{
+				Kind:            extsvc.KindGitHub,
+				DisplayName:     "GITHUB #4",
+				Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+				NamespaceUserID: user.ID,
+			},
+			wantUnrestricted: false,
+		},
+		{
+			name: "Cloud: auto-add authorization to user code host connections for GitLab",
+			externalService: &types.ExternalService{
+				Kind:            extsvc.KindGitLab,
+				DisplayName:     "GITLAB #1",
+				Config:          `{"url": "https://gitlab.com", "projectQuery": ["none"], "token": "abc"}`,
+				NamespaceUserID: user.ID,
+			},
+			wantUnrestricted: false,
 		},
 	}
 	for _, test := range tests {
@@ -540,6 +563,79 @@ func TestExternalServicesStore_GetByID(t *testing.T) {
 	}
 }
 
+func TestGetLastSyncError(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	// Create a new external service
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	es := &types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "GITHUB #1",
+		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+	}
+	err := (&ExternalServiceStore{}).Create(ctx, confGet, es)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Should be able to get back by its ID
+	_, err = (&ExternalServiceStore{}).GetByID(ctx, es.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	lastSyncError, err := (&ExternalServiceStore{}).GetLastSyncError(ctx, es.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if lastSyncError != "" {
+		t.Fatalf("Expected empty error, have %q", lastSyncError)
+	}
+
+	// Could have failure message
+	_, err = dbconn.Global.Exec(`
+INSERT INTO external_service_sync_jobs (external_service_id, state, finished_at)
+VALUES ($1,'errored', now())
+`, es.ID)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	lastSyncError, err = (&ExternalServiceStore{}).GetLastSyncError(ctx, es.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if lastSyncError != "" {
+		t.Fatalf("Expected empty error, have %q", lastSyncError)
+	}
+
+	// Add sync error
+	expectedError := "oops"
+	_, err = dbconn.Global.Exec(`
+INSERT INTO external_service_sync_jobs (external_service_id, failure_message, state, finished_at)
+VALUES ($1,$2,'errored', now())
+`, es.ID, expectedError)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	lastSyncError, err = (&ExternalServiceStore{}).GetLastSyncError(ctx, es.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if lastSyncError != expectedError {
+		t.Fatalf("Expected %q, have %q", expectedError, lastSyncError)
+	}
+}
+
 func TestExternalServicesStore_List(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -590,6 +686,32 @@ func TestExternalServicesStore_List(t *testing.T) {
 		sort.Slice(got, func(i, j int) bool { return got[i].ID < got[j].ID })
 
 		if diff := cmp.Diff(ess, got); diff != "" {
+			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("list all external services in ascending order", func(t *testing.T) {
+		got, err := (&ExternalServiceStore{}).List(ctx, ExternalServicesListOptions{OrderByDirection: "ASC"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := []*types.ExternalService(types.ExternalServices(ess).Clone())
+		sort.Slice(want, func(i, j int) bool { return want[i].ID < want[j].ID })
+
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("list all external services in descending order", func(t *testing.T) {
+		got, err := (&ExternalServiceStore{}).List(ctx, ExternalServicesListOptions{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := []*types.ExternalService(types.ExternalServices(ess).Clone())
+		sort.Slice(want, func(i, j int) bool { return want[i].ID > want[j].ID })
+
+		if diff := cmp.Diff(want, got); diff != "" {
 			t.Fatalf("Mismatch (-want +got):\n%s", diff)
 		}
 	})

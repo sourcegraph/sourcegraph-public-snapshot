@@ -767,10 +767,11 @@ func TestSearch(t *testing.T) {
 
 	t.Run("And/Or search expression queries", func(t *testing.T) {
 		tests := []struct {
-			name       string
-			query      string
-			zeroResult bool
-			wantAlert  *gqltestutil.SearchAlert
+			name            string
+			query           string
+			zeroResult      bool
+			exactMatchCount int64
+			wantAlert       *gqltestutil.SearchAlert
 		}{
 			{
 				name:  `Or distributive property on content and file`,
@@ -785,12 +786,14 @@ func TestSearch(t *testing.T) {
 				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ (type:diff or type:commit) author:felix yarn`,
 			},
 			{
-				name:  `Or distributive property on rev`,
-				query: `repo:^github\.com/sgtest/go-diff$ (rev:garo/lsif-indexing-campaign or rev:test-already-exist-pr) file:README.md`,
+				name:            `Or distributive property on rev`,
+				query:           `repo:^github\.com/sgtest/mux$ (rev:v1.7.3 or revision:v1.7.2)`,
+				exactMatchCount: 2,
 			},
 			{
-				name:  `Or distributive property on rev`,
-				query: `repo:^github\.com/sgtest/go-diff$ (rev:garo/lsif-indexing-campaign or rev:test-already-exist-pr)`,
+				name:            `Or distributive property on rev with file`,
+				query:           `repo:^github\.com/sgtest/mux$ (rev:v1.7.3 or revision:v1.7.2) file:README.md`,
+				exactMatchCount: 2,
 			},
 			{
 				name:  `Or distributive property on repo`,
@@ -799,6 +802,11 @@ func TestSearch(t *testing.T) {
 			{
 				name:  `Or distributive property on repo where only one repo contains match (tests repo cache is invalidated)`,
 				query: `(repo:^github\.com/sgtest/sourcegraph-typescript$ or repo:^github\.com/sgtest/go-diff$) package diff provides`,
+			},
+			{
+				name:            `Or distributive property on commits deduplicates and merges`,
+				query:           `repo:^github\.com/sgtest/go-diff$ type:commit (message:add or message:file)`,
+				exactMatchCount: 21,
 			},
 		}
 		for _, test := range tests {
@@ -820,6 +828,9 @@ func TestSearch(t *testing.T) {
 					if len(results.Results) == 0 {
 						t.Fatal("Want non-zero results but got 0")
 					}
+				}
+				if test.exactMatchCount != 0 && results.MatchCount != test.exactMatchCount {
+					t.Fatalf("Want exactly %d results but got %d", test.exactMatchCount, results.MatchCount)
 				}
 			})
 		}

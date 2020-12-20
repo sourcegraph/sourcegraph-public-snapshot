@@ -13,6 +13,8 @@ import {
     Quantifier,
 } from 'regexpp/ast'
 
+/* eslint-disable unicorn/better-regex */
+
 /**
  * A DecoratedToken is a type of token used for syntax highlighting, hovers, and diagnostics. All
  * standard Token types are compatible where DecoratedTokens are used. A DecoratedToken extends
@@ -54,6 +56,9 @@ export enum MetaRegexpKind {
     EscapedCharacter = 'EscapedCharacter', // like \(
     CharacterSet = 'CharacterSet', // like \s
     CharacterClass = 'CharacterClass', // like [a-z]
+    CharacterClassRange = 'CharacterClassRange', // the a-z part in [a-z]
+    CharacterClassRangeHyphen = 'CharacterClassRangeHyphen', // the - part in [a-z]
+    CharacterClassMember = 'CharacterClassMember', // a character inside a charcter class like [abcd]
     LazyQuantifier = 'LazyQuantifier', // the ? after a range quantifier
     RangeQuantifier = 'RangeQuantifier', // like +
 }
@@ -63,6 +68,7 @@ export enum MetaRegexpKind {
  */
 export interface MetaStructural extends BaseMetaToken {
     type: 'metaStructural'
+    groupRange?: CharacterRange
     kind: MetaStructuralKind
 }
 
@@ -71,6 +77,9 @@ export interface MetaStructural extends BaseMetaToken {
  */
 export enum MetaStructuralKind {
     Hole = 'Hole',
+    RegexpHole = 'RegexpHole',
+    Variable = 'Variable',
+    RegexpSeparator = 'RegexpSeparator',
 }
 
 /**
@@ -81,7 +90,8 @@ export interface MetaField extends BaseMetaToken {
 }
 
 /**
- * A token that is labeled and interpreted as repository revision syntax.
+ * A token that is labeled and interpreted as repository revision syntax in Sourcegraph. Note: there
+ * are syntactic differences from pure Git ref syntax.
  * See https://docs.sourcegraph.com/code_search/reference/queries#repository-revisions.
  */
 export interface MetaRevision extends BaseMetaToken {
@@ -89,13 +99,25 @@ export interface MetaRevision extends BaseMetaToken {
     kind: MetaRevisionKind
 }
 
-export enum MetaRevisionKind {
-    Separator = 'Separator', // is a ':'
-    Label = 'Label', // a branch or tag
+export type MetaRevisionKind = MetaGitRevision | MetaSourcegraphRevision
+
+/**
+ * A custom revision syntax that is only valid in Sourcegraph search queries.
+ */
+export enum MetaSourcegraphRevision {
+    Separator = 'Separator', // a ':' that separates revision patterns
+    IncludeGlobMarker = 'IncludeGlobMarker', // a '*' at the beginning of a revision pattern to mark it as an "include" glob pattern.
+    ExcludeGlobMarker = 'ExcludeGlobMarker', // a '*!' at the beginning of a revision pattern to mark it as an "exclude" glob pattern.
+}
+
+/**
+ * Revision syntax that correspond to git glob pattern syntax, git refs (e.g., branches), or git objects (e.g., commits, tags).
+ */
+export enum MetaGitRevision {
     CommitHash = 'CommitHash', // a commit hash
-    PathLike = 'PathLike', // a path-like pattern, e.g., the refs/heads/ part in *refs/heads/*
+    Label = 'Label', // a catch-all string that refers to a git object or ref, like a branch name or tag
+    ReferencePath = 'ReferencePath', // the part of a revision that refers to a git reference path, like refs/heads/ part in refs/heads/*
     Wildcard = 'Wildcard', // a '*' in glob syntax
-    Negate = 'Negate', // a '!' in glob syntax
 }
 
 /**
@@ -110,8 +132,6 @@ export interface MetaRepoRevisionSeparator extends BaseMetaToken {
  * Coalesces consecutive pattern tokens. Used, for example, when parsing
  * literal characters like 'f', 'o', 'o' in regular expressions, which are
  * coalesced to 'foo' for hovers.
- *
- * @param tokens
  */
 const coalescePatterns = (tokens: DecoratedToken[]): DecoratedToken[] => {
     let previous: Pattern | undefined
@@ -229,15 +249,34 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
                 })
             },
             onCharacterClassRangeEnter(node: CharacterClassRange) {
-                // highlight the '-' in [a-z]. Take care to use node.min.end, because we
-                // don't want to highlight the first '-' in [--z], nor an escaped '-' with a
-                // two-character offset as in [\--z].
-                tokens.push({
-                    type: 'metaRegexp',
-                    range: { start: offset + node.min.end, end: offset + node.min.end + 1 },
-                    value: '-',
-                    kind: MetaRegexpKind.CharacterClass,
-                })
+                // Push the min and max characters of the range to associate them with the
+                // same groupRange for hovers.
+                tokens.push(
+                    {
+                        type: 'metaRegexp',
+                        range: { start: offset + node.min.start, end: offset + node.min.end },
+                        groupRange: { start: offset + node.start, end: offset + node.end },
+                        value: node.raw,
+                        kind: MetaRegexpKind.CharacterClassRange,
+                    },
+                    // Highlight the '-' in [a-z]. Take care to use node.min.end, because we
+                    // don't want to highlight the first '-' in [--z], nor an escaped '-' with a
+                    // two-character offset as in [\--z].
+                    {
+                        type: 'metaRegexp',
+                        range: { start: offset + node.min.end, end: offset + node.min.end + 1 },
+                        groupRange: { start: offset + node.start, end: offset + node.end },
+                        value: node.raw,
+                        kind: MetaRegexpKind.CharacterClassRangeHyphen,
+                    },
+                    {
+                        type: 'metaRegexp',
+                        range: { start: offset + node.max.start, end: offset + node.max.end },
+                        groupRange: { start: offset + node.start, end: offset + node.end },
+                        value: node.raw,
+                        kind: MetaRegexpKind.CharacterClassRange,
+                    }
+                )
             },
             onQuantifierEnter(node: Quantifier) {
                 // the lazy quantifier ? adds one
@@ -283,11 +322,31 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
             onCharacterEnter(node: Character) {
                 if (node.end - node.start > 1 && node.raw.startsWith('\\')) {
                     // This is an escaped value like `\.`, `\u0065`, `\x65`.
+                    // If this escaped value is part of a range, like [a-\\],
+                    // set the group range to associate it with hovers.
+                    const groupRange =
+                        node.parent.type === 'CharacterClassRange'
+                            ? { start: offset + node.parent.start, end: offset + node.parent.end }
+                            : undefined
+                    tokens.push({
+                        type: 'metaRegexp',
+                        range: { start: offset + node.start, end: offset + node.end },
+                        groupRange,
+                        value: node.raw,
+                        kind: MetaRegexpKind.EscapedCharacter,
+                    })
+                    return
+                }
+                if (node.parent.type === 'CharacterClassRange') {
+                    return // This unescaped character is handled by onCharacterClassRangeEnter.
+                }
+                if (node.parent.type === 'CharacterClass') {
+                    // This character is inside a character class like [abcd] and is contextually special for hover tooltips.
                     tokens.push({
                         type: 'metaRegexp',
                         range: { start: offset + node.start, end: offset + node.end },
                         value: node.raw,
-                        kind: MetaRegexpKind.EscapedCharacter,
+                        kind: MetaRegexpKind.CharacterClassMember,
                     })
                     return
                 }
@@ -328,42 +387,51 @@ const mapRevisionMeta = (token: Literal): DecoratedToken[] => {
     }
 
     // Appends a decorated token to the list of tokens, and resets the current accumulator to be empty.
-    const appendDecoratedToken = (endIndex: number): void => {
+    const appendDecoratedToken = (endIndex: number, kind?: MetaRevisionKind): void => {
         const value = accumulator.join('')
-        let kind
-        switch (value) {
-            case ':':
-                kind = MetaRevisionKind.Separator
-                break
-            case '*':
-                kind = MetaRevisionKind.Wildcard
-                break
-            case '!':
-                kind = MetaRevisionKind.Negate
-                break
-            default:
-                if (value.includes('/')) {
-                    kind = MetaRevisionKind.PathLike
-                } else if (value.match(/^[\dA-Fa-f]+$/) && value.length > 6) {
-                    kind = MetaRevisionKind.CommitHash
-                } else {
-                    kind = MetaRevisionKind.Label
-                }
+        if (kind === undefined) {
+            if (value.includes('refs/')) {
+                kind = MetaGitRevision.ReferencePath
+            } else if (value.match(/^[\dA-Fa-f]+$/) && value.length > 6) {
+                kind = MetaGitRevision.CommitHash
+            } else {
+                kind = MetaGitRevision.Label
+            }
         }
         const range = { start: offset + endIndex - value.length, end: offset + endIndex }
         decorated.push({ type: 'metaRevision', kind, value, range })
         accumulator = []
     }
 
+    // Return true when we're at the beginning of a revision: at the beginning of the string,
+    // or when the preceding character is a ':' revision separator.
+    const atRevision = (index: number): boolean =>
+        index === 0 || (token.value[index - 1] !== null && token.value[index - 1] === ':')
+
     while (token.value[start] !== undefined) {
         current = nextChar()
         switch (current) {
+            case '*': {
+                appendDecoratedToken(start - 1) // Push the running revision string up to this special syntax.
+                if (atRevision(start - 1) && token.value[start] !== '!') {
+                    // Demarcates that this is an "include" glob pattern that follows.
+                    accumulator.push(current)
+                    appendDecoratedToken(start, MetaSourcegraphRevision.IncludeGlobMarker)
+                } else if (atRevision(start - 1) && token.value[start] === '!') {
+                    // Demarcates that this is an "exclude" glob pattern that follows.
+                    current = nextChar() // Consume the '!'
+                    accumulator.push('*!')
+                    appendDecoratedToken(start, MetaSourcegraphRevision.ExcludeGlobMarker)
+                } else {
+                    accumulator.push(current)
+                    appendDecoratedToken(start, MetaGitRevision.Wildcard)
+                }
+                break
+            }
             case ':':
-            case '*':
-            case '!':
-                appendDecoratedToken(start - 1) // append up to this special character
+                appendDecoratedToken(start - 1)
                 accumulator.push(current)
-                appendDecoratedToken(start)
+                appendDecoratedToken(start, MetaSourcegraphRevision.Separator)
                 break
             default:
                 accumulator.push(current)
@@ -396,11 +464,54 @@ const mapStructuralMeta = (pattern: Pattern): DecoratedToken[] => {
     }
 
     // Appends a decorated token to the list of tokens, and resets the current token to be empty.
-    const appendDecoratedToken = (endIndex: number, kind: PatternKind.Literal | MetaStructuralKind): void => {
+    const appendDecoratedToken = (endIndex: number, kind: PatternKind.Literal | MetaStructuralKind.Hole): void => {
         const value = token.join('')
         const range = { start: offset + endIndex - value.length, end: offset + endIndex }
         if (kind === PatternKind.Literal) {
             decorated.push({ type: 'pattern', kind, value, range })
+        } else if (value.match(/^:\[(\w*)~(.*)\]$/)) {
+            // Handle regexp hole.
+            const [, variable, pattern] = value.match(/^:\[(\w*)~(.*)\]$/)!
+            const variableStart = range.start + 2 /* :[ */
+            const variableRange = { start: variableStart, end: variableStart + variable.length }
+            const patternStart = variableRange.end + 1 /* ~ */
+            const patternRange = { start: patternStart, end: patternStart + pattern.length }
+            decorated.push(
+                ...([
+                    {
+                        type: 'metaStructural',
+                        kind: MetaStructuralKind.RegexpHole,
+                        range: { start: range.start, end: variableStart },
+                        groupRange: range,
+                        value: ':[',
+                    },
+                    {
+                        type: 'metaStructural',
+                        kind: MetaStructuralKind.Variable,
+                        range: variableRange,
+                        value: variable,
+                    },
+                    {
+                        type: 'metaStructural',
+                        kind: MetaStructuralKind.RegexpSeparator,
+                        range: { start: variableRange.end, end: variableRange.end + 1 },
+                        value: '~',
+                    },
+                    ...mapRegexpMeta({
+                        type: 'pattern',
+                        kind: PatternKind.Regexp,
+                        range: patternRange,
+                        value: pattern,
+                    }),
+                    {
+                        type: 'metaStructural',
+                        kind: MetaStructuralKind.RegexpHole,
+                        range: { start: patternRange.end, end: patternRange.end + 1 },
+                        groupRange: range,
+                        value: ']',
+                    },
+                ] as DecoratedToken[])
+            )
         } else {
             decorated.push({ type: 'metaStructural', kind, value, range })
         }
@@ -420,7 +531,8 @@ const mapStructuralMeta = (pattern: Pattern): DecoratedToken[] => {
                     }
                     start = start + 2
                     // Append the value of '...' after advancing.
-                    appendDecoratedToken(start - 3, MetaStructuralKind.Hole)
+                    token.push('...')
+                    appendDecoratedToken(start, MetaStructuralKind.Hole)
                     continue
                 }
                 token.push('.')

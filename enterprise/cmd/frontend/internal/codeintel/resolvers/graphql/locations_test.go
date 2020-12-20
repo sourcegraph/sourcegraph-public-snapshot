@@ -6,6 +6,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -35,7 +36,7 @@ func TestCachedLocationResolver(t *testing.T) {
 	var repoCalls uint32
 	db.Mocks.Repos.Get = func(v0 context.Context, id api.RepoID) (*types.Repo, error) {
 		atomic.AddUint32(&repoCalls, 1)
-		return &types.Repo{ID: id}, nil
+		return &types.Repo{ID: id, CreatedAt: time.Now()}, nil
 	}
 
 	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
@@ -85,8 +86,13 @@ func TestCachedLocationResolver(t *testing.T) {
 					errs <- err
 					return
 				}
-				if repositoryResolver.Type().ID != repositoryID {
-					errs <- fmt.Errorf("unexpected repository id. want=%d have=%d", repositoryID, repositoryResolver.Type().ID)
+				repoID, err := gql.UnmarshalRepositoryID(repositoryResolver.ID())
+				if err != nil {
+					errs <- err
+					return
+				}
+				if repoID != repositoryID {
+					errs <- fmt.Errorf("unexpected repository id. want=%d have=%d", repositoryID, repoID)
 					return
 				}
 			}

@@ -3,6 +3,7 @@ package definitions
 import (
 	"fmt"
 
+	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
@@ -35,18 +36,18 @@ func ZoektIndexServer() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedContainerCPUUsage("zoekt-indexserver", monitoring.ObservableOwnerSearch),
-						sharedContainerMemoryUsage("zoekt-indexserver", monitoring.ObservableOwnerSearch),
+						shared.ContainerCPUUsage("zoekt-indexserver", monitoring.ObservableOwnerSearch),
+						shared.ContainerMemoryUsage("zoekt-indexserver", monitoring.ObservableOwnerSearch),
 					},
 					{
-						sharedContainerRestarts("zoekt-indexserver", monitoring.ObservableOwnerSearch),
-						sharedContainerFsInodes("zoekt-indexserver", monitoring.ObservableOwnerSearch),
+						shared.ContainerRestarts("zoekt-indexserver", monitoring.ObservableOwnerSearch),
+						shared.ContainerFsInodes("zoekt-indexserver", monitoring.ObservableOwnerSearch),
 					},
 					{
 						{
 							Name:              "fs_io_operations",
 							Description:       "filesystem reads and writes rate by instance over 1h",
-							Query:             fmt.Sprintf(`sum by(name) (rate(container_fs_reads_total{%[1]s}[1h]) + rate(container_fs_writes_total{%[1]s}[1h]))`, promCadvisorContainerMatchers("zoekt-indexserver")),
+							Query:             fmt.Sprintf(`sum by(name) (rate(container_fs_reads_total{%[1]s}[1h]) + rate(container_fs_writes_total{%[1]s}[1h]))`, shared.CadvisorNameMatcher("zoekt-indexserver")),
 							DataMayNotExist:   true,
 							Warning:           monitoring.Alert().GreaterOrEqual(5000),
 							PanelOptions:      monitoring.PanelOptions().LegendFormat("{{name}}"),
@@ -61,12 +62,12 @@ func ZoektIndexServer() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedProvisioningCPUUsageLongTerm("zoekt-indexserver", monitoring.ObservableOwnerSearch),
-						sharedProvisioningMemoryUsageLongTerm("zoekt-indexserver", monitoring.ObservableOwnerSearch),
+						shared.ProvisioningCPUUsageLongTerm("zoekt-indexserver", monitoring.ObservableOwnerSearch),
+						shared.ProvisioningMemoryUsageLongTerm("zoekt-indexserver", monitoring.ObservableOwnerSearch),
 					},
 					{
-						sharedProvisioningCPUUsageShortTerm("zoekt-indexserver", monitoring.ObservableOwnerSearch),
-						sharedProvisioningMemoryUsageShortTerm("zoekt-indexserver", monitoring.ObservableOwnerSearch),
+						shared.ProvisioningCPUUsageShortTerm("zoekt-indexserver", monitoring.ObservableOwnerSearch),
+						shared.ProvisioningMemoryUsageShortTerm("zoekt-indexserver", monitoring.ObservableOwnerSearch),
 					},
 				},
 			},
@@ -78,7 +79,7 @@ func ZoektIndexServer() *monitoring.Container {
 						// zoekt_index_server, zoekt_web_server are deployed together
 						// as part of the indexed-search service, so only show pod
 						// availability here.
-						sharedKubernetesPodsAvailable("indexed-search", monitoring.ObservableOwnerSearch),
+						shared.KubernetesPodsAvailable("indexed-search", monitoring.ObservableOwnerSearch),
 					},
 				},
 			},

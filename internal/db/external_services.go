@@ -3,13 +3,13 @@ package db
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"strings"
 	"sync"
 
 	"github.com/hashicorp/go-multierror"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
@@ -49,6 +49,11 @@ type ExternalServiceStore struct {
 // NewExternalServicesStoreWithDB instantiates and returns a new ExternalServicesStore with prepared statements.
 func NewExternalServicesStoreWithDB(db dbutil.DB) *ExternalServiceStore {
 	return &ExternalServiceStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+}
+
+// NewExternalServicesStoreWithDB instantiates and returns a new ExternalServicesStore with prepared statements.
+func NewExternalServicesStoreWith(other basestore.ShareableStore) *ExternalServiceStore {
+	return &ExternalServiceStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 
 func (e *ExternalServiceStore) With(other basestore.ShareableStore) *ExternalServiceStore {
@@ -107,6 +112,8 @@ type ExternalServicesListOptions struct {
 	// When specified, only include external services with ID below this number
 	// (because we're sorting results by ID in descending order).
 	AfterID int64
+	// Possible values are ASC or DESC. Defaults to DESC.
+	OrderByDirection string
 	*LimitOffset
 }
 
@@ -217,41 +224,35 @@ func (e *ExternalServiceStore) ValidateConfig(ctx context.Context, opt ValidateE
 	switch opt.Kind {
 	case extsvc.KindGitHub:
 		var c schema.GitHubConnection
-		if err = json.Unmarshal(normalized, &c); err != nil {
+		if err = jsoniter.Unmarshal(normalized, &c); err != nil {
 			return nil, err
-		}
-		if opt.HasNamespace && c.Authorization == nil {
-			errs = multierror.Append(errs, errAuthorizationRequired)
 		}
 		err = e.validateGitHubConnection(ctx, opt.ID, &c)
 
 	case extsvc.KindGitLab:
 		var c schema.GitLabConnection
-		if err = json.Unmarshal(normalized, &c); err != nil {
+		if err = jsoniter.Unmarshal(normalized, &c); err != nil {
 			return nil, err
-		}
-		if opt.HasNamespace && c.Authorization == nil {
-			errs = multierror.Append(errs, errAuthorizationRequired)
 		}
 		err = e.validateGitLabConnection(ctx, opt.ID, &c, opt.AuthProviders)
 
 	case extsvc.KindBitbucketServer:
 		var c schema.BitbucketServerConnection
-		if err = json.Unmarshal(normalized, &c); err != nil {
+		if err = jsoniter.Unmarshal(normalized, &c); err != nil {
 			return nil, err
 		}
 		err = e.validateBitbucketServerConnection(ctx, opt.ID, &c)
 
 	case extsvc.KindBitbucketCloud:
 		var c schema.BitbucketCloudConnection
-		if err = json.Unmarshal(normalized, &c); err != nil {
+		if err = jsoniter.Unmarshal(normalized, &c); err != nil {
 			return nil, err
 		}
 		err = e.validateBitbucketCloudConnection(ctx, opt.ID, &c)
 
 	case extsvc.KindOther:
 		var c schema.OtherExternalServiceConnection
-		if err = json.Unmarshal(normalized, &c); err != nil {
+		if err = jsoniter.Unmarshal(normalized, &c); err != nil {
 			return nil, err
 		}
 		err = validateOtherExternalServiceConnection(&c)
@@ -446,7 +447,7 @@ func (e *ExternalServiceStore) validateDuplicateRateLimits(ctx context.Context, 
 // started, otherwise a panic would occur once pkg/conf's deadlock detector
 // determines a deadlock occurred.
 //
-// 🚨 SECURITY: The caller must ensure that the actor is a site admin.
+// 🚨 SECURITY: The caller must ensure that the actor is a site admin or owner of the external service.
 // Otherwise, `es.NamespaceUserID` must be specified (i.e. non-nil) for
 // a user-added external service.
 //
@@ -466,6 +467,53 @@ func (e *ExternalServiceStore) Create(ctx context.Context, confGet func() *conf.
 	})
 	if err != nil {
 		return err
+	}
+
+	// NOTE: For GitHub and GitLab user code host connections on Sourcegraph Cloud,
+	//  we always want to enforce repository permissions using OAuth to prevent
+	//  unexpected resource leaking.
+	if envvar.SourcegraphDotComMode() && es.NamespaceUserID != 0 {
+		switch es.Kind {
+		case extsvc.KindGitHub:
+			var c schema.GitHubConnection
+			if err = jsoniter.Unmarshal(normalized, &c); err != nil {
+				return err
+			}
+
+			if c.Authorization == nil {
+				c.Authorization = &schema.GitHubAuthorization{}
+
+				normalized, err = jsoniter.Marshal(c)
+				if err != nil {
+					return err
+				}
+			}
+
+		case extsvc.KindGitLab:
+			var c schema.GitLabConnection
+			if err = jsoniter.Unmarshal(normalized, &c); err != nil {
+				return err
+			}
+
+			if c.Authorization == nil {
+				c.Authorization = &schema.GitLabAuthorization{
+					IdentityProvider: schema.IdentityProvider{
+						Oauth: &schema.OAuthIdentity{
+							Type: "oauth",
+						},
+					},
+				}
+
+				normalized, err = jsoniter.Marshal(c)
+				if err != nil {
+					return err
+				}
+			}
+		}
+
+		// We expect users to edit code host connections via our UI so no JSON with
+		// comments should appear, thus OK to set config as normalized.
+		es.Config = string(normalized)
 	}
 
 	es.CreatedAt = timeutil.Now()
@@ -563,7 +611,7 @@ const upsertExternalServicesQueryValueFmtstr = `
 `
 
 const upsertExternalServicesQueryFmtstr = `
--- source: internal/repos/store.go:DBStore.UpsertExternalServices
+-- source: internal/db/external_services.go:ExternalServiceStore.Upsert
 INSERT INTO external_services (
   id,
   kind,
@@ -680,7 +728,7 @@ func (e externalServiceNotFoundError) NotFound() bool {
 
 // Delete deletes an external service.
 //
-// 🚨 SECURITY: The caller must ensure that the actor is a site admin.
+// 🚨 SECURITY: The caller must ensure that the actor is a site admin or owner of the external service.
 func (e *ExternalServiceStore) Delete(ctx context.Context, id int64) error {
 	if Mocks.ExternalServices.Delete != nil {
 		return Mocks.ExternalServices.Delete(ctx, id)
@@ -703,18 +751,18 @@ func (e *ExternalServiceStore) Delete(ctx context.Context, id int64) error {
 
 // GetByID returns the external service for id.
 //
-// 🚨 SECURITY: The caller must ensure that the actor is a site admin.
+// 🚨 SECURITY: The caller must ensure that the actor is a site admin or owner of the external service.
 func (e *ExternalServiceStore) GetByID(ctx context.Context, id int64) (*types.ExternalService, error) {
 	if Mocks.ExternalServices.GetByID != nil {
 		return Mocks.ExternalServices.GetByID(id)
 	}
 	e.ensureStore()
 
-	conds := []*sqlf.Query{
-		sqlf.Sprintf("deleted_at IS NULL"),
-		sqlf.Sprintf("id=%d", id),
+	opt := ExternalServicesListOptions{
+		IDs: []int64{id},
 	}
-	ess, err := e.list(ctx, conds, nil)
+
+	ess, err := e.list(ctx, opt)
 	if err != nil {
 		return nil, err
 	}
@@ -722,6 +770,28 @@ func (e *ExternalServiceStore) GetByID(ctx context.Context, id int64) (*types.Ex
 		return nil, externalServiceNotFoundError{id: id}
 	}
 	return ess[0], nil
+}
+
+// GetLastSyncError returns the error associated with the latest sync of the
+// supplied external service.
+//
+// 🚨 SECURITY: The caller must ensure that the actor is a site admin or owner of the external service
+func (e *ExternalServiceStore) GetLastSyncError(ctx context.Context, id int64) (string, error) {
+	if Mocks.ExternalServices.GetLastSyncError != nil {
+		return Mocks.ExternalServices.GetLastSyncError(id)
+	}
+	e.ensureStore()
+
+	q := sqlf.Sprintf(`
+SELECT failure_message from external_service_sync_jobs
+WHERE external_service_id = %d
+AND state IN ('completed','errored')
+ORDER BY finished_at DESC
+LIMIT 1
+`, id)
+
+	lastError, _, err := basestore.ScanFirstNullString(e.Query(ctx, q))
+	return lastError, err
 }
 
 // List returns external services under given namespace.
@@ -736,7 +806,7 @@ func (e *ExternalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 	}
 	e.ensureStore()
 
-	return e.list(ctx, opt.sqlConditions(), opt.LimitOffset)
+	return e.list(ctx, opt)
 }
 
 // DistinctKinds returns the distinct list of external services kinds that are stored in the database.
@@ -761,15 +831,19 @@ WHERE deleted_at IS NULL
 	return kinds, nil
 }
 
-func (e *ExternalServiceStore) list(ctx context.Context, conds []*sqlf.Query, limitOffset *LimitOffset) ([]*types.ExternalService, error) {
+func (e *ExternalServiceStore) list(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
+	if opt.OrderByDirection != "ASC" {
+		opt.OrderByDirection = "DESC"
+	}
+
 	q := sqlf.Sprintf(`
 		SELECT id, kind, display_name, config, created_at, updated_at, deleted_at, last_sync_at, next_sync_at, namespace_user_id, unrestricted
 		FROM external_services
 		WHERE (%s)
-		ORDER BY id DESC
+		ORDER BY id `+opt.OrderByDirection+`
 		%s`,
-		sqlf.Join(conds, ") AND ("),
-		limitOffset.SQL(),
+		sqlf.Join(opt.sqlConditions(), ") AND ("),
+		opt.LimitOffset.SQL(),
 	)
 
 	rows, err := e.Query(ctx, q)
@@ -814,7 +888,7 @@ func (e *ExternalServiceStore) list(ctx context.Context, conds []*sqlf.Query, li
 
 // Count counts all external services that satisfy the options (ignoring limit and offset).
 //
-// 🚨 SECURITY: The caller must ensure that the actor is a site admin.
+// 🚨 SECURITY: The caller must ensure that the actor is a site admin or owner of the external service.
 func (e *ExternalServiceStore) Count(ctx context.Context, opt ExternalServicesListOptions) (int, error) {
 	if Mocks.ExternalServices.Count != nil {
 		return Mocks.ExternalServices.Count(ctx, opt)
@@ -831,10 +905,11 @@ func (e *ExternalServiceStore) Count(ctx context.Context, opt ExternalServicesLi
 
 // MockExternalServices mocks the external services store.
 type MockExternalServices struct {
-	Create  func(ctx context.Context, confGet func() *conf.Unified, externalService *types.ExternalService) error
-	Delete  func(ctx context.Context, id int64) error
-	GetByID func(id int64) (*types.ExternalService, error)
-	List    func(opt ExternalServicesListOptions) ([]*types.ExternalService, error)
-	Update  func(ctx context.Context, ps []schema.AuthProviders, id int64, update *ExternalServiceUpdate) error
-	Count   func(ctx context.Context, opt ExternalServicesListOptions) (int, error)
+	Create           func(ctx context.Context, confGet func() *conf.Unified, externalService *types.ExternalService) error
+	Delete           func(ctx context.Context, id int64) error
+	GetByID          func(id int64) (*types.ExternalService, error)
+	GetLastSyncError func(id int64) (string, error)
+	List             func(opt ExternalServicesListOptions) ([]*types.ExternalService, error)
+	Update           func(ctx context.Context, ps []schema.AuthProviders, id int64, update *ExternalServiceUpdate) error
+	Count            func(ctx context.Context, opt ExternalServicesListOptions) (int, error)
 }

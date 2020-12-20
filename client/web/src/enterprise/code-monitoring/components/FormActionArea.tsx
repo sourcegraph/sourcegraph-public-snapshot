@@ -164,8 +164,7 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
             )}
             <small className="text-muted">
                 What other actions would you like to do?{' '}
-                <a href="" target="_blank" rel="noopener">
-                    {/* TODO: populate link */}
+                <a href="mailto:feedback@sourcegraph.com" target="_blank" rel="noopener">
                     Share feedback.
                 </a>
             </small>

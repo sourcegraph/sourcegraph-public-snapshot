@@ -1,19 +1,13 @@
 package monitoring
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
-	"log"
 	"math/rand"
-	"os"
-	"path/filepath"
 	"strings"
 	"time"
-	"unicode"
 
 	"github.com/grafana-tools/sdk"
-	"github.com/prometheus/common/model"
 )
 
 // Container describes a Docker container to be observed.
@@ -52,359 +46,8 @@ func (c *Container) validate() error {
 	return nil
 }
 
-// Group describes a group of observable information about a container.
-//
-// These correspond to collapsible sections in a Grafana dashboard.
-type Group struct {
-	// Title of the group, briefly summarizing what this group is about, or
-	// "General" if the group is just about the container in general.
-	Title string
-
-	// Hidden indicates whether or not the group should be hidden by default.
-	//
-	// This should only be used when the dashboard is already full of information
-	// and the information presented in this group is unlikely to be the cause of
-	// issues and should generally only be inspected in the event that an alert
-	// for that information is firing.
-	Hidden bool
-
-	// Rows of observable metrics.
-	Rows []Row
-}
-
-func (g Group) validate() error {
-	if g.Title != upperFirst(g.Title) || g.Title == withPeriod(g.Title) {
-		return fmt.Errorf("Group.Title must start with an uppercase letter and not end with a period; found \"%s\"", g.Title)
-	}
-	for i, r := range g.Rows {
-		if err := r.validate(); err != nil {
-			return fmt.Errorf("row %d: %v", i, err)
-		}
-	}
-	return nil
-}
-
-// Row of observable metrics.
-//
-// These correspond to a row of Grafana graphs.
-type Row []Observable
-
-func (r Row) validate() error {
-	if len(r) < 1 || len(r) > 4 {
-		return fmt.Errorf("row must have 1 to 4 observables only, found %v", len(r))
-	}
-	for _, o := range r {
-		if err := o.validate(); err != nil {
-			return fmt.Errorf("observable %q: %v", o.Name, err)
-		}
-	}
-	return nil
-}
-
-// ObservableOwner denotes a team that owns an Observable. The current teams are described in
-// the handbook: https://about.sourcegraph.com/company/team/org_chart#engineering
-type ObservableOwner string
-
-const (
-	ObservableOwnerSearch       ObservableOwner = "search"
-	ObservableOwnerCampaigns    ObservableOwner = "campaigns"
-	ObservableOwnerCodeIntel    ObservableOwner = "code-intel"
-	ObservableOwnerDistribution ObservableOwner = "distribution"
-	ObservableOwnerSecurity     ObservableOwner = "security"
-	ObservableOwnerWeb          ObservableOwner = "web"
-	ObservableOwnerCloud        ObservableOwner = "cloud"
-)
-
-// Observable describes a metric about a container that can be observed. For example, memory usage.
-//
-// These correspond to Grafana graphs.
-type Observable struct {
-	// Name is a short and human-readable lower_snake_case name describing what is being observed.
-	//
-	// It must be unique relative to the service name.
-	//
-	// Good examples:
-	//
-	//  github_rate_limit_remaining
-	// 	search_error_rate
-	//
-	// Bad examples:
-	//
-	//  repo_updater_github_rate_limit
-	// 	search_error_rate_over_5m
-	//
-	Name string
-
-	// Description is a human-readable description of exactly what is being observed.
-	//
-	// Good examples:
-	//
-	// 	"remaining GitHub API rate limit quota"
-	// 	"number of search errors every 5m"
-	//  "90th percentile search request duration over 5m"
-	//
-	// Bad examples:
-	//
-	// 	"GitHub rate limit"
-	// 	"search errors[5m]"
-	// 	"P90 search latency"
-	//
-	Description string
-
-	// Owner indicates the team that owns any alerts associated with this Observable.
-	Owner ObservableOwner
-
-	// Query is the actual Prometheus query that should be observed.
-	Query string
-
-	// DataMayNotExist indicates if the query may not return data until some event occurs in the
-	// future.
-	//
-	// For example, repo_updater_memory_usage should always have data present and an alert should
-	// fire if for some reason that query is not returning any data, so this would be set to false.
-	// In contrast, search_error_rate would depend on users actually performing searches and we
-	// would not want an alert to fire if no data was present, so this would be set to true.
-	DataMayNotExist bool
-
-	// DataMayNotBeNaN indicates whether or not the query may return NaN regularly.
-	// In other words, when true, alerts will fire if the query returns NaN.
-	//
-	// NaN often indicates a mistaken divide by zero - for many types of alert queries,
-	// this is a common problem on low-traffic deployments where the values of many
-	// metrics frequently end up being 0, so the default is to allow it.
-	//
-	// However, for some queries NaN values may be unexpected, in which case you should
-	// set this to true.
-	DataMayNotBeNaN bool
-
-	// Warning and Critical alert definitions.
-	// Consider adding at least a Warning or Critical alert to each Observable to make it easy to
-	// identify when the target of this metric is missbehaving.
-	Warning, Critical *ObservableAlertDefinition
-
-	// NoAlerts is used by Observables that don't need any alerts.
-	// We want to be explicit about this to ensure alerting is considered and if we choose not to Alert,
-	// its easy to identify it is an intentional behavior.
-	NoAlert bool
-
-	// PossibleSolutions is Markdown describing possible solutions in the event that the alert is
-	// firing. If there is no clear potential resolution, "none" must be explicitly stated.
-	//
-	// Contacting support should not be mentioned as part of a possible solution, as it is
-	// communicated elsewhere.
-	//
-	// To make writing the Markdown more friendly in Go, string literals like this:
-	//
-	// 	Observable{
-	// 		PossibleSolutions: `
-	// 			- Foobar 'some code'
-	// 		`
-	// 	}
-	//
-	// Becomes:
-	//
-	// 	- Foobar `some code`
-	//
-	// In other words:
-	//
-	// 1. The preceding newline is removed.
-	// 2. The indentation in the string literal is removed (based on the last line).
-	// 3. Single quotes become backticks.
-	// 4. The last line (which is all indention) is removed.
-	//
-	PossibleSolutions string
-
-	// PanelOptions describes some options for how to render the metric in the Grafana panel.
-	PanelOptions ObservablePanelOptions
-}
-
-func (o Observable) validate() error {
-	if strings.Contains(o.Name, " ") || strings.ToLower(o.Name) != o.Name {
-		return fmt.Errorf("Observable.Name must be in lower_snake_case; found \"%s\"", o.Name)
-	}
-	if v := string([]rune(o.Description)[0]); v != strings.ToLower(v) {
-		return fmt.Errorf("Observable.Description must be lowercase; found \"%s\"", o.Description)
-	}
-
-	if !o.NoAlert && o.Warning.isEmpty() && o.Critical.isEmpty() {
-		return fmt.Errorf("Observable.Warning or Observable.Critical must be set or explicitly disable alerts with Observable.NoAlert")
-	}
-
-	if l := strings.ToLower(o.PossibleSolutions); strings.Contains(l, "contact support") || strings.Contains(l, "contact us") {
-		return fmt.Errorf("PossibleSolutions: should not include mentions of contacting support")
-	}
-	if o.PossibleSolutions == "" {
-		return fmt.Errorf(`PossibleSolutions: must list solutions or "none"`)
-	} else if o.PossibleSolutions != "none" {
-		if _, err := goMarkdown(o.PossibleSolutions); err != nil {
-			return fmt.Errorf("PossibleSolutions: %v", err)
-		}
-	}
-	if o.Owner == "" {
-		return errors.New("Observable.Owner must be defined")
-	}
-	return nil
-}
-
-// Alert provides a builder for defining alerting on an Observable.
-func Alert() *ObservableAlertDefinition {
-	return &ObservableAlertDefinition{}
-}
-
-// ObservableAlertDefinition defines when an alert would be considered firing.
-type ObservableAlertDefinition struct {
-	// GreaterOrEqual, when non-zero, indicates the alert should fire when
-	// greater or equal to this value.
-	greaterOrEqual *float64
-
-	// LessOrEqual, when non-zero, indicates the alert should fire when less
-	// than or equal to this value.
-	lessOrEqual *float64
-
-	// For indicates how long the given thresholds must be exceeded for this
-	// alert to be considered firing. Defaults to 0s.
-	duration time.Duration
-}
-
-func (a *ObservableAlertDefinition) GreaterOrEqual(f float64) *ObservableAlertDefinition {
-	a.greaterOrEqual = &f
-	return a
-}
-
-func (a *ObservableAlertDefinition) LessOrEqual(f float64) *ObservableAlertDefinition {
-	a.lessOrEqual = &f
-	return a
-}
-
-func (a *ObservableAlertDefinition) For(d time.Duration) *ObservableAlertDefinition {
-	a.duration = d
-	return a
-}
-
-func (a *ObservableAlertDefinition) isEmpty() bool {
-	return a == nil || (*a == ObservableAlertDefinition{}) || (a.greaterOrEqual == nil && a.lessOrEqual == nil)
-}
-
-// UnitType for controlling the unit type display on graphs.
-type UnitType string
-
-// short returns the short string description of the unit, for qualifying a
-// number of this unit type as human-readable.
-func (u UnitType) short() string {
-	switch u {
-	case Number, "":
-		return ""
-	case Milliseconds:
-		return "ms"
-	case Seconds:
-		return "s"
-	case Percentage:
-		return "%"
-	case Bytes:
-		return "B"
-	case BitsPerSecond:
-		return "bps"
-	default:
-		panic("never here")
-	}
-}
-
-// From https://sourcegraph.com/github.com/grafana/grafana@b63b82976b3708b082326c0b7d42f38d4bc261fa/-/blob/packages/grafana-data/src/valueFormats/categories.ts#L23
-const (
-	// Number is the default unit type.
-	Number UnitType = "short"
-
-	// Milliseconds for representing time.
-	Milliseconds UnitType = "dtdurationms"
-
-	// Seconds for representing time.
-	Seconds UnitType = "dtdurations"
-
-	// Percentage in the range of 0-100.
-	Percentage UnitType = "percent"
-
-	// Bytes in IEC (1024) format, e.g. for representing storage sizes.
-	Bytes UnitType = "bytes"
-
-	// BitsPerSecond, e.g. for representing network and disk IO.
-	BitsPerSecond UnitType = "bps"
-)
-
-type ObservablePanelOptions struct {
-	min, max     *float64
-	minAuto      bool
-	legendFormat string
-	unitType     UnitType
-	interval     string
-}
-
-// Min sets the minimum value of the Y axis on the panel. The default is zero.
-func (p ObservablePanelOptions) Min(min float64) ObservablePanelOptions {
-	p.min = &min
-	return p
-}
-
-// Min sets the minimum value of the Y axis on the panel to auto, instead of
-// the default zero.
-//
-// This is generally only useful if trying to show negative numbers.
-func (p ObservablePanelOptions) MinAuto() ObservablePanelOptions {
-	p.minAuto = true
-	return p
-}
-
-// Max sets the maximum value of the Y axis on the panel. The default is auto.
-func (p ObservablePanelOptions) Max(max float64) ObservablePanelOptions {
-	p.max = &max
-	return p
-}
-
-// LegendFormat sets the panel's legend format, which may use Go template strings to select
-// labels from the Prometheus query.
-func (p ObservablePanelOptions) LegendFormat(format string) ObservablePanelOptions {
-	p.legendFormat = format
-	return p
-}
-
-// Unit sets the panel's Y axis unit type.
-func (p ObservablePanelOptions) Unit(t UnitType) ObservablePanelOptions {
-	p.unitType = t
-	return p
-}
-
-func (p ObservablePanelOptions) Interval(ms int) ObservablePanelOptions {
-	p.interval = fmt.Sprintf("%dms", ms)
-	return p
-}
-
-func (p ObservablePanelOptions) withDefaults() ObservablePanelOptions {
-	if p.min == nil && !p.minAuto {
-		defaultMin := 0.0
-		p.min = &defaultMin
-	}
-	if p.legendFormat == "" {
-		// Important: We use "value" as the default legend format and not, say, "{{instance}}" or
-		// an empty string (Grafana defaults to all labels in that case) because:
-		//
-		// 1. Using "{{instance}}" is often wrong, see: https://about.sourcegraph.com/handbook/engineering/observability/monitoring_pillars#faq-why-can-t-i-create-a-graph-panel-with-more-than-5-cardinality-labels
-		// 2. More often than not, you actually do want to aggregate your whole query with `sum()`, `max()` or similar.
-		// 3. If "{{instance}}" or similar was the default, it would be easy for people to say "I guess that's intentional"
-		//    instead of seeing multiple "value" labels on their dashboard (which immediately makes them think
-		//    "how can I fix that?".)
-		//
-		p.legendFormat = "value"
-	}
-	if p.unitType == "" {
-		p.unitType = Number
-	}
-	return p
-}
-
-// PanelOptions provides a builder for customizing an Observable.
-func PanelOptions() ObservablePanelOptions { return ObservablePanelOptions{} }
-
-// dashboard generates the Grafana dashboard for this container.
-func (c *Container) dashboard() *sdk.Board {
+// renderDashboard generates the Grafana renderDashboard for this container.
+func (c *Container) renderDashboard() *sdk.Board {
 	board := sdk.NewBoard(c.Title)
 	board.Version = uint(rand.Uint32())
 	board.UID = c.Name
@@ -632,9 +275,9 @@ func (c *Container) dashboard() *sdk.Board {
 }
 
 // alertDescription generates an alert description for the specified coontainer's alert.
-func (c *Container) alertDescription(o Observable, alert *ObservableAlertDefinition) string {
+func (c *Container) alertDescription(o Observable, alert *ObservableAlertDefinition) (string, error) {
 	if alert.isEmpty() {
-		panic("never here")
+		return "", errors.New("cannot generate description for empty alert")
 	}
 	var description string
 
@@ -649,24 +292,23 @@ func (c *Container) alertDescription(o Observable, alert *ObservableAlertDefinit
 		// e.g. "zoekt-indexserver: less than 20 indexed search requests every 5m by code"
 		description = fmt.Sprintf("%s: less than %v%s %s", c.Name, *alert.lessOrEqual, units, o.Description)
 	} else {
-		panic(fmt.Sprintf("unable to generate description for observable %+v", o))
+		return "", fmt.Errorf("unable to generate description for observable %+v", o)
 	}
 
 	// add information about "for"
 	if alert.duration > 0 {
-		return fmt.Sprintf("%s for %s", description, alert.duration)
+		return fmt.Sprintf("%s for %s", description, alert.duration), nil
 	}
-	return description
+	return description, nil
 }
 
-// promAlertsFile generates the Prometheus rules file which defines our
+// renderRules generates the Prometheus rules file which defines our
 // high-level alerting metrics for the container. For more information about
 // how these work, see:
 //
 // https://docs.sourcegraph.com/admin/observability/metrics_guide#high-level-alerting-metrics
 //
-func (c *Container) promAlertsFile() *promRulesFile {
-	f := &promRulesFile{}
+func (c *Container) renderRules() (*promRulesFile, error) {
 	group := promGroup{Name: c.Name}
 	for _, g := range c.Groups {
 		for _, r := range g.Rows {
@@ -679,27 +321,35 @@ func (c *Container) promAlertsFile() *promRulesFile {
 						continue
 					}
 
-					hasUpperAndLowerBounds := (a.greaterOrEqual != nil) && (a.lessOrEqual != nil)
-					makeLabels := func(bound string) map[string]string {
+					// makeLabels renders labels for rules belonging to this observable and alert,
+					// bound is one of upperBound or lowerBound
+					const (
+						upperBound = "high"
+						lowerBound = "low"
+					)
+					makeLabels := func(bound string) (map[string]string, error) {
 						var name, description string
+						var err error
+						hasUpperAndLowerBounds := (a.greaterOrEqual != nil) && (a.lessOrEqual != nil)
 						if hasUpperAndLowerBounds {
 							// if both bounds are present, since we generate an alert for each bound
 							// make sure the prometheus alert description only describes one bound
 							name = fmt.Sprintf("%s_%s", o.Name, bound)
-							if bound == "high" {
-								description = c.alertDescription(o, &ObservableAlertDefinition{
+							if bound == upperBound {
+								description, err = c.alertDescription(o, &ObservableAlertDefinition{
 									greaterOrEqual: a.greaterOrEqual,
 								})
-							} else if bound == "low" {
-								description = c.alertDescription(o, &ObservableAlertDefinition{
+							} else if bound == lowerBound {
+								description, err = c.alertDescription(o, &ObservableAlertDefinition{
 									lessOrEqual: a.lessOrEqual,
 								})
-							} else {
-								panic(fmt.Sprintf("never here, bad alert bound: %s", bound))
 							}
 						} else {
 							name = o.Name
-							description = c.alertDescription(o, a)
+							description, err = c.alertDescription(o, a)
+						}
+						if err != nil {
+							return nil, fmt.Errorf("unable to generate labels: %+v", err)
 						}
 						return map[string]string{
 							"name":         name,
@@ -707,7 +357,7 @@ func (c *Container) promAlertsFile() *promRulesFile {
 							"service_name": c.Name,
 							"description":  description,
 							"owner":        string(o.Owner),
-						}
+						}, nil
 					}
 
 					// The alertQuery must contribute a query that returns a value < 1 when it is not
@@ -736,13 +386,19 @@ func (c *Container) promAlertsFile() *promRulesFile {
 							alertQuery = fmt.Sprintf("(%s) OR on() vector(0)", alertQuery)
 						}
 
+						// Set value for NaN condition
 						alertQuery = fmt.Sprintf("((%s) >= 0) OR on() vector(%v)", alertQuery, fireOnNan)
+
+						labels, err := makeLabels(upperBound)
+						if err != nil {
+							return nil, err
+						}
 
 						// Wrap the query in max() so that if there are multiple series (e.g. per-container) they
 						// get flattened into a single one (we only support per-service alerts,
 						// not per-container/replica).
 						// More context: https://github.com/sourcegraph/sourcegraph/issues/11571#issuecomment-654571953
-						group.AppendRow(fmt.Sprintf("max(%s)", alertQuery), makeLabels("high"), a.duration)
+						group.appendRow(fmt.Sprintf("max(%s)", alertQuery), labels, a.duration)
 					}
 					if a.lessOrEqual != nil {
 						//
@@ -759,277 +415,398 @@ func (c *Container) promAlertsFile() *promRulesFile {
 							alertQuery = fmt.Sprintf("(%s) OR on() vector(0)", alertQuery)
 						}
 
+						// Set value for NaN condition
 						alertQuery = fmt.Sprintf("((%s) >= 0) OR on() vector(%v)", alertQuery, fireOnNan)
+
+						labels, err := makeLabels(lowerBound)
+						if err != nil {
+							return nil, err
+						}
 
 						// Wrap the query in min() so that if there are multiple series (e.g. per-container) they
 						// get flattened into a single one (we only support per-service alerts,
 						// not per-container/replica).
 						// More context: https://github.com/sourcegraph/sourcegraph/issues/11571#issuecomment-654571953
-						group.AppendRow(fmt.Sprintf("min(%s)", alertQuery), makeLabels("low"), a.duration)
+						group.appendRow(fmt.Sprintf("min(%s)", alertQuery), labels, a.duration)
 					}
 				}
 			}
 		}
 	}
-	f.Groups = append(f.Groups, group)
-	return f
+	if err := group.validate(); err != nil {
+		return nil, err
+	}
+	return &promRulesFile{
+		Groups: []promGroup{group},
+	}, nil
 }
 
-// isValidUID checks if the given string is a valid UID for entry into a Grafana dashboard. This is
-// primarily used in the URL, e.g. /-/debug/grafana/d/syntect-server/<UID> and allows us to have
-// static URLs we can document like:
+// Group describes a group of observable information about a container.
 //
-// 	Go to https://sourcegraph.example.com/-/debug/grafana/d/syntect-server/syntect-server
+// These correspond to collapsible sections in a Grafana dashboard.
+type Group struct {
+	// Title of the group, briefly summarizing what this group is about, or
+	// "General" if the group is just about the container in general.
+	Title string
+
+	// Hidden indicates whether or not the group should be hidden by default.
+	//
+	// This should only be used when the dashboard is already full of information
+	// and the information presented in this group is unlikely to be the cause of
+	// issues and should generally only be inspected in the event that an alert
+	// for that information is firing.
+	Hidden bool
+
+	// Rows of observable metrics.
+	Rows []Row
+}
+
+func (g Group) validate() error {
+	if g.Title != upperFirst(g.Title) || g.Title == withPeriod(g.Title) {
+		return fmt.Errorf("Group.Title must start with an uppercase letter and not end with a period; found \"%s\"", g.Title)
+	}
+	for i, r := range g.Rows {
+		if err := r.validate(); err != nil {
+			return fmt.Errorf("row %d: %v", i, err)
+		}
+	}
+	return nil
+}
+
+// Row of observable metrics.
 //
-// Instead of having to describe all the steps to navigate there because the UID is random.
-func isValidUID(s string) bool {
-	if s != strings.ToLower(s) {
-		return false
+// These correspond to a row of Grafana graphs.
+type Row []Observable
+
+func (r Row) validate() error {
+	if len(r) < 1 || len(r) > 4 {
+		return fmt.Errorf("row must have 1 to 4 observables only, found %v", len(r))
 	}
-	for _, r := range s {
-		if !(unicode.IsLetter(r) || unicode.IsNumber(r) || r == '-') {
-			return false
+	for _, o := range r {
+		if err := o.validate(); err != nil {
+			return fmt.Errorf("observable %q: %v", o.Name, err)
 		}
 	}
-	return true
+	return nil
 }
 
-// upperFirst returns s with an uppercase first rune.
-func upperFirst(s string) string {
-	return strings.ToUpper(string([]rune(s)[0])) + string([]rune(s)[1:])
-}
+// ObservableOwner denotes a team that owns an Observable. The current teams are described in
+// the handbook: https://about.sourcegraph.com/company/team/org_chart#engineering
+type ObservableOwner string
 
-// withPeriod returns s ending with a period.
-func withPeriod(s string) string {
-	if !strings.HasSuffix(s, ".") {
-		return s + "."
-	}
-	return s
-}
+const (
+	ObservableOwnerSearch       ObservableOwner = "search"
+	ObservableOwnerCampaigns    ObservableOwner = "campaigns"
+	ObservableOwnerCodeIntel    ObservableOwner = "code-intel"
+	ObservableOwnerDistribution ObservableOwner = "distribution"
+	ObservableOwnerSecurity     ObservableOwner = "security"
+	ObservableOwnerWeb          ObservableOwner = "web"
+	ObservableOwnerCloud        ObservableOwner = "cloud"
+)
 
-func deleteRemnants(filelist []string, grafanaDir, promDir string) {
-	err := filepath.Walk(grafanaDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			log.Print("Unable to access file: ", path)
-			return nil
-		}
-		if filepath.Ext(path) != ".json" || info.IsDir() {
-			return nil
-		}
-		for _, f := range filelist {
-			if filepath.Ext(f) != ".json" || filepath.Ext(path) != ".json" || info.IsDir() {
-				continue
-			}
-			if filepath.Base(path) == f {
-				return nil
-			}
-		}
-		err = os.Remove(path)
-		log.Println("Removed orphan grafana file: ", path)
-		return err
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = filepath.Walk(promDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			log.Print("Unable to access file: ", path)
-			return nil
-		}
-		if !strings.Contains(filepath.Base(path), alertSuffix) || info.IsDir() {
-			return nil
-		}
-
-		for _, f := range filelist {
-			if filepath.Ext(f) != ".yml" {
-				continue
-			}
-			if filepath.Base(path) == f {
-				return nil
-			}
-		}
-		err = os.Remove(path)
-		log.Println("Removed orphan prometheus alert file: ", path)
-		return err
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
-func generateDocs(containers []*Container) []byte {
-	var b bytes.Buffer
-	fmt.Fprintf(&b, `# Alert solutions
-
-This document contains possible solutions for when you find alerts are firing in Sourcegraph's monitoring.
-If your alert isn't mentioned here, or if the solution doesn't help, [contact us](mailto:support@sourcegraph.com)
-for assistance.
-
-To learn more about Sourcegraph's alerting, see [our alerting documentation](https://docs.sourcegraph.com/admin/observability/alerting).
-
-<!-- DO NOT EDIT: generated via: go generate ./monitoring -->
-
-`)
-	for _, c := range containers {
-		for _, g := range c.Groups {
-			for _, r := range g.Rows {
-				for _, o := range r {
-					if o.Warning == nil && o.Critical == nil {
-						continue
-					}
-
-					fmt.Fprintf(&b, "## %s: %s\n\n", c.Name, o.Name)
-					fmt.Fprintf(&b, `<p class="subtitle">%s: %s</p>`, o.Owner, o.Description)
-
-					// Render descriptions of various levels of this alert
-					fmt.Fprintf(&b, "\n\n**Descriptions:**\n\n")
-					var prometheusAlertNames []string
-					for _, alert := range []struct {
-						level     string
-						threshold *ObservableAlertDefinition
-					}{
-						{level: "warning", threshold: o.Warning},
-						{level: "critical", threshold: o.Critical},
-					} {
-						if alert.threshold.isEmpty() {
-							continue
-						}
-						fmt.Fprintf(&b, "- _%s_\n", c.alertDescription(o, alert.threshold))
-						prometheusAlertNames = append(prometheusAlertNames,
-							fmt.Sprintf("  \"%s\"", prometheusAlertName(alert.level, c.Name, o.Name)))
-					}
-					fmt.Fprint(&b, "\n")
-
-					// Render solutions for dealing with this alert
-					fmt.Fprintf(&b, "**Possible solutions:**\n\n")
-					if o.PossibleSolutions != "none" {
-						possibleSolutions, _ := goMarkdown(o.PossibleSolutions)
-						fmt.Fprintf(&b, "%s\n", possibleSolutions)
-					}
-					// add silencing configuration as another solution
-					fmt.Fprintf(&b, "- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:\n\n")
-					fmt.Fprintf(&b, "```json\n%s\n```\n\n", fmt.Sprintf(`"observability.silenceAlerts": [
-%s
-]`, strings.Join(prometheusAlertNames, ",\n")))
-
-					// Render break for readability
-					fmt.Fprint(&b, "<br />\n\n")
-				}
-			}
-		}
-	}
-	return b.Bytes()
-}
-
-func goMarkdown(m string) (string, error) {
-	m = strings.TrimPrefix(m, "\n")
-
-	// Replace single quotes with backticks.
-	// Replace escaped single quotes with single quotes.
-	m = strings.Replace(m, `\'`, `$ESCAPED_SINGLE_QUOTE`, -1)
-	m = strings.Replace(m, `'`, "`", -1)
-	m = strings.Replace(m, `$ESCAPED_SINGLE_QUOTE`, "'", -1)
-
-	// Unindent based on the indention of the last line.
-	lines := strings.Split(m, "\n")
-	baseIndention := lines[len(lines)-1]
-	if strings.TrimSpace(baseIndention) == "" {
-		if strings.Contains(baseIndention, " ") {
-			return "", errors.New("go string literal indention must be tabs")
-		}
-		indentionLevel := strings.Count(baseIndention, "\t")
-		removeIndention := strings.Repeat("\t", indentionLevel+1)
-		for i, l := range lines[:len(lines)-1] {
-			newLine := strings.TrimPrefix(l, removeIndention)
-			if l == newLine {
-				return "", fmt.Errorf("inconsistent indention (line %d %q expected to start with %q)", i, l, removeIndention)
-			}
-			lines[i] = newLine
-		}
-		m = strings.Join(lines[:len(lines)-1], "\n")
-	}
-
-	// If result is not a list, make it a list, so we can add items.
-	if !strings.HasPrefix(m, "-") && !strings.HasPrefix(m, "*") {
-		m = fmt.Sprintf("- %s", m)
-	}
-
-	return m, nil
-}
-
-// promRulesFile represents a Prometheus recording rules file (which we use for defining our alerts)
-// see:
+// Observable describes a metric about a container that can be observed. For example, memory usage.
 //
-// https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/
-//
-type promRulesFile struct {
-	Groups []promGroup
+// These correspond to Grafana graphs.
+type Observable struct {
+	// Name is a short and human-readable lower_snake_case name describing what is being observed.
+	//
+	// It must be unique relative to the service name.
+	//
+	// Good examples:
+	//
+	//  github_rate_limit_remaining
+	// 	search_error_rate
+	//
+	// Bad examples:
+	//
+	//  repo_updater_github_rate_limit
+	// 	search_error_rate_over_5m
+	//
+	Name string
+
+	// Description is a human-readable description of exactly what is being observed.
+	//
+	// Good examples:
+	//
+	// 	"remaining GitHub API rate limit quota"
+	// 	"number of search errors every 5m"
+	//  "90th percentile search request duration over 5m"
+	//
+	// Bad examples:
+	//
+	// 	"GitHub rate limit"
+	// 	"search errors[5m]"
+	// 	"P90 search latency"
+	//
+	Description string
+
+	// Owner indicates the team that owns any alerts associated with this Observable.
+	Owner ObservableOwner
+
+	// Query is the actual Prometheus query that should be observed.
+	Query string
+
+	// DataMayNotExist indicates if the query may not return data until some event occurs in the
+	// future.
+	//
+	// For example, repo_updater_memory_usage should always have data present and an alert should
+	// fire if for some reason that query is not returning any data, so this would be set to false.
+	// In contrast, search_error_rate would depend on users actually performing searches and we
+	// would not want an alert to fire if no data was present, so this would be set to true.
+	DataMayNotExist bool
+
+	// DataMayNotBeNaN indicates whether or not the query may return NaN regularly.
+	// In other words, when true, alerts will fire if the query returns NaN.
+	//
+	// NaN often indicates a mistaken divide by zero - for many types of alert queries,
+	// this is a common problem on low-traffic deployments where the values of many
+	// metrics frequently end up being 0, so the default is to allow it.
+	//
+	// However, for some queries NaN values may be unexpected, in which case you should
+	// set this to true.
+	DataMayNotBeNaN bool
+
+	// Warning and Critical alert definitions.
+	// Consider adding at least a Warning or Critical alert to each Observable to make it easy to
+	// identify when the target of this metric is missbehaving.
+	Warning, Critical *ObservableAlertDefinition
+
+	// NoAlerts is used by Observables that don't need any alerts.
+	// We want to be explicit about this to ensure alerting is considered and if we choose not to Alert,
+	// its easy to identify it is an intentional behavior.
+	NoAlert bool
+
+	// PossibleSolutions is Markdown describing possible solutions in the event that the alert is
+	// firing. If there is no clear potential resolution, "none" must be explicitly stated.
+	//
+	// Contacting support should not be mentioned as part of a possible solution, as it is
+	// communicated elsewhere.
+	//
+	// To make writing the Markdown more friendly in Go, string literals like this:
+	//
+	// 	Observable{
+	// 		PossibleSolutions: `
+	// 			- Foobar 'some code'
+	// 		`
+	// 	}
+	//
+	// Becomes:
+	//
+	// 	- Foobar `some code`
+	//
+	// In other words:
+	//
+	// 1. The preceding newline is removed.
+	// 2. The indentation in the string literal is removed (based on the last line).
+	// 3. Single quotes become backticks.
+	// 4. The last line (which is all indention) is removed.
+	//
+	PossibleSolutions string
+
+	// PanelOptions describes some options for how to render the metric in the Grafana panel.
+	PanelOptions ObservablePanelOptions
 }
 
-type promGroup struct {
-	Name  string
-	Rules []promRule
+func (o Observable) WithWarning(a *ObservableAlertDefinition) Observable {
+	o.Warning = a
+	return o
 }
 
-func (g *promGroup) AppendRow(alertQuery string, labels map[string]string, duration time.Duration) {
-	labels["alert_type"] = "builtin" // indicate alert is generated
-	var forDuration *model.Duration
-	if duration > 0 {
-		d := model.Duration(duration)
-		forDuration = &d
+func (o Observable) WithCritical(a *ObservableAlertDefinition) Observable {
+	o.Critical = a
+	return o
+}
+
+func (o Observable) WithNoAlerts() Observable {
+	o.Warning = nil
+	o.Critical = nil
+	o.NoAlert = true
+	return o
+}
+
+func (o Observable) validate() error {
+	if strings.Contains(o.Name, " ") || strings.ToLower(o.Name) != o.Name {
+		return fmt.Errorf("Observable.Name must be in lower_snake_case; found \"%s\"", o.Name)
+	}
+	if v := string([]rune(o.Description)[0]); v != strings.ToLower(v) {
+		return fmt.Errorf("Observable.Description must be lowercase; found \"%s\"", o.Description)
 	}
 
-	alertName := prometheusAlertName(labels["level"], labels["service_name"], labels["name"])
-	g.Rules = append(g.Rules,
-		// Native prometheus alert, based on alertQuery which returns 0 if not firing or 1 if firing.
-		promRule{
-			Alert:  alertName,
-			Labels: labels,
-			Expr:   fmt.Sprintf(`%s >= 1`, alertQuery),
-			For:    forDuration,
-		},
-		// Record for generated alert, useful for indicating in Grafana dashboards if this alert
-		// is defined at all. Prometheus's ALERTS metric does not track alerts with alertstate="inactive".
+	if !o.NoAlert && o.Warning.isEmpty() && o.Critical.isEmpty() {
+		return fmt.Errorf("Observable.Warning or Observable.Critical must be set or explicitly disable alerts with Observable.NoAlert")
+	}
+
+	if l := strings.ToLower(o.PossibleSolutions); strings.Contains(l, "contact support") || strings.Contains(l, "contact us") {
+		return fmt.Errorf("PossibleSolutions: should not include mentions of contacting support")
+	}
+	if o.PossibleSolutions == "" {
+		return fmt.Errorf(`PossibleSolutions: must list solutions or "none"`)
+	} else if o.PossibleSolutions != "none" {
+		if _, err := toMarkdownList(o.PossibleSolutions); err != nil {
+			return fmt.Errorf("PossibleSolutions: %v", err)
+		}
+	}
+	if o.Owner == "" {
+		return errors.New("Observable.Owner must be defined")
+	}
+	return nil
+}
+
+// Alert provides a builder for defining alerting on an Observable.
+func Alert() *ObservableAlertDefinition {
+	return &ObservableAlertDefinition{}
+}
+
+// ObservableAlertDefinition defines when an alert would be considered firing.
+type ObservableAlertDefinition struct {
+	// GreaterOrEqual, when non-zero, indicates the alert should fire when
+	// greater or equal to this value.
+	greaterOrEqual *float64
+
+	// LessOrEqual, when non-zero, indicates the alert should fire when less
+	// than or equal to this value.
+	lessOrEqual *float64
+
+	// For indicates how long the given thresholds must be exceeded for this
+	// alert to be considered firing. Defaults to 0s.
+	duration time.Duration
+}
+
+func (a *ObservableAlertDefinition) GreaterOrEqual(f float64) *ObservableAlertDefinition {
+	a.greaterOrEqual = &f
+	return a
+}
+
+func (a *ObservableAlertDefinition) LessOrEqual(f float64) *ObservableAlertDefinition {
+	a.lessOrEqual = &f
+	return a
+}
+
+func (a *ObservableAlertDefinition) For(d time.Duration) *ObservableAlertDefinition {
+	a.duration = d
+	return a
+}
+
+func (a *ObservableAlertDefinition) isEmpty() bool {
+	return a == nil || (*a == ObservableAlertDefinition{}) || (a.greaterOrEqual == nil && a.lessOrEqual == nil)
+}
+
+// UnitType for controlling the unit type display on graphs.
+type UnitType string
+
+// short returns the short string description of the unit, for qualifying a
+// number of this unit type as human-readable.
+func (u UnitType) short() string {
+	switch u {
+	case Number, "":
+		return ""
+	case Milliseconds:
+		return "ms"
+	case Seconds:
+		return "s"
+	case Percentage:
+		return "%"
+	case Bytes:
+		return "B"
+	case BitsPerSecond:
+		return "bps"
+	default:
+		panic("never here")
+	}
+}
+
+// From https://sourcegraph.com/github.com/grafana/grafana@b63b82976b3708b082326c0b7d42f38d4bc261fa/-/blob/packages/grafana-data/src/valueFormats/categories.ts#L23
+const (
+	// Number is the default unit type.
+	Number UnitType = "short"
+
+	// Milliseconds for representing time.
+	Milliseconds UnitType = "dtdurationms"
+
+	// Seconds for representing time.
+	Seconds UnitType = "dtdurations"
+
+	// Percentage in the range of 0-100.
+	Percentage UnitType = "percent"
+
+	// Bytes in IEC (1024) format, e.g. for representing storage sizes.
+	Bytes UnitType = "bytes"
+
+	// BitsPerSecond, e.g. for representing network and disk IO.
+	BitsPerSecond UnitType = "bps"
+)
+
+// ObservablePanelOptions declares options for visualizing an Observable.
+type ObservablePanelOptions struct {
+	min, max     *float64
+	minAuto      bool
+	legendFormat string
+	unitType     UnitType
+	interval     string
+}
+
+// PanelOptions provides a builder for customizing an Observable visualization.
+func PanelOptions() ObservablePanelOptions { return ObservablePanelOptions{} }
+
+// Min sets the minimum value of the Y axis on the panel. The default is zero.
+func (p ObservablePanelOptions) Min(min float64) ObservablePanelOptions {
+	p.min = &min
+	return p
+}
+
+// Min sets the minimum value of the Y axis on the panel to auto, instead of
+// the default zero.
+//
+// This is generally only useful if trying to show negative numbers.
+func (p ObservablePanelOptions) MinAuto() ObservablePanelOptions {
+	p.minAuto = true
+	return p
+}
+
+// Max sets the maximum value of the Y axis on the panel. The default is auto.
+func (p ObservablePanelOptions) Max(max float64) ObservablePanelOptions {
+	p.max = &max
+	return p
+}
+
+// LegendFormat sets the panel's legend format, which may use Go template strings to select
+// labels from the Prometheus query.
+func (p ObservablePanelOptions) LegendFormat(format string) ObservablePanelOptions {
+	p.legendFormat = format
+	return p
+}
+
+// Unit sets the panel's Y axis unit type.
+func (p ObservablePanelOptions) Unit(t UnitType) ObservablePanelOptions {
+	p.unitType = t
+	return p
+}
+
+// Interval declares the panel's interval in milliseconds.
+func (p ObservablePanelOptions) Interval(ms int) ObservablePanelOptions {
+	p.interval = fmt.Sprintf("%dms", ms)
+	return p
+}
+
+func (p ObservablePanelOptions) withDefaults() ObservablePanelOptions {
+	if p.min == nil && !p.minAuto {
+		defaultMin := 0.0
+		p.min = &defaultMin
+	}
+	if p.legendFormat == "" {
+		// Important: We use "value" as the default legend format and not, say, "{{instance}}" or
+		// an empty string (Grafana defaults to all labels in that case) because:
 		//
-		// Since ALERTS{alertname="value"} does not exist if the alert has never fired, we add set
-		// the series to vector(0) instead.
-		promRule{
-			Record: "alert_count",
-			Labels: labels,
-			Expr:   fmt.Sprintf(`max(ALERTS{alertname=%q,alertstate="firing"} OR on() vector(0))`, alertName),
-		})
-}
-
-type promRule struct {
-	// either Record or Alert
-	Record string `yaml:",omitempty"`
-	Alert  string `yaml:",omitempty"`
-
-	Labels map[string]string
-	Expr   string
-
-	// for Alert only
-	For *model.Duration `yaml:",omitempty"`
-}
-
-// setPanelSize is a helper to set a panel's size.
-func setPanelSize(p *sdk.Panel, width, height int) {
-	p.GridPos.W = &width
-	p.GridPos.H = &height
-}
-
-// setPanelSize is a helper to set a panel's position.
-func setPanelPos(p *sdk.Panel, x, y int) {
-	p.GridPos.X = &x
-	p.GridPos.Y = &y
-}
-
-func stringPtr(s string) *string {
-	return &s
-}
-
-// prometheusAlertName creates an alertname that is unique given the combination of parameters
-func prometheusAlertName(level, service, name string) string {
-	return fmt.Sprintf("%s_%s_%s", level, service, name)
+		// 1. Using "{{instance}}" is often wrong, see: https://about.sourcegraph.com/handbook/engineering/observability/monitoring_pillars#faq-why-can-t-i-create-a-graph-panel-with-more-than-5-cardinality-labels
+		// 2. More often than not, you actually do want to aggregate your whole query with `sum()`, `max()` or similar.
+		// 3. If "{{instance}}" or similar was the default, it would be easy for people to say "I guess that's intentional"
+		//    instead of seeing multiple "value" labels on their dashboard (which immediately makes them think
+		//    "how can I fix that?".)
+		//
+		p.legendFormat = "value"
+	}
+	if p.unitType == "" {
+		p.unitType = Number
+	}
+	return p
 }

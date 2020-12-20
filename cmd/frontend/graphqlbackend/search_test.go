@@ -244,7 +244,7 @@ func testStringResult(result *searchSuggestionResolver) string {
 	var name string
 	switch r := result.result.(type) {
 	case *RepositoryResolver:
-		name = "repo:" + string(r.repo.Name)
+		name = "repo:" + r.Name()
 	case *GitTreeEntryResolver:
 		name = "file:" + r.Path()
 	case *languageResolver:
@@ -760,9 +760,9 @@ func TestComputeExcludedRepositories(t *testing.T) {
 	}
 }
 
-func mkFileMatch(repo *types.Repo, path string, lineNumbers ...int32) *FileMatchResolver {
+func mkFileMatch(repo *types.RepoName, path string, lineNumbers ...int32) *FileMatchResolver {
 	if repo == nil {
-		repo = &types.Repo{
+		repo = &types.RepoName{
 			ID:   1,
 			Name: "repo",
 		}
@@ -775,7 +775,7 @@ func mkFileMatch(repo *types.Repo, path string, lineNumbers ...int32) *FileMatch
 		uri:          fileMatchURI(repo.Name, "", path),
 		JPath:        path,
 		JLineMatches: lines,
-		Repo:         &RepositoryResolver{repo: repo},
+		Repo:         &RepositoryResolver{innerRepo: repo.ToRepo()},
 	}
 }
 
@@ -999,5 +999,57 @@ func TestGetReposWrongUnderlyingType(t *testing.T) {
 	_, err := getRepos(context.Background(), rp)
 	if err == nil {
 		t.Errorf("Expected error, got nil")
+	}
+}
+
+func TestHasTypeRepo(t *testing.T) {
+	tests := []struct {
+		query           string
+		wantHasTypeRepo bool
+	}{
+		{
+			query:           "sourcegraph type:repo",
+			wantHasTypeRepo: true,
+		},
+		{
+			query:           "sourcegraph type:symbol type:repo",
+			wantHasTypeRepo: true,
+		},
+		{
+			query:           "(sourcegraph type:repo) or (goreman type:repo)",
+			wantHasTypeRepo: true,
+		},
+		{
+			query:           "sourcegraph repohasfile:Dockerfile type:repo",
+			wantHasTypeRepo: true,
+		},
+		{
+			query:           "repo:sourcegraph type:repo",
+			wantHasTypeRepo: true,
+		},
+		{
+			query:           "repo:sourcegraph",
+			wantHasTypeRepo: false,
+		},
+		{
+			query:           "repository",
+			wantHasTypeRepo: false,
+		},
+		{
+			query:           "",
+			wantHasTypeRepo: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.query, func(t *testing.T) {
+			q, err := query.ProcessAndOr(tt.query, query.ParserOptions{SearchType: query.SearchTypeLiteral})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got := hasTypeRepo(q); got != tt.wantHasTypeRepo {
+				t.Fatalf("got %t, expected %t", got, tt.wantHasTypeRepo)
+			}
+		})
 	}
 }

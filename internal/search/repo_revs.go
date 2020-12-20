@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -72,7 +72,7 @@ type RepositoryRevisions struct {
 
 	// ListRefs is called to list all Git refs for a repository. It is intended to be mocked by
 	// tests. If nil, git.ListRefs is used.
-	ListRefs func(context.Context, gitserver.Repo) ([]git.Ref, error)
+	ListRefs func(context.Context, api.RepoName) ([]git.Ref, error)
 }
 
 func (r *RepositoryRevisions) Equal(other *RepositoryRevisions) bool {
@@ -132,10 +132,10 @@ func parseRev(spec string) RevisionSpecifier {
 	return RevisionSpecifier{RevSpec: spec}
 }
 
-// GitserverRepo is a convenience function to return the gitserver.Repo for
+// GitserverRepo is a convenience function to return the api.RepoName for
 // r.Repo. The returned Repo will not have the URL set, only the name.
-func (r *RepositoryRevisions) GitserverRepo() gitserver.Repo {
-	return gitserver.Repo{Name: r.Repo.Name}
+func (r *RepositoryRevisions) GitserverRepo() api.RepoName {
+	return r.Repo.Name
 }
 
 func (r *RepositoryRevisions) String() string {

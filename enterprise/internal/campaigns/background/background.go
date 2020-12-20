@@ -4,14 +4,14 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 )
 
-func StartBackgroundJobs(ctx context.Context, db *sql.DB, campaignsStore *campaigns.Store, repoStore repos.Store, cf *httpcli.Factory) {
+func Routines(ctx context.Context, db *sql.DB, campaignsStore *store.Store, cf *httpcli.Factory) []goroutine.BackgroundRoutine {
 	sourcer := repos.NewSourcer(cf)
 
 	metrics := newMetrics()
@@ -21,6 +21,5 @@ func StartBackgroundJobs(ctx context.Context, db *sql.DB, campaignsStore *campai
 		newWorkerResetter(campaignsStore, metrics),
 		newSpecExpireWorker(ctx, campaignsStore),
 	}
-
-	go goroutine.MonitorBackgroundRoutines(ctx, routines...)
+	return routines
 }

@@ -1,7 +1,8 @@
 /* eslint-disable id-length */
-import { Observable, fromEvent, Subscription, OperatorFunction, pipe, Subscriber } from 'rxjs'
-import { defaultIfEmpty, map, scan } from 'rxjs/operators'
+import { Observable, fromEvent, Subscription, OperatorFunction, pipe, Subscriber, Notification } from 'rxjs'
+import { defaultIfEmpty, map, materialize, scan } from 'rxjs/operators'
 import * as GQL from '../../../shared/src/graphql/schema'
+import { asError, isErrorLike } from '../../../shared/src/util/errors'
 import { SearchPatternType } from '../graphql-operations'
 
 // This is an initial proof of concept implementation of search streaming.
@@ -72,11 +73,6 @@ type RepositoryMatch = { type: 'repo' } & Pick<FileMatch, 'repository' | 'branch
  * Should be replaced when a new ones come in.
  */
 export interface Progress {
-    /**
-     * True if this is the final progress update for this stream
-     */
-    done: boolean
-
     /**
      * The number of repositories matching the repo: filter. Is set once they
      * are resolved.
@@ -151,12 +147,12 @@ export interface Filter {
 
 interface Alert {
     title: string
-    description?: string
-    proposedQueries: ProposedQuery[]
+    description?: string | null
+    proposedQueries: ProposedQuery[] | null
 }
 
 interface ProposedQuery {
-    description?: string
+    description?: string | null
     query: string
 }
 
@@ -276,18 +272,32 @@ function toGQLCommitMatch(commit: CommitMatch): GQL.ICommitSearchResult {
     return gqlCommit as GQL.ICommitSearchResult
 }
 
-export interface AggregateStreamingSearchResults {
+export type StreamingResultsState = 'loading' | 'error' | 'complete'
+
+interface BaseAggregateResults {
+    state: StreamingResultsState
     results: GQL.SearchResult[]
     alert?: Alert
     filters: Filter[]
     progress: Progress
 }
 
+interface SuccessfulAggregateResults extends BaseAggregateResults {
+    state: 'loading' | 'complete'
+}
+
+interface ErrorAggregateResults extends BaseAggregateResults {
+    state: 'error'
+    error: Error
+}
+
+export type AggregateStreamingSearchResults = SuccessfulAggregateResults | ErrorAggregateResults
+
 const emptyAggregateResults: AggregateStreamingSearchResults = {
+    state: 'loading',
     results: [],
     filters: [],
     progress: {
-        done: false,
         durationMs: 0,
         matchCount: 0,
         skipped: [],
@@ -311,40 +321,64 @@ function toGQLSearchResult(match: Match): GQL.SearchResult {
  * Converts a stream of SearchEvents into AggregateStreamingSearchResults
  */
 const switchAggregateSearchResults: OperatorFunction<SearchEvent, AggregateStreamingSearchResults> = pipe(
-    scan((results: AggregateStreamingSearchResults, newEvent: SearchEvent) => {
-        switch (newEvent.type) {
-            case 'matches':
-                return {
-                    ...results,
-                    // Matches are additive
-                    results: results.results.concat(newEvent.data.map(toGQLSearchResult)),
-                }
+    materialize(),
+    scan(
+        (
+            results: AggregateStreamingSearchResults,
+            newEvent: Notification<SearchEvent>
+        ): AggregateStreamingSearchResults => {
+            switch (newEvent.kind) {
+                case 'N': {
+                    switch (newEvent.value?.type) {
+                        case 'matches':
+                            return {
+                                ...results,
+                                // Matches are additive
+                                results: results.results.concat(newEvent.value.data.map(toGQLSearchResult)),
+                            }
 
-            case 'progress':
-                return {
-                    ...results,
-                    // Progress updates replace
-                    progress: newEvent.data,
-                }
+                        case 'progress':
+                            return {
+                                ...results,
+                                // Progress updates replace
+                                progress: newEvent.value.data,
+                            }
 
-            case 'filters':
-                return {
-                    ...results,
-                    // New filter results replace all previous ones
-                    filters: newEvent.data,
-                }
+                        case 'filters':
+                            return {
+                                ...results,
+                                // New filter results replace all previous ones
+                                filters: newEvent.value.data,
+                            }
 
-            case 'alert':
-                return {
-                    ...results,
-                    alert: newEvent.data,
-                }
+                        case 'alert':
+                            return {
+                                ...results,
+                                alert: newEvent.value.data,
+                            }
 
-            default:
-                return results
-        }
-    }, emptyAggregateResults),
-    defaultIfEmpty(emptyAggregateResults)
+                        default:
+                            return results
+                    }
+                }
+                case 'E':
+                    return {
+                        ...results,
+                        error: asError(newEvent.error),
+                        state: 'error',
+                    }
+                case 'C':
+                    return {
+                        ...results,
+                        state: 'complete',
+                    }
+                default:
+                    return results
+            }
+        },
+        emptyAggregateResults
+    ),
+    defaultIfEmpty(emptyAggregateResults as AggregateStreamingSearchResults)
 )
 
 const observeMessages = <T extends SearchEvent>(
@@ -385,7 +419,18 @@ const messageHandlers: {
         }),
     error: (type, eventSource, observer) =>
         fromEvent(eventSource, type).subscribe(error => {
-            observer.error(error)
+            if (isErrorLike(error)) {
+                observer.error(error)
+            } else {
+                // The EventSource API can return a DOM event that is not an Error object
+                // (e.g. doesn't have the message property), so we need to construct our own here.
+                // See https://developer.mozilla.org/en-US/docs/Web/API/EventSource/error_event
+                observer.error(
+                    new Error(
+                        'There was a network error retrieving search results. Check your Internet connection and try again.'
+                    )
+                )
+            }
             eventSource.close()
         }),
     matches: observeMessages,

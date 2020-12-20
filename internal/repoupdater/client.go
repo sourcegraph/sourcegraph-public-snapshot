@@ -15,7 +15,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -127,30 +126,18 @@ func (c *Client) RepoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 	return result, err
 }
 
-// Repo represents a repository on gitserver. It contains the information necessary to identify and
-// create/clone it.
-type Repo struct {
-	Name api.RepoName // the repository's URI
-
-	// URL is the repository's Git remote URL. If the gitserver already has cloned the repository,
-	// this field is optional (it will use the last-used Git remote URL). If the repository is not
-	// cloned on the gitserver, the request will fail.
-	URL string
-}
-
 // MockEnqueueRepoUpdate mocks (*Client).EnqueueRepoUpdate for tests.
-var MockEnqueueRepoUpdate func(ctx context.Context, repo gitserver.Repo) (*protocol.RepoUpdateResponse, error)
+var MockEnqueueRepoUpdate func(ctx context.Context, repo api.RepoName) (*protocol.RepoUpdateResponse, error)
 
 // EnqueueRepoUpdate requests that the named repository be updated in the near
 // future. It does not wait for the update.
-func (c *Client) EnqueueRepoUpdate(ctx context.Context, repo gitserver.Repo) (*protocol.RepoUpdateResponse, error) {
+func (c *Client) EnqueueRepoUpdate(ctx context.Context, repo api.RepoName) (*protocol.RepoUpdateResponse, error) {
 	if MockEnqueueRepoUpdate != nil {
 		return MockEnqueueRepoUpdate(ctx, repo)
 	}
 
 	req := &protocol.RepoUpdateRequest{
-		Repo: repo.Name,
-		URL:  repo.URL,
+		Repo: repo,
 	}
 
 	resp, err := c.httpPost(ctx, "enqueue-repo-update", req)

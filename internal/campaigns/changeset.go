@@ -14,15 +14,49 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	gitlabwebhooks "github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
+// ChangesetState defines the possible states of a Changeset.
+// These are displayed in the UI as well.
+type ChangesetState string
+
+// ChangesetState constants.
+const (
+	ChangesetStateUnpublished ChangesetState = "UNPUBLISHED"
+	ChangesetStateProcessing  ChangesetState = "PROCESSING"
+	ChangesetStateOpen        ChangesetState = "OPEN"
+	ChangesetStateDraft       ChangesetState = "DRAFT"
+	ChangesetStateClosed      ChangesetState = "CLOSED"
+	ChangesetStateMerged      ChangesetState = "MERGED"
+	ChangesetStateDeleted     ChangesetState = "DELETED"
+	ChangesetStateRetrying    ChangesetState = "RETRYING"
+	ChangesetStateFailed      ChangesetState = "FAILED"
+)
+
+// Valid returns true if the given ChangesetState is valid.
+func (s ChangesetState) Valid() bool {
+	switch s {
+	case ChangesetStateUnpublished,
+		ChangesetStateProcessing,
+		ChangesetStateOpen,
+		ChangesetStateDraft,
+		ChangesetStateClosed,
+		ChangesetStateMerged,
+		ChangesetStateDeleted,
+		ChangesetStateRetrying,
+		ChangesetStateFailed:
+		return true
+	default:
+		return false
+	}
+}
+
 // ChangesetPublicationState defines the possible publication states of a Changeset.
 type ChangesetPublicationState string
 
-// ChangesetState constants.
+// ChangesetPublicationState constants.
 const (
 	ChangesetPublicationStateUnpublished ChangesetPublicationState = "UNPUBLISHED"
 	ChangesetPublicationStatePublished   ChangesetPublicationState = "PUBLISHED"
@@ -183,10 +217,9 @@ type Changeset struct {
 	DiffStatDeleted     *int32
 	SyncState           ChangesetSyncState
 
-	// The campaign that "owns" this changeset: it can create/close it on code host.
+	// The campaign that "owns" this changeset: it can create/close
+	// it on code host. If this is 0, it is imported/tracked by a campaign.
 	OwnedByCampaignID int64
-	// Whether it was imported/tracked by a campaign.
-	AddedToCampaign bool
 
 	// This is 0 if the Changeset isn't owned by Sourcegraph.
 	CurrentSpecID  int64
@@ -203,10 +236,6 @@ type Changeset struct {
 	NumResets       int64
 	NumFailures     int64
 
-	// Unsynced is true if the changeset tracks an external changeset but the
-	// data hasn't been synced yet.
-	Unsynced bool
-
 	// Closing is set to true (along with the ReocncilerState) when the
 	// reconciler should close the changeset.
 	Closing bool
@@ -220,14 +249,6 @@ func (c *Changeset) Clone() *Changeset {
 	tt := *c
 	tt.CampaignIDs = c.CampaignIDs[:len(c.CampaignIDs):len(c.CampaignIDs)]
 	return &tt
-}
-
-// PublishedAndSynced returns whether the Changeset has been published on the
-// code host and is fully synced.
-// This can be used as a check before accessing the fields based on synced
-// metadata, such as Title or Body, etc.
-func (c *Changeset) PublishedAndSynced() bool {
-	return !c.Unsynced && c.PublicationState.Published()
 }
 
 // Published returns whether the Changeset's PublicationState is Published.
@@ -452,10 +473,21 @@ func (c *Changeset) Events() (events []*ChangesetEvent) {
 		}
 
 	case *gitlab.MergeRequest:
-		events = make([]*ChangesetEvent, 0, len(m.Notes)+len(m.Pipelines))
+		events = make([]*ChangesetEvent, 0, len(m.Notes)+len(m.ResourceStateEvents)+len(m.Pipelines))
 
 		for _, note := range m.Notes {
 			if event := note.ToEvent(); event != nil {
+				appendEvent(&ChangesetEvent{
+					ChangesetID: c.ID,
+					Key:         event.(Keyer).Key(),
+					Kind:        ChangesetEventKindFor(event),
+					Metadata:    event,
+				})
+			}
+		}
+
+		for _, e := range m.ResourceStateEvents {
+			if event := e.ToEvent(); event != nil {
 				appendEvent(&ChangesetEvent{
 					ChangesetID: c.ID,
 					Key:         event.(Keyer).Key(),
@@ -728,12 +760,14 @@ func ChangesetEventKindFor(e interface{}) ChangesetEventKind {
 		return ChangesetEventKindGitLabMarkWorkInProgress
 	case *gitlab.UnmarkWorkInProgressEvent:
 		return ChangesetEventKindGitLabUnmarkWorkInProgress
-	case *gitlabwebhooks.MergeRequestCloseEvent:
+
+	case *gitlab.MergeRequestClosedEvent:
 		return ChangesetEventKindGitLabClosed
-	case *gitlabwebhooks.MergeRequestMergeEvent:
-		return ChangesetEventKindGitLabMerged
-	case *gitlabwebhooks.MergeRequestReopenEvent:
+	case *gitlab.MergeRequestReopenedEvent:
 		return ChangesetEventKindGitLabReopened
+	case *gitlab.MergeRequestMergedEvent:
+		return ChangesetEventKindGitLabMerged
+
 	default:
 		panic(errors.Errorf("unknown changeset event kind for %T", e))
 	}
@@ -808,11 +842,11 @@ func NewChangesetEventMetadata(k ChangesetEventKind) (interface{}, error) {
 		case ChangesetEventKindGitLabUnmarkWorkInProgress:
 			return new(gitlab.UnmarkWorkInProgressEvent), nil
 		case ChangesetEventKindGitLabClosed:
-			return new(gitlabwebhooks.MergeRequestCloseEvent), nil
+			return new(gitlab.MergeRequestClosedEvent), nil
 		case ChangesetEventKindGitLabMerged:
-			return new(gitlabwebhooks.MergeRequestMergeEvent), nil
+			return new(gitlab.MergeRequestMergedEvent), nil
 		case ChangesetEventKindGitLabReopened:
-			return new(gitlabwebhooks.MergeRequestReopenEvent), nil
+			return new(gitlab.MergeRequestReopenedEvent), nil
 		}
 	}
 	return nil, errors.Errorf("unknown changeset event kind %q", k)

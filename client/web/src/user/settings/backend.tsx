@@ -1,16 +1,25 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { gql, dataOrThrowErrors } from '../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../../shared/src/util/errors'
-import { mutateGraphQL } from '../../backend/graphql'
+import { requestGraphQL } from '../../backend/graphql'
 import { eventLogger } from '../../tracking/eventLogger'
-import { UserEvent, EventSource } from '../../../../shared/src/graphql-operations'
+import { UserEvent, EventSource, Scalars } from '../../../../shared/src/graphql-operations'
+import {
+    LogEventResult,
+    LogEventVariables,
+    LogUserEventResult,
+    LogUserEventVariables,
+    SetUserEmailVerifiedResult,
+    SetUserEmailVerifiedVariables,
+    UpdatePasswordResult,
+    UpdatePasswordVariables,
+} from '../../graphql-operations'
 
-export function updatePassword(args: { oldPassword: string; newPassword: string }): Observable<void> {
-    return mutateGraphQL(
+export function updatePassword(args: UpdatePasswordVariables): Observable<void> {
+    return requestGraphQL<UpdatePasswordResult, UpdatePasswordVariables>(
         gql`
-            mutation updatePassword($oldPassword: String!, $newPassword: String!) {
+            mutation UpdatePassword($oldPassword: String!, $newPassword: String!) {
                 updatePassword(oldPassword: $oldPassword, newPassword: $newPassword) {
                     alwaysNil
                 }
@@ -35,8 +44,8 @@ export function updatePassword(args: { oldPassword: string; newPassword: string 
  * @param email the email address to edit
  * @param verified the new verification state for the user email
  */
-export function setUserEmailVerified(user: GQL.ID, email: string, verified: boolean): Observable<void> {
-    return mutateGraphQL(
+export function setUserEmailVerified(user: Scalars['ID'], email: string, verified: boolean): Observable<void> {
+    return requestGraphQL<SetUserEmailVerifiedResult, SetUserEmailVerifiedVariables>(
         gql`
             mutation SetUserEmailVerified($user: ID!, $email: String!, $verified: Boolean!) {
                 setUserEmailVerified(user: $user, email: $email, verified: $verified) {
@@ -63,9 +72,9 @@ export function setUserEmailVerified(user: GQL.ID, email: string, verified: bool
  * @deprecated Use logEvent
  */
 export function logUserEvent(event: UserEvent): void {
-    mutateGraphQL(
+    requestGraphQL<LogUserEventResult, LogUserEventVariables>(
         gql`
-            mutation logUserEvent($event: UserEvent!, $userCookieID: String!) {
+            mutation LogUserEvent($event: UserEvent!, $userCookieID: String!) {
                 logUserEvent(event: $event, userCookieID: $userCookieID) {
                     alwaysNil
                 }
@@ -92,10 +101,10 @@ export function logUserEvent(event: UserEvent): void {
  *
  * Not used at all for public/sourcegraph.com usage.
  */
-export function logEvent(event: string, eventProperties?: any): void {
-    mutateGraphQL(
+export function logEvent(event: string, eventProperties?: unknown): void {
+    requestGraphQL<LogEventResult, LogEventVariables>(
         gql`
-            mutation logEvent(
+            mutation LogEvent(
                 $event: String!
                 $userCookieID: String!
                 $url: String!
@@ -112,7 +121,7 @@ export function logEvent(event: string, eventProperties?: any): void {
             userCookieID: eventLogger.getAnonymousUserID(),
             url: window.location.href,
             source: EventSource.WEB,
-            argument: eventProperties && JSON.stringify(eventProperties),
+            argument: eventProperties ? JSON.stringify(eventProperties) : null,
         }
     )
         .pipe(map(dataOrThrowErrors))

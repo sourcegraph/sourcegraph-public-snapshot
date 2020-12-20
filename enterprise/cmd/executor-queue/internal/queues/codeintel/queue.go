@@ -5,11 +5,13 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/apiserver"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
@@ -25,21 +27,22 @@ const StalledJobMaximumAge = time.Second * 5
 // "queued" on its next reset.
 const MaximumNumResets = 3
 
-func QueueOptions(db dbutil.DB, config *Config) apiserver.QueueOptions {
+func QueueOptions(db dbutil.DB, config *Config, observationContext *observation.Context) apiserver.QueueOptions {
 	recordTransformer := func(record workerutil.Record) (apiclient.Job, error) {
 		return transformRecord(record.(store.Index), config)
 	}
 
 	return apiserver.QueueOptions{
-		Store:             newWorkerStore(db),
+		Store:             newWorkerStore(db, observationContext),
 		RecordTransformer: recordTransformer,
 	}
 }
 
 // newWorkerStore creates a dbworker store that wraps the lsif_indexes table.
-func newWorkerStore(db dbutil.DB) dbworkerstore.Store {
+func newWorkerStore(db dbutil.DB, observationContext *observation.Context) dbworkerstore.Store {
 	handle := basestore.NewHandleWithDB(db, sql.TxOptions{})
 	options := dbworkerstore.Options{
+		Name:              "precise_code_intel_index_worker_store",
 		TableName:         "lsif_indexes",
 		ViewName:          "lsif_indexes_with_repository_name u",
 		ColumnExpressions: store.IndexColumnsWithNullRank,
@@ -49,5 +52,5 @@ func newWorkerStore(db dbutil.DB) dbworkerstore.Store {
 		MaxNumResets:      MaximumNumResets,
 	}
 
-	return dbworkerstore.New(handle, options)
+	return dbworkerstore.NewWithMetrics(handle, options, observationContext)
 }

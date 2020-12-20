@@ -1,18 +1,12 @@
 import * as React from 'react'
-import { Progress } from '../../../stream'
+import { Progress, StreamingResultsState } from '../../../stream'
 import { StreamingProgressCount } from './StreamingProgressCount'
 import { StreamingProgressSkippedButton } from './StreamingProgressSkippedButton'
 
 export interface StreamingProgressProps {
-    progress?: Progress
-    onSearchAgain?: (additionalFilters: string[]) => void
-}
-
-export const defaultProgress: Progress = {
-    done: false,
-    durationMs: 0,
-    matchCount: 0,
-    skipped: [],
+    state: StreamingResultsState
+    progress: Progress
+    onSearchAgain: (additionalFilters: string[]) => void
 }
 
 export const StreamingProgress: React.FunctionComponent<StreamingProgressProps> = props => (

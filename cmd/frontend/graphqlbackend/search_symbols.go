@@ -70,16 +70,11 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 	ctx, cancelAll := context.WithCancel(ctx)
 	defer cancelAll()
 
-	common = &searchResultsCommon{partial: make(map[api.RepoName]struct{})}
+	common = &searchResultsCommon{partial: make(map[api.RepoID]struct{})}
 
 	indexed, err := newIndexedSearchRequest(ctx, args, symbolRequest)
 	if err != nil {
 		return nil, nil, err
-	}
-
-	common.repos = make([]*types.RepoName, len(repos))
-	for i, repo := range repos {
-		common.repos[i] = repo.Repo
 	}
 
 	var searcherRepos []*search.RepositoryRevisions
@@ -130,21 +125,10 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 	run.Acquire()
 	goroutine.Go(func() {
 		defer run.Release()
-		matches, limitHit, reposLimitHit, searchErr := indexed.Search(ctx)
+		indexedCommon, matches, searchErr := indexed.Search(ctx)
 		mu.Lock()
 		defer mu.Unlock()
-		if ctx.Err() == nil {
-			for _, repo := range indexed.Repos() {
-				common.searched = append(common.searched, repo.Repo)
-				common.indexed = append(common.indexed, repo.Repo)
-			}
-			for repo := range reposLimitHit {
-				common.partial[api.RepoName(repo)] = struct{}{}
-			}
-		}
-		if limitHit {
-			common.limitHit = true
-		}
+		common.update(&indexedCommon)
 		tr.LogFields(otlog.Object("searchErr", searchErr), otlog.Error(err), otlog.Bool("overLimitCanceled", overLimitCanceled))
 		if searchErr != nil && err == nil && !overLimitCanceled {
 			err = searchErr
@@ -170,16 +154,14 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 			}
 			mu.Lock()
 			defer mu.Unlock()
-			limitHit := symbolCount(res) > limit
-			repoErr = handleRepoSearchResult(common, repoRevs, limitHit, false, repoErr)
-			if repoErr != nil {
+			repoCommon, fatalErr := handleRepoSearchResult(repoRevs, len(repoSymbols) > limit, false, repoErr)
+			if fatalErr != nil {
 				if ctx.Err() == nil || errors.Cause(repoErr) != ctx.Err() {
 					// Only record error if it's not directly caused by a context error.
 					run.Error(repoErr)
 				}
-			} else {
-				common.searched = append(common.searched, repoRevs.Repo)
 			}
+			common.update(&repoCommon)
 			if repoSymbols != nil {
 				addMatches(repoSymbols)
 			}

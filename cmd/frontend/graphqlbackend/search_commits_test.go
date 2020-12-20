@@ -65,7 +65,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	}
 
 	wantCommit := toGitCommitResolver(
-		&RepositoryResolver{repo: &types.Repo{ID: 1, Name: "repo"}},
+		&RepositoryResolver{innerRepo: &types.Repo{ID: 1, Name: "repo"}},
 		"c1",
 		&git.Commit{ID: "c1", Author: gitSignatureWithDate},
 	)
@@ -279,4 +279,15 @@ func Benchmark_highlightMatches(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_ = highlightMatches(rx, lines)
 	}
+}
+
+// searchCommitsInRepo is a blocking version of searchCommitsInRepoStream.
+func searchCommitsInRepo(ctx context.Context, op search.CommitParameters) (results []*CommitSearchResultResolver, limitHit, timedOut bool, err error) {
+	for event := range searchCommitsInRepoStream(ctx, op) {
+		results = append(results, event.Results...)
+		limitHit = event.LimitHit
+		timedOut = event.TimedOut
+		err = event.Error
+	}
+	return results, limitHit, timedOut, err
 }

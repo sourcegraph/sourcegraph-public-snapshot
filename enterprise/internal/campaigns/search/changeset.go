@@ -5,7 +5,8 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
 )
 
@@ -14,14 +15,14 @@ import (
 //
 // At present, the only field that will be set in the options is TextSearch.
 // This will change in the future as we start to support field operators.
-func ParseChangesetSearch(search string) (*campaigns.ListChangesetsOpts, error) {
+func ParseChangesetSearch(search string) (*store.ListChangesetsOpts, error) {
 	tree, err := syntax.Parse(search)
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing search string")
 	}
 
-	opts := campaigns.ListChangesetsOpts{
-		TextSearch: make([]campaigns.ListChangesetsTextSearchExpr, 0),
+	opts := store.ListChangesetsOpts{
+		TextSearch: make([]store.ListChangesetsTextSearchExpr, 0),
 	}
 	var errs *multierror.Error
 	for _, expr := range tree {
@@ -37,12 +38,12 @@ func ParseChangesetSearch(search string) (*campaigns.ListChangesetsOpts, error) 
 
 		switch expr.ValueType {
 		case syntax.TokenLiteral:
-			opts.TextSearch = append(opts.TextSearch, campaigns.ListChangesetsTextSearchExpr{
+			opts.TextSearch = append(opts.TextSearch, store.ListChangesetsTextSearchExpr{
 				Term: expr.Value,
 				Not:  expr.Not,
 			})
 		case syntax.TokenQuoted:
-			opts.TextSearch = append(opts.TextSearch, campaigns.ListChangesetsTextSearchExpr{
+			opts.TextSearch = append(opts.TextSearch, store.ListChangesetsTextSearchExpr{
 				Term: strings.Trim(expr.Value, `"`),
 				Not:  expr.Not,
 			})

@@ -2,21 +2,23 @@ package resolvers
 
 import (
 	"context"
-	"database/sql"
 	"os"
 	"reflect"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/state"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/syncer"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -29,7 +31,7 @@ import (
 )
 
 func TestChangesetCountsOverTimeResolver(t *testing.T) {
-	counts := &ee.ChangesetCounts{
+	counts := &state.ChangesetCounts{
 		Time:                 time.Now(),
 		Total:                10,
 		Merged:               9,
@@ -75,9 +77,11 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	cf, save := httptestutil.NewGitHubRecorderFactory(t, *update, "test-changeset-counts-over-time")
 	defer save()
 
-	userID := insertTestUser(t, dbconn.Global, "changeset-counts-over-time", false)
+	userID := ct.CreateTestUser(t, false).ID
 
-	repoStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	repoStore := db.NewRepoStoreWithDB(dbconn.Global)
+	esStore := db.NewExternalServicesStoreWithDB(dbconn.Global)
+
 	githubExtSvc := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub",
@@ -88,7 +92,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		}),
 	}
 
-	err := repoStore.UpsertExternalServices(ctx, githubExtSvc)
+	err := esStore.Upsert(ctx, githubExtSvc)
 	if err != nil {
 		t.Fatal(t)
 	}
@@ -103,24 +107,24 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = repoStore.InsertRepos(ctx, githubRepo)
+	err = repoStore.Create(ctx, githubRepo)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	mockState := ct.MockChangesetSyncState(&protocol.RepoInfo{
-		Name: api.RepoName(githubRepo.Name),
+		Name: githubRepo.Name,
 		VCS:  protocol.VCSInfo{URL: githubRepo.URI},
 	})
 	defer mockState.Unmock()
 
-	store := ee.NewStore(dbconn.Global)
+	cstore := store.New(dbconn.Global)
 
 	spec := &campaigns.CampaignSpec{
 		NamespaceUserID: userID,
 		UserID:          userID,
 	}
-	if err := store.CreateCampaignSpec(ctx, spec); err != nil {
+	if err := cstore.CreateCampaignSpec(ctx, spec); err != nil {
 		t.Fatal(err)
 	}
 
@@ -134,7 +138,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		CampaignSpecID:   spec.ID,
 	}
 
-	err = store.CreateCampaign(ctx, campaign)
+	err = cstore.CreateCampaign(ctx, campaign)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -157,16 +161,16 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	}
 
 	for _, c := range changesets {
-		if err = store.CreateChangeset(ctx, c); err != nil {
+		if err = cstore.CreateChangeset(ctx, c); err != nil {
 			t.Fatal(err)
 		}
 
-		if err := ee.SyncChangeset(ctx, repoStore, store, githubSrc, githubRepo, c); err != nil {
+		if err := syncer.SyncChangeset(ctx, cstore, githubSrc, githubRepo, c); err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	s, err := graphqlbackend.NewSchema(&Resolver{store: store}, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(&Resolver{store: cstore}, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

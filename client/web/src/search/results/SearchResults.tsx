@@ -23,7 +23,7 @@ import { ErrorLike, isErrorLike, asError } from '../../../../shared/src/util/err
 import { PageTitle } from '../../components/PageTitle'
 import { Settings } from '../../schema/settings.schema'
 import { ThemeProps } from '../../../../shared/src/theme'
-import { EventLogger } from '../../tracking/eventLogger'
+import { eventLogger, EventLogger } from '../../tracking/eventLogger'
 import { isSearchResults, submitSearch, toggleSearchFilter, getSearchTypeFromQuery, QueryState } from '../helpers'
 import { queryTelemetryData } from '../queryTelemetry'
 import { SearchResultsFilterBars, DynamicSearchFilter } from './SearchResultsFilterBars'
@@ -74,9 +74,11 @@ interface SearchResultsState {
     resultsOrError?: GQL.ISearchResults
     allExpanded: boolean
 
+    /* The time when loading the search results started. */
+    loadingStarted: number
+
     // Saved Queries
     showSavedQueryModal: boolean
-    didSaveQuery: boolean
 
     /** The contributions, merged from all extensions, or undefined before the initial emission. */
     contributions?: Evaluated<Contributions>
@@ -98,10 +100,10 @@ export const LATEST_VERSION = 'V2'
 
 export class SearchResults extends React.Component<SearchResultsProps, SearchResultsState> {
     public state: SearchResultsState = {
-        didSaveQuery: false,
         showSavedQueryModal: false,
         allExpanded: false,
         showVersionContextWarning: false,
+        loadingStarted: 0,
     }
     /** Emits on componentDidUpdate with the new props */
     private componentUpdates = new Subject<SearchResultsProps>()
@@ -163,6 +165,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                             [
                                 {
                                     resultsOrError: undefined,
+                                    loadingStarted: Date.now(),
                                     didSave: false,
                                     activeType: getSearchTypeFromQuery(query),
                                 },
@@ -268,21 +271,23 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
     }
 
     private showSaveQueryModal = (): void => {
-        this.setState({ showSavedQueryModal: true, didSaveQuery: false })
-    }
-
-    private onDidCreateSavedQuery = (): void => {
-        this.props.telemetryService.log('SavedQueryCreated')
-        this.setState({ showSavedQueryModal: false, didSaveQuery: true })
+        this.setState({ showSavedQueryModal: true })
     }
 
     private onModalClose = (): void => {
         this.props.telemetryService.log('SavedQueriesToggleCreating', { queries: { creating: false } })
-        this.setState({ didSaveQuery: false, showSavedQueryModal: false })
+        this.setState({ showSavedQueryModal: false })
     }
 
     private onDismissWarning = (): void => {
         this.setState({ showVersionContextWarning: false })
+    }
+
+    private onFirstResultLoad = (): void => {
+        const patternType = parseSearchURLPatternType(this.props.location.search)
+        eventLogger.log(`search.latencies.frontend.${patternType || 'unknown'}.first-result`, {
+            durationMs: Date.now() - this.state.loadingStarted,
+        })
     }
 
     public render(): JSX.Element | null {
@@ -322,14 +327,13 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                 <SearchResultsList
                     {...this.props}
                     resultsOrError={this.state.resultsOrError}
+                    onFirstResultLoad={this.onFirstResultLoad}
                     onShowMoreResultsClick={this.showMoreResults}
                     onExpandAllResultsToggle={this.onExpandAllResultsToggle}
                     allExpanded={this.state.allExpanded}
                     showSavedQueryModal={this.state.showSavedQueryModal}
                     onSaveQueryClick={this.showSaveQueryModal}
                     onSavedQueryModalClose={this.onModalClose}
-                    onDidCreateSavedQuery={this.onDidCreateSavedQuery}
-                    didSave={this.state.didSaveQuery}
                     shouldDisplayPerformanceWarning={shouldDisplayPerformanceWarning}
                 />
             </div>

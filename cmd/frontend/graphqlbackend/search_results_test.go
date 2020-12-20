@@ -52,7 +52,7 @@ func TestSearchResults(t *testing.T) {
 			// just remove that assumption in the following line of code.
 			switch m := result.(type) {
 			case *RepositoryResolver:
-				resultDescriptions[i] = fmt.Sprintf("repo:%s", m.repo.Name)
+				resultDescriptions[i] = fmt.Sprintf("repo:%s", m.innerRepo.Name)
 			case *FileMatchResolver:
 				resultDescriptions[i] = fmt.Sprintf("%s:%d", m.JPath, m.JLineMatches[0].JLineNumber)
 			default:
@@ -91,7 +91,7 @@ func TestSearchResults(t *testing.T) {
 		db.Mocks.Repos.Count = mockCount
 
 		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *searchResultsCommon, error) {
-			return nil, &searchResultsCommon{repos: []*types.RepoName{{ID: 1, Name: "repo"}}}, nil
+			return nil, &searchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 
@@ -149,8 +149,8 @@ func TestSearchResults(t *testing.T) {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
 			}
 			repo := &types.RepoName{ID: 1, Name: "repo"}
-			fm := mkFileMatch(repo.ToRepo(), "dir/file", 123)
-			return []*FileMatchResolver{fm}, &searchResultsCommon{repos: []*types.RepoName{repo}}, nil
+			fm := mkFileMatch(repo, "dir/file", 123)
+			return []*FileMatchResolver{fm}, &searchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 
@@ -214,8 +214,8 @@ func TestSearchResults(t *testing.T) {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
 			}
 			repo := &types.RepoName{ID: 1, Name: "repo"}
-			fm := mkFileMatch(repo.ToRepo(), "dir/file", 123)
-			return []*FileMatchResolver{fm}, &searchResultsCommon{repos: []*types.RepoName{repo}}, nil
+			fm := mkFileMatch(repo, "dir/file", 123)
+			return []*FileMatchResolver{fm}, &searchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 
@@ -522,9 +522,9 @@ func TestSearchResolver_getPatternInfo(t *testing.T) {
 }
 
 func TestSearchResolver_DynamicFilters(t *testing.T) {
-	repo := &types.Repo{Name: "testRepo"}
+	repo := &types.RepoName{Name: "testRepo"}
 	repoMatch := &RepositoryResolver{
-		repo: repo,
+		innerRepo: repo.ToRepo(),
 	}
 	fileMatch := func(path string) *FileMatchResolver {
 		return mkFileMatch(repo, path)
@@ -1002,73 +1002,52 @@ func TestDedupSort(t *testing.T) {
 	}
 }
 
-func TestCommitAndDiffSearchLimits(t *testing.T) {
+func TestCheckDiffCommitSearchLimits(t *testing.T) {
 	cases := []struct {
-		name                 string
-		resultTypes          []string
-		numRepoRevs          int
-		fields               map[string][]*searchquerytypes.Value
-		wantResultTypes      []string
-		wantAlertDescription string
+		name        string
+		resultType  string
+		numRepoRevs int
+		fields      map[string][]*searchquerytypes.Value
+		wantError   error
 	}{
 		{
-			name:                 "diff_search_warns_on_repos_greater_than_search_limit",
-			resultTypes:          []string{"diff"},
-			numRepoRevs:          51,
-			wantResultTypes:      []string{}, // diff is removed from the resultTypes
-			wantAlertDescription: `Diff search can currently only handle searching over 50 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`,
+			name:        "diff_search_warns_on_repos_greater_than_search_limit",
+			resultType:  "diff",
+			numRepoRevs: 51,
+			wantError:   RepoLimitErr{ResultType: "diff", Max: 50},
 		},
 		{
-			name:                 "commit_search_warns_on_repos_greater_than_search_limit",
-			resultTypes:          []string{"commit"},
-			numRepoRevs:          51,
-			wantResultTypes:      []string{}, // diff is removed from the resultTypes
-			wantAlertDescription: `Commit search can currently only handle searching over 50 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`,
+			name:        "commit_search_warns_on_repos_greater_than_search_limit",
+			resultType:  "commit",
+			numRepoRevs: 51,
+			wantError:   RepoLimitErr{ResultType: "commit", Max: 50},
 		},
 		{
-			name:                 "commit_search_warns_on_repos_greater_than_search_limit_with_time_filter",
-			fields:               map[string][]*searchquerytypes.Value{"after": nil},
-			resultTypes:          []string{"commit"},
-			numRepoRevs:          20000,
-			wantResultTypes:      []string{},
-			wantAlertDescription: `Commit search can currently only handle searching over 10000 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`,
+			name:        "commit_search_warns_on_repos_greater_than_search_limit_with_time_filter",
+			fields:      map[string][]*searchquerytypes.Value{"after": nil},
+			resultType:  "commit",
+			numRepoRevs: 20000,
+			wantError:   TimeLimitErr{ResultType: "commit", Max: 10000},
 		},
 		{
-			name:                 "no_warning_when_commit_search_within_search_limit",
-			resultTypes:          []string{"commit"},
-			numRepoRevs:          50,
-			wantResultTypes:      []string{"commit"}, // commit is preserved in resultTypes
-			wantAlertDescription: "",
+			name:        "no_warning_when_commit_search_within_search_limit",
+			resultType:  "commit",
+			numRepoRevs: 50,
+			wantError:   nil,
 		},
 		{
-			name:                 "no_search_limit_on_queries_including_after_filter",
-			fields:               map[string][]*searchquerytypes.Value{"after": nil},
-			resultTypes:          []string{"file"},
-			numRepoRevs:          200,
-			wantResultTypes:      []string{"file"},
-			wantAlertDescription: "",
+			name:        "no_search_limit_on_queries_including_after_filter",
+			fields:      map[string][]*searchquerytypes.Value{"after": nil},
+			resultType:  "commit",
+			numRepoRevs: 200,
+			wantError:   nil,
 		},
 		{
-			name:                 "no_search_limit_on_queries_including_before_filter",
-			fields:               map[string][]*searchquerytypes.Value{"before": nil},
-			resultTypes:          []string{"file"},
-			numRepoRevs:          200,
-			wantResultTypes:      []string{"file"},
-			wantAlertDescription: "",
-		},
-		{
-			name:                 "no_search_limit_on_repos_for_file_search",
-			resultTypes:          []string{"file"},
-			numRepoRevs:          200,
-			wantResultTypes:      []string{"file"},
-			wantAlertDescription: "",
-		},
-		{
-			name:                 "multiple_result_type_search_is_affected",
-			resultTypes:          []string{"file", "commit"},
-			numRepoRevs:          200,
-			wantResultTypes:      []string{},
-			wantAlertDescription: `Commit search can currently only handle searching over 50 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`,
+			name:        "no_search_limit_on_queries_including_before_filter",
+			fields:      map[string][]*searchquerytypes.Value{"before": nil},
+			resultType:  "commit",
+			numRepoRevs: 200,
+			wantError:   nil,
 		},
 	}
 
@@ -1080,29 +1059,16 @@ func TestCommitAndDiffSearchLimits(t *testing.T) {
 			}
 		}
 
-		haveResultTypes, alert := alertOnSearchLimit(test.resultTypes, &search.TextParameters{
-			RepoPromise: (&search.Promise{}).Resolve(repoRevs),
-			Query:       &query.OrdinaryQuery{Query: &query.Query{Fields: test.fields}},
-		})
+		haveErr := checkDiffCommitSearchLimits(
+			context.Background(),
+			&search.TextParameters{
+				RepoPromise: (&search.Promise{}).Resolve(repoRevs),
+				Query:       &query.OrdinaryQuery{Query: &query.Query{Fields: test.fields}},
+			},
+			test.resultType)
 
-		haveAlertDescription := ""
-		if alert != nil {
-			haveAlertDescription = *alert.Description()
-		}
-
-		if diff := cmp.Diff(test.wantAlertDescription, haveAlertDescription); diff != "" {
-			t.Fatalf("test %s, mismatched alert (-want, +got):\n%s", test.name, diff)
-		}
-		if !reflect.DeepEqual(haveResultTypes, test.wantResultTypes) {
-			haveResultType := "is empty"
-			wantResultType := "is empty"
-			if len(haveResultTypes) > 0 {
-				haveResultType = haveResultTypes[0]
-			}
-			if len(test.wantResultTypes) > 0 {
-				wantResultType = test.wantResultTypes[0]
-			}
-			t.Fatalf("test %s, have result type: %q, want result type: %q", test.name, haveResultType, wantResultType)
+		if diff := cmp.Diff(test.wantError, haveErr); diff != "" {
+			t.Fatalf("test %s, mismatched error (-want, +got):\n%s", test.name, diff)
 		}
 	}
 }
@@ -1248,125 +1214,123 @@ func TestGetExactFilePatterns(t *testing.T) {
 	}
 }
 
-type mockSearchResultURIGetter struct {
-	repo string
-	file string
-}
-
-func (m mockSearchResultURIGetter) searchResultURIs() (string, string) {
-	return m.repo, m.file
-}
-
 func TestCompareSearchResults(t *testing.T) {
+	makeResult := func(repo, file string) *FileMatchResolver {
+		return &FileMatchResolver{
+			Repo:  &RepositoryResolver{innerRepo: &types.Repo{Name: api.RepoName(repo)}},
+			JPath: file,
+		}
+	}
+
 	tests := []struct {
 		name              string
-		a                 searchResultURIGetter
-		b                 searchResultURIGetter
+		a                 *FileMatchResolver
+		b                 *FileMatchResolver
 		exactFilePatterns map[string]struct{}
 		aIsLess           bool
 	}{
 		{
 			name:              "prefer exact match",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: "afile"},
-			b:                 mockSearchResultURIGetter{repo: "arepo", file: "file"},
+			a:                 makeResult("arepo", "afile"),
+			b:                 makeResult("arepo", "file"),
 			exactFilePatterns: map[string]struct{}{"file": {}},
 			aIsLess:           false,
 		},
 		{
 			name:              "reverse a and b",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: "file"},
-			b:                 mockSearchResultURIGetter{repo: "arepo", file: "afile"},
+			a:                 makeResult("arepo", "file"),
+			b:                 makeResult("arepo", "afile"),
 			exactFilePatterns: map[string]struct{}{"file": {}},
 			aIsLess:           true,
 		},
 		{
 			name:              "alphabetical order if exactFilePatterns is empty",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: "afile"},
-			b:                 mockSearchResultURIGetter{repo: "arepo", file: "file"},
+			a:                 makeResult("arepo", "afile"),
+			b:                 makeResult("arepo", "file"),
 			exactFilePatterns: map[string]struct{}{},
 			aIsLess:           true,
 		},
 		{
 			name:              "alphabetical order if exactFilePatterns is nil",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: "afile"},
-			b:                 mockSearchResultURIGetter{repo: "arepo", file: "bfile"},
+			a:                 makeResult("arepo", "afile"),
+			b:                 makeResult("arepo", "bfile"),
 			exactFilePatterns: nil,
 			aIsLess:           true,
 		},
 		{
 			name:              "same length, different files",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: "bfile"},
-			b:                 mockSearchResultURIGetter{repo: "arepo", file: "afile"},
+			a:                 makeResult("arepo", "bfile"),
+			b:                 makeResult("arepo", "afile"),
 			exactFilePatterns: nil,
 			aIsLess:           false,
 		},
 		{
 			name:              "exact matches with different length",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: "adir1/file"},
-			b:                 mockSearchResultURIGetter{repo: "arepo", file: "dir1/file"},
+			a:                 makeResult("arepo", "adir1/file"),
+			b:                 makeResult("arepo", "dir1/file"),
 			exactFilePatterns: map[string]struct{}{"file": {}},
 			aIsLess:           false,
 		},
 		{
 			name:              "exact matches with same length",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: "dir2/file"},
-			b:                 mockSearchResultURIGetter{repo: "arepo", file: "dir1/file"},
+			a:                 makeResult("arepo", "dir2/file"),
+			b:                 makeResult("arepo", "dir1/file"),
 			exactFilePatterns: map[string]struct{}{"file": {}},
 			aIsLess:           false,
 		},
 		{
 			name:              "no match",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: "afile"},
-			b:                 mockSearchResultURIGetter{repo: "arepo", file: "bfile"},
+			a:                 makeResult("arepo", "afile"),
+			b:                 makeResult("arepo", "bfile"),
 			exactFilePatterns: map[string]struct{}{"file": {}},
 			aIsLess:           true,
 		},
 		{
 			name:              "different repo, 1 exact match",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: "file"},
-			b:                 mockSearchResultURIGetter{repo: "brepo", file: "afile"},
+			a:                 makeResult("arepo", "file"),
+			b:                 makeResult("brepo", "afile"),
 			exactFilePatterns: map[string]struct{}{"file": {}},
 			aIsLess:           true,
 		},
 		{
 			name:              "different repo, no exact patterns",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: "file"},
-			b:                 mockSearchResultURIGetter{repo: "brepo", file: "afile"},
+			a:                 makeResult("arepo", "file"),
+			b:                 makeResult("brepo", "afile"),
 			exactFilePatterns: nil,
 			aIsLess:           true,
 		},
 		{
 			name:              "different repo, 2 exact matches",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: "file"},
-			b:                 mockSearchResultURIGetter{repo: "brepo", file: "file"},
+			a:                 makeResult("arepo", "file"),
+			b:                 makeResult("brepo", "file"),
 			exactFilePatterns: map[string]struct{}{"file": {}},
 			aIsLess:           true,
 		},
 		{
 			name:              "repo matches only",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: ""},
-			b:                 mockSearchResultURIGetter{repo: "brepo", file: ""},
+			a:                 makeResult("arepo", ""),
+			b:                 makeResult("brepo", ""),
 			exactFilePatterns: nil,
 			aIsLess:           true,
 		},
 		{
 			name:              "repo match and file match, same repo",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: "file"},
-			b:                 mockSearchResultURIGetter{repo: "arepo", file: ""},
+			a:                 makeResult("arepo", "file"),
+			b:                 makeResult("arepo", ""),
 			exactFilePatterns: nil,
 			aIsLess:           false,
 		},
 		{
 			name:              "repo match and file match, different repos",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: ""},
-			b:                 mockSearchResultURIGetter{repo: "brepo", file: "file"},
+			a:                 makeResult("arepo", ""),
+			b:                 makeResult("brepo", "file"),
 			exactFilePatterns: nil,
 			aIsLess:           true,
 		},
 		{
 			name:              "prefer repo matches",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: ""},
-			b:                 mockSearchResultURIGetter{repo: "brepo", file: "file"},
+			a:                 makeResult("arepo", ""),
+			b:                 makeResult("brepo", "file"),
 			exactFilePatterns: map[string]struct{}{"file": {}},
 			aIsLess:           true,
 		},

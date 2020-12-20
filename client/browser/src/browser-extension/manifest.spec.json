@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "name": "Sourcegraph",
   "manifest_version": 2,
-  "description": "Adds code intelligence to GitHub: hovers, definitions, references. Supports 20+ languages and other popular code hosts, too.",
+  "description": "Adds code intelligence to GitHub, GitLab, and other hosts: hovers, definitions, references. For 20+ languages.",
   "browser_action": {
     "default_title": "Sourcegraph",
     "default_icon": {

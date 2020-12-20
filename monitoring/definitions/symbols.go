@@ -1,6 +1,9 @@
 package definitions
 
-import "github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+import (
+	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
+	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+)
 
 func Symbols() *monitoring.Container {
 	return &monitoring.Container{
@@ -34,7 +37,7 @@ func Symbols() *monitoring.Container {
 						},
 					},
 					{
-						sharedFrontendInternalAPIErrorResponses("symbols", monitoring.ObservableOwnerCodeIntel),
+						shared.FrontendInternalAPIErrorResponses("symbols", monitoring.ObservableOwnerCodeIntel),
 					},
 				},
 			},
@@ -43,12 +46,12 @@ func Symbols() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedContainerCPUUsage("symbols", monitoring.ObservableOwnerCodeIntel),
-						sharedContainerMemoryUsage("symbols", monitoring.ObservableOwnerCodeIntel),
+						shared.ContainerCPUUsage("symbols", monitoring.ObservableOwnerCodeIntel),
+						shared.ContainerMemoryUsage("symbols", monitoring.ObservableOwnerCodeIntel),
 					},
 					{
-						sharedContainerRestarts("symbols", monitoring.ObservableOwnerCodeIntel),
-						sharedContainerFsInodes("symbols", monitoring.ObservableOwnerCodeIntel),
+						shared.ContainerRestarts("symbols", monitoring.ObservableOwnerCodeIntel),
+						shared.ContainerFsInodes("symbols", monitoring.ObservableOwnerCodeIntel),
 					},
 				},
 			},
@@ -57,12 +60,12 @@ func Symbols() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedProvisioningCPUUsageLongTerm("symbols", monitoring.ObservableOwnerCodeIntel),
-						sharedProvisioningMemoryUsageLongTerm("symbols", monitoring.ObservableOwnerCodeIntel),
+						shared.ProvisioningCPUUsageLongTerm("symbols", monitoring.ObservableOwnerCodeIntel),
+						shared.ProvisioningMemoryUsageLongTerm("symbols", monitoring.ObservableOwnerCodeIntel),
 					},
 					{
-						sharedProvisioningCPUUsageShortTerm("symbols", monitoring.ObservableOwnerCodeIntel),
-						sharedProvisioningMemoryUsageShortTerm("symbols", monitoring.ObservableOwnerCodeIntel),
+						shared.ProvisioningCPUUsageShortTerm("symbols", monitoring.ObservableOwnerCodeIntel),
+						shared.ProvisioningMemoryUsageShortTerm("symbols", monitoring.ObservableOwnerCodeIntel),
 					},
 				},
 			},
@@ -71,8 +74,8 @@ func Symbols() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedGoGoroutines("symbols", monitoring.ObservableOwnerCodeIntel),
-						sharedGoGcDuration("symbols", monitoring.ObservableOwnerCodeIntel),
+						shared.GoGoroutines("symbols", monitoring.ObservableOwnerCodeIntel),
+						shared.GoGcDuration("symbols", monitoring.ObservableOwnerCodeIntel),
 					},
 				},
 			},
@@ -81,7 +84,7 @@ func Symbols() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedKubernetesPodsAvailable("symbols", monitoring.ObservableOwnerCodeIntel),
+						shared.KubernetesPodsAvailable("symbols", monitoring.ObservableOwnerCodeIntel),
 					},
 				},
 			},

@@ -17,7 +17,6 @@ const { add } = storiesOf(
 
 add('popover', () => {
     const progress: Progress = {
-        done: true,
         durationMs: 1500,
         matchCount: 2,
         repositoriesCount: 2,
@@ -56,5 +55,5 @@ add('popover', () => {
         ],
     }
 
-    return <WebStory>{() => <StreamingProgressSkippedPopover progress={progress} />}</WebStory>
+    return <WebStory>{() => <StreamingProgressSkippedPopover progress={progress} onSearchAgain={() => {}} />}</WebStory>
 })

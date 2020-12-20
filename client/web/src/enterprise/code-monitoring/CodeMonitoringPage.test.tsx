@@ -7,6 +7,7 @@ import { AuthenticatedUser } from '../../auth'
 import { ListCodeMonitors, ListUserCodeMonitorsVariables } from '../../graphql-operations'
 import sinon from 'sinon'
 import { mockCodeMonitorNodes } from './testing/util'
+import { EMPTY_SETTINGS_CASCADE } from '../../../../shared/src/settings/settings'
 
 const history = H.createBrowserHistory({})
 history.replace({ pathname: '/code-monitoring' })
@@ -27,6 +28,7 @@ const additionalProps = {
             totalCount: 12,
         }),
     toggleCodeMonitorEnabled: sinon.spy((id: string, enabled: boolean) => of({ id: 'test', enabled: true })),
+    settingsCascade: EMPTY_SETTINGS_CASCADE,
 }
 
 const generateMockFetchMonitors = (count: number) => ({ id, first, after }: ListUserCodeMonitorsVariables) => {

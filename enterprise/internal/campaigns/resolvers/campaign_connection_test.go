@@ -2,22 +2,22 @@ package resolvers
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
+	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 )
 
 func TestCampaignConnectionResolver(t *testing.T) {
@@ -28,13 +28,14 @@ func TestCampaignConnectionResolver(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
-	userID := insertTestUser(t, dbconn.Global, "campaign-connection-resolver", true)
+	userID := ct.CreateTestUser(t, true).ID
 
-	store := ee.NewStore(dbconn.Global)
-	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	cstore := store.New(dbconn.Global)
+	repoStore := db.NewRepoStoreWith(cstore)
+	esStore := db.NewExternalServicesStoreWith(cstore)
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, rstore))
-	if err := rstore.InsertRepos(ctx, repo); err != nil {
+	repo := newGitHubTestRepo("github.com/sourcegraph/campaign-connection-test", newGitHubExternalService(t, esStore))
+	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 
@@ -42,14 +43,14 @@ func TestCampaignConnectionResolver(t *testing.T) {
 		NamespaceUserID: userID,
 		UserID:          userID,
 	}
-	if err := store.CreateCampaignSpec(ctx, spec1); err != nil {
+	if err := cstore.CreateCampaignSpec(ctx, spec1); err != nil {
 		t.Fatal(err)
 	}
 	spec2 := &campaigns.CampaignSpec{
 		NamespaceUserID: userID,
 		UserID:          userID,
 	}
-	if err := store.CreateCampaignSpec(ctx, spec2); err != nil {
+	if err := cstore.CreateCampaignSpec(ctx, spec2); err != nil {
 		t.Fatal(err)
 	}
 
@@ -61,7 +62,7 @@ func TestCampaignConnectionResolver(t *testing.T) {
 		LastAppliedAt:    time.Now(),
 		CampaignSpecID:   spec1.ID,
 	}
-	if err := store.CreateCampaign(ctx, campaign1); err != nil {
+	if err := cstore.CreateCampaign(ctx, campaign1); err != nil {
 		t.Fatal(err)
 	}
 	campaign2 := &campaigns.Campaign{
@@ -72,11 +73,11 @@ func TestCampaignConnectionResolver(t *testing.T) {
 		LastAppliedAt:    time.Now(),
 		CampaignSpecID:   spec2.ID,
 	}
-	if err := store.CreateCampaign(ctx, campaign2); err != nil {
+	if err := cstore.CreateCampaign(ctx, campaign2); err != nil {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(&Resolver{store: store}, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(&Resolver{store: cstore}, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -179,7 +180,7 @@ func TestCampaignsListing(t *testing.T) {
 	ctx := context.Background()
 	dbtesting.SetupGlobalTestDB(t)
 
-	userID := insertTestUser(t, dbconn.Global, "campaigns-listing", true)
+	userID := ct.CreateTestUser(t, true).ID
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
 
 	org, err := db.Orgs.Create(ctx, "org", nil)
@@ -187,10 +188,10 @@ func TestCampaignsListing(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	store := ee.NewStore(dbconn.Global)
+	store := store.New(dbconn.Global)
 
 	r := &Resolver{store: store}
-	s, err := graphqlbackend.NewSchema(r, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(r, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

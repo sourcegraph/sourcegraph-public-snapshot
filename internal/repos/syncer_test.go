@@ -31,7 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func testSyncerSyncWithErrors(t *testing.T, store repos.Store) func(t *testing.T) {
+func testSyncerSyncWithErrors(t *testing.T, store *repos.Store) func(t *testing.T) {
 	return func(t *testing.T) {
 		ctx := context.Background()
 
@@ -40,15 +40,16 @@ func testSyncerSyncWithErrors(t *testing.T, store repos.Store) func(t *testing.T
 			Config: `{}`,
 		}
 
-		if err := store.UpsertExternalServices(ctx, &githubService); err != nil {
+		if err := store.ExternalServiceStore.Upsert(ctx, &githubService); err != nil {
 			t.Fatal(err)
 		}
 
 		for _, tc := range []struct {
-			name    string
-			sourcer repos.Sourcer
-			store   repos.Store
-			err     string
+			name     string
+			sourcer  repos.Sourcer
+			store    *repos.Store
+			err      string
+			teardown func()
 		}{
 			{
 				name:    "sourcer error aborts sync",
@@ -59,19 +60,28 @@ func testSyncerSyncWithErrors(t *testing.T, store repos.Store) func(t *testing.T
 			{
 				name:    "store list error aborts sync",
 				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(&githubService, nil)),
-				store: &storeWithErrors{
-					Store:        store,
-					ListReposErr: errors.New("boom"),
+				store: func() *repos.Store {
+					idb.Mocks.Repos.List = func(v0 context.Context, v1 idb.ReposListOptions) ([]*types.Repo, error) {
+						return nil, errors.New("boom")
+					}
+					return store
+				}(),
+				teardown: func() {
+					idb.Mocks.Repos = idb.MockRepos{}
 				},
 				err: "syncer.sync.store.list-repos: boom",
 			},
 			{
 				name:    "store upsert error aborts sync",
 				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(&githubService, nil)),
-				store: &storeWithErrors{
-					Store:          store,
-					UpsertReposErr: errors.New("booya"),
-				},
+				store: func() *repos.Store {
+					cp := *store
+					cp.Mocks.UpsertRepos = func(ctx context.Context, repos ...*types.Repo) (err error) {
+						return errors.New("booya")
+					}
+
+					return &cp
+				}(),
 				err: "syncer.sync.store.upsert-repos: booya",
 			},
 		} {
@@ -81,6 +91,9 @@ func testSyncerSyncWithErrors(t *testing.T, store repos.Store) func(t *testing.T
 				now := clock.Now
 				ctx := context.Background()
 
+				if tc.teardown != nil {
+					defer tc.teardown()
+				}
 				syncer := &repos.Syncer{
 					Sourcer: tc.sourcer,
 					Now:     now,
@@ -103,28 +116,20 @@ func testSyncerSyncWithErrors(t *testing.T, store repos.Store) func(t *testing.T
 	}
 }
 
-type storeWithErrors struct {
-	repos.Store
+type repoListerWithErrors struct {
+	*idb.RepoStore
 
-	ListReposErr   error
-	UpsertReposErr error
+	ListReposErr error
 }
 
-func (s *storeWithErrors) ListRepos(ctx context.Context, args repos.StoreListReposArgs) ([]*types.Repo, error) {
+func (s *repoListerWithErrors) List(ctx context.Context, args idb.ReposListOptions) ([]*types.Repo, error) {
 	if s.ListReposErr != nil {
 		return nil, s.ListReposErr
 	}
-	return s.Store.ListRepos(ctx, args)
+	return s.RepoStore.List(ctx, args)
 }
 
-func (s *storeWithErrors) UpsertRepos(ctx context.Context, repos ...*types.Repo) error {
-	if s.UpsertReposErr != nil {
-		return s.UpsertReposErr
-	}
-	return s.Store.UpsertRepos(ctx, repos...)
-}
-
-func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
+func testSyncerSync(t *testing.T, s *repos.Store) func(*testing.T) {
 	servicesPerKind := createExternalServices(t, s)
 
 	githubService := servicesPerKind[extsvc.KindGitHub]
@@ -235,14 +240,14 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 	}
 
 	// create a few external services
-	if err := s.UpsertExternalServices(context.Background(), &svcdup); err != nil {
+	if err := s.ExternalServiceStore.Upsert(context.Background(), &svcdup); err != nil {
 		t.Fatalf("failed to insert external services: %v", err)
 	}
 
 	type testCase struct {
 		name    string
 		sourcer repos.Sourcer
-		store   repos.Store
+		store   *repos.Store
 		stored  types.Repos
 		svcs    []*types.ExternalService
 		ctx     context.Context
@@ -300,7 +305,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 				// If the source is unauthorized we should treat this as if zero repos were returned as it indicates
 				// that the source no longer has access to its repos
 				name:    string(tc.repo.Name) + "/unauthorized",
-				sourcer: repos.NewFakeSourcer(&errUnauthorized{}),
+				sourcer: repos.NewFakeSourcer(&repos.ErrUnauthorized{}),
 				store:   s,
 				stored: types.Repos{tc.repo.With(
 					types.Opt.RepoSources(tc.svc.URN()),
@@ -310,7 +315,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 					types.Opt.RepoSources(tc.svc.URN(), svcdup.URN()),
 				)}},
 				svcs: []*types.ExternalService{tc.svc},
-				err:  "<nil>",
+				err:  "bad credentials",
 			},
 			testCase{
 				// It's expected that there could be multiple stored sources but only one will ever be returned
@@ -593,7 +598,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 			tc := tc
 			ctx := context.Background()
 
-			t.Run(tc.name, transact(ctx, tc.store, func(t testing.TB, st repos.Store) {
+			t.Run(tc.name, transact(ctx, tc.store, func(t testing.TB, st *repos.Store) {
 				defer func() {
 					if err := recover(); err != nil {
 						t.Fatalf("%q panicked: %v", tc.name, err)
@@ -613,7 +618,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 
 				if st != nil && len(tc.stored) > 0 {
 					cloned := tc.stored.Clone()
-					if err := st.InsertRepos(ctx, cloned...); err != nil {
+					if err := st.RepoStore.Create(ctx, cloned...); err != nil {
 						t.Fatalf("failed to prepare store: %v", err)
 					}
 				}
@@ -638,7 +643,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 				if st != nil {
 					var want, have types.Repos
 					want.Concat(tc.diff.Added, tc.diff.Modified, tc.diff.Unmodified)
-					have, _ = st.ListRepos(ctx, repos.StoreListReposArgs{})
+					have, _ = st.RepoStore.List(ctx, idb.ReposListOptions{})
 
 					want = want.With(types.Opt.RepoID(0))
 					have = have.With(types.Opt.RepoID(0))
@@ -652,7 +657,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 	}
 }
 
-func testSyncRepo(t *testing.T, s repos.Store) func(*testing.T) {
+func testSyncRepo(t *testing.T, s *repos.Store) func(*testing.T) {
 	clock := dbtesting.NewFakeClock(time.Now(), time.Second)
 
 	servicesPerKind := createExternalServices(t, s)
@@ -742,7 +747,7 @@ func testSyncRepo(t *testing.T, s repos.Store) func(*testing.T) {
 			tc := tc
 			ctx := context.Background()
 
-			t.Run(tc.name, transact(ctx, s, func(t testing.TB, st repos.Store) {
+			t.Run(tc.name, transact(ctx, s, func(t testing.TB, st *repos.Store) {
 				defer func() {
 					if err := recover(); err != nil {
 						t.Fatalf("%q panicked: %v", tc.name, err)
@@ -750,7 +755,7 @@ func testSyncRepo(t *testing.T, s repos.Store) func(*testing.T) {
 				}()
 
 				if len(tc.stored) > 0 {
-					if err := st.InsertRepos(ctx, tc.stored.Clone()...); err != nil {
+					if err := st.RepoStore.Create(ctx, tc.stored.Clone()...); err != nil {
 						t.Fatalf("failed to prepare store: %v", err)
 					}
 				}
@@ -764,7 +769,7 @@ func testSyncRepo(t *testing.T, s repos.Store) func(*testing.T) {
 					t.Fatal(err)
 				}
 
-				have, err := st.ListRepos(ctx, repos.StoreListReposArgs{})
+				have, err := st.RepoStore.List(ctx, idb.ReposListOptions{})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -1042,8 +1047,8 @@ func TestDiff(t *testing.T) {
 	}
 }
 
-func testSyncRun(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testing.T) {
-	return func(t *testing.T, store repos.Store) func(t *testing.T) {
+func testSyncRun(db *sql.DB) func(t *testing.T, store *repos.Store) func(t *testing.T) {
+	return func(t *testing.T, store *repos.Store) func(t *testing.T) {
 		return func(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
@@ -1053,7 +1058,7 @@ func testSyncRun(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testi
 				Kind:   extsvc.KindGitHub,
 			}
 
-			if err := store.UpsertExternalServices(ctx, svc); err != nil {
+			if err := store.ExternalServiceStore.Upsert(ctx, svc); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1082,7 +1087,7 @@ func testSyncRun(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testi
 			}
 
 			// Initial repos in store
-			if err := store.InsertRepos(ctx, stored...); err != nil {
+			if err := store.RepoStore.Create(ctx, stored...); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1135,8 +1140,8 @@ func testSyncRun(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testi
 	}
 }
 
-func testSyncer(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testing.T) {
-	return func(t *testing.T, store repos.Store) func(t *testing.T) {
+func testSyncer(db *sql.DB) func(t *testing.T, store *repos.Store) func(t *testing.T) {
+	return func(t *testing.T, store *repos.Store) func(t *testing.T) {
 		return func(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
@@ -1154,7 +1159,7 @@ func testSyncer(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testin
 			}
 
 			// setup services
-			if err := store.UpsertExternalServices(ctx, services...); err != nil {
+			if err := store.ExternalServiceStore.Upsert(ctx, services...); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1300,8 +1305,8 @@ func testSyncer(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testin
 	}
 }
 
-func testOrphanedRepo(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testing.T) {
-	return func(t *testing.T, store repos.Store) func(t *testing.T) {
+func testOrphanedRepo(db *sql.DB) func(t *testing.T, store *repos.Store) func(t *testing.T) {
+	return func(t *testing.T, store *repos.Store) func(t *testing.T) {
 		return func(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
@@ -1324,7 +1329,7 @@ func testOrphanedRepo(db *sql.DB) func(t *testing.T, store repos.Store) func(t *
 			}
 
 			// setup services
-			if err := store.UpsertExternalServices(ctx, svc1, svc2); err != nil {
+			if err := store.ExternalServiceStore.Upsert(ctx, svc1, svc2); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1383,7 +1388,7 @@ func testOrphanedRepo(db *sql.DB) func(t *testing.T, store repos.Store) func(t *
 			}
 
 			// Confirm that the repository hasn't been deleted
-			rs, err := store.ListRepos(ctx, repos.StoreListReposArgs{})
+			rs, err := store.RepoStore.List(ctx, idb.ReposListOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1418,23 +1423,8 @@ func testOrphanedRepo(db *sql.DB) func(t *testing.T, store repos.Store) func(t *
 	}
 }
 
-// storeWrapper executes arbitrary code before store methods.
-type storeWrapper struct {
-	repos.Store
-
-	onUpsertRepos func()
-}
-
-func (s *storeWrapper) UpsertRepos(ctx context.Context, rs ...*types.Repo) error {
-	if s.onUpsertRepos != nil {
-		s.onUpsertRepos()
-	}
-
-	return s.Store.UpsertRepos(ctx, rs...)
-}
-
-func testConflictingSyncers(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testing.T) {
-	return func(t *testing.T, store repos.Store) func(t *testing.T) {
+func testConflictingSyncers(db *sql.DB) func(t *testing.T, store *repos.Store) func(t *testing.T) {
+	return func(t *testing.T, store *repos.Store) func(t *testing.T) {
 		return func(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
@@ -1457,7 +1447,7 @@ func testConflictingSyncers(db *sql.DB) func(t *testing.T, store repos.Store) fu
 			}
 
 			// setup services
-			if err := store.UpsertExternalServices(ctx, svc1, svc2); err != nil {
+			if err := store.ExternalServiceStore.Upsert(ctx, svc1, svc2); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1500,7 +1490,7 @@ func testConflictingSyncers(db *sql.DB) func(t *testing.T, store repos.Store) fu
 			// Confirm that there are two relationships
 			assertSourceCount(ctx, t, db, 2)
 
-			fromDB, err := store.ListRepos(ctx, repos.StoreListReposArgs{})
+			fromDB, err := store.RepoStore.List(ctx, idb.ReposListOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1513,13 +1503,12 @@ func testConflictingSyncers(db *sql.DB) func(t *testing.T, store repos.Store) fu
 			}
 
 			// Create two transactions
-			txStore := store.(repos.Transactor)
-			tx1, err := txStore.Transact(ctx)
+			tx1, err := store.Transact(ctx)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			tx2, err := txStore.Transact(ctx)
+			tx2, err := store.Transact(ctx)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1554,9 +1543,12 @@ func testConflictingSyncers(db *sql.DB) func(t *testing.T, store repos.Store) fu
 					},
 					Now: time.Now,
 				}
-				err := syncer2.SyncExternalService(ctx, &storeWrapper{Store: tx2, onUpsertRepos: func() {
+				storeCp := *store
+				storeCp.Mocks.UpsertRepos = func(ctx context.Context, repos ...*types.Repo) (err error) {
 					close(upsertCalledCh)
-				}}, svc2.ID, 10*time.Second)
+					return store.UpsertRepos(ctx, repos...)
+				}
+				err := syncer2.SyncExternalService(ctx, &storeCp, svc2.ID, 10*time.Second)
 				errChan <- err
 			}()
 
@@ -1569,7 +1561,7 @@ func testConflictingSyncers(db *sql.DB) func(t *testing.T, store repos.Store) fu
 			}
 			tx2.Done(nil)
 
-			fromDB, err = store.ListRepos(ctx, repos.StoreListReposArgs{})
+			fromDB, err = store.RepoStore.List(ctx, idb.ReposListOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1585,8 +1577,8 @@ func testConflictingSyncers(db *sql.DB) func(t *testing.T, store repos.Store) fu
 }
 
 // Test that sync repo does not clear out any other repo relationships
-func testSyncRepoMaintainsOtherSources(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testing.T) {
-	return func(t *testing.T, store repos.Store) func(t *testing.T) {
+func testSyncRepoMaintainsOtherSources(db *sql.DB) func(t *testing.T, store *repos.Store) func(t *testing.T) {
+	return func(t *testing.T, store *repos.Store) func(t *testing.T) {
 		return func(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
@@ -1609,7 +1601,7 @@ func testSyncRepoMaintainsOtherSources(db *sql.DB) func(t *testing.T, store repo
 			}
 
 			// setup services
-			if err := store.UpsertExternalServices(ctx, svc1, svc2); err != nil {
+			if err := store.ExternalServiceStore.Upsert(ctx, svc1, svc2); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1670,8 +1662,8 @@ func testSyncRepoMaintainsOtherSources(db *sql.DB) func(t *testing.T, store repo
 	}
 }
 
-func testUserAddedRepos(db *sql.DB, userID int32) func(t *testing.T, store repos.Store) func(t *testing.T) {
-	return func(t *testing.T, store repos.Store) func(t *testing.T) {
+func testUserAddedRepos(db *sql.DB, userID int32) func(t *testing.T, store *repos.Store) func(t *testing.T) {
+	return func(t *testing.T, store *repos.Store) func(t *testing.T) {
 		return func(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
@@ -1696,7 +1688,7 @@ func testUserAddedRepos(db *sql.DB, userID int32) func(t *testing.T, store repos
 			}
 
 			// setup services
-			if err := store.UpsertExternalServices(ctx, userService, adminService); err != nil {
+			if err := store.ExternalServiceStore.Upsert(ctx, userService, adminService); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1851,8 +1843,8 @@ func testUserAddedRepos(db *sql.DB, userID int32) func(t *testing.T, store repos
 	}
 }
 
-func testNameOnConflictDiscardOld(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testing.T) {
-	return func(t *testing.T, store repos.Store) func(t *testing.T) {
+func testNameOnConflictDiscardOld(db *sql.DB) func(t *testing.T, store *repos.Store) func(t *testing.T) {
+	return func(t *testing.T, store *repos.Store) func(t *testing.T) {
 		return func(t *testing.T) {
 			// Test the case where more than one external service returns the same name for different repos. The names
 			// are the same, but the external id are different.
@@ -1878,7 +1870,7 @@ func testNameOnConflictDiscardOld(db *sql.DB) func(t *testing.T, store repos.Sto
 			}
 
 			// setup services
-			if err := store.UpsertExternalServices(ctx, svc1, svc2); err != nil {
+			if err := store.ExternalServiceStore.Upsert(ctx, svc1, svc2); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1929,7 +1921,7 @@ func testNameOnConflictDiscardOld(db *sql.DB) func(t *testing.T, store repos.Sto
 			}
 
 			// We expect repo2 to be synced since it sorts before repo1 because the ID is alphabetically first
-			fromDB, err := store.ListRepos(ctx, repos.StoreListReposArgs{
+			fromDB, err := store.RepoStore.List(ctx, idb.ReposListOptions{
 				Names: []string{"github.com/org/foo"},
 			})
 			if err != nil {
@@ -1949,8 +1941,8 @@ func testNameOnConflictDiscardOld(db *sql.DB) func(t *testing.T, store repos.Sto
 	}
 }
 
-func testNameOnConflictDiscardNew(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testing.T) {
-	return func(t *testing.T, store repos.Store) func(t *testing.T) {
+func testNameOnConflictDiscardNew(db *sql.DB) func(t *testing.T, store *repos.Store) func(t *testing.T) {
+	return func(t *testing.T, store *repos.Store) func(t *testing.T) {
 		return func(t *testing.T) {
 			// Test the case where more than one external service returns the same name for different repos. The names
 			// are the same, but the external id are different.
@@ -1976,7 +1968,7 @@ func testNameOnConflictDiscardNew(db *sql.DB) func(t *testing.T, store repos.Sto
 			}
 
 			// setup services
-			if err := store.UpsertExternalServices(ctx, svc1, svc2); err != nil {
+			if err := store.ExternalServiceStore.Upsert(ctx, svc1, svc2); err != nil {
 				t.Fatal(err)
 			}
 
@@ -2027,7 +2019,7 @@ func testNameOnConflictDiscardNew(db *sql.DB) func(t *testing.T, store repos.Sto
 			}
 
 			// We expect repo1 to be synced since it sorts before repo2 because the ID is alphabetically first
-			fromDB, err := store.ListRepos(ctx, repos.StoreListReposArgs{
+			fromDB, err := store.RepoStore.List(ctx, idb.ReposListOptions{
 				Names: []string{"github.com/org/foo"},
 			})
 			if err != nil {
@@ -2047,8 +2039,8 @@ func testNameOnConflictDiscardNew(db *sql.DB) func(t *testing.T, store repos.Sto
 	}
 }
 
-func testNameOnConflictOnRename(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testing.T) {
-	return func(t *testing.T, store repos.Store) func(t *testing.T) {
+func testNameOnConflictOnRename(db *sql.DB) func(t *testing.T, store *repos.Store) func(t *testing.T) {
+	return func(t *testing.T, store *repos.Store) func(t *testing.T) {
 		return func(t *testing.T) {
 			// Test the case where more than one external service returns the same name for different repos. The names
 			// are the same, but the external id are different.
@@ -2074,7 +2066,7 @@ func testNameOnConflictOnRename(db *sql.DB) func(t *testing.T, store repos.Store
 			}
 
 			// setup services
-			if err := store.UpsertExternalServices(ctx, svc1, svc2); err != nil {
+			if err := store.ExternalServiceStore.Upsert(ctx, svc1, svc2); err != nil {
 				t.Fatal(err)
 			}
 
@@ -2142,7 +2134,7 @@ func testNameOnConflictOnRename(db *sql.DB) func(t *testing.T, store repos.Store
 			}
 
 			// We expect repo1 to be synced since it sorts before repo2 because the ID is alphabetically first
-			fromDB, err := store.ListRepos(ctx, repos.StoreListReposArgs{})
+			fromDB, err := store.RepoStore.List(ctx, idb.ReposListOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -2159,8 +2151,8 @@ func testNameOnConflictOnRename(db *sql.DB) func(t *testing.T, store repos.Store
 		}
 	}
 }
-func testDeleteExternalService(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testing.T) {
-	return func(t *testing.T, store repos.Store) func(t *testing.T) {
+func testDeleteExternalService(db *sql.DB) func(t *testing.T, store *repos.Store) func(t *testing.T) {
+	return func(t *testing.T, store *repos.Store) func(t *testing.T) {
 		return func(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
@@ -2183,7 +2175,7 @@ func testDeleteExternalService(db *sql.DB) func(t *testing.T, store repos.Store)
 			}
 
 			// setup services
-			if err := store.UpsertExternalServices(ctx, svc1, svc2); err != nil {
+			if err := store.ExternalServiceStore.Upsert(ctx, svc1, svc2); err != nil {
 				t.Fatal(err)
 			}
 
@@ -2225,7 +2217,7 @@ func testDeleteExternalService(db *sql.DB) func(t *testing.T, store repos.Store)
 
 			// Delete the first service
 			svc1.DeletedAt = now
-			if err := store.UpsertExternalServices(ctx, svc1); err != nil {
+			if err := store.ExternalServiceStore.Upsert(ctx, svc1); err != nil {
 				t.Fatal(err)
 			}
 
@@ -2237,7 +2229,7 @@ func testDeleteExternalService(db *sql.DB) func(t *testing.T, store repos.Store)
 
 			// Delete the second service
 			svc2.DeletedAt = now
-			if err := store.UpsertExternalServices(ctx, svc2); err != nil {
+			if err := store.ExternalServiceStore.Upsert(ctx, svc2); err != nil {
 				t.Fatal(err)
 			}
 
@@ -2270,14 +2262,4 @@ func assertDeletedRepoCount(ctx context.Context, t *testing.T, db *sql.DB, want 
 	if rowCount != want {
 		t.Fatalf("Expected %d rows, got %d", want, rowCount)
 	}
-}
-
-type errUnauthorized struct{}
-
-func (u *errUnauthorized) Error() string {
-	return "not authorised"
-}
-
-func (u *errUnauthorized) Unauthorized() bool {
-	return true
 }

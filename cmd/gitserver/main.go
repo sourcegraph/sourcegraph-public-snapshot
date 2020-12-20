@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
+	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
@@ -41,6 +42,11 @@ var (
 func main() {
 	env.Lock()
 	env.HandleHelpFlag()
+
+	if err := profiler.Init(); err != nil {
+		log.Fatalf("failed to start profiler: %v", err)
+	}
+
 	logging.Init()
 	tracer.Init()
 	trace.Init(true)
@@ -110,10 +116,8 @@ func main() {
 	}
 	addr := net.JoinHostPort(host, port)
 	srv := &http.Server{
-		ReadTimeout:  75 * time.Second,
-		WriteTimeout: 10 * time.Minute, // set a high write timeout as we may serve large archives
-		Addr:         addr,
-		Handler:      handler,
+		Addr:    addr,
+		Handler: handler,
 	}
 	log15.Info("git-server: listening", "addr", srv.Addr)
 

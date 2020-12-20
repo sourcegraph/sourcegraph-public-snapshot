@@ -14,7 +14,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -54,6 +53,7 @@ func NewSyncWorker(ctx context.Context, db dbutil.DB, handler dbworker.Handler, 
 	}...)
 
 	store := store.New(dbHandle, store.Options{
+		Name:              "repo_sync_worker_store",
 		TableName:         "external_service_sync_jobs",
 		ViewName:          "external_service_sync_jobs_with_next_sync_at",
 		Scan:              scanSingleJob,
@@ -68,13 +68,11 @@ func NewSyncWorker(ctx context.Context, db dbutil.DB, handler dbworker.Handler, 
 		Name:        "repo_sync_worker",
 		NumHandlers: opts.NumHandlers,
 		Interval:    opts.WorkerInterval,
-		Metrics: workerutil.WorkerMetrics{
-			HandleOperation: newObservationOperation(opts.PrometheusRegisterer),
-		},
+		Metrics:     newWorkerMetrics(opts.PrometheusRegisterer),
 	})
 
 	resetter := dbworker.NewResetter(store, dbworker.ResetterOptions{
-		Name:     "sync-worker",
+		Name:     "repo_sync_worker_resetter",
 		Interval: 5 * time.Minute,
 		Metrics:  newResetterMetrics(opts.PrometheusRegisterer),
 	})
@@ -86,7 +84,7 @@ func NewSyncWorker(ctx context.Context, db dbutil.DB, handler dbworker.Handler, 
 	return worker, resetter
 }
 
-func newObservationOperation(r prometheus.Registerer) *observation.Operation {
+func newWorkerMetrics(r prometheus.Registerer) workerutil.WorkerMetrics {
 	var observationContext *observation.Context
 
 	if r == nil {
@@ -99,18 +97,7 @@ func newObservationOperation(r prometheus.Registerer) *observation.Operation {
 		}
 	}
 
-	m := metrics.NewOperationMetrics(
-		observationContext.Registerer,
-		"repo_updater_external_service_syncer",
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of results returned"),
-	)
-
-	return observationContext.Operation(observation.Op{
-		Name:         "Syncer.Process",
-		MetricLabels: []string{"process"},
-		Metrics:      m,
-	})
+	return workerutil.NewMetrics(observationContext, "repo_updater_external_service_syncer", nil)
 }
 
 func newResetterMetrics(r prometheus.Registerer) dbworker.ResetterMetrics {

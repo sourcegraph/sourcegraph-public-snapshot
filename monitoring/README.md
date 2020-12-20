@@ -15,6 +15,9 @@ From this directory:
 go generate ./...
 ```
 
+Logging output supports the [Sourcegraph log level flags](https://docs.sourcegraph.com/admin/observability#logs).
+Other configuration options can be customized via flags declared in [`main.go`](./main.go).
+
 ## Features
 
 ### Documentation generation

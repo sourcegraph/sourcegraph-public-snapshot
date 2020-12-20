@@ -9,7 +9,7 @@ import (
 
 // Handler is a version of workerutil.Handler that refines the store type.
 type Handler interface {
-	// Handle processes a single record. The store provided by this method a store backed
+	// Handle processes a single record. The store provided by this method is a store backed
 	// by the transaction that is locking the given record. If use of a database is necessary
 	// within this handler, other stores should take the underlying handler to keep work
 	// within the same transaction.

@@ -187,16 +187,21 @@ func WithBulkInsertion(ctx context.Context, bulkInsertion bool) context.Context 
 
 type hook struct{}
 
-// postgresBulkInsertRowPattern matches `($1, $2, $3), ($4, $5, $6), ...` which
+// postgresBulkInsertRowsPattern matches `($1, $2, $3), ($4, $5, $6), ...` which
 // we use to cut out the row payloads from bulk insertion tracing data. We don't
 // need all the parameter data for such requests, which are too big to fit into
-// Jaeger spans.
-var postgresBulkInsertRowPattern = lazyregexp.New(`(\([$\d,\s]+\)[,\s]*)+`)
+// Jaeger spans. Note that we don't just capture `($1.*`, as we want queries with
+// a trailing ON CONFLICT clause not to be semantically mangled in the log output.
+var postgresBulkInsertRowsPattern = lazyregexp.New(`(\([$\d,\s]+\)[,\s]*)+`)
+
+// postgresBulkInsertRowsReplacement replaces the all-placeholder rows matched
+// by the pattern defined above.
+var postgresBulkInsertRowsReplacement = []byte("(...) ")
 
 // Before implements sqlhooks.Hooks
 func (h *hook) Before(ctx context.Context, query string, args ...interface{}) (context.Context, error) {
 	if BulkInsertion(ctx) {
-		query = string(postgresBulkInsertRowPattern.ReplaceAll([]byte(query), []byte("...")))
+		query = string(postgresBulkInsertRowsPattern.ReplaceAll([]byte(query), postgresBulkInsertRowsReplacement))
 	}
 
 	tr, ctx := trace.New(ctx, "sql", query,

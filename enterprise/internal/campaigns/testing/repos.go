@@ -9,14 +9,15 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	idb "github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func TestRepo(t *testing.T, store repos.Store, serviceKind string) *types.Repo {
+func TestRepo(t *testing.T, store *idb.ExternalServiceStore, serviceKind string) *types.Repo {
 	t.Helper()
 
 	clock := dbtesting.NewFakeClock(time.Now(), 0)
@@ -30,7 +31,7 @@ func TestRepo(t *testing.T, store repos.Store, serviceKind string) *types.Repo {
 		UpdatedAt:   now,
 	}
 
-	if err := store.UpsertExternalServices(context.Background(), &svc); err != nil {
+	if err := store.Upsert(context.Background(), &svc); err != nil {
 		t.Fatalf("failed to insert external services: %v", err)
 	}
 
@@ -55,23 +56,32 @@ func TestRepo(t *testing.T, store repos.Store, serviceKind string) *types.Repo {
 func CreateTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) ([]*types.Repo, *types.ExternalService) {
 	t.Helper()
 
-	rstore := repos.NewDBStore(db, sql.TxOptions{})
+	repoStore := idb.NewRepoStoreWithDB(db)
+	esStore := idb.NewExternalServicesStoreWithDB(db)
 
 	ext := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub",
 		Config: MarshalJSON(t, &schema.GitHubConnection{
-			Url:   "https://github.com",
-			Token: "SECRETTOKEN",
+			Url:             "https://github.com",
+			Token:           "SECRETTOKEN",
+			RepositoryQuery: []string{"none"},
+			// This field is needed to enforce permissions
+			Authorization: &schema.GitHubAuthorization{},
 		}),
 	}
-	if err := rstore.UpsertExternalServices(ctx, ext); err != nil {
+
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+
+	if err := esStore.Create(ctx, confGet, ext); err != nil {
 		t.Fatal(err)
 	}
 
 	var rs []*types.Repo
 	for i := 0; i < count; i++ {
-		r := TestRepo(t, rstore, extsvc.KindGitHub)
+		r := TestRepo(t, esStore, extsvc.KindGitHub)
 		r.Sources = map[string]*types.SourceInfo{ext.URN(): {
 			ID:       ext.URN(),
 			CloneURL: "https://secrettoken@github.com/" + string(r.Name),
@@ -80,7 +90,7 @@ func CreateTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) (
 		rs = append(rs, r)
 	}
 
-	err := rstore.InsertRepos(ctx, rs...)
+	err := repoStore.Create(ctx, rs...)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -91,7 +101,8 @@ func CreateTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) (
 func CreateGitlabTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) ([]*types.Repo, *types.ExternalService) {
 	t.Helper()
 
-	rstore := repos.NewDBStore(db, sql.TxOptions{})
+	repoStore := idb.NewRepoStoreWithDB(db)
+	esStore := idb.NewExternalServicesStoreWithDB(db)
 
 	ext := &types.ExternalService{
 		Kind:        extsvc.KindGitLab,
@@ -101,13 +112,13 @@ func CreateGitlabTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count 
 			Token: "SECRETTOKEN",
 		}),
 	}
-	if err := rstore.UpsertExternalServices(ctx, ext); err != nil {
+	if err := esStore.Upsert(ctx, ext); err != nil {
 		t.Fatal(err)
 	}
 
 	var rs []*types.Repo
 	for i := 0; i < count; i++ {
-		r := TestRepo(t, rstore, extsvc.KindGitLab)
+		r := TestRepo(t, esStore, extsvc.KindGitLab)
 		r.Sources = map[string]*types.SourceInfo{ext.URN(): {
 			ID:       ext.URN(),
 			CloneURL: "https://git:gitlab-token@gitlab.com/" + string(r.Name),
@@ -116,7 +127,7 @@ func CreateGitlabTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count 
 		rs = append(rs, r)
 	}
 
-	err := rstore.InsertRepos(ctx, rs...)
+	err := repoStore.Create(ctx, rs...)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -127,7 +138,8 @@ func CreateGitlabTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count 
 func CreateBbsTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) ([]*types.Repo, *types.ExternalService) {
 	t.Helper()
 
-	rstore := repos.NewDBStore(db, sql.TxOptions{})
+	repoStore := idb.NewRepoStoreWithDB(db)
+	esStore := idb.NewExternalServicesStoreWithDB(db)
 
 	ext := &types.ExternalService{
 		Kind:        extsvc.KindBitbucketServer,
@@ -137,13 +149,13 @@ func CreateBbsTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int
 			Token: "SECRETTOKEN",
 		}),
 	}
-	if err := rstore.UpsertExternalServices(ctx, ext); err != nil {
+	if err := esStore.Upsert(ctx, ext); err != nil {
 		t.Fatal(err)
 	}
 
 	var rs []*types.Repo
 	for i := 0; i < count; i++ {
-		r := TestRepo(t, rstore, extsvc.KindBitbucketServer)
+		r := TestRepo(t, esStore, extsvc.KindBitbucketServer)
 		r.Sources = map[string]*types.SourceInfo{
 			ext.URN(): {
 				ID:       ext.URN(),
@@ -154,7 +166,7 @@ func CreateBbsTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int
 		rs = append(rs, r)
 	}
 
-	err := rstore.InsertRepos(ctx, rs...)
+	err := repoStore.Create(ctx, rs...)
 	if err != nil {
 		t.Fatal(err)
 	}

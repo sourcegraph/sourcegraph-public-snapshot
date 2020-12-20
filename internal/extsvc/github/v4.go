@@ -79,7 +79,7 @@ func NewV4Client(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V4Cli
 	}
 
 	rl := ratelimit.DefaultRegistry.Get(apiURL.String())
-	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(apiURL.String(), tokenHash, &ratelimit.Monitor{HeaderPrefix: "X-"})
+	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(apiURL.String(), tokenHash, "graphql", &ratelimit.Monitor{HeaderPrefix: "X-"})
 
 	return &V4Client{
 		apiURL:           apiURL,
@@ -96,6 +96,11 @@ func NewV4Client(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V4Cli
 // authenticator instance (most likely a token).
 func (c *V4Client) WithAuthenticator(a auth.Authenticator) *V4Client {
 	return NewV4Client(c.apiURL, a, c.httpClient)
+}
+
+// RateLimitMonitor exposes the rate limit monitor.
+func (c *V4Client) RateLimitMonitor() *ratelimit.Monitor {
+	return c.rateLimitMonitor
 }
 
 func (c *V4Client) requestGraphQL(ctx context.Context, query string, vars map[string]interface{}, result interface{}) (err error) {

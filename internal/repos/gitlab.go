@@ -3,6 +3,7 @@ package repos
 import (
 	"context"
 	"fmt"
+
 	"net/url"
 	"strconv"
 	"strings"
@@ -11,6 +12,10 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -48,6 +53,11 @@ func NewGitLabSource(svc *types.ExternalService, cf *httpcli.Factory) (*GitLabSo
 	}
 	return newGitLabSource(svc, &c, cf)
 }
+
+var gitlabRemainingGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
+	Name: "src_gitlab_rate_limit_remaining",
+	Help: "Number of calls to GitLab's API remaining before hitting the rate limit.",
+}, []string{"resource", "name"})
 
 func newGitLabSource(svc *types.ExternalService, c *schema.GitLabConnection, cf *httpcli.Factory) (*GitLabSource, error) {
 	baseURL, err := url.Parse(c.Url)
@@ -88,6 +98,14 @@ func newGitLabSource(svc *types.ExternalService, c *schema.GitLabConnection, cf 
 
 	provider := gitlab.NewClientProvider(baseURL, cli)
 
+	client := provider.GetPATClient(c.Token, "")
+
+	if !envvar.SourcegraphDotComMode() || c.CloudGlobal {
+		client.RateLimitMonitor().SetCollector(func(remaining float64) {
+			gitlabRemainingGauge.WithLabelValues("rest", svc.DisplayName).Set(remaining)
+		})
+	}
+
 	return &GitLabSource{
 		svc:                 svc,
 		config:              c,
@@ -95,7 +113,7 @@ func newGitLabSource(svc *types.ExternalService, c *schema.GitLabConnection, cf 
 		baseURL:             baseURL,
 		nameTransformations: nts,
 		provider:            provider,
-		client:              provider.GetPATClient(c.Token, ""),
+		client:              client,
 	}, nil
 }
 
@@ -486,6 +504,11 @@ func (s *GitLabSource) decorateMergeRequestData(ctx context.Context, project *gi
 		return errors.Wrap(err, "retrieving notes")
 	}
 
+	events, err := s.getMergeRequestResourceStateEvents(ctx, project, mr)
+	if err != nil {
+		return errors.Wrap(err, "retrieving resource state events")
+	}
+
 	pipelines, err := s.getMergeRequestPipelines(ctx, project, mr)
 	if err != nil {
 		return errors.Wrap(err, "retrieving pipelines")
@@ -493,6 +516,7 @@ func (s *GitLabSource) decorateMergeRequestData(ctx context.Context, project *gi
 
 	mr.Notes = notes
 	mr.Pipelines = pipelines
+	mr.ResourceStateEvents = events
 	return nil
 }
 
@@ -534,6 +558,40 @@ func readSystemNotes(it func() ([]*gitlab.Note, error)) ([]*gitlab.Note, error) 
 				notes = append(notes, note)
 			}
 		}
+	}
+}
+
+// getMergeRequestResourceStateEvents retrieves the events attached to a merge request in
+// descending time order.
+func (s *GitLabSource) getMergeRequestResourceStateEvents(ctx context.Context, project *gitlab.Project, mr *gitlab.MergeRequest) ([]*gitlab.ResourceStateEvent, error) {
+	// Get the forward iterator that gives us a note page at a time.
+	it := s.client.GetMergeRequestResourceStateEvents(ctx, project, mr.IID)
+
+	// Now we can iterate over the pages of notes and fill in the slice to be
+	// returned.
+	events, err := readMergeRequestResourceStateEvents(it)
+	if err != nil {
+		return nil, errors.Wrap(err, "reading resource state events pages")
+	}
+
+	return events, nil
+}
+
+func readMergeRequestResourceStateEvents(it func() ([]*gitlab.ResourceStateEvent, error)) ([]*gitlab.ResourceStateEvent, error) {
+	var events []*gitlab.ResourceStateEvent
+
+	for {
+		page, err := it()
+		if err != nil {
+			return nil, errors.Wrap(err, "retrieving resource state events page")
+		}
+		if len(page) == 0 {
+			// The terminal condition for the iterator is returning an empty
+			// slice with no error, so we can stop iterating here.
+			return events, nil
+		}
+
+		events = append(events, page...)
 	}
 }
 

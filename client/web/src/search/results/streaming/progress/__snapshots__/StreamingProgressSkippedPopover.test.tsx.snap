@@ -2,9 +2,9 @@
 
 exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
 <StreamingProgressSkippedPopover
+  onSearchAgain={[Function]}
   progress={
     Object {
-      "done": true,
       "durationMs": 1500,
       "matchCount": 2,
       "repositoriesCount": 2,

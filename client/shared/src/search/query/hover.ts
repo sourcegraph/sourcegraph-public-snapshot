@@ -7,7 +7,10 @@ import {
     MetaRegexp,
     MetaRegexpKind,
     MetaRevision,
-    MetaRevisionKind,
+    MetaGitRevision,
+    MetaSourcegraphRevision,
+    MetaStructural,
+    MetaStructuralKind,
 } from './decoratedToken'
 import { resolveFilter } from './filters'
 
@@ -47,6 +50,11 @@ const toRegexpHover = (token: MetaRegexp): string => {
                 case '\\S':
                     return '**Negated whitespace**. Match any character that is **not** a whitespace character like a space, line break, or tab.'
             }
+        case MetaRegexpKind.CharacterClassRange:
+        case MetaRegexpKind.CharacterClassRangeHyphen:
+            return `**Character range**. Match a character in the range \`${token.value}\`.`
+        case MetaRegexpKind.CharacterClassMember:
+            return `**Character**. This character class matches the character \`${token.value}\`.`
         case MetaRegexpKind.Delimited:
             return '**Group**. Groups together multiple expressions to match.'
         case MetaRegexpKind.EscapedCharacter: {
@@ -93,45 +101,39 @@ const toRegexpHover = (token: MetaRegexp): string => {
     }
 }
 
-const toRevisionHover = (token: MetaRevision): string => {
-    let title: string
-    let description: string
+const toStructuralHover = (token: MetaStructural): string => {
     switch (token.kind) {
-        case MetaRevisionKind.CommitHash:
-            title = 'commit hash'
-            description = 'Search the repository at this commit.'
-            break
-        case MetaRevisionKind.Label:
-            if (token.value.match(/^head$/i)) {
-                title = 'HEAD'
-                description = 'Search the repository at the latest HEAD commit of the default branch.'
-                break
-            }
-            title = 'branch name or tag'
-            description = 'Search the branch name or tag at the head commit.'
-            break
-        case MetaRevisionKind.Negate:
-            title = 'negation'
-            description =
-                'A prefix of a glob pattern or path that does **not** match a set of git objects, like a commit or branch name. Typically used in conjunction with a glob pattern that matches a set of commits or branches, followed by a negated set to exclude. For example, `*refs/heads/*:*!refs/heads/release*` searches all branches at the head commit, excluding branches matching `release*`.'
-            break
-        case MetaRevisionKind.PathLike:
-            title = 'using git reference path'
-            description =
-                'Search across git objects, like commits or branches, that match this git reference path. Typically used in conjunction with glob patterns, where a pattern like `*refs/heads/*` searches across all repository branches at the head commit.'
-            break
-        case MetaRevisionKind.Separator:
-            title = 'separator'
-            description =
-                'Separates multiple revisions to search across. For example, `1a35d48:feature:3.15` searches the repository for matches at commit `1a35d48`, or a branch named `feature`, or a tag `3.15`.'
-            break
-        case MetaRevisionKind.Wildcard:
-            title = 'wildcard'
-            description =
-                'Glob syntax to match zero or more characters in a revision. Typically used to match multiple branches or tags based on a git reference path. For example, `refs/tags/v3.*` matches all tags that start with `v3.`.'
-            break
+        case MetaStructuralKind.Hole:
+            return '**Structural hole**. Matches code structures contextually. See the [syntax reference](https://docs.sourcegraph.com/code_search/reference/structural#syntax-reference) for a complete description.'
+        case MetaStructuralKind.RegexpHole:
+            return '**Regular expression hole**. Match the regular expression defined inside this hole.'
+        case MetaStructuralKind.Variable:
+            return '**Hole variable**. A descriptive name for the syntax matched by this hole.'
+        case MetaStructuralKind.RegexpSeparator:
+            return '**Regular expression separator**. Indicates the start of a regular expression that this hole should match.'
     }
-    return `**Revision ${title}**. ${description}`
+}
+
+const toRevisionHover = (token: MetaRevision): string => {
+    switch (token.kind) {
+        case MetaGitRevision.CommitHash:
+            return '**Revision commit hash**. Search the repository at this commit.'
+        case MetaGitRevision.Label:
+            if (token.value.match(/^head$/i)) {
+                return '**Revision HEAD**. Search the repository at the latest HEAD commit of the default branch.'
+            }
+            return '**Revision branch name or tag**. Search the branch name or tag at the head commit.'
+        case MetaGitRevision.ReferencePath:
+            return '**Revision using git reference path**. Search the branch name or tag at the head commit. Search across git objects, like commits or branches, that match this git reference path. Typically used in conjunction with glob patterns, where a pattern like `*refs/heads/*` searches across all repository branches at the head commit.'
+        case MetaGitRevision.Wildcard:
+            return '**Revision wildcard**. Glob syntax to match zero or more characters in a revision. Typically used to match multiple branches or tags based on a git reference path. For example, `refs/tags/v3.*` matches all tags that start with `v3.`.'
+        case MetaSourcegraphRevision.IncludeGlobMarker:
+            return '**Revision glob pattern to include**. A prefixing indicating that a glob pattern follows. Git references matching the glob pattern are included in the search. Typically used where a pattern like `*refs/heads/*` searches across all repository branches at the head commit.'
+        case MetaSourcegraphRevision.ExcludeGlobMarker:
+            return '**Revision glob pattern to exclude**. A prefix indicating that git references, like a commit or branch name, should be **excluded** from search based on the glob pattern that follows. Used in conjunction with a glob pattern that matches a set of commits or branches, followed by a a pattern to exclude from the set. For example, `*refs/heads/*:*!refs/heads/release*` searches all branches at the head commit, excluding branches matching `release*`.'
+        case MetaSourcegraphRevision.Separator:
+            return '**Revision separator**. Separates multiple revisions to search across. For example, `1a35d48:feature:3.15` searches the repository for matches at commit `1a35d48`, or a branch named `feature`, or a tag `3.15`.'
+    }
 }
 
 const toHover = (token: DecoratedToken): string => {
@@ -145,7 +147,9 @@ const toHover = (token: DecoratedToken): string => {
         case 'metaRevision':
             return toRevisionHover(token)
         case 'metaRepoRevisionSeparator':
-            return '**Search at revision.** Separates a repository pattern and the revisions to search, like commits or branches. The part before the `@` specifies the repositories to search, the part after the `@` specifies which revisions to search.'
+            return '**Search at revision**. Separates a repository pattern and the revisions to search, like commits or branches. The part before the `@` specifies the repositories to search, the part after the `@` specifies which revisions to search.'
+        case 'metaStructural':
+            return toStructuralHover(token)
     }
     return ''
 }
@@ -207,6 +211,9 @@ export const getHoverResult = (
                 values.push(toHover(token))
                 range = toMonacoRange(token.groupRange ? token.groupRange : token.range)
                 break
+            case 'metaStructural':
+                values.push(toHover(token))
+                range = toMonacoRange(token.groupRange ? token.groupRange : token.range)
         }
     })
     return {

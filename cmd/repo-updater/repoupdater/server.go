@@ -13,7 +13,9 @@ import (
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -28,7 +30,7 @@ import (
 
 // Server is a repoupdater server.
 type Server struct {
-	repos.Store
+	*repos.Store
 	*repos.Syncer
 	SourcegraphDotComMode bool
 	GithubDotComSource    interface {
@@ -38,7 +40,7 @@ type Server struct {
 		GetRepo(ctx context.Context, projectWithNamespace string) (*types.Repo, error)
 	}
 	Scheduler interface {
-		UpdateOnce(id api.RepoID, name api.RepoName, url string)
+		UpdateOnce(id api.RepoID, name api.RepoName)
 		ScheduleInfo(id api.RepoID) *protocol.RepoUpdateSchedulerInfoResult
 	}
 	GitserverClient interface {
@@ -90,7 +92,7 @@ func (s *Server) handleRepoExternalServices(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	rs, err := s.Store.ListRepos(r.Context(), repos.StoreListReposArgs{
+	rs, err := s.Store.RepoStore.List(r.Context(), db.ReposListOptions{
 		IDs: []api.RepoID{req.ID},
 	})
 	if err != nil {
@@ -111,11 +113,12 @@ func (s *Server) handleRepoExternalServices(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	args := repos.StoreListExternalServicesArgs{
-		IDs: svcIDs,
+	args := db.ExternalServicesListOptions{
+		IDs:              svcIDs,
+		OrderByDirection: "ASC",
 	}
 
-	es, err := s.Store.ListExternalServices(r.Context(), args)
+	es, err := s.Store.ExternalServiceStore.List(r.Context(), args)
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
 		return
@@ -133,7 +136,7 @@ func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rs, err := s.Store.ListRepos(r.Context(), repos.StoreListReposArgs{
+	rs, err := s.Store.RepoStore.List(r.Context(), db.ReposListOptions{
 		IDs: []api.RepoID{req.ID},
 	})
 	if err != nil {
@@ -148,11 +151,12 @@ func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	args := repos.StoreListExternalServicesArgs{
-		Kinds: types.Repos(rs).Kinds(),
+	args := db.ExternalServicesListOptions{
+		Kinds:            types.Repos(rs).Kinds(),
+		OrderByDirection: "ASC",
 	}
 
-	es, err := s.Store.ListExternalServices(r.Context(), args)
+	es, err := s.Store.ExternalServiceStore.List(r.Context(), args)
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
 		return
@@ -184,7 +188,7 @@ func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = s.Store.UpsertExternalServices(r.Context(), es...)
+	err = s.Store.ExternalServiceStore.Upsert(r.Context(), es...)
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
 		return
@@ -311,7 +315,7 @@ func (s *Server) enqueueRepoUpdate(ctx context.Context, req *protocol.RepoUpdate
 		tr.Finish()
 	}()
 
-	rs, err := s.Store.ListRepos(ctx, repos.StoreListReposArgs{Names: []string{string(req.Repo)}})
+	rs, err := s.Store.RepoStore.List(ctx, db.ReposListOptions{Names: []string{string(req.Repo)}})
 	if err != nil {
 		return nil, http.StatusInternalServerError, errors.Wrap(err, "store.list-repos")
 	}
@@ -321,17 +325,12 @@ func (s *Server) enqueueRepoUpdate(ctx context.Context, req *protocol.RepoUpdate
 	}
 
 	repo := rs[0]
-	if req.URL == "" {
-		if urls := repo.CloneURLs(); len(urls) > 0 {
-			req.URL = urls[0]
-		}
-	}
-	s.Scheduler.UpdateOnce(repo.ID, req.Repo, req.URL)
+
+	s.Scheduler.UpdateOnce(repo.ID, repo.Name)
 
 	return &protocol.RepoUpdateResponse{
 		ID:   repo.ID,
 		Name: string(repo.Name),
-		URL:  req.URL,
 	}, http.StatusOK, nil
 }
 
@@ -449,7 +448,7 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		return mockRepoLookup(args)
 	}
 
-	list, err := s.Store.ListRepos(ctx, repos.StoreListReposArgs{
+	list, err := s.Store.RepoStore.List(ctx, db.ReposListOptions{
 		Names: []string{string(args.Repo)},
 	})
 	if err != nil {

@@ -1,7 +1,6 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import { isEqual } from 'lodash'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import FileIcon from 'mdi-react/FileIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
@@ -21,7 +20,6 @@ import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { isDefined, hasProperty } from '../../../../shared/src/util/types'
-import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { SearchResult } from '../../components/SearchResult'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import { ThemeProps } from '../../../../shared/src/theme'
@@ -35,6 +33,7 @@ import { SearchResultTypeTabs } from './SearchResultTypeTabs'
 import { QueryState } from '../helpers'
 import { PerformanceWarningAlert } from '../../site/PerformanceWarningAlert'
 import { SearchResultsStats } from './SearchResultsStats'
+import { SearchAlert } from './SearchAlert'
 
 const isSearchResults = (value: unknown): value is GQL.ISearchResults =>
     typeof value === 'object' &&
@@ -63,6 +62,9 @@ export interface SearchResultsListProps
     onShowMoreResultsClick?: () => void
     navbarSearchQueryState: QueryState
 
+    /* Called when the first result has fully loaded. */
+    onFirstResultLoad?: () => void
+
     // Expand all feature
     allExpanded: boolean
     onExpandAllResultsToggle: () => void
@@ -71,9 +73,7 @@ export interface SearchResultsListProps
     showSavedQueryButton?: boolean
     showSavedQueryModal: boolean
     onSavedQueryModalClose: () => void
-    onDidCreateSavedQuery: () => void
     onSaveQueryClick: () => void
-    didSave: boolean
 
     interactiveSearchMode: boolean
 
@@ -388,41 +388,13 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
 
                                     {/* Server-provided help message */}
                                     {results.alert && (
-                                        <div className="alert alert-info m-2" data-testid="alert-container">
-                                            <h3>
-                                                <AlertCircleIcon className="icon-inline" /> {results.alert.title}
-                                            </h3>
-                                            <p>{results.alert.description}</p>
-                                            {results.alert.proposedQueries && (
-                                                <>
-                                                    <h4>Did you mean:</h4>
-                                                    <ul className="list-unstyled">
-                                                        {results.alert.proposedQueries.map(proposedQuery => (
-                                                            <li key={proposedQuery.query}>
-                                                                <Link
-                                                                    className="btn btn-secondary btn-sm"
-                                                                    data-testid="proposed-query-link"
-                                                                    to={
-                                                                        '/search?' +
-                                                                        buildSearchURLQuery(
-                                                                            proposedQuery.query,
-                                                                            this.props.patternType,
-                                                                            this.props.caseSensitive,
-                                                                            this.props.versionContext,
-                                                                            {}
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    {proposedQuery.query || proposedQuery.description}
-                                                                </Link>
-                                                                {proposedQuery.query &&
-                                                                    proposedQuery.description &&
-                                                                    ` — ${proposedQuery.description}`}
-                                                            </li>
-                                                        ))}
-                                                    </ul>
-                                                </>
-                                            )}{' '}
+                                        <SearchAlert
+                                            alert={results.alert}
+                                            caseSensitive={this.props.caseSensitive}
+                                            patternType={this.props.patternType}
+                                            versionContext={this.props.versionContext}
+                                        >
+                                            {' '}
                                             {results.timedout.length > 0 &&
                                                 results.timedout.length === results.repositoriesCount &&
                                                 /* All repositories timed out. */
@@ -440,7 +412,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                                           ]
                                                         : []
                                                 )}
-                                        </div>
+                                        </SearchAlert>
                                     )}
 
                                     {/* Results */}
@@ -449,7 +421,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                         onShowMoreItems={this.onBottomHit(results.results.length)}
                                         onVisibilityChange={this.nextItemVisibilityChange}
                                         items={results.results
-                                            .map(result => this.renderResult(result))
+                                            .map((result, index) => this.renderResult(result, index === 0))
                                             .filter(isDefined)}
                                         containment={this.scrollableElementRef || undefined}
                                         onRef={this.nextVirtualListContainerElement}
@@ -523,13 +495,18 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
         )
     }
 
-    private renderResult(result: GQL.GenericSearchResultInterface | GQL.IFileMatch): JSX.Element | undefined {
+    private renderResult(
+        result: GQL.GenericSearchResultInterface | GQL.IFileMatch,
+        isFirst: boolean
+    ): JSX.Element | undefined {
         switch (result.__typename) {
             case 'FileMatch':
                 return (
                     <FileMatch
                         key={'file:' + result.file.url}
                         location={this.props.location}
+                        eventLogger={eventLogger}
+                        onFirstResultLoad={isFirst ? this.props.onFirstResultLoad : undefined}
                         icon={result.lineMatches && result.lineMatches.length > 0 ? SourceRepositoryIcon : FileIcon}
                         result={result}
                         onSelect={this.logEvent}

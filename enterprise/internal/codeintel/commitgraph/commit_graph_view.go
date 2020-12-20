@@ -13,6 +13,13 @@ type CommitGraphView struct {
 	Tokens map[int]string
 }
 
+// UploadMeta represents the visibility of an LSIF upload from a particular location
+// on a repository's commit graph.
+type UploadMeta struct {
+	UploadID int
+	Distance uint32
+}
+
 func NewCommitGraphView() *CommitGraphView {
 	return &CommitGraphView{
 		Meta:   map[string][]UploadMeta{},

@@ -352,32 +352,27 @@ func (s *Server) ignorePath(path string) bool {
 }
 
 func (s *Server) handleIsRepoCloneable(w http.ResponseWriter, r *http.Request) {
-	// TODO(keegancsmith,tsenart) gitserver should never receive URL, just
-	// api.RepoName. Update call sites.
-
 	var req protocol.IsRepoCloneableRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	if req.URL == "" {
-		if req.Repo == "" {
-			http.Error(w, "no URL and Repo", http.StatusBadRequest)
-			return
-		}
+	if req.Repo == "" {
+		http.Error(w, "no Repo given", http.StatusBadRequest)
+		return
+	}
 
-		// BACKCOMPAT: Determine URL from the existing repo on disk if the client didn't send it.
-		var err error
-		req.URL, err = s.getRemoteURL(r.Context(), req.Repo)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+	remoteURL, err := s.getRemoteURL(r.Context(), req.Repo)
+	if err != nil {
+		// We use this endpoint to verify if a repo exists without consuming
+		// API rate limit, since many users visit private or bogus repos,
+		// so we deduce the unauthenticated clone URL from the repo name.
+		remoteURL = "https://" + string(req.Repo) + ".git"
 	}
 
 	var resp protocol.IsRepoCloneableResponse
-	if err := s.isCloneable(r.Context(), req.URL); err == nil {
+	if err := s.isCloneable(r.Context(), remoteURL); err == nil {
 		resp = protocol.IsRepoCloneableResponse{Cloneable: true}
 	} else {
 		resp = protocol.IsRepoCloneableResponse{
@@ -1376,6 +1371,8 @@ func (s *Server) doRepoUpdate2(repo api.RepoName) error {
 			"+refs/merge-requests/*:refs/merge-requests/*",
 			// Bitbucket pull requests
 			"+refs/pull-requests/*:refs/pull-requests/*",
+			// Gerrit changesets
+			"+refs/changes/*:refs/changes/*",
 			// Possibly deprecated refs for sourcegraph zap experiment?
 			"+refs/sourcegraph/*:refs/sourcegraph/*")
 	}

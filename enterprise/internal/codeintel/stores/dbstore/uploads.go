@@ -8,10 +8,10 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 // Upload is a subset of the lsif_uploads table and stores both processed and unprocessed
@@ -174,6 +174,7 @@ type GetUploadsOptions struct {
 	Term           string
 	VisibleAtTip   bool
 	UploadedBefore *time.Time
+	OldestFirst    bool
 	Limit          int
 	Offset         int
 }
@@ -247,6 +248,13 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 		return nil, 0, err
 	}
 
+	var orderExpression *sqlf.Query
+	if opts.OldestFirst {
+		orderExpression = sqlf.Sprintf("uploaded_at")
+	} else {
+		orderExpression = sqlf.Sprintf("uploaded_at DESC")
+	}
+
 	uploads, err := scanUploads(tx.Store.Query(
 		ctx,
 		sqlf.Sprintf(`
@@ -277,8 +285,8 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 				WHERE r.state = 'queued'
 			) s
 			ON u.id = s.id
-			WHERE %s ORDER BY uploaded_at DESC LIMIT %d OFFSET %d
-		`, sqlf.Join(conds, " AND "), opts.Limit, opts.Offset),
+			WHERE %s ORDER BY %s LIMIT %d OFFSET %d
+		`, sqlf.Join(conds, " AND "), orderExpression, opts.Limit, opts.Offset),
 	))
 	if err != nil {
 		return nil, 0, err
@@ -304,15 +312,6 @@ func makeSearchCondition(term string) *sqlf.Query {
 	}
 
 	return sqlf.Sprintf("(%s)", sqlf.Join(termConds, " OR "))
-}
-
-// QueueSize returns the number of uploads in the queued state.
-func (s *Store) QueueSize(ctx context.Context) (_ int, err error) {
-	ctx, endObservation := s.operations.queueSize.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
-	defer endObservation(1, observation.Args{})
-
-	count, _, err := basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(`SELECT COUNT(*) FROM lsif_uploads_with_repository_name WHERE state = 'queued'`)))
-	return count, err
 }
 
 // InsertUpload inserts a new upload and returns its identifier.
@@ -381,34 +380,6 @@ func (s *Store) MarkQueued(ctx context.Context, id int, uploadSize *int64) (err 
 	return s.Store.Exec(ctx, sqlf.Sprintf(`UPDATE lsif_uploads SET state = 'queued', upload_size = %s WHERE id = %s`, uploadSize, id))
 }
 
-// MarkComplete updates the state of the upload to complete.
-func (s *Store) MarkComplete(ctx context.Context, id int) (err error) {
-	ctx, endObservation := s.operations.markComplete.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("id", id),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	return s.Store.Exec(ctx, sqlf.Sprintf(`
-		UPDATE lsif_uploads
-		SET state = 'completed', finished_at = clock_timestamp()
-		WHERE id = %s
-	`, id))
-}
-
-// MarkErrored updates the state of the upload to errored and updates the failure summary data.
-func (s *Store) MarkErrored(ctx context.Context, id int, failureMessage string) (err error) {
-	ctx, endObservation := s.operations.markErrored.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("id", id),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	return s.Store.Exec(ctx, sqlf.Sprintf(`
-		UPDATE lsif_uploads
-		SET state = 'errored', finished_at = clock_timestamp(), failure_message = %s
-		WHERE id = %s
-	`, failureMessage, id))
-}
-
 var uploadColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("u.id"),
 	sqlf.Sprintf("u.commit"),
@@ -429,40 +400,6 @@ var uploadColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("u.uploaded_parts"),
 	sqlf.Sprintf("u.upload_size"),
 	sqlf.Sprintf("NULL"),
-}
-
-// Dequeue selects the oldest queued upload smaller than the given maximum size and locks it with a transaction.
-// If there is such an upload, the upload is returned along with a store instance which wraps the transaction.
-// This transaction must be closed. If there is no such unlocked upload, a zero-value upload and nil store will
-// be returned along with a false valued flag. This method must not be called from within a transaction.
-func (s *Store) Dequeue(ctx context.Context, maxSize int64) (_ Upload, _ *Store, _ bool, err error) {
-	ctx, endObservation := s.operations.dequeue.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int64("maxSize", maxSize),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	conditions := []*sqlf.Query{}
-	if maxSize != 0 {
-		conditions = append(conditions, sqlf.Sprintf("upload_size IS NULL OR upload_size <= %s", maxSize))
-	}
-
-	upload, tx, ok, err := s.makeUploadWorkQueueStore().Dequeue(ctx, conditions)
-	if err != nil || !ok {
-		return Upload{}, nil, false, err
-	}
-
-	return upload.(Upload), s.With(tx), true, nil
-}
-
-// Requeue updates the state of the upload to queued and adds a processing delay before the next dequeue attempt.
-func (s *Store) Requeue(ctx context.Context, id int, after time.Time) (err error) {
-	ctx, endObservation := s.operations.requeue.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("id", id),
-		// TODO(efritz) - after should be a duration
-	}})
-	defer endObservation(1, observation.Args{})
-
-	return s.makeUploadWorkQueueStore().Requeue(ctx, id, after)
 }
 
 // DeleteUploadByID deletes an upload by its identifier. This method returns a true-valued flag if a record
@@ -549,39 +486,4 @@ func (s *Store) HardDeleteUploadByID(ctx context.Context, ids ...int) (err error
 	}
 
 	return s.Store.Exec(ctx, sqlf.Sprintf(`DELETE FROM lsif_uploads WHERE id IN (%s)`, sqlf.Join(idQueries, ", ")))
-}
-
-// StalledUploadMaxAge is the maximum allowable duration between updating the state of an
-// upload as "processing" and locking the upload row during processing. An unlocked row that
-// is marked as processing likely indicates that the worker that dequeued the upload has died.
-// There should be a nearly-zero delay between these states during normal operation.
-const StalledUploadMaxAge = time.Second * 5
-
-// UploadMaxNumResets is the maximum number of times an upload can be reset. If an upload's
-// failed attempts counter reaches this threshold, it will be moved into "errored" rather than
-// "queued" on its next reset.
-const UploadMaxNumResets = 3
-
-// ResetStalled moves all unlocked uploads processing for more than `StalledUploadMaxAge` back to the queued state.
-// In order to prevent input that continually crashes worker instances, uploads that have been reset more than
-// UploadMaxNumResets times will be marked as errored. This method returns a list of updated and errored upload
-// identifiers.
-func (s *Store) ResetStalled(ctx context.Context, now time.Time) ([]int, []int, error) {
-	return s.makeUploadWorkQueueStore().ResetStalled(ctx)
-}
-
-func (s *Store) makeUploadWorkQueueStore() dbworkerstore.Store {
-	return WorkerutilUploadStore(s)
-}
-
-func WorkerutilUploadStore(s basestore.ShareableStore) dbworkerstore.Store {
-	return dbworkerstore.New(s.Handle(), dbworkerstore.Options{
-		TableName:         "lsif_uploads",
-		ViewName:          "lsif_uploads_with_repository_name u",
-		ColumnExpressions: uploadColumnsWithNullRank,
-		Scan:              scanFirstUploadRecord,
-		OrderByExpression: sqlf.Sprintf("uploaded_at"),
-		StalledMaxAge:     StalledUploadMaxAge,
-		MaxNumResets:      UploadMaxNumResets,
-	})
 }

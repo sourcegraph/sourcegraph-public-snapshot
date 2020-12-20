@@ -3,6 +3,7 @@ package repos
 import (
 	"container/heap"
 	"context"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -104,7 +105,6 @@ type updateScheduler struct {
 // a configuration source, such as information retrieved from GitHub for a
 // given GitHubConnection.
 type configuredRepo struct {
-	URL  string
 	ID   api.RepoID
 	Name api.RepoName
 }
@@ -195,7 +195,9 @@ func (s *updateScheduler) runUpdateLoop(ctx context.Context) {
 					schedError.Inc()
 					log15.Warn("error requesting repo update", "uri", repo.Name, "err", err)
 				}
-				if resp != nil && resp.LastFetched != nil && resp.LastChanged != nil {
+				if interval := getCustomInterval(conf.Get(), string(repo.Name)); interval > 0 {
+					s.schedule.updateInterval(repo, interval)
+				} else if resp != nil && resp.LastFetched != nil && resp.LastChanged != nil {
 					// This is the heuristic that is described in the updateScheduler documentation.
 					// Update that documentation if you update this logic.
 					interval := resp.LastFetched.Sub(*resp.LastChanged) / 2
@@ -206,9 +208,26 @@ func (s *updateScheduler) runUpdateLoop(ctx context.Context) {
 	}
 }
 
+func getCustomInterval(c *conf.Unified, repoName string) time.Duration {
+	if c == nil {
+		return 0
+	}
+	for _, rule := range c.GitUpdateInterval {
+		re, err := regexp.Compile(rule.Pattern)
+		if err != nil {
+			log15.Warn("error compiling GitUpdateInterval pattern", "error", err)
+			continue
+		}
+		if re.MatchString(repoName) {
+			return time.Duration(rule.Interval) * time.Minute
+		}
+	}
+	return 0
+}
+
 // requestRepoUpdate sends a request to gitserver to request an update.
 var requestRepoUpdate = func(ctx context.Context, repo configuredRepo, since time.Duration) (*gitserverprotocol.RepoUpdateResponse, error) {
-	return gitserver.DefaultClient.RequestRepoUpdate(ctx, gitserver.Repo{Name: repo.Name, URL: repo.URL}, since)
+	return gitserver.DefaultClient.RequestRepoUpdate(ctx, repo.Name, since)
 }
 
 // configuredLimiter returns a mutable limiter that is
@@ -311,11 +330,7 @@ func (s *updateScheduler) remove(r *types.Repo) {
 func configuredRepoFromRepo(r *types.Repo) configuredRepo {
 	repo := configuredRepo{
 		ID:   r.ID,
-		Name: api.RepoName(r.Name),
-	}
-
-	if urls := r.CloneURLs(); len(urls) > 0 {
-		repo.URL = urls[0]
+		Name: r.Name,
 	}
 
 	return repo
@@ -323,11 +338,10 @@ func configuredRepoFromRepo(r *types.Repo) configuredRepo {
 
 // UpdateOnce causes a single update of the given repository.
 // It neither adds nor removes the repo from the schedule.
-func (s *updateScheduler) UpdateOnce(id api.RepoID, name api.RepoName, url string) {
+func (s *updateScheduler) UpdateOnce(id api.RepoID, name api.RepoName) {
 	repo := configuredRepo{
 		ID:   id,
 		Name: name,
-		URL:  url,
 	}
 	schedManualFetch.Inc()
 	s.updateQueue.enqueue(repo, priorityHigh)

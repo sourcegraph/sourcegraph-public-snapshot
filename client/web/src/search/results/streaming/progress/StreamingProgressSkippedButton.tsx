@@ -1,18 +1,27 @@
 import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
-import React, { useCallback, useState, useMemo } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
-import { defaultProgress, StreamingProgressProps } from './StreamingProgress'
+import { StreamingProgressProps } from './StreamingProgress'
 import { StreamingProgressSkippedPopover } from './StreamingProgressSkippedPopover'
 
-export const StreamingProgressSkippedButton: React.FunctionComponent<StreamingProgressProps> = ({
-    progress = defaultProgress,
-}) => {
+export const StreamingProgressSkippedButton: React.FunctionComponent<Pick<
+    StreamingProgressProps,
+    'progress' | 'onSearchAgain'
+>> = ({ progress, onSearchAgain }) => {
     const [isOpen, setIsOpen] = useState(false)
     const toggleOpen = useCallback(() => setIsOpen(previous => !previous), [setIsOpen])
 
     const skippedWithWarning = useMemo(() => progress.skipped.some(skipped => skipped.severity === 'warn'), [progress])
+
+    const onSearchAgainWithPopupClose = useCallback(
+        (filters: string[]) => {
+            setIsOpen(false)
+            onSearchAgain(filters)
+        },
+        [setIsOpen, onSearchAgain]
+    )
 
     return (
         <>
@@ -36,7 +45,10 @@ export const StreamingProgressSkippedButton: React.FunctionComponent<StreamingPr
                         Some results excluded
                     </DropdownToggle>
                     <DropdownMenu className="streaming-progress__skipped-popover">
-                        <StreamingProgressSkippedPopover progress={progress} />
+                        <StreamingProgressSkippedPopover
+                            progress={progress}
+                            onSearchAgain={onSearchAgainWithPopupClose}
+                        />
                     </DropdownMenu>
                 </ButtonDropdown>
             )}

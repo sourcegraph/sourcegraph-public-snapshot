@@ -56,17 +56,6 @@ func (ss *fakeSearcher) String() string {
 	return fmt.Sprintf("fakeSearcher(result = %v, repos = %v)", ss.result, ss.repos)
 }
 
-type errorSearcher struct {
-	err error
-
-	// Default all unimplemented zoekt.Searcher methods to panic.
-	zoekt.Searcher
-}
-
-func (es *errorSearcher) Search(ctx context.Context, q zoektquery.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
-	return nil, es.err
-}
-
 func TestIndexedSearch(t *testing.T) {
 	zeroTimeoutCtx, cancel := context.WithTimeout(context.Background(), 0)
 	defer cancel()
@@ -81,6 +70,9 @@ func TestIndexedSearch(t *testing.T) {
 	}
 
 	reposHEAD := makeRepositoryRevisions("foo/bar", "foo/foobar")
+	repoBar := reposHEAD[0].Repo
+	repoFooBar := reposHEAD[1].Repo
+	repos := []*types.RepoName{repoBar, repoFooBar}
 	zoektRepos := []*zoekt.RepoListEntry{{
 		Repository: zoekt.Repository{
 			Name:     "foo/bar",
@@ -100,8 +92,7 @@ func TestIndexedSearch(t *testing.T) {
 		wantMatchURLs      []string
 		wantMatchInputRevs []string
 		wantUnindexed      []*search.RepositoryRevisions
-		wantLimitHit       bool
-		wantReposLimitHit  map[string]struct{}
+		wantCommon         searchResultsCommon
 		wantErr            bool
 	}{
 		{
@@ -113,9 +104,11 @@ func TestIndexedSearch(t *testing.T) {
 				useFullDeadline: false,
 				since:           func(time.Time) time.Duration { return time.Second - time.Millisecond },
 			},
-			wantLimitHit:      false,
-			wantReposLimitHit: nil,
-			wantErr:           false,
+			wantCommon: searchResultsCommon{
+				searched: repos,
+				indexed:  repos,
+			},
+			wantErr: false,
 		},
 		{
 			name: "no matches timeout",
@@ -126,9 +119,11 @@ func TestIndexedSearch(t *testing.T) {
 				useFullDeadline: false,
 				since:           func(time.Time) time.Duration { return time.Minute },
 			},
-			wantLimitHit:      false,
-			wantReposLimitHit: nil,
-			wantErr:           true,
+			wantCommon: searchResultsCommon{
+				searched: repos,
+				indexed:  repos,
+				timedout: repos,
+			},
 		},
 		{
 			name: "context timeout",
@@ -139,9 +134,11 @@ func TestIndexedSearch(t *testing.T) {
 				useFullDeadline: true,
 				since:           func(time.Time) time.Duration { return 0 },
 			},
-			wantLimitHit:      false,
-			wantReposLimitHit: nil,
-			wantErr:           true,
+			wantCommon: searchResultsCommon{
+				searched: repos,
+				indexed:  repos,
+				timedout: repos,
+			},
 		},
 		{
 			name: "results",
@@ -188,9 +185,7 @@ func TestIndexedSearch(t *testing.T) {
 				},
 				since: func(time.Time) time.Duration { return 0 },
 			},
-			wantLimitHit:      false,
-			wantReposLimitHit: map[string]struct{}{},
-			wantMatchCount:    5,
+			wantMatchCount: 5,
 			wantMatchURLs: []string{
 				"git://foo/bar#baz.go",
 				"git://foo/foobar#baz.go",
@@ -198,6 +193,10 @@ func TestIndexedSearch(t *testing.T) {
 			wantMatchInputRevs: []string{
 				"",
 				"",
+			},
+			wantCommon: searchResultsCommon{
+				searched: repos,
+				indexed:  repos,
 			},
 			wantErr: false,
 		},
@@ -223,8 +222,10 @@ func TestIndexedSearch(t *testing.T) {
 				},
 				since: func(time.Time) time.Duration { return 0 },
 			},
-			wantLimitHit:      false,
-			wantReposLimitHit: map[string]struct{}{},
+			wantCommon: searchResultsCommon{
+				searched: []*types.RepoName{repoBar},
+				indexed:  []*types.RepoName{repoBar},
+			},
 			wantMatchURLs: []string{
 				"git://foo/bar?HEAD#baz.go",
 				"git://foo/bar?dev#baz.go",
@@ -255,6 +256,10 @@ func TestIndexedSearch(t *testing.T) {
 					},
 				},
 			},
+			wantCommon: searchResultsCommon{
+				searched: []*types.RepoName{repoBar},
+				indexed:  []*types.RepoName{repoBar},
+			},
 			wantUnindexed: makeRepositoryRevisions("foo/bar@unindexed"),
 			wantMatchURLs: []string{
 				"git://foo/bar?HEAD#baz.go",
@@ -275,7 +280,6 @@ func TestIndexedSearch(t *testing.T) {
 			wantUnindexed:      makeRepositoryRevisions("foo/bar@HEAD"),
 			wantMatchURLs:      nil,
 			wantMatchInputRevs: nil,
-			wantLimitHit:       false,
 		},
 		{
 			name: "ref-glob with implicit /*",
@@ -290,7 +294,6 @@ func TestIndexedSearch(t *testing.T) {
 			wantUnindexed:      makeRepositoryRevisions("foo/bar@HEAD"),
 			wantMatchURLs:      nil,
 			wantMatchInputRevs: nil,
-			wantLimitHit:       false,
 		},
 	}
 	for _, tt := range tests {
@@ -325,16 +328,13 @@ func TestIndexedSearch(t *testing.T) {
 
 			indexed.since = tt.args.since
 
-			gotFm, gotLimitHit, gotReposLimitHit, err := indexed.Search(tt.args.ctx)
+			gotCommon, gotFm, err := indexed.Search(tt.args.ctx)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("zoektSearchHEAD() error = %v, wantErr = %v", err, tt.wantErr)
 				return
 			}
-			if gotLimitHit != tt.wantLimitHit {
-				t.Errorf("zoektSearchHEAD() gotLimitHit = %v, want %v", gotLimitHit, tt.wantLimitHit)
-			}
-			if diff := cmp.Diff(tt.wantReposLimitHit, gotReposLimitHit, cmpopts.EquateEmpty()); diff != "" {
-				t.Errorf("reposLimitHit mismatch (-want +got):\n%s", diff)
+			if diff := cmp.Diff(&tt.wantCommon, &gotCommon, cmpopts.EquateEmpty()); diff != "" {
+				t.Errorf("common mismatch (-want +got):\n%s", diff)
 			}
 
 			var gotMatchCount int
@@ -971,7 +971,7 @@ func TestZoektFileMatchToSymbolResults(t *testing.T) {
 		}},
 	}
 
-	repo := &RepositoryResolver{repo: &types.Repo{Name: "foo"}}
+	repo := &RepositoryResolver{innerRepo: &types.Repo{Name: "foo"}}
 
 	results := zoektFileMatchToSymbolResults(repo, "master", file)
 	var symbols []protocol.Symbol
@@ -983,7 +983,7 @@ func TestZoektFileMatchToSymbolResults(t *testing.T) {
 		if got, want := res.baseURI.URL.String(), "git://foo?master"; got != want {
 			t.Fatalf("baseURI: got %q want %q", got, want)
 		}
-		if got, want := string(res.commit.repoResolver.repo.Name), "foo"; got != want {
+		if got, want := string(res.commit.repoResolver.innerRepo.Name), "foo"; got != want {
 			t.Fatalf("reporesolver: got %q want %q", got, want)
 		}
 		if got, want := string(res.commit.oid), "deadbeef"; got != want {

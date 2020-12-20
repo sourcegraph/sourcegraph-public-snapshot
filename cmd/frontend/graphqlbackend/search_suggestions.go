@@ -102,7 +102,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			resolvers := make([]*searchSuggestionResolver, 0, len(resolved.repoRevs))
 			for _, rev := range resolved.repoRevs {
 				resolvers = append(resolvers, newSearchSuggestionResolver(
-					&RepositoryResolver{repo: rev.Repo.ToRepo()},
+					&RepositoryResolver{innerRepo: rev.Repo.ToRepo()},
 					math.MaxInt32,
 				))
 			}
@@ -348,9 +348,9 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		var k key
 		switch s := s.result.(type) {
 		case *RepositoryResolver:
-			k.repoName = s.repo.Name
+			k.repoName = s.innerRepo.Name
 		case *GitTreeEntryResolver:
-			k.repoName = s.commit.repoResolver.repo.Name
+			k.repoName = s.commit.repoResolver.innerRepo.Name
 			// We explicitly do not use GitCommitResolver.OID() to get the OID here
 			// because it could significantly slow down search suggestions from zoekt as
 			// it doesn't specify the commit the default branch is on. This result would in
@@ -362,7 +362,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			// equal.
 			k.file = s.Path()
 		case *searchSymbolResult:
-			k.repoName = s.commit.repoResolver.repo.Name
+			k.repoName = s.commit.repoResolver.innerRepo.Name
 			k.symbol = s.symbol.Name + s.symbol.Parent
 		case *languageResolver:
 			k.lang = s.name

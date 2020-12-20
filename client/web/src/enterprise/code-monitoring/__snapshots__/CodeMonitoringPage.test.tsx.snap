@@ -21,6 +21,12 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
   history="[History]"
   location="[Location path=/code-monitoring]"
   setBreadcrumb={[Function]}
+  settingsCascade={
+    Object {
+      "final": Object {},
+      "subjects": Array [],
+    }
+  }
   toggleCodeMonitorEnabled={[Function]}
   useBreadcrumb={[Function]}
 >
@@ -42,13 +48,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
           Create new code monitor
         </AnchorLink>
       }
-      icon={
-        Object {
-          "$$typeof": Symbol(react.memo),
-          "compare": null,
-          "type": [Function],
-        }
-      }
+      icon={[Function]}
       title={
         <React.Fragment>
           Code monitoring
@@ -69,9 +69,13 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
         <h1
           className="flex-grow-1"
         >
-          <Memo(VideoInputAntennaIcon)
+          <TowerIcon
             className="icon-inline page-header__icon"
-          />
+          >
+            <span>
+              🗼
+            </span>
+          </TowerIcon>
            
           Code monitoring
            
@@ -105,7 +109,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
       Watch your code for changes and trigger actions to get notifications, send webhooks, and more.
        
       <a
-        href="/"
+        href="https://docs.sourcegraph.com/code_monitoring"
       >
         Learn more.
       </a>
@@ -172,7 +176,13 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
             nodeComponent={[Function]}
             nodeComponentProps={
               Object {
+                "authentictedUser": Object {
+                  "email": "alice@alice.com",
+                  "id": "foobar",
+                  "username": "alice",
+                },
                 "location": "[Location path=/code-monitoring]",
+                "showCodeMonitoringTestEmailButton": false,
                 "toggleCodeMonitorEnabled": [Function],
               }
             }
@@ -464,7 +474,13 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                 nodeComponent={[Function]}
                 nodeComponentProps={
                   Object {
+                    "authentictedUser": Object {
+                      "email": "alice@alice.com",
+                      "id": "foobar",
+                      "username": "alice",
+                    },
                     "location": "[Location path=/code-monitoring]",
+                    "showCodeMonitoringTestEmailButton": false,
                     "toggleCodeMonitorEnabled": [Function],
                   }
                 }
@@ -477,6 +493,13 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                   className="filtered-connection__nodes "
                 >
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo0"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -507,6 +530,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -524,9 +548,10 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             Test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -580,6 +605,13 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo1"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -610,6 +642,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -627,9 +660,10 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             Second test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -683,6 +717,13 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo2"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -713,6 +754,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -730,9 +772,10 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             Third test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -786,6 +829,13 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo3"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -816,6 +866,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -833,9 +884,10 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             Fourth test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -889,6 +941,13 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo4"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -919,6 +978,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -936,9 +996,10 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             Fifth test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -992,6 +1053,13 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo5"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -1022,6 +1090,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -1039,9 +1108,10 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             Sixth test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -1095,6 +1165,13 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo6"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -1125,6 +1202,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -1142,9 +1220,10 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             Seventh test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -1198,6 +1277,13 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo7"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -1228,6 +1314,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -1245,9 +1332,10 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             Eighth test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -1301,6 +1389,13 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo9"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -1331,6 +1426,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -1348,9 +1444,10 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             Ninth test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -1404,6 +1501,13 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo10"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -1434,6 +1538,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -1451,9 +1556,10 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             Tenth test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -1515,9 +1621,10 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
       <div
         className="mt-5"
       >
-        We want to hear your feedback! 
+        We want to hear your feedback!
+         
         <a
-          href="/"
+          href="mailto:feedback@sourcegraph.com"
         >
           Share your thoughts
         </a>
@@ -1548,6 +1655,12 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
   history="[History]"
   location="[Location path=/code-monitoring]"
   setBreadcrumb={[Function]}
+  settingsCascade={
+    Object {
+      "final": Object {},
+      "subjects": Array [],
+    }
+  }
   toggleCodeMonitorEnabled={[Function]}
   useBreadcrumb={[Function]}
 >
@@ -1569,13 +1682,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
           Create new code monitor
         </AnchorLink>
       }
-      icon={
-        Object {
-          "$$typeof": Symbol(react.memo),
-          "compare": null,
-          "type": [Function],
-        }
-      }
+      icon={[Function]}
       title={
         <React.Fragment>
           Code monitoring
@@ -1596,9 +1703,13 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
         <h1
           className="flex-grow-1"
         >
-          <Memo(VideoInputAntennaIcon)
+          <TowerIcon
             className="icon-inline page-header__icon"
-          />
+          >
+            <span>
+              🗼
+            </span>
+          </TowerIcon>
            
           Code monitoring
            
@@ -1632,7 +1743,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
       Watch your code for changes and trigger actions to get notifications, send webhooks, and more.
        
       <a
-        href="/"
+        href="https://docs.sourcegraph.com/code_monitoring"
       >
         Learn more.
       </a>
@@ -1699,7 +1810,13 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
             nodeComponent={[Function]}
             nodeComponentProps={
               Object {
+                "authentictedUser": Object {
+                  "email": "alice@alice.com",
+                  "id": "foobar",
+                  "username": "alice",
+                },
                 "location": "[Location path=/code-monitoring]",
+                "showCodeMonitoringTestEmailButton": false,
                 "toggleCodeMonitorEnabled": [Function],
               }
             }
@@ -1809,7 +1926,13 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                 nodeComponent={[Function]}
                 nodeComponentProps={
                   Object {
+                    "authentictedUser": Object {
+                      "email": "alice@alice.com",
+                      "id": "foobar",
+                      "username": "alice",
+                    },
                     "location": "[Location path=/code-monitoring]",
+                    "showCodeMonitoringTestEmailButton": false,
                     "toggleCodeMonitorEnabled": [Function],
                   }
                 }
@@ -1822,6 +1945,13 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                   className="filtered-connection__nodes "
                 >
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo0"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -1852,6 +1982,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -1869,9 +2000,10 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                             Test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -1925,6 +2057,13 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo1"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -1955,6 +2094,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -1972,9 +2112,10 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                             Second test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -2028,6 +2169,13 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo2"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -2058,6 +2206,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -2075,9 +2224,10 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                             Third test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -2139,9 +2289,10 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
       <div
         className="mt-5"
       >
-        We want to hear your feedback! 
+        We want to hear your feedback!
+         
         <a
-          href="/"
+          href="mailto:feedback@sourcegraph.com"
         >
           Share your thoughts
         </a>
@@ -2172,6 +2323,12 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
   history="[History]"
   location="[Location path=/code-monitoring]"
   setBreadcrumb={[Function]}
+  settingsCascade={
+    Object {
+      "final": Object {},
+      "subjects": Array [],
+    }
+  }
   toggleCodeMonitorEnabled={[Function]}
   useBreadcrumb={[Function]}
 >
@@ -2193,13 +2350,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
           Create new code monitor
         </AnchorLink>
       }
-      icon={
-        Object {
-          "$$typeof": Symbol(react.memo),
-          "compare": null,
-          "type": [Function],
-        }
-      }
+      icon={[Function]}
       title={
         <React.Fragment>
           Code monitoring
@@ -2220,9 +2371,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
         <h1
           className="flex-grow-1"
         >
-          <Memo(VideoInputAntennaIcon)
+          <TowerIcon
             className="icon-inline page-header__icon"
-          />
+          >
+            <span>
+              🗼
+            </span>
+          </TowerIcon>
            
           Code monitoring
            
@@ -2256,7 +2411,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
       Watch your code for changes and trigger actions to get notifications, send webhooks, and more.
        
       <a
-        href="/"
+        href="https://docs.sourcegraph.com/code_monitoring"
       >
         Learn more.
       </a>
@@ -2323,7 +2478,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
             nodeComponent={[Function]}
             nodeComponentProps={
               Object {
+                "authentictedUser": Object {
+                  "email": "alice@alice.com",
+                  "id": "foobar",
+                  "username": "alice",
+                },
                 "location": "[Location path=/code-monitoring]",
+                "showCodeMonitoringTestEmailButton": false,
                 "toggleCodeMonitorEnabled": [Function],
               }
             }
@@ -2667,7 +2828,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                 nodeComponent={[Function]}
                 nodeComponentProps={
                   Object {
+                    "authentictedUser": Object {
+                      "email": "alice@alice.com",
+                      "id": "foobar",
+                      "username": "alice",
+                    },
                     "location": "[Location path=/code-monitoring]",
+                    "showCodeMonitoringTestEmailButton": false,
                     "toggleCodeMonitorEnabled": [Function],
                   }
                 }
@@ -2680,6 +2847,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                   className="filtered-connection__nodes "
                 >
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo0"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -2710,6 +2884,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -2727,9 +2902,10 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             Test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -2783,6 +2959,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo1"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -2813,6 +2996,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -2830,9 +3014,10 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             Second test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -2886,6 +3071,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo2"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -2916,6 +3108,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -2933,9 +3126,10 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             Third test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -2989,6 +3183,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo3"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -3019,6 +3220,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -3036,9 +3238,10 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             Fourth test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -3092,6 +3295,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo4"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -3122,6 +3332,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -3139,9 +3350,10 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             Fifth test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -3195,6 +3407,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo5"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -3225,6 +3444,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -3242,9 +3462,10 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             Sixth test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -3298,6 +3519,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo6"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -3328,6 +3556,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -3345,9 +3574,10 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             Seventh test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -3401,6 +3631,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo7"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -3431,6 +3668,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -3448,9 +3686,10 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             Eighth test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -3504,6 +3743,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo9"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -3534,6 +3780,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -3551,9 +3798,10 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             Ninth test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -3607,6 +3855,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo10"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -3637,6 +3892,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -3654,9 +3910,10 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             Tenth test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -3710,6 +3967,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo11"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -3740,6 +4004,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -3757,9 +4022,10 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             Eleventh test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -3813,6 +4079,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo12"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -3843,6 +4116,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -3860,9 +4134,10 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             Twelfth test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -3945,9 +4220,10 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
       <div
         className="mt-5"
       >
-        We want to hear your feedback! 
+        We want to hear your feedback!
+         
         <a
-          href="/"
+          href="mailto:feedback@sourcegraph.com"
         >
           Share your thoughts
         </a>

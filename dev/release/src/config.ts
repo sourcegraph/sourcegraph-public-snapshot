@@ -1,6 +1,6 @@
-import { readLine, getWeekNumber } from './util'
+import { cacheFolder, readLine, getWeekNumber } from './util'
 import * as semver from 'semver'
-import { readFileSync } from 'fs'
+import { readFileSync, unlinkSync } from 'fs'
 import { parse as parseJSONC } from '@sqs/jsonc-parser'
 
 /**
@@ -30,10 +30,15 @@ export interface Config {
 }
 
 /**
+ * Default path of JSONC containing release configuration.
+ */
+const configPath = 'release-config.jsonc'
+
+/**
  * Loads configuration from predefined path. It does not do any special validation.
  */
 export function loadConfig(): Config {
-    return parseJSONC(readFileSync('release-config.jsonc').toString()) as Config
+    return parseJSONC(readFileSync(configPath).toString()) as Config
 }
 
 /**
@@ -60,19 +65,23 @@ export async function releaseVersions(
     // Verify the configured upcoming release. The response is cached and expires in a
     // week, after which the captain is required to confirm again.
     const now = new Date()
-    const cachedVersion = `.secrets/current_release_${now.getUTCFullYear()}_${getWeekNumber(now)}.txt`
+    const cachedVersionResponse = `${cacheFolder}/current_release_${now.getUTCFullYear()}_${getWeekNumber(now)}.txt`
     const confirmVersion = await readLine(
-        `Please confirm the upcoming release version (configured: '${config.upcomingRelease}'): `,
-        cachedVersion
+        `Please confirm the upcoming release version configured in '${configPath}' (currently '${config.upcomingRelease}'): `,
+        cachedVersionResponse
     )
     const parsedConfirmed = semver.parse(confirmVersion, parseOptions)
+    let error = ''
     if (!parsedConfirmed) {
-        throw new Error(`Provided version '${confirmVersion}' is not valid semver (in ${cachedVersion})`)
+        error = `Provided version '${confirmVersion}' is not valid semver`
+    } else if (semver.neq(parsedConfirmed, parsedUpcoming)) {
+        error = `Provided version '${confirmVersion}' and config.upcomingRelease '${config.upcomingRelease}' do not match - please update the release configuration at '${configPath}' and try again`
     }
-    if (semver.neq(parsedConfirmed, parsedUpcoming)) {
-        throw new Error(
-            `Provided version '${confirmVersion}' and config.upcomingRelease '${config.upcomingRelease}' to not match - please update the release configuration, or confirm the version in your cached answer (in ${cachedVersion})`
-        )
+
+    // If error, abort and remove the cached response (since it is invalid anyway)
+    if (error !== '') {
+        unlinkSync(cachedVersionResponse)
+        throw new Error(error)
     }
 
     const versions = {

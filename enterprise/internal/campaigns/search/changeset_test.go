@@ -5,7 +5,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/hashicorp/go-multierror"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
 )
 
@@ -68,50 +69,50 @@ func TestChangesetSearch(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		for name, tc := range map[string]struct {
 			input string
-			want  campaigns.ListChangesetsOpts
+			want  store.ListChangesetsOpts
 		}{
 			"empty string": {
 				input: ``,
-				want: campaigns.ListChangesetsOpts{
-					TextSearch: []campaigns.ListChangesetsTextSearchExpr{},
+				want: store.ListChangesetsOpts{
+					TextSearch: []store.ListChangesetsTextSearchExpr{},
 				},
 			},
 			"single word": {
 				input: `foo`,
-				want: campaigns.ListChangesetsOpts{
-					TextSearch: []campaigns.ListChangesetsTextSearchExpr{
+				want: store.ListChangesetsOpts{
+					TextSearch: []store.ListChangesetsTextSearchExpr{
 						{Term: "foo"},
 					},
 				},
 			},
 			"negated single word": {
 				input: `-foo`,
-				want: campaigns.ListChangesetsOpts{
-					TextSearch: []campaigns.ListChangesetsTextSearchExpr{
+				want: store.ListChangesetsOpts{
+					TextSearch: []store.ListChangesetsTextSearchExpr{
 						{Term: "foo", Not: true},
 					},
 				},
 			},
 			"quoted phrase": {
 				input: `"foo bar"`,
-				want: campaigns.ListChangesetsOpts{
-					TextSearch: []campaigns.ListChangesetsTextSearchExpr{
+				want: store.ListChangesetsOpts{
+					TextSearch: []store.ListChangesetsTextSearchExpr{
 						{Term: "foo bar"},
 					},
 				},
 			},
 			"negated quoted phrase": {
 				input: `-"foo bar"`,
-				want: campaigns.ListChangesetsOpts{
-					TextSearch: []campaigns.ListChangesetsTextSearchExpr{
+				want: store.ListChangesetsOpts{
+					TextSearch: []store.ListChangesetsTextSearchExpr{
 						{Term: "foo bar", Not: true},
 					},
 				},
 			},
 			"multiple exprs": {
 				input: `foo "foo bar" -quux -"baz"`,
-				want: campaigns.ListChangesetsOpts{
-					TextSearch: []campaigns.ListChangesetsTextSearchExpr{
+				want: store.ListChangesetsOpts{
+					TextSearch: []store.ListChangesetsTextSearchExpr{
 						{Term: "foo"},
 						{Term: "foo bar"},
 						{Term: "quux", Not: true},

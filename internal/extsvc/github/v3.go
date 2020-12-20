@@ -49,6 +49,10 @@ type V3Client struct {
 
 	// rateLimit is our self imposed rate limiter
 	rateLimit *rate.Limiter
+
+	// resource specifies which API this client is intended for.
+	// One of 'rest' or 'search'.
+	resource string
 }
 
 // NewV3Client creates a new GitHub API client with an optional default
@@ -57,6 +61,19 @@ type V3Client struct {
 // apiURL must point to the base URL of the GitHub API. See the docstring for
 // V3Client.apiURL.
 func NewV3Client(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V3Client {
+	return newV3Client(apiURL, a, "rest", cli)
+}
+
+// NewV3SearchClient creates a new GitHub API client intended for use with the
+// search API with an optional default authenticator.
+//
+// apiURL must point to the base URL of the GitHub API. See the docstring for
+// V3Client.apiURL.
+func NewV3SearchClient(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V3Client {
+	return newV3Client(apiURL, a, "search", cli)
+}
+
+func newV3Client(apiURL *url.URL, a auth.Authenticator, resource string, cli httpcli.Doer) *V3Client {
 	apiURL = canonicalizedURL(apiURL)
 	if gitHubDisable {
 		cli = disabledClient{}
@@ -82,7 +99,7 @@ func NewV3Client(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V3Cli
 	}
 
 	rl := ratelimit.DefaultRegistry.Get(apiURL.String())
-	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(apiURL.String(), tokenHash, &ratelimit.Monitor{HeaderPrefix: "X-"})
+	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(apiURL.String(), tokenHash, resource, &ratelimit.Monitor{HeaderPrefix: "X-"})
 
 	return &V3Client{
 		apiURL:           apiURL,
@@ -92,6 +109,7 @@ func NewV3Client(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V3Cli
 		rateLimit:        rl,
 		rateLimitMonitor: rlm,
 		repoCache:        newRepoCache(apiURL, a),
+		resource:         resource,
 	}
 }
 
@@ -99,15 +117,7 @@ func NewV3Client(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V3Cli
 // the current V3Client, except authenticated as the GitHub user with the given
 // authenticator instance (most likely a token).
 func (c *V3Client) WithAuthenticator(a auth.Authenticator) *V3Client {
-	return NewV3Client(c.apiURL, a, c.httpClient)
-}
-
-// WithSeparateRateLimitMonitor returns a new V3Client that uses the same configuration as
-// the current V3Client, except the rate limit monitor not from the global shared pool.
-func (c *V3Client) WithSeparateRateLimitMonitor() *V3Client {
-	client := NewV3Client(c.apiURL, c.auth, c.httpClient)
-	client.rateLimitMonitor = &ratelimit.Monitor{HeaderPrefix: "X-"}
-	return client
+	return newV3Client(c.apiURL, a, c.resource, c.httpClient)
 }
 
 // RateLimitMonitor exposes the rate limit monitor.

@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/pathmatch"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -144,7 +145,7 @@ func isValidRawLogDiffSearchFormatArgs(formatArgs []string) bool {
 
 // RawLogDiffSearch wraps RawLogDiffSearchStream providing a blocking API. See
 // RawLogDiffSearchStream.
-func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSearchOptions) (results []*LogCommitSearchResult, complete bool, err error) {
+func RawLogDiffSearch(ctx context.Context, repo api.RepoName, opt RawLogDiffSearchOptions) (results []*LogCommitSearchResult, complete bool, err error) {
 	for event := range RawLogDiffSearchStream(ctx, repo, opt) {
 		results = append(results, event.Results...)
 		complete = event.Complete
@@ -159,7 +160,7 @@ func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSe
 //
 // The returned channel must be read until closed, otherwise you may leak
 // resources.
-func RawLogDiffSearchStream(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSearchOptions) <-chan LogCommitSearchEvent {
+func RawLogDiffSearchStream(ctx context.Context, repo api.RepoName, opt RawLogDiffSearchOptions) <-chan LogCommitSearchEvent {
 	c := make(chan LogCommitSearchEvent)
 	go func() {
 		defer close(c)
@@ -172,7 +173,7 @@ func RawLogDiffSearchStream(ctx context.Context, repo gitserver.Repo, opt RawLog
 // doLogDiffSearchStream is called by RawLogDiffSearchStream to send events
 // down c. It uses named return values to simplify sending errors down the
 // channel. The return values can be ignored.
-func doLogDiffSearchStream(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSearchOptions, c chan LogCommitSearchEvent) (complete bool, err error) {
+func doLogDiffSearchStream(ctx context.Context, repo api.RepoName, opt RawLogDiffSearchOptions, c chan LogCommitSearchEvent) (complete bool, err error) {
 	resultCount := 0
 	tr, ctx := trace.New(ctx, "Git: RawLogDiffSearch", fmt.Sprintf("%+v, timeout=%s", opt, deadlineLabel(ctx)))
 	defer func() {
@@ -288,7 +289,7 @@ func doLogDiffSearchStream(ctx context.Context, repo gitserver.Repo, opt RawLogD
 	return complete, nil
 }
 
-func rawLogSearchCmd(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSearchOptions) (*gitserver.Cmd, error) {
+func rawLogSearchCmd(ctx context.Context, repo api.RepoName, opt RawLogDiffSearchOptions) (*gitserver.Cmd, error) {
 	args := []string{"log"}
 	args = append(args, opt.Args...)
 	if !isAllowedGitCmd(args) {
@@ -319,7 +320,7 @@ func rawLogSearchCmd(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSea
 
 // rawShowSearch runs git show on each commit in onelineCommits. We need to do
 // this to further filter hunks.
-func rawShowSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSearchOptions, cache *refResolveCache, onelineCommits []*onelineCommit) (results []*LogCommitSearchResult, complete bool, err error) {
+func rawShowSearch(ctx context.Context, repo api.RepoName, opt RawLogDiffSearchOptions, cache *refResolveCache, onelineCommits []*onelineCommit) (results []*LogCommitSearchResult, complete bool, err error) {
 	if len(onelineCommits) == 0 {
 		return nil, true, nil
 	}
@@ -534,7 +535,7 @@ type refResolveCache struct {
 	}
 }
 
-func (r *refResolveCache) resolveHEADSymbolicRef(ctx context.Context, repo gitserver.Repo) (target string, err error) {
+func (r *refResolveCache) resolveHEADSymbolicRef(ctx context.Context, repo api.RepoName) (target string, err error) {
 	resolve := func() (string, error) {
 		cmd := gitserver.DefaultClient.Command("git", "rev-parse", "--symbolic-full-name", "HEAD")
 		cmd.Repo = repo
@@ -562,7 +563,7 @@ func (r *refResolveCache) resolveHEADSymbolicRef(ctx context.Context, repo gitse
 
 // filterAndResolveRefs replaces "HEAD" entries with the names of the ref they refer to,
 // and it omits "HEAD -> ..." entries.
-func filterAndResolveRefs(ctx context.Context, repo gitserver.Repo, refs []string, cache *refResolveCache) ([]string, error) {
+func filterAndResolveRefs(ctx context.Context, repo api.RepoName, refs []string, cache *refResolveCache) ([]string, error) {
 	filtered := refs[:0]
 	for _, ref := range refs {
 		if strings.HasPrefix(ref, "HEAD -> ") {

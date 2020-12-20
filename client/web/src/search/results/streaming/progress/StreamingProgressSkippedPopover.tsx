@@ -4,16 +4,16 @@ import SearchIcon from 'mdi-react/SearchIcon'
 import React, { useCallback, useState } from 'react'
 import { Alert, Button, Form, FormGroup, Input, Label } from 'reactstrap'
 import { SyntaxHighlightedSearchQuery } from '../../../../components/SyntaxHighlightedSearchQuery'
-import { defaultProgress, StreamingProgressProps } from './StreamingProgress'
+import { StreamingProgressProps } from './StreamingProgress'
 
-export const StreamingProgressSkippedPopover: React.FunctionComponent<StreamingProgressProps> = ({
-    progress = defaultProgress,
-    onSearchAgain,
-}) => {
+export const StreamingProgressSkippedPopover: React.FunctionComponent<Pick<
+    StreamingProgressProps,
+    'progress' | 'onSearchAgain'
+>> = ({ progress, onSearchAgain }) => {
     const [selectedSuggestedSearches, setSelectedSuggestedSearches] = useState(new Set<string>())
     const submitHandler = useCallback(
         (event: React.FormEvent) => {
-            onSearchAgain?.([...selectedSuggestedSearches])
+            onSearchAgain([...selectedSuggestedSearches])
             event.preventDefault()
         },
         [selectedSuggestedSearches, onSearchAgain]

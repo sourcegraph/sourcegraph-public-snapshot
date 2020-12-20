@@ -3,13 +3,12 @@ package dbstore
 import (
 	"context"
 	"fmt"
-	"sort"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
+
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -47,6 +46,7 @@ func TestGetIndexByID(t *testing.T) {
 				Commands: []string{"yarn install --frozen-lockfile --no-progress"},
 			},
 		},
+		LocalSteps:  []string{"echo hello"},
 		Root:        "/foo/bar",
 		Indexer:     "sourcegraph/lsif-tsc:latest",
 		IndexerArgs: []string{"lib/**/*.js", "test/**/*.js", "--allowJs", "--checkJs"},
@@ -211,35 +211,6 @@ func TestGetIndexes(t *testing.T) {
 	}
 }
 
-func TestIndexQueueSize(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
-
-	insertIndexes(t, dbconn.Global,
-		Index{ID: 1, State: "queued"},
-		Index{ID: 2, State: "errored"},
-		Index{ID: 3, State: "processing"},
-		Index{ID: 4, State: "completed"},
-		Index{ID: 5, State: "completed"},
-		Index{ID: 6, State: "queued"},
-		Index{ID: 7, State: "processing"},
-		Index{ID: 8, State: "completed"},
-		Index{ID: 9, State: "processing"},
-		Index{ID: 10, State: "queued"},
-	)
-
-	count, err := store.IndexQueueSize(context.Background())
-	if err != nil {
-		t.Fatalf("unexpected error getting index queue size: %s", err)
-	}
-	if count != 3 {
-		t.Errorf("unexpected count. want=%d have=%d", 3, count)
-	}
-}
-
 func TestIsQueued(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -299,6 +270,7 @@ func TestInsertIndex(t *testing.T) {
 				Commands: []string{"yarn install --frozen-lockfile --no-progress"},
 			},
 		},
+		LocalSteps:  []string{"echo hello"},
 		Root:        "/foo/bar",
 		Indexer:     "sourcegraph/lsif-tsc:latest",
 		IndexerArgs: []string{"lib/**/*.js", "test/**/*.js", "--allowJs", "--checkJs"},
@@ -329,6 +301,7 @@ func TestInsertIndex(t *testing.T) {
 				Commands: []string{"yarn install --frozen-lockfile --no-progress"},
 			},
 		},
+		LocalSteps:  []string{"echo hello"},
 		Root:        "/foo/bar",
 		Indexer:     "sourcegraph/lsif-tsc:latest",
 		IndexerArgs: []string{"lib/**/*.js", "test/**/*.js", "--allowJs", "--checkJs"},
@@ -351,274 +324,6 @@ func TestInsertIndex(t *testing.T) {
 		if diff := cmp.Diff(expected, index); diff != "" {
 			t.Errorf("unexpected index (-want +got):\n%s", diff)
 		}
-	}
-}
-
-func TestMarkIndexComplete(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
-
-	insertIndexes(t, dbconn.Global, Index{ID: 1, State: "queued"})
-
-	if err := store.MarkIndexComplete(context.Background(), 1); err != nil {
-		t.Fatalf("unexpected error marking index as completed: %s", err)
-	}
-
-	if index, exists, err := store.GetIndexByID(context.Background(), 1); err != nil {
-		t.Fatalf("unexpected error getting index: %s", err)
-	} else if !exists {
-		t.Fatal("expected record to exist")
-	} else if index.State != "completed" {
-		t.Errorf("unexpected state. want=%q have=%q", "completed", index.State)
-	}
-}
-
-func TestMarkIndexErrored(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
-
-	insertIndexes(t, dbconn.Global, Index{ID: 1, State: "queued"})
-
-	if err := store.MarkIndexErrored(context.Background(), 1, "oops"); err != nil {
-		t.Fatalf("unexpected error marking index as completed: %s", err)
-	}
-
-	if index, exists, err := store.GetIndexByID(context.Background(), 1); err != nil {
-		t.Fatalf("unexpected error getting index: %s", err)
-	} else if !exists {
-		t.Fatal("expected record to exist")
-	} else if index.State != "errored" {
-		t.Errorf("unexpected state. want=%q have=%q", "errored", index.State)
-	}
-}
-
-func TestDequeueIndexProcessSuccess(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
-
-	// Add dequeueable index
-	insertIndexes(t, dbconn.Global, Index{ID: 1, State: "queued"})
-
-	index, tx, ok, err := store.DequeueIndex(context.Background())
-	if err != nil {
-		t.Fatalf("unexpected error dequeueing index: %s", err)
-	}
-	if !ok {
-		t.Fatalf("expected something to be dequeueable")
-	}
-
-	if index.ID != 1 {
-		t.Errorf("unexpected index id. want=%d have=%d", 1, index.ID)
-	}
-	if index.State != "processing" {
-		t.Errorf("unexpected state. want=%s have=%s", "processing", index.State)
-	}
-
-	if state, _, err := basestore.ScanFirstString(dbconn.Global.Query("SELECT state FROM lsif_indexes WHERE id = 1")); err != nil {
-		t.Errorf("unexpected error getting state: %s", err)
-	} else if state != "processing" {
-		t.Errorf("unexpected state outside of txn. want=%s have=%s", "processing", state)
-	}
-
-	if err := tx.MarkIndexComplete(context.Background(), index.ID); err != nil {
-		t.Fatalf("unexpected error marking index complete: %s", err)
-	}
-	_ = tx.Done(nil)
-
-	if state, _, err := basestore.ScanFirstString(dbconn.Global.Query("SELECT state FROM lsif_indexes WHERE id = 1")); err != nil {
-		t.Errorf("unexpected error getting state: %s", err)
-	} else if state != "completed" {
-		t.Errorf("unexpected state outside of txn. want=%s have=%s", "completed", state)
-	}
-}
-
-func TestDequeueIndexProcessError(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
-
-	// Add dequeueable index
-	insertIndexes(t, dbconn.Global, Index{ID: 1, State: "queued"})
-
-	index, tx, ok, err := store.DequeueIndex(context.Background())
-	if err != nil {
-		t.Fatalf("unexpected error dequeueing index: %s", err)
-	}
-	if !ok {
-		t.Fatalf("expected something to be dequeueable")
-	}
-
-	if index.ID != 1 {
-		t.Errorf("unexpected index id. want=%d have=%d", 1, index.ID)
-	}
-	if index.State != "processing" {
-		t.Errorf("unexpected state. want=%s have=%s", "processing", index.State)
-	}
-
-	if state, _, err := basestore.ScanFirstString(dbconn.Global.Query("SELECT state FROM lsif_indexes WHERE id = 1")); err != nil {
-		t.Errorf("unexpected error getting state: %s", err)
-	} else if state != "processing" {
-		t.Errorf("unexpected state outside of txn. want=%s have=%s", "processing", state)
-	}
-
-	if err := tx.MarkIndexErrored(context.Background(), index.ID, "test message"); err != nil {
-		t.Fatalf("unexpected error marking index complete: %s", err)
-	}
-	_ = tx.Done(nil)
-
-	if state, _, err := basestore.ScanFirstString(dbconn.Global.Query("SELECT state FROM lsif_indexes WHERE id = 1")); err != nil {
-		t.Errorf("unexpected error getting state: %s", err)
-	} else if state != "errored" {
-		t.Errorf("unexpected state outside of txn. want=%s have=%s", "errored", state)
-	}
-
-	if message, _, err := basestore.ScanFirstString(dbconn.Global.Query("SELECT failure_message FROM lsif_indexes WHERE id = 1")); err != nil {
-		t.Errorf("unexpected error getting failure_message: %s", err)
-	} else if message != "test message" {
-		t.Errorf("unexpected failure message outside of txn. want=%s have=%s", "test message", message)
-	}
-}
-
-func TestDequeueIndexSkipsLocked(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
-
-	t1 := time.Unix(1587396557, 0).UTC()
-	t2 := t1.Add(time.Minute)
-	t3 := t2.Add(time.Minute)
-	insertIndexes(
-		t,
-		dbconn.Global,
-		Index{ID: 1, State: "queued", QueuedAt: t1},
-		Index{ID: 2, State: "processing", QueuedAt: t2},
-		Index{ID: 3, State: "queued", QueuedAt: t3},
-	)
-
-	tx1, err := dbconn.Global.BeginTx(context.Background(), nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() { _ = tx1.Rollback() }()
-
-	// Row lock index 1 in a transaction which should be skipped by ResetStalled
-	if _, err := tx1.Query(`SELECT * FROM lsif_indexes WHERE id = 1 FOR UPDATE`); err != nil {
-		t.Fatal(err)
-	}
-
-	index, tx2, ok, err := store.DequeueIndex(context.Background())
-	if err != nil {
-		t.Fatalf("unexpected error dequeueing index: %s", err)
-	}
-	if !ok {
-		t.Fatalf("expected something to be dequeueable")
-	}
-	defer func() { _ = tx2.Done(nil) }()
-
-	if index.ID != 3 {
-		t.Errorf("unexpected index id. want=%d have=%d", 3, index.ID)
-	}
-	if index.State != "processing" {
-		t.Errorf("unexpected state. want=%s have=%s", "processing", index.State)
-	}
-}
-
-func TestDequeueIndexSkipsDelayed(t *testing.T) {
-	t.Skip()
-
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
-
-	t1 := time.Unix(1587396557, 0).UTC()
-	t2 := t1.Add(time.Minute)
-	t3 := t2.Add(time.Minute)
-	insertIndexes(
-		t,
-		dbconn.Global,
-		Index{ID: 1, State: "queued", QueuedAt: t1, ProcessAfter: &t2},
-		Index{ID: 2, State: "processing", QueuedAt: t2},
-		Index{ID: 3, State: "queued", QueuedAt: t3},
-	)
-
-	tx1, err := dbconn.Global.BeginTx(context.Background(), nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() { _ = tx1.Rollback() }()
-
-	index, tx2, ok, err := store.DequeueIndex(context.Background())
-	if err != nil {
-		t.Fatalf("unexpected error dequeueing index: %s", err)
-	}
-	if !ok {
-		t.Fatalf("expected something to be dequeueable")
-	}
-	defer func() { _ = tx2.Done(nil) }()
-
-	if index.ID != 3 {
-		t.Errorf("unexpected index id. want=%d have=%d", 3, index.ID)
-	}
-	if index.State != "processing" {
-		t.Errorf("unexpected state. want=%s have=%s", "processing", index.State)
-	}
-}
-
-func TestDequeueIndexEmpty(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
-
-	_, tx, ok, err := store.DequeueIndex(context.Background())
-	if err != nil {
-		t.Fatalf("unexpected error dequeueing index: %s", err)
-	}
-	if ok {
-		_ = tx.Done(nil)
-		t.Fatalf("unexpected dequeue")
-	}
-}
-
-func TestRequeueIndex(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
-
-	insertIndexes(t, dbconn.Global, Index{ID: 1, State: "processing"})
-
-	after := time.Unix(1587396557, 0).UTC().Add(time.Hour)
-
-	if err := store.RequeueIndex(context.Background(), 1, after); err != nil {
-		t.Fatalf("unexpected error requeueing index: %s", err)
-	}
-
-	if index, exists, err := store.GetIndexByID(context.Background(), 1); err != nil {
-		t.Fatalf("unexpected error getting index: %s", err)
-	} else if !exists {
-		t.Fatal("expected record to exist")
-	} else if index.State != "queued" {
-		t.Errorf("unexpected state. want=%q have=%q", "queued", index.State)
-	} else if index.ProcessAfter == nil || *index.ProcessAfter != after {
-		t.Errorf("unexpected process after. want=%s have=%s", after, index.ProcessAfter)
 	}
 }
 
@@ -705,68 +410,5 @@ func TestDeleteIndexesWithoutRepository(t *testing.T) {
 	}
 	if diff := cmp.Diff(expected, ids); diff != "" {
 		t.Errorf("unexpected ids (-want +got):\n%s", diff)
-	}
-}
-
-func TestResetStalledIndexes(t *testing.T) {
-	t.Skip()
-
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
-
-	now := time.Unix(1587396557, 0).UTC()
-	t1 := now.Add(-time.Second * 6) // old
-	t2 := now.Add(-time.Second * 2) // new enough
-	t3 := now.Add(-time.Second * 3) // new enough
-	t4 := now.Add(-time.Second * 8) // old
-	t5 := now.Add(-time.Second * 8) // old
-
-	insertIndexes(t, dbconn.Global,
-		Index{ID: 1, State: "processing", StartedAt: &t1, NumResets: 1},
-		Index{ID: 2, State: "processing", StartedAt: &t2},
-		Index{ID: 3, State: "processing", StartedAt: &t3},
-		Index{ID: 4, State: "processing", StartedAt: &t4},
-		Index{ID: 5, State: "processing", StartedAt: &t5},
-		Index{ID: 6, State: "processing", StartedAt: &t1, NumResets: IndexMaxNumResets},
-		Index{ID: 7, State: "processing", StartedAt: &t4, NumResets: IndexMaxNumResets},
-	)
-
-	tx, err := dbconn.Global.BeginTx(context.Background(), nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() { _ = tx.Rollback() }()
-
-	// Row lock index 5 in a transaction which should be skipped by ResetStalled
-	if _, err := tx.Query(`SELECT * FROM lsif_indexes WHERE id = 5 FOR UPDATE`); err != nil {
-		t.Fatal(err)
-	}
-
-	resetIDs, erroredIDs, err := store.ResetStalledIndexes(context.Background(), now)
-	if err != nil {
-		t.Fatalf("unexpected error resetting stalled indexes: %s", err)
-	}
-	sort.Ints(resetIDs)
-	sort.Ints(erroredIDs)
-
-	expectedReset := []int{1, 4}
-	if diff := cmp.Diff(expectedReset, resetIDs); diff != "" {
-		t.Errorf("unexpected reset IDs (-want +got):\n%s", diff)
-	}
-
-	expectedErrored := []int{6, 7}
-	if diff := cmp.Diff(expectedErrored, erroredIDs); diff != "" {
-		t.Errorf("unexpected errored IDs (-want +got):\n%s", diff)
-	}
-
-	index, _, err := store.GetIndexByID(context.Background(), 1)
-	if err != nil {
-		t.Fatalf("unexpected error getting index: %s", err)
-	}
-	if index.NumResets != 2 {
-		t.Errorf("unexpected num resets. want=%d have=%d", 2, index.NumResets)
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
@@ -20,7 +21,7 @@ func RepoUpdater() *monitoring.Container {
 				Title: "General",
 				Rows: []monitoring.Row{
 					{
-						sharedFrontendInternalAPIErrorResponses("repo-updater", monitoring.ObservableOwnerCloud),
+						shared.FrontendInternalAPIErrorResponses("repo-updater", monitoring.ObservableOwnerCloud),
 					},
 				},
 			},
@@ -363,6 +364,53 @@ func RepoUpdater() *monitoring.Container {
 							PossibleSolutions: "Check repo-updater logs. Check code host connectivity",
 						},
 					},
+					{
+						{
+							Name:            "github_graphql_rate_limit_remaining",
+							Description:     "remaining calls to GitHub graphql API before hitting the rate limit",
+							Query:           `max by (name) (src_github_rate_limit_remaining_v2{resource="graphql"})`,
+							DataMayNotExist: true,
+							// 5% of initial limit of 5000
+							Critical:          monitoring.Alert().LessOrEqual(250),
+							PanelOptions:      monitoring.PanelOptions().LegendFormat("{{name}}"),
+							Owner:             monitoring.ObservableOwnerCloud,
+							PossibleSolutions: `Try restarting the pod to get a different public IP.`,
+						},
+						{
+							Name:            "github_rest_rate_limit_remaining",
+							Description:     "remaining calls to GitHub rest API before hitting the rate limit",
+							Query:           `max by (name) (src_github_rate_limit_remaining_v2{resource="rest"})`,
+							DataMayNotExist: true,
+							// 5% of initial limit of 5000
+							Critical:          monitoring.Alert().LessOrEqual(250),
+							PanelOptions:      monitoring.PanelOptions().LegendFormat("{{name}}"),
+							Owner:             monitoring.ObservableOwnerCloud,
+							PossibleSolutions: `Try restarting the pod to get a different public IP.`,
+						},
+						{
+							Name:              "github_search_rate_limit_remaining",
+							Description:       "remaining calls to GitHub search API before hitting the rate limit",
+							Query:             `max by (name) (src_github_rate_limit_remaining_v2{resource="search"})`,
+							DataMayNotExist:   true,
+							Critical:          monitoring.Alert().LessOrEqual(5),
+							PanelOptions:      monitoring.PanelOptions().LegendFormat("{{name}}"),
+							Owner:             monitoring.ObservableOwnerCloud,
+							PossibleSolutions: `Try restarting the pod to get a different public IP.`,
+						},
+					},
+					{
+						{
+							Name:            "gitlab_rest_rate_limit_remaining",
+							Description:     "remaining calls to GitLab rest API before hitting the rate limit",
+							Query:           `max by (name) (src_gitlab_rate_limit_remaining{resource="rest"})`,
+							DataMayNotExist: true,
+							// 5% of initial limit of 600
+							Critical:          monitoring.Alert().LessOrEqual(30),
+							PanelOptions:      monitoring.PanelOptions().LegendFormat("{{name}}"),
+							Owner:             monitoring.ObservableOwnerCloud,
+							PossibleSolutions: `Try restarting the pod to get a different public IP.`,
+						},
+					},
 				},
 			},
 			{
@@ -370,12 +418,14 @@ func RepoUpdater() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedContainerCPUUsage("repo-updater", monitoring.ObservableOwnerCloud),
-						sharedContainerMemoryUsage("repo-updater", monitoring.ObservableOwnerCloud),
+						shared.ContainerCPUUsage("repo-updater", monitoring.ObservableOwnerCloud),
+						shared.ContainerMemoryUsage("repo-updater", monitoring.ObservableOwnerCloud).
+							WithWarning(nil).
+							WithCritical(monitoring.Alert().GreaterOrEqual(90)),
 					},
 					{
-						sharedContainerRestarts("repo-updater", monitoring.ObservableOwnerCloud),
-						sharedContainerFsInodes("repo-updater", monitoring.ObservableOwnerCloud),
+						shared.ContainerRestarts("repo-updater", monitoring.ObservableOwnerCloud),
+						shared.ContainerFsInodes("repo-updater", monitoring.ObservableOwnerCloud),
 					},
 				},
 			},
@@ -384,12 +434,12 @@ func RepoUpdater() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedProvisioningCPUUsageLongTerm("repo-updater", monitoring.ObservableOwnerCloud),
-						sharedProvisioningMemoryUsageLongTerm("repo-updater", monitoring.ObservableOwnerCloud),
+						shared.ProvisioningCPUUsageLongTerm("repo-updater", monitoring.ObservableOwnerCloud),
+						shared.ProvisioningMemoryUsageLongTerm("repo-updater", monitoring.ObservableOwnerCloud),
 					},
 					{
-						sharedProvisioningCPUUsageShortTerm("repo-updater", monitoring.ObservableOwnerCloud),
-						sharedProvisioningMemoryUsageShortTerm("repo-updater", monitoring.ObservableOwnerCloud),
+						shared.ProvisioningCPUUsageShortTerm("repo-updater", monitoring.ObservableOwnerCloud),
+						shared.ProvisioningMemoryUsageShortTerm("repo-updater", monitoring.ObservableOwnerCloud),
 					},
 				},
 			},
@@ -398,8 +448,8 @@ func RepoUpdater() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedGoGoroutines("repo-updater", monitoring.ObservableOwnerCloud),
-						sharedGoGcDuration("repo-updater", monitoring.ObservableOwnerCloud),
+						shared.GoGoroutines("repo-updater", monitoring.ObservableOwnerCloud),
+						shared.GoGcDuration("repo-updater", monitoring.ObservableOwnerCloud),
 					},
 				},
 			},
@@ -408,7 +458,7 @@ func RepoUpdater() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedKubernetesPodsAvailable("repo-updater", monitoring.ObservableOwnerCloud),
+						shared.KubernetesPodsAvailable("repo-updater", monitoring.ObservableOwnerCloud),
 					},
 				},
 			},

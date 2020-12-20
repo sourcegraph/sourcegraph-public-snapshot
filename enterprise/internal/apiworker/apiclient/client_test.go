@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
@@ -300,7 +302,7 @@ func testRoute(t *testing.T, spec routeSpec, f func(client *Client)) {
 			Password: "hunter2",
 		},
 	}
-	f(New(options))
+	f(New(options, &observation.TestContext))
 }
 
 func testServer(t *testing.T, spec routeSpec) *httptest.Server {

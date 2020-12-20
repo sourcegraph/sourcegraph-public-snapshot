@@ -6,7 +6,9 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/reconciler"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
@@ -26,19 +28,18 @@ const reconcilerMaxNumResets = 60
 // processing.
 func newWorker(
 	ctx context.Context,
-	s *campaigns.Store,
-	gitClient campaigns.GitserverClient,
+	s *store.Store,
+	gitClient reconciler.GitserverClient,
 	sourcer repos.Sourcer,
 	metrics campaignsMetrics,
 ) *workerutil.Worker {
-	r := &campaigns.Reconciler{GitserverClient: gitClient, Sourcer: sourcer, Store: s}
+	r := &reconciler.Reconciler{GitserverClient: gitClient, Sourcer: sourcer, Store: s}
 
 	options := workerutil.WorkerOptions{
+		Name:        "campaigns_reconciler_worker",
 		NumHandlers: 5,
 		Interval:    5 * time.Second,
-		Metrics: workerutil.WorkerMetrics{
-			HandleOperation: metrics.handleOperation,
-		},
+		Metrics:     metrics.workerMetrics,
 	}
 
 	workerStore := createDBWorkerStore(s)
@@ -47,11 +48,11 @@ func newWorker(
 	return worker
 }
 
-func newWorkerResetter(s *campaigns.Store, metrics campaignsMetrics) *dbworker.Resetter {
+func newWorkerResetter(s *store.Store, metrics campaignsMetrics) *dbworker.Resetter {
 	workerStore := createDBWorkerStore(s)
 
 	options := dbworker.ResetterOptions{
-		Name:     "campaigns_reconciler_resetter",
+		Name:     "campaigns_reconciler_worker_resetter",
 		Interval: 1 * time.Minute,
 		Metrics: dbworker.ResetterMetrics{
 			Errors:              metrics.errors,
@@ -65,14 +66,15 @@ func newWorkerResetter(s *campaigns.Store, metrics campaignsMetrics) *dbworker.R
 }
 
 func scanFirstChangesetRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
-	return campaigns.ScanFirstChangeset(rows, err)
+	return store.ScanFirstChangeset(rows, err)
 }
 
-func createDBWorkerStore(s *campaigns.Store) dbworkerstore.Store {
+func createDBWorkerStore(s *store.Store) dbworkerstore.Store {
 	return dbworkerstore.New(s.Handle(), dbworkerstore.Options{
+		Name:                 "campaigns_reconciler_worker_store",
 		TableName:            "changesets",
 		AlternateColumnNames: map[string]string{"state": "reconciler_state"},
-		ColumnExpressions:    campaigns.ChangesetColumns,
+		ColumnExpressions:    store.ChangesetColumns,
 		Scan:                 scanFirstChangesetRecord,
 
 		// Order changesets by state, so that freshly enqueued changesets have

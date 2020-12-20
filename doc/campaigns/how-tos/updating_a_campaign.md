@@ -20,8 +20,8 @@ For more information, see [Code host interactions in campaigns](../explanations/
 
 In order to update a campaign after previewing the changes, do the following:
 
-1. Edit the [campaign spec](../references/campaign_spec_yaml_reference.md) with which you created the campaign to include the changes you want to make to the campaign. For example, change the [`description`](../references/campaign_spec_yaml_reference.md#description) of the campaign or change [the commit message in the `changesetTemplate`](../references/campaign_spec_yaml_reference.md#changesettemplate-commit-message).
-1. Use the [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) to execute and upload the campaign spec.
+1. Edit the [campaign spec](../references/campaign_spec_yaml_reference.md) with which you created the campaign to include the changes you want to make to the campaign. For example, change [the commit message in the `changesetTemplate`](../references/campaign_spec_yaml_reference.md#changesettemplate-commit-message), or add a new changeset id [to the importedChangesets](https://docs.sourcegraph.com/campaigns/references/campaign_spec_yaml_reference#importchangesets), or [modify the repositoriesMatchingQuery](https://docs.sourcegraph.com/campaigns/references/campaign_spec_yaml_reference#on-repositoriesmatchingquery) to return different search results.
+1. Use the [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) to execute and preview the campaign spec.
 
     <pre><code>src campaign preview -f <em>YOUR_CAMPAIGN_SPEC.campaign.yaml</em></code></pre>
 1. Open on the URL that's printed to preview the changes that will be made by applying the new campaign spec.
@@ -49,7 +49,7 @@ Changes that affect the changesets are processed asynchronously to update the ch
 Here are some examples:
 
 - When the diff or attributes that affect the resulting commit of a changeset directly (such as the [`changesetTemplate.commit.message`](../references/campaign_spec_yaml_reference.md#changesettemplate-commit-message) or the [`changesetTemplate.commit.author`](../references/campaign_spec_yaml_reference.md#changesettemplate-commit-author)) and the changeset has been published, the commit on the code host will be overwritten by a new commit that includes the updated diff.
-- When the the [`changesetTemplate.title`](../references/campaign_spec_yaml_reference.md#changesettemplate-title) or the [`changesetTemplate.body`](../references/campaign_spec_yaml_reference.md#changesettemplate-commit-author) are changed and the changeset has been published, the changeset on the code host will be updated accordingly.
+- When the [`changesetTemplate.title`](../references/campaign_spec_yaml_reference.md#changesettemplate-title) or the [`changesetTemplate.body`](../references/campaign_spec_yaml_reference.md#changesettemplate-commit-author) are changed and the changeset has been published, the changeset on the code host will be updated accordingly.
 - When the [`changesetTemplate.branch`](../references/campaign_spec_yaml_reference.md#changesettemplate-title) is changed after the changeset has been published on the code host, the existing changeset will be closed on the code host and new one, with the new branch, will be created.
 - When the campaign spec is changed in such a way that no diff is produced in a repository in which the campaign already created and published a changeset, the existing changeset will be closed on the code host and detached from the campaign.
 

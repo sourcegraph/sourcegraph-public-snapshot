@@ -185,7 +185,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 	if err != nil {
 		return nil, err
 	}
-	common.update(*fileCommon)
+	common.update(fileCommon)
 
 	tr.LazyPrintf("results=%d limitHit=%v cloning=%d missing=%d excludedFork=%d excludedArchived=%d timedout=%d",
 		len(results),
@@ -276,7 +276,7 @@ func paginatedSearchFilesInRepos(ctx context.Context, args *search.TextParameter
 			// searchFilesInRepos can return a nil structure, but the executor
 			// requires a non-nil one always (which is more sane).
 			fileCommon = &searchResultsCommon{
-				partial: map[api.RepoName]struct{}{},
+				partial: map[api.RepoID]struct{}{},
 			}
 		}
 		// fileResults is not sorted so we must sort it now. fileCommon may or
@@ -328,6 +328,24 @@ type repoPaginationPlan struct {
 // returned.
 type executor func(batch []*search.RepositoryRevisions) ([]SearchResultResolver, *searchResultsCommon, error)
 
+// repoOfResult is a helper function to resolve the repo associated with a result type.
+func repoOfResult(result SearchResultResolver) string {
+	switch r := result.(type) {
+	case *RepositoryResolver:
+		return string(r.Name())
+	case *FileMatchResolver:
+		return r.Repo.Name()
+	case *CommitSearchResultResolver:
+		// Pagination does not support commit searches at the
+		// moment. Ideally we want to return the repo associated
+		// with a commit, but the commit result type does not
+		// clearly expose the repo it is associated with.
+		return "~" // lexicographically last.
+	}
+	// Unreachable.
+	panic("unreachable: repoOfResult expects RepositoryResolver, FileMatchResolver, or CommitSearchResultResolver")
+}
+
 // execute executes the repository pagination plan by invoking the executor to
 // search batches of repositories.
 //
@@ -377,7 +395,7 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *sea
 
 		// Accumulate the results and stop if we have enough for the user.
 		results = append(results, batchResults...)
-		common.update(*batchCommon)
+		common.update(batchCommon)
 
 		if len(results) >= resultOffset+int(p.pagination.limit) {
 			break
@@ -390,7 +408,7 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *sea
 
 	if len(sliced.results) > 0 {
 		// First, identify what repository corresponds to the last result.
-		lastRepoConsumedName, _ := sliced.results[len(sliced.results)-1].searchResultURIs()
+		lastRepoConsumedName := repoOfResult(sliced.results[len(sliced.results)-1])
 		var lastRepoConsumed *types.RepoName
 		for _, repo := range p.repositories {
 			if string(repo.Repo.Name) == lastRepoConsumedName {
@@ -454,7 +472,7 @@ type slicedSearchResults struct {
 func sliceSearchResults(results []SearchResultResolver, common *searchResultsCommon, offset, limit int) (final slicedSearchResults) {
 	firstRepo := ""
 	if len(results[:offset]) > 0 {
-		firstRepo, _ = results[offset].searchResultURIs()
+		firstRepo = repoOfResult(results[offset])
 	}
 	// First we handle the case of having few enough results that we do not
 	// need to slice anything.
@@ -462,7 +480,7 @@ func sliceSearchResults(results []SearchResultResolver, common *searchResultsCom
 		results = results[offset:]
 		final.results = results
 		if len(final.results) > 0 {
-			lastResultRepo, _ := final.results[len(final.results)-1].searchResultURIs()
+			lastResultRepo := repoOfResult(final.results[len(final.results)-1])
 			final.common = sliceSearchResultsCommon(common, firstRepo, lastResultRepo)
 		} else {
 			final.common = sliceSearchResultsCommon(common, firstRepo, "")
@@ -481,8 +499,7 @@ func sliceSearchResults(results []SearchResultResolver, common *searchResultsCom
 	}
 	resultsByRepo := map[*types.RepoName][]SearchResultResolver{}
 	for _, r := range results[:limit] {
-		repoName, _ := r.searchResultURIs()
-		repo := reposByName[repoName]
+		repo := reposByName[repoOfResult(r)]
 		resultsByRepo[repo] = append(resultsByRepo[repo], r)
 	}
 
@@ -498,7 +515,7 @@ func sliceSearchResults(results []SearchResultResolver, common *searchResultsCom
 	// resume fetching results starting at b3.
 	var lastResultRepo string
 	for _, r := range originalResults[:offset+limit] {
-		repo, _ := r.searchResultURIs()
+		repo := repoOfResult(r)
 		if repo != lastResultRepo {
 			final.resultOffset = 0
 		} else {
@@ -506,7 +523,7 @@ func sliceSearchResults(results []SearchResultResolver, common *searchResultsCom
 		}
 		lastResultRepo = repo
 	}
-	nextRepo, _ := results[limit].searchResultURIs()
+	nextRepo := repoOfResult(results[limit])
 	if nextRepo != lastResultRepo {
 		final.resultOffset = 0
 	} else {
@@ -519,7 +536,7 @@ func sliceSearchResults(results []SearchResultResolver, common *searchResultsCom
 	finalResults := make([]SearchResultResolver, 0, limit)
 	finalResultCount := int32(0)
 	for _, r := range results[:limit] {
-		repoName, _ := r.searchResultURIs()
+		repoName := repoOfResult(r)
 		if _, ok := seenRepos[repoName]; ok {
 			continue
 		}
@@ -545,7 +562,8 @@ func sliceSearchResultsCommon(common *searchResultsCommon, firstResultRepo, last
 	final := &searchResultsCommon{
 		limitHit:         false, // irrelevant in paginated search
 		indexUnavailable: common.indexUnavailable,
-		partial:          make(map[api.RepoName]struct{}),
+		repos:            make(map[api.RepoID]*types.RepoName),
+		partial:          make(map[api.RepoID]struct{}),
 		resultCount:      common.resultCount,
 	}
 
@@ -560,6 +578,7 @@ func sliceSearchResultsCommon(common *searchResultsCommon, firstResultRepo, last
 			if firstResultRepo != "" && string(r.Name) < firstResultRepo {
 				continue
 			}
+			final.repos[r.ID] = r
 			dst = append(dst, r)
 			if string(r.Name) == lastResultRepo {
 				break
@@ -567,7 +586,17 @@ func sliceSearchResultsCommon(common *searchResultsCommon, firstResultRepo, last
 		}
 		return dst
 	}
-	final.repos = doAppend(final.repos, common.repos)
+
+	for _, r := range common.repos {
+		if lastResultRepo == "" || string(r.Name) > lastResultRepo {
+			continue
+		}
+		if firstResultRepo != "" && string(r.Name) < firstResultRepo {
+			continue
+		}
+		final.repos[r.ID] = r
+	}
+
 	final.searched = doAppend(final.searched, common.searched)
 	final.indexed = doAppend(final.indexed, common.indexed)
 	final.cloning = doAppend(final.cloning, common.cloning)

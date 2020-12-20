@@ -45,14 +45,14 @@ import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { TreeEntriesSection } from './TreeEntriesSection'
-import { GitCommitFields, TreePageRepositoryFields } from '../../graphql-operations'
+import { GitCommitFields, Scalars, TreePageRepositoryFields } from '../../graphql-operations'
 import { getFileDecorations } from '../../backend/features'
 import { FileDecorationsByPath } from '../../../../shared/src/api/extension/flatExtensionApi'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 
 const fetchTreeCommits = memoizeObservable(
     (args: {
-        repo: GQL.ID
+        repo: Scalars['ID']
         revspec: string
         first?: number
         filePath?: string

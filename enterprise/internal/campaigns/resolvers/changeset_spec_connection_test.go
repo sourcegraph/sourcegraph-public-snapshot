@@ -2,20 +2,20 @@ package resolvers
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -27,32 +27,33 @@ func TestChangesetSpecConnectionResolver(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
-	userID := insertTestUser(t, dbconn.Global, "changeset-spec-connection-resolver", false)
+	userID := ct.CreateTestUser(t, false).ID
 
-	store := ee.NewStore(dbconn.Global)
+	cstore := store.New(dbconn.Global)
 
 	campaignSpec := &campaigns.CampaignSpec{
 		UserID:          userID,
 		NamespaceUserID: userID,
 	}
-	if err := store.CreateCampaignSpec(ctx, campaignSpec); err != nil {
+	if err := cstore.CreateCampaignSpec(ctx, campaignSpec); err != nil {
 		t.Fatal(err)
 	}
 
-	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	repoStore := db.NewRepoStoreWith(cstore)
+	esStore := db.NewExternalServicesStoreWith(cstore)
 
-	repos := make([]*types.Repo, 0, 3)
-	for i := 0; i < cap(repos); i++ {
-		name := fmt.Sprintf("github.com/sourcegraph/repo-%d", i)
-		r := newGitHubTestRepo(name, newGitHubExternalService(t, reposStore))
-		if err := reposStore.InsertRepos(ctx, r); err != nil {
+	rs := make([]*types.Repo, 0, 3)
+	for i := 0; i < cap(rs); i++ {
+		name := fmt.Sprintf("github.com/sourcegraph/test-changeset-spec-connection-repo-%d", i)
+		r := newGitHubTestRepo(name, newGitHubExternalService(t, esStore))
+		if err := repoStore.Create(ctx, r); err != nil {
 			t.Fatal(err)
 		}
-		repos = append(repos, r)
+		rs = append(rs, r)
 	}
 
-	changesetSpecs := make([]*campaigns.ChangesetSpec, 0, len(repos))
-	for _, r := range repos {
+	changesetSpecs := make([]*campaigns.ChangesetSpec, 0, len(rs))
+	for _, r := range rs {
 		repoID := graphqlbackend.MarshalRepositoryID(r.ID)
 		s, err := campaigns.NewChangesetSpecFromRaw(ct.NewRawChangesetSpecGitBranch(repoID, "d34db33f"))
 		if err != nil {
@@ -62,14 +63,14 @@ func TestChangesetSpecConnectionResolver(t *testing.T) {
 		s.UserID = userID
 		s.RepoID = r.ID
 
-		if err := store.CreateChangesetSpec(ctx, s); err != nil {
+		if err := cstore.CreateChangesetSpec(ctx, s); err != nil {
 			t.Fatal(err)
 		}
 
 		changesetSpecs = append(changesetSpecs, s)
 	}
 
-	s, err := graphqlbackend.NewSchema(&Resolver{store: store}, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(&Resolver{store: cstore}, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

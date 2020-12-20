@@ -8,7 +8,6 @@ import { StreamingProgressSkippedPopover } from './StreamingProgressSkippedPopov
 describe('StreamingProgressSkippedPopover', () => {
     it('should render correctly', () => {
         const progress: Progress = {
-            done: true,
             durationMs: 1500,
             matchCount: 2,
             repositoriesCount: 2,
@@ -46,13 +45,12 @@ describe('StreamingProgressSkippedPopover', () => {
             ],
         }
 
-        const element = mount(<StreamingProgressSkippedPopover progress={progress} />)
+        const element = mount(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} />)
         expect(element).toMatchSnapshot()
     })
 
     it('should not show Search Again section if no suggested searches are set', () => {
         const progress: Progress = {
-            done: true,
             durationMs: 1500,
             matchCount: 2,
             repositoriesCount: 2,
@@ -66,13 +64,12 @@ describe('StreamingProgressSkippedPopover', () => {
             ],
         }
 
-        const element = mount(<StreamingProgressSkippedPopover progress={progress} />)
+        const element = mount(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} />)
         expect(element.find(Form)).toHaveLength(0)
     })
 
     it('should have Search Again button disabled by default', () => {
         const progress: Progress = {
-            done: true,
             durationMs: 1500,
             matchCount: 2,
             repositoriesCount: 2,
@@ -90,7 +87,7 @@ describe('StreamingProgressSkippedPopover', () => {
             ],
         }
 
-        const element = mount(<StreamingProgressSkippedPopover progress={progress} />)
+        const element = mount(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} />)
         const searchAgainButton = element.find(Button)
         expect(searchAgainButton).toHaveLength(1)
         expect(searchAgainButton.prop('disabled')).toBe(true)
@@ -98,7 +95,6 @@ describe('StreamingProgressSkippedPopover', () => {
 
     it('should enable Search Again button if at least one item is checked', () => {
         const progress: Progress = {
-            done: true,
             durationMs: 1500,
             matchCount: 2,
             repositoriesCount: 2,
@@ -136,7 +132,7 @@ describe('StreamingProgressSkippedPopover', () => {
             ],
         }
 
-        const element = mount(<StreamingProgressSkippedPopover progress={progress} />)
+        const element = mount(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} />)
 
         const checkboxes = element.find(Input)
         expect(checkboxes).toHaveLength(3)
@@ -152,7 +148,6 @@ describe('StreamingProgressSkippedPopover', () => {
 
     it('should disable Search Again button if unchecking all items', () => {
         const progress: Progress = {
-            done: true,
             durationMs: 1500,
             matchCount: 2,
             repositoriesCount: 2,
@@ -190,7 +185,7 @@ describe('StreamingProgressSkippedPopover', () => {
             ],
         }
 
-        const element = mount(<StreamingProgressSkippedPopover progress={progress} />)
+        const element = mount(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} />)
 
         const checkboxes = element.find(Input)
         expect(checkboxes).toHaveLength(3)
@@ -212,7 +207,6 @@ describe('StreamingProgressSkippedPopover', () => {
 
     it('should call onSearchAgain with selected items when button is clicked', () => {
         const progress: Progress = {
-            done: true,
             durationMs: 1500,
             matchCount: 2,
             repositoriesCount: 2,

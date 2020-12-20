@@ -119,9 +119,7 @@ export const hiddenExternalChangesetFieldsFragment = gql`
         createdAt
         updatedAt
         nextSyncAt
-        externalState
-        publicationState
-        reconcilerState
+        state
     }
 `
 export const externalChangesetFieldsFragment = gql`
@@ -130,9 +128,7 @@ export const externalChangesetFieldsFragment = gql`
         id
         title
         body
-        publicationState
-        reconcilerState
-        externalState
+        state
         reviewState
         checkState
         error
@@ -156,6 +152,13 @@ export const externalChangesetFieldsFragment = gql`
         nextSyncAt
         currentSpec {
             id
+            type
+            description {
+                __typename
+                ... on GitBranchChangesetDescription {
+                    headRef
+                }
+            }
         }
     }
 
@@ -184,11 +187,9 @@ export const queryChangesets = ({
     campaign,
     first,
     after,
-    externalState,
+    state,
     reviewState,
     checkState,
-    publicationState,
-    reconcilerState,
     onlyPublishedByThisCampaign,
     search,
 }: CampaignChangesetsVariables): Observable<
@@ -200,11 +201,9 @@ export const queryChangesets = ({
                 $campaign: ID!
                 $first: Int
                 $after: String
-                $externalState: ChangesetExternalState
+                $state: ChangesetState
                 $reviewState: ChangesetReviewState
                 $checkState: ChangesetCheckState
-                $publicationState: ChangesetPublicationState
-                $reconcilerState: [ChangesetReconcilerState!]
                 $onlyPublishedByThisCampaign: Boolean
                 $search: String
             ) {
@@ -214,9 +213,7 @@ export const queryChangesets = ({
                         changesets(
                             first: $first
                             after: $after
-                            externalState: $externalState
-                            publicationState: $publicationState
-                            reconcilerState: $reconcilerState
+                            state: $state
                             reviewState: $reviewState
                             checkState: $checkState
                             onlyPublishedByThisCampaign: $onlyPublishedByThisCampaign
@@ -241,11 +238,9 @@ export const queryChangesets = ({
             campaign,
             first,
             after,
-            externalState,
+            state,
             reviewState,
             checkState,
-            publicationState,
-            reconcilerState,
             onlyPublishedByThisCampaign,
             search,
         }

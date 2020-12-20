@@ -2,7 +2,6 @@ package usagestats
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"testing"
 	"time"
@@ -14,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -23,7 +21,9 @@ func TestCampaignsUsageStatistics(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 
 	// Create stub repo.
-	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	repoStore := db.NewRepoStoreWithDB(dbconn.Global)
+	esStore := db.NewExternalServicesStoreWithDB(dbconn.Global)
+
 	now := time.Now()
 	svc := types.ExternalService{
 		Kind:        extsvc.KindGitHub,
@@ -32,7 +32,7 @@ func TestCampaignsUsageStatistics(t *testing.T) {
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
-	if err := rstore.UpsertExternalServices(ctx, &svc); err != nil {
+	if err := esStore.Upsert(ctx, &svc); err != nil {
 		t.Fatalf("failed to insert external services: %v", err)
 	}
 	repo := &types.Repo{
@@ -49,7 +49,7 @@ func TestCampaignsUsageStatistics(t *testing.T) {
 			},
 		},
 	}
-	if err := rstore.InsertRepos(ctx, repo); err != nil {
+	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 
@@ -105,16 +105,16 @@ func TestCampaignsUsageStatistics(t *testing.T) {
 	// missing diffstat shouldn't happen anymore (due to migration), but it's still a nullable field.
 	_, err = dbconn.Global.Exec(`
 		INSERT INTO changesets
-			(id, repo_id, external_service_type, added_to_campaign, owned_by_campaign_id, external_state, publication_state, diff_stat_added, diff_stat_changed, diff_stat_deleted)
+			(id, repo_id, external_service_type, owned_by_campaign_id, external_state, publication_state, diff_stat_added, diff_stat_changed, diff_stat_deleted)
 		VALUES
 		    -- tracked
-			(1, $1, 'github', true, NULL, 'OPEN',   'PUBLISHED', 9, 7, 5),
-			(2, $1, 'github', true, NULL, 'MERGED', 'PUBLISHED', 7, 9, 5),
+			(1, $1, 'github', NULL, 'OPEN',   'PUBLISHED', 9, 7, 5),
+			(2, $1, 'github', NULL, 'MERGED', 'PUBLISHED', 7, 9, 5),
 			-- created by campaign
-			(4, $1, 'github', false, 1, 'OPEN',   'PUBLISHED', 5, 7, 9),
-			(5, $1, 'github', false, 1, 'OPEN',   'PUBLISHED', NULL, NULL, NULL),
-			(6, $1, 'github', false, 2, 'MERGED', 'PUBLISHED', 9, 7, 5),
-			(7, $1, 'github', false, 2, 'MERGED', 'PUBLISHED', NULL, NULL, NULL)
+			(4, $1, 'github', 1, 'OPEN',   'PUBLISHED', 5, 7, 9),
+			(5, $1, 'github', 1, 'OPEN',   'PUBLISHED', NULL, NULL, NULL),
+			(6, $1, 'github', 2, 'MERGED', 'PUBLISHED', 9, 7, 5),
+			(7, $1, 'github', 2, 'MERGED', 'PUBLISHED', NULL, NULL, NULL)
 	`, repo.ID)
 	if err != nil {
 		t.Fatal(err)

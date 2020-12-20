@@ -26,11 +26,15 @@ type MonitorRegistry struct {
 	monitors map[string]*Monitor
 }
 
-// GetOrSet fetches the rate limit monitor associated with the given code host / token tuple.
-// If none has been configured yet, the provided monitor will be set.
-func (r *MonitorRegistry) GetOrSet(baseURL, authHash string, monitor *Monitor) *Monitor {
+// GetOrSet fetches the rate limit monitor associated with the given code host /
+// token tuple and an optional resource key. If none has been configured yet, the
+// provided monitor will be set.
+func (r *MonitorRegistry) GetOrSet(baseURL, authHash, resource string, monitor *Monitor) *Monitor {
 	baseURL = normaliseURL(baseURL)
 	key := baseURL + ":" + authHash
+	if len(resource) > 0 {
+		key = key + ":" + resource
+	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if _, ok := r.monitors[key]; !ok {
@@ -55,10 +59,11 @@ type Monitor struct {
 
 	mu        sync.Mutex
 	known     bool
-	limit     int       // last RateLimit-Limit HTTP response header value
-	remaining int       // last RateLimit-Remaining HTTP response header value
-	reset     time.Time // last RateLimit-Remaining HTTP response header value
-	retry     time.Time // deadline based on Retry-After HTTP response header value
+	limit     int                     // last RateLimit-Limit HTTP response header value
+	remaining int                     // last RateLimit-Remaining HTTP response header value
+	reset     time.Time               // last RateLimit-Remaining HTTP response header value
+	retry     time.Time               // deadline based on Retry-After HTTP response header value
+	collector func(remaining float64) // metrics collector for remaining tokens
 
 	clock func() time.Time
 }
@@ -176,6 +181,17 @@ func (c *Monitor) Update(h http.Header) {
 	c.limit = limit
 	c.remaining = remaining
 	c.reset = time.Unix(resetAtSeconds, 0)
+
+	if c.known && c.collector != nil {
+		c.collector(float64(c.remaining))
+	}
+}
+
+// SetCollector sets the metric collector.
+func (c *Monitor) SetCollector(collector func(remaining float64)) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.collector = collector
 }
 
 func (c *Monitor) now() time.Time {
