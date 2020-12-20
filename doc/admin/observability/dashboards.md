@@ -1,10 +1,10 @@
-# Sourcegraph monitoring dashboards
-
-This document contains details on how to intepret panels and metrics in Sourcegraph's monitoring dashboards.
-
-To learn more about Sourcegraph's metrics and how to view these dashboards, see [our metrics documentation](https://docs.sourcegraph.com/admin/observability/metrics).
+# Dashboards reference
 
 <!-- DO NOT EDIT: generated via: go generate ./monitoring -->
+
+This document contains a complete reference on Sourcegraph's available dashboards, as well as details on how to interpret the panels and metrics.
+
+To learn more about Sourcegraph's metrics and how to view these dashboards, see [our metrics guide](https://docs.sourcegraph.com/admin/observability/metrics).
 
 ## Frontend
 

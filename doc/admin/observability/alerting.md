@@ -1,14 +1,14 @@
-# Alerts
+# Alerting
 
 Alerts can be configured to notify site admins when there is something wrong or noteworthy on the Sourcegraph instance.
 
 ## Understanding alerts
 
-See [alert solutions](alert_solutions.md) for possible solutions when alerts are firing, and learn more about alert labels and metrics in our [metrics guide](metrics_guide.md).
+See [alert solutions](alert_solutions.md) for possible solutions when alerts are firing, and learn more about alert labels, metrics, and dashboards in our [metrics guide](metrics.md).
 
 ## Setting up alerting
 
-Visit your site configuration (e.g. `https://sourcegraph.example.com/site-admin/configuration`) to configure alerts using the `observability.alerts` field. As always, you can use `Ctrl+Space` at any time to get hints about allowed fields as well as relevant documentation inside the configuration editor.
+Visit your site configuration (e.g. `https://sourcegraph.example.com/site-admin/configuration`) to configure alerts using the [`observability.alerts`](../config/site_config.md#observability-alerts) field. As always, you can use `Ctrl+Space` at any time to get hints about allowed fields as well as relevant documentation inside the configuration editor.
 
 Once configured, Sourcegraph alerts will automatically be routed to the appropriate notification channels by severity level.
 
@@ -113,7 +113,7 @@ The test alert may take up to a minute to fire. The triggered alert will automat
 
 ### Silencing alerts
 
-If there is an alert you are aware of and you wish to silence notifications for it, add an entry to the `observability.silenceAlerts` field. For example:
+If there is an alert you are aware of and you wish to silence notifications for it, add an entry to the [`observability.silenceAlerts`](../config/site_config.md#observability-silenceAlerts)field. For example:
 
 ```json
 {

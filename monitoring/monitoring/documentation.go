@@ -16,24 +16,24 @@ const (
 	dashboardsDocsFile = "dashboards.md"
 )
 
-const alertSolutionsHeader = `# Sourcegraph alert solutions
+const alertSolutionsHeader = `# Alert solutions
+
+<!-- DO NOT EDIT: generated via: go generate ./monitoring -->
 
 This document contains possible solutions for when you find alerts are firing in Sourcegraph's monitoring.
 If your alert isn't mentioned here, or if the solution doesn't help, [contact us](mailto:support@sourcegraph.com) for assistance.
 
-To learn more about Sourcegraph's alerting and how to set up alerts, see [our alerting documentation](https://docs.sourcegraph.com/admin/observability/alerting).
-
-<!-- DO NOT EDIT: generated via: go generate ./monitoring -->
+To learn more about Sourcegraph's alerting and how to set up alerts, see [our alerting guide](https://docs.sourcegraph.com/admin/observability/alerting).
 
 `
 
-const dashboardsHeader = `# Sourcegraph monitoring dashboards
-
-This document contains details on how to intepret panels and metrics in Sourcegraph's monitoring dashboards.
-
-To learn more about Sourcegraph's metrics and how to view these dashboards, see [our metrics documentation](https://docs.sourcegraph.com/admin/observability/metrics).
+const dashboardsHeader = `# Dashboards reference
 
 <!-- DO NOT EDIT: generated via: go generate ./monitoring -->
+
+This document contains a complete reference on Sourcegraph's available dashboards, as well as details on how to interpret the panels and metrics.
+
+To learn more about Sourcegraph's metrics and how to view these dashboards, see [our metrics guide](https://docs.sourcegraph.com/admin/observability/metrics).
 
 `
 

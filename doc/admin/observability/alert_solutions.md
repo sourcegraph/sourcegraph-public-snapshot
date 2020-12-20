@@ -1,11 +1,11 @@
-# Sourcegraph alert solutions
+# Alert solutions
+
+<!-- DO NOT EDIT: generated via: go generate ./monitoring -->
 
 This document contains possible solutions for when you find alerts are firing in Sourcegraph's monitoring.
 If your alert isn't mentioned here, or if the solution doesn't help, [contact us](mailto:support@sourcegraph.com) for assistance.
 
-To learn more about Sourcegraph's alerting and how to set up alerts, see [our alerting documentation](https://docs.sourcegraph.com/admin/observability/alerting).
-
-<!-- DO NOT EDIT: generated via: go generate ./monitoring -->
+To learn more about Sourcegraph's alerting and how to set up alerts, see [our alerting guide](https://docs.sourcegraph.com/admin/observability/alerting).
 
 ## frontend: 99th_percentile_search_request_duration
 
