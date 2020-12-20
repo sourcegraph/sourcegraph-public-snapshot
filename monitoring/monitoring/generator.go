@@ -17,6 +17,7 @@ import (
 const (
 	alertSuffix        = "_alert_rules.yml"
 	alertSolutionsFile = "alert_solutions.md"
+	dashboardsDocsFile = "dashboards.md"
 )
 
 const (
@@ -54,7 +55,7 @@ func Generate(logger log15.Logger, opts GenerateOptions, containers ...*Containe
 
 		// Verify container configuration
 		if err := container.validate(); err != nil {
-			clog.Crit("Failed to validate container", "err", err)
+			clog.Crit("Failed to validate Container", "err", err)
 			return err
 		}
 
@@ -132,15 +133,23 @@ func Generate(logger log15.Logger, opts GenerateOptions, containers ...*Containe
 		logger.Debug("Rendering docs")
 		docs, err := renderDocumentation(containers)
 		if err != nil {
-			logger.Crit("Unable to generate docs", "error", err)
+			logger.Crit("Failed to generate docs", "error", err)
 			return err
 		}
-		err = ioutil.WriteFile(filepath.Join(opts.DocsDir, alertSolutionsFile), docs.alertSolutions.Bytes(), os.ModePerm)
-		if err != nil {
-			logger.Crit("Could not write alert solutions to output", "error", err)
-			return err
+		for _, docOut := range []struct {
+			path string
+			data []byte
+		}{
+			{path: filepath.Join(opts.DocsDir, alertSolutionsFile), data: docs.alertSolutions.Bytes()},
+			{path: filepath.Join(opts.DocsDir, dashboardsDocsFile), data: docs.dashboards.Bytes()},
+		} {
+			err = ioutil.WriteFile(docOut.path, docOut.data, os.ModePerm)
+			if err != nil {
+				logger.Crit("Could not write docs to path", "path", docOut.path, "error", err)
+				return err
+			}
+			generatedAssets = append(generatedAssets, docOut.path)
 		}
-		generatedAssets = append(generatedAssets, alertSolutionsFile)
 	}
 
 	// Clean up dangling assets

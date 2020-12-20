@@ -30,14 +30,17 @@ func RepoUpdater() *monitoring.Container {
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:              "syncer_sync_last_time",
-							Description:       "time since last sync",
-							Query:             `max(timestamp(vector(time()))) - max(src_repoupdater_syncer_sync_last_time)`,
-							DataMayNotExist:   true,
-							NoAlert:           true,
-							PanelOptions:      monitoring.PanelOptions().Unit(monitoring.Seconds),
-							Owner:             monitoring.ObservableOwnerCloud,
-							PossibleSolutions: "Make sure there are external services added with valid tokens",
+							Name:            "syncer_sync_last_time",
+							Description:     "time since last sync",
+							Query:           `max(timestamp(vector(time()))) - max(src_repoupdater_syncer_sync_last_time)`,
+							DataMayNotExist: true,
+							NoAlert:         true,
+							PanelOptions:    monitoring.PanelOptions().Unit(monitoring.Seconds),
+							Owner:           monitoring.ObservableOwnerCloud,
+							Interpretation: `
+								A high value here indicates issues synchronizing repository permissions.
+								If the value is persistently high, make sure all external services have valid tokens.
+							`,
 						},
 						{
 							Name:            "src_repoupdater_max_sync_backoff",
@@ -165,14 +168,17 @@ func RepoUpdater() *monitoring.Container {
 							PossibleSolutions: "Check repo-updater logs. This is expected to fire if there are no user added code hosts",
 						},
 						{
-							Name:              "sched_manual_fetch",
-							Description:       "repositories scheduled due to user traffic",
-							Query:             `sum(rate(src_repoupdater_sched_manual_fetch[1m]))`,
-							NoAlert:           true,
-							DataMayNotExist:   true,
-							PanelOptions:      monitoring.PanelOptions().Unit(monitoring.Number),
-							Owner:             monitoring.ObservableOwnerCloud,
-							PossibleSolutions: "Check repo-updater logs. This is expected to fire if there are no user added code hosts",
+							Name:            "sched_manual_fetch",
+							Description:     "repositories scheduled due to user traffic",
+							Query:           `sum(rate(src_repoupdater_sched_manual_fetch[1m]))`,
+							NoAlert:         true,
+							DataMayNotExist: true,
+							PanelOptions:    monitoring.PanelOptions().Unit(monitoring.Number),
+							Owner:           monitoring.ObservableOwnerCloud,
+							Interpretation: `
+								Check repo-updater logs if this value is persistently high.
+								This does not indicate anything if there are no user added code hosts.
+							`,
 						},
 					},
 					{

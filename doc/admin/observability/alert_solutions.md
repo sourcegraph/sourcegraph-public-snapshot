@@ -1,10 +1,9 @@
-# Alert solutions
+# Sourcegraph alert solutions
 
 This document contains possible solutions for when you find alerts are firing in Sourcegraph's monitoring.
-If your alert isn't mentioned here, or if the solution doesn't help, [contact us](mailto:support@sourcegraph.com)
-for assistance.
+If your alert isn't mentioned here, or if the solution doesn't help, [contact us](mailto:support@sourcegraph.com) for assistance.
 
-To learn more about Sourcegraph's alerting, see [our alerting documentation](https://docs.sourcegraph.com/admin/observability/alerting).
+To learn more about Sourcegraph's alerting and how to set up alerts, see [our alerting documentation](https://docs.sourcegraph.com/admin/observability/alerting).
 
 <!-- DO NOT EDIT: generated via: go generate ./monitoring -->
 
@@ -1198,8 +1197,8 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-			- **Kubernetes:** consider provisioning more machines with less resources.
+- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+- **Kubernetes:** consider provisioning more machines with less resources.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1558,8 +1557,8 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-			- **Kubernetes:** consider provisioning more machines with less resources.
+- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+- **Kubernetes:** consider provisioning more machines with less resources.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1796,8 +1795,8 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-			- **Kubernetes:** consider provisioning more machines with less resources.
+- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+- **Kubernetes:** consider provisioning more machines with less resources.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2602,8 +2601,8 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-			- **Kubernetes:** consider provisioning more machines with less resources.
+- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+- **Kubernetes:** consider provisioning more machines with less resources.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2869,8 +2868,8 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-			- **Kubernetes:** consider provisioning more machines with less resources.
+- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+- **Kubernetes:** consider provisioning more machines with less resources.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3761,8 +3760,8 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions:**
 
-- 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-			- **Kubernetes:** consider provisioning more machines with less resources.
+- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+- **Kubernetes:** consider provisioning more machines with less resources.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4068,8 +4067,8 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions:**
 
-- 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-			- **Kubernetes:** consider provisioning more machines with less resources.
+- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+- **Kubernetes:** consider provisioning more machines with less resources.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4375,8 +4374,8 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions:**
 
-- 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-			- **Kubernetes:** consider provisioning more machines with less resources.
+- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+- **Kubernetes:** consider provisioning more machines with less resources.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4615,8 +4614,8 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions:**
 
-- 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-			- **Kubernetes:** consider provisioning more machines with less resources.
+- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+- **Kubernetes:** consider provisioning more machines with less resources.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4837,8 +4836,8 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions:**
 
-- 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-			- **Kubernetes:** consider provisioning more machines with less resources.
+- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+- **Kubernetes:** consider provisioning more machines with less resources.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -5077,8 +5076,8 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions:**
 
-- 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-			- **Kubernetes:** consider provisioning more machines with less resources.
+- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+- **Kubernetes:** consider provisioning more machines with less resources.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -5318,8 +5317,8 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions:**
 
-- 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-			- **Kubernetes:** consider provisioning more machines with less resources.
+- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+- **Kubernetes:** consider provisioning more machines with less resources.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -5645,8 +5644,8 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions:**
 
-- 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-			- **Kubernetes:** consider provisioning more machines with less resources.
+- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+- **Kubernetes:** consider provisioning more machines with less resources.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -6005,8 +6004,8 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions:**
 
-- 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-			- **Kubernetes:** consider provisioning more machines with less resources.
+- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+- **Kubernetes:** consider provisioning more machines with less resources.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json

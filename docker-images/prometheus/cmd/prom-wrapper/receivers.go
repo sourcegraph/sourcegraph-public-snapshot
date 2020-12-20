@@ -7,6 +7,7 @@ import (
 
 	amconfig "github.com/prometheus/alertmanager/config"
 	commoncfg "github.com/prometheus/common/config"
+
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -22,6 +23,8 @@ const (
 	colorGood     = "#00FF00" // green
 )
 
+const alertSolutionsURL = "https://docs.sourcegraph.com/admin/observability/alert_solutions"
+
 // commonLabels defines the set of labels we group alerts by, such that each alert falls in a unique group.
 // These labels are available in Alertmanager templates as fields of `.CommonLabels`.
 //
@@ -31,11 +34,13 @@ const (
 // When changing this, make sure to update the webhook body documentation in /doc/admin/observability/alerting.md
 var commonLabels = []string{"alertname", "level", "service_name", "name", "owner", "description"}
 
-// Static alertmanager templates
+// Static alertmanager templates. Templating reference: https://prometheus.io/docs/alerting/latest/notifications
+//
+// All `.CommonLabels` labels used in these templates should be included in `route.GroupByStr` in order for them to be available.
 var (
-	// Alertmanager notification template reference: https://prometheus.io/docs/alerting/latest/notifications
-	// All labels used in these templates should be included in route.GroupByStr
-	alertSolutionsURLTemplate = `https://docs.sourcegraph.com/admin/observability/alert_solutions#{{ .CommonLabels.service_name }}-{{ .CommonLabels.name | reReplaceAll "(_low|_high)$" "" | reReplaceAll "_" "-" }}`
+	// observableDocAnchorTemplate must match anchors generated in `monitoring/monitoring/documentation.go`.
+	observableDocAnchorTemplate = `{{ .CommonLabels.service_name }}-{{ .CommonLabels.name | reReplaceAll "(_low|_high)$" "" | reReplaceAll "_" "-" }}`
+	alertSolutionsURLTemplate   = fmt.Sprintf(`%s#%s`, alertSolutionsURL, observableDocAnchorTemplate)
 
 	// Title templates
 	firingTitleTemplate       = "[{{ .CommonLabels.level | toUpper }}] {{ .CommonLabels.description }}"
