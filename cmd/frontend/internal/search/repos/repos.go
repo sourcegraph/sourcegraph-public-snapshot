@@ -142,7 +142,7 @@ func ResolveRepositories(ctx context.Context, op Options) (Resolved, error) {
 		// on Sourcegraph.com (100ms+).
 		excludedC := make(chan ExcludedRepos)
 		go func() {
-			excludedC <- computeExcludedRepositories(ctx, op.Query, options)
+			excludedC <- ComputeExcludedRepositories(ctx, op.Query, options)
 		}()
 
 		repos, err = db.Repos.ListRepoNames(ctx, options)
@@ -355,11 +355,11 @@ func resolveVersionContext(versionContext string) (*schema.VersionContext, error
 // Cf. golang/go/src/regexp/syntax/parse.go.
 const regexpFlags = regexpsyntax.ClassNL | regexpsyntax.PerlX | regexpsyntax.UnicodeGroups
 
-// exactlyOneRepo returns whether exactly one repo: literal field is specified and
+// ExactlyOneRepo returns whether exactly one repo: literal field is specified and
 // delineated by regex anchors ^ and $. This function helps determine whether we
 // should return results for a single repo regardless of whether it is a fork or
 // archive.
-func exactlyOneRepo(repoFilters []string) bool {
+func ExactlyOneRepo(repoFilters []string) bool {
 	if len(repoFilters) == 1 {
 		filter, _ := search.ParseRepositoryRevisions(repoFilters[0])
 		if strings.HasPrefix(filter, "^") && strings.HasSuffix(filter, "$") {
@@ -380,9 +380,9 @@ type ExcludedRepos struct {
 	Archived int
 }
 
-// computeExcludedRepositories returns a list of excluded repositories (Forks or
+// ComputeExcludedRepositories returns a list of excluded repositories (Forks or
 // archives) based on the search Query.
-func computeExcludedRepositories(ctx context.Context, q query.QueryInfo, op db.ReposListOptions) (excluded ExcludedRepos) {
+func ComputeExcludedRepositories(ctx context.Context, q query.QueryInfo, op db.ReposListOptions) (excluded ExcludedRepos) {
 	if q == nil {
 		return ExcludedRepos{}
 	}
@@ -394,7 +394,7 @@ func computeExcludedRepositories(ctx context.Context, q query.QueryInfo, op db.R
 
 	forkStr, _ := q.StringValue(query.FieldFork)
 	fork := ParseYesNoOnly(forkStr)
-	if fork == Invalid && !exactlyOneRepo(op.IncludePatterns) {
+	if fork == Invalid && !ExactlyOneRepo(op.IncludePatterns) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -413,7 +413,7 @@ func computeExcludedRepositories(ctx context.Context, q query.QueryInfo, op db.R
 
 	archivedStr, _ := q.StringValue(query.FieldArchived)
 	archived := ParseYesNoOnly(archivedStr)
-	if archived == Invalid && !exactlyOneRepo(op.IncludePatterns) {
+	if archived == Invalid && !ExactlyOneRepo(op.IncludePatterns) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()

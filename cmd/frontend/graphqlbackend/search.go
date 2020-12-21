@@ -9,17 +9,14 @@ import (
 	regexpsyntax "regexp/syntax"
 	"sort"
 	"strconv"
-	"strings"
 	"sync"
 
-	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 
 	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -373,86 +370,6 @@ func decodedViewerFinalSettings(ctx context.Context) (_ *schema.Settings, err er
 // Cf. golang/go/src/regexp/syntax/parse.go.
 const regexpFlags = regexpsyntax.ClassNL | regexpsyntax.PerlX | regexpsyntax.UnicodeGroups
 
-// exactlyOneRepo returns whether exactly one repo: literal field is specified and
-// delineated by regex anchors ^ and $. This function helps determine whether we
-// should return results for a single repo regardless of whether it is a fork or
-// archive.
-func exactlyOneRepo(repoFilters []string) bool {
-	if len(repoFilters) == 1 {
-		filter, _ := search.ParseRepositoryRevisions(repoFilters[0])
-		if strings.HasPrefix(filter, "^") && strings.HasSuffix(filter, "$") {
-			filter := strings.TrimSuffix(strings.TrimPrefix(filter, "^"), "$")
-			r, err := regexpsyntax.Parse(filter, regexpFlags)
-			if err != nil {
-				return false
-			}
-			return r.Op == regexpsyntax.OpLiteral
-		}
-	}
-	return false
-}
-
-// A type that counts how many repos with a certain label were excluded from search results.
-type excludedRepos struct {
-	forks    int
-	archived int
-}
-
-// computeExcludedRepositories returns a list of excluded repositories (forks or
-// archives) based on the search query.
-func computeExcludedRepositories(ctx context.Context, q query.QueryInfo, op db.ReposListOptions) (excluded excludedRepos) {
-	if q == nil {
-		return excludedRepos{}
-	}
-
-	// PERF: We query concurrently since each count call can be slow on
-	// Sourcegraph.com (100ms+).
-	var wg sync.WaitGroup
-	var numExcludedForks, numExcludedArchived int
-
-	forkStr, _ := q.StringValue(query.FieldFork)
-	fork := searchrepos.ParseYesNoOnly(forkStr)
-	if fork == searchrepos.Invalid && !exactlyOneRepo(op.IncludePatterns) {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			// 'fork:...' was not specified and forks are excluded, find out
-			// which repos are excluded.
-			selectForks := op
-			selectForks.OnlyForks = true
-			selectForks.NoForks = false
-			var err error
-			numExcludedForks, err = db.Repos.Count(ctx, selectForks)
-			if err != nil {
-				log15.Warn("repo count for excluded fork", "err", err)
-			}
-		}()
-	}
-
-	archivedStr, _ := q.StringValue(query.FieldArchived)
-	archived := searchrepos.ParseYesNoOnly(archivedStr)
-	if archived == searchrepos.Invalid && !exactlyOneRepo(op.IncludePatterns) {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			// archived...: was not specified and archives are excluded,
-			// find out which repos are excluded.
-			selectArchived := op
-			selectArchived.OnlyArchived = true
-			selectArchived.NoArchived = false
-			var err error
-			numExcludedArchived, err = db.Repos.Count(ctx, selectArchived)
-			if err != nil {
-				log15.Warn("repo count for excluded archive", "err", err)
-			}
-		}()
-	}
-
-	wg.Wait()
-
-	return excludedRepos{forks: numExcludedForks, archived: numExcludedArchived}
-}
-
 // resolveRepositories calls ResolveRepositories, caching the result for the common case
 // where effectiveRepoFieldValues == nil.
 func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoFieldValues []string) (searchrepos.Resolved, error) {
@@ -497,7 +414,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 
 	forkStr, _ := r.query.StringValue(query.FieldFork)
 	fork := searchrepos.ParseYesNoOnly(forkStr)
-	if fork == searchrepos.Invalid && !exactlyOneRepo(repoFilters) && !settingForks {
+	if fork == searchrepos.Invalid && !searchrepos.ExactlyOneRepo(repoFilters) && !settingForks {
 		// fork defaults to No unless either of:
 		// (1) exactly one repo is being searched, or
 		// (2) user/org/global setting includes forks
@@ -506,7 +423,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 
 	archivedStr, _ := r.query.StringValue(query.FieldArchived)
 	archived := searchrepos.ParseYesNoOnly(archivedStr)
-	if archived == searchrepos.Invalid && !exactlyOneRepo(repoFilters) && !settingArchived {
+	if archived == searchrepos.Invalid && !searchrepos.ExactlyOneRepo(repoFilters) && !settingArchived {
 		// archived defaults to No unless either of:
 		// (1) exactly one repo is being searched, or
 		// (2) user/org/global setting includes archives in all searches
@@ -546,19 +463,6 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		r.repoErr = err
 	}
 	return resolved, err
-}
-
-func hasTypeRepo(q query.QueryInfo) bool {
-	fields := q.Fields()
-	if len(fields["type"]) == 0 {
-		return false
-	}
-	for _, t := range fields["type"] {
-		if t.Value() == "repo" {
-			return true
-		}
-	}
-	return false
 }
 
 func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*searchSuggestionResolver, error) {
