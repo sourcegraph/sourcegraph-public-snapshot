@@ -6,12 +6,16 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/google/zoekt"
+
 	"github.com/google/go-cmp/cmp"
+	searchzoekt "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -269,6 +273,88 @@ func TestSearchRevspecs(t *testing.T) {
 			}
 			if !reflect.DeepEqual(clashing, test.clashing) {
 				t.Errorf("clashing repo mismatch: actual: %#v, expected: %#v", clashing, test.clashing)
+			}
+		})
+	}
+}
+
+func TestDefaultRepositories(t *testing.T) {
+	tcs := []struct {
+		name             string
+		defaultsInDb     []string
+		indexedRepoNames map[string]bool
+		want             []string
+		excludePatterns  []string
+	}{
+		{
+			name:             "none in db => none returned",
+			defaultsInDb:     nil,
+			indexedRepoNames: nil,
+			want:             nil,
+		},
+		{
+			name:             "two in db, one indexed => indexed repo returned",
+			defaultsInDb:     []string{"unindexedrepo", "indexedrepo"},
+			indexedRepoNames: map[string]bool{"indexedrepo": true},
+			want:             []string{"indexedrepo"},
+		},
+		{
+			name:             "should not return excluded repo",
+			defaultsInDb:     []string{"unindexedrepo1", "indexedrepo1", "indexedrepo2", "indexedrepo3"},
+			indexedRepoNames: map[string]bool{"indexedrepo1": true, "indexedrepo2": true, "indexedrepo3": true},
+			excludePatterns:  []string{"indexedrepo3"},
+			want:             []string{"indexedrepo1", "indexedrepo2"},
+		},
+		{
+			name:             "should not return excluded repo (case insensitive)",
+			defaultsInDb:     []string{"unindexedrepo1", "indexedrepo1", "indexedrepo2", "Indexedrepo3"},
+			indexedRepoNames: map[string]bool{"indexedrepo1": true, "indexedrepo2": true, "Indexedrepo3": true},
+			excludePatterns:  []string{"indexedrepo3"},
+			want:             []string{"indexedrepo1", "indexedrepo2"},
+		},
+		{
+			name:             "should not return excluded repos ending in `test`",
+			defaultsInDb:     []string{"repo1", "repo2", "repo-test", "repoTEST"},
+			indexedRepoNames: map[string]bool{"repo1": true, "repo2": true, "repo-test": true, "repoTEST": true},
+			excludePatterns:  []string{"test$"},
+			want:             []string{"repo1", "repo2"},
+		},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+
+			var drs []*types.RepoName
+			for i, name := range tc.defaultsInDb {
+				r := &types.RepoName{
+					ID:   api.RepoID(i),
+					Name: api.RepoName(name),
+				}
+				drs = append(drs, r)
+			}
+			getRawDefaultRepos := func(ctx context.Context) ([]*types.RepoName, error) {
+				return drs, nil
+			}
+
+			var indexed []*zoekt.RepoListEntry
+			for name := range tc.indexedRepoNames {
+				indexed = append(indexed, &zoekt.RepoListEntry{Repository: zoekt.Repository{Name: name}})
+			}
+			z := &searchbackend.Zoekt{
+				Client:       &searchzoekt.FakeSearcher{Repos: indexed},
+				DisableCache: true,
+			}
+
+			ctx := context.Background()
+			drs, err := defaultRepositories(ctx, getRawDefaultRepos, z, tc.excludePatterns)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var drNames []string
+			for _, dr := range drs {
+				drNames = append(drNames, string(dr.Name))
+			}
+			if !reflect.DeepEqual(drNames, tc.want) {
+				t.Errorf("names of default repos = %v, want %v", drNames, tc.want)
 			}
 		})
 	}

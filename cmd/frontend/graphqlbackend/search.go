@@ -11,7 +11,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -560,46 +559,6 @@ func hasTypeRepo(q query.QueryInfo) bool {
 		}
 	}
 	return false
-}
-
-type defaultReposFunc func(ctx context.Context) ([]*types.RepoName, error)
-
-func defaultRepositories(ctx context.Context, getRawDefaultRepos defaultReposFunc, z *searchbackend.Zoekt, excludePatterns []string) ([]*types.RepoName, error) {
-	// Get the list of default repos from the db.
-	defaultRepos, err := getRawDefaultRepos(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "querying db for default repos")
-	}
-
-	// Remove excluded repos
-	if len(excludePatterns) > 0 {
-		patterns, _ := regexp.Compile(`(?i)` + searchrepos.UnionRegExps(excludePatterns))
-		filteredRepos := defaultRepos[:0]
-		for _, repo := range defaultRepos {
-			if matched := patterns.MatchString(string(repo.Name)); !matched {
-				filteredRepos = append(filteredRepos, repo)
-			}
-		}
-		defaultRepos = filteredRepos
-	}
-
-	// Ask Zoekt which repos it has indexed
-	ctx, cancel := context.WithTimeout(ctx, time.Second)
-	defer cancel()
-	set, err := z.ListAll(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	// In place filtering of defaultRepos to only include names from set.
-	repos := defaultRepos[:0]
-	for _, r := range defaultRepos {
-		if _, ok := set[string(r.Name)]; ok {
-			repos = append(repos, r)
-		}
-	}
-
-	return repos, nil
 }
 
 func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*searchSuggestionResolver, error) {
