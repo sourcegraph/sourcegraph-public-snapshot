@@ -17,9 +17,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
@@ -373,97 +371,6 @@ func decodedViewerFinalSettings(ctx context.Context) (_ *schema.Settings, err er
 	return &settings, nil
 }
 
-// A repogroup value is either a exact repo path RepoPath, or a regular
-// expression pattern RepoRegexpPattern.
-type RepoGroupValue interface {
-	value()
-	String() string
-}
-
-type RepoPath string
-type RepoRegexpPattern string
-
-func (RepoPath) value() {}
-func (r RepoPath) String() string {
-	return string(r)
-}
-
-func (RepoRegexpPattern) value() {}
-func (r RepoRegexpPattern) String() string {
-	return string(r)
-}
-
-var mockResolveRepoGroups func() (map[string][]RepoGroupValue, error)
-
-func resolveRepoGroups(ctx context.Context, settings *schema.Settings) (groups map[string][]RepoGroupValue, err error) {
-	if mockResolveRepoGroups != nil {
-		return mockResolveRepoGroups()
-	}
-	groups = map[string][]RepoGroupValue{}
-
-	for name, values := range settings.SearchRepositoryGroups {
-		repos := make([]RepoGroupValue, 0, len(values))
-
-		for _, value := range values {
-			switch path := value.(type) {
-			case string:
-				repos = append(repos, RepoPath(path))
-			case map[string]interface{}:
-				if stringRegex, ok := path["regex"].(string); ok {
-					repos = append(repos, RepoRegexpPattern(stringRegex))
-				} else {
-					log15.Warn("ignoring repo group value because regex not specified", "regex-string", path["regex"])
-				}
-			default:
-				log15.Warn("ignoring repo group value of unrecognized type", "value", value, "type", fmt.Sprintf("%T", value))
-			}
-		}
-		groups[name] = repos
-	}
-
-	if currentUserAllowedExternalServices(ctx) == conf.ExternalServiceModeDisabled {
-		return groups, nil
-	}
-
-	a := actor.FromContext(ctx)
-	names, err := db.Repos.GetUserAddedRepoNames(ctx, a.UID)
-	if err != nil {
-		log15.Warn("getting user added repos", "err", err)
-		return groups, nil
-	}
-
-	if len(names) == 0 {
-		return groups, nil
-	}
-
-	values := make([]RepoGroupValue, 0, len(names))
-	for _, name := range names {
-		values = append(values, RepoPath(name))
-	}
-	groups["my"] = values
-
-	return groups, nil
-}
-
-// repoGroupValuesToRegexp does a lookup of all repo groups by name and converts
-// their values to a list of regular expressions to search.
-func repoGroupValuesToRegexp(groupNames []string, groups map[string][]RepoGroupValue) []string {
-	var patterns []string
-	for _, groupName := range groupNames {
-		for _, value := range groups[groupName] {
-			switch v := value.(type) {
-			case RepoPath:
-				patterns = append(patterns, "^"+regexp.QuoteMeta(v.String())+"$")
-			case RepoRegexpPattern:
-				patterns = append(patterns, v.String())
-			default:
-				panic("unreachable")
-			}
-		}
-	}
-	return patterns
-}
-
 // Cf. golang/go/src/regexp/syntax/parse.go.
 const regexpFlags = regexpsyntax.ClassNL | regexpsyntax.PerlX | regexpsyntax.UnicodeGroups
 
@@ -547,8 +454,8 @@ func computeExcludedRepositories(ctx context.Context, q query.QueryInfo, op db.R
 	return excludedRepos{forks: numExcludedForks, archived: numExcludedArchived}
 }
 
-// resolveRepositories calls doResolveRepositories, caching the result for the common
-// case where effectiveRepoFieldValues == nil.
+// resolveRepositories calls ResolveRepositories, caching the result for the common case
+// where effectiveRepoFieldValues == nil.
 func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoFieldValues []string) (searchrepos.Resolved, error) {
 	var err error
 	var repoRevs, missingRepoRevs []*search.RepositoryRevisions
@@ -633,106 +540,13 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		CommitAfter:        commitAfter,
 		Query:              r.query,
 	}
-	resolved, err := searchrepos.Resolve(ctx, options)
+	resolved, err := searchrepos.ResolveRepositories(ctx, options)
 	tr.LazyPrintf("resolveRepositories - done")
 	if effectiveRepoFieldValues == nil {
 		r.resolved = resolved
 		r.repoErr = err
 	}
 	return resolved, err
-}
-
-// a patternRevspec maps an include pattern to a list of revisions
-// for repos matching that pattern. "map" in this case does not mean
-// an actual map, because we want regexp matches, not identity matches.
-type patternRevspec struct {
-	includePattern *regexp.Regexp
-	revs           []search.RevisionSpecifier
-}
-
-// given a repo name, determine whether it matched any patterns for which we have
-// revspecs (or ref globs), and if so, return the matching/allowed ones.
-func getRevsForMatchedRepo(repo api.RepoName, pats []patternRevspec) (matched []search.RevisionSpecifier, clashing []search.RevisionSpecifier) {
-	revLists := make([][]search.RevisionSpecifier, 0, len(pats))
-	for _, rev := range pats {
-		if rev.includePattern.MatchString(string(repo)) {
-			revLists = append(revLists, rev.revs)
-		}
-	}
-	// exactly one match: we accept that list
-	if len(revLists) == 1 {
-		matched = revLists[0]
-		return
-	}
-	// no matches: we generate a dummy list containing only master
-	if len(revLists) == 0 {
-		matched = []search.RevisionSpecifier{{RevSpec: ""}}
-		return
-	}
-	// if two repo specs match, and both provided non-empty rev lists,
-	// we want their intersection
-	allowedRevs := make(map[search.RevisionSpecifier]struct{}, len(revLists[0]))
-	allRevs := make(map[search.RevisionSpecifier]struct{}, len(revLists[0]))
-	// starting point: everything is "true" if it is currently allowed
-	for _, rev := range revLists[0] {
-		allowedRevs[rev] = struct{}{}
-		allRevs[rev] = struct{}{}
-	}
-	// in theory, "master-by-default" entries won't even be participating
-	// in this.
-	for _, revList := range revLists[1:] {
-		restrictedRevs := make(map[search.RevisionSpecifier]struct{}, len(revList))
-		for _, rev := range revList {
-			allRevs[rev] = struct{}{}
-			if _, ok := allowedRevs[rev]; ok {
-				restrictedRevs[rev] = struct{}{}
-			}
-		}
-		allowedRevs = restrictedRevs
-	}
-	if len(allowedRevs) > 0 {
-		matched = make([]search.RevisionSpecifier, 0, len(allowedRevs))
-		for rev := range allowedRevs {
-			matched = append(matched, rev)
-		}
-		sort.Slice(matched, func(i, j int) bool { return matched[i].Less(matched[j]) })
-		return
-	}
-	// build a list of the revspecs which broke this, return it
-	// as the "clashing" list.
-	clashing = make([]search.RevisionSpecifier, 0, len(allRevs))
-	for rev := range allRevs {
-		clashing = append(clashing, rev)
-	}
-	// ensure that lists are always returned in sorted order.
-	sort.Slice(clashing, func(i, j int) bool { return clashing[i].Less(clashing[j]) })
-	return
-}
-
-// findPatternRevs mutates the given list of include patterns to
-// be a raw list of the repository name patterns we want, separating
-// out their revision specs, if any.
-func findPatternRevs(includePatterns []string) (includePatternRevs []patternRevspec, err error) {
-	includePatternRevs = make([]patternRevspec, 0, len(includePatterns))
-	for i, includePattern := range includePatterns {
-		repoPattern, revs := search.ParseRepositoryRevisions(includePattern)
-		// Validate pattern now so the error message is more recognizable to the
-		// user
-		if _, err := regexp.Compile(repoPattern); err != nil {
-			return nil, &badRequestError{err}
-		}
-		repoPattern = optimizeRepoPatternWithHeuristics(repoPattern)
-		includePatterns[i] = repoPattern
-		if len(revs) > 0 {
-			p, err := regexp.Compile("(?i:" + includePatterns[i] + ")")
-			if err != nil {
-				return nil, &badRequestError{err}
-			}
-			patternRev := patternRevspec{includePattern: p, revs: revs}
-			includePatternRevs = append(includePatternRevs, patternRev)
-		}
-	}
-	return
 }
 
 func searchLimits() schema.SearchLimits {
@@ -815,16 +629,6 @@ func defaultRepositories(ctx context.Context, getRawDefaultRepos defaultReposFun
 	}
 
 	return repos, nil
-}
-
-func optimizeRepoPatternWithHeuristics(repoPattern string) string {
-	if envvar.SourcegraphDotComMode() && (strings.HasPrefix(string(repoPattern), "github.com") || strings.HasPrefix(string(repoPattern), `github\.com`)) {
-		repoPattern = "^" + repoPattern
-	}
-	// Optimization: make the "." in "github.com" a literal dot
-	// so that the regexp can be optimized more effectively.
-	repoPattern = strings.Replace(string(repoPattern), "github.com", `github\.com`, -1)
-	return repoPattern
 }
 
 func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*searchSuggestionResolver, error) {

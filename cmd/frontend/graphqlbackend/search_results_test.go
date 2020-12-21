@@ -13,6 +13,7 @@ import (
 	"github.com/google/zoekt"
 	"go.uber.org/atomic"
 
+	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -778,7 +779,7 @@ func TestSearchRevspecs(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.descr, func(t *testing.T) {
-			pats, err := findPatternRevs(test.specs)
+			pats, err := searchrepos.FindPatternRevs(test.specs)
 			if err != nil {
 				if test.err == nil {
 					t.Errorf("unexpected error: '%s'", err)
@@ -792,7 +793,7 @@ func TestSearchRevspecs(t *testing.T) {
 			if test.err != nil {
 				t.Errorf("missing expected error: wanted '%s'", test.err.Error())
 			}
-			matched, clashing := getRevsForMatchedRepo(api.RepoName(test.repo), pats)
+			matched, clashing := searchrepos.GetRevsForMatchedRepo(api.RepoName(test.repo), pats)
 			if !reflect.DeepEqual(matched, test.matched) {
 				t.Errorf("matched repo mismatch: actual: %#v, expected: %#v", matched, test.matched)
 			}

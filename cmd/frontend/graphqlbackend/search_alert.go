@@ -122,7 +122,7 @@ func alertForStalePermissions() *searchAlert {
 // query does not contain any repos to search.
 func (r *searchResolver) reposExist(ctx context.Context, options searchrepos.Options) bool {
 	options.UserSettings = r.userSettings
-	resolved, err := searchrepos.Resolve(ctx, options)
+	resolved, err := searchrepos.ResolveRepositories(ctx, options)
 	return err == nil && len(resolved.RepoRevs) > 0
 }
 
