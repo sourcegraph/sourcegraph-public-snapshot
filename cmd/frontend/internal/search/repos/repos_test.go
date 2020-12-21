@@ -4,14 +4,12 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"sync"
 	"testing"
-
-	"github.com/inconshreveable/log15"
 
 	"github.com/google/zoekt"
 
 	"github.com/google/go-cmp/cmp"
+
 	searchzoekt "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 
@@ -362,61 +360,6 @@ func TestDefaultRepositories(t *testing.T) {
 			}
 		})
 	}
-}
-
-// computeExcludedRepositories returns a list of excluded repositories (forks or
-// archives) based on the search query.
-func computeExcludedRepositories(ctx context.Context, q query.QueryInfo, op db.ReposListOptions) (excluded ExcludedRepos) {
-	if q == nil {
-		return ExcludedRepos{}
-	}
-
-	// PERF: We query concurrently since each count call can be slow on
-	// Sourcegraph.com (100ms+).
-	var wg sync.WaitGroup
-	var numExcludedForks, numExcludedArchived int
-
-	forkStr, _ := q.StringValue(query.FieldFork)
-	fork := ParseYesNoOnly(forkStr)
-	if fork == Invalid && !ExactlyOneRepo(op.IncludePatterns) {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			// 'fork:...' was not specified and forks are excluded, find out
-			// which repos are excluded.
-			selectForks := op
-			selectForks.OnlyForks = true
-			selectForks.NoForks = false
-			var err error
-			numExcludedForks, err = db.Repos.Count(ctx, selectForks)
-			if err != nil {
-				log15.Warn("repo count for excluded fork", "err", err)
-			}
-		}()
-	}
-
-	archivedStr, _ := q.StringValue(query.FieldArchived)
-	archived := ParseYesNoOnly(archivedStr)
-	if archived == Invalid && !ExactlyOneRepo(op.IncludePatterns) {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			// archived...: was not specified and archives are excluded,
-			// find out which repos are excluded.
-			selectArchived := op
-			selectArchived.OnlyArchived = true
-			selectArchived.NoArchived = false
-			var err error
-			numExcludedArchived, err = db.Repos.Count(ctx, selectArchived)
-			if err != nil {
-				log15.Warn("repo count for excluded archive", "err", err)
-			}
-		}()
-	}
-
-	wg.Wait()
-
-	return ExcludedRepos{Forks: numExcludedForks, Archived: numExcludedArchived}
 }
 
 func TestHasTypeRepo(t *testing.T) {

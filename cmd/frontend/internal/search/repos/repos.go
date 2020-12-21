@@ -142,7 +142,7 @@ func ResolveRepositories(ctx context.Context, op Options) (Resolved, error) {
 		// on Sourcegraph.com (100ms+).
 		excludedC := make(chan ExcludedRepos)
 		go func() {
-			excludedC <- ComputeExcludedRepositories(ctx, op.Query, options)
+			excludedC <- computeExcludedRepositories(ctx, op.Query, options)
 		}()
 
 		repos, err = db.Repos.ListRepoNames(ctx, options)
@@ -321,6 +321,54 @@ func (op *Options) String() string {
 	return b.String()
 }
 
+func SearchLimits() schema.SearchLimits {
+	// Our configuration reader does not set defaults from schema. So we rely
+	// on Go default values to mean defaults.
+	withDefault := func(x *int, def int) {
+		if *x <= 0 {
+			*x = def
+		}
+	}
+
+	c := conf.Get()
+
+	var limits schema.SearchLimits
+	if c.SearchLimits != nil {
+		limits = *c.SearchLimits
+	}
+
+	// If MaxRepos unset use deprecated value
+	if limits.MaxRepos == 0 {
+		limits.MaxRepos = c.MaxReposToSearch
+	}
+
+	withDefault(&limits.MaxRepos, math.MaxInt32>>1)
+	withDefault(&limits.CommitDiffMaxRepos, 50)
+	withDefault(&limits.CommitDiffWithTimeFilterMaxRepos, 10000)
+	withDefault(&limits.MaxTimeoutSeconds, 60)
+
+	return limits
+}
+
+// ExactlyOneRepo returns whether exactly one repo: literal field is specified and
+// delineated by regex anchors ^ and $. This function helps determine whether we
+// should return results for a single repo regardless of whether it is a fork or
+// archive.
+func ExactlyOneRepo(repoFilters []string) bool {
+	if len(repoFilters) == 1 {
+		filter, _ := search.ParseRepositoryRevisions(repoFilters[0])
+		if strings.HasPrefix(filter, "^") && strings.HasSuffix(filter, "$") {
+			filter := strings.TrimSuffix(strings.TrimPrefix(filter, "^"), "$")
+			r, err := regexpsyntax.Parse(filter, regexpFlags)
+			if err != nil {
+				return false
+			}
+			return r.Op == regexpsyntax.OpLiteral
+		}
+	}
+	return false
+}
+
 func UnionRegExps(patterns []string) string {
 	if len(patterns) == 0 {
 		return ""
@@ -355,34 +403,15 @@ func resolveVersionContext(versionContext string) (*schema.VersionContext, error
 // Cf. golang/go/src/regexp/syntax/parse.go.
 const regexpFlags = regexpsyntax.ClassNL | regexpsyntax.PerlX | regexpsyntax.UnicodeGroups
 
-// ExactlyOneRepo returns whether exactly one repo: literal field is specified and
-// delineated by regex anchors ^ and $. This function helps determine whether we
-// should return results for a single repo regardless of whether it is a fork or
-// archive.
-func ExactlyOneRepo(repoFilters []string) bool {
-	if len(repoFilters) == 1 {
-		filter, _ := search.ParseRepositoryRevisions(repoFilters[0])
-		if strings.HasPrefix(filter, "^") && strings.HasSuffix(filter, "$") {
-			filter := strings.TrimSuffix(strings.TrimPrefix(filter, "^"), "$")
-			r, err := regexpsyntax.Parse(filter, regexpFlags)
-			if err != nil {
-				return false
-			}
-			return r.Op == regexpsyntax.OpLiteral
-		}
-	}
-	return false
-}
-
 // A type that counts how many repos with a certain label were excluded from search results.
 type ExcludedRepos struct {
 	Forks    int
 	Archived int
 }
 
-// ComputeExcludedRepositories returns a list of excluded repositories (Forks or
+// computeExcludedRepositories returns a list of excluded repositories (Forks or
 // archives) based on the search Query.
-func ComputeExcludedRepositories(ctx context.Context, q query.QueryInfo, op db.ReposListOptions) (excluded ExcludedRepos) {
+func computeExcludedRepositories(ctx context.Context, q query.QueryInfo, op db.ReposListOptions) (excluded ExcludedRepos) {
 	if q == nil {
 		return ExcludedRepos{}
 	}
@@ -526,35 +555,6 @@ func findPatternRevs(includePatterns []string) (includePatternRevs []patternRevs
 		}
 	}
 	return
-}
-
-func SearchLimits() schema.SearchLimits {
-	// Our configuration reader does not set defaults from schema. So we rely
-	// on Go default values to mean defaults.
-	withDefault := func(x *int, def int) {
-		if *x <= 0 {
-			*x = def
-		}
-	}
-
-	c := conf.Get()
-
-	var limits schema.SearchLimits
-	if c.SearchLimits != nil {
-		limits = *c.SearchLimits
-	}
-
-	// If MaxRepos unset use deprecated value
-	if limits.MaxRepos == 0 {
-		limits.MaxRepos = c.MaxReposToSearch
-	}
-
-	withDefault(&limits.MaxRepos, math.MaxInt32>>1)
-	withDefault(&limits.CommitDiffMaxRepos, 50)
-	withDefault(&limits.CommitDiffWithTimeFilterMaxRepos, 10000)
-	withDefault(&limits.MaxTimeoutSeconds, 60)
-
-	return limits
 }
 
 func hasTypeRepo(q query.QueryInfo) bool {
