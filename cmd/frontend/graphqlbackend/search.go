@@ -19,6 +19,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repositories"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -41,7 +42,7 @@ import (
 
 // This file contains the root resolver for search. It currently has a lot of
 // logic that spans out into all the other search_* files.
-var mockResolveRepositories func(effectiveRepoFieldValues []string) (resolved resolvedRepositories, err error)
+var mockResolveRepositories func(effectiveRepoFieldValues []string) (resolved repositories.ResolvedRepositories, err error)
 
 type SearchArgs struct {
 	Version        string
@@ -302,7 +303,7 @@ type searchResolver struct {
 
 	// Cached resolveRepositories results.
 	reposMu  sync.Mutex
-	resolved resolvedRepositories
+	resolved repositories.ResolvedRepositories
 	repoErr  error
 
 	zoekt        *searchbackend.Zoekt
@@ -569,7 +570,7 @@ func computeExcludedRepositories(ctx context.Context, q query.QueryInfo, op db.R
 
 // resolveRepositories calls doResolveRepositories, caching the result for the common
 // case where effectiveRepoFieldValues == nil.
-func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoFieldValues []string) (resolvedRepositories, error) {
+func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoFieldValues []string) (repositories.ResolvedRepositories, error) {
 	var err error
 	var repoRevs, missingRepoRevs []*search.RepositoryRevisions
 	var overLimit bool
@@ -589,7 +590,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 	if effectiveRepoFieldValues == nil {
 		r.reposMu.Lock()
 		defer r.reposMu.Unlock()
-		if r.resolved.repoRevs != nil || r.resolved.missingRepoRevs != nil || r.repoErr != nil {
+		if r.resolved.RepoRevs != nil || r.resolved.MissingRepoRevs != nil || r.repoErr != nil {
 			tr.LazyPrintf("cached")
 			return r.resolved, r.repoErr
 		}
@@ -638,22 +639,22 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 	}
 
 	tr.LazyPrintf("resolveRepositories - start")
-	options := resolveRepoOp{
-		repoFilters:        repoFilters,
-		minusRepoFilters:   minusRepoFilters,
-		repoGroupFilters:   repoGroupFilters,
-		versionContextName: versionContextName,
-		userSettings:       r.userSettings,
-		onlyForks:          fork == Only,
-		noForks:            fork == No,
-		onlyArchived:       archived == Only,
-		noArchived:         archived == No,
-		onlyPrivate:        visibility == query.Private,
-		onlyPublic:         visibility == query.Public,
-		commitAfter:        commitAfter,
-		query:              r.query,
+	options := repositories.ResolveRepoOp{
+		RepoFilters:        repoFilters,
+		MinusRepoFilters:   minusRepoFilters,
+		RepoGroupFilters:   repoGroupFilters,
+		VersionContextName: versionContextName,
+		UserSettings:       r.userSettings,
+		OnlyForks:          fork == Only,
+		NoForks:            fork == No,
+		OnlyArchived:       archived == Only,
+		NoArchived:         archived == No,
+		OnlyPrivate:        visibility == query.Private,
+		OnlyPublic:         visibility == query.Public,
+		CommitAfter:        commitAfter,
+		Query:              r.query,
 	}
-	resolved, err := resolveRepositories(ctx, options)
+	resolved, err := repositories.ResolveRepositories(ctx, options)
 	tr.LazyPrintf("resolveRepositories - done")
 	if effectiveRepoFieldValues == nil {
 		r.resolved = resolved
@@ -1184,7 +1185,7 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*se
 		return nil, err
 	}
 
-	if resolved.overLimit {
+	if resolved.OverLimit {
 		// If we've exceeded the repo limit, then we may miss files from repos we care
 		// about, so don't bother searching filenames at all.
 		return nil, nil
@@ -1197,7 +1198,7 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*se
 
 	args := search.TextParameters{
 		PatternInfo:     p,
-		RepoPromise:     (&search.Promise{}).Resolve(resolved.repoRevs),
+		RepoPromise:     (&search.Promise{}).Resolve(resolved.RepoRevs),
 		Query:           r.query,
 		UseFullDeadline: r.searchTimeoutFieldSet(),
 		Zoekt:           r.zoekt,
