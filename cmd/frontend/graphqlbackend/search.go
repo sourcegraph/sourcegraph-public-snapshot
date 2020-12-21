@@ -411,8 +411,8 @@ func computeExcludedRepositories(ctx context.Context, q query.QueryInfo, op db.R
 	var numExcludedForks, numExcludedArchived int
 
 	forkStr, _ := q.StringValue(query.FieldFork)
-	fork := parseYesNoOnly(forkStr)
-	if fork == Invalid && !exactlyOneRepo(op.IncludePatterns) {
+	fork := searchrepos.ParseYesNoOnly(forkStr)
+	if fork == searchrepos.Invalid && !exactlyOneRepo(op.IncludePatterns) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -430,8 +430,8 @@ func computeExcludedRepositories(ctx context.Context, q query.QueryInfo, op db.R
 	}
 
 	archivedStr, _ := q.StringValue(query.FieldArchived)
-	archived := parseYesNoOnly(archivedStr)
-	if archived == Invalid && !exactlyOneRepo(op.IncludePatterns) {
+	archived := searchrepos.ParseYesNoOnly(archivedStr)
+	if archived == searchrepos.Invalid && !exactlyOneRepo(op.IncludePatterns) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -496,21 +496,21 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 	}
 
 	forkStr, _ := r.query.StringValue(query.FieldFork)
-	fork := parseYesNoOnly(forkStr)
-	if fork == Invalid && !exactlyOneRepo(repoFilters) && !settingForks {
+	fork := searchrepos.ParseYesNoOnly(forkStr)
+	if fork == searchrepos.Invalid && !exactlyOneRepo(repoFilters) && !settingForks {
 		// fork defaults to No unless either of:
 		// (1) exactly one repo is being searched, or
 		// (2) user/org/global setting includes forks
-		fork = No
+		fork = searchrepos.No
 	}
 
 	archivedStr, _ := r.query.StringValue(query.FieldArchived)
-	archived := parseYesNoOnly(archivedStr)
-	if archived == Invalid && !exactlyOneRepo(repoFilters) && !settingArchived {
+	archived := searchrepos.ParseYesNoOnly(archivedStr)
+	if archived == searchrepos.Invalid && !exactlyOneRepo(repoFilters) && !settingArchived {
 		// archived defaults to No unless either of:
 		// (1) exactly one repo is being searched, or
 		// (2) user/org/global setting includes archives in all searches
-		archived = No
+		archived = searchrepos.No
 	}
 
 	visibilityStr, _ := r.query.StringValue(query.FieldVisibility)
@@ -530,10 +530,10 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		RepoGroupFilters:   repoGroupFilters,
 		VersionContextName: versionContextName,
 		UserSettings:       r.userSettings,
-		OnlyForks:          fork == Only,
-		NoForks:            fork == No,
-		OnlyArchived:       archived == Only,
-		NoArchived:         archived == No,
+		OnlyForks:          fork == searchrepos.Only,
+		NoForks:            fork == searchrepos.No,
+		OnlyArchived:       archived == searchrepos.Only,
+		NoArchived:         archived == searchrepos.No,
 		OnlyPrivate:        visibility == query.Private,
 		OnlyPublic:         visibility == query.Public,
 		CommitAfter:        commitAfter,

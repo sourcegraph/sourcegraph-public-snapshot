@@ -11,7 +11,7 @@ const (
 	Invalid yesNoOnly = "invalid"
 )
 
-func parseYesNoOnly(s string) yesNoOnly {
+func ParseYesNoOnly(s string) yesNoOnly {
 	switch s {
 	case "y", "Y", "yes", "YES", "Yes":
 		return Yes
