@@ -19,7 +19,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repositories"
+	repositories2 "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repositories"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -42,7 +42,7 @@ import (
 
 // This file contains the root resolver for search. It currently has a lot of
 // logic that spans out into all the other search_* files.
-var mockResolveRepositories func(effectiveRepoFieldValues []string) (resolved repositories.ResolvedRepositories, err error)
+var mockResolveRepositories func(effectiveRepoFieldValues []string) (resolved repositories2.ResolvedRepositories, err error)
 
 type SearchArgs struct {
 	Version        string
@@ -303,7 +303,7 @@ type searchResolver struct {
 
 	// Cached resolveRepositories results.
 	reposMu  sync.Mutex
-	resolved repositories.ResolvedRepositories
+	resolved repositories2.ResolvedRepositories
 	repoErr  error
 
 	zoekt        *searchbackend.Zoekt
@@ -570,7 +570,7 @@ func computeExcludedRepositories(ctx context.Context, q query.QueryInfo, op db.R
 
 // resolveRepositories calls doResolveRepositories, caching the result for the common
 // case where effectiveRepoFieldValues == nil.
-func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoFieldValues []string) (repositories.ResolvedRepositories, error) {
+func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoFieldValues []string) (repositories2.ResolvedRepositories, error) {
 	var err error
 	var repoRevs, missingRepoRevs []*search.RepositoryRevisions
 	var overLimit bool
@@ -639,7 +639,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 	}
 
 	tr.LazyPrintf("resolveRepositories - start")
-	options := repositories.ResolveRepoOp{
+	options := repositories2.ResolveRepoOp{
 		RepoFilters:        repoFilters,
 		MinusRepoFilters:   minusRepoFilters,
 		RepoGroupFilters:   repoGroupFilters,
@@ -654,7 +654,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		CommitAfter:        commitAfter,
 		Query:              r.query,
 	}
-	resolved, err := repositories.ResolveRepositories(ctx, options)
+	resolved, err := repositories2.ResolveRepositories(ctx, options)
 	tr.LazyPrintf("resolveRepositories - done")
 	if effectiveRepoFieldValues == nil {
 		r.resolved = resolved
