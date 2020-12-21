@@ -16,6 +16,7 @@ export interface CodeMonitorNodeProps extends Pick<CodeMonitoringProps, 'toggleC
     node: CodeMonitorFields
     location: H.Location
     authentictedUser: AuthenticatedUser
+    showCodeMonitoringTestEmailButton: boolean
 }
 
 const LOADING = 'LOADING' as const
@@ -25,6 +26,7 @@ export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
     location,
     node,
     authentictedUser,
+    showCodeMonitoringTestEmailButton,
 }: CodeMonitorNodeProps) => {
     const [enabled, setEnabled] = useState<boolean>(node.enabled)
 
@@ -84,15 +86,18 @@ export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
                     {node.actions.nodes.length > 0 && (
                         <div className="d-flex text-muted">
                             New search result → Sends email notifications{' '}
-                            {authentictedUser.siteAdmin && hasEnabledAction && node.enabled && (
-                                <button
-                                    type="button"
-                                    className="btn btn-link p-0 border-0 ml-2 test-send-test-email"
-                                    onClick={sendEmailRequest}
-                                >
-                                    Send test email
-                                </button>
-                            )}
+                            {showCodeMonitoringTestEmailButton &&
+                                authentictedUser.siteAdmin &&
+                                hasEnabledAction &&
+                                node.enabled && (
+                                    <button
+                                        type="button"
+                                        className="btn btn-link p-0 border-0 ml-2 test-send-test-email"
+                                        onClick={sendEmailRequest}
+                                    >
+                                        Send test email
+                                    </button>
+                                )}
                         </div>
                     )}
                 </div>

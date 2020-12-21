@@ -37,29 +37,10 @@ func changeReceivers(ctx context.Context, log log15.Logger, change ChangeContext
 		result.Problems = append(result.Problems, conf.NewSiteProblem(fmt.Sprintf("`observability.alerts`: %v", err)))
 	}
 
-	// reset and generate new notifiers configuration
+	// reset and generate new alertmanager receivers and routes configuration
 	receivers, routes := newRoutesAndReceivers(newConfig.Alerts, newConfig.ExternalURL, newProblem)
-	change.AMConfig.Receivers = append(receivers, &amconfig.Receiver{
-		// stub receiver
-		Name: alertmanagerNoopReceiver,
-	})
-	change.AMConfig.Route = &amconfig.Route{
-		GroupByStr: commonLabels,
-
-		// How long to initially wait to send a notification for a group - each group matches exactly one alert, so fire immediately
-		GroupWait: duration(1 * time.Second),
-
-		// How long to wait before sending a notification about new alerts that are added to a group of alerts - in this case,
-		// equivalent to how long to wait until notifying about an alert re-firing
-		GroupInterval:  duration(1 * time.Minute),
-		RepeatInterval: duration(7 * 24 * time.Hour),
-
-		// Route alerts to notifications
-		Routes: routes,
-
-		// Fallback to do nothing for alerts not compatible with our receivers
-		Receiver: alertmanagerNoopReceiver,
-	}
+	change.AMConfig.Receivers = receivers
+	change.AMConfig.Route = newRootRoute(routes)
 
 	return result
 }

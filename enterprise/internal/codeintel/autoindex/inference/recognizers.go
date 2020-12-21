@@ -21,6 +21,7 @@ type IndexJobRecognizer interface {
 
 type IndexJob struct {
 	DockerSteps []DockerStep
+	LocalSteps  []string
 	Root        string
 	Indexer     string
 	IndexerArgs []string
@@ -34,7 +35,7 @@ type DockerStep struct {
 }
 
 // Recognizers is a list of registered index job recognizers.
-var Recognizers = []IndexJobRecognizer{
-	lsifGoJobRecognizer{},
-	lsifTscJobRecognizer{},
+var Recognizers = map[string]IndexJobRecognizer{
+	"go":  lsifGoJobRecognizer{},
+	"tsc": lsifTscJobRecognizer{},
 }

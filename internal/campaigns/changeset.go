@@ -18,10 +18,45 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
+// ChangesetState defines the possible states of a Changeset.
+// These are displayed in the UI as well.
+type ChangesetState string
+
+// ChangesetState constants.
+const (
+	ChangesetStateUnpublished ChangesetState = "UNPUBLISHED"
+	ChangesetStateProcessing  ChangesetState = "PROCESSING"
+	ChangesetStateOpen        ChangesetState = "OPEN"
+	ChangesetStateDraft       ChangesetState = "DRAFT"
+	ChangesetStateClosed      ChangesetState = "CLOSED"
+	ChangesetStateMerged      ChangesetState = "MERGED"
+	ChangesetStateDeleted     ChangesetState = "DELETED"
+	ChangesetStateRetrying    ChangesetState = "RETRYING"
+	ChangesetStateFailed      ChangesetState = "FAILED"
+)
+
+// Valid returns true if the given ChangesetState is valid.
+func (s ChangesetState) Valid() bool {
+	switch s {
+	case ChangesetStateUnpublished,
+		ChangesetStateProcessing,
+		ChangesetStateOpen,
+		ChangesetStateDraft,
+		ChangesetStateClosed,
+		ChangesetStateMerged,
+		ChangesetStateDeleted,
+		ChangesetStateRetrying,
+		ChangesetStateFailed:
+		return true
+	default:
+		return false
+	}
+}
+
 // ChangesetPublicationState defines the possible publication states of a Changeset.
 type ChangesetPublicationState string
 
-// ChangesetState constants.
+// ChangesetPublicationState constants.
 const (
 	ChangesetPublicationStateUnpublished ChangesetPublicationState = "UNPUBLISHED"
 	ChangesetPublicationStatePublished   ChangesetPublicationState = "PUBLISHED"
@@ -201,10 +236,6 @@ type Changeset struct {
 	NumResets       int64
 	NumFailures     int64
 
-	// Unsynced is true if the changeset tracks an external changeset but the
-	// data hasn't been synced yet.
-	Unsynced bool
-
 	// Closing is set to true (along with the ReocncilerState) when the
 	// reconciler should close the changeset.
 	Closing bool
@@ -218,14 +249,6 @@ func (c *Changeset) Clone() *Changeset {
 	tt := *c
 	tt.CampaignIDs = c.CampaignIDs[:len(c.CampaignIDs):len(c.CampaignIDs)]
 	return &tt
-}
-
-// PublishedAndSynced returns whether the Changeset has been published on the
-// code host and is fully synced.
-// This can be used as a check before accessing the fields based on synced
-// metadata, such as Title or Body, etc.
-func (c *Changeset) PublishedAndSynced() bool {
-	return !c.Unsynced && c.PublicationState.Published()
 }
 
 // Published returns whether the Changeset's PublicationState is Published.

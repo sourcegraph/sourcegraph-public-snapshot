@@ -53,7 +53,14 @@ func NewWorker(options Options, observationContext *observation.Context) gorouti
 	idSet := newIDSet()
 	queueStore := apiclient.New(options.ClientOptions, observationContext)
 	store := &storeShim{queueName: options.QueueName, queueStore: queueStore}
-	handler := &handler{idSet: idSet, options: options, runnerFactory: command.NewRunner}
+
+	handler := &handler{
+		idSet:         idSet,
+		options:       options,
+		operations:    command.MakeOperations(observationContext),
+		runnerFactory: command.NewRunner,
+	}
+
 	indexer := workerutil.NewWorker(context.Background(), store, handler, options.WorkerOptions)
 	heartbeat := goroutine.NewHandlerWithErrorMessage("heartbeat", func(ctx context.Context) error {
 		return queueStore.Heartbeat(ctx, idSet.Slice())

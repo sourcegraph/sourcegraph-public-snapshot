@@ -421,7 +421,7 @@ func TestApplyCampaign(t *testing.T) {
 		LastAppliedAt:  marshalDateTime(t, now),
 		Changesets: apitest.ChangesetConnection{
 			Nodes: []apitest.Changeset{
-				{Typename: "ExternalChangeset", ReconcilerState: "QUEUED"},
+				{Typename: "ExternalChangeset", State: string(campaigns.ChangesetStateProcessing)},
 			},
 			TotalCount: 1,
 		},
@@ -476,13 +476,7 @@ mutation($campaignSpec: ID!, $ensureCampaign: ID){
     changesets {
       nodes {
         __typename
-
-        ... on ExternalChangeset {
-          reconcilerState
-        }
-        ... on HiddenExternalChangeset {
-          reconcilerState
-        }
+        state
       }
 
       totalCount
@@ -660,12 +654,8 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 		"PUBLISHED",
 		"INVALID",
 	}
-	reconcilerStates := [][]campaigns.ReconcilerState{
-		{"PROCESSING"},
-		{campaigns.ReconcilerStateProcessing},
-		{"INVALID"},
-	}
-	wantExternalStates := []campaigns.ChangesetExternalState{"OPEN", "INVALID"}
+	wantStates := []campaigns.ChangesetState{"OPEN", "INVALID"}
+	wantExternalStates := []campaigns.ChangesetExternalState{"OPEN"}
 	wantReviewStates := []campaigns.ChangesetReviewState{"APPROVED", "INVALID"}
 	wantCheckStates := []campaigns.ChangesetCheckState{"PENDING", "INVALID"}
 	wantOnlyPublishedByThisCampaign := []bool{true}
@@ -692,54 +682,24 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 			wantSafe:   true,
 			wantParsed: store.ListChangesetsOpts{LimitOpts: store.LimitOpts{Limit: 10}},
 		},
-		// Setting publication state is safe and transferred to opts.
+		// Setting state is safe and transferred to opts.
 		{
 			args: &graphqlbackend.ListChangesetsArgs{
-				PublicationState: &wantPublicationStates[0],
+				State: &wantStates[0],
 			},
 			wantSafe: true,
 			wantParsed: store.ListChangesetsOpts{
+				ExternalState:    &wantExternalStates[0],
 				PublicationState: &wantPublicationStates[0],
+				ReconcilerStates: []campaigns.ReconcilerState{campaigns.ReconcilerStateCompleted},
 			},
 		},
-		// Setting invalid publication state fails.
+		// Setting invalid state fails.
 		{
 			args: &graphqlbackend.ListChangesetsArgs{
-				PublicationState: &wantPublicationStates[1],
+				State: &wantStates[1],
 			},
-			wantErr: "changeset publication state not valid",
-		},
-		// Setting reconciler state is safe and transferred to opts as lowercase version.
-		{
-			args: &graphqlbackend.ListChangesetsArgs{
-				ReconcilerState: &reconcilerStates[0],
-			},
-			wantSafe: true,
-			wantParsed: store.ListChangesetsOpts{
-				ReconcilerStates: reconcilerStates[1],
-			},
-		},
-		// Setting invalid reconciler state fails.
-		{
-			args: &graphqlbackend.ListChangesetsArgs{
-				ReconcilerState: &reconcilerStates[2],
-			},
-			wantErr: "changeset reconciler state not valid",
-		},
-		// Setting external state is safe and transferred to opts.
-		{
-			args: &graphqlbackend.ListChangesetsArgs{
-				ExternalState: &wantExternalStates[0],
-			},
-			wantSafe:   true,
-			wantParsed: store.ListChangesetsOpts{ExternalState: &wantExternalStates[0]},
-		},
-		// Setting invalid external state fails.
-		{
-			args: &graphqlbackend.ListChangesetsArgs{
-				ExternalState: &wantExternalStates[1],
-			},
-			wantErr: "changeset external state not valid",
+			wantErr: "changeset state not valid",
 		},
 		// Setting review state is not safe and transferred to opts.
 		{

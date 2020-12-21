@@ -4,13 +4,7 @@ import { ThemeProps } from '../../../../../shared/src/theme'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
-import {
-    Scalars,
-    ChangesetExternalState,
-    ChangesetPublicationState,
-    ChangesetFields,
-    CampaignChangesetsResult,
-} from '../../../graphql-operations'
+import { Scalars, ChangesetFields, CampaignChangesetsResult } from '../../../graphql-operations'
 import { Subject } from 'rxjs'
 import { FilteredConnectionQueryArguments, FilteredConnection } from '../../../components/FilteredConnection'
 import { repeatWhen, withLatestFrom, filter, map, delay } from 'rxjs/operators'
@@ -32,6 +26,7 @@ import {
 import { ErrorLike } from '../../../../../shared/src/util/errors'
 import { CampaignCloseHeaderWillCloseChangesets, CampaignCloseHeaderWillKeepChangesets } from './CampaignCloseHeader'
 import { CampaignCloseChangesetsListEmptyElement } from './CampaignCloseChangesetsListEmptyElement'
+import { ChangesetState } from '../../../../../shared/src/graphql-operations'
 
 interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, ExtensionsControllerProps {
     campaignID: Scalars['ID']
@@ -69,9 +64,10 @@ export const CampaignCloseChangesetsList: React.FunctionComponent<Props> = ({
     const queryChangesetsConnection = useCallback(
         (args: FilteredConnectionQueryArguments) =>
             queryChangesets({
-                externalState: ChangesetExternalState.OPEN,
-                publicationState: ChangesetPublicationState.PUBLISHED,
-                reconcilerState: null,
+                // TODO: This doesn't account for draft changesets. Ideally, this would
+                // use the delta API and apply an empty campaign spec, but then changesets
+                // would currently be lost.
+                state: ChangesetState.OPEN,
                 checkState: null,
                 reviewState: null,
                 first: args.first ?? null,

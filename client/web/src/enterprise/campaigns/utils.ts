@@ -1,11 +1,4 @@
-import {
-    ChangesetExternalState,
-    ChangesetCheckState,
-    ChangesetReviewState,
-    ChangesetFields,
-    ChangesetReconcilerState,
-    ChangesetPublicationState,
-} from '../../graphql-operations'
+import { ChangesetCheckState, ChangesetReviewState, ChangesetState } from '../../graphql-operations'
 import { HoveredToken } from '@sourcegraph/codeintellify'
 import {
     RepoSpec,
@@ -16,10 +9,6 @@ import {
     ModeSpec,
 } from '../../../../shared/src/util/url'
 import { getModeFromPath } from '../../../../shared/src/languages'
-
-export function isValidChangesetExternalState(input: string): input is ChangesetExternalState {
-    return Object.values<string>(ChangesetExternalState).includes(input)
-}
 
 export function isValidChangesetReviewState(input: string): input is ChangesetReviewState {
     return Object.values<string>(ChangesetReviewState).includes(input)
@@ -42,49 +31,6 @@ export function getLSPTextDocumentPositionParameters(
     }
 }
 
-export enum ChangesetUIState {
-    UNPUBLISHED = 'UNPUBLISHED',
-    ERRORED = 'ERRORED',
-    PROCESSING = 'PROCESSING',
-    OPEN = 'OPEN',
-    DRAFT = 'DRAFT',
-    CLOSED = 'CLOSED',
-    MERGED = 'MERGED',
-    DELETED = 'DELETED',
-}
-
-export function isValidChangesetUIState(input: string): input is ChangesetUIState {
-    return Object.values<string>(ChangesetUIState).includes(input)
-}
-
-export function computeChangesetUIState(
-    changeset: Pick<ChangesetFields, 'reconcilerState' | 'publicationState' | 'externalState'>
-): ChangesetUIState {
-    if (changeset.reconcilerState === ChangesetReconcilerState.ERRORED) {
-        return ChangesetUIState.ERRORED
-    }
-    // TODO: We should create a separate UI state for these
-    if (changeset.reconcilerState === ChangesetReconcilerState.FAILED) {
-        return ChangesetUIState.ERRORED
-    }
-    if (changeset.reconcilerState !== ChangesetReconcilerState.COMPLETED) {
-        return ChangesetUIState.PROCESSING
-    }
-    if (changeset.publicationState === ChangesetPublicationState.UNPUBLISHED) {
-        return ChangesetUIState.UNPUBLISHED
-    }
-    // Must be set, because changesetPublicationState !== UNPUBLISHED.
-    const externalState = changeset.externalState!
-    switch (externalState) {
-        case ChangesetExternalState.DRAFT:
-            return ChangesetUIState.DRAFT
-        case ChangesetExternalState.OPEN:
-            return ChangesetUIState.OPEN
-        case ChangesetExternalState.CLOSED:
-            return ChangesetUIState.CLOSED
-        case ChangesetExternalState.MERGED:
-            return ChangesetUIState.MERGED
-        case ChangesetExternalState.DELETED:
-            return ChangesetUIState.DELETED
-    }
+export function isValidChangesetState(input: string): input is ChangesetState {
+    return Object.values<string>(ChangesetState).includes(input)
 }

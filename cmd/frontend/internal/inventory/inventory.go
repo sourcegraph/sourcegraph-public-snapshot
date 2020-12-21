@@ -9,9 +9,9 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/go-enry/go-enry/v2"
+	"github.com/go-enry/go-enry/v2/data"
 	"github.com/pkg/errors"
-	"github.com/src-d/enry/v2"
-	"github.com/src-d/enry/v2/data"
 )
 
 // Inventory summarizes a tree's contents (e.g., which programming
