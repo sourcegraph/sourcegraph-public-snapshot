@@ -12,7 +12,7 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 
-	repositories2 "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repositories"
+	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -259,8 +259,8 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 	}
 
 	setMockResolveRepositories := func(numRepos int) {
-		mockResolveRepositories = func(effectiveRepoFieldValues []string) (resolved repositories2.ResolvedRepositories, err error) {
-			return repositories2.ResolvedRepositories{
+		mockResolveRepositories = func(effectiveRepoFieldValues []string) (resolved searchrepos.Resolved, err error) {
+			return searchrepos.Resolved{
 				RepoRevs:        generateRepoRevs(numRepos),
 				MissingRepoRevs: make([]*search.RepositoryRevisions, 0),
 				OverLimit:       true,

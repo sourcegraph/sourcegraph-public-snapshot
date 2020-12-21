@@ -15,7 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	repositories2 "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repositories"
+	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
@@ -120,9 +120,9 @@ func alertForStalePermissions() *searchAlert {
 // returns 0 repos or fails, it returns false. It is a helper function for
 // raising NoResolvedRepos alerts with suggestions when we know the original
 // query does not contain any repos to search.
-func (r *searchResolver) reposExist(ctx context.Context, options repositories2.ResolveRepoOp) bool {
+func (r *searchResolver) reposExist(ctx context.Context, options searchrepos.Options) bool {
 	options.UserSettings = r.userSettings
-	resolved, err := repositories2.ResolveRepositories(ctx, options)
+	resolved, err := searchrepos.Resolve(ctx, options)
 	return err == nil && len(resolved.RepoRevs) > 0
 }
 
@@ -182,7 +182,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			}
 		}
 		proposedQueries := []*searchQueryDescription{}
-		tryRemoveRepoGroup := repositories2.ResolveRepoOp{
+		tryRemoveRepoGroup := searchrepos.Options{
 			RepoFilters:      repoFilters,
 			MinusRepoFilters: minusRepoFilters,
 			OnlyForks:        onlyForks,
@@ -199,7 +199,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 		}
 
 		unionRepoFilter := unionRegExps(repoFilters)
-		tryAnyRepo := repositories2.ResolveRepoOp{
+		tryAnyRepo := searchrepos.Options{
 			RepoFilters:      []string{unionRepoFilter},
 			MinusRepoFilters: minusRepoFilters,
 			RepoGroupFilters: repoGroupFilters,
@@ -237,7 +237,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			}
 		}
 		proposedQueries := []*searchQueryDescription{}
-		tryRemoveRepoGroup := repositories2.ResolveRepoOp{
+		tryRemoveRepoGroup := searchrepos.Options{
 			RepoFilters:      repoFilters,
 			MinusRepoFilters: minusRepoFilters,
 			OnlyForks:        onlyForks,
@@ -275,7 +275,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 		}
 		proposedQueries := []*searchQueryDescription{}
 		unionRepoFilter := unionRegExps(repoFilters)
-		tryAnyRepo := repositories2.ResolveRepoOp{
+		tryAnyRepo := searchrepos.Options{
 			RepoFilters:      []string{unionRepoFilter},
 			MinusRepoFilters: minusRepoFilters,
 			RepoGroupFilters: repoGroupFilters,
@@ -330,7 +330,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 
 		proposedQueries := []*searchQueryDescription{}
 		if forksNotSet {
-			tryIncludeForks := repositories2.ResolveRepoOp{
+			tryIncludeForks := searchrepos.Options{
 				RepoFilters:      repoFilters,
 				MinusRepoFilters: minusRepoFilters,
 				NoForks:          false,
@@ -345,7 +345,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 		}
 
 		if archivedNotSet {
-			tryIncludeArchived := repositories2.ResolveRepoOp{
+			tryIncludeArchived := searchrepos.Options{
 				RepoFilters:      repoFilters,
 				MinusRepoFilters: minusRepoFilters,
 				OnlyForks:        onlyForks,

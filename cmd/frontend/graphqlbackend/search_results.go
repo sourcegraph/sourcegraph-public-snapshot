@@ -27,7 +27,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
-	repositories2 "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repositories"
+	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -58,11 +58,11 @@ type searchResultsCommon struct {
 	// that are in this map.
 	repos map[api.RepoID]*types.RepoName
 
-	searched []*types.RepoName           // repos that were searched
-	indexed  []*types.RepoName           // repos that were searched using an index
-	cloning  []*types.RepoName           // repos that could not be searched because they were still being cloned
-	missing  []*types.RepoName           // repos that could not be searched because they do not exist
-	excluded repositories2.ExcludedRepos // repo counts of excluded repos because the search query doesn't apply to them, but that we want to know about (forks, archives)
+	searched []*types.RepoName         // repos that were searched
+	indexed  []*types.RepoName         // repos that were searched using an index
+	cloning  []*types.RepoName         // repos that could not be searched because they were still being cloned
+	missing  []*types.RepoName         // repos that could not be searched because they do not exist
+	excluded searchrepos.ExcludedRepos // repo counts of excluded repos because the search query doesn't apply to them, but that we want to know about (forks, archives)
 
 	partial map[api.RepoID]struct{} // repos that were searched, but have results that were not returned due to exceeded limits
 
@@ -1206,7 +1206,7 @@ func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*Sea
 	// type searchers (file, diff, symbol, etc) completely timed out and could not
 	// produce even partial results. Other searcher types may have produced results.
 	//
-	// In this case, or if we got a partial timeout where ALL repositories2 timed out,
+	// In this case, or if we got a partial timeout where ALL searchrepos timed out,
 	// we do not return partial results and instead display a timeout alert.
 	shouldShowAlert := err == context.DeadlineExceeded
 	if err == nil && len(rr.searchResultsCommon.timedout) > 0 && len(rr.searchResultsCommon.timedout) == len(rr.searchResultsCommon.repos) {
@@ -1601,30 +1601,30 @@ func (r *searchResolver) determineResultTypes(args search.TextParameters, forceO
 	return resultTypes
 }
 
-func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, start time.Time) (resolved repositories2.ResolvedRepositories, res *SearchResultsResolver, err error) {
+func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, start time.Time) (resolved searchrepos.Resolved, res *SearchResultsResolver, err error) {
 	resolved, err = r.resolveRepositories(ctx, nil)
 	if err != nil {
 		if errors.Is(err, authz.ErrStalePermissions{}) {
 			log15.Debug("searchResolver.determineRepos", "err", err)
 			alert := alertForStalePermissions()
-			return repositories2.ResolvedRepositories{}, &SearchResultsResolver{alert: alert, start: start}, nil
+			return searchrepos.Resolved{}, &SearchResultsResolver{alert: alert, start: start}, nil
 		}
 		e := git.BadCommitError{}
 		if errors.As(err, &e) {
 			alert := r.alertForInvalidRevision(e.Spec)
-			return repositories2.ResolvedRepositories{}, &SearchResultsResolver{alert: alert, start: start}, nil
+			return searchrepos.Resolved{}, &SearchResultsResolver{alert: alert, start: start}, nil
 		}
-		return repositories2.ResolvedRepositories{}, nil, err
+		return searchrepos.Resolved{}, nil, err
 	}
 
 	tr.LazyPrintf("searching %d repos, %d missing", len(resolved.RepoRevs), len(resolved.MissingRepoRevs))
 	if len(resolved.RepoRevs) == 0 {
 		alert := r.alertForNoResolvedRepos(ctx)
-		return repositories2.ResolvedRepositories{}, &SearchResultsResolver{alert: alert, start: start}, nil
+		return searchrepos.Resolved{}, &SearchResultsResolver{alert: alert, start: start}, nil
 	}
 	if resolved.OverLimit {
 		alert := r.alertForOverRepoLimit(ctx)
-		return repositories2.ResolvedRepositories{}, &SearchResultsResolver{alert: alert, start: start}, nil
+		return searchrepos.Resolved{}, &SearchResultsResolver{alert: alert, start: start}, nil
 	}
 	return resolved, nil, nil
 }
@@ -1943,7 +1943,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			agg.doFilePathSearch(ctx, &argsIndexed)
 		})
 		// On sourcegraph.com and for unscoped queries, determineRepos returns the subset
-		// of indexed default repositories2. No need to call searcher, because
+		// of indexed default searchrepos. No need to call searcher, because
 		// len(searcherRepos) will always be 0.
 		if envvar.SourcegraphDotComMode() {
 			args.Mode = search.NoFilePath
@@ -2147,7 +2147,7 @@ func compareDates(left, right *time.Time) bool {
 // filename matches a value in a non-empty set exactFilePatterns, then such
 // filenames are listed earlier.
 //
-// Commits are sorted by date. Commits are not associated with repositories2, and
+// Commits are sorted by date. Commits are not associated with searchrepos, and
 // will always list after repository or file match results, if any.
 func compareSearchResults(left, right SearchResultResolver, exactFilePatterns map[string]struct{}) bool {
 	sortKeys := func(result SearchResultResolver) (string, string, *time.Time) {

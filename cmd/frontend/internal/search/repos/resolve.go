@@ -1,4 +1,4 @@
-package repositories
+package repos
 
 import (
 	"context"
@@ -33,7 +33,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func ResolveRepositories(ctx context.Context, op ResolveRepoOp) (ResolvedRepositories, error) {
+func Resolve(ctx context.Context, op Options) (Resolved, error) {
 	var err error
 	tr, ctx := trace.New(ctx, "resolveRepositories", op.String())
 	defer func() {
@@ -57,7 +57,7 @@ func ResolveRepositories(ctx context.Context, op ResolveRepoOp) (ResolvedReposit
 	if groupNames := op.RepoGroupFilters; len(groupNames) > 0 {
 		groups, err := resolveRepoGroups(ctx, op.UserSettings)
 		if err != nil {
-			return ResolvedRepositories{}, err
+			return Resolved{}, err
 		}
 		patterns := repoGroupValuesToRegexp(groupNames, groups)
 		tr.LazyPrintf("repogroups: adding %d repos to include pattern", len(patterns))
@@ -74,7 +74,7 @@ func ResolveRepositories(ctx context.Context, op ResolveRepoOp) (ResolvedReposit
 	// revision specs, if they had any.
 	includePatternRevs, err := findPatternRevs(includePatterns)
 	if err != nil {
-		return ResolvedRepositories{}, err
+		return Resolved{}, err
 	}
 
 	// If a version context is specified, gather the list of repository names
@@ -85,7 +85,7 @@ func ResolveRepositories(ctx context.Context, op ResolveRepoOp) (ResolvedReposit
 	if len(includePatternRevs) == 0 && op.VersionContextName != "" {
 		versionContext, err = resolveVersionContext(op.VersionContextName)
 		if err != nil {
-			return ResolvedRepositories{}, err
+			return Resolved{}, err
 		}
 
 		for _, revision := range versionContext.Revisions {
@@ -99,7 +99,7 @@ func ResolveRepositories(ctx context.Context, op ResolveRepoOp) (ResolvedReposit
 		start := time.Now()
 		defaultRepos, err = defaultRepositories(ctx, db.DefaultRepos.List, search.Indexed(), excludePatterns)
 		if err != nil {
-			return ResolvedRepositories{}, errors.Wrap(err, "getting list of default repos")
+			return Resolved{}, errors.Wrap(err, "getting list of default repos")
 		}
 		tr.LazyPrintf("defaultrepos: took %s to add %d repos", time.Since(start), len(defaultRepos))
 
@@ -146,7 +146,7 @@ func ResolveRepositories(ctx context.Context, op ResolveRepoOp) (ResolvedReposit
 		tr.LazyPrintf("excluded repos: %+v", excluded)
 
 		if err != nil {
-			return ResolvedRepositories{}, err
+			return Resolved{}, err
 		}
 	}
 	overLimit := len(repos) >= maxRepoListSize
@@ -210,10 +210,10 @@ func ResolveRepositories(ctx context.Context, op ResolveRepoOp) (ResolvedReposit
 			trimmedRefSpec := strings.TrimPrefix(rev.RevSpec, "^") // handle negated revisions, such as ^<branch>, ^<tag>, or ^<commit>
 			if _, err := git.ResolveRevision(ctx, repoRev.GitserverRepo(), trimmedRefSpec, git.ResolveRevisionOptions{NoEnsureRevision: true}); err != nil {
 				if errors.Is(err, context.DeadlineExceeded) {
-					return ResolvedRepositories{}, context.DeadlineExceeded
+					return Resolved{}, context.DeadlineExceeded
 				}
 				if errors.As(err, &git.BadCommitError{}) {
-					return ResolvedRepositories{}, err
+					return Resolved{}, err
 				}
 				if gitserver.IsRevisionNotFound(err) {
 					// The revspec does not exist, so don't include it, and report that it's missing.
@@ -244,7 +244,7 @@ func ResolveRepositories(ctx context.Context, op ResolveRepoOp) (ResolvedReposit
 		tr.LazyPrintf("repohascommitafter removed %d repos in %s", before-len(repoRevs), time.Since(start))
 	}
 
-	return ResolvedRepositories{
+	return Resolved{
 		RepoRevs:        repoRevs,
 		MissingRepoRevs: missingRepoRevs,
 		ExcludedRepos:   excluded,
@@ -252,14 +252,14 @@ func ResolveRepositories(ctx context.Context, op ResolveRepoOp) (ResolvedReposit
 	}, err
 }
 
-type ResolvedRepositories struct {
+type Resolved struct {
 	RepoRevs        []*search.RepositoryRevisions
 	MissingRepoRevs []*search.RepositoryRevisions
 	ExcludedRepos   ExcludedRepos
 	OverLimit       bool
 }
 
-type ResolveRepoOp struct {
+type Options struct {
 	RepoFilters        []string
 	MinusRepoFilters   []string
 	RepoGroupFilters   []string
@@ -277,7 +277,7 @@ type ResolveRepoOp struct {
 
 // This file contains the root resolver for search. It currently has a lot of
 // logic that spans out into all the other search_* files.
-//var mockResolveRepositories func(effectiveRepoFieldValues []string) (resolved ResolvedRepositories, err error)
+//var mockResolveRepositories func(effectiveRepoFieldValues []string) (resolved Resolved, err error)
 
 //type SearchArgs struct {
 //	Version        string
@@ -532,7 +532,7 @@ type ResolveRepoOp struct {
 //
 //	// Cached resolveRepositories results.
 //	reposMu  sync.Mutex
-//	resolved ResolvedRepositories
+//	resolved Resolved
 //	repoErr  error
 //
 //	zoekt        *searchbackend.Zoekt
@@ -799,7 +799,7 @@ func computeExcludedRepositories(ctx context.Context, q query.QueryInfo, op db.R
 
 //// resolveRepositories calls doResolveRepositories, caching the result for the common
 //// case where effectiveRepoFieldValues == nil.
-//func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoFieldValues []string) (ResolvedRepositories, error) {
+//func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoFieldValues []string) (Resolved, error) {
 //	var err error
 //	var RepoRevs, MissingRepoRevs []*search.RepositoryRevisions
 //	var OverLimit bool
@@ -868,7 +868,7 @@ func computeExcludedRepositories(ctx context.Context, q query.QueryInfo, op db.R
 //	}
 //
 //	tr.LazyPrintf("resolveRepositories - start")
-//	options := ResolveRepoOp{
+//	options := Options{
 //		RepoFilters:        RepoFilters,
 //		MinusRepoFilters:   MinusRepoFilters,
 //		RepoGroupFilters:   RepoGroupFilters,
@@ -985,7 +985,7 @@ func findPatternRevs(includePatterns []string) (includePatternRevs []patternRevs
 	return
 }
 
-func (op *ResolveRepoOp) String() string {
+func (op *Options) String() string {
 	var b strings.Builder
 	if len(op.RepoFilters) == 0 {
 		b.WriteString("r=[]")

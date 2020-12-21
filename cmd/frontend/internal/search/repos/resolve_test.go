@@ -1,4 +1,4 @@
-package repositories
+package repos
 
 import (
 	"context"
@@ -149,8 +149,8 @@ func TestRevisionValidation(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.repoFilters[0], func(t *testing.T) {
 
-			op := ResolveRepoOp{RepoFilters: tt.repoFilters}
-			resolved, err := ResolveRepositories(context.Background(), op)
+			op := Options{RepoFilters: tt.repoFilters}
+			resolved, err := Resolve(context.Background(), op)
 
 			if diff := cmp.Diff(tt.wantRepoRevs, resolved.RepoRevs); diff != "" {
 				t.Error(diff)
