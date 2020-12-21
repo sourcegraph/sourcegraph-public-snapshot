@@ -56,17 +56,6 @@ func (ss *fakeSearcher) String() string {
 	return fmt.Sprintf("fakeSearcher(result = %v, repos = %v)", ss.result, ss.repos)
 }
 
-type errorSearcher struct {
-	err error
-
-	// Default all unimplemented zoekt.Searcher methods to panic.
-	zoekt.Searcher
-}
-
-func (es *errorSearcher) Search(ctx context.Context, q zoektquery.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
-	return nil, es.err
-}
-
 func TestIndexedSearch(t *testing.T) {
 	zeroTimeoutCtx, cancel := context.WithTimeout(context.Background(), 0)
 	defer cancel()

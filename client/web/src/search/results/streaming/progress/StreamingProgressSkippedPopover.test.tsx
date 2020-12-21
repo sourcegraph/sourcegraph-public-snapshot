@@ -8,7 +8,6 @@ import { StreamingProgressSkippedPopover } from './StreamingProgressSkippedPopov
 describe('StreamingProgressSkippedPopover', () => {
     it('should render correctly', () => {
         const progress: Progress = {
-            done: true,
             durationMs: 1500,
             matchCount: 2,
             repositoriesCount: 2,
@@ -52,7 +51,6 @@ describe('StreamingProgressSkippedPopover', () => {
 
     it('should not show Search Again section if no suggested searches are set', () => {
         const progress: Progress = {
-            done: true,
             durationMs: 1500,
             matchCount: 2,
             repositoriesCount: 2,
@@ -72,7 +70,6 @@ describe('StreamingProgressSkippedPopover', () => {
 
     it('should have Search Again button disabled by default', () => {
         const progress: Progress = {
-            done: true,
             durationMs: 1500,
             matchCount: 2,
             repositoriesCount: 2,
@@ -98,7 +95,6 @@ describe('StreamingProgressSkippedPopover', () => {
 
     it('should enable Search Again button if at least one item is checked', () => {
         const progress: Progress = {
-            done: true,
             durationMs: 1500,
             matchCount: 2,
             repositoriesCount: 2,
@@ -152,7 +148,6 @@ describe('StreamingProgressSkippedPopover', () => {
 
     it('should disable Search Again button if unchecking all items', () => {
         const progress: Progress = {
-            done: true,
             durationMs: 1500,
             matchCount: 2,
             repositoriesCount: 2,
@@ -212,7 +207,6 @@ describe('StreamingProgressSkippedPopover', () => {
 
     it('should call onSearchAgain with selected items when button is clicked', () => {
         const progress: Progress = {
-            done: true,
             durationMs: 1500,
             matchCount: 2,
             repositoriesCount: 2,

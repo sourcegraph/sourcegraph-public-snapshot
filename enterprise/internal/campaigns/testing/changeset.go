@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/go-diff/diff"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -34,8 +35,7 @@ type TestChangesetOpts struct {
 
 	OwnedByCampaign int64
 
-	Unsynced bool
-	Closing  bool
+	Closing bool
 
 	Metadata interface{}
 }
@@ -82,8 +82,7 @@ func BuildChangeset(opts TestChangesetOpts) *campaigns.Changeset {
 
 		OwnedByCampaignID: opts.OwnedByCampaign,
 
-		Unsynced: opts.Unsynced,
-		Closing:  opts.Closing,
+		Closing: opts.Closing,
 
 		ReconcilerState: opts.ReconcilerState,
 		NumFailures:     opts.NumFailures,
@@ -117,7 +116,6 @@ type ChangesetAssertions struct {
 	ExternalID       string
 	ExternalBranch   string
 	DiffStat         *diff.Stat
-	Unsynced         bool
 	Closing          bool
 
 	Title string
@@ -176,10 +174,6 @@ func AssertChangeset(t *testing.T, c *campaigns.Changeset, a ChangesetAssertions
 
 	if diff := cmp.Diff(a.DiffStat, c.DiffStat()); diff != "" {
 		t.Fatalf("changeset DiffStat wrong. (-want +got):\n%s", diff)
-	}
-
-	if diff := cmp.Diff(a.Unsynced, c.Unsynced); diff != "" {
-		t.Fatalf("changeset Unsynced wrong. (-want +got):\n%s", diff)
 	}
 
 	if diff := cmp.Diff(a.Closing, c.Closing); diff != "" {
@@ -255,7 +249,6 @@ func SetChangesetPublished(t *testing.T, ctx context.Context, s UpdateChangesete
 	c.PublicationState = campaigns.ChangesetPublicationStatePublished
 	c.ReconcilerState = campaigns.ReconcilerStateCompleted
 	c.ExternalState = campaigns.ChangesetExternalStateOpen
-	c.Unsynced = false
 
 	if err := s.UpdateChangeset(ctx, c); err != nil {
 		t.Fatalf("failed to update changeset: %s", err)

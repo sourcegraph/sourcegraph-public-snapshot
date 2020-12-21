@@ -15,11 +15,14 @@ import { catchError, map, startWith } from 'rxjs/operators'
 import { asError, isErrorLike } from '../../../../shared/src/util/errors'
 import { useObservable } from '../../../../shared/src/util/useObservable'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
+import { Settings } from '../../schema/settings.schema'
 
 export interface CodeMonitoringPageProps
     extends BreadcrumbsProps,
         BreadcrumbSetters,
-        Pick<CodeMonitoringProps, 'fetchUserCodeMonitors' | 'toggleCodeMonitorEnabled'> {
+        Pick<CodeMonitoringProps, 'fetchUserCodeMonitors' | 'toggleCodeMonitorEnabled'>,
+        SettingsCascadeProps<Settings> {
     authenticatedUser: AuthenticatedUser
     location: H.Location
     history: H.History
@@ -246,6 +249,11 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                                     nodeComponentProps={{
                                         authentictedUser: props.authenticatedUser,
                                         location: props.location,
+                                        showCodeMonitoringTestEmailButton:
+                                            (!isErrorLike(props.settingsCascade.final) &&
+                                                props.settingsCascade.final?.experimentalFeatures
+                                                    ?.showCodeMonitoringTestEmailButton) ||
+                                            false,
                                         toggleCodeMonitorEnabled,
                                     }}
                                     noun="code monitor"

@@ -50,6 +50,7 @@ require (
 	github.com/gitchander/permutation v0.0.0-20181107151852-9e56b92e9909
 	github.com/gliderlabs/ssh v0.3.0 // indirect
 	github.com/glycerine/go-unsnap-stream v0.0.0-20190901134440-81cf024a9e0a // indirect
+	github.com/go-enry/go-enry/v2 v2.6.0
 	github.com/go-git/go-git/v5 v5.1.0 // indirect
 	github.com/go-openapi/runtime v0.19.21 // indirect
 	github.com/go-openapi/spec v0.19.9 // indirect
@@ -162,7 +163,6 @@ require (
 	github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images v0.0.0-00010101000000-000000000000
 	github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
-	github.com/src-d/enry/v2 v2.1.0
 	github.com/stretchr/objx v0.3.0 // indirect
 	github.com/stripe/stripe-go v70.15.0+incompatible
 	github.com/temoto/robotstxt v1.1.1
@@ -210,7 +210,8 @@ replace (
 
 	// prom-wrapper needs to be able to write alertmanager configuration with secrets, etc, which
 	// the alertmanager project is currently not planning on accepting changes for.
-	github.com/prometheus/alertmanager => github.com/bobheadxi/alertmanager v0.21.1-0.20200727091526-3e856a90b534
+	github.com/prometheus/alertmanager => github.com/sourcegraph/alertmanager v0.21.1-0.20200727091526-3e856a90b534
+
 	github.com/russellhaering/gosaml2 => github.com/sourcegraph/gosaml2 v0.6.1-0.20201216035416-70944041979a
 )
 

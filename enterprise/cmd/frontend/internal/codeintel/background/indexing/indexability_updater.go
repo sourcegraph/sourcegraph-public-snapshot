@@ -2,16 +2,21 @@ package indexing
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/inference"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 const MaxGitserverRequestsPerSecond = 20
@@ -38,7 +43,7 @@ func NewIndexabilityUpdater(
 	interval time.Duration,
 	operations *operations,
 ) goroutine.BackgroundRoutine {
-	return goroutine.NewPeriodicGoroutine(context.Background(), interval, &IndexabilityUpdater{
+	updater := &IndexabilityUpdater{
 		dbStore:             dbStore,
 		gitserverClient:     gitserverClient,
 		operations:          operations,
@@ -47,7 +52,9 @@ func NewIndexabilityUpdater(
 		minimumPreciseCount: minimumPreciseCount,
 		enableIndexingCNCF:  os.Getenv("DISABLE_CNCF") == "",
 		limiter:             rate.NewLimiter(MaxGitserverRequestsPerSecond, 1),
-	})
+	}
+
+	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), interval, updater, operations.handleIndexabilityUpdater)
 }
 
 func (u *IndexabilityUpdater) Handle(ctx context.Context) error {
@@ -62,14 +69,22 @@ func (u *IndexabilityUpdater) Handle(ctx context.Context) error {
 		stats = append(stats, u.cncfStats()...)
 	}
 
+	var queueErr error
 	for _, stat := range stats {
 		if err := u.queueRepository(ctx, stat); err != nil {
 			if isRepoNotExist(err) {
 				continue
 			}
 
-			return err
+			if queueErr != nil {
+				queueErr = err
+			} else {
+				queueErr = multierror.Append(queueErr, err)
+			}
 		}
+	}
+	if queueErr != nil {
+		return queueErr
 	}
 
 	// Anything we didn't update hasn't had any activity and didn't come back
@@ -83,11 +98,20 @@ func (u *IndexabilityUpdater) Handle(ctx context.Context) error {
 }
 
 func (u *IndexabilityUpdater) HandleError(err error) {
-	u.operations.numErrors.Inc()
 	log15.Error("Failed to update index queue", "err", err)
 }
 
-func (u *IndexabilityUpdater) queueRepository(ctx context.Context, repoUsageStatistics store.RepoUsageStatistics) error {
+func (u *IndexabilityUpdater) queueRepository(ctx context.Context, repoUsageStatistics store.RepoUsageStatistics) (err error) {
+	// Enable tracing on the context and trace the operation
+	ctx = ot.WithShouldTrace(ctx, true)
+
+	ctx, traceLog, endObservation := u.operations.queueRepository.WithAndLogger(ctx, &err, observation.Args{
+		LogFields: []log.Field{
+			log.Int("repositoryID", repoUsageStatistics.RepositoryID),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	if err := u.limiter.Wait(ctx); err != nil {
 		return err
 	}
@@ -96,15 +120,20 @@ func (u *IndexabilityUpdater) queueRepository(ctx context.Context, repoUsageStat
 	if err != nil {
 		return errors.Wrap(err, "gitserver.Head")
 	}
+	traceLog(log.String("commit", commit))
 
 	paths, err := u.gitserverClient.ListFiles(ctx, repoUsageStatistics.RepositoryID, commit, inference.Patterns)
 	if err != nil {
 		return errors.Wrap(err, "gitserver.ListFiles")
 	}
+	traceLog(log.Int("numPaths", len(paths)))
+
 	matched := false
-	for _, handler := range inference.Recognizers {
-		if handler.CanIndex(paths) {
-			matched = true
+	for name, handler := range inference.Recognizers {
+		matched = handler.CanIndex(paths)
+		traceLog(log.Bool(fmt.Sprintf("%s.CanIndex", name), matched))
+
+		if matched {
 			break
 		}
 	}
@@ -119,7 +148,6 @@ func (u *IndexabilityUpdater) queueRepository(ctx context.Context, repoUsageStat
 		SearchCount:  &repoUsageStatistics.SearchCount,
 		PreciseCount: &repoUsageStatistics.PreciseCount,
 	}
-
 	if err := u.dbStore.UpdateIndexableRepository(ctx, indexableRepository, time.Now().UTC()); err != nil {
 		return errors.Wrap(err, "store.UpdateIndexableRepository")
 	}
@@ -127,19 +155,6 @@ func (u *IndexabilityUpdater) queueRepository(ctx context.Context, repoUsageStat
 	log15.Debug("Updated indexable repository metadata", "repository_id", repoUsageStatistics.RepositoryID)
 	return nil
 }
-
-// TODO - duplicated
-// func isRepoNotExist(err error) bool {
-// 	for err != nil {
-// 		if vcs.IsRepoNotExist(err) {
-// 			return true
-// 		}
-
-// 		err = errors.Unwrap(err)
-// 	}
-
-// 	return false
-// }
 
 // Below we enable indexing CNCF repositories automatically as a work around for
 // not having finished implementation of RFC 201 before having an opportunity where

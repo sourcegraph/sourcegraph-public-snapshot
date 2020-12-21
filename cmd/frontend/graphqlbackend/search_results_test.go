@@ -1002,73 +1002,52 @@ func TestDedupSort(t *testing.T) {
 	}
 }
 
-func TestCommitAndDiffSearchLimits(t *testing.T) {
+func TestCheckDiffCommitSearchLimits(t *testing.T) {
 	cases := []struct {
-		name                 string
-		resultTypes          []string
-		numRepoRevs          int
-		fields               map[string][]*searchquerytypes.Value
-		wantResultTypes      []string
-		wantAlertDescription string
+		name        string
+		resultType  string
+		numRepoRevs int
+		fields      map[string][]*searchquerytypes.Value
+		wantError   error
 	}{
 		{
-			name:                 "diff_search_warns_on_repos_greater_than_search_limit",
-			resultTypes:          []string{"diff"},
-			numRepoRevs:          51,
-			wantResultTypes:      []string{}, // diff is removed from the resultTypes
-			wantAlertDescription: `Diff search can currently only handle searching over 50 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`,
+			name:        "diff_search_warns_on_repos_greater_than_search_limit",
+			resultType:  "diff",
+			numRepoRevs: 51,
+			wantError:   RepoLimitErr{ResultType: "diff", Max: 50},
 		},
 		{
-			name:                 "commit_search_warns_on_repos_greater_than_search_limit",
-			resultTypes:          []string{"commit"},
-			numRepoRevs:          51,
-			wantResultTypes:      []string{}, // diff is removed from the resultTypes
-			wantAlertDescription: `Commit search can currently only handle searching over 50 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`,
+			name:        "commit_search_warns_on_repos_greater_than_search_limit",
+			resultType:  "commit",
+			numRepoRevs: 51,
+			wantError:   RepoLimitErr{ResultType: "commit", Max: 50},
 		},
 		{
-			name:                 "commit_search_warns_on_repos_greater_than_search_limit_with_time_filter",
-			fields:               map[string][]*searchquerytypes.Value{"after": nil},
-			resultTypes:          []string{"commit"},
-			numRepoRevs:          20000,
-			wantResultTypes:      []string{},
-			wantAlertDescription: `Commit search can currently only handle searching over 10000 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`,
+			name:        "commit_search_warns_on_repos_greater_than_search_limit_with_time_filter",
+			fields:      map[string][]*searchquerytypes.Value{"after": nil},
+			resultType:  "commit",
+			numRepoRevs: 20000,
+			wantError:   TimeLimitErr{ResultType: "commit", Max: 10000},
 		},
 		{
-			name:                 "no_warning_when_commit_search_within_search_limit",
-			resultTypes:          []string{"commit"},
-			numRepoRevs:          50,
-			wantResultTypes:      []string{"commit"}, // commit is preserved in resultTypes
-			wantAlertDescription: "",
+			name:        "no_warning_when_commit_search_within_search_limit",
+			resultType:  "commit",
+			numRepoRevs: 50,
+			wantError:   nil,
 		},
 		{
-			name:                 "no_search_limit_on_queries_including_after_filter",
-			fields:               map[string][]*searchquerytypes.Value{"after": nil},
-			resultTypes:          []string{"file"},
-			numRepoRevs:          200,
-			wantResultTypes:      []string{"file"},
-			wantAlertDescription: "",
+			name:        "no_search_limit_on_queries_including_after_filter",
+			fields:      map[string][]*searchquerytypes.Value{"after": nil},
+			resultType:  "commit",
+			numRepoRevs: 200,
+			wantError:   nil,
 		},
 		{
-			name:                 "no_search_limit_on_queries_including_before_filter",
-			fields:               map[string][]*searchquerytypes.Value{"before": nil},
-			resultTypes:          []string{"file"},
-			numRepoRevs:          200,
-			wantResultTypes:      []string{"file"},
-			wantAlertDescription: "",
-		},
-		{
-			name:                 "no_search_limit_on_repos_for_file_search",
-			resultTypes:          []string{"file"},
-			numRepoRevs:          200,
-			wantResultTypes:      []string{"file"},
-			wantAlertDescription: "",
-		},
-		{
-			name:                 "multiple_result_type_search_is_affected",
-			resultTypes:          []string{"file", "commit"},
-			numRepoRevs:          200,
-			wantResultTypes:      []string{},
-			wantAlertDescription: `Commit search can currently only handle searching over 50 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`,
+			name:        "no_search_limit_on_queries_including_before_filter",
+			fields:      map[string][]*searchquerytypes.Value{"before": nil},
+			resultType:  "commit",
+			numRepoRevs: 200,
+			wantError:   nil,
 		},
 	}
 
@@ -1080,29 +1059,16 @@ func TestCommitAndDiffSearchLimits(t *testing.T) {
 			}
 		}
 
-		haveResultTypes, alert := alertOnSearchLimit(test.resultTypes, &search.TextParameters{
-			RepoPromise: (&search.Promise{}).Resolve(repoRevs),
-			Query:       &query.OrdinaryQuery{Query: &query.Query{Fields: test.fields}},
-		})
+		haveErr := checkDiffCommitSearchLimits(
+			context.Background(),
+			&search.TextParameters{
+				RepoPromise: (&search.Promise{}).Resolve(repoRevs),
+				Query:       &query.OrdinaryQuery{Query: &query.Query{Fields: test.fields}},
+			},
+			test.resultType)
 
-		haveAlertDescription := ""
-		if alert != nil {
-			haveAlertDescription = *alert.Description()
-		}
-
-		if diff := cmp.Diff(test.wantAlertDescription, haveAlertDescription); diff != "" {
-			t.Fatalf("test %s, mismatched alert (-want, +got):\n%s", test.name, diff)
-		}
-		if !reflect.DeepEqual(haveResultTypes, test.wantResultTypes) {
-			haveResultType := "is empty"
-			wantResultType := "is empty"
-			if len(haveResultTypes) > 0 {
-				haveResultType = haveResultTypes[0]
-			}
-			if len(test.wantResultTypes) > 0 {
-				wantResultType = test.wantResultTypes[0]
-			}
-			t.Fatalf("test %s, have result type: %q, want result type: %q", test.name, haveResultType, wantResultType)
+		if diff := cmp.Diff(test.wantError, haveErr); diff != "" {
+			t.Fatalf("test %s, mismatched error (-want, +got):\n%s", test.name, diff)
 		}
 	}
 }

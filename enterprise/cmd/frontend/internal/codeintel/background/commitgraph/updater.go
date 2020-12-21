@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
@@ -51,13 +52,18 @@ func (u *Updater) Handle(ctx context.Context) error {
 		return errors.Wrap(err, "store.DirtyRepositories")
 	}
 
+	var updateErr error
 	for repositoryID, dirtyFlag := range repositoryIDs {
 		if err := u.tryUpdate(ctx, repositoryID, dirtyFlag); err != nil {
-			log15.Warn("Failed to update commit graph", "err", err)
+			if updateErr == nil {
+				updateErr = err
+			} else {
+				updateErr = multierror.Append(updateErr, err)
+			}
 		}
 	}
 
-	return nil
+	return updateErr
 }
 
 func (u *Updater) HandleError(err error) {
@@ -171,12 +177,15 @@ func (u *Updater) getOldestCommitDate(ctx context.Context, repositoryID int) (ti
 		return time.Time{}, false, errors.Wrap(err, "store.GetUploads")
 	}
 
+outer:
 	for _, upload := range uploads {
 		commitDate, err := u.gitserverClient.CommitDate(ctx, repositoryID, upload.Commit)
 		if err != nil {
-			if basegitserver.IsRevisionNotFound(err) {
-				log15.Warn("Unknown commit", "commit", upload.Commit)
-				continue
+			for ex := err; ex != nil; ex = errors.Unwrap(ex) {
+				if basegitserver.IsRevisionNotFound(ex) {
+					log15.Warn("Unknown commit", "commit", upload.Commit)
+					continue outer
+				}
 			}
 
 			return time.Time{}, false, errors.Wrap(err, "gitserver.CommitDate")

@@ -67,6 +67,27 @@ func ScanFirstString(rows *sql.Rows, queryErr error) (_ string, _ bool, err erro
 	return "", false, nil
 }
 
+// ScanFirstNullString reads possibly null string values from the given row
+// object and returns the first one. If no rows match the query, a false-valued
+// flag is returned.
+func ScanFirstNullString(rows *sql.Rows, queryErr error) (_ string, _ bool, err error) {
+	if queryErr != nil {
+		return "", false, queryErr
+	}
+	defer func() { err = CloseRows(rows, err) }()
+
+	if rows.Next() {
+		var value sql.NullString
+		if err := rows.Scan(&value); err != nil {
+			return "", false, err
+		}
+
+		return value.String, true, nil
+	}
+
+	return "", false, nil
+}
+
 // ScanInts reads integer values from the given row object.
 func ScanInts(rows *sql.Rows, queryErr error) (_ []int, err error) {
 	if queryErr != nil {

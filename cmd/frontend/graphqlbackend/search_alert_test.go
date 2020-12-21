@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+
 	"github.com/hashicorp/go-multierror"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -150,6 +152,41 @@ func TestAddQueryRegexpField(t *testing.T) {
 				t.Errorf("got %q, want %q", got, test.want)
 			}
 		})
+	}
+}
+
+func TestAlertForDiffCommitSearchLimits(t *testing.T) {
+	cases := []struct {
+		name                 string
+		multiErr             *multierror.Error
+		wantAlertDescription string
+	}{
+		{
+			name:                 "diff_search_warns_on_repos_greater_than_search_limit",
+			multiErr:             multierror.Append(&multierror.Error{}, RepoLimitErr{ResultType: "diff", Max: 50}),
+			wantAlertDescription: `Diff search can currently only handle searching over 50 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`,
+		},
+		{
+			name:                 "commit_search_warns_on_repos_greater_than_search_limit",
+			multiErr:             multierror.Append(&multierror.Error{}, RepoLimitErr{ResultType: "commit", Max: 50}),
+			wantAlertDescription: `Commit search can currently only handle searching over 50 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`,
+		},
+		{
+			name:                 "commit_search_warns_on_repos_greater_than_search_limit_with_time_filter",
+			multiErr:             multierror.Append(&multierror.Error{}, TimeLimitErr{ResultType: "commit", Max: 10000}),
+			wantAlertDescription: `Commit search can currently only handle searching over 10000 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`,
+		},
+	}
+
+	for _, test := range cases {
+		haveMultiErr, alert := alertForDiffCommitSearch(test.multiErr)
+		if haveMultiErr != nil {
+			t.Fatalf("the alert should have been filtered from the multierror")
+		}
+		haveAlertDescription := alert.description
+		if diff := cmp.Diff(test.wantAlertDescription, haveAlertDescription); diff != "" {
+			t.Fatalf("test %s, mismatched alert (-want, +got):\n%s", test.name, diff)
+		}
 	}
 }
 

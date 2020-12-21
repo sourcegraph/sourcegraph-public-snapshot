@@ -94,7 +94,7 @@ func parseTemplate(buf []byte) []Term {
 			}
 			if len(buf[start:]) > 0 {
 				// Look ahead and see if this is the start of a hole.
-				if r, _ := utf8.DecodeRune(buf); r == '[' {
+				if r, _ = utf8.DecodeRune(buf); r == '[' {
 					// It is the start of a hole, consume the '['.
 					r = next()
 					open++

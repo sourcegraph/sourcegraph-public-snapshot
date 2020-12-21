@@ -9,31 +9,33 @@ import (
 func TestFormatRawOrDockerCommandRaw(t *testing.T) {
 	actual := formatRawOrDockerCommand(
 		CommandSpec{
-			Commands: []string{"ls", "-a"},
-			Dir:      "subdir",
-			Env:      []string{"TEST=true"},
+			Command:   []string{"ls", "-a"},
+			Dir:       "subdir",
+			Env:       []string{"TEST=true"},
+			Operation: makeTestOperation(),
 		},
 		"/proj/src",
 		Options{},
 	)
 
 	expected := command{
-		Commands: []string{"ls", "-a"},
-		Dir:      "/proj/src/subdir",
-		Env:      []string{"TEST=true"},
+		Command: []string{"ls", "-a"},
+		Dir:     "/proj/src/subdir",
+		Env:     []string{"TEST=true"},
 	}
-	if diff := cmp.Diff(expected, actual); diff != "" {
+	if diff := cmp.Diff(expected, actual, commandComparer); diff != "" {
 		t.Errorf("unexpected command (-want +got):\n%s", diff)
 	}
 }
 
-func TestFormatRawOrDockerCommandDocker(t *testing.T) {
+func TestFormatRawOrDockerCommandDockerScript(t *testing.T) {
 	actual := formatRawOrDockerCommand(
 		CommandSpec{
-			Image:    "alpine:latest",
-			Commands: []string{"ls", "-a"},
-			Dir:      "subdir",
-			Env:      []string{"TEST=true"},
+			Image:      "alpine:latest",
+			ScriptPath: "myscript.sh",
+			Dir:        "subdir",
+			Env:        []string{"TEST=true"},
+			Operation:  makeTestOperation(),
 		},
 		"/proj/src",
 		Options{
@@ -45,18 +47,44 @@ func TestFormatRawOrDockerCommandDocker(t *testing.T) {
 	)
 
 	expected := command{
-		Commands: []string{
+		Command: []string{
 			"docker", "run", "--rm",
 			"--cpus", "4",
 			"--memory", "20G",
 			"-v", "/proj/src:/data",
+			"-v", "myscript.sh:myscript.sh",
 			"-w", "/data/subdir",
 			"-e", "TEST=true",
+			"--entrypoint",
+			"/bin/sh",
 			"alpine:latest",
-			"ls", "-a",
+			"myscript.sh",
 		},
 	}
-	if diff := cmp.Diff(expected, actual); diff != "" {
+	if diff := cmp.Diff(expected, actual, commandComparer); diff != "" {
+		t.Errorf("unexpected command (-want +got):\n%s", diff)
+	}
+}
+
+func TestFormatRawOrDockerCommandDockerCommand(t *testing.T) {
+	actual := formatRawOrDockerCommand(
+		CommandSpec{
+			Command: []string{"ls", "-a"},
+			Dir:     "subdir",
+			Env:     []string{"TEST=true"},
+		},
+		"/proj/src",
+		Options{},
+	)
+
+	expected := command{
+		Command: []string{
+			"ls", "-a",
+		},
+		Env: []string{"TEST=true"},
+		Dir: "/proj/src/subdir",
+	}
+	if diff := cmp.Diff(expected, actual, commandComparer); diff != "" {
 		t.Errorf("unexpected command (-want +got):\n%s", diff)
 	}
 }

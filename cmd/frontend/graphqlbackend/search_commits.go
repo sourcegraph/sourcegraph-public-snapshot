@@ -217,17 +217,6 @@ type searchCommitsInRepoEvent struct {
 	Error error
 }
 
-// searchCommitsInRepo is a blocking version of searchCommitsInRepoStream.
-func searchCommitsInRepo(ctx context.Context, op search.CommitParameters) (results []*CommitSearchResultResolver, limitHit, timedOut bool, err error) {
-	for event := range searchCommitsInRepoStream(ctx, op) {
-		results = append(results, event.Results...)
-		limitHit = event.LimitHit
-		timedOut = event.TimedOut
-		err = event.Error
-	}
-	return results, limitHit, timedOut, err
-}
-
 // searchCommitsInRepoStream searchs for commits based on op.
 //
 // The returned channel must be read until closed, otherwise you may leak

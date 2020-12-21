@@ -4,7 +4,7 @@
 
 Extensions can decorate files in the file tree and/or directory page with text content and/or a `<meter/>` element. In this tutorial, you'll build an extension that decorates directories with the length of their names.
 
-Caveat: file decorations are only displayed on Sourcegraph, not on code hosts.
+> Note: Currently, file decorations are only displayed on Sourcegraph, not on code hosts.
 
 ## Prerequisites
 

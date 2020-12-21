@@ -6,7 +6,10 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/apiclient"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/command"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestPrepareWorkspace(t *testing.T) {
@@ -21,7 +24,10 @@ func TestPrepareWorkspace(t *testing.T) {
 		GitServicePath: "/internal/git",
 	}
 	runner := NewMockRunner()
-	handler := &handler{options: options}
+	handler := &handler{
+		options:    options,
+		operations: command.MakeOperations(&observation.TestContext),
+	}
 
 	dir, err := handler.prepareWorkspace(context.Background(), runner, "linux", "deadbeef")
 	if err != nil {
@@ -35,7 +41,7 @@ func TestPrepareWorkspace(t *testing.T) {
 
 	var commands [][]string
 	for _, call := range runner.RunFunc.History() {
-		commands = append(commands, call.Arg1.Commands)
+		commands = append(commands, call.Arg1.Command)
 	}
 
 	expectedCommands := [][]string{
@@ -51,7 +57,10 @@ func TestPrepareWorkspace(t *testing.T) {
 func TestPrepareWorkspaceNoRepository(t *testing.T) {
 	options := Options{}
 	runner := NewMockRunner()
-	handler := &handler{options: options}
+	handler := &handler{
+		options:    options,
+		operations: command.MakeOperations(&observation.TestContext),
+	}
 
 	dir, err := handler.prepareWorkspace(context.Background(), runner, "", "")
 	if err != nil {

@@ -150,8 +150,7 @@ func TestChangesetResolver(t *testing.T) {
 		Repo:                repo.ID,
 		ExternalServiceType: "github",
 		ExternalID:          "9876",
-		Unsynced:            true,
-		PublicationState:    campaigns.ChangesetPublicationStatePublished,
+		PublicationState:    campaigns.ChangesetPublicationStateUnpublished,
 		ReconcilerState:     campaigns.ReconcilerStateQueued,
 	})
 
@@ -202,9 +201,8 @@ func TestChangesetResolver(t *testing.T) {
 					Typename:  "PreviewRepositoryComparison",
 					FileDiffs: testDiffGraphQL,
 				},
-				PublicationState: string(campaigns.ChangesetPublicationStateUnpublished),
-				ReconcilerState:  string(campaigns.ReconcilerStateCompleted),
-				CurrentSpec:      apitest.ChangesetSpec{ID: string(marshalChangesetSpecRandID(unpublishedSpec.RandID))},
+				State:       string(campaigns.ChangesetStateUnpublished),
+				CurrentSpec: apitest.ChangesetSpec{ID: string(marshalChangesetSpecRandID(unpublishedSpec.RandID))},
 			},
 		},
 		{
@@ -222,31 +220,28 @@ func TestChangesetResolver(t *testing.T) {
 					Typename:  "PreviewRepositoryComparison",
 					FileDiffs: testDiffGraphQL,
 				},
-				PublicationState: string(campaigns.ChangesetPublicationStateUnpublished),
-				ReconcilerState:  string(campaigns.ReconcilerStateErrored),
-				Error:            "very bad error",
-				CurrentSpec:      apitest.ChangesetSpec{ID: string(marshalChangesetSpecRandID(erroredSpec.RandID))},
+				State:       string(campaigns.ChangesetStateRetrying),
+				Error:       "very bad error",
+				CurrentSpec: apitest.ChangesetSpec{ID: string(marshalChangesetSpecRandID(erroredSpec.RandID))},
 			},
 		},
 		{
 			name:      "synced github changeset",
 			changeset: syncedGitHubChangeset,
 			want: apitest.Changeset{
-				Typename:      "ExternalChangeset",
-				Title:         "GitHub PR Title",
-				Body:          "GitHub PR Body",
-				ExternalState: "OPEN",
-				ExternalID:    "12345",
-				CheckState:    "PENDING",
-				ReviewState:   "CHANGES_REQUESTED",
-				NextSyncAt:    marshalDateTime(t, now.Add(8*time.Hour)),
-				Repository:    apitest.Repository{Name: string(repo.Name)},
+				Typename:    "ExternalChangeset",
+				Title:       "GitHub PR Title",
+				Body:        "GitHub PR Body",
+				ExternalID:  "12345",
+				CheckState:  "PENDING",
+				ReviewState: "CHANGES_REQUESTED",
+				NextSyncAt:  marshalDateTime(t, now.Add(8*time.Hour)),
+				Repository:  apitest.Repository{Name: string(repo.Name)},
 				ExternalURL: apitest.ExternalURL{
 					URL:         "https://github.com/sourcegraph/sourcegraph/pull/12345",
 					ServiceType: "github",
 				},
-				PublicationState: string(campaigns.ChangesetPublicationStatePublished),
-				ReconcilerState:  string(campaigns.ReconcilerStateCompleted),
+				State: string(campaigns.ChangesetStateOpen),
 				Events: apitest.ChangesetEventConnection{
 					TotalCount: 2,
 				},
@@ -264,12 +259,11 @@ func TestChangesetResolver(t *testing.T) {
 			name:      "unsynced changeset",
 			changeset: unsyncedChangeset,
 			want: apitest.Changeset{
-				Typename:         "ExternalChangeset",
-				ExternalID:       "9876",
-				Repository:       apitest.Repository{Name: string(repo.Name)},
-				Labels:           []apitest.Label{},
-				PublicationState: string(campaigns.ChangesetPublicationStatePublished),
-				ReconcilerState:  string(campaigns.ReconcilerStateQueued),
+				Typename:   "ExternalChangeset",
+				ExternalID: "9876",
+				Repository: apitest.Repository{Name: string(repo.Name)},
+				Labels:     []apitest.Label{},
+				State:      string(campaigns.ChangesetStateProcessing),
 			},
 		},
 	}
@@ -314,13 +308,11 @@ query($changeset: ID!) {
       body
 
       externalID
-      externalState
+      state
       reviewState
       checkState
       externalURL { url, serviceType }
       nextSyncAt
-      publicationState
-      reconcilerState
       error
 
       repository { name }

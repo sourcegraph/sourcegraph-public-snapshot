@@ -4,12 +4,12 @@ exports[`StreamingProgressCount should render correctly for 0 items in progress 
 <StreamingProgressCount
   progress={
     Object {
-      "done": false,
       "durationMs": 0,
       "matchCount": 0,
       "skipped": Array [],
     }
   }
+  state="loading"
 >
   <div
     className="streaming-progress__count d-flex align-items-center streaming-progress__count--in-progress"
@@ -31,13 +31,13 @@ exports[`StreamingProgressCount should render correctly for 1 item complete 1`] 
 <StreamingProgressCount
   progress={
     Object {
-      "done": true,
       "durationMs": 1250,
       "matchCount": 1,
       "repositoriesCount": 1,
       "skipped": Array [],
     }
   }
+  state="complete"
 >
   <div
     className="streaming-progress__count d-flex align-items-center"
@@ -64,13 +64,13 @@ exports[`StreamingProgressCount should render correctly for 123 items complete 1
 <StreamingProgressCount
   progress={
     Object {
-      "done": true,
       "durationMs": 1250,
       "matchCount": 123,
       "repositoriesCount": 500,
       "skipped": Array [],
     }
   }
+  state="complete"
 >
   <div
     className="streaming-progress__count d-flex align-items-center"

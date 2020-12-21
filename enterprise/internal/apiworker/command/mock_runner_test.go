@@ -22,7 +22,7 @@ type MockCommandRunner struct {
 func NewMockCommandRunner() *MockCommandRunner {
 	return &MockCommandRunner{
 		RunCommandFunc: &CommandRunnerRunCommandFunc{
-			defaultHook: func(context.Context, *Logger, command) error {
+			defaultHook: func(context.Context, command, *Logger) error {
 				return nil
 			},
 		},
@@ -34,7 +34,7 @@ func NewMockCommandRunner() *MockCommandRunner {
 // github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/command).
 // It is redefined here as it is unexported in the source packge.
 type surrogateMockCommandRunner interface {
-	RunCommand(context.Context, *Logger, command) error
+	RunCommand(context.Context, command, *Logger) error
 }
 
 // NewMockCommandRunnerFrom creates a new mock of the MockCommandRunner
@@ -51,15 +51,15 @@ func NewMockCommandRunnerFrom(i surrogateMockCommandRunner) *MockCommandRunner {
 // CommandRunnerRunCommandFunc describes the behavior when the RunCommand
 // method of the parent MockCommandRunner instance is invoked.
 type CommandRunnerRunCommandFunc struct {
-	defaultHook func(context.Context, *Logger, command) error
-	hooks       []func(context.Context, *Logger, command) error
+	defaultHook func(context.Context, command, *Logger) error
+	hooks       []func(context.Context, command, *Logger) error
 	history     []CommandRunnerRunCommandFuncCall
 	mutex       sync.Mutex
 }
 
 // RunCommand delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockCommandRunner) RunCommand(v0 context.Context, v1 *Logger, v2 command) error {
+func (m *MockCommandRunner) RunCommand(v0 context.Context, v1 command, v2 *Logger) error {
 	r0 := m.RunCommandFunc.nextHook()(v0, v1, v2)
 	m.RunCommandFunc.appendCall(CommandRunnerRunCommandFuncCall{v0, v1, v2, r0})
 	return r0
@@ -68,7 +68,7 @@ func (m *MockCommandRunner) RunCommand(v0 context.Context, v1 *Logger, v2 comman
 // SetDefaultHook sets function that is called when the RunCommand method of
 // the parent MockCommandRunner instance is invoked and the hook queue is
 // empty.
-func (f *CommandRunnerRunCommandFunc) SetDefaultHook(hook func(context.Context, *Logger, command) error) {
+func (f *CommandRunnerRunCommandFunc) SetDefaultHook(hook func(context.Context, command, *Logger) error) {
 	f.defaultHook = hook
 }
 
@@ -76,7 +76,7 @@ func (f *CommandRunnerRunCommandFunc) SetDefaultHook(hook func(context.Context, 
 // RunCommand method of the parent MockCommandRunner instance inovkes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *CommandRunnerRunCommandFunc) PushHook(hook func(context.Context, *Logger, command) error) {
+func (f *CommandRunnerRunCommandFunc) PushHook(hook func(context.Context, command, *Logger) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -85,7 +85,7 @@ func (f *CommandRunnerRunCommandFunc) PushHook(hook func(context.Context, *Logge
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *CommandRunnerRunCommandFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, *Logger, command) error {
+	f.SetDefaultHook(func(context.Context, command, *Logger) error {
 		return r0
 	})
 }
@@ -93,12 +93,12 @@ func (f *CommandRunnerRunCommandFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *CommandRunnerRunCommandFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, *Logger, command) error {
+	f.PushHook(func(context.Context, command, *Logger) error {
 		return r0
 	})
 }
 
-func (f *CommandRunnerRunCommandFunc) nextHook() func(context.Context, *Logger, command) error {
+func (f *CommandRunnerRunCommandFunc) nextHook() func(context.Context, command, *Logger) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -136,10 +136,10 @@ type CommandRunnerRunCommandFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 *Logger
+	Arg1 command
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 command
+	Arg2 *Logger
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
