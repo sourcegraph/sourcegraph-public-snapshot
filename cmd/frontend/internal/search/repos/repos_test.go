@@ -2,6 +2,8 @@ package repos
 
 import (
 	"context"
+	"fmt"
+	"reflect"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -160,6 +162,113 @@ func TestRevisionValidation(t *testing.T) {
 			}
 			if tt.wantErr != err {
 				t.Errorf("got: %v, expected: %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+// TestSearchRevspecs tests a repository name against a list of
+// repository specs with optional revspecs, and determines whether
+// we get the expected error, list of matching rev specs, or list
+// of clashing revspecs (if no matching rev specs were found)
+func TestSearchRevspecs(t *testing.T) {
+	type testCase struct {
+		descr    string
+		specs    []string
+		repo     string
+		err      error
+		matched  []search.RevisionSpecifier
+		clashing []search.RevisionSpecifier
+	}
+
+	tests := []testCase{
+		{
+			descr:    "simple match",
+			specs:    []string{"foo"},
+			repo:     "foo",
+			err:      nil,
+			matched:  []search.RevisionSpecifier{{RevSpec: ""}},
+			clashing: nil,
+		},
+		{
+			descr:    "single revspec",
+			specs:    []string{".*o@123456"},
+			repo:     "foo",
+			err:      nil,
+			matched:  []search.RevisionSpecifier{{RevSpec: "123456"}},
+			clashing: nil,
+		},
+		{
+			descr:    "revspec plus unspecified rev",
+			specs:    []string{".*o@123456", "foo"},
+			repo:     "foo",
+			err:      nil,
+			matched:  []search.RevisionSpecifier{{RevSpec: "123456"}},
+			clashing: nil,
+		},
+		{
+			descr:    "revspec plus unspecified rev, but backwards",
+			specs:    []string{".*o", "foo@123456"},
+			repo:     "foo",
+			err:      nil,
+			matched:  []search.RevisionSpecifier{{RevSpec: "123456"}},
+			clashing: nil,
+		},
+		{
+			descr:    "conflicting revspecs",
+			specs:    []string{".*o@123456", "foo@234567"},
+			repo:     "foo",
+			err:      nil,
+			matched:  nil,
+			clashing: []search.RevisionSpecifier{{RevSpec: "123456"}, {RevSpec: "234567"}},
+		},
+		{
+			descr:    "overlapping revspecs",
+			specs:    []string{".*o@a:b", "foo@b:c"},
+			repo:     "foo",
+			err:      nil,
+			matched:  []search.RevisionSpecifier{{RevSpec: "b"}},
+			clashing: nil,
+		},
+		{
+			descr:    "multiple overlapping revspecs",
+			specs:    []string{".*o@a:b:c", "foo@b:c:d"},
+			repo:     "foo",
+			err:      nil,
+			matched:  []search.RevisionSpecifier{{RevSpec: "b"}, {RevSpec: "c"}},
+			clashing: nil,
+		},
+		{
+			descr:    "invalid regexp",
+			specs:    []string{"*o@a:b"},
+			repo:     "foo",
+			err:      fmt.Errorf("%s", "bad request: error parsing regexp: missing argument to repetition operator: `*`"),
+			matched:  nil,
+			clashing: nil,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.descr, func(t *testing.T) {
+			pats, err := findPatternRevs(test.specs)
+			if err != nil {
+				if test.err == nil {
+					t.Errorf("unexpected error: '%s'", err)
+				}
+				if test.err != nil && err.Error() != test.err.Error() {
+					t.Errorf("incorrect error: got '%s', expected '%s'", err, test.err)
+				}
+				// don't try to use the pattern list if we got an error
+				return
+			}
+			if test.err != nil {
+				t.Errorf("missing expected error: wanted '%s'", test.err.Error())
+			}
+			matched, clashing := getRevsForMatchedRepo(api.RepoName(test.repo), pats)
+			if !reflect.DeepEqual(matched, test.matched) {
+				t.Errorf("matched repo mismatch: actual: %#v, expected: %#v", matched, test.matched)
+			}
+			if !reflect.DeepEqual(clashing, test.clashing) {
+				t.Errorf("clashing repo mismatch: actual: %#v, expected: %#v", clashing, test.clashing)
 			}
 		})
 	}

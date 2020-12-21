@@ -61,7 +61,7 @@ func ResolveRepoGroups(ctx context.Context, settings *schema.Settings) (groups m
 		groups[name] = repos
 	}
 
-	if currentUserAllowedExternalServices(ctx) == conf.ExternalServiceModeDisabled {
+	if CurrentUserAllowedExternalServices(ctx) == conf.ExternalServiceModeDisabled {
 		return groups, nil
 	}
 

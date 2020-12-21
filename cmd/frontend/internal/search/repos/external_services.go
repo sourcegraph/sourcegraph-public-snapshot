@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db"
 )
 
-func currentUserAllowedExternalServices(ctx context.Context) conf.ExternalServiceMode {
+func CurrentUserAllowedExternalServices(ctx context.Context) conf.ExternalServiceMode {
 	mode := conf.ExternalServiceUserMode()
 	if mode != conf.ExternalServiceModeDisabled {
 		return mode

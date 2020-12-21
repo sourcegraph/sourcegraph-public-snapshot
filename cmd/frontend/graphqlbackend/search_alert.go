@@ -198,7 +198,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			}
 		}
 
-		unionRepoFilter := unionRegExps(repoFilters)
+		unionRepoFilter := searchrepos.UnionRegExps(repoFilters)
 		tryAnyRepo := searchrepos.Options{
 			RepoFilters:      []string{unionRepoFilter},
 			MinusRepoFilters: minusRepoFilters,
@@ -274,7 +274,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			}
 		}
 		proposedQueries := []*searchQueryDescription{}
-		unionRepoFilter := unionRegExps(repoFilters)
+		unionRepoFilter := searchrepos.UnionRegExps(repoFilters)
 		tryAnyRepo := searchrepos.Options{
 			RepoFilters:      []string{unionRepoFilter},
 			MinusRepoFilters: minusRepoFilters,

@@ -1515,7 +1515,7 @@ func getPatternInfo(q query.QueryInfo, opts *getPatternInfoOptions) (*search.Tex
 		CombyRule:                    strings.Join(combyRule, ""),
 	}
 	if len(excludePatterns) > 0 {
-		patternInfo.ExcludePattern = unionRegExps(excludePatterns)
+		patternInfo.ExcludePattern = searchrepos.UnionRegExps(excludePatterns)
 	}
 	return patternInfo, nil
 }
@@ -1536,7 +1536,7 @@ func langIncludeExcludePatterns(values, negatedValues []string) (includePatterns
 				// Add `\.ext$` pattern to match files with the given extension.
 				extPatterns[i] = regexp.QuoteMeta(ext) + "$"
 			}
-			*patterns = append(*patterns, unionRegExps(extPatterns))
+			*patterns = append(*patterns, searchrepos.UnionRegExps(extPatterns))
 		}
 		return nil
 	}

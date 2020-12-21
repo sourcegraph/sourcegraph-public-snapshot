@@ -602,7 +602,7 @@ func defaultRepositories(ctx context.Context, getRawDefaultRepos defaultReposFun
 
 	// Remove excluded repos
 	if len(excludePatterns) > 0 {
-		patterns, _ := regexp.Compile(`(?i)` + unionRegExps(excludePatterns))
+		patterns, _ := regexp.Compile(`(?i)` + searchrepos.UnionRegExps(excludePatterns))
 		filteredRepos := defaultRepos[:0]
 		for _, repo := range defaultRepos {
 			if matched := patterns.MatchString(string(repo.Name)); !matched {
@@ -671,26 +671,6 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*se
 		suggestions = append(suggestions, newSearchSuggestionResolver(result.File(), assumedScore))
 	}
 	return suggestions, nil
-}
-
-func unionRegExps(patterns []string) string {
-	if len(patterns) == 0 {
-		return ""
-	}
-	if len(patterns) == 1 {
-		return patterns[0]
-	}
-
-	// We only need to wrap the pattern in parentheses if it contains a "|" because
-	// "|" has the lowest precedence of any operator.
-	patterns2 := make([]string, len(patterns))
-	for i, p := range patterns {
-		if strings.Contains(p, "|") {
-			p = "(" + p + ")"
-		}
-		patterns2[i] = p
-	}
-	return strings.Join(patterns2, "|")
 }
 
 type badRequestError struct {
