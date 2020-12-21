@@ -55,7 +55,7 @@ func ResolveRepositories(ctx context.Context, op Options) (Resolved, error) {
 
 	excludePatterns := op.MinusRepoFilters
 
-	maxRepoListSize := searchLimits().MaxRepos
+	maxRepoListSize := SearchLimits().MaxRepos
 
 	// If any repo groups are specified, take the intersection of the repo
 	// groups and the set of repos specified with repo:. (If none are specified
@@ -321,6 +321,26 @@ func (op *Options) String() string {
 	return b.String()
 }
 
+func UnionRegExps(patterns []string) string {
+	if len(patterns) == 0 {
+		return ""
+	}
+	if len(patterns) == 1 {
+		return patterns[0]
+	}
+
+	// We only need to wrap the pattern in parentheses if it contains a "|" because
+	// "|" has the lowest precedence of any operator.
+	patterns2 := make([]string, len(patterns))
+	for i, p := range patterns {
+		if strings.Contains(p, "|") {
+			p = "(" + p + ")"
+		}
+		patterns2[i] = p
+	}
+	return strings.Join(patterns2, "|")
+}
+
 // NOTE: This function is not called if the version context is not used
 func resolveVersionContext(versionContext string) (*schema.VersionContext, error) {
 	for _, vc := range conf.Get().ExperimentalFeatures.VersionContexts {
@@ -508,7 +528,7 @@ func findPatternRevs(includePatterns []string) (includePatternRevs []patternRevs
 	return
 }
 
-func searchLimits() schema.SearchLimits {
+func SearchLimits() schema.SearchLimits {
 	// Our configuration reader does not set defaults from schema. So we rely
 	// on Go default values to mean defaults.
 	withDefault := func(x *int, def int) {
@@ -647,26 +667,6 @@ func optimizeRepoPatternWithHeuristics(repoPattern string) string {
 	// so that the regexp can be optimized more effectively.
 	repoPattern = strings.Replace(repoPattern, "github.com", `github\.com`, -1)
 	return repoPattern
-}
-
-func UnionRegExps(patterns []string) string {
-	if len(patterns) == 0 {
-		return ""
-	}
-	if len(patterns) == 1 {
-		return patterns[0]
-	}
-
-	// We only need to wrap the pattern in parentheses if it contains a "|" because
-	// "|" has the lowest precedence of any operator.
-	patterns2 := make([]string, len(patterns))
-	for i, p := range patterns {
-		if strings.Contains(p, "|") {
-			p = "(" + p + ")"
-		}
-		patterns2[i] = p
-	}
-	return strings.Join(patterns2, "|")
 }
 
 type badRequestError struct {

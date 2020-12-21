@@ -1562,7 +1562,7 @@ func (r *searchResolver) searchTimeoutFieldSet() bool {
 
 func (r *searchResolver) withTimeout(ctx context.Context) (context.Context, context.CancelFunc, error) {
 	d := defaultTimeout
-	maxTimeout := time.Duration(searchLimits().MaxTimeoutSeconds) * time.Second
+	maxTimeout := time.Duration(searchrepos.SearchLimits().MaxTimeoutSeconds) * time.Second
 	timeout, _ := r.query.StringValue(query.FieldTimeout)
 	if timeout != "" {
 		var err error
@@ -1659,7 +1659,7 @@ func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameter
 		hasTimeFilter = true
 	}
 
-	limits := searchLimits()
+	limits := searchrepos.SearchLimits()
 	if max := limits.CommitDiffMaxRepos; !hasTimeFilter && len(repos) > max {
 		return RepoLimitErr{ResultType: resultType, Max: max}
 	}

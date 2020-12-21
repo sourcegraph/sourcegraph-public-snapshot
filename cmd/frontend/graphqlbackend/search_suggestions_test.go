@@ -21,7 +21,7 @@ import (
 )
 
 func TestSearchSuggestions(t *testing.T) {
-	limitOffset := &db.LimitOffset{Limit: searchLimits().MaxRepos + 1}
+	limitOffset := &db.LimitOffset{Limit: searchrepos.SearchLimits().MaxRepos + 1}
 
 	getSuggestions := func(t *testing.T, query, version string) []string {
 		t.Helper()
