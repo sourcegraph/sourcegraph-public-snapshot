@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/syncer"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -332,7 +333,7 @@ func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
 	if url == "" {
 		return nil, nil
 	}
-	return externallink.NewResolver(url, r.changeset.ExternalServiceType), nil
+	return externallink.NewResolver(url, extsvc.TypeToKind(r.changeset.ExternalServiceType)), nil
 }
 
 func (r *changesetResolver) ReviewState(ctx context.Context) *campaigns.ChangesetReviewState {
