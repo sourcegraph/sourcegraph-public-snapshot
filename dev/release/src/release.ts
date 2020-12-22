@@ -558,21 +558,32 @@ Campaign: ${campaignURL}`,
         description: 'Run final tasks for the sourcegraph/sourcegraph release pull request',
         run: async config => {
             const { upcoming: release } = await releaseVersions(config)
+            let failed = false
 
             // Push final tags
             const branch = `${release.major}.${release.minor}`
             const tag = `v${release.version}`
             for (const repo of ['deploy-sourcegraph', 'deploy-sourcegraph-docker']) {
-                await createTag(
-                    await getAuthenticatedGitHubClient(),
-                    {
-                        owner: 'sourcegraph',
-                        repo,
-                        branch,
-                        tag,
-                    },
-                    config.dryRun.tags || false
-                )
+                try {
+                    await createTag(
+                        await getAuthenticatedGitHubClient(),
+                        {
+                            owner: 'sourcegraph',
+                            repo,
+                            branch,
+                            tag,
+                        },
+                        config.dryRun.tags || false
+                    )
+                } catch (error) {
+                    console.error(error)
+                    console.error(`Failed to create tag ${tag} on ${repo}@${branch}`)
+                    failed = true
+                }
+            }
+
+            if (failed) {
+                throw new Error('Error occured applying some changes - please check log output')
             }
         },
     },
