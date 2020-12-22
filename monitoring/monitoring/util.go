@@ -47,7 +47,7 @@ func isValidUID(s string) bool {
 	return true
 }
 
-// toMarkdown converts a Go string into Markdown, and optionally convert it to a list item if required.
+// toMarkdown converts a Go string to Markdown, and optionally converts it to a list item if requested by forceList.
 func toMarkdown(m string, forceList bool) (string, error) {
 	m = strings.TrimPrefix(m, "\n")
 

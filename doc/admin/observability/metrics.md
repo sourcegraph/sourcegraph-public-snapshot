@@ -51,7 +51,7 @@ To access the remote server using `sshuttle` from your local machine:
 sshuttle -r user@host 0/0
 ```
 
-Grafana will be available http://host:3370/-/debug/grafana.
+Grafana will be available at http://host:3370/-/debug/grafana.
 
 > WARNING: Our Grafana instance runs in anonymous mode with all authentication turned off, since we rely on Sourcegraph's built-in authentication.
 > Please be careful when exposing it directly to external traffic.
