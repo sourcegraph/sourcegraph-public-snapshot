@@ -618,7 +618,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#gitserver-reposito
 
 This cloud panel indicates echo test command duration.
 
-A high value here is likely to indicate a problem, especially if consistently high.
+A high value here likely indicates a problem, especially if consistently high.
 You can query for individual commands using `sum by (cmd)(src_gitserver_exec_running)` in Grafana (`/-/debug/grafana`) to see if a specific Git Server command might be spiking in frequency.
 
 If this value is consistently high, consider the following:
