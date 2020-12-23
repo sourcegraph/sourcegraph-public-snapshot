@@ -1,30 +1,33 @@
-# Observability developer documentation
+# Developing observability
 
 This documentation is for generalized, usecase-agnostic development of Sourcegraph's observability.
 Sourcegraph employees should also refer to the [handbook's observability section](https://about.sourcegraph.com/handbook/engineering/observability) for Sourcegraph-specific documentation.
 
-Observability includes:
+> NOTE: For how to *use* Sourcegraph's observability and an overview of our observability features, refer to the [observability for site administrators documentation](../../../admin/observability/index.md).
 
-- Monitoring - how you know _when something is wrong_, which includes:
-  - Dashboards & metrics
-  - Alerting
-  - Health checks
-- Debugging - how you debug _what is wrong_, which includes:
-  - Distributed tracing
-  - Logging
+## Overview
 
-> NOTE: For how to *use* Sourcegraph's observability and an overview of our observability features, refer to the [observability for administrators documentation](../../admin/observability/index.md).
+Observability at Sourcegraph includes:
+
+| | Description | Examples |
+|:--|------------|--------|
+| **Monitoring** | how you know _when_ something is wrong | Dashboards & metrics, alerting, health checks |
+| **Debugging** | how you debug _what_ is wrong | Tracing, logging |
 
 ## Concepts
 
 - [Sourcegraph monitoring pillars](https://about.sourcegraph.com/handbook/engineering/observability/monitoring_pillars)
 - [Sourcegraph monitoring architecture](https://about.sourcegraph.com/handbook/engineering/observability/monitoring_architecture)
 
-## Background
-
-- [Monitoring generator](./monitoring-generator.md)
-
 ## Guides
 
-- [How to find monitoring](../how-to/find_monitoring.md)
-- [How to add monitoring](../how-to/add_monitoring.md)
+- [How to find monitoring](../../how-to/find_monitoring.md)
+- [How to add monitoring](../../how-to/add_monitoring.md)
+- How to add observability (coming soon)
+
+## Components
+
+- [Monitoring generator](./monitoring-generator.md)
+- [Sourcegraph Grafana](./grafana.md)
+- [Sourcegraph Prometheus](./prometheus.md)
+- [Observability for site administrators](../../../admin/observability/index.md)
