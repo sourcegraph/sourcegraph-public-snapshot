@@ -1,5 +1,10 @@
 # How to add monitoring
 
+This guide documents how to add monitoring to Sourcegraph's source code.
+Sourcegraph employees should also refer to the [handbook's monitoring section](https://about.sourcegraph.com/handbook/engineering/observability/monitoring) for Sourcegraph-specific documentation.
+
+> NOTE: For how to *use* Sourcegraph's observability and an overview of our observability features, refer to the [observability for site administrators documentation](../../admin/observability/index.md).
+
 ## Metrics
 
 Service-side, metrics should be made available over HTTP for Prometheus to scrape.
@@ -21,22 +26,30 @@ In [deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph
 
 ## Alerts, dashboards, and documentation
 
-Creating alerts, dashboards, and documentation for monitoring is powered by the [Sourcegraph monitoring generator](TODO), which requires monitorings to be defined in our [monitoring definitions package](TODO).
-The monitoring generator provides [a lot of features and integrations with the Sourcegraph monitoring ecosystem](TODO) for free.
+Creating alerts, dashboards, and documentation for monitoring is powered by the Sourcegraph monitoring generator, which requires monitorings to be defined in our [monitoring definitions package](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/monitoring/definitions).
+The monitoring generator provides [a lot of features and integrations with the Sourcegraph monitoring ecosystem](../background-information/observability/monitoring-generator.md#features) for free.
 
 This section documents how to use develop monitoring definitions for a Sourcegraph service.
-To get started, you should read the [Sourcegraph monitoring pillars](https://about.sourcegraph.com/handbook/engineering/observability/monitoring_pillars) for some of the principles we try to uphold when developing monitoring.
+To get started, you should read:
+
+- the [Sourcegraph monitoring pillars](https://about.sourcegraph.com/handbook/engineering/observability/monitoring_pillars) for some of the principles we try to uphold when developing monitoring
+- relevant [reference documentation for the monitoring generator](../background-information/observability/monitoring-generator.md)
 
 ### Set up an observable
 
+Monitoring is build around "observables" - something you wish to observe.
+The generator API exposes this concept through the [`Observable` type](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/monitoring/monitoring/README.md#type-observable).
+
 You can decide where to put your new observable by looking for an existing dashboard that your information should go in.
-Think "when this number shows something bad, which service's logs are likely to be most relevant?"
-Dashboards can be viewed by either:
+Think "when this number shows something bad, which service's logs are likely to be most relevant?".
+If you are just editing an existing observable,
+
+Existing dashboards can be viewed by either:
 
 - Visiting Grafana on an existing Sourcegraph instance that you have site admin permissions for, e.g. `example.sourcegraph.com/-/debug/grafana` - see the [metrics for site administrators documentation](../../admin/observability/metrics.md) for more details.
-- [Running the monitoring stack locally](TODO)
+- [Running the monitoring stack locally](./monitoring_local_dev.md)
 
-Open that service's monitoring definition (e.g. `monitoring/frontend.go`, `monitoring/git_server.go`) in your editor.
+Once you've found a home for your observable, open that service's monitoring definition (e.g. `monitoring/frontend.go`, `monitoring/git_server.go`) in your editor.
 Declare your [`Observable`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40master+file:%5Emonitoring/+type+Observable&patternType=literal) by:
 
 - adding it to [an existing `Row` in the file](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@64aa473/-/blob/monitoring/frontend.go#L12-43)
@@ -54,9 +67,7 @@ Here's an example `Observable` that we will use throughout this guide to get you
 
 ### Write a query
 
-Use the Grafana Explore page on [Sourcegraph.com](https://sourcegraph.com/-/debug/grafana/explore), [k8s.sgdev.org](https://k8s.sgdev.org/-/debug/grafana/explore), or [your local development server](http://localhost:3080/-/debug/grafana/explore) to start writing your Prometheus query.
-
-Make sure you update your description to reflect the query you end up with.
+Use the Grafana Explore page on a Sourcegraph instance you have site administrator access to (`/-/debug/grafana/explore`) to start writing your Prometheus query.
 
 ```diff
 {
@@ -66,6 +77,8 @@ Make sure you update your description to reflect the query you end up with.
 +   Query:       `histogram_quantile(0.99, sum by (le)(rate(search_request_duration{status="success}[5m])))`,
 }
 ```
+
+Make sure to update your description to reflect the query you end up with where relevant.
 
 ### Configure panel options
 
@@ -137,3 +150,16 @@ It's best if you also add some Markdown documentation with your best guess of wh
 ```
 
 > NOTE: In both `PossibleSolutions` and `Interpretation`, you can write plain Markdown with some slight modifications, such as single quotes are used instead of backticks for code formatting, and indention will automatically be removed for you.
+
+### Validate your observable
+
+Run the monitoring generator from the root Sourcegraph directory:
+
+```sh
+go generate ./monitoring/...
+```
+
+This will validate your Observable configuration and let you know of any changes you need to make if required.
+If the generator runs successfully, you should now [run the monitoring stack locally](./monitoring_local_dev.md) to validate your observable by hand.
+
+Once everything looks good, open a pull request with your observable to the main Sourcegraph codebase!
