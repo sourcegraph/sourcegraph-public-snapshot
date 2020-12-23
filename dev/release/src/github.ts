@@ -37,13 +37,13 @@ const templates = {
     upgradeMangedInstanceIssue: {
         owner: 'sourceraph',
         repo: 'about',
-        path: 'handbook/engineering/releases/upgrade_managed_issue_template.md'
+        path: 'handbook/engineering/releases/upgrade_managed_issue_template.md',
     },
     releaseDockerIssue: {
         owner: 'sourcegraph',
         repo: 'about',
-        path: 'handbook/engineering/releases/release_deploy_sourcegraph_docker_template.md'
-    }
+        path: 'handbook/engineering/releases/release_deploy_sourcegraph_docker_template.md',
+    },
 }
 
 /**

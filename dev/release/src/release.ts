@@ -195,7 +195,7 @@ const steps: Step[] = [
                 version: release,
                 assignees: [captainGitHubUsername],
                 releaseDateTime: new Date(releaseDateTime),
-                oneWorkingDayAfterRelease: new Date (oneWorkingDayAfterRelease),
+                oneWorkingDayAfterRelease: new Date(oneWorkingDayAfterRelease),
                 oneWorkingDayBeforeRelease: new Date(oneWorkingDayBeforeRelease),
                 fourWorkingDaysBeforeRelease: new Date(fourWorkingDaysBeforeRelease),
                 fiveWorkingDaysBeforeRelease: new Date(fiveWorkingDaysBeforeRelease),
