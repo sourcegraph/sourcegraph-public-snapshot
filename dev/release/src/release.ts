@@ -148,6 +148,22 @@ const steps: Step[] = [
                     startDateTime: new Date(config.releaseDateTime).toISOString(),
                     endDateTime: addMinutes(new Date(config.releaseDateTime), 1).toISOString(),
                 },
+                {
+                    title: `Deploy Sourcegraph ${release.major}.${release.minor} to managed instances`,
+                    description: '(This is not an actual event to attend, just a calendar marker.)',
+                    anyoneCanAddSelf: true,
+                    attendees: [config.teamEmail],
+                    startDateTime: new Date(config.oneWorkingDayAfterRelease).toISOString(),
+                    endDateTime: addMinutes(new Date(config.releaseDateTime), 1).toISOString(),
+                },
+                {
+                    title: `Release deploy-soucegraph-docker ${release.major}.${release.minor} for customers`,
+                    description: '(This is not an actual event to attend, just a calendar marker.)',
+                    anyoneCanAddSelf: true,
+                    attendees: [config.teamEmail],
+                    startDateTime: new Date(config.oneWorkingDayAfterRelease).toISOString(),
+                    endDateTime: addMinutes(new Date(config.releaseDateTime), 1).toISOString(),
+                },
             ]
 
             for (const event of events) {
@@ -163,6 +179,7 @@ const steps: Step[] = [
             const {
                 releaseDateTime,
                 captainGitHubUsername,
+                oneWorkingDayAfterRelease,
                 oneWorkingDayBeforeRelease,
                 fourWorkingDaysBeforeRelease,
                 fiveWorkingDaysBeforeRelease,
@@ -178,6 +195,7 @@ const steps: Step[] = [
                 version: release,
                 assignees: [captainGitHubUsername],
                 releaseDateTime: new Date(releaseDateTime),
+                oneWorkingDayAfterRelease: new Date (oneWorkingDayAfterRelease),
                 oneWorkingDayBeforeRelease: new Date(oneWorkingDayBeforeRelease),
                 fourWorkingDaysBeforeRelease: new Date(fourWorkingDaysBeforeRelease),
                 fiveWorkingDaysBeforeRelease: new Date(fiveWorkingDaysBeforeRelease),
