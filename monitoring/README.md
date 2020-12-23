@@ -7,6 +7,14 @@ This page primarily documents the [generator's current capabilities](#features) 
 
 To learn about how to find, add, and use monitoring, see the [Sourcegraph monitoring developer guide](https://about.sourcegraph.com/handbook/engineering/observability/monitoring).
 
+- [Usage](#usage)
+- [Features](#features)
+  - [Documentation generation](#documentation-generation)
+  - [Grafana integration](#grafana-integration)
+  - [Prometheus integration](#prometheus-integration)
+  - [Alertmanager integration](#alertmanager-integration)
+- [Development](#development)
+
 ## Usage
 
 From this directory:
@@ -22,9 +30,13 @@ Other configuration options can be customized via flags declared in [`main.go`](
 
 ### Documentation generation
 
-The generator automatically creates documentation from monitoring definitions, such as [alert solutions references](https://docs.sourcegraph.com/admin/observability/alert_solutions), that customers and engineers can reference.
+The generator automatically creates documentation from monitoring definitions that customers and engineers can reference.
+These include:
 
-Links to generated documentation can be provided in our other generated integrations - for example, [Slack alerts](https://docs.sourcegraph.com/admin/observability/alerting#setting-up-alerting) will provide a link to the appropriate alert solutions entry.
+- [Alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions)
+- [Dashboards reference](https://docs.sourcegraph.com/admin/observability/dashboards)
+
+Links to generated documentation can be provided in our other generated integrations - for example, [Slack alerts](https://docs.sourcegraph.com/admin/observability/alerting#setting-up-alerting) will provide a link to the appropriate alert solutions entry, and [Grafana panels](#grafana-integration) will link to the appropriate dashboards reference entry.
 
 ### Grafana integration
 
@@ -38,20 +50,27 @@ It also takes care of the following:
   - Threshold lines for alerts of all levels are rendered in graphs
 - Formatting of units, labels, and more (using either the defaults, or the [`ObservablePanelOptions` API](./monitoring/README.md#type-observablepaneloptions))
 - Maintaining a uniform look and feel across all dashboards
+- Providing links to [generated documentation](#documentation-generation)
 
 Links to generated documentation can be provided in our other generated integrations - for example, [Slack alerts](https://docs.sourcegraph.com/admin/observability/alerting#setting-up-alerting) will provide a link to the appropriate service's dashboard.
 
 ### Prometheus integration
 
-The generator automatically generates and ships Prometheus recording rules and alerts within the [Sourcegraph Prometheus distribution](https://about.sourcegraph.com/handbook/engineering/observability/monitoring_architecture#sourcegraph-prometheus). This includes the [`alert_count` recording rules](https://about.sourcegraph.com/handbook/engineering/observability/monitoring_architecture#alert-count-metrics) and native Prometheus alerts, all with appropriate and consistent labels.
+The generator automatically generates and ships Prometheus recording rules and alerts within the [Sourcegraph Prometheus distribution](https://about.sourcegraph.com/handbook/engineering/observability/monitoring_architecture#sourcegraph-prometheus).
+This include the following, all with appropriate and consistent labels:
+
+- [`alert_count` recording rules](https://about.sourcegraph.com/handbook/engineering/observability/monitoring_architecture#alert-count-metrics)
+- Native Prometheus alerts, leveraged by our [Alertmanager integration](#alertmanager-integration)
 
 Generated Prometheus recording rules are leveraged by the [Grafana integration](#grafana-integration).
 
 ### Alertmanager integration
 
-The generator's [Prometheus integration](#prometheus-integration) is a critical part of the [Sourcegraph's alerting capabilities](https://about.sourcegraph.com/handbook/engineering/observability/monitoring_architecture#alert-notifications), which handles alert routing by level and formatting of alert messages to include links to [documentation](#documentation-generation) and [dashboards](#grafana-integration). Learn more about using Sourcegraph alerting in the [alerting documentation](https://docs.sourcegraph.com/admin/observability/alerting).
+The generator's [Prometheus integration](#prometheus-integration) is a critical part of the [Sourcegraph's alerting capabilities](https://about.sourcegraph.com/handbook/engineering/observability/monitoring_architecture#alert-notifications), which handles alert routing by level and formatting of alert messages to include links to [documentation](#documentation-generation) and [dashboards](#grafana-integration).
+Learn more about using Sourcegraph alerting in the [alerting documentation](https://docs.sourcegraph.com/admin/observability/alerting).
+This is possible due to the labels generated by the [Prometheus integration](#prometheus-integration)
 
-At Sourcegraph, routing based on team ownership (as defined by [`ObservableOwner`](./monitoring/README.md#type-observableowner)) is used to route customer support requests and [on-call events through OpsGenie](https://about.sourcegraph.com/handbook/engineering/incidents/on_call).
+At Sourcegraph, extended routing based on team ownership (as defined by [`ObservableOwner`](./monitoring/README.md#type-observableowner)) is also used to route customer support requests and [on-call events through OpsGenie](https://about.sourcegraph.com/handbook/engineering/incidents/on_call).
 
 ## Development
 
@@ -62,6 +81,6 @@ The Sourcegraph monitoring generator consists of three components:
   This is where the all service monitoring definitions lives.
   If you are editing monitoring, this is probably where you want to look - see the [Sourcegraph monitoring developer guide](https://about.sourcegraph.com/handbook/engineering/observability/monitoring).
 - _Generator_, defined in the nested [`monitoring/monitoring` package](./monitoring/README.md) package.
-  This is where the API for service monitoring definitions is defined, as well as the generator code.
+  This is where the API for service monitoring definitions is defined, as well as the generator code that provides the [above features](#features).
 
 All features and capabilities for developed for the generator should align with the [Sourcegraph monitoring pillars](https://about.sourcegraph.com/handbook/engineering/observability/monitoring_pillars).

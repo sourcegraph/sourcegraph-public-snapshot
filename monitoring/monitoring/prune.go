@@ -47,7 +47,7 @@ func pruneAssets(logger log15.Logger, filelist []string, grafanaDir, promDir str
 				plog.Debug("Unable to access file, ignoring")
 				return nil
 			}
-			if !strings.Contains(filepath.Base(path), alertSuffix) || info.IsDir() {
+			if !strings.Contains(filepath.Base(path), alertRulesFileSuffix) || info.IsDir() {
 				return nil
 			}
 

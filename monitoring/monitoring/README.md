@@ -20,7 +20,7 @@ To learn more about the generator\, see the top\-level program: https://github.c
 - [type Group](<#type-group>)
 - [type Observable](<#type-observable>)
   - [func (o Observable) WithCritical(a *ObservableAlertDefinition) Observable](<#func-observable-withcritical>)
-  - [func (o Observable) WithNoAlerts() Observable](<#func-observable-withnoalerts>)
+  - [func (o Observable) WithNoAlerts(interpretation string) Observable](<#func-observable-withnoalerts>)
   - [func (o Observable) WithWarning(a *ObservableAlertDefinition) Observable](<#func-observable-withwarning>)
 - [type ObservableAlertDefinition](<#type-observablealertdefinition>)
   - [func Alert() *ObservableAlertDefinition](<#func-alert>)
@@ -40,7 +40,7 @@ To learn more about the generator\, see the top\-level program: https://github.c
 - [type UnitType](<#type-unittype>)
 
 
-## func [Generate](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/generator.go#L45>)
+## func [Generate](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/generator.go#L40>)
 
 ```go
 func Generate(logger log15.Logger, opts GenerateOptions, containers ...*Container) error
@@ -71,7 +71,7 @@ type Container struct {
 }
 ```
 
-## type [GenerateOptions](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/generator.go#L30-L42>)
+## type [GenerateOptions](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/generator.go#L25-L37>)
 
 GenerateOptions declares options for the monitoring generator\.
 
@@ -91,7 +91,7 @@ type GenerateOptions struct {
 }
 ```
 
-## type [Group](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L447-L462>)
+## type [Group](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L461-L476>)
 
 Group describes a group of observable information about a container\.
 
@@ -116,7 +116,7 @@ type Group struct {
 }
 ```
 
-## type [Observable](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L510-L608>)
+## type [Observable](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L524-L642>)
 
 Observable describes a metric about a container that can be observed\. For example\, memory usage\.
 
@@ -156,7 +156,7 @@ type Observable struct {
     //
     Description string
 
-    // Owner indicates the team that owns any alerts associated with this Observable.
+    // Owner indicates the team that owns this Observable (including its alerts and maintainence).
     Owner ObservableOwner
 
     // Query is the actual Prometheus query that should be observed.
@@ -183,17 +183,23 @@ type Observable struct {
     DataMayNotBeNaN bool
 
     // Warning and Critical alert definitions.
-    // Consider adding at least a Warning or Critical alert to each Observable to make it easy to
-    // identify when the target of this metric is missbehaving.
+    // Consider adding at least a Warning or Critical alert to each Observable to make it
+    // easy to identify when the target of this metric is misbehaving. If no alerts are
+    // provided, NoAlert must be set and Interpretation must be provided.
     Warning, Critical *ObservableAlertDefinition
 
-    // NoAlerts is used by Observables that don't need any alerts.
-    // We want to be explicit about this to ensure alerting is considered and if we choose not to Alert,
-    // its easy to identify it is an intentional behavior.
+    // NoAlerts must be set by Observables that do not have any alerts.
+    // This ensures the omission of alerts is intentional. If set to true, an Interpretation
+    // must be provided in place of PossibleSolutions.
     NoAlert bool
 
-    // PossibleSolutions is Markdown describing possible solutions in the event that the alert is
-    // firing. If there is no clear potential resolution, "none" must be explicitly stated.
+    // PossibleSolutions is Markdown describing possible solutions in the event that the
+    // alert is firing. This field not required if no alerts are attached to this Observable.
+    // If there is no clear potential resolution or there is no alert configured, "none"
+    // must be explicitly stated.
+    //
+    // Use the Interpretation field for additional guidance on understanding this Observable that isn't directly related to solving it.
+    // it, the Interpretation field can be provided as well.
     //
     // Contacting support should not be mentioned as part of a possible solution, as it is
     // communicated elsewhere.
@@ -216,33 +222,49 @@ type Observable struct {
     // 2. The indentation in the string literal is removed (based on the last line).
     // 3. Single quotes become backticks.
     // 4. The last line (which is all indention) is removed.
+    // 5. Non-list items are converted to a list.
     //
     PossibleSolutions string
+
+    // Interpretation is Markdown that can serve as a reference for interpreting this
+    // observable. For example, Interpretation could provide guidance on what sort of
+    // patterns to look for in the observable's graph and document why this observable is
+    // usefule.
+    //
+    // If no alerts are configured for an observable, this field is required. If the
+    // Description is sufficient to capture what this Observable describes, "none" must be
+    // explicitly stated.
+    //
+    // To make writing the Markdown more friendly in Go, string literal processing as
+    // PossibleSolutions is provided, though the output is not converted to a list.
+    Interpretation string
 
     // PanelOptions describes some options for how to render the metric in the Grafana panel.
     PanelOptions ObservablePanelOptions
 }
 ```
 
-### func \(Observable\) [WithCritical](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L615>)
+### func \(Observable\) [WithCritical](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L649>)
 
 ```go
 func (o Observable) WithCritical(a *ObservableAlertDefinition) Observable
 ```
 
-### func \(Observable\) [WithNoAlerts](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L620>)
+### func \(Observable\) [WithNoAlerts](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L655>)
 
 ```go
-func (o Observable) WithNoAlerts() Observable
+func (o Observable) WithNoAlerts(interpretation string) Observable
 ```
 
-### func \(Observable\) [WithWarning](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L610>)
+WithNoAlerts disables alerting on this Observable and sets the given interpretation instead\.
+
+### func \(Observable\) [WithWarning](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L644>)
 
 ```go
 func (o Observable) WithWarning(a *ObservableAlertDefinition) Observable
 ```
 
-## type [ObservableAlertDefinition](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L661-L673>)
+## type [ObservableAlertDefinition](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L717-L729>)
 
 ObservableAlertDefinition defines when an alert would be considered firing\.
 
@@ -252,7 +274,7 @@ type ObservableAlertDefinition struct {
 }
 ```
 
-### func [Alert](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L656>)
+### func [Alert](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L712>)
 
 ```go
 func Alert() *ObservableAlertDefinition
@@ -260,25 +282,25 @@ func Alert() *ObservableAlertDefinition
 
 Alert provides a builder for defining alerting on an Observable\.
 
-### func \(\*ObservableAlertDefinition\) [For](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L685>)
+### func \(\*ObservableAlertDefinition\) [For](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L741>)
 
 ```go
 func (a *ObservableAlertDefinition) For(d time.Duration) *ObservableAlertDefinition
 ```
 
-### func \(\*ObservableAlertDefinition\) [GreaterOrEqual](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L675>)
+### func \(\*ObservableAlertDefinition\) [GreaterOrEqual](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L731>)
 
 ```go
 func (a *ObservableAlertDefinition) GreaterOrEqual(f float64) *ObservableAlertDefinition
 ```
 
-### func \(\*ObservableAlertDefinition\) [LessOrEqual](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L680>)
+### func \(\*ObservableAlertDefinition\) [LessOrEqual](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L736>)
 
 ```go
 func (a *ObservableAlertDefinition) LessOrEqual(f float64) *ObservableAlertDefinition
 ```
 
-## type [ObservableOwner](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L495>)
+## type [ObservableOwner](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L509>)
 
 ObservableOwner denotes a team that owns an Observable\. The current teams are described in the handbook: https://about.sourcegraph.com/company/team/org_chart#engineering
 
@@ -298,7 +320,7 @@ const (
 )
 ```
 
-## type [ObservablePanelOptions](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L740-L746>)
+## type [ObservablePanelOptions](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L796-L802>)
 
 ObservablePanelOptions declares options for visualizing an Observable\.
 
@@ -308,7 +330,7 @@ type ObservablePanelOptions struct {
 }
 ```
 
-### func [PanelOptions](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L749>)
+### func [PanelOptions](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L805>)
 
 ```go
 func PanelOptions() ObservablePanelOptions
@@ -316,7 +338,7 @@ func PanelOptions() ObservablePanelOptions
 
 PanelOptions provides a builder for customizing an Observable visualization\.
 
-### func \(ObservablePanelOptions\) [Interval](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L786>)
+### func \(ObservablePanelOptions\) [Interval](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L842>)
 
 ```go
 func (p ObservablePanelOptions) Interval(ms int) ObservablePanelOptions
@@ -324,7 +346,7 @@ func (p ObservablePanelOptions) Interval(ms int) ObservablePanelOptions
 
 Interval declares the panel's interval in milliseconds\.
 
-### func \(ObservablePanelOptions\) [LegendFormat](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L774>)
+### func \(ObservablePanelOptions\) [LegendFormat](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L830>)
 
 ```go
 func (p ObservablePanelOptions) LegendFormat(format string) ObservablePanelOptions
@@ -332,7 +354,7 @@ func (p ObservablePanelOptions) LegendFormat(format string) ObservablePanelOptio
 
 LegendFormat sets the panel's legend format\, which may use Go template strings to select labels from the Prometheus query\.
 
-### func \(ObservablePanelOptions\) [Max](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L767>)
+### func \(ObservablePanelOptions\) [Max](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L823>)
 
 ```go
 func (p ObservablePanelOptions) Max(max float64) ObservablePanelOptions
@@ -340,7 +362,7 @@ func (p ObservablePanelOptions) Max(max float64) ObservablePanelOptions
 
 Max sets the maximum value of the Y axis on the panel\. The default is auto\.
 
-### func \(ObservablePanelOptions\) [Min](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L752>)
+### func \(ObservablePanelOptions\) [Min](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L808>)
 
 ```go
 func (p ObservablePanelOptions) Min(min float64) ObservablePanelOptions
@@ -348,7 +370,7 @@ func (p ObservablePanelOptions) Min(min float64) ObservablePanelOptions
 
 Min sets the minimum value of the Y axis on the panel\. The default is zero\.
 
-### func \(ObservablePanelOptions\) [MinAuto](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L761>)
+### func \(ObservablePanelOptions\) [MinAuto](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L817>)
 
 ```go
 func (p ObservablePanelOptions) MinAuto() ObservablePanelOptions
@@ -358,7 +380,7 @@ Min sets the minimum value of the Y axis on the panel to auto\, instead of the d
 
 This is generally only useful if trying to show negative numbers\.
 
-### func \(ObservablePanelOptions\) [Unit](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L780>)
+### func \(ObservablePanelOptions\) [Unit](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L836>)
 
 ```go
 func (p ObservablePanelOptions) Unit(t UnitType) ObservablePanelOptions
@@ -366,7 +388,7 @@ func (p ObservablePanelOptions) Unit(t UnitType) ObservablePanelOptions
 
 Unit sets the panel's Y axis unit type\.
 
-## type [Row](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L479>)
+## type [Row](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L493>)
 
 Row of observable metrics\.
 
@@ -376,7 +398,7 @@ These correspond to a row of Grafana graphs\.
 type Row []Observable
 ```
 
-## type [UnitType](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L695>)
+## type [UnitType](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L751>)
 
 UnitType for controlling the unit type display on graphs\.
 

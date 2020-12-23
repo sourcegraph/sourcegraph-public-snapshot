@@ -73,8 +73,9 @@ var (
 			PanelOptions:    monitoring.PanelOptions().LegendFormat("{{name}}"),
 			Owner:           owner,
 			PossibleSolutions: `
-			- Refer to your OS or cloud provider's documentation for how to increase inodes.
-			- **Kubernetes:** consider provisioning more machines with less resources.`,
+				- Refer to your OS or cloud provider's documentation for how to increase inodes.
+				- **Kubernetes:** consider provisioning more machines with less resources.
+			`,
 		}
 	}
 )

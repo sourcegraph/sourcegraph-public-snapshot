@@ -30,17 +30,17 @@ type Container struct {
 
 func (c *Container) validate() error {
 	if !isValidUID(c.Name) {
-		return fmt.Errorf("Container.Name must be lowercase alphanumeric + dashes; found \"%s\"", c.Name)
+		return fmt.Errorf("Name must be lowercase alphanumeric + dashes; found \"%s\"", c.Name)
 	}
 	if c.Title != strings.Title(c.Title) {
-		return fmt.Errorf("Container.Title must be in Title Case; found \"%s\" want \"%s\"", c.Title, strings.Title(c.Title))
+		return fmt.Errorf("Title must be in Title Case; found \"%s\" want \"%s\"", c.Title, strings.Title(c.Title))
 	}
 	if c.Description != withPeriod(c.Description) || c.Description != upperFirst(c.Description) {
-		return fmt.Errorf("Container.Description must be sentence starting with an uppercas eletter and ending with period; found \"%s\"", c.Description)
+		return fmt.Errorf("Description must be sentence starting with an uppercas eletter and ending with period; found \"%s\"", c.Description)
 	}
-	for _, g := range c.Groups {
+	for i, g := range c.Groups {
 		if err := g.validate(); err != nil {
-			return fmt.Errorf("group %q: %v", g.Title, err)
+			return fmt.Errorf("Group %d %q: %v", i, g.Title, err)
 		}
 	}
 	return nil
@@ -193,6 +193,20 @@ func (c *Container) renderDashboard() *sdk.Board {
 				panel.GraphPanel.AliasColors = map[string]string{}
 				panel.GraphPanel.Xaxis = sdk.Axis{
 					Show: true,
+				}
+
+				// Add reference links
+				panel.Links = []sdk.Link{{
+					Title:       "Panel reference",
+					URL:         stringPtr(fmt.Sprintf("%s#%s", canonicalDashboardsDocsURL, observableDocAnchor(c, o))),
+					TargetBlank: boolPtr(true),
+				}}
+				if !o.NoAlert {
+					panel.Links = append(panel.Links, sdk.Link{
+						Title:       "Alerts reference",
+						URL:         stringPtr(fmt.Sprintf("%s#%s", canonicalAlertSolutionsURL, observableDocAnchor(c, o))),
+						TargetBlank: boolPtr(true),
+					})
 				}
 
 				opt := o.PanelOptions.withDefaults()
@@ -463,11 +477,11 @@ type Group struct {
 
 func (g Group) validate() error {
 	if g.Title != upperFirst(g.Title) || g.Title == withPeriod(g.Title) {
-		return fmt.Errorf("Group.Title must start with an uppercase letter and not end with a period; found \"%s\"", g.Title)
+		return fmt.Errorf("Title must start with an uppercase letter and not end with a period; found \"%s\"", g.Title)
 	}
 	for i, r := range g.Rows {
 		if err := r.validate(); err != nil {
-			return fmt.Errorf("row %d: %v", i, err)
+			return fmt.Errorf("Row %d: %v", i, err)
 		}
 	}
 	return nil
@@ -482,9 +496,9 @@ func (r Row) validate() error {
 	if len(r) < 1 || len(r) > 4 {
 		return fmt.Errorf("row must have 1 to 4 observables only, found %v", len(r))
 	}
-	for _, o := range r {
+	for i, o := range r {
 		if err := o.validate(); err != nil {
-			return fmt.Errorf("observable %q: %v", o.Name, err)
+			return fmt.Errorf("Observable %d %q: %v", i, o.Name, err)
 		}
 	}
 	return nil
@@ -540,7 +554,7 @@ type Observable struct {
 	//
 	Description string
 
-	// Owner indicates the team that owns any alerts associated with this Observable.
+	// Owner indicates the team that owns this Observable (including its alerts and maintainence).
 	Owner ObservableOwner
 
 	// Query is the actual Prometheus query that should be observed.
@@ -567,17 +581,23 @@ type Observable struct {
 	DataMayNotBeNaN bool
 
 	// Warning and Critical alert definitions.
-	// Consider adding at least a Warning or Critical alert to each Observable to make it easy to
-	// identify when the target of this metric is missbehaving.
+	// Consider adding at least a Warning or Critical alert to each Observable to make it
+	// easy to identify when the target of this metric is misbehaving. If no alerts are
+	// provided, NoAlert must be set and Interpretation must be provided.
 	Warning, Critical *ObservableAlertDefinition
 
-	// NoAlerts is used by Observables that don't need any alerts.
-	// We want to be explicit about this to ensure alerting is considered and if we choose not to Alert,
-	// its easy to identify it is an intentional behavior.
+	// NoAlerts must be set by Observables that do not have any alerts.
+	// This ensures the omission of alerts is intentional. If set to true, an Interpretation
+	// must be provided in place of PossibleSolutions.
 	NoAlert bool
 
-	// PossibleSolutions is Markdown describing possible solutions in the event that the alert is
-	// firing. If there is no clear potential resolution, "none" must be explicitly stated.
+	// PossibleSolutions is Markdown describing possible solutions in the event that the
+	// alert is firing. This field not required if no alerts are attached to this Observable.
+	// If there is no clear potential resolution or there is no alert configured, "none"
+	// must be explicitly stated.
+	//
+	// Use the Interpretation field for additional guidance on understanding this Observable that isn't directly related to solving it.
+	// it, the Interpretation field can be provided as well.
 	//
 	// Contacting support should not be mentioned as part of a possible solution, as it is
 	// communicated elsewhere.
@@ -600,8 +620,22 @@ type Observable struct {
 	// 2. The indentation in the string literal is removed (based on the last line).
 	// 3. Single quotes become backticks.
 	// 4. The last line (which is all indention) is removed.
+	// 5. Non-list items are converted to a list.
 	//
 	PossibleSolutions string
+
+	// Interpretation is Markdown that can serve as a reference for interpreting this
+	// observable. For example, Interpretation could provide guidance on what sort of
+	// patterns to look for in the observable's graph and document why this observable is
+	// usefule.
+	//
+	// If no alerts are configured for an observable, this field is required. If the
+	// Description is sufficient to capture what this Observable describes, "none" must be
+	// explicitly stated.
+	//
+	// To make writing the Markdown more friendly in Go, string literal processing as
+	// PossibleSolutions is provided, though the output is not converted to a list.
+	Interpretation string
 
 	// PanelOptions describes some options for how to render the metric in the Grafana panel.
 	PanelOptions ObservablePanelOptions
@@ -617,38 +651,60 @@ func (o Observable) WithCritical(a *ObservableAlertDefinition) Observable {
 	return o
 }
 
-func (o Observable) WithNoAlerts() Observable {
+// WithNoAlerts disables alerting on this Observable and sets the given interpretation instead.
+func (o Observable) WithNoAlerts(interpretation string) Observable {
 	o.Warning = nil
 	o.Critical = nil
 	o.NoAlert = true
+	o.PossibleSolutions = ""
+	o.Interpretation = interpretation
 	return o
 }
 
 func (o Observable) validate() error {
 	if strings.Contains(o.Name, " ") || strings.ToLower(o.Name) != o.Name {
-		return fmt.Errorf("Observable.Name must be in lower_snake_case; found \"%s\"", o.Name)
+		return fmt.Errorf("Name must be in lower_snake_case; found \"%s\"", o.Name)
 	}
 	if v := string([]rune(o.Description)[0]); v != strings.ToLower(v) {
-		return fmt.Errorf("Observable.Description must be lowercase; found \"%s\"", o.Description)
-	}
-
-	if !o.NoAlert && o.Warning.isEmpty() && o.Critical.isEmpty() {
-		return fmt.Errorf("Observable.Warning or Observable.Critical must be set or explicitly disable alerts with Observable.NoAlert")
-	}
-
-	if l := strings.ToLower(o.PossibleSolutions); strings.Contains(l, "contact support") || strings.Contains(l, "contact us") {
-		return fmt.Errorf("PossibleSolutions: should not include mentions of contacting support")
-	}
-	if o.PossibleSolutions == "" {
-		return fmt.Errorf(`PossibleSolutions: must list solutions or "none"`)
-	} else if o.PossibleSolutions != "none" {
-		if _, err := toMarkdownList(o.PossibleSolutions); err != nil {
-			return fmt.Errorf("PossibleSolutions: %v", err)
-		}
+		return fmt.Errorf("Description must be lowercase; found \"%s\"", o.Description)
 	}
 	if o.Owner == "" {
-		return errors.New("Observable.Owner must be defined")
+		return errors.New("Owner must be defined")
 	}
+
+	allAlertsEmpty := (o.Warning.isEmpty() && o.Critical.isEmpty())
+	if allAlertsEmpty || o.NoAlert {
+		// Ensure lack of alerts is intentional
+		if allAlertsEmpty && !o.NoAlert {
+			return fmt.Errorf("Warning or Critical must be set or explicitly disable alerts with NoAlert")
+		} else if !allAlertsEmpty && o.NoAlert {
+			return fmt.Errorf("No Warning or Critical alert is set, but NoAlert is also true")
+		}
+		// PossibleSolutions if there are no alerts is redundant and likely an error
+		if o.PossibleSolutions != "" {
+			return fmt.Errorf(`PossibleSolutions is not required if no alerts are configured - did you mean to provide an Interpretation instead?`)
+		}
+		// Interpretation must be provided and valid
+		if o.Interpretation == "" {
+			return fmt.Errorf("Interpretation must be provided if no alerts are set")
+		} else if o.Interpretation != "none" {
+			if _, err := toMarkdown(o.Interpretation, false); err != nil {
+				return fmt.Errorf("Interpretation cannot be converted to Markdown: %w", err)
+			}
+		}
+	} else {
+		// PossibleSolutions must be provided and valid
+		if o.PossibleSolutions == "" {
+			return fmt.Errorf(`PossibleSolutions must list solutions or an explicit "none"`)
+		} else if o.PossibleSolutions != "none" {
+			if solutions, err := toMarkdown(o.PossibleSolutions, true); err != nil {
+				return fmt.Errorf("PossibleSolutions cannot be converted to Markdown: %w", err)
+			} else if l := strings.ToLower(solutions); strings.Contains(l, "contact support") || strings.Contains(l, "contact us") {
+				return fmt.Errorf("PossibleSolutions should not include mentions of contacting support")
+			}
+		}
+	}
+
 	return nil
 }
 

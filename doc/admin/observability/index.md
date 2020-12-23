@@ -1,60 +1,44 @@
 # Observability
 
-Sourcegraph is designed to meet enterprise production readiness criteria. A key pillar of production
-readiness is the ability to observe, monitor, and analyze the health and state of the
-system.
+<p class="lead">
+A key pillar of production readiness is the ability to observe, monitor, and analyze the health and state of the system.
+Sourcegraph is designed, and ships with, a number of observability tools and capabilities to meet enterprise production readiness criteria.
+</p>
 
-> NOTE: If you're using the [Kubernetes cluster deployment
-> option](https://github.com/sourcegraph/deploy-sourcegraph), see the [Kubernetes cluster
-> administrator
-> guide](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/docs/admin-guide.md) for more
-> information.
+<div class="getting-started">
+  <a href="metrics" class="btn" alt="Run through the Quickstart guide">
+   <span>Metrics and dashboards</span>
+   </br>
+   Learn about the metrics and dashboards provided out-of-the-box.
+  </a>
 
-Sourcegraph ships with a number of observability tools and capabilities:
+  <a href="alerting" class="btn" alt="Set up alerting">
+   <span>Alerting</span>
+   </br>
+   Receive notifications about the health of your Sourcegraph deployment.
+  </a>
 
-* [Metrics and dashboards](metrics.md) via Prometheus and Grafana
-* [Tracing](tracing.md)
-* [Alerting](alerting.md)
-  * [Alerting: custom consumption](alerting_custom_consumption.md)
-* [Logs](#logs)
-* [Health checks](#health-checks)
-* [Other tools](#other-tools)
+  <a href="troubleshooting" class="btn" alt="Set up alerting">
+   <span>Troubleshooting</span>
+   </br>
+   Investigate a specific production issue with our troubleshooting guide.
+  </a>
+</div>
 
-If you are investigating a specific production issue, consult the [troubleshooting guide](troubleshooting.md).
+## Guides
 
-## Logs
+* [Metrics and dashboards](metrics.md)
+* [Alerting](./alerting.md)
+* [Tracing](./tracing.md)
+* [Logs](./logs.md)
+* [Health checks](./health_checks.md)
+* [Troubleshooting guide](troubleshooting.md)
 
-### Log levels
+## Reference
 
-A Sourcegraph service's log level is configured via the environment variable `SRC_LOG_LEVEL`. The valid values (from most to least verbose) are:
-
-* `dbug`: Debug. Output all logs. Default in cluster deployments.
-* `info`: Informational.
-* `warn`: Warning. Default in Docker deployments.
-* `eror`: Error.
-* `crit`: Critical.
-
-### Log format
-
-A Sourcegraph service's log output format is configured via the environment variable `SRC_LOG_FORMAT`. The valid values are:
-
-* `condensed`: Optimized for human readability.
-* `json`: Machine-readable JSON format.
-* `logfmt`: The [logfmt](https://github.com/kr/logfmt) format.
-
-## Health checks
-
-An application health check status endpoint is available at the URL path `/healthz`. It returns HTTP 200 if and only if the main frontend server and databases (PostgreSQL and Redis) are available.
-
-The [Kubernetes cluster deployment option](https://github.com/sourcegraph/deploy-sourcegraph) ships with comprehensive health checks for each Kubernetes deployment.
-
-## Other tools
-
-- [Sentry](https://sentry.io) error reporting, configured via the `sentry` property in [site configuration](../config/site_config.md)
-- [Go net/trace](#viewing-go-net-trace-information)
-- [Honeycomb](https://honeycomb.io/)
+* [Dashboards reference](./dashboards.md)
+* [Alert solutions](./alert_solutions.md)
 
 ## Support
 
-For help configuring monitoring and tracing on your Sourcegraph instance, use our [public issue
-tracker](https://github.com/sourcegraph/issues/issues).
+For help configuring observability on your Sourcegraph instance, use our [public issue tracker](https://github.com/sourcegraph/issues/issues).
