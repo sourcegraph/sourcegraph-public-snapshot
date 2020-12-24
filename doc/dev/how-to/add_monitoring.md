@@ -42,7 +42,7 @@ Monitoring is build around "observables" - something you wish to observe.
 The generator API exposes this concept through the [`Observable` type](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/monitoring/monitoring/README.md#type-observable).
 
 You can decide where to put your new observable by looking for an existing dashboard that your information should go in.
-Think "when this number shows something bad, which service's logs are likely to be most relevant?".
+Think "when this number shows something bad, which service logs are likely to be most relevant?".
 If you are just editing an existing observable,
 
 Existing dashboards can be viewed by either:
@@ -50,7 +50,7 @@ Existing dashboards can be viewed by either:
 - Visiting Grafana on an existing Sourcegraph instance that you have site admin permissions for, e.g. `example.sourcegraph.com/-/debug/grafana` - see the [metrics for site administrators documentation](../../admin/observability/metrics.md) for more details.
 - [Running the monitoring stack locally](./monitoring_local_dev.md)
 
-Once you've found a home for your observable, open that service's monitoring definition (e.g. `monitoring/frontend.go`, `monitoring/git_server.go`) in your editor.
+Once you have found a home for your observable, open that service's monitoring definition (e.g. `monitoring/frontend.go`, `monitoring/git_server.go`) in your editor.
 Declare your [`Observable`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40master+file:%5Emonitoring/+type+Observable&patternType=literal) by:
 
 - adding it to [an existing `Row` in the file](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@64aa473/-/blob/monitoring/frontend.go#L12-43)
@@ -68,7 +68,7 @@ Here's an example `Observable` that we will use throughout this guide to get you
 
 ### Write a query
 
-Use the Grafana Explore page on a Sourcegraph instance you have site administrator access to (`/-/debug/grafana/explore`) to start writing your Prometheus query.
+Use the Grafana Explore page on a Sourcegraph instance where you have site administrator access (`/-/debug/grafana/explore`) to start writing your Prometheus query.
 
 ```diff
 {

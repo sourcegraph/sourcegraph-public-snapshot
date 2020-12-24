@@ -8,7 +8,7 @@ The [developing observability page](../background-information/observability/inde
 
 ## Alerts
 
-Alert are defined in the [`monitoring/definitions` package](https://k8s.sgdev.org/github.com/sourcegraph/sourcegraph/-/tree/monitoring/definitions) - for example, [querying for definitions of `Warning` or `Critical`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:monitoring/definitions+Warning:+:%5B_%5Cn%5D+OR+Critical:+:%5B_%5Cn%5D&patternType=structural) will surface all Sourcegraph alerts.
+Alerts are defined in the [`monitoring/definitions` package](https://k8s.sgdev.org/github.com/sourcegraph/sourcegraph/-/tree/monitoring/definitions) - for example, [querying for definitions of `Warning` or `Critical`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:monitoring/definitions+Warning:+:%5B_%5Cn%5D+OR+Critical:+:%5B_%5Cn%5D&patternType=structural) will surface all Sourcegraph alerts.
 
 ## Metrics
 

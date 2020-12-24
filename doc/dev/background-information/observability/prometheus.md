@@ -10,7 +10,7 @@ The image is defined in [`docker-images/prometheus`](https://sourcegraph.com/git
 
 ## Prom-wrapper
 
-The image's entrypoint is a sidecar program called the prom-wrapper.
+The entrypoint of the image is a sidecar program called the prom-wrapper.
 Learn more about it [here](https://about.sourcegraph.com/handbook/engineering/observability/monitoring_architecture#prom-wrapper).
 
 The source code for this program is currently kept in [`docker-images/prometheus/cmd/prom-wrapper`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/docker-images/prometheus/cmd/prom-wrapper).

@@ -10,7 +10,7 @@ The [developing observability page](../background-information/observability/inde
 
 ### With all services
 
-The monitoring stack in included in the `./dev/start.sh` and `./enterprise/dev/start.sh` scripts.
+The monitoring stack is included in the `./dev/start.sh` and `./enterprise/dev/start.sh` scripts.
 Learn more about these in the [general development getting started guide](../getting-started/index.md).
 
 ### Without all services
