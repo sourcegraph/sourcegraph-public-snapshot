@@ -32,7 +32,7 @@ More behavior can be controlled with [environmental variables](https://grafana.c
 For most use cases, you can access Grafana [through your Sourcegraph instance](#grafana).
 Follow the instructions below to access Grafana directly to, for example, edit configuration directly.
 
-> NOTE: Most of the dashboards that Sourcegraph ships with is not configurable through the Grafana UI.
+> NOTE: Most of the dashboards that Sourcegraph ships with are not configurable through the Grafana UI.
 > In general, we recommend [these configuration methods instead](#grafana-configuration).
 
 If you are using the [Kubernetes deployment option](../install/kubernetes/index.md), you can access Grafana directly using Kubernetes port forwarding to your local machine:
@@ -66,33 +66,29 @@ For most use cases, you can query Prometheus through [Grafana](#grafana) using G
 
 #### High-level alerting metrics
 
-Sourcegraph's metrics include a single high-level metric `alert_count` which indicates the number of `level=critical` and `level=warning` alerts each service has fired over time for each Sourcegraph service. This is the same metric presented on the **Overview** Grafana dashboard.
+Sourcegraph's metrics include a single high-level metric `alert_count` which indicates the number of `level=critical` and `level=warning` alerts each service has fired over time for each Sourcegraph service.
+This is the same metric presented on the **Overview** Grafana dashboard.
 
-We provide [built-in alerting](./alerting.md) for these metrics. Refer to our [alert solutions reference](./alert_solutions.md) for details on specific alerts metrics.
+> NOTE: We provide [built-in alerting](./alerting.md) for these alerting metrics to help monitor the health of your Sourcegraph instance.
+> Refer to our [alert solutions reference](./alert_solutions.md) for details on specific alerts.
 
-**Description:** The number of alerts each service has fired and their severity level. The severity levels are defined as follows:
+**Description:** The number of alerts each service has fired for a given alert name and severity level.
 
-- `critical`: something is _definitively_ wrong with Sourcegraph. We suggest using a high-visibility notification channel for these alerts.
-  - **Examples:** Database inaccessible, running out of disk space, running out of memory.
-  - **Suggested action:** Page a site administrator to investigate.
-- `warning`: something _could_ be wrong with Sourcegraph. We suggest checking in on these periodically, or using a notification channel that will not bother anyone if it is spammed. Over time, as warning alerts become stable and reliable across many Sourcegraph deployments, they will also be promoted to critical alerts in an update by Sourcegraph.
-  - **Examples:** High latency, high search timeouts.
-  - **Suggested action:** Email a site administrator to investigate and monitor when convenient, and please let us know so that we can improve them.
-
-**Values:**
-
-- Although the values of `alert_count` are floating-point numbers, only their whole numbers have meaning. For example: `0.5` and `0.7` indicate no alerts are firing, while `1.2` indicates exactly one alert is firing and `3.0` indicates exactly three alerts firing.
+**Values:** Although the values of `alert_count` are floating-point numbers, only their whole numbers have meaning.
+For example, `0.5` and `0.7` indicate no alerts are firing, while `1.2` indicates exactly one alert is firing and `3.0` indicates exactly three alerts firing.
 
 **Labels:**
 
-- `level`: either `critical` or `warning`, as defined above.
-- `service_name`: the name of the service that fired the alert.
-- `name`: the name of the alert that the service fired.
-- `description`: a human-readable description of the alert.
+| Label | Description |
+|-------|-------------|
+| `service_name` | the name of the service that fired the alert |
+| `name` | the name of the alert that the service fired |
+| `level` | either `critical` or `warning`, as defined [here](./alerting.md) |
+| `description` | a human-readable description of the alert |
 
 #### Complete reference
 
-A complete reference of Sourcegraph's vast set of Prometheus metrics is not yet available. If you are interested in this, please reach out by filing an issue or contacting us at support@sourcegraph.com.
+A complete reference of Sourcegraph's vast set of Prometheus metrics is not yet available. If you are interested in this, please reach out by filing an issue or contacting us at [support@sourcegraph.com](mailto:support@sourcegraph.com).
 
 ### Prometheus configuration
 

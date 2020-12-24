@@ -15,6 +15,7 @@
 - [Developing campaigns](campaigns/index.md)
 - [Developing code intelligence](codeintel/index.md)
 - [Developing code monitoring](codemonitoring/index.md)
+- [Developing observability](observability/index.md)
 - [Dependencies and generated code](dependencies_and_codegen.md)
 
 ## Tools
@@ -22,7 +23,6 @@
 - [Renovate dependency updates](renovate.md)
 - [Using PostgreSQL](postgresql.md)
 
-## Monitoring
+## Other
 
 - [Telemetry](telemetry.md)
-- [Observability](observability.md)

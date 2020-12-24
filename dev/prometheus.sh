@@ -12,6 +12,7 @@ if [ ! -e "${PROMETHEUS_DISK}" ]; then
 fi
 IMAGE=sourcegraph/prometheus:dev
 CONTAINER=prometheus
+PORT=9090
 
 CONFIG_DIR="$(pwd)/docker-images/prometheus/config"
 DOCKER_NET=""
@@ -34,17 +35,15 @@ docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
 
 cp ${PROM_TARGETS} "${CONFIG_DIR}"/prometheus_targets.yml
 
-pushd monitoring >/dev/null || exit 1
-RELOAD=false go generate
-popd >/dev/null || exit 1
-
+# Avoid cluttering dev/start.sh log output
 PROMETHEUS_LOGS="${HOME}/.sourcegraph-dev/logs/prometheus"
 mkdir -p "${PROMETHEUS_LOGS}"
 PROMETHEUS_LOG_FILE="${PROMETHEUS_LOGS}/prometheus.log"
 
 # Quickly build image
+echo "Prometheus: building ${IMAGE}..."
 IMAGE=${IMAGE} CACHE=true ./docker-images/prometheus/build.sh >"${PROMETHEUS_LOG_FILE}" 2>&1 ||
-  (BUILD_EXIT_CODE=$? && echo "build failed; dumping log:" && cat "${PROMETHEUS_LOG_FILE}" && exit $BUILD_EXIT_CODE)
+  (BUILD_EXIT_CODE=$? && echo "Prometheus build failed; dumping log:" && cat "${PROMETHEUS_LOG_FILE}" && exit $BUILD_EXIT_CODE)
 
 function finish() {
   PROMETHEUS_EXIT_CODE=$?
@@ -58,6 +57,8 @@ function finish() {
   return $PROMETHEUS_EXIT_CODE
 }
 
+echo "Prometheus: serving on http://localhost:${PORT}"
+echo "Prometheus: note that logs are piped to ${PROMETHEUS_LOG_FILE}"
 docker run --rm ${DOCKER_NET} ${DOCKER_USER} \
   --name=${CONTAINER} \
   --cpus=1 \
@@ -66,4 +67,6 @@ docker run --rm ${DOCKER_NET} ${DOCKER_USER} \
   -v "${PROMETHEUS_DISK}":/prometheus \
   -v "${CONFIG_DIR}":/sg_prometheus_add_ons \
   -e SRC_FRONTEND_INTERNAL="${SRC_FRONTEND_INTERNAL}" \
+  -e DISABLE_SOURCEGRAPH_CONFIG="${DISABLE_SOURCEGRAPH_CONFIG:-""}" \
+  -e DISABLE_ALERTMANAGER="${DISABLE_ALERTMANAGER:-""}" \
   ${IMAGE} >"${PROMETHEUS_LOG_FILE}" 2>&1 || finish
