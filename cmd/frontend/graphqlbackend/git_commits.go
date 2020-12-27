@@ -11,11 +11,12 @@ import (
 type gitCommitConnectionResolver struct {
 	revisionRange string
 
-	first  *int32
-	query  *string
-	path   *string
-	author *string
-	after  *string
+	first      *int32
+	query      *string
+	path       *string
+	author     *string
+	after      *string
+	lineRanges []string // git log -L
 
 	repo *RepositoryResolver
 
@@ -54,6 +55,7 @@ func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*git.Commi
 			MessageQuery: query,
 			Author:       author,
 			After:        after,
+			LineRanges:   r.lineRanges,
 			Path:         path,
 		})
 	}

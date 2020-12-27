@@ -1,0 +1,12 @@
+.symbol-hover {
+    &__signature {
+        pre {
+            margin-bottom: 0;
+            white-space: pre-wrap;
+        }
+        pre code {
+            font-size: 1.2rem;
+            line-height: 1.8rem;
+        }
+    }
+}

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	protocol "github.com/sourcegraph/lsif-protocol"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/datastructures"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/lsif"
 )
@@ -58,6 +59,16 @@ func TestCorrelate(t *testing.T) {
 				EndLine:           6,
 				EndCharacter:      7,
 				ReferenceResultID: 15,
+				Tag: &protocol.RangeSymbolTag{
+					Type: "definition",
+					SymbolData: protocol.SymbolData{
+						Text: "foo",
+					},
+					FullRange: &protocol.RangeData{
+						Start: protocol.Pos{Line: 1, Character: 2},
+						End:   protocol.Pos{Line: 3, Character: 4},
+					},
+				},
 			},
 			8: {
 				StartLine:      5,
@@ -124,6 +135,22 @@ func TestCorrelate(t *testing.T) {
 			22: {Name: "pkg A", Version: "v0.1.0"},
 			23: {Name: "pkg B", Version: "v1.2.3"},
 		},
+		SymbolData: map[int]protocol.Symbol{
+			53: {
+				SymbolData: protocol.SymbolData{Text: "foo", Kind: 4},
+				Locations: []protocol.SymbolLocation{
+					{
+						URI:       "foo.go",
+						Range:     &protocol.RangeData{Start: protocol.Pos{Character: 8}, End: protocol.Pos{Character: 11}},
+						FullRange: protocol.RangeData{End: protocol.Pos{Line: 3, Character: 9}},
+					},
+					{
+						URI:       "bar.go",
+						FullRange: protocol.RangeData{End: protocol.Pos{Line: 3, Character: 11}},
+					},
+				},
+			},
+		},
 		DiagnosticResults: map[int][]lsif.Diagnostic{
 			49: {
 				{
@@ -136,6 +163,12 @@ func TestCorrelate(t *testing.T) {
 					EndLine:        1,
 					EndCharacter:   6,
 				},
+			},
+		},
+		DocumentSymbolResults: map[int][]protocol.RangeBasedDocumentSymbol{
+			51: {
+				{ID: 7},
+				{ID: 8, Children: []protocol.RangeBasedDocumentSymbol{{ID: 9}}},
 			},
 		},
 		NextData: map[int]int{
@@ -155,9 +188,15 @@ func TestCorrelate(t *testing.T) {
 			9:  datastructures.IDSetWith(19),
 			10: datastructures.IDSetWith(20),
 			11: datastructures.IDSetWith(21),
+			53: datastructures.IDSetWith(19),
 		}),
 		Diagnostics: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
 			2: datastructures.IDSetWith(49),
+		}),
+		DocumentSymbols:  datastructures.NewDefaultIDSetMap(),
+		WorkspaceSymbols: datastructures.IDSetWith(53),
+		Members:          datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
+			// TODO(sqs)
 		}),
 	}
 
@@ -190,7 +229,9 @@ func TestCorrelateMetaDataRoot(t *testing.T) {
 		HoverData:              map[int]string{},
 		MonikerData:            map[int]lsif.Moniker{},
 		PackageInformationData: map[int]lsif.PackageInformation{},
+		SymbolData:             map[int]protocol.Symbol{},
 		DiagnosticResults:      map[int][]lsif.Diagnostic{},
+		DocumentSymbolResults:  map[int][]protocol.RangeBasedDocumentSymbol{},
 		NextData:               map[int]int{},
 		ImportedMonikers:       datastructures.NewIDSet(),
 		ExportedMonikers:       datastructures.NewIDSet(),
@@ -199,6 +240,9 @@ func TestCorrelateMetaDataRoot(t *testing.T) {
 		Contains:               datastructures.NewDefaultIDSetMap(),
 		Monikers:               datastructures.NewDefaultIDSetMap(),
 		Diagnostics:            datastructures.NewDefaultIDSetMap(),
+		DocumentSymbols:        datastructures.NewDefaultIDSetMap(),
+		WorkspaceSymbols:       datastructures.NewIDSet(),
+		Members:                datastructures.NewDefaultIDSetMap(),
 	}
 
 	if diff := cmp.Diff(expectedState, state, datastructures.Comparers...); diff != "" {
@@ -230,7 +274,9 @@ func TestCorrelateMetaDataRootX(t *testing.T) {
 		HoverData:              map[int]string{},
 		MonikerData:            map[int]lsif.Moniker{},
 		PackageInformationData: map[int]lsif.PackageInformation{},
+		SymbolData:             map[int]protocol.Symbol{},
 		DiagnosticResults:      map[int][]lsif.Diagnostic{},
+		DocumentSymbolResults:  map[int][]protocol.RangeBasedDocumentSymbol{},
 		NextData:               map[int]int{},
 		ImportedMonikers:       datastructures.NewIDSet(),
 		ExportedMonikers:       datastructures.NewIDSet(),
@@ -239,6 +285,9 @@ func TestCorrelateMetaDataRootX(t *testing.T) {
 		Contains:               datastructures.NewDefaultIDSetMap(),
 		Monikers:               datastructures.NewDefaultIDSetMap(),
 		Diagnostics:            datastructures.NewDefaultIDSetMap(),
+		DocumentSymbols:        datastructures.NewDefaultIDSetMap(),
+		WorkspaceSymbols:       datastructures.NewIDSet(),
+		Members:                datastructures.NewDefaultIDSetMap(),
 	}
 
 	if diff := cmp.Diff(expectedState, state, datastructures.Comparers...); diff != "" {

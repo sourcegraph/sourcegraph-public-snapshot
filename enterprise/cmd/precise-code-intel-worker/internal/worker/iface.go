@@ -49,6 +49,7 @@ type LSIFStore interface {
 	WriteResultChunks(ctx context.Context, bundleID int, resultChunks chan lsifstore.IndexedResultChunkData) error
 	WriteDefinitions(ctx context.Context, bundleID int, monikerLocations chan lsifstore.MonikerLocations) error
 	WriteReferences(ctx context.Context, bundleID int, monikerLocations chan lsifstore.MonikerLocations) error
+	WriteSymbols(ctx context.Context, bundleID int, symbols chan lsifstore.SymbolData) error
 }
 
 type LSIFStoreShim struct {

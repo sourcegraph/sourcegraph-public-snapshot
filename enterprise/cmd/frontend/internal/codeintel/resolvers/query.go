@@ -3,11 +3,13 @@ package resolvers
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/opentracing/opentracing-go/log"
+	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	codeintelapi "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/api"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
@@ -41,6 +43,29 @@ type AdjustedCodeIntelligenceRange struct {
 	HoverText   string
 }
 
+// AdjustedPackage is similar to a codeintelapi.ResolvedPackage, but with fields denoting the
+// commit adjusted for the target commit (when the requested commit is not indexed).
+type AdjustedPackage struct {
+	lsifstore.Package
+	Dump           store.Dump
+	AdjustedCommit string
+}
+
+// AdjustedSymbol is similar to a codeintelapi.ResolvedSymbol, but with TODO(sqs): describe
+// adjustment.
+type AdjustedSymbol struct {
+	lsifstore.Symbol
+	Children []AdjustedSymbol
+	Dump     store.Dump
+}
+
+func (s AdjustedSymbol) Descendant(path []int) AdjustedSymbol {
+	for _, index := range path {
+		s = s.Children[index]
+	}
+	return s
+}
+
 // QueryResolver is the main interface to bundle-related operations exposed to the GraphQL API. This
 // resolver consolidates the logic for bundle operations and is not itself concerned with GraphQL/API
 // specifics (auth, validation, marshaling, etc.). This resolver is wrapped by a symmetrics resolver
@@ -51,6 +76,9 @@ type QueryResolver interface {
 	References(ctx context.Context, line, character, limit int, rawCursor string) ([]AdjustedLocation, string, error)
 	Hover(ctx context.Context, line, character int) (string, lsifstore.Range, bool, error)
 	Diagnostics(ctx context.Context, limit int) ([]AdjustedDiagnostic, int, error)
+	Packages(ctx context.Context, limit int) ([]AdjustedPackage, int, error)
+	Symbols(ctx context.Context, filters *gql.SymbolFilters, limit int) ([]AdjustedSymbol, int, error)
+	Symbol(ctx context.Context, scheme, identifier string) (*AdjustedSymbol, []int, error)
 }
 
 type queryResolver struct {
@@ -90,6 +118,13 @@ func NewQueryResolver(
 		path:             path,
 		uploads:          uploads,
 	}
+}
+
+// TODO(sqs): hack
+func (r *queryResolver) TmpWithPath(path string) QueryResolver {
+	tmp := *r
+	tmp.path = path
+	return &tmp
 }
 
 const slowRangesRequestThreshold = time.Second
@@ -398,6 +433,150 @@ func (r *queryResolver) Diagnostics(ctx context.Context, limit int) (_ []Adjuste
 	}
 
 	return adjustedDiagnostics, totalCount, nil
+}
+
+const slowPackagesRequestThreshold = time.Second
+
+func (r *queryResolver) Packages(ctx context.Context, limit int) (_ []AdjustedPackage, _ int, err error) {
+	ctx, endObservation := observeResolver(ctx, &err, "Packages", r.operations.packages, slowPackagesRequestThreshold, observation.Args{
+		LogFields: []log.Field{
+			log.Int("repositoryID", r.repositoryID),
+			log.String("commit", r.commit),
+			log.String("path", r.path),
+			log.String("uploadIDs", strings.Join(r.uploadIDs(), ", ")),
+			log.Int("limit", limit),
+		},
+	})
+	defer endObservation()
+
+	totalCount := 0
+	var allPackages []codeintelapi.ResolvedPackage
+	for i := range r.uploads {
+		adjustedPath, ok, err := r.positionAdjuster.AdjustPath(ctx, r.uploads[i].Commit, r.path, false)
+		if err != nil {
+			return nil, 0, err
+		}
+		if !ok {
+			continue
+		}
+
+		l := limit - len(allPackages)
+		if l < 0 {
+			l = 0
+		}
+
+		packages, count, err := r.codeIntelAPI.Packages(ctx, adjustedPath, r.uploads[i].ID, l, 0)
+		if err != nil {
+			return nil, 0, err
+		}
+
+		totalCount += count
+		allPackages = append(allPackages, packages...)
+	}
+
+	adjustedPackages := make([]AdjustedPackage, 0, len(allPackages))
+	for i := range allPackages {
+		// TODO(sqs): adjust? see how it's done for diagnostics
+		adjustedPackages = append(adjustedPackages, AdjustedPackage{
+			Package:        allPackages[i].Package,
+			Dump:           allPackages[i].Dump,
+			AdjustedCommit: "TODO", // TODO(sqs)
+		})
+	}
+
+	return adjustedPackages, totalCount, nil
+}
+
+const slowSymbolsRequestThreshold = time.Second
+
+func (r *queryResolver) Symbols(ctx context.Context, filters *gql.SymbolFilters, limit int) (_ []AdjustedSymbol, _ int, err error) {
+	ctx, endObservation := observeResolver(ctx, &err, "Symbols", r.operations.symbols, slowSymbolsRequestThreshold, observation.Args{
+		LogFields: []log.Field{
+			log.Int("repositoryID", r.repositoryID),
+			log.String("commit", r.commit),
+			log.String("uploadIDs", strings.Join(r.uploadIDs(), ", ")),
+			log.Int("limit", limit),
+		},
+	})
+	defer endObservation()
+
+	if r.path != "" {
+		return nil, 0, errors.New("unable to get symbols for non-root")
+	}
+
+	var (
+		allSymbols []codeintelapi.ResolvedSymbol
+		totalCount int
+	)
+	for i := range r.uploads {
+		l := limit - len(allSymbols)
+		if l < 0 {
+			l = 0
+		}
+
+		symbols, subtotalCount, err := r.codeIntelAPI.Symbols(ctx, filters, r.uploads[i].ID, l, 0)
+		if err != nil {
+			return nil, 0, err
+		}
+		// TODO(sqs): call r.adjustLocations to re-adjust symbols' locations
+		// TODO(sqs): handle case when symbol trees from different dumps have conflicts/overlap
+
+		allSymbols = append(allSymbols, symbols...)
+		totalCount += subtotalCount
+	}
+
+	adjustedSymbols := adjustSymbolsWithDump(allSymbols)
+
+	return adjustedSymbols, totalCount, nil
+}
+
+func (r *queryResolver) Symbol(ctx context.Context, scheme, identifier string) (_ *AdjustedSymbol, _ []int, err error) {
+	ctx, endObservation := observeResolver(ctx, &err, "Symbol", r.operations.symbol, slowSymbolsRequestThreshold, observation.Args{
+		LogFields: []log.Field{
+			log.Int("repositoryID", r.repositoryID),
+			log.String("commit", r.commit),
+			log.String("uploadIDs", strings.Join(r.uploadIDs(), ", ")),
+			log.String("scheme", scheme),
+			log.String("identifier", identifier),
+		},
+	})
+	defer endObservation()
+
+	if r.path != "" {
+		return nil, nil, errors.New("unable to get symbol for non-root")
+	}
+
+	for i := range r.uploads {
+		symbol, treePath, err := r.codeIntelAPI.Symbol(ctx, r.uploads[i].ID, scheme, identifier)
+		if err != nil {
+			return nil, nil, err
+		}
+		// TODO(sqs): handle case when multiple symbols have same moniker
+		// TODO(sqs): call r.adjustLocations to re-adjust symbols' locations
+
+		if symbol != nil {
+			return &adjustSymbolsWithDump([]codeintelapi.ResolvedSymbol{*symbol})[0], treePath, nil
+		}
+	}
+
+	return nil, nil, nil
+}
+
+// TODO(sqs): not actually performing any adjustments right now
+func adjustSymbolsWithDump(roots []codeintelapi.ResolvedSymbol) []AdjustedSymbol {
+	var convertToAdjusted func(s *codeintelapi.ResolvedSymbol) AdjustedSymbol
+	convertToAdjusted = func(s *codeintelapi.ResolvedSymbol) AdjustedSymbol {
+		rs := AdjustedSymbol{
+			Dump:   s.Dump,
+			Symbol: s.Symbol,
+		}
+		for i := range s.Children {
+			rs.Children = append(rs.Children, convertToAdjusted(&s.Children[i]))
+		}
+		return rs
+	}
+
+	return convertToAdjusted(&codeintelapi.ResolvedSymbol{Children: roots}).Children
 }
 
 // uploadIDs returns a slice of this query's matched upload identifiers.

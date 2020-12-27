@@ -16,6 +16,7 @@ type operations struct {
 	monikerResults     *observation.Operation
 	monikersByPosition *observation.Operation
 	packageInformation *observation.Operation
+	packages           *observation.Operation
 	pathsWithPrefix    *observation.Operation
 	ranges             *observation.Operation
 	readDefinitions    *observation.Operation
@@ -23,13 +24,17 @@ type operations struct {
 	readMeta           *observation.Operation
 	readReferences     *observation.Operation
 	readResultChunk    *observation.Operation
+	readSymbols        *observation.Operation
 	reaResultChunk     *observation.Operation
 	references         *observation.Operation
+	symbols            *observation.Operation
+	symbol             *observation.Operation
 	writeDefinitions   *observation.Operation
 	writeDocuments     *observation.Operation
 	writeMeta          *observation.Operation
 	writeReferences    *observation.Operation
 	writeResultChunks  *observation.Operation
+	writeSymbols       *observation.Operation
 }
 
 func makeOperations(observationContext *observation.Context) *operations {
@@ -57,6 +62,7 @@ func makeOperations(observationContext *observation.Context) *operations {
 		monikerResults:     op("MonikerResults"),
 		monikersByPosition: op("MonikersByPosition"),
 		packageInformation: op("PackageInformation"),
+		packages:           op("Packages"),
 		pathsWithPrefix:    op("PathsWithPrefix"),
 		ranges:             op("Ranges"),
 		readDefinitions:    op("ReadDefinitions"),
@@ -64,12 +70,16 @@ func makeOperations(observationContext *observation.Context) *operations {
 		readMeta:           op("ReadMeta"),
 		readReferences:     op("ReadReferences"),
 		readResultChunk:    op("ReadResultChunk"),
+		readSymbols:        op("ReadSymbols"),
 		reaResultChunk:     op("ReaResultChunk"),
 		references:         op("References"),
+		symbols:            op("Symbols"),
+		symbol:             op("Symbol"),
 		writeDefinitions:   op("WriteDefinitions"),
 		writeDocuments:     op("WriteDocuments"),
 		writeMeta:          op("WriteMeta"),
 		writeReferences:    op("WriteReferences"),
 		writeResultChunks:  op("WriteResultChunks"),
+		writeSymbols:       op("WriteSymbols"),
 	}
 }

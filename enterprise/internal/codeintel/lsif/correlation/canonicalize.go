@@ -40,9 +40,10 @@ func canonicalizeDocuments(state *State) {
 	for documentID, uri := range state.DocumentData {
 		// Choose canonical document alphabetically
 		if canonicalID := documentIDs[uri][0]; documentID != canonicalID {
-			// Move ranges and diagnostics into the canonical document
+			// Move ranges, diagnostics, and symbols into the canonical document
 			state.Contains.SetUnion(canonicalID, state.Contains.Get(documentID))
 			state.Diagnostics.SetUnion(canonicalID, state.Diagnostics.Get(documentID))
+			state.DocumentSymbols.SetUnion(canonicalID, state.DocumentSymbols.Get(documentID))
 
 			canonicalizeDocumentsInDefinitionReferences(state, state.DefinitionData, documentID, canonicalID)
 			canonicalizeDocumentsInDefinitionReferences(state, state.ReferenceData, documentID, canonicalID)
@@ -51,6 +52,7 @@ func canonicalizeDocuments(state *State) {
 			delete(state.DocumentData, documentID)
 			state.Contains.Delete(documentID)
 			state.Diagnostics.Delete(documentID)
+			state.DocumentSymbols.Delete(documentID)
 		}
 	}
 }

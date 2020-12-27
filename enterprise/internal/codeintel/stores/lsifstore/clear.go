@@ -16,6 +16,7 @@ var tableNames = []string{
 	"lsif_data_result_chunks",
 	"lsif_data_definitions",
 	"lsif_data_references",
+	"lsif_data_symbols",
 }
 
 func (s *Store) Clear(ctx context.Context, bundleIDs ...int) (err error) {

@@ -142,7 +142,7 @@ export interface LayoutProps
 export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const routeMatch = props.routes.find(({ path, exact }) => matchPath(props.location.pathname, { path, exact }))?.path
     const isSearchRelatedPage = (routeMatch === '/:repoRevAndRest+' || routeMatch?.startsWith('/search')) ?? false
-    const minimalNavLinks = routeMatch === '/cncf'
+    const minimalNavLinks = routeMatch === '/cncf' || props.location.pathname.includes('/-/symbols')
     const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
 
     // Hack! Hardcode these routes into cmd/frontend/internal/app/ui/router.go

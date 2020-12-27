@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 
+	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/api"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
@@ -17,6 +18,9 @@ type CodeIntelAPI interface {
 	References(ctx context.Context, repositoryID int, commit string, limit int, cursor api.Cursor) ([]api.ResolvedLocation, api.Cursor, bool, error)
 	Hover(ctx context.Context, file string, line, character, uploadID int) (string, lsifstore.Range, bool, error)
 	Diagnostics(ctx context.Context, prefix string, uploadID, limit, offset int) ([]api.ResolvedDiagnostic, int, error)
+	Packages(ctx context.Context, prefix string, uploadID, limit, offset int) ([]api.ResolvedPackage, int, error)
+	Symbols(ctx context.Context, filters *gql.SymbolFilters, uploadID, limit, offset int) ([]api.ResolvedSymbol, int, error)
+	Symbol(ctx context.Context, uploadID int, scheme, identifier string) (*api.ResolvedSymbol, []int, error)
 }
 
 type DBStore interface {

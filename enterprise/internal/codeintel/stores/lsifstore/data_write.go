@@ -114,6 +114,30 @@ func (s *Store) writeDefinitionReferences(ctx context.Context, bundleID int, tab
 	return withBatchInserter(ctx, s.Handle().DB(), tableName, []string{"dump_id", "scheme", "identifier", "data"}, inserter)
 }
 
+func (s *Store) WriteSymbols(ctx context.Context, bundleID int, symbols chan SymbolData) (err error) {
+	ctx, endObservation := s.operations.writeSymbols.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("bundleID", bundleID),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	inserter := func(inserter *batch.BatchInserter) error {
+		for v := range symbols {
+			data, err := s.serializer.MarshalSymbol(v)
+			if err != nil {
+				return err
+			}
+
+			if err := inserter.Insert(ctx, bundleID, data); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
+
+	return withBatchInserter(ctx, s.Handle().DB(), "lsif_data_symbols", []string{"dump_id", "data"}, inserter)
+}
+
 func withBatchInserter(ctx context.Context, db dbutil.DB, tableName string, columns []string, f func(inserter *batch.BatchInserter) error) (err error) {
 	return goroutine.RunWorkers(goroutine.SimplePoolWorker(func() error {
 		inserter := batch.NewBatchInserter(ctx, db, tableName, columns...)
