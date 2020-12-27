@@ -40,10 +40,21 @@ export const PlainQueryInput: React.FunctionComponent<MonacoQueryInputProps> = (
 }
 
 /**
+ * Dev feature flag to use a plain (non-Monaco) query input, which can load faster and is therefore
+ * sometimes nice when you are reloading the page frequently during local development. Run
+ * `localStorage.usePlainQueryInput=true;location.reload()` in the JavaScript console to enable,
+ * `delete localStorage.usePlainQueryInput;location.reload()` to disable.
+ */
+const USE_PLAIN_QUERY_INPUT = localStorage.getItem('usePlainQueryInput') !== null
+
+/**
  * A lazily-loaded {@link MonacoQueryInput}, displaying a read-only query field as a fallback during loading.
  */
-export const LazyMonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = props => (
-    <Suspense fallback={<PlainQueryInput {...props} />}>
-        <MonacoQueryInput {...props} />
-    </Suspense>
-)
+export const LazyMonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = props =>
+    USE_PLAIN_QUERY_INPUT ? (
+        <PlainQueryInput {...props} />
+    ) : (
+        <Suspense fallback={<PlainQueryInput {...props} />}>
+            <MonacoQueryInput {...props} />
+        </Suspense>
+    )
