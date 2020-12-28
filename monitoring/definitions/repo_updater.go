@@ -21,7 +21,7 @@ func RepoUpdater() *monitoring.Container {
 				Title: "General",
 				Rows: []monitoring.Row{
 					{
-						shared.FrontendInternalAPIErrorResponses("repo-updater", monitoring.ObservableOwnerCloud),
+						shared.FrontendInternalAPIErrorResponses("repo-updater", monitoring.ObservableOwnerCloud).Observable(),
 					},
 				},
 			},
@@ -424,14 +424,15 @@ func RepoUpdater() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.ContainerCPUUsage("repo-updater", monitoring.ObservableOwnerCloud),
+						shared.ContainerCPUUsage("repo-updater", monitoring.ObservableOwnerCloud).Observable(),
 						shared.ContainerMemoryUsage("repo-updater", monitoring.ObservableOwnerCloud).
 							WithWarning(nil).
-							WithCritical(monitoring.Alert().GreaterOrEqual(90)),
+							WithCritical(monitoring.Alert().GreaterOrEqual(90)).
+							Observable(),
 					},
 					{
-						shared.ContainerRestarts("repo-updater", monitoring.ObservableOwnerCloud),
-						shared.ContainerFsInodes("repo-updater", monitoring.ObservableOwnerCloud),
+						shared.ContainerRestarts("repo-updater", monitoring.ObservableOwnerCloud).Observable(),
+						shared.ContainerFsInodes("repo-updater", monitoring.ObservableOwnerCloud).Observable(),
 					},
 				},
 			},
@@ -440,12 +441,12 @@ func RepoUpdater() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.ProvisioningCPUUsageLongTerm("repo-updater", monitoring.ObservableOwnerCloud),
-						shared.ProvisioningMemoryUsageLongTerm("repo-updater", monitoring.ObservableOwnerCloud),
+						shared.ProvisioningCPUUsageLongTerm("repo-updater", monitoring.ObservableOwnerCloud).Observable(),
+						shared.ProvisioningMemoryUsageLongTerm("repo-updater", monitoring.ObservableOwnerCloud).Observable(),
 					},
 					{
-						shared.ProvisioningCPUUsageShortTerm("repo-updater", monitoring.ObservableOwnerCloud),
-						shared.ProvisioningMemoryUsageShortTerm("repo-updater", monitoring.ObservableOwnerCloud),
+						shared.ProvisioningCPUUsageShortTerm("repo-updater", monitoring.ObservableOwnerCloud).Observable(),
+						shared.ProvisioningMemoryUsageShortTerm("repo-updater", monitoring.ObservableOwnerCloud).Observable(),
 					},
 				},
 			},
@@ -454,8 +455,8 @@ func RepoUpdater() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.GoGoroutines("repo-updater", monitoring.ObservableOwnerCloud),
-						shared.GoGcDuration("repo-updater", monitoring.ObservableOwnerCloud),
+						shared.GoGoroutines("repo-updater", monitoring.ObservableOwnerCloud).Observable(),
+						shared.GoGcDuration("repo-updater", monitoring.ObservableOwnerCloud).Observable(),
 					},
 				},
 			},
@@ -464,7 +465,7 @@ func RepoUpdater() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.KubernetesPodsAvailable("repo-updater", monitoring.ObservableOwnerCloud),
+						shared.KubernetesPodsAvailable("repo-updater", monitoring.ObservableOwnerCloud).Observable(),
 					},
 				},
 			},

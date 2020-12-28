@@ -96,7 +96,7 @@ func GitServer() *monitoring.Container {
 								- **Kubernetes and Docker Compose:** Check that you are running a similar number of git server replicas and that their CPU/memory limits are allocated according to what is shown in the [Sourcegraph resource estimator](../install/resource_estimator.md).
 							`,
 						},
-						shared.FrontendInternalAPIErrorResponses("gitserver", monitoring.ObservableOwnerCloud),
+						shared.FrontendInternalAPIErrorResponses("gitserver", monitoring.ObservableOwnerCloud).Observable(),
 					},
 				},
 			},
@@ -105,12 +105,12 @@ func GitServer() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.ContainerCPUUsage("gitserver", monitoring.ObservableOwnerCloud),
-						shared.ContainerMemoryUsage("gitserver", monitoring.ObservableOwnerCloud),
+						shared.ContainerCPUUsage("gitserver", monitoring.ObservableOwnerCloud).Observable(),
+						shared.ContainerMemoryUsage("gitserver", monitoring.ObservableOwnerCloud).Observable(),
 					},
 					{
-						shared.ContainerRestarts("gitserver", monitoring.ObservableOwnerCloud),
-						shared.ContainerFsInodes("gitserver", monitoring.ObservableOwnerCloud),
+						shared.ContainerRestarts("gitserver", monitoring.ObservableOwnerCloud).Observable(),
+						shared.ContainerFsInodes("gitserver", monitoring.ObservableOwnerCloud).Observable(),
 					},
 					{
 						{
@@ -131,16 +131,16 @@ func GitServer() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.ProvisioningCPUUsageLongTerm("gitserver", monitoring.ObservableOwnerCloud),
-						shared.ProvisioningMemoryUsageLongTerm("gitserver", monitoring.ObservableOwnerCloud).WithNoAlerts(`
-							Git Server is expected to use up all the memory it is provided.
-						`),
+						shared.ProvisioningCPUUsageLongTerm("gitserver", monitoring.ObservableOwnerCloud).Observable(),
+						shared.ProvisioningMemoryUsageLongTerm("gitserver", monitoring.ObservableOwnerCloud).
+							WithNoAlerts(`Git Server is expected to use up all the memory it is provided.`).
+							Observable(),
 					},
 					{
-						shared.ProvisioningCPUUsageShortTerm("gitserver", monitoring.ObservableOwnerCloud),
-						shared.ProvisioningMemoryUsageShortTerm("gitserver", monitoring.ObservableOwnerCloud).WithNoAlerts(`
-							Git Server is expected to use up all the memory it is provided.
-						`),
+						shared.ProvisioningCPUUsageShortTerm("gitserver", monitoring.ObservableOwnerCloud).Observable(),
+						shared.ProvisioningMemoryUsageShortTerm("gitserver", monitoring.ObservableOwnerCloud).
+							WithNoAlerts(`Git Server is expected to use up all the memory it is provided.`).
+							Observable(),
 					},
 				},
 			},
@@ -149,8 +149,8 @@ func GitServer() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.GoGoroutines("gitserver", monitoring.ObservableOwnerCloud),
-						shared.GoGcDuration("gitserver", monitoring.ObservableOwnerCloud),
+						shared.GoGoroutines("gitserver", monitoring.ObservableOwnerCloud).Observable(),
+						shared.GoGcDuration("gitserver", monitoring.ObservableOwnerCloud).Observable(),
 					},
 				},
 			},
@@ -159,7 +159,7 @@ func GitServer() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.KubernetesPodsAvailable("gitserver", monitoring.ObservableOwnerCloud),
+						shared.KubernetesPodsAvailable("gitserver", monitoring.ObservableOwnerCloud).Observable(),
 					},
 				},
 			},

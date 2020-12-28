@@ -36,12 +36,12 @@ func ZoektIndexServer() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.ContainerCPUUsage("zoekt-indexserver", monitoring.ObservableOwnerSearch),
-						shared.ContainerMemoryUsage("zoekt-indexserver", monitoring.ObservableOwnerSearch),
+						shared.ContainerCPUUsage("zoekt-indexserver", monitoring.ObservableOwnerSearch).Observable(),
+						shared.ContainerMemoryUsage("zoekt-indexserver", monitoring.ObservableOwnerSearch).Observable(),
 					},
 					{
-						shared.ContainerRestarts("zoekt-indexserver", monitoring.ObservableOwnerSearch),
-						shared.ContainerFsInodes("zoekt-indexserver", monitoring.ObservableOwnerSearch),
+						shared.ContainerRestarts("zoekt-indexserver", monitoring.ObservableOwnerSearch).Observable(),
+						shared.ContainerFsInodes("zoekt-indexserver", monitoring.ObservableOwnerSearch).Observable(),
 					},
 					{
 						{
@@ -62,12 +62,12 @@ func ZoektIndexServer() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.ProvisioningCPUUsageLongTerm("zoekt-indexserver", monitoring.ObservableOwnerSearch),
-						shared.ProvisioningMemoryUsageLongTerm("zoekt-indexserver", monitoring.ObservableOwnerSearch),
+						shared.ProvisioningCPUUsageLongTerm("zoekt-indexserver", monitoring.ObservableOwnerSearch).Observable(),
+						shared.ProvisioningMemoryUsageLongTerm("zoekt-indexserver", monitoring.ObservableOwnerSearch).Observable(),
 					},
 					{
-						shared.ProvisioningCPUUsageShortTerm("zoekt-indexserver", monitoring.ObservableOwnerSearch),
-						shared.ProvisioningMemoryUsageShortTerm("zoekt-indexserver", monitoring.ObservableOwnerSearch),
+						shared.ProvisioningCPUUsageShortTerm("zoekt-indexserver", monitoring.ObservableOwnerSearch).Observable(),
+						shared.ProvisioningMemoryUsageShortTerm("zoekt-indexserver", monitoring.ObservableOwnerSearch).Observable(),
 					},
 				},
 			},
@@ -79,7 +79,7 @@ func ZoektIndexServer() *monitoring.Container {
 						// zoekt_index_server, zoekt_web_server are deployed together
 						// as part of the indexed-search service, so only show pod
 						// availability here.
-						shared.KubernetesPodsAvailable("indexed-search", monitoring.ObservableOwnerSearch),
+						shared.KubernetesPodsAvailable("indexed-search", monitoring.ObservableOwnerSearch).Observable(),
 					},
 				},
 			},

@@ -65,12 +65,12 @@ func SyntectServer() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.ContainerCPUUsage("syntect-server", monitoring.ObservableOwnerCloud),
-						shared.ContainerMemoryUsage("syntect-server", monitoring.ObservableOwnerCloud),
+						shared.ContainerCPUUsage("syntect-server", monitoring.ObservableOwnerCloud).Observable(),
+						shared.ContainerMemoryUsage("syntect-server", monitoring.ObservableOwnerCloud).Observable(),
 					},
 					{
-						shared.ContainerRestarts("syntect-server", monitoring.ObservableOwnerCloud),
-						shared.ContainerFsInodes("syntect-server", monitoring.ObservableOwnerCloud),
+						shared.ContainerRestarts("syntect-server", monitoring.ObservableOwnerCloud).Observable(),
+						shared.ContainerFsInodes("syntect-server", monitoring.ObservableOwnerCloud).Observable(),
 					},
 				},
 			},
@@ -79,12 +79,12 @@ func SyntectServer() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.ProvisioningCPUUsageLongTerm("syntect-server", monitoring.ObservableOwnerCloud),
-						shared.ProvisioningMemoryUsageLongTerm("syntect-server", monitoring.ObservableOwnerCloud),
+						shared.ProvisioningCPUUsageLongTerm("syntect-server", monitoring.ObservableOwnerCloud).Observable(),
+						shared.ProvisioningMemoryUsageLongTerm("syntect-server", monitoring.ObservableOwnerCloud).Observable(),
 					},
 					{
-						shared.ProvisioningCPUUsageShortTerm("syntect-server", monitoring.ObservableOwnerCloud),
-						shared.ProvisioningMemoryUsageShortTerm("syntect-server", monitoring.ObservableOwnerCloud),
+						shared.ProvisioningCPUUsageShortTerm("syntect-server", monitoring.ObservableOwnerCloud).Observable(),
+						shared.ProvisioningMemoryUsageShortTerm("syntect-server", monitoring.ObservableOwnerCloud).Observable(),
 					},
 				},
 			},
@@ -93,7 +93,7 @@ func SyntectServer() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.KubernetesPodsAvailable("syntect-server", monitoring.ObservableOwnerCloud),
+						shared.KubernetesPodsAvailable("syntect-server", monitoring.ObservableOwnerCloud).Observable(),
 					},
 				},
 			},
