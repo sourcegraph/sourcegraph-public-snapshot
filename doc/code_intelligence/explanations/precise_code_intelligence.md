@@ -16,7 +16,7 @@ First navigate to your [global settings](https://sourcegraph.example.com/site-ad
 Then select a language specific guide from the list below to generate and upload LSIF files for your repository. The LSIF data is used by Sourcegraph instances to power code intelligence requests (such as hovers, definitions, and references). If you don't see a guide for the language you need below, follow our general [quickstart guide](../lsif_quickstart.md) to setup precise code intelligence.
 
 - [Go](../how-to/index_a_go_repository.md)
-- [Javascript / Typescript](../how-to/index_a_typescript_and_javascript_repository.md)
+- [JavaScript/TypeScript](../how-to/index_a_typescript_and_javascript_repository.md)
 
 After completing the initial setup, follow the [continuous integration guide](../how-to/adding_lsif_to_workflows.md#lsif-in-continuous-integration) to automate indexing of code changes as part of your CI/CD practice.
 
