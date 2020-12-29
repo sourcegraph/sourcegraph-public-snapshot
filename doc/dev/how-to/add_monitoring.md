@@ -107,7 +107,7 @@ If you opt not to include an alert, you must explicitly set `NoAlert: true` and 
 
 To get started, refer to [understanding alerts](../../admin/observability/alerting.md#understanding-alerts) for what your alert should indicate.
 Then make a guess about what a good or bad value for your query is - it's OK if this isn't perfect, just do your best.
-You can then use the [ObservableAlertDefinition](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/monitoring/monitoring/README.md#type-observablealertdefinition) add an alert to your Observable, for example:
+You can then use the [ObservableAlertDefinition](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/monitoring/monitoring/README.md#type-observablealertdefinition) to add an alert to your Observable, for example:
 
 ```diff
 {
