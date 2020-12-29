@@ -384,6 +384,8 @@ ${customMessage || ''}
 
 ### :warning: Additional changes required
 
+These steps must be completed before this PR can be merged, unless otherwise stated. Push any required changes directly to this PR branch.
+
 ${actionItems.map(item => `- [ ] ${item}`).join('\n')}
 
 cc @${config.captainGitHubUsername}
