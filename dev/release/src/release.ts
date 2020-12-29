@@ -18,6 +18,7 @@ import { addMinutes, isWeekend, eachDayOfInterval, addDays, subDays } from 'date
 import { readFileSync, rmdirSync, writeFileSync } from 'fs'
 import * as path from 'path'
 import commandExists from 'command-exists'
+import { SemVer } from 'semver'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
 
@@ -419,6 +420,11 @@ cc @${config.captainGitHubUsername}
                             `comby -in-place 'latestReleaseKubernetesBuild = newBuild(":[1]")' "latestReleaseKubernetesBuild = newBuild(\\"${release.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
                             `comby -in-place 'latestReleaseDockerServerImageBuild = newBuild(":[1]")' "latestReleaseDockerServerImageBuild = newBuild(\\"${release.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
                             `comby -in-place 'latestReleaseDockerComposeOrPureDocker = newBuild(":[1]")' "latestReleaseDockerComposeOrPureDocker = newBuild(\\"${release.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
+
+                            // Support previous release for now
+                            notPatchRelease
+                                ? `comby -in-place 'env["MINIMUM_UPGRADEABLE_VERSION"] = ":[1]"' 'env["MINIMUM_UPGRADEABLE_VERSION"] = "${previous.version}"' enterprise/dev/ci/ci/*.go`
+                                : 'echo "Skipping bumping of upgradable version for patch release"',
 
                             // Add a stub to add upgrade guide entries
                             notPatchRelease
