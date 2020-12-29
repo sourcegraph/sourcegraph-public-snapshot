@@ -102,7 +102,7 @@ func ExecutorQueue() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.FrontendInternalAPIErrorResponses("executor-queue", monitoring.ObservableOwnerCodeIntel),
+						shared.FrontendInternalAPIErrorResponses("executor-queue", monitoring.ObservableOwnerCodeIntel).Observable(),
 					},
 				},
 			},
@@ -111,12 +111,12 @@ func ExecutorQueue() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.ContainerCPUUsage("executor-queue", monitoring.ObservableOwnerCodeIntel),
-						shared.ContainerMemoryUsage("executor-queue", monitoring.ObservableOwnerCodeIntel),
+						shared.ContainerCPUUsage("executor-queue", monitoring.ObservableOwnerCodeIntel).Observable(),
+						shared.ContainerMemoryUsage("executor-queue", monitoring.ObservableOwnerCodeIntel).Observable(),
 					},
 					{
-						shared.ContainerRestarts("executor-queue", monitoring.ObservableOwnerCodeIntel),
-						shared.ContainerFsInodes("executor-queue", monitoring.ObservableOwnerCodeIntel),
+						shared.ContainerRestarts("executor-queue", monitoring.ObservableOwnerCodeIntel).Observable(),
+						shared.ContainerFsInodes("executor-queue", monitoring.ObservableOwnerCodeIntel).Observable(),
 					},
 				},
 			},
@@ -125,12 +125,12 @@ func ExecutorQueue() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.ProvisioningCPUUsageLongTerm("executor-queue", monitoring.ObservableOwnerCodeIntel),
-						shared.ProvisioningMemoryUsageLongTerm("executor-queue", monitoring.ObservableOwnerCodeIntel),
+						shared.ProvisioningCPUUsageLongTerm("executor-queue", monitoring.ObservableOwnerCodeIntel).Observable(),
+						shared.ProvisioningMemoryUsageLongTerm("executor-queue", monitoring.ObservableOwnerCodeIntel).Observable(),
 					},
 					{
-						shared.ProvisioningCPUUsageShortTerm("executor-queue", monitoring.ObservableOwnerCodeIntel),
-						shared.ProvisioningMemoryUsageShortTerm("executor-queue", monitoring.ObservableOwnerCodeIntel),
+						shared.ProvisioningCPUUsageShortTerm("executor-queue", monitoring.ObservableOwnerCodeIntel).Observable(),
+						shared.ProvisioningMemoryUsageShortTerm("executor-queue", monitoring.ObservableOwnerCodeIntel).Observable(),
 					},
 				},
 			},
@@ -139,8 +139,8 @@ func ExecutorQueue() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.GoGoroutines("executor-queue", monitoring.ObservableOwnerCodeIntel),
-						shared.GoGcDuration("executor-queue", monitoring.ObservableOwnerCodeIntel),
+						shared.GoGoroutines("executor-queue", monitoring.ObservableOwnerCodeIntel).Observable(),
+						shared.GoGcDuration("executor-queue", monitoring.ObservableOwnerCodeIntel).Observable(),
 					},
 				},
 			},
@@ -149,7 +149,7 @@ func ExecutorQueue() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.KubernetesPodsAvailable("executor-queue", monitoring.ObservableOwnerCodeIntel),
+						shared.KubernetesPodsAvailable("executor-queue", monitoring.ObservableOwnerCodeIntel).Observable(),
 					},
 				},
 			},

@@ -641,26 +641,6 @@ type Observable struct {
 	PanelOptions ObservablePanelOptions
 }
 
-func (o Observable) WithWarning(a *ObservableAlertDefinition) Observable {
-	o.Warning = a
-	return o
-}
-
-func (o Observable) WithCritical(a *ObservableAlertDefinition) Observable {
-	o.Critical = a
-	return o
-}
-
-// WithNoAlerts disables alerting on this Observable and sets the given interpretation instead.
-func (o Observable) WithNoAlerts(interpretation string) Observable {
-	o.Warning = nil
-	o.Critical = nil
-	o.NoAlert = true
-	o.PossibleSolutions = ""
-	o.Interpretation = interpretation
-	return o
-}
-
 func (o Observable) validate() error {
 	if strings.Contains(o.Name, " ") || strings.ToLower(o.Name) != o.Name {
 		return fmt.Errorf("Name must be in lower_snake_case; found \"%s\"", o.Name)
@@ -715,29 +695,27 @@ func Alert() *ObservableAlertDefinition {
 
 // ObservableAlertDefinition defines when an alert would be considered firing.
 type ObservableAlertDefinition struct {
-	// GreaterOrEqual, when non-zero, indicates the alert should fire when
-	// greater or equal to this value.
 	greaterOrEqual *float64
-
-	// LessOrEqual, when non-zero, indicates the alert should fire when less
-	// than or equal to this value.
-	lessOrEqual *float64
-
-	// For indicates how long the given thresholds must be exceeded for this
-	// alert to be considered firing. Defaults to 0s.
-	duration time.Duration
+	lessOrEqual    *float64
+	duration       time.Duration
 }
 
+// GreaterOrEqual, when non-zero, indicates the alert should fire when greater or equal
+// to this value.
 func (a *ObservableAlertDefinition) GreaterOrEqual(f float64) *ObservableAlertDefinition {
 	a.greaterOrEqual = &f
 	return a
 }
 
+// LessOrEqual, when non-zero, indicates the alert should fire when less than or equal to
+// this value.
 func (a *ObservableAlertDefinition) LessOrEqual(f float64) *ObservableAlertDefinition {
 	a.lessOrEqual = &f
 	return a
 }
 
+// For indicates how long the given thresholds must be exceeded for this alert to be
+// considered firing. Defaults to 0s (immediately alerts when threshold is exceeded).
 func (a *ObservableAlertDefinition) For(d time.Duration) *ObservableAlertDefinition {
 	a.duration = d
 	return a

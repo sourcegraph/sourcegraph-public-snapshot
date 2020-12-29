@@ -94,7 +94,7 @@ The primary thing you'll use is to change the Grafana display from plain numbers
     Name:        "some_metric_behaviour",
     Description: "some behaviour of a metric over 5m",
     Query:       `histogram_quantile(0.99, sum by (le)(rate(search_request_duration{status="success}[5m])))`,
-+   PanelOptions: PanelOptions().LegendFormat("duration").Unit(Seconds),
++   PanelOptions: monitoring.PanelOptions().LegendFormat("duration").Unit(monitoring.Seconds),
 }
 ```
 
@@ -103,22 +103,23 @@ The primary thing you'll use is to change the Grafana display from plain numbers
 Alerts can be defined at two levels: warning, and critical.
 They are used to provide Sourcegraph health notifications for site administrators.
 This step is optional, but highly recommended.
+If you opt not to include an alert, you must explicitly set `NoAlert: true` and [provide relevant documentation for this observable](#add-documentation).
 
-To get started, make a guess about what a good or bad value for your query is.
-It's OK if this isn't perfect, just do your best.
-Then add an alert to your Observable, for example:
+To get started, refer to [understanding alerts](../../admin/observability/alerting.md#understanding-alerts) for what your alert should indicate.
+Then make a guess about what a good or bad value for your query is - it's OK if this isn't perfect, just do your best.
+You can then use the [ObservableAlertDefinition](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/monitoring/monitoring/README.md#type-observablealertdefinition) to add an alert to your Observable, for example:
 
 ```diff
 {
     Name:        "some_metric_behaviour",
     Description: "some behaviour of a metric over 5m",
     Query:       `histogram_quantile(0.99, sum by (le)(rate(search_request_duration{status="success}[5m])))`,
-    PanelOptions: PanelOptions().LegendFormat("duration").Unit(Seconds),
-+   Warning:      Alert{GreaterOrEqual: 20},
+    PanelOptions: monitoring.PanelOptions().LegendFormat("duration").Unit(monitoring.Seconds),
++   Warning:      monitoring.Alert().GreaterOrEqual(20),
 }
 ```
 
-This step is optional - if you opt not to include an alert, you must explicitly set `NoAlert: true` and provide [relevant documentation for this observable](#add-documentation).
+Options like only alerting after a certain duration (`.For(time.Duration)`) are also available - refer to the [monitoring library reference](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/monitoring/monitoring/README.md#type-observablealertdefinition).
 
 ### Add documentation
 
@@ -129,8 +130,8 @@ It's best if you also add some Markdown documentation with your best guess of wh
     Name:        "some_metric_behaviour",
     Description: "some behaviour of a metric over 5m",
     Query:       `histogram_quantile(0.99, sum by (le)(rate(search_request_duration{status="success}[5m])))`,
-    Warning:      Alert{GreaterOrEqual: 20},
-    PanelOptions: PanelOptions().LegendFormat("duration").Unit(Seconds),
+    Warning:      monitoring.Alert().GreaterOrEqual(20),
+    PanelOptions: monitoring.PanelOptions().LegendFormat("duration").Unit(monitoring.Seconds),
 +   PossibleSolutions: `
 +       - Look at 'SERVICE' logs for details on the slow search queries.
 +   `,
@@ -143,7 +144,7 @@ It's best if you also add some Markdown documentation with your best guess of wh
     Description: "some behaviour of a metric over 5m",
     Query:       `histogram_quantile(0.99, sum by (le)(rate(search_request_duration{status="success}[5m])))`,
     NoAlert:      true,
-    PanelOptions: PanelOptions().LegendFormat("duration").Unit(Seconds),
+    PanelOptions: monitoring.PanelOptions().LegendFormat("duration").Unit(monitoring.Seconds),
 +   Interpretation: `
 +       This value might be high under X, Y, and Z conditions.
 +   `,

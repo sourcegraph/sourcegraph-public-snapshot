@@ -151,12 +151,12 @@ func PreciseCodeIntelIndexer() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.ContainerCPUUsage("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
-						shared.ContainerMemoryUsage("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
+						shared.ContainerCPUUsage("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel).Observable(),
+						shared.ContainerMemoryUsage("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel).Observable(),
 					},
 					{
-						shared.ContainerRestarts("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
-						shared.ContainerFsInodes("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
+						shared.ContainerRestarts("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel).Observable(),
+						shared.ContainerFsInodes("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel).Observable(),
 					},
 				},
 			},
@@ -165,12 +165,12 @@ func PreciseCodeIntelIndexer() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.ProvisioningCPUUsageLongTerm("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
-						shared.ProvisioningMemoryUsageLongTerm("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
+						shared.ProvisioningCPUUsageLongTerm("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel).Observable(),
+						shared.ProvisioningMemoryUsageLongTerm("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel).Observable(),
 					},
 					{
-						shared.ProvisioningCPUUsageShortTerm("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
-						shared.ProvisioningMemoryUsageShortTerm("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
+						shared.ProvisioningCPUUsageShortTerm("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel).Observable(),
+						shared.ProvisioningMemoryUsageShortTerm("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel).Observable(),
 					},
 				},
 			},
@@ -179,8 +179,8 @@ func PreciseCodeIntelIndexer() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.GoGoroutines("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
-						shared.GoGcDuration("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
+						shared.GoGoroutines("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel).Observable(),
+						shared.GoGcDuration("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel).Observable(),
 					},
 				},
 			},
@@ -189,7 +189,7 @@ func PreciseCodeIntelIndexer() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.KubernetesPodsAvailable("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
+						shared.KubernetesPodsAvailable("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel).Observable(),
 					},
 				},
 			},

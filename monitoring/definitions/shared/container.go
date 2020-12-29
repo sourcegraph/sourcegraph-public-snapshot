@@ -11,8 +11,8 @@ import (
 // More granular resource usage warnings are provided by the provisioning observables.
 
 var (
-	ContainerRestarts sharedObservable = func(containerName string, owner monitoring.ObservableOwner) monitoring.Observable {
-		return monitoring.Observable{
+	ContainerRestarts sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
+		return Observable{
 			Name:            "container_restarts",
 			Description:     "container restarts every 5m by instance",
 			Query:           fmt.Sprintf(`increase(cadvisor_container_restart_count{%s}[5m])`, CadvisorNameMatcher(containerName)),
@@ -31,8 +31,8 @@ var (
 		}
 	}
 
-	ContainerMemoryUsage sharedObservable = func(containerName string, owner monitoring.ObservableOwner) monitoring.Observable {
-		return monitoring.Observable{
+	ContainerMemoryUsage sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
+		return Observable{
 			Name:            "container_memory_usage",
 			Description:     "container memory usage by instance",
 			Query:           fmt.Sprintf(`cadvisor_container_memory_usage_percentage_total{%s}`, CadvisorNameMatcher(containerName)),
@@ -47,8 +47,8 @@ var (
 		}
 	}
 
-	ContainerCPUUsage sharedObservable = func(containerName string, owner monitoring.ObservableOwner) monitoring.Observable {
-		return monitoring.Observable{
+	ContainerCPUUsage sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
+		return Observable{
 			Name:            "container_cpu_usage",
 			Description:     "container cpu usage total (1m average) across all cores by instance",
 			Query:           fmt.Sprintf(`cadvisor_container_cpu_usage_percentage_total{%s}`, CadvisorNameMatcher(containerName)),
@@ -63,8 +63,8 @@ var (
 		}
 	}
 
-	ContainerFsInodes sharedObservable = func(containerName string, owner monitoring.ObservableOwner) monitoring.Observable {
-		return monitoring.Observable{
+	ContainerFsInodes sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
+		return Observable{
 			Name:            "fs_inodes_used",
 			Description:     "fs inodes in use by instance",
 			Query:           fmt.Sprintf(`sum by (name)(container_fs_inodes_total{%s})`, CadvisorNameMatcher(containerName)),

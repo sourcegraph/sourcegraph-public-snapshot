@@ -8,8 +8,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
-var FrontendInternalAPIErrorResponses sharedObservable = func(containerName string, owner monitoring.ObservableOwner) monitoring.Observable {
-	return monitoring.Observable{
+var FrontendInternalAPIErrorResponses sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
+	return Observable{
 		Name:            "frontend_internal_api_error_responses",
 		Description:     "frontend-internal API error responses every 5m by route",
 		Query:           fmt.Sprintf(`sum by (category)(increase(src_frontend_internal_request_duration_seconds_count{job="%[1]s",code!~"2.."}[5m])) / ignoring(category) group_left sum(increase(src_frontend_internal_request_duration_seconds_count{job="%[1]s"}[5m]))`, containerName),
