@@ -18,7 +18,6 @@ import { addMinutes, isWeekend, eachDayOfInterval, addDays, subDays } from 'date
 import { readFileSync, rmdirSync, writeFileSync } from 'fs'
 import * as path from 'path'
 import commandExists from 'command-exists'
-import { SemVer } from 'semver'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
 
