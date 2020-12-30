@@ -19,6 +19,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
+- `src config` now works correctly when provided a subject.
+
 ### Removed
 
 ## 3.23.1
