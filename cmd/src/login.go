@@ -38,11 +38,15 @@ Examples:
 		if err := flagSet.Parse(args); err != nil {
 			return err
 		}
-		if len(args) != 1 {
-			return &usageError{errors.New("expected exactly one argument: the Sourcegraph URL")}
+		endpoint := cfg.Endpoint
+		if len(args) == 1 {
+			endpoint = args[0]
 		}
-		endpointArg := args[0]
-		return loginCmd(context.Background(), cfg, endpointArg, os.Stdout)
+		if endpoint == "" {
+			return &usageError{errors.New("expected exactly one argument: the Sourcegraph URL, or SRC_ENDPOINT to be set")}
+		}
+
+		return loginCmd(context.Background(), cfg, endpoint, os.Stdout)
 	}
 
 	commands = append(commands, &command{

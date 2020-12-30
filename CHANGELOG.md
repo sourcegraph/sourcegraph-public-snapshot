@@ -15,6 +15,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Changed
 
+- `src login` now defaults to validating against `SRC_ENDPOINT` if configured.
+
 ### Fixed
 
 ### Removed
