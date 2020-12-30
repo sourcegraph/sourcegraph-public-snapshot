@@ -1,15 +1,4 @@
-# This Dockerfile is adapted from https://github.com/prometheus/prometheus/blob/v2.15.2/Dockerfile with
-# our own customizations.
-#
-# When upgrading prometheus, be sure to check https://github.com/prometheus/prometheus/blob/master/Dockerfile
-# (replacing master with the version number) to see if any changes (added/removed files, etc.) need to be
-# synchronized with this derivative Dockerfile. Also make sure to update the appropriate com.sourcegraph.*.version
-# labels below.
-FROM prom/prometheus:v2.21.0@sha256:f3ada803723ccbc443ebea19f7ab24d3323def496e222134bf9ed54ae5b787bd AS prom_upstream
-
-# Similarly to above, this Dockerfile also extends https://github.com/prometheus/alertmanager/blob/v0.21.0/Dockerfile
-# When upgrading alertmanager, make sure to make similar checks to the one above.
-FROM prom/alertmanager:v0.21.0@sha256:913293083cb14085bfc01018bb30d1dcbbc9ed197ae21ef2ca917b0d29265198 AS am_upstream
+# sourcegraph/prometheus - learn more about this image in https://docs.sourcegraph.com/dev/background-information/observability/prometheus
 
 # Build monitoring definitions
 FROM sourcegraph/alpine:3.12@sha256:133a0a767b836cf86a011101995641cf1b5cbefb3dd212d78d7be145adde636d AS monitoring_builder
@@ -18,9 +7,17 @@ COPY ./.bin/monitoring-generator /bin/monitoring-generator
 RUN PROMETHEUS_DIR='/generated/prometheus' GRAFANA_DIR='' DOCS_DIR='' NO_PRUNE=true /bin/monitoring-generator
 RUN ls '/generated/prometheus'
 
+# To upgrade Prometheus or Alertmanager, see https://docs.sourcegraph.com/dev/background-information/observability/prometheus#upgrading-prometheus-or-alertmanager
+FROM prom/prometheus:v2.23.0@sha256:0eac377a90d361be9da35b469def699bcd5bb26eab8a6e9068516a9910717d58 AS prom_upstream
+FROM prom/alertmanager:v0.21.0@sha256:913293083cb14085bfc01018bb30d1dcbbc9ed197ae21ef2ca917b0d29265198 AS am_upstream
+
 # Prepare final image
 # hadolint ignore=DL3007
 FROM quay.io/prometheus/busybox-linux-amd64:latest@sha256:fca3819d670cdaee0d785499fda202ea01c0640ca0803d26ae6dbf2a1c8c041c
+
+# Should reflect versions above
+LABEL com.sourcegraph.prometheus.version=v2.23.0
+LABEL com.sourcegraph.alertmanager.version=v0.21.0
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
@@ -33,10 +30,8 @@ LABEL org.opencontainers.image.url=https://sourcegraph.com/
 LABEL org.opencontainers.image.source=https://github.com/sourcegraph/sourcegraph/
 LABEL org.opencontainers.image.documentation=https://docs.sourcegraph.com/
 
-LABEL com.sourcegraph.prometheus.version=v2.16.0
-LABEL com.sourcegraph.alertmanager.version=v0.21.0
-
-# Prometheus
+# Prometheus - extended from https://github.com/prometheus/prometheus/blob/VERSION/Dockerfile
+# Check the upstream image (replacing VERSION with the appropriate Prometheus version) when upgrading
 COPY --from=prom_upstream /bin/prometheus /bin/prometheus
 COPY --from=prom_upstream /bin/promtool /bin/promtoool
 COPY --from=prom_upstream /etc/prometheus/prometheus.yml /etc/prometheus/prometheus.yml
@@ -47,7 +42,8 @@ COPY --from=prom_upstream /NOTICE /NOTICE
 # hadolint ignore=DL3010
 COPY --from=prom_upstream /npm_licenses.tar.bz2 /npm_licenses.tar.bz2
 
-# Alertmanager
+# Alertmanager - extended from https://github.com/prometheus/alertmanager/blob/VERSION/Dockerfile
+# Check the upstream image (replacing VERSION with the appropriate Prometheus version) when upgrading
 COPY --from=am_upstream /bin/alertmanager /bin/alertmanager
 
 RUN ln -s /usr/share/prometheus/console_libraries /usr/share/prometheus/consoles/ /etc/prometheus/
