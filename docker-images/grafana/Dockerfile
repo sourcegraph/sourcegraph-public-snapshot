@@ -19,9 +19,9 @@ RUN GRAFANA_DIR='/generated/grafana' PROMETHEUS_DIR='' DOCS_DIR='' NO_PRUNE=true
 RUN ls '/generated/grafana'
 
 # Prepare final image
-# when upgrading the Grafana version, please refer to https://about.sourcegraph.com/handbook/engineering/distribution/observability/monitoring#upgrading-grafana
-FROM grafana/grafana:7.2.0@sha256:b1c8a29dc7972bd5773bce5e564dd4bdcd96723dfeee6f5b754a2b3039e39dcb as production
-LABEL com.sourcegraph.grafana.version=7.0.3
+# when upgrading the Grafana version, please refer to https://docs.sourcegraph.com/dev/background-information/observability/grafana#upgrading-grafana
+FROM grafana/grafana:7.3.5@sha256:511bc20bfcd1b79f3947bb1c33d152f7484e7a91418883fb4dddf71274227321 as production
+LABEL com.sourcegraph.grafana.version=7.3.5
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
@@ -35,14 +35,14 @@ LABEL org.opencontainers.image.source=https://github.com/sourcegraph/sourcegraph
 LABEL org.opencontainers.image.documentation=https://docs.sourcegraph.com/
 
 # hadolint ignore=DL3020
-ADD --chown=grafana:grafana config /sg_config_grafana
+ADD config /sg_config_grafana
 COPY home.json /usr/share/grafana/public/dashboards/home.json
 
 COPY --from=jsonnet_builder /dashboards/*.json /sg_config_grafana/provisioning/dashboards/sourcegraph_internal/
 COPY --from=monitoring_builder /generated/grafana/* /sg_config_grafana/provisioning/dashboards/sourcegraph/
 
 # hadolint ignore=DL3020
-ADD --chown=grafana:grafana entry.sh /
+ADD entry.sh /
 
 USER root
 # hadolint ignore=DL3018

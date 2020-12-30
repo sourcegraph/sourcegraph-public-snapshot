@@ -11,5 +11,6 @@ The image is defined in [`docker-images/grafana`](https://sourcegraph.com/github
 
 To upgrade Grafana, make the appropriate version change to the [`sourcegraph/grafana` Dockerfile](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+FROM+grafana/grafana::%5Bversion.%5D&patternType=structural) and:
 
+* Ensure that no migration steps are required: [Migrate from previous Grafana container versions](https://grafana.com/docs/grafana/latest/installation/docker/#migrate-from-previous-docker-containers-versions)
 * Ensure the image still builds: `./docker-images/grafana/build.sh`
 * [Run the monitoring stack locally](../../how-to/monitoring_local_dev.md) and verify that all generated Grafana dashboards still render correctly
