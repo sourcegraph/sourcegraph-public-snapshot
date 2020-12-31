@@ -94,7 +94,7 @@ func (sm *DefaultIDSetMap) SetContains(key, id int) bool {
 	return false
 }
 
-// SetEach determines if the given identifier belongs to the set at the given key.
+// SetEach invokes the given function with each identifier in the set at the given key.
 func (sm *DefaultIDSetMap) SetEach(key int, f func(id int)) {
 	if sm.key == key {
 		sm.value.Each(f)
