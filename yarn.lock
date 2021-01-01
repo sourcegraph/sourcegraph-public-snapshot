@@ -3791,10 +3791,10 @@
   resolved "https://registry.npmjs.org/@types/mockdate/-/mockdate-2.0.0.tgz#aaf388a1ead3b0f5ed6dc1611956ea7b40a57d3c"
   integrity sha1-qvOIoerTsPXtbcFhGVbqe0ClfTw=
 
-"@types/mz@2.7.2":
-  version "2.7.2"
-  resolved "https://registry.npmjs.org/@types/mz/-/mz-2.7.2.tgz#48de03aacc98aeb40cfdeb8c58fff9fb8a2d8dfc"
-  integrity sha512-a6E4fuAakzq/uRHEohiYo9M5G+NV33FodRGCU+N4W65CAk6PPJo9KWPH8hxkqiiUgfs8EgUFuKPxclcUEahsRw==
+"@types/mz@2.7.3":
+  version "2.7.3"
+  resolved "https://registry.npmjs.org/@types/mz/-/mz-2.7.3.tgz#e42a21e73f5f9340fe4a176981fafb1eb8cc6c12"
+  integrity sha512-Zp1NUJ4Alh3gaun0a5rkF3DL7b2j1WB6rPPI5h+CJ98sQnxe9qwskClvupz/4bqChGR3L/BRhTjlaOwR+uiZJg==
   dependencies:
     "@types/node" "*"
 

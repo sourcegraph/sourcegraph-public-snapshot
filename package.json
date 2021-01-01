@@ -137,7 +137,7 @@
     "@types/mini-css-extract-plugin": "1.2.1",
     "@types/mocha": "8.2.0",
     "@types/mockdate": "2.0.0",
-    "@types/mz": "2.7.2",
+    "@types/mz": "2.7.3",
     "@types/node": "13.13.5",
     "@types/optimize-css-assets-webpack-plugin": "5.0.1",
     "@types/pollyjs__core": "4.3.1",
