@@ -131,7 +131,7 @@
     "@types/jest": "26.0.19",
     "@types/js-cookie": "2.2.6",
     "@types/jsdom": "12.2.4",
-    "@types/lodash": "4.14.165",
+    "@types/lodash": "4.14.166",
     "@types/marked": "1.2.1",
     "@types/mime-types": "2.1.0",
     "@types/mini-css-extract-plugin": "1.2.1",
