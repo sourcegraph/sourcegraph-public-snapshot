@@ -149,7 +149,7 @@
     "@types/react-grid-layout": "0.17.2",
     "@types/react-hot-loader": "4.1.0",
     "@types/react-router": "5.1.9",
-    "@types/react-router-dom": "5.1.6",
+    "@types/react-router-dom": "5.1.7",
     "@types/react-stripe-elements": "6.0.4",
     "@types/react-test-renderer": "16.9.2",
     "@types/reactstrap": "8.4.2",
