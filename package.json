@@ -135,7 +135,7 @@
     "@types/marked": "1.2.1",
     "@types/mime-types": "2.1.0",
     "@types/mini-css-extract-plugin": "1.2.1",
-    "@types/mocha": "8.0.4",
+    "@types/mocha": "8.2.0",
     "@types/mockdate": "2.0.0",
     "@types/mz": "2.7.2",
     "@types/node": "13.13.5",
