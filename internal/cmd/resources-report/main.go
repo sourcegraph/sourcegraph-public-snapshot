@@ -100,6 +100,7 @@ func run(opts options) error {
 	}
 	if !*opts.dry {
 		if err := generateReport(ctx, opts, resources); err != nil {
+			reportError(ctx, opts, err, "report")
 			return fmt.Errorf("report: %w", err)
 		}
 	}
