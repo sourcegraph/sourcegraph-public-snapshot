@@ -22,10 +22,13 @@ func setPanelPos(p *sdk.Panel, x, y int) {
 // observablePanelID generates a panel ID unique per dashboard for an observable at a
 // given group and row.
 func observablePanelID(groupIndex, rowIndex, observableIndex int) uint {
-	// start generated panel IDs at large number
-	baseGeneratedPanelID := 100000
-	panelID := baseGeneratedPanelID + (groupIndex * 100) + (rowIndex * 10) + (observableIndex * 1)
-	return uint(panelID)
+	// by default, Grafana generates panel IDs starting at 0 for panels not assigned an ID.
+	// to avoid conflicts, we start generated panel IDs at large number.
+	const baseGeneratedPanelID = 100000
+	return uint(baseGeneratedPanelID +
+		(groupIndex * 100) +
+		(rowIndex * 10) +
+		(observableIndex * 1))
 }
 
 // isValidGrafanaUID checks if the given string is a valid UID for entry into a Grafana dashboard. This is
