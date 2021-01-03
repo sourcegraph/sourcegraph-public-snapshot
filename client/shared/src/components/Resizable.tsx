@@ -88,11 +88,6 @@ export class Resizable<C extends React.ReactElement> extends React.PureComponent
                 className={`resizable resizable--${this.props.handlePosition} ${this.props.className || ''}`}
                 ref={this.setContainerRef}
             >
-                <div
-                    className={`resizable__ghost ${this.state.resizing ? 'resizable__ghost--resizing' : ''}`}
-                    onMouseMove={this.onMouseMove}
-                    onMouseUp={this.onMouseUp}
-                />
                 {this.props.element}
                 <div
                     className={`resizable__handle resizable__handle--${this.props.handlePosition} ${
@@ -112,29 +107,40 @@ export class Resizable<C extends React.ReactElement> extends React.PureComponent
         event.preventDefault()
         if (!this.state.resizing) {
             this.setState({ resizing: true })
-        }
-    }
 
-    private onMouseUp = (event: React.MouseEvent<HTMLDivElement>): void => {
-        event.preventDefault()
-        if (this.state.resizing) {
-            this.setState({ resizing: false })
-        }
-    }
-
-    private onMouseMove = (event: React.MouseEvent<HTMLDivElement>): void => {
-        event.preventDefault()
-        if (this.state.resizing && this.containerRef) {
-            let size = isHorizontal(this.props.handlePosition)
-                ? this.props.handlePosition === 'right'
-                    ? event.pageX - this.containerRef.getBoundingClientRect().left
-                    : this.containerRef.getBoundingClientRect().right - event.pageX
-                : this.containerRef.getBoundingClientRect().bottom - event.pageY
-            if (event.shiftKey) {
-                size = Math.ceil(size / 20) * 20
+            const onMouseMove = (event: MouseEvent): void => {
+                event.preventDefault()
+                if (this.state.resizing && this.containerRef) {
+                    let size = isHorizontal(this.props.handlePosition)
+                        ? this.props.handlePosition === 'right'
+                            ? event.pageX - this.containerRef.getBoundingClientRect().left
+                            : this.containerRef.getBoundingClientRect().right - event.pageX
+                        : this.containerRef.getBoundingClientRect().bottom - event.pageY
+                    if (event.shiftKey) {
+                        size = Math.ceil(size / 20) * 20
+                    }
+                    this.setState({ size })
+                    this.sizeUpdates.next(size)
+                }
             }
-            this.setState({ size })
-            this.sizeUpdates.next(size)
+
+            let onMouseUp: (event: Event) => void
+            // Because it needs to refer to itself.
+            //
+            // eslint-disable-next-line prefer-const
+            onMouseUp = (event: Event): void => {
+                event.preventDefault()
+                if (this.state.resizing) {
+                    this.setState({ resizing: false })
+                    if (event.currentTarget) {
+                        event.currentTarget.removeEventListener('mouseup', onMouseUp)
+                        event.currentTarget.removeEventListener('mousemove', onMouseMove as EventListener)
+                    }
+                }
+            }
+
+            event.currentTarget.ownerDocument.addEventListener('mousemove', onMouseMove)
+            event.currentTarget.ownerDocument.addEventListener('mouseup', onMouseUp)
         }
     }
 }
