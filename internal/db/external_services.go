@@ -540,6 +540,9 @@ func (e *ExternalServiceStore) Create(ctx context.Context, confGet func() *conf.
 // 🚨 SECURITY: The value of `Unrestricted` field is disregarded and will always
 // be recalculated based on whether `"authorization"` is presented in `Config`.
 func (e *ExternalServiceStore) Upsert(ctx context.Context, svcs ...*types.ExternalService) error {
+	if Mocks.ExternalServices.Upsert != nil {
+		return Mocks.ExternalServices.Upsert(ctx, svcs...)
+	}
 	if len(svcs) == 0 {
 		return nil
 	}
@@ -912,4 +915,5 @@ type MockExternalServices struct {
 	List             func(opt ExternalServicesListOptions) ([]*types.ExternalService, error)
 	Update           func(ctx context.Context, ps []schema.AuthProviders, id int64, update *ExternalServiceUpdate) error
 	Count            func(ctx context.Context, opt ExternalServicesListOptions) (int, error)
+	Upsert           func(ctx context.Context, services ...*types.ExternalService) error
 }

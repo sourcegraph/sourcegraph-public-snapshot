@@ -825,6 +825,12 @@ type Mutation {
         """
         actions: [MonitorEditActionInput!]!
     ): Monitor!
+
+    """
+    Set the repos synced by an external service
+    """
+    setExternalServiceRepos(id: ID!, repos: [String!], allRepos: Boolean!): EmptyResponse!
+
     """
     Reset the timestamps of a trigger query. The query will be queued immediately and return
     all results without a limit on the timeframe. Only site admins may perform this mutation.
