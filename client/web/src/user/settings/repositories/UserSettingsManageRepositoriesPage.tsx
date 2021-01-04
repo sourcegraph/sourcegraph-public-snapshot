@@ -1,4 +1,4 @@
-import React, {FormEvent, useState} from 'react'
+import React, {FormEvent, useCallback, useState} from 'react'
 import {TelemetryProps} from '../../../../../shared/src/telemetry/telemetryService'
 import {RouteComponentProps} from 'react-router'
 import {PageTitle} from '../../../components/PageTitle'
@@ -12,7 +12,6 @@ import {
 } from '../../../graphql-operations';
 import {listAffiliatedRepositories} from '../../../site-admin/backend';
 import {queryExternalServices, setExternalServiceRepos,} from '../../../components/externalServices/backend'
-import {ErrorBar} from "recharts";
 import {ErrorAlert} from "../../../components/alerts";
 
 interface Props extends RouteComponentProps, TelemetryProps {
@@ -64,7 +63,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     const [query, setQuery] = useState('')
     const [codeHostFilter, setCodeHostFilter] = useState('')
     const [codeHosts, setCodeHosts] = useState(initialCodeHostState)
-    const [publicRepos, setPublicRepos] = useState({text: '', show: false})
 
     // first we should load code hosts
     if (!codeHosts.loaded) {
@@ -274,6 +272,23 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         </Form>
     )
 
+    const onRepoClicked = useCallback(
+        (repo: Repo) => (): void => {
+            const newMap = new Map(selectionState.repos)
+            if (newMap.has(repo.name)) {
+                newMap.delete(repo.name)
+            } else {
+                newMap.set(repo.name, repo)
+            }
+            setSelectionState({
+                repos: newMap,
+                radio: selectionState.radio,
+                loaded: selectionState.loaded,
+            })
+        },
+        [selectionState, setSelectionState]
+    )
+
     const rows: JSX.Element = (
         <tbody>
         <tr className="align-items-baseline d-flex" key="header">
@@ -314,37 +329,15 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     <RepositoryNode
                         name={repo.name}
                         url=""
-                        onClick={() => {
-                            const newMap = new Map(selectionState.repos)
-                            if (newMap.has(repo.name)) {
-                                newMap.delete(repo.name)
-                            } else {
-                                newMap.set(repo.name, repo)
-                            }
-                            setSelectionState({
-                                repos: newMap,
-                                radio: selectionState.radio,
-                                loaded: selectionState.loaded
-                            })
-                        }}
+                        onClick={onRepoClicked(repo)}
                         serviceType={repo.codeHost?.kind.toLowerCase() || ''}
                         isPrivate={repo.private}
                         prefixComponent={(<input
                             className="mr-2"
                             type="checkbox"
                             checked={selectionState.repos.has(repo.name)}
-                            onChange={event => {
-                                const newMap = new Map(selectionState.repos)
-                                if (newMap.has(repo.name)) {
-                                    newMap.delete(repo.name)
-                                } else {
-                                    newMap.set(repo.name, repo)
-                                }
-                                setSelectionState({
-                                    repos: newMap,
-                                    radio: selectionState.radio,
-                                    loaded: selectionState.loaded
-                                })
+                            onClick={event => {
+                                onRepoClicked(repo)
                             }}
                         />)}
                     />
@@ -367,7 +360,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         </tr>
         </tbody>
     )
-
+    console.log(selectionState.repos)
     return (
         <div className="p-2">
             <PageTitle title="Manage Repositories"/>
