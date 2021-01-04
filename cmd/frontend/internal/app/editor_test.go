@@ -8,6 +8,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -57,6 +59,18 @@ func TestEditorRev(t *testing.T) {
 }
 
 func TestEditorRedirect(t *testing.T) {
+	db.Mocks.ExternalServices.List = func(db.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+		return []*types.ExternalService{
+			{
+				ID:          1,
+				Kind:        extsvc.KindGitHub,
+				DisplayName: "GITHUB #1",
+				Config:      `{"url": "https://github.example.com", "repositoryQuery": ["none"], "token": "abc"}`,
+			},
+		}, nil
+	}
+	defer func() { db.Mocks.ExternalServices = db.MockExternalServices{} }()
+
 	cases := []struct {
 		name            string
 		q               url.Values

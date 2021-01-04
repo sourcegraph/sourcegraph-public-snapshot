@@ -2,8 +2,8 @@ package cloneurls
 
 import (
 	"context"
-	"strings"
 	neturl "net/url"
+	"strings"
 
 	"github.com/pkg/errors"
 
