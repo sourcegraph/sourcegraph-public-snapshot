@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
@@ -53,9 +54,10 @@ func init() {
 // sessionInfo is the information we store in the session. The gorilla/sessions library doesn't appear to
 // enforce the maxAge field in its session store implementations, so we include the expiry here.
 type sessionInfo struct {
-	Actor        *actor.Actor  `json:"actor"`
-	LastActive   time.Time     `json:"lastActive"`
-	ExpiryPeriod time.Duration `json:"expiryPeriod"`
+	Actor         *actor.Actor  `json:"actor"`
+	LastActive    time.Time     `json:"lastActive"`
+	ExpiryPeriod  time.Duration `json:"expiryPeriod"`
+	UserCreatedAt time.Time     `json:"userCreatedAt"`
 }
 
 // SetSessionStore sets the backing store used for storing sessions on the server. It should be called exactly once.
