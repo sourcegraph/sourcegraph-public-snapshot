@@ -12,7 +12,7 @@ import {
 } from '../../../graphql-operations';
 import {listAffiliatedRepositories} from '../../../site-admin/backend';
 import {queryExternalServices, setExternalServiceRepos,} from '../../../components/externalServices/backend'
-import {ErrorAlert} from "../../../components/alerts";
+import {ErrorAlert} from '../../../components/alerts';
 
 interface Props extends RouteComponentProps, TelemetryProps {
     userID: string
@@ -333,7 +333,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                         serviceType={repo.codeHost?.kind.toLowerCase() || ''}
                         isPrivate={repo.private}
                         prefixComponent={(<input
-                            // this is truly cursed. for some reason the onClick/onChange callback for this element will
+                            // this is truly cursed. for some reason the onClick/onChange callback for this element
                             // will allow setState and trigger a render, but not reevaluate the checked field, causing
                             // the checkbox to not become checked until another checkbox is clicked. however if you set
                             // state via the same function called via RepositoryNode.onClick the render correctly reads
