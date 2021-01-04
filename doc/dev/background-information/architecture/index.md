@@ -30,6 +30,7 @@ If you want to learn more about search:
 
 - [Code search product documentation](../../../code_search/index.md)
 - [Life of a search query](life-of-a-search-query.md)
+- [Search pagination](search-pagination.md)
 
 ## Code intellgence
 
@@ -64,6 +65,10 @@ TODO
 ## Sourcegraph extension API
 
 TODO
+
+If you want to learn more about our extension API:
+
+- [Sourcegraph extension architecture](sourcegraph-extensions.md)
 
 ## src-cli
 
@@ -122,11 +127,3 @@ Our backend is composed of multiple services:
 Here are some references to help you understand how multiple systems fit together:
 
 - [Life of a ping](life-of-a-ping.md)
-- [Search pagination](search-pagination.md)
-- Code intelligence
-  - [Uploads](../codeintel/uploads.md)
-  - [Queries](../codeintel/queries.md)
-  - [Extensions](../codeintel/extensions.md)
-- [Sourcegraph extension architecture](sourcegraph-extensions.md)
-- Future topics we will cover here:
-  - Web app and browser extension architecture
