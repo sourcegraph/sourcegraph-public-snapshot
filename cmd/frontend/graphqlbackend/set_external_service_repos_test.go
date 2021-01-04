@@ -15,7 +15,7 @@ import (
 	"testing"
 )
 
-func TestSetCodeHostRepos(t *testing.T) {
+func TestSetExternalServiceRepos(t *testing.T) {
 	db.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
 		return &types.ExternalService{
 			DisplayName:     "test",
@@ -76,7 +76,7 @@ func TestSetCodeHostRepos(t *testing.T) {
 			Schema:  mustParseGraphQLSchema(t),
 			Query: `
 			mutation {
-				setCodeHostRepos(
+				setExternalServiceRepos(
 					id: "RXh0ZXJuYWxTZXJ2aWNlOjIx"
 					allRepos: false
 					repos: ["foo","bar","baz"]
@@ -85,7 +85,7 @@ func TestSetCodeHostRepos(t *testing.T) {
 				}
 			}
 			`,
-			ExpectedResult: `{"setCodeHostRepos":{"alwaysNil":null}}`,
+			ExpectedResult: `{"setExternalServiceRepos":{"alwaysNil":null}}`,
 		},
 	})
 	if !called {

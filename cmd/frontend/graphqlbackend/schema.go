@@ -827,9 +827,9 @@ type Mutation {
     ): Monitor!
 
     """
-    Set the repos synced by a code host
+    Set the repos synced by an external service
     """
-    setCodeHostRepos(id: ID!, repos: [String!], allRepos: Boolean!): EmptyResponse!
+    setExternalServiceRepos(id: ID!, repos: [String!], allRepos: Boolean!): EmptyResponse!
 
     """
     Reset the timestamps of a trigger query. The query will be queued immediately and return
