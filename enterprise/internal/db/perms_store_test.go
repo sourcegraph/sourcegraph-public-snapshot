@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"sort"
 	"sync"
@@ -1937,19 +1938,19 @@ func testPermsStore_ListExternalAccounts(db *sql.DB) func(*testing.T) {
 		// Set up test users and external accounts
 		extSQL := `
 INSERT INTO
-	user_external_accounts(user_id, service_type, service_id, account_id, client_id, created_at, updated_at, deleted_at, expired_at)
+	user_external_accounts(user_id, service_type, service_id, account_id, client_id, auth_data, created_at, updated_at, deleted_at, expired_at)
 VALUES
-	(%s, %s, %s, %s, %s, %s, %s, %s, %s)
+	(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 `
 		qs := []*sqlf.Query{
 			sqlf.Sprintf(`INSERT INTO users(username) VALUES('alice')`), // ID=1
 			sqlf.Sprintf(`INSERT INTO users(username) VALUES('bob')`),   // ID=2
 
-			sqlf.Sprintf(extSQL, 1, extsvc.TypeGitLab, "https://gitlab.com/", "alice_gitlab", "alice_gitlab_client_id", clock(), clock(), nil, nil), // ID=1
-			sqlf.Sprintf(extSQL, 1, extsvc.TypeGitHub, "https://github.com/", "alice_github", "alice_github_client_id", clock(), clock(), nil, nil), // ID=2
-			sqlf.Sprintf(extSQL, 2, extsvc.TypeGitLab, "https://gitlab.com/", "bob_gitlab", "bob_gitlab_client_id", clock(), clock(), nil, nil),     // ID=3
-			sqlf.Sprintf(extSQL, 2, extsvc.TypeGitHub, "https://github.com/", "bob_github", "bob_github_client_id", clock(), clock(), clock(), nil), // ID=4
-			sqlf.Sprintf(extSQL, 1, extsvc.TypeGitHub, "https://github.com/", "expired", "expired_client_id", clock(), clock(), nil, clock()),       // ID=5
+			sqlf.Sprintf(extSQL, 1, extsvc.TypeGitLab, "https://gitlab.com/", "alice_gitlab", "alice_gitlab_client_id", nil, clock(), clock(), nil, nil),                      // ID=1
+			sqlf.Sprintf(extSQL, 1, extsvc.TypeGitHub, "https://github.com/", "alice_github", "alice_github_client_id", `{"access_token":"123"}`, clock(), clock(), nil, nil), // ID=2
+			sqlf.Sprintf(extSQL, 2, extsvc.TypeGitLab, "https://gitlab.com/", "bob_gitlab", "bob_gitlab_client_id", nil, clock(), clock(), nil, nil),                          // ID=3
+			sqlf.Sprintf(extSQL, 2, extsvc.TypeGitHub, "https://github.com/", "bob_github", "bob_github_client_id", nil, clock(), clock(), clock(), nil),                      // ID=4
+			sqlf.Sprintf(extSQL, 1, extsvc.TypeGitHub, "https://github.com/", "expired", "expired_client_id", nil, clock(), clock(), nil, clock()),                            // ID=5
 		}
 		for _, q := range qs {
 			if err := s.execute(ctx, q); err != nil {
@@ -1964,6 +1965,7 @@ VALUES
 				t.Fatal(err)
 			}
 
+			aliceGitHubAuthData := json.RawMessage(`{"access_token":"123"}`)
 			expAccounts := []*extsvc.Account{
 				{
 					ID:     1,
@@ -1985,6 +1987,9 @@ VALUES
 						ServiceID:   "https://github.com/",
 						AccountID:   "alice_github",
 						ClientID:    "alice_github_client_id",
+					},
+					AccountData: extsvc.AccountData{
+						AuthData: &aliceGitHubAuthData,
 					},
 					CreatedAt: clock(),
 					UpdatedAt: clock(),
