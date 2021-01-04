@@ -59,6 +59,39 @@ func updateSheet(ctx context.Context, sheetID string, resources Resources, opts 
 	newPageID := reportTime.Unix()
 	newPage := generatedSheetPagePrefix + reportTime.UTC().Format(time.RFC3339)
 
+	// query for pages (sheets) we might need to delete
+	if opts.PruneOlderThan > 0 {
+		oldestSheet := reportTime.Add(-opts.PruneOlderThan)
+		if opts.Verbose {
+			log.Printf("pruning pages older than %s\n", oldestSheet)
+		}
+		mainSheet, err := client.Spreadsheets.Get(sheetID).Fields(googleapi.Field("sheets")).Context(ctx).Do()
+		if err != nil {
+			return "", fmt.Errorf("unable to get sheet %q: %w", sheetID, err)
+		}
+		for _, page := range mainSheet.Sheets {
+			if page == nil || page.Properties == nil {
+				continue
+			}
+			if strings.HasPrefix(page.Properties.Title, generatedSheetPagePrefix) {
+				// parse date out of the sheet id, which we set to be unix timestamps (see above)
+				reportID := page.Properties.SheetId
+				reportCreatedDate := time.Unix(reportID, 0)
+				if reportCreatedDate.Before(oldestSheet) {
+					sheetOps = append(sheetOps, &sheets.Request{
+						DeleteSheet: &sheets.DeleteSheetRequest{
+							SheetId: reportID,
+						},
+					})
+					if opts.Verbose {
+						log.Printf("adding op to delete sheet '%d' (%s older than delete threshold)\n",
+							reportID, oldestSheet.Sub(reportCreatedDate))
+					}
+				}
+			}
+		}
+	}
+
 	// set up a new page (sheet) within the sheet if there are resources to report
 	if len(resources) > 0 {
 		if opts.Verbose {
@@ -93,39 +126,6 @@ func updateSheet(ctx context.Context, sheetID string, resources Resources, opts 
 				},
 				Fields: "userEnteredFormat.textFormat.bold",
 			}})
-	}
-
-	// query for pages (sheets) we might need to delete
-	if opts.PruneOlderThan > 0 {
-		oldestSheet := reportTime.Add(-opts.PruneOlderThan)
-		if opts.Verbose {
-			log.Printf("pruning pages older than %s\n", oldestSheet)
-		}
-		mainSheet, err := client.Spreadsheets.Get(sheetID).Fields(googleapi.Field("sheets")).Context(ctx).Do()
-		if err != nil {
-			return "", fmt.Errorf("unable to get sheet %q: %w", sheetID, err)
-		}
-		for _, page := range mainSheet.Sheets {
-			if page == nil || page.Properties == nil {
-				continue
-			}
-			if strings.HasPrefix(page.Properties.Title, generatedSheetPagePrefix) {
-				// parse date out of the sheet id, which we set to be unix timestamps (see above)
-				reportID := page.Properties.SheetId
-				reportCreatedDate := time.Unix(reportID, 0)
-				if reportCreatedDate.Before(oldestSheet) {
-					sheetOps = append(sheetOps, &sheets.Request{
-						DeleteSheet: &sheets.DeleteSheetRequest{
-							SheetId: reportID,
-						},
-					})
-					if opts.Verbose {
-						log.Printf("adding op to delete sheet '%d' (%s older than delete threshold)\n",
-							reportID, oldestSheet.Sub(reportCreatedDate))
-					}
-				}
-			}
-		}
 	}
 
 	// make the changes (if there are any)
