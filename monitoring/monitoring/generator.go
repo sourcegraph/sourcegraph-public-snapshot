@@ -15,11 +15,6 @@ import (
 )
 
 const (
-	alertSuffix        = "_alert_rules.yml"
-	alertSolutionsFile = "alert_solutions.md"
-)
-
-const (
 	localGrafanaURL         = "http://127.0.0.1:3370"
 	localGrafanaCredentials = "admin:admin"
 
@@ -54,7 +49,7 @@ func Generate(logger log15.Logger, opts GenerateOptions, containers ...*Containe
 
 		// Verify container configuration
 		if err := container.validate(); err != nil {
-			clog.Crit("Failed to validate container", "err", err)
+			clog.Crit("Failed to validate Container", "err", err)
 			return err
 		}
 
@@ -78,13 +73,15 @@ func Generate(logger log15.Logger, opts GenerateOptions, containers ...*Containe
 
 			// Reload specific dashboard
 			if opts.Reload {
-				clog.Debug("Reloading Grafana instance", "instance", localGrafanaURL)
+				crlog := clog.New("instance", localGrafanaURL)
+				crlog.Debug("Reloading Grafana instance")
 				client := sdk.NewClient(localGrafanaURL, localGrafanaCredentials, sdk.DefaultHTTPClient)
 				_, err := client.SetDashboard(context.Background(), *board, sdk.SetDashboardParams{Overwrite: true})
 				if err != nil {
-					clog.Crit("Could not reload Grafana instance", "error", err)
+					crlog.Crit("Could not reload Grafana instance", "error", err)
 					return err
 				}
+				crlog.Info("Reloaded Grafana instance")
 			}
 		}
 
@@ -101,7 +98,7 @@ func Generate(logger log15.Logger, opts GenerateOptions, containers ...*Containe
 				clog.Crit("Invalid rules", "err", err)
 				return err
 			}
-			fileName := strings.Replace(container.Name, "-", "_", -1) + alertSuffix
+			fileName := strings.Replace(container.Name, "-", "_", -1) + alertRulesFileSuffix
 			generatedAssets = append(generatedAssets, fileName)
 			err = ioutil.WriteFile(filepath.Join(opts.PrometheusDir, fileName), data, os.ModePerm)
 			if err != nil {
@@ -113,34 +110,44 @@ func Generate(logger log15.Logger, opts GenerateOptions, containers ...*Containe
 
 	// Reload all Prometheus rules
 	if opts.PrometheusDir != "" && opts.Reload {
+		rlog := logger.New("instance", localPrometheusURL)
 		// Reload all Prometheus rules
-		logger.Debug("Reloading Prometheus instance", "instance", localPrometheusURL)
+		rlog.Debug("Reloading Prometheus instance", "instance", localPrometheusURL)
 		resp, err := http.Post(localPrometheusURL+"/-/reload", "", nil)
 		if err != nil {
-			logger.Crit("Could not reload Prometheus", "error", err)
+			rlog.Crit("Could not reload Prometheus", "error", err)
 			return err
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != 200 {
-			logger.Crit("Unexpected status code while reloading Prometheus rules", "code", resp.StatusCode)
+			rlog.Crit("Unexpected status code while reloading Prometheus rules", "code", resp.StatusCode)
 			return err
 		}
+		rlog.Info("Reloaded Prometheus instance")
 	}
 
 	// Generate documentation
 	if opts.DocsDir != "" {
 		logger.Debug("Rendering docs")
-		solutions, err := renderDocumentation(containers)
+		docs, err := renderDocumentation(containers)
 		if err != nil {
-			logger.Crit("Unable to generate docs", "error", err)
+			logger.Crit("Failed to generate docs", "error", err)
 			return err
 		}
-		err = ioutil.WriteFile(filepath.Join(opts.DocsDir, alertSolutionsFile), solutions, os.ModePerm)
-		if err != nil {
-			logger.Crit("Could not write alert solutions to output", "error", err)
-			return err
+		for _, docOut := range []struct {
+			path string
+			data []byte
+		}{
+			{path: filepath.Join(opts.DocsDir, alertSolutionsFile), data: docs.alertSolutions.Bytes()},
+			{path: filepath.Join(opts.DocsDir, dashboardsDocsFile), data: docs.dashboards.Bytes()},
+		} {
+			err = ioutil.WriteFile(docOut.path, docOut.data, os.ModePerm)
+			if err != nil {
+				logger.Crit("Could not write docs to path", "path", docOut.path, "error", err)
+				return err
+			}
+			generatedAssets = append(generatedAssets, docOut.path)
 		}
-		generatedAssets = append(generatedAssets, alertSolutionsFile)
 	}
 
 	// Clean up dangling assets

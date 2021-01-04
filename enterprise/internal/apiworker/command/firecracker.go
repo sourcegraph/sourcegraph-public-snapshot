@@ -193,7 +193,13 @@ func firecrackerCopyfileFlags(dir string, imageKeys, scriptPaths []string, optio
 			tarfilePathInVM(imageKey),
 		))
 	}
-	copyfiles = append(copyfiles, scriptPaths...)
+
+	for _, scriptPath := range scriptPaths {
+		copyfiles = append(copyfiles, fmt.Sprintf(
+			"%s:%s", scriptPath, scriptPath,
+		))
+	}
+
 	if dir != "" {
 		copyfiles = append(copyfiles, fmt.Sprintf("%s:%s", dir, firecrackerContainerDir))
 	}

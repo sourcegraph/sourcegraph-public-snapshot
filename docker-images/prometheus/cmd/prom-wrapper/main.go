@@ -15,8 +15,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
-
 	amclient "github.com/prometheus/alertmanager/api/v2/client"
+
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 

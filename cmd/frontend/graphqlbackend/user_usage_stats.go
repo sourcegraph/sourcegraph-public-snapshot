@@ -3,13 +3,19 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"strings"
 	"time"
+
+	"github.com/inconshreveable/log15"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestatsdeprecated"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 )
@@ -88,6 +94,13 @@ func (*schemaResolver) LogEvent(ctx context.Context, args *struct {
 		}
 	}
 
+	if strings.HasPrefix(args.Event, "search.latencies.frontend.") {
+		if err := exportPrometheusSearchLatencies(args.Event, payload); err != nil {
+			log15.Error("export prometheus search latencies", "error", err)
+		}
+		return nil, nil // Future(slimsag): implement actual event logging for these events
+	}
+
 	actor := actor.FromContext(ctx)
 	return nil, usagestats.LogEvent(ctx, usagestats.Event{
 		EventName:    args.Event,
@@ -97,4 +110,42 @@ func (*schemaResolver) LogEvent(ctx context.Context, args *struct {
 		Source:       args.Source,
 		Argument:     payload,
 	})
+}
+
+var (
+	searchLatenciesFrontendCodeLoad = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "src_search_latency_frontend_code_load_seconds",
+		Help:    "Milliseconds the webapp frontend spends waiting for search result code snippets to load.",
+		Buckets: trace.UserLatencyBuckets,
+	}, nil)
+	searchLatenciesFrontendFirstResult = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "src_search_latency_frontend_first_result_seconds",
+		Help:    "Milliseconds the webapp frontend spends waiting for the first search result to load.",
+		Buckets: trace.UserLatencyBuckets,
+	}, []string{"type"})
+)
+
+func init() {
+	prometheus.MustRegister(searchLatenciesFrontendCodeLoad)
+	prometheus.MustRegister(searchLatenciesFrontendFirstResult)
+}
+
+// exportPrometheusSearchLatencies exports Prometheus search latency metrics given a GraphQL
+// LogEvent payload.
+func exportPrometheusSearchLatencies(event string, payload json.RawMessage) error {
+	var v struct {
+		DurationMS float64 `json:"durationMs"`
+	}
+	if err := json.Unmarshal([]byte(payload), &v); err != nil {
+		return err
+	}
+	fmt.Println(event, v.DurationMS)
+	if event == "search.latencies.frontend.code-load" {
+		searchLatenciesFrontendCodeLoad.WithLabelValues().Observe(v.DurationMS / 1000.0)
+	}
+	if strings.HasPrefix(event, "search.latencies.frontend.") && strings.HasSuffix(event, ".first-result") {
+		searchType := strings.TrimSuffix(strings.TrimPrefix(event, "search.latencies.frontend."), ".first-result")
+		searchLatenciesFrontendFirstResult.WithLabelValues(searchType).Observe(v.DurationMS / 1000.0)
+	}
+	return nil
 }

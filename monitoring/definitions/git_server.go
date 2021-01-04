@@ -33,13 +33,16 @@ func GitServer() *monitoring.Container {
 						},
 						{
 							Name:            "running_git_commands",
-							Description:     "running git commands (signals load)",
+							Description:     "running git commands",
 							Query:           "max(src_gitserver_exec_running)",
 							DataMayNotExist: true,
 							Warning:         monitoring.Alert().GreaterOrEqual(50).For(2 * time.Minute),
 							Critical:        monitoring.Alert().GreaterOrEqual(100).For(5 * time.Minute),
 							PanelOptions:    monitoring.PanelOptions().LegendFormat("running commands"),
 							Owner:           monitoring.ObservableOwnerCloud,
+							Interpretation: `
+								A high value signals load.
+							`,
 							PossibleSolutions: `
 								- **Check if the problem may be an intermittent and temporary peak** using the "Container monitoring" section at the bottom of the Git Server dashboard.
 								- **Single container deployments:** Consider upgrading to a [Docker Compose deployment](../install/docker-compose/migrate.md) which offers better scalability and resource isolation.
@@ -77,20 +80,23 @@ func GitServer() *monitoring.Container {
 					}, {
 						{
 							Name:            "echo_command_duration_test",
-							Description:     "echo command duration test",
+							Description:     "echo test command duration",
 							Query:           "max(src_gitserver_echo_duration_seconds)",
 							DataMayNotExist: true,
 							NoAlert:         true,
 							PanelOptions:    monitoring.PanelOptions().LegendFormat("running commands").Unit(monitoring.Seconds),
 							Owner:           monitoring.ObservableOwnerCloud,
-							PossibleSolutions: `
-								- **Query a graph for individual commands** using 'sum by (cmd)(src_gitserver_exec_running)' in Grafana ('/-/debug/grafana') to see if a command might be spiking in frequency.
-								- **Check if the problem may be an intermittent and temporary peak** using the "Container monitoring" section at the bottom of the Git Server dashboard.
-								- **Single container deployments:** Consider upgrading to a [Docker Compose deployment](../install/docker-compose/migrate.md) which offers better scalability and resource isolation.
+							Interpretation: `
+								A high value here likely indicates a problem, especially if consistently high.
+								You can query for individual commands using 'sum by (cmd)(src_gitserver_exec_running)' in Grafana ('/-/debug/grafana') to see if a specific Git Server command might be spiking in frequency.
+
+								If this value is consistently high, consider the following:
+
+								- **Single container deployments:** Upgrade to a [Docker Compose deployment](../install/docker-compose/migrate.md) which offers better scalability and resource isolation.
 								- **Kubernetes and Docker Compose:** Check that you are running a similar number of git server replicas and that their CPU/memory limits are allocated according to what is shown in the [Sourcegraph resource estimator](../install/resource_estimator.md).
 							`,
 						},
-						shared.FrontendInternalAPIErrorResponses("gitserver", monitoring.ObservableOwnerCloud),
+						shared.FrontendInternalAPIErrorResponses("gitserver", monitoring.ObservableOwnerCloud).Observable(),
 					},
 				},
 			},
@@ -99,12 +105,12 @@ func GitServer() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.ContainerCPUUsage("gitserver", monitoring.ObservableOwnerCloud),
-						shared.ContainerMemoryUsage("gitserver", monitoring.ObservableOwnerCloud),
+						shared.ContainerCPUUsage("gitserver", monitoring.ObservableOwnerCloud).Observable(),
+						shared.ContainerMemoryUsage("gitserver", monitoring.ObservableOwnerCloud).Observable(),
 					},
 					{
-						shared.ContainerRestarts("gitserver", monitoring.ObservableOwnerCloud),
-						shared.ContainerFsInodes("gitserver", monitoring.ObservableOwnerCloud),
+						shared.ContainerRestarts("gitserver", monitoring.ObservableOwnerCloud).Observable(),
+						shared.ContainerFsInodes("gitserver", monitoring.ObservableOwnerCloud).Observable(),
 					},
 					{
 						{
@@ -125,16 +131,16 @@ func GitServer() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.ProvisioningCPUUsageLongTerm("gitserver", monitoring.ObservableOwnerCloud),
-						// gitserver generally uses up all the memory it gets, so
-						// alerting on high memory usage is not very useful
-						shared.ProvisioningMemoryUsageLongTerm("gitserver", monitoring.ObservableOwnerCloud).WithNoAlerts(),
+						shared.ProvisioningCPUUsageLongTerm("gitserver", monitoring.ObservableOwnerCloud).Observable(),
+						shared.ProvisioningMemoryUsageLongTerm("gitserver", monitoring.ObservableOwnerCloud).
+							WithNoAlerts(`Git Server is expected to use up all the memory it is provided.`).
+							Observable(),
 					},
 					{
-						shared.ProvisioningCPUUsageShortTerm("gitserver", monitoring.ObservableOwnerCloud),
-						// gitserver generally uses up all the memory it gets, so
-						// alerting on high memory usage is not very useful
-						shared.ProvisioningMemoryUsageShortTerm("gitserver", monitoring.ObservableOwnerCloud).WithNoAlerts(),
+						shared.ProvisioningCPUUsageShortTerm("gitserver", monitoring.ObservableOwnerCloud).Observable(),
+						shared.ProvisioningMemoryUsageShortTerm("gitserver", monitoring.ObservableOwnerCloud).
+							WithNoAlerts(`Git Server is expected to use up all the memory it is provided.`).
+							Observable(),
 					},
 				},
 			},
@@ -143,8 +149,8 @@ func GitServer() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.GoGoroutines("gitserver", monitoring.ObservableOwnerCloud),
-						shared.GoGcDuration("gitserver", monitoring.ObservableOwnerCloud),
+						shared.GoGoroutines("gitserver", monitoring.ObservableOwnerCloud).Observable(),
+						shared.GoGcDuration("gitserver", monitoring.ObservableOwnerCloud).Observable(),
 					},
 				},
 			},
@@ -153,7 +159,7 @@ func GitServer() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.KubernetesPodsAvailable("gitserver", monitoring.ObservableOwnerCloud),
+						shared.KubernetesPodsAvailable("gitserver", monitoring.ObservableOwnerCloud).Observable(),
 					},
 				},
 			},

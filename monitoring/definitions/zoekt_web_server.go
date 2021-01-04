@@ -36,12 +36,12 @@ func ZoektWebServer() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.ContainerCPUUsage("zoekt-webserver", monitoring.ObservableOwnerSearch),
-						shared.ContainerMemoryUsage("zoekt-webserver", monitoring.ObservableOwnerSearch),
+						shared.ContainerCPUUsage("zoekt-webserver", monitoring.ObservableOwnerSearch).Observable(),
+						shared.ContainerMemoryUsage("zoekt-webserver", monitoring.ObservableOwnerSearch).Observable(),
 					},
 					{
-						shared.ContainerRestarts("zoekt-webserver", monitoring.ObservableOwnerSearch),
-						shared.ContainerFsInodes("zoekt-webserver", monitoring.ObservableOwnerSearch),
+						shared.ContainerRestarts("zoekt-webserver", monitoring.ObservableOwnerSearch).Observable(),
+						shared.ContainerFsInodes("zoekt-webserver", monitoring.ObservableOwnerSearch).Observable(),
 					},
 					{
 						{
@@ -62,12 +62,12 @@ func ZoektWebServer() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.ProvisioningCPUUsageLongTerm("zoekt-webserver", monitoring.ObservableOwnerSearch),
-						shared.ProvisioningMemoryUsageLongTerm("zoekt-webserver", monitoring.ObservableOwnerSearch),
+						shared.ProvisioningCPUUsageLongTerm("zoekt-webserver", monitoring.ObservableOwnerSearch).Observable(),
+						shared.ProvisioningMemoryUsageLongTerm("zoekt-webserver", monitoring.ObservableOwnerSearch).Observable(),
 					},
 					{
-						shared.ProvisioningCPUUsageShortTerm("zoekt-webserver", monitoring.ObservableOwnerSearch),
-						shared.ProvisioningMemoryUsageShortTerm("zoekt-webserver", monitoring.ObservableOwnerSearch),
+						shared.ProvisioningCPUUsageShortTerm("zoekt-webserver", monitoring.ObservableOwnerSearch).Observable(),
+						shared.ProvisioningMemoryUsageShortTerm("zoekt-webserver", monitoring.ObservableOwnerSearch).Observable(),
 					},
 				},
 			},

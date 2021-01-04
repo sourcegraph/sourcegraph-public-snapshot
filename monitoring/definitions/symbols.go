@@ -37,7 +37,7 @@ func Symbols() *monitoring.Container {
 						},
 					},
 					{
-						shared.FrontendInternalAPIErrorResponses("symbols", monitoring.ObservableOwnerCodeIntel),
+						shared.FrontendInternalAPIErrorResponses("symbols", monitoring.ObservableOwnerCodeIntel).Observable(),
 					},
 				},
 			},
@@ -46,12 +46,12 @@ func Symbols() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.ContainerCPUUsage("symbols", monitoring.ObservableOwnerCodeIntel),
-						shared.ContainerMemoryUsage("symbols", monitoring.ObservableOwnerCodeIntel),
+						shared.ContainerCPUUsage("symbols", monitoring.ObservableOwnerCodeIntel).Observable(),
+						shared.ContainerMemoryUsage("symbols", monitoring.ObservableOwnerCodeIntel).Observable(),
 					},
 					{
-						shared.ContainerRestarts("symbols", monitoring.ObservableOwnerCodeIntel),
-						shared.ContainerFsInodes("symbols", monitoring.ObservableOwnerCodeIntel),
+						shared.ContainerRestarts("symbols", monitoring.ObservableOwnerCodeIntel).Observable(),
+						shared.ContainerFsInodes("symbols", monitoring.ObservableOwnerCodeIntel).Observable(),
 					},
 				},
 			},
@@ -60,12 +60,12 @@ func Symbols() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.ProvisioningCPUUsageLongTerm("symbols", monitoring.ObservableOwnerCodeIntel),
-						shared.ProvisioningMemoryUsageLongTerm("symbols", monitoring.ObservableOwnerCodeIntel),
+						shared.ProvisioningCPUUsageLongTerm("symbols", monitoring.ObservableOwnerCodeIntel).Observable(),
+						shared.ProvisioningMemoryUsageLongTerm("symbols", monitoring.ObservableOwnerCodeIntel).Observable(),
 					},
 					{
-						shared.ProvisioningCPUUsageShortTerm("symbols", monitoring.ObservableOwnerCodeIntel),
-						shared.ProvisioningMemoryUsageShortTerm("symbols", monitoring.ObservableOwnerCodeIntel),
+						shared.ProvisioningCPUUsageShortTerm("symbols", monitoring.ObservableOwnerCodeIntel).Observable(),
+						shared.ProvisioningMemoryUsageShortTerm("symbols", monitoring.ObservableOwnerCodeIntel).Observable(),
 					},
 				},
 			},
@@ -74,8 +74,8 @@ func Symbols() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.GoGoroutines("symbols", monitoring.ObservableOwnerCodeIntel),
-						shared.GoGcDuration("symbols", monitoring.ObservableOwnerCodeIntel),
+						shared.GoGoroutines("symbols", monitoring.ObservableOwnerCodeIntel).Observable(),
+						shared.GoGcDuration("symbols", monitoring.ObservableOwnerCodeIntel).Observable(),
 					},
 				},
 			},
@@ -84,7 +84,7 @@ func Symbols() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.KubernetesPodsAvailable("symbols", monitoring.ObservableOwnerCodeIntel),
+						shared.KubernetesPodsAvailable("symbols", monitoring.ObservableOwnerCodeIntel).Observable(),
 					},
 				},
 			},

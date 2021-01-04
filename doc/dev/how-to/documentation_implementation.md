@@ -26,7 +26,7 @@ You can preview the documentation site at http://localhost:5080 when running Sou
 You can also run the docsite on its own with the following command:
 
 ```sh
-./dev/docsite.sh -config doc/docsite.json serve -http=localhost:5080
+yarn docsite:serve
 ```
 
 ## Linking to documentation in-product

@@ -38,6 +38,8 @@ import {
     SearchStreamingProps,
     resolveVersionContext,
 } from '../..'
+import { ErrorAlert } from '../../../components/alerts'
+import { eventLogger } from '../../../tracking/eventLogger'
 
 export interface StreamingSearchResultsProps
     extends SearchStreamingProps,
@@ -166,6 +168,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                     <FileMatch
                         key={'file:' + result.file.url}
                         location={location}
+                        eventLogger={eventLogger}
                         icon={result.lineMatches && result.lineMatches.length > 0 ? SourceRepositoryIcon : FileIcon}
                         result={result}
                         onSelect={logSearchResultClicked}
@@ -258,6 +261,15 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                     <div className="text-center my-4" data-testid="loading-container">
                         <LoadingSpinner className="icon-inline" />
                     </div>
+                )}
+
+                {results?.state === 'error' && (
+                    <ErrorAlert
+                        className="m-2"
+                        data-testid="search-results-list-error"
+                        error={results.error}
+                        history={history}
+                    />
                 )}
 
                 {results?.state === 'complete' && !results?.alert && results?.results.length === 0 && (

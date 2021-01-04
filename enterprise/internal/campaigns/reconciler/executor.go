@@ -89,7 +89,6 @@ func (e *executor) Run(ctx context.Context, plan *Plan) (err error) {
 		return err
 	}
 
-	upsertChangesetEvents := true
 	for _, op := range plan.Ops.ExecutionOrder() {
 		switch op {
 		case campaigns.ReconcilerOperationSync:
@@ -131,14 +130,12 @@ func (e *executor) Run(ctx context.Context, plan *Plan) (err error) {
 		}
 	}
 
-	if upsertChangesetEvents {
-		events := e.ch.Events()
-		state.SetDerivedState(ctx, e.ch, events)
+	events := e.ch.Events()
+	state.SetDerivedState(ctx, e.ch, events)
 
-		if err := e.tx.UpsertChangesetEvents(ctx, events...); err != nil {
-			log15.Error("UpsertChangesetEvents", "err", err)
-			return err
-		}
+	if err := e.tx.UpsertChangesetEvents(ctx, events...); err != nil {
+		log15.Error("UpsertChangesetEvents", "err", err)
+		return err
 	}
 
 	return e.tx.UpdateChangeset(ctx, e.ch)

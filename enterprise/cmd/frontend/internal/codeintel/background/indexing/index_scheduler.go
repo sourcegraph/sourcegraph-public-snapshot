@@ -4,13 +4,17 @@ import (
 	"context"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/inference"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
@@ -38,7 +42,7 @@ func NewIndexScheduler(
 	interval time.Duration,
 	operations *operations,
 ) goroutine.BackgroundRoutine {
-	return goroutine.NewPeriodicGoroutine(context.Background(), interval, &IndexScheduler{
+	scheduler := &IndexScheduler{
 		dbStore:                     dbStore,
 		gitserverClient:             gitserverClient,
 		batchSize:                   batchSize,
@@ -47,7 +51,9 @@ func NewIndexScheduler(
 		minimumSearchRatio:          minimumSearchRatio,
 		minimumPreciseCount:         minimumPreciseCount,
 		operations:                  operations,
-	})
+	}
+
+	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), interval, scheduler, operations.handleIndexScheduler)
 }
 
 func (s *IndexScheduler) Handle(ctx context.Context) error {
@@ -72,29 +78,47 @@ func (s *IndexScheduler) Handle(ctx context.Context) error {
 		indexableRepositoryIDs = append(indexableRepositoryIDs, indexableRepository.RepositoryID)
 	}
 
+	var queueErr error
 	for _, repositoryID := range deduplicateRepositoryIDs(configuredRepositoryIDs, indexableRepositoryIDs) {
 		if err := s.queueIndex(ctx, repositoryID); err != nil {
 			if isRepoNotExist(err) {
 				continue
 			}
 
-			return err
+			if queueErr != nil {
+				queueErr = err
+			} else {
+				queueErr = multierror.Append(queueErr, err)
+			}
 		}
+	}
+	if queueErr != nil {
+		return queueErr
 	}
 
 	return nil
 }
 
 func (s *IndexScheduler) HandleError(err error) {
-	s.operations.numErrors.Inc()
 	log15.Error("Failed to update indexable repositories", "err", err)
 }
 
 func (s *IndexScheduler) queueIndex(ctx context.Context, repositoryID int) (err error) {
+	// Enable tracing on the context and trace the operation
+	ctx = ot.WithShouldTrace(ctx, true)
+
+	ctx, traceLog, endObservation := s.operations.queueIndex.WithAndLogger(ctx, &err, observation.Args{
+		LogFields: []log.Field{
+			log.Int("repositoryID", repositoryID),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	commit, err := s.gitserverClient.Head(ctx, repositoryID)
 	if err != nil {
 		return errors.Wrap(err, "gitserver.Head")
 	}
+	traceLog(log.String("commit", commit))
 
 	isQueued, err := s.dbStore.IsQueued(ctx, repositoryID, commit)
 	if err != nil {
@@ -111,6 +135,7 @@ func (s *IndexScheduler) queueIndex(ctx context.Context, repositoryID int) (err 
 	if len(indexes) == 0 {
 		return nil
 	}
+	traceLog(log.Int("numIndexes", len(indexes)))
 
 	tx, err := s.dbStore.Transact(ctx)
 	if err != nil {

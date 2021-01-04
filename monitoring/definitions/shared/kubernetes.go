@@ -10,8 +10,8 @@ import (
 // Kubernetes monitoring overviews
 
 var (
-	KubernetesPodsAvailable sharedObservable = func(containerName string, owner monitoring.ObservableOwner) monitoring.Observable {
-		return monitoring.Observable{
+	KubernetesPodsAvailable sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
+		return Observable{
 			Name:              "pods_available_percentage",
 			Description:       "percentage pods available",
 			Query:             fmt.Sprintf(`sum by(app) (up{app=~".*%[1]s"}) / count by (app) (up{app=~".*%[1]s"}) * 100`, containerName),

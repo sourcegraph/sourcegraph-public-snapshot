@@ -21,6 +21,12 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
   history="[History]"
   location="[Location path=/code-monitoring]"
   setBreadcrumb={[Function]}
+  settingsCascade={
+    Object {
+      "final": Object {},
+      "subjects": Array [],
+    }
+  }
   toggleCodeMonitorEnabled={[Function]}
   useBreadcrumb={[Function]}
 >
@@ -176,6 +182,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                   "username": "alice",
                 },
                 "location": "[Location path=/code-monitoring]",
+                "showCodeMonitoringTestEmailButton": false,
                 "toggleCodeMonitorEnabled": [Function],
               }
             }
@@ -473,6 +480,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                       "username": "alice",
                     },
                     "location": "[Location path=/code-monitoring]",
+                    "showCodeMonitoringTestEmailButton": false,
                     "toggleCodeMonitorEnabled": [Function],
                   }
                 }
@@ -522,6 +530,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -633,6 +642,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -744,6 +754,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -855,6 +866,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -966,6 +978,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -1077,6 +1090,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -1188,6 +1202,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -1299,6 +1314,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -1410,6 +1426,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -1521,6 +1538,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -1637,6 +1655,12 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
   history="[History]"
   location="[Location path=/code-monitoring]"
   setBreadcrumb={[Function]}
+  settingsCascade={
+    Object {
+      "final": Object {},
+      "subjects": Array [],
+    }
+  }
   toggleCodeMonitorEnabled={[Function]}
   useBreadcrumb={[Function]}
 >
@@ -1792,6 +1816,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                   "username": "alice",
                 },
                 "location": "[Location path=/code-monitoring]",
+                "showCodeMonitoringTestEmailButton": false,
                 "toggleCodeMonitorEnabled": [Function],
               }
             }
@@ -1907,6 +1932,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                       "username": "alice",
                     },
                     "location": "[Location path=/code-monitoring]",
+                    "showCodeMonitoringTestEmailButton": false,
                     "toggleCodeMonitorEnabled": [Function],
                   }
                 }
@@ -1956,6 +1982,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -2067,6 +2094,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -2178,6 +2206,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -2294,6 +2323,12 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
   history="[History]"
   location="[Location path=/code-monitoring]"
   setBreadcrumb={[Function]}
+  settingsCascade={
+    Object {
+      "final": Object {},
+      "subjects": Array [],
+    }
+  }
   toggleCodeMonitorEnabled={[Function]}
   useBreadcrumb={[Function]}
 >
@@ -2449,6 +2484,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                   "username": "alice",
                 },
                 "location": "[Location path=/code-monitoring]",
+                "showCodeMonitoringTestEmailButton": false,
                 "toggleCodeMonitorEnabled": [Function],
               }
             }
@@ -2798,6 +2834,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                       "username": "alice",
                     },
                     "location": "[Location path=/code-monitoring]",
+                    "showCodeMonitoringTestEmailButton": false,
                     "toggleCodeMonitorEnabled": [Function],
                   }
                 }
@@ -2847,6 +2884,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -2958,6 +2996,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -3069,6 +3108,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -3180,6 +3220,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -3291,6 +3332,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -3402,6 +3444,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -3513,6 +3556,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -3624,6 +3668,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -3735,6 +3780,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -3846,6 +3892,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -3957,6 +4004,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
@@ -4068,6 +4116,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
                     toggleCodeMonitorEnabled={[Function]}
                   >
                     <div

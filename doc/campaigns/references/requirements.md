@@ -11,6 +11,8 @@ Campaigns is compatible with the following code hosts:
 * GitLab 12.7 and later (burndown charts are only supported with 13.2 and later)
 * Bitbucket Server 5.7 and later
 
+>NOTE: Currently, in code hosts configured [to use SSH to clone repositories via the `gitURLType` setting](../../admin/repo/auth.md), only site admins will be able to publish changesets. 
+
 ### Campaigns effect on code host rate limits
 
 For each changeset, Sourcegraph periodically makes API requests to its code host to update its status. Sourcegraph intelligently schedules these requests to avoid overwhelming the code host's rate limits. In environments with many open campaigns, this can result in outdated changesets as they await their turn in the update queue.

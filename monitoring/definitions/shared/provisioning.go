@@ -11,8 +11,8 @@ import (
 // Warn that instances might need more/less resources if usage is high on various time scales.
 
 var (
-	ProvisioningCPUUsageLongTerm sharedObservable = func(containerName string, owner monitoring.ObservableOwner) monitoring.Observable {
-		return monitoring.Observable{
+	ProvisioningCPUUsageLongTerm sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
+		return Observable{
 			Name:            "provisioning_container_cpu_usage_long_term",
 			Description:     "container cpu usage total (90th percentile over 1d) across all cores by instance",
 			Query:           fmt.Sprintf(`quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{%s}[1d])`, CadvisorNameMatcher(containerName)),
@@ -27,8 +27,8 @@ var (
 		}
 	}
 
-	ProvisioningMemoryUsageLongTerm sharedObservable = func(containerName string, owner monitoring.ObservableOwner) monitoring.Observable {
-		return monitoring.Observable{
+	ProvisioningMemoryUsageLongTerm sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
+		return Observable{
 			Name:            "provisioning_container_memory_usage_long_term",
 			Description:     "container memory usage (1d maximum) by instance",
 			Query:           fmt.Sprintf(`max_over_time(cadvisor_container_memory_usage_percentage_total{%s}[1d])`, CadvisorNameMatcher(containerName)),
@@ -43,8 +43,8 @@ var (
 		}
 	}
 
-	ProvisioningCPUUsageShortTerm sharedObservable = func(containerName string, owner monitoring.ObservableOwner) monitoring.Observable {
-		return monitoring.Observable{
+	ProvisioningCPUUsageShortTerm sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
+		return Observable{
 			Name:            "provisioning_container_cpu_usage_short_term",
 			Description:     "container cpu usage total (5m maximum) across all cores by instance",
 			Query:           fmt.Sprintf(`max_over_time(cadvisor_container_cpu_usage_percentage_total{%s}[5m])`, CadvisorNameMatcher(containerName)),
@@ -59,8 +59,8 @@ var (
 		}
 	}
 
-	ProvisioningMemoryUsageShortTerm sharedObservable = func(containerName string, owner monitoring.ObservableOwner) monitoring.Observable {
-		return monitoring.Observable{
+	ProvisioningMemoryUsageShortTerm sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
+		return Observable{
 			Name:            "provisioning_container_memory_usage_short_term",
 			Description:     "container memory usage (5m maximum) by instance",
 			Query:           fmt.Sprintf(`max_over_time(cadvisor_container_memory_usage_percentage_total{%s}[5m])`, CadvisorNameMatcher(containerName)),

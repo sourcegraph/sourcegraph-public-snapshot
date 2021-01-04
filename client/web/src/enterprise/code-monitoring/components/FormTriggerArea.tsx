@@ -193,7 +193,9 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                     <div className="d-flex justify-content-between align-items-center">
                         <div>
                             <div className="font-weight-bold">When there are new search results</div>
-                            <code className="text-muted test-existing-query">{query}</code>
+                            <code className="trigger-area__query-label text-break text-muted test-existing-query">
+                                {query}
+                            </code>
                         </div>
                         <div>
                             <button

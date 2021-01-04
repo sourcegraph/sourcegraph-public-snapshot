@@ -659,7 +659,9 @@ WHERE id IN (SELECT id FROM changeset_ids);
 func (s *Store) EnqueueChangesetsToClose(ctx context.Context, campaignID int64) error {
 	q := sqlf.Sprintf(
 		enqueueChangesetsToCloseFmtstr,
+		campaigns.ReconcilerStateQueued,
 		campaignID,
+		campaigns.ChangesetPublicationStatePublished,
 		campaigns.ChangesetExternalStateClosed,
 		campaigns.ChangesetExternalStateMerged,
 	)
@@ -671,19 +673,18 @@ const enqueueChangesetsToCloseFmtstr = `
 UPDATE
   changesets
 SET
-  reconciler_state = 'queued',
+  reconciler_state = %s,
   failure_message = NULL,
   num_failures = 0,
   closing = TRUE
 WHERE
-  owned_by_campaign_id = %d
-AND
+  owned_by_campaign_id = %d AND
+  publication_state = %s AND
   NOT (
     reconciler_state = 'completed'
-	AND
-	(external_state = %s OR external_state = %s)
+    AND
+    (external_state = %s OR external_state = %s)
   )
-;
 `
 
 func ScanFirstChangeset(rows *sql.Rows, err error) (*campaigns.Changeset, bool, error) {

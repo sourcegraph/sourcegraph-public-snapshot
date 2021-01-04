@@ -1,34 +1,41 @@
 package indexing
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
+	"fmt"
 
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type operations struct {
-	numErrors prometheus.Counter
+	handleIndexabilityUpdater *observation.Operation
+	handleIndexScheduler      *observation.Operation
+	queueRepository           *observation.Operation
+	queueIndex                *observation.Operation
 }
 
 var NewOperations = newOperations
 
 func newOperations(observationContext *observation.Context) *operations {
-	counter := func(name, help string) prometheus.Counter {
-		counter := prometheus.NewCounter(prometheus.CounterOpts{
-			Name: name,
-			Help: help,
-		})
-
-		observationContext.Registerer.MustRegister(counter)
-		return counter
-	}
-
-	numErrors := counter(
-		"src_codeintel_background_index_scheduler_errors_total",
-		"The number of errors that occur during a codeintel background index scheduling job.",
+	metrics := metrics.NewOperationMetrics(
+		observationContext.Registerer,
+		"codeintel_indexing",
+		metrics.WithLabels("op"),
+		metrics.WithCountHelp("Total number of method invocations."),
 	)
 
+	op := func(name string) *observation.Operation {
+		return observationContext.Operation(observation.Op{
+			Name:         fmt.Sprintf("codeintel.indexing.%s", name),
+			MetricLabels: []string{name},
+			Metrics:      metrics,
+		})
+	}
+
 	return &operations{
-		numErrors: numErrors,
+		handleIndexabilityUpdater: op("HandleIndexabilityUpdate"),
+		handleIndexScheduler:      op("HandleIndexSchedule"),
+		queueRepository:           op("QueueRepository"),
+		queueIndex:                op("QueueIndex"),
 	}
 }
