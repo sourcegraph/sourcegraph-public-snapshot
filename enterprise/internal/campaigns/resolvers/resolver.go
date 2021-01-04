@@ -623,30 +623,58 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, campaign
 		opts.Cursor = cursor
 	}
 
-	if args.PublicationState != nil {
-		publicationState := *args.PublicationState
-		if !publicationState.Valid() {
-			return opts, false, errors.New("changeset publication state not valid")
+	if args.State != nil {
+		state := *args.State
+		if !state.Valid() {
+			return opts, false, errors.New("changeset state not valid")
 		}
-		opts.PublicationState = &publicationState
+
+		switch state {
+		case campaigns.ChangesetStateOpen:
+			externalState := campaigns.ChangesetExternalStateOpen
+			publicationState := campaigns.ChangesetPublicationStatePublished
+			opts.ExternalState = &externalState
+			opts.ReconcilerStates = []campaigns.ReconcilerState{campaigns.ReconcilerStateCompleted}
+			opts.PublicationState = &publicationState
+		case campaigns.ChangesetStateDraft:
+			externalState := campaigns.ChangesetExternalStateDraft
+			publicationState := campaigns.ChangesetPublicationStatePublished
+			opts.ExternalState = &externalState
+			opts.ReconcilerStates = []campaigns.ReconcilerState{campaigns.ReconcilerStateCompleted}
+			opts.PublicationState = &publicationState
+		case campaigns.ChangesetStateClosed:
+			externalState := campaigns.ChangesetExternalStateClosed
+			publicationState := campaigns.ChangesetPublicationStatePublished
+			opts.ExternalState = &externalState
+			opts.ReconcilerStates = []campaigns.ReconcilerState{campaigns.ReconcilerStateCompleted}
+			opts.PublicationState = &publicationState
+		case campaigns.ChangesetStateMerged:
+			externalState := campaigns.ChangesetExternalStateMerged
+			publicationState := campaigns.ChangesetPublicationStatePublished
+			opts.ExternalState = &externalState
+			opts.ReconcilerStates = []campaigns.ReconcilerState{campaigns.ReconcilerStateCompleted}
+			opts.PublicationState = &publicationState
+		case campaigns.ChangesetStateDeleted:
+			externalState := campaigns.ChangesetExternalStateDeleted
+			publicationState := campaigns.ChangesetPublicationStatePublished
+			opts.ExternalState = &externalState
+			opts.ReconcilerStates = []campaigns.ReconcilerState{campaigns.ReconcilerStateCompleted}
+			opts.PublicationState = &publicationState
+		case campaigns.ChangesetStateUnpublished:
+			publicationState := campaigns.ChangesetPublicationStateUnpublished
+			opts.ReconcilerStates = []campaigns.ReconcilerState{campaigns.ReconcilerStateCompleted}
+			opts.PublicationState = &publicationState
+		case campaigns.ChangesetStateProcessing:
+			opts.ReconcilerStates = []campaigns.ReconcilerState{campaigns.ReconcilerStateQueued, campaigns.ReconcilerStateProcessing}
+		case campaigns.ChangesetStateRetrying:
+			opts.ReconcilerStates = []campaigns.ReconcilerState{campaigns.ReconcilerStateErrored}
+		case campaigns.ChangesetStateFailed:
+			opts.ReconcilerStates = []campaigns.ReconcilerState{campaigns.ReconcilerStateFailed}
+		default:
+			return opts, false, errors.Errorf("changeset state %q not supported in filtering", state)
+		}
 	}
 
-	if args.ReconcilerState != nil {
-		for _, reconcilerState := range *args.ReconcilerState {
-			if !reconcilerState.Valid() {
-				return opts, false, errors.New("changeset reconciler state not valid")
-			}
-		}
-		opts.ReconcilerStates = *args.ReconcilerState
-	}
-
-	if args.ExternalState != nil {
-		externalState := *args.ExternalState
-		if !externalState.Valid() {
-			return opts, false, errors.New("changeset external state not valid")
-		}
-		opts.ExternalState = &externalState
-	}
 	if args.ReviewState != nil {
 		state := *args.ReviewState
 		if !state.Valid() {

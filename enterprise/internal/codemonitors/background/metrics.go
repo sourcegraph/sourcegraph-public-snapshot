@@ -4,16 +4,17 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
+
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
 type codeMonitorsMetrics struct {
-	handleOperation *observation.Operation
-	resets          prometheus.Counter
-	resetFailures   prometheus.Counter
-	errors          prometheus.Counter
+	workerMetrics workerutil.WorkerMetrics
+	resets        prometheus.Counter
+	resetFailures prometheus.Counter
+	errors        prometheus.Counter
 }
 
 func newMetricsForTriggerQueries() codeMonitorsMetrics {
@@ -22,19 +23,6 @@ func newMetricsForTriggerQueries() codeMonitorsMetrics {
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
-
-	metrics := metrics.NewOperationMetrics(
-		observationContext.Registerer,
-		"code_monitors_trigger_queries",
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of queries run"),
-	)
-
-	handleOperation := observationContext.Operation(observation.Op{
-		Name:         "Query.Run",
-		MetricLabels: []string{"process"},
-		Metrics:      metrics,
-	})
 
 	resetFailures := prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "src_codemonitors_query_reset_failures_total",
@@ -55,10 +43,10 @@ func newMetricsForTriggerQueries() codeMonitorsMetrics {
 	observationContext.Registerer.MustRegister(errors)
 
 	return codeMonitorsMetrics{
-		handleOperation: handleOperation,
-		resets:          resets,
-		resetFailures:   resetFailures,
-		errors:          errors,
+		workerMetrics: workerutil.NewMetrics(observationContext, "code_monitors_trigger_queries", nil),
+		resets:        resets,
+		resetFailures: resetFailures,
+		errors:        errors,
 	}
 }
 
@@ -68,19 +56,6 @@ func newActionMetrics() codeMonitorsMetrics {
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
-
-	metrics := metrics.NewOperationMetrics(
-		observationContext.Registerer,
-		"code_monitors_actions",
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of actions run"),
-	)
-
-	handleOperation := observationContext.Operation(observation.Op{
-		Name:         "Action.Run",
-		MetricLabels: []string{"process"},
-		Metrics:      metrics,
-	})
 
 	resetFailures := prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "src_codemonitors_action_reset_failures_total",
@@ -101,9 +76,9 @@ func newActionMetrics() codeMonitorsMetrics {
 	observationContext.Registerer.MustRegister(errors)
 
 	return codeMonitorsMetrics{
-		handleOperation: handleOperation,
-		resets:          resets,
-		resetFailures:   resetFailures,
-		errors:          errors,
+		workerMetrics: workerutil.NewMetrics(observationContext, "code_monitors_actions", nil),
+		resets:        resets,
+		resetFailures: resetFailures,
+		errors:        errors,
 	}
 }

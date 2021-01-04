@@ -62,6 +62,9 @@ export interface SearchResultsListProps
     onShowMoreResultsClick?: () => void
     navbarSearchQueryState: QueryState
 
+    /* Called when the first result has fully loaded. */
+    onFirstResultLoad?: () => void
+
     // Expand all feature
     allExpanded: boolean
     onExpandAllResultsToggle: () => void
@@ -418,7 +421,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                         onShowMoreItems={this.onBottomHit(results.results.length)}
                                         onVisibilityChange={this.nextItemVisibilityChange}
                                         items={results.results
-                                            .map(result => this.renderResult(result))
+                                            .map((result, index) => this.renderResult(result, index === 0))
                                             .filter(isDefined)}
                                         containment={this.scrollableElementRef || undefined}
                                         onRef={this.nextVirtualListContainerElement}
@@ -492,13 +495,18 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
         )
     }
 
-    private renderResult(result: GQL.GenericSearchResultInterface | GQL.IFileMatch): JSX.Element | undefined {
+    private renderResult(
+        result: GQL.GenericSearchResultInterface | GQL.IFileMatch,
+        isFirst: boolean
+    ): JSX.Element | undefined {
         switch (result.__typename) {
             case 'FileMatch':
                 return (
                     <FileMatch
                         key={'file:' + result.file.url}
                         location={this.props.location}
+                        eventLogger={eventLogger}
+                        onFirstResultLoad={isFirst ? this.props.onFirstResultLoad : undefined}
                         icon={result.lineMatches && result.lineMatches.length > 0 ? SourceRepositoryIcon : FileIcon}
                         result={result}
                         onSelect={this.logEvent}

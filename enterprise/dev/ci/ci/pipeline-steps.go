@@ -97,7 +97,7 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 			bk.AutomaticRetry(5),
 			bk.Cmd("yarn --mutex network --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("yarn gulp generate"),
-			bk.Env("CHROMATIC", "1"),
+			bk.Env("MINIFY", "1"),
 			bk.Cmd(chromaticCommand))
 
 		// Shared tests
@@ -266,7 +266,7 @@ func triggerE2EandQA(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 	env["CANDIDATE_VERSION"] = c.candidateImageTag()
 	env["VAGRANT_SERVICE_ACCOUNT"] = "buildkite@sourcegraph-ci.iam.gserviceaccount.com"
 
-	// Test upgrades from mininum upgradeable Sourcegraph version
+	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
 	env["MINIMUM_UPGRADEABLE_VERSION"] = "3.22.0"
 
 	env["DOCKER_CLUSTER_IMAGES_TXT"] = clusterDockerImages(images.SourcegraphDockerImages)

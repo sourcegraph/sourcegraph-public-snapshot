@@ -321,15 +321,18 @@ export async function createChangesets(options: ChangesetsOptions): Promise<Crea
         console.log('Generating changes and publishing as pull requests')
     }
 
-    // Generate and push changes
+    // Generate and push changes. We abort here if a repo fails because it should be safe
+    // to re-run changesets, which force push changes to a PR branch.
     for (const change of options.changes) {
         const repository = `${change.owner}/${change.repo}`
         console.log(`${repository}: Preparing change for on '${change.base}' to '${change.head}'`)
         await createBranchWithChanges(octokit, { ...change, dryRun: options.dryRun })
     }
 
-    // Publish changes as pull requests only if all changes are successfully created
+    // Publish changes as pull requests only if all changes are successfully created. We
+    // continue on error for errors when publishing.
     const results: CreatedChangeset[] = []
+    let publishChangesFailed = false
     for (const change of options.changes) {
         const repository = `${change.owner}/${change.repo}`
         console.log(`${repository}: Preparing pull request for change from '${change.base}' to '${change.head}':
@@ -337,21 +340,30 @@ export async function createChangesets(options: ChangesetsOptions): Promise<Crea
 Title: ${change.title}
 Body: ${change.body || 'none'}`)
         let pullRequest: { url: string; number: number } = { url: '', number: -1 }
-        if (!options.dryRun) {
-            pullRequest = await createPR(octokit, change)
-        }
+        try {
+            if (!options.dryRun) {
+                pullRequest = await createPR(octokit, change)
+            }
 
-        results.push({
-            repository,
-            branch: change.base,
-            pullRequestURL: pullRequest.url,
-            pullRequestNumber: pullRequest.number,
-        })
+            results.push({
+                repository,
+                branch: change.base,
+                pullRequestURL: pullRequest.url,
+                pullRequestNumber: pullRequest.number,
+            })
+        } catch (error) {
+            publishChangesFailed = true
+            console.error(error)
+            console.error(`Failed to create pull request for change in ${repository}`, { change })
+        }
     }
 
     // Log results
     for (const result of results) {
         console.log(`${result.repository} (${result.branch}): created pull request ${result.pullRequestURL}`)
+    }
+    if (publishChangesFailed) {
+        throw new Error('Error occured applying some changes - please check log output')
     }
 
     return results

@@ -24,6 +24,10 @@
 ## Implementing Sourcegraph
 
 - [Developing the product documentation](documentation_implementation.md)
+- [Observability](../background-information/observability/index.md)
+  - [How to find monitoring](find_monitoring.md)
+  - [How to add monitoring](add_monitoring.md)
+  - [Set up local Sourcegraph monitoring development](monitoring_local_dev.md)
 
 ## Testing Sourcegraph
 

@@ -384,6 +384,8 @@ ${customMessage || ''}
 
 ### :warning: Additional changes required
 
+These steps must be completed before this PR can be merged, unless otherwise stated. Push any required changes directly to this PR branch.
+
 ${actionItems.map(item => `- [ ] ${item}`).join('\n')}
 
 cc @${config.captainGitHubUsername}
@@ -417,6 +419,11 @@ cc @${config.captainGitHubUsername}
                             `comby -in-place 'latestReleaseKubernetesBuild = newBuild(":[1]")' "latestReleaseKubernetesBuild = newBuild(\\"${release.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
                             `comby -in-place 'latestReleaseDockerServerImageBuild = newBuild(":[1]")' "latestReleaseDockerServerImageBuild = newBuild(\\"${release.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
                             `comby -in-place 'latestReleaseDockerComposeOrPureDocker = newBuild(":[1]")' "latestReleaseDockerComposeOrPureDocker = newBuild(\\"${release.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
+
+                            // Support previous release for now
+                            notPatchRelease
+                                ? `comby -in-place 'env["MINIMUM_UPGRADEABLE_VERSION"] = ":[1]"' 'env["MINIMUM_UPGRADEABLE_VERSION"] = "${previous.version}"' enterprise/dev/ci/ci/*.go`
+                                : 'echo "Skipping bumping of upgradable version for patch release"',
 
                             // Add a stub to add upgrade guide entries
                             notPatchRelease
@@ -558,21 +565,32 @@ Campaign: ${campaignURL}`,
         description: 'Run final tasks for the sourcegraph/sourcegraph release pull request',
         run: async config => {
             const { upcoming: release } = await releaseVersions(config)
+            let failed = false
 
             // Push final tags
             const branch = `${release.major}.${release.minor}`
             const tag = `v${release.version}`
             for (const repo of ['deploy-sourcegraph', 'deploy-sourcegraph-docker']) {
-                await createTag(
-                    await getAuthenticatedGitHubClient(),
-                    {
-                        owner: 'sourcegraph',
-                        repo,
-                        branch,
-                        tag,
-                    },
-                    config.dryRun.tags || false
-                )
+                try {
+                    await createTag(
+                        await getAuthenticatedGitHubClient(),
+                        {
+                            owner: 'sourcegraph',
+                            repo,
+                            branch,
+                            tag,
+                        },
+                        config.dryRun.tags || false
+                    )
+                } catch (error) {
+                    console.error(error)
+                    console.error(`Failed to create tag ${tag} on ${repo}@${branch}`)
+                    failed = true
+                }
+            }
+
+            if (failed) {
+                throw new Error('Error occured applying some changes - please check log output')
             }
         },
     },

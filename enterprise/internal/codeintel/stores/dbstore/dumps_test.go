@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commitgraph"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
@@ -71,57 +72,6 @@ func TestGetDumpByID(t *testing.T) {
 		t.Fatal("expected record to exist")
 	} else if diff := cmp.Diff(expected, dump); diff != "" {
 		t.Errorf("unexpected dump (-want +got):\n%s", diff)
-	}
-}
-
-func TestOldestDumpForRepository(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
-
-	// No dumps exist initially
-	if _, exists, err := store.OldestDumpForRepository(context.Background(), 1); err != nil {
-		t.Fatalf("unexpected error getting dump: %s", err)
-	} else if exists {
-		t.Fatal("unexpected record")
-	}
-
-	n := 20
-	baseTime := time.Unix(1587396557, 0).UTC()
-
-	var uploads []Upload
-	for i := 0; i < n; i++ {
-		uploads = append(uploads, Upload{
-			ID:             i,
-			Commit:         makeCommit(i),
-			RepositoryID:   50,
-			UploadedAt:     baseTime.Add(time.Minute * -time.Duration(i)),
-			State:          "completed",
-			RepositoryName: "n-50",
-			Indexer:        "lsif-go",
-		})
-	}
-	insertUploads(t, dbconn.Global, uploads...)
-
-	if dump, exists, err := store.OldestDumpForRepository(context.Background(), 50); err != nil {
-		t.Fatalf("unexpected error getting dump: %s", err)
-	} else if !exists {
-		t.Fatal("expected record to exist")
-	} else {
-		expectedDump := Dump{
-			ID:             n - 1,
-			Commit:         makeCommit(n - 1),
-			RepositoryID:   50,
-			UploadedAt:     baseTime.Add(time.Minute * -time.Duration(n-1)),
-			State:          "completed",
-			RepositoryName: "n-50",
-			Indexer:        "lsif-go",
-		}
-		if diff := cmp.Diff(expectedDump, dump); diff != "" {
-			t.Errorf("unexpected dump (-want +got):\n%s", diff)
-		}
 	}
 }
 

@@ -12,6 +12,7 @@ fi
 
 IMAGE=sourcegraph/grafana:dev
 CONTAINER=grafana
+PORT=3370
 
 # docker containers must access things via docker host on non-linux platforms
 CONFIG_SUB_DIR="all"
@@ -30,11 +31,6 @@ fi
 
 docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
 
-# Generate Grafana dashboards
-pushd monitoring >/dev/null || exit 1
-RELOAD=false go generate
-popd >/dev/null || exit 1
-
 # Log file location: since we log outside of the Docker container, we should
 # log somewhere that's _not_ ~/.sourcegraph-dev/data/grafana, since that gets
 # volume mounted into the container and therefore has its own ownership
@@ -48,8 +44,9 @@ mkdir -p "${GRAFANA_LOGS}"
 GRAFANA_LOG_FILE="${GRAFANA_LOGS}/grafana.log"
 
 # Quickly build image
+echo "Grafana: building ${IMAGE}..."
 IMAGE=${IMAGE} CACHE=true ./docker-images/grafana/build.sh >"${GRAFANA_LOG_FILE}" 2>&1 ||
-  (BUILD_EXIT_CODE=$? && echo "build failed; dumping log:" && cat "${GRAFANA_LOG_FILE}" && exit $BUILD_EXIT_CODE)
+  (BUILD_EXIT_CODE=$? && echo "Grafana build failed; dumping log:" && cat "${GRAFANA_LOG_FILE}" && exit $BUILD_EXIT_CODE)
 
 function finish() {
   GRAFANA_EXIT_CODE=$?
@@ -66,6 +63,8 @@ function finish() {
   return $GRAFANA_EXIT_CODE
 }
 
+echo "Grafana: serving on http://localhost:${PORT}"
+echo "Grafana: note that logs are piped to ${GRAFANA_LOG_FILE}"
 docker run --rm ${DOCKER_USER} \
   --name=${CONTAINER} \
   --cpus=1 \

@@ -1,7 +1,7 @@
 .trigger-area {
     &__query-input {
         display: flex;
-        align-items: center;
+        align-items: flex-start;
 
         &-preview-link {
             white-space: nowrap;
@@ -24,10 +24,18 @@
             }
         }
 
+        &-error-message {
+            font-size: 12px;
+        }
+
         &-field {
             border-top-right-radius: 0;
             border-bottom-right-radius: 0;
             padding-right: 8rem;
         }
+    }
+
+    &__query-label {
+        white-space: pre-wrap;
     }
 }

@@ -1,39 +1,41 @@
 import React from 'react'
-import { ChangesetFields } from '../../../../graphql-operations'
+import { ChangesetFields, ChangesetState } from '../../../../graphql-operations'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import SourcePullIcon from 'mdi-react/SourcePullIcon'
 import SourceMergeIcon from 'mdi-react/SourceMergeIcon'
 import DeleteIcon from 'mdi-react/DeleteIcon'
+import AutorenewIcon from 'mdi-react/AutorenewIcon'
 import ErrorIcon from 'mdi-react/ErrorIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import classNames from 'classnames'
-import { computeChangesetUIState, ChangesetUIState } from '../../utils'
 
 export interface ChangesetStatusCellProps {
     className?: string
-    changeset: Pick<ChangesetFields, 'publicationState' | 'externalState' | 'reconcilerState'>
+    changeset: Pick<ChangesetFields, 'state'>
 }
 
 export const ChangesetStatusCell: React.FunctionComponent<ChangesetStatusCellProps> = ({
     changeset,
     className = 'd-flex',
 }) => {
-    switch (computeChangesetUIState(changeset)) {
-        case ChangesetUIState.ERRORED:
+    switch (changeset.state) {
+        case ChangesetState.FAILED:
             return <ChangesetStatusError className={className} />
-        case ChangesetUIState.PROCESSING:
+        case ChangesetState.RETRYING:
+            return <ChangesetStatusRetrying className={className} />
+        case ChangesetState.PROCESSING:
             return <ChangesetStatusProcessing className={className} />
-        case ChangesetUIState.UNPUBLISHED:
+        case ChangesetState.UNPUBLISHED:
             return <ChangesetStatusUnpublished className={className} />
-        case ChangesetUIState.OPEN:
+        case ChangesetState.OPEN:
             return <ChangesetStatusOpen className={className} />
-        case ChangesetUIState.DRAFT:
+        case ChangesetState.DRAFT:
             return <ChangesetStatusDraft className={className} />
-        case ChangesetUIState.CLOSED:
+        case ChangesetState.CLOSED:
             return <ChangesetStatusClosed className={className} />
-        case ChangesetUIState.MERGED:
+        case ChangesetState.MERGED:
             return <ChangesetStatusMerged className={className} />
-        case ChangesetUIState.DELETED:
+        case ChangesetState.DELETED:
             return <ChangesetStatusDeleted className={className} />
     }
 }
@@ -98,11 +100,20 @@ export const ChangesetStatusDeleted: React.FunctionComponent<{ label?: JSX.Eleme
     </div>
 )
 export const ChangesetStatusError: React.FunctionComponent<{ label?: JSX.Element; className?: string }> = ({
-    label = <span className="text-danger">Error</span>,
+    label = <span className="text-danger">Failed</span>,
     className,
 }) => (
     <div className={classNames(iconClassNames, 'text-danger', className)}>
         <ErrorIcon />
+        {label}
+    </div>
+)
+export const ChangesetStatusRetrying: React.FunctionComponent<{ label?: JSX.Element; className?: string }> = ({
+    label = <span className="text-muted">Retrying</span>,
+    className,
+}) => (
+    <div className={classNames(iconClassNames, 'text-muted', className)}>
+        <AutorenewIcon />
         {label}
     </div>
 )

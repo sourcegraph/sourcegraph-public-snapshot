@@ -113,7 +113,7 @@ describe('Code monitoring', () => {
             await driver.page.waitForSelector('.is-invalid')
             await driver.page.waitForSelector('.test-trigger-error')
             expect(await driver.page.evaluate(() => document.querySelector('.test-trigger-error')?.textContent)).toBe(
-                'Code monitors require queries to specify a `patternType:` of literal, regexp, or structural.'
+                'Code monitors require queries to specify a `patternType:` of literal or regexp.'
             )
             await driver.page.type('.test-trigger-input', ' patterntype:literal')
             await driver.page.waitForSelector('.is-valid')

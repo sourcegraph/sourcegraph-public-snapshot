@@ -6,13 +6,21 @@ import (
 )
 
 func TestRunCommandEmptyCommand(t *testing.T) {
-	if err := runCommand(context.Background(), nil, command{Commands: []string{}}); err != ErrIllegalCommand {
+	command := command{
+		Command:   []string{},
+		Operation: makeTestOperation(),
+	}
+	if err := runCommand(context.Background(), command, nil); err != ErrIllegalCommand {
 		t.Errorf("unexpected error. want=%q have=%q", ErrIllegalCommand, err)
 	}
 }
 
 func TestRunCommandIllegalCommand(t *testing.T) {
-	if err := runCommand(context.Background(), nil, command{Commands: []string{"kill"}}); err != ErrIllegalCommand {
+	command := command{
+		Command:   []string{"kill"},
+		Operation: makeTestOperation(),
+	}
+	if err := runCommand(context.Background(), command, nil); err != ErrIllegalCommand {
 		t.Errorf("unexpected error. want=%q have=%q", ErrIllegalCommand, err)
 	}
 }

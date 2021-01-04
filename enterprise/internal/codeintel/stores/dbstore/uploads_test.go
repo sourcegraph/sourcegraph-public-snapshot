@@ -250,9 +250,11 @@ func TestGetUploads(t *testing.T) {
 		term           string
 		visibleAtTip   bool
 		uploadedBefore *time.Time
+		oldestFirst    bool
 		expectedIDs    []int
 	}{
 		{expectedIDs: []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}},
+		{oldestFirst: true, expectedIDs: []int{10, 9, 8, 7, 6, 5, 4, 3, 2, 1}},
 		{repositoryID: 50, expectedIDs: []int{1, 2, 3, 5, 7, 8, 9, 10}},
 		{state: "completed", expectedIDs: []int{7, 8, 10}},
 		{term: "sub", expectedIDs: []int{1, 3, 5, 6, 7, 10}}, // searches root
@@ -288,6 +290,7 @@ func TestGetUploads(t *testing.T) {
 					Term:           testCase.term,
 					VisibleAtTip:   testCase.visibleAtTip,
 					UploadedBefore: testCase.uploadedBefore,
+					OldestFirst:    testCase.oldestFirst,
 					Limit:          3,
 					Offset:         lo,
 				})

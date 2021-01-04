@@ -336,15 +336,15 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 2,
-                "scopes": "identifier"
+                "scopes": "metaRegexpCharacterClassRange"
               },
               {
                 "startIndex": 3,
-                "scopes": "metaRegexpCharacterClass"
+                "scopes": "metaRegexpCharacterClassRangeHyphen"
               },
               {
                 "startIndex": 4,
-                "scopes": "identifier"
+                "scopes": "metaRegexpCharacterClassRange"
               },
               {
                 "startIndex": 5,
@@ -368,15 +368,15 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 1,
-                "scopes": "identifier"
+                "scopes": "metaRegexpCharacterClassRange"
               },
               {
                 "startIndex": 2,
-                "scopes": "metaRegexpCharacterClass"
+                "scopes": "metaRegexpCharacterClassRangeHyphen"
               },
               {
                 "startIndex": 3,
-                "scopes": "identifier"
+                "scopes": "metaRegexpCharacterClassRange"
               },
               {
                 "startIndex": 4,
@@ -388,15 +388,15 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 6,
-                "scopes": "identifier"
+                "scopes": "metaRegexpCharacterClassRange"
               },
               {
                 "startIndex": 7,
-                "scopes": "metaRegexpCharacterClass"
+                "scopes": "metaRegexpCharacterClassRangeHyphen"
               },
               {
                 "startIndex": 8,
-                "scopes": "identifier"
+                "scopes": "metaRegexpCharacterClassRange"
               },
               {
                 "startIndex": 9,
@@ -408,15 +408,15 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 11,
-                "scopes": "identifier"
+                "scopes": "metaRegexpCharacterClassRange"
               },
               {
                 "startIndex": 12,
-                "scopes": "metaRegexpCharacterClass"
+                "scopes": "metaRegexpCharacterClassRangeHyphen"
               },
               {
                 "startIndex": 13,
-                "scopes": "identifier"
+                "scopes": "metaRegexpCharacterClassRange"
               },
               {
                 "startIndex": 14,
@@ -646,7 +646,7 @@ describe('getMonacoTokens()', () => {
     test('decorate escaped characters', () => {
         expect(
             getMonacoTokens(
-                toSuccess(scanSearchQuery('[\\--\\abc] \\|\\.|\\(\\)', false, SearchPatternType.regexp)),
+                toSuccess(scanSearchQuery('[--\\\\abc] \\|\\.|\\(\\)', false, SearchPatternType.regexp)),
                 true
             )
         ).toMatchInlineSnapshot(`
@@ -657,15 +657,23 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 1,
-                "scopes": "metaRegexpEscapedCharacter"
+                "scopes": "metaRegexpCharacterClassRange"
+              },
+              {
+                "startIndex": 2,
+                "scopes": "metaRegexpCharacterClassRangeHyphen"
               },
               {
                 "startIndex": 3,
-                "scopes": "metaRegexpCharacterClass"
+                "scopes": "metaRegexpCharacterClassRange"
               },
               {
-                "startIndex": 4,
+                "startIndex": 3,
                 "scopes": "metaRegexpEscapedCharacter"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "metaRegexpCharacterClassMember"
               },
               {
                 "startIndex": 6,

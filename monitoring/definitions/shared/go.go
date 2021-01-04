@@ -10,8 +10,8 @@ import (
 // Golang monitoring overviews
 
 var (
-	GoGoroutines sharedObservable = func(containerName string, owner monitoring.ObservableOwner) monitoring.Observable {
-		return monitoring.Observable{
+	GoGoroutines sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
+		return Observable{
 			Name:              "go_goroutines",
 			Description:       "maximum active goroutines",
 			Query:             fmt.Sprintf(`max by(instance) (go_goroutines{job=~".*%s"})`, containerName),
@@ -23,8 +23,8 @@ var (
 		}
 	}
 
-	GoGcDuration sharedObservable = func(containerName string, owner monitoring.ObservableOwner) monitoring.Observable {
-		return monitoring.Observable{
+	GoGcDuration sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
+		return Observable{
 			Name:              "go_gc_duration_seconds",
 			Description:       "maximum go garbage collection duration",
 			Query:             fmt.Sprintf(`max by(instance) (go_gc_duration_seconds{job=~".*%s"})`, containerName),
