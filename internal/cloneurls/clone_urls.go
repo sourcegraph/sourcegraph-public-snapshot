@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// reposourceCloneURLToRepoName maps a Git clone URL (format documented here:
+// ReposourceCloneURLToRepoName maps a Git clone URL (format documented here:
 // https://git-scm.com/docs/git-clone#_git_urls_a_id_urls_a) to the corresponding repo name if there
 // exists a code host configuration that matches the clone URL. Implicitly, it includes a code host
 // configuration for github.com, even if one is not explicitly specified. Returns the empty string and nil
