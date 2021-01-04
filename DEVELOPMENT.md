@@ -38,11 +38,3 @@ For example, suppose we have the the recommended versions.
 If a new feature is added to a new `3.91.6` release of src-cli and this change requires only features available in Sourcegraph `3.99`, then this feature should also be present in a new `3.85.8` release of src-cli. Because a Sourcegraph instance will automatically select the highest patch version, all non-breaking changes should increment only the patch version. 
 
 Note that if instead the recommended src-cli version for Sourcegraph `3.99` was `3.90.4` in the example above, there is no additional step required, and the new patch version of src-cli will be available to both Sourcegraph versions.
-
-## AppVeyor builds
-
-We use AppVeyor to test `src-cli` on Windows.
-
-Configure the AppVeyor builds by editing the `appveyor.yml` file and logging in to AppVeyor and changing the settings there.
-
-Login with your GitHub account, switch to the `sourcegraph` account and change the settings here: https://ci.appveyor.com/project/sourcegraph/src-cli/settings/environment
