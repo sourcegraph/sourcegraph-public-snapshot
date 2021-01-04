@@ -333,12 +333,15 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                         serviceType={repo.codeHost?.kind.toLowerCase() || ''}
                         isPrivate={repo.private}
                         prefixComponent={(<input
-                            className="mr-2"
+                            // this is truly cursed. for some reason the onClick/onChange callback for this element will
+                            // will allow setState and trigger a render, but not reevaluate the checked field, causing
+                            // the checkbox to not become checked until another checkbox is clicked. however if you set
+                            // state via the same function called via RepositoryNode.onClick the render correctly reads
+                            // the checked func, and shows the box as checked. in order to hack around this i've set
+                            // pointer-events: none so that we always use RepositoryNode.onClick. i am so sorry.
+                            className="mr-2 no-click"
                             type="checkbox"
                             checked={selectionState.repos.has(repo.name)}
-                            onClick={event => {
-                                onRepoClicked(repo)
-                            }}
                         />)}
                     />
                 </tr>
