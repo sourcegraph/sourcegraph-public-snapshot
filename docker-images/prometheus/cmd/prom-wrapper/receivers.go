@@ -88,7 +88,11 @@ func newRoutesAndReceivers(newAlerts []*schema.ObservabilityAlerts, externalURL 
 
 	// Parameterized alertmanager templates
 	var (
-		dashboardURLTemplate = strings.TrimSuffix(externalURL, "/") + `/-/debug/grafana/d/{{ .CommonLabels.service_name }}/{{ .CommonLabels.service_name }}`
+		// link to grafana dashboard, based on external URL configuration and alert labels
+		dashboardURLTemplate = strings.TrimSuffix(externalURL, "/") + `/-/debug/grafana/d/` +
+			`{{ .CommonLabels.service_name }}/{{ .CommonLabels.service_name }}` + // link to service dashboard
+			"?from=now-1h" + // link to a smaller time window for alert to be more visible
+			"&viewPanel={{ .CommonLabels.grafana_panel_id }}" // link directly to the relevant panel
 
 		// messages for different states
 		firingBodyTemplate          = `{{ .CommonLabels.level | title }} alert '{{ .CommonLabels.name }}' is firing for service '{{ .CommonLabels.service_name }}' ({{ .CommonLabels.owner }}).`

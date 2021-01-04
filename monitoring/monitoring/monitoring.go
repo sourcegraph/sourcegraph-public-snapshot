@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"strconv"
 	"strings"
 	"time"
 
@@ -29,7 +30,7 @@ type Container struct {
 }
 
 func (c *Container) validate() error {
-	if !isValidUID(c.Name) {
+	if !isValidGrafanaUID(c.Name) {
 		return fmt.Errorf("Name must be lowercase alphanumeric + dashes; found \"%s\"", c.Name)
 	}
 	if c.Title != strings.Title(c.Title) {
@@ -160,7 +161,7 @@ func (c *Container) renderDashboard() *sdk.Board {
 
 	baseY := 8
 	offsetY := baseY
-	for _, group := range c.Groups {
+	for groupIndex, group := range c.Groups {
 		// Non-general groups are shown as collapsible panels.
 		var rowPanel *sdk.Panel
 		if group.Title != "General" {
@@ -176,12 +177,13 @@ func (c *Container) renderDashboard() *sdk.Board {
 		}
 
 		// Generate a panel for displaying each observable in each row.
-		for _, row := range group.Rows {
+		for rowIndex, row := range group.Rows {
 			panelWidth := 24 / len(row)
 			offsetY++
 			for i, o := range row {
 				panelTitle := strings.ToTitle(string([]rune(o.Description)[0])) + string([]rune(o.Description)[1:])
 				panel := sdk.NewGraph(panelTitle)
+				panel.ID = observablePanelID(groupIndex, rowIndex, i)
 				setPanelSize(panel, panelWidth, 5)
 				setPanelPos(panel, i*panelWidth, offsetY)
 				panel.GraphPanel.Legend.Show = true
@@ -324,9 +326,9 @@ func (c *Container) alertDescription(o Observable, alert *ObservableAlertDefinit
 //
 func (c *Container) renderRules() (*promRulesFile, error) {
 	group := promGroup{Name: c.Name}
-	for _, g := range c.Groups {
-		for _, r := range g.Rows {
-			for _, o := range r {
+	for groupIndex, g := range c.Groups {
+		for rowIndex, r := range g.Rows {
+			for observableIndex, o := range r {
 				for level, a := range map[string]*ObservableAlertDefinition{
 					"warning":  o.Warning,
 					"critical": o.Critical,
@@ -371,6 +373,10 @@ func (c *Container) renderRules() (*promRulesFile, error) {
 							"service_name": c.Name,
 							"description":  description,
 							"owner":        string(o.Owner),
+
+							// in the corresponding dashboard, this label should indicate
+							// the panel associated with this rule
+							"grafana_panel_id": strconv.Itoa(int(observablePanelID(groupIndex, rowIndex, observableIndex))),
 						}, nil
 					}
 
