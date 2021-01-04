@@ -16,8 +16,8 @@ import {
     DeleteExternalServiceResult,
     ExternalServicesVariables,
     ExternalServicesResult,
-    SetCodeHostReposVariables,
-    SetCodeHostReposResult,
+    SetExternalServiceReposVariables,
+    SetExternalServiceReposResult,
 } from '../../graphql-operations'
 import { requestGraphQL } from '../../backend/graphql'
 
@@ -88,11 +88,11 @@ export function updateExternalService(
         .toPromise()
 }
 
-export function setCodeHostRepos(variables: SetCodeHostReposVariables): Promise<SetCodeHostReposResult['setCodeHostRepos']>{
-    return requestGraphQL<SetCodeHostReposResult, SetCodeHostReposVariables>(
+export function setExternalServiceRepos(variables: SetExternalServiceReposVariables): Promise<SetExternalServiceReposResult['setExternalServiceRepos']>{
+    return requestGraphQL<SetExternalServiceReposResult, SetExternalServiceReposVariables>(
         gql`
-            mutation SetCodeHostRepos($id: ID!, $allRepos: Boolean!, $repos: [String!]) {
-                setCodeHostRepos(id: $id, allRepos: $allRepos, repos: $repos) {
+            mutation SetExternalServiceRepos($id: ID!, $allRepos: Boolean!, $repos: [String!]) {
+                setExternalServiceRepos(id: $id, allRepos: $allRepos, repos: $repos) {
                     alwaysNil
                 }
             }
@@ -100,7 +100,7 @@ export function setCodeHostRepos(variables: SetCodeHostReposVariables): Promise<
         variables
     ).pipe(
         map(dataOrThrowErrors),
-        map(data => data.setCodeHostRepos)
+        map(data => data.setExternalServiceRepos)
     ).toPromise()
 }
 

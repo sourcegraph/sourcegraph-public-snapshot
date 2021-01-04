@@ -11,7 +11,9 @@ import {
     Maybe,
 } from '../../../graphql-operations';
 import {listAffiliatedRepositories} from '../../../site-admin/backend';
-import {queryExternalServices, setCodeHostRepos,} from '../../../components/externalServices/backend'
+import {queryExternalServices, setExternalServiceRepos,} from '../../../components/externalServices/backend'
+import {ErrorBar} from "recharts";
+import {ErrorAlert} from "../../../components/alerts";
 
 interface Props extends RouteComponentProps, TelemetryProps {
     userID: string
@@ -44,6 +46,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         repos: emptyRepos,
         loading: false,
         loaded: false,
+        error: "",
     }
     const selectionMap = new Map<string,Repo>();
     const emptyHosts: ExternalServicesResult['externalServices']['nodes']= []
@@ -110,6 +113,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             repos: emptyRepos,
             loading: true,
             loaded: false,
+            error: '',
         })
         const listReposSubscription = listAffiliatedRepositories({
             user: userID,
@@ -118,9 +122,20 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 repos: result.affiliatedRepositories.nodes,
                 loading: false,
                 loaded: true,
+                error: '',
             })
-            listReposSubscription.unsubscribe()
-        })
+                listReposSubscription.unsubscribe()
+            },
+            error => {
+                console.log(error)
+                setRepoState({
+                        repos: emptyRepos,
+                        loading: false,
+                        loaded: true,
+                        error: String(error)
+                    })
+            }
+        )
     }
 
     // if we've loaded repos we should then populate our selection from
@@ -177,7 +192,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 }
                 repos.push(repo.name)
             }
-            setCodeHostRepos({
+            setExternalServiceRepos({
                 id: host.id,
                 allRepos: selectionState.radio === 'all',
                 repos: selectionState.radio === 'selected' && repos || null,
@@ -375,6 +390,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                             selectionState.radio === 'selected' && (
                                 <div className="filtered-connection">
                                     {filterControls}
+                                    {repoState.error !== '' && <ErrorAlert error={repoState.error} history={history}/>}
                                     <table className="filtered-connection test-filtered-connection filtered-connection--noncompact table mt-3">
                                         {
                                             // if we're selecting repos, and the repos are still loading, display the loading animation
@@ -393,36 +409,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                                     </div>
                                 </div>
                             )}
-                    </div>
-                </li>
-                <li className="list-group-item p-4">
-                    <div>
-                        <h3>Other repositories</h3>
-                        <p className="text-muted">Public code on GitHub and GitLab</p>
-                        <Form>
-                            <div className="d-flex align-items-baseline flex-column">
-                                <div className="w-100 d-flex align-items-baseline">
-                                <input type="checkbox" onChange={event => {
-                                    setPublicRepos({
-                                        show: !publicRepos.show,
-                                        text: publicRepos.text,
-                                    })
-                                }}/><p className="ml-2">Sync specific public repos</p>
-                                </div>
-                                {publicRepos.show && (
-                                    <>
-                                    <textarea className="w-100 public-repos-textbox" onChange={event => {
-                                        console.log(event.target.value)
-                                        setPublicRepos({
-                                            show: publicRepos.show,
-                                            text: event.target.value,
-                                        })
-                                    }}/>
-                                    <p className="text-muted mt-2">Specify with complete URLs, one repository per line.</p>
-                                    </>
-                                )}
-                            </div>
-                        </Form>
                     </div>
                 </li>
             </ul>
