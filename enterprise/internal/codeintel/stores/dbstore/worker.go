@@ -6,6 +6,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
@@ -20,7 +21,7 @@ const StalledUploadMaxAge = time.Second * 5
 // "queued" on its next reset.
 const UploadMaxNumResets = 3
 
-var uploadWorkerStore = dbworkerstore.Options{
+var uploadWorkerStoreOptions = dbworkerstore.Options{
 	Name:              "precise_code_intel_upload_worker_store",
 	TableName:         "lsif_uploads",
 	ViewName:          "lsif_uploads_with_repository_name u",
@@ -31,8 +32,8 @@ var uploadWorkerStore = dbworkerstore.Options{
 	MaxNumResets:      UploadMaxNumResets,
 }
 
-func WorkerutilUploadStore(s basestore.ShareableStore) dbworkerstore.Store {
-	return dbworkerstore.New(s.Handle(), uploadWorkerStore)
+func WorkerutilUploadStore(s basestore.ShareableStore, observationContext *observation.Context) dbworkerstore.Store {
+	return dbworkerstore.NewWithMetrics(s.Handle(), uploadWorkerStoreOptions, observationContext)
 }
 
 // StalledIndexMaxAge is the maximum allowable duration between updating the state of an
@@ -46,7 +47,7 @@ const StalledIndexMaxAge = time.Second * 5
 // "queued" on its next reset.
 const IndexMaxNumResets = 3
 
-var indexWorkerStore = dbworkerstore.Options{
+var indexWorkerStoreOptions = dbworkerstore.Options{
 	Name:              "precise_code_intel_index_worker_store",
 	TableName:         "lsif_indexes",
 	ViewName:          "lsif_indexes_with_repository_name u",
@@ -57,6 +58,6 @@ var indexWorkerStore = dbworkerstore.Options{
 	MaxNumResets:      IndexMaxNumResets,
 }
 
-func WorkerutilIndexStore(s basestore.ShareableStore) dbworkerstore.Store {
-	return dbworkerstore.New(s.Handle(), indexWorkerStore)
+func WorkerutilIndexStore(s basestore.ShareableStore, observationContext *observation.Context) dbworkerstore.Store {
+	return dbworkerstore.NewWithMetrics(s.Handle(), indexWorkerStoreOptions, observationContext)
 }

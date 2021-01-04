@@ -7,6 +7,7 @@ type IndexConfiguration struct {
 
 type IndexJob struct {
 	Steps       []DockerStep
+	LocalSteps  []string
 	Root        string
 	Indexer     string
 	IndexerArgs []string

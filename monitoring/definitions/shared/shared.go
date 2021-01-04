@@ -28,7 +28,36 @@ import (
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
-type sharedObservable func(containerName string, owner monitoring.ObservableOwner) monitoring.Observable
+// Observable is a variant of normal Observables that offer convenience functions for
+// customizing shared observables.
+type Observable monitoring.Observable
+
+// Observable is a convenience adapter that casts this SharedObservable as an normal Observable.
+func (o Observable) Observable() monitoring.Observable { return monitoring.Observable(o) }
+
+// WithWarning overrides this Observable's warning-level alert with the given alert.
+func (o Observable) WithWarning(a *monitoring.ObservableAlertDefinition) Observable {
+	o.Warning = a
+	return o
+}
+
+// WithCritical overrides this Observable's critical-level alert with the given alert.
+func (o Observable) WithCritical(a *monitoring.ObservableAlertDefinition) Observable {
+	o.Critical = a
+	return o
+}
+
+// WithNoAlerts disables alerting on this Observable and sets the given interpretation instead.
+func (o Observable) WithNoAlerts(interpretation string) Observable {
+	o.Warning = nil
+	o.Critical = nil
+	o.NoAlert = true
+	o.PossibleSolutions = ""
+	o.Interpretation = interpretation
+	return o
+}
+
+type sharedObservable func(containerName string, owner monitoring.ObservableOwner) Observable
 
 // CadvisorNameMatcher generates Prometheus matchers that capture metrics that match the given container name
 // while excluding some irrelevant series

@@ -50,6 +50,7 @@ describe('CodeExcerpt', () => {
         className: 'file-match__item-code-excerpt',
         fetchHighlightedFileRangeLines: () =>
             of(HIGHLIGHTED_FILE_LINES_SIMPLE).pipe(map(ranges => ranges[0].slice(startLine, endLine))),
+        isFirst: false,
     }
 
     it('renders correct number of rows', () => {

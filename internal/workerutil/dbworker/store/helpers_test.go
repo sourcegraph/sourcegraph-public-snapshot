@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
@@ -22,7 +23,7 @@ func (r TestWorkRecord) RecordID() int {
 }
 
 func testStore(options Options) *store {
-	return newStore(basestore.NewHandleWithDB(dbconn.Global, sql.TxOptions{}), options)
+	return newStore(basestore.NewHandleWithDB(dbconn.Global, sql.TxOptions{}), options, &observation.TestContext)
 }
 
 type TestRecord struct {

@@ -86,6 +86,15 @@ type Op struct {
 	MetricLabels []string
 	// LogFields that apply for for every invocation of this operation.
 	LogFields []log.Field
+	// ErrorFilter returns false for any error that should be converted to nil
+	// for the purposes of metrics and tracing. If this field is not set then
+	// error values are unaltered.
+	//
+	// This is useful when, for example, a revision not found error is expected by
+	// a process interfacing with gitserver. Such an error should not be treated as
+	// an unexpected value in metrics and traces but should be handled higher up in
+	// the stack.
+	ErrorFilter func(err error) bool
 }
 
 // Operation combines the state of the parent context to create a new operation. This value
@@ -98,6 +107,7 @@ func (c *Context) Operation(args Op) *Operation {
 		kebabName:    kebabCase(args.Name),
 		metricLabels: args.MetricLabels,
 		logFields:    args.LogFields,
+		errorFilter:  args.ErrorFilter,
 	}
 }
 
@@ -109,6 +119,7 @@ type Operation struct {
 	kebabName    string
 	metricLabels []string
 	logFields    []log.Field
+	errorFilter  func(err error) bool
 }
 
 // FinishFunc is the shape of the function returned by With and should be invoked within
@@ -151,6 +162,7 @@ func (op *Operation) WithAndLogger(ctx context.Context, err *error, args Args) (
 		logFields := mergeLogFields(defaultFinishFields, finishArgs.LogFields)
 		metricLabels := mergeLabels(op.metricLabels, args.MetricLabels, finishArgs.MetricLabels)
 
+		err = op.applyErrorFilter(err)
 		op.emitErrorLogs(err, logFields)
 		op.emitMetrics(err, count, elapsed, metricLabels)
 		op.finishTrace(err, tr, logFields)
@@ -211,6 +223,16 @@ func (op *Operation) finishTrace(err *error, tr *trace.Trace, logFields []log.Fi
 
 	tr.LogFields(logFields...)
 	tr.Finish()
+}
+
+// applyErrorFilter returns nil if the given error does not pass the registered error filter.
+// The original value is returned otherwise.
+func (op *Operation) applyErrorFilter(err *error) *error {
+	if op.errorFilter != nil && err != nil && op.errorFilter(*err) {
+		return nil
+	}
+
+	return err
 }
 
 // mergeLabels flattens slices of slices of strings.

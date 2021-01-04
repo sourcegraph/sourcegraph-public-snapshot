@@ -2,14 +2,22 @@ package apiworker
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/command"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestHandle(t *testing.T) {
+	makeTempDir = func() (string, error) {
+		return "/tmp/codeintel", nil
+	}
+	os.Mkdir("/tmp/codeintel", os.ModePerm)
+
 	store := NewMockStore()
 	runner := NewMockRunner()
 
@@ -49,9 +57,10 @@ func TestHandle(t *testing.T) {
 	}
 
 	handler := &handler{
-		idSet:   newIDSet(),
-		options: Options{},
-		runnerFactory: func(dir string, logger *command.Logger, options command.Options) command.Runner {
+		idSet:      newIDSet(),
+		options:    Options{},
+		operations: command.MakeOperations(&observation.TestContext),
+		runnerFactory: func(dir string, logger *command.Logger, options command.Options, operations *command.Operations) command.Runner {
 			if dir == "" {
 				// The handler allocates a temporary runner to invoke the git commands,
 				// which do not have a specific directory to run in. We don't need to
@@ -81,12 +90,16 @@ func TestHandle(t *testing.T) {
 
 	var commands [][]string
 	for _, call := range runner.RunFunc.History() {
-		commands = append(commands, call.Arg1.Commands)
+		if call.Arg1.Image != "" {
+			commands = append(commands, []string{"/bin/sh", call.Arg1.ScriptPath})
+		} else {
+			commands = append(commands, call.Arg1.Command)
+		}
 	}
 
 	expectedCommands := [][]string{
-		{"go", "mod", "install"},
-		{"yarn", "install"},
+		{"/bin/sh", "/tmp/codeintel/42.0_linux@deadbeef.sh"},
+		{"/bin/sh", "/tmp/codeintel/42.1_linux@deadbeef.sh"},
 		{"src", "campaigns", "help"},
 		{"src", "campaigns", "apply", "-f", "spec.yaml"},
 	}

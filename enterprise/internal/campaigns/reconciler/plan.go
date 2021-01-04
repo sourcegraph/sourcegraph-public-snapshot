@@ -112,7 +112,7 @@ func DeterminePlan(previousSpec, currentSpec *campaigns.ChangesetSpec, ch *campa
 	// If it doesn't have a spec, it's an imported changeset and we can't do
 	// anything.
 	if currentSpec == nil {
-		if ch.Unsynced {
+		if ch.Unpublished() {
 			pl.SetOp(campaigns.ReconcilerOperationImport)
 		}
 		return pl, nil

@@ -6,9 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
-	"os"
 	"sync"
 	"time"
 
@@ -19,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"gopkg.in/yaml.v2"
 )
 
 func init() {
@@ -78,7 +75,7 @@ func newSubscribedSiteConfig(config schema.SiteConfiguration) *subscribedSiteCon
 
 type siteConfigDiff struct {
 	Type   string
-	Change Change
+	change Change
 }
 
 // Diff returns a set of changes to apply.
@@ -86,15 +83,15 @@ func (c *subscribedSiteConfig) Diff(other *subscribedSiteConfig) []siteConfigDif
 	var changes []siteConfigDiff
 
 	if !bytes.Equal(c.alertsSum[:], other.alertsSum[:]) || c.ExternalURL != other.ExternalURL {
-		changes = append(changes, siteConfigDiff{Type: "alerts", Change: changeReceivers})
+		changes = append(changes, siteConfigDiff{Type: "alerts", change: changeReceivers})
 	}
 
 	if !bytes.Equal(c.emailSum[:], other.emailSum[:]) {
-		changes = append(changes, siteConfigDiff{Type: "email", Change: changeSMTP})
+		changes = append(changes, siteConfigDiff{Type: "email", change: changeSMTP})
 	}
 
 	if !bytes.Equal(c.silencedAlertsSum[:], other.silencedAlertsSum[:]) {
-		changes = append(changes, siteConfigDiff{Type: "silenced-alerts", Change: changeSilences})
+		changes = append(changes, siteConfigDiff{Type: "silenced-alerts", change: changeSilences})
 	}
 
 	return changes
@@ -207,7 +204,7 @@ func (c *SiteConfigSubscriber) execDiffs(ctx context.Context, newConfig *subscri
 	defer c.mux.Unlock()
 
 	c.log.Debug("applying configuration diffs", "diffs", diffs)
-	c.problems = nil
+	c.problems = nil // reset problems
 
 	amConfig, err := amconfig.LoadFile(alertmanagerConfigPath)
 	if err != nil {
@@ -223,31 +220,20 @@ func (c *SiteConfigSubscriber) execDiffs(ctx context.Context, newConfig *subscri
 	}
 	for _, diff := range diffs {
 		c.log.Info(fmt.Sprintf("applying changes for %q diff", diff.Type))
-		result := diff.Change(ctx, c.log.New("change", diff.Type), changeContext, newConfig)
+		result := diff.change(ctx, c.log.New("change", diff.Type), changeContext, newConfig)
 		c.problems = append(c.problems, result.Problems...)
 	}
 
-	// persist configuration to disk
+	// attempt to apply changes
 	c.log.Debug("reloading with new configuration")
-	updateProblem := conf.NewSiteProblem("`observability`: failed to update Alertmanager configuration, please refer to Prometheus logs for more details")
-	amConfigData, err := yaml.Marshal(amConfig)
+	err = applyConfiguration(ctx, changeContext.AMConfig)
 	if err != nil {
-		c.log.Error("failed to generate Alertmanager configuration", "error", err)
-		c.problems = append(c.problems, updateProblem)
+		c.log.Error("failed to apply new configuration", "error", err)
+		c.problems = append(c.problems, conf.NewSiteProblem(fmt.Sprintf("`observability`: failed to update Alertmanager configuration (%s)", err.Error())))
 		return
-	}
-	if err := ioutil.WriteFile(alertmanagerConfigPath, amConfigData, os.ModePerm); err != nil {
-		c.log.Error("failed to write Alertmanager configuration", "error", err)
-		c.problems = append(c.problems, updateProblem)
-		return
-	}
-	if err := reloadAlertmanager(ctx); err != nil {
-		c.log.Error("failed to reload Alertmanager configuration", "error", err)
-		// this error can include useful information relevant to configuration, so include it in problem
-		c.problems = append(c.problems, conf.NewSiteProblem(fmt.Sprintf("`observability`: failed to update Alertmanager configuration: %v", err)))
 	}
 
-	// update state
+	// update state if changes applied
 	c.config = newConfig
 	c.log.Debug("configuration diffs applied", "diffs", diffs, "problems", c.problems)
 }

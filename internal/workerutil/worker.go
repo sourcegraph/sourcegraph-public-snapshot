@@ -45,10 +45,6 @@ type WorkerOptions struct {
 	Metrics WorkerMetrics
 }
 
-type WorkerMetrics struct {
-	HandleOperation *observation.Operation
-}
-
 func NewWorker(ctx context.Context, store Store, handler Handler, options WorkerOptions) *Worker {
 	return newWorker(ctx, store, handler, options, glock.NewRealClock())
 }
@@ -161,6 +157,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 		return false, nil
 	}
 
+	w.options.Metrics.numJobs.Inc()
 	log15.Debug("Dequeued record for processing", "name", w.options.Name, "id", record.RecordID())
 
 	if hook, ok := w.handler.(WithHooks); ok {
@@ -175,6 +172,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 				hook.PostHandle(w.ctx, record)
 			}
 
+			w.options.Metrics.numJobs.Dec()
 			w.handlerSemaphore <- struct{}{}
 			w.wg.Done()
 		}()
@@ -193,10 +191,8 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 func (w *Worker) handle(tx Store, record Record) (err error) {
 	// Enable tracing on the context and trace the remainder of the operation including the
 	// transaction commit call in the following deferred function.
-	ctx, endOperation := w.options.Metrics.HandleOperation.With(ot.WithShouldTrace(w.ctx, true), &err, observation.Args{})
-	defer func() {
-		endOperation(1, observation.Args{})
-	}()
+	ctx, endOperation := w.options.Metrics.operations.handle.With(ot.WithShouldTrace(w.ctx, true), &err, observation.Args{})
+	defer endOperation(1, observation.Args{})
 
 	defer func() {
 		// Notice that we will commit the transaction even on error from the handler

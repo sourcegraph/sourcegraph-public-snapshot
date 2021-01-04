@@ -102,20 +102,20 @@ func Postgres() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.ProvisioningCPUUsageLongTerm(dbSourcegraph, monitoring.ObservableOwnerCloud),
-						shared.ProvisioningMemoryUsageLongTerm(dbSourcegraph, monitoring.ObservableOwnerCloud),
+						shared.ProvisioningCPUUsageLongTerm(dbSourcegraph, monitoring.ObservableOwnerCloud).Observable(),
+						shared.ProvisioningMemoryUsageLongTerm(dbSourcegraph, monitoring.ObservableOwnerCloud).Observable(),
 					},
 					{
-						shared.ProvisioningCPUUsageShortTerm(dbSourcegraph, monitoring.ObservableOwnerCloud),
-						shared.ProvisioningMemoryUsageShortTerm(dbSourcegraph, monitoring.ObservableOwnerCloud),
+						shared.ProvisioningCPUUsageShortTerm(dbSourcegraph, monitoring.ObservableOwnerCloud).Observable(),
+						shared.ProvisioningMemoryUsageShortTerm(dbSourcegraph, monitoring.ObservableOwnerCloud).Observable(),
 					},
 					{
-						shared.ProvisioningCPUUsageLongTerm(dbCodeIntel, monitoring.ObservableOwnerCodeIntel),
-						shared.ProvisioningMemoryUsageLongTerm(dbCodeIntel, monitoring.ObservableOwnerCodeIntel),
+						shared.ProvisioningCPUUsageLongTerm(dbCodeIntel, monitoring.ObservableOwnerCodeIntel).Observable(),
+						shared.ProvisioningMemoryUsageLongTerm(dbCodeIntel, monitoring.ObservableOwnerCodeIntel).Observable(),
 					},
 					{
-						shared.ProvisioningCPUUsageShortTerm(dbCodeIntel, monitoring.ObservableOwnerCodeIntel),
-						shared.ProvisioningMemoryUsageShortTerm(dbCodeIntel, monitoring.ObservableOwnerCodeIntel),
+						shared.ProvisioningCPUUsageShortTerm(dbCodeIntel, monitoring.ObservableOwnerCodeIntel).Observable(),
+						shared.ProvisioningMemoryUsageShortTerm(dbCodeIntel, monitoring.ObservableOwnerCodeIntel).Observable(),
 					},
 				},
 			},

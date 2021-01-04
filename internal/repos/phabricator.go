@@ -183,11 +183,11 @@ func (s *PhabricatorSource) client(ctx context.Context) (*phabricator.Client, er
 }
 
 // RunPhabricatorRepositorySyncWorker runs the worker that syncs repositories from Phabricator to Sourcegraph
-func RunPhabricatorRepositorySyncWorker(ctx context.Context, s Store) {
+func RunPhabricatorRepositorySyncWorker(ctx context.Context, s *Store) {
 	cf := httpcli.NewExternalHTTPClientFactory()
 
 	for {
-		phabs, err := s.ExternalServiceStore().List(ctx, db.ExternalServicesListOptions{
+		phabs, err := s.ExternalServiceStore.List(ctx, db.ExternalServicesListOptions{
 			Kinds: []string{extsvc.KindPhabricator},
 		})
 		if err != nil {

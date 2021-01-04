@@ -207,6 +207,7 @@ func TestAddExternalService(t *testing.T) {
 	db.Mocks.ExternalServices.Create = func(ctx context.Context, confGet func() *conf.Unified, externalService *types.ExternalService) error {
 		return nil
 	}
+
 	t.Cleanup(func() {
 		db.Mocks.Users = db.MockUsers{}
 		db.Mocks.ExternalServices = db.MockExternalServices{}
@@ -608,6 +609,9 @@ func TestExternalServices(t *testing.T) {
 
 		return 2, nil
 	}
+	db.Mocks.ExternalServices.GetLastSyncError = func(id int64) (string, error) {
+		return "Oops", nil
+	}
 	defer func() {
 		db.Mocks.Users = db.MockUsers{}
 		db.Mocks.ExternalServices = db.MockExternalServices{}
@@ -650,6 +654,27 @@ func TestExternalServices(t *testing.T) {
 			{
 				"externalServices": {
 					"nodes": [{"id":"RXh0ZXJuYWxTZXJ2aWNlOjE="}]
+				}
+			}
+		`,
+		},
+		// LastSyncError included
+		{
+			Schema: mustParseGraphQLSchema(t),
+			Query: `
+			{
+				externalServices(namespace: "VXNlcjoy") {
+					nodes {
+						id
+						lastSyncError
+					}
+				}
+			}
+		`,
+			ExpectedResult: `
+			{
+				"externalServices": {
+					"nodes": [{"id":"RXh0ZXJuYWxTZXJ2aWNlOjE=","lastSyncError":"Oops"}]
 				}
 			}
 		`,
