@@ -1,6 +1,7 @@
 package graphqlbackend
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"github.com/graph-gophers/graphql-go/gqltesting"
@@ -10,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"io/ioutil"
 	"net/http"
 	"reflect"
 	"testing"
@@ -66,6 +68,7 @@ func TestSetExternalServiceRepos(t *testing.T) {
 		Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
 			return &http.Response{
 				StatusCode: http.StatusOK,
+				Body:       ioutil.NopCloser(bytes.NewReader([]byte{})),
 			}, nil
 		}),
 	}
