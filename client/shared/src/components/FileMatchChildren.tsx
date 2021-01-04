@@ -15,10 +15,17 @@ import { isErrorLike } from '../util/errors'
 import { ISymbol, IHighlightLineRange } from '../graphql/schema'
 import { map } from 'rxjs/operators'
 
+export interface EventLogger {
+    log: (eventLabel: string, eventProperties?: any) => void
+}
+
 interface FileMatchProps extends SettingsCascadeProps, ThemeProps {
     location: H.Location
+    eventLogger?: EventLogger
     items: MatchItem[]
     result: FileLineMatch
+    /* Called when the first result has fully loaded. */
+    onFirstResultLoad?: () => void
     /**
      * Whether or not to show all matches for this file, or only a subset.
      */
@@ -75,10 +82,11 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
         props.settingsCascade.final.experimentalFeatures &&
         props.settingsCascade.final.experimentalFeatures.enableFastResultLoading
 
-    const { result, isLightTheme, fetchHighlightedFileLineRanges } = props
+    const { result, isLightTheme, fetchHighlightedFileLineRanges, eventLogger, onFirstResultLoad } = props
     const fetchHighlightedFileRangeLines = React.useCallback(
-        (startLine, endLine) =>
-            fetchHighlightedFileLineRanges(
+        (isFirst, startLine, endLine) => {
+            const startTime = Date.now()
+            return fetchHighlightedFileLineRanges(
                 {
                     repoName: result.repository.name,
                     commitID: result.file.commit.oid,
@@ -96,13 +104,28 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                 },
                 false
             ).pipe(
-                map(lines =>
-                    optimizeHighlighting
+                map(lines => {
+                    if (isFirst && onFirstResultLoad) {
+                        onFirstResultLoad()
+                    }
+                    if (eventLogger) {
+                        eventLogger.log('search.latencies.frontend.code-load', { durationMs: Date.now() - startTime })
+                    }
+                    return optimizeHighlighting
                         ? lines[grouped.findIndex(group => group.startLine === startLine && group.endLine === endLine)]
                         : lines[0].slice(startLine, endLine)
-                )
-            ),
-        [result, isLightTheme, fetchHighlightedFileLineRanges, grouped, optimizeHighlighting]
+                })
+            )
+        },
+        [
+            result,
+            isLightTheme,
+            fetchHighlightedFileLineRanges,
+            grouped,
+            optimizeHighlighting,
+            eventLogger,
+            onFirstResultLoad,
+        ]
     )
 
     if (NO_SEARCH_HIGHLIGHTING) {
@@ -127,7 +150,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                     </code>
                 </Link>
             ))}
-            {grouped.map(group => (
+            {grouped.map((group, index) => (
                 <div
                     key={`linematch:${result.file.url}${group.position.line}:${group.position.character}`}
                     className="file-match-children__item-code-wrapper test-file-match-children-item-wrapper"
@@ -149,6 +172,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                             className="file-match-children__item-code-excerpt"
                             isLightTheme={isLightTheme}
                             fetchHighlightedFileRangeLines={fetchHighlightedFileRangeLines}
+                            isFirst={index === 0}
                         />
                     </Link>
 

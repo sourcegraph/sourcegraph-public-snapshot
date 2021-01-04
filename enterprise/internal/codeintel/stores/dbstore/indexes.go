@@ -29,11 +29,12 @@ type Index struct {
 	NumResets      int                            `json:"numResets"`
 	NumFailures    int                            `json:"numFailures"`
 	RepositoryID   int                            `json:"repositoryId"`
+	LocalSteps     []string                       `json:"local_steps"`
 	RepositoryName string                         `json:"repositoryName"`
 	DockerSteps    []DockerStep                   `json:"docker_steps"`
 	Root           string                         `json:"root"`
 	Indexer        string                         `json:"indexer"`
-	IndexerArgs    []string                       `json:"indexer_args"`
+	IndexerArgs    []string                       `json:"indexer_args"` // TODO - convert this to `IndexCommand string`
 	Outfile        string                         `json:"outfile"`
 	ExecutionLogs  []workerutil.ExecutionLogEntry `json:"execution_logs"`
 	Rank           *int                           `json:"placeInQueue"`
@@ -75,6 +76,7 @@ func scanIndexes(rows *sql.Rows, queryErr error) (_ []Index, err error) {
 			&index.Outfile,
 			pq.Array(&executionLogs),
 			&index.Rank,
+			pq.Array(&index.LocalSteps),
 		); err != nil {
 			return nil, err
 		}
@@ -137,7 +139,8 @@ func (s *Store) GetIndexByID(ctx context.Context, id int) (_ Index, _ bool, err 
 			u.indexer_args,
 			u.outfile,
 			u.execution_logs,
-			s.rank
+			s.rank,
+			u.local_steps
 		FROM lsif_indexes_with_repository_name u
 		LEFT JOIN (
 			SELECT r.id, RANK() OVER (ORDER BY COALESCE(r.process_after, r.queued_at)) as rank
@@ -220,7 +223,8 @@ func (s *Store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Ind
 				u.indexer_args,
 				u.outfile,
 				u.execution_logs,
-				s.rank
+				s.rank,
+				u.local_steps
 			FROM lsif_indexes_with_repository_name u
 			LEFT JOIN (
 				SELECT r.id, RANK() OVER (ORDER BY COALESCE(r.process_after, r.queued_at)) as rank
@@ -287,6 +291,9 @@ func (s *Store) InsertIndex(ctx context.Context, index Index) (_ int, err error)
 	if index.IndexerArgs == nil {
 		index.IndexerArgs = []string{}
 	}
+	if index.LocalSteps == nil {
+		index.LocalSteps = []string{}
+	}
 
 	id, _, err := basestore.ScanFirstInt(s.Store.Query(
 		ctx,
@@ -296,18 +303,20 @@ func (s *Store) InsertIndex(ctx context.Context, index Index) (_ int, err error)
 				commit,
 				repository_id,
 				docker_steps,
+				local_steps,
 				root,
 				indexer,
 				indexer_args,
 				outfile,
 				execution_logs
-			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 			RETURNING id
 		`,
 			index.State,
 			index.Commit,
 			index.RepositoryID,
 			pq.Array(index.DockerSteps),
+			pq.Array(index.LocalSteps),
 			index.Root,
 			index.Indexer,
 			pq.Array(index.IndexerArgs),
@@ -339,6 +348,7 @@ var indexColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf(`u.outfile`),
 	sqlf.Sprintf(`u.execution_logs`),
 	sqlf.Sprintf("NULL"),
+	sqlf.Sprintf(`u.local_steps`),
 }
 
 var IndexColumnsWithNullRank = indexColumnsWithNullRank

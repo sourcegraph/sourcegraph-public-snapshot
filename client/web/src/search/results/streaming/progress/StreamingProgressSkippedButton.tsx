@@ -3,13 +3,13 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
-import { defaultProgress, StreamingProgressProps } from './StreamingProgress'
+import { StreamingProgressProps } from './StreamingProgress'
 import { StreamingProgressSkippedPopover } from './StreamingProgressSkippedPopover'
 
-export const StreamingProgressSkippedButton: React.FunctionComponent<StreamingProgressProps> = ({
-    progress = defaultProgress,
-    onSearchAgain,
-}) => {
+export const StreamingProgressSkippedButton: React.FunctionComponent<Pick<
+    StreamingProgressProps,
+    'progress' | 'onSearchAgain'
+>> = ({ progress, onSearchAgain }) => {
     const [isOpen, setIsOpen] = useState(false)
     const toggleOpen = useCallback(() => setIsOpen(previous => !previous), [setIsOpen])
 

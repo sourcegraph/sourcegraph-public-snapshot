@@ -6,7 +6,7 @@ const TerserPlugin = require('terser-webpack-plugin')
 
 const monacoEditorPaths = [path.resolve(__dirname, '..', 'node_modules', 'monaco-editor')]
 
-const isChromatic = !!process.env.CHROMATIC
+const shouldMinify = !!process.env.MINIFY
 
 const config = {
   stories: ['../client/**/*.story.tsx'],
@@ -18,15 +18,15 @@ const config = {
    */
   webpackFinal: config => {
     // Include sourcemaps
-    config.mode = isChromatic ? 'production' : 'development'
-    config.devtool = isChromatic ? 'source-map' : 'cheap-module-eval-source-map'
+    config.mode = shouldMinify ? 'production' : 'development'
+    config.devtool = shouldMinify ? 'source-map' : 'cheap-module-eval-source-map'
     const definePlugin = config.plugins.find(plugin => plugin instanceof DefinePlugin)
     // @ts-ignore
     definePlugin.definitions.NODE_ENV = JSON.stringify(config.mode)
     // @ts-ignore
     definePlugin.definitions['process.env'].NODE_ENV = JSON.stringify(config.mode)
 
-    if (isChromatic) {
+    if (shouldMinify) {
       config.optimization = {
         minimize: true,
         minimizer: [

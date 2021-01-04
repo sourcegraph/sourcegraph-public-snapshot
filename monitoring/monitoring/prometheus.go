@@ -8,6 +8,10 @@ import (
 	"github.com/prometheus/common/model"
 )
 
+const (
+	alertRulesFileSuffix = "_alert_rules.yml"
+)
+
 // prometheusAlertName creates an alertname that is unique given the combination of parameters
 func prometheusAlertName(level, service, name string) string {
 	return fmt.Sprintf("%s_%s_%s", level, service, name)

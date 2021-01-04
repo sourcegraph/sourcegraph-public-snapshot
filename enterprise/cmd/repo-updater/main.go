@@ -38,7 +38,7 @@ func main() {
 
 func enterpriseInit(
 	db *sql.DB,
-	repoStore repos.Store,
+	repoStore *repos.Store,
 	cf *httpcli.Factory,
 	server *repoupdater.Server,
 ) (debugDumpers []debugserver.Dumper) {
