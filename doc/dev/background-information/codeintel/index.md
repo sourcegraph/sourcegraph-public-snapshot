@@ -4,9 +4,9 @@ This guide documents our approach to developing code intelligence-related featur
 
 Services:
 
-- [executor-queue](../../../../enterprise/cmd/executor-queue/)
-- [executor](../../../../enterprise/cmd/executor/)
-- [precise-code-intel-worker](../../../../enterprise/cmd/precise-code-intel-worker/)
+- [executor-queue](../../../../enterprise/cmd/executor-queue/README.md)
+- [executor](../../../../enterprise/cmd/executor/README.md)
+- [precise-code-intel-worker](../../../../enterprise/cmd/precise-code-intel-worker/README.md)
 
 Docs:
 
