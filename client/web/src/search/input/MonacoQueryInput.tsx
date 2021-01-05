@@ -262,7 +262,7 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
                             id="monaco-query-input"
                             language={SOURCEGRAPH_SEARCH}
                             value={this.props.queryState.query}
-                            height={16}
+                            height={17}
                             isLightTheme={this.props.isLightTheme}
                             editorWillMount={this.editorWillMount}
                             onEditorCreated={this.onEditorCreated}
