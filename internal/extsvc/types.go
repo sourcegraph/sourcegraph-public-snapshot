@@ -258,12 +258,6 @@ func ParseConfig(kind, config string) (cfg interface{}, _ error) {
 	return cfg, jsonc.Unmarshal(config, cfg)
 }
 
-// ReposSetter allows us to set the repositories for a code host without
-// needing to directly parse and understand the code host config
-type ReposSetter interface {
-	SetRepos(all bool, repos []string) error
-}
-
 const IDParam = "externalServiceID"
 
 func WebhookURL(kind string, externalServiceID int64, externalURL string) string {
