@@ -61,7 +61,7 @@ func GetRetentionStatistics(ctx context.Context) (*types.RetentionStats, error) 
 		LEFT JOIN sub     ON dates.week_start_date = sub.cohort_date
 		GROUP BY week, cohorts.cohort_size
 		ORDER BY week DESC;
-		`, timeNow(), timeNow(), timeNow(), timeNow())
+		`, timeNow().AddDate(0, 0, -7), timeNow().AddDate(0, 0, -7), timeNow().AddDate(0, 0, -7), timeNow().AddDate(0, 0, -7))
 
 	rows, err := dbconn.Global.QueryContext(ctx, weeklyRetentionQuery.Query(sqlf.PostgresBindVar), weeklyRetentionQuery.Args()...)
 	if err != nil {
