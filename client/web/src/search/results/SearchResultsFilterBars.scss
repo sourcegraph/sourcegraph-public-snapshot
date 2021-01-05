@@ -1,6 +1,21 @@
 @import '../QuickLinks';
 
 .search-results-filter-bars {
+    &__carousel {
+        display: flex;
+
+        // HACK: This will make the content grow to fix the space left.
+        // Without a fixed width, the content will overflow the screen.
+        width: 0;
+        flex-grow: 1;
+    }
+
+    &__scroll {
+        &--disabled {
+            visibility: hidden;
+        }
+    }
+
     &__row {
         display: flex;
         flex: 0 0 auto;
