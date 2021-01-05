@@ -115,16 +115,23 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 		_ = os.RemoveAll(scriptsDir)
 	}()
 
+	// TEMPORARY OBSERVABILITY INCREASE
+	for _, dockerStep := range job.DockerSteps {
+		log15.Info("TEMP: docker step", "step", fmt.Sprintf("%+v", dockerStep))
+	}
+
+	// TEMPORARY OBSERVABILITY INCREASE
+	for _, cliStep := range job.CliSteps {
+		log15.Info("TEMP: cli step", "step", fmt.Sprintf("%+v", cliStep))
+	}
+
 	scriptPaths := make([]string, 0, len(job.DockerSteps))
 	for i, dockerStep := range job.DockerSteps {
-		// TEMPORARY OBSERVABILITY INCREASE
-		log15.Info("TEMP: docker step", "step", fmt.Sprintf("%+v", dockerStep))
-
 		scriptPath := filepath.Join(scriptsDir, scriptNameFromJobStep(job, i))
 		scriptContent := buildScript(dockerStep)
 
 		// TEMPORARY OBSERVABILITY INCREASE
-		log15.Info("TEMP: script", "path", scriptPath, "content", scriptContent)
+		log15.Info("TEMP: script", "path", scriptPath, "content", string(scriptContent))
 
 		if err := ioutil.WriteFile(scriptPath, scriptContent, os.ModePerm); err != nil {
 			return err
@@ -161,10 +168,6 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 
 	// Invoke each src-cli step sequentially
 	for i, cliStep := range job.CliSteps {
-
-		// TEMPORARY OBSERVABILITY INCREASE
-		log15.Info("TEMP: cli step", "step", fmt.Sprintf("%+v", cliStep))
-
 		cliStepCommand := command.CommandSpec{
 			Key:       fmt.Sprintf("step.src.%d", i),
 			Command:   append([]string{"src"}, cliStep.Commands...),
@@ -181,8 +184,12 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 	return nil
 }
 
+var scriptPreamble = `
+set -x
+`
+
 func buildScript(dockerStep apiclient.DockerStep) []byte {
-	return append([]byte("set -x\n"), []byte(strings.Join(dockerStep.Commands, "\n"))...)
+	return []byte(strings.Join(append([]string{scriptPreamble, ""}, dockerStep.Commands...), "\n") + "\n")
 }
 
 func union(a, b map[string]string) map[string]string {

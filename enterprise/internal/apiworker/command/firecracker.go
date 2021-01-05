@@ -154,6 +154,21 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger *Logger,
 		}
 	}
 
+	// TEMPORARY OBSERVABILITY INCREASE
+	for i, scriptPath := range scriptPaths {
+		catCommand := command{
+			Key: fmt.Sprintf("setup.cat.%d", i),
+			Command: flatten(
+				"ignite", "exec", name, "--",
+				"cat", scriptPath,
+			),
+			Operation: operations.SetupRm,
+		}
+		if err := runner.RunCommand(ctx, catCommand, logger); err != nil {
+			return errors.Wrap(err, fmt.Sprintf("failed to cat %s", scriptPath))
+		}
+	}
+
 	return nil
 }
 
