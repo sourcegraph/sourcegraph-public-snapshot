@@ -272,7 +272,8 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             // we call this in a setTimeout as for some reason the onChange of
             // the checkbox element will register the state change but not
             // reevaluate the `checked` field until another box is ticked.
-            setTimeout(() => {setSelectionState({
+            setTimeout(() => {
+                setSelectionState({
                     repos: newMap,
                     radio: selectionState.radio,
                     loaded: selectionState.loaded,
