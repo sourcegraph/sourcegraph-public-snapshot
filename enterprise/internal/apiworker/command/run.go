@@ -130,6 +130,9 @@ func readProcessPipes(stdout, stderr io.Reader) (*bytes.Buffer, *sync.WaitGroup)
 	return out, wg
 }
 
+// monitorCommand starts the given command and waits for the given wait group to complete.
+// This function returns a non-nil error only if there was a system issue - commands that
+// run but fail due to a non-zero exit code will return a nil error and the exit code.
 func monitorCommand(cmd *exec.Cmd, pipeReaderWaitGroup *sync.WaitGroup) (int, error) {
 	if err := cmd.Start(); err != nil {
 		return 0, err
@@ -138,8 +141,10 @@ func monitorCommand(cmd *exec.Cmd, pipeReaderWaitGroup *sync.WaitGroup) (int, er
 	pipeReaderWaitGroup.Wait()
 
 	if err := cmd.Wait(); err != nil {
-		return 0, err
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			return exitErr.ExitCode(), nil
+		}
 	}
 
-	return cmd.ProcessState.ExitCode(), nil
+	return 0, nil
 }
