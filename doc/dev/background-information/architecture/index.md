@@ -32,7 +32,7 @@ If you want to learn more about search:
 - [Life of a search query](life-of-a-search-query.md)
 - [Search pagination](search-pagination.md)
 
-## Code intellgence
+## Code intelligence
 
 Code intelligence surfaces data (for example: doc comments for a symbol) and actions (for example: go to definition, find references) based on our semantic understanding of code (unlike search, which is completely text based).
 
