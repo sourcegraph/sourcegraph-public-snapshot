@@ -5,6 +5,8 @@ import {
     listIssues,
     getTrackingIssue,
     ensureReleaseTrackingIssue,
+    ensureReleaseDockerTrackingIssue,
+    ensureUpgradeManagedTrackingIssue,
     ensurePatchReleaseIssue,
     createChangesets,
     CreatedChangeset,
@@ -27,6 +29,8 @@ export type StepID =
     | 'tracking:release-timeline'
     | 'tracking:release-issue'
     | 'tracking:patch-issue'
+    | 'tracking:release-docker-customers'
+    | 'tracking:upgrade-managed-instances'
     // branch cut
     | 'changelog:cut'
     // release
@@ -261,6 +265,44 @@ If you have changes that should go into this patch release, <${patchRequestTempl
                     slackAnnounceChannel
                 )
                 console.log(`Posted to Slack channel ${slackAnnounceChannel}`)
+            }
+        },
+    },
+    {
+        id: 'tracking:release-docker-customers',
+        description: 'Create a Github issue to track MAJOR.MINOR release of pure-docker to customers',
+        run: async config => {
+            const { captainGitHubUsername, oneWorkingDayAfterRelease, dryRun } = config
+            const { upcoming: release } = await releaseVersions(config)
+
+            // Create issue
+            const { url, created } = await ensureReleaseDockerTrackingIssue({
+                version: release,
+                assignees: [captainGitHubUsername],
+                oneWorkingDayAfterRelease: new Date(oneWorkingDayAfterRelease),
+                dryRun: dryRun.trackingIssues || false,
+            })
+            if (url) {
+                console.log(created ? `Created tracking issue ${url}` : `Tracking issue already exists: ${url}`)
+            }
+        },
+    },
+    {
+        id: 'tracking:upgrade-managed-instances',
+        description: 'Create a Github issue to track upgrade of managed instances MAJOR.MINOR release',
+        run: async config => {
+            const { captainGitHubUsername, oneWorkingDayAfterRelease, dryRun } = config
+            const { upcoming: release } = await releaseVersions(config)
+
+            // Create issue
+            const { url, created } = await ensureUpgradeManagedTrackingIssue({
+                version: release,
+                assignees: [captainGitHubUsername],
+                oneWorkingDayAfterRelease: new Date(oneWorkingDayAfterRelease),
+                dryRun: dryRun.trackingIssues || false,
+            })
+            if (url) {
+                console.log(created ? `Created tracking issue ${url}` : `Tracking issue already exists: ${url}`)
             }
         },
     },
