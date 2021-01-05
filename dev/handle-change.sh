@@ -4,7 +4,6 @@ set -e
 cd "$(dirname "${BASH_SOURCE[0]}")/.." # cd to repo root dir
 
 generate_graphql=false
-generate_dashboards=false
 generate_monitoring=false
 generate_schema=false
 cmdlist=()
