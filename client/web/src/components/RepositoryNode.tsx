@@ -1,4 +1,4 @@
-import React from 'react'
+import React, {useCallback} from 'react'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import CloudOutlineIcon from 'mdi-react/CloudOutlineIcon'
 import TickIcon from 'mdi-react/TickIcon'
@@ -98,12 +98,12 @@ export const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({
     isPrivate,
     prefixComponent,
 }) => {
-    const handleOnClick = (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>): void => {
+    const handleOnClick = useCallback((event: React.MouseEvent<HTMLAnchorElement, MouseEvent>): void => {
         if (onClick !== undefined) {
             event.preventDefault()
             onClick()
         }
-    }
+    }, [onClick])
     return (
         <tr className="w-100 repository-node d-flex align-items-center justify-content-between">
             <a className="w-100 " href={url} onClick={handleOnClick}>
@@ -112,7 +112,6 @@ export const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({
                         {prefixComponent && prefixComponent}
                         <StatusIcon mirrorInfo={mirrorInfo} />
                         <CodeHostIcon hostType={serviceType} />
-                        {/* eslint-disable-next-line react/jsx-no-bind */}
                         <RepoLink
                             className="text-muted"
                             repoClassName="text-primary"
