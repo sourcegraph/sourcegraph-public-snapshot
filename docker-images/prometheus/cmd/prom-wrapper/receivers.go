@@ -90,9 +90,17 @@ func newRoutesAndReceivers(newAlerts []*schema.ObservabilityAlerts, externalURL 
 	var (
 		// link to grafana dashboard, based on external URL configuration and alert labels
 		dashboardURLTemplate = strings.TrimSuffix(externalURL, "/") + `/-/debug/grafana/d/` +
-			`{{ .CommonLabels.service_name }}/{{ .CommonLabels.service_name }}` + // link to service dashboard
-			"?from=now-1h" + // link to a smaller time window for alert to be more visible
-			"&viewPanel={{ .CommonLabels.grafana_panel_id }}" // link directly to the relevant panel
+			// link to service dashboard
+			`{{ .CommonLabels.service_name }}/{{ .CommonLabels.service_name }}` +
+			// link to time when alert starts.
+			// add 000 to adapt prometheus unix to grafana unix.
+			// there's some weirdness in time templates, see https://github.com/prometheus/alertmanager/issues/1188
+			"?from={{ (index .Alerts 0).StartsAt.Unix }}000" +
+			// link to time when alert ends, or now if it has not ended.
+			// add 000 to adapt prometheus unix to grafana unix
+			"&to={{ with (index .Alerts 0).EndsAt.Unix }}{{ if gt . 0 }}{{ . }}000{{ else }}now{{ end }}{{ end }}" +
+			// link directly to the relevant panel
+			"&viewPanel={{ .CommonLabels.grafana_panel_id }}"
 
 		// messages for different states
 		firingBodyTemplate          = `{{ .CommonLabels.level | title }} alert '{{ .CommonLabels.name }}' is firing for service '{{ .CommonLabels.service_name }}' ({{ .CommonLabels.owner }}).`
