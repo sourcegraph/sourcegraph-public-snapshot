@@ -223,7 +223,7 @@ func GetData(r *http.Request, key string, value interface{}) error {
 // new session is created.
 //
 // If expiryPeriod is 0, the default expiry period is used.
-func SetActor(w http.ResponseWriter, r *http.Request, actor *actor.Actor, expiryPeriod time.Duration) error {
+func SetActor(w http.ResponseWriter, r *http.Request, actor *actor.Actor, expiryPeriod time.Duration, userCreatedAt time.Time) error {
 	var value *sessionInfo
 	if actor != nil {
 		if expiryPeriod == 0 {
@@ -233,7 +233,7 @@ func SetActor(w http.ResponseWriter, r *http.Request, actor *actor.Actor, expiry
 				expiryPeriod = defaultExpiryPeriod
 			}
 		}
-		value = &sessionInfo{Actor: actor, ExpiryPeriod: expiryPeriod, LastActive: time.Now()}
+		value = &sessionInfo{Actor: actor, ExpiryPeriod: expiryPeriod, LastActive: time.Now(), UserCreatedAt: userCreatedAt}
 	}
 	return SetData(w, r, "actor", value)
 }
@@ -375,6 +375,12 @@ func authenticateByCookie(r *http.Request, w http.ResponseWriter) context.Contex
 		// Check that the session is still valid
 		if info.LastActive.Before(usr.InvalidatedSessionsAt) {
 			_ = deleteSession(w, r) // Delete the now invalid session
+			return r.Context()
+		}
+
+		// Check that the user's creation date matches what is stored in the session.
+		if !info.UserCreatedAt.Equal(usr.CreatedAt) {
+			_ = deleteSession(w, r)
 			return r.Context()
 		}
 
