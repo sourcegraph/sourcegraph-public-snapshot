@@ -269,11 +269,15 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             } else {
                 newMap.set(repo.name, repo)
             }
-            setSelectionState({
-                repos: newMap,
-                radio: selectionState.radio,
-                loaded: selectionState.loaded,
-            })
+            // we call this in a setTimeout as for some reason the onChange of
+            // the checkbox element will register the state change but not
+            // reevaluate the `checked` field until another box is ticked.
+            setTimeout(() => {setSelectionState({
+                    repos: newMap,
+                    radio: selectionState.radio,
+                    loaded: selectionState.loaded,
+                })
+            }, 1)
         },
         [selectionState, setSelectionState]
     )
@@ -336,8 +340,9 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                                     // state via the same function called via RepositoryNode.onClick the render correctly reads
                                     // the checked func, and shows the box as checked. in order to hack around this i've set
                                     // pointer-events: none so that we always use RepositoryNode.onClick. i am so sorry.
-                                    className="mr-2 no-click"
+                                    className="mr-2"
                                     type="checkbox"
+                                    onChange={onRepoClicked(repo)}
                                     checked={selectionState.repos.has(repo.name)}
                                 />
                             }
