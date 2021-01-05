@@ -120,6 +120,9 @@ func readProcessPipes(stdout, stderr io.Reader) (*bytes.Buffer, *sync.WaitGroup)
 			m.Lock()
 			fmt.Fprintf(out, "%s: %s\n", prefix, scanner.Text())
 			m.Unlock()
+
+			// TEMPORARY OBSERVABILITY INCREASE
+			log15.Info("TEMP: command output", "prefix", prefix, "text", scanner.Text())
 		}
 	}
 
