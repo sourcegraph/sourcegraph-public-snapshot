@@ -173,26 +173,29 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     }
 
     // save changes and update code hosts
-    const submit = useCallback((event: FormEvent<HTMLFormElement>): void => {
-        event.preventDefault()
-        for (const host of codeHosts.hosts) {
-            const repos: string[] = []
-            for (const repo of selectionState.repos.values()) {
-                if (repo.codeHost!.id !== host.id) {
-                    continue
+    const submit = useCallback(
+        (event: FormEvent<HTMLFormElement>): void => {
+            event.preventDefault()
+            for (const host of codeHosts.hosts) {
+                const repos: string[] = []
+                for (const repo of selectionState.repos.values()) {
+                    if (repo.codeHost!.id !== host.id) {
+                        continue
+                    }
+                    repos.push(repo.name)
                 }
-                repos.push(repo.name)
+                setExternalServiceRepos({
+                    id: host.id,
+                    allRepos: selectionState.radio === 'all',
+                    repos: (selectionState.radio === 'selected' && repos) || null,
+                }).catch(error => {
+                    throw error
+                })
             }
-            setExternalServiceRepos({
-                id: host.id,
-                allRepos: selectionState.radio === 'all',
-                repos: (selectionState.radio === 'selected' && repos) || null,
-            }).catch(error => {
-                throw error
-            })
-        }
-        history.push(routingPrefix + '/repositories')
-    }, [codeHosts.hosts, history, routingPrefix, selectionState.radio, selectionState.repos])
+            history.push(routingPrefix + '/repositories')
+        },
+        [codeHosts.hosts, history, routingPrefix, selectionState.radio, selectionState.repos]
+    )
 
     const handleRadioSelect = (changeEvent: React.ChangeEvent<HTMLInputElement>): void => {
         setSelectionState({
