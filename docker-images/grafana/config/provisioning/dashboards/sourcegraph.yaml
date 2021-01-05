@@ -7,12 +7,6 @@ providers:
     type: file
     options:
       path: /sg_config_grafana/provisioning/dashboards/sourcegraph
-  - name: 'sourcegraph_internal'
-    orgId: 1
-    folder: 'Sourcegraph Internal'
-    type: file
-    options:
-      path: /sg_config_grafana/provisioning/dashboards/sourcegraph_internal
   - name: 'sourcegraph_additional'
     orgId: 1
     folder: ''
