@@ -30,7 +30,7 @@ export type StepID =
     | 'tracking:release-issue'
     | 'tracking:patch-issue'
     | 'tracking:release-docker-customers'
-    | 'tracking:upgrade-managed-instances'
+    | 'tracking:release-managed-instances'
     // branch cut
     | 'changelog:cut'
     // release
@@ -288,7 +288,7 @@ If you have changes that should go into this patch release, <${patchRequestTempl
         },
     },
     {
-        id: 'tracking:upgrade-managed-instances',
+        id: 'tracking:release-managed-instances',
         description: 'Create a Github issue to track upgrade of managed instances MAJOR.MINOR release',
         run: async config => {
             const { captainGitHubUsername, oneWorkingDayAfterRelease, dryRun } = config
