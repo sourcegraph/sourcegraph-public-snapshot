@@ -116,7 +116,7 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger *Logger,
 			"ignite", "run",
 			commonFirecrackerFlags,
 			firecrackerResourceFlags(options.ResourceOptions),
-			firecrackerCopyfileFlags(repoDir, imageKeys, scriptPaths, options),
+			firecrackerCopyfileFlags(repoDir, imageKeys, options),
 			"--ssh",
 			"--name", name,
 			sanitizeImage(options.FirecrackerOptions.Image),
@@ -160,7 +160,7 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger *Logger,
 			Key: fmt.Sprintf("setup.cat.%d", i),
 			Command: flatten(
 				"ignite", "exec", name, "--",
-				"cat", scriptPath,
+				"cat", filepath.Join(firecrackerContainerDir, ScriptsPath, scriptPath),
 			),
 			Operation: operations.SetupRm,
 		}
@@ -204,19 +204,13 @@ func firecrackerResourceFlags(options ResourceOptions) []string {
 	}
 }
 
-func firecrackerCopyfileFlags(dir string, imageKeys, scriptPaths []string, options Options) []string {
-	copyfiles := make([]string, 0, len(imageKeys)+len(scriptPaths)+1)
+func firecrackerCopyfileFlags(dir string, imageKeys []string, options Options) []string {
+	copyfiles := make([]string, 0, len(imageKeys)+1)
 	for _, imageKey := range imageKeys {
 		copyfiles = append(copyfiles, fmt.Sprintf(
 			"%s:%s",
 			tarfilePathOnHost(imageKey, options),
 			tarfilePathInVM(imageKey),
-		))
-	}
-
-	for _, scriptPath := range scriptPaths {
-		copyfiles = append(copyfiles, fmt.Sprintf(
-			"%s:%s", scriptPath, scriptPath,
 		))
 	}
 
