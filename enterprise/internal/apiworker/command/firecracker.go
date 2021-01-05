@@ -71,6 +71,11 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger *Logger,
 		imageMap[fmt.Sprintf("image%d", i)] = image
 	}
 
+	// TEMPORARY OBSERVABILITY INCREASE
+	for k, v := range imageMap {
+		log15.Info("TEMP: imageMap", "k", k, "v", v)
+	}
+
 	imageKeys := make([]string, 0, len(imageMap))
 	for k := range imageMap {
 		imageKeys = append(imageKeys, k)
@@ -104,7 +109,7 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger *Logger,
 		}
 	}
 
-	// Start the VM and wait for the SSH serer to become available
+	// Start the VM and wait for the SSH server to become available
 	startCommand := command{
 		Key: "setup.firecracker.start",
 		Command: flatten(
