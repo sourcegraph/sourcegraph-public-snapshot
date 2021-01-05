@@ -173,7 +173,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     }
 
     // save changes and update code hosts
-    const submit = (event: FormEvent<HTMLFormElement>): void => {
+    const submit = useCallback((event: FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
         for (const host of codeHosts.hosts) {
             const repos: string[] = []
@@ -192,7 +192,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             })
         }
         history.push(routingPrefix + '/repositories')
-    }
+    }, [codeHosts.hosts, history, routingPrefix, selectionState.radio, selectionState.repos])
 
     const handleRadioSelect = (changeEvent: React.ChangeEvent<HTMLInputElement>): void => {
         setSelectionState({
@@ -411,7 +411,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     </div>
                 </li>
             </ul>
-            {/* eslint-disable-next-line react/jsx-no-bind */}
             <Form className="mt-4 d-flex" onSubmit={submit}>
                 <button type="submit" className="btn btn-primary test-goto-add-external-service-page mr-2">
                     Save changes
