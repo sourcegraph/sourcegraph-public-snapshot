@@ -2,9 +2,11 @@ package db
 
 import (
 	"context"
+	"sync"
 	"sync/atomic"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
@@ -20,21 +22,62 @@ type cachedRepos struct {
 	fetched time.Time
 }
 
-func (c *cachedRepos) Repos() []*types.RepoName {
-	if c == nil || time.Since(c.fetched) > defaultReposMaxAge {
-		return nil
+// Repos returns the current cached repos and boolean value indicating
+// whether an update is required
+func (c *cachedRepos) Repos() ([]*types.RepoName, bool) {
+	if c == nil {
+		return nil, true
 	}
-	return append([]*types.RepoName{}, c.repos...)
+	if c.repos == nil {
+		return nil, true
+	}
+	return append([]*types.RepoName{}, c.repos...), time.Since(c.fetched) > defaultReposMaxAge
 }
 
 type defaultRepos struct {
 	cache atomic.Value
+	mu    sync.Mutex
 }
 
 func (s *defaultRepos) List(ctx context.Context) (results []*types.RepoName, err error) {
 	cached, _ := s.cache.Load().(*cachedRepos)
-	if repos := cached.Repos(); repos != nil {
+	repos, needsUpdate := cached.Repos()
+	if !needsUpdate {
 		return repos, nil
+	}
+
+	// We don't have any repos yet, fetch them
+	if len(repos) == 0 {
+		return s.refreshCache(ctx)
+	}
+
+	// We have existing repos, return the stale data and start background refresh
+	go func() {
+		newCtx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+		defer cancel()
+
+		_, err := s.refreshCache(newCtx)
+		if err != nil {
+			log15.Error("Refreshing default repos cache", "error", err)
+		}
+	}()
+	return repos, nil
+}
+
+func (s *defaultRepos) refreshCache(ctx context.Context) ([]*types.RepoName, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// Check whether another routine already did the work
+	cached, _ := s.cache.Load().(*cachedRepos)
+	repos, needsUpdate := cached.Repos()
+	if !needsUpdate {
+		return repos, nil
+	}
+
+	// We can reset the slice here so we don't allocate another one
+	if repos != nil {
+		repos = repos[0:0]
 	}
 
 	const q = `
@@ -67,10 +110,9 @@ UNION
 `
 	rows, err := dbconn.Global.QueryContext(ctx, q)
 	if err != nil {
-		return nil, errors.Wrap(err, "querying default_repos table")
+		return nil, errors.Wrap(err, "fetching repos")
 	}
 	defer rows.Close()
-	var repos []*types.RepoName
 	for rows.Next() {
 		var r types.RepoName
 		if err := rows.Scan(&r.ID, &r.Name); err != nil {
