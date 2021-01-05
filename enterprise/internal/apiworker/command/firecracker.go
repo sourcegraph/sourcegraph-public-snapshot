@@ -160,7 +160,7 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger *Logger,
 			Key: fmt.Sprintf("setup.cat.%d", i),
 			Command: flatten(
 				"ignite", "exec", name, "--",
-				"cat", filepath.Join(ScriptsPath, scriptPath),
+				"cat", filepath.Join(firecrackerContainerDir, ScriptsPath, scriptPath),
 			),
 			Operation: operations.SetupRm,
 		}
