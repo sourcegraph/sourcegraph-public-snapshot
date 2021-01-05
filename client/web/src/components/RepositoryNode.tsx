@@ -1,37 +1,37 @@
-import React from 'react';
-import {LoadingSpinner} from '@sourcegraph/react-loading-spinner';
-import CloudOutlineIcon from 'mdi-react/CloudOutlineIcon';
-import TickIcon from 'mdi-react/TickIcon';
-import GithubIcon from 'mdi-react/GithubIcon';
-import GitlabIcon from 'mdi-react/GitlabIcon';
-import BitbucketIcon from 'mdi-react/BitbucketIcon';
-import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon';
-import {RepoLink} from '../../../shared/src/components/RepoLink';
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon';
+import React from 'react'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import CloudOutlineIcon from 'mdi-react/CloudOutlineIcon'
+import TickIcon from 'mdi-react/TickIcon'
+import GithubIcon from 'mdi-react/GithubIcon'
+import GitlabIcon from 'mdi-react/GitlabIcon'
+import BitbucketIcon from 'mdi-react/BitbucketIcon'
+import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
+import { RepoLink } from '../../../shared/src/components/RepoLink'
+import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 
 interface RepositoryNodeProps {
-    name: string,
+    name: string
     mirrorInfo?: {
-        cloneInProgress: boolean,
+        cloneInProgress: boolean
         cloned: boolean
-    },
-    onClick?: () => void,
-    url: string,
-    serviceType: string,
+    }
+    onClick?: () => void
+    url: string
+    serviceType: string
     isPrivate: boolean
     prefixComponent?: JSX.Element
 }
 
 interface StatusIconProps {
     mirrorInfo?: {
-        cloneInProgress: boolean,
+        cloneInProgress: boolean
         cloned: boolean
     }
 }
 
 const StatusIcon: React.FunctionComponent<StatusIconProps> = ({ mirrorInfo }) => {
     if (mirrorInfo === undefined) {
-        return <div/>
+        return <div />
     }
     if (mirrorInfo.cloneInProgress) {
         return (
@@ -90,16 +90,15 @@ const CodeHostIcon: React.FunctionComponent<CodeHostIconProps> = ({ hostType }) 
 }
 
 export const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({
-                                                                                 name,
-                                                                                 mirrorInfo,
-                                                                                 url,
-                                                                                 onClick,
-                                                                                 serviceType,
-                                                                                 isPrivate,
-                                                                                 prefixComponent
-                                                                             }) => {
-
-    const handleOnClick = (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>):void => {
+    name,
+    mirrorInfo,
+    url,
+    onClick,
+    serviceType,
+    isPrivate,
+    prefixComponent,
+}) => {
+    const handleOnClick = (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>): void => {
         if (onClick !== undefined) {
             event.preventDefault()
             onClick()
@@ -110,15 +109,21 @@ export const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({
             <a className="w-100 " href={url} onClick={handleOnClick}>
                 <td className="w-100 d-flex justify-content-between align-items-baseline">
                     <div className="d-flex align-items-center">
-                        {prefixComponent && (prefixComponent)}
-                        <StatusIcon mirrorInfo={mirrorInfo}/>
-                        <CodeHostIcon hostType={serviceType}/>
+                        {prefixComponent && prefixComponent}
+                        <StatusIcon mirrorInfo={mirrorInfo} />
+                        <CodeHostIcon hostType={serviceType} />
                         {/* eslint-disable-next-line react/jsx-no-bind */}
-                        <RepoLink className="text-muted" repoClassName="text-primary" repoName={name} to={url} onClick={handleOnClick}/>
+                        <RepoLink
+                            className="text-muted"
+                            repoClassName="text-primary"
+                            repoName={name}
+                            to={url}
+                            onClick={handleOnClick}
+                        />
                     </div>
                     <div>
                         {isPrivate && <div className="badge badge-secondary text-muted">Private</div>}
-                        <ChevronRightIcon className="icon-inline ml-2 caret-icon"/>
+                        <ChevronRightIcon className="icon-inline ml-2 caret-icon" />
                     </div>
                 </td>
             </a>

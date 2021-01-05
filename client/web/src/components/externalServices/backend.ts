@@ -88,7 +88,9 @@ export function updateExternalService(
         .toPromise()
 }
 
-export function setExternalServiceRepos(variables: SetExternalServiceReposVariables): Promise<SetExternalServiceReposResult['setExternalServiceRepos']>{
+export function setExternalServiceRepos(
+    variables: SetExternalServiceReposVariables
+): Promise<SetExternalServiceReposResult['setExternalServiceRepos']> {
     return requestGraphQL<SetExternalServiceReposResult, SetExternalServiceReposVariables>(
         gql`
             mutation SetExternalServiceRepos($id: ID!, $allRepos: Boolean!, $repos: [String!]) {
@@ -98,10 +100,12 @@ export function setExternalServiceRepos(variables: SetExternalServiceReposVariab
             }
         `,
         variables
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => data.setExternalServiceRepos)
-    ).toPromise()
+    )
+        .pipe(
+            map(dataOrThrowErrors),
+            map(data => data.setExternalServiceRepos)
+        )
+        .toPromise()
 }
 
 export function fetchExternalService(id: Scalars['ID']): Observable<ExternalServiceFields> {

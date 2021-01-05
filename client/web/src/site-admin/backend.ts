@@ -216,19 +216,13 @@ export function listUserRepositories(
     )
 }
 
-export function listAffiliatedRepositories(args: Partial<AffiliatedRepositoriesVariables>): Observable<NonNullable<AffiliatedRepositoriesResult>> {
+export function listAffiliatedRepositories(
+    args: Partial<AffiliatedRepositoriesVariables>
+): Observable<NonNullable<AffiliatedRepositoriesResult>> {
     return requestGraphQL<AffiliatedRepositoriesResult, AffiliatedRepositoriesVariables>(
         gql`
-            query AffiliatedRepositories(
-                $user: ID!
-                $codeHost: ID
-                $query: String
-            ) {
-                affiliatedRepositories(
-                    user: $user
-                    codeHost: $codeHost
-                    query: $query
-                ) {
+            query AffiliatedRepositories($user: ID!, $codeHost: ID, $query: String) {
+                affiliatedRepositories(user: $user, codeHost: $codeHost, query: $query) {
                     nodes {
                         name
                         codeHost {
@@ -246,9 +240,7 @@ export function listAffiliatedRepositories(args: Partial<AffiliatedRepositoriesV
             codeHost: args.codeHost ?? null,
             query: args.query ?? null,
         }
-    ).pipe(
-        map(dataOrThrowErrors)
-    )
+    ).pipe(map(dataOrThrowErrors))
 }
 /**
  * Fetches all repositories.
