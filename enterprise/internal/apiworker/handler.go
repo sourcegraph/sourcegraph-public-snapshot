@@ -171,7 +171,7 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 }
 
 func buildScript(dockerStep apiclient.DockerStep) []byte {
-	return []byte(strings.Join(dockerStep.Commands, "\n"))
+	return append([]byte("set -x\n"), []byte(strings.Join(dockerStep.Commands, "\n"))...)
 }
 
 func union(a, b map[string]string) map[string]string {
