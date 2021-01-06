@@ -3475,7 +3475,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Descriptions:**
 
-- <span class="badge badge-critical">critical</span> repo-updater: 1e-06+ permissions sync error rate for 1m0s
+- <span class="badge badge-critical">critical</span> repo-updater: 1+ permissions sync error rate for 1m0s
 
 **Possible solutions:**
 

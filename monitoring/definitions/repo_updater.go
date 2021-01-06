@@ -296,9 +296,9 @@ func RepoUpdater() *monitoring.Container {
 						{
 							Name:            "perms_syncer_sync_errors",
 							Description:     "permissions sync error rate",
-							Query:           `sum by (type) (rate(src_repoupdater_perms_syncer_sync_errors_total[1m]))`,
+							Query:           `sum by (type) (ceil(rate(src_repoupdater_perms_syncer_sync_errors_total[1m])))`,
 							DataMayNotExist: true,
-							Critical:        monitoring.Alert().GreaterOrEqual(0.000001).For(time.Minute),
+							Critical:        monitoring.Alert().GreaterOrEqual(1).For(time.Minute),
 							PanelOptions:    monitoring.PanelOptions().LegendFormat("{{type}}").Unit(monitoring.Number),
 							Owner:           monitoring.ObservableOwnerCloud,
 							PossibleSolutions: `
