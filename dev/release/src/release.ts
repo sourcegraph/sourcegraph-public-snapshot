@@ -5,7 +5,6 @@ import {
     listIssues,
     getTrackingIssue,
     ensureReleaseTrackingIssue,
-    ensureReleaseDockerTrackingIssue,
     ensureUpgradeManagedTrackingIssue,
     ensurePatchReleaseIssue,
     createChangesets,
@@ -29,7 +28,6 @@ export type StepID =
     | 'tracking:release-timeline'
     | 'tracking:release-issue'
     | 'tracking:patch-issue'
-    | 'tracking:release-docker-customers'
     | 'tracking:release-managed-instances'
     // branch cut
     | 'changelog:cut'
@@ -160,14 +158,6 @@ const steps: Step[] = [
                     startDateTime: new Date(config.oneWorkingDayAfterRelease).toISOString(),
                     endDateTime: addMinutes(new Date(config.releaseDateTime), 1).toISOString(),
                 },
-                {
-                    title: `Release deploy-soucegraph-docker ${release.major}.${release.minor} for customers`,
-                    description: '(This is not an actual event to attend, just a calendar marker.)',
-                    anyoneCanAddSelf: true,
-                    attendees: [config.teamEmail],
-                    startDateTime: new Date(config.oneWorkingDayAfterRelease).toISOString(),
-                    endDateTime: addMinutes(new Date(config.releaseDateTime), 1).toISOString(),
-                },
             ]
 
             for (const event of events) {
@@ -265,25 +255,6 @@ If you have changes that should go into this patch release, <${patchRequestTempl
                     slackAnnounceChannel
                 )
                 console.log(`Posted to Slack channel ${slackAnnounceChannel}`)
-            }
-        },
-    },
-    {
-        id: 'tracking:release-docker-customers',
-        description: 'Create a Github issue to track MAJOR.MINOR release of pure-docker to customers',
-        run: async config => {
-            const { captainGitHubUsername, oneWorkingDayAfterRelease, dryRun } = config
-            const { upcoming: release } = await releaseVersions(config)
-
-            // Create issue
-            const { url, created } = await ensureReleaseDockerTrackingIssue({
-                version: release,
-                assignees: [captainGitHubUsername],
-                oneWorkingDayAfterRelease: new Date(oneWorkingDayAfterRelease),
-                dryRun: dryRun.trackingIssues || false,
-            })
-            if (url) {
-                console.log(created ? `Created tracking issue ${url}` : `Tracking issue already exists: ${url}`)
             }
         },
     },
