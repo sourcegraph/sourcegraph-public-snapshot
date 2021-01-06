@@ -21047,10 +21047,10 @@ ts-essentials@^2.0.3:
   resolved "https://registry.npmjs.org/ts-essentials/-/ts-essentials-2.0.12.tgz#c9303f3d74f75fa7528c3d49b80e089ab09d8745"
   integrity sha512-3IVX4nI6B5cc31/GFFE+i8ey/N2eA0CZDbo6n0yrz0zDX8ZJ8djmU1p+XRz7G3is0F3bB3pu2pAroFdAWQKU3w==
 
-ts-graphql-plugin@^2.1.1:
-  version "2.1.1"
-  resolved "https://registry.npmjs.org/ts-graphql-plugin/-/ts-graphql-plugin-2.1.1.tgz#f832b970b1b0159b6acb91d6e16c17e1ec5d762b"
-  integrity sha512-r4zVxvC9K1lFUlwL0sDD9sDHzq/keD+8vu5fqedP1+ECS10uVWrU/ojGruVO1Qdi8pqOAaHYPILoJASLaThY+w==
+ts-graphql-plugin@^2.1.2:
+  version "2.1.2"
+  resolved "https://registry.npmjs.org/ts-graphql-plugin/-/ts-graphql-plugin-2.1.2.tgz#c77f472b20c4b54520e93899c677628a4a4e8f86"
+  integrity sha512-gzpy6lvlFj7u6n9HAMGGfVokYuGOduo9yVqLI7d8i0No3rCvu6kcGqtXBLziROXy5SAuMxYrL6r3P6UaEBFSLQ==
   dependencies:
     graphql-language-service-interface "^2.4.1"
     graphql-language-service-types "^1.6.1"

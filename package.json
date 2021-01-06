@@ -244,7 +244,7 @@
     "terser-webpack-plugin": "^4.2.3",
     "thread-loader": "^3.0.1",
     "to-string-loader": "^1.1.6",
-    "ts-graphql-plugin": "^2.1.1",
+    "ts-graphql-plugin": "^2.1.2",
     "ts-morph": "^8.1.0",
     "ts-node": "^9.1.0",
     "typescript": "^4.1.3",
