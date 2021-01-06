@@ -44,8 +44,7 @@ exports[`InstallBrowserExtensionAlert BITBUCKETSERVER (Chrome) 1`] = `
          
         to add code intelligence
          
-        to
-         
+        to 
         pull requests
          
         and file views
@@ -252,8 +251,7 @@ exports[`InstallBrowserExtensionAlert GITHUB (Chrome) 1`] = `
          
         to add code intelligence
          
-        to
-         
+        to 
         pull requests
          
         and file views
@@ -460,8 +458,7 @@ exports[`InstallBrowserExtensionAlert GITLAB (Chrome) 1`] = `
          
         to add code intelligence
          
-        to
-         
+        to 
         merge requests
          
         and file views

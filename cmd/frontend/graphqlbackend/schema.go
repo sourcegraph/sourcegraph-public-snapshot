@@ -4457,6 +4457,12 @@ type ExternalLink {
     displaying an icon that represents the service.
     """
     serviceKind: ExternalServiceKind
+
+    """
+    The type of external service, such as "github", or null if unknown/unrecognized. This is used solely for
+    displaying an icon that represents the service.
+    """
+    serviceType: String @deprecated(reason: "use name serviceKind instead")
 }
 
 """

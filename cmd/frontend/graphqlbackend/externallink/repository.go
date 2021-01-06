@@ -31,11 +31,11 @@ func Repository(ctx context.Context, repo *types.Repo) (links []*Resolver, err e
 	if phabRepo != nil {
 		links = append(links, NewResolver(
 			strings.TrimSuffix(phabRepo.URL, "/")+"/diffusion/"+phabRepo.Callsign,
-			extsvc.KindPhabricator,
+			extsvc.TypePhabricator,
 		))
 	}
 	if link != nil && link.Root != "" {
-		links = append(links, NewResolver(link.Root, nullableKind(serviceType)))
+		links = append(links, NewResolver(link.Root, serviceType))
 	}
 	return links, nil
 }
@@ -52,7 +52,7 @@ func FileOrDir(ctx context.Context, repo *types.Repo, rev, path string, isDir bo
 		if err == nil && string(branchName) != "" {
 			links = append(links, NewResolver(
 				fmt.Sprintf("%s/source/%s/browse/%s/%s;%s", strings.TrimSuffix(phabRepo.URL, "/"), phabRepo.Callsign, url.PathEscape(string(branchName)), path, rev),
-				extsvc.KindPhabricator,
+				extsvc.TypePhabricator,
 			))
 		}
 	}
@@ -66,7 +66,7 @@ func FileOrDir(ctx context.Context, repo *types.Repo, rev, path string, isDir bo
 		}
 		if url != "" {
 			url = strings.NewReplacer("{rev}", rev, "{path}", path).Replace(url)
-			links = append(links, NewResolver(url, nullableKind(serviceType)))
+			links = append(links, NewResolver(url, serviceType))
 		}
 	}
 
@@ -81,14 +81,14 @@ func Commit(ctx context.Context, repo *types.Repo, commitID api.CommitID) (links
 	if phabRepo != nil {
 		links = append(links, NewResolver(
 			fmt.Sprintf("%s/r%s%s", strings.TrimSuffix(phabRepo.URL, "/"), phabRepo.Callsign, commitStr),
-			extsvc.KindPhabricator,
+			extsvc.TypePhabricator,
 		))
 	}
 
 	if link != nil && link.Commit != "" {
 		links = append(links, NewResolver(
 			strings.Replace(link.Commit, "{commit}", commitStr, -1),
-			nullableKind(serviceType),
+			serviceType,
 		))
 	}
 
@@ -135,15 +135,6 @@ var linksForRepositoryFailed = prometheus.NewCounter(prometheus.CounterOpts{
 	Name: "src_graphql_links_for_repository_failed_total",
 	Help: "The total number of times the GraphQL field LinksForRepository failed.",
 })
-
-func nullableKind(st string) string {
-	var kind string
-	if st != "" {
-		kind = extsvc.TypeToKind(st)
-	}
-
-	return kind
-}
 
 func init() {
 	prometheus.MustRegister(linksForRepositoryFailed)
