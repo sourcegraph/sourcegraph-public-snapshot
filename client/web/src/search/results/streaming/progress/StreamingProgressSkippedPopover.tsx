@@ -48,10 +48,7 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<Pick<
                     </h4>
                     {skipped.message && (
                         <div className="mt-2">
-                            <Markdown
-                                dangerousInnerHTML={renderMarkdown(skipped.message)}
-                                history={history}
-                            />
+                            <Markdown dangerousInnerHTML={renderMarkdown(skipped.message)} history={history} />
                         </div>
                     )}
                 </Alert>

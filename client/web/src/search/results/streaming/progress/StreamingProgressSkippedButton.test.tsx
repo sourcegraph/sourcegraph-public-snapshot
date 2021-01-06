@@ -18,7 +18,9 @@ describe('StreamingProgressSkippedButton', () => {
             skipped: [],
         }
 
-        const element = mount(<StreamingProgressSkippedButton progress={progress} onSearchAgain={sinon.spy()} history={history} />)
+        const element = mount(
+            <StreamingProgressSkippedButton progress={progress} onSearchAgain={sinon.spy()} history={history} />
+        )
         expect(element.find('.streaming-progress__skipped')).toHaveLength(0)
         expect(element.find('.streaming-progress__skipped-popover')).toHaveLength(0)
     })
@@ -52,7 +54,9 @@ describe('StreamingProgressSkippedButton', () => {
             ],
         }
 
-        const element = mount(<StreamingProgressSkippedButton progress={progress} onSearchAgain={sinon.spy()} history={history} />)
+        const element = mount(
+            <StreamingProgressSkippedButton progress={progress} onSearchAgain={sinon.spy()} history={history} />
+        )
         expect(element.find('.btn.streaming-progress__skipped')).toHaveLength(1)
         expect(element.find('.btn.streaming-progress__skipped.alert.alert-danger')).toHaveLength(0)
     })
@@ -96,7 +100,9 @@ describe('StreamingProgressSkippedButton', () => {
             ],
         }
 
-        const element = mount(<StreamingProgressSkippedButton progress={progress} onSearchAgain={sinon.spy()} history={history} />)
+        const element = mount(
+            <StreamingProgressSkippedButton progress={progress} onSearchAgain={sinon.spy()} history={history} />
+        )
         expect(element.find('.btn.streaming-progress__skipped')).toHaveLength(1)
         expect(element.find('.btn.streaming-progress__skipped--warning')).toHaveLength(1)
     })
@@ -130,7 +136,9 @@ describe('StreamingProgressSkippedButton', () => {
             ],
         }
 
-        const element = mount(<StreamingProgressSkippedButton progress={progress} onSearchAgain={sinon.spy()} history={history} />)
+        const element = mount(
+            <StreamingProgressSkippedButton progress={progress} onSearchAgain={sinon.spy()} history={history} />
+        )
 
         let popover = element.find(ButtonDropdown)
         expect(popover.prop('isOpen')).toBe(false)
@@ -178,7 +186,9 @@ describe('StreamingProgressSkippedButton', () => {
 
         const onSearchAgain = sinon.spy()
 
-        const element = mount(<StreamingProgressSkippedButton progress={progress} onSearchAgain={onSearchAgain} history={history} />)
+        const element = mount(
+            <StreamingProgressSkippedButton progress={progress} onSearchAgain={onSearchAgain} history={history} />
+        )
 
         // Open dropdown
         const button = element.find('.btn.streaming-progress__skipped')

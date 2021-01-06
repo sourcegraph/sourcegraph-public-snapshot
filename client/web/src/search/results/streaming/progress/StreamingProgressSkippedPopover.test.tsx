@@ -37,7 +37,8 @@ describe('StreamingProgressSkippedPopover', () => {
                 },
                 {
                     reason: 'excluded-archive',
-                    message: 'By default we exclude archived repositories. Include them with `archived:yes` in your query.',
+                    message:
+                        'By default we exclude archived repositories. Include them with `archived:yes` in your query.',
                     severity: 'info',
                     title: '1 archived',
                     suggested: {
@@ -58,7 +59,9 @@ describe('StreamingProgressSkippedPopover', () => {
             ],
         }
 
-        const element = mount(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} history={history} />)
+        const element = mount(
+            <StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} history={history} />
+        )
         expect(element).toMatchSnapshot()
     })
 
@@ -77,7 +80,9 @@ describe('StreamingProgressSkippedPopover', () => {
             ],
         }
 
-        const element = mount(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} history={history} />)
+        const element = mount(
+            <StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} history={history} />
+        )
         expect(element.find(Form)).toHaveLength(0)
     })
 
@@ -100,7 +105,9 @@ describe('StreamingProgressSkippedPopover', () => {
             ],
         }
 
-        const element = mount(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} history={history} />)
+        const element = mount(
+            <StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} history={history} />
+        )
         const searchAgainButton = element.find(Button)
         expect(searchAgainButton).toHaveLength(1)
         expect(searchAgainButton.prop('disabled')).toBe(true)
@@ -145,7 +152,9 @@ describe('StreamingProgressSkippedPopover', () => {
             ],
         }
 
-        const element = mount(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} history={history} />)
+        const element = mount(
+            <StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} history={history} />
+        )
 
         const checkboxes = element.find(Input)
         expect(checkboxes).toHaveLength(3)
@@ -198,7 +207,9 @@ describe('StreamingProgressSkippedPopover', () => {
             ],
         }
 
-        const element = mount(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} history={history} />)
+        const element = mount(
+            <StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} history={history} />
+        )
 
         const checkboxes = element.find(Input)
         expect(checkboxes).toHaveLength(3)
@@ -259,7 +270,9 @@ describe('StreamingProgressSkippedPopover', () => {
 
         const searchAgain = sinon.spy()
 
-        const element = mount(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={searchAgain} history={history} />)
+        const element = mount(
+            <StreamingProgressSkippedPopover progress={progress} onSearchAgain={searchAgain} history={history} />
+        )
 
         const checkboxes = element.find(Input)
 

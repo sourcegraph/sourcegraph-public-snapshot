@@ -26,7 +26,14 @@ add('0 results, in progress', () => {
 
     return (
         <WebStory>
-            {() => <StreamingProgress progress={progress} state="loading" onSearchAgain={onSearchAgain} history={history} />}
+            {() => (
+                <StreamingProgress
+                    progress={progress}
+                    state="loading"
+                    onSearchAgain={onSearchAgain}
+                    history={history}
+                />
+            )}
         </WebStory>
     )
 })
@@ -41,7 +48,14 @@ add('1 result from 1 repository, in progress', () => {
 
     return (
         <WebStory>
-            {() => <StreamingProgress progress={progress} state="loading" onSearchAgain={onSearchAgain} history={history} />}
+            {() => (
+                <StreamingProgress
+                    progress={progress}
+                    state="loading"
+                    onSearchAgain={onSearchAgain}
+                    history={history}
+                />
+            )}
         </WebStory>
     )
 })
@@ -77,7 +91,14 @@ add('2 results from 2 repositories, complete, skipped with info', () => {
 
     return (
         <WebStory>
-            {() => <StreamingProgress progress={progress} state="complete" onSearchAgain={onSearchAgain} history={history} />}
+            {() => (
+                <StreamingProgress
+                    progress={progress}
+                    state="complete"
+                    onSearchAgain={onSearchAgain}
+                    history={history}
+                />
+            )}
         </WebStory>
     )
 })
@@ -113,7 +134,14 @@ add('2 results from 2 repositories, loading, skipped with info', () => {
 
     return (
         <WebStory>
-            {() => <StreamingProgress progress={progress} state="loading" onSearchAgain={onSearchAgain} history={history} />}
+            {() => (
+                <StreamingProgress
+                    progress={progress}
+                    state="loading"
+                    onSearchAgain={onSearchAgain}
+                    history={history}
+                />
+            )}
         </WebStory>
     )
 })
@@ -159,7 +187,14 @@ add('2 results from 2 repositories, complete, skipped with warning', () => {
 
     return (
         <WebStory>
-            {() => <StreamingProgress progress={progress} state="complete" onSearchAgain={onSearchAgain} history={history} />}
+            {() => (
+                <StreamingProgress
+                    progress={progress}
+                    state="complete"
+                    onSearchAgain={onSearchAgain}
+                    history={history}
+                />
+            )}
         </WebStory>
     )
 })
@@ -205,7 +240,14 @@ add('2 results from 2 repositories, loading, skipped with warning', () => {
 
     return (
         <WebStory>
-            {() => <StreamingProgress progress={progress} state="loading" onSearchAgain={onSearchAgain} history={history} />}
+            {() => (
+                <StreamingProgress
+                    progress={progress}
+                    state="loading"
+                    onSearchAgain={onSearchAgain}
+                    history={history}
+                />
+            )}
         </WebStory>
     )
 })
