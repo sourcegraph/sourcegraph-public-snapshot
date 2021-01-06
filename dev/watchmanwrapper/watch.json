@@ -11,7 +11,6 @@
         ["suffix", "go"],
         ["dirname", "cmd/symbols"],
         ["dirname", "schema"],
-        ["dirname", "docker-images/grafana/jsonnet"],
         ["dirname", "monitoring"],
         ["name", "cmd/frontend/graphqlbackend/schema.graphql", "wholename"]
       ]
