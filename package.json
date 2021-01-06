@@ -252,7 +252,7 @@
     "web-ext": "^4.2.0",
     "webpack": "^4.44.2",
     "webpack-bundle-analyzer": "^3.9.0",
-    "webpack-dev-server": "^3.11.0",
+    "webpack-dev-server": "^3.11.1",
     "worker-loader": "^3.0.4",
     "yarn-deduplicate": "^2.1.1"
   },
