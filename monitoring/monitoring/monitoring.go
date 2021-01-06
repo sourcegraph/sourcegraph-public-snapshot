@@ -339,31 +339,9 @@ func (c *Container) renderRules() (*promRulesFile, error) {
 
 					// makeLabels renders labels for rules belonging to this observable and alert,
 					// bound is one of upperBound or lowerBound
-					const (
-						upperBound = "high"
-						lowerBound = "low"
-					)
-					makeLabels := func(bound string) (map[string]string, error) {
-						var name, description string
-						var err error
-						hasUpperAndLowerBounds := (a.greaterOrEqual != nil) && (a.lessOrEqual != nil)
-						if hasUpperAndLowerBounds {
-							// if both bounds are present, since we generate an alert for each bound
-							// make sure the prometheus alert description only describes one bound
-							name = fmt.Sprintf("%s_%s", o.Name, bound)
-							if bound == upperBound {
-								description, err = c.alertDescription(o, &ObservableAlertDefinition{
-									greaterOrEqual: a.greaterOrEqual,
-								})
-							} else if bound == lowerBound {
-								description, err = c.alertDescription(o, &ObservableAlertDefinition{
-									lessOrEqual: a.lessOrEqual,
-								})
-							}
-						} else {
-							name = o.Name
-							description, err = c.alertDescription(o, a)
-						}
+					makeLabels := func() (map[string]string, error) {
+						name := o.Name
+						description, err := c.alertDescription(o, a)
 						if err != nil {
 							return nil, fmt.Errorf("unable to generate labels: %+v", err)
 						}
@@ -409,7 +387,7 @@ func (c *Container) renderRules() (*promRulesFile, error) {
 						// Set value for NaN condition
 						alertQuery = fmt.Sprintf("((%s) >= 0) OR on() vector(%v)", alertQuery, fireOnNan)
 
-						labels, err := makeLabels(upperBound)
+						labels, err := makeLabels()
 						if err != nil {
 							return nil, err
 						}
@@ -438,7 +416,7 @@ func (c *Container) renderRules() (*promRulesFile, error) {
 						// Set value for NaN condition
 						alertQuery = fmt.Sprintf("((%s) >= 0) OR on() vector(%v)", alertQuery, fireOnNan)
 
-						labels, err := makeLabels(lowerBound)
+						labels, err := makeLabels()
 						if err != nil {
 							return nil, err
 						}
@@ -679,6 +657,15 @@ func (o Observable) validate() error {
 			}
 		}
 	} else {
+		// Ensure alerts are valid
+		for alertLevel, alert := range map[string]*ObservableAlertDefinition{
+			"Warning":  o.Warning,
+			"Critical": o.Critical,
+		} {
+			if err := alert.validate(); err != nil {
+				return fmt.Errorf("%s Alert: %w", alertLevel, err)
+			}
+		}
 		// PossibleSolutions must be provided and valid
 		if o.PossibleSolutions == "" {
 			return fmt.Errorf(`PossibleSolutions must list solutions or an explicit "none"`)
@@ -729,6 +716,16 @@ func (a *ObservableAlertDefinition) For(d time.Duration) *ObservableAlertDefinit
 
 func (a *ObservableAlertDefinition) isEmpty() bool {
 	return a == nil || (*a == ObservableAlertDefinition{}) || (a.greaterOrEqual == nil && a.lessOrEqual == nil)
+}
+
+func (a *ObservableAlertDefinition) validate() error {
+	if a.isEmpty() {
+		return nil
+	}
+	if a.greaterOrEqual != nil && a.lessOrEqual != nil {
+		return errors.New("only one bound (greater or less) can be set")
+	}
+	return nil
 }
 
 // UnitType for controlling the unit type display on graphs.
