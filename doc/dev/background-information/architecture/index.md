@@ -6,8 +6,8 @@ This document provides a high level overview of Sourcegraph's architecture so yo
 
 At its core, Sourcegraph maintains a persistent cache of all the code that is connected to it. It is persistent, because this data is critical for Sourcegraph to function, but it is ultimately a cache because the code host is the source of truth and our cache is eventually consistent.
 
-- [gitserver](../../../../cmd/gitserver/README.md) is the sharded service that stores the code and makes it accessible to other Sourcegraph services.
-- [repo-updater](../../../../cmd/repo-updater/README.md) is the singleton service that is responsible for ensuring all the code in gitserver is as up-to-date as possible while respecting code host rate limits. It is also responsible for syncing code repository metadata from the code host that is stored in the `repo` table of our Postgres database.
+- [gitserver](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/cmd/gitserver/README.md) is the sharded service that stores the code and makes it accessible to other Sourcegraph services.
+- [repo-updater](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/cmd/repo-updater/README.md) is the singleton service that is responsible for ensuring all the code in gitserver is as up-to-date as possible while respecting code host rate limits. It is also responsible for syncing code repository metadata from the code host that is stored in the `repo` table of our Postgres database.
 
 If you want to learn more about how code is synchronized, read [Life of a repository](life-of-a-repository.md).
 
