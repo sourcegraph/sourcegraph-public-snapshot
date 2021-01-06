@@ -82,6 +82,30 @@ TODO
 
 TODO
 
+## Observability
+
+Observability encapsulates the monitoring and debugging of Sourcegraph deployments.
+Sourcegraph is designed, and ships with, a number of observability tools and capabilities out-of-the box to enable visibility into the health and state of a Sourcegraph deployment.
+
+Monitoring includes [metrics and dashboards](../../../admin/observability/metrics.md), [alerting](../../../admin/observability/alerting.md), and [health checking](../../../admin/observability/health_checks.md) capabilities.
+Learn more about monitoring in the [monitoring architecture overview](https://about.sourcegraph.com/handbook/engineering/observability/monitoring_architecture).
+
+- [grafana](../observability/grafana.md) is the frontend for service metrics, and ships with customized dashboards for Sourcegraph services.
+- [prometheus](../observability/prometheus.md) handles scraping of service metrics, and ships with recording rules, alert rules, and alerting capabilities.
+- [Health checks are provided by each Sourcegraph service](../../../admin/observability/health_checks.md).
+
+Debugging includes [tracing](../../../admin/observability/tracing.md) and [logging](../../../admin/observability/logs.md).
+
+- [jaeger](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/docker-images/jaeger-all-in-one) is the distributed tracing service used by Sourcegraph.
+- [jaeger-agent](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/docker-images/jaeger-agent) is a sidecar used in Kubernetes deployments for collecting traces from services.
+- [Logs are provided by each Sourcegraph service](../../../admin/observability/logs.md).
+
+If you want to learn more about observability:
+
+- [Observability for site administrators](../../../admin/observability/index.md)
+- [Observability developer documentation](../observability/index.md)
+- [Observability at Sourcegraph](https://about.sourcegraph.com/handbook/engineering/observability)
+
 <!-- content below here has not been reorganized or refreshed yet -->
 
 ## Diagram
