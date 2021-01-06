@@ -177,7 +177,6 @@ const steps: Step[] = [
                 oneWorkingDayBeforeRelease,
                 fourWorkingDaysBeforeRelease,
                 fiveWorkingDaysBeforeRelease,
-
                 captainSlackUsername,
                 slackAnnounceChannel,
                 dryRun,
