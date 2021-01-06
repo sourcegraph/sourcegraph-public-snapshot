@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"regexp"
 	"strings"
 )
 
@@ -49,13 +48,11 @@ func fprintObservableHeader(w io.Writer, c *Container, o *Observable, headerLeve
 	fmt.Fprintf(w, " %s: %s\n\n", c.Name, o.Name)
 }
 
-var observableDocAnchorRemoveRegexp = regexp.MustCompile("(_low|_high)$")
-
 // Create an anchor link that matches `fprintObservableHeader`
 //
 // Must match Prometheus template in `docker-images/prometheus/cmd/prom-wrapper/receivers.go`
 func observableDocAnchor(c *Container, o Observable) string {
-	observableAnchor := strings.ReplaceAll(observableDocAnchorRemoveRegexp.ReplaceAllString(o.Name, ""), "_", "-")
+	observableAnchor := strings.ReplaceAll(o.Name, "_", "-")
 	return fmt.Sprintf("%s-%s", c.Name, observableAnchor)
 }
 
