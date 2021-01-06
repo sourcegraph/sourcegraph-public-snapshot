@@ -1,5 +1,7 @@
 import classNames from 'classnames'
-import React, { useCallback, useRef, useState, useLayoutEffect } from 'react'
+import MenuLeftIcon from 'mdi-react/MenuLeftIcon'
+import MenuRightIcon from 'mdi-react/MenuRightIcon'
+import React, { useCallback, useLayoutEffect, useRef, useState } from 'react'
 import { SearchFilters } from '../../../../shared/src/api/protocol'
 import { QuickLink } from '../../schema/settings.schema'
 import { FilterChip } from '../FilterChip'
@@ -42,6 +44,9 @@ const FilterCarousel: React.FunctionComponent<{ children: JSX.Element | JSX.Elem
 
     const [canScrollBack, setCanScrollBack] = useState(false)
     const [canScrollForward, setCanScrollForward] = useState(false)
+
+    // WARNING for i18n/l10n: If/when we end up supporting right-to-left (eg. Arabic, Hebrew),
+    // this logic has to be reversed in RTL mode, as scrollLeft will be increasingly **negative**.
     const onBackClicked = useCallback(() => {
         if (canScrollBack && filtersReference.current) {
             const width = filtersReference.current.clientWidth
@@ -87,26 +92,26 @@ const FilterCarousel: React.FunctionComponent<{ children: JSX.Element | JSX.Elem
         <div className="d-flex search-results-filter-bars__carousel">
             <button
                 type="button"
-                className={classNames('search-results-filter-bars__scroll', 'search-results-filter-bars__scroll-back', {
+                className={classNames('btn', 'btn-link', 'search-results-filter-bars__scroll', {
                     'search-results-filter-bars__scroll--disabled': !canScrollBack,
                 })}
                 onClick={onBackClicked}
             >
-                Back
+                <span className="sr-only">Back</span>
+                <MenuLeftIcon />
             </button>
             <div className="search-results-filter-bars__filters" ref={filtersReference}>
                 {children}
             </div>
             <button
                 type="button"
-                className={classNames(
-                    'search-results-filter-bars__scroll',
-                    'search-results-filter-bars__scroll-forward',
-                    { 'search-results-filter-bars__scroll--disabled': !canScrollForward }
-                )}
+                className={classNames('btn', 'btn-link', 'search-results-filter-bars__scroll', {
+                    'search-results-filter-bars__scroll--disabled': !canScrollForward,
+                })}
                 onClick={onForwardClicked}
             >
-                Forward
+                <span className="sr-only">Forward</span>
+                <MenuRightIcon />
             </button>
         </div>
     )
