@@ -3,7 +3,6 @@ package monitoring
 import (
 	"errors"
 	"fmt"
-	"math"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -337,79 +336,25 @@ func (c *Container) renderRules() (*promRulesFile, error) {
 						continue
 					}
 
-					// The alertQuery must contribute a query that returns a value < 1 when it is not
-					// firing, or a value of >= 1 when it is firing.
+					// The alertQuery must contribute a query that returns true when it should be firing.
 					var alertQuery string
-
-					// Replace NaN values with zero (not firing) or one (firing) if they are present.
-					valueIfNaN := "0"
-					if o.DataMayNotBeNaN {
-						valueIfNaN = "1"
+					if a.greaterThan != nil {
+						comparator := ">="
+						if a.strictCompare {
+							comparator = ">"
+						}
+						alertQuery = fmt.Sprintf("(%s) %s %v", o.Query, comparator, *a.greaterThan)
+					} else if a.lessThan != nil {
+						comparator := "<="
+						if a.strictCompare {
+							comparator = "<"
+						}
+						alertQuery = fmt.Sprintf("(%s) %s %v", o.Query, comparator, *a.lessThan)
 					}
 
-					if a.greaterThan != nil {
-						// Add a very small value for strictly greater than
-						greaterThan := *a.greaterThan
-						if a.strictCompare {
-							greaterThan += math.SmallestNonzeroFloat64
-						}
-
-						// By dividing the query value and the greaterOrEqual value, we produce a
-						// value of 1 when the query reaches the greaterOrEqual value and < 1
-						// otherwise. Examples:
-						//
-						// 	query_value=50 / greaterThan=50 == 1.0
-						// 	query_value=25 / greaterThan=50 == 0.5
-						// 	query_value=0 / greaterThan=50 == 0.0
-						//
-						alertQuery = fmt.Sprintf("(%s) / (%v)", o.Query, greaterThan)
-
-						// Replace no-data with zero values, so the alert does not fire, if desired.
-						if o.DataMayNotExist {
-							alertQuery = fmt.Sprintf("(%s) OR on() vector(0)", alertQuery)
-						}
-
-						// Set value for NaN condition
-						alertQuery = fmt.Sprintf("((%s) >= 0) OR on() vector(%v)", alertQuery, valueIfNaN)
-
-						// Wrap the query in max() so that if there are multiple series (e.g. per-container) they
-						// get flattened into a single one (we only support per-service alerts,
-						// not per-container/replica).
-						// More context: https://github.com/sourcegraph/sourcegraph/issues/11571#issuecomment-654571953
-						alertQuery = fmt.Sprintf("max(%s)", alertQuery)
-					} else if a.lessThan != nil {
-						lessThan := *a.lessThan
-						// Add a very small value for strictly less than
-						if a.strictCompare {
-							lessThan -= math.SmallestNonzeroFloat64
-						}
-
-						// We try to produce an output == 1 when the alert should fire:
-						//
-						// 	lessThan=50 / query_value=100 == 0.5
-						// 	lessThan=50 / query_value=50 == 1.0
-						// 	lessThan=50 / query_value=25 == 2.0
-						//
-						// Clamp the query value to account for <= 0 values:
-						//
-						// 	lessThan=50 / query_value=0 (0.0000001) == 500000000
-						// 	lessThan=50 / query_value=-50 (0.0000001) == 500000000
-						//
-						alertQuery = fmt.Sprintf("%v / clamp_min(%s, 0.0000001)", lessThan, o.Query)
-
-						// Replace no-data with zero values, so the alert does not fire, if desired.
-						if o.DataMayNotExist {
-							alertQuery = fmt.Sprintf("(%s) OR on() vector(0)", alertQuery)
-						}
-
-						// Set value for NaN condition
-						alertQuery = fmt.Sprintf("((%s) >= 0) OR on() vector(%v)", alertQuery, valueIfNaN)
-
-						// Wrap the query in min() so that if there are multiple series (e.g. per-container) they
-						// get flattened into a single one (we only support per-service alerts,
-						// not per-container/replica).
-						// More context: https://github.com/sourcegraph/sourcegraph/issues/11571#issuecomment-654571953
-						alertQuery = fmt.Sprintf("min(%s)", alertQuery)
+					// If the data must exist, we alert if the query returns no value as well
+					if o.DataMustExist {
+						alertQuery = fmt.Sprintf("(%s) OR (absent(%s) == 1)", alertQuery, o.Query)
 					}
 
 					description, err := c.alertDescription(o, a)
@@ -545,25 +490,13 @@ type Observable struct {
 	// Query is the actual Prometheus query that should be observed.
 	Query string
 
-	// DataMayNotExist indicates if the query may not return data until some event occurs in the
-	// future.
+	// DataMustExist indicates if the query must return data.
 	//
 	// For example, repo_updater_memory_usage should always have data present and an alert should
-	// fire if for some reason that query is not returning any data, so this would be set to false.
+	// fire if for some reason that query is not returning any data, so this would be set to true.
 	// In contrast, search_error_rate would depend on users actually performing searches and we
-	// would not want an alert to fire if no data was present, so this would be set to true.
-	DataMayNotExist bool
-
-	// DataMayNotBeNaN indicates whether or not the query may return NaN regularly.
-	// In other words, when true, alerts will fire if the query returns NaN.
-	//
-	// NaN often indicates a mistaken divide by zero - for many types of alert queries,
-	// this is a common problem on low-traffic deployments where the values of many
-	// metrics frequently end up being 0, so the default is to allow it.
-	//
-	// However, for some queries NaN values may be unexpected, in which case you should
-	// set this to true.
-	DataMayNotBeNaN bool
+	// would not want an alert to fire if no data was present, so this will not need to be set.
+	DataMustExist bool
 
 	// Warning and Critical alert definitions.
 	// Consider adding at least a Warning or Critical alert to each Observable to make it

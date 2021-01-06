@@ -80,7 +80,7 @@ func (g *promGroup) appendRow(alertQuery string, labels map[string]string, durat
 		promRule{
 			Alert:  alertName,
 			Labels: labels,
-			Expr:   fmt.Sprintf(`%s >= 1`, alertQuery),
+			Expr:   alertQuery,
 			For:    forDuration,
 		},
 		// Record for generated alert, useful for indicating in Grafana dashboards if this alert
