@@ -21,11 +21,11 @@ interface Props extends RouteComponentProps, TelemetryProps {
     routingPrefix: string
 }
 
-interface rowProps {
+interface RowProps {
     node: SiteAdminRepositoryFields
 }
 
-const row: React.FunctionComponent<rowProps> = props => (
+const row: React.FunctionComponent<RowProps> = props => (
     <RepositoryNode
         name={props.node.name}
         url={props.node.url}

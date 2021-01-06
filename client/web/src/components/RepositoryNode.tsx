@@ -31,7 +31,7 @@ interface StatusIconProps {
 
 const StatusIcon: React.FunctionComponent<StatusIconProps> = ({ mirrorInfo }) => {
     if (mirrorInfo === undefined) {
-        return <div />
+        return null
     }
     if (mirrorInfo.cloneInProgress) {
         return (
@@ -81,12 +81,13 @@ const CodeHostIcon: React.FunctionComponent<CodeHostIconProps> = ({ hostType }) 
                     <BitbucketIcon className="icon-inline bitbucket-icon" />
                 </small>
             )
+        default:
+            return (
+                <small className="mr-2">
+                    <SourceRepositoryIcon className="icon-inline" />
+                </small>
+            )
     }
-    return (
-        <small className="mr-2">
-            <SourceRepositoryIcon className="icon-inline" />
-        </small>
-    )
 }
 
 export const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({
@@ -109,8 +110,8 @@ export const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({
     )
     return (
         <tr className="w-100 repository-node d-flex align-items-center justify-content-between">
-            <a className="w-100 " href={url} onClick={handleOnClick}>
-                <td className="w-100 d-flex justify-content-between align-items-baseline">
+            <td className="w-100 d-flex justify-content-between align-items-baseline">
+                <a className="w-100 " href={url} onClick={handleOnClick}>
                     <div className="d-flex align-items-center">
                         {prefixComponent && prefixComponent}
                         <StatusIcon mirrorInfo={mirrorInfo} />
@@ -127,8 +128,58 @@ export const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({
                         {isPrivate && <div className="badge badge-secondary text-muted">Private</div>}
                         <ChevronRightIcon className="icon-inline ml-2 caret-icon" />
                     </div>
-                </td>
-            </a>
+                </a>
+            </td>
+        </tr>
+    )
+}
+
+interface CheckboxRepositoryNodeProps {
+    name: string
+    mirrorInfo?: {
+        cloneInProgress: boolean
+        cloned: boolean
+    }
+    onClick: () => void
+    checked: boolean
+    serviceType: string
+    isPrivate: boolean
+}
+
+export const CheckboxRepositoryNode: React.FunctionComponent<CheckboxRepositoryNodeProps> = ({
+    name,
+    mirrorInfo,
+    onClick,
+    checked,
+    serviceType,
+    isPrivate,
+}) => {
+    const handleOnClick = useCallback(
+        (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>): void => {
+            if (onClick !== undefined) {
+                event.preventDefault()
+                onClick()
+            }
+        },
+        [onClick]
+    )
+    return (
+        <tr className="w-100 repository-node d-flex align-items-center justify-content-between" key={name}>
+            <td className="w-100 d-flex justify-content-between align-items-baseline" onClick={onClick}>
+                <div className="d-flex align-items-center">
+                    <input className="mr-2" type="checkbox" onChange={onClick} checked={checked} />
+                    <StatusIcon mirrorInfo={mirrorInfo} />
+                    <CodeHostIcon hostType={serviceType} />
+                    <RepoLink
+                        className="text-muted"
+                        repoClassName="font-weight-bolder"
+                        repoName={name}
+                        to=""
+                        onClick={handleOnClick}
+                    />
+                </div>
+                <div>{isPrivate && <div className="badge badge-secondary text-muted">Private</div>}</div>
+            </td>
         </tr>
     )
 }

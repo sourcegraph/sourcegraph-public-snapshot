@@ -1,8 +1,8 @@
-import React, { FormEvent, useCallback, useState } from 'react'
+import React, { FormEvent, useCallback, useEffect, useState } from 'react'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 import { RouteComponentProps } from 'react-router'
 import { PageTitle } from '../../../components/PageTitle'
-import { RepositoryNode } from '../../../components/RepositoryNode'
+import { CheckboxRepositoryNode } from '../../../components/RepositoryNode'
 import { Form } from '../../../../../branded/src/components/Form'
 import { Link } from '../../../../../shared/src/components/Link'
 import { ExternalServiceKind, ExternalServicesResult, Maybe } from '../../../graphql-operations'
@@ -21,18 +21,21 @@ interface Repo {
     private: boolean
 }
 
-const perPage = 20
+const PER_PAGE = 20
 
 /**
  * A page to manage the repositories a user syncs from their connected code hosts.
  */
 export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> = ({
     history,
-    location,
     userID,
     routingPrefix,
     telemetryService,
 }) => {
+    useEffect(() => {
+        telemetryService.logViewEvent('UserSettingsRepositories')
+    }, [telemetryService])
+
     // initial state vars
     const emptyRepos: Repo[] = []
     const initialRepoState = {
@@ -78,7 +81,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                         break
                     case ExternalServiceKind.GITHUB:
                         if (cfg.repos !== undefined) {
-                            Array.prototype.push.apply(selected, cfg.repos)
+                            selected.push(...cfg.repos)
                         }
                         break
                 }
@@ -120,7 +123,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 listReposSubscription.unsubscribe()
             },
             error => {
-                console.log(error)
                 setRepoState({
                     repos: emptyRepos,
                     loading: false,
@@ -164,9 +166,9 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
     // create elements for pagination
     const pages: JSX.Element[] = []
-    for (let page = 1; page <= Math.ceil(filteredRepos.length / perPage); page++) {
+    for (let page = 1; page <= Math.ceil(filteredRepos.length / PER_PAGE); page++) {
         pages.push(
-            <a className="btn" onClick={event => setPage(page)}>
+            <a className="btn" onClick={() => setPage(page)}>
                 <p className={(currentPage === page && 'text-primary') || 'text-muted'}>{page}</p>
             </a>
         )
@@ -189,12 +191,12 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     allRepos: selectionState.radio === 'all',
                     repos: (selectionState.radio === 'selected' && repos) || null,
                 }).catch(error => {
-                    throw error
+                    setRepoState({ ...repoState, error: String(error) })
                 })
             }
             history.push(routingPrefix + '/repositories')
         },
-        [codeHosts.hosts, history, routingPrefix, selectionState.radio, selectionState.repos]
+        [codeHosts.hosts, history, repoState, routingPrefix, selectionState.radio, selectionState.repos]
     )
 
     const handleRadioSelect = (changeEvent: React.ChangeEvent<HTMLInputElement>): void => {
@@ -286,69 +288,48 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     const rows: JSX.Element = (
         <tbody>
             <tr className="align-items-baseline d-flex" key="header">
-                <tr className="w-100 repository-node d-flex align-items-center justify-content-between">
-                    <td className="w-100 d-flex justify-content-between align-items-baseline">
-                        <div className="d-flex align-items-center">
-                            <input
-                                className="mr-2"
-                                type="checkbox"
-                                checked={selectionState.repos.size === filteredRepos.length}
-                                onChange={event => {
-                                    const newMap = new Map<string, Repo>()
-                                    // if not all repos are selected, we should select all, otherwise empty the selection
-                                    if (selectionState.repos.size !== filteredRepos.length) {
-                                        for (const repo of filteredRepos) {
-                                            newMap.set(repo.name, repo)
-                                        }
-                                    }
-                                    setSelectionState({
-                                        repos: newMap,
-                                        loaded: selectionState.loaded,
-                                        radio: selectionState.radio,
-                                    })
-                                }}
-                            />
-                            <span
-                                className={
-                                    ((selectionState.repos.size !== 0 && 'font-weight-bold ') || '') +
-                                    'repositories-header'
+                <td className="w-100 d-flex justify-content-flex-start align-items-center">
+                    <input
+                        className="mr-2"
+                        type="checkbox"
+                        checked={selectionState.repos.size === filteredRepos.length}
+                        onChange={() => {
+                            const newMap = new Map<string, Repo>()
+                            // if not all repos are selected, we should select all, otherwise empty the selection
+                            if (selectionState.repos.size !== filteredRepos.length) {
+                                for (const repo of filteredRepos) {
+                                    newMap.set(repo.name, repo)
                                 }
-                            >
-                                {(selectionState.repos.size > 0 && selectionState.repos.size) || 'No'} repositories
-                                selected.
-                            </span>
-                        </div>
-                    </td>
-                </tr>
+                            }
+                            setSelectionState({
+                                repos: newMap,
+                                loaded: selectionState.loaded,
+                                radio: selectionState.radio,
+                            })
+                        }}
+                    />
+                    <span
+                        className={
+                            ((selectionState.repos.size !== 0 && 'font-weight-bold ') || '') + 'repositories-header'
+                        }
+                    >
+                        {(selectionState.repos.size > 0 && selectionState.repos.size) || 'No'} repositories selected.
+                    </span>
+                </td>
             </tr>
             {filteredRepos.map((repo, index) => {
-                if (index < (currentPage - 1) * perPage || index >= currentPage * perPage) {
+                if (index < (currentPage - 1) * PER_PAGE || index >= currentPage * PER_PAGE) {
                     return
                 }
                 return (
-                    <tr className="align-items-baseline d-flex" key={repo.name}>
-                        <RepositoryNode
-                            name={repo.name}
-                            url=""
-                            onClick={onRepoClicked(repo)}
-                            serviceType={repo.codeHost?.kind.toLowerCase() || ''}
-                            isPrivate={repo.private}
-                            prefixComponent={
-                                <input
-                                    // this is truly cursed. for some reason the onClick/onChange callback for this element
-                                    // will allow setState and trigger a render, but not reevaluate the checked field, causing
-                                    // the checkbox to not become checked until another checkbox is clicked. however if you set
-                                    // state via the same function called via RepositoryNode.onClick the render correctly reads
-                                    // the checked func, and shows the box as checked. in order to hack around this i've set
-                                    // pointer-events: none so that we always use RepositoryNode.onClick. i am so sorry.
-                                    className="mr-2"
-                                    type="checkbox"
-                                    onChange={onRepoClicked(repo)}
-                                    checked={selectionState.repos.has(repo.name)}
-                                />
-                            }
-                        />
-                    </tr>
+                    <CheckboxRepositoryNode
+                        name={repo.name}
+                        key={repo.name}
+                        onClick={onRepoClicked(repo)}
+                        checked={selectionState.repos.has(repo.name)}
+                        serviceType={repo.codeHost?.kind.toLowerCase() || ''}
+                        isPrivate={repo.private}
+                    />
                 )
             })}
         </tbody>
@@ -357,17 +338,16 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     const loadingAnimation: JSX.Element = (
         <tbody>
             <tr className="mt-2 align-items-baseline d-flex w-80">
-                <div className="animate-shimmer w-100 h-100 p-3" />
+                <td className="animate-shimmer w-100 h-100 p-3" />
             </tr>
             <tr className="mt-2 align-items-baseline d-flex w-30">
-                <div className="animate-shimmer w-100 h-100 p-3" />
+                <td className="animate-shimmer w-100 h-100 p-3" />
             </tr>
             <tr className="mt-2 align-items-baseline d-flex w-70">
-                <div className="animate-shimmer w-100 h-100 p-3" />
+                <td className="animate-shimmer w-100 h-100 p-3" />
             </tr>
         </tbody>
     )
-    console.log(selectionState.repos)
     return (
         <div className="p-2">
             <PageTitle title="Manage Repositories" />
@@ -376,8 +356,8 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 Choose which repositories to sync with Sourcegraph so you can search all your code in one place.
             </p>
             <ul className="list-group">
-                <li className="list-group-item">
-                    <div className="p-4">
+                <li className="list-group-item" key="body">
+                    <div className="p-4" key="description">
                         <h3>Your repositories</h3>
                         <p className="text-muted">
                             Repositories you own or collaborate on from{' '}
