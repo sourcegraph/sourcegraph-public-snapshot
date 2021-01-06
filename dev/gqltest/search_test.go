@@ -427,6 +427,11 @@ func TestSearch(t *testing.T) {
 				name:  "commit search, nonzero result",
 				query: `repo:^github\.com/sgtest/go-diff$ type:commit count:1`,
 			},
+			{
+				name:       "commit search, nonzero result",
+				query:      `repo:^github\.com/sgtest/go-diff$@ref/noexist type:commit count:1`,
+				zeroResult: true,
+			},
 			// Diff search
 			{
 				name:  "diff search, nonzero result",
