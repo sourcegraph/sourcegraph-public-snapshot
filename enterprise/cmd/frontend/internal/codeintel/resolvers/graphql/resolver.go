@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/graph-gophers/graphql-go"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
@@ -153,6 +154,15 @@ func (r *Resolver) UpdateRepositoryIndexConfiguration(ctx context.Context, args 
 	}
 
 	return &gql.EmptyResponse{}, nil
+}
+
+func (r *Resolver) QueueAutoIndexJob(ctx context.Context, args *gql.QueueAutoIndexJobArgs) (*gql.EmptyResponse, error) {
+	repositoryID, err := unmarshalLSIFIndexGQLID(args.Repository)
+	if err != nil {
+		return nil, err
+	}
+
+	return &gql.EmptyResponse{}, r.resolver.QueueAutoIndexJob(ctx, int(repositoryID))
 }
 
 func (r *Resolver) GitBlobLSIFData(ctx context.Context, args *gql.GitBlobLSIFDataArgs) (gql.GitBlobLSIFDataResolver, error) {
