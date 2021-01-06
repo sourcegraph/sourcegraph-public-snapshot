@@ -12,7 +12,7 @@ LABEL org.opencontainers.image.url=https://sourcegraph.com/
 LABEL org.opencontainers.image.source=https://github.com/sourcegraph/sourcegraph/
 LABEL org.opencontainers.image.documentation=https://docs.sourcegraph.com/
 
-# Reflects cAdvisor Dockerfile at https://github.com/google/cadvisor/blob/v0.37.0/deploy/Dockerfile
+# Reflects cAdvisor Dockerfile at https://github.com/google/cadvisor/blob/v0.38.6/deploy/Dockerfile
 # alongside additional Sourcegraph defaults.
 ENTRYPOINT ["/usr/bin/cadvisor", "-logtostderr", \
     # sourcegraph cAdvisor custom port
@@ -20,7 +20,7 @@ ENTRYPOINT ["/usr/bin/cadvisor", "-logtostderr", \
     # only enable certain metrics, based on kubelet master
     "-disable_metrics=percpu,hugetlb,sched,tcp,udp,advtcp", \
     # other kubelet defaults
-    # see https://sourcegraph.com/github.com/google/cadvisor@v0.37.0/-/blob/deploy/kubernetes/overlays/examples/cadvisor-args.yaml
+    # see https://sourcegraph.com/github.com/google/cadvisor@v0.38.6/-/blob/deploy/kubernetes/overlays/examples/cadvisor-args.yaml
     "-housekeeping_interval=10s", \
     "-max_housekeeping_interval=15s", \
     "-event_storage_event_limit=default=0", \
