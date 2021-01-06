@@ -19940,10 +19940,10 @@ storybook-addon-designs@^5.4.2:
   dependencies:
     react-pdf "^4.0.5"
 
-storybook-dark-mode@^1.0.3:
-  version "1.0.3"
-  resolved "https://registry.npmjs.org/storybook-dark-mode/-/storybook-dark-mode-1.0.3.tgz#8d58a874b6107ff1a7f29ebb0e6726b8036eee08"
-  integrity sha512-mjHLrv/dwtqKmbOoQ2CMtGKDttWSnUybutujsIPxLcEC77EujjWiRBFv46LtXAZEyZLm8sGFUz0s6HJJfJ3tSw==
+storybook-dark-mode@^1.0.4:
+  version "1.0.4"
+  resolved "https://registry.npmjs.org/storybook-dark-mode/-/storybook-dark-mode-1.0.4.tgz#848e5ee6c5dd6180d15c533380c8b35579ec4975"
+  integrity sha512-4ZQh6scu/WlUycAMNbkNyF/9fN2bI/sJvNdPZoBa1b2X1UtsgzUeHRCGWcLsTpoiaPgPE/+eT077PuYHm5sYLQ==
   dependencies:
     fast-deep-equal "^3.0.0"
     memoizerific "^1.11.3"
