@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func Test_defaultRepos_List(t *testing.T) {
+func TestListDefaultRepos(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -120,6 +120,56 @@ func Test_defaultRepos_List(t *testing.T) {
 			t.Errorf("mismatch (-want +got):\n%s", diff)
 		}
 	})
+}
+
+func TestListDefaultReposNotCloned(t *testing.T) {
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+	_, err := dbconn.Global.ExecContext(ctx, `
+			-- insert one user-added repo, i.e. a repo added by an external service owned by a user
+			INSERT INTO users(id, username) VALUES (1, 'foo');
+			INSERT INTO repo(id, name, cloned) VALUES (10, 'github.com/foo/bar10', true);
+			INSERT INTO repo(id, name, cloned) VALUES (11, 'github.com/foo/bar11', false);
+			INSERT INTO external_services(id, kind, display_name, config, namespace_user_id) VALUES (100, 'github', 'github', '{}', 1);
+			INSERT INTO external_service_repos VALUES (100, 10, 'https://github.com/foo/bar10');
+			INSERT INTO external_service_repos VALUES (100, 11, 'https://github.com/foo/bar11');
+
+			-- insert one repo referenced in the default repo table
+			INSERT INTO repo(id, name, cloned) VALUES (12, 'github.com/foo/bar12', true);
+			INSERT INTO default_repos(repo_id) VALUES(12);
+			INSERT INTO repo(id, name, cloned) VALUES (13, 'github.com/foo/bar13', false);
+			INSERT INTO default_repos(repo_id) VALUES(13);
+
+			-- insert one repo not referenced in the default repo table;
+			INSERT INTO repo(id, name) VALUES (14, 'github.com/foo/bar14');
+		`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	repos, err := Repos.ListDefaultReposNotCloned(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	sort.Slice(repos, func(i, j int) bool {
+		return repos[i].ID < repos[j].ID
+	})
+
+	want := []*types.RepoName{
+		{
+			ID:   api.RepoID(11),
+			Name: "github.com/foo/bar11",
+		},
+		{
+			ID:   api.RepoID(13),
+			Name: "github.com/foo/bar13",
+		},
+	}
+	// expect 2 repos, the user added repo and the one that is referenced in the default repos table
+	if diff := cmp.Diff(want, repos, cmpopts.EquateEmpty()); diff != "" {
+		t.Errorf("mismatch (-want +got):\n%s", diff)
+	}
 }
 
 func BenchmarkDefaultRepos_List_Empty(b *testing.B) {

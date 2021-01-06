@@ -662,7 +662,32 @@ func (s *RepoStore) ListDefaultRepos(ctx context.Context) (results []*types.Repo
 	}()
 	s.ensureStore()
 
-	const q = `
+	return s.listDefaultRepos(ctx, false)
+}
+
+// ListDefaultRepos returns a list of default repos that are not currently
+// cloned. Default repos are a union of any repo in our default_repos table or
+// any repos owned by a user.
+func (s *RepoStore) ListDefaultReposNotCloned(ctx context.Context) (results []*types.RepoName, err error) {
+	tr, ctx := trace.New(ctx, "repos.ListDefaultRepos", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+	s.ensureStore()
+
+	return s.listDefaultRepos(ctx, true)
+}
+
+// listDefaultRepos lists default repos with the option of only returning default
+// repos that are not cloned.
+func (s *RepoStore) listDefaultRepos(ctx context.Context, notCloned bool) (results []*types.RepoName, err error) {
+	var notClonedClause string
+	if notCloned {
+		notClonedClause = "AND NOT r.cloned"
+	}
+
+	var q = fmt.Sprintf(`
 -- source: internal/db/default_repos.go:defaultRepos.List
 SELECT
     id,
@@ -679,17 +704,19 @@ WHERE
 			s.namespace_user_id IS NOT NULL
 			AND s.deleted_at IS NULL
 			AND r.id = sr.repo_id
-            AND r.deleted_at IS NULL)
+            AND r.deleted_at IS NULL
+            %s)
 UNION
     SELECT
-        repo.id,
-        repo.name
+        r.id,
+        r.name
     FROM
         default_repos
-		JOIN repo ON default_repos.repo_id = repo.id
+		JOIN repo r ON default_repos.repo_id = r.id
 	WHERE
-		deleted_at IS NULL
-`
+		r.deleted_at IS NULL
+        %s
+`, notClonedClause, notClonedClause)
 
 	var repos []*types.RepoName
 
