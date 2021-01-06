@@ -29,6 +29,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Updated language detection library. Includes language detection for `lang:starlark`. [#16900](https://github.com/sourcegraph/sourcegraph/pull/16900)
 - Fixed retrieving status for indexed tags and deduplicated main branches in the indexing settings page. [#13787](https://github.com/sourcegraph/sourcegraph/issues/13787)
 - Fixed search highlighting the wrong line. [#10468](https://github.com/sourcegraph/sourcegraph/issues/10468)
+- Fixed an issue where searches of the form `foo type:file` returned results of type `path` too. [#17076](https://github.com/sourcegraph/sourcegraph/issues/17076)
 
 ### Removed
 

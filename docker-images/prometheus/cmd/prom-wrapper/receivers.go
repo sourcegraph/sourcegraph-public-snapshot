@@ -40,7 +40,7 @@ var commonLabels = []string{"alertname", "level", "service_name", "name", "owner
 // All `.CommonLabels` labels used in these templates should be included in `route.GroupByStr` in order for them to be available.
 var (
 	// observableDocAnchorTemplate must match anchors generated in `monitoring/monitoring/documentation.go`.
-	observableDocAnchorTemplate = `{{ .CommonLabels.service_name }}-{{ .CommonLabels.name | reReplaceAll "(_low|_high)$" "" | reReplaceAll "_" "-" }}`
+	observableDocAnchorTemplate = `{{ .CommonLabels.service_name }}-{{ .CommonLabels.name | reReplaceAll "_" "-" }}`
 	alertSolutionsURLTemplate   = fmt.Sprintf(`%s#%s`, alertSolutionsURL, observableDocAnchorTemplate)
 
 	// Title templates

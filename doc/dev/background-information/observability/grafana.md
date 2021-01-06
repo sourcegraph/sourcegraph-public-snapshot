@@ -7,6 +7,10 @@ Adding dashboards, panels, etc. to this image is handled by the [monitoring gene
 
 The image is defined in [`docker-images/grafana`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/docker-images/grafana).
 
+## Dashboards
+
+See [Metrics: Grafana](../../../admin/observability/metrics.md#grafana).
+
 ## Upgrading Grafana
 
 To upgrade Grafana:
