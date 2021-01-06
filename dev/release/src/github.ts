@@ -34,6 +34,11 @@ const templates = {
         repo: 'about',
         path: 'handbook/engineering/releases/patch_release_issue_template.md',
     },
+    upgradeMangedInstanceIssue: {
+        owner: 'sourceraph',
+        repo: 'about',
+        path: 'handbook/engineering/releases/upgrade_managed_issue_template.md',
+    },
 }
 
 /**
@@ -53,6 +58,7 @@ export async function ensureReleaseTrackingIssue({
     assignees: string[]
     releaseDateTime: Date
     oneWorkingDayBeforeRelease: Date
+    oneWorkingDayAfterRelease: Date
     fourWorkingDaysBeforeRelease: Date
     fiveWorkingDaysBeforeRelease: Date
     dryRun: boolean
@@ -136,6 +142,63 @@ export async function ensurePatchReleaseIssue({
             repo: 'sourcegraph',
             assignees,
             body: issueBody,
+            labels: ['release-tracking'],
+        },
+        dryRun
+    )
+}
+
+/**
+ * Ensures a upgrade managed instances to ($MAJOR.$MINOR) tracking issue has been created with the given
+ * parameters using `templates.releaseIssue`.
+ */
+export async function ensureUpgradeManagedTrackingIssue({
+    version,
+    assignees,
+    oneWorkingDayAfterRelease,
+    dryRun,
+}: {
+    version: semver.SemVer
+    assignees: string[]
+    oneWorkingDayAfterRelease: Date
+    dryRun: boolean
+}): Promise<{ url: string; created: boolean }> {
+    const octokit = await getAuthenticatedGitHubClient()
+    console.log(`Preparing issue from ${JSON.stringify(templates.upgradeMangedInstanceIssue)}`)
+    const issueTemplate = await getContent(octokit, templates.upgradeMangedInstanceIssue)
+    const majorMinor = `${version.major}.${version.minor}`
+    const issueBody = issueTemplate
+        .replace(/\$MAJOR/g, version.major.toString())
+        .replace(/\$MINOR/g, version.minor.toString())
+        .replace(/\$PATCH/g, version.patch.toString())
+        .replace(
+            /\$ONE_WORKING_DAY_AFTER_RELEASE/g,
+            dateMarkdown(oneWorkingDayAfterRelease, `One working day before ${majorMinor} release`)
+        )
+
+    // Release milestones are not as emphasised now as they used to be, since most teams
+    // use sprints shorter than releases to track their work. For reference, if one is
+    // available we apply it to this tracking issue, otherwise just leave it without a
+    // milestone.
+    let milestoneNumber: number | undefined
+    const milestone = await getReleaseMilestone(octokit, version)
+    if (!milestone) {
+        console.log(
+            `Milestone ${JSON.stringify(releaseMilestoneName(version))} is closed or not found — omitting from issue.`
+        )
+    } else {
+        milestoneNumber = milestone ? milestone.number : undefined
+    }
+
+    return ensureIssue(
+        octokit,
+        {
+            title: trackingIssueTitle(version),
+            owner: 'sourcegraph',
+            repo: 'sourcegraph',
+            assignees,
+            body: issueBody,
+            milestone: milestoneNumber,
             labels: ['release-tracking'],
         },
         dryRun
@@ -321,15 +384,18 @@ export async function createChangesets(options: ChangesetsOptions): Promise<Crea
         console.log('Generating changes and publishing as pull requests')
     }
 
-    // Generate and push changes
+    // Generate and push changes. We abort here if a repo fails because it should be safe
+    // to re-run changesets, which force push changes to a PR branch.
     for (const change of options.changes) {
         const repository = `${change.owner}/${change.repo}`
         console.log(`${repository}: Preparing change for on '${change.base}' to '${change.head}'`)
         await createBranchWithChanges(octokit, { ...change, dryRun: options.dryRun })
     }
 
-    // Publish changes as pull requests only if all changes are successfully created
+    // Publish changes as pull requests only if all changes are successfully created. We
+    // continue on error for errors when publishing.
     const results: CreatedChangeset[] = []
+    let publishChangesFailed = false
     for (const change of options.changes) {
         const repository = `${change.owner}/${change.repo}`
         console.log(`${repository}: Preparing pull request for change from '${change.base}' to '${change.head}':
@@ -337,21 +403,30 @@ export async function createChangesets(options: ChangesetsOptions): Promise<Crea
 Title: ${change.title}
 Body: ${change.body || 'none'}`)
         let pullRequest: { url: string; number: number } = { url: '', number: -1 }
-        if (!options.dryRun) {
-            pullRequest = await createPR(octokit, change)
-        }
+        try {
+            if (!options.dryRun) {
+                pullRequest = await createPR(octokit, change)
+            }
 
-        results.push({
-            repository,
-            branch: change.base,
-            pullRequestURL: pullRequest.url,
-            pullRequestNumber: pullRequest.number,
-        })
+            results.push({
+                repository,
+                branch: change.base,
+                pullRequestURL: pullRequest.url,
+                pullRequestNumber: pullRequest.number,
+            })
+        } catch (error) {
+            publishChangesFailed = true
+            console.error(error)
+            console.error(`Failed to create pull request for change in ${repository}`, { change })
+        }
     }
 
     // Log results
     for (const result of results) {
         console.log(`${result.repository} (${result.branch}): created pull request ${result.pullRequestURL}`)
+    }
+    if (publishChangesFailed) {
+        throw new Error('Error occured applying some changes - please check log output')
     }
 
     return results

@@ -28,30 +28,32 @@ func (h *handler) prepareWorkspace(ctx context.Context, commandRunner command.Ru
 		}
 	}()
 
-	if repositoryName == "" {
-		return tempDir, nil
-	}
-
-	cloneURL, err := makeURL(
-		h.options.ClientOptions.EndpointOptions.URL,
-		h.options.ClientOptions.EndpointOptions.Username,
-		h.options.ClientOptions.EndpointOptions.Password,
-		h.options.GitServicePath,
-		repositoryName,
-	)
-	if err != nil {
-		return "", err
-	}
-
-	gitCommands := []command.CommandSpec{
-		{Key: "setup.git.init", Command: []string{"git", "-C", tempDir, "init"}, Operation: h.operations.SetupGitInit},
-		{Key: "setup.git.fetch", Command: []string{"git", "-C", tempDir, "-c", "protocol.version=2", "fetch", cloneURL.String(), commit}, Operation: h.operations.SetupGitFetch},
-		{Key: "setup.git.checkout", Command: []string{"git", "-C", tempDir, "checkout", commit}, Operation: h.operations.SetupGitCheckout},
-	}
-	for _, spec := range gitCommands {
-		if err := commandRunner.Run(ctx, spec); err != nil {
-			return "", errors.Wrap(err, fmt.Sprintf("failed %s", spec.Key))
+	if repositoryName != "" {
+		cloneURL, err := makeURL(
+			h.options.ClientOptions.EndpointOptions.URL,
+			h.options.ClientOptions.EndpointOptions.Username,
+			h.options.ClientOptions.EndpointOptions.Password,
+			h.options.GitServicePath,
+			repositoryName,
+		)
+		if err != nil {
+			return "", err
 		}
+
+		gitCommands := []command.CommandSpec{
+			{Key: "setup.git.init", Command: []string{"git", "-C", tempDir, "init"}, Operation: h.operations.SetupGitInit},
+			{Key: "setup.git.fetch", Command: []string{"git", "-C", tempDir, "-c", "protocol.version=2", "fetch", cloneURL.String(), commit}, Operation: h.operations.SetupGitFetch},
+			{Key: "setup.git.checkout", Command: []string{"git", "-C", tempDir, "checkout", commit}, Operation: h.operations.SetupGitCheckout},
+		}
+		for _, spec := range gitCommands {
+			if err := commandRunner.Run(ctx, spec); err != nil {
+				return "", errors.Wrap(err, fmt.Sprintf("failed %s", spec.Key))
+			}
+		}
+	}
+
+	if err := os.MkdirAll(filepath.Join(tempDir, command.ScriptsPath), os.ModePerm); err != nil {
+		return "", err
 	}
 
 	return tempDir, nil

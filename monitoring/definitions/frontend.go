@@ -8,6 +8,9 @@ import (
 )
 
 func Frontend() *monitoring.Container {
+	// frontend is sometimes called sourcegraph-frontend in various contexts
+	const containerName = "(frontend|sourcegraph-frontend)"
+
 	return &monitoring.Container{
 		Name:        "frontend",
 		Title:       "Frontend",
@@ -565,34 +568,34 @@ func Frontend() *monitoring.Container {
 							PossibleSolutions: "none",
 						},
 						{
-							Name:              "codeintel_upload_records_removed",
-							Description:       "upload records expired or deleted every 5m",
-							Query:             `sum(increase(src_codeintel_background_upload_records_removed_total{job=~"(sourcegraph-)?frontend"}[5m]))`,
-							DataMayNotExist:   true,
-							NoAlert:           true,
-							PanelOptions:      monitoring.PanelOptions().LegendFormat("uploads removed"),
-							Owner:             monitoring.ObservableOwnerCodeIntel,
-							PossibleSolutions: "none",
+							Name:            "codeintel_upload_records_removed",
+							Description:     "upload records expired or deleted every 5m",
+							Query:           `sum(increase(src_codeintel_background_upload_records_removed_total{job=~"(sourcegraph-)?frontend"}[5m]))`,
+							DataMayNotExist: true,
+							NoAlert:         true,
+							PanelOptions:    monitoring.PanelOptions().LegendFormat("uploads removed"),
+							Owner:           monitoring.ObservableOwnerCodeIntel,
+							Interpretation:  "none",
 						},
 						{
-							Name:              "codeintel_index_records_removed",
-							Description:       "index records expired or deleted every 5m",
-							Query:             `sum(increase(src_codeintel_background_index_records_removed_total{job=~"(sourcegraph-)?frontend"}[5m]))`,
-							DataMayNotExist:   true,
-							NoAlert:           true,
-							PanelOptions:      monitoring.PanelOptions().LegendFormat("indexes removed"),
-							Owner:             monitoring.ObservableOwnerCodeIntel,
-							PossibleSolutions: "none",
+							Name:            "codeintel_index_records_removed",
+							Description:     "index records expired or deleted every 5m",
+							Query:           `sum(increase(src_codeintel_background_index_records_removed_total{job=~"(sourcegraph-)?frontend"}[5m]))`,
+							DataMayNotExist: true,
+							NoAlert:         true,
+							PanelOptions:    monitoring.PanelOptions().LegendFormat("indexes removed"),
+							Owner:           monitoring.ObservableOwnerCodeIntel,
+							Interpretation:  "none",
 						},
 						{
-							Name:              "codeintel_lsif_data_removed",
-							Description:       "data for unreferenced upload records removed every 5m",
-							Query:             `sum(increase(src_codeintel_background_uploads_purged_total{job=~"(sourcegraph-)?frontend"}[5m]))`,
-							DataMayNotExist:   true,
-							NoAlert:           true,
-							PanelOptions:      monitoring.PanelOptions().LegendFormat("uploads purged"),
-							Owner:             monitoring.ObservableOwnerCodeIntel,
-							PossibleSolutions: "none",
+							Name:            "codeintel_lsif_data_removed",
+							Description:     "data for unreferenced upload records removed every 5m",
+							Query:           `sum(increase(src_codeintel_background_uploads_purged_total{job=~"(sourcegraph-)?frontend"}[5m]))`,
+							DataMayNotExist: true,
+							NoAlert:         true,
+							PanelOptions:    monitoring.PanelOptions().LegendFormat("uploads purged"),
+							Owner:           monitoring.ObservableOwnerCodeIntel,
+							Interpretation:  "none",
 						},
 					},
 					{
@@ -645,14 +648,14 @@ func Frontend() *monitoring.Container {
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:              "codeintel_indexing_99th_percentile_duration",
-							Description:       "99th percentile successful indexing operation duration over 5m",
-							Query:             `histogram_quantile(0.99, sum by (le)(rate(src_codeintel_indexing_duration_seconds_bucket{job=~"(sourcegraph-)?frontend"}[5m])))`,
-							DataMayNotExist:   true,
-							NoAlert:           true,
-							PanelOptions:      monitoring.PanelOptions().LegendFormat("operations").Unit(monitoring.Seconds),
-							Owner:             monitoring.ObservableOwnerCodeIntel,
-							PossibleSolutions: "none",
+							Name:            "codeintel_indexing_99th_percentile_duration",
+							Description:     "99th percentile successful indexing operation duration over 5m",
+							Query:           `histogram_quantile(0.99, sum by (le)(rate(src_codeintel_indexing_duration_seconds_bucket{job=~"(sourcegraph-)?frontend"}[5m])))`,
+							DataMayNotExist: true,
+							NoAlert:         true,
+							PanelOptions:    monitoring.PanelOptions().LegendFormat("operations").Unit(monitoring.Seconds),
+							Owner:           monitoring.ObservableOwnerCodeIntel,
+							Interpretation:  "none",
 						},
 						{
 							Name:              "codeintel_indexing_errors",
@@ -760,12 +763,12 @@ func Frontend() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.ContainerCPUUsage("frontend", monitoring.ObservableOwnerCloud),
-						shared.ContainerMemoryUsage("frontend", monitoring.ObservableOwnerCloud),
+						shared.ContainerCPUUsage(containerName, monitoring.ObservableOwnerCloud).Observable(),
+						shared.ContainerMemoryUsage(containerName, monitoring.ObservableOwnerCloud).Observable(),
 					},
 					{
-						shared.ContainerRestarts("frontend", monitoring.ObservableOwnerCloud),
-						shared.ContainerFsInodes("frontend", monitoring.ObservableOwnerCloud),
+						shared.ContainerRestarts(containerName, monitoring.ObservableOwnerCloud).Observable(),
+						shared.ContainerFsInodes(containerName, monitoring.ObservableOwnerCloud).Observable(),
 					},
 				},
 			},
@@ -774,12 +777,12 @@ func Frontend() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.ProvisioningCPUUsageLongTerm("frontend", monitoring.ObservableOwnerCloud),
-						shared.ProvisioningMemoryUsageLongTerm("frontend", monitoring.ObservableOwnerCloud),
+						shared.ProvisioningCPUUsageLongTerm(containerName, monitoring.ObservableOwnerCloud).Observable(),
+						shared.ProvisioningMemoryUsageLongTerm(containerName, monitoring.ObservableOwnerCloud).Observable(),
 					},
 					{
-						shared.ProvisioningCPUUsageShortTerm("frontend", monitoring.ObservableOwnerCloud),
-						shared.ProvisioningMemoryUsageShortTerm("frontend", monitoring.ObservableOwnerCloud),
+						shared.ProvisioningCPUUsageShortTerm(containerName, monitoring.ObservableOwnerCloud).Observable(),
+						shared.ProvisioningMemoryUsageShortTerm(containerName, monitoring.ObservableOwnerCloud).Observable(),
 					},
 				},
 			},
@@ -788,8 +791,8 @@ func Frontend() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.GoGoroutines("frontend", monitoring.ObservableOwnerCloud),
-						shared.GoGcDuration("frontend", monitoring.ObservableOwnerCloud),
+						shared.GoGoroutines(containerName, monitoring.ObservableOwnerCloud).Observable(),
+						shared.GoGcDuration(containerName, monitoring.ObservableOwnerCloud).Observable(),
 					},
 				},
 			},
@@ -798,7 +801,7 @@ func Frontend() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.KubernetesPodsAvailable("frontend", monitoring.ObservableOwnerCloud),
+						shared.KubernetesPodsAvailable(containerName, monitoring.ObservableOwnerCloud).Observable(),
 					},
 				},
 			},

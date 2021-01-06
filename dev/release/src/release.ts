@@ -5,6 +5,7 @@ import {
     listIssues,
     getTrackingIssue,
     ensureReleaseTrackingIssue,
+    ensureUpgradeManagedTrackingIssue,
     ensurePatchReleaseIssue,
     createChangesets,
     CreatedChangeset,
@@ -27,6 +28,7 @@ export type StepID =
     | 'tracking:release-timeline'
     | 'tracking:release-issue'
     | 'tracking:patch-issue'
+    | 'tracking:release-managed-instances'
     // branch cut
     | 'changelog:cut'
     // release
@@ -148,6 +150,14 @@ const steps: Step[] = [
                     startDateTime: new Date(config.releaseDateTime).toISOString(),
                     endDateTime: addMinutes(new Date(config.releaseDateTime), 1).toISOString(),
                 },
+                {
+                    title: `Deploy Sourcegraph ${release.major}.${release.minor} to managed instances`,
+                    description: '(This is not an actual event to attend, just a calendar marker.)',
+                    anyoneCanAddSelf: true,
+                    attendees: [config.teamEmail],
+                    startDateTime: new Date(config.oneWorkingDayAfterRelease).toISOString(),
+                    endDateTime: addMinutes(new Date(config.releaseDateTime), 1).toISOString(),
+                },
             ]
 
             for (const event of events) {
@@ -163,10 +173,10 @@ const steps: Step[] = [
             const {
                 releaseDateTime,
                 captainGitHubUsername,
+                oneWorkingDayAfterRelease,
                 oneWorkingDayBeforeRelease,
                 fourWorkingDaysBeforeRelease,
                 fiveWorkingDaysBeforeRelease,
-
                 captainSlackUsername,
                 slackAnnounceChannel,
                 dryRun,
@@ -178,6 +188,7 @@ const steps: Step[] = [
                 version: release,
                 assignees: [captainGitHubUsername],
                 releaseDateTime: new Date(releaseDateTime),
+                oneWorkingDayAfterRelease: new Date(oneWorkingDayAfterRelease),
                 oneWorkingDayBeforeRelease: new Date(oneWorkingDayBeforeRelease),
                 fourWorkingDaysBeforeRelease: new Date(fourWorkingDaysBeforeRelease),
                 fiveWorkingDaysBeforeRelease: new Date(fiveWorkingDaysBeforeRelease),
@@ -243,6 +254,25 @@ If you have changes that should go into this patch release, <${patchRequestTempl
                     slackAnnounceChannel
                 )
                 console.log(`Posted to Slack channel ${slackAnnounceChannel}`)
+            }
+        },
+    },
+    {
+        id: 'tracking:release-managed-instances',
+        description: 'Create a Github issue to track upgrade of managed instances MAJOR.MINOR release',
+        run: async config => {
+            const { captainGitHubUsername, oneWorkingDayAfterRelease, dryRun } = config
+            const { upcoming: release } = await releaseVersions(config)
+
+            // Create issue
+            const { url, created } = await ensureUpgradeManagedTrackingIssue({
+                version: release,
+                assignees: [captainGitHubUsername],
+                oneWorkingDayAfterRelease: new Date(oneWorkingDayAfterRelease),
+                dryRun: dryRun.trackingIssues || false,
+            })
+            if (url) {
+                console.log(created ? `Created tracking issue ${url}` : `Tracking issue already exists: ${url}`)
             }
         },
     },
@@ -384,6 +414,8 @@ ${customMessage || ''}
 
 ### :warning: Additional changes required
 
+These steps must be completed before this PR can be merged, unless otherwise stated. Push any required changes directly to this PR branch.
+
 ${actionItems.map(item => `- [ ] ${item}`).join('\n')}
 
 cc @${config.captainGitHubUsername}
@@ -417,6 +449,11 @@ cc @${config.captainGitHubUsername}
                             `comby -in-place 'latestReleaseKubernetesBuild = newBuild(":[1]")' "latestReleaseKubernetesBuild = newBuild(\\"${release.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
                             `comby -in-place 'latestReleaseDockerServerImageBuild = newBuild(":[1]")' "latestReleaseDockerServerImageBuild = newBuild(\\"${release.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
                             `comby -in-place 'latestReleaseDockerComposeOrPureDocker = newBuild(":[1]")' "latestReleaseDockerComposeOrPureDocker = newBuild(\\"${release.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
+
+                            // Support previous release for now
+                            notPatchRelease
+                                ? `comby -in-place 'env["MINIMUM_UPGRADEABLE_VERSION"] = ":[1]"' 'env["MINIMUM_UPGRADEABLE_VERSION"] = "${previous.version}"' enterprise/dev/ci/ci/*.go`
+                                : 'echo "Skipping bumping of upgradable version for patch release"',
 
                             // Add a stub to add upgrade guide entries
                             notPatchRelease
@@ -558,21 +595,32 @@ Campaign: ${campaignURL}`,
         description: 'Run final tasks for the sourcegraph/sourcegraph release pull request',
         run: async config => {
             const { upcoming: release } = await releaseVersions(config)
+            let failed = false
 
             // Push final tags
             const branch = `${release.major}.${release.minor}`
             const tag = `v${release.version}`
             for (const repo of ['deploy-sourcegraph', 'deploy-sourcegraph-docker']) {
-                await createTag(
-                    await getAuthenticatedGitHubClient(),
-                    {
-                        owner: 'sourcegraph',
-                        repo,
-                        branch,
-                        tag,
-                    },
-                    config.dryRun.tags || false
-                )
+                try {
+                    await createTag(
+                        await getAuthenticatedGitHubClient(),
+                        {
+                            owner: 'sourcegraph',
+                            repo,
+                            branch,
+                            tag,
+                        },
+                        config.dryRun.tags || false
+                    )
+                } catch (error) {
+                    console.error(error)
+                    console.error(`Failed to create tag ${tag} on ${repo}@${branch}`)
+                    failed = true
+                }
+            }
+
+            if (failed) {
+                throw new Error('Error occured applying some changes - please check log output')
             }
         },
     },

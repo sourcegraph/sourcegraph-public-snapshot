@@ -17,6 +17,7 @@ import { useObservable } from '../../../../shared/src/util/useObservable'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { Settings } from '../../schema/settings.schema'
+import { CodeMonitoringLogo } from './CodeMonitoringLogo'
 
 export interface CodeMonitoringPageProps
     extends BreadcrumbsProps,
@@ -83,7 +84,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                         </sup>
                     </>
                 }
-                icon={TowerIcon}
+                icon={CodeMonitoringLogo}
                 actions={
                     userHasCodeMonitors &&
                     userHasCodeMonitors !== 'loading' &&
@@ -273,5 +274,3 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
         </div>
     )
 }
-
-const TowerIcon: React.FunctionComponent = () => <span>🗼</span>

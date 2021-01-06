@@ -50,12 +50,12 @@ func Prometheus() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.ContainerCPUUsage("prometheus", monitoring.ObservableOwnerDistribution),
-						shared.ContainerMemoryUsage("prometheus", monitoring.ObservableOwnerDistribution),
+						shared.ContainerCPUUsage("prometheus", monitoring.ObservableOwnerDistribution).Observable(),
+						shared.ContainerMemoryUsage("prometheus", monitoring.ObservableOwnerDistribution).Observable(),
 					},
 					{
-						shared.ContainerRestarts("prometheus", monitoring.ObservableOwnerDistribution),
-						shared.ContainerFsInodes("prometheus", monitoring.ObservableOwnerDistribution),
+						shared.ContainerRestarts("prometheus", monitoring.ObservableOwnerDistribution).Observable(),
+						shared.ContainerFsInodes("prometheus", monitoring.ObservableOwnerDistribution).Observable(),
 					},
 				},
 			},
@@ -64,12 +64,12 @@ func Prometheus() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.ProvisioningCPUUsageLongTerm("prometheus", monitoring.ObservableOwnerDistribution),
-						shared.ProvisioningMemoryUsageLongTerm("prometheus", monitoring.ObservableOwnerDistribution),
+						shared.ProvisioningCPUUsageLongTerm("prometheus", monitoring.ObservableOwnerDistribution).Observable(),
+						shared.ProvisioningMemoryUsageLongTerm("prometheus", monitoring.ObservableOwnerDistribution).Observable(),
 					},
 					{
-						shared.ProvisioningCPUUsageShortTerm("prometheus", monitoring.ObservableOwnerDistribution),
-						shared.ProvisioningMemoryUsageShortTerm("prometheus", monitoring.ObservableOwnerDistribution),
+						shared.ProvisioningCPUUsageShortTerm("prometheus", monitoring.ObservableOwnerDistribution).Observable(),
+						shared.ProvisioningMemoryUsageShortTerm("prometheus", monitoring.ObservableOwnerDistribution).Observable(),
 					},
 				},
 			},
@@ -78,7 +78,7 @@ func Prometheus() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.KubernetesPodsAvailable("prometheus", monitoring.ObservableOwnerDistribution),
+						shared.KubernetesPodsAvailable("prometheus", monitoring.ObservableOwnerDistribution).Observable(),
 					},
 				},
 			},

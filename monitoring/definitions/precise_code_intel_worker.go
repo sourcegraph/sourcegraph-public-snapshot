@@ -48,24 +48,24 @@ func PreciseCodeIntelWorker() *monitoring.Container {
 					},
 					{
 						{
-							Name:              "active_workers",
-							Description:       "active workers processing uploads",
-							Query:             `max(up{job="precise-code-intel-worker"})`,
-							DataMayNotExist:   true,
-							NoAlert:           true,
-							PanelOptions:      monitoring.PanelOptions().LegendFormat("workers"),
-							Owner:             monitoring.ObservableOwnerCodeIntel,
-							PossibleSolutions: "none",
+							Name:            "active_workers",
+							Description:     "active workers processing uploads",
+							Query:           `max(up{job="precise-code-intel-worker"})`,
+							DataMayNotExist: true,
+							NoAlert:         true,
+							PanelOptions:    monitoring.PanelOptions().LegendFormat("workers"),
+							Owner:           monitoring.ObservableOwnerCodeIntel,
+							Interpretation:  "none",
 						},
 						{
-							Name:              "active_jobs",
-							Description:       "active jobs",
-							Query:             `sum(src_codeintel_upload_queue_processor_handlers)`,
-							DataMayNotExist:   true,
-							NoAlert:           true,
-							PanelOptions:      monitoring.PanelOptions().LegendFormat("jobs"),
-							Owner:             monitoring.ObservableOwnerCodeIntel,
-							PossibleSolutions: "none",
+							Name:            "active_jobs",
+							Description:     "active jobs",
+							Query:           `sum(src_codeintel_upload_queue_processor_handlers)`,
+							DataMayNotExist: true,
+							NoAlert:         true,
+							PanelOptions:    monitoring.PanelOptions().LegendFormat("jobs"),
+							Owner:           monitoring.ObservableOwnerCodeIntel,
+							Interpretation:  "none",
 						},
 					},
 				},
@@ -75,14 +75,14 @@ func PreciseCodeIntelWorker() *monitoring.Container {
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:              "job_99th_percentile_duration",
-							Description:       "99th percentile successful job duration over 5m",
-							Query:             `histogram_quantile(0.99, sum by (le)(rate(src_codeintel_upload_queue_processor_duration_seconds_bucket[5m])))`,
-							DataMayNotExist:   true,
-							NoAlert:           true,
-							PanelOptions:      monitoring.PanelOptions().LegendFormat("jobs").Unit(monitoring.Seconds),
-							Owner:             monitoring.ObservableOwnerCodeIntel,
-							PossibleSolutions: "none",
+							Name:            "job_99th_percentile_duration",
+							Description:     "99th percentile successful job duration over 5m",
+							Query:           `histogram_quantile(0.99, sum by (le)(rate(src_codeintel_upload_queue_processor_duration_seconds_bucket[5m])))`,
+							DataMayNotExist: true,
+							NoAlert:         true,
+							PanelOptions:    monitoring.PanelOptions().LegendFormat("jobs").Unit(monitoring.Seconds),
+							Owner:           monitoring.ObservableOwnerCodeIntel,
+							Interpretation:  "none",
 						},
 					},
 				},
@@ -207,7 +207,7 @@ func PreciseCodeIntelWorker() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.FrontendInternalAPIErrorResponses("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
+						shared.FrontendInternalAPIErrorResponses("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel).Observable(),
 					},
 				},
 			},
@@ -216,12 +216,12 @@ func PreciseCodeIntelWorker() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.ContainerCPUUsage("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
-						shared.ContainerMemoryUsage("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
+						shared.ContainerCPUUsage("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel).Observable(),
+						shared.ContainerMemoryUsage("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel).Observable(),
 					},
 					{
-						shared.ContainerRestarts("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
-						shared.ContainerFsInodes("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
+						shared.ContainerRestarts("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel).Observable(),
+						shared.ContainerFsInodes("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel).Observable(),
 					},
 				},
 			},
@@ -230,12 +230,12 @@ func PreciseCodeIntelWorker() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.ProvisioningCPUUsageLongTerm("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
-						shared.ProvisioningMemoryUsageLongTerm("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
+						shared.ProvisioningCPUUsageLongTerm("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel).Observable(),
+						shared.ProvisioningMemoryUsageLongTerm("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel).Observable(),
 					},
 					{
-						shared.ProvisioningCPUUsageShortTerm("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
-						shared.ProvisioningMemoryUsageShortTerm("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
+						shared.ProvisioningCPUUsageShortTerm("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel).Observable(),
+						shared.ProvisioningMemoryUsageShortTerm("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel).Observable(),
 					},
 				},
 			},
@@ -244,8 +244,8 @@ func PreciseCodeIntelWorker() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.GoGoroutines("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
-						shared.GoGcDuration("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
+						shared.GoGoroutines("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel).Observable(),
+						shared.GoGcDuration("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel).Observable(),
 					},
 				},
 			},
@@ -254,7 +254,7 @@ func PreciseCodeIntelWorker() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.KubernetesPodsAvailable("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
+						shared.KubernetesPodsAvailable("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel).Observable(),
 					},
 				},
 			},

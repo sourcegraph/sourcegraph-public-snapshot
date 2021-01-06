@@ -7,7 +7,9 @@ import (
 
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
+
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func (r *RepositoryResolver) TextSearchIndex() *repositoryTextSearchIndexResolver {
@@ -117,15 +119,22 @@ func (r *repositoryTextSearchIndexResolver) Refs(ctx context.Context) ([]*reposi
 	for i, refName := range refNames {
 		refs[i] = &repositoryTextSearchIndexedRef{ref: &GitRefResolver{name: refName, repo: r.repo}}
 	}
-	refByName := func(refName string) *repositoryTextSearchIndexedRef {
+	refByName := func(name string) *repositoryTextSearchIndexedRef {
+		possibleRefNames := []string{"refs/heads/" + name, "refs/tags/" + name}
+		for _, ref := range possibleRefNames {
+			if _, err := git.ResolveRevision(ctx, r.repo.innerRepo.Name, ref, git.ResolveRevisionOptions{NoEnsureRevision: true}); err == nil {
+				name = ref
+				break
+			}
+		}
 		for _, ref := range refs {
-			if ref.ref.name == refName {
+			if ref.ref.name == name {
 				return ref
 			}
 		}
 
 		// If Zoekt reports it has another indexed branch, include that.
-		newRef := &repositoryTextSearchIndexedRef{ref: &GitRefResolver{name: refName, repo: r.repo}}
+		newRef := &repositoryTextSearchIndexedRef{ref: &GitRefResolver{name: name, repo: r.repo}}
 		refs = append(refs, newRef)
 		return newRef
 	}
@@ -160,11 +169,11 @@ func (r *repositoryTextSearchIndexedRef) Current(ctx context.Context) (bool, err
 		return false, nil
 	}
 
-	target, err := r.ref.Target().OID(ctx)
+	commit, err := r.ref.Target().Commit(ctx)
 	if err != nil {
 		return false, err
 	}
-	return target == r.indexedCommit, nil
+	return commit.oid == r.indexedCommit, nil
 }
 
 func (r *repositoryTextSearchIndexedRef) IndexedCommit() *gitObject {

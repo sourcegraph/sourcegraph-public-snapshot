@@ -277,6 +277,10 @@ Go,github.com/certifi/gocertifi,v0.0.0-20200211180108-c7c1fbc02894,Mozilla Publi
 Go,github.com/cespare/xxhash,v1.1.0,MIT,"",Approved
 Go,github.com/cespare/xxhash/v2,v2.1.1,MIT,"",Approved
 Go,github.com/chris-ramon/douceur,v0.2.0,MIT,"",Approved
+Go,github.com/cockroachdb/errors,v1.8.1,Apache 2.0,"",Approved
+Go,github.com/cockroachdb/logtags,v0.0.0-20190617123548-eb05cc24525f,Apache 2.0,"",Approved
+Go,github.com/cockroachdb/redact,v1.0.8,Apache 2.0,"",Approved
+Go,github.com/cockroachdb/sentry-go,v0.6.1-cockroachdb.2,Simplified BSD,"",Approved
 Go,github.com/coreos/go-oidc,v2.2.1,Apache 2.0,"",Approved
 Go,github.com/coreos/go-semver,v0.3.0,Apache 2.0,"",Approved
 Go,github.com/daviddengcn/go-colortext,v1.0.0,MIT,"",Approved
@@ -314,6 +318,7 @@ Go,github.com/go-openapi/validate,v0.19.11,Apache 2.0,"",Approved
 Go,github.com/go-redsync/redsync,v1.4.2,New BSD,"",Approved
 Go,github.com/go-stack/stack,v1.8.0,MIT,"",Approved
 Go,github.com/gobwas/glob,v0.2.3,MIT,"",Approved
+Go,github.com/gogo/protobuf,v1.3.1,New BSD,"",Approved
 Go,github.com/golang-migrate/migrate/v4,v4.11.0,MIT,"",Approved
 Go,github.com/golang/gddo,v0.0.0-20200831202555-721e228c7686,New BSD,"",Approved
 Go,github.com/golang/groupcache,v0.0.0-20200121045136-8c9f03a8e57e,Apache 2.0,"",Approved
@@ -362,6 +367,7 @@ Go,github.com/keegancsmith/sqlf,v1.1.0,MIT,"",Approved
 Go,github.com/keegancsmith/tmpfriend,v0.0.0-20180423180255-86e88902a513,MIT,"",Approved
 Go,github.com/kevinburke/ssh_config,v0.0.0-20190725054713-01f96b0aa0cd,MIT,"",Approved
 Go,github.com/klauspost/compress,v1.11.0,"MIT,New BSD","",Approved
+Go,github.com/kr/pretty,v0.2.1,MIT,"",Approved
 Go,github.com/kr/text,v0.2.0,MIT,"",Approved
 Go,github.com/lib/pq,v1.8.0,MIT,"",Approved
 Go,github.com/machinebox/graphql,v0.2.2,Apache 2.0,"",Approved

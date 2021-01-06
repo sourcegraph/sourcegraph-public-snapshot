@@ -818,6 +818,12 @@ type Mutation {
         """
         actions: [MonitorEditActionInput!]!
     ): Monitor!
+
+    """
+    Set the repos synced by an external service
+    """
+    setExternalServiceRepos(id: ID!, repos: [String!], allRepos: Boolean!): EmptyResponse!
+
     """
     Reset the timestamps of a trigger query. The query will be queued immediately and return
     all results without a limit on the timeframe. Only site admins may perform this mutation.
@@ -7654,7 +7660,7 @@ type MonitoringStatistics {
 }
 
 """
-A high-level monitoring alert, for details see https://docs.sourcegraph.com/admin/observability/metrics_guide#high-level-alerting-metrics
+A high-level monitoring alert, for details see https://docs.sourcegraph.com/admin/observability/metrics#high-level-alerting-metrics
 """
 type MonitoringAlert {
     """

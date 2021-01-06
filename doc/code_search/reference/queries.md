@@ -218,3 +218,9 @@ Example: [`repo:docker repo:registry`](https://sourcegraph.com/search?q=repo:doc
 A query with `type:path` restricts terms to matching filenames only (not file contents).
 
 Example: [`type:path repo:/docker/ registry`](https://sourcegraph.com/search?q=type:path+repo:/docker/+registry)
+
+## Content search
+
+A query with `type:file` restricts terms to matching file contents only (not filenames).
+
+Example: [`type:file repo:^github\.com/sourcegraph/about$ website`](https://sourcegraph.com/search?q=type:file+repo:%5Egithub%5C.com/sourcegraph/about%24+website&patternType=literal)

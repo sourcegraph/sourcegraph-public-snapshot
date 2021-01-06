@@ -105,29 +105,30 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 	}
 	sort.Strings(imageNames)
 
-	// Create temp directory to store scripts in before they get copied into firecracker.
-	// Script content is passed in from the job
-	scriptsDir, err := makeTempDir()
-	if err != nil {
-		return err
+	// TEMPORARY OBSERVABILITY INCREASE
+	for _, dockerStep := range job.DockerSteps {
+		log15.Info("TEMP: docker step", "step", fmt.Sprintf("%+v", dockerStep))
 	}
-	defer func() {
-		_ = os.RemoveAll(scriptsDir)
-	}()
 
-	scriptPaths := make([]string, 0, len(job.DockerSteps))
+	// TEMPORARY OBSERVABILITY INCREASE
+	for _, cliStep := range job.CliSteps {
+		log15.Info("TEMP: cli step", "step", fmt.Sprintf("%+v", cliStep))
+	}
+
+	scriptNames := make([]string, 0, len(job.DockerSteps))
 	for i, dockerStep := range job.DockerSteps {
-		scriptPath := filepath.Join(scriptsDir, scriptNameFromJobStep(job, i))
+		scriptName := scriptNameFromJobStep(job, i)
+		scriptPath := filepath.Join(workingDirectory, command.ScriptsPath, scriptName)
 
 		if err := ioutil.WriteFile(scriptPath, buildScript(dockerStep), os.ModePerm); err != nil {
 			return err
 		}
 
-		scriptPaths = append(scriptPaths, scriptPath)
+		scriptNames = append(scriptNames, scriptName)
 	}
 
 	// Setup Firecracker VM (if enabled)
-	if err := runner.Setup(ctx, imageNames, scriptPaths); err != nil {
+	if err := runner.Setup(ctx, imageNames, nil); err != nil {
 		return err
 	}
 	defer func() {
@@ -141,7 +142,7 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 		dockerStepCommand := command.CommandSpec{
 			Key:        fmt.Sprintf("step.docker.%d", i),
 			Image:      dockerStep.Image,
-			ScriptPath: scriptPaths[i],
+			ScriptPath: scriptNames[i],
 			Dir:        dockerStep.Dir,
 			Env:        dockerStep.Env,
 			Operation:  h.operations.Exec,
@@ -170,8 +171,12 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 	return nil
 }
 
+var scriptPreamble = `
+set -x
+`
+
 func buildScript(dockerStep apiclient.DockerStep) []byte {
-	return []byte(strings.Join(dockerStep.Commands, "\n"))
+	return []byte(strings.Join(append([]string{scriptPreamble, ""}, dockerStep.Commands...), "\n") + "\n")
 }
 
 func union(a, b map[string]string) map[string]string {
