@@ -5223,7 +5223,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Descriptions:**
 
-- <span class="badge badge-warning">warning</span> prometheus: 1+ failed alertmanager notifications over 1m
+- <span class="badge badge-warning">warning</span> prometheus: 0+ failed alertmanager notifications over 1m
 
 **Possible solutions:**
 

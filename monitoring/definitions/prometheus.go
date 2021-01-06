@@ -37,7 +37,7 @@ func Prometheus() *monitoring.Container {
 							Description:       "failed alertmanager notifications over 1m",
 							Query:             `sum by(integration) (rate(alertmanager_notifications_failed_total[1m]))`,
 							DataMayNotExist:   true,
-							Warning:           monitoring.Alert().GreaterOrEqual(1),
+							Warning:           monitoring.Alert().Greater(0),
 							PanelOptions:      monitoring.PanelOptions().LegendFormat("{{integration}}"),
 							Owner:             monitoring.ObservableOwnerDistribution,
 							PossibleSolutions: "Ensure that your [`observability.alerts` configuration](https://docs.sourcegraph.com/admin/observability/alerting#setting-up-alerting) (in site configuration) is valid.",
