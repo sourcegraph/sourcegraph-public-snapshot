@@ -10,13 +10,12 @@ import { PhabricatorIcon } from '../../../../shared/src/components/icons' // TOD
 import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { fetchFileExternalLinks } from '../backend'
 import { RevisionSpec, FileSpec } from '../../../../shared/src/util/url'
-import { ExternalLinkFields, RepositoryFields } from '../../graphql-operations'
+import { ExternalLinkFields, RepositoryFields, ExternalServiceKind } from '../../graphql-operations'
 import { useObservable } from '../../../../shared/src/util/useObservable'
 import GitlabIcon from 'mdi-react/GitlabIcon'
 import { eventLogger } from '../../tracking/eventLogger'
 import { InstallBrowserExtensionPopover } from './InstallBrowserExtensionPopover'
 import { useLocalStorage } from '../../util/useLocalStorage'
-import * as GQL from '../../../../shared/src/graphql/schema'
 
 interface GoToCodeHostPopoverProps {
     /**
@@ -169,8 +168,8 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
     // Extract url to add branch, line numbers or commit range.
     let url = externalURL.url
     if (
-        externalURL.serviceKind === GQL.ExternalServiceKind.GITHUB ||
-        externalURL.serviceKind === GQL.ExternalServiceKind.GITLAB
+        externalURL.serviceKind === ExternalServiceKind.GITHUB ||
+        externalURL.serviceKind === ExternalServiceKind.GITLAB
     ) {
         // If in a branch, add branch path to the code host URL.
         if (props.revision && props.revision !== defaultBranch && !fileExternalLinksOrError) {
@@ -182,7 +181,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
         }
         // Add range or position path to the code host URL.
         if (props.range) {
-            const rangeEndPrefix = externalURL.serviceKind === GQL.ExternalServiceKind.GITLAB ? '' : 'L'
+            const rangeEndPrefix = externalURL.serviceKind === ExternalServiceKind.GITLAB ? '' : 'L'
             url += `#L${props.range.start.line}-${rangeEndPrefix}${props.range.end.line}`
         } else if (props.position) {
             url += `#L${props.position.line}`
@@ -222,22 +221,22 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
 }
 
 export function serviceKindDisplayNameAndIcon(
-    serviceKind: GQL.ExternalServiceKind | null
+    serviceKind: ExternalServiceKind | null
 ): { displayName: string; icon?: React.ComponentType<{ className?: string }> } {
     if (!serviceKind) {
         return { displayName: 'code host' }
     }
 
     switch (serviceKind) {
-        case GQL.ExternalServiceKind.GITHUB:
+        case ExternalServiceKind.GITHUB:
             return { displayName: 'GitHub', icon: GithubIcon }
-        case GQL.ExternalServiceKind.GITLAB:
+        case ExternalServiceKind.GITLAB:
             return { displayName: 'GitLab', icon: GitlabIcon }
-        case GQL.ExternalServiceKind.BITBUCKETSERVER:
+        case ExternalServiceKind.BITBUCKETSERVER:
             return { displayName: 'Bitbucket Server', icon: BitbucketIcon }
-        case GQL.ExternalServiceKind.PHABRICATOR:
+        case ExternalServiceKind.PHABRICATOR:
             return { displayName: 'Phabricator', icon: PhabricatorIcon }
-        case GQL.ExternalServiceKind.AWSCODECOMMIT:
+        case ExternalServiceKind.AWSCODECOMMIT:
             return { displayName: 'AWS CodeCommit' }
         default:
             return { displayName: upperFirst(toLower(serviceKind)) }

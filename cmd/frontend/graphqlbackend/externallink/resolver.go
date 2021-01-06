@@ -21,9 +21,8 @@ func (r *Resolver) URL() string { return r.url }
 func (r *Resolver) ServiceKind() *string {
 	if r.serviceKind == "" {
 		return nil
-	} else {
-		return &r.serviceKind
 	}
+	return &r.serviceKind
 
 }
 

@@ -1,10 +1,8 @@
 import React from 'react'
 import CloseIcon from 'mdi-react/CloseIcon'
 import ExportIcon from 'mdi-react/ExportIcon'
-
-import * as GQL from '../../../../shared/src/graphql/schema'
 import { serviceKindDisplayNameAndIcon } from './GoToCodeHostAction'
-import { ExternalLinkFields } from '../../graphql-operations'
+import { ExternalLinkFields, ExternalServiceKind } from '../../graphql-operations'
 
 interface Props {
     onAlertDismissed: () => void
@@ -18,10 +16,10 @@ const CHROME_EXTENSION_STORE_LINK = 'https://chrome.google.com/webstore/detail/d
 
 /** Code hosts the browser extension supports */
 const supportedServiceTypes = new Set<string>([
-    GQL.ExternalServiceKind.GITHUB,
-    GQL.ExternalServiceKind.GITLAB,
-    GQL.ExternalServiceKind.PHABRICATOR,
-    GQL.ExternalServiceKind.BITBUCKETSERVER,
+    ExternalServiceKind.GITHUB,
+    ExternalServiceKind.GITLAB,
+    ExternalServiceKind.PHABRICATOR,
+    ExternalServiceKind.BITBUCKETSERVER,
 ])
 
 export const InstallBrowserExtensionAlert: React.FunctionComponent<Props> = ({
@@ -76,14 +74,11 @@ export const InstallBrowserExtensionAlert: React.FunctionComponent<Props> = ({
                                 Install the Sourcegraph browser extension
                             </a>{' '}
                             to add code intelligence{' '}
-                            {serviceKind === GQL.ExternalServiceKind.GITHUB ||
-                            serviceKind === GQL.ExternalServiceKind.BITBUCKETSERVER ||
-                            serviceKind === GQL.ExternalServiceKind.GITLAB ? (
+                            {serviceKind === ExternalServiceKind.GITHUB ||
+                            serviceKind === ExternalServiceKind.BITBUCKETSERVER ||
+                            serviceKind === ExternalServiceKind.GITLAB ? (
                                 <>
-                                    to{' '}
-                                    {serviceKind === GQL.ExternalServiceKind.GITLAB
-                                        ? 'merge requests'
-                                        : 'pull requests'}{' '}
+                                    to {serviceKind === ExternalServiceKind.GITLAB ? 'merge requests' : 'pull requests'}{' '}
                                     and file views
                                 </>
                             ) : (
@@ -94,14 +89,12 @@ export const InstallBrowserExtensionAlert: React.FunctionComponent<Props> = ({
                     ) : (
                         <>
                             Get code intelligence{' '}
-                            {serviceKind === GQL.ExternalServiceKind.GITHUB ||
-                            serviceKind === GQL.ExternalServiceKind.BITBUCKETSERVER ||
-                            serviceKind === GQL.ExternalServiceKind.GITLAB ? (
+                            {serviceKind === ExternalServiceKind.GITHUB ||
+                            serviceKind === ExternalServiceKind.BITBUCKETSERVER ||
+                            serviceKind === ExternalServiceKind.GITLAB ? (
                                 <>
                                     while browsing files and reviewing{' '}
-                                    {serviceKind === GQL.ExternalServiceKind.GITLAB
-                                        ? 'merge requests'
-                                        : 'pull requests'}
+                                    {serviceKind === ExternalServiceKind.GITLAB ? 'merge requests' : 'pull requests'}
                                 </>
                             ) : (
                                 <>while browsing and reviewing code</>

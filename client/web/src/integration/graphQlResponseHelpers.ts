@@ -5,9 +5,8 @@ import {
     FileExternalLinksResult,
     RepositoryRedirectResult,
     ResolveRevResult,
+    ExternalServiceKind,
 } from '../graphql-operations'
-
-import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 
 export const createTreeEntriesResult = (url: string, toplevelFiles: string[]): TreeEntriesResult => ({
     repository: {
