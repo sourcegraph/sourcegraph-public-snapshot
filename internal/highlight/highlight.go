@@ -326,13 +326,14 @@ func preSpansToTable(h string) (string, error) {
 		codeTd.AppendChild(codeCell)
 		codeTd.Attr = append(codeCell.Attr, html.Attribute{Key: "class", Val: "code"})
 	}
-	addNewRowsForTextNode := func(textNode *html.Node) {
+	addNewRows := func(textNode *html.Node) {
 		// Text node, create a new table row for each newline at the end.
 		nodeData := textNode.Data
-		// Remove preceding newlines, if the entire node is *not* made up of newlines.
+		// Trim the preceding newlines and check if the entire node was *not* made up of newlines.
 		// This prevents us from counting the preceding newlines and appending them as rows at the end.
-		if len(nodeData) != strings.Count(nodeData, "\n") {
-			nodeData = strings.TrimLeft(nodeData, "\n")
+		trimmedNodeData := strings.TrimLeft(nodeData, "\n")
+		if len(trimmedNodeData) > 0 {
+			nodeData = trimmedNodeData
 		}
 		newlines := strings.Count(nodeData, "\n")
 		for i := 0; i < newlines; i++ {
@@ -357,7 +358,7 @@ func preSpansToTable(h string) (string, error) {
 				for nextChild != nil {
 					switch {
 					case nextChild.Type == html.TextNode:
-						addNewRowsForTextNode(nextChild)
+						addNewRows(nextChild)
 					default:
 						return "", fmt.Errorf("unexpected HTML child structure (encountered %+v)", nextChild)
 					}
@@ -365,7 +366,7 @@ func preSpansToTable(h string) (string, error) {
 				}
 			}
 		case next.Type == html.TextNode:
-			addNewRowsForTextNode(next)
+			addNewRows(next)
 		default:
 			return "", fmt.Errorf("unexpected HTML structure (encountered %+v)", next)
 		}
