@@ -83,7 +83,16 @@ If you want to learn more about our extension API:
 
 ## src-cli
 
-TODO
+src-cli, or `src`, is a command line tool that users can run locally to interact with Sourcegraph.
+
+src-cli is written in Go, and distributed as a standalone binary for Windows, macOS, and Linux. Its features include [running searches](../../../cli/references/search.md), managing Sourcegraph, and [executing campaigns](../../../campaigns/quickstart.md#create-the-campaign). src-cli is an integral part of the [campaigns product](#campaigns).
+
+Note that src-cli is not contained within the Sourcegraph monorepo, and has its own release cadence.
+
+If you want to learn more about src-cli:
+
+- [src-cli repository](https://github.com/sourcegraph/src-cli)
+- [src-cli documentation](../../../cli/index.md)
 
 ## Editor extensions
 
