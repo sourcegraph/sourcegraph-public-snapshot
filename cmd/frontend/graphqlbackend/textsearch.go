@@ -294,7 +294,7 @@ func fileMatchResultsToSearchResults(results []*FileMatchResolver) []SearchResul
 }
 
 // searchFilesInRepos searches a set of repos for a pattern.
-// For c != nil searchFilesInRepos will send down partial results down c.
+// For c != nil searchFilesInRepos will send results down c.
 func searchFilesInRepos(ctx context.Context, args *search.TextParameters, c chan<- []SearchResultResolver) (res []*FileMatchResolver, common *searchResultsCommon, err error) {
 	if mockSearchFilesInRepos != nil {
 		return mockSearchFilesInRepos(args)
