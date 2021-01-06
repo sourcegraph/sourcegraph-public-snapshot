@@ -11357,10 +11357,10 @@ graphql-request@^3.3.0:
     extract-files "^9.0.0"
     form-data "^3.0.0"
 
-graphql-schema-linter@^1.0.1:
-  version "1.0.1"
-  resolved "https://registry.npmjs.org/graphql-schema-linter/-/graphql-schema-linter-1.0.1.tgz#8b16ef19f77ab436ca4fc4c7cfa648b7f4abc8a4"
-  integrity sha512-wcT0to0fBKLmbe4N9C1pM53T6hn8PJ393k1GkWQPLC5xVAVjh37BU23NB9drekVzYXwWfnvP64B4wwFFHKr56w==
+graphql-schema-linter@^2.0.1:
+  version "2.0.1"
+  resolved "https://registry.npmjs.org/graphql-schema-linter/-/graphql-schema-linter-2.0.1.tgz#fa76752fc9461721992b0e8e3c8660a29819759f"
+  integrity sha512-zCezfm0TRW+WhmI7WzVjZbaZrymij7gj4ipc3bqQFQnQLyzirUKKW365kIe7YWKOudnmNp9o1IYKFm1MM/R0zw==
   dependencies:
     chalk "^2.0.1"
     columnify "^1.5.4"
