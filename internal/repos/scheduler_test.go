@@ -836,6 +836,34 @@ func TestUpdateQueue_setCloned(t *testing.T) {
 	assertFront(notcloned.Name)
 }
 
+func TestScheduleInsertNew(t *testing.T) {
+	repo1 := &types.RepoName{ID: 1, Name: "repo1"}
+	repo2 := &types.RepoName{ID: 2, Name: "repo2"}
+
+	_, stop := startRecording()
+	defer stop()
+
+	s := NewUpdateScheduler()
+
+	assertFront := func(name api.RepoName) {
+		t.Helper()
+		front := s.schedule.heap[0].Repo.Name
+		if front != name {
+			t.Fatalf("front of schedule is %q, want %q", front, name)
+		}
+	}
+
+	// add everything to the scheduler for the distant future.
+	mockTime(defaultTime.Add(time.Hour))
+	s.schedule.insertNew([]*types.RepoName{repo1})
+	assertFront(repo1.Name)
+
+	// Add including old
+	mockTime(defaultTime)
+	s.schedule.insertNew([]*types.RepoName{repo1, repo2})
+	assertFront(repo2.Name)
+}
+
 func TestSchedule_updateInterval(t *testing.T) {
 	a := configuredRepo{ID: 1, Name: "a"}
 	b := configuredRepo{ID: 2, Name: "b"}
