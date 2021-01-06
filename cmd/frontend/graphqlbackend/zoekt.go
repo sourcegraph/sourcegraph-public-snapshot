@@ -629,7 +629,7 @@ func noOpAnyChar(re *syntax.Regexp) {
 	}
 }
 
-func parseRe(pattern string, filenameOnly bool, queryIsCaseSensitive bool) (zoektquery.Q, error) {
+func parseRe(pattern string, filenameOnly bool, contentOnly bool, queryIsCaseSensitive bool) (zoektquery.Q, error) {
 	// these are the flags used by zoekt, which differ to searcher.
 	re, err := syntax.Parse(pattern, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
 	if err != nil {
@@ -642,20 +642,20 @@ func parseRe(pattern string, filenameOnly bool, queryIsCaseSensitive bool) (zoek
 		return &zoektquery.Substring{
 			Pattern:       string(re.Rune),
 			CaseSensitive: queryIsCaseSensitive,
-
-			FileName: filenameOnly,
+			Content:       contentOnly,
+			FileName:      filenameOnly,
 		}, nil
 	}
 	return &zoektquery.Regexp{
 		Regexp:        re,
 		CaseSensitive: queryIsCaseSensitive,
-
-		FileName: filenameOnly,
+		Content:       contentOnly,
+		FileName:      filenameOnly,
 	}, nil
 }
 
 func fileRe(pattern string, queryIsCaseSensitive bool) (zoektquery.Q, error) {
-	return parseRe(pattern, true, queryIsCaseSensitive)
+	return parseRe(pattern, true, false, queryIsCaseSensitive)
 }
 
 func queryToZoektQuery(query *search.TextPatternInfo, typ indexedRequestType) (zoektquery.Q, error) {
@@ -665,7 +665,8 @@ func queryToZoektQuery(query *search.TextPatternInfo, typ indexedRequestType) (z
 	var err error
 	if query.IsRegExp {
 		fileNameOnly := query.PatternMatchesPath && !query.PatternMatchesContent
-		q, err = parseRe(query.Pattern, fileNameOnly, query.IsCaseSensitive)
+		contentOnly := !query.PatternMatchesPath && query.PatternMatchesContent
+		q, err = parseRe(query.Pattern, fileNameOnly, contentOnly, query.IsCaseSensitive)
 		if err != nil {
 			return nil, err
 		}
