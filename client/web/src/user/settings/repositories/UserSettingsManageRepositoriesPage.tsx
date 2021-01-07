@@ -58,7 +58,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
     // set up state hooks
     const [repoState, setRepoState] = useState(initialRepoState)
-    const [selectionState, setSelectionState] = useState({ repos: selectionMap, loaded: false, radio: 'all' })
+    const [selectionState, setSelectionState] = useState({ repos: selectionMap, loaded: false, radio: '' })
     const [currentPage, setPage] = useState(1)
     const [query, setQuery] = useState('')
     const [codeHostFilter, setCodeHostFilter] = useState('')
@@ -217,15 +217,15 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     }
 
     const modeSelect: JSX.Element = (
-        <Form>
-            <div className="d-flex flex-row align-items-baseline">
+        <Form className="mt-4">
+            <label className="d-flex flex-row align-items-baseline">
                 <input type="radio" value="all" checked={selectionState.radio === 'all'} onChange={handleRadioSelect} />
                 <div className="d-flex flex-column ml-2">
                     <p className="mb-0">Sync all my repositories</p>
                     <p className="text-muted">Will sync all current and future public and private repositories</p>
                 </div>
-            </div>
-            <div className="d-flex flex-row align-items-baseline">
+            </label>
+            <label className="d-flex flex-row align-items-baseline">
                 <input
                     type="radio"
                     value="selected"
@@ -235,7 +235,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 <div className="d-flex flex-column ml-2">
                     <p className="mb-0">Sync selected repositories</p>
                 </div>
-            </div>
+            </label>
         </Form>
     )
 
@@ -289,35 +289,41 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         [selectionState, setSelectionState]
     )
 
+    const selectAll = () => {
+        const newMap = new Map<string, Repo>()
+        // if not all repos are selected, we should select all, otherwise empty the selection
+        if (selectionState.repos.size !== filteredRepos.length) {
+            for (const repo of filteredRepos) {
+                newMap.set(repo.name, repo)
+            }
+        }
+        setSelectionState({
+            repos: newMap,
+            loaded: selectionState.loaded,
+            radio: selectionState.radio,
+        })
+    }
     const rows: JSX.Element = (
         <tbody>
             <tr className="align-items-baseline d-flex" key="header">
-                <td className="w-100 d-flex justify-content-flex-start align-items-center">
+                <td
+                    onClick={selectAll}
+                    className="user-settings-repos__repositorynode p-2 w-100 d-flex align-items-center border-top-0 border-bottom border-color-2"
+                >
                     <input
-                        className="mr-2"
+                        className="mr-3"
                         type="checkbox"
                         checked={selectionState.repos.size === filteredRepos.length}
-                        onChange={() => {
-                            const newMap = new Map<string, Repo>()
-                            // if not all repos are selected, we should select all, otherwise empty the selection
-                            if (selectionState.repos.size !== filteredRepos.length) {
-                                for (const repo of filteredRepos) {
-                                    newMap.set(repo.name, repo)
-                                }
-                            }
-                            setSelectionState({
-                                repos: newMap,
-                                loaded: selectionState.loaded,
-                                radio: selectionState.radio,
-                            })
-                        }}
+                        onChange={selectAll}
                     />
                     <span
                         className={
-                            ((selectionState.repos.size !== 0 && 'font-weight-bold ') || '') + 'repositories-header'
+                            ((selectionState.repos.size !== 0 && 'text-body') || 'text-muted') + ' repositories-header'
                         }
                     >
-                        {(selectionState.repos.size > 0 && selectionState.repos.size) || 'No'} repositories selected.
+                        {(selectionState.repos.size > 0 &&
+                            String(selectionState.repos.size) + ' repositories selected') ||
+                            'Select all'}
                     </span>
                 </td>
             </tr>
@@ -360,7 +366,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 Choose which repositories to sync with Sourcegraph so you can search all your code in one place.
             </p>
             <ul className="list-group">
-                <li className="list-group-item" key="body">
+                <li className="list-group-item p-0 border-color-2" key="body">
                     <div className="p-4" key="description">
                         <h3>Your repositories</h3>
                         <p className="text-muted">
@@ -376,10 +382,10 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                         {
                             // if we're in 'selected' mode, show a list of all the repos on the code hosts to select from
                             selectionState.radio === 'selected' && (
-                                <div className="filtered-connection">
+                                <div className="filtered-connection ml-4">
                                     {filterControls}
                                     {repoState.error !== '' && <ErrorAlert error={repoState.error} history={history} />}
-                                    <table className="filtered-connection test-filtered-connection filtered-connection--noncompact table mt-3">
+                                    <table className="filtered-connection test-filtered-connection filtered-connection--noncompact table">
                                         {
                                             // if we're selecting repos, and the repos are still loading, display the loading animation
                                             selectionState.radio === 'selected' &&

@@ -110,8 +110,8 @@ export const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({
         [onClick]
     )
     return (
-        <tr className="repository-node">
-            <td>
+        <tr className="user-settings-repos__repositorynode">
+            <td className="border-color">
                 <a
                     className="w-100 d-flex justify-content-between align-items-center"
                     href={url}
@@ -131,7 +131,7 @@ export const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({
                     </div>
                     <div>
                         {isPrivate && <div className="badge badge-secondary text-muted">Private</div>}
-                        <ChevronRightIcon className="icon-inline ml-2 caret-icon" />
+                        <ChevronRightIcon className="icon-inline ml-2 user-settings-repos__caret" />
                     </div>
                 </a>
             </td>
@@ -169,21 +169,21 @@ export const CheckboxRepositoryNode: React.FunctionComponent<CheckboxRepositoryN
         [onClick]
     )
     return (
-        <tr className="repository-node" key={name}>
-            <td className="w-100 d-flex justify-content-between" onClick={onClick}>
+        <tr className="user-settings-repos__repositorynode" key={name}>
+            <td className="p-2 w-100 d-flex justify-content-between border-color-2" onClick={onClick}>
                 <div className="d-flex align-items-center">
-                    <input className="mr-2" type="checkbox" onChange={onClick} checked={checked} />
+                    <input className="mr-3" type="checkbox" onChange={onClick} checked={checked} />
                     <StatusIcon mirrorInfo={mirrorInfo} />
                     <CodeHostIcon hostType={serviceType} />
                     <RepoLink
                         className="text-muted"
-                        repoClassName="font-weight-bolder"
+                        repoClassName="text-body"
                         repoName={name}
-                        to=""
+                        to={null}
                         onClick={handleOnClick}
                     />
                 </div>
-                <div>{isPrivate && <div className="badge badge-secondary text-muted">Private</div>}</div>
+                <div>{isPrivate && <div className="badge bg-color-2 text-muted">Private</div>}</div>
             </td>
         </tr>
     )

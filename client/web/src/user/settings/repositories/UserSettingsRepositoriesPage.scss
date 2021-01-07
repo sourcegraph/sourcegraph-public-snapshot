@@ -15,18 +15,41 @@
 }
 
 .user-settings-repos__shimmer {
+    background: linear-gradient(to right, #eff1f3 4%, #e2e2e2 25%, #eff1f3 36%);
+    animation: shimmer 2s infinite linear;
+    background-size: 1000px 100%;
+    border-radius: 5px;
+
     @media (prefers-color-scheme: dark) {
         background: linear-gradient(to right, #14151c 4%, #454545 25%, #14151c 36%);
         animation: shimmer 2s infinite linear;
         background-size: 1000px 100%;
         border-radius: 5px;
     }
-    @media (prefers-color-scheme: light) {
-        background: linear-gradient(to right, #eff1f3 4%, #e2e2e2 25%, #eff1f3 36%);
-        animation: shimmer 2s infinite linear;
-        background-size: 1000px 100%;
-        border-radius: 5px;
-    }
+}
+
+.user-settings-repos__repositorynode {
+    cursor: pointer;
+}
+
+.user-settings-repos__repositorynode:hover {
+    background-color: var(--color-bg-2);
+}
+
+.border-color-2 {
+    border-color: var(--border-color-2) !important;
+}
+
+.border-top-color-2 {
+    border-top: 1px solid var(--border-color-2) !important;
+}
+
+.border-bottom-2 {
+    border-top: 2px solid;
+}
+
+.bg-color-2 {
+    background-color: var(--color-bg-2);
 }
 
 @keyframes shimmer {

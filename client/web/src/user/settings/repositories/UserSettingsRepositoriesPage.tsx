@@ -30,6 +30,7 @@ const Row: React.FunctionComponent<RowProps> = props => (
         name={props.node.name}
         url={props.node.url}
         serviceType={props.node.externalRepository.serviceType.toUpperCase()}
+        mirrorInfo={props.node.mirrorInfo}
         isPrivate={props.node.isPrivate}
     />
 )
