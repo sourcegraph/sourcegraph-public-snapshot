@@ -88,7 +88,7 @@ The following is what `src` does _for each repository_:
     ```
 2. Unzip archive into the workspace. Where the workspace lives depends on the workspace mode, which can be controlled by the `-workspace` flag. The two modes are:
   * _Bind_ mount mode (the default everywhere except Intel macOS), this will be somewhere on the filesystem, e.g. `~/.cache/sourcegraph/campaigns` (see `src campaign preview -h` for the default value of cache directory, overwrite with `-cache`)
-  * _Volume_ mount mode (the default on Intel macOS): a Docker volume will be created and attached to all running containers, then removed before `src` exits
+  * _Volume_ mount mode (the default on Intel macOS): a Docker volume will be created using `docker volume create` and attached to all running containers, then removed before `src` exits
 3. `cd` into the workspace, which now contains the unzipped archive
 4. In the workspace, create a git repository:
 	- Configure `git` to not use local configuration (see [the code for explanations on what each variable does](https://github.com/sourcegraph/src-cli/blob/038180005c9ebf5c0f9e8d3b2eda63c109cea904/internal/campaigns/run_steps.go#L31-L44)):
