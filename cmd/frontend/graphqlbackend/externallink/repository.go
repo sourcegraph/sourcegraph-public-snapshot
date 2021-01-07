@@ -29,13 +29,13 @@ import (
 func Repository(ctx context.Context, repo *types.Repo) (links []*Resolver, err error) {
 	phabRepo, link, serviceType := linksForRepository(ctx, repo)
 	if phabRepo != nil {
-		links = append(links, &Resolver{
-			url:         strings.TrimSuffix(phabRepo.URL, "/") + "/diffusion/" + phabRepo.Callsign,
-			serviceType: extsvc.TypePhabricator,
-		})
+		links = append(links, NewResolver(
+			strings.TrimSuffix(phabRepo.URL, "/")+"/diffusion/"+phabRepo.Callsign,
+			extsvc.TypePhabricator,
+		))
 	}
 	if link != nil && link.Root != "" {
-		links = append(links, &Resolver{url: link.Root, serviceType: serviceType})
+		links = append(links, NewResolver(link.Root, serviceType))
 	}
 	return links, nil
 }
@@ -50,10 +50,10 @@ func FileOrDir(ctx context.Context, repo *types.Repo, rev, path string, isDir bo
 		branchName, _, _, err := git.ExecSafe(ctx, repo.Name, []string{"symbolic-ref", "--short", "HEAD"})
 		branchName = bytes.TrimSpace(branchName)
 		if err == nil && string(branchName) != "" {
-			links = append(links, &Resolver{
-				url:         fmt.Sprintf("%s/source/%s/browse/%s/%s;%s", strings.TrimSuffix(phabRepo.URL, "/"), phabRepo.Callsign, url.PathEscape(string(branchName)), path, rev),
-				serviceType: extsvc.TypePhabricator,
-			})
+			links = append(links, NewResolver(
+				fmt.Sprintf("%s/source/%s/browse/%s/%s;%s", strings.TrimSuffix(phabRepo.URL, "/"), phabRepo.Callsign, url.PathEscape(string(branchName)), path, rev),
+				extsvc.TypePhabricator,
+			))
 		}
 	}
 
@@ -66,7 +66,7 @@ func FileOrDir(ctx context.Context, repo *types.Repo, rev, path string, isDir bo
 		}
 		if url != "" {
 			url = strings.NewReplacer("{rev}", rev, "{path}", path).Replace(url)
-			links = append(links, &Resolver{url: url, serviceType: serviceType})
+			links = append(links, NewResolver(url, serviceType))
 		}
 	}
 
@@ -79,17 +79,17 @@ func Commit(ctx context.Context, repo *types.Repo, commitID api.CommitID) (links
 
 	phabRepo, link, serviceType := linksForRepository(ctx, repo)
 	if phabRepo != nil {
-		links = append(links, &Resolver{
-			url:         fmt.Sprintf("%s/r%s%s", strings.TrimSuffix(phabRepo.URL, "/"), phabRepo.Callsign, commitStr),
-			serviceType: extsvc.TypePhabricator,
-		})
+		links = append(links, NewResolver(
+			fmt.Sprintf("%s/r%s%s", strings.TrimSuffix(phabRepo.URL, "/"), phabRepo.Callsign, commitStr),
+			extsvc.TypePhabricator,
+		))
 	}
 
 	if link != nil && link.Commit != "" {
-		links = append(links, &Resolver{
-			url:         strings.Replace(link.Commit, "{commit}", commitStr, -1),
-			serviceType: serviceType,
-		})
+		links = append(links, NewResolver(
+			strings.Replace(link.Commit, "{commit}", commitStr, -1),
+			serviceType,
+		))
 	}
 
 	return links, nil
