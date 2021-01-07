@@ -194,6 +194,28 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			namespaceUserID: 1,
 			wantErr:         `field "rateLimit" is not allowed in a user-added external service`,
 		},
+		{
+			name:            "duplicate kinds not allowed for user owned services",
+			kind:            extsvc.KindGitHub,
+			config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+			namespaceUserID: 1,
+			setup: func(t *testing.T) {
+				t.Cleanup(func() {
+					Mocks.ExternalServices.List = nil
+				})
+				Mocks.ExternalServices.List = func(opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
+					return []*types.ExternalService{
+						{
+							ID:          1,
+							Kind:        extsvc.KindGitHub,
+							DisplayName: "GITHUB 1",
+							Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+						},
+					}, nil
+				}
+			},
+			wantErr: `existing external service, "GITHUB 1", of same kind already added`,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
