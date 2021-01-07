@@ -29,7 +29,7 @@ const Row: React.FunctionComponent<RowProps> = props => (
     <RepositoryNode
         name={props.node.name}
         url={props.node.url}
-        serviceType={props.node.externalRepository.serviceType}
+        serviceType={props.node.externalRepository.serviceType.toUpperCase()}
         isPrivate={props.node.isPrivate}
     />
 )
