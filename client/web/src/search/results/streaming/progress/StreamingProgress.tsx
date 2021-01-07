@@ -1,4 +1,5 @@
 import * as React from 'react'
+import * as H from 'history'
 import { Progress, StreamingResultsState } from '../../../stream'
 import { StreamingProgressCount } from './StreamingProgressCount'
 import { StreamingProgressSkippedButton } from './StreamingProgressSkippedButton'
@@ -6,6 +7,7 @@ import { StreamingProgressSkippedButton } from './StreamingProgressSkippedButton
 export interface StreamingProgressProps {
     state: StreamingResultsState
     progress: Progress
+    history: H.History
     onSearchAgain: (additionalFilters: string[]) => void
 }
 

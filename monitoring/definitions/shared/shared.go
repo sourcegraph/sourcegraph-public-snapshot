@@ -62,9 +62,7 @@ type sharedObservable func(containerName string, owner monitoring.ObservableOwne
 // CadvisorNameMatcher generates Prometheus matchers that capture metrics that match the given container name
 // while excluding some irrelevant series
 func CadvisorNameMatcher(containerName string) string {
-	// This matcher excludes:
-	// * jaeger sidecar (jaeger-agent)
-	// * pod sidecars (_POD_)
-	// as well as matching on the name of the container exactly with "_{container}_"
-	return fmt.Sprintf(`name=~".*_%s_.*",name!~".*(_POD_|_jaeger-agent_).*"`, containerName)
+	// Name must start with the container name exactly.
+	// Suffix could be replica in docker-compose ('-0', '-1') or pod name in Kubernetes
+	return fmt.Sprintf(`name=~"^%s.*"`, containerName)
 }

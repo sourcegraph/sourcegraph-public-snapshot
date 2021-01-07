@@ -16,6 +16,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -38,31 +39,6 @@ type addExternalServiceInput struct {
 	Namespace   *graphql.ID
 }
 
-func currentUserAllowedExternalServices(ctx context.Context) conf.ExternalServiceMode {
-	mode := conf.ExternalServiceUserMode()
-	if mode != conf.ExternalServiceModeDisabled {
-		return mode
-	}
-
-	a := actor.FromContext(ctx)
-	if !a.IsAuthenticated() {
-		return conf.ExternalServiceModeDisabled
-	}
-
-	// The user may have a tag that opts them in
-	ok, _ := db.Users.HasTag(ctx, a.UID, db.TagAllowUserExternalServicePrivate)
-	if ok {
-		return conf.ExternalServiceModeAll
-	}
-
-	ok, _ = db.Users.HasTag(ctx, a.UID, db.TagAllowUserExternalServicePublic)
-	if ok {
-		return conf.ExternalServiceModePublic
-	}
-
-	return conf.ExternalServiceModeDisabled
-}
-
 func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExternalServiceArgs) (*externalServiceResolver, error) {
 	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
 		return nil, errors.New("adding external service not allowed when using EXTSVC_CONFIG_FILE")
@@ -71,7 +47,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 	// 🚨 SECURITY: Only site admins may add external services if user mode is disabled.
 	namespaceUserID := int32(0)
 	isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx) == nil
-	allowUserExternalServices := currentUserAllowedExternalServices(ctx)
+	allowUserExternalServices := searchrepos.CurrentUserAllowedExternalServices(ctx)
 	if args.Input.Namespace != nil {
 		if allowUserExternalServices == conf.ExternalServiceModeDisabled {
 			return nil, errors.New("allow users to add external services is not enabled")

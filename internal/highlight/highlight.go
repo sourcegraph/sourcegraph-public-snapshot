@@ -17,11 +17,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/gosyntect"
+	"golang.org/x/net/html"
+	"golang.org/x/net/html/atom"
+
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-	"golang.org/x/net/html"
-	"golang.org/x/net/html/atom"
 )
 
 var (
@@ -325,6 +326,20 @@ func preSpansToTable(h string) (string, error) {
 		codeTd.AppendChild(codeCell)
 		codeTd.Attr = append(codeCell.Attr, html.Attribute{Key: "class", Val: "code"})
 	}
+	addNewRows := func(textNode *html.Node) {
+		// Text node, create a new table row for each newline at the end.
+		nodeData := textNode.Data
+		// Trim the preceding newlines and check if the entire node was *not* made up of newlines.
+		// This prevents us from counting the preceding newlines and appending them as rows at the end.
+		trimmedNodeData := strings.TrimLeft(nodeData, "\n")
+		if len(trimmedNodeData) > 0 {
+			nodeData = trimmedNodeData
+		}
+		newlines := strings.Count(nodeData, "\n")
+		for i := 0; i < newlines; i++ {
+			newRow()
+		}
+	}
 	newRow()
 	for next != nil {
 		nextSibling := next.NextSibling
@@ -343,11 +358,7 @@ func preSpansToTable(h string) (string, error) {
 				for nextChild != nil {
 					switch {
 					case nextChild.Type == html.TextNode:
-						// Text node, create a new table row for each newline.
-						newlines := strings.Count(nextChild.Data, "\n")
-						for i := 0; i < newlines; i++ {
-							newRow()
-						}
+						addNewRows(nextChild)
 					default:
 						return "", fmt.Errorf("unexpected HTML child structure (encountered %+v)", nextChild)
 					}
@@ -355,11 +366,7 @@ func preSpansToTable(h string) (string, error) {
 				}
 			}
 		case next.Type == html.TextNode:
-			// Text node, create a new table row for each newline.
-			newlines := strings.Count(next.Data, "\n")
-			for i := 0; i < newlines; i++ {
-				newRow()
-			}
+			addNewRows(next)
 		default:
 			return "", fmt.Errorf("unexpected HTML structure (encountered %+v)", next)
 		}
