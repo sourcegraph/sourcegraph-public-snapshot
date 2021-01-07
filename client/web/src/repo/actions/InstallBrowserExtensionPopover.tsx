@@ -4,13 +4,12 @@ import React, { useMemo } from 'react'
 import { Popover } from 'reactstrap'
 import { ButtonLink } from '../../../../shared/src/components/LinkOrButton'
 import { SourcegraphIcon } from '../../auth/icons'
-import { serviceKindDisplayNameAndIcon } from './GoToCodeHostAction'
-import { ExternalServiceKind } from '../../../../shared/src/graphql/schema'
+import { serviceTypeDisplayNameAndIcon } from './GoToCodeHostAction'
 import FocusLock from 'react-focus-lock'
 
 interface Props {
     url: string
-    serviceKind: ExternalServiceKind | null
+    serviceType: string | null
     onClose: () => void
     onRejection: () => void
     onClickInstall: () => void
@@ -21,7 +20,7 @@ interface Props {
 
 export const InstallBrowserExtensionPopover: React.FunctionComponent<Props> = ({
     url,
-    serviceKind,
+    serviceType,
     onClose,
     onRejection,
     onClickInstall,
@@ -29,7 +28,7 @@ export const InstallBrowserExtensionPopover: React.FunctionComponent<Props> = ({
     toggle,
     isOpen,
 }) => {
-    const { displayName, icon } = serviceKindDisplayNameAndIcon(serviceKind)
+    const { displayName, icon } = serviceTypeDisplayNameAndIcon(serviceType)
     const Icon = icon || ExportIcon
 
     // Open all external links in new tab
@@ -62,9 +61,9 @@ export const InstallBrowserExtensionPopover: React.FunctionComponent<Props> = ({
                         </h3>
                         <p className="py-3">
                             Install Sourcegraph browser extension to add code intelligence{' '}
-                            {serviceKind === ExternalServiceKind.PHABRICATOR
+                            {serviceType === 'phabricator'
                                 ? 'while browsing and reviewing code'
-                                : `to ${serviceKind === ExternalServiceKind.GITLAB ? 'MR' : 'PR'}s and file views`}{' '}
+                                : `to ${serviceType === 'gitlab' ? 'MR' : 'PR'}s and file views`}{' '}
                             on {displayName} or any other connected code host.
                         </p>
 

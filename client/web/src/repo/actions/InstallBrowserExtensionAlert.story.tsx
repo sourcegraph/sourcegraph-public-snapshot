@@ -3,7 +3,6 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { WebStory } from '../../components/WebStory'
 import { InstallBrowserExtensionAlert } from './InstallBrowserExtensionAlert'
-import { ExternalServiceKind } from '../../../../shared/src/graphql/schema'
 
 const onAlertDismissed = action('onAlertDismissed')
 
@@ -13,16 +12,11 @@ const { add } = storiesOf('web/repo/actions/InstallBrowserExtensionAlert', modul
 
 // Disable Chromatic for the non-GitHub alerts since they are mostly the same
 
-const services = [
-    ExternalServiceKind.GITHUB,
-    ExternalServiceKind.GITLAB,
-    ExternalServiceKind.PHABRICATOR,
-    ExternalServiceKind.BITBUCKETSERVER,
-] as const
+const services = ['github', 'gitlab', 'phabricator', 'bitbucketServer'] as const
 
-for (const serviceKind of services) {
+for (const serviceType of services) {
     add(
-        `${serviceKind} (Chrome)`,
+        `${serviceType} (Chrome)`,
         () => (
             <WebStory>
                 {() => (
@@ -30,25 +24,20 @@ for (const serviceKind of services) {
                         isChrome={true}
                         onAlertDismissed={onAlertDismissed}
                         codeHostIntegrationMessaging="browser-extension"
-                        externalURLs={[
-                            {
-                                url: '',
-                                serviceKind,
-                            },
-                        ]}
+                        externalURLs={[{ url: '', serviceType }]}
                     />
                 )}
             </WebStory>
         ),
         {
             chromatic: {
-                disable: serviceKind !== ExternalServiceKind.GITHUB,
+                disable: serviceType !== 'github',
             },
         }
     )
 
     add(
-        `${serviceKind} (non-Chrome)`,
+        `${serviceType} (non-Chrome)`,
         () => (
             <WebStory>
                 {() => (
@@ -56,25 +45,20 @@ for (const serviceKind of services) {
                         isChrome={false}
                         onAlertDismissed={onAlertDismissed}
                         codeHostIntegrationMessaging="browser-extension"
-                        externalURLs={[
-                            {
-                                url: '',
-                                serviceKind,
-                            },
-                        ]}
+                        externalURLs={[{ url: '', serviceType }]}
                     />
                 )}
             </WebStory>
         ),
         {
             chromatic: {
-                disable: serviceKind !== ExternalServiceKind.GITHUB,
+                disable: serviceType !== 'github',
             },
         }
     )
 
     add(
-        `${serviceKind} (native integration installed)`,
+        `${serviceType} (native integration installed)`,
         () => (
             <WebStory>
                 {() => (
@@ -82,19 +66,14 @@ for (const serviceKind of services) {
                         isChrome={false}
                         onAlertDismissed={onAlertDismissed}
                         codeHostIntegrationMessaging="native-integration"
-                        externalURLs={[
-                            {
-                                url: '',
-                                serviceKind,
-                            },
-                        ]}
+                        externalURLs={[{ url: '', serviceType }]}
                     />
                 )}
             </WebStory>
         ),
         {
             chromatic: {
-                disable: serviceKind !== ExternalServiceKind.GITHUB,
+                disable: serviceType !== 'github',
             },
         }
     )
