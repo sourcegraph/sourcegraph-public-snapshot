@@ -184,7 +184,9 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 	defer s.setOrResetLastSyncErr(externalServiceID, &err)
 
 	ids := []int64{externalServiceID}
-	svcs, err := tx.ExternalServiceStore.List(ctx, db.ExternalServicesListOptions{IDs: ids})
+	// We don't use tx here as the sourcing process below can be slow and we don't
+	// want to hold a lock on the external_services table for too long.
+	svcs, err := s.Store.ExternalServiceStore.List(ctx, db.ExternalServicesListOptions{IDs: ids})
 	if err != nil {
 		return errors.Wrap(err, "fetching external services")
 	}

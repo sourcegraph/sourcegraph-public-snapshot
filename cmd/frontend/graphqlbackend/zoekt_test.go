@@ -17,6 +17,7 @@ import (
 	zoektrpc "github.com/google/zoekt/rpc"
 	"github.com/keegancsmith/sqlf"
 
+	searchzoekt "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
@@ -30,31 +31,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-// fakeSearcher is a zoekt.Searcher that returns a predefined search result.
-type fakeSearcher struct {
-	result *zoekt.SearchResult
-
-	repos []*zoekt.RepoListEntry
-
-	// Default all unimplemented zoekt.Searcher methods to panic.
-	zoekt.Searcher
-}
-
-func (ss *fakeSearcher) Search(ctx context.Context, q zoektquery.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
-	if ss.result == nil {
-		return &zoekt.SearchResult{}, nil
-	}
-	return ss.result, nil
-}
-
-func (ss *fakeSearcher) List(ctx context.Context, q zoektquery.Q) (*zoekt.RepoList, error) {
-	return &zoekt.RepoList{Repos: ss.repos}, nil
-}
-
-func (ss *fakeSearcher) String() string {
-	return fmt.Sprintf("fakeSearcher(result = %v, repos = %v)", ss.result, ss.repos)
-}
 
 func TestIndexedSearch(t *testing.T) {
 	zeroTimeoutCtx, cancel := context.WithTimeout(context.Background(), 0)
@@ -309,9 +285,9 @@ func TestIndexedSearch(t *testing.T) {
 				RepoPromise:     (&search.Promise{}).Resolve(tt.args.repos),
 				UseFullDeadline: tt.args.useFullDeadline,
 				Zoekt: &searchbackend.Zoekt{
-					Client: &fakeSearcher{
-						result: &zoekt.SearchResult{Files: tt.args.results},
-						repos:  zoektRepos,
+					Client: &searchzoekt.FakeSearcher{
+						Result: &zoekt.SearchResult{Files: tt.args.results},
+						Repos:  zoektRepos,
 					},
 					DisableCache: true,
 				},
@@ -715,9 +691,9 @@ func BenchmarkSearchResults(b *testing.B) {
 	zoektFileMatches := generateZoektMatches(50)
 
 	z := &searchbackend.Zoekt{
-		Client: &fakeSearcher{
-			repos:  zoektRepos,
-			result: &zoekt.SearchResult{Files: zoektFileMatches},
+		Client: &searchzoekt.FakeSearcher{
+			Repos:  zoektRepos,
+			Result: &zoekt.SearchResult{Files: zoektFileMatches},
 		},
 		DisableCache: true,
 	}
@@ -759,9 +735,9 @@ func BenchmarkIntegrationSearchResults(b *testing.B) {
 	_, repos, zoektRepos := generateRepos(5000)
 	zoektFileMatches := generateZoektMatches(50)
 
-	zoektClient, cleanup := zoektRPC(&fakeSearcher{
-		repos:  zoektRepos,
-		result: &zoekt.SearchResult{Files: zoektFileMatches},
+	zoektClient, cleanup := zoektRPC(&searchzoekt.FakeSearcher{
+		Repos:  zoektRepos,
+		Result: &zoekt.SearchResult{Files: zoektFileMatches},
 	})
 	defer cleanup()
 	z := &searchbackend.Zoekt{

@@ -147,7 +147,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 	}
 	args := search.TextParameters{
 		PatternInfo:     p,
-		RepoPromise:     (&search.Promise{}).Resolve(resolved.repoRevs),
+		RepoPromise:     (&search.Promise{}).Resolve(resolved.RepoRevs),
 		Query:           r.query,
 		UseFullDeadline: false,
 		Zoekt:           r.zoekt,
@@ -171,13 +171,13 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 
 	// Since we're searching a subset of the repositories this query would
 	// search overall, we must sort the repositories deterministically.
-	for _, repoRev := range resolved.repoRevs {
+	for _, repoRev := range resolved.RepoRevs {
 		sort.Slice(repoRev.Revs, func(i, j int) bool {
 			return repoRev.Revs[i].Less(repoRev.Revs[j])
 		})
 	}
-	sort.Slice(resolved.repoRevs, func(i, j int) bool {
-		return repoIsLess(resolved.repoRevs[i].Repo, resolved.repoRevs[j].Repo)
+	sort.Slice(resolved.RepoRevs, func(i, j int) bool {
+		return repoIsLess(resolved.RepoRevs[i].Repo, resolved.RepoRevs[j].Repo)
 	})
 
 	common := searchResultsCommon{maxResultsCount: r.maxResults()}
@@ -192,15 +192,15 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 		common.limitHit,
 		len(common.cloning),
 		len(common.missing),
-		common.excluded.forks,
-		common.excluded.archived,
+		common.excluded.Forks,
+		common.excluded.Archived,
 		len(common.timedout))
 
 	// Alert is a potential alert shown to the user.
 	var alert *searchAlert
 
-	if len(resolved.missingRepoRevs) > 0 {
-		alert = alertForMissingRepoRevs(r.patternType, resolved.missingRepoRevs)
+	if len(resolved.MissingRepoRevs) > 0 {
+		alert = alertForMissingRepoRevs(r.patternType, resolved.MissingRepoRevs)
 	}
 
 	log15.Info("next cursor for paginated search request",
@@ -601,8 +601,8 @@ func sliceSearchResultsCommon(common *searchResultsCommon, firstResultRepo, last
 	final.indexed = doAppend(final.indexed, common.indexed)
 	final.cloning = doAppend(final.cloning, common.cloning)
 	final.missing = doAppend(final.missing, common.missing)
-	final.excluded.forks = final.excluded.forks + common.excluded.forks
-	final.excluded.archived = final.excluded.archived + common.excluded.archived
+	final.excluded.Forks = final.excluded.Forks + common.excluded.Forks
+	final.excluded.Archived = final.excluded.Archived + common.excluded.Archived
 	final.timedout = doAppend(final.timedout, common.timedout)
 	return final
 }

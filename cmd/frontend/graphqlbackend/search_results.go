@@ -27,6 +27,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
+	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -57,11 +58,11 @@ type searchResultsCommon struct {
 	// that are in this map.
 	repos map[api.RepoID]*types.RepoName
 
-	searched []*types.RepoName // repos that were searched
-	indexed  []*types.RepoName // repos that were searched using an index
-	cloning  []*types.RepoName // repos that could not be searched because they were still being cloned
-	missing  []*types.RepoName // repos that could not be searched because they do not exist
-	excluded excludedRepos     // repo counts of excluded repos because the search query doesn't apply to them, but that we want to know about (forks, archives)
+	searched []*types.RepoName         // repos that were searched
+	indexed  []*types.RepoName         // repos that were searched using an index
+	cloning  []*types.RepoName         // repos that could not be searched because they were still being cloned
+	missing  []*types.RepoName         // repos that could not be searched because they do not exist
+	excluded searchrepos.ExcludedRepos // repo counts of excluded repos because the search query doesn't apply to them, but that we want to know about (forks, archives)
 
 	partial map[api.RepoID]struct{} // repos that were searched, but have results that were not returned due to exceeded limits
 
@@ -149,8 +150,8 @@ func (c *searchResultsCommon) update(other *searchResultsCommon) {
 	c.indexed = append(c.indexed, other.indexed...)
 	c.cloning = append(c.cloning, other.cloning...)
 	c.missing = append(c.missing, other.missing...)
-	c.excluded.forks = c.excluded.forks + other.excluded.forks
-	c.excluded.archived = c.excluded.archived + other.excluded.archived
+	c.excluded.Forks = c.excluded.Forks + other.excluded.Forks
+	c.excluded.Archived = c.excluded.Archived + other.excluded.Archived
 	c.timedout = append(c.timedout, other.timedout...)
 	c.resultCount += other.resultCount
 
@@ -348,11 +349,11 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 		}
 	}
 
-	if sr.searchResultsCommon.excluded.forks > 0 {
-		add("fork:yes", "fork:yes", int32(sr.searchResultsCommon.excluded.forks), sr.limitHit, "repo", scoreImportant)
+	if sr.searchResultsCommon.excluded.Forks > 0 {
+		add("fork:yes", "fork:yes", int32(sr.searchResultsCommon.excluded.Forks), sr.limitHit, "repo", scoreImportant)
 	}
-	if sr.searchResultsCommon.excluded.archived > 0 {
-		add("archived:yes", "archived:yes", int32(sr.searchResultsCommon.excluded.archived), sr.limitHit, "repo", scoreImportant)
+	if sr.searchResultsCommon.excluded.Archived > 0 {
+		add("archived:yes", "archived:yes", int32(sr.searchResultsCommon.excluded.Archived), sr.limitHit, "repo", scoreImportant)
 	}
 	for _, result := range sr.SearchResults {
 		if fm, ok := result.ToFileMatch(); ok {
@@ -1073,8 +1074,8 @@ func (r *searchResolver) evaluateOperator(ctx context.Context, scopeParameters [
 // invalidating cached repo info.
 func (r *searchResolver) setQuery(q []query.Node) {
 	if r.invalidateRepoCache {
-		r.resolved.repoRevs = nil
-		r.resolved.missingRepoRevs = nil
+		r.resolved.RepoRevs = nil
+		r.resolved.MissingRepoRevs = nil
 		r.repoErr = nil
 	}
 	r.query.(*query.AndOrQuery).Query = q
@@ -1514,7 +1515,7 @@ func getPatternInfo(q query.QueryInfo, opts *getPatternInfoOptions) (*search.Tex
 		CombyRule:                    strings.Join(combyRule, ""),
 	}
 	if len(excludePatterns) > 0 {
-		patternInfo.ExcludePattern = unionRegExps(excludePatterns)
+		patternInfo.ExcludePattern = searchrepos.UnionRegExps(excludePatterns)
 	}
 	return patternInfo, nil
 }
@@ -1535,7 +1536,7 @@ func langIncludeExcludePatterns(values, negatedValues []string) (includePatterns
 				// Add `\.ext$` pattern to match files with the given extension.
 				extPatterns[i] = regexp.QuoteMeta(ext) + "$"
 			}
-			*patterns = append(*patterns, unionRegExps(extPatterns))
+			*patterns = append(*patterns, searchrepos.UnionRegExps(extPatterns))
 		}
 		return nil
 	}
@@ -1561,7 +1562,7 @@ func (r *searchResolver) searchTimeoutFieldSet() bool {
 
 func (r *searchResolver) withTimeout(ctx context.Context) (context.Context, context.CancelFunc, error) {
 	d := defaultTimeout
-	maxTimeout := time.Duration(searchLimits().MaxTimeoutSeconds) * time.Second
+	maxTimeout := time.Duration(searchrepos.SearchLimits().MaxTimeoutSeconds) * time.Second
 	timeout, _ := r.query.StringValue(query.FieldTimeout)
 	if timeout != "" {
 		var err error
@@ -1600,30 +1601,30 @@ func (r *searchResolver) determineResultTypes(args search.TextParameters, forceO
 	return resultTypes
 }
 
-func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, start time.Time) (resolved resolvedRepositories, res *SearchResultsResolver, err error) {
+func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, start time.Time) (resolved searchrepos.Resolved, res *SearchResultsResolver, err error) {
 	resolved, err = r.resolveRepositories(ctx, nil)
 	if err != nil {
 		if errors.Is(err, authz.ErrStalePermissions{}) {
 			log15.Debug("searchResolver.determineRepos", "err", err)
 			alert := alertForStalePermissions()
-			return resolvedRepositories{}, &SearchResultsResolver{alert: alert, start: start}, nil
+			return searchrepos.Resolved{}, &SearchResultsResolver{alert: alert, start: start}, nil
 		}
 		e := git.BadCommitError{}
 		if errors.As(err, &e) {
 			alert := r.alertForInvalidRevision(e.Spec)
-			return resolvedRepositories{}, &SearchResultsResolver{alert: alert, start: start}, nil
+			return searchrepos.Resolved{}, &SearchResultsResolver{alert: alert, start: start}, nil
 		}
-		return resolvedRepositories{}, nil, err
+		return searchrepos.Resolved{}, nil, err
 	}
 
-	tr.LazyPrintf("searching %d repos, %d missing", len(resolved.repoRevs), len(resolved.missingRepoRevs))
-	if len(resolved.repoRevs) == 0 {
+	tr.LazyPrintf("searching %d repos, %d missing", len(resolved.RepoRevs), len(resolved.MissingRepoRevs))
+	if len(resolved.RepoRevs) == 0 {
 		alert := r.alertForNoResolvedRepos(ctx)
-		return resolvedRepositories{}, &SearchResultsResolver{alert: alert, start: start}, nil
+		return searchrepos.Resolved{}, &SearchResultsResolver{alert: alert, start: start}, nil
 	}
-	if resolved.overLimit {
+	if resolved.OverLimit {
 		alert := r.alertForOverRepoLimit(ctx)
-		return resolvedRepositories{}, &SearchResultsResolver{alert: alert, start: start}, nil
+		return searchrepos.Resolved{}, &SearchResultsResolver{alert: alert, start: start}, nil
 	}
 	return resolved, nil, nil
 }
@@ -1658,7 +1659,7 @@ func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameter
 		hasTimeFilter = true
 	}
 
-	limits := searchLimits()
+	limits := searchrepos.SearchLimits()
 	if max := limits.CommitDiffMaxRepos; !hasTimeFilter && len(repos) > max {
 		return RepoLimitErr{ResultType: resultType, Max: max}
 	}
@@ -1942,7 +1943,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			agg.doFilePathSearch(ctx, &argsIndexed)
 		})
 		// On sourcegraph.com and for unscoped queries, determineRepos returns the subset
-		// of indexed default repositories. No need to call searcher, because
+		// of indexed default searchrepos. No need to call searcher, because
 		// len(searcherRepos) will always be 0.
 		if envvar.SourcegraphDotComMode() {
 			args.Mode = search.NoFilePath
@@ -1961,21 +1962,21 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 
 	// Send down our first bit of progress.
 	{
-		repos := make(map[api.RepoID]*types.RepoName, len(resolved.repoRevs))
-		for _, repoRev := range resolved.repoRevs {
+		repos := make(map[api.RepoID]*types.RepoName, len(resolved.RepoRevs))
+		for _, repoRev := range resolved.RepoRevs {
 			repos[repoRev.Repo.ID] = repoRev.Repo
 		}
 
 		agg.report(ctx, nil, &searchResultsCommon{
 			repos:    repos,
-			excluded: resolved.excludedRepos,
+			excluded: resolved.ExcludedRepos,
 		}, nil)
 	}
 
 	// Resolve repo promise so searches waiting on it can proceed. We do this
 	// after reporting the above progress to ensure we don't get search
 	// results before the above reporting.
-	args.RepoPromise.Resolve(resolved.repoRevs)
+	args.RepoPromise.Resolve(resolved.RepoRevs)
 
 	searchedFileContentsOrPaths := false
 	for _, resultType := range resultTypes {
@@ -2049,8 +2050,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		common.limitHit,
 		len(common.cloning),
 		len(common.missing),
-		common.excluded.forks,
-		common.excluded.archived,
+		common.excluded.Forks,
+		common.excluded.Archived,
 		len(common.timedout))
 
 	var alert *searchAlert
@@ -2069,8 +2070,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		alert = alertForStructuralSearchNotSet(r.originalQuery)
 	}
 
-	if len(resolved.missingRepoRevs) > 0 {
-		alert = alertForMissingRepoRevs(r.patternType, resolved.missingRepoRevs)
+	if len(resolved.MissingRepoRevs) > 0 {
+		alert = alertForMissingRepoRevs(r.patternType, resolved.MissingRepoRevs)
 	}
 
 	// If we have some results, only log the error instead of returning it,
@@ -2146,7 +2147,7 @@ func compareDates(left, right *time.Time) bool {
 // filename matches a value in a non-empty set exactFilePatterns, then such
 // filenames are listed earlier.
 //
-// Commits are sorted by date. Commits are not associated with repositories, and
+// Commits are sorted by date. Commits are not associated with searchrepos, and
 // will always list after repository or file match results, if any.
 func compareSearchResults(left, right SearchResultResolver, exactFilePatterns map[string]struct{}) bool {
 	sortKeys := func(result SearchResultResolver) (string, string, *time.Time) {

@@ -8,6 +8,9 @@ import (
 )
 
 func Frontend() *monitoring.Container {
+	// frontend is sometimes called sourcegraph-frontend in various contexts
+	const containerName = "(frontend|sourcegraph-frontend)"
+
 	return &monitoring.Container{
 		Name:        "frontend",
 		Title:       "Frontend",
@@ -760,12 +763,12 @@ func Frontend() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.ContainerCPUUsage("frontend", monitoring.ObservableOwnerCloud).Observable(),
-						shared.ContainerMemoryUsage("frontend", monitoring.ObservableOwnerCloud).Observable(),
+						shared.ContainerCPUUsage(containerName, monitoring.ObservableOwnerCloud).Observable(),
+						shared.ContainerMemoryUsage(containerName, monitoring.ObservableOwnerCloud).Observable(),
 					},
 					{
-						shared.ContainerRestarts("frontend", monitoring.ObservableOwnerCloud).Observable(),
-						shared.ContainerFsInodes("frontend", monitoring.ObservableOwnerCloud).Observable(),
+						shared.ContainerRestarts(containerName, monitoring.ObservableOwnerCloud).Observable(),
+						shared.ContainerFsInodes(containerName, monitoring.ObservableOwnerCloud).Observable(),
 					},
 				},
 			},
@@ -774,12 +777,12 @@ func Frontend() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.ProvisioningCPUUsageLongTerm("frontend", monitoring.ObservableOwnerCloud).Observable(),
-						shared.ProvisioningMemoryUsageLongTerm("frontend", monitoring.ObservableOwnerCloud).Observable(),
+						shared.ProvisioningCPUUsageLongTerm(containerName, monitoring.ObservableOwnerCloud).Observable(),
+						shared.ProvisioningMemoryUsageLongTerm(containerName, monitoring.ObservableOwnerCloud).Observable(),
 					},
 					{
-						shared.ProvisioningCPUUsageShortTerm("frontend", monitoring.ObservableOwnerCloud).Observable(),
-						shared.ProvisioningMemoryUsageShortTerm("frontend", monitoring.ObservableOwnerCloud).Observable(),
+						shared.ProvisioningCPUUsageShortTerm(containerName, monitoring.ObservableOwnerCloud).Observable(),
+						shared.ProvisioningMemoryUsageShortTerm(containerName, monitoring.ObservableOwnerCloud).Observable(),
 					},
 				},
 			},
@@ -788,8 +791,8 @@ func Frontend() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.GoGoroutines("frontend", monitoring.ObservableOwnerCloud).Observable(),
-						shared.GoGcDuration("frontend", monitoring.ObservableOwnerCloud).Observable(),
+						shared.GoGoroutines(containerName, monitoring.ObservableOwnerCloud).Observable(),
+						shared.GoGcDuration(containerName, monitoring.ObservableOwnerCloud).Observable(),
 					},
 				},
 			},
@@ -798,7 +801,7 @@ func Frontend() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.KubernetesPodsAvailable("frontend", monitoring.ObservableOwnerCloud).Observable(),
+						shared.KubernetesPodsAvailable(containerName, monitoring.ObservableOwnerCloud).Observable(),
 					},
 				},
 			},
