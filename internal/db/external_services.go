@@ -146,15 +146,15 @@ func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 
 type ValidateExternalServiceConfigOptions struct {
 	// The ID of the external service, 0 is a valid value for not-yet-created external service.
-	ID int64
+	ExternalServiceID int64
 	// The kind of external service.
 	Kind string
 	// The actual config of the external service.
 	Config string
 	// The list of authN providers configured on the instance.
 	AuthProviders []schema.AuthProviders
-	// When true, indicates this is a user-added the external service.
-	HasNamespace bool
+	// If non zero, indicates the user that owns the external service.
+	NamespaceUserID int32
 }
 
 var errAuthorizationRequired = errors.New("authorization required")
@@ -184,7 +184,7 @@ func (e *ExternalServiceStore) ValidateConfig(ctx context.Context, opt ValidateE
 	}
 
 	// For user-added external services, we need to prevent them from using disallowed fields.
-	if opt.HasNamespace {
+	if opt.NamespaceUserID > 0 {
 		// We do not allow users to add external service other than GitHub.com and GitLab.com
 		result := gjson.GetBytes(normalized, "url")
 		baseURL, err := url.Parse(result.String())
@@ -203,6 +203,11 @@ func (e *ExternalServiceStore) ValidateConfig(ctx context.Context, opt ValidateE
 			if r.Exists() {
 				return nil, errors.Errorf("field %q is not allowed in a user-added external service", disallowedFields[i])
 			}
+		}
+
+		// A user can only create one external service per kind
+		if err := e.validateSingleKindPerUser(ctx, opt.ExternalServiceID, opt.Kind, opt.NamespaceUserID); err != nil {
+			return nil, err
 		}
 	}
 
@@ -227,28 +232,28 @@ func (e *ExternalServiceStore) ValidateConfig(ctx context.Context, opt ValidateE
 		if err = jsoniter.Unmarshal(normalized, &c); err != nil {
 			return nil, err
 		}
-		err = e.validateGitHubConnection(ctx, opt.ID, &c)
+		err = e.validateGitHubConnection(ctx, opt.ExternalServiceID, &c)
 
 	case extsvc.KindGitLab:
 		var c schema.GitLabConnection
 		if err = jsoniter.Unmarshal(normalized, &c); err != nil {
 			return nil, err
 		}
-		err = e.validateGitLabConnection(ctx, opt.ID, &c, opt.AuthProviders)
+		err = e.validateGitLabConnection(ctx, opt.ExternalServiceID, &c, opt.AuthProviders)
 
 	case extsvc.KindBitbucketServer:
 		var c schema.BitbucketServerConnection
 		if err = jsoniter.Unmarshal(normalized, &c); err != nil {
 			return nil, err
 		}
-		err = e.validateBitbucketServerConnection(ctx, opt.ID, &c)
+		err = e.validateBitbucketServerConnection(ctx, opt.ExternalServiceID, &c)
 
 	case extsvc.KindBitbucketCloud:
 		var c schema.BitbucketCloudConnection
 		if err = jsoniter.Unmarshal(normalized, &c); err != nil {
 			return nil, err
 		}
-		err = e.validateBitbucketCloudConnection(ctx, opt.ID, &c)
+		err = e.validateBitbucketCloudConnection(ctx, opt.ExternalServiceID, &c)
 
 	case extsvc.KindOther:
 		var c schema.OtherExternalServiceConnection
@@ -439,6 +444,38 @@ func (e *ExternalServiceStore) validateDuplicateRateLimits(ctx context.Context, 
 	return nil
 }
 
+// validateSingleKindPerUser returns an error if the user attempts to add more than one external service of the same kind.
+func (e *ExternalServiceStore) validateSingleKindPerUser(ctx context.Context, id int64, kind string, userID int32) error {
+	opt := ExternalServicesListOptions{
+		Kinds: []string{kind},
+		LimitOffset: &LimitOffset{
+			Limit: 500, // The number is randomly chosen
+		},
+		NamespaceUserID: userID,
+	}
+	for {
+		svcs, err := e.List(ctx, opt)
+		if err != nil {
+			return errors.Wrap(err, "list")
+		}
+		if len(svcs) == 0 {
+			break // No more results, exiting
+		}
+		opt.AfterID = svcs[len(svcs)-1].ID // Advance the cursor
+
+		// Fail if a service already exists that is not the current service
+		for _, svc := range svcs {
+			if svc.ID != id {
+				return fmt.Errorf("existing external service, %q, of same kind already added", svc.DisplayName)
+			}
+		}
+		if len(svcs) < opt.Limit {
+			break // Less results than limit means we've reached end
+		}
+	}
+	return nil
+}
+
 // Create creates an external service.
 //
 // Since this method is used before the configuration server has started
@@ -460,10 +497,10 @@ func (e *ExternalServiceStore) Create(ctx context.Context, confGet func() *conf.
 	e.ensureStore()
 
 	normalized, err := e.ValidateConfig(ctx, ValidateExternalServiceConfigOptions{
-		Kind:          es.Kind,
-		Config:        es.Config,
-		AuthProviders: confGet().AuthProviders,
-		HasNamespace:  es.NamespaceUserID != 0,
+		Kind:            es.Kind,
+		Config:          es.Config,
+		AuthProviders:   confGet().AuthProviders,
+		NamespaceUserID: es.NamespaceUserID,
 	})
 	if err != nil {
 		return err
@@ -669,11 +706,11 @@ func (e *ExternalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 		}
 
 		normalized, err = e.ValidateConfig(ctx, ValidateExternalServiceConfigOptions{
-			ID:            id,
-			Kind:          externalService.Kind,
-			Config:        *update.Config,
-			AuthProviders: ps,
-			HasNamespace:  externalService.NamespaceUserID != 0,
+			ExternalServiceID: id,
+			Kind:              externalService.Kind,
+			Config:            *update.Config,
+			AuthProviders:     ps,
+			NamespaceUserID:   externalService.NamespaceUserID,
 		})
 		if err != nil {
 			return err
