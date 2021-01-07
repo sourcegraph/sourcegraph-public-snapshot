@@ -12,8 +12,10 @@ import (
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 )
 
-const DefaultUploadPageSize = 50
-const DefaultIndexPageSize = 50
+const (
+	DefaultUploadPageSize = 50
+	DefaultIndexPageSize  = 50
+)
 
 // Resolver is the main interface to code intel-related operations exposted to the GraphQL API. This
 // resolver concerns itself with GraphQL/API-specific behaviors (auth, validation, marshaling, etc.).
@@ -156,13 +158,13 @@ func (r *Resolver) UpdateRepositoryIndexConfiguration(ctx context.Context, args 
 	return &gql.EmptyResponse{}, nil
 }
 
-func (r *Resolver) QueueAutoIndexJob(ctx context.Context, args *gql.QueueAutoIndexJobArgs) (*gql.EmptyResponse, error) {
-	repositoryID, err := unmarshalLSIFIndexGQLID(args.Repository)
+func (r *Resolver) QueueAutoIndexJobForRepo(ctx context.Context, id graphql.ID) (*gql.EmptyResponse, error) {
+	repositoryID, err := unmarshalLSIFIndexGQLID(id)
 	if err != nil {
 		return nil, err
 	}
 
-	return &gql.EmptyResponse{}, r.resolver.QueueAutoIndexJob(ctx, int(repositoryID))
+	return &gql.EmptyResponse{}, r.resolver.QueueAutoIndexJobForRepo(ctx, int(repositoryID))
 }
 
 func (r *Resolver) GitBlobLSIFData(ctx context.Context, args *gql.GitBlobLSIFDataArgs) (gql.GitBlobLSIFDataResolver, error) {

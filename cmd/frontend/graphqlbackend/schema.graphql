@@ -566,6 +566,11 @@ type Mutation {
     updateRepositoryIndexConfiguration(repository: ID!, configuration: String!): EmptyResponse
 
     """
+    Queues the index jobs for a repository for execution.
+    """
+    queueAutoIndexJobForRepo(repository: ID!): EmptyResponse
+
+    """
     Set the permissions of a repository (i.e., which users may view it on Sourcegraph). This
     operation overwrites the previous permissions for the repository.
     """

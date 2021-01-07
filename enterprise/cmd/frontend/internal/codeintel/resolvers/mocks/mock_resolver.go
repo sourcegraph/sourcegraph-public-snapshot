@@ -36,9 +36,9 @@ type MockResolver struct {
 	// QueryResolverFunc is an instance of a mock function object
 	// controlling the behavior of the method QueryResolver.
 	QueryResolverFunc *ResolverQueryResolverFunc
-	// QueueAutoIndexJobFunc is an instance of a mock function object
-	// controlling the behavior of the method QueueAutoIndexJob.
-	QueueAutoIndexJobFunc *ResolverQueueAutoIndexJobFunc
+	// QueueAutoIndexJobForRepoFunc is an instance of a mock function object
+	// controlling the behavior of the method QueueAutoIndexJobForRepo.
+	QueueAutoIndexJobForRepoFunc *ResolverQueueAutoIndexJobForRepoFunc
 	// UpdateIndexConfigurationByRepositoryIDFunc is an instance of a mock
 	// function object controlling the behavior of the method
 	// UpdateIndexConfigurationByRepositoryID.
@@ -87,7 +87,7 @@ func NewMockResolver() *MockResolver {
 				return nil, nil
 			},
 		},
-		QueueAutoIndexJobFunc: &ResolverQueueAutoIndexJobFunc{
+		QueueAutoIndexJobForRepoFunc: &ResolverQueueAutoIndexJobForRepoFunc{
 			defaultHook: func(context.Context, int) error {
 				return nil
 			},
@@ -130,8 +130,8 @@ func NewMockResolverFrom(i resolvers.Resolver) *MockResolver {
 		QueryResolverFunc: &ResolverQueryResolverFunc{
 			defaultHook: i.QueryResolver,
 		},
-		QueueAutoIndexJobFunc: &ResolverQueueAutoIndexJobFunc{
-			defaultHook: i.QueueAutoIndexJob,
+		QueueAutoIndexJobForRepoFunc: &ResolverQueueAutoIndexJobForRepoFunc{
+			defaultHook: i.QueueAutoIndexJobForRepo,
 		},
 		UpdateIndexConfigurationByRepositoryIDFunc: &ResolverUpdateIndexConfigurationByRepositoryIDFunc{
 			defaultHook: i.UpdateIndexConfigurationByRepositoryID,
@@ -902,35 +902,37 @@ func (c ResolverQueryResolverFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// ResolverQueueAutoIndexJobFunc describes the behavior when the
-// QueueAutoIndexJob method of the parent MockResolver instance is invoked.
-type ResolverQueueAutoIndexJobFunc struct {
+// ResolverQueueAutoIndexJobForRepoFunc describes the behavior when the
+// QueueAutoIndexJobForRepo method of the parent MockResolver instance is
+// invoked.
+type ResolverQueueAutoIndexJobForRepoFunc struct {
 	defaultHook func(context.Context, int) error
 	hooks       []func(context.Context, int) error
-	history     []ResolverQueueAutoIndexJobFuncCall
+	history     []ResolverQueueAutoIndexJobForRepoFuncCall
 	mutex       sync.Mutex
 }
 
-// QueueAutoIndexJob delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockResolver) QueueAutoIndexJob(v0 context.Context, v1 int) error {
-	r0 := m.QueueAutoIndexJobFunc.nextHook()(v0, v1)
-	m.QueueAutoIndexJobFunc.appendCall(ResolverQueueAutoIndexJobFuncCall{v0, v1, r0})
+// QueueAutoIndexJobForRepo delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockResolver) QueueAutoIndexJobForRepo(v0 context.Context, v1 int) error {
+	r0 := m.QueueAutoIndexJobForRepoFunc.nextHook()(v0, v1)
+	m.QueueAutoIndexJobForRepoFunc.appendCall(ResolverQueueAutoIndexJobForRepoFuncCall{v0, v1, r0})
 	return r0
 }
 
-// SetDefaultHook sets function that is called when the QueueAutoIndexJob
-// method of the parent MockResolver instance is invoked and the hook queue
-// is empty.
-func (f *ResolverQueueAutoIndexJobFunc) SetDefaultHook(hook func(context.Context, int) error) {
+// SetDefaultHook sets function that is called when the
+// QueueAutoIndexJobForRepo method of the parent MockResolver instance is
+// invoked and the hook queue is empty.
+func (f *ResolverQueueAutoIndexJobForRepoFunc) SetDefaultHook(hook func(context.Context, int) error) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// QueueAutoIndexJob method of the parent MockResolver instance inovkes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *ResolverQueueAutoIndexJobFunc) PushHook(hook func(context.Context, int) error) {
+// QueueAutoIndexJobForRepo method of the parent MockResolver instance
+// inovkes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ResolverQueueAutoIndexJobForRepoFunc) PushHook(hook func(context.Context, int) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -938,7 +940,7 @@ func (f *ResolverQueueAutoIndexJobFunc) PushHook(hook func(context.Context, int)
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *ResolverQueueAutoIndexJobFunc) SetDefaultReturn(r0 error) {
+func (f *ResolverQueueAutoIndexJobForRepoFunc) SetDefaultReturn(r0 error) {
 	f.SetDefaultHook(func(context.Context, int) error {
 		return r0
 	})
@@ -946,13 +948,13 @@ func (f *ResolverQueueAutoIndexJobFunc) SetDefaultReturn(r0 error) {
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *ResolverQueueAutoIndexJobFunc) PushReturn(r0 error) {
+func (f *ResolverQueueAutoIndexJobForRepoFunc) PushReturn(r0 error) {
 	f.PushHook(func(context.Context, int) error {
 		return r0
 	})
 }
 
-func (f *ResolverQueueAutoIndexJobFunc) nextHook() func(context.Context, int) error {
+func (f *ResolverQueueAutoIndexJobForRepoFunc) nextHook() func(context.Context, int) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -965,26 +967,27 @@ func (f *ResolverQueueAutoIndexJobFunc) nextHook() func(context.Context, int) er
 	return hook
 }
 
-func (f *ResolverQueueAutoIndexJobFunc) appendCall(r0 ResolverQueueAutoIndexJobFuncCall) {
+func (f *ResolverQueueAutoIndexJobForRepoFunc) appendCall(r0 ResolverQueueAutoIndexJobForRepoFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of ResolverQueueAutoIndexJobFuncCall objects
-// describing the invocations of this function.
-func (f *ResolverQueueAutoIndexJobFunc) History() []ResolverQueueAutoIndexJobFuncCall {
+// History returns a sequence of ResolverQueueAutoIndexJobForRepoFuncCall
+// objects describing the invocations of this function.
+func (f *ResolverQueueAutoIndexJobForRepoFunc) History() []ResolverQueueAutoIndexJobForRepoFuncCall {
 	f.mutex.Lock()
-	history := make([]ResolverQueueAutoIndexJobFuncCall, len(f.history))
+	history := make([]ResolverQueueAutoIndexJobForRepoFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// ResolverQueueAutoIndexJobFuncCall is an object that describes an
-// invocation of method QueueAutoIndexJob on an instance of MockResolver.
-type ResolverQueueAutoIndexJobFuncCall struct {
+// ResolverQueueAutoIndexJobForRepoFuncCall is an object that describes an
+// invocation of method QueueAutoIndexJobForRepo on an instance of
+// MockResolver.
+type ResolverQueueAutoIndexJobForRepoFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -998,13 +1001,13 @@ type ResolverQueueAutoIndexJobFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c ResolverQueueAutoIndexJobFuncCall) Args() []interface{} {
+func (c ResolverQueueAutoIndexJobForRepoFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c ResolverQueueAutoIndexJobFuncCall) Results() []interface{} {
+func (c ResolverQueueAutoIndexJobForRepoFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

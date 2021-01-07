@@ -9,7 +9,6 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -28,7 +27,7 @@ type Resolver interface {
 	DeleteIndexByID(ctx context.Context, id int) error
 	IndexConfiguration(ctx context.Context, repositoryID int) (store.IndexConfiguration, error)
 	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, configuration string) error
-	QueueAutoIndexJob(ctx context.Context, repositoryID int) error
+	QueueAutoIndexJobForRepo(ctx context.Context, repositoryID int) error
 	QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataArgs) (QueryResolver, error)
 }
 
@@ -48,7 +47,7 @@ func NewResolver(
 	codeIntelAPI CodeIntelAPI,
 	hunkCache HunkCache,
 	observationContext *observation.Context,
-	gitClient *gitserver.Client,
+	gitClient enqueuer.GitserverClient,
 	enqueuerDBStore enqueuer.DBStore,
 ) Resolver {
 	return &resolver{
@@ -104,7 +103,7 @@ func (r *resolver) UpdateIndexConfigurationByRepositoryID(ctx context.Context, r
 	return r.dbStore.UpdateIndexConfigurationByRepositoryID(ctx, repositoryID, []byte(configuration))
 }
 
-func (r *resolver) QueueAutoIndexJob(ctx context.Context, repositoryID int) error {
+func (r *resolver) QueueAutoIndexJobForRepo(ctx context.Context, repositoryID int) error {
 	return r.enqueuer.QueueIndex(ctx, repositoryID)
 }
 
