@@ -8,6 +8,10 @@ Adding recording rules, alerts, etc. to this image is handled by the [monitoring
 
 The image is defined in [`docker-images/prometheus`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/docker-images/prometheus).
 
+## Metrics
+
+See [Metrics: Prometheus](../../../admin/observability/metrics.md#prometheus).
+
 ## Prom-wrapper
 
 The entrypoint of the image is a sidecar program called the prom-wrapper.

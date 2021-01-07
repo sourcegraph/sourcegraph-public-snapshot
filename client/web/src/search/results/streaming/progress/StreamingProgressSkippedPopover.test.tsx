@@ -1,4 +1,5 @@
 import { mount } from 'enzyme'
+import { createBrowserHistory } from 'history'
 import React, { ChangeEvent } from 'react'
 import { Button, Form, Input } from 'reactstrap'
 import sinon from 'sinon'
@@ -6,6 +7,8 @@ import { Progress } from '../../../stream'
 import { StreamingProgressSkippedPopover } from './StreamingProgressSkippedPopover'
 
 describe('StreamingProgressSkippedPopover', () => {
+    const history = createBrowserHistory()
+
     it('should render correctly', () => {
         const progress: Progress = {
             durationMs: 1500,
@@ -33,6 +36,17 @@ describe('StreamingProgressSkippedPopover', () => {
                     },
                 },
                 {
+                    reason: 'excluded-archive',
+                    message:
+                        'By default we exclude archived repositories. Include them with `archived:yes` in your query.',
+                    severity: 'info',
+                    title: '1 archived',
+                    suggested: {
+                        title: 'include archived',
+                        queryExpression: 'archived:yes',
+                    },
+                },
+                {
                     reason: 'shard-timedout',
                     message: 'Search timed out',
                     severity: 'warn',
@@ -45,7 +59,9 @@ describe('StreamingProgressSkippedPopover', () => {
             ],
         }
 
-        const element = mount(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} />)
+        const element = mount(
+            <StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} history={history} />
+        )
         expect(element).toMatchSnapshot()
     })
 
@@ -64,7 +80,9 @@ describe('StreamingProgressSkippedPopover', () => {
             ],
         }
 
-        const element = mount(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} />)
+        const element = mount(
+            <StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} history={history} />
+        )
         expect(element.find(Form)).toHaveLength(0)
     })
 
@@ -87,7 +105,9 @@ describe('StreamingProgressSkippedPopover', () => {
             ],
         }
 
-        const element = mount(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} />)
+        const element = mount(
+            <StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} history={history} />
+        )
         const searchAgainButton = element.find(Button)
         expect(searchAgainButton).toHaveLength(1)
         expect(searchAgainButton.prop('disabled')).toBe(true)
@@ -132,7 +152,9 @@ describe('StreamingProgressSkippedPopover', () => {
             ],
         }
 
-        const element = mount(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} />)
+        const element = mount(
+            <StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} history={history} />
+        )
 
         const checkboxes = element.find(Input)
         expect(checkboxes).toHaveLength(3)
@@ -185,7 +207,9 @@ describe('StreamingProgressSkippedPopover', () => {
             ],
         }
 
-        const element = mount(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} />)
+        const element = mount(
+            <StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} history={history} />
+        )
 
         const checkboxes = element.find(Input)
         expect(checkboxes).toHaveLength(3)
@@ -246,7 +270,9 @@ describe('StreamingProgressSkippedPopover', () => {
 
         const searchAgain = sinon.spy()
 
-        const element = mount(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={searchAgain} />)
+        const element = mount(
+            <StreamingProgressSkippedPopover progress={progress} onSearchAgain={searchAgain} history={history} />
+        )
 
         const checkboxes = element.find(Input)
 

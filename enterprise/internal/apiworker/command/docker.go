@@ -5,6 +5,10 @@ import (
 	"strconv"
 )
 
+// ScriptsPath is the location relative to the executor workspace where the executor
+// will write scripts required for the execution of the job.
+const ScriptsPath = ".sourcegraph-executor"
+
 // formatRawOrDockerCommand constructs the command to run on the host in order to
 // invoke the given spec. If the spec does not specify an image, then the command
 // will be run _directly_ on the host. Otherwise, the command will be run inside
@@ -32,7 +36,7 @@ func formatRawOrDockerCommand(spec CommandSpec, dir string, options Options) com
 			dockerEnvFlags(spec.Env),
 			dockerEntrypointFlags(),
 			spec.Image,
-			spec.ScriptPath,
+			filepath.Join("/data", ScriptsPath, spec.ScriptPath),
 		),
 		Operation: spec.Operation,
 	}
@@ -46,7 +50,7 @@ func dockerResourceFlags(options ResourceOptions) []string {
 }
 
 func dockerVolumeFlags(wd, scriptPath string) []string {
-	return []string{"-v", wd + ":/data", "-v", scriptPath + ":" + scriptPath}
+	return []string{"-v", wd + ":/data"}
 }
 
 func dockerWorkingdirectoryFlags(dir string) []string {

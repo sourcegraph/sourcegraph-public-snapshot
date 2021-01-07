@@ -12,6 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 
+	searchzoekt "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
@@ -26,7 +27,7 @@ func TestSearchRepositories(t *testing.T) {
 		{Repo: &types.RepoName{ID: 789, Name: "bar/one"}, Revs: []search.RevisionSpecifier{{RevSpec: ""}}},
 	}
 
-	zoekt := &searchbackend.Zoekt{Client: &fakeSearcher{}}
+	zoekt := &searchbackend.Zoekt{Client: &searchzoekt.FakeSearcher{}}
 
 	mockSearchFilesInRepos = func(args *search.TextParameters) (matches []*FileMatchResolver, common *searchResultsCommon, err error) {
 		repos, err := getRepos(context.Background(), args.RepoPromise)
@@ -147,7 +148,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 		}
 	}
 
-	zoekt := &searchbackend.Zoekt{Client: &fakeSearcher{}}
+	zoekt := &searchbackend.Zoekt{Client: &searchzoekt.FakeSearcher{}}
 
 	t.Run("repo should be included in results, query has repoHasFile filter", func(t *testing.T) {
 		repo := &search.RepositoryRevisions{Repo: &types.RepoName{ID: 123, Name: "foo/one"}, Revs: []search.RevisionSpecifier{{RevSpec: ""}}}
