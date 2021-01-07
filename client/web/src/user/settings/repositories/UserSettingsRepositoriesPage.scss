@@ -1,20 +1,20 @@
-.user-settings-repos_gitlab-icon {
+.user-settings-repos__gitlab {
     fill: #ff5900 !important;
 }
 
-.user-settings-repos_github-icon {
+.user-settings-repos__github {
     fill: var(--body-color) !important;
 }
 
-.user-settings-repos_check-icon {
+.user-settings-repos__check {
     fill: var(--color-bg-3) !important;
 }
 
-.user-settings-repos_caret-icon {
+.user-settings-repos__caret {
     fill: var(--primary) !important;
 }
 
-.user-settings-repos_animate-shimmer {
+.user-settings-repos__shimmer {
     @media (prefers-color-scheme: dark) {
         background: linear-gradient(to right, #14151c 4%, #454545 25%, #14151c 36%);
         animation: shimmer 2s infinite linear;

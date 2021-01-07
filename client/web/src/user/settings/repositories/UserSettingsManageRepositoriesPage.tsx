@@ -342,13 +342,13 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     const loadingAnimation: JSX.Element = (
         <tbody>
             <tr className="mt-2 align-items-baseline d-flex w-80">
-                <td className="user-settings-repos_animate-shimmer w-100 h-100 p-3 border-top-0" />
+                <td className="user-settings-repos__shimmer w-100 h-100 p-3 border-top-0" />
             </tr>
             <tr className="mt-2 align-items-baseline d-flex w-30">
-                <td className="user-settings-repos_animate-shimmer w-100 h-100 p-3 border-top-0" />
+                <td className="user-settings-repos__shimmer w-100 h-100 p-3 border-top-0" />
             </tr>
             <tr className="mt-2 align-items-baseline d-flex w-70">
-                <td className="user-settings-repos_animate-shimmer w-100 h-100 p-3 border-top-0" />
+                <td className="user-settings-repos__shimmer w-100 h-100 p-3 border-top-0" />
             </tr>
         </tbody>
     )

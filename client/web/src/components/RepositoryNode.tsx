@@ -53,7 +53,7 @@ const StatusIcon: React.FunctionComponent<StatusIconProps> = ({ mirrorInfo }) =>
     }
     return (
         <small className="mr-2">
-            <TickIcon className="icon-inline user-settings-repos_check-icon" />
+            <TickIcon className="icon-inline user-settings-repos__check" />
         </small>
     )
 }
@@ -67,19 +67,19 @@ const CodeHostIcon: React.FunctionComponent<CodeHostIconProps> = ({ hostType }) 
         case ExternalServiceKind.GITHUB:
             return (
                 <small className="mr-2">
-                    <GithubIcon className="icon-inline user-settings-repos_github-icon" />
+                    <GithubIcon className="icon-inline user-settings-repos__github" />
                 </small>
             )
         case ExternalServiceKind.GITLAB:
             return (
                 <small className="mr-2">
-                    <GitlabIcon className="icon-inline user-settings-repos_gitlab-icon" />
+                    <GitlabIcon className="icon-inline user-settings-repos__gitlab" />
                 </small>
             )
         case ExternalServiceKind.BITBUCKETCLOUD:
             return (
                 <small className="mr-2">
-                    <BitbucketIcon className="icon-inline user-settings-repos_bitbucket-icon" />
+                    <BitbucketIcon className="icon-inline user-settings-repos__bitbucket" />
                 </small>
             )
         default:
