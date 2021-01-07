@@ -3,13 +3,15 @@ import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
 import React, { useCallback, useState } from 'react'
 import { Alert, Button, Form, FormGroup, Input, Label } from 'reactstrap'
+import { Markdown } from '../../../../../../shared/src/components/Markdown'
+import { renderMarkdown } from '../../../../../../shared/src/util/markdown'
 import { SyntaxHighlightedSearchQuery } from '../../../../components/SyntaxHighlightedSearchQuery'
 import { StreamingProgressProps } from './StreamingProgress'
 
 export const StreamingProgressSkippedPopover: React.FunctionComponent<Pick<
     StreamingProgressProps,
-    'progress' | 'onSearchAgain'
->> = ({ progress, onSearchAgain }) => {
+    'progress' | 'onSearchAgain' | 'history'
+>> = ({ progress, onSearchAgain, history }) => {
     const [selectedSuggestedSearches, setSelectedSuggestedSearches] = useState(new Set<string>())
     const submitHandler = useCallback(
         (event: React.FormEvent) => {
@@ -44,7 +46,11 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<Pick<
                         )}
                         <span>{skipped.title}</span>
                     </h4>
-                    {skipped.message && <div className="mt-2">{skipped.message}</div>}
+                    {skipped.message && (
+                        <div className="mt-2">
+                            <Markdown dangerousInnerHTML={renderMarkdown(skipped.message)} history={history} />
+                        </div>
+                    )}
                 </Alert>
             ))}
             {progress.skipped.some(skipped => skipped.suggested) && (
