@@ -324,7 +324,7 @@ When writing a custom \`ObservablePanelOption\`\, keep in mind that:
 
 \- There are only ever two \`YAxes\`: left at \`YAxes\[0\]\` and right at \`YAxes\[1\]\`\. Target customizations at the Y\-axis you want to modify\, e\.g\. \`YAxes\[0\]\.Property = Value\`\.
 
-\- There observable being graphed is configured in \`Targets\[0\]\`\. Customize it by editing it directly\, e\.g\. \`Targets\[0\]\.Property = Value\`\.
+\- The observable being graphed is configured in \`Targets\[0\]\`\. Customize it by editing it directly\, e\.g\. \`Targets\[0\]\.Property = Value\`\.
 
 If an option could be leveraged by multiple observables\, a shared panel option can be defined in the \`monitoring\` package\.
 
