@@ -128,7 +128,7 @@
     "@types/he": "1.1.1",
     "@types/highlight.js": "9.12.4",
     "@types/is-absolute-url": "3.0.0",
-    "@types/jest": "26.0.19",
+    "@types/jest": "26.0.20",
     "@types/js-cookie": "2.2.6",
     "@types/jsdom": "12.2.4",
     "@types/lodash": "4.14.167",
