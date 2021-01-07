@@ -5,23 +5,40 @@ import (
 )
 
 // ObservablePanelOption declares an option for customizing a graph panel.
+// `ObservablePanelOptions` is responsible for collecting and applying options.
 //
-// When writing a custom ObservablePanelOption, keep in mind that:
+// You can make any customization you want to a graph panel by using `ObservablePanelOptions.With`:
+//
+//   PanelOptions: monitoring.PanelOption().With(func(o Observable, g *sdk.GraphPanel) {
+//     // ... modify 'g'
+//   }),
+//
+// When writing a custom `ObservablePanelOption`, keep in mind that:
 //
 // - There are only ever two `YAxes`: left at `YAxes[0]` and right at `YAxes[1]`.
-//   Target customizations at the Y-axis you want to modify, e.g. `YAxes[0].Property = Value`.
-// - There observable being graphed is configured in `Targets[0]`.
-//   Customize it by editing it directly, e.g. `Targets[0].Property = Value`.
+// Target customizations at the Y-axis you want to modify, e.g. `YAxes[0].Property = Value`.
 //
-// ObservablePanelOptions is responsible for collecting and applying options.
+// - There observable being graphed is configured in `Targets[0]`.
+// Customize it by editing it directly, e.g. `Targets[0].Property = Value`.
+//
+// If an option could be leveraged by multiple observables, a shared panel option can be
+// defined in the `monitoring` package.
+//
+// When creating a shared `ObservablePanelOption`, it should defined as a function that
+// returns a `ObservablePanelOption`. The function should be prefixed with `Option`, e.g.
+// `OptionMyCustomization`. It can then be used with the `ObservablePanelOptions.With`:
+//
+//   PanelOptions: monitoring.PanelOption().With(monitoring.OptionMyCustomization),
+//
+// Using a shared prefix helps with discoverability of available options.
 type ObservablePanelOption func(Observable, *sdk.GraphPanel)
 
-// basicPanel instantiates all properties of a graph that can be adjusted in an
+// optionBasicPanel instantiates all properties of a graph that can be adjusted in an
 // ObservablePanelOption, and some reasonable defaults aimed at maintaining a uniform
 // look and feel.
 //
 // All ObservablePanelOptions start with this option.
-func basicPanel() ObservablePanelOption {
+func optionBasicPanel() ObservablePanelOption {
 	return func(o Observable, g *sdk.GraphPanel) {
 		g.Legend.Show = true
 		g.Fill = 1
@@ -50,11 +67,11 @@ func basicPanel() ObservablePanelOption {
 	}
 }
 
-// PanelWithOpinionatedDefaults sets some opinionated default properties aimed at
+// OptionOpinionatedDefaults sets some opinionated default properties aimed at
 // encouraging good dashboard practices.
 //
 // It is applied in the default PanelOptions().
-func PanelWithOpinionatedDefaults() ObservablePanelOption {
+func OptionOpinionatedDefaults() ObservablePanelOption {
 	return func(o Observable, g *sdk.GraphPanel) {
 		// We use "value" as the default legend format and not, say, "{{instance}}" or
 		// an empty string (Grafana defaults to all labels in that case) because:
@@ -72,10 +89,10 @@ func PanelWithOpinionatedDefaults() ObservablePanelOption {
 	}
 }
 
-// PanelWithThresholds draws threshold lines based on the Observable's configured alerts.
+// OptionAlertThresholds draws threshold lines based on the Observable's configured alerts.
 //
 // It is applied in the default PanelOptions().
-func PanelWithThresholds() ObservablePanelOption {
+func OptionAlertThresholds() ObservablePanelOption {
 	return func(o Observable, g *sdk.GraphPanel) {
 		if o.Warning != nil && o.Warning.greaterOrEqual != nil {
 			// Warning threshold

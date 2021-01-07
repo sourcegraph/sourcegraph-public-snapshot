@@ -6,7 +6,9 @@ import (
 	"github.com/grafana-tools/sdk"
 )
 
-// ObservablePanelOptions declares options for visualizing an Observable.
+// ObservablePanelOptions declares options for visualizing an Observable. A default set
+// of options can be instantiated with `PanelOptions()`, and further customized using
+// `ObservablePanelOptions.With(ObservablePanelOption)`.
 type ObservablePanelOptions struct {
 	options []ObservablePanelOption
 
@@ -19,21 +21,21 @@ type ObservablePanelOptions struct {
 func PanelOptions() ObservablePanelOptions {
 	return ObservablePanelOptions{
 		options: []ObservablePanelOption{
-			basicPanel(), // required basic values
-			PanelWithOpinionatedDefaults(),
-			PanelWithThresholds(),
+			optionBasicPanel(), // required basic values
+			OptionOpinionatedDefaults(),
+			OptionAlertThresholds(),
 		},
 	}
 }
 
-// PanelOptionsBasic provides a builder for customizing an Observable visualization
+// PanelOptionsMinimal provides a builder for customizing an Observable visualization
 // starting with an extremely minimal graph panel.
 //
-// In general, we recommend against using this
-func PanelOptionsBasic() ObservablePanelOptions {
+// In general, we advise using PanelOptions() instead to start with recommended defaults.
+func PanelOptionsMinimal() ObservablePanelOptions {
 	return ObservablePanelOptions{
 		options: []ObservablePanelOption{
-			basicPanel(), // required basic values
+			optionBasicPanel(), // required basic values
 		},
 	}
 }
@@ -91,8 +93,8 @@ func (p ObservablePanelOptions) Interval(ms int) ObservablePanelOptions {
 	return p
 }
 
-// Option renders an additional option.
-func (p ObservablePanelOptions) Option(op ObservablePanelOption) ObservablePanelOptions {
+// With will add the provided option to be applied when building this panel.
+func (p ObservablePanelOptions) With(op ObservablePanelOption) ObservablePanelOptions {
 	p.options = append(p.options, op)
 	return p
 }
