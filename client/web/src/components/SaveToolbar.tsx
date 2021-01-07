@@ -4,7 +4,7 @@ import CheckIcon from 'mdi-react/CheckIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
 
-interface Props {
+export interface Props {
     dirty?: boolean
     saving?: boolean
     error?: Error
@@ -13,7 +13,9 @@ interface Props {
     onDiscard: () => void
 }
 
-export const SaveToolbar: React.FunctionComponent<Props> = ({ dirty, saving, error, onSave, onDiscard }) => {
+export type SaveToolbarPropsGenerator<T extends object> = (props: Readonly<Props>) => Props & T
+
+export const SaveToolbar: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ dirty, saving, error, onSave, onDiscard, children }) => {
     const saveDiscardDisabled = saving || !dirty
     let saveDiscardTitle: string | undefined
     if (saving) {
@@ -49,6 +51,7 @@ export const SaveToolbar: React.FunctionComponent<Props> = ({ dirty, saving, err
                 >
                     <CloseIcon className="icon-inline" /> Discard
                 </button>
+                {children}
                 {saving && (
                     <span className="save-toolbar__item save-toolbar__message">
                         <LoadingSpinner className="icon-inline" /> Saving...
