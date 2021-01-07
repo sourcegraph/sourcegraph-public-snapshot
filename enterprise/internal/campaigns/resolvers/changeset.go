@@ -99,9 +99,6 @@ func (r *changesetResolver) repoAccessible() bool {
 	return r.repo != nil
 }
 
-// importing returns whether the changeset hasn't finished importing yet.
-func (r *changesetResolver) importing() bool { return r.changeset.IsImporting() }
-
 func (r *changesetResolver) computeSpec(ctx context.Context) (*campaigns.ChangesetSpec, error) {
 	r.specOnce.Do(func() {
 		if r.changeset.CurrentSpecID == 0 {
@@ -222,7 +219,7 @@ func (r *changesetResolver) NextSyncAt(ctx context.Context) (*graphqlbackend.Dat
 }
 
 func (r *changesetResolver) Title(ctx context.Context) (*string, error) {
-	if r.importing() {
+	if r.changeset.IsImporting() {
 		return nil, nil
 	}
 
@@ -243,7 +240,7 @@ func (r *changesetResolver) Title(ctx context.Context) (*string, error) {
 }
 
 func (r *changesetResolver) Body(ctx context.Context) (*string, error) {
-	if r.importing() {
+	if r.changeset.IsImporting() {
 		return nil, nil
 	}
 
@@ -423,7 +420,7 @@ func (r *changesetResolver) Events(ctx context.Context, args *graphqlbackend.Cha
 }
 
 func (r *changesetResolver) Diff(ctx context.Context) (graphqlbackend.RepositoryComparisonInterface, error) {
-	if r.importing() {
+	if r.changeset.IsImporting() {
 		return nil, nil
 	}
 
