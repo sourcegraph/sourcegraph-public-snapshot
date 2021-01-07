@@ -8,7 +8,7 @@ import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import { RepoLink } from '../../../shared/src/components/RepoLink'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import {ExternalServiceKind} from "../graphql-operations";
+import { ExternalServiceKind } from '../graphql-operations'
 
 interface RepositoryNodeProps {
     name: string
@@ -112,7 +112,11 @@ export const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({
     return (
         <tr className="repository-node">
             <td>
-                <a className="w-100 d-flex justify-content-between align-items-center" href={url} onClick={handleOnClick}>
+                <a
+                    className="w-100 d-flex justify-content-between align-items-center"
+                    href={url}
+                    onClick={handleOnClick}
+                >
                     <div className="d-flex align-items-center">
                         {prefixComponent && prefixComponent}
                         <StatusIcon mirrorInfo={mirrorInfo} />

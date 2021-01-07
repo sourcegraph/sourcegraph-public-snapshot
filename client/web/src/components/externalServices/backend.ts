@@ -2,7 +2,7 @@ import { TelemetryService } from '../../../../shared/src/telemetry/telemetryServ
 import { Observable } from 'rxjs'
 import { gql, dataOrThrowErrors } from '../../../../shared/src/graphql/graphql'
 import { createAggregateError, isErrorLike, ErrorLike } from '../../../../shared/src/util/errors'
-import {map, mapTo} from 'rxjs/operators'
+import { map, mapTo } from 'rxjs/operators'
 import {
     UpdateExternalServiceResult,
     UpdateExternalServiceVariables,
@@ -90,9 +90,7 @@ export function updateExternalService(
         .toPromise()
 }
 
-export function setExternalServiceRepos(
-    variables: SetExternalServiceReposVariables
-): Promise<void> {
+export function setExternalServiceRepos(variables: SetExternalServiceReposVariables): Promise<void> {
     return requestGraphQL<SetExternalServiceReposResult, SetExternalServiceReposVariables>(
         gql`
             mutation SetExternalServiceRepos($id: ID!, $allRepos: Boolean!, $repos: [String!]) {
@@ -103,10 +101,7 @@ export function setExternalServiceRepos(
         `,
         variables
     )
-        .pipe(
-            map(dataOrThrowErrors),
-            mapTo(undefined)
-        )
+        .pipe(map(dataOrThrowErrors), mapTo(undefined))
         .toPromise()
 }
 
