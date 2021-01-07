@@ -143,7 +143,8 @@ type executor struct {
 	client   api.Client
 	features featureFlags
 	logger   *LogManager
-	creator  *WorkspaceCreator
+	creator  WorkspaceCreator
+	fetcher  RepoFetcher
 
 	tasks      []*Task
 	statuses   map[*Task]*TaskStatus
@@ -165,6 +166,7 @@ func newExecutor(opts ExecutorOpts, client api.Client, features featureFlags) *e
 		creator:       opts.Creator,
 		client:        client,
 		features:      features,
+		fetcher:       opts.RepoFetcher,
 		doneEnqueuing: make(chan struct{}),
 		logger:        NewLogManager(opts.TempDir, opts.KeepLogs),
 		tempDir:       opts.TempDir,
@@ -315,7 +317,7 @@ func (x *executor) do(ctx context.Context, task *Task) (err error) {
 	defer cancel()
 
 	// Actually execute the steps.
-	diff, err := runSteps(runCtx, x.creator, task.Repository, task.Steps, log, x.tempDir, func(currentlyExecuting string) {
+	diff, err := runSteps(runCtx, x.fetcher, x.creator, task.Repository, task.Steps, log, x.tempDir, func(currentlyExecuting string) {
 		x.updateTaskStatus(task, func(status *TaskStatus) {
 			status.CurrentlyExecuting = currentlyExecuting
 		})

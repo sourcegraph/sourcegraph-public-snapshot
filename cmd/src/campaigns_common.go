@@ -40,6 +40,7 @@ type campaignsApplyFlags struct {
 	namespace        string
 	parallelism      int
 	timeout          time.Duration
+	workspace        string
 	cleanArchives    bool
 	skipErrors       bool
 }
@@ -98,6 +99,20 @@ func newCampaignsApplyFlags(flagSet *flag.FlagSet, cacheDir, tempDir string) *ca
 	flagSet.BoolVar(
 		&caf.skipErrors, "skip-errors", false,
 		"If true, errors encountered while executing steps in a repository won't stop the execution of the campaign spec but only cause that repository to be skipped.",
+	)
+
+	// We default to bind workspaces on everything except ARM64 macOS at
+	// present. In the future, we'll likely want to switch the default for ARM64
+	// macOS as well, but this requires access to the hardware for testing.
+	var defaultWorkspace string
+	if runtime.GOOS == "darwin" && runtime.GOARCH == "amd64" {
+		defaultWorkspace = "volume"
+	} else {
+		defaultWorkspace = "bind"
+	}
+	flagSet.StringVar(
+		&caf.workspace, "workspace", defaultWorkspace,
+		`Workspace mode to use ("bind" or "volume")`,
 	)
 
 	flagSet.BoolVar(verbose, "v", false, "print verbose output")
@@ -176,18 +191,20 @@ func campaignsExecute(ctx context.Context, out *output.Output, svc *campaigns.Se
 	}
 
 	opts := campaigns.ExecutorOpts{
-		Cache:      svc.NewExecutionCache(flags.cacheDir),
-		Creator:    svc.NewWorkspaceCreator(flags.cacheDir, flags.cleanArchives),
-		ClearCache: flags.clearCache,
-		KeepLogs:   flags.keepLogs,
-		Timeout:    flags.timeout,
-		TempDir:    flags.tempDir,
+		Cache:       svc.NewExecutionCache(flags.cacheDir),
+		Creator:     svc.NewWorkspaceCreator(flags.cacheDir),
+		RepoFetcher: svc.NewRepoFetcher(flags.cacheDir, flags.cleanArchives),
+		ClearCache:  flags.clearCache,
+		KeepLogs:    flags.keepLogs,
+		Timeout:     flags.timeout,
+		TempDir:     flags.tempDir,
 	}
 	if flags.parallelism <= 0 {
 		opts.Parallelism = runtime.GOMAXPROCS(0)
 	} else {
 		opts.Parallelism = flags.parallelism
 	}
+	out.VerboseLine(output.Linef("🚧", output.StyleSuccess, "Workspace creator: %T", opts.Creator))
 	executor := svc.NewExecutor(opts)
 
 	if errs != nil {
@@ -210,10 +227,10 @@ func campaignsExecute(ctx context.Context, out *output.Output, svc *campaigns.Se
 
 	imageProgress := out.Progress([]output.ProgressBar{{
 		Label: "Preparing container images",
-		Max:   float64(len(campaignSpec.Steps)),
+		Max:   1.0,
 	}}, nil)
-	err = svc.SetDockerImages(ctx, campaignSpec, func(step int) {
-		imageProgress.SetValue(0, float64(step))
+	err = svc.SetDockerImages(ctx, opts.Creator, campaignSpec, func(perc float64) {
+		imageProgress.SetValue(0, perc)
 	})
 	if err != nil {
 		return "", "", err

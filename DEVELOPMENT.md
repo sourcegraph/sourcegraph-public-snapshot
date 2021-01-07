@@ -38,3 +38,19 @@ For example, suppose we have the the recommended versions.
 If a new feature is added to a new `3.91.6` release of src-cli and this change requires only features available in Sourcegraph `3.99`, then this feature should also be present in a new `3.85.8` release of src-cli. Because a Sourcegraph instance will automatically select the highest patch version, all non-breaking changes should increment only the patch version. 
 
 Note that if instead the recommended src-cli version for Sourcegraph `3.99` was `3.90.4` in the example above, there is no additional step required, and the new patch version of src-cli will be available to both Sourcegraph versions.
+
+## Dependent Docker images
+
+`src campaign apply` and `src campaign preview` use a Docker image published as `sourcegraph/src-campaign-volume-workspace` for utility purposes when the volume workspace is selected, which is the default on macOS. This [Docker image](./docker/campaign-volume-workspace/Dockerfile) is built by [a Python script](./docker/campaign-volume-workspace/push.py) invoked by the GitHub Action workflow described in [`docker.yml`](.github/workflows/docker.yml).
+
+To build and develop this locally, you can build and tag the image with:
+
+```sh
+docker build -t sourcegraph/src-campaign-volume-workspace - < docker/campaign-volume-workspace/Dockerfile
+```
+
+To remove it and then force the upstream image on Docker Hub to be used again:
+
+```sh
+docker rmi sourcegraph/src-campaign-volume-workspace
+```

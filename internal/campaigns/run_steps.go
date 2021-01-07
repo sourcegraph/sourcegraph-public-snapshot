@@ -17,51 +17,20 @@ import (
 	"github.com/sourcegraph/src-cli/internal/campaigns/graphql"
 )
 
-func runSteps(ctx context.Context, wc *WorkspaceCreator, repo *graphql.Repository, steps []Step, logger *TaskLogger, tempDir string, reportProgress func(string)) ([]byte, error) {
+func runSteps(ctx context.Context, rf RepoFetcher, wc WorkspaceCreator, repo *graphql.Repository, steps []Step, logger *TaskLogger, tempDir string, reportProgress func(string)) ([]byte, error) {
 	reportProgress("Downloading archive")
+	zip, err := rf.Fetch(ctx, repo)
+	if err != nil {
+		return nil, errors.Wrap(err, "fetching repo")
+	}
+	defer zip.Close()
 
-	volumeDir, err := wc.Create(ctx, repo)
+	reportProgress("Initializing workspace")
+	workspace, err := wc.Create(ctx, repo, zip.Path())
 	if err != nil {
 		return nil, errors.Wrap(err, "creating workspace")
 	}
-	defer os.RemoveAll(volumeDir)
-
-	runGitCmd := func(args ...string) ([]byte, error) {
-		cmd := exec.CommandContext(ctx, "git", args...)
-		cmd.Env = []string{
-			// Don't use the system wide git config.
-			"GIT_CONFIG_NOSYSTEM=1",
-			// And also not any other, because they can mess up output, change defaults, .. which can do unexpected things.
-			"GIT_CONFIG=/dev/null",
-			// Set user.name and user.email in the local repository. The user name and
-			// e-mail will eventually be ignored anyway, since we're just using the Git
-			// repository to generate diffs, but we don't want git to generate alarming
-			// looking warnings.
-			"GIT_AUTHOR_NAME=Sourcegraph",
-			"GIT_AUTHOR_EMAIL=campaigns@sourcegraph.com",
-			"GIT_COMMITTER_NAME=Sourcegraph",
-			"GIT_COMMITTER_EMAIL=campaigns@sourcegraph.com",
-		}
-		cmd.Dir = volumeDir
-		out, err := cmd.CombinedOutput()
-		if err != nil {
-			return nil, errors.Wrapf(err, "'git %s' failed: %s", strings.Join(args, " "), out)
-		}
-		return out, nil
-	}
-
-	reportProgress("Initializing workspace")
-	if _, err := runGitCmd("init"); err != nil {
-		return nil, errors.Wrap(err, "git init failed")
-	}
-
-	// --force because we want previously "gitignored" files in the repository
-	if _, err := runGitCmd("add", "--force", "--all"); err != nil {
-		return nil, errors.Wrap(err, "git add failed")
-	}
-	if _, err := runGitCmd("commit", "--quiet", "--all", "-m", "src-action-exec"); err != nil {
-		return nil, errors.Wrap(err, "git commit failed")
-	}
+	defer workspace.Close(ctx)
 
 	results := make([]StepResult, len(steps))
 
@@ -184,15 +153,18 @@ func runSteps(ctx context.Context, wc *WorkspaceCreator, repo *graphql.Repositor
 
 		reportProgress(runScript.String())
 		const workDir = "/work"
-		args := []string{
+		workspaceOpts, err := workspace.DockerRunOpts(ctx, workDir)
+		if err != nil {
+			return nil, errors.Wrap(err, "getting Docker options for workspace")
+		}
+		args := append([]string{
 			"run",
 			"--rm",
 			"--init",
 			"--cidfile", cidFile.Name(),
 			"--workdir", workDir,
-			"--mount", fmt.Sprintf("type=bind,source=%s,target=%s", volumeDir, workDir),
 			"--mount", fmt.Sprintf("type=bind,source=%s,target=%s,ro", runScriptFile.Name(), containerTemp),
-		}
+		}, workspaceOpts...)
 		for target, source := range filesToMount {
 			args = append(args, "--mount", fmt.Sprintf("type=bind,source=%s,target=%s,ro", source.Name(), target))
 		}
@@ -205,7 +177,9 @@ func runSteps(ctx context.Context, wc *WorkspaceCreator, repo *graphql.Repositor
 
 		cmd := exec.CommandContext(ctx, "docker", args...)
 		cmd.Args = append(cmd.Args, "--", step.image, containerTemp)
-		cmd.Dir = volumeDir
+		if dir := workspace.WorkDir(); dir != nil {
+			cmd.Dir = *dir
+		}
 
 		var stdoutBuffer, stderrBuffer bytes.Buffer
 		cmd.Stdout = io.MultiWriter(&stdoutBuffer, logger.PrefixWriter("stdout"))
@@ -233,31 +207,16 @@ func runSteps(ctx context.Context, wc *WorkspaceCreator, repo *graphql.Repositor
 
 		logger.Logf("[Step %d] complete in %s", i+1, elapsed)
 
-		if _, err := runGitCmd("add", "--all"); err != nil {
-			return nil, errors.Wrap(err, "git add failed")
-		}
-
-		statusOut, err := runGitCmd("status", "--porcelain")
+		changes, err := workspace.Changes(ctx)
 		if err != nil {
-			return nil, errors.Wrap(err, "git status failed")
+			return nil, errors.Wrap(err, "getting changed files in step")
 		}
 
-		changes, err := parseGitStatus(statusOut)
-		if err != nil {
-			return nil, errors.Wrap(err, "parsing git status output")
-		}
-
-		results[i] = StepResult{Files: changes, Stdout: &stdoutBuffer, Stderr: &stderrBuffer}
+		results[i] = StepResult{files: changes, Stdout: &stdoutBuffer, Stderr: &stderrBuffer}
 	}
 
 	reportProgress("Calculating diff")
-	// As of Sourcegraph 3.14 we only support unified diff format.
-	// That means we need to strip away the `a/` and `/b` prefixes with `--no-prefix`.
-	// See: https://github.com/sourcegraph/sourcegraph/blob/82d5e7e1562fef6be5c0b17f18631040fd330835/enterprise/internal/campaigns/service.go#L324-L329
-	//
-	// Also, we need to add --binary so binary file changes are inlined in the patch.
-	//
-	diffOut, err := runGitCmd("diff", "--cached", "--no-prefix", "--binary")
+	diffOut, err := workspace.Diff(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "git diff failed")
 	}
@@ -477,8 +436,8 @@ func (stepCtx *StepContext) ToFuncMap() template.FuncMap {
 
 // StepResult represents the result of a previously executed step.
 type StepResult struct {
-	// Files are the changes made to files by the step.
-	Files StepChanges
+	// files are the changes made to files by the step.
+	files *StepChanges
 
 	// Stdout is the output produced by the step on standard out.
 	Stdout *bytes.Buffer
@@ -495,16 +454,36 @@ type StepChanges struct {
 }
 
 // ModifiedFiles returns the files modified by a step.
-func (r StepResult) ModifiedFiles() []string { return r.Files.Modified }
+func (r StepResult) ModifiedFiles() []string {
+	if r.files != nil {
+		return r.files.Modified
+	}
+	return []string{}
+}
 
 // AddedFiles returns the files added by a step.
-func (r StepResult) AddedFiles() []string { return r.Files.Added }
+func (r StepResult) AddedFiles() []string {
+	if r.files != nil {
+		return r.files.Added
+	}
+	return []string{}
+}
 
 // DeletedFiles returns the files deleted by a step.
-func (r StepResult) DeletedFiles() []string { return r.Files.Deleted }
+func (r StepResult) DeletedFiles() []string {
+	if r.files != nil {
+		return r.files.Deleted
+	}
+	return []string{}
+}
 
 // RenamedFiles returns the new name of files that have been renamed by a step.
-func (r StepResult) RenamedFiles() []string { return r.Files.Renamed }
+func (r StepResult) RenamedFiles() []string {
+	if r.files != nil {
+		return r.files.Renamed
+	}
+	return []string{}
+}
 
 func parseGitStatus(out []byte) (StepChanges, error) {
 	result := StepChanges{}

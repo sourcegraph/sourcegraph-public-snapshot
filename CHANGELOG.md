@@ -13,6 +13,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Added
 
+- `src campaign [apply|preview]` can now make use of Docker volumes, rather than bind-mounting the host filesystem. This is now the default on macOS, as volume mounts have generally better performance there. The optional `-workspace` flag can be used to override the default. [#412](https://github.com/sourcegraph/src-cli/pull/412)
+
 ### Changed
 
 - `src login` now defaults to validating against `SRC_ENDPOINT` if configured.

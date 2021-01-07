@@ -6,56 +6,103 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net/http"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/campaigns/graphql"
 )
 
-type WorkspaceCreator struct {
-	dir    string
-	client api.Client
-
-	deleteZips bool
+type dockerBindWorkspaceCreator struct {
+	dir string
 }
 
-func (wc *WorkspaceCreator) Create(ctx context.Context, repo *graphql.Repository) (string, error) {
-	path := localRepositoryZipArchivePath(wc.dir, repo)
+var _ WorkspaceCreator = &dockerBindWorkspaceCreator{}
 
-	exists, err := fileExists(path)
+func (wc *dockerBindWorkspaceCreator) Create(ctx context.Context, repo *graphql.Repository, zip string) (Workspace, error) {
+	w, err := wc.unzipToWorkspace(ctx, repo, zip)
 	if err != nil {
-		return "", err
+		return nil, errors.Wrap(err, "unzipping the repository")
 	}
 
-	if !exists {
-		err = fetchRepositoryArchive(ctx, wc.client, repo, path)
-		if err != nil {
-			// If the context got cancelled, or we ran out of disk space, or
-			// ... while we were downloading the file, we remove the partially
-			// downloaded file.
-			os.Remove(path)
+	return w, errors.Wrap(wc.prepareGitRepo(ctx, w), "preparing local git repo")
+}
 
-			return "", errors.Wrap(err, "fetching ZIP archive")
-		}
+func (*dockerBindWorkspaceCreator) DockerImages() []string { return []string{} }
+
+func (*dockerBindWorkspaceCreator) prepareGitRepo(ctx context.Context, w *dockerBindWorkspace) error {
+	if _, err := runGitCmd(ctx, w.dir, "init"); err != nil {
+		return errors.Wrap(err, "git init failed")
 	}
 
-	if wc.deleteZips {
-		defer os.Remove(path)
+	// --force because we want previously "gitignored" files in the repository
+	if _, err := runGitCmd(ctx, w.dir, "add", "--force", "--all"); err != nil {
+		return errors.Wrap(err, "git add failed")
+	}
+	if _, err := runGitCmd(ctx, w.dir, "commit", "--quiet", "--all", "--allow-empty", "-m", "src-action-exec"); err != nil {
+		return errors.Wrap(err, "git commit failed")
 	}
 
+	return nil
+}
+
+func (wc *dockerBindWorkspaceCreator) unzipToWorkspace(ctx context.Context, repo *graphql.Repository, zip string) (*dockerBindWorkspace, error) {
 	prefix := "workspace-" + repo.Slug()
-	workspace, err := unzipToTempDir(ctx, path, wc.dir, prefix)
+	workspace, err := unzipToTempDir(ctx, zip, wc.dir, prefix)
 	if err != nil {
-		return "", errors.Wrap(err, "unzipping the ZIP archive")
+		return nil, errors.Wrap(err, "unzipping the ZIP archive")
 	}
 
-	return workspace, nil
+	return &dockerBindWorkspace{dir: workspace}, nil
+}
+
+type dockerBindWorkspace struct {
+	dir string
+}
+
+var _ Workspace = &dockerBindWorkspace{}
+
+func (w *dockerBindWorkspace) Close(ctx context.Context) error {
+	return os.RemoveAll(w.dir)
+}
+
+func (w *dockerBindWorkspace) DockerRunOpts(ctx context.Context, target string) ([]string, error) {
+	return []string{
+		"--mount",
+		fmt.Sprintf("type=bind,source=%s,target=%s", w.dir, target),
+	}, nil
+}
+
+func (w *dockerBindWorkspace) WorkDir() *string { return &w.dir }
+
+func (w *dockerBindWorkspace) Changes(ctx context.Context) (*StepChanges, error) {
+	if _, err := runGitCmd(ctx, w.dir, "add", "--all"); err != nil {
+		return nil, errors.Wrap(err, "git add failed")
+	}
+
+	statusOut, err := runGitCmd(ctx, w.dir, "status", "--porcelain")
+	if err != nil {
+		return nil, errors.Wrap(err, "git status failed")
+	}
+
+	changes, err := parseGitStatus(statusOut)
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing git status output")
+	}
+
+	return &changes, nil
+}
+
+func (w *dockerBindWorkspace) Diff(ctx context.Context) ([]byte, error) {
+	// As of Sourcegraph 3.14 we only support unified diff format.
+	// That means we need to strip away the `a/` and `/b` prefixes with `--no-prefix`.
+	// See: https://github.com/sourcegraph/sourcegraph/blob/82d5e7e1562fef6be5c0b17f18631040fd330835/enterprise/internal/campaigns/service.go#L324-L329
+	//
+	// Also, we need to add --binary so binary file changes are inlined in the patch.
+	//
+	return runGitCmd(ctx, w.dir, "diff", "--cached", "--no-prefix", "--binary")
 }
 
 func fileExists(path string) (bool, error) {
@@ -80,47 +127,6 @@ func unzipToTempDir(ctx context.Context, zipFile, tempDir, tempFilePrefix string
 	}
 
 	return volumeDir, unzip(zipFile, volumeDir)
-}
-
-func fetchRepositoryArchive(ctx context.Context, client api.Client, repo *graphql.Repository, dest string) error {
-	req, err := client.NewHTTPRequest(ctx, "GET", repositoryZipArchivePath(repo), nil)
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Accept", "application/zip")
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unable to fetch archive (HTTP %d from %s)", resp.StatusCode, req.URL.String())
-	}
-
-	// Unlike the mkdirAll() calls elsewhere in this file, this is only giving
-	// us a temporary place on the filesystem to keep the archive. Since it's
-	// never mounted into the containers being run, we can keep these
-	// directories 0700 without issue.
-	if err := os.MkdirAll(filepath.Dir(dest), 0700); err != nil {
-		return err
-	}
-
-	f, err := os.Create(dest)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	if _, err := io.Copy(f, resp.Body); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func repositoryZipArchivePath(repo *graphql.Repository) string {
-	return path.Join("", repo.Name+"@"+repo.BaseRef(), "-", "raw")
 }
 
 func localRepositoryZipArchivePath(dir string, repo *graphql.Repository) string {

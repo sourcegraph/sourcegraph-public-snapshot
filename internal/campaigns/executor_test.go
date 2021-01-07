@@ -213,10 +213,14 @@ func TestExecutor_Integration(t *testing.T) {
 			defer os.Remove(testTempDir)
 
 			cache := newInMemoryExecutionCache()
-			creator := &WorkspaceCreator{dir: testTempDir, client: client}
+			creator := &dockerBindWorkspaceCreator{dir: testTempDir}
 			opts := ExecutorOpts{
-				Cache:       cache,
-				Creator:     creator,
+				Cache:   cache,
+				Creator: creator,
+				RepoFetcher: &repoFetcher{
+					client: client,
+					dir:    testTempDir,
+				},
 				TempDir:     testTempDir,
 				Parallelism: runtime.GOMAXPROCS(0),
 				Timeout:     tc.executorTimeout,

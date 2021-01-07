@@ -45,6 +45,7 @@ Examples:
 		svc := campaigns.NewService(&campaigns.ServiceOpts{
 			AllowUnsupported: flags.allowUnsupported,
 			Client:           cfg.apiClient(flags.api, flagSet.Output()),
+			Workspace:        flags.workspace,
 		})
 
 		if err := svc.DetermineFeatureFlags(ctx); err != nil {

@@ -36,7 +36,7 @@ R  README.md -> README.markdown
 func TestParsingAndRenderingTemplates(t *testing.T) {
 	stepCtx := &StepContext{
 		PreviousStep: StepResult{
-			Files: StepChanges{
+			files: &StepChanges{
 				Modified: []string{"go.mod"},
 				Added:    []string{"main.go.swp"},
 				Deleted:  []string{".DS_Store"},
