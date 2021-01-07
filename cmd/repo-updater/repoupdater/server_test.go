@@ -772,7 +772,8 @@ func testServerStatusMessages(t *testing.T, store *repos.Store) func(t *testing.
 
 				clock := dbtesting.NewFakeClock(time.Now(), 0)
 				syncer := &repos.Syncer{
-					Now: clock.Now,
+					Store: store,
+					Now:   clock.Now,
 				}
 
 				if tc.sourcerErr != nil || tc.listRepoErr != nil {
