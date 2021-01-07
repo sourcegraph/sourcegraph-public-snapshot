@@ -1,24 +1,32 @@
-.gitlab-icon {
+.user-settings-repos_gitlab-icon {
     fill: #ff5900 !important;
 }
 
-.github-icon {
+.user-settings-repos_github-icon {
     fill: var(--body-color) !important;
 }
 
-.check-icon {
+.user-settings-repos_check-icon {
     fill: var(--color-bg-3) !important;
 }
 
-.caret-icon {
+.user-settings-repos_caret-icon {
     fill: var(--primary) !important;
 }
 
-.animate-shimmer {
-    animation: shimmer 2s infinite linear;
-    background: linear-gradient(to right, #eff1f3 4%, #e2e2e2 25%, #eff1f3 36%);
-    background-size: 1000px 100%;
-    border-radius: 5px;
+.user-settings-repos_animate-shimmer {
+    @media (prefers-color-scheme: dark) {
+        background: linear-gradient(to right, #14151c 4%, #454545 25%, #14151c 36%);
+        animation: shimmer 2s infinite linear;
+        background-size: 1000px 100%;
+        border-radius: 5px;
+    }
+    @media (prefers-color-scheme: light) {
+        background: linear-gradient(to right, #eff1f3 4%, #e2e2e2 25%, #eff1f3 36%);
+        animation: shimmer 2s infinite linear;
+        background-size: 1000px 100%;
+        border-radius: 5px;
+    }
 }
 
 @keyframes shimmer {

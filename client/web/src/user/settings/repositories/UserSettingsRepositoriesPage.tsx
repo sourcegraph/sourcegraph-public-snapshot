@@ -25,7 +25,7 @@ interface RowProps {
     node: SiteAdminRepositoryFields
 }
 
-const row: React.FunctionComponent<RowProps> = props => (
+const Row: React.FunctionComponent<RowProps> = props => (
     <RepositoryNode
         name={props.node.name}
         url={props.node.url}
@@ -137,7 +137,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                 noun="repository"
                 pluralNoun="repositories"
                 queryConnection={queryRepositories}
-                nodeComponent={row}
+                nodeComponent={Row}
                 listComponent="table"
                 listClassName="w-100"
                 filters={state.filters}

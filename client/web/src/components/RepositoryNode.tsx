@@ -8,6 +8,7 @@ import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import { RepoLink } from '../../../shared/src/components/RepoLink'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
+import {ExternalServiceKind} from "../graphql-operations";
 
 interface RepositoryNodeProps {
     name: string
@@ -52,7 +53,7 @@ const StatusIcon: React.FunctionComponent<StatusIconProps> = ({ mirrorInfo }) =>
     }
     return (
         <small className="mr-2">
-            <TickIcon className="icon-inline check-icon" />
+            <TickIcon className="icon-inline user-settings-repos_check-icon" />
         </small>
     )
 }
@@ -63,22 +64,22 @@ interface CodeHostIconProps {
 
 const CodeHostIcon: React.FunctionComponent<CodeHostIconProps> = ({ hostType }) => {
     switch (hostType) {
-        case 'github':
+        case ExternalServiceKind.GITHUB:
             return (
                 <small className="mr-2">
-                    <GithubIcon className="icon-inline github-icon" />
+                    <GithubIcon className="icon-inline user-settings-repos_github-icon" />
                 </small>
             )
-        case 'gitlab':
+        case ExternalServiceKind.GITLAB:
             return (
                 <small className="mr-2">
-                    <GitlabIcon className="icon-inline gitlab-icon" />
+                    <GitlabIcon className="icon-inline user-settings-repos_gitlab-icon" />
                 </small>
             )
-        case 'bitbucketCloud':
+        case ExternalServiceKind.BITBUCKETCLOUD:
             return (
                 <small className="mr-2">
-                    <BitbucketIcon className="icon-inline bitbucket-icon" />
+                    <BitbucketIcon className="icon-inline user-settings-repos_bitbucket-icon" />
                 </small>
             )
         default:
@@ -109,9 +110,9 @@ export const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({
         [onClick]
     )
     return (
-        <tr className="w-100 repository-node d-flex align-items-center justify-content-between">
-            <td className="w-100 d-flex justify-content-between align-items-baseline">
-                <a className="w-100 " href={url} onClick={handleOnClick}>
+        <tr className="repository-node">
+            <td>
+                <a className="w-100 d-flex justify-content-between align-items-center" href={url} onClick={handleOnClick}>
                     <div className="d-flex align-items-center">
                         {prefixComponent && prefixComponent}
                         <StatusIcon mirrorInfo={mirrorInfo} />
@@ -164,8 +165,8 @@ export const CheckboxRepositoryNode: React.FunctionComponent<CheckboxRepositoryN
         [onClick]
     )
     return (
-        <tr className="w-100 repository-node d-flex align-items-center justify-content-between" key={name}>
-            <td className="w-100 d-flex justify-content-between align-items-baseline" onClick={onClick}>
+        <tr className="repository-node" key={name}>
+            <td className="w-100 d-flex justify-content-between" onClick={onClick}>
                 <div className="d-flex align-items-center">
                     <input className="mr-2" type="checkbox" onChange={onClick} checked={checked} />
                     <StatusIcon mirrorInfo={mirrorInfo} />

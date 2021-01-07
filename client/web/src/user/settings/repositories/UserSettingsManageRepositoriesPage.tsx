@@ -6,8 +6,7 @@ import { CheckboxRepositoryNode } from '../../../components/RepositoryNode'
 import { Form } from '../../../../../branded/src/components/Form'
 import { Link } from '../../../../../shared/src/components/Link'
 import { ExternalServiceKind, ExternalServicesResult, Maybe } from '../../../graphql-operations'
-import { listAffiliatedRepositories } from '../../../site-admin/backend'
-import { queryExternalServices, setExternalServiceRepos } from '../../../components/externalServices/backend'
+import { queryExternalServices, setExternalServiceRepos, listAffiliatedRepositories } from '../../../components/externalServices/backend'
 import { ErrorAlert } from '../../../components/alerts'
 
 interface Props extends RouteComponentProps, TelemetryProps {
@@ -23,35 +22,35 @@ interface Repo {
 
 const PER_PAGE = 20
 
+// initial state constants
+const emptyRepos: Repo[] = []
+const initialRepoState = {
+    repos: emptyRepos,
+    loading: false,
+    loaded: false,
+    error: '',
+}
+const selectionMap = new Map<string, Repo>()
+const emptyHosts: ExternalServicesResult['externalServices']['nodes'] = []
+const emptyRepoNames: string[] = []
+const initialCodeHostState = {
+    hosts: emptyHosts,
+    loaded: false,
+    configuredRepos: emptyRepoNames,
+}
+
 /**
  * A page to manage the repositories a user syncs from their connected code hosts.
  */
 export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> = ({
-    history,
-    userID,
-    routingPrefix,
-    telemetryService,
+   history,
+   userID,
+   routingPrefix,
+   telemetryService,
 }) => {
     useEffect(() => {
         telemetryService.logViewEvent('UserSettingsRepositories')
     }, [telemetryService])
-
-    // initial state vars
-    const emptyRepos: Repo[] = []
-    const initialRepoState = {
-        repos: emptyRepos,
-        loading: false,
-        loaded: false,
-        error: '',
-    }
-    const selectionMap = new Map<string, Repo>()
-    const emptyHosts: ExternalServicesResult['externalServices']['nodes'] = []
-    const emptyRepoNames: string[] = []
-    const initialCodeHostState = {
-        hosts: emptyHosts,
-        loaded: false,
-        configuredRepos: emptyRepoNames,
-    }
 
     // set up state hooks
     const [repoState, setRepoState] = useState(initialRepoState)
@@ -61,77 +60,86 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     const [codeHostFilter, setCodeHostFilter] = useState('')
     const [codeHosts, setCodeHosts] = useState(initialCodeHostState)
 
-    // first we should load code hosts
-    if (!codeHosts.loaded) {
-        const codeHostSubscription = queryExternalServices({
-            first: null,
-            after: null,
-            namespace: userID,
-        }).subscribe(result => {
-            const selected: string[] = []
-            for (const host of result.nodes) {
-                const cfg = JSON.parse(host.config)
-                switch (host.kind) {
-                    case ExternalServiceKind.GITLAB:
-                        if (cfg.projects !== undefined) {
-                            cfg.projects.map((project: any) => {
-                                selected.push(project.name)
-                            })
+    useCallback(
+        () => {
+            // first we should load code hosts
+            if (!codeHosts.loaded) {
+                const codeHostSubscription = queryExternalServices({
+                    first: null,
+                    after: null,
+                    namespace: userID,
+                }).subscribe(result => {
+                    const selected: string[] = []
+                    for (const host of result.nodes) {
+                        const cfg = JSON.parse(host.config)
+                        switch (host.kind) {
+                            case ExternalServiceKind.GITLAB:
+                                if (cfg.projects !== undefined) {
+                                    cfg.projects.map((project: any) => {
+                                        selected.push(project.name)
+                                    })
+                                }
+                                break
+                            case ExternalServiceKind.GITHUB:
+                                if (cfg.repos !== undefined) {
+                                    selected.push(...cfg.repos)
+                                }
+                                break
                         }
-                        break
-                    case ExternalServiceKind.GITHUB:
-                        if (cfg.repos !== undefined) {
-                            selected.push(...cfg.repos)
-                        }
-                        break
-                }
-            }
-            setCodeHosts({
-                loaded: true,
-                hosts: result.nodes,
-                configuredRepos: selected,
-            })
-            if (selected.length !== 0) {
-                setSelectionState({
-                    repos: selectionState.repos,
-                    radio: 'selected',
-                    loaded: selectionState.loaded,
+                    }
+                    setCodeHosts({
+                        loaded: true,
+                        hosts: result.nodes,
+                        configuredRepos: selected,
+                    })
+                    if (selected.length !== 0) {
+                        setSelectionState({
+                            repos: selectionState.repos,
+                            radio: 'selected',
+                            loaded: selectionState.loaded,
+                        })
+                    }
+                    codeHostSubscription.unsubscribe()
                 })
             }
-            codeHostSubscription.unsubscribe()
-        })
-    }
+        },
+        [codeHosts, selectionState.loaded, selectionState.repos, userID]
+    )()
 
     // once we've loaded code hosts and the 'selected' panel is visible, load repos and set the loading state
-    if (selectionState.radio === 'selected' && !repoState.loaded && !repoState.loading) {
-        setRepoState({
-            repos: emptyRepos,
-            loading: true,
-            loaded: false,
-            error: '',
-        })
-        const listReposSubscription = listAffiliatedRepositories({
-            user: userID,
-        }).subscribe(
-            result => {
-                setRepoState({
-                    repos: result.affiliatedRepositories.nodes,
-                    loading: false,
-                    loaded: true,
-                    error: '',
-                })
-                listReposSubscription.unsubscribe()
-            },
-            error => {
-                setRepoState({
-                    repos: emptyRepos,
-                    loading: false,
-                    loaded: true,
-                    error: String(error),
-                })
-            }
-        )
-    }
+    useCallback(() => {
+        if (selectionState.radio === 'selected' && !repoState.loaded && !repoState.loading) {
+            setRepoState({
+                repos: emptyRepos,
+                loading: true,
+                loaded: false,
+                error: '',
+            })
+            const listReposSubscription = listAffiliatedRepositories({
+                user: userID,
+                codeHost: null,
+                query: null
+            }).subscribe(
+                result => {
+                    setRepoState({
+                        repos: result.affiliatedRepositories.nodes,
+                        loading: false,
+                        loaded: true,
+                        error: '',
+                    })
+                    listReposSubscription.unsubscribe()
+                },
+                error => {
+                    setRepoState({
+                        repos: emptyRepos,
+                        loading: false,
+                        loaded: true,
+                        error: String(error),
+                    })
+                }
+            )
+        }
+    }, [repoState.loaded, repoState.loading, selectionState.radio, userID])()
 
     // if we've loaded repos we should then populate our selection from
     // code host config.
@@ -271,81 +279,76 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             } else {
                 newMap.set(repo.name, repo)
             }
-            // we call this in a setTimeout as for some reason the onChange of
-            // the checkbox element will register the state change but not
-            // reevaluate the `checked` field until another box is ticked.
-            setTimeout(() => {
-                setSelectionState({
-                    repos: newMap,
-                    radio: selectionState.radio,
-                    loaded: selectionState.loaded,
-                })
-            }, 1)
+            setSelectionState({
+                repos: newMap,
+                radio: selectionState.radio,
+                loaded: selectionState.loaded,
+            })
         },
         [selectionState, setSelectionState]
     )
 
     const rows: JSX.Element = (
         <tbody>
-            <tr className="align-items-baseline d-flex" key="header">
-                <td className="w-100 d-flex justify-content-flex-start align-items-center">
-                    <input
-                        className="mr-2"
-                        type="checkbox"
-                        checked={selectionState.repos.size === filteredRepos.length}
-                        onChange={() => {
-                            const newMap = new Map<string, Repo>()
-                            // if not all repos are selected, we should select all, otherwise empty the selection
-                            if (selectionState.repos.size !== filteredRepos.length) {
-                                for (const repo of filteredRepos) {
-                                    newMap.set(repo.name, repo)
-                                }
+        <tr className="align-items-baseline d-flex" key="header">
+            <td className="w-100 d-flex justify-content-flex-start align-items-center">
+                <input
+                    className="mr-2"
+                    type="checkbox"
+                    checked={selectionState.repos.size === filteredRepos.length}
+                    onChange={() => {
+                        const newMap = new Map<string, Repo>()
+                        // if not all repos are selected, we should select all, otherwise empty the selection
+                        if (selectionState.repos.size !== filteredRepos.length) {
+                            for (const repo of filteredRepos) {
+                                newMap.set(repo.name, repo)
                             }
-                            setSelectionState({
-                                repos: newMap,
-                                loaded: selectionState.loaded,
-                                radio: selectionState.radio,
-                            })
-                        }}
-                    />
-                    <span
-                        className={
-                            ((selectionState.repos.size !== 0 && 'font-weight-bold ') || '') + 'repositories-header'
                         }
-                    >
+                        setSelectionState({
+                            repos: newMap,
+                            loaded: selectionState.loaded,
+                            radio: selectionState.radio,
+                        })
+                    }}
+                />
+                <span
+                    className={
+                        ((selectionState.repos.size !== 0 && 'font-weight-bold ') || '') + 'repositories-header'
+                    }
+                >
                         {(selectionState.repos.size > 0 && selectionState.repos.size) || 'No'} repositories selected.
                     </span>
-                </td>
-            </tr>
-            {filteredRepos.map((repo, index) => {
-                if (index < (currentPage - 1) * PER_PAGE || index >= currentPage * PER_PAGE) {
-                    return
-                }
-                return (
-                    <CheckboxRepositoryNode
-                        name={repo.name}
-                        key={repo.name}
-                        onClick={onRepoClicked(repo)}
-                        checked={selectionState.repos.has(repo.name)}
-                        serviceType={repo.codeHost?.kind.toLowerCase() || ''}
-                        isPrivate={repo.private}
-                    />
-                )
-            })}
+            </td>
+        </tr>
+        {filteredRepos.map((repo, index) => {
+            if (index < (currentPage - 1) * PER_PAGE || index >= currentPage * PER_PAGE) {
+                return
+            }
+            return (
+                <CheckboxRepositoryNode
+                    name={repo.name}
+                    key={repo.name}
+                    onClick={onRepoClicked(repo)}
+                    checked={selectionState.repos.has(repo.name)}
+                    serviceType={repo.codeHost?.kind || ''}
+                    isPrivate={repo.private}
+                />
+            )
+        })}
         </tbody>
     )
 
     const loadingAnimation: JSX.Element = (
         <tbody>
-            <tr className="mt-2 align-items-baseline d-flex w-80">
-                <td className="animate-shimmer w-100 h-100 p-3" />
-            </tr>
-            <tr className="mt-2 align-items-baseline d-flex w-30">
-                <td className="animate-shimmer w-100 h-100 p-3" />
-            </tr>
-            <tr className="mt-2 align-items-baseline d-flex w-70">
-                <td className="animate-shimmer w-100 h-100 p-3" />
-            </tr>
+        <tr className="mt-2 align-items-baseline d-flex w-80">
+            <td className="user-settings-repos_animate-shimmer w-100 h-100 p-3 border-top-0" />
+        </tr>
+        <tr className="mt-2 align-items-baseline d-flex w-30">
+            <td className="user-settings-repos_animate-shimmer w-100 h-100 p-3 border-top-0" />
+        </tr>
+        <tr className="mt-2 align-items-baseline d-flex w-70">
+            <td className="user-settings-repos_animate-shimmer w-100 h-100 p-3 border-top-0" />
+        </tr>
         </tbody>
     )
     return (
@@ -379,9 +382,9 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                                         {
                                             // if we're selecting repos, and the repos are still loading, display the loading animation
                                             selectionState.radio === 'selected' &&
-                                                repoState.loading &&
-                                                !repoState.loaded &&
-                                                loadingAnimation
+                                            repoState.loading &&
+                                            !repoState.loaded &&
+                                            loadingAnimation
                                         }
                                         {
                                             // if the repos are loaded display the rows of repos
