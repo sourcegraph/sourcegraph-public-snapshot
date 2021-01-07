@@ -1206,7 +1206,7 @@ func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*Sea
 	// type searchers (file, diff, symbol, etc) completely timed out and could not
 	// produce even partial results. Other searcher types may have produced results.
 	//
-	// In this case, or if we got a partial timeout where ALL searchrepos timed out,
+	// In this case, or if we got a partial timeout where ALL repositories timed out,
 	// we do not return partial results and instead display a timeout alert.
 	shouldShowAlert := err == context.DeadlineExceeded
 	if err == nil && len(rr.searchResultsCommon.timedout) > 0 && len(rr.searchResultsCommon.timedout) == len(rr.searchResultsCommon.repos) {
