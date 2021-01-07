@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -32,9 +33,9 @@ func TestSearchProgress(t *testing.T) {
 				missing:  mkRepos("missing-1", "missing-2"),
 				cloning:  mkRepos("cloning-1"),
 				timedout: mkRepos("timedout-1"),
-				excluded: excludedRepos{
-					forks:    5,
-					archived: 1,
+				excluded: searchrepos.ExcludedRepos{
+					Forks:    5,
+					Archived: 1,
 				},
 			},
 		},
