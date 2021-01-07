@@ -765,7 +765,7 @@ func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 			continue
 		}
 		if repoMatch, ok := r.ToRepository(); ok {
-			rightRepoMatches[string(repoMatch.URL())] = repoMatch
+			rightRepoMatches[repoMatch.URL()] = repoMatch
 			continue
 		}
 		if commitMatch, ok := r.ToCommitSearchResult(); ok {
