@@ -3089,7 +3089,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Descriptions:**
 
-- <span class="badge badge-critical">critical</span> repo-updater: 0.01+ sync error rate for 10m0s
+- <span class="badge badge-critical">critical</span> repo-updater: 0+ sync error rate for 10m0s
 
 **Possible solutions:**
 

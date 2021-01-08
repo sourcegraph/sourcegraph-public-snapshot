@@ -62,7 +62,7 @@ func RepoUpdater() *monitoring.Container {
 							Name:         "src_repoupdater_syncer_sync_errors_total",
 							Description:  "sync error rate",
 							Query:        `sum by (family) (rate(src_repoupdater_syncer_sync_errors_total[5m]))`,
-							Critical:     monitoring.Alert().GreaterOrEqual(0.01).For(10 * time.Minute),
+							Critical:     monitoring.Alert().Greater(0).For(10 * time.Minute),
 							PanelOptions: monitoring.PanelOptions().Unit(monitoring.Number),
 							Owner:        monitoring.ObservableOwnerCloud,
 							PossibleSolutions: `
@@ -140,7 +140,7 @@ func RepoUpdater() *monitoring.Container {
 							Name:              "purge_failed",
 							Description:       "repositories purge failed",
 							Query:             `sum(rate(src_repoupdater_purge_failed[1m]))`,
-							Warning:           monitoring.Alert().GreaterOrEqual(0).For(5 * time.Minute),
+							Warning:           monitoring.Alert().Greater(0).For(5 * time.Minute),
 							PanelOptions:      monitoring.PanelOptions().Unit(monitoring.Number),
 							Owner:             monitoring.ObservableOwnerCloud,
 							PossibleSolutions: "Check repo-updater's connectivity with gitserver and gitserver logs",
@@ -184,7 +184,7 @@ func RepoUpdater() *monitoring.Container {
 							Description: "rate of growth of update queue length over 5 minutes",
 							Query:       `max(deriv(src_repoupdater_sched_update_queue_length[5m]))`,
 							// Alert if the derivative is positive for longer than 30 minutes
-							Critical:          monitoring.Alert().GreaterOrEqual(0).For(30 * time.Minute),
+							Critical:          monitoring.Alert().Greater(0).For(30 * time.Minute),
 							PanelOptions:      monitoring.PanelOptions().Unit(monitoring.Number),
 							Owner:             monitoring.ObservableOwnerCloud,
 							PossibleSolutions: "Check repo-updater logs for indications that the queue is not being processed. The queue length should trend downwards over time as items are sent to GitServer",
