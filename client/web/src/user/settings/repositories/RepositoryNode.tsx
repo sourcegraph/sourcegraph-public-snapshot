@@ -121,12 +121,7 @@ export const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({
                         {prefixComponent && prefixComponent}
                         <StatusIcon mirrorInfo={mirrorInfo} />
                         <CodeHostIcon hostType={serviceType} />
-                        <RepoLink
-                            className="text-muted"
-                            repoClassName="text-primary"
-                            repoName={name}
-                            to={null}
-                        />
+                        <RepoLink className="text-muted" repoClassName="text-primary" repoName={name} to={null} />
                     </div>
                     <div>
                         {isPrivate && <div className="badge badge-secondary text-muted">Private</div>}

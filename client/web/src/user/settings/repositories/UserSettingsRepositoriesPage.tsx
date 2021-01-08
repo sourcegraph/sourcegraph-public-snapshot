@@ -16,7 +16,7 @@ import { RouteComponentProps } from 'react-router'
 import { Link } from '../../../../../shared/src/components/Link'
 import { RepositoryNode } from './RepositoryNode'
 import AddIcon from 'mdi-react/AddIcon'
-import {ErrorLike} from '../../../../../shared/src/util/errors';
+import { ErrorLike } from '../../../../../shared/src/util/errors'
 
 interface Props extends RouteComponentProps, TelemetryProps {
     userID: string
@@ -115,9 +115,9 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
         [userID]
     )
 
-    const updated = useCallback((value: Connection<SiteAdminRepositoryFields> | ErrorLike | undefined):void => {
+    const updated = useCallback((value: Connection<SiteAdminRepositoryFields> | ErrorLike | undefined): void => {
         if (value as Connection<SiteAdminRepositoryFields>) {
-            const conn = (value as Connection<SiteAdminRepositoryFields>)
+            const conn = value as Connection<SiteAdminRepositoryFields>
             if (conn.totalCount !== 0) {
                 setHasRepos(true)
             }
@@ -172,7 +172,11 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                         className="btn btn-primary test-goto-add-external-service-page"
                         to={`${routingPrefix}/repositories/manage`}
                     >
-                        {(hasRepos && <>Manage Repositories</>) || <><AddIcon className="icon-inline" /> Add repositories</>}
+                        {(hasRepos && <>Manage Repositories</>) || (
+                            <>
+                                <AddIcon className="icon-inline" /> Add repositories
+                            </>
+                        )}
                     </Link>
                 )}
             </div>
@@ -187,8 +191,6 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     )
 }
 
-const TotalCountSummary: React.FunctionComponent<{totalCount: number}> = ({
-    totalCount,
-}) => (
-        <p className="user-settings-repos__summary">{totalCount} repositories total</p>
-    )
+const TotalCountSummary: React.FunctionComponent<{ totalCount: number }> = ({ totalCount }) => (
+    <p className="user-settings-repos__summary">{totalCount} repositories total</p>
+)

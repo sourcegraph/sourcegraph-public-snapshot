@@ -12,8 +12,8 @@ import {
     listAffiliatedRepositories,
 } from '../../../components/externalServices/backend'
 import { ErrorAlert } from '../../../components/alerts'
-import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon';
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon';
+import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
+import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 
 interface Props extends RouteComponentProps, TelemetryProps {
     userID: string
@@ -180,25 +180,39 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     for (let page = 1; page <= Math.ceil(filteredRepos.length / PER_PAGE); page++) {
         if (page === 1) {
             pages.push(
-                (page !== currentPage &&
-                    <a className="btn px-0" onClick={() => setPage(currentPage-1)}>
-                        <ChevronLeftIcon className="icon-inline fill-primary"/> Previous
+                (page !== currentPage && (
+                    <a className="btn px-0" onClick={() => setPage(currentPage - 1)}>
+                        <ChevronLeftIcon className="icon-inline fill-primary" /> Previous
                     </a>
-                ) || <span className="px-0 text-muted"><ChevronLeftIcon className="icon-inline fill-border-color-2"/> previous</span>
+                )) || (
+                    <span className="px-0 text-muted">
+                        <ChevronLeftIcon className="icon-inline fill-border-color-2" /> previous
+                    </span>
+                )
             )
         }
         pages.push(
-            <a className={'btn user-settings-repos__page '+String(currentPage === page && 'user-settings-repos__page--active')} onClick={() => setPage(page)}>
-                <p className={'mb-0 '+ String((currentPage === page && 'text-muted') || 'text-primary')}>{page}</p>
+            <a
+                className={
+                    'btn user-settings-repos__page ' +
+                    String(currentPage === page && 'user-settings-repos__page--active')
+                }
+                onClick={() => setPage(page)}
+            >
+                <p className={'mb-0 ' + String((currentPage === page && 'text-muted') || 'text-primary')}>{page}</p>
             </a>
         )
-        if (page === Math.ceil(filteredRepos.length/ PER_PAGE)) {
+        if (page === Math.ceil(filteredRepos.length / PER_PAGE)) {
             pages.push(
-                (page !== currentPage &&
-                <a className="btn px-0" onClick={() => setPage(currentPage+1)}>
-                    <ChevronRightIcon className="icon-inline fill-primary"/>
-                </a>
-                ) || <span className="px-0"><ChevronRightIcon className="icon-inline fill-border-color-2"/></span>
+                (page !== currentPage && (
+                    <a className="btn px-0" onClick={() => setPage(currentPage + 1)}>
+                        <ChevronRightIcon className="icon-inline fill-primary" />
+                    </a>
+                )) || (
+                    <span className="px-0">
+                        <ChevronRightIcon className="icon-inline fill-border-color-2" />
+                    </span>
+                )
             )
         }
     }
@@ -309,7 +323,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         [selectionState, setSelectionState]
     )
 
-    const selectAll = ():void => {
+    const selectAll = (): void => {
         const newMap = new Map<string, Repo>()
         // if not all repos are selected, we should select all, otherwise empty the selection
         if (selectionState.repos.size !== filteredRepos.length) {
