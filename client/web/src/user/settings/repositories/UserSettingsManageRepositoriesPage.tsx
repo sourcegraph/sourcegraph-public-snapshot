@@ -12,8 +12,8 @@ import {
     listAffiliatedRepositories,
 } from '../../../components/externalServices/backend'
 import { ErrorAlert } from '../../../components/alerts'
-import ChevronLeftIcon from "mdi-react/ChevronLeftIcon";
-import ChevronRightIcon from "mdi-react/ChevronRightIcon";
+import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon';
+import ChevronRightIcon from 'mdi-react/ChevronRightIcon';
 
 interface Props extends RouteComponentProps, TelemetryProps {
     userID: string
@@ -26,7 +26,7 @@ interface Repo {
     private: boolean
 }
 
-const PER_PAGE = 20
+const PER_PAGE = 25
 
 // initial state constants
 const emptyRepos: Repo[] = []
@@ -182,9 +182,9 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             pages.push(
                 (page !== currentPage &&
                     <a className="btn px-0" onClick={() => setPage(currentPage-1)}>
-                        <ChevronLeftIcon className="icon-inline fill-primary"/>
+                        <ChevronLeftIcon className="icon-inline fill-primary"/> Previous
                     </a>
-                ) || <span className="px-0"><ChevronLeftIcon className="icon-inline fill-border-color-2"/></span>
+                ) || <span className="px-0 text-muted"><ChevronLeftIcon className="icon-inline fill-border-color-2"/> previous</span>
             )
         }
         pages.push(
@@ -419,7 +419,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                                             repoState.loaded && rows
                                         }
                                     </table>
-                                    <div className="d-flex flex-direction-row align-items-baseline w-100 justify-content-center">
+                                    <div className="user-settings-repos__pages">
                                         {
                                             // pagination control
                                             pages

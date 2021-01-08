@@ -50,6 +50,15 @@
     padding-top: 1.5rem;
 }
 
+.user-settings-repos__pages {
+    display: flex;
+    align-items: baseline;
+    width: 80%;
+    flex-wrap: wrap;
+    margin-left: auto;
+    margin-right: auto;
+}
+
 .user-settings-repos__page {
     display: flex;
     align-items: center;
@@ -57,6 +66,7 @@
     border-radius: 3px;
     background-color: var(--color-bg-2);
     margin-right: 0.25rem;
+    margin-bottom: 0.25rem;
     width: 24px;
     height: 24px;
     font-size: 12px;
