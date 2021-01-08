@@ -782,33 +782,18 @@ func TestScanDelimited(t *testing.T) {
 }
 
 func TestMergePatterns(t *testing.T) {
-	cases := []struct {
-		input string
-		want  string
-	}{
-		{
-			input: "foo()bar",
-			want:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":8}}`,
-		},
-		{
-			input: "()bar",
-			want:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":5}}`,
-		},
+	test := func(input string) string {
+		p := &parser{buf: []byte(input), heuristics: parensAsPatterns}
+		nodes, err := p.parseLeaves(Regexp)
+		got := nodes[0].(Pattern).Annotation.Range.String()
+		if err != nil {
+			t.Error(err)
+		}
+		return got
 	}
 
-	for _, tt := range cases {
-		t.Run("merge pattern", func(t *testing.T) {
-			p := &parser{buf: []byte(tt.input), heuristics: parensAsPatterns}
-			nodes, err := p.parseLeaves(Regexp)
-			got := nodes[0].(Pattern).Annotation.Range.String()
-			if err != nil {
-				t.Error(err)
-			}
-			if diff := cmp.Diff(tt.want, got); diff != "" {
-				t.Error(diff)
-			}
-		})
-	}
+	autogold.Want("foo()bar", `{"start":{"line":0,"column":0},"end":{"line":0,"column":8}}`).Equal(t, test("foo()bar"))
+	autogold.Want("()bar", `{"start":{"line":0,"column":0},"end":{"line":0,"column":5}}`).Equal(t, test("()bar"))
 }
 
 func TestMatchUnaryKeyword(t *testing.T) {
