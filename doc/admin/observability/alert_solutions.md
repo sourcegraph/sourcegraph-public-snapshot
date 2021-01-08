@@ -2150,6 +2150,26 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 <br />
 
+## postgres: pods_available_percentage
+
+<p class="subtitle">percentage pods available (cloud)</p>
+
+**Descriptions:**
+
+- <span class="badge badge-critical">critical</span> postgres: less than 90% percentage pods available for 10m0s
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_postgres_pods_available_percentage"
+]
+```
+
+<br />
+
 ## precise-code-intel-worker: upload_queue_size
 
 <p class="subtitle">queue size (code-intel)</p>

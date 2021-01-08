@@ -939,6 +939,16 @@ Refer to the [alert solutions reference](./alert_solutions.md#postgres-provision
 
 <br />
 
+### Postgres: Kubernetes monitoring (ignore if using Docker Compose or server)
+
+#### postgres: pods_available_percentage
+
+This cloud panel indicates percentage pods available.
+
+Refer to the [alert solutions reference](./alert_solutions.md#postgres-pods-available-percentage) for relevant alerts.
+
+<br />
+
 ## Precise Code Intel Worker
 
 <p class="subtitle">Handles conversion of uploaded precise code intelligence bundles.</p>
