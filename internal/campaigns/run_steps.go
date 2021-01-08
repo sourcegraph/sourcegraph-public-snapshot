@@ -113,7 +113,7 @@ func runSteps(ctx context.Context, rf RepoFetcher, wc WorkspaceCreator, repo *gr
 		}
 
 		// Parse and render the step.Files.
-		files, err := renderStepFiles(step.Files, &stepContext)
+		files, err := renderMap(step.Files, &stepContext)
 		if err != nil {
 			return nil, errors.Wrap(err, "parsing step files")
 		}
@@ -128,7 +128,7 @@ func runSteps(ctx context.Context, rf RepoFetcher, wc WorkspaceCreator, repo *gr
 			}
 			defer os.Remove(fp.Name())
 
-			if _, err := io.Copy(fp, content); err != nil {
+			if _, err := fp.WriteString(content); err != nil {
 				return nil, errors.Wrap(err, "writing to temporary file")
 			}
 
@@ -146,7 +146,7 @@ func runSteps(ctx context.Context, rf RepoFetcher, wc WorkspaceCreator, repo *gr
 		}
 
 		// Render the step.Env variables as templates.
-		env, err := renderStepEnv(stepEnv, &stepContext)
+		env, err := renderMap(stepEnv, &stepContext)
 		if err != nil {
 			return nil, errors.Wrap(err, "parsing step environment")
 		}
@@ -338,52 +338,25 @@ func parseAsTemplate(name, input string, stepCtx *StepContext) (*template.Templa
 	return template.New(name).Delims("${{", "}}").Funcs(stepCtx.ToFuncMap()).Parse(input)
 }
 
-func renderStepFiles(files map[string]string, stepCtx *StepContext) (map[string]io.Reader, error) {
-	containerFiles := make(map[string]io.Reader, len(files))
+func renderMap(m map[string]string, stepCtx *StepContext) (map[string]string, error) {
+	rendered := make(map[string]string, len(m))
 
-	for fileName, fileRaw := range files {
-		// We treat the file contents as a template and render it
-		// into a buffer that we then mount into the code host.
+	for k, v := range rendered {
 		var out bytes.Buffer
 
-		tmpl, err := parseAsTemplate(fileName, fileRaw, stepCtx)
+		tmpl, err := parseAsTemplate(k, v, stepCtx)
 		if err != nil {
-			return containerFiles, err
+			return rendered, err
 		}
 
 		if err := tmpl.Execute(&out, stepCtx); err != nil {
-			return containerFiles, err
+			return rendered, err
 		}
 
-		containerFiles[fileName] = &out
+		rendered[k] = out.String()
 	}
 
-	return containerFiles, nil
-}
-
-func renderStepEnv(env map[string]string, stepCtx *StepContext) (map[string]string, error) {
-	parsedEnv := make(map[string]string, len(env))
-
-	fnMap := stepCtx.ToFuncMap()
-
-	for k, v := range env {
-		// We treat the file contents as a template and render it
-		// into a buffer that we then mount into the code host.
-		var out bytes.Buffer
-
-		tmpl, err := template.New(k).Delims("${{", "}}").Funcs(fnMap).Parse(v)
-		if err != nil {
-			return parsedEnv, err
-		}
-
-		if err := tmpl.Execute(&out, stepCtx); err != nil {
-			return parsedEnv, err
-		}
-
-		parsedEnv[k] = out.String()
-	}
-
-	return parsedEnv, nil
+	return rendered, nil
 }
 
 // StepContext represents the contextual information available when executing a
