@@ -219,40 +219,40 @@ func (c *Container) renderDashboard() *sdk.Board {
 					Show:     true,
 				}
 
-				if o.Warning != nil && o.Warning.greaterOrEqual != nil {
+				if o.Warning != nil && o.Warning.greaterThan != nil {
 					// Warning threshold
 					panel.GraphPanel.Thresholds = append(panel.GraphPanel.Thresholds, sdk.Threshold{
-						Value:     float32(*o.Warning.greaterOrEqual),
+						Value:     float32(*o.Warning.greaterThan),
 						Op:        "gt",
 						ColorMode: "custom",
 						Line:      true,
 						LineColor: "rgba(255, 73, 53, 0.8)",
 					})
 				}
-				if o.Critical != nil && o.Critical.greaterOrEqual != nil {
+				if o.Critical != nil && o.Critical.greaterThan != nil {
 					// Critical threshold
 					panel.GraphPanel.Thresholds = append(panel.GraphPanel.Thresholds, sdk.Threshold{
-						Value:     float32(*o.Critical.greaterOrEqual),
+						Value:     float32(*o.Critical.greaterThan),
 						Op:        "gt",
 						ColorMode: "custom",
 						Line:      true,
 						LineColor: "rgba(255, 17, 36, 0.8)",
 					})
 				}
-				if o.Warning != nil && o.Warning.lessOrEqual != nil {
+				if o.Warning != nil && o.Warning.lessThan != nil {
 					// Warning threshold
 					panel.GraphPanel.Thresholds = append(panel.GraphPanel.Thresholds, sdk.Threshold{
-						Value:     float32(*o.Warning.lessOrEqual),
+						Value:     float32(*o.Warning.lessThan),
 						Op:        "lt",
 						ColorMode: "custom",
 						Line:      true,
 						LineColor: "rgba(255, 73, 53, 0.8)",
 					})
 				}
-				if o.Critical != nil && o.Critical.lessOrEqual != nil {
+				if o.Critical != nil && o.Critical.lessThan != nil {
 					// Critical threshold
 					panel.GraphPanel.Thresholds = append(panel.GraphPanel.Thresholds, sdk.Threshold{
-						Value:     float32(*o.Critical.lessOrEqual),
+						Value:     float32(*o.Critical.lessThan),
 						Op:        "lt",
 						ColorMode: "custom",
 						Line:      true,
@@ -297,16 +297,15 @@ func (c *Container) alertDescription(o Observable, alert *ObservableAlertDefinit
 	}
 	var description string
 
-	// description based on thresholds
+	// description based on thresholds. no special description for 'alert.strictCompare',
+	// because the description is pretty ambiguous to fit different alerts.
 	units := o.PanelOptions.unitType.short()
-	if alert.greaterOrEqual != nil && alert.lessOrEqual != nil {
-		description = fmt.Sprintf("%s: %v%s+ or less than %v%s %s", c.Name, *alert.greaterOrEqual, units, *alert.lessOrEqual, units, o.Description)
-	} else if alert.greaterOrEqual != nil {
+	if alert.greaterThan != nil {
 		// e.g. "zoekt-indexserver: 20+ indexed search request errors every 5m by code"
-		description = fmt.Sprintf("%s: %v%s+ %s", c.Name, *alert.greaterOrEqual, units, o.Description)
-	} else if alert.lessOrEqual != nil {
+		description = fmt.Sprintf("%s: %v%s+ %s", c.Name, *alert.greaterThan, units, o.Description)
+	} else if alert.lessThan != nil {
 		// e.g. "zoekt-indexserver: less than 20 indexed search requests every 5m by code"
-		description = fmt.Sprintf("%s: less than %v%s %s", c.Name, *alert.lessOrEqual, units, o.Description)
+		description = fmt.Sprintf("%s: less than %v%s %s", c.Name, *alert.lessThan, units, o.Description)
 	} else {
 		return "", fmt.Errorf("unable to generate description for observable %+v", o)
 	}
@@ -322,7 +321,7 @@ func (c *Container) alertDescription(o Observable, alert *ObservableAlertDefinit
 // high-level alerting metrics for the container. For more information about
 // how these work, see:
 //
-// https://docs.sourcegraph.com/admin/observability/metrics_guide#high-level-alerting-metrics
+// https://docs.sourcegraph.com/admin/observability/metrics#high-level-alerting-metrics
 //
 func (c *Container) renderRules() (*promRulesFile, error) {
 	group := promGroup{Name: c.Name}
@@ -337,96 +336,43 @@ func (c *Container) renderRules() (*promRulesFile, error) {
 						continue
 					}
 
-					// makeLabels renders labels for rules belonging to this observable and alert,
-					// bound is one of upperBound or lowerBound
-					makeLabels := func() (map[string]string, error) {
-						name := o.Name
-						description, err := c.alertDescription(o, a)
-						if err != nil {
-							return nil, fmt.Errorf("unable to generate labels: %+v", err)
-						}
-						return map[string]string{
-							"name":         name,
-							"level":        level,
-							"service_name": c.Name,
-							"description":  description,
-							"owner":        string(o.Owner),
-
-							// in the corresponding dashboard, this label should indicate
-							// the panel associated with this rule
-							"grafana_panel_id": strconv.Itoa(int(observablePanelID(groupIndex, rowIndex, observableIndex))),
-						}, nil
-					}
-
-					// The alertQuery must contribute a query that returns a value < 1 when it is not
-					// firing, or a value of >= 1 when it is firing.
+					// The alertQuery must contribute a query that returns true when it should be firing.
 					var alertQuery string
-
-					// Replace NaN values with zero (not firing) or one (firing) if they are present.
-					fireOnNan := "0"
-					if o.DataMayNotBeNaN {
-						fireOnNan = "1"
+					if a.greaterThan != nil {
+						comparator := ">="
+						if a.strictCompare {
+							comparator = ">"
+						}
+						alertQuery = fmt.Sprintf("(%s) %s %v", o.Query, comparator, *a.greaterThan)
+					} else if a.lessThan != nil {
+						comparator := "<="
+						if a.strictCompare {
+							comparator = "<"
+						}
+						alertQuery = fmt.Sprintf("(%s) %s %v", o.Query, comparator, *a.lessThan)
 					}
 
-					if a.greaterOrEqual != nil {
-						// By dividing the query value and the greaterOrEqual value, we produce a
-						// value of 1 when the query reaches the greaterOrEqual value and < 1
-						// otherwise. Examples:
-						//
-						// 	query_value=50 / greaterOrEqual=50 == 1.0
-						// 	query_value=25 / greaterOrEqual=50 == 0.5
-						// 	query_value=0 / greaterOrEqual=50 == 0.0
-						//
-						alertQuery = fmt.Sprintf("(%s) / %v", o.Query, *a.greaterOrEqual)
-
-						// Replace no-data with zero values, so the alert does not fire, if desired.
-						if o.DataMayNotExist {
-							alertQuery = fmt.Sprintf("(%s) OR on() vector(0)", alertQuery)
-						}
-
-						// Set value for NaN condition
-						alertQuery = fmt.Sprintf("((%s) >= 0) OR on() vector(%v)", alertQuery, fireOnNan)
-
-						labels, err := makeLabels()
-						if err != nil {
-							return nil, err
-						}
-
-						// Wrap the query in max() so that if there are multiple series (e.g. per-container) they
-						// get flattened into a single one (we only support per-service alerts,
-						// not per-container/replica).
-						// More context: https://github.com/sourcegraph/sourcegraph/issues/11571#issuecomment-654571953
-						group.appendRow(fmt.Sprintf("max(%s)", alertQuery), labels, a.duration)
+					// If the data must exist, we alert if the query returns no value as well
+					if o.DataMustExist {
+						alertQuery = fmt.Sprintf("(%s) OR (absent(%s) == 1)", alertQuery, o.Query)
 					}
-					if a.lessOrEqual != nil {
-						//
-						// 	lessOrEqual=50 / query_value=100 == 0.5
-						// 	lessOrEqual=50 / query_value=50 == 1.0
-						// 	lessOrEqual=50 / query_value=25 == 2.0
-						// 	lessOrEqual=50 / query_value=0 (0.0000001) == 500000000
-						// 	lessOrEqual=50 / query_value=-50 (0.0000001) == 500000000
-						//
-						alertQuery = fmt.Sprintf("%v / clamp_min(%s, 0.0000001)", *a.lessOrEqual, o.Query)
 
-						// Replace no-data with zero values, so the alert does not fire, if desired.
-						if o.DataMayNotExist {
-							alertQuery = fmt.Sprintf("(%s) OR on() vector(0)", alertQuery)
-						}
-
-						// Set value for NaN condition
-						alertQuery = fmt.Sprintf("((%s) >= 0) OR on() vector(%v)", alertQuery, fireOnNan)
-
-						labels, err := makeLabels()
-						if err != nil {
-							return nil, err
-						}
-
-						// Wrap the query in min() so that if there are multiple series (e.g. per-container) they
-						// get flattened into a single one (we only support per-service alerts,
-						// not per-container/replica).
-						// More context: https://github.com/sourcegraph/sourcegraph/issues/11571#issuecomment-654571953
-						group.appendRow(fmt.Sprintf("min(%s)", alertQuery), labels, a.duration)
+					description, err := c.alertDescription(o, a)
+					if err != nil {
+						return nil, fmt.Errorf("%s.%s.%s: unable to generate labels: %+v",
+							c.Name, o.Name, level, err)
 					}
+					group.appendRow(alertQuery, map[string]string{
+						"name":         o.Name,
+						"level":        level,
+						"service_name": c.Name,
+						"description":  description,
+						"owner":        string(o.Owner),
+
+						// in the corresponding dashboard, this label should indicate
+						// the panel associated with this rule
+						"grafana_panel_id": strconv.Itoa(int(observablePanelID(groupIndex, rowIndex, observableIndex))),
+					}, a.duration)
 				}
 			}
 		}
@@ -544,25 +490,13 @@ type Observable struct {
 	// Query is the actual Prometheus query that should be observed.
 	Query string
 
-	// DataMayNotExist indicates if the query may not return data until some event occurs in the
-	// future.
+	// DataMustExist indicates if the query must return data.
 	//
 	// For example, repo_updater_memory_usage should always have data present and an alert should
-	// fire if for some reason that query is not returning any data, so this would be set to false.
+	// fire if for some reason that query is not returning any data, so this would be set to true.
 	// In contrast, search_error_rate would depend on users actually performing searches and we
-	// would not want an alert to fire if no data was present, so this would be set to true.
-	DataMayNotExist bool
-
-	// DataMayNotBeNaN indicates whether or not the query may return NaN regularly.
-	// In other words, when true, alerts will fire if the query returns NaN.
-	//
-	// NaN often indicates a mistaken divide by zero - for many types of alert queries,
-	// this is a common problem on low-traffic deployments where the values of many
-	// metrics frequently end up being 0, so the default is to allow it.
-	//
-	// However, for some queries NaN values may be unexpected, in which case you should
-	// set this to true.
-	DataMayNotBeNaN bool
+	// would not want an alert to fire if no data was present, so this will not need to be set.
+	DataMustExist bool
 
 	// Warning and Critical alert definitions.
 	// Consider adding at least a Warning or Critical alert to each Observable to make it
@@ -688,22 +622,38 @@ func Alert() *ObservableAlertDefinition {
 
 // ObservableAlertDefinition defines when an alert would be considered firing.
 type ObservableAlertDefinition struct {
-	greaterOrEqual *float64
-	lessOrEqual    *float64
-	duration       time.Duration
+	greaterThan   *float64
+	lessThan      *float64
+	strictCompare bool
+
+	duration time.Duration
 }
 
-// GreaterOrEqual, when non-zero, indicates the alert should fire when greater or equal
-// to this value.
+// GreaterOrEqual indicates the alert should fire when greater or equal the given value.
 func (a *ObservableAlertDefinition) GreaterOrEqual(f float64) *ObservableAlertDefinition {
-	a.greaterOrEqual = &f
+	a.greaterThan = &f
+	a.strictCompare = false
 	return a
 }
 
-// LessOrEqual, when non-zero, indicates the alert should fire when less than or equal to
-// this value.
+// LessOrEqual indicates the alert should fire when less than or equal to the given value.
 func (a *ObservableAlertDefinition) LessOrEqual(f float64) *ObservableAlertDefinition {
-	a.lessOrEqual = &f
+	a.lessThan = &f
+	a.strictCompare = false
+	return a
+}
+
+// Greater indicates the alert should fire when strictly greater to this value.
+func (a *ObservableAlertDefinition) Greater(f float64) *ObservableAlertDefinition {
+	a.greaterThan = &f
+	a.strictCompare = true
+	return a
+}
+
+// Less indicates the alert should fire when strictly less than this value.
+func (a *ObservableAlertDefinition) Less(f float64) *ObservableAlertDefinition {
+	a.lessThan = &f
+	a.strictCompare = true
 	return a
 }
 
@@ -715,14 +665,14 @@ func (a *ObservableAlertDefinition) For(d time.Duration) *ObservableAlertDefinit
 }
 
 func (a *ObservableAlertDefinition) isEmpty() bool {
-	return a == nil || (*a == ObservableAlertDefinition{}) || (a.greaterOrEqual == nil && a.lessOrEqual == nil)
+	return a == nil || (*a == ObservableAlertDefinition{}) || (a.greaterThan == nil && a.lessThan == nil)
 }
 
 func (a *ObservableAlertDefinition) validate() error {
 	if a.isEmpty() {
 		return nil
 	}
-	if a.greaterOrEqual != nil && a.lessOrEqual != nil {
+	if a.greaterThan != nil && a.lessThan != nil {
 		return errors.New("only one bound (greater or less) can be set")
 	}
 	return nil
