@@ -44,7 +44,6 @@ func optionBasicPanel() ObservablePanelOption {
 		g.Fill = 1
 		g.Lines = true
 		g.Linewidth = 1
-		g.NullPointMode = "connected"
 		g.Pointradius = 2
 		g.AliasColors = map[string]string{}
 		g.Xaxis = sdk.Axis{
@@ -86,6 +85,9 @@ func OptionOpinionatedDefaults() ObservablePanelOption {
 		g.Yaxes[0].Min = sdk.NewFloatString(0.0)
 		// Default to treating values as simple numbers.
 		g.Yaxes[0].Format = string(Number)
+		// Default to showing a zero when values are null. Using 'connected' can be misleading,
+		// and this looks better and less worrisome than just 'null'.
+		g.NullPointMode = "null as zero"
 	}
 }
 

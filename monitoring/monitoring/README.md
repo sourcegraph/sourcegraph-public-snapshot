@@ -346,7 +346,7 @@ Using a shared prefix helps with discoverability of available options\.
 type ObservablePanelOption func(Observable, *sdk.GraphPanel)
 ```
 
-### func [OptionAlertThresholds](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/panel_option.go#L95>)
+### func [OptionAlertThresholds](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/panel_option.go#L97>)
 
 ```go
 func OptionAlertThresholds() ObservablePanelOption
@@ -356,7 +356,7 @@ OptionAlertThresholds draws threshold lines based on the Observable's configured
 
 It is applied in the default PanelOptions\(\)\.
 
-### func [OptionOpinionatedDefaults](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/panel_option.go#L74>)
+### func [OptionOpinionatedDefaults](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/panel_option.go#L73>)
 
 ```go
 func OptionOpinionatedDefaults() ObservablePanelOption
