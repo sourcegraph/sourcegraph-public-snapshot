@@ -178,114 +178,27 @@ func TestScanField(t *testing.T) {
 		Negated bool
 		Advance int
 	}
-	cases := []struct {
-		Input   string
-		Negated bool
-		Want    value
-	}{
-		// Valid field.
-		{
-			Input: "repo:foo",
-			Want: value{
-				Field:   "repo",
-				Advance: 5,
-			},
-		},
-		{
-			Input: "RepO:foo",
-			Want: value{
-				Field:   "RepO",
-				Advance: 5,
-			},
-		},
-		{
-			Input: "after:",
-			Want: value{
-				Field:   "after",
-				Advance: 6,
-			},
-		},
-		{
-			Input: "-repo:",
-			Want: value{
-				Field:   "repo",
-				Negated: true,
-				Advance: 6,
-			},
-		},
-		// Invalid field.
-		{
-			Input: "",
-			Want: value{
-				Field:   "",
-				Advance: 0,
-			},
-		},
-		{
-			Input: "-",
-			Want: value{
-				Field:   "",
-				Advance: 0,
-			},
-		},
-		{
-			Input: "-:",
-			Want: value{
-				Field:   "",
-				Advance: 0,
-			},
-		},
-		{
-			Input: ":",
-			Want: value{
-				Field:   "",
-				Advance: 0,
-			},
-		},
-		{
-			Input: "??:foo",
-			Want: value{
-				Field:   "",
-				Advance: 0,
-			},
-		},
-		{
-			Input: "repo",
-			Want: value{
-				Field:   "",
-				Advance: 0,
-			},
-		},
-		{
-			Input: "-repo",
-			Want: value{
-				Field:   "",
-				Advance: 0,
-			},
-		},
-		{
-			Input: "--repo:",
-			Want: value{
-				Field:   "",
-				Advance: 0,
-			},
-		},
-		{
-			Input: ":foo",
-			Want: value{
-				Field:   "",
-				Advance: 0,
-			},
-		},
+
+	test := func(input string) string {
+		gotField, gotNegated, gotAdvance := ScanField([]byte(input))
+		v, _ := json.Marshal(value{gotField, gotNegated, gotAdvance})
+		return string(v)
 	}
-	for _, c := range cases {
-		t.Run("scan field", func(t *testing.T) {
-			gotField, gotNegated, gotAdvance := ScanField([]byte(c.Input))
-			if diff := cmp.Diff(c.Want, value{gotField, gotNegated, gotAdvance}); diff != "" {
-				t.Error(diff)
-			}
-		})
-	}
+
+	autogold.Want("repo:foo", `{"Field":"repo","Negated":false,"Advance":5}`).Equal(t, test("repo:foo"))
+	autogold.Want("RepO:foo", `{"Field":"RepO","Negated":false,"Advance":5}`).Equal(t, test("RepO:foo"))
+	autogold.Want("after:", `{"Field":"after","Negated":false,"Advance":6}`).Equal(t, test("after:"))
+	autogold.Want("-repo:", `{"Field":"repo","Negated":true,"Advance":6}`).Equal(t, test("-repo:"))
+	autogold.Want("", `{"Field":"","Negated":false,"Advance":0}`).Equal(t, test(""))
+	autogold.Want("-", `{"Field":"","Negated":false,"Advance":0}`).Equal(t, test("-"))
+	autogold.Want("-:", `{"Field":"","Negated":false,"Advance":0}`).Equal(t, test("-:"))
+	autogold.Want(":", `{"Field":"","Negated":false,"Advance":0}`).Equal(t, test(":"))
+	autogold.Want("??:foo", `{"Field":"","Negated":false,"Advance":0}`).Equal(t, test("??:foo"))
+	autogold.Want("repo", `{"Field":"","Negated":false,"Advance":0}`).Equal(t, test("repo"))
+	autogold.Want("-repo", `{"Field":"","Negated":false,"Advance":0}`).Equal(t, test("-repo"))
+	autogold.Want("--repo:", `{"Field":"","Negated":false,"Advance":0}`).Equal(t, test("--repo:"))
+	autogold.Want(":foo", `{"Field":"","Negated":false,"Advance":0}`).Equal(t, test(":foo"))
+
 }
 
 func parseAndOrGrammar(in string) ([]Node, error) {
