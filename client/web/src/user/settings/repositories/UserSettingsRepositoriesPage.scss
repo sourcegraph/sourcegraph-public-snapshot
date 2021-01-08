@@ -14,13 +14,18 @@
     fill: var(--primary) !important;
 }
 
-.user-settings-repos__shimmer {
-    background: linear-gradient(to right, #eff1f3 4%, #e2e2e2 25%, #eff1f3 36%);
-    animation: shimmer 2s infinite linear;
-    background-size: 1000px 100%;
-    border-radius: 5px;
+.theme-light {
+    .user-settings-repos__shimmer {
+        background: linear-gradient(to right, #eff1f3 4%, #e2e2e2 25%, #eff1f3 36%);
+        animation: shimmer 2s infinite linear;
+        background-size: 1000px 100%;
+        border-radius: 5px;
 
-    @media (prefers-color-scheme: dark) {
+    }
+}
+
+.theme-dark {
+    .user-settings-repos__shimmer {
         background: linear-gradient(to right, #14151c 4%, #454545 25%, #14151c 36%);
         animation: shimmer 2s infinite linear;
         background-size: 1000px 100%;
