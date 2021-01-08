@@ -285,8 +285,17 @@ func fileMatchURI(name api.RepoName, ref, path string) string {
 
 var mockSearchFilesInRepos func(args *search.TextParameters) ([]*FileMatchResolver, *searchResultsCommon, error)
 
+func fileMatchResultsToSearchResults(results []*FileMatchResolver) []SearchResultResolver {
+	results2 := make([]SearchResultResolver, len(results))
+	for i, result := range results {
+		results2[i] = result
+	}
+	return results2
+}
+
 // searchFilesInRepos searches a set of repos for a pattern.
-func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res []*FileMatchResolver, common *searchResultsCommon, err error) {
+// For c != nil searchFilesInRepos will send results down c.
+func searchFilesInRepos(ctx context.Context, args *search.TextParameters, c chan<- []SearchResultResolver) (res []*FileMatchResolver, common *searchResultsCommon, err error) {
 	if mockSearchFilesInRepos != nil {
 		return mockSearchFilesInRepos(args)
 	}
@@ -379,6 +388,12 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 				return a > b
 			})
 			unflattened = append(unflattened, matches)
+
+			// Send matches down the results channel.
+			if c != nil {
+				c <- fileMatchResultsToSearchResults(matches)
+			}
+
 			flattenedSize += len(matches)
 
 			// Stop searching once we have found enough matches. This does

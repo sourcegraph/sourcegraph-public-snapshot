@@ -176,7 +176,7 @@ func reposToAdd(ctx context.Context, args *search.TextParameters, repos []*searc
 			newArgs.RepoPromise = (&search.Promise{}).Resolve(repos)
 			newArgs.Query = q
 			newArgs.UseFullDeadline = true
-			matches, _, err := searchFilesInRepos(ctx, &newArgs)
+			matches, _, err := searchFilesInRepos(ctx, &newArgs, nil)
 			if err != nil {
 				return nil, err
 			}
@@ -204,7 +204,7 @@ func reposToAdd(ctx context.Context, args *search.TextParameters, repos []*searc
 			newArgs.RepoPromise = rp
 			newArgs.Query = q
 			newArgs.UseFullDeadline = true
-			matches, _, err := searchFilesInRepos(ctx, &newArgs)
+			matches, _, err := searchFilesInRepos(ctx, &newArgs, nil)
 			if err != nil {
 				return nil, err
 			}
