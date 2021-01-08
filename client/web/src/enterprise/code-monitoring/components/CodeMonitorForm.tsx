@@ -137,7 +137,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
     return (
         <>
             <Form className="my-4 pb-5 test-monitor-form" onSubmit={requestOnSubmit}>
-                <div className="flex mb-4">
+                <div className="d-flex flex-column mb-4">
                     Name
                     <div>
                         <input
@@ -154,7 +154,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                     </div>
                     <small className="text-muted">
                         Give it a short, descriptive name to reference events on Sourcegraph and in notifications. Do
-                        not include:{' '}
+                        not include{' '}
                         <a
                             href="https://docs.sourcegraph.com/code_monitoring/explanations/best_practices#do-not-include-confidential-information-in-monitor-names"
                             target="_blank"

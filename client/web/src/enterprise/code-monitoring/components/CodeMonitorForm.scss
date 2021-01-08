@@ -3,6 +3,9 @@
 .code-monitor-form {
     &__card {
         border-radius: 4px;
+        // stylelint-disable-next-line declaration-property-unit-whitelist
+        margin-top: calc(1rem - 1px);
+        margin-bottom: calc(1rem - 1px);
 
         &-link {
             &:hover {
@@ -13,12 +16,16 @@
 
         &--button {
             // stylelint-disable-next-line declaration-property-unit-whitelist
-            margin: calc(16px - 1px) -1px;
+            margin-top: calc(1rem - 1px);
+            margin-bottom: calc(1rem - 1px);
             border-radius: 4px;
 
             &:hover {
                 // stylelint-disable-next-line declaration-property-unit-whitelist
-                margin: calc(16px - 2px) -2px;
+                margin-top: calc(1rem - 2px);
+                margin-bottom: calc(1rem - 2px);
+                margin-left: -1px;
+                margin-right: -1px;
                 border: 2px solid #329af0;
             }
 
@@ -40,6 +47,7 @@
 
     &__horizontal-rule {
         margin: 2rem 0;
+        border-top: 1px solid var(--border-color-2);
     }
 
     &__owner-dropdown {
