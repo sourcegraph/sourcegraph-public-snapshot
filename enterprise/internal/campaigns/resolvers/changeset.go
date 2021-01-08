@@ -219,6 +219,10 @@ func (r *changesetResolver) NextSyncAt(ctx context.Context) (*graphqlbackend.Dat
 }
 
 func (r *changesetResolver) Title(ctx context.Context) (*string, error) {
+	if r.changeset.IsImporting() {
+		return nil, nil
+	}
+
 	if r.changeset.Published() {
 		t, err := r.changeset.Title()
 		if err != nil {
@@ -227,10 +231,6 @@ func (r *changesetResolver) Title(ctx context.Context) (*string, error) {
 		return &t, nil
 	}
 
-	if r.changeset.CurrentSpecID == 0 {
-		// An importing changeset that hasn't finished importing yet.
-		return nil, nil
-	}
 	desc, err := r.getBranchSpecDescription(ctx)
 	if err != nil {
 		return nil, err
@@ -240,6 +240,10 @@ func (r *changesetResolver) Title(ctx context.Context) (*string, error) {
 }
 
 func (r *changesetResolver) Body(ctx context.Context) (*string, error) {
+	if r.changeset.IsImporting() {
+		return nil, nil
+	}
+
 	if r.changeset.Published() {
 		b, err := r.changeset.Body()
 		if err != nil {
@@ -248,10 +252,6 @@ func (r *changesetResolver) Body(ctx context.Context) (*string, error) {
 		return &b, nil
 	}
 
-	if r.changeset.CurrentSpecID == 0 {
-		// An importing changeset that hasn't finished importing yet.
-		return nil, nil
-	}
 	desc, err := r.getBranchSpecDescription(ctx)
 	if err != nil {
 		return nil, err
@@ -420,11 +420,11 @@ func (r *changesetResolver) Events(ctx context.Context, args *graphqlbackend.Cha
 }
 
 func (r *changesetResolver) Diff(ctx context.Context) (graphqlbackend.RepositoryComparisonInterface, error) {
+	if r.changeset.IsImporting() {
+		return nil, nil
+	}
+
 	if r.changeset.Unpublished() {
-		if r.changeset.CurrentSpecID == 0 {
-			// An importing changeset that hasn't finished importing yet.
-			return nil, nil
-		}
 		desc, err := r.getBranchSpecDescription(ctx)
 		if err != nil {
 			return nil, err

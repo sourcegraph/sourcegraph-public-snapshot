@@ -3,6 +3,7 @@ package apiworker
 import (
 	"context"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -13,10 +14,11 @@ import (
 )
 
 func TestHandle(t *testing.T) {
-	makeTempDir = func() (string, error) {
-		return "/tmp/codeintel", nil
+	testDir := "/tmp/codeintel"
+	makeTempDir = func() (string, error) { return testDir, nil }
+	if err := os.MkdirAll(filepath.Join(testDir, command.ScriptsPath), os.ModePerm); err != nil {
+		t.Fatalf("unexpected error creating workspace: %s", err)
 	}
-	os.Mkdir("/tmp/codeintel", os.ModePerm)
 
 	store := NewMockStore()
 	runner := NewMockRunner()
@@ -98,8 +100,8 @@ func TestHandle(t *testing.T) {
 	}
 
 	expectedCommands := [][]string{
-		{"/bin/sh", "/tmp/codeintel/42.0_linux@deadbeef.sh"},
-		{"/bin/sh", "/tmp/codeintel/42.1_linux@deadbeef.sh"},
+		{"/bin/sh", "42.0_linux@deadbeef.sh"},
+		{"/bin/sh", "42.1_linux@deadbeef.sh"},
 		{"src", "campaigns", "help"},
 		{"src", "campaigns", "apply", "-f", "spec.yaml"},
 	}

@@ -9,6 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
 
+	searchzoekt "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
@@ -76,9 +77,9 @@ func TestStructuralSearchRepoFilter(t *testing.T) {
 	}}
 
 	z := &searchbackend.Zoekt{
-		Client: &fakeSearcher{
-			repos:  []*zoekt.RepoListEntry{zoektRepo},
-			result: &zoekt.SearchResult{Files: zoektFileMatches},
+		Client: &searchzoekt.FakeSearcher{
+			Repos:  []*zoekt.RepoListEntry{zoektRepo},
+			Result: &zoekt.SearchResult{Files: zoektFileMatches},
 		},
 		DisableCache: true,
 	}

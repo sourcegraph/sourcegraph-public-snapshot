@@ -30,6 +30,7 @@ export const externalServiceFragment = gql`
         displayName
         config
         warning
+        lastSyncError
         webhookURL
     }
 `
@@ -178,6 +179,8 @@ export const listExternalServiceFragment = gql`
         kind
         displayName
         config
+        warning
+        lastSyncError
     }
 `
 

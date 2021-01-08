@@ -16,14 +16,6 @@ func (s *Server) handleList(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	query := func(name string) bool { _, ok := q[name]; return ok }
 	switch {
-
-	// These two cases are for backcompat (can be removed in 3.4)
-	case r.URL.RawQuery == "":
-		fallthrough // treat same as if the URL query was "gitolite" for backcompat
-	case query("gitolite"):
-		defaultGitolite.listRepos(ctx, q.Get("gitolite"), w)
-		return
-
 	case query("cloned"):
 		err := godirwalk.Walk(s.ReposDir, &godirwalk.Options{
 			Callback: func(path string, de *godirwalk.Dirent) error {

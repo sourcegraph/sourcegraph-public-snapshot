@@ -562,6 +562,11 @@ func searchCommitsInRepos(ctx context.Context, args *search.TextParametersForCom
 		common      = &searchResultsCommon{}
 	)
 	for _, repoRev := range args.Repos {
+		// Skip the repo if no revisions were resolved for it
+		if len(repoRev.Revs) == 0 {
+			continue
+		}
+
 		wg.Add(1)
 		go func(repoRev *search.RepositoryRevisions) {
 			defer wg.Done()

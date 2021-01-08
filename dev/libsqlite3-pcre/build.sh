@@ -74,14 +74,14 @@ function build() {
     darwin*)
       # pkg-config spits out multiple arguments and must not be quoted.
       # shellcheck disable=SC2046
-      gcc -fno-common -dynamiclib pcre.c -o "$libsqlite_path" $(pkg-config --cflags sqlite3 libpcre) $(pkg-config --libs libpcre) -fPIC
+      gcc -fno-common -dynamiclib pcre.c -o "$libsqlite_path" $(pkg-config --cflags sqlite3 libpcre) $(pkg-config --libs libpcre sqlite3) -fPIC
       exit 0
       ;;
 
     linux*)
       # pkg-config spits out multiple arguments and must not be quoted.
       # shellcheck disable=SC2046
-      gcc -shared -o "$libsqlite_path" $(pkg-config --cflags sqlite3 libpcre) -fPIC -W -Werror pcre.c $(pkg-config --libs libpcre) -Wl,-z,defs
+      gcc -shared -o "$libsqlite_path" $(pkg-config --cflags sqlite3 libpcre) -fPIC -W -Werror pcre.c $(pkg-config --libs libpcre sqlite3) -Wl,-z,defs
       exit 0
       ;;
 

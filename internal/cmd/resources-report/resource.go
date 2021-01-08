@@ -76,7 +76,11 @@ func generateReport(ctx context.Context, opts options, resources Resources) erro
 	var reportPage string
 	if *opts.sheetID != "" {
 		var err error
-		if reportPage, err = updateSheet(ctx, *opts.sheetID, filteredResources, highlighted); err != nil {
+		if reportPage, err = updateSheet(ctx, *opts.sheetID, filteredResources, updateSheetOptions{
+			HighlightedRows: highlighted,
+			PruneOlderThan:  *opts.sheetPruneOlderThan,
+			Verbose:         *opts.verbose,
+		}); err != nil {
 			return fmt.Errorf("sheets: %w", err)
 		}
 	}

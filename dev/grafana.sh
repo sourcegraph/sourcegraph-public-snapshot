@@ -73,7 +73,6 @@ docker run --rm ${DOCKER_USER} \
   -v "${GRAFANA_DISK}":/var/lib/grafana \
   -v "$(pwd)"/dev/grafana/${CONFIG_SUB_DIR}:/sg_config_grafana/provisioning/datasources \
   -v "$(pwd)"/docker-images/grafana/config/provisioning/dashboards:/sg_grafana_additional_dashboards \
-  -v "$(pwd)"/docker-images/grafana/jsonnet:/sg_grafana_additional_dashboards/legacy \
   -e DISABLE_SOURCEGRAPH_CONFIG="${DISABLE_SOURCEGRAPH_CONFIG:-'false'}" \
   ${IMAGE} >"${GRAFANA_LOG_FILE}" 2>&1 || finish
 

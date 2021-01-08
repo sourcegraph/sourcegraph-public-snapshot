@@ -18,13 +18,12 @@ func GitHubProxy() *monitoring.Container {
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:            "github_proxy_waiting_requests",
-							Description:     "number of requests waiting on the global mutex",
-							Query:           `max(github_proxy_waiting_requests)`,
-							DataMayNotExist: true,
-							Warning:         monitoring.Alert().GreaterOrEqual(100).For(5 * time.Minute),
-							PanelOptions:    monitoring.PanelOptions().LegendFormat("requests waiting"),
-							Owner:           monitoring.ObservableOwnerCloud,
+							Name:         "github_proxy_waiting_requests",
+							Description:  "number of requests waiting on the global mutex",
+							Query:        `max(github_proxy_waiting_requests)`,
+							Warning:      monitoring.Alert().GreaterOrEqual(100).For(5 * time.Minute),
+							PanelOptions: monitoring.PanelOptions().LegendFormat("requests waiting"),
+							Owner:        monitoring.ObservableOwnerCloud,
 							PossibleSolutions: `
 								- **Check github-proxy logs for network connection issues.
 								- **Check github status.`,

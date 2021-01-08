@@ -6,19 +6,20 @@ import (
 	"sort"
 	"testing"
 
+	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestSearchFilterSuggestions(t *testing.T) {
-	mockResolveRepoGroups = func() (map[string][]RepoGroupValue, error) {
-		return map[string][]RepoGroupValue{
+	searchrepos.MockResolveRepoGroups = func() (map[string][]searchrepos.RepoGroupValue, error) {
+		return map[string][]searchrepos.RepoGroupValue{
 			"repogroup1": {},
 			"repogroup2": {},
 		}, nil
 	}
-	defer func() { mockResolveRepoGroups = nil }()
+	defer func() { searchrepos.MockResolveRepoGroups = nil }()
 
 	db.Mocks.Repos.List = func(_ context.Context, _ db.ReposListOptions) ([]*types.Repo, error) {
 		return []*types.Repo{

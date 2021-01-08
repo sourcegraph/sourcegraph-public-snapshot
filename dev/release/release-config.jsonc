@@ -18,6 +18,7 @@
     "upcomingRelease": "3.23.0",
 
     // Release dates
+    "oneWorkingDayAfterRelease": "21 December 2020 10:00 PST",
     "releaseDateTime": "20 December 2020 10:00 PST",
     "oneWorkingDayBeforeRelease": "18 December 2020 10:00 PST",
     "fourWorkingDaysBeforeRelease": "15 December 2020 10:00 PST",

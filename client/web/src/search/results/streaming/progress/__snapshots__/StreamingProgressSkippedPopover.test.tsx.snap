@@ -2,6 +2,7 @@
 
 exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
 <StreamingProgressSkippedPopover
+  history="[History]"
   onSearchAgain={[Function]}
   progress={
     Object {
@@ -28,6 +29,16 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
             "title": "archived:yes",
           },
           "title": "60k archived repositories excluded",
+        },
+        Object {
+          "message": "By default we exclude archived repositories. Include them with \`archived:yes\` in your query.",
+          "reason": "excluded-archive",
+          "severity": "info",
+          "suggested": Object {
+            "queryExpression": "archived:yes",
+            "title": "include archived",
+          },
+          "title": "1 archived",
         },
         Object {
           "message": "Search timed out",
@@ -123,7 +134,22 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
           <div
             className="mt-2"
           >
-            10k forked repositories excluded
+            <Markdown
+              dangerousInnerHTML="<p>10k forked repositories excluded</p>
+"
+              history="[History]"
+            >
+              <div
+                className="markdown"
+                dangerouslySetInnerHTML={
+                  Object {
+                    "__html": "<p>10k forked repositories excluded</p>
+",
+                  }
+                }
+                onClick={[Function]}
+              />
+            </Markdown>
           </div>
         </div>
       </Transition>
@@ -209,7 +235,123 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
           <div
             className="mt-2"
           >
-            60k archived repositories excluded
+            <Markdown
+              dangerousInnerHTML="<p>60k archived repositories excluded</p>
+"
+              history="[History]"
+            >
+              <div
+                className="markdown"
+                dangerouslySetInnerHTML={
+                  Object {
+                    "__html": "<p>60k archived repositories excluded</p>
+",
+                  }
+                }
+                onClick={[Function]}
+              />
+            </Markdown>
+          </div>
+        </div>
+      </Transition>
+    </Fade>
+  </Alert>
+  <Alert
+    closeAriaLabel="Close"
+    color="info"
+    fade={false}
+    isOpen={true}
+    key="excluded-archive"
+    tag="div"
+    transition={
+      Object {
+        "appear": true,
+        "baseClass": "fade",
+        "baseClassActive": "show",
+        "enter": true,
+        "exit": true,
+        "in": true,
+        "mountOnEnter": false,
+        "onEnter": [Function],
+        "onEntered": [Function],
+        "onEntering": [Function],
+        "onExit": [Function],
+        "onExited": [Function],
+        "onExiting": [Function],
+        "tag": "div",
+        "timeout": 150,
+        "unmountOnExit": true,
+      }
+    }
+  >
+    <Fade
+      appear={true}
+      baseClass=""
+      baseClassActive="show"
+      className="alert alert-info"
+      enter={true}
+      exit={true}
+      in={true}
+      mountOnEnter={false}
+      onEnter={[Function]}
+      onEntered={[Function]}
+      onEntering={[Function]}
+      onExit={[Function]}
+      onExited={[Function]}
+      onExiting={[Function]}
+      role="alert"
+      tag="div"
+      timeout={0}
+      unmountOnExit={true}
+    >
+      <Transition
+        appear={true}
+        enter={true}
+        exit={true}
+        in={true}
+        mountOnEnter={false}
+        onEnter={[Function]}
+        onEntered={[Function]}
+        onEntering={[Function]}
+        onExit={[Function]}
+        onExited={[Function]}
+        onExiting={[Function]}
+        timeout={0}
+        unmountOnExit={true}
+      >
+        <div
+          className="alert alert-info"
+          role="alert"
+        >
+          <h4
+            className="d-flex align-items-center mb-0"
+          >
+            <Memo(InformationOutlineIcon)
+              className="icon-inline mr-2"
+            />
+            <span>
+              1 archived
+            </span>
+          </h4>
+          <div
+            className="mt-2"
+          >
+            <Markdown
+              dangerousInnerHTML="<p>By default we exclude archived repositories. Include them with <code>archived:yes</code> in your query.</p>
+"
+              history="[History]"
+            >
+              <div
+                className="markdown"
+                dangerouslySetInnerHTML={
+                  Object {
+                    "__html": "<p>By default we exclude archived repositories. Include them with <code>archived:yes</code> in your query.</p>
+",
+                  }
+                }
+                onClick={[Function]}
+              />
+            </Markdown>
           </div>
         </div>
       </Transition>
@@ -295,7 +437,22 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
           <div
             className="mt-2"
           >
-            Search timed out
+            <Markdown
+              dangerousInnerHTML="<p>Search timed out</p>
+"
+              history="[History]"
+            >
+              <div
+                className="markdown"
+                dangerouslySetInnerHTML={
+                  Object {
+                    "__html": "<p>Search timed out</p>
+",
+                  }
+                }
+                onClick={[Function]}
+              />
+            </Markdown>
           </div>
         </div>
       </Transition>
@@ -398,6 +555,57 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
               </Input>
                
               archived:yes
+               (
+              <SyntaxHighlightedSearchQuery
+                query="archived:yes"
+              >
+                <span
+                  className="text-monospace search-query-link"
+                >
+                  <span
+                    className="search-filter-keyword"
+                  >
+                    archived
+                    :
+                  </span>
+                  yes
+                </span>
+              </SyntaxHighlightedSearchQuery>
+              )
+            </label>
+          </Label>
+          <Label
+            check={true}
+            className="mb-1 d-block"
+            key="archived:yes"
+            tag="label"
+            widths={
+              Array [
+                "xs",
+                "sm",
+                "md",
+                "lg",
+                "xl",
+              ]
+            }
+          >
+            <label
+              className="mb-1 d-block form-check-label"
+            >
+              <Input
+                onChange={[Function]}
+                type="checkbox"
+                value="archived:yes"
+              >
+                <input
+                  className="form-check-input"
+                  onChange={[Function]}
+                  type="checkbox"
+                  value="archived:yes"
+                />
+              </Input>
+               
+              include archived
                (
               <SyntaxHighlightedSearchQuery
                 query="archived:yes"

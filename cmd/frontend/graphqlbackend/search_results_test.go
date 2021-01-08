@@ -13,6 +13,8 @@ import (
 	"github.com/google/zoekt"
 	"go.uber.org/atomic"
 
+	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
+	searchzoekt "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -35,7 +37,7 @@ func assertEqual(t *testing.T, got, want interface{}) {
 }
 
 func TestSearchResults(t *testing.T) {
-	limitOffset := &db.LimitOffset{Limit: searchLimits().MaxRepos + 1}
+	limitOffset := &db.LimitOffset{Limit: searchrepos.SearchLimits().MaxRepos + 1}
 
 	getResults := func(t *testing.T, query, version string) []string {
 		r, err := (&schemaResolver{}).Search(context.Background(), &SearchArgs{Query: query, Version: version})
@@ -696,113 +698,6 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 	}
 }
 
-// TestSearchRevspecs tests a repository name against a list of
-// repository specs with optional revspecs, and determines whether
-// we get the expected error, list of matching rev specs, or list
-// of clashing revspecs (if no matching rev specs were found)
-func TestSearchRevspecs(t *testing.T) {
-	type testCase struct {
-		descr    string
-		specs    []string
-		repo     string
-		err      error
-		matched  []search.RevisionSpecifier
-		clashing []search.RevisionSpecifier
-	}
-
-	tests := []testCase{
-		{
-			descr:    "simple match",
-			specs:    []string{"foo"},
-			repo:     "foo",
-			err:      nil,
-			matched:  []search.RevisionSpecifier{{RevSpec: ""}},
-			clashing: nil,
-		},
-		{
-			descr:    "single revspec",
-			specs:    []string{".*o@123456"},
-			repo:     "foo",
-			err:      nil,
-			matched:  []search.RevisionSpecifier{{RevSpec: "123456"}},
-			clashing: nil,
-		},
-		{
-			descr:    "revspec plus unspecified rev",
-			specs:    []string{".*o@123456", "foo"},
-			repo:     "foo",
-			err:      nil,
-			matched:  []search.RevisionSpecifier{{RevSpec: "123456"}},
-			clashing: nil,
-		},
-		{
-			descr:    "revspec plus unspecified rev, but backwards",
-			specs:    []string{".*o", "foo@123456"},
-			repo:     "foo",
-			err:      nil,
-			matched:  []search.RevisionSpecifier{{RevSpec: "123456"}},
-			clashing: nil,
-		},
-		{
-			descr:    "conflicting revspecs",
-			specs:    []string{".*o@123456", "foo@234567"},
-			repo:     "foo",
-			err:      nil,
-			matched:  nil,
-			clashing: []search.RevisionSpecifier{{RevSpec: "123456"}, {RevSpec: "234567"}},
-		},
-		{
-			descr:    "overlapping revspecs",
-			specs:    []string{".*o@a:b", "foo@b:c"},
-			repo:     "foo",
-			err:      nil,
-			matched:  []search.RevisionSpecifier{{RevSpec: "b"}},
-			clashing: nil,
-		},
-		{
-			descr:    "multiple overlapping revspecs",
-			specs:    []string{".*o@a:b:c", "foo@b:c:d"},
-			repo:     "foo",
-			err:      nil,
-			matched:  []search.RevisionSpecifier{{RevSpec: "b"}, {RevSpec: "c"}},
-			clashing: nil,
-		},
-		{
-			descr:    "invalid regexp",
-			specs:    []string{"*o@a:b"},
-			repo:     "foo",
-			err:      fmt.Errorf("%s", "bad request: error parsing regexp: missing argument to repetition operator: `*`"),
-			matched:  nil,
-			clashing: nil,
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.descr, func(t *testing.T) {
-			pats, err := findPatternRevs(test.specs)
-			if err != nil {
-				if test.err == nil {
-					t.Errorf("unexpected error: '%s'", err)
-				}
-				if test.err != nil && err.Error() != test.err.Error() {
-					t.Errorf("incorrect error: got '%s', expected '%s'", err, test.err)
-				}
-				// don't try to use the pattern list if we got an error
-				return
-			}
-			if test.err != nil {
-				t.Errorf("missing expected error: wanted '%s'", test.err.Error())
-			}
-			matched, clashing := getRevsForMatchedRepo(api.RepoName(test.repo), pats)
-			if !reflect.DeepEqual(matched, test.matched) {
-				t.Errorf("matched repo mismatch: actual: %#v, expected: %#v", matched, test.matched)
-			}
-			if !reflect.DeepEqual(clashing, test.clashing) {
-				t.Errorf("clashing repo mismatch: actual: %#v, expected: %#v", clashing, test.clashing)
-			}
-		})
-	}
-}
-
 func TestLonger(t *testing.T) {
 	N := 2
 	noise := time.Nanosecond
@@ -944,9 +839,9 @@ func TestSearchResultsHydration(t *testing.T) {
 	}}
 
 	z := &searchbackend.Zoekt{
-		Client: &fakeSearcher{
-			repos:  []*zoekt.RepoListEntry{zoektRepo},
-			result: &zoekt.SearchResult{Files: zoektFileMatches},
+		Client: &searchzoekt.FakeSearcher{
+			Repos:  []*zoekt.RepoListEntry{zoektRepo},
+			Result: &zoekt.SearchResult{Files: zoektFileMatches},
 		},
 		DisableCache: true,
 	}
@@ -1381,9 +1276,9 @@ func TestEvaluateAnd(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			zoektFileMatches := generateZoektMatches(tt.zoektMatches)
 			z := &searchbackend.Zoekt{
-				Client: &fakeSearcher{
-					repos:  zoektRepos,
-					result: &zoekt.SearchResult{Files: zoektFileMatches, Stats: zoekt.Stats{FilesSkipped: tt.filesSkipped}},
+				Client: &searchzoekt.FakeSearcher{
+					Repos:  zoektRepos,
+					Result: &zoekt.SearchResult{Files: zoektFileMatches, Stats: zoekt.Stats{FilesSkipped: tt.filesSkipped}},
 				},
 				DisableCache: true,
 			}

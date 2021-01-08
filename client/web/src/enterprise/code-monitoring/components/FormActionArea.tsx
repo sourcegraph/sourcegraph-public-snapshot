@@ -163,7 +163,7 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                 </div>
             )}
             <small className="text-muted">
-                What other actions would you like to do?{' '}
+                What other actions would you like to take?{' '}
                 <a href="mailto:feedback@sourcegraph.com" target="_blank" rel="noopener">
                     Share feedback.
                 </a>
