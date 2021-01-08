@@ -181,12 +181,12 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         if (page === 1) {
             pages.push(
                 (page !== currentPage && (
-                    <a className="btn px-0" onClick={() => setPage(currentPage - 1)}>
-                        <ChevronLeftIcon className="icon-inline fill-primary" /> Previous
+                    <a className="btn px-0 text-primary user-settings-repos__pageend" onClick={() => setPage(currentPage - 1)}>
+                        <ChevronLeftIcon className="icon-inline fill-primary" />Previous
                     </a>
                 )) || (
-                    <span className="px-0 text-muted">
-                        <ChevronLeftIcon className="icon-inline fill-border-color-2" /> previous
+                    <span className="px-0 text-muted user-settings-repos__pageend">
+                        <ChevronLeftIcon className="icon-inline fill-border-color-2" />Previous
                     </span>
                 )
             )
@@ -205,12 +205,12 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         if (page === Math.ceil(filteredRepos.length / PER_PAGE)) {
             pages.push(
                 (page !== currentPage && (
-                    <a className="btn px-0" onClick={() => setPage(currentPage + 1)}>
-                        <ChevronRightIcon className="icon-inline fill-primary" />
+                    <a className="btn px-0 text-primary user-settings-repos__pageend" onClick={() => setPage(currentPage + 1)}>
+                        Next<ChevronRightIcon className="icon-inline fill-primary" />
                     </a>
                 )) || (
-                    <span className="px-0">
-                        <ChevronRightIcon className="icon-inline fill-border-color-2" />
+                    <span className="px-0 text-muted user-settings-repos__pageend">
+                        Next<ChevronRightIcon className="icon-inline fill-border-color-2" />
                     </span>
                 )
             )
