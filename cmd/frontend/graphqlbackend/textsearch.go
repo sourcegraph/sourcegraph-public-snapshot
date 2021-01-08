@@ -518,52 +518,56 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, c chan
 		go func() {
 			// TODO limitHit, handleRepoSearchResult
 			defer wg.Done()
-			indexedCommon, matches, err := indexed.Search(ctx)
+
 			mu.Lock()
 			defer mu.Unlock()
-			common.update(&indexedCommon)
-			tr.LogFields(otlog.Error(err), otlog.Bool("overLimitCanceled", overLimitCanceled))
-			if err != nil && searchErr == nil && !overLimitCanceled {
-				searchErr = err
-				tr.LazyPrintf("cancel indexed search due to error: %v", err)
-				cancel()
-			}
+			for event := range indexedSearchStream(ctx, indexed) {
+				common.update(&event.common)
 
-			if args.PatternInfo.IsStructuralPat {
-				// A partition of {repo name => file list} that we will build from Zoekt matches
-				partition := make(map[string][]string)
-				var repos []*search.RepositoryRevisions
-
-				for _, m := range matches {
-					name := string(m.Repo.Name())
-					partition[name] = append(partition[name], m.JPath)
+				err = event.err
+				tr.LogFields(otlog.Error(err), otlog.Bool("overLimitCanceled", overLimitCanceled))
+				if err != nil && searchErr == nil && !overLimitCanceled {
+					searchErr = err
+					tr.LazyPrintf("cancel indexed search due to error: %v", err)
+					cancel()
 				}
 
-				// Filter Zoekt repos that didn't contain matches
-				for _, repo := range indexed.Repos() {
-					for key := range partition {
-						if string(repo.Repo.Name) == key {
-							repos = append(repos, repo)
+				if args.PatternInfo.IsStructuralPat {
+					// A partition of {repo name => file list} that we will build from Zoekt matches
+					partition := make(map[string][]string)
+					var repos []*search.RepositoryRevisions
+
+					for _, m := range event.results {
+						name := string(m.Repo.Name())
+						partition[name] = append(partition[name], m.JPath)
+					}
+
+					// Filter Zoekt repos that didn't contain matches
+					for _, repo := range indexed.Repos() {
+						for key := range partition {
+							if string(repo.Repo.Name) == key {
+								repos = append(repos, repo)
+							}
 						}
 					}
-				}
 
-				// For structural search, we run callSearcherOverRepos
-				// over the set of repos and files known to contain
-				// parts of the pattern as determined by Zoekt.
-				// callSearcherOverRepos must acquire the lock, so we
-				// must release the lock held by Zoekt at this point.
-				// The Zoekt part of the search is done here as far as
-				// structural search is concerned, so the lock can be
-				// freely released.
-				mu.Unlock()
-				err := callSearcherOverRepos(repos, partition)
-				mu.Lock()
-				if err != nil {
-					searchErr = err
+					// For structural search, we run callSearcherOverRepos
+					// over the set of repos and files known to contain
+					// parts of the pattern as determined by Zoekt.
+					// callSearcherOverRepos must acquire the lock, so we
+					// must release the lock held by Zoekt at this point.
+					// The Zoekt part of the search is done here as far as
+					// structural search is concerned, so the lock can be
+					// freely released.
+					mu.Unlock()
+					err := callSearcherOverRepos(repos, partition)
+					mu.Lock()
+					if err != nil {
+						searchErr = err
+					}
+				} else {
+					addMatches(event.results)
 				}
-			} else {
-				addMatches(matches)
 			}
 		}()
 	}

@@ -304,7 +304,7 @@ func TestIndexedSearch(t *testing.T) {
 
 			indexed.since = tt.args.since
 
-			gotCommon, gotFm, err := indexed.Search(tt.args.ctx)
+			gotCommon, gotFm, err := indexed.Search(tt.args.ctx, nil)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("zoektSearchHEAD() error = %v, wantErr = %v", err, tt.wantErr)
 				return
