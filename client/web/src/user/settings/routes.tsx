@@ -4,7 +4,7 @@ import { lazyComponent } from '../../util/lazyComponent'
 import { UserSettingsAreaRoute, UserSettingsAreaRouteContext } from './UserSettingsArea'
 import { Scalars } from '../../graphql-operations'
 import { RouteComponentProps } from 'react-router'
-import type { UserAddExternalServicesPageProps } from './UserAddExternalServicesPage'
+import type { UserAddCodeHostsPageContainerProps } from './UserAddCodeHostsPageContainer'
 
 const SettingsArea = lazyComponent(() => import('../../settings/SettingsArea'), 'SettingsArea')
 const ExternalServicesPage = lazyComponent(
@@ -16,10 +16,11 @@ const UserSettingsRepositoriesPage = lazyComponent(
     'UserSettingsRepositoriesPage'
 )
 
-const UserAddExternalServicesPage = lazyComponent<UserAddExternalServicesPageProps, 'UserAddExternalServicesPage'>(
-    () => import('./UserAddExternalServicesPage'),
-    'UserAddExternalServicesPage'
-)
+const UserAddCodeHostsPageContainer = lazyComponent<
+    UserAddCodeHostsPageContainerProps,
+    'UserAddCodeHostsPageContainer'
+>(() => import('./UserAddCodeHostsPageContainer'), 'UserAddCodeHostsPageContainer')
+
 const ExternalServicePage = lazyComponent(
     () => import('../../components/externalServices/ExternalServicePage'),
     'ExternalServicePage'
@@ -101,19 +102,14 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
             props.user.tags?.includes('AllowUserExternalServicePublic'),
     },
     {
-        path: '/external-services/new',
-        render: props => (
-            <UserAddExternalServicesPage
-                {...props}
-                routingPrefix={props.user.url + '/settings'}
-                afterCreateRoute={props.user.url + '/settings/external-services'}
-                userID={props.user.id}
-            />
-        ),
+        path: '/code-hosts',
+        render: props => <UserAddCodeHostsPageContainer userID={props.user.id} history={props.history} />,
         exact: true,
         condition: props =>
             window.context.externalServicesUserModeEnabled ||
-            props.authenticatedUser.tags?.includes('AllowUserExternalServicePublic'),
+            (props.user.id === props.authenticatedUser.id &&
+                props.authenticatedUser.tags.includes('AllowUserExternalServicePublic')) ||
+            props.user.tags?.includes('AllowUserExternalServicePublic'),
     },
     {
         path: '/external-services/:id',

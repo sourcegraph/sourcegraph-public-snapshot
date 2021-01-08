@@ -94,40 +94,40 @@ func OptionOpinionatedDefaults() ObservablePanelOption {
 // It is applied in the default PanelOptions().
 func OptionAlertThresholds() ObservablePanelOption {
 	return func(o Observable, g *sdk.GraphPanel) {
-		if o.Warning != nil && o.Warning.greaterOrEqual != nil {
+		if o.Warning != nil && o.Warning.greaterThan != nil {
 			// Warning threshold
 			g.Thresholds = append(g.Thresholds, sdk.Threshold{
-				Value:     float32(*o.Warning.greaterOrEqual),
+				Value:     float32(*o.Warning.greaterThan),
 				Op:        "gt",
 				ColorMode: "custom",
 				Line:      true,
 				LineColor: "rgba(255, 73, 53, 0.8)",
 			})
 		}
-		if o.Critical != nil && o.Critical.greaterOrEqual != nil {
+		if o.Critical != nil && o.Critical.greaterThan != nil {
 			// Critical threshold
 			g.Thresholds = append(g.Thresholds, sdk.Threshold{
-				Value:     float32(*o.Critical.greaterOrEqual),
+				Value:     float32(*o.Critical.greaterThan),
 				Op:        "gt",
 				ColorMode: "custom",
 				Line:      true,
 				LineColor: "rgba(255, 17, 36, 0.8)",
 			})
 		}
-		if o.Warning != nil && o.Warning.lessOrEqual != nil {
+		if o.Warning != nil && o.Warning.lessThan != nil {
 			// Warning threshold
 			g.Thresholds = append(g.Thresholds, sdk.Threshold{
-				Value:     float32(*o.Warning.lessOrEqual),
+				Value:     float32(*o.Warning.lessThan),
 				Op:        "lt",
 				ColorMode: "custom",
 				Line:      true,
 				LineColor: "rgba(255, 73, 53, 0.8)",
 			})
 		}
-		if o.Critical != nil && o.Critical.lessOrEqual != nil {
+		if o.Critical != nil && o.Critical.lessThan != nil {
 			// Critical threshold
 			g.Thresholds = append(g.Thresholds, sdk.Threshold{
-				Value:     float32(*o.Critical.lessOrEqual),
+				Value:     float32(*o.Critical.lessThan),
 				Op:        "lt",
 				ColorMode: "custom",
 				Line:      true,
