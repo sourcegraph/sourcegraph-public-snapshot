@@ -13,6 +13,16 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Added
 
+### Changed
+
+### Fixed
+
+### Removed
+
+## 3.23.2
+
+### Added
+
 - `src campaign [apply|preview]` can now make use of Docker volumes, rather than bind-mounting the host filesystem. This is now the default on macOS, as volume mounts have generally better performance there. The optional `-workspace` flag can be used to override the default. [#412](https://github.com/sourcegraph/src-cli/pull/412)
 
 ### Changed
@@ -22,8 +32,6 @@ All notable changes to `src-cli` are documented in this file.
 ### Fixed
 
 - `src config` now works correctly when provided a subject.
-
-### Removed
 
 ## 3.23.1
 
