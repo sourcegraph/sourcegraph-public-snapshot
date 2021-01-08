@@ -146,7 +146,7 @@ func TestSearchFilesInReposStream(t *testing.T) {
 	}
 	defer func() { mockSearchFilesInRepo = nil }()
 
-	zoekt := &searchbackend.Zoekt{Client: &fakeSearcher{}}
+	zoekt := &searchbackend.Zoekt{Client: &searchzoekt.FakeSearcher{}}
 
 	q, err := query.ParseAndCheck("foo")
 	if err != nil {
