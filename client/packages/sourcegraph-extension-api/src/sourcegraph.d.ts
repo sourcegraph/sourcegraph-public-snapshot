@@ -1181,7 +1181,7 @@ declare module 'sourcegraph' {
          * The current version context of the workspace, if any.
          *
          * A version context is a set of repositories and revisions on a Sourcegraph instance.
-         * when set, extensions use it to scope search queries, code intelligence actions, etc.
+         * When set, extensions use it to scope search queries, code intelligence actions, etc.
          *
          * See more information at http://docs.sourcegraph.com/user/search#version-contexts.
          */
@@ -1484,6 +1484,8 @@ declare module 'sourcegraph' {
      * A completion item is a suggestion to complete text that the user has typed.
      *
      * @see {@link CompletionItemProvider#provideCompletionItems}
+     *
+     * @deprecated
      */
     export interface CompletionItem {
         /**
@@ -1508,6 +1510,8 @@ declare module 'sourcegraph' {
 
     /**
      * A collection of [completion items](#CompletionItem) to be presented in the editor.
+     *
+     * @deprecated
      */
     export interface CompletionList {
         /**
@@ -1522,6 +1526,8 @@ declare module 'sourcegraph' {
      *
      * Providers are queried for completions as the user types in any document matching the document
      * selector specified at registration time.
+     *
+     * @deprecated
      */
     export interface CompletionItemProvider {
         /**
@@ -1658,6 +1664,8 @@ declare module 'sourcegraph' {
          * @param selector A selector that defines the documents this provider applies to.
          * @param provider A completion item provider.
          * @returns An unsubscribable to unregister this provider.
+         *
+         * @deprecated
          */
         export function registerCompletionItemProvider(
             selector: DocumentSelector,

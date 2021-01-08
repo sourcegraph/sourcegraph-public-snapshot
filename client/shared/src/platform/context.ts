@@ -8,9 +8,10 @@ import { FileSpec, UIPositionSpec, RawRepoSpec, RepoSpec, RevisionSpec, ViewStat
 import { DiffPart } from '@sourcegraph/codeintellify'
 import { isObject } from 'lodash'
 import { hasProperty } from '../util/types'
-import { IExtensionsService } from '../api/client/services/extensionsService'
-import { ModelService } from '../api/client/services/modelService'
 import { Scalars } from '../graphql-operations'
+import { ErrorLike } from '../util/errors'
+import { ExecutableExtension } from '../api/extension/flatExtensionApi'
+import { InputBoxOptions } from 'sourcegraph'
 
 export interface EndpointPair {
     /** The endpoint to proxy the API of the other thread from */
@@ -137,8 +138,11 @@ export interface PlatformContext {
      * @param bundleURL The URL to the JavaScript bundle file specified in the extension manifest.
      * @returns A script URL suitable for passing to importScripts, typically either the original
      * https:// URL for the extension's bundle or a blob: URI for it.
+     *
+     * TODO(tj): If this doesn't return a getScriptURLForExtension function, the original bundleURL will be used.
+     * Also, make getScriptURL batched to minimize round trips between extension host and client application
      */
-    getScriptURLForExtension: (bundleURL: string) => string | Promise<string>
+    getScriptURLForExtension: () => undefined | ((bundleURL: string[]) => Promise<(string | ErrorLike)[]>)
 
     /**
      * Constructs the URL (possibly relative or absolute) to the file with the specified options.
@@ -195,9 +199,26 @@ export interface PlatformContext {
     telemetryService?: TelemetryService
 
     /**
-     * Creates an extensions service that provides the list of extensions to be activated.
+     * If this is a function that returns a Subscribable of executable extensions,
+     * the extension host will not activate any other settings (e.g. extensions from user settings)
      */
-    createExtensionsService?(modelService: Pick<ModelService, 'activeLanguages'>): IExtensionsService
+    getStaticExtensions?: () => undefined | Subscribable<ExecutableExtension[]>
+
+    /**
+     * Display a modal message from an extension to the user.
+     *
+     * @param message The message to display
+     * @returns a Promise that resolves when the user dismisses the message
+     */
+    showMessage?(message: string): Promise<void>
+
+    /**
+     * Displays an input box for an extension that asks the user for input.
+     *
+     * @param options Configures the behavior of the input box.
+     * @returns The string provided by the user, or `undefined` if the input box was canceled.
+     */
+    showInputBox?(options: InputBoxOptions | undefined): Promise<string | undefined>
 }
 
 /**

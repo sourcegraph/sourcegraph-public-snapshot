@@ -2,11 +2,10 @@ import { isEqual } from 'lodash'
 import React, { createRef, TextareaHTMLAttributes, useEffect, useState } from 'react'
 import { Subscription, Unsubscribable } from 'rxjs'
 import { distinctUntilChanged, filter, map } from 'rxjs/operators'
-import { CodeEditorData, ViewerId, ViewerService, observeEditorAndModel } from '../../api/client/services/viewerService'
-import { ModelService, TextModel } from '../../api/client/services/modelService'
 import { offsetToPosition, positionToOffset } from '../../api/client/types/textDocument'
 import { ExtensionsControllerProps } from '../../extensions/controller'
 import { isDefined } from '../../util/types'
+import { TextDocument } from 'sourcegraph'
 
 /**
  * Utilities for 2-way syncing an HTMLTextAreaElement with an editor and model. These are factored
@@ -19,7 +18,7 @@ export const EditorTextFieldUtils = {
      */
     getEditorDataFromElement: (
         element: HTMLTextAreaElement
-    ): Pick<TextModel, 'text'> & Pick<CodeEditorData, 'selections'> => {
+    ): Pick<TextDocument, 'text'> & Pick<CodeEditorData, 'selections'> => {
         const isReversed = element.selectionDirection === 'backward'
         const selectionStart = isReversed ? element.selectionEnd : element.selectionStart
         const selectionEnd = isReversed ? element.selectionStart : element.selectionEnd
@@ -118,7 +117,7 @@ interface Props
     /**
      * The URI of the model that this component is backed by.
      */
-    modelUri: TextModel['uri']
+    modelUri: TextDocument['uri']
 
     /**
      * Called when the textarea value (editor model content) changes.

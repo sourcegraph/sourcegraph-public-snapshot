@@ -20,7 +20,6 @@ import { asError, ErrorLike } from '../../util/errors'
 import { throttleTimeWindow } from '../../util/rxjs/throttleTimeWindow'
 import { getWordAtText } from '../../util/wordHelpers'
 import { CompletionWidget, CompletionWidgetProps } from './CompletionWidget'
-import { observeEditorAndModel } from '../../api/client/services/viewerService'
 
 export interface EditorCompletionWidgetProps
     extends ExtensionsControllerProps,

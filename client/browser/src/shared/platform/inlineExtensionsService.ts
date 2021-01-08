@@ -1,9 +1,9 @@
 import { isExtension } from '../context'
 import { isFirefox } from '../util/context'
-import { IExtensionsService, ExecutableExtension } from '../../../../shared/src/api/client/services/extensionsService'
 import { Subscribable, from } from 'rxjs'
 import { checkOk } from '../../../../shared/src/backend/fetch'
 import { ExtensionManifest } from '../../../../shared/src/extensions/extensionManifest'
+import { ExecutableExtension } from '../../../../shared/src/api/extension/flatExtensionApi'
 
 /**
  * Determine if inline extensions should be loaded.
@@ -40,15 +40,4 @@ export function getInlineExtensions(): Subscribable<ExecutableExtension[]> {
         )
 
     return from(requestPromise)
-}
-
-/**
- * Manages the set of inline (bundled) extensions that are loaded. Only applicable to the Firefox browser add-on.
- *
- * The inline extensions service loads extensions directly from the add-on assets and does not load any code remotely.
- */
-export class InlineExtensionsService implements IExtensionsService {
-    public get activeExtensions(): Subscribable<ExecutableExtension[]> {
-        return getInlineExtensions()
-    }
 }

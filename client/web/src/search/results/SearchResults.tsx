@@ -1,7 +1,7 @@
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import * as React from 'react'
-import { concat, Observable, Subject, Subscription } from 'rxjs'
+import { concat, from, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, tap } from 'rxjs/operators'
 import {
     parseSearchURLQuery,
@@ -39,6 +39,7 @@ import { SearchPatternType } from '../../../../shared/src/graphql-operations'
 import { shouldDisplayPerformanceWarning } from '../backend'
 import { VersionContextWarning } from './VersionContextWarning'
 import { CodeMonitoringProps } from '../../enterprise/code-monitoring'
+import { wrapRemoteObservable } from '../../../../shared/src/api/client/api/common'
 
 export interface SearchResultsProps
     extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI' | 'services'>,
@@ -205,7 +206,12 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                                 this.props.setCaseSensitivity(caseSensitive)
                                             }
 
-                                            this.props.setVersionContext(versionContext)
+                                            this.props.setVersionContext(versionContext).catch(error => {
+                                                console.error(
+                                                    'Error sending initial versionContext to extensions',
+                                                    error
+                                                )
+                                            })
                                         },
                                         error => {
                                             this.props.telemetryService.log('SearchResultsFetchFailed', {
@@ -258,8 +264,8 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         )
 
         this.subscriptions.add(
-            this.props.extensionsController.services.contribution
-                .getContributions()
+            from(this.props.extensionsController.extHostAPI)
+                .pipe(switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getContributions())))
                 .subscribe(contributions => this.setState({ contributions }))
         )
     }

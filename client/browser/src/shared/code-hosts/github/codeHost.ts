@@ -24,9 +24,9 @@ import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './
 import { commentTextFieldResolver } from './textFields'
 import { setElementTooltip } from './tooltip'
 import { getFileContainers, parseURL } from './util'
-import { NotificationType } from '../../../../../shared/src/api/client/services/notifications'
 import { defer, of } from 'rxjs'
 import { observeSystemIsLightTheme } from '../../../../../shared/src/theme'
+import { NotificationType } from '../../../../../shared/src/api/contract'
 
 /**
  * Creates the mount element for the CodeViewToolbar on code views containing

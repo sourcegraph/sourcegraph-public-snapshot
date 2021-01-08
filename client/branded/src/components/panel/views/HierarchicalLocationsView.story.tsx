@@ -7,11 +7,13 @@ import * as H from 'history'
 import { Location } from '@sourcegraph/extension-api-types'
 import { of } from 'rxjs'
 import { createContextService } from '../../../../../shared/src/api/client/context/contextService'
-import {
-    ContributionsEntry,
-    ContributionUnsubscribable,
-} from '../../../../../shared/src/api/client/services/contribution'
+// import {
+//     ContributionsEntry,
+//     ContributionUnsubscribable,
+// } from '../../../../../shared/src/api/client/services/contribution'
 import { noop } from 'lodash'
+import { ContributionsEntry } from '../../../../../shared/src/api/extension/flatExtensionApi'
+import { pretendRemote } from '../../../../../shared/src/api/util'
 
 const { add } = storiesOf('branded/HierarchicalLocationsView', module).addDecorator(story => (
     <BrandedStory styles={webStyles}>{() => <div className="p-5">{story()}</div>}</BrandedStory>
@@ -87,15 +89,7 @@ const LOCATIONS: Location[] = [
 
 const PROPS: HierarchicalLocationsViewProps = {
     extensionsController: {
-        services: {
-            context: createContextService({ clientApplication: 'other' }),
-            contribution: {
-                registerContributions: (entry: ContributionsEntry): ContributionUnsubscribable => ({
-                    entry,
-                    unsubscribe: noop,
-                }),
-            },
-        },
+        extHostAPI: pretendRemote({}),
     },
     settingsCascade: { subjects: null, final: null },
     location: H.createLocation('/'),

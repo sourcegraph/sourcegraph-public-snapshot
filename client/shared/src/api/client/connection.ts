@@ -1,31 +1,15 @@
 import * as comlink from 'comlink'
-import { from, merge, Subject, Subscription, of } from 'rxjs'
-import { concatMap, first } from 'rxjs/operators'
-import { ContextValues, Progress, ProgressOptions, Unsubscribable } from 'sourcegraph'
+import { from, Subscription } from 'rxjs'
+import { first } from 'rxjs/operators'
+import { Unsubscribable } from 'sourcegraph'
 import { PlatformContext, ClosableEndpointPair } from '../../platform/context'
 import { ExtensionHostAPIFactory } from '../extension/api/api'
 import { InitData } from '../extension/extensionHost'
 import { ClientAPI } from './api/api'
-import { ClientCodeEditor } from './api/codeEditor'
-import { createClientContent } from './api/content'
-import { ClientContext } from './api/context'
-import { ClientExtensions } from './api/extensions'
-import { ClientLanguageFeatures } from './api/languageFeatures'
-import { ClientViews } from './api/views'
-import { ClientWindows } from './api/windows'
-import { Services } from './services'
-import {
-    MessageActionItem,
-    ShowInputParameters,
-    ShowMessageRequestParameters,
-    ShowNotificationParameters,
-} from './services/notifications'
-import { TextModelUpdate } from './services/modelService'
-import { ViewerUpdate } from './services/viewerService'
 import { registerComlinkTransferHandlers } from '../util'
-import { initMainThreadAPI } from './mainthread-api'
+import { initMainThreadAPI, MainThreadAPIDependencies } from './mainthread-api'
 import { isSettingsValid } from '../../settings/settings'
-import { FlatExtensionHostAPI } from '../contract'
+import { FlatExtensionHostAPI, MainThreadAPI } from '../contract'
 
 export interface ExtensionHostClientConnection {
     /**
@@ -54,10 +38,18 @@ export interface ActivatedExtension {
  */
 export async function createExtensionHostClientConnection(
     endpointsPromise: Promise<ClosableEndpointPair>,
-    services: Services,
     initData: Omit<InitData, 'initialSettings'>,
-    platformContext: Pick<PlatformContext, 'settings' | 'updateSettings' | 'requestGraphQL' | 'telemetryService'>
-): Promise<{ subscription: Unsubscribable; api: comlink.Remote<FlatExtensionHostAPI> }> {
+    platformContext: Pick<
+        PlatformContext,
+        | 'settings'
+        | 'updateSettings'
+        | 'requestGraphQL'
+        | 'telemetryService'
+        | 'sideloadedExtensionURL'
+        | 'getScriptURLForExtension'
+    >,
+    mainThreadAPIDependences: MainThreadAPIDependencies
+): Promise<{ subscription: Unsubscribable; api: comlink.Remote<FlatExtensionHostAPI>; mainThreadAPI: MainThreadAPI }> {
     const subscription = new Subscription()
 
     // MAIN THREAD
@@ -77,87 +69,22 @@ export async function createExtensionHostClientConnection(
         initialSettings: isSettingsValid(initialSettings) ? initialSettings : { final: {}, subjects: [] },
     })
 
-    const clientContext = new ClientContext((updates: ContextValues) => services.context.updateContext(updates))
-    subscription.add(clientContext)
-
-    // Sync models and viewers to the extension host
-    subscription.add(
-        merge(
-            of([...services.model.models.entries()].map(([, model]): TextModelUpdate => ({ type: 'added', ...model }))),
-            from(services.model.modelUpdates)
-        )
-            .pipe(concatMap(modelUpdates => proxy.documents.$acceptDocumentData(modelUpdates)))
-            .subscribe()
+    const { api: newAPI, subscription: apiSubscriptions } = initMainThreadAPI(
+        proxy,
+        platformContext,
+        mainThreadAPIDependences
     )
-    subscription.add(
-        merge(
-            of(
-                [...services.viewer.viewers.entries()].map(
-                    ([viewerId, viewerData]): ViewerUpdate => ({
-                        type: 'added',
-                        viewerId,
-                        viewerData,
-                    })
-                )
-            ),
-            from(services.viewer.viewerUpdates)
-        )
-            .pipe(concatMap(viewerUpdates => proxy.windows.$acceptWindowData(viewerUpdates)))
-            .subscribe()
-    )
-
-    const clientWindows = new ClientWindows(
-        (parameters: ShowNotificationParameters) => services.notifications.showMessages.next({ ...parameters }),
-        (parameters: ShowMessageRequestParameters) =>
-            new Promise<MessageActionItem | null>(resolve => {
-                services.notifications.showMessageRequests.next({ ...parameters, resolve })
-            }),
-        (parameters: ShowInputParameters) =>
-            new Promise<string | null>(resolve => {
-                services.notifications.showInputs.next({ ...parameters, resolve })
-            }),
-        ({ title }: ProgressOptions) => {
-            const reporter = new Subject<Progress>()
-            services.notifications.progresses.next({ title, progress: reporter.asObservable() })
-            return reporter
-        }
-    )
-
-    const clientViews = new ClientViews(
-        services.panelViews,
-        services.textDocumentLocations,
-        services.viewer,
-        services.view
-    )
-
-    const clientCodeEditor = new ClientCodeEditor(services.textDocumentDecoration)
-    subscription.add(clientCodeEditor)
-
-    const clientLanguageFeatures = new ClientLanguageFeatures(
-        services.textDocumentReferences,
-        services.textDocumentLocations,
-        services.completionItems
-    )
-    subscription.add(new ClientExtensions(proxy.extensions, services.extensions, platformContext))
-
-    const clientContent = createClientContent(services.linkPreviews)
-
-    const { api: newAPI, subscription: apiSubscriptions } = initMainThreadAPI(proxy, platformContext, services)
 
     subscription.add(apiSubscriptions)
 
     const clientAPI: ClientAPI = {
         ping: () => 'pong',
-        context: clientContext,
-        languageFeatures: clientLanguageFeatures,
-        windows: clientWindows,
-        codeEditor: clientCodeEditor,
-        views: clientViews,
-        content: clientContent,
         ...newAPI,
     }
 
     comlink.expose(clientAPI, endpoints.expose)
 
-    return { subscription, api: proxy }
+    // TODO(tj): return MainThreadAPI and add to Controller interface
+    // to allow app to interact with APIs whose state lives in the main thread
+    return { subscription, api: proxy, mainThreadAPI: newAPI }
 }

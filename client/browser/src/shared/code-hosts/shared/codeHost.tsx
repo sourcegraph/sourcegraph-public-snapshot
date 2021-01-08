@@ -43,7 +43,6 @@ import {
 } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../../shared/src/actions/ActionItem'
 import { DecorationMapByLine } from '../../../../../shared/src/api/client/services/decoration'
-import { CodeEditorData, CodeEditorWithPartialModel } from '../../../../../shared/src/api/client/services/viewerService'
 import {
     isPrivateRepoPublicSourcegraphComErrorLike,
     isRepoNotFoundErrorLike,

@@ -1,10 +1,19 @@
-import { Remote, proxyMarker, releaseProxy, ProxyMethods, ProxyMarked, proxy, UnproxyOrClone } from 'comlink'
+import {
+    Remote,
+    proxyMarker,
+    releaseProxy,
+    ProxyMethods,
+    ProxyMarked,
+    proxy,
+    UnproxyOrClone,
+    ProxyOrClone,
+} from 'comlink'
 import { noop } from 'lodash'
-import { from, Observable, observable as symbolObservable, Subscription, Unsubscribable } from 'rxjs'
+import { from, Observable, observable as symbolObservable, of, Subscription, Unsubscribable } from 'rxjs'
 import { mergeMap, finalize } from 'rxjs/operators'
 import { Subscribable } from 'sourcegraph'
 import { ProxySubscribable } from '../../extension/api/common'
-import { syncSubscription } from '../../util'
+import { isPromiseLike, syncSubscription } from '../../util'
 import { asError } from '../../../util/errors'
 import { FeatureProviderRegistry } from '../services/registry'
 
@@ -45,24 +54,26 @@ export interface RemoteObservable<T> extends Observable<T>, ProxySubscribed {}
  *
  * The returned Observable is augmented with the `releaseProxy` method from comlink to release the underlying `MessagePort`.
  *
- * @param proxyPromise The proxy to the `ProxyObservable` in the other thread
+ * @param proxyOrProxyPromise The proxy to the `ProxyObservable` in the other thread
  * @param addToSubscription If provided, directly adds the `ProxySubscription` to this Subscription.
  */
 export const wrapRemoteObservable = <T>(
-    proxyPromise: Promise<Remote<ProxySubscribable<T>>>,
+    proxyOrProxyPromise: Remote<ProxySubscribable<T>> | Promise<Remote<ProxySubscribable<T>>>,
     addToSubscription?: Subscription
-): RemoteObservable<T> => {
+): RemoteObservable<ProxyOrClone<T>> => {
     const proxySubscription = new Subscription()
     if (addToSubscription) {
         addToSubscription.add(proxySubscription)
     }
-    const observable = from(proxyPromise).pipe(
+    const observable = from(
+        isPromiseLike(proxyOrProxyPromise) ? proxyOrProxyPromise : Promise.resolve(proxyOrProxyPromise)
+    ).pipe(
         mergeMap(
-            (proxySubscribable): Subscribable<T> => {
+            (proxySubscribable): Subscribable<ProxyOrClone<T>> => {
                 proxySubscription.add(new ProxySubscription(proxySubscribable))
                 return {
                     // Needed for Rx type check
-                    [symbolObservable](): Subscribable<T> {
+                    [symbolObservable](): Subscribable<ProxyOrClone<T>> {
                         return this
                     },
                     subscribe(...args: any[]): Subscription {
@@ -131,7 +142,7 @@ export function registerRemoteProvider<
 >(
     registry: FeatureProviderRegistry<
         TRegistrationOptions,
-        (parameters: TLocalProviderParameters) => Observable<TProviderResult>
+        (parameters: TLocalProviderParameters) => Observable<ProxyOrClone<TProviderResult>>
     >,
     registrationOptions: TRegistrationOptions,
     remoteProviderFunction: Remote<

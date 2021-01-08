@@ -3,7 +3,7 @@ import { filter, map, switchMap, take, toArray, first } from 'rxjs/operators'
 import { ViewComponent, Window } from 'sourcegraph'
 import { isDefined } from '../../util/types'
 import { TextModel } from '../client/services/modelService'
-import { NotificationType } from '../client/services/notifications'
+import { NotificationType } from '../contract'
 import { assertToJSON, collectSubscribableValues, integrationTestContext } from './testHelpers'
 
 describe('Windows (integration)', () => {

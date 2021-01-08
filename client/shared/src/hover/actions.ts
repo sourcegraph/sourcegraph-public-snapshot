@@ -19,16 +19,16 @@ import {
 import { ActionItemAction } from '../actions/ActionItem'
 import { wrapRemoteObservable } from '../api/client/api/common'
 import { Context } from '../api/client/context/context'
-import { parse, parseTemplate } from '../api/client/context/expr/evaluator'
-import { Services } from '../api/client/services'
-import { WorkspaceRootWithMetadata } from '../api/client/services/workspaceService'
+import { WorkspaceRootWithMetadata } from '../api/extension/flatExtensionApi'
 import { ContributableMenu, TextDocumentPositionParameters } from '../api/protocol'
+import { syncSubscription } from '../api/util'
 import { isPrivateRepoPublicSourcegraphComErrorLike } from '../backend/errors'
 import { resolveRawRepoName } from '../backend/repo'
 import { getContributedActionItems } from '../contributions/contributions'
 import { Controller, ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContext, PlatformContextProps, URLToFileContext } from '../platform/context'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
+import { extensionsController } from '../util/searchTestHelpers'
 import { makeRepoURI, parseRepoURI, withWorkspaceRootInputRevision, isExternalLink } from '../util/url'
 import { HoverContext } from './HoverOverlay'
 
@@ -59,9 +59,12 @@ export function getHoverActions(
         hoverContext
     ).pipe(
         switchMap(context =>
-            extensionsController.services.contribution
-                .getContributions(undefined, context)
-                .pipe(map(contributions => getContributedActionItems(contributions, ContributableMenu.Hover)))
+            from(extensionsController.extHostAPI).pipe(
+                switchMap(extensionHostAPI =>
+                    wrapRemoteObservable(extensionHostAPI.getContributions(undefined, context))
+                ),
+                map(contributions => getContributedActionItems(contributions, ContributableMenu.Hover))
+            )
         )
     )
 }
@@ -92,14 +95,7 @@ export function getHoverActionsContext(
         platformContext: { urlToFile, requestGraphQL },
     }: {
         getDefinition: (parameters: TextDocumentPositionParameters) => Observable<MaybeLoadingResult<Location[]>>
-        extensionsController: {
-            services: {
-                workspace: {
-                    roots: { value: readonly WorkspaceRootWithMetadata[] }
-                }
-                textDocumentReferences: Pick<Services['textDocumentReferences'], 'providersForDocument'>
-            }
-        }
+        extensionsController: Pick<Controller, 'extHostAPI'>
         platformContext: Pick<PlatformContext, 'urlToFile' | 'requestGraphQL'>
     },
     hoverContext: HoveredToken & HoverContext
@@ -110,7 +106,7 @@ export function getHoverActionsContext(
         part: hoverContext.part,
     }
     const definitionURLOrError = getDefinition(parameters).pipe(
-        getDefinitionURL({ urlToFile, requestGraphQL }, extensionsController.services, parameters),
+        getDefinitionURL({ urlToFile, requestGraphQL }, extensionsController, parameters),
         catchError((error): [MaybeLoadingResult<ErrorLike>] => [{ isLoading: false, result: asError(error) }]),
         share()
     )
@@ -122,9 +118,10 @@ export function getHoverActionsContext(
         // hasReferenceProvider:
         // Only show "Find references" if a reference provider is registered. Unlike definitions, references are
         // not preloaded and here just involve statically constructing a URL, so no need to indicate loading.
-        extensionsController.services.textDocumentReferences
-            .providersForDocument(parameters.textDocument)
-            .pipe(map(providers => providers.length !== 0)),
+
+        from(extensionsController.extHostAPI).pipe(
+            switchMap(extensionHostAPI => extensionHostAPI.hasReferenceProvidersForDocument(parameters))
+        ),
 
         // showFindReferences:
         // If there is no definition, delay showing "Find references" because it is likely that the token is
@@ -193,18 +190,19 @@ export interface UIDefinitionURL {
  */
 export const getDefinitionURL = (
     { urlToFile, requestGraphQL }: Pick<PlatformContext, 'urlToFile' | 'requestGraphQL'>,
-    {
-        workspace,
-    }: {
-        workspace: {
-            roots: { value: readonly WorkspaceRootWithMetadata[] }
-        }
-    },
+    extensionsController: Pick<Controller, 'extHostAPI'>,
     parameters: TextDocumentPositionParameters & URLToFileContext
 ) => (locations: Observable<MaybeLoadingResult<Location[]>>): Observable<MaybeLoadingResult<UIDefinitionURL | null>> =>
-    locations.pipe(
+    combineLatest([
+        locations,
+        from(extensionsController.extHostAPI).pipe(
+            switchMap(extensionHostAPI => from(extensionHostAPI.getWorkspaceRoots()))
+        ),
+    ]).pipe(
         switchMap(
-            ({ isLoading, result: definitions }): Observable<Partial<MaybeLoadingResult<UIDefinitionURL | null>>> => {
+            ([{ isLoading, result: definitions }, workspaceRoots]): Observable<
+                Partial<MaybeLoadingResult<UIDefinitionURL | null>>
+            > => {
                 if (definitions.length === 0) {
                     return of<MaybeLoadingResult<UIDefinitionURL | null>>({ isLoading, result: null })
                 }
@@ -215,7 +213,7 @@ export const getDefinitionURL = (
                 if (definitions.length > 1) {
                     // Open the panel to show all definitions.
                     const uri = withWorkspaceRootInputRevision(
-                        workspace.roots.value || [],
+                        workspaceRoots || [],
                         parseRepoURI(parameters.textDocument.uri)
                     )
                     return of<MaybeLoadingResult<UIDefinitionURL | null>>({
@@ -243,7 +241,7 @@ export const getDefinitionURL = (
                 // Preserve the input revision (e.g., a Git branch name instead of a Git commit SHA) if the result is
                 // inside one of the current roots. This avoids navigating the user from (e.g.) a URL with a nice Git
                 // branch name to a URL with a full Git commit SHA.
-                const uri = withWorkspaceRootInputRevision(workspace.roots.value || [], parseRepoURI(def.uri))
+                const uri = withWorkspaceRootInputRevision(workspaceRoots || [], parseRepoURI(def.uri))
 
                 if (def.range) {
                     uri.position = {
@@ -295,55 +293,46 @@ export function registerHoverContributions({
     platformContext: { urlToFile, requestGraphQL },
     history,
     locationAssign,
-}: (
-    | (ExtensionsControllerProps & PlatformContextProps)
-    | {
-          extensionsController: Pick<Controller, 'extHostAPI'> & {
-              services: Pick<Services, 'commands' | 'contribution'> & {
-                  workspace: {
-                      roots: { value: readonly WorkspaceRootWithMetadata[] }
-                  }
-              }
-          }
-          platformContext: Pick<PlatformContext, 'urlToFile' | 'requestGraphQL'>
-      }
-) & {
+}: {
+    extensionsController: Pick<Controller, 'extHostAPI' | 'registerCommand'>
+    platformContext: Pick<PlatformContext, 'urlToFile' | 'requestGraphQL'>
+} & {
     history: H.History
     /** Implementation of `window.location.assign()` used to navigate to external URLs. */
     locationAssign: typeof location.assign
 }): Unsubscribable {
     const subscriptions = new Subscription()
 
-    // Registers the "Go to definition" action shown in the hover tooltip. When clicked, the action finds the
-    // definition of the token using the registered definition providers and navigates the user there.
-    //
-    // When the user hovers over a token (even before they click "Go to definition"), it attempts to preload the
-    // definition. If preloading succeeds and at least 1 definition is found, the "Go to definition" action becomes
-    // a normal link (<a href>) pointing to the definition's URL. Using a normal link here is good for a11y and UX
-    // (e.g., open-in-new-tab works and the browser status bar shows the URL).
-    //
-    // Otherwise (if preloading fails, or if preloading has not yet finished), clicking "Go to definition" executes
-    // the goToDefinition command. A loading indicator is displayed, and any errors that occur during execution are
-    // shown to the user.
-    //
-    // Future improvements:
-    //
-    // TODO(sqs): If the user middle-clicked or Cmd/Ctrl-clicked the button, it would be nice if when the
-    // definition was found, a new browser tab was opened to the destination. This is not easy because browsers
-    // usually block new tabs opened by JavaScript not directly triggered by a user mouse/keyboard interaction.
-    //
-    // TODO(sqs): Pin hover after an action has been clicked and before it has completed.
-    subscriptions.add(
-        extensionsController.services.contribution.registerContributions({
-            contributions: {
+    extensionsController.extHostAPI
+        .then(extensionHostAPI => {
+            // Registers the "Go to definition" action shown in the hover tooltip. When clicked, the action finds the
+            // definition of the token using the registered definition providers and navigates the user there.
+            //
+            // When the user hovers over a token (even before they click "Go to definition"), it attempts to preload the
+            // definition. If preloading succeeds and at least 1 definition is found, the "Go to definition" action becomes
+            // a normal link (<a href>) pointing to the definition's URL. Using a normal link here is good for a11y and UX
+            // (e.g., open-in-new-tab works and the browser status bar shows the URL).
+            //
+            // Otherwise (if preloading fails, or if preloading has not yet finished), clicking "Go to definition" executes
+            // the goToDefinition command. A loading indicator is displayed, and any errors that occur during execution are
+            // shown to the user.
+            //
+            // Future improvements:
+            //
+            // TODO(sqs): If the user middle-clicked or Cmd/Ctrl-clicked the button, it would be nice if when the
+            // definition was found, a new browser tab was opened to the destination. This is not easy because browsers
+            // usually block new tabs opened by JavaScript not directly triggered by a user mouse/keyboard interaction.
+            //
+            // TODO(sqs): Pin hover after an action has been clicked and before it has completed.
+            const contribs = {
                 actions: [
                     {
                         id: 'goToDefinition',
-                        title: parseTemplate('Go to definition'),
+                        title: 'Go to definition',
                         command: 'goToDefinition',
                         commandArguments: [
                             /* eslint-disable no-template-curly-in-string */
-                            parseTemplate('${json(hoverPosition)}'),
+                            '${json(hoverPosition)}',
                             /* eslint-enable no-template-curly-in-string */
                         ],
                     },
@@ -351,10 +340,10 @@ export function registerHoverContributions({
                         // This action is used when preloading the definition succeeded and at least 1
                         // definition was found.
                         id: 'goToDefinition.preloaded',
-                        title: parseTemplate('Go to definition'),
+                        title: 'Go to definition',
                         command: 'open',
                         // eslint-disable-next-line no-template-curly-in-string
-                        commandArguments: [parseTemplate('${goToDefinition.url}')],
+                        commandArguments: ['${goToDefinition.url}'],
                     },
                 ],
                 menus: {
@@ -363,89 +352,97 @@ export function registerHoverContributions({
                         // goToDefinition.{error, loading, url} will all be falsey.)
                         {
                             action: 'goToDefinition',
-                            when: parse('goToDefinition.error || goToDefinition.showLoading'),
+                            when: 'goToDefinition.error || goToDefinition.showLoading',
                         },
                         {
                             action: 'goToDefinition.preloaded',
-                            when: parse('goToDefinition.url'),
+                            when: 'goToDefinition.url',
                         },
                     ],
                 },
-            },
-        })
-    )
-    subscriptions.add(
-        extensionsController.services.commands.registerCommand({
-            command: 'goToDefinition',
-            run: async (parametersString: string) => {
-                const parameters: TextDocumentPositionParameters & URLToFileContext = JSON.parse(parametersString)
-                const { result } = await from(extensionsController.extHostAPI)
-                    .pipe(
-                        switchMap(api => wrapRemoteObservable(api.getDefinition(parameters))),
-                        getDefinitionURL({ urlToFile, requestGraphQL }, extensionsController.services, parameters),
-                        first(({ isLoading, result }) => !isLoading || result !== null)
-                    )
-                    .toPromise()
-                if (!result) {
-                    throw new Error('No definition found.')
-                }
-                if (result.url === H.createPath(history.location)) {
-                    // The user might be confused if they click "Go to definition" and don't go anywhere, which
-                    // occurs if they are *already* on the definition. Give a helpful tip if they do this.
-                    //
-                    // Note that these tips won't show up if the definition URL is already known by the time they
-                    // click "Go to definition", because then it's a normal link and not a button that executes
-                    // this command. TODO: It would be nice if they also showed up in that case.
-                    if (result.multiple) {
-                        // The user may not have noticed the panel at the bottom of the screen, so tell them
-                        // explicitly.
-                        throw new Error('Multiple definitions shown in panel below.')
-                    }
-                    throw new Error('Already at the definition.')
-                }
-                if (isExternalLink(result.url)) {
-                    // External links must be navigated to through the browser
-                    locationAssign(result.url)
-                } else {
-                    // Use history library to handle in-app navigation
-                    history.push(result.url)
-                }
-            },
-        })
-    )
+            }
 
-    // Register the "Find references" action shown in the hover tooltip. This is simpler than "Go to definition"
-    // because it just needs a URL that can be statically constructed from the current URL (it does not need to
-    // query any providers).
-    subscriptions.add(
-        extensionsController.services.contribution.registerContributions({
-            contributions: {
-                actions: [
-                    {
-                        id: 'findReferences',
-                        title: parseTemplate('Find references'),
-                        command: 'open',
-                        // eslint-disable-next-line no-template-curly-in-string
-                        commandArguments: [parseTemplate('${findReferences.url}')],
+            subscriptions.add(syncSubscription(extensionHostAPI.registerContributions(contribs)))
+
+            subscriptions.add(
+                extensionsController.registerCommand({
+                    command: 'goToDefinition',
+                    run: async (parametersString: string) => {
+                        const parameters: TextDocumentPositionParameters & URLToFileContext = JSON.parse(
+                            parametersString
+                        )
+
+                        const { result } = await wrapRemoteObservable(extensionHostAPI.getDefinition(parameters))
+                            .pipe(
+                                getDefinitionURL({ urlToFile, requestGraphQL }, extensionsController, parameters),
+                                first(({ isLoading, result }) => !isLoading || result !== null)
+                            )
+                            .toPromise()
+
+                        if (!result) {
+                            throw new Error('No definition found.')
+                        }
+                        if (result.url === H.createPath(history.location)) {
+                            // The user might be confused if they click "Go to definition" and don't go anywhere, which
+                            // occurs if they are *already* on the definition. Give a helpful tip if they do this.
+                            //
+                            // Note that these tips won't show up if the definition URL is already known by the time they
+                            // click "Go to definition", because then it's a normal link and not a button that executes
+                            // this command. TODO: It would be nice if they also showed up in that case.
+                            if (result.multiple) {
+                                // The user may not have noticed the panel at the bottom of the screen, so tell them
+                                // explicitly.
+                                throw new Error('Multiple definitions shown in panel below.')
+                            }
+                            throw new Error('Already at the definition.')
+                        }
+                        if (isExternalLink(result.url)) {
+                            // External links must be navigated to through the browser
+                            locationAssign(result.url)
+                        } else {
+                            // Use history library to handle in-app navigation
+                            history.push(result.url)
+                        }
                     },
-                ],
-                menus: {
-                    hover: [
-                        // To reduce UI jitter, even though "Find references" can be shown immediately (because
-                        // the URL can be statically constructed), don't show it until either (1) "Go to
-                        // definition" is showing or (2) the LOADER_DELAY has elapsed. The part (2) of this
-                        // logic is implemented in the observable pipe that sets findReferences.url above.
-                        {
-                            action: 'findReferences',
-                            when: parse(
-                                'findReferences.url && (goToDefinition.showLoading || goToDefinition.url || goToDefinition.error)'
-                            ),
+                })
+            )
+
+            // Register the "Find references" action shown in the hover tooltip. This is simpler than "Go to definition"
+            // because it just needs a URL that can be statically constructed from the current URL (it does not need to
+            // query any providers).
+            subscriptions.add(
+                syncSubscription(
+                    extensionHostAPI.registerContributions({
+                        actions: [
+                            {
+                                id: 'findReferences',
+                                // title: parseTemplate('Find references'),
+                                title: 'Find references',
+                                command: 'open',
+                                // eslint-disable-next-line no-template-curly-in-string
+                                commandArguments: ['${findReferences.url}'],
+                            },
+                        ],
+                        menus: {
+                            hover: [
+                                // To reduce UI jitter, even though "Find references" can be shown immediately (because
+                                // the URL can be statically constructed), don't show it until either (1) "Go to
+                                // definition" is showing or (2) the LOADER_DELAY has elapsed. The part (2) of this
+                                // logic is implemented in the observable pipe that sets findReferences.url above.
+                                {
+                                    action: 'findReferences',
+                                    when:
+                                        'findReferences.url && (goToDefinition.showLoading || goToDefinition.url || goToDefinition.error)',
+                                },
+                            ],
                         },
-                    ],
-                },
-            },
+                    })
+                )
+            )
         })
-    )
+        .catch(() => {
+            console.error('Failed to register "Go to Definition" and "Find references" actions with extension host')
+        })
 
     return subscriptions
 }

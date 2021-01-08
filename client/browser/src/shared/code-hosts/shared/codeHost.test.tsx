@@ -29,11 +29,10 @@ import {
 import { toCodeViewResolver } from './codeViews'
 import { DEFAULT_GRAPHQL_RESPONSES, mockRequestGraphQL } from './testHelpers'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
-import { NotificationType } from '../../../../../shared/src/api/client/services/notifications'
 import { toPrettyBlobURL } from '../../../../../shared/src/util/url'
 import { MockIntersectionObserver } from './MockIntersectionObserver'
 import { pretendRemote } from '../../../../../shared/src/api/util'
-import { FlatExtensionHostAPI } from '../../../../../shared/src/api/contract'
+import { FlatExtensionHostAPI, NotificationType } from '../../../../../shared/src/api/contract'
 
 const RENDER = sinon.spy()
 

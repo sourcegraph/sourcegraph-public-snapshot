@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react'
-import { Subscription } from 'rxjs'
+import { from, Subscription } from 'rxjs'
+import { switchMap } from 'rxjs/operators'
+import { wrapRemoteObservable } from '../../api/client/api/common'
 import { ExtensionsControllerProps } from '../../extensions/controller'
 import { applyLinkPreview, ApplyLinkPreviewOptions } from './linkPreviews'
 
@@ -36,10 +38,14 @@ export const WithLinkPreviews: React.FunctionComponent<Props> = ({
         const subscriptions = new Subscription()
         for (const link of container.querySelectorAll<HTMLAnchorElement>('a[href]')) {
             subscriptions.add(
-                extensionsController.services.linkPreviews.provideLinkPreview(link.href).subscribe(linkPreview => {
-                    applyLinkPreview({ setElementTooltip, linkPreviewContentClass }, link, linkPreview)
-                    setHTML(container.innerHTML)
-                })
+                from(extensionsController.extHostAPI)
+                    .pipe(
+                        switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getLinkPreviews(link.href)))
+                    )
+                    .subscribe(linkPreview => {
+                        applyLinkPreview({ setElementTooltip, linkPreviewContentClass }, link, linkPreview)
+                        setHTML(container.innerHTML)
+                    })
             )
         }
         return () => subscriptions.unsubscribe()

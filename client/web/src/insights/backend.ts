@@ -3,15 +3,9 @@ import { catchError, map } from 'rxjs/operators'
 import { requestGraphQL } from '../backend/graphql'
 import { InsightsResult, InsightFields } from '../graphql-operations'
 import { LineChartContent } from 'sourcegraph'
-import {
-    getViewsForContainer,
-    ViewContexts,
-    ViewProviderResult,
-    ViewService,
-} from '../../../shared/src/api/client/services/viewService'
-import { ContributableViewContainer } from '../../../shared/src/api/protocol'
 import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import { asError } from '../../../shared/src/util/errors'
+import { ViewProviderResult } from '../../../shared/src/api/contract'
 
 const insightFieldsFragment = gql`
     fragment InsightFields on Insight {
@@ -42,13 +36,11 @@ function fetchBackendInsights(): Observable<InsightFields[]> {
     )
 }
 
-export function getCombinedViews<W extends ContributableViewContainer>(
-    where: W,
-    parameters: ViewContexts[W],
-    viewService: Pick<ViewService, 'getWhere'>
+export function getCombinedViews(
+    getExtensionsInsights: () => Observable<ViewProviderResult[]>
 ): Observable<ViewProviderResult[]> {
     return combineLatest([
-        getViewsForContainer(where, parameters, viewService),
+        getExtensionsInsights(),
         fetchBackendInsights().pipe(
             map(backendInsights =>
                 backendInsights.map(

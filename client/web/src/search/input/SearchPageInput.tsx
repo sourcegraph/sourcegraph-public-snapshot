@@ -41,7 +41,6 @@ interface Props
         KeyboardShortcutsProps,
         TelemetryProps,
         Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
-        ExtensionsControllerProps<'executeCommand' | 'services'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
         CopyQueryButtonProps,
         Pick<SubmitSearchParameters, 'source'>,
@@ -52,7 +51,7 @@ interface Props
     location: H.Location
     history: H.History
     isSourcegraphDotCom: boolean
-    setVersionContext: (versionContext: string | undefined) => void
+    setVersionContext: (versionContext: string | undefined) => Promise<void>
     availableVersionContexts: VersionContext[] | undefined
     /** Whether globbing is enabled for filters. */
     globbing: boolean

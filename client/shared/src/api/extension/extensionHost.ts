@@ -4,21 +4,12 @@ import { Subscription, Unsubscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { EndpointPair } from '../../platform/context'
 import { ClientAPI } from '../client/api/api'
-import { NotificationType } from '../client/services/notifications'
 import { ExtensionHostAPI, ExtensionHostAPIFactory } from './api/api'
-import { ExtensionContent } from './api/content'
-import { ExtensionContext } from './api/context'
-import { createDecorationType } from './api/decorations'
-import { ExtensionDocuments } from './api/documents'
 import { DocumentHighlightKind } from './api/documentHighlights'
-import { Extensions } from './api/extensions'
-import { ExtensionLanguageFeatures } from './api/languageFeatures'
-import { ExtensionViewsApi } from './api/views'
-import { ExtensionWindows } from './api/windows'
-
 import { registerComlinkTransferHandlers } from '../util'
 import { initNewExtensionAPI } from './flatExtensionApi'
 import { SettingsCascade } from '../../settings/settings'
+import { NotificationType } from '../contract'
 
 /**
  * Required information when initializing an extension host.
@@ -125,42 +116,34 @@ function createExtensionAPI(
     /** Proxy to main thread */
     const proxy = comlink.wrap<ClientAPI>(endpoints.proxy)
 
-    // For debugging/tests.
+    // For debugging/tests. TODO(tj): can deprecate
     const sync = async (): Promise<void> => {
         await proxy.ping()
     }
-    const context = new ExtensionContext(proxy.context)
-    const documents = new ExtensionDocuments(sync)
+    // const context = new ExtensionContext(proxy.context)
 
-    const extensions = new Extensions()
-    subscription.add(extensions)
-
-    const windows = new ExtensionWindows(proxy, documents)
-    const views = new ExtensionViewsApi(proxy.views)
-    const languageFeatures = new ExtensionLanguageFeatures(proxy.languageFeatures, documents)
-    const content = new ExtensionContent(proxy.content)
+    // const extensions = new Extensions()
+    // subscription.add(extensions)
+    // TODO(tj): remember to add new extension activation sub to bag
 
     const {
         configuration,
         exposedToMain,
         workspace,
-        state,
         commands,
         search,
-        languages: { registerHoverProvider, registerDocumentHighlightProvider, registerDefinitionProvider },
-        registerFileDecorationProvider,
+        languages,
         graphQL,
-    } = initNewExtensionAPI(proxy, initData.initialSettings, documents)
+        content,
+        app,
+        internal,
+    } = initNewExtensionAPI(proxy, initData)
 
     // Expose the extension host API to the client (main thread)
     const extensionHostAPI: ExtensionHostAPI = {
         [comlink.proxyMarker]: true,
 
         ping: () => 'pong',
-
-        documents,
-        extensions,
-        windows,
         ...exposedToMain,
     }
 
@@ -184,88 +167,24 @@ function createExtensionAPI(
         MarkupKind,
         NotificationType,
         DocumentHighlightKind,
-        app: {
-            activeWindowChanges: windows.activeWindowChanges,
-            get activeWindow(): sourcegraph.Window | undefined {
-                return windows.activeWindow
-            },
-            get windows(): sourcegraph.Window[] {
-                return windows.getAll()
-            },
-            createPanelView: (id: string) => views.createPanelView(id),
-            createDecorationType,
-            registerViewProvider: (id, provider) => views.registerViewProvider(id, provider),
-            registerFileDecorationProvider,
-        },
+        app,
 
-        workspace: {
-            get textDocuments(): sourcegraph.TextDocument[] {
-                return documents.getAll()
-            },
-            onDidOpenTextDocument: documents.openedTextDocuments,
-            openedTextDocuments: documents.openedTextDocuments,
-            ...workspace,
-            // we use state here directly because of getters
-            // getter are not preserved as functions via {...obj} syntax
-            // thus expose state until we migrate documents to the new model according RFC 155
-            get roots() {
-                return state.roots
-            },
-            get versionContext() {
-                return state.versionContext
-            },
-        },
-
+        workspace,
         configuration,
 
-        languages: {
-            registerHoverProvider,
-            registerDocumentHighlightProvider,
-            registerDefinitionProvider,
-
-            // These were removed, but keep them here so that calls from old extensions do not throw
-            // an exception and completely break.
-            registerTypeDefinitionProvider: () => {
-                console.warn(
-                    'sourcegraph.languages.registerTypeDefinitionProvider was removed. Use sourcegraph.languages.registerLocationProvider instead.'
-                )
-                return { unsubscribe: () => undefined }
-            },
-            registerImplementationProvider: () => {
-                console.warn(
-                    'sourcegraph.languages.registerImplementationProvider was removed. Use sourcegraph.languages.registerLocationProvider instead.'
-                )
-                return { unsubscribe: () => undefined }
-            },
-
-            registerReferenceProvider: (
-                selector: sourcegraph.DocumentSelector,
-                provider: sourcegraph.ReferenceProvider
-            ) => languageFeatures.registerReferenceProvider(selector, provider),
-
-            registerLocationProvider: (
-                id: string,
-                selector: sourcegraph.DocumentSelector,
-                provider: sourcegraph.LocationProvider
-            ) => languageFeatures.registerLocationProvider(id, selector, provider),
-
-            registerCompletionItemProvider: (
-                selector: sourcegraph.DocumentSelector,
-                provider: sourcegraph.CompletionItemProvider
-            ) => languageFeatures.registerCompletionItemProvider(selector, provider),
-        },
+        languages,
 
         search,
         commands,
         graphQL,
-        content: {
-            registerLinkPreviewProvider: (urlMatchPattern: string, provider: sourcegraph.LinkPreviewProvider) =>
-                content.registerLinkPreviewProvider(urlMatchPattern, provider),
-        },
+        content,
 
         internal: {
-            sync,
-            updateContext: (updates: sourcegraph.ContextValues) => context.updateContext(updates),
+            sync: () => {
+                console.warn('Sourcegraph extensions no longer need to call sync to ensure intended behavior') // TODO(tj): better error
+                return sync()
+            },
+            updateContext: (updates: sourcegraph.ContextValues) => internal.updateContext(updates),
             sourcegraphURL: new URL(initData.sourcegraphURL),
             clientApplication: initData.clientApplication,
         },

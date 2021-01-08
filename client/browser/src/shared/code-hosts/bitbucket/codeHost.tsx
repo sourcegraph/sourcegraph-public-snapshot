@@ -1,6 +1,7 @@
 import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { of } from 'rxjs'
 import { Omit } from 'utility-types'
+import { NotificationType } from '../../../../../shared/src/api/contract'
 import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '../../../../../shared/src/util/url'
 import { querySelectorOrSelf } from '../../util/dom'
 import { CodeHost, MountGetter } from '../shared/codeHost'
@@ -16,7 +17,6 @@ import {
     resolveSingleFileDiffFileInfo,
 } from './fileInfo'
 import { isCommitsView, isCompareView, isPullRequestView, isSingleFileView } from './scrape'
-import { NotificationType } from '../../../../../shared/src/api/client/services/notifications'
 
 /**
  * Gets or creates the toolbar mount for allcode views.
