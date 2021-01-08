@@ -107,6 +107,32 @@ func (s *Store) TotalCountMonitors(ctx context.Context, userID int32) (count int
 	return count, err
 }
 
+const remainingCountMonitorsFmtStr = `
+SELECT COUNT(*)
+FROM cm_monitors
+WHERE namespace_user_id = %s
+AND id > %s;
+`
+
+// RemainingCountMonitors provides the number of unreturned code monitors after
+// a call to Monitors with the given args
+func (s *Store) RemainingCountMonitors(ctx context.Context, userID int32, args *graphqlbackend.ListMonitorsArgs) (remaining int32, err error) {
+	after, err := unmarshalAfter(args.After)
+	if err != nil {
+		return 0, err
+	}
+
+	var count int32
+	err = s.QueryRow(ctx, sqlf.Sprintf(remainingCountMonitorsFmtStr, userID, after)).Scan(&count)
+
+	remaining = count - args.First
+	if remaining < 0 {
+		remaining = 0
+	}
+
+	return remaining, err
+}
+
 const monitorsFmtStr = `
 SELECT id, created_by, created_at, changed_by, changed_at, description, enabled, namespace_user_id, namespace_org_id
 FROM cm_monitors

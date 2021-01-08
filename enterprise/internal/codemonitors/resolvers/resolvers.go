@@ -40,10 +40,17 @@ func (r *Resolver) Monitors(ctx context.Context, userID int32, args *graphqlback
 	if err != nil {
 		return nil, err
 	}
-	totalCount, err := r.store.TotalCountMonitors(ctx, userID)
+
+	total, err := r.store.TotalCountMonitors(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
+
+	remaining, err := r.store.RemainingCountMonitors(ctx, userID, args)
+	if err != nil {
+		return nil, err
+	}
+
 	mrs := make([]graphqlbackend.MonitorResolver, 0, len(ms))
 	for _, m := range ms {
 		mrs = append(mrs, &monitor{
@@ -51,7 +58,7 @@ func (r *Resolver) Monitors(ctx context.Context, userID int32, args *graphqlback
 			Monitor:  m,
 		})
 	}
-	return &monitorConnection{Resolver: r, monitors: mrs, totalCount: totalCount}, nil
+	return &monitorConnection{Resolver: r, monitors: mrs, totalCount: total, remaining: remaining}, nil
 }
 
 func (r *Resolver) MonitorByID(ctx context.Context, ID graphql.ID) (m graphqlbackend.MonitorResolver, err error) {
@@ -423,6 +430,7 @@ type monitorConnection struct {
 	*Resolver
 	monitors   []graphqlbackend.MonitorResolver
 	totalCount int32
+	remaining  int32
 }
 
 func (m *monitorConnection) Nodes(ctx context.Context) ([]graphqlbackend.MonitorResolver, error) {
@@ -434,7 +442,7 @@ func (m *monitorConnection) TotalCount(ctx context.Context) (int32, error) {
 }
 
 func (m *monitorConnection) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	if len(m.monitors) == 0 {
+	if len(m.monitors) == 0 || m.remaining == 0 {
 		return graphqlutil.HasNextPage(false), nil
 	}
 	return graphqlutil.NextPageCursor(string(m.monitors[len(m.monitors)-1].ID())), nil
