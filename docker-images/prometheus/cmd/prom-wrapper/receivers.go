@@ -92,15 +92,14 @@ func newRoutesAndReceivers(newAlerts []*schema.ObservabilityAlerts, externalURL 
 		dashboardURLTemplate = strings.TrimSuffix(externalURL, "/") + `/-/debug/grafana/d/` +
 			// link to service dashboard
 			`{{ .CommonLabels.service_name }}/{{ .CommonLabels.service_name }}` +
-			// link to time when alert starts.
-			// add 000 to adapt prometheus unix to grafana unix.
-			// there's some weirdness in time templates, see https://github.com/prometheus/alertmanager/issues/1188
-			"?from={{ (index .Alerts 0).StartsAt.Unix }}000" +
-			// link to time when alert ends, or now if it has not ended.
-			// add 000 to adapt prometheus unix to grafana unix
-			"&to={{ with (index .Alerts 0).EndsAt.Unix }}{{ if gt . 0 }}{{ . }}000{{ else }}now{{ end }}{{ end }}" +
 			// link directly to the relevant panel
-			"&viewPanel={{ .CommonLabels.grafana_panel_id }}"
+			"?viewPanel={{ .CommonLabels.grafana_panel_id }}" +
+			// link to a time frame relevant to the alert.
+			// we add 000 to adapt prometheus unix to grafana milliseconds for URL parameters.
+			// this template is weird due to lack of Alertmanager functionality: https://github.com/prometheus/alertmanager/issues/1188
+			"{{ $start := (index .Alerts 0).StartsAt.Unix }}{{ $end := (index .Alerts 0).EndsAt.Unix }}" + // start var decls
+			"{{ if gt $end 0 }}&from={{ $start }}000&end={{ $end }}000" + // if $end is valid, link to start and end
+			"{{ else }}&time={{ $start }}000&time.window=3600000{{ end }}" // if $end is invalid, link to start and window of 1 hour
 
 		// messages for different states
 		firingBodyTemplate          = `{{ .CommonLabels.level | title }} alert '{{ .CommonLabels.name }}' is firing for service '{{ .CommonLabels.service_name }}' ({{ .CommonLabels.owner }}).`
