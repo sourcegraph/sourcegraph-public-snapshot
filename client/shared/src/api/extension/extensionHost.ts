@@ -4,7 +4,6 @@ import { Subscription, Unsubscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { EndpointPair } from '../../platform/context'
 import { ClientAPI } from '../client/api/api'
-import { NotificationType } from '../client/services/notifications'
 import { ExtensionHostAPI, ExtensionHostAPIFactory } from './api/api'
 import { ExtensionContent } from './api/content'
 import { ExtensionContext } from './api/context'
@@ -14,11 +13,10 @@ import { DocumentHighlightKind } from './api/documentHighlights'
 import { Extensions } from './api/extensions'
 import { ExtensionLanguageFeatures } from './api/languageFeatures'
 import { ExtensionViewsApi } from './api/views'
-import { ExtensionWindows } from './api/windows'
-
 import { registerComlinkTransferHandlers } from '../util'
 import { initNewExtensionAPI } from './flatExtensionApi'
 import { SettingsCascade } from '../../settings/settings'
+import { NotificationType } from '../contract'
 
 /**
  * Required information when initializing an extension host.
@@ -130,12 +128,14 @@ function createExtensionAPI(
         await proxy.ping()
     }
     const context = new ExtensionContext(proxy.context)
+    // TODO(tj): temporary keep this around even though we don't use it anymore
+    // we're flattening extension windows and documents, but extensionlanguagefeatures
+    // depends on documents. refactor remaining language features in next commit
     const documents = new ExtensionDocuments(sync)
 
     const extensions = new Extensions()
     subscription.add(extensions)
 
-    const windows = new ExtensionWindows(proxy, documents)
     const views = new ExtensionViewsApi(proxy.views)
     const languageFeatures = new ExtensionLanguageFeatures(proxy.languageFeatures, documents)
     const content = new ExtensionContent(proxy.content)
@@ -144,13 +144,13 @@ function createExtensionAPI(
         configuration,
         exposedToMain,
         workspace,
-        state,
         commands,
         search,
         languages: { registerHoverProvider, registerDocumentHighlightProvider, registerDefinitionProvider },
-        registerFileDecorationProvider,
         graphQL,
-    } = initNewExtensionAPI(proxy, initData.initialSettings, documents)
+        app,
+        internal,
+    } = initNewExtensionAPI(proxy, initData, documents)
 
     // Expose the extension host API to the client (main thread)
     const extensionHostAPI: ExtensionHostAPI = {
@@ -160,7 +160,6 @@ function createExtensionAPI(
 
         documents,
         extensions,
-        windows,
         ...exposedToMain,
     }
 
@@ -185,37 +184,21 @@ function createExtensionAPI(
         NotificationType,
         DocumentHighlightKind,
         app: {
-            activeWindowChanges: windows.activeWindowChanges,
+            // TODO(tj): deprecate the following 3, implement get window()
+            activeWindowChanges: app.activeWindowChanges,
             get activeWindow(): sourcegraph.Window | undefined {
-                return windows.activeWindow
+                return app.activeWindow
             },
             get windows(): sourcegraph.Window[] {
-                return windows.getAll()
+                return app.windows
             },
+            registerFileDecorationProvider: app.registerFileDecorationProvider,
             createPanelView: (id: string) => views.createPanelView(id),
             createDecorationType,
             registerViewProvider: (id, provider) => views.registerViewProvider(id, provider),
-            registerFileDecorationProvider,
         },
 
-        workspace: {
-            get textDocuments(): sourcegraph.TextDocument[] {
-                return documents.getAll()
-            },
-            onDidOpenTextDocument: documents.openedTextDocuments,
-            openedTextDocuments: documents.openedTextDocuments,
-            ...workspace,
-            // we use state here directly because of getters
-            // getter are not preserved as functions via {...obj} syntax
-            // thus expose state until we migrate documents to the new model according RFC 155
-            get roots() {
-                return state.roots
-            },
-            get versionContext() {
-                return state.versionContext
-            },
-        },
-
+        workspace,
         configuration,
 
         languages: {

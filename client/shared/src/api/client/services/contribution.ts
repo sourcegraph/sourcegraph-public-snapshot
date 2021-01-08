@@ -1,6 +1,6 @@
 import { isEqual, mapValues } from 'lodash'
 import { BehaviorSubject, combineLatest, isObservable, Observable, of, Subscribable, Unsubscribable, from } from 'rxjs'
-import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
+import { distinctUntilChanged, map, switchMap, tap } from 'rxjs/operators'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import { ContributableMenu, Contributions, Evaluated, MenuItemContribution, Raw } from '../../protocol'
 import { Context, ContributionScope, computeContext } from '../context/context'
@@ -39,7 +39,9 @@ export class ContributionRegistry {
         private modelService: Pick<ModelService, 'getPartialModel'>,
         private settings: PlatformContext['settings'],
         private context: Subscribable<Context>
-    ) {}
+    ) {
+        this._entries.subscribe(contributions => console.log({ contributions }))
+    }
 
     /**
      * Register contributions and return an unsubscribable that deregisters the contributions.
@@ -313,6 +315,7 @@ function evaluateActionContributions<T>(
 
 /**
  * Evaluates expressions in contribution definitions against the given context.
+ * TODO(tj): wrong description, fix
  */
 export function parseContributionExpressions(contributions: Raw<Contributions>): Contributions {
     return {

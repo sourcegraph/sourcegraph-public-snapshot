@@ -244,22 +244,32 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
 
     // Update the workspace roots service to reflect the current repo / resolved revision
     useEffect(() => {
-        props.extensionsController.services.workspace.roots.next(
-            resolvedRevisionOrError && !isErrorLike(resolvedRevisionOrError)
-                ? [
-                      {
-                          uri: makeRepoURI({
-                              repoName,
-                              revision: resolvedRevisionOrError.commitID,
-                          }),
-                          inputRevision: revision || '',
-                      },
-                  ]
-                : []
-        )
+        const workspaceRootUri =
+            resolvedRevisionOrError &&
+            !isErrorLike(resolvedRevisionOrError) &&
+            makeRepoURI({
+                repoName,
+                revision: resolvedRevisionOrError.commitID,
+            })
+
+        if (workspaceRootUri) {
+            props.extensionsController.extHostAPI.then(extHostAPI =>
+                extHostAPI.addWorkspaceRoot({
+                    uri: workspaceRootUri,
+                    inputRevision: revision || '',
+                })
+            )
+        }
+
         // Clear the Sourcegraph extensions model's roots when navigating away.
-        return () => props.extensionsController.services.workspace.roots.next([])
-    }, [props.extensionsController.services.workspace.roots, repoName, resolvedRevisionOrError, revision])
+        return () => {
+            if (workspaceRootUri) {
+                props.extensionsController.extHostAPI.then(extHostAPI =>
+                    extHostAPI.removeWorkspaceRoot(workspaceRootUri)
+                )
+            }
+        }
+    }, [props.extensionsController, repoName, resolvedRevisionOrError, revision])
 
     // Update the navbar query to reflect the current repo / revision
     const { globbing, onNavbarQueryChange } = props

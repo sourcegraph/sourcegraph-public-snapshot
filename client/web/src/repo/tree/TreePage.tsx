@@ -9,8 +9,8 @@ import TagIcon from 'mdi-react/TagIcon'
 import UserIcon from 'mdi-react/UserIcon'
 import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import { Link, Redirect } from 'react-router-dom'
-import { Observable, EMPTY } from 'rxjs'
-import { catchError, map } from 'rxjs/operators'
+import { Observable, EMPTY, from } from 'rxjs'
+import { catchError, map, switchMap } from 'rxjs/operators'
 import { ActionItem } from '../../../../shared/src/actions/ActionItem'
 import { ActionsContainer } from '../../../../shared/src/actions/ActionsContainer'
 import { ContributableMenu, ContributableViewContainer } from '../../../../shared/src/api/protocol'
@@ -231,7 +231,16 @@ export const TreePage: React.FunctionComponent<Props> = ({
     }, [services.viewer, services.model, uri, codeInsightsEnabled])
 
     // Observe directory views
-    const workspaceUri = services.workspace.roots.value[0]?.uri
+    const workspaceUri = useObservable(
+        useMemo(
+            () =>
+                from(props.extensionsController.extHostAPI).pipe(
+                    switchMap(extHostAPI => extHostAPI.getWorkspaceRoots()),
+                    map(workspaceRoots => workspaceRoots[0]?.uri)
+                ),
+            [props.extensionsController]
+        )
+    )
     const views = useObservable(
         useMemo(
             () =>

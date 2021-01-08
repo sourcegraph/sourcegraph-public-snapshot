@@ -233,6 +233,7 @@ export function createViewerService(modelService: Pick<ModelService, 'removeMode
         removeAllViewers(): void {
             const updates: ViewerUpdate[] = [...viewers.keys()].map(viewerId => ({ type: 'deleted', viewerId }))
             viewers.clear()
+            // TODO(tj): should models be cleared? check if they are. if they aren't, it's possible that too many extensions could be active at a time (activation event for language of previously opened file)
             viewerUpdates.next(updates)
             // The active viewer will have been removed
             activeViewerUpdates.next(undefined)
@@ -278,6 +279,7 @@ export function observeEditorAndModel(
     { observeViewer }: Pick<ViewerService, 'observeViewer'>,
     { observeModel }: Pick<ModelService, 'observeModel'>
 ): Observable<CodeEditorWithModel> {
+    // TODO(tj): take ext host api
     return observeViewer({ viewerId }).pipe(
         map(viewer => {
             if (viewer.type !== 'CodeEditor') {

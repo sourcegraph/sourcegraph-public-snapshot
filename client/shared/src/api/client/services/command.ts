@@ -63,6 +63,7 @@ export class CommandRegistry {
  * Most callers should use CommandRegistry's executeCommand method, which uses the registered commands.
  */
 export function executeCommand(commands: CommandEntry[], parameters: ExecuteCommandParameters): Promise<any> {
+    // TODO(tj): why array? use map
     const command = commands.find(entry => entry.command === parameters.command)
     if (!command) {
         throw new Error(`command not found: ${JSON.stringify(parameters.command)}`)

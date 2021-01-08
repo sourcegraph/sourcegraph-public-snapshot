@@ -25,7 +25,7 @@ import { RepoRevisionSidebarCommits } from '../../RepoRevisionSidebarCommits'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { AuthenticatedUser } from '../../../auth'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
-import { wrapRemoteObservable } from '../../../../../shared/src/api/client/api/common'
+import { finallyReleaseProxy, wrapRemoteObservable } from '../../../../../shared/src/api/client/api/common'
 import { Scalars } from '../../../../../shared/src/graphql-operations'
 
 interface Props
@@ -100,20 +100,16 @@ export class BlobPanel extends React.PureComponent<Props> {
             extraParameters?: Pick<P, Exclude<keyof P, keyof TextDocumentPositionParameters>>
         ): Entry<PanelViewProviderRegistrationOptions, ProvidePanelViewSignature> => ({
             registrationOptions: { id, container: ContributableViewContainer.Panel },
-            provider: from(this.props.extensionsController.services.viewer.activeViewerUpdates).pipe(
-                map(activeEditor =>
-                    activeEditor && activeEditor.type === 'CodeEditor'
-                        ? {
-                              ...activeEditor,
-                              model: this.props.extensionsController.services.model.getPartialModel(
-                                  activeEditor.resource
-                              ),
-                          }
-                        : undefined
+            provider: from(this.props.extensionsController.extHostAPI).pipe(
+                // Get TextDocumentPositionParams from selection of active viewer
+                switchMap(extensionHostAPI =>
+                    wrapRemoteObservable(extensionHostAPI.getActiveCodeEditorPosition(), this.subscriptions).pipe(
+                        finallyReleaseProxy()
+                    )
                 ),
-                map(activeEditor => {
-                    const parameters: TextDocumentPositionParameters | null = getActiveCodeEditorPosition(activeEditor)
-                    if (!parameters) {
+                map(textDocumentPositionParameters => {
+                    console.log({ textDocumentPositionParameters })
+                    if (!textDocumentPositionParameters) {
                         return null
                     }
                     return {
@@ -125,7 +121,10 @@ export class BlobPanel extends React.PureComponent<Props> {
                         // enough to know that (typeof params & typeof extraParams) is P.
                         //
                         // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-                        locationProvider: provideLocations({ ...parameters, ...extraParameters } as P).pipe(
+                        locationProvider: provideLocations({
+                            ...textDocumentPositionParameters,
+                            ...extraParameters,
+                        } as P).pipe(
                             tap(({ result: locations }) => {
                                 if (this.props.activation && id === 'references' && locations.length > 0) {
                                     this.props.activation.update({ FoundReferences: true })
@@ -136,7 +135,10 @@ export class BlobPanel extends React.PureComponent<Props> {
                 })
             ),
         })
+        console.log('registering panel views')
 
+        // TODO(tj): this is where built in panel views are registered. should we expose panel view registration
+        // method in extension host API?
         this.subscriptions.add(
             this.props.extensionsController.services.panelViews.registerProviders([
                 entryForViewProviderRegistration('def', 'Definition', 190, parameters =>
@@ -148,6 +150,7 @@ export class BlobPanel extends React.PureComponent<Props> {
                     'references',
                     'References',
                     180,
+                    // TODO(tj): implement extensionHostAPI.getLocations
                     parameters =>
                         this.props.extensionsController.services.textDocumentReferences.getLocations(parameters),
                     {
@@ -158,22 +161,26 @@ export class BlobPanel extends React.PureComponent<Props> {
                     // File history view.
                     registrationOptions: { id: 'history', container: ContributableViewContainer.Panel },
                     provider: subjectChanges.pipe(
-                        map((subject: PanelSubject) => ({
-                            title: 'History',
-                            content: '',
-                            priority: 150,
-                            locationProvider: undefined,
-                            reactElement: (
-                                <RepoRevisionSidebarCommits
-                                    key="commits"
-                                    repoID={this.props.repoID}
-                                    revision={subject.revision}
-                                    filePath={subject.filePath}
-                                    history={this.props.history}
-                                    location={this.props.location}
-                                />
-                            ),
-                        }))
+                        map((subject: PanelSubject) => {
+                            const historyEmission = {
+                                title: 'History',
+                                content: '',
+                                priority: 150,
+                                locationProvider: undefined,
+                                reactElement: (
+                                    <RepoRevisionSidebarCommits
+                                        key="commits"
+                                        repoID={this.props.repoID}
+                                        revision={subject.revision}
+                                        filePath={subject.filePath}
+                                        history={this.props.history}
+                                        location={this.props.location}
+                                    />
+                                ),
+                            }
+                            console.log({ historyEmission })
+                            return historyEmission
+                        })
                     ),
                 },
             ])
@@ -189,6 +196,7 @@ export class BlobPanel extends React.PureComponent<Props> {
     }
 
     public render(): JSX.Element | null {
+        console.log('rendering blob panel')
         return null
     }
 }

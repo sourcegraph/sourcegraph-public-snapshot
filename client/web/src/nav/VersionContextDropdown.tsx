@@ -78,7 +78,9 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
 
     const updateValue = useCallback(
         (newValue?: string): void => {
-            setVersionContext(newValue)
+            setVersionContext(newValue).catch(error => {
+                console.error('Error sending initial versionContext to extensions', error)
+            })
             submitOnToggle(newValue)
         },
         [setVersionContext, submitOnToggle]

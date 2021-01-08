@@ -4,7 +4,7 @@ import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { combineLatest, fromEvent, merge, ReplaySubject, Subject, Subscription } from 'rxjs'
+import { combineLatest, from, fromEvent, merge, ReplaySubject, Subject, Subscription } from 'rxjs'
 import { catchError, filter, map, share, switchMap, withLatestFrom } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
 import { groupDecorationsByLine } from '../../../../shared/src/api/client/services/decoration'
@@ -168,7 +168,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     const [decorationsOrError, setDecorationsOrError] = useState<TextDocumentDecoration[] | Error | null>()
 
     // This effect is meant to run only after first render, cleanup on unmount.
-    // TODO: Create a hoverifier React hook
+    // TODO: Create a hoverifier class
     useEffect(() => {
         const subscriptions = new Subscription()
 
@@ -269,6 +269,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
             })
         )
 
+        // TODO(tj): useObservable
         // When clicking a line, update the URL (which will in turn trigger a highlight of the line)
         subscriptions.add(
             codeViewElements
@@ -314,6 +315,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 })
         )
 
+        // TODO(tj): useObservable
         // Update selected line when position in hash changes
         subscriptions.add(
             locationPositions.pipe(withLatestFrom(codeViewElements)).subscribe(([position, codeView]) => {
@@ -335,6 +337,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
             })
         )
 
+        // TODO(tj): useObservable
         // Update the Sourcegraph extensions model to reflect the current file.
         subscriptions.add(
             combineLatest([blobInfoChanges, locationPositions]).subscribe(([blobInfo, position]) => {
@@ -356,6 +359,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
             })
         )
 
+        // TODO(tj): useObservable
         // Get decorations for the current file
         let lastBlobInfo: (AbsoluteRepoFile & ModeSpec) | undefined
         const decorations = blobInfoChanges.pipe(

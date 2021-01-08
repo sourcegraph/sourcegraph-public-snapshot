@@ -1,10 +1,9 @@
 import * as comlink from 'comlink'
 import { isEqual, omit } from 'lodash'
-import { combineLatest, from, ReplaySubject, Unsubscribable, ObservableInput, Subscription } from 'rxjs'
+import { combineLatest, ReplaySubject, Unsubscribable, ObservableInput, Subscription } from 'rxjs'
 import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { PanelView, View } from 'sourcegraph'
 import { ContributableViewContainer } from '../../protocol'
-import { ViewerService, getActiveCodeEditorPosition } from '../services/viewerService'
 import { TextDocumentLocationProviderIDRegistry } from '../services/location'
 import { PanelViewWithComponent, PanelViewProviderRegistry } from '../services/panelViews'
 import { Location } from '@sourcegraph/extension-api-types'
@@ -12,6 +11,7 @@ import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { ProxySubscribable } from '../../extension/api/common'
 import { wrapRemoteObservable, ProxySubscription } from './common'
 import { ViewService, ViewContexts } from '../services/viewService'
+import { ExtensionHostAPI } from '../../extension/api/api'
 
 /** @internal */
 export interface PanelViewData extends Pick<PanelView, 'title' | 'content' | 'priority' | 'component'> {}
@@ -66,8 +66,8 @@ export class ClientViews implements ClientViewsAPI {
     constructor(
         private panelViewRegistry: PanelViewProviderRegistry,
         private textDocumentLocations: TextDocumentLocationProviderIDRegistry,
-        private viewerService: ViewerService,
-        private viewService: ViewService
+        private viewService: ViewService,
+        private proxy: comlink.Remote<ExtensionHostAPI>
     ) {}
 
     public $registerPanelViewProvider(provider: { id: string }): PanelUpdater {
@@ -89,8 +89,7 @@ export class ClientViews implements ClientViewsAPI {
                             return undefined
                         }
 
-                        return from(this.viewerService.activeViewerUpdates).pipe(
-                            map(getActiveCodeEditorPosition),
+                        return wrapRemoteObservable(this.proxy.getActiveCodeEditorPosition()).pipe(
                             switchMap(
                                 (parameters): ObservableInput<MaybeLoadingResult<Location[]>> => {
                                     if (!parameters) {

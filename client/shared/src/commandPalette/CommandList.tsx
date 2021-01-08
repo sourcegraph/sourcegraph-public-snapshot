@@ -9,7 +9,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import TooltipPopoverWrapper from 'reactstrap/lib/TooltipPopoverWrapper'
-import { Subscription } from 'rxjs'
+import { from, Subscription } from 'rxjs'
 import stringScore from 'string-score'
 import { Key } from 'ts-key-enum'
 import { KeyboardShortcut } from '../keyboardShortcuts'
@@ -22,6 +22,8 @@ import { PlatformContextProps } from '../platform/context'
 import { TelemetryProps } from '../telemetry/telemetryService'
 import { EmptyCommandList } from './EmptyCommandList'
 import { SettingsCascadeOrError } from '../settings/settings'
+import { wrapRemoteObservable } from '../api/client/api/common'
+import { map, switchMap } from 'rxjs/operators'
 
 /**
  * Customizable CSS classes for elements of the the command list button.
@@ -55,7 +57,7 @@ export interface CommandListClassProps {
 
 export interface CommandListProps
     extends CommandListClassProps,
-        ExtensionsControllerProps<'services' | 'executeCommand'>,
+        ExtensionsControllerProps<'services' | 'executeCommand' | 'extHostAPI'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
         TelemetryProps {
     /** The menu whose commands to display. */
@@ -134,6 +136,12 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
             this.props.extensionsController.services.contribution
                 .getContributions()
                 .subscribe(contributions => this.setState({ contributions }))
+        )
+
+        this.subscriptions.add(
+            from(this.props.extensionsController.extHostAPI)
+                .pipe(switchMap(extHostAPI => wrapRemoteObservable(extHostAPI.getContributions())))
+                .subscribe(contributions => console.log('contribs from cmdlist! from exthost!', contributions))
         )
 
         this.subscriptions.add(

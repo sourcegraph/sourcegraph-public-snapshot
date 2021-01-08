@@ -16,6 +16,8 @@ const defaultDependencies = (): MainThreadAPIDependencies => ({
 })
 
 describe('MainThreadAPI', () => {
+    // TODO(tj): commands, notifications
+
     describe('graphQL', () => {
         test('PlatformContext#requestGraphQL is called with the correct arguments', async () => {
             const requestGraphQL = sinon.spy(_options => EMPTY)

@@ -62,7 +62,7 @@ export interface SearchPageProps
     location: H.Location
     history: H.History
     isSourcegraphDotCom: boolean
-    setVersionContext: (versionContext: string | undefined) => void
+    setVersionContext: (versionContext: string | undefined) => Promise<void>
     availableVersionContexts: VersionContext[] | undefined
     autoFocus?: boolean
 

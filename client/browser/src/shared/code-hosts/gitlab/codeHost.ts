@@ -8,8 +8,8 @@ import { getCommandPaletteMount } from './extensions'
 import { resolveCommitFileInfo, resolveDiffFileInfo, resolveFileInfo } from './fileInfo'
 import { getPageInfo, GitLabPageKind, getFilePathsFromCodeView } from './scrape'
 import { subtypeOf } from '../../../../../shared/src/util/types'
-import { NotificationType } from '../../../../../shared/src/api/client/services/notifications'
 import { toAbsoluteBlobURL } from '../../../../../shared/src/util/url'
+import { NotificationType } from '../../../../../shared/src/api/contract'
 
 const toolbarButtonProps = {
     className: 'btn btn-default btn-sm',

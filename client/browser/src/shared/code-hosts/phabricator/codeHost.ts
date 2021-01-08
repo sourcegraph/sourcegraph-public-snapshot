@@ -10,7 +10,7 @@ import { ViewResolver } from '../shared/views'
 import { convertSpacesToTabs, spacesToTabsAdjustment } from '.'
 import { diffDomFunctions, diffusionDOMFns } from './domFunctions'
 import { resolveDiffFileInfo, resolveDiffusionFileInfo, resolveRevisionFileInfo } from './fileInfo'
-import { NotificationType } from '../../../../../shared/src/api/client/services/notifications'
+import { NotificationType } from '../../../../../shared/src/api/contract'
 
 /**
  * Gets the actual text content we care about and returns the number of characters we have stripped

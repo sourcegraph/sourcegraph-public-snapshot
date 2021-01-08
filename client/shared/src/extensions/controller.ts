@@ -1,10 +1,9 @@
-import { from, Observable, Subject, Subscription, Unsubscribable } from 'rxjs'
+import { from, Subject, Subscription, Unsubscribable } from 'rxjs'
 import { map, publishReplay, refCount } from 'rxjs/operators'
 import { Services } from '../api/client/services'
 import { ExecuteCommandParameters } from '../api/client/services/command'
 import { ContributionRegistry, parseContributionExpressions } from '../api/client/services/contribution'
 import { ExtensionsService } from '../api/client/services/extensionsService'
-import { NotificationType } from '../api/client/services/notifications'
 import { InitData } from '../api/extension/extensionHost'
 import { registerBuiltinClientCommands } from '../commands/commands'
 import { Notification } from '../notifications/notification'
@@ -13,17 +12,10 @@ import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { isDefined } from '../util/types'
 import { createExtensionHostClientConnection } from '../api/client/connection'
 import { Remote } from 'comlink'
-import { FlatExtensionHostAPI } from '../api/contract'
+import { FlatExtensionHostAPI, NotificationType } from '../api/contract'
+import { CommandEntry, MainThreadAPIDependencies } from '../api/client/mainthread-api'
 
 export interface Controller extends Unsubscribable {
-    /**
-     * Global notification messages that should be displayed to the user, from the following sources:
-     *
-     * - window/showMessage notifications from extensions
-     * - Errors thrown or returned in command invocation
-     */
-    readonly notifications: Observable<Notification>
-
     services: Services
 
     /**
@@ -38,6 +30,8 @@ export interface Controller extends Unsubscribable {
      * skip this. The error is always returned to the caller.
      */
     executeCommand(parameters: ExecuteCommandParameters, suppressNotificationOnError?: boolean): Promise<any>
+
+    registerCommand(entryToRegister: CommandEntry): Unsubscribable
 
     /**
      * Frees all resources associated with this client.
@@ -58,10 +52,6 @@ export interface ExtensionsControllerProps<K extends keyof Controller = keyof Co
     extensionsController: Pick<Controller, K>
 }
 
-function messageFromExtension(message: string): string {
-    return `From extension:\n\n${message}`
-}
-
 /**
  * Creates the controller, which handles all communication between the client application and extensions.
  *
@@ -76,50 +66,42 @@ export function createController(context: PlatformContext): Controller {
         sourcegraphURL: context.sourcegraphURL,
         clientApplication: context.clientApplication,
     }
+
+    const commands = new Map<string, CommandEntry>()
+    const mainThreadAPIDependencies: MainThreadAPIDependencies = {
+        registerCommand: ({ command, run }) => {
+            if (commands.has(command)) {
+                throw new Error(`command is already registered: ${JSON.stringify(command)}`)
+            }
+            commands.set(command, { command, run })
+            return {
+                unsubscribe: () => commands.delete(command),
+            }
+        },
+        executeCommand: ({ args, command }) => {
+            const commandEntry = commands.get(command)
+            if (!commandEntry) {
+                throw new Error(`command not found: ${JSON.stringify(command)}`)
+            }
+            return Promise.resolve(commandEntry.run(...(args || [])))
+        },
+    }
+
     const extensionHostClientPromise = createExtensionHostClientConnection(
         context.createExtensionHost(),
         services,
         initData,
-        context
+        context,
+        // TOOD: replace services w/ this
+        mainThreadAPIDependencies
     )
 
     subscriptions.add(() => extensionHostClientPromise.then(({ subscription }) => subscription.unsubscribe()))
 
     const notifications = new Subject<Notification>()
 
-    subscriptions.add(registerBuiltinClientCommands(services, context))
+    subscriptions.add(registerBuiltinClientCommands(services, context, mainThreadAPIDependencies))
     subscriptions.add(registerExtensionContributions(services.contribution, services.extensions))
-
-    // Show messages (that don't need user input) as global notifications.
-    subscriptions.add(
-        services.notifications.showMessages.subscribe(({ message, type }) => notifications.next({ message, type }))
-    )
-    subscriptions.add(
-        services.notifications.progresses.subscribe(({ title, progress }) => {
-            notifications.next({ message: title, progress, type: NotificationType.Log })
-        })
-    )
-    subscriptions.add(
-        services.notifications.showMessageRequests.subscribe(({ message, actions, resolve }) => {
-            if (!actions || actions.length === 0) {
-                alert(messageFromExtension(message))
-                resolve(null)
-                return
-            }
-            const value = prompt(
-                messageFromExtension(
-                    `${message}\n\nValid responses: ${actions.map(({ title }) => JSON.stringify(title)).join(', ')}`
-                ),
-                actions[0].title
-            )
-            resolve(actions.find(a => a.title === value) || null)
-        })
-    )
-    subscriptions.add(
-        services.notifications.showInputs.subscribe(({ message, defaultValue, resolve }) =>
-            resolve(prompt(messageFromExtension(message), defaultValue))
-        )
-    )
 
     // Debug helpers.
     const DEBUG = true
@@ -137,10 +119,9 @@ export function createController(context: PlatformContext): Controller {
     }
 
     return {
-        notifications,
         services,
         executeCommand: (parameters, suppressNotificationOnError) =>
-            services.commands.executeCommand(parameters).catch(error => {
+            mainThreadAPIDependencies.executeCommand(parameters).catch(error => {
                 if (!suppressNotificationOnError) {
                     notifications.next({
                         message: asError(error).message,
@@ -150,6 +131,7 @@ export function createController(context: PlatformContext): Controller {
                 }
                 return Promise.reject(error)
             }),
+        registerCommand: entryToRegister => mainThreadAPIDependencies.registerCommand(entryToRegister),
         extHostAPI: extensionHostClientPromise.then(({ api }) => api),
         unsubscribe: () => subscriptions.unsubscribe(),
     }
@@ -171,6 +153,7 @@ export function registerExtensionContributions(
                 .filter(isDefined)
                 .map(contributions => {
                     try {
+                        // TODO(tj): looks like all contributions are parsed each time an extension is activated
                         return parseContributionExpressions(contributions)
                     } catch (error) {
                         // An error during evaluation causes all of the contributions in the same entry to be

@@ -2,7 +2,7 @@ import * as H from 'history'
 import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
 import { Observable, Subscription } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { map, tap } from 'rxjs/operators'
 import {
     PanelViewWithComponent,
     PanelViewProviderRegistrationOptions,
@@ -77,7 +77,10 @@ class Panel extends React.PureComponent<Props, State> {
         this.subscriptions.add(
             this.props.extensionsController.services.panelViews
                 .getPanelViews(ContributableViewContainer.Panel)
-                .pipe(map(panelViews => ({ panelViews })))
+                .pipe(
+                    map(panelViews => ({ panelViews })),
+                    tap(stuff => console.log({ stuff }))
+                )
                 .subscribe(stateUpdate => this.setState(stateUpdate))
         )
     }
@@ -104,7 +107,6 @@ class Panel extends React.PureComponent<Props, State> {
         const hasTabs = items.length > 0
         const activePanelViewID = TabsWithURLViewStatePersistence.readFromURL(this.props.location, items)
         const activePanelView = items.find(item => item.id === activePanelViewID)
-
         return (
             <div className="panel">
                 {hasTabs ? (

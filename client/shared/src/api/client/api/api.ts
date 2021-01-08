@@ -3,7 +3,6 @@ import { ClientContentAPI } from './content'
 import { ClientContextAPI } from './context'
 import { ClientLanguageFeaturesAPI } from './languageFeatures'
 import { ClientViewsAPI } from './views'
-import { ClientWindowsAPI } from './windows'
 import { MainThreadAPI } from '../../contract'
 
 /**
@@ -14,7 +13,6 @@ export interface ClientAPI extends MainThreadAPI {
 
     context: ClientContextAPI
     languageFeatures: ClientLanguageFeaturesAPI
-    windows: ClientWindowsAPI
     codeEditor: ClientCodeEditorAPI
     views: ClientViewsAPI
     content: ClientContentAPI

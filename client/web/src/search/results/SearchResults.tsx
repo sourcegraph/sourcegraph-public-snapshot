@@ -205,7 +205,12 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                                 this.props.setCaseSensitivity(caseSensitive)
                                             }
 
-                                            this.props.setVersionContext(versionContext)
+                                            this.props.setVersionContext(versionContext).catch(error => {
+                                                console.error(
+                                                    'Error sending initial versionContext to extensions',
+                                                    error
+                                                )
+                                            })
                                         },
                                         error => {
                                             this.props.telemetryService.log('SearchResultsFetchFailed', {

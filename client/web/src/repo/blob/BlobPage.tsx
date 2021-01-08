@@ -210,6 +210,8 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
         props.extensionsController.services.viewer,
     ])
 
+    // TODO(tj): useBlobPanelViews
+
     // If url explicitly asks for a certain rendering mode, renderMode is set to that mode, else it checks:
     // - If file contains richHTML and url does not include a line number: We render in richHTML.
     // - If file does not contain richHTML or the url includes a line number: We render in code view.

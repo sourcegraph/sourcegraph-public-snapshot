@@ -13,6 +13,8 @@ import { WorkspaceRootWithMetadata } from '../client/services/workspaceService'
 import { InitData, startExtensionHost } from '../extension/extensionHost'
 import { FlatExtensionHostAPI } from '../contract'
 import { Remote } from 'comlink'
+import { MainThreadAPIDependencies } from '../client/mainthread-api'
+import { noop } from 'lodash'
 
 export function assertToJSON(a: any, expected: any): void {
     const raw = JSON.stringify(a)
@@ -93,6 +95,11 @@ export async function integrationTestContext(
         clientApplication: 'sourcegraph',
     }
 
+    const mainThreadAPIDependences: MainThreadAPIDependencies = {
+        registerCommand: () => ({ unsubscribe: noop }),
+        executeCommand: () => Promise.resolve(),
+    }
+
     const { api } = await createExtensionHostClientConnection(
         Promise.resolve({
             endpoints: clientEndpoints,
@@ -100,7 +107,8 @@ export async function integrationTestContext(
         }),
         services,
         initData,
-        mocks
+        mocks,
+        mainThreadAPIDependences
     )
 
     const extensionAPI = await extensionHost.extensionAPI
@@ -112,7 +120,7 @@ export async function integrationTestContext(
     for (const editor of initModel.viewers) {
         services.viewer.addViewer(editor)
     }
-    services.workspace.roots.next(initModel.roots)
+    await Promise.all(initModel.roots.map(root => api.addWorkspaceRoot(root)))
 
     // Wait for initModel to be initialized
     if (initModel.viewers.length > 0) {

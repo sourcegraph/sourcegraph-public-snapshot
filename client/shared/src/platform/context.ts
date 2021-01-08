@@ -11,6 +11,7 @@ import { hasProperty } from '../util/types'
 import { IExtensionsService } from '../api/client/services/extensionsService'
 import { ModelService } from '../api/client/services/modelService'
 import { Scalars } from '../graphql-operations'
+// import { InputBoxOptions } from 'sourcegraph'
 
 export interface EndpointPair {
     /** The endpoint to proxy the API of the other thread from */
@@ -198,6 +199,22 @@ export interface PlatformContext {
      * Creates an extensions service that provides the list of extensions to be activated.
      */
     createExtensionsService?(modelService: Pick<ModelService, 'activeLanguages'>): IExtensionsService
+
+    /**
+     * Display a modal message from an extension to the user.
+     *
+     * @param message The message to display
+     * @returns a Promise that resolves when the user dismisses the message
+     */
+    showMessage?(message: string): Promise<void>
+
+    /**
+     * Displays an input box for an extension that asks the user for input.
+     *
+     * @param options Configures the behavior of the input box.
+     * @returns The string provided by the user, or `undefined` if the input box was canceled.
+     */
+    showInputBox?(options: InputBoxOptions | undefined): Promise<string | undefined>
 }
 
 /**
