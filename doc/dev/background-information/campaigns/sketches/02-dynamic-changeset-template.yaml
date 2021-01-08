@@ -1,0 +1,74 @@
+############################################
+#
+#      Sketch of a campaign spec with
+#
+#      ~~DYNAMIC CHANGESET TEMPLATE~~
+#
+############################################
+
+# [...]
+
+steps:
+  # [...]
+  - run: cat enterprise/internal/campaigns/CODENOTIFY | awk '{print $2}'
+    # We take the output of the command and put it in a variable called
+    # `notifiees`
+    outputVariable: notifiees
+    container: alpine:3
+
+# Which is declared here (this block should be moved further up probably)
+vars:
+  - name: notifiees
+    default: ""
+    # Optional:
+    overwrites:
+      - repository: github.com/simpsons/*
+        value: @TroyMcClure
+      - repository: github.com/simpsons/nuclear-plant
+        # Maybe combined with the other sketch, where steps have a directory:
+        directory: docs
+        value: @Smithers
+
+changesetTemplate:
+  # [...]
+  title: Hello Springfield!
+  body: Please take a look at the changes here ${{ vars.notifiees }}
+  #                             Using the variable here ^^^
+  commit:
+    message: What is up Homer
+  # [...]
+
+  # Since `steps` can set variables you could even say that `published` depends
+  # on the output of a command
+
+
+# Thought: should we provide "types" (string, list of strings, number,
+# list of numbers, boolean, ...) for variables and helpers to convert output
+# into those?
+# Like so:
+vars:
+  - name: notifiees
+    type: list(string)
+    default:
+      - anna
+      - lisa
+steps:
+  # [...]
+  - run: cat enterprise/internal/campaigns/CODENOTIFY | awk '{print $2}'
+    # And then this would/could/should split the output lines into a list?
+    outputVariable: notifiees
+    container: alpine:3
+
+# The advantage of [GitHub's approach][githuboutputvars] is that you can set
+# multiple vars in the same container. With this approach sketched out here,
+# you'd need multiple steps to set multiple vars
+
+# With variables, you could even allow overwriting them from the CLI:
+#
+#     src campaign preview -f my.yaml -var 'notifiees=Hans Wurst'
+
+
+
+# [githuboutputvars]: https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions#jobsjob_idoutputs
+
+

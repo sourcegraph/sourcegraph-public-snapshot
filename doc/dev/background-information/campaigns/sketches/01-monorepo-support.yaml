@@ -1,0 +1,74 @@
+############################################
+#
+#      Sketch of a campaign spec with
+#
+#      ~~BETTER MONOREPO SUPPORT~~
+#
+############################################
+
+# [...]
+
+on:
+  - repositoriesMatchingQuery: file:README.md
+  - repository: github.com/sourcegraph/src-cli
+    # If "directories" are specified here...
+    directories: ["web", "go", "doc"]
+
+# ... the steps will be executed for each directory₁ independently...
+steps:
+  # ... and the "repository.search_result_paths" only contain results in the *directory*
+  - run: echo Hello World | tee -a ${{ join repository.search_result_paths " " }}
+    container: alpine:3
+
+changesetTemplate:
+  # [...]
+  # Since we now have, potentially, multiple changesets per directory, we need to give them
+  # different branches.
+
+  # The easiest₂ way would be to use templating. Like this:
+  branch: campaigns/hello-world-${{ repository.directory }}
+  # That's the directory in which the steps were run₃.
+
+  # Or users could use something like a `join-str` function for this:
+  branch: ${{ join-str "campaigns/hello-world" repository.directory "-" }}
+  # (Or we change our `join`'s signature to accept varargs)
+
+  # That would also be backwards compatible with `transformChanges`:
+  branch: campaigns/hello-world-${{ transformChanges.directory }}
+
+  # ₁  If search results are also yielded in that repository _outside_ of the
+  #    given directories, we can either (a) run the steps in the root directory too
+  #    or (b) simply ignore them. I think (b) is easier to grasp and to implement
+  #    right now. We can then still add (a) later.
+  #
+  #    In the future we could also extend `directories` with sibling option like
+  #    `onlyIfMatched: true|false` so that the steps are only executed *in the
+  #    directories*  if the `repository` was yielded by a search query.
+
+  # ₂  I now think this approach is nicer than having to specify `branch` all
+  #    the way up there next to `directories`, and also prefer it to the current
+  #    approach we have with `transformChanges` (which, admittely, is a contained
+  #    MVP, which spoke against adding more templating).
+  #    Tradeoff: requires a runtime validation (vs. a schema validation),
+  #    because we would need to validate that no duplicate branch names have
+  #    been produced and prompt the user to modify changesetTemplate.branch in that
+  #    case. That's not too bad, since we kinda do that for `transformChanges`
+  #    already.
+
+  # ₃  Why `repository.directory`? (And not, say, `steps.directory`?)
+  #    Because we also have `repository.search_result_paths` which come from `on:`
+  #    and I think it makes sense to refer to entities yielded by `on` on a global
+  #    level. Right now the only entity yielded is the `repository`, but
+  #    what if, in the future, we had something like `on: codemonitor: foo`?
+  #    Then we could refer to `codemonitor.name`
+
+
+# Or, instead of adding `directories` to `on`, we could do something like this:
+
+on:
+  - repositoriesMatchingQuery: file:README.md
+
+stepsConfig:
+  - repository: github.com/sourcegraph/src-cli
+    # If "directories" are specified here...
+    directories: ["web", "go", "doc"]
