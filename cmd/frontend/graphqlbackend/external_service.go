@@ -149,15 +149,5 @@ func (r *externalServiceResolver) LastSyncError(ctx context.Context) (*string, e
 }
 
 func (r *externalServiceResolver) RepoCount(ctx context.Context) (int32, error) {
-	// 🚨 SECURITY: Only site admins or the owner of the external service are allowed
-	// to query the number of repos they have synced
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		if r.externalService.NamespaceUserID == 0 {
-			return 0, err
-		} else if actor.FromContext(ctx).UID != r.externalService.NamespaceUserID {
-			return 0, errors.New("the authenticated user does not have access to this external service")
-		}
-	}
-
 	return db.ExternalServices.RepoCount(ctx, r.externalService.ID)
 }
