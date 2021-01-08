@@ -104,7 +104,7 @@ func (r *resolver) UpdateIndexConfigurationByRepositoryID(ctx context.Context, r
 }
 
 func (r *resolver) QueueAutoIndexJobForRepo(ctx context.Context, repositoryID int) error {
-	return r.enqueuer.QueueIndex(ctx, repositoryID)
+	return r.enqueuer.ForceQueueIndex(ctx, repositoryID)
 }
 
 const slowQueryResolverRequestThreshold = time.Second

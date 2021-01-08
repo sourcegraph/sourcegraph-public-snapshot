@@ -1470,6 +1470,9 @@ func (c DBStoreUpdateIndexableRepositoryFuncCall) Results() []interface{} {
 // github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer)
 // used for unit testing.
 type MockEnqueuer struct {
+	// ForceQueueIndexFunc is an instance of a mock function object
+	// controlling the behavior of the method ForceQueueIndex.
+	ForceQueueIndexFunc *EnqueuerForceQueueIndexFunc
 	// QueueIndexFunc is an instance of a mock function object controlling
 	// the behavior of the method QueueIndex.
 	QueueIndexFunc *EnqueuerQueueIndexFunc
@@ -1479,6 +1482,11 @@ type MockEnqueuer struct {
 // return zero values for all results, unless overwritten.
 func NewMockEnqueuer() *MockEnqueuer {
 	return &MockEnqueuer{
+		ForceQueueIndexFunc: &EnqueuerForceQueueIndexFunc{
+			defaultHook: func(context.Context, int) error {
+				return nil
+			},
+		},
 		QueueIndexFunc: &EnqueuerQueueIndexFunc{
 			defaultHook: func(context.Context, int) error {
 				return nil
@@ -1491,10 +1499,119 @@ func NewMockEnqueuer() *MockEnqueuer {
 // methods delegate to the given implementation, unless overwritten.
 func NewMockEnqueuerFrom(i Enqueuer) *MockEnqueuer {
 	return &MockEnqueuer{
+		ForceQueueIndexFunc: &EnqueuerForceQueueIndexFunc{
+			defaultHook: i.ForceQueueIndex,
+		},
 		QueueIndexFunc: &EnqueuerQueueIndexFunc{
 			defaultHook: i.QueueIndex,
 		},
 	}
+}
+
+// EnqueuerForceQueueIndexFunc describes the behavior when the
+// ForceQueueIndex method of the parent MockEnqueuer instance is invoked.
+type EnqueuerForceQueueIndexFunc struct {
+	defaultHook func(context.Context, int) error
+	hooks       []func(context.Context, int) error
+	history     []EnqueuerForceQueueIndexFuncCall
+	mutex       sync.Mutex
+}
+
+// ForceQueueIndex delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockEnqueuer) ForceQueueIndex(v0 context.Context, v1 int) error {
+	r0 := m.ForceQueueIndexFunc.nextHook()(v0, v1)
+	m.ForceQueueIndexFunc.appendCall(EnqueuerForceQueueIndexFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the ForceQueueIndex
+// method of the parent MockEnqueuer instance is invoked and the hook queue
+// is empty.
+func (f *EnqueuerForceQueueIndexFunc) SetDefaultHook(hook func(context.Context, int) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ForceQueueIndex method of the parent MockEnqueuer instance inovkes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *EnqueuerForceQueueIndexFunc) PushHook(hook func(context.Context, int) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *EnqueuerForceQueueIndexFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *EnqueuerForceQueueIndexFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int) error {
+		return r0
+	})
+}
+
+func (f *EnqueuerForceQueueIndexFunc) nextHook() func(context.Context, int) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnqueuerForceQueueIndexFunc) appendCall(r0 EnqueuerForceQueueIndexFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnqueuerForceQueueIndexFuncCall objects
+// describing the invocations of this function.
+func (f *EnqueuerForceQueueIndexFunc) History() []EnqueuerForceQueueIndexFuncCall {
+	f.mutex.Lock()
+	history := make([]EnqueuerForceQueueIndexFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnqueuerForceQueueIndexFuncCall is an object that describes an invocation
+// of method ForceQueueIndex on an instance of MockEnqueuer.
+type EnqueuerForceQueueIndexFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnqueuerForceQueueIndexFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnqueuerForceQueueIndexFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // EnqueuerQueueIndexFunc describes the behavior when the QueueIndex method

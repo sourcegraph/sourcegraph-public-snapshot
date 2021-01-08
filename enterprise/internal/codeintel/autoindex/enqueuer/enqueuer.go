@@ -26,6 +26,14 @@ func NewIndexEnqueuer(dbStore DBStore, gitClient GitserverClient) *IndexEnqueuer
 }
 
 func (s *IndexEnqueuer) QueueIndex(ctx context.Context, repositoryID int) (err error) {
+	return s.queueIndex(ctx, repositoryID, false)
+}
+
+func (s *IndexEnqueuer) ForceQueueIndex(ctx context.Context, repositoryID int) (err error) {
+	return s.queueIndex(ctx, repositoryID, true)
+}
+
+func (s *IndexEnqueuer) queueIndex(ctx context.Context, repositoryID int, force bool) (err error) {
 	// Enable tracing on the context and trace the operation
 	ctx = ot.WithShouldTrace(ctx, true)
 
@@ -40,14 +48,16 @@ func (s *IndexEnqueuer) QueueIndex(ctx context.Context, repositoryID int) (err e
 	if err != nil {
 		return errors.Wrap(err, "gitserver.Head")
 	}
-	//traceLog(log.String("commit", commit))
+	// traceLog(log.String("commit", commit))
 
-	isQueued, err := s.dbStore.IsQueued(ctx, repositoryID, commit)
-	if err != nil {
-		return errors.Wrap(err, "store.IsQueued")
-	}
-	if isQueued {
-		return nil
+	if !force {
+		isQueued, err := s.dbStore.IsQueued(ctx, repositoryID, commit)
+		if err != nil {
+			return errors.Wrap(err, "store.IsQueued")
+		}
+		if isQueued {
+			return nil
+		}
 	}
 
 	indexes, err := s.getIndexJobs(ctx, repositoryID, commit)
@@ -57,7 +67,6 @@ func (s *IndexEnqueuer) QueueIndex(ctx context.Context, repositoryID int) (err e
 	if len(indexes) == 0 {
 		return nil
 	}
-	//traceLog(log.Int("numIndexes", len(indexes)))
 
 	tx, err := s.dbStore.Transact(ctx)
 	if err != nil {

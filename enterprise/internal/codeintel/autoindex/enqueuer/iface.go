@@ -11,6 +11,7 @@ import (
 
 type Enqueuer interface {
 	QueueIndex(ctx context.Context, repositoryID int) (err error)
+	ForceQueueIndex(ctx context.Context, repositoryID int) (err error)
 }
 
 type DBStore interface {

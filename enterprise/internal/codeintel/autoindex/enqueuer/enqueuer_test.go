@@ -64,9 +64,6 @@ func TestIndexSchedulerUpdateIndexConfigurationInDatabase(t *testing.T) {
 		//operations:      newOperations(&observation.TestContext),
 	}
 
-	/* if err := scheduler.Handle(context.Background()); err != nil {
-		t.Fatalf("unexpected error performing update: %s", err)
-	} */
 	scheduler.QueueIndex(context.Background(), 42)
 
 	if len(mockDBStore.GetIndexConfigurationByRepositoryIDFunc.History()) != 1 {
