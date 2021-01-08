@@ -69,11 +69,11 @@ TODO
 
 Code monitoring allows users to get notified of changes to their codebase.
 
-Users can view, edit and create code monitors through the code monitoring UI (`/code-monitoring`). A code monitor is comprised of a **trigger**, and one or more **actions**.
+Users can view, edit and create code monitors through the code monitoring UI (`/code-monitoring`). A code monitor comprises a **trigger**, and one or more **actions**.
 
-The **trigger** represents the event to monitor. For now, the only supported trigger is a search query of `type:diff` or `type:commit`, run every five minutes by the Go backend with an automatically added `after:` parameter narrowing down the diffs/commits that should be searched. The monitor's configured actions are run when this query returns a non-zero number of results.
+The **trigger** watches for new data and if there is new data we call this an event. For now, the only supported trigger is a search query of `type:diff` or `type:commit`, run every five minutes by the Go backend with an automatically added `after:` parameter narrowing down the diffs/commits that should be searched. The monitor's configured actions are run when this query returns a non-zero number of results.
 
-The **actions** are run in response to the event trigger. For now, the only supported action is an email notification to the primary email address of the code monitor's owner. In order for this to work, [`email.address` and `email.smtp` must be configured in site configuration](https://docs.sourcegraph.com/admin/observability/alerting#email). Code monitoring actions will be extended in the future to support webhooks.
+The **actions** are run in response to a trigger event. For now, the only supported action is an email notification to the primary email address of the code monitor's owner. In order for this to work, [`email.address` and `email.smtp` must be configured in site configuration](https://docs.sourcegraph.com/admin/observability/alerting#email). Code monitoring actions will be extended in the future to support webhooks.
 
 If you want to learn more about code monitoring:
 - [Code monitoring documentation](https://docs.sourcegraph.com/code_monitoring)
