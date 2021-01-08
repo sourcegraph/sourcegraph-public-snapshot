@@ -18,19 +18,10 @@ export interface CodeIntelIndexConfigurationPageProps extends RouteComponentProp
     getConfiguration?: typeof defaultGetConfiguration
 }
 
-const customToolbar: {
-    propsGenerator: SaveToolbarPropsGenerator<{ children?: React.ReactNode }>
-    saveToolbar: React.FunctionComponent<SaveToolbarProps & {}>
-} = {
-    propsGenerator: (props: Readonly<SaveToolbarProps> & Readonly<{}>): SaveToolbarProps & AutoIndexProps => {
-        const autoIndexProps: AutoIndexProps = {
-            onQueueJob: () => {
-                alert("you got borgered")
-            }
-        }
-        return { ...props, ...autoIndexProps }
-    },
-    saveToolbar: CodeIntelAutoIndexSaveToolbar
+enum CodeIntelIndexEditorState {
+    Idle,
+    Saving,
+    Queueing
 }
 
 export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexConfigurationPageProps> = ({
@@ -44,8 +35,9 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
 
     const [fetchError, setFetchError] = useState<Error>()
     const [saveError, setSaveError] = useState<Error>()
-    const [saving, setSaving] = useState(() => false)
+    const [state, setState] = useState(() => CodeIntelIndexEditorState.Idle)
     const [configuration, setConfiguration] = useState<string>()
+    const [dirty, setDirty] = useState<boolean>()
 
     useEffect(() => {
         const subscription = getConfiguration({ id: repo.id }).subscribe(configuration => {
@@ -57,7 +49,7 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
 
     const save = useCallback(
         async (content: string) => {
-            setSaving(true)
+            setState(CodeIntelIndexEditorState.Saving)
             setSaveError(undefined)
 
             try {
@@ -66,11 +58,32 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
             } catch (error) {
                 setSaveError(error)
             } finally {
+                setState(CodeIntelIndexEditorState.Idle)
                 setSaving(false)
             }
         },
         [repo]
     )
+
+    const saving = state === CodeIntelIndexEditorState.Saving
+    const queueing = state === CodeIntelIndexEditorState.Queueing
+
+    const customToolbar: {
+        propsGenerator: SaveToolbarPropsGenerator<AutoIndexProps>
+        saveToolbar: React.FunctionComponent<SaveToolbarProps & AutoIndexProps>
+    } = {
+        propsGenerator: (props: Readonly<SaveToolbarProps> & Readonly<{}>): SaveToolbarProps & AutoIndexProps => {
+            const autoIndexProps: AutoIndexProps = {
+                enqueueing: queueing
+            }
+
+            const p = { ...props, ...autoIndexProps }
+            p.willShowError = (): boolean => !queueing && !p.saving
+            p.saveDiscardDisabled = (): boolean => saving || !dirty || queueing
+            return p
+        },
+        saveToolbar: CodeIntelAutoIndexSaveToolbar,
+    }
 
     return fetchError ? (
         <ErrorAlert prefix="Error fetching index configuration" error={fetchError} history={history} />
@@ -99,6 +112,7 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
                     history={history}
                     telemetryService={telemetryService}
                     customSaveToolbar={customToolbar}
+                    onDirtyChange={(dirty: boolean) => setDirty(dirty)}
                 />
             </div>
         )
