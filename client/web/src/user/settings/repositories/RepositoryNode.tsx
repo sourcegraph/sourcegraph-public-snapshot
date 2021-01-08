@@ -6,9 +6,9 @@ import GithubIcon from 'mdi-react/GithubIcon'
 import GitlabIcon from 'mdi-react/GitlabIcon'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
-import { RepoLink } from '../../../shared/src/components/RepoLink'
+import { RepoLink } from '../../../../../shared/src/components/RepoLink'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import { ExternalServiceKind } from '../graphql-operations'
+import { ExternalServiceKind } from '../../../graphql-operations'
 
 interface RepositoryNodeProps {
     name: string
@@ -113,7 +113,7 @@ export const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({
         <tr className="user-settings-repos__repositorynode">
             <td className="border-color">
                 <a
-                    className="w-100 d-flex justify-content-between align-items-center"
+                    className="w-100 d-flex justify-content-between align-items-center user-settings-repos__link"
                     href={url}
                     onClick={handleOnClick}
                 >
@@ -125,8 +125,7 @@ export const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({
                             className="text-muted"
                             repoClassName="text-primary"
                             repoName={name}
-                            to={url}
-                            onClick={handleOnClick}
+                            to={null}
                         />
                     </div>
                     <div>

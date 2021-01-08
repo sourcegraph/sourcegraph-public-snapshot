@@ -2,7 +2,7 @@ import React, { FormEvent, useCallback, useEffect, useState } from 'react'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 import { RouteComponentProps } from 'react-router'
 import { PageTitle } from '../../../components/PageTitle'
-import { CheckboxRepositoryNode } from '../../../components/RepositoryNode'
+import { CheckboxRepositoryNode } from './RepositoryNode'
 import { Form } from '../../../../../branded/src/components/Form'
 import { Link } from '../../../../../shared/src/components/Link'
 import { ExternalServiceKind, ExternalServicesResult, Maybe } from '../../../graphql-operations'
@@ -12,6 +12,8 @@ import {
     listAffiliatedRepositories,
 } from '../../../components/externalServices/backend'
 import { ErrorAlert } from '../../../components/alerts'
+import ChevronLeftIcon from "mdi-react/ChevronLeftIcon";
+import ChevronRightIcon from "mdi-react/ChevronRightIcon";
 
 interface Props extends RouteComponentProps, TelemetryProps {
     userID: string
@@ -176,11 +178,29 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     // create elements for pagination
     const pages: JSX.Element[] = []
     for (let page = 1; page <= Math.ceil(filteredRepos.length / PER_PAGE); page++) {
+        if (page === 1) {
+            pages.push(
+                (page !== currentPage &&
+                    <a className="btn px-0" onClick={() => setPage(currentPage-1)}>
+                        <ChevronLeftIcon className="icon-inline fill-primary"/>
+                    </a>
+                ) || <span className="px-0"><ChevronLeftIcon className="icon-inline fill-border-color-2"/></span>
+            )
+        }
         pages.push(
-            <a className="btn" onClick={() => setPage(page)}>
-                <p className={(currentPage === page && 'text-primary') || 'text-muted'}>{page}</p>
+            <a className={'btn user-settings-repos__page '+String(currentPage === page && 'user-settings-repos__page--active')} onClick={() => setPage(page)}>
+                <p className={'mb-0 '+ String((currentPage === page && 'text-muted') || 'text-primary')}>{page}</p>
             </a>
         )
+        if (page === Math.ceil(filteredRepos.length/ PER_PAGE)) {
+            pages.push(
+                (page !== currentPage &&
+                <a className="btn px-0" onClick={() => setPage(currentPage+1)}>
+                    <ChevronRightIcon className="icon-inline fill-primary"/>
+                </a>
+                ) || <span className="px-0"><ChevronRightIcon className="icon-inline fill-border-color-2"/></span>
+            )
+        }
     }
 
     // save changes and update code hosts
@@ -289,7 +309,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         [selectionState, setSelectionState]
     )
 
-    const selectAll = () => {
+    const selectAll = ():void => {
         const newMap = new Map<string, Repo>()
         // if not all repos are selected, we should select all, otherwise empty the selection
         if (selectionState.repos.size !== filteredRepos.length) {
@@ -303,6 +323,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             radio: selectionState.radio,
         })
     }
+
     const rows: JSX.Element = (
         <tbody>
             <tr className="align-items-baseline d-flex" key="header">
@@ -398,7 +419,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                                             repoState.loaded && rows
                                         }
                                     </table>
-                                    <div className="d-flex flex-direction-row align-items-center w-100 justify-content-center">
+                                    <div className="d-flex flex-direction-row align-items-baseline w-100 justify-content-center">
                                         {
                                             // pagination control
                                             pages

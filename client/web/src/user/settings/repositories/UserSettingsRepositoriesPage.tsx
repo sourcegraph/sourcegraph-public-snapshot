@@ -3,6 +3,7 @@ import { PageTitle } from '../../../components/PageTitle'
 import { RepositoriesResult, SiteAdminRepositoryFields, UserRepositoriesResult } from '../../../graphql-operations'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 import {
+    Connection,
     FilteredConnection,
     FilteredConnectionFilter,
     FilteredConnectionQueryArguments,
@@ -13,8 +14,9 @@ import { listUserRepositories } from '../../../site-admin/backend'
 import { queryExternalServices } from '../../../components/externalServices/backend'
 import { RouteComponentProps } from 'react-router'
 import { Link } from '../../../../../shared/src/components/Link'
-import { RepositoryNode } from '../../../components/RepositoryNode'
+import { RepositoryNode } from './RepositoryNode'
 import AddIcon from 'mdi-react/AddIcon'
+import {ErrorLike} from '../../../../../shared/src/util/errors';
 
 interface Props extends RouteComponentProps, TelemetryProps {
     userID: string
@@ -47,6 +49,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
 }) => {
     const emptyFilters: FilteredConnectionFilter[] = []
     const [state, setState] = useState({ filters: emptyFilters, fetched: false })
+    const [hasRepos, setHasRepos] = useState(false)
 
     if (!state.fetched) {
         queryExternalServices({ namespace: userID, first: null, after: null })
@@ -112,6 +115,15 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
         [userID]
     )
 
+    const updated = useCallback((value: Connection<SiteAdminRepositoryFields> | ErrorLike | undefined):void => {
+        if (value as Connection<SiteAdminRepositoryFields>) {
+            const conn = (value as Connection<SiteAdminRepositoryFields>)
+            if (conn.totalCount !== 0) {
+                setHasRepos(true)
+            }
+        }
+    }, [])
+
     useEffect(() => {
         telemetryService.logViewEvent('UserSettingsRepositories')
     }, [telemetryService])
@@ -141,9 +153,11 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                 nodeComponent={Row}
                 listComponent="table"
                 listClassName="w-100"
+                onUpdate={updated}
                 filters={state.filters}
                 history={history}
                 location={location}
+                totalCountSummaryComponent={TotalCountSummary}
             />
         )
     }
@@ -158,11 +172,11 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                         className="btn btn-primary test-goto-add-external-service-page"
                         to={`${routingPrefix}/repositories/manage`}
                     >
-                        <AddIcon className="icon-inline" /> Manage repositories
+                        {(hasRepos && <>Manage Repositories</>) || <><AddIcon className="icon-inline" /> Add repositories</>}
                     </Link>
                 )}
             </div>
-            <p className="text-muted">
+            <p className="text-muted pb-2">
                 All repositories synced with Sourcegraph from{' '}
                 <a className="text-primary" href={routingPrefix + '/external-services'}>
                     connected code hosts
@@ -172,3 +186,9 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
         </div>
     )
 }
+
+const TotalCountSummary: React.FunctionComponent<{totalCount: number}> = ({
+    totalCount,
+}) => (
+        <p className="user-settings-repos__summary">{totalCount} repositories total</p>
+    )

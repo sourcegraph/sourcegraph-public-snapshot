@@ -38,7 +38,35 @@
 }
 
 .user-settings-repos__repositorynode:hover {
+    background-color: var(--color-bg-1);
+}
+
+.user-settings-repos__link:hover {
+    text-decoration: none;
+}
+
+.user-settings-repos__summary {
+    font-size: 10pt;
+    padding-top: 1.5rem;
+}
+
+.user-settings-repos__page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 3px;
     background-color: var(--color-bg-2);
+    margin-right: 0.25rem;
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+}
+.user-settings-repos__page:hover {
+    background-color: var(--color-bg-1);
+}
+
+.user-settings-repos__page--active {
+    background-color: inherit;
 }
 
 .border-color-2 {
@@ -55,6 +83,14 @@
 
 .bg-color-2 {
     background-color: var(--color-bg-2);
+}
+
+.fill-border-color-2 {
+    fill: var(--border-color-2) !important;
+}
+
+.fill-primary {
+    fill: var(--primary) !important;
 }
 
 @keyframes shimmer {
