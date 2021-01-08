@@ -70,9 +70,3 @@ steps:
 # With variables, you could even allow overwriting them from the CLI:
 #
 #     src campaign preview -f my.yaml -var 'notifiees=Hans Wurst'
-
-
-
-# [githuboutputvars]: https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions#jobsjob_idoutputs
-
-
