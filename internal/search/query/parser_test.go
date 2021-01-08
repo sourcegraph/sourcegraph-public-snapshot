@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/hexops/autogold"
 	"github.com/pkg/errors"
 )
 
@@ -29,182 +30,146 @@ func heuristicLabels(nodes []Node) string {
 }
 
 func TestParseParameterList(t *testing.T) {
-	cases := []struct {
-		Name       string
-		Input      string
+	type value struct {
 		Want       string
-		WantLabels labels
+		WantLabels string
 		WantRange  string
-	}{
-		{
-			Name:       "Normal field:value",
-			Input:      `file:README.md`,
-			Want:       `{"field":"file","value":"README.md","negated":false}`,
-			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":14}}`,
-			WantLabels: None,
-		},
-		{
-			Name:       "Normal field:value with trailing space",
-			Input:      `file:README.md    `,
-			Want:       `{"field":"file","value":"README.md","negated":false}`,
-			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":14}}`,
-			WantLabels: None,
-		},
-		{
-			Name:       "First char is colon",
-			Input:      `:foo`,
-			Want:       `{"value":":foo","negated":false}`,
-			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":4}}`,
-			WantLabels: Regexp,
-		},
-		{
-			Name:       "Last char is colon",
-			Input:      `foo:`,
-			Want:       `{"value":"foo:","negated":false}`,
-			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":4}}`,
-			WantLabels: Regexp,
-		},
-		{
-			Name:       "Match first colon",
-			Input:      `file:bar:baz`,
-			Want:       `{"field":"file","value":"bar:baz","negated":false}`,
-			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":12}}`,
-			WantLabels: None,
-		},
-		{
-			Name:       "No field, start with minus",
-			Input:      `-:foo`,
-			Want:       `{"value":"-:foo","negated":false}`,
-			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":5}}`,
-			WantLabels: Regexp,
-		},
-		{
-			Name:       "Minus prefix on field",
-			Input:      `-file:README.md`,
-			Want:       `{"field":"file","value":"README.md","negated":true}`,
-			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":15}}`,
-			WantLabels: Regexp,
-		},
-		{
-			Name:       "NOT prefix on file",
-			Input:      `NOT file:README.md`,
-			Want:       `{"field":"file","value":"README.md","negated":true}`,
-			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":18}}`,
-			WantLabels: Regexp,
-		},
-		{
-			Name:       "NOT prefix on unsupported key-value pair",
-			Input:      `NOT foo:bar`,
-			Want:       `{"value":"foo:bar","negated":true}`,
-			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":11}}`,
-			WantLabels: Regexp,
-		},
-		{
-			Name:       "NOT prefix on content",
-			Input:      `NOT content:bar`,
-			Want:       `{"field":"content","value":"bar","negated":true}`,
-			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":15}}`,
-			WantLabels: Regexp,
-		},
-		{
-			Name:       "Double NOT",
-			Input:      `NOT NOT`,
-			Want:       `{"value":"NOT","negated":true}`,
-			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":7}}`,
-			WantLabels: Regexp,
-		},
-		{
-			Name:       "Double minus prefix on field",
-			Input:      `--foo:bar`,
-			Want:       `{"value":"--foo:bar","negated":false}`,
-			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":9}}`,
-			WantLabels: Regexp,
-		},
-		{
-			Name:       "Minus in the middle is not a valid field",
-			Input:      `fie-ld:bar`,
-			Want:       `{"value":"fie-ld:bar","negated":false}`,
-			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":10}}`,
-			WantLabels: Regexp,
-		},
-		{
-			Name:       "Preserve escaped whitespace",
-			Input:      `a\ pattern`,
-			Want:       `{"value":"a\\ pattern","negated":false}`,
-			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":10}}`,
-			WantLabels: Regexp,
-		},
-		{
-			Input:      `"quoted"`,
-			Want:       `{"value":"quoted","negated":false}`,
-			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":8}}`,
-			WantLabels: Literal | Quoted,
-		},
-		{
-			Input:      `'\''`,
-			Want:       `{"value":"'","negated":false}`,
-			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":4}}`,
-			WantLabels: Literal | Quoted,
-		},
-		{
-			Input:      `foo.*bar(`,
-			Want:       `{"value":"foo.*bar(","negated":false}`,
-			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":9}}`,
-			WantLabels: Regexp | HeuristicDanglingParens,
-		},
-		{
-			Input:      `/a regex pattern/`,
-			Want:       `{"value":"a regex pattern","negated":false}`,
-			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":17}}`,
-			WantLabels: Regexp,
-		},
-		{
-			Input:      `Search()\(`,
-			Want:       `{"value":"Search()\\(","negated":false}`,
-			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":10}}`,
-			WantLabels: Regexp,
-		},
-		{
-			Input:      `Search(xxx)\(`,
-			Want:       `{"value":"Search(xxx)\\(","negated":false}`,
-			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":13}}`,
-			WantLabels: Regexp,
-		},
 	}
-	for _, tt := range cases {
-		t.Run(tt.Name, func(t *testing.T) {
-			parser := &parser{buf: []byte(tt.Input), heuristics: parensAsPatterns | allowDanglingParens}
-			result, err := parser.parseLeaves(Regexp)
-			if err != nil {
-				t.Fatal(fmt.Sprintf("Unexpected error: %s", err))
-			}
-			resultNode := result[0]
-			got, _ := json.Marshal(resultNode)
-			// Check parsed values.
-			if diff := cmp.Diff(tt.Want, string(got)); diff != "" {
-				t.Error(diff)
-			}
-			// Check ranges.
-			switch n := resultNode.(type) {
-			case Pattern:
-				rangeStr := n.Annotation.Range.String()
-				if diff := cmp.Diff(tt.WantRange, rangeStr); diff != "" {
-					t.Error(diff)
-				}
-			case Parameter:
-				rangeStr := n.Annotation.Range.String()
-				if diff := cmp.Diff(tt.WantRange, rangeStr); diff != "" {
-					t.Error(diff)
-				}
-			}
-			// Check labels.
-			if patternNode, ok := resultNode.(Pattern); ok {
-				if diff := cmp.Diff(tt.WantLabels, patternNode.Annotation.Labels); diff != "" {
-					t.Error(diff)
-				}
-			}
-		})
+
+	test := func(input string) value {
+		parser := &parser{buf: []byte(input), heuristics: parensAsPatterns | allowDanglingParens}
+		result, err := parser.parseLeaves(Regexp)
+		if err != nil {
+			t.Fatal(fmt.Sprintf("Unexpected error: %s", err))
+		}
+		resultNode := result[0]
+		got, _ := json.Marshal(resultNode)
+
+		var gotRange string
+		switch n := resultNode.(type) {
+		case Pattern:
+			gotRange = n.Annotation.Range.String()
+		case Parameter:
+			gotRange = n.Annotation.Range.String()
+		}
+
+		var gotLabels string
+		if _, ok := resultNode.(Pattern); ok {
+			gotLabels = heuristicLabels([]Node{resultNode})
+		}
+
+		return value{
+			Want:       string(got),
+			WantLabels: gotLabels,
+			WantRange:  gotRange,
+		}
 	}
+
+	autogold.Want("Normal field:value", value{
+		Want:      `{"field":"file","value":"README.md","negated":false}`,
+		WantRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":14}}`,
+	}).Equal(t, test(`file:README.md`))
+
+	autogold.Want("Normal field:value with trailing space", value{
+		Want:      `{"field":"file","value":"README.md","negated":false}`,
+		WantRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":14}}`,
+	}).Equal(t, test(`file:README.md    `))
+
+	autogold.Want("First char is colon", value{
+		Want: `{"value":":foo","negated":false}`, WantLabels: "Regexp",
+		WantRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":4}}`,
+	}).Equal(t, test(`:foo`))
+
+	autogold.Want("Last char is colon", value{
+		Want: `{"value":"foo:","negated":false}`, WantLabels: "Regexp",
+		WantRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":4}}`,
+	}).Equal(t, test(`foo:`))
+
+	autogold.Want("Match first colon", value{
+		Want:      `{"field":"file","value":"bar:baz","negated":false}`,
+		WantRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":12}}`,
+	}).Equal(t, test(`file:bar:baz`))
+
+	autogold.Want("No field, start with minus", value{
+		Want: `{"value":"-:foo","negated":false}`, WantLabels: "Regexp",
+		WantRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":5}}`,
+	}).Equal(t, test(`-:foo`))
+
+	autogold.Want("Minus prefix on field", value{
+		Want:      `{"field":"file","value":"README.md","negated":true}`,
+		WantRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":15}}`,
+	}).Equal(t, test(`-file:README.md`))
+
+	autogold.Want("NOT prefix on file", value{
+		Want:      `{"field":"file","value":"README.md","negated":true}`,
+		WantRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":18}}`,
+	}).Equal(t, test(`NOT file:README.md`))
+
+	autogold.Want("NOT prefix on unsupported key-value pair", value{
+		Want: `{"value":"foo:bar","negated":true}`, WantLabels: "Regexp",
+		WantRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":11}}`,
+	}).Equal(t, test(`NOT foo:bar`))
+	autogold.Want("NOT prefix on content", value{
+		Want:      `{"field":"content","value":"bar","negated":true}`,
+		WantRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":15}}`,
+	}).Equal(t, test(`NOT content:bar`))
+
+	autogold.Want("Double NOT", value{
+		Want: `{"value":"NOT","negated":true}`, WantLabels: "Regexp",
+		WantRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":7}}`,
+	}).Equal(t, test(`NOT NOT`))
+
+	autogold.Want("Double minus prefix on field", value{
+		Want:       `{"value":"--foo:bar","negated":false}`,
+		WantLabels: "Regexp",
+		WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":9}}`,
+	}).Equal(t, test(`--foo:bar`))
+
+	autogold.Want("Minus in the middle is not a valid field", value{
+		Want:       `{"value":"fie-ld:bar","negated":false}`,
+		WantLabels: "Regexp",
+		WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":10}}`,
+	}).Equal(t, test(`fie-ld:bar`))
+
+	autogold.Want("Preserve escaped whitespace", value{
+		Want:       `{"value":"a\\ pattern","negated":false}`,
+		WantLabels: "Regexp",
+		WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":10}}`,
+	}).Equal(t, test(`a\ pattern`))
+
+	autogold.Want("Quoted", value{
+		Want: `{"value":"quoted","negated":false}`, WantLabels: "Literal,Quoted",
+		WantRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":8}}`,
+	}).Equal(t, test(`"quoted"`))
+
+	autogold.Want("Escaped quote", value{
+		Want: `{"value":"'","negated":false}`, WantLabels: "Literal,Quoted",
+		WantRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":4}}`,
+	}).Equal(t, test(`'\''`))
+
+	autogold.Want("Regexp syntax with unbalanced paren", value{
+		Want:       `{"value":"foo.*bar(","negated":false}`,
+		WantLabels: "HeuristicDanglingParens,Regexp",
+		WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":9}}`,
+	}).Equal(t, test(`foo.*bar(`))
+
+	autogold.Want("Regexp delimiters", value{
+		Want:       `{"value":"a regex pattern","negated":false}`,
+		WantLabels: "Regexp",
+		WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":17}}`,
+	}).Equal(t, test(`/a regex pattern/`))
+
+	autogold.Want("Regexp group", value{
+		Want:       `{"value":"Search()\\(","negated":false}`,
+		WantLabels: "Regexp",
+		WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":10}}`,
+	}).Equal(t, test(`Search()\(`))
+
+	autogold.Want("Regexp non-empty group", value{
+		Want:       `{"value":"Search(xxx)\\\\(","negated":false}`,
+		WantLabels: "HeuristicDanglingParens,Regexp",
+		WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":14}}`,
+	}).Equal(t, test(`Search(xxx)\\(`))
 }
 
 func TestScanField(t *testing.T) {
