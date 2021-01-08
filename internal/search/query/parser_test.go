@@ -752,87 +752,33 @@ func TestScanDelimited(t *testing.T) {
 		ErrMsg string
 	}
 
-	cases := []struct {
-		name      string
-		input     string
-		delimiter rune
-		want      result
-	}{
-		{
-			input:     `""`,
-			delimiter: '"',
-			want:      result{Value: "", Count: 2, ErrMsg: ""},
-		},
-		{
-			input:     `"a"`,
-			delimiter: '"',
-			want:      result{Value: `a`, Count: 3, ErrMsg: ""},
-		},
-		{
-			input:     `"\""`,
-			delimiter: '"',
-			want:      result{Value: `"`, Count: 4, ErrMsg: ""},
-		},
-		{
-			input:     `"\\""`,
-			delimiter: '"',
-			want:      result{Value: `\`, Count: 4, ErrMsg: ""},
-		},
-		{
-			input:     `"\\\"`,
-			delimiter: '"',
-			want:      result{Value: "", Count: 5, ErrMsg: `unterminated literal: expected "`},
-		},
-		{
-			input:     `"\\\""`,
-			delimiter: '"',
-			want:      result{Value: `\"`, Count: 6, ErrMsg: ""},
-		},
-		{
-			input:     `"a`,
-			delimiter: '"',
-			want:      result{Value: "", Count: 2, ErrMsg: `unterminated literal: expected "`},
-		},
-		{
-			input:     `"\?"`,
-			delimiter: '"',
-			want:      result{Value: "", Count: 3, ErrMsg: `unrecognized escape sequence`},
-		},
-		{
-			name:      "panic",
-			input:     `a"`,
-			delimiter: '"',
-			want:      result{},
-		},
-		{
-			input:     `/\//`,
-			delimiter: '/',
-			want:      result{Value: "/", Count: 4, ErrMsg: ""},
-		},
-	}
-
-	for _, tt := range cases {
-		if tt.name == "panic" {
-			defer func() {
-				if r := recover(); r == nil {
-					t.Errorf("expected panic for ScanDelimited")
-				}
-			}()
-			_, _, _ = ScanDelimited([]byte(tt.input), true, tt.delimiter)
+	test := func(input string, delimiter rune) string {
+		value, count, err := ScanDelimited([]byte(input), true, delimiter)
+		var errMsg string
+		if err != nil {
+			errMsg = err.Error()
 		}
-
-		t.Run(tt.name, func(t *testing.T) {
-			value, count, err := ScanDelimited([]byte(tt.input), true, tt.delimiter)
-			var errMsg string
-			if err != nil {
-				errMsg = err.Error()
-			}
-			got := result{value, count, errMsg}
-			if diff := cmp.Diff(tt.want, got); diff != "" {
-				t.Error(diff)
-			}
-		})
+		v, _ := json.Marshal(result{value, count, errMsg})
+		return string(v)
 	}
+
+	autogold.Want(`""`, `{"Value":"","Count":2,"ErrMsg":""}`).Equal(t, test(`""`, '"'))
+	autogold.Want(`"a"`, `{"Value":"a","Count":3,"ErrMsg":""}`).Equal(t, test(`"a"`, '"'))
+	autogold.Want(`"\""`, `{"Value":"\"","Count":4,"ErrMsg":""}`).Equal(t, test(`"\""`, '"'))
+	autogold.Want(`"\\""`, `{"Value":"\\","Count":4,"ErrMsg":""}`).Equal(t, test(`"\\""`, '"'))
+	autogold.Want(`"\\\"`, `{"Value":"","Count":5,"ErrMsg":"unterminated literal: expected \""}`).Equal(t, test(`"\\\"`, '"'))
+	autogold.Want(`"\\\""`, `{"Value":"\\\"","Count":6,"ErrMsg":""}`).Equal(t, test(`"\\\""`, '"'))
+	autogold.Want(`"a`, `{"Value":"","Count":2,"ErrMsg":"unterminated literal: expected \""}`).Equal(t, test(`"a`, '"'))
+	autogold.Want(`"\?"`, `{"Value":"","Count":3,"ErrMsg":"unrecognized escape sequence"}`).Equal(t, test(`"\?"`, '"'))
+	autogold.Want(`/\//`, `{"Value":"/","Count":4,"ErrMsg":""}`).Equal(t, test(`/\//`, '/'))
+
+	// The next invocation of test needs to panic.
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("expected panic for ScanDelimited")
+		}
+	}()
+	_ = test(`a"`, '"')
 }
 
 func TestMergePatterns(t *testing.T) {
