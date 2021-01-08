@@ -16,7 +16,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func (u *users) IsPassword(ctx context.Context, id int32, password string) (bool, error) {
+func (u *UserStore) IsPassword(ctx context.Context, id int32, password string) (bool, error) {
 	var passwd sql.NullString
 	if err := dbconn.Global.QueryRowContext(ctx, "SELECT passwd FROM users WHERE deleted_at IS NULL AND id=$1", id).Scan(&passwd); err != nil {
 		return false, err
@@ -32,7 +32,7 @@ var (
 	ErrPasswordResetRateLimit = errors.New("password reset rate limit reached")
 )
 
-func (u *users) RenewPasswordResetCode(ctx context.Context, id int32) (string, error) {
+func (u *UserStore) RenewPasswordResetCode(ctx context.Context, id int32) (string, error) {
 	if _, err := u.GetByID(ctx, id); err != nil {
 		return "", err
 	}
@@ -57,7 +57,7 @@ func (u *users) RenewPasswordResetCode(ctx context.Context, id int32) (string, e
 }
 
 // SetPassword sets the user's password given a new password and a password reset code
-func (u *users) SetPassword(ctx context.Context, id int32, resetCode, newPassword string) (bool, error) {
+func (u *UserStore) SetPassword(ctx context.Context, id int32, resetCode, newPassword string) (bool, error) {
 	// 🚨 SECURITY: no empty passwords
 	if newPassword == "" {
 		return false, errors.New("new password was empty")
@@ -90,13 +90,13 @@ func (u *users) SetPassword(ctx context.Context, id int32, resetCode, newPasswor
 	return true, nil
 }
 
-func (u *users) DeletePasswordResetCode(ctx context.Context, id int32) error {
+func (u *UserStore) DeletePasswordResetCode(ctx context.Context, id int32) error {
 	_, err := dbconn.Global.ExecContext(ctx, "UPDATE users SET passwd_reset_code=NULL, passwd_reset_time=NULL WHERE id=$1", id)
 	return err
 }
 
 // UpdatePassword updates a user's password given the current password.
-func (u *users) UpdatePassword(ctx context.Context, id int32, oldPassword, newPassword string) error {
+func (u *UserStore) UpdatePassword(ctx context.Context, id int32, oldPassword, newPassword string) error {
 	// 🚨 SECURITY: No empty passwords.
 	if oldPassword == "" {
 		return errors.New("old password was empty")
@@ -134,7 +134,7 @@ func (u *users) UpdatePassword(ctx context.Context, id int32, oldPassword, newPa
 //
 // A randomized password is used (instead of an empty password) to avoid bugs where an empty password
 // is considered to be no password. The random password is expected to be irretrievable.
-func (u *users) RandomizePasswordAndClearPasswordResetRateLimit(ctx context.Context, id int32) error {
+func (u *UserStore) RandomizePasswordAndClearPasswordResetRateLimit(ctx context.Context, id int32) error {
 	passwd, err := hashPassword(randstring.NewLen(36))
 	if err != nil {
 		return err

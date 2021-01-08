@@ -26,7 +26,7 @@ import (
 // users provides access to the `users` table.
 //
 // For a detailed overview of the schema, see schema.md.
-type users struct {
+type UserStore struct {
 	// BeforeCreateUser (if set) is a hook called before creating a new user in the DB by any means
 	// (e.g., both directly via Users.Create or via ExternalAccounts.CreateUserAndSave).
 	BeforeCreateUser func(context.Context) error
@@ -134,7 +134,7 @@ type NewUser struct {
 // It's implemented as part of the (users).Create call instead of relying on the caller to do it in
 // order to avoid a race condition where multiple initial site admins could be created or zero site
 // admins could be created.
-func (u *users) Create(ctx context.Context, info NewUser) (newUser *types.User, err error) {
+func (u *UserStore) Create(ctx context.Context, info NewUser) (newUser *types.User, err error) {
 	if Mocks.Users.Create != nil {
 		return Mocks.Users.Create(ctx, info)
 	}
@@ -174,7 +174,7 @@ func CheckPasswordLength(pw string) error {
 
 // create is like Create, except it uses the provided DB transaction. It must execute in a
 // transaction because the post-user-creation hooks must run atomically with the user creation.
-func (u *users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *types.User, err error) {
+func (u *UserStore) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *types.User, err error) {
 	if Mocks.Users.Create != nil {
 		return Mocks.Users.Create(ctx, info)
 	}
@@ -343,7 +343,7 @@ type UserUpdate struct {
 }
 
 // Update updates a user's profile information.
-func (u *users) Update(ctx context.Context, id int32, update UserUpdate) error {
+func (u *UserStore) Update(ctx context.Context, id int32, update UserUpdate) error {
 	if Mocks.Users.Update != nil {
 		return Mocks.Users.Update(id, update)
 	}
@@ -405,7 +405,7 @@ func (u *users) Update(ctx context.Context, id int32, update UserUpdate) error {
 }
 
 // Delete performs a soft-delete of the user and all resources associated with this user.
-func (u *users) Delete(ctx context.Context, id int32) error {
+func (u *UserStore) Delete(ctx context.Context, id int32) error {
 	if Mocks.Users.Delete != nil {
 		return Mocks.Users.Delete(ctx, id)
 	}
@@ -463,7 +463,7 @@ func (u *users) Delete(ctx context.Context, id int32) error {
 }
 
 // HardDelete removes the user and all resources associated with this user.
-func (u *users) HardDelete(ctx context.Context, id int32) error {
+func (u *UserStore) HardDelete(ctx context.Context, id int32) error {
 	if Mocks.Users.HardDelete != nil {
 		return Mocks.Users.HardDelete(ctx, id)
 	}
@@ -537,7 +537,7 @@ func (u *users) HardDelete(ctx context.Context, id int32) error {
 }
 
 // SetIsSiteAdmin sets the the user with given ID to be or not to be the site admin.
-func (u *users) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bool) error {
+func (u *UserStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bool) error {
 	if Mocks.Users.SetIsSiteAdmin != nil {
 		return Mocks.Users.SetIsSiteAdmin(id, isSiteAdmin)
 	}
@@ -557,7 +557,7 @@ func (u *users) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bool) 
 // user is not allowed to invite any other user (either because they've
 // invited too many users, or some other error occurred). If the user has
 // quota remaining, their quota is decremented and ok is true.
-func (u *users) CheckAndDecrementInviteQuota(ctx context.Context, userID int32) (ok bool, err error) {
+func (u *UserStore) CheckAndDecrementInviteQuota(ctx context.Context, userID int32) (ok bool, err error) {
 	if Mocks.Users.CheckAndDecrementInviteQuota != nil {
 		return Mocks.Users.CheckAndDecrementInviteQuota(ctx, userID)
 	}
@@ -578,7 +578,7 @@ func (u *users) CheckAndDecrementInviteQuota(ctx context.Context, userID int32) 
 	return true, nil // the user has remaining quota to send invites
 }
 
-func (u *users) GetByID(ctx context.Context, id int32) (*types.User, error) {
+func (u *UserStore) GetByID(ctx context.Context, id int32) (*types.User, error) {
 	if Mocks.Users.GetByID != nil {
 		return Mocks.Users.GetByID(ctx, id)
 	}
@@ -588,14 +588,14 @@ func (u *users) GetByID(ctx context.Context, id int32) (*types.User, error) {
 // GetByVerifiedEmail returns the user (if any) with the specified verified email address. If a user
 // has a matching *unverified* email address, they will not be returned by this method. At most one
 // user may have any given verified email address.
-func (u *users) GetByVerifiedEmail(ctx context.Context, email string) (*types.User, error) {
+func (u *UserStore) GetByVerifiedEmail(ctx context.Context, email string) (*types.User, error) {
 	if Mocks.Users.GetByVerifiedEmail != nil {
 		return Mocks.Users.GetByVerifiedEmail(ctx, email)
 	}
 	return u.getOneBySQL(ctx, "WHERE id=(SELECT user_id FROM user_emails WHERE email=$1 AND verified_at IS NOT NULL) AND deleted_at IS NULL LIMIT 1", email)
 }
 
-func (u *users) GetByUsername(ctx context.Context, username string) (*types.User, error) {
+func (u *UserStore) GetByUsername(ctx context.Context, username string) (*types.User, error) {
 	if Mocks.Users.GetByUsername != nil {
 		return Mocks.Users.GetByUsername(ctx, username)
 	}
@@ -605,7 +605,7 @@ func (u *users) GetByUsername(ctx context.Context, username string) (*types.User
 
 // GetByUsernames returns a list of users by given usernames. The number of results list could be less
 // than the candidate list due to no user is associated with some usernames.
-func (u *users) GetByUsernames(ctx context.Context, usernames ...string) ([]*types.User, error) {
+func (u *UserStore) GetByUsernames(ctx context.Context, usernames ...string) ([]*types.User, error) {
 	if Mocks.Users.GetByUsernames != nil {
 		return Mocks.Users.GetByUsernames(ctx, usernames...)
 	}
@@ -624,7 +624,7 @@ func (u *users) GetByUsernames(ctx context.Context, usernames ...string) ([]*typ
 
 var ErrNoCurrentUser = errors.New("no current user")
 
-func (u *users) GetByCurrentAuthUser(ctx context.Context) (*types.User, error) {
+func (u *UserStore) GetByCurrentAuthUser(ctx context.Context) (*types.User, error) {
 	if Mocks.Users.GetByCurrentAuthUser != nil {
 		return Mocks.Users.GetByCurrentAuthUser(ctx)
 	}
@@ -640,7 +640,7 @@ func (u *users) GetByCurrentAuthUser(ctx context.Context) (*types.User, error) {
 	return u.getOneBySQL(ctx, "WHERE id=$1 AND deleted_at IS NULL LIMIT 1", actor.UID)
 }
 
-func (u *users) InvalidateSessionsByID(ctx context.Context, id int32) error {
+func (u *UserStore) InvalidateSessionsByID(ctx context.Context, id int32) error {
 	if Mocks.Users.InvalidateSessionsByID != nil {
 		return Mocks.Users.InvalidateSessionsByID(ctx, id)
 	}
@@ -681,7 +681,7 @@ func (u *users) InvalidateSessionsByID(ctx context.Context, id int32) error {
 	return nil
 }
 
-func (u *users) Count(ctx context.Context, opt *UsersListOptions) (int, error) {
+func (u *UserStore) Count(ctx context.Context, opt *UsersListOptions) (int, error) {
 	if Mocks.Users.Count != nil {
 		return Mocks.Users.Count(ctx, opt)
 	}
@@ -711,7 +711,7 @@ type UsersListOptions struct {
 	*LimitOffset
 }
 
-func (u *users) List(ctx context.Context, opt *UsersListOptions) (_ []*types.User, err error) {
+func (u *UserStore) List(ctx context.Context, opt *UsersListOptions) (_ []*types.User, err error) {
 	if Mocks.Users.List != nil {
 		return Mocks.Users.List(ctx, opt)
 	}
@@ -732,7 +732,7 @@ func (u *users) List(ctx context.Context, opt *UsersListOptions) (_ []*types.Use
 }
 
 // ListDates lists all user's created and deleted dates, used by usage stats.
-func (*users) ListDates(ctx context.Context) (dates []types.UserDates, _ error) {
+func (*UserStore) ListDates(ctx context.Context) (dates []types.UserDates, _ error) {
 	rows, err := dbconn.Global.QueryContext(ctx, listDatesQuery)
 	if err != nil {
 		return nil, err
@@ -765,7 +765,7 @@ FROM users
 ORDER BY id ASC
 `
 
-func (*users) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
+func (*UserStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
 	conds = []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	conds = append(conds, sqlf.Sprintf("deleted_at IS NULL"))
 	if opt.Query != "" {
@@ -790,7 +790,7 @@ func (*users) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
 	return conds
 }
 
-func (u *users) getOneBySQL(ctx context.Context, query string, args ...interface{}) (*types.User, error) {
+func (u *UserStore) getOneBySQL(ctx context.Context, query string, args ...interface{}) (*types.User, error) {
 	users, err := u.getBySQL(ctx, query, args...)
 	if err != nil {
 		return nil, err
@@ -802,7 +802,7 @@ func (u *users) getOneBySQL(ctx context.Context, query string, args ...interface
 }
 
 // getBySQL returns users matching the SQL query, if any exist.
-func (*users) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.User, error) {
+func (*UserStore) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.User, error) {
 	rows, err := dbconn.Global.QueryContext(ctx, "SELECT u.id, u.username, u.display_name, u.avatar_url, u.created_at, u.updated_at, u.site_admin, u.passwd IS NOT NULL, u.tags, u.invalidated_sessions_at FROM users u "+query, args...)
 	if err != nil {
 		return nil, err
@@ -837,7 +837,7 @@ const (
 
 // HasTag reports whether the context actor has the given tag.
 // If not, it returns false and a nil error.
-func (u *users) HasTag(ctx context.Context, userID int32, tag string) (bool, error) {
+func (u *UserStore) HasTag(ctx context.Context, userID int32, tag string) (bool, error) {
 	if Mocks.Users.HasTag != nil {
 		return Mocks.Users.HasTag(ctx, userID, tag)
 	}

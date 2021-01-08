@@ -9,7 +9,7 @@ import (
 // SetTag adds (present=true) or removes (present=false) a tag from the given user's set of tags. An
 // error occurs if the user does not exist. Adding a duplicate tag or removing a nonexistent tag is
 // not an error.
-func (*users) SetTag(ctx context.Context, userID int32, tag string, present bool) error {
+func (*UserStore) SetTag(ctx context.Context, userID int32, tag string, present bool) error {
 	var query string
 	if present {
 		// Add tag.
