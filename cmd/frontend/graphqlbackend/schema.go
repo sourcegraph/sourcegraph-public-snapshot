@@ -4037,7 +4037,7 @@ type ExternalService implements Node {
     """
     namespace: ID
     """
-    The number of repos synced by the external service
+    The number of repos synced by the external service.
     """
     repoCount: Int!
     """
