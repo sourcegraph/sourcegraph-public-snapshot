@@ -7,7 +7,7 @@ import { ErrorAlert } from '../../../components/alerts'
 import { PageTitle } from '../../../components/PageTitle'
 import { SettingsAreaRepositoryFields } from '../../../graphql-operations'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../../settings/DynamicallyImportedMonacoSettingsEditor'
-import { getConfiguration as defaultGetConfiguration, updateConfiguration } from './backend'
+import { getConfiguration as defaultGetConfiguration, updateConfiguration, enqueueIndexJob } from './backend'
 import allConfigSchema from './schema.json'
 import { CodeIntelAutoIndexSaveToolbar, AutoIndexProps } from '../../../components/CodeIntelAutoIndexSaveToolbar'
 import { SaveToolbarPropsGenerator, Props as SaveToolbarProps } from '../../../components/SaveToolbar'
@@ -59,7 +59,21 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
                 setSaveError(error)
             } finally {
                 setState(CodeIntelIndexEditorState.Idle)
-                setSaving(false)
+            }
+        },
+        [repo]
+    )
+    const enqueue = useCallback(
+        async () => {
+            setState(CodeIntelIndexEditorState.Queueing)
+            setSaveError(undefined)
+
+            try {
+                await enqueueIndexJob(repo.id).toPromise()
+            } catch (error) {
+                setSaveError(error)
+            } finally {
+                setState(CodeIntelIndexEditorState.Idle)
             }
         },
         [repo]
@@ -74,6 +88,7 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
     } = {
         propsGenerator: (props: Readonly<SaveToolbarProps> & Readonly<{}>): SaveToolbarProps & AutoIndexProps => {
             const autoIndexProps: AutoIndexProps = {
+                onQueueJob: enqueue,
                 enqueueing: queueing
             }
 

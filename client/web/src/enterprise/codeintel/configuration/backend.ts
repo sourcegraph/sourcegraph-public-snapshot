@@ -12,6 +12,8 @@ import {
     RepositoryIndexConfigurationFields,
     UpdateRepositoryIndexConfigurationResult,
     UpdateRepositoryIndexConfigurationVariables,
+    QueueAutoIndexJobForRepoResult,
+    QueueAutoIndexJobForRepoVariables
 } from '../../../graphql-operations'
 
 export function getConfiguration({ id }: { id: string }): Observable<RepositoryIndexConfigurationFields | null> {
@@ -61,6 +63,28 @@ export function updateConfiguration({ id, content }: { id: string; content: stri
         map(data => {
             if (!data.updateRepositoryIndexConfiguration) {
                 throw createInvalidGraphQLMutationResponseError('UpdateRepositoryIndexConfiguration')
+            }
+        })
+    )
+}
+
+export function enqueueIndexJob(id: string): Observable<void> {
+    const query = gql`
+        mutation QueueAutoIndexJobForRepo($id: ID!) {
+            queueAutoIndexJobForRepo(repository: $id) {
+                alwaysNil
+            }
+        }
+    `
+
+    return requestGraphQL<QueueAutoIndexJobForRepoResult, QueueAutoIndexJobForRepoVariables>(
+        query,
+        { id },
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => {
+            if (!data.queueAutoIndexJobForRepo) {
+                throw createInvalidGraphQLMutationResponseError('QueueAutoIndexJobForRepo')
             }
         })
     )
