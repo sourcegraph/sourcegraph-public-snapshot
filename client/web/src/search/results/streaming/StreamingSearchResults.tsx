@@ -210,9 +210,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
         () => setItemsToShow(items => Math.min(results?.results.length || 0, items + incrementalItemsToShow)),
         [results?.results.length]
     )
-    const logSearchResultClicked = useCallback(() => props.telemetryService.log('SearchResultClicked'), [
-        props.telemetryService,
-    ])
+    const logSearchResultClicked = useCallback(() => telemetryService.log('SearchResultClicked'), [telemetryService])
     const renderResult = (result: GQL.GenericSearchResultInterface | GQL.IFileMatch): JSX.Element | undefined => {
         switch (result.__typename) {
             case 'FileMatch':
@@ -241,9 +239,10 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
     const onSearchAgain = useCallback(
         (additionalFilters: string[]) => {
             const newQuery = [query, ...additionalFilters].join(' ')
+            telemetryService.log('SearchSkippedResultsAgainClicked')
             submitSearch({ ...props, query: newQuery, source: 'excludedResults' })
         },
-        [query, props]
+        [query, telemetryService, props]
     )
 
     return (
