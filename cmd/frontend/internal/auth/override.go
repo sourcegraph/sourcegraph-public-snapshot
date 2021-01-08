@@ -2,7 +2,6 @@ package auth
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/inconshreveable/log15"
 
@@ -63,8 +62,15 @@ func OverrideAuthMiddleware(next http.Handler) http.Handler {
 				return
 			}
 
+			user, err := db.Users.GetByID(r.Context(), userID)
+			if err != nil {
+				log15.Error("Error retrieving user from database.", "error", err)
+				http.Error(w, "", http.StatusInternalServerError)
+				return
+			}
+
 			a := actor.FromUser(userID)
-			if err := session.SetActor(w, r, a, 0, time.Now()); err != nil {
+			if err := session.SetActor(w, r, a, 0, user.CreatedAt); err != nil {
 				log15.Error("Error starting auth-override session.", "error", err)
 				http.Error(w, "error starting auth-override session", http.StatusInternalServerError)
 				return
