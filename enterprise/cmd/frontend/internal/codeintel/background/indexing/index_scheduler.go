@@ -12,6 +12,7 @@ import (
 
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
@@ -39,6 +40,7 @@ func NewIndexScheduler(
 	minimumPreciseCount int,
 	interval time.Duration,
 	operations *operations,
+	observationContext *observation.Context,
 ) goroutine.BackgroundRoutine {
 	scheduler := &IndexScheduler{
 		dbStore:                     dbStore,
@@ -48,7 +50,7 @@ func NewIndexScheduler(
 		minimumSearchRatio:          minimumSearchRatio,
 		minimumPreciseCount:         minimumPreciseCount,
 		operations:                  operations,
-		enqueuer:                    enqueuer.NewIndexEnqueuer(enqueuerDBStore, gitserverClient),
+		enqueuer:                    enqueuer.NewIndexEnqueuer(enqueuerDBStore, gitserverClient, observationContext),
 	}
 
 	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), interval, scheduler, operations.handleIndexScheduler)

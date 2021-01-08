@@ -11,7 +11,6 @@ type operations struct {
 	handleIndexabilityUpdater *observation.Operation
 	handleIndexScheduler      *observation.Operation
 	queueRepository           *observation.Operation
-	queueIndex                *observation.Operation
 }
 
 var NewOperations = newOperations
@@ -36,6 +35,5 @@ func newOperations(observationContext *observation.Context) *operations {
 		handleIndexabilityUpdater: op("HandleIndexabilityUpdate"),
 		handleIndexScheduler:      op("HandleIndexSchedule"),
 		queueRepository:           op("QueueRepository"),
-		queueIndex:                op("QueueIndex"),
 	}
 }

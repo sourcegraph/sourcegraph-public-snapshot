@@ -63,7 +63,7 @@ func TestIndexSchedulerUpdateIndexConfigurationInDatabase(t *testing.T) {
 	scheduler := &IndexScheduler{
 		dbStore:    mockDBStore,
 		operations: newOperations(&observation.TestContext),
-		enqueuer:   enqueuer.NewIndexEnqueuer(mockDBStore, mockGitserverClient),
+		enqueuer:   enqueuer.NewIndexEnqueuer(mockDBStore, mockGitserverClient, &observation.TestContext),
 	}
 
 	if err := scheduler.Handle(context.Background()); err != nil {
@@ -188,7 +188,7 @@ func TestIndexSchedulerUpdateIndexConfigurationInRepository(t *testing.T) {
 	scheduler := &IndexScheduler{
 		dbStore:    mockDBStore,
 		operations: newOperations(&observation.TestContext),
-		enqueuer:   enqueuer.NewIndexEnqueuer(mockDBStore, mockGitserverClient),
+		enqueuer:   enqueuer.NewIndexEnqueuer(mockDBStore, mockGitserverClient, &observation.TestContext),
 	}
 
 	if err := scheduler.Handle(context.Background()); err != nil {
@@ -290,7 +290,7 @@ func TestIndexSchedulerUpdateIndexConfigurationInferred(t *testing.T) {
 	scheduler := &IndexScheduler{
 		dbStore:    mockDBStore,
 		operations: newOperations(&observation.TestContext),
-		enqueuer:   enqueuer.NewIndexEnqueuer(mockDBStore, mockGitserverClient),
+		enqueuer:   enqueuer.NewIndexEnqueuer(mockDBStore, mockGitserverClient, &observation.TestContext),
 	}
 
 	if err := scheduler.Handle(context.Background()); err != nil {

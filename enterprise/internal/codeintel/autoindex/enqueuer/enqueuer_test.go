@@ -10,9 +10,10 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func TestIndexSchedulerUpdateIndexConfigurationInDatabase(t *testing.T) {
+func TestIndexEnqueuerUpdateIndexConfigurationInDatabase(t *testing.T) {
 	indexConfiguration := store.IndexConfiguration{
 		ID:           1,
 		RepositoryID: 42,
@@ -61,7 +62,7 @@ func TestIndexSchedulerUpdateIndexConfigurationInDatabase(t *testing.T) {
 	scheduler := &IndexEnqueuer{
 		dbStore:         mockDBStore,
 		gitserverClient: mockGitserverClient,
-		//operations:      newOperations(&observation.TestContext),
+		operations:      newOperations(&observation.TestContext),
 	}
 
 	scheduler.QueueIndex(context.Background(), 42)
@@ -167,7 +168,7 @@ index_jobs:
     outfile: lsif.dump
 `)
 
-func TestIndexSchedulerUpdateIndexConfigurationInRepository(t *testing.T) {
+func TestIndexEnqueuerUpdateIndexConfigurationInRepository(t *testing.T) {
 	mockDBStore := NewMockDBStore()
 	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
 	mockDBStore.GetRepositoriesWithIndexConfigurationFunc.SetDefaultReturn([]int{42}, nil)
@@ -184,7 +185,7 @@ func TestIndexSchedulerUpdateIndexConfigurationInRepository(t *testing.T) {
 	scheduler := &IndexEnqueuer{
 		dbStore:         mockDBStore,
 		gitserverClient: mockGitserverClient,
-		//operations:      newOperations(&observation.TestContext),
+		operations:      newOperations(&observation.TestContext),
 	}
 
 	if err := scheduler.QueueIndex(context.Background(), 42); err != nil {
@@ -255,7 +256,7 @@ func TestIndexSchedulerUpdateIndexConfigurationInRepository(t *testing.T) {
 	}
 }
 
-func TestIndexSchedulerUpdateIndexConfigurationInferred(t *testing.T) {
+func TestIndexEnqueuerUpdateIndexConfigurationInferred(t *testing.T) {
 	mockDBStore := NewMockDBStore()
 	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
 	mockDBStore.IndexableRepositoriesFunc.SetDefaultReturn([]store.IndexableRepository{
@@ -286,6 +287,7 @@ func TestIndexSchedulerUpdateIndexConfigurationInferred(t *testing.T) {
 	scheduler := &IndexEnqueuer{
 		dbStore:         mockDBStore,
 		gitserverClient: mockGitserverClient,
+		operations:      newOperations(&observation.TestContext),
 	}
 
 	for _, id := range []int{41, 42, 43, 44} {

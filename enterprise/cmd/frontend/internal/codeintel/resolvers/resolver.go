@@ -56,7 +56,7 @@ func NewResolver(
 		codeIntelAPI: codeIntelAPI,
 		hunkCache:    hunkCache,
 		operations:   makeOperations(observationContext),
-		enqueuer:     enqueuer.NewIndexEnqueuer(enqueuerDBStore, gitClient),
+		enqueuer:     enqueuer.NewIndexEnqueuer(enqueuerDBStore, gitClient, observationContext),
 	}
 }
 

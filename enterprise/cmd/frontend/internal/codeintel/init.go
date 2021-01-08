@@ -132,7 +132,7 @@ func newIndexingRoutines(observationContext *observation.Context) []goroutine.Ba
 	operations := indexing.NewOperations(observationContext)
 
 	return []goroutine.BackgroundRoutine{
-		indexing.NewIndexScheduler(services.dbStore, enqueuerDBStore, gitserverClient, config.IndexBatchSize, config.MinimumTimeSinceLastEnqueue, config.MinimumSearchCount, float64(config.MinimumSearchRatio)/100, config.MinimumPreciseCount, config.AutoIndexingTaskInterval, operations),
+		indexing.NewIndexScheduler(services.dbStore, enqueuerDBStore, gitserverClient, config.IndexBatchSize, config.MinimumTimeSinceLastEnqueue, config.MinimumSearchCount, float64(config.MinimumSearchRatio)/100, config.MinimumPreciseCount, config.AutoIndexingTaskInterval, operations, observationContext),
 		indexing.NewIndexabilityUpdater(services.dbStore, gitserverClient, config.MinimumSearchCount, float64(config.MinimumSearchRatio)/100, config.MinimumPreciseCount, config.AutoIndexingTaskInterval, operations),
 	}
 }
