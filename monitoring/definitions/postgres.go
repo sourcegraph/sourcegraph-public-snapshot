@@ -95,7 +95,6 @@ func Postgres() *monitoring.Container {
 					},
 				},
 			},
-
 			{
 				Title:  "Provisioning indicators (not available on server)",
 				Hidden: true,
@@ -108,6 +107,15 @@ func Postgres() *monitoring.Container {
 					{
 						shared.ProvisioningCPUUsageShortTerm(databaseContainerNames, monitoring.ObservableOwnerCloud).Observable(),
 						shared.ProvisioningMemoryUsageShortTerm(databaseContainerNames, monitoring.ObservableOwnerCloud).Observable(),
+					},
+				},
+			},
+			{
+				Title:  "Kubernetes monitoring (ignore if using Docker Compose or server)",
+				Hidden: true,
+				Rows: []monitoring.Row{
+					{
+						shared.KubernetesPodsAvailable(databaseContainerNames, monitoring.ObservableOwnerCloud).Observable(),
 					},
 				},
 			},
