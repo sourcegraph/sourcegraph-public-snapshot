@@ -471,6 +471,28 @@ describe('StreamingSearchResults', () => {
         element.unmount()
     })
 
+    it('should log view, query, and results fetched events', () => {
+        const logSpy = sinon.spy()
+        const logViewEventSpy = sinon.spy()
+        const telemetryService = {
+            ...NOOP_TELEMETRY_SERVICE,
+            log: logSpy,
+            logViewEvent: logViewEventSpy,
+        }
+
+        const element = mount(
+            <BrowserRouter>
+                <StreamingSearchResults {...defaultProps} telemetryService={telemetryService} />
+            </BrowserRouter>
+        )
+
+        sinon.assert.calledOnceWithExactly(logViewEventSpy, 'SearchResults')
+        sinon.assert.calledWith(logSpy, 'SearchResultsQueried')
+        sinon.assert.calledWith(logSpy, 'SearchResultsFetched')
+
+        element.unmount()
+    })
+
     it('should log event when clicking on search result', () => {
         const logSpy = sinon.spy()
         const telemetryService = {
@@ -487,7 +509,6 @@ describe('StreamingSearchResults', () => {
         const item = element.find(FileMatch).first()
         act(() => item.prop('onSelect')())
 
-        sinon.assert.calledOnce(logSpy)
         sinon.assert.calledWith(logSpy, 'SearchResultClicked')
 
         element.unmount()
