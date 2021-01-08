@@ -22,14 +22,14 @@
                 border: 2px solid #329af0;
             }
 
-            .create-monitor-page__trigger--disabled & {
+            .code-monitor-form__trigger--disabled & {
                 margin: 1rem 0;
                 &:hover {
                     border: 1px solid var(--border-color);
                 }
             }
 
-            .create-monitor-page__actions--disabled & {
+            .code-monitor-form__actions--disabled & {
                 margin: 1rem 0;
                 &:hover {
                     border: 1px solid var(--border-color);
@@ -44,5 +44,19 @@
 
     &__owner-dropdown {
         min-width: 50%;
+    }
+
+    &__actions {
+        &--disabled {
+            color: $gray-17 !important;
+            opacity: 0.5;
+        }
+    }
+
+    &__triggers {
+        &--disabled {
+            color: $gray-17 !important;
+            opacity: 0.5;
+        }
     }
 }

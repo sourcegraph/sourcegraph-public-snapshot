@@ -8,8 +8,8 @@ import { StreamingProgressSkippedPopover } from './StreamingProgressSkippedPopov
 
 export const StreamingProgressSkippedButton: React.FunctionComponent<Pick<
     StreamingProgressProps,
-    'progress' | 'onSearchAgain'
->> = ({ progress, onSearchAgain }) => {
+    'progress' | 'onSearchAgain' | 'history'
+>> = ({ progress, onSearchAgain, history }) => {
     const [isOpen, setIsOpen] = useState(false)
     const toggleOpen = useCallback(() => setIsOpen(previous => !previous), [setIsOpen])
 
@@ -48,6 +48,7 @@ export const StreamingProgressSkippedButton: React.FunctionComponent<Pick<
                         <StreamingProgressSkippedPopover
                             progress={progress}
                             onSearchAgain={onSearchAgainWithPopupClose}
+                            history={history}
                         />
                     </DropdownMenu>
                 </ButtonDropdown>

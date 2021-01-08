@@ -62,12 +62,11 @@ func TestFormatFirecrackerCommandDockerScript(t *testing.T) {
 				"--cpus", "4",
 				"--memory", "20G",
 				"-v", "/work:/data",
-				"-v", "myscript.sh:myscript.sh",
 				"-w", "/data/subdir",
 				"-e", "TEST=true",
 				"--entrypoint /bin/sh",
 				"alpine:latest",
-				"myscript.sh",
+				"/data/.sourcegraph-executor/myscript.sh",
 			}, " "),
 		},
 	}

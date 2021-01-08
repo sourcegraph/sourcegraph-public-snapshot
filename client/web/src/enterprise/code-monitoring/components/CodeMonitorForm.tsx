@@ -178,7 +178,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                     </small>
                 </div>
                 <hr className="code-monitor-form__horizontal-rule" />
-                <div className="create-monitor-page__triggers mb-4">
+                <div className="code-monitor-form__triggers mb-4">
                     <FormTriggerArea
                         query={currentCodeMonitorState.trigger.query}
                         onQueryChange={onQueryChange}
@@ -188,7 +188,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                 </div>
                 <div
                     className={classnames({
-                        'create-monitor-page__actions--disabled': !formCompletion.triggerCompleted,
+                        'code-monitor-form__actions--disabled': !formCompletion.triggerCompleted,
                     })}
                 >
                     <FormActionArea

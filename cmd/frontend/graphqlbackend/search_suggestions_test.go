@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
+	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -20,7 +21,7 @@ import (
 )
 
 func TestSearchSuggestions(t *testing.T) {
-	limitOffset := &db.LimitOffset{Limit: searchLimits().MaxRepos + 1}
+	limitOffset := &db.LimitOffset{Limit: searchrepos.SearchLimits().MaxRepos + 1}
 
 	getSuggestions := func(t *testing.T, query, version string) []string {
 		t.Helper()
@@ -181,18 +182,18 @@ func TestSearchSuggestions(t *testing.T) {
 		defer func() { mockSearchFilesInRepos = nil }()
 
 		calledResolveRepoGroups := false
-		mockResolveRepoGroups = func() (map[string][]RepoGroupValue, error) {
+		searchrepos.MockResolveRepoGroups = func() (map[string][]searchrepos.RepoGroupValue, error) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledResolveRepoGroups = true
-			return map[string][]RepoGroupValue{
+			return map[string][]searchrepos.RepoGroupValue{
 				"baz": {
-					RepoPath("foo-repo1"),
-					RepoPath("repo3"),
+					searchrepos.RepoPath("foo-repo1"),
+					searchrepos.RepoPath("repo3"),
 				},
 			}, nil
 		}
-		defer func() { mockResolveRepoGroups = nil }()
+		defer func() { searchrepos.MockResolveRepoGroups = nil }()
 		for _, v := range searchVersions {
 			testSuggestions(t, "repogroup:baz foo", v, []string{"repo:foo-repo1", "file:dir/foo-repo3-file-name-match", "file:dir/foo-repo1-file-name-match", "file:dir/file-content-match"})
 			if !calledReposListRepoNamesInGroup {

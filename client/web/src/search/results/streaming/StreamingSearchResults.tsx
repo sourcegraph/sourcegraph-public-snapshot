@@ -218,6 +218,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                             <StreamingProgress
                                 progress={results?.progress || { durationMs: 0, matchCount: 0, skipped: [] }}
                                 state={results?.state || 'loading'}
+                                history={props.history}
                                 onSearchAgain={onSearchAgain}
                             />
                         }

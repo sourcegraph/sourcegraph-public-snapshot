@@ -15,6 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
@@ -119,10 +120,10 @@ func alertForStalePermissions() *searchAlert {
 // returns 0 repos or fails, it returns false. It is a helper function for
 // raising NoResolvedRepos alerts with suggestions when we know the original
 // query does not contain any repos to search.
-func (r *searchResolver) reposExist(ctx context.Context, options resolveRepoOp) bool {
-	options.userSettings = r.userSettings
-	resolved, err := resolveRepositories(ctx, options)
-	return err == nil && len(resolved.repoRevs) > 0
+func (r *searchResolver) reposExist(ctx context.Context, options searchrepos.Options) bool {
+	options.UserSettings = r.userSettings
+	resolved, err := searchrepos.ResolveRepositories(ctx, options)
+	return err == nil && len(resolved.RepoRevs) > 0
 }
 
 func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAlert {
@@ -181,11 +182,11 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			}
 		}
 		proposedQueries := []*searchQueryDescription{}
-		tryRemoveRepoGroup := resolveRepoOp{
-			repoFilters:      repoFilters,
-			minusRepoFilters: minusRepoFilters,
-			onlyForks:        onlyForks,
-			noForks:          noForks,
+		tryRemoveRepoGroup := searchrepos.Options{
+			RepoFilters:      repoFilters,
+			MinusRepoFilters: minusRepoFilters,
+			OnlyForks:        onlyForks,
+			NoForks:          noForks,
 		}
 		if r.reposExist(ctx, tryRemoveRepoGroup) {
 			proposedQueries = []*searchQueryDescription{
@@ -197,13 +198,13 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			}
 		}
 
-		unionRepoFilter := unionRegExps(repoFilters)
-		tryAnyRepo := resolveRepoOp{
-			repoFilters:      []string{unionRepoFilter},
-			minusRepoFilters: minusRepoFilters,
-			repoGroupFilters: repoGroupFilters,
-			onlyForks:        onlyForks,
-			noForks:          noForks,
+		unionRepoFilter := searchrepos.UnionRegExps(repoFilters)
+		tryAnyRepo := searchrepos.Options{
+			RepoFilters:      []string{unionRepoFilter},
+			MinusRepoFilters: minusRepoFilters,
+			RepoGroupFilters: repoGroupFilters,
+			OnlyForks:        onlyForks,
+			NoForks:          noForks,
 		}
 		if r.reposExist(ctx, tryAnyRepo) {
 			proposedQueries = append(proposedQueries, &searchQueryDescription{
@@ -236,11 +237,11 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			}
 		}
 		proposedQueries := []*searchQueryDescription{}
-		tryRemoveRepoGroup := resolveRepoOp{
-			repoFilters:      repoFilters,
-			minusRepoFilters: minusRepoFilters,
-			onlyForks:        onlyForks,
-			noForks:          noForks,
+		tryRemoveRepoGroup := searchrepos.Options{
+			RepoFilters:      repoFilters,
+			MinusRepoFilters: minusRepoFilters,
+			OnlyForks:        onlyForks,
+			NoForks:          noForks,
 		}
 		if r.reposExist(ctx, tryRemoveRepoGroup) {
 			proposedQueries = []*searchQueryDescription{
@@ -273,13 +274,13 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			}
 		}
 		proposedQueries := []*searchQueryDescription{}
-		unionRepoFilter := unionRegExps(repoFilters)
-		tryAnyRepo := resolveRepoOp{
-			repoFilters:      []string{unionRepoFilter},
-			minusRepoFilters: minusRepoFilters,
-			repoGroupFilters: repoGroupFilters,
-			onlyForks:        onlyForks,
-			noForks:          noForks,
+		unionRepoFilter := searchrepos.UnionRegExps(repoFilters)
+		tryAnyRepo := searchrepos.Options{
+			RepoFilters:      []string{unionRepoFilter},
+			MinusRepoFilters: minusRepoFilters,
+			RepoGroupFilters: repoGroupFilters,
+			OnlyForks:        onlyForks,
+			NoForks:          noForks,
 		}
 		if r.reposExist(ctx, tryAnyRepo) {
 			proposedQueries = append(proposedQueries, &searchQueryDescription{
@@ -329,10 +330,10 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 
 		proposedQueries := []*searchQueryDescription{}
 		if forksNotSet {
-			tryIncludeForks := resolveRepoOp{
-				repoFilters:      repoFilters,
-				minusRepoFilters: minusRepoFilters,
-				noForks:          false,
+			tryIncludeForks := searchrepos.Options{
+				RepoFilters:      repoFilters,
+				MinusRepoFilters: minusRepoFilters,
+				NoForks:          false,
 			}
 			if r.reposExist(ctx, tryIncludeForks) {
 				proposedQueries = append(proposedQueries, &searchQueryDescription{
@@ -344,12 +345,12 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 		}
 
 		if archivedNotSet {
-			tryIncludeArchived := resolveRepoOp{
-				repoFilters:      repoFilters,
-				minusRepoFilters: minusRepoFilters,
-				onlyForks:        onlyForks,
-				noForks:          noForks,
-				onlyArchived:     true,
+			tryIncludeArchived := searchrepos.Options{
+				RepoFilters:      repoFilters,
+				MinusRepoFilters: minusRepoFilters,
+				OnlyForks:        onlyForks,
+				NoForks:          noForks,
+				OnlyArchived:     true,
 			}
 			if r.reposExist(ctx, tryIncludeArchived) {
 				proposedQueries = append(proposedQueries, &searchQueryDescription{
@@ -428,9 +429,9 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 	}
 
 	resolved, _ := r.resolveRepositories(ctx, nil)
-	if len(resolved.repoRevs) > 0 {
-		paths := make([]string, len(resolved.repoRevs))
-		for i, repo := range resolved.repoRevs {
+	if len(resolved.RepoRevs) > 0 {
+		paths := make([]string, len(resolved.RepoRevs))
+		for i, repo := range resolved.RepoRevs {
 			paths[i] = string(repo.Repo.Name)
 		}
 
@@ -464,7 +465,7 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 			}
 
 			var more string
-			if resolved.overLimit {
+			if resolved.OverLimit {
 				more = "(further filtering required)"
 			}
 			// We found a more specific repo: filter that may be narrow enough. Now

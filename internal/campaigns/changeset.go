@@ -257,6 +257,9 @@ func (c *Changeset) Published() bool { return c.PublicationState.Published() }
 // Unpublished returns whether the Changeset's PublicationState is Unpublished.
 func (c *Changeset) Unpublished() bool { return c.PublicationState.Unpublished() }
 
+// IsImporting returns whether the Changeset is being imported but it's not finished yet.
+func (c *Changeset) IsImporting() bool { return c.Unpublished() && c.CurrentSpecID == 0 }
+
 // DiffStat returns a *diff.Stat if DiffStatAdded, DiffStatChanged, and
 // DiffStatDeleted are set, or nil if one or more is not.
 func (c *Changeset) DiffStat() *diff.Stat {
