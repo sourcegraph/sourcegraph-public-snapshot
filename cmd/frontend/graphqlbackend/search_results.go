@@ -757,6 +757,7 @@ func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 	rightFileMatches := make(map[string]*FileMatchResolver)
 	rightRepoMatches := make(map[string]*RepositoryResolver)
 	rightCommitMatches := make(map[string]*CommitSearchResultResolver)
+	rightDiffMatches := make(map[string]*CommitSearchResultResolver)
 
 	// accumulate matches for the right subexpression in a lookup.
 	for _, r := range right.SearchResults {
@@ -769,7 +770,11 @@ func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 			continue
 		}
 		if commitMatch, ok := r.ToCommitSearchResult(); ok {
-			rightCommitMatches[commitMatch.url] = commitMatch
+			if commitMatch.DiffPreview() != nil {
+				rightDiffMatches[commitMatch.URL()] = commitMatch
+			} else {
+				rightCommitMatches[commitMatch.URL()] = commitMatch
+			}
 			continue
 		}
 		merged = append(merged, r)
@@ -801,11 +806,18 @@ func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 		}
 
 		if leftCommitMatch, ok := leftMatch.ToCommitSearchResult(); ok {
-			rightCommitMatch := rightCommitMatches[leftCommitMatch.url]
-			if rightCommitMatch == nil {
-				// no overlap with existing matches.
-				merged = append(merged, leftMatch)
-				count++
+			if leftCommitMatch.DiffPreview() != nil {
+				rightDiffMatch := rightDiffMatches[leftCommitMatch.URL()]
+				if rightDiffMatch == nil {
+					merged = append(merged, leftCommitMatch)
+					count++
+				}
+			} else {
+				rightCommitMatch := rightCommitMatches[leftCommitMatch.URL()]
+				if rightCommitMatch == nil {
+					merged = append(merged, leftCommitMatch)
+					count++
+				}
 			}
 			continue
 		}
@@ -819,6 +831,9 @@ func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 		merged = append(merged, v)
 	}
 	for _, v := range rightCommitMatches {
+		merged = append(merged, v)
+	}
+	for _, v := range rightDiffMatches {
 		merged = append(merged, v)
 	}
 
