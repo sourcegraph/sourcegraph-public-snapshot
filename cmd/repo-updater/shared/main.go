@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/shared/assets"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -51,7 +52,9 @@ const port = "3182"
 type EnterpriseInit func(db *sql.DB, store *repos.Store, cf *httpcli.Factory, server *repoupdater.Server) []debugserver.Dumper
 
 func Main(enterpriseInit EnterpriseInit) {
-	ctx := context.Background()
+	// NOTE: Internal actor is required to have full visibility of the repo table
+	// 	(i.e. bypass repository authorization).
+	ctx := actor.WithInternalActor(context.Background())
 	env.Lock()
 	env.HandleHelpFlag()
 
@@ -331,10 +334,18 @@ func Main(enterpriseInit EnterpriseInit) {
 	},
 	)
 
+	// NOTE: Internal actor is required to have full visibility of the repo table
+	// 	(i.e. bypass repository authorization).
+	authzBypass := func(f http.Handler) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			r = r.WithContext(actor.WithInternalActor(r.Context()))
+			f.ServeHTTP(w, r)
+		}
+	}
 	httpSrv := httpserver.NewFromAddr(addr, &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
-		Handler:      ot.Middleware(handler),
+		Handler:      ot.Middleware(authzBypass(handler)),
 	})
 	goroutine.MonitorBackgroundRoutines(ctx, httpSrv)
 }
