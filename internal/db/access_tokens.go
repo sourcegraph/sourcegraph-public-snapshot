@@ -140,7 +140,23 @@ func (s *accessTokens) GetByID(ctx context.Context, id int64) (*AccessToken, err
 		return Mocks.AccessTokens.GetByID(id)
 	}
 
-	results, err := s.list(ctx, []*sqlf.Query{sqlf.Sprintf("id=%d", id)}, nil)
+	return s.get(ctx, []*sqlf.Query{sqlf.Sprintf("id=%d", id)})
+}
+
+// GetByToken retrieves the access token (if any) given its hex encoded string.
+//
+// 🚨 SECURITY: The caller must ensure that the actor is permitted to view this access token.
+func (s *accessTokens) GetByToken(ctx context.Context, tokenHexEncoded string) (*AccessToken, error) {
+	token, err := hex.DecodeString(tokenHexEncoded)
+	if err != nil {
+		return nil, errors.Wrap(err, "AccessTokens.GetByToken")
+	}
+
+	return s.get(ctx, []*sqlf.Query{sqlf.Sprintf("value_sha256=%s", toSHA256Bytes(token))})
+}
+
+func (s *accessTokens) get(ctx context.Context, conds []*sqlf.Query) (*AccessToken, error) {
+	results, err := s.list(ctx, conds, nil)
 	if err != nil {
 		return nil, err
 	}
