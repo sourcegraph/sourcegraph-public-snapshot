@@ -797,433 +797,117 @@ func TestMergePatterns(t *testing.T) {
 }
 
 func TestMatchUnaryKeyword(t *testing.T) {
-	tests := []struct {
-		in   string
-		pos  int
-		want bool
-	}{
-		{
-			in:   "NOT bar",
-			pos:  0,
-			want: true,
-		},
-		{
-			in:   "foo NOT bar",
-			pos:  4,
-			want: true,
-		},
-		{
-			in:   "foo NOT",
-			pos:  4,
-			want: false,
-		},
-		{
-			in:   "fooNOT bar",
-			pos:  3,
-			want: false,
-		},
-		{
-			in:   "NOTbar",
-			pos:  0,
-			want: false,
-		},
-		{
-			in:   "(not bar)",
-			pos:  1,
-			want: true,
-		},
+
+	test := func(input string, pos int) string {
+		p := &parser{buf: []byte(input), pos: pos}
+		return fmt.Sprintf("%t", p.matchUnaryKeyword("NOT"))
 	}
-	for _, tt := range tests {
-		t.Run(tt.in, func(t *testing.T) {
-			p := &parser{buf: []byte(tt.in), pos: tt.pos}
-			if got := p.matchUnaryKeyword("NOT"); got != tt.want {
-				t.Errorf("matchUnaryKeyword() = %v, want %v", got, tt.want)
-			}
-		})
-	}
+
+	autogold.Want("NOT bar", "true").Equal(t, test("NOT bar", 0))
+	autogold.Want("foo NOT bar", "true").Equal(t, test("foo NOT bar", 4))
+	autogold.Want("foo NOT", "false").Equal(t, test("foo NOT", 4))
+	autogold.Want("fooNOT bar", "false").Equal(t, test("fooNOT bar", 3))
+	autogold.Want("NOTbar", "false").Equal(t, test("NOTbar", 0))
+	autogold.Want("(not bar)", "true").Equal(t, test("(not bar)", 1))
 }
 
 func TestParseAndOrLiteral(t *testing.T) {
-	cases := []struct {
-		Input      string
+	type value struct {
 		Want       string
-		WantLabels string
-		WantError  string
-	}{
-		{
-			Input:      "()",
-			Want:       `"()"`,
-			WantLabels: "HeuristicParensAsPatterns,Literal",
-		},
-		{
-			Input:      `"`,
-			Want:       `"\""`,
-			WantLabels: "Literal",
-		},
-		{
-			Input:      `""`,
-			Want:       `"\"\""`,
-			WantLabels: "Literal",
-		},
-		{
-			Input:      "(",
-			Want:       `"("`,
-			WantLabels: "HeuristicDanglingParens,Literal",
-		},
-		{
-			Input:      "repo:foo foo( or bar(",
-			Want:       `(and "repo:foo" (or "foo(" "bar("))`,
-			WantLabels: "HeuristicHoisted,Literal",
-		},
-		{
-			Input:      "x or",
-			Want:       `(concat "x" "or")`,
-			WantLabels: "Literal",
-		},
-		{
-			Input:      "repo:foo (x",
-			Want:       `(and "repo:foo" "(x")`,
-			WantLabels: "HeuristicDanglingParens,Literal",
-		},
-		{
-			Input:      "(x or bar() )",
-			Want:       `(or "x" "bar()")`,
-			WantLabels: "Literal",
-		},
-		{
-			Input:      "(x",
-			Want:       `"(x"`,
-			WantLabels: "HeuristicDanglingParens,Literal",
-		},
-		{
-			Input:      "x or (x",
-			Want:       `(or "x" "(x")`,
-			WantLabels: "HeuristicDanglingParens,HeuristicHoisted,Literal",
-		},
-		{
-			Input:      "(y or (z",
-			Want:       `(or "(y" "(z")`,
-			WantLabels: "HeuristicDanglingParens,HeuristicHoisted,Literal",
-		},
-		{
-			Input:      "repo:foo (lisp)",
-			Want:       `(and "repo:foo" "(lisp)")`,
-			WantLabels: "HeuristicParensAsPatterns,Literal",
-		},
-		{
-			Input:      "repo:foo (lisp lisp())",
-			Want:       `(and "repo:foo" "(lisp lisp())")`,
-			WantLabels: "HeuristicParensAsPatterns,Literal",
-		},
-		{
-			Input:      "repo:foo (lisp or lisp)",
-			Want:       `(and "repo:foo" (or "lisp" "lisp"))`,
-			WantLabels: "Literal",
-		},
-		{
-			Input:      "repo:foo (lisp or lisp())",
-			Want:       `(and "repo:foo" (or "lisp" "lisp()"))`,
-			WantLabels: "Literal",
-		},
-		{
-			Input:      "repo:foo (lisp or lisp())",
-			Want:       `(and "repo:foo" (or "lisp" "lisp()"))`,
-			WantLabels: "Literal",
-		},
-		{
-			Input:      "repo:foo (lisp or lisp()",
-			Want:       `(and "repo:foo" (or "(lisp" "lisp()"))`,
-			WantLabels: "HeuristicDanglingParens,HeuristicHoisted,Literal",
-		},
-		{
-			Input:      "(y or bar())",
-			Want:       `(or "y" "bar()")`,
-			WantLabels: "Literal",
-		},
-		{
-			Input:      "((x or bar(",
-			Want:       `(or "((x" "bar(")`,
-			WantLabels: "HeuristicDanglingParens,HeuristicHoisted,Literal",
-		},
-		{
-			Input:      "",
-			Want:       "",
-			WantLabels: "None",
-		},
-		{
-			Input:      " ",
-			Want:       "",
-			WantLabels: "None",
-		},
-		{
-			Input:      "  ",
-			Want:       "",
-			WantLabels: "None",
-		},
-		{
-			Input:      "a",
-			Want:       `"a"`,
-			WantLabels: "Literal",
-		},
-		{
-			Input:      " a",
-			Want:       `"a"`,
-			WantLabels: "Literal",
-		},
-		{
-			Input:      `a `,
-			Want:       `"a"`,
-			WantLabels: "Literal",
-		},
-		{
-			Input:      ` a b`,
-			Want:       `(concat "a" "b")`,
-			WantLabels: "Literal",
-		},
-		{
-			Input:      `a  b`,
-			Want:       `(concat "a" "b")`,
-			WantLabels: "Literal",
-		},
-		{
-			Input:      `:`,
-			Want:       `":"`,
-			WantLabels: "Literal",
-		},
-		{
-			Input:      `:=`,
-			Want:       `":="`,
-			WantLabels: "Literal",
-		},
-		{
-			Input:      `:= range`,
-			Want:       `(concat ":=" "range")`,
-			WantLabels: "Literal",
-		},
-		{
-			Input:      "`",
-			Want:       "\"`\"",
-			WantLabels: "Literal",
-		},
-		{
-			Input:      `'`,
-			Want:       `"'"`,
-			WantLabels: "Literal",
-		},
-		{
-			Input:      "file:a",
-			Want:       `"file:a"`,
-			WantLabels: "None",
-		},
-		{
-			Input:      `"file:a"`,
-			Want:       `"\"file:a\""`,
-			WantLabels: "Literal",
-		},
-		{
-			Input:      `"x foo:bar`,
-			Want:       `(concat "\"x" "foo:bar")`,
-			WantLabels: "Literal",
-		},
-		// -repo:c" is considered valid. "repo:b is a literal pattern.
-		{
-			Input:      `"repo:b -repo:c"`,
-			Want:       `(and "-repo:c\"" "\"repo:b")`,
-			WantLabels: "Literal",
-		},
-		{
-			Input:      `".*"`,
-			Want:       `"\".*\""`,
-			WantLabels: "Literal",
-		},
-		{
-			Input:      `-pattern: ok`,
-			Want:       `(concat "-pattern:" "ok")`,
-			WantLabels: "Literal",
-		},
-		{
-			Input:      `a:b "patterntype:regexp"`,
-			Want:       `(concat "a:b" "\"patterntype:regexp\"")`,
-			WantLabels: "Literal",
-		},
-		{
-			Input:      `not file:foo pattern`,
-			Want:       `(and "-file:foo" "pattern")`,
-			WantLabels: "Literal",
-		},
-		{
-			Input:      `not literal.*pattern`,
-			Want:       `(not "literal.*pattern")`,
-			WantLabels: "Literal",
-		},
-		// Whitespace is removed. content: exists for preserving whitespace.
-		{
-			Input:      `lang:go func  main`,
-			Want:       `(and "lang:go" (concat "func" "main"))`,
-			WantLabels: "Literal",
-		},
-		{
-			Input:      `\n`,
-			Want:       `"\\n"`,
-			WantLabels: "Literal",
-		},
-		{
-			Input:      `\t`,
-			Want:       `"\\t"`,
-			WantLabels: "Literal",
-		},
-		{
-			Input:      `\\`,
-			Want:       `"\\\\"`,
-			WantLabels: "Literal",
-		},
-		{
-			Input:      `foo\d "bar*"`,
-			Want:       `(concat "foo\\d" "\"bar*\"")`,
-			WantLabels: "Literal",
-		},
-		{
-			Input:      `\d`,
-			Want:       `"\\d"`,
-			WantLabels: "Literal",
-		},
-		{
-			Input:      `type:commit message:"a commit message" after:"10 days ago"`,
-			Want:       `(and "type:commit" "message:a commit message" "after:10 days ago")`,
-			WantLabels: "None",
-		},
-		{
-			Input:      `type:commit message:"a commit message" after:"10 days ago" test test2`,
-			Want:       `(and "type:commit" "message:a commit message" "after:10 days ago" (concat "test" "test2"))`,
-			WantLabels: "Literal",
-		},
-		{
-			Input:      `type:commit message:'a commit message' after:'10 days ago' test test2`,
-			Want:       `(and "type:commit" "message:a commit message" "after:10 days ago" (concat "test" "test2"))`,
-			WantLabels: "Literal",
-		},
-		{
-			Input:      `type:commit message:"a com"mit message" after:"10 days ago"`,
-			Want:       `(and "type:commit" "message:a com" "after:10 days ago" (concat "mit" "message\""))`,
-			WantLabels: "Literal",
-		},
-		{
-			Input:      `bar and (foo or x\) ()`,
-			Want:       `(or (and "bar" "(foo") (concat "x\\)" "()"))`,
-			WantLabels: "HeuristicDanglingParens,HeuristicHoisted,Literal",
-		},
-		// For implementation simplicity, behavior preserves whitespace
-		// inside parentheses.
-		{
-			Input:      "repo:foo (lisp    lisp)",
-			Want:       `(and "repo:foo" "(lisp    lisp)")`,
-			WantLabels: "HeuristicParensAsPatterns,Literal",
-		},
-		{
-			Input:      "repo:foo main( or (lisp    lisp)",
-			Want:       `(and "repo:foo" (or "main(" "(lisp    lisp)"))`,
-			WantLabels: "HeuristicHoisted,HeuristicParensAsPatterns,Literal",
-		},
-		{
-			Input:      "repo:foo )foo(",
-			WantError:  "unbalanced expression: unmatched closing parenthesis )",
-			WantLabels: "None",
-		},
-		{
-			Input:      "repo:foo )main( or (lisp    lisp)",
-			WantError:  "unbalanced expression: unmatched closing parenthesis )",
-			WantLabels: "None",
-		},
-		{
-			Input:      "repo:foo ) main( or (lisp    lisp)",
-			WantError:  "unbalanced expression: unmatched closing parenthesis )",
-			WantLabels: "None",
-		},
-		{
-			Input:      "repo:foo )))) main( or (lisp    lisp) and )))",
-			WantError:  "unbalanced expression: unmatched closing parenthesis )",
-			WantLabels: "None",
-		},
-		{
-			Input:      `repo:foo Args or main)`,
-			WantError:  "unbalanced expression: unmatched closing parenthesis )",
-			WantLabels: "None",
-		},
-		{
-			Input:      `repo:foo Args) and main`,
-			WantError:  "unbalanced expression: unmatched closing parenthesis )",
-			WantLabels: "None",
-		},
-		{
-			Input:      `repo:foo bar and baz)`,
-			WantError:  "unbalanced expression: unmatched closing parenthesis )",
-			WantLabels: "None",
-		},
-		{
-			Input:      `repo:foo bar)) and baz`,
-			WantError:  "unbalanced expression: unmatched closing parenthesis )",
-			WantLabels: "None",
-		},
-		{
-			Input:      `repo:foo (bar and baz))`,
-			WantError:  "unbalanced expression: unmatched closing parenthesis )",
-			WantLabels: "None",
-		},
-		{
-			Input:      `repo:foo (bar and (baz)))`,
-			WantError:  "unbalanced expression: unmatched closing parenthesis )",
-			WantLabels: "None",
-		},
-		{
-			Input:      `repo:foo (bar( and baz())`,
-			Want:       `(and "repo:foo" "bar(" "baz()")`,
-			WantLabels: "Literal",
-		},
-		{
-			Input:      `"quoted"`,
-			Want:       `"\"quoted\""`,
-			WantLabels: "Literal",
-		},
-		// This test input should error because the single quote in 'after' is unclosed.
-		{
-			Input:      `type:commit message:'a commit message' after:'10 days ago" test test2`,
-			WantError:  "unterminated literal: expected '",
-			WantLabels: "None",
-		},
-		// Fringe tests cases at the boundary of heuristics and invalid syntax.
-		{
-			Input:      `)(0 )0`,
-			WantError:  "unbalanced expression: unmatched closing parenthesis )",
-			WantLabels: "None",
-		},
-		{
-			Input:      `((R:)0))0`,
-			WantError:  "unbalanced expression: unmatched closing parenthesis )",
-			WantLabels: "None",
-		},
+		WantLabels string `json:",omitempty"`
+		WantError  string `json:",omitempty"`
 	}
-	for _, tt := range cases {
-		t.Run("literal search parse", func(t *testing.T) {
-			result, err := ParseAndOr(tt.Input, SearchTypeLiteral)
-			if err != nil {
-				if diff := cmp.Diff(tt.WantError, err.Error()); diff != "" {
-					t.Error(diff)
-				}
-			}
-			var resultStr []string
-			for _, node := range result {
-				resultStr = append(resultStr, node.String())
-			}
-			got := strings.Join(resultStr, " ")
-			if diff := cmp.Diff(tt.Want, got); diff != "" {
-				t.Error(diff)
-			}
-			gotLabels := heuristicLabels(result)
-			if diff := cmp.Diff(tt.WantLabels, gotLabels); diff != "" {
-				t.Error(diff)
-			}
-		})
+
+	test := func(input string) string {
+		result, err := ParseAndOr(input, SearchTypeLiteral)
+		if err != nil {
+			return fmt.Sprintf("ERROR: %s", err.Error())
+		}
+		wantLabels := heuristicLabels(result)
+		var resultStr []string
+		for _, node := range result {
+			resultStr = append(resultStr, node.String())
+		}
+		want := fmt.Sprintf("%s", strings.Join(resultStr, " "))
+		if wantLabels != "" {
+			return fmt.Sprintf("%s (%s)", want, wantLabels)
+		}
+		return want
 	}
+
+	autogold.Want("()", `"()" (HeuristicParensAsPatterns,Literal)`).Equal(t, test("()"))
+	autogold.Want(`"`, `"\"" (Literal)`).Equal(t, test(`"`))
+	autogold.Want(`""`, `"\"\"" (Literal)`).Equal(t, test(`""`))
+	autogold.Want("(", `"(" (HeuristicDanglingParens,Literal)`).Equal(t, test("("))
+	autogold.Want("repo:foo foo( or bar(", `(and "repo:foo" (or "foo(" "bar(")) (HeuristicHoisted,Literal)`).Equal(t, test("repo:foo foo( or bar("))
+	autogold.Want("x or", `(concat "x" "or") (Literal)`).Equal(t, test("x or"))
+	autogold.Want("repo:foo (x", `(and "repo:foo" "(x") (HeuristicDanglingParens,Literal)`).Equal(t, test("repo:foo (x"))
+	autogold.Want("(x or bar() )", `(or "x" "bar()") (Literal)`).Equal(t, test("(x or bar() )"))
+	autogold.Want("(x", `"(x" (HeuristicDanglingParens,Literal)`).Equal(t, test("(x"))
+	autogold.Want("x or (x", `(or "x" "(x") (HeuristicDanglingParens,HeuristicHoisted,Literal)`).Equal(t, test("x or (x"))
+	autogold.Want("(y or (z", `(or "(y" "(z") (HeuristicDanglingParens,HeuristicHoisted,Literal)`).Equal(t, test("(y or (z"))
+	autogold.Want("repo:foo (lisp)", `(and "repo:foo" "(lisp)") (HeuristicParensAsPatterns,Literal)`).Equal(t, test("repo:foo (lisp)"))
+	autogold.Want("repo:foo (lisp lisp())", `(and "repo:foo" "(lisp lisp())") (HeuristicParensAsPatterns,Literal)`).Equal(t, test("repo:foo (lisp lisp())"))
+	autogold.Want("repo:foo (lisp or lisp)", `(and "repo:foo" (or "lisp" "lisp")) (Literal)`).Equal(t, test("repo:foo (lisp or lisp)"))
+	autogold.Want("repo:foo (lisp or lisp())", `(and "repo:foo" (or "lisp" "lisp()")) (Literal)`).Equal(t, test("repo:foo (lisp or lisp())"))
+	autogold.Want("repo:foo (lisp or lisp()", `(and "repo:foo" (or "(lisp" "lisp()")) (HeuristicDanglingParens,HeuristicHoisted,Literal)`).Equal(t, test("repo:foo (lisp or lisp()"))
+	autogold.Want("(y or bar())", `(or "y" "bar()") (Literal)`).Equal(t, test("(y or bar())"))
+	autogold.Want("((x or bar(", `(or "((x" "bar(") (HeuristicDanglingParens,HeuristicHoisted,Literal)`).Equal(t, test("((x or bar("))
+	autogold.Want("", " (None)").Equal(t, test(""))
+	autogold.Want(" ", " (None)").Equal(t, test(" "))
+	autogold.Want("  ", " (None)").Equal(t, test("  "))
+	autogold.Want("a", `"a" (Literal)`).Equal(t, test("a"))
+	autogold.Want(" a", `"a" (Literal)`).Equal(t, test(" a"))
+	autogold.Want(`a `, `"a" (Literal)`).Equal(t, test(`a `))
+	autogold.Want(` a b`, `(concat "a" "b") (Literal)`).Equal(t, test(` a b`))
+	autogold.Want(`a  b`, `(concat "a" "b") (Literal)`).Equal(t, test(`a  b`))
+	autogold.Want(`:`, `":" (Literal)`).Equal(t, test(`:`))
+	autogold.Want(`:=`, `":=" (Literal)`).Equal(t, test(`:=`))
+	autogold.Want(`:= range`, `(concat ":=" "range") (Literal)`).Equal(t, test(`:= range`))
+	autogold.Want("`", "\"`\" (Literal)").Equal(t, test("`"))
+	autogold.Want(`'`, `"'" (Literal)`).Equal(t, test(`'`))
+	autogold.Want("file:a", `"file:a" (None)`).Equal(t, test("file:a"))
+	autogold.Want(`"file:a"`, `"\"file:a\"" (Literal)`).Equal(t, test(`"file:a"`))
+	autogold.Want(`"x foo:bar`, `(concat "\"x" "foo:bar") (Literal)`).Equal(t, test(`"x foo:bar`))
+	// -repo:c" is considered valid. "repo:b is a literal pattern.
+	autogold.Want(`"repo:b -repo:c"`, `(and "-repo:c\"" "\"repo:b") (Literal)`).Equal(t, test(`"repo:b -repo:c"`))
+	autogold.Want(`".*"`, `"\".*\"" (Literal)`).Equal(t, test(`".*"`))
+	autogold.Want(`-pattern: ok`, `(concat "-pattern:" "ok") (Literal)`).Equal(t, test(`-pattern: ok`))
+	autogold.Want(`a:b "patterntype:regexp"`, `(concat "a:b" "\"patterntype:regexp\"") (Literal)`).Equal(t, test(`a:b "patterntype:regexp"`))
+	autogold.Want(`not file:foo pattern`, `(and "-file:foo" "pattern") (Literal)`).Equal(t, test(`not file:foo pattern`))
+	autogold.Want(`not literal.*pattern`, `(not "literal.*pattern") (Literal)`).Equal(t, test(`not literal.*pattern`))
+	// Whitespace is removed. content: exists for preserving whitespace.
+	autogold.Want(`lang:go func  main`, `(and "lang:go" (concat "func" "main")) (Literal)`).Equal(t, test(`lang:go func  main`))
+	autogold.Want(`\n`, `"\\n" (Literal)`).Equal(t, test(`\n`))
+	autogold.Want(`\t`, `"\\t" (Literal)`).Equal(t, test(`\t`))
+	autogold.Want(`\\`, `"\\\\" (Literal)`).Equal(t, test(`\\`))
+	autogold.Want(`foo\d "bar*"`, `(concat "foo\\d" "\"bar*\"") (Literal)`).Equal(t, test(`foo\d "bar*"`))
+	autogold.Want(`\d`, `"\\d" (Literal)`).Equal(t, test(`\d`))
+	autogold.Want(`type:commit message:"a commit message" after:"10 days ago"`, `(and "type:commit" "message:a commit message" "after:10 days ago") (None)`).Equal(t, test(`type:commit message:"a commit message" after:"10 days ago"`))
+	autogold.Want(`type:commit message:"a commit message" after:"10 days ago" test test2`, `(and "type:commit" "message:a commit message" "after:10 days ago" (concat "test" "test2")) (Literal)`).Equal(t, test(`type:commit message:"a commit message" after:"10 days ago" test test2`))
+	autogold.Want(`type:commit message:"a com"mit message" after:"10 days ago"`, `(and "type:commit" "message:a com" "after:10 days ago" (concat "mit" "message\"")) (Literal)`).Equal(t, test(`type:commit message:"a com"mit message" after:"10 days ago"`))
+	autogold.Want(`bar and (foo or x\) ()`, `(or (and "bar" "(foo") (concat "x\\)" "()")) (HeuristicDanglingParens,HeuristicHoisted,Literal)`).Equal(t, test(`bar and (foo or x\) ()`))
+	// For implementation simplicity, behavior preserves whitespace inside parentheses.
+	autogold.Want("repo:foo (lisp    lisp)", `(and "repo:foo" "(lisp    lisp)") (HeuristicParensAsPatterns,Literal)`).Equal(t, test("repo:foo (lisp    lisp)"))
+	autogold.Want("repo:foo main( or (lisp    lisp)", `(and "repo:foo" (or "main(" "(lisp    lisp)")) (HeuristicHoisted,HeuristicParensAsPatterns,Literal)`).Equal(t, test("repo:foo main( or (lisp    lisp)"))
+	autogold.Want("repo:foo )foo(", "ERROR: unbalanced expression: unmatched closing parenthesis )").Equal(t, test("repo:foo )foo("))
+	autogold.Want("repo:foo )main( or (lisp    lisp)", "ERROR: unbalanced expression: unmatched closing parenthesis )").Equal(t, test("repo:foo )main( or (lisp    lisp)"))
+	autogold.Want("repo:foo ) main( or (lisp    lisp)", "ERROR: unbalanced expression: unmatched closing parenthesis )").Equal(t, test("repo:foo ) main( or (lisp    lisp)"))
+	autogold.Want("repo:foo )))) main( or (lisp    lisp) and )))", "ERROR: unbalanced expression: unmatched closing parenthesis )").Equal(t, test("repo:foo )))) main( or (lisp    lisp) and )))"))
+	autogold.Want(`repo:foo Args or main)`, "ERROR: unbalanced expression: unmatched closing parenthesis )").Equal(t, test(`repo:foo Args or main)`))
+	autogold.Want(`repo:foo Args) and main`, "ERROR: unbalanced expression: unmatched closing parenthesis )").Equal(t, test(`repo:foo Args) and main`))
+	autogold.Want(`repo:foo bar and baz)`, "ERROR: unbalanced expression: unmatched closing parenthesis )").Equal(t, test(`repo:foo bar and baz)`))
+	autogold.Want(`repo:foo bar)) and baz`, "ERROR: unbalanced expression: unmatched closing parenthesis )").Equal(t, test(`repo:foo bar)) and baz`))
+	autogold.Want(`repo:foo (bar and baz))`, "ERROR: unbalanced expression: unmatched closing parenthesis )").Equal(t, test(`repo:foo (bar and baz))`))
+	autogold.Want(`repo:foo (bar and (baz)))`, "ERROR: unbalanced expression: unmatched closing parenthesis )").Equal(t, test(`repo:foo (bar and (baz)))`))
+	autogold.Want(`repo:foo (bar( and baz())`, `(and "repo:foo" "bar(" "baz()") (Literal)`).Equal(t, test(`repo:foo (bar( and baz())`))
+	autogold.Want(`"quoted"`, `"\"quoted\"" (Literal)`).Equal(t, test(`"quoted"`))
+	// This test input should error because the single quote in 'after' is unclosed.
+	autogold.Want(`type:commit message:'a commit message' after:'10 days ago" test test2`, "ERROR: unterminated literal: expected '").Equal(t, test(`type:commit message:'a commit message' after:'10 days ago" test test2`))
+	// Fringe tests cases at the boundary of heuristics and invalid syntax.
+	autogold.Want(`)(0 )0`, "ERROR: unbalanced expression: unmatched closing parenthesis )").Equal(t, test(`)(0 )0`))
+	autogold.Want(`((R:)0))0`, "ERROR: unbalanced expression: unmatched closing parenthesis )").Equal(t, test(`((R:)0))0`))
+
 }
 
 func TestScanBalancedPattern(t *testing.T) {
