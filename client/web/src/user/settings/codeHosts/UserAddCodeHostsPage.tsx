@@ -104,7 +104,9 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             {isServicesByKind(statusOrError) &&
                 Object.values(statusOrError)
                     .filter(isDefined)
-                    .filter(service => service.warning)
+                    // Services may return warnings/errors immediately or after
+                    // the sync. We want to display an alert for both.
+                    .filter(service => service.warning || service.lastSyncError)
                     .map(getServiceWarningFragment)}
 
             {/* display other errors */}
