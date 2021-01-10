@@ -152,6 +152,7 @@ query FileExternalLinks($repoName: String!, $revision: String!, $filePath: Strin
 					... on ExternalLink {
 						url
 						serviceKind
+						serviceType
 					}
 				}
 			}
