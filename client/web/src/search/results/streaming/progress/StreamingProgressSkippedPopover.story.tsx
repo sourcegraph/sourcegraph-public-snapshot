@@ -1,9 +1,11 @@
 import * as React from 'react'
+import { createMemoryHistory } from 'history'
 import { storiesOf } from '@storybook/react'
 import { WebStory } from '../../../../components/WebStory'
 import { Progress } from '../../../stream'
 import { StreamingProgressSkippedPopover } from './StreamingProgressSkippedPopover'
 
+const history = createMemoryHistory()
 const { add } = storiesOf(
     'web/search/results/streaming/progress/StreamingProgressSkippedPopover',
     module
@@ -42,6 +44,16 @@ add('popover', () => {
                 },
             },
             {
+                reason: 'excluded-archive',
+                message: 'By default we exclude archived repositories. Include them with `archived:yes` in your query.',
+                severity: 'info',
+                title: '1 archived',
+                suggested: {
+                    title: 'include archived',
+                    queryExpression: 'archived:yes',
+                },
+            },
+            {
                 reason: 'shard-timedout',
                 message:
                     'Search timed out before some repositories could be searched. Try reducing scope of your query with repo: or other filters.',
@@ -55,5 +67,9 @@ add('popover', () => {
         ],
     }
 
-    return <WebStory>{() => <StreamingProgressSkippedPopover progress={progress} onSearchAgain={() => {}} />}</WebStory>
+    return (
+        <WebStory>
+            {() => <StreamingProgressSkippedPopover progress={progress} onSearchAgain={() => {}} history={history} />}
+        </WebStory>
+    )
 })

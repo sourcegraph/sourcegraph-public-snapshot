@@ -87,12 +87,12 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 
 func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 	tests := []struct {
-		name         string
-		kind         string
-		config       string
-		hasNamespace bool
-		setup        func(t *testing.T)
-		wantErr      string
+		name            string
+		kind            string
+		config          string
+		namespaceUserID int32
+		setup           func(t *testing.T)
+		wantErr         string
 	}{
 		{
 			name:    "0 errors - GitHub.com",
@@ -160,39 +160,61 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			wantErr: "1 error occurred:\n\t* existing external service, \"GITHUB 1\", already has a rate limit set\n\n",
 		},
 		{
-			name:         "prevent code hosts that are not allowed",
-			kind:         extsvc.KindGitHub,
-			config:       `{"url": "https://github.example.com", "repositoryQuery": ["none"], "token": "abc"}`,
-			hasNamespace: true,
-			wantErr:      `users are only allowed to add external service for https://github.com/ and https://gitlab.com/`,
+			name:            "prevent code hosts that are not allowed",
+			kind:            extsvc.KindGitHub,
+			config:          `{"url": "https://github.example.com", "repositoryQuery": ["none"], "token": "abc"}`,
+			namespaceUserID: 1,
+			wantErr:         `users are only allowed to add external service for https://github.com/ and https://gitlab.com/`,
 		},
 		{
-			name:         "gjson handles comments",
-			kind:         extsvc.KindGitHub,
-			config:       `{"url": "https://github.com", "token": "abc", "repositoryQuery": ["affiliated"]} // comment`,
-			hasNamespace: false,
-			wantErr:      "<nil>",
+			name:            "gjson handles comments",
+			kind:            extsvc.KindGitHub,
+			config:          `{"url": "https://github.com", "token": "abc", "repositoryQuery": ["affiliated"]} // comment`,
+			namespaceUserID: 1,
+			wantErr:         "<nil>",
 		},
 		{
-			name:         "prevent disallowed repositoryPathPattern field",
-			kind:         extsvc.KindGitHub,
-			config:       `{"url": "https://github.com", "repositoryPathPattern": "github/{nameWithOwner}"}`,
-			hasNamespace: true,
-			wantErr:      `field "repositoryPathPattern" is not allowed in a user-added external service`,
+			name:            "prevent disallowed repositoryPathPattern field",
+			kind:            extsvc.KindGitHub,
+			config:          `{"url": "https://github.com", "repositoryPathPattern": "github/{nameWithOwner}"}`,
+			namespaceUserID: 1,
+			wantErr:         `field "repositoryPathPattern" is not allowed in a user-added external service`,
 		},
 		{
-			name:         "prevent disallowed nameTransformations field",
-			kind:         extsvc.KindGitHub,
-			config:       `{"url": "https://github.com", "nameTransformations": [{"regex": "\\.d/","replacement": "/"},{"regex": "-git$","replacement": ""}]}`,
-			hasNamespace: true,
-			wantErr:      `field "nameTransformations" is not allowed in a user-added external service`,
+			name:            "prevent disallowed nameTransformations field",
+			kind:            extsvc.KindGitHub,
+			config:          `{"url": "https://github.com", "nameTransformations": [{"regex": "\\.d/","replacement": "/"},{"regex": "-git$","replacement": ""}]}`,
+			namespaceUserID: 1,
+			wantErr:         `field "nameTransformations" is not allowed in a user-added external service`,
 		},
 		{
-			name:         "prevent disallowed rateLimit field",
-			kind:         extsvc.KindGitHub,
-			config:       `{"url": "https://github.com", "rateLimit": {}}`,
-			hasNamespace: true,
-			wantErr:      `field "rateLimit" is not allowed in a user-added external service`,
+			name:            "prevent disallowed rateLimit field",
+			kind:            extsvc.KindGitHub,
+			config:          `{"url": "https://github.com", "rateLimit": {}}`,
+			namespaceUserID: 1,
+			wantErr:         `field "rateLimit" is not allowed in a user-added external service`,
+		},
+		{
+			name:            "duplicate kinds not allowed for user owned services",
+			kind:            extsvc.KindGitHub,
+			config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+			namespaceUserID: 1,
+			setup: func(t *testing.T) {
+				t.Cleanup(func() {
+					Mocks.ExternalServices.List = nil
+				})
+				Mocks.ExternalServices.List = func(opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
+					return []*types.ExternalService{
+						{
+							ID:          1,
+							Kind:        extsvc.KindGitHub,
+							DisplayName: "GITHUB 1",
+							Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+						},
+					}, nil
+				}
+			},
+			wantErr: `existing external service, "GITHUB 1", of same kind already added`,
 		},
 	}
 	for _, test := range tests {
@@ -202,9 +224,9 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			}
 
 			_, err := ExternalServices.ValidateConfig(context.Background(), ValidateExternalServiceConfigOptions{
-				Kind:         test.kind,
-				Config:       test.config,
-				HasNamespace: test.hasNamespace,
+				Kind:            test.kind,
+				Config:          test.config,
+				NamespaceUserID: test.namespaceUserID,
 			})
 			gotErr := fmt.Sprintf("%v", err)
 			if gotErr != test.wantErr {

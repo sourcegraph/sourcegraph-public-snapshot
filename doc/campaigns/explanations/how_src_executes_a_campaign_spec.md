@@ -86,9 +86,11 @@ The following is what `src` does _for each repository_:
       'http://sourcegraph.example.com/github.com/my-org/my-repo@refs/heads/master/-/raw' \
       --output ~/tmp/my-repo.zip
     ```
-2. Unzip archive, e.g. into `~/Library/Caches/sourcegraph/campaigns` (see `src campaign preview -h` for default value of cache directory, overwrite with `-cache`)
-3. `cd` into unzipped archive
-4. In the unzipped archive directory, create a git repository:
+2. Unzip archive into the workspace. Where the workspace lives depends on the workspace mode, which can be controlled by the `-workspace` flag. The two modes are:
+  * _Bind_ mount mode (the default everywhere except Intel macOS), this will be somewhere on the filesystem, e.g. `~/.cache/sourcegraph/campaigns` (see `src campaign preview -h` for the default value of cache directory, overwrite with `-cache`)
+  * _Volume_ mount mode (the default on Intel macOS): a Docker volume will be created using `docker volume create` and attached to all running containers, then removed before `src` exits
+3. `cd` into the workspace, which now contains the unzipped archive
+4. In the workspace, create a git repository:
 	- Configure `git` to not use local configuration (see [the code for explanations on what each variable does](https://github.com/sourcegraph/src-cli/blob/038180005c9ebf5c0f9e8d3b2eda63c109cea904/internal/campaigns/run_steps.go#L31-L44)):
 
     ```
@@ -112,19 +114,28 @@ For each step in the campaign specs `steps`:
 1. Probe container image (the `container` property of the step) to see whether it has `/bin/sh` or `/bin/bash`
 2. Write the step's `run` command to a temp file on the host, e.g. `/tmp-script`
 3. Run `chmod 644 /tmp-script`
-4. Run the Docker container:
+4. Run the Docker container. The exact command will depend on the workspace mode:
+  * _Bind_:
 
-    ```
-    docker run --rm --init --workdir /work \
-      --mount type=bind,source=/unzipped-archive-locally,target=/work \
-      --mount type=bind,source=/tmp-script,target=/tmp-file-in-container \
-      --entrypoint /bin/bash -- <IMAGE> /tmp-file-in-container
-    ```
+      ```
+      docker run --rm --init --workdir /work \
+        --mount type=bind,source=/unzipped-archive-locally,target=/work \
+        --mount type=bind,source=/tmp-script,target=/tmp-file-in-container \
+        --entrypoint /bin/bash -- <IMAGE> /tmp-file-in-container
+      ```
+  * _Volume_:
+
+      ```
+      docker run --rm --init --workdir /work \
+        --mount type=volume,source=temporary-docker-volume-id,target=/work \
+        --mount type=bind,source=/tmp-script,target=/tmp-file-in-container \
+        --entrypoint /bin/bash -- <IMAGE> /tmp-file-in-container
+      ```
 5. Add all produced changes to the git index: `git add --all`
 
 ### 3. Create final diff
 
-In the unzipped archive:
+In the workspace:
 
 1. Create a diff by running: `git diff --cached --no-prefix --binary`
 

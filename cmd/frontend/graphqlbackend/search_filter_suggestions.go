@@ -5,6 +5,7 @@ import (
 	"regexp"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 )
 
@@ -15,7 +16,7 @@ func (r *schemaResolver) SearchFilterSuggestions(ctx context.Context) (*searchFi
 		return nil, err
 	}
 
-	groupsByName, err := resolveRepoGroups(ctx, settings)
+	groupsByName, err := searchrepos.ResolveRepoGroups(ctx, settings)
 	if err != nil {
 		return nil, err
 	}
