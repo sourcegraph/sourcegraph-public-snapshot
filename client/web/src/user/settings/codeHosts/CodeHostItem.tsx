@@ -91,7 +91,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                 ) : service?.id ? (
                     <CheckCircleIcon className="icon-inline mb-0 mr-2 text-success" />
                 ) : (
-                    <CircleDashedIcon className="icon-inline mb-0 mr-2 text-muted" />
+                    <CircleDashedIcon className="icon-inline mb-0 mr-2 add-user-code-hosts-page__icon--dashed" />
                 )}
                 <Icon className="icon-inline mb-0 mr-1" />
             </div>
