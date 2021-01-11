@@ -28,6 +28,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -205,6 +207,11 @@ func TestMiddleware(t *testing.T) {
 		return 0, "safeErr", fmt.Errorf("account %v not found in mock", op.ExternalAccount)
 	}
 	defer func() { auth.MockGetAndSaveUser = nil }()
+
+	db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+		return &types.User{ID: id, CreatedAt: time.Now()}, nil
+	}
+	defer func() { db.Mocks = db.MockStores{} }()
 
 	// Set up the test handler.
 	authedHandler := http.NewServeMux()

@@ -20,15 +20,17 @@ func TestSetActorDeleteSession(t *testing.T) {
 	cleanup := ResetMockSessionStore(t)
 	defer cleanup()
 
+	userCreatedAt := time.Now()
+
 	db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
-		return &types.User{ID: id}, nil
+		return &types.User{ID: id, CreatedAt: userCreatedAt}, nil
 	}
 	defer func() { db.Mocks = db.MockStores{} }()
 
 	// Start new session
 	w := httptest.NewRecorder()
 	actr := &actor.Actor{UID: 123, FromSessionCookie: true}
-	if err := SetActor(w, httptest.NewRequest("GET", "/", nil), actr, 24*time.Hour, time.Now()); err != nil {
+	if err := SetActor(w, httptest.NewRequest("GET", "/", nil), actr, 24*time.Hour, userCreatedAt); err != nil {
 		t.Fatal(err)
 	}
 	var authCookies []*http.Cookie
@@ -134,15 +136,17 @@ func TestSessionExpiry(t *testing.T) {
 	cleanup := ResetMockSessionStore(t)
 	defer cleanup()
 
+	userCreatedAt := time.Now()
+
 	db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
-		return &types.User{ID: id}, nil
+		return &types.User{ID: id, CreatedAt: userCreatedAt}, nil
 	}
 	defer func() { db.Mocks = db.MockStores{} }()
 
 	// Start new session
 	w := httptest.NewRecorder()
 	actr := &actor.Actor{UID: 123, FromSessionCookie: true}
-	if err := SetActor(w, httptest.NewRequest("GET", "/", nil), actr, time.Second, time.Now()); err != nil {
+	if err := SetActor(w, httptest.NewRequest("GET", "/", nil), actr, time.Second, userCreatedAt); err != nil {
 		t.Fatal(err)
 	}
 	var authCookies []*http.Cookie
@@ -214,10 +218,11 @@ func TestCookieMiddleware(t *testing.T) {
 	defer cleanup()
 
 	actors := []*actor.Actor{{UID: 123, FromSessionCookie: true}, {UID: 456}, {UID: 789}}
+	userCreatedAt := time.Now()
 
 	db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
 		if id == actors[0].UID {
-			return &types.User{ID: id}, nil
+			return &types.User{ID: id, CreatedAt: userCreatedAt}, nil
 		}
 		if id == actors[1].UID {
 			return nil, &errcode.Mock{IsNotFound: true}
@@ -230,7 +235,7 @@ func TestCookieMiddleware(t *testing.T) {
 	authedReqs := make([]*http.Request, len(actors))
 	for i, actr := range actors {
 		w := httptest.NewRecorder()
-		if err := SetActor(w, httptest.NewRequest("GET", "/", nil), actr, time.Hour, time.Now()); err != nil {
+		if err := SetActor(w, httptest.NewRequest("GET", "/", nil), actr, time.Hour, userCreatedAt); err != nil {
 			t.Fatal(err)
 		}
 
