@@ -16,7 +16,6 @@ const commonProps: VersionContextDropdownProps = {
     patternType: SearchPatternType.literal,
     caseSensitive: false,
     versionContext: undefined,
-    filtersInQuery: undefined,
 }
 describe('VersionContextDropdown', () => {
     it('renders the version context dropdown with no context selected', () => {

@@ -16,7 +16,6 @@ import {
 } from '../../../../shared/src/util/searchTestHelpers'
 import { SearchResultsList, SearchResultsListProps } from './SearchResultsList'
 import { NEVER, of } from 'rxjs'
-import { FiltersToTypeAndValue, FilterType } from '../../../../shared/src/search/interactive/util'
 import { SearchPatternType } from '../../../../shared/src/graphql-operations'
 
 let VISIBILITY_CHANGED_CALLBACKS: ((isVisible: boolean) => void)[] = []
@@ -117,14 +116,9 @@ describe('SearchResultsList', () => {
         caseSensitive: false,
         setCaseSensitivity: sinon.spy(),
 
-        interactiveSearchMode: false,
-        filtersInQuery: {},
-        toggleSearchMode: sinon.fake(),
-        onFiltersInQueryChange: sinon.fake(),
-        splitSearchModes: false,
         versionContext: undefined,
 
-        navbarSearchQueryState: { query: '', cursorPosition: 0 },
+        navbarSearchQueryState: { query: '' },
 
         shouldDisplayPerformanceWarning: () => of(false),
     }
@@ -287,23 +281,9 @@ describe('SearchResultsList', () => {
             ],
         }
 
-        const filtersInQuery: FiltersToTypeAndValue = {
-            a: {
-                type: FilterType.repo,
-                value: 'test1',
-                editable: true,
-            },
-            b: {
-                type: FilterType.repo,
-                value: 'test2',
-                editable: true,
-            },
-        }
-
         const props = {
             ...defaultProps,
             resultsOrError,
-            filtersInQuery,
         }
 
         const { container } = render(

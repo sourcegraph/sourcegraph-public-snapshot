@@ -8,38 +8,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
-
-func TestGuessRepoNameFromRemoteURL(t *testing.T) {
-	cases := []struct {
-		url               string
-		hostnameToPattern map[string]string
-		expName           api.RepoName
-	}{
-		{"github.com:a/b", nil, "github.com/a/b"},
-		{"github.com:a/b.git", nil, "github.com/a/b"},
-		{"git@github.com:a/b", nil, "github.com/a/b"},
-		{"git@github.com:a/b.git", nil, "github.com/a/b"},
-		{"ssh://git@github.com/a/b.git", nil, "github.com/a/b"},
-		{"ssh://github.com/a/b.git", nil, "github.com/a/b"},
-		{"ssh://github.com:1234/a/b.git", nil, "github.com/a/b"},
-		{"https://github.com:1234/a/b.git", nil, "github.com/a/b"},
-		{"http://alice@foo.com:1234/a/b", nil, "foo.com/a/b"},
-		{"github.com:a/b", map[string]string{"github.com": "{hostname}/{path}"}, "github.com/a/b"},
-		{"github.com:a/b", map[string]string{"asdf.com": "{hostname}-----{path}"}, "github.com/a/b"},
-		{"github.com:a/b", map[string]string{"github.com": "{hostname}-{path}"}, "github.com-a/b"},
-		{"github.com:a/b", map[string]string{"github.com": "{path}"}, "a/b"},
-		{"github.com:a/b", map[string]string{"github.com": "{hostname}"}, "github.com"},
-		{"github.com:a/b", map[string]string{"github.com": "github/{path}", "asdf.com": "asdf/{path}"}, "github/a/b"},
-		{"asdf.com:a/b", map[string]string{"github.com": "github/{path}", "asdf.com": "asdf/{path}"}, "asdf/a/b"},
-	}
-	for _, c := range cases {
-		if got, want := guessRepoNameFromRemoteURL(c.url, c.hostnameToPattern), c.expName; got != want {
-			t.Errorf("%+v: got %q, want %q", c, got, want)
-		}
-	}
-}
 
 func TestEditorRev(t *testing.T) {
 	repoName := api.RepoName("myRepo")
@@ -87,6 +59,18 @@ func TestEditorRev(t *testing.T) {
 }
 
 func TestEditorRedirect(t *testing.T) {
+	db.Mocks.ExternalServices.List = func(db.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+		return []*types.ExternalService{
+			{
+				ID:          1,
+				Kind:        extsvc.KindGitHub,
+				DisplayName: "GITHUB #1",
+				Config:      `{"url": "https://github.example.com", "repositoryQuery": ["none"], "token": "abc"}`,
+			},
+		}, nil
+	}
+	defer func() { db.Mocks.ExternalServices = db.MockExternalServices{} }()
+
 	cases := []struct {
 		name            string
 		q               url.Values

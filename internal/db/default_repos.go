@@ -9,7 +9,6 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -75,53 +74,9 @@ func (s *defaultRepos) refreshCache(ctx context.Context) ([]*types.RepoName, err
 		return repos, nil
 	}
 
-	// We can reset the slice here so we don't allocate another one
-	if repos != nil {
-		repos = repos[0:0]
-	}
-
-	const q = `
--- source: internal/db/default_repos.go:defaultRepos.List
-SELECT
-    id,
-    name
-FROM
-    repo r
-WHERE
-    EXISTS (
-        SELECT
-        FROM
-            external_service_repos sr
-            INNER JOIN external_services s ON s.id = sr.external_service_id
-        WHERE
-			s.namespace_user_id IS NOT NULL
-			AND s.deleted_at IS NULL
-			AND r.id = sr.repo_id
-            AND r.deleted_at IS NULL)
-UNION
-    SELECT
-        repo.id,
-        repo.name
-    FROM
-        default_repos
-		JOIN repo ON default_repos.repo_id = repo.id
-	WHERE
-		deleted_at IS NULL
-`
-	rows, err := dbconn.Global.QueryContext(ctx, q)
+	repos, err := Repos.ListDefaultRepos(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "fetching repos")
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var r types.RepoName
-		if err := rows.Scan(&r.ID, &r.Name); err != nil {
-			return nil, errors.Wrap(err, "scanning row from default_repos table")
-		}
-		repos = append(repos, &r)
-	}
-	if err = rows.Err(); err != nil {
-		return nil, errors.Wrap(err, "scanning rows from default_repos table")
+		return nil, errors.Wrap(err, "querying for default repos")
 	}
 
 	s.cache.Store(&cachedRepos{

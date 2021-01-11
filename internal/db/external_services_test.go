@@ -456,6 +456,55 @@ func TestExternalServicesStore_Update(t *testing.T) {
 	}
 }
 
+func TestCountRepoCount(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := actor.WithInternalActor(context.Background())
+
+	// Create a new external service
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	es1 := &types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "GITHUB #1",
+		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+	}
+	err := ExternalServices.Create(ctx, confGet, es1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = dbconn.Global.ExecContext(ctx, `
+INSERT INTO repo (id, name, description, fork)
+VALUES (1, 'github.com/user/repo', '', FALSE);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Insert rows to `external_service_repos` table to test the trigger.
+	q := sqlf.Sprintf(`
+INSERT INTO external_service_repos (external_service_id, repo_id, clone_url)
+VALUES (%d, 1, '')
+`, es1.ID)
+	_, err = dbconn.Global.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := ExternalServices.RepoCount(ctx, es1.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if count != 1 {
+		t.Fatalf("Expected 1, got %d", count)
+	}
+}
+
 func TestExternalServicesStore_Delete(t *testing.T) {
 	if testing.Short() {
 		t.Skip()

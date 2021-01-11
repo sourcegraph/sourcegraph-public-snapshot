@@ -101,13 +101,16 @@ func (s *Store) QueryRow(ctx context.Context, query *sqlf.Query) *sql.Row {
 	return s.handle.db.QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 }
 
-// Exec performs a query and throws away the result.
+// Exec performs a query without returning any rows.
 func (s *Store) Exec(ctx context.Context, query *sqlf.Query) error {
-	rows, err := s.Query(ctx, query)
-	if err != nil {
-		return err
-	}
-	return CloseRows(rows, nil)
+	_, err := s.ExecResult(ctx, query)
+	return err
+}
+
+// ExecResult performs a query without returning any rows, but includes the
+// result of the execution.
+func (s *Store) ExecResult(ctx context.Context, query *sqlf.Query) (sql.Result, error) {
+	return s.handle.db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 }
 
 // InTransaction returns true if the underlying database handle is in a transaction.

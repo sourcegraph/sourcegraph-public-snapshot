@@ -4037,6 +4037,10 @@ type ExternalService implements Node {
     """
     namespace: ID
     """
+    The number of repos synced by the external service.
+    """
+    repoCount: Int!
+    """
     An optional URL that will be populated when webhooks have been configured for the external service.
     """
     webhookURL: String
@@ -4048,7 +4052,6 @@ type ExternalService implements Node {
     not break the API and stay backwards compatible.
     """
     warning: String
-
     """
     External services are synced with code hosts in the background. This optional field
     will contain any errors that occured during the most recent completed sync.
@@ -4459,10 +4462,16 @@ type ExternalLink {
     """
     url: String!
     """
+    The kind of external service, such as "GITHUB", or null if unknown/unrecognized. This is used solely for
+    displaying an icon that represents the service.
+    """
+    serviceKind: ExternalServiceKind
+
+    """
     The type of external service, such as "github", or null if unknown/unrecognized. This is used solely for
     displaying an icon that represents the service.
     """
-    serviceType: String
+    serviceType: String @deprecated(reason: "use name serviceKind instead")
 }
 
 """

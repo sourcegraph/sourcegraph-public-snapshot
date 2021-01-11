@@ -1,13 +1,15 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`RepoLink renders a fragment when "to" is null 1`] = `
-Array [
-  " ",
-  "my/",
+<span
+  className=""
+>
+   
+  my/
   <span>
     repo
-  </span>,
-]
+  </span>
+</span>
 `;
 
 exports[`RepoLink renders a link when "to" is set 1`] = `
@@ -15,10 +17,14 @@ exports[`RepoLink renders a link when "to" is set 1`] = `
   className=""
   href="http://example.com"
 >
-   
-  my/
-  <span>
-    repo
+  <span
+    className=""
+  >
+     
+    my/
+    <span>
+      repo
+    </span>
   </span>
 </a>
 `;
