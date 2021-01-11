@@ -150,7 +150,7 @@ export async function ensurePatchReleaseIssue({
 
 /**
  * Ensures a upgrade managed instances to ($MAJOR.$MINOR) tracking issue has been created with the given
- * parameters using `templates.upgradeMangedInstanceIssue`.
+ * parameters using `templates.upgradeManagedInstanceIssue`.
  */
 export async function ensureUpgradeManagedTrackingIssue({
     version,
