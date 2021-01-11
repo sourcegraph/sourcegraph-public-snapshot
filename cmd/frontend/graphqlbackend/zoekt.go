@@ -239,10 +239,7 @@ func (s *indexedSearchRequest) Search(ctx context.Context, c chan<- indexedSearc
 	case textRequest, symbolRequest:
 		zoektStream = zoektSearchStream
 	case fileRequest:
-		// Wrap zoektSearchHEADOnlyFilesStream to get a common signature for the event loop.
-		zoektStream = func(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, _ indexedRequestType, since func(t time.Time) time.Duration) <-chan zoektSearchStreamEvent {
-			return zoektSearchHEADOnlyFilesStream(ctx, args, repos, since)
-		}
+		zoektStream = zoektSearchHEADOnlyFilesStream
 	default:
 		err = fmt.Errorf("unexpected indexedSearchRequest type: %q", s.typ)
 		c <- indexedSearchEvent{common: searchResultsCommon{}, results: nil, err: err}

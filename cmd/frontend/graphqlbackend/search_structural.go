@@ -260,7 +260,7 @@ func buildQuery(args *search.TextParameters, repos *indexedRepoRevs, filePathPat
 	), nil
 }
 
-func zoektSearchHEADOnlyFilesStream(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, since func(t time.Time) time.Duration) <-chan zoektSearchStreamEvent {
+func zoektSearchHEADOnlyFilesStream(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, _ indexedRequestType, since func(t time.Time) time.Duration) <-chan zoektSearchStreamEvent {
 	c := make(chan zoektSearchStreamEvent)
 	go func() {
 		defer close(c)
