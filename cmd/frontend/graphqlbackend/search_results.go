@@ -895,7 +895,26 @@ func intersect(left, right *SearchResultsResolver) *SearchResultsResolver {
 // and likely yields fewer than N results). If the intersection does not yield N
 // results, and is not exhaustive for every expression, we rerun the search by
 // doubling count again.
-func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []query.Node, operands []query.Node) (*SearchResultsResolver, error) {
+func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []query.Node, operands []query.Node) (result *SearchResultsResolver, err error) {
+	// Temporarily disable resultChannel. For AND expressions we fall back to batch
+	// mode and send results down the channel once all terms have been evaluated.
+	sink := make(chan []SearchResultResolver)
+	defer close(sink)
+	go func() {
+		for {
+			_, ok := <-sink
+			if !ok {
+				break
+			}
+		}
+	}()
+	resultChannel := r.resultChannel
+	r.resultChannel = sink
+	defer func() {
+		resultChannel <- result.SearchResults
+		r.resultChannel = resultChannel
+	}()
+
 	start := time.Now()
 
 	if len(operands) == 0 {
@@ -903,8 +922,6 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 	}
 
 	var (
-		err        error
-		result     *SearchResultsResolver
 		termResult *SearchResultsResolver
 	)
 
@@ -1162,6 +1179,7 @@ func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolve
 			r.invalidateRepoCache = true
 		}
 		for _, disjunct := range query.Dnf(q.Query) {
+			fmt.Printf("🍿 disjunct %+v\n", disjunct)
 			disjunct = query.ConcatRevFilters(disjunct)
 			newResult, err := r.evaluate(ctx, disjunct)
 			if err != nil {
@@ -1841,6 +1859,7 @@ func (r *searchResolver) isGlobalSearch() bool {
 //
 // Partial results AND an error may be returned.
 func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType string) (_ *SearchResultsResolver, err error) {
+	fmt.Printf("🐙 leaf query %+v\n", r.query)
 	tr, ctx := trace.New(ctx, "doResults", r.rawQuery())
 	defer func() {
 		tr.SetError(err)
