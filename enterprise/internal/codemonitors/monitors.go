@@ -116,21 +116,10 @@ AND id > %s;
 
 // RemainingCountMonitors provides the number of unreturned code monitors after
 // a call to Monitors with the given args
-func (s *Store) RemainingCountMonitors(ctx context.Context, userID int32, args *graphqlbackend.ListMonitorsArgs) (remaining int32, err error) {
-	after, err := unmarshalAfter(args.After)
-	if err != nil {
-		return 0, err
-	}
 
-	var count int32
-	err = s.QueryRow(ctx, sqlf.Sprintf(remainingCountMonitorsFmtStr, userID, after)).Scan(&count)
-
-	remaining = count - args.First
-	if remaining < 0 {
-		remaining = 0
-	}
-
-	return remaining, err
+func (s *Store) RemainingCountMonitors(ctx context.Context, userID int32, lastID int64) (count int32, err error) {
+	err = s.QueryRow(ctx, sqlf.Sprintf(remainingCountMonitorsFmtStr, userID, lastID)).Scan(&count)
+	return count, err
 }
 
 const monitorsFmtStr = `

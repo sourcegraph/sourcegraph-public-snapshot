@@ -46,9 +46,12 @@ func (r *Resolver) Monitors(ctx context.Context, userID int32, args *graphqlback
 		return nil, err
 	}
 
-	remaining, err := r.store.RemainingCountMonitors(ctx, userID, args)
-	if err != nil {
-		return nil, err
+	var remaining int32
+	if len(ms) != 0 {
+		remaining, err = r.store.RemainingCountMonitors(ctx, userID, ms[len(ms)-1].ID)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	mrs := make([]graphqlbackend.MonitorResolver, 0, len(ms))
@@ -58,6 +61,7 @@ func (r *Resolver) Monitors(ctx context.Context, userID int32, args *graphqlback
 			Monitor:  m,
 		})
 	}
+
 	return &monitorConnection{Resolver: r, monitors: mrs, totalCount: total, remaining: remaining}, nil
 }
 
