@@ -193,7 +193,7 @@ export async function ensureUpgradeManagedTrackingIssue({
     return ensureIssue(
         octokit,
         {
-            title: version + ' upgrade managed instance tracking issue',
+            title: managedIssueTrackingTitle(version),
             owner: 'sourcegraph',
             repo: 'sourcegraph',
             assignees,
@@ -322,6 +322,11 @@ function trackingIssueTitle(version: semver.SemVer): string {
         return `${version.major}.${version.minor} release tracking issue`
     }
     return `${version.version} patch release tracking issue`
+}
+
+function managedIssueTrackingTitle(version: semver.SemVer): string {
+    return `${version.version} upgrade managed instances tracking issue`
+
 }
 
 async function getIssueByTitle(octokit: Octokit, title: string): Promise<Issue | null> {
