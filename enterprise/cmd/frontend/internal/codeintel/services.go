@@ -13,8 +13,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/api"
 	codeintelapi "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/api"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/background/indexing"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
@@ -31,14 +29,9 @@ var services struct {
 	lsifStore       *lsifstore.Store
 	uploadStore     uploadstore.Store
 	gitserverClient *gitserver.Client
-	indexEnqueuer   IndexEnqueuer
+	indexEnqueuer   *enqueuer.IndexEnqueuer
 	api             *codeintelapi.CodeIntelAPI
 	err             error
-}
-
-type IndexEnqueuer interface {
-	indexing.IndexEnqueuer
-	resolvers.IndexEnqueuer
 }
 
 var once sync.Once
