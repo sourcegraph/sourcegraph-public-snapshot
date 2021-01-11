@@ -82,7 +82,7 @@ export const AddUserEmailForm: FunctionComponent<Props> = ({ user, className, on
             {/* eslint-disable-next-line react/forbid-elements */}
             <form className="form-inline" onSubmit={onSubmit} noValidate={true}>
                 <LoaderInput
-                    className={(deriveInputClassName(emailState), 'mr-sm-2')}
+                    className={classNames(deriveInputClassName(emailState), 'mr-sm-2')}
                     loading={emailState.kind === 'LOADING'}
                 >
                     <input
@@ -104,7 +104,7 @@ export const AddUserEmailForm: FunctionComponent<Props> = ({ user, className, on
                         spellCheck={false}
                         readOnly={false}
                     />
-                </LoaderInput>{' '}
+                </LoaderInput>
                 <LoaderButton
                     loading={statusOrError === 'loading'}
                     label="Add"
