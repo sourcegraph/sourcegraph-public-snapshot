@@ -6,7 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/hexops/autogold"
 	"github.com/pkg/errors"
 )
@@ -220,529 +219,244 @@ func parseAndOrGrammar(in string) ([]Node, error) {
 }
 
 func TestParse(t *testing.T) {
-	type relation string         // a relation for comparing test outputs of queries parsed according to grammar and heuristics.
-	const Same relation = "Same" // a constant that says heuristic output is interpreted the same as the grammar spec.
-	type Spec = relation         // constructor for expected output of the grammar spec without heuristics.
-	type Diff = relation         // constructor for expected heuristic output when different to the grammar spec.
+	type value struct {
+		Grammar   string
+		Heuristic string
+	}
 
-	cases := []struct {
-		Name          string
-		Input         string
-		WantGrammar   relation
-		WantHeuristic relation
-	}{
-		{
-			Name:          "Empty string",
-			Input:         "",
-			WantGrammar:   "",
-			WantHeuristic: Same,
-		},
-		{
-			Name:          "Whitespace",
-			Input:         "             ",
-			WantGrammar:   "",
-			WantHeuristic: Same,
-		},
-		{
-			Name:          "Single",
-			Input:         "a",
-			WantGrammar:   `"a"`,
-			WantHeuristic: Same,
-		},
-		{
-			Name:          "Whitespace basic",
-			Input:         "a b",
-			WantGrammar:   `(concat "a" "b")`,
-			WantHeuristic: Same,
-		},
-		{
-			Name:          "Basic",
-			Input:         "a and b and c",
-			WantGrammar:   `(and "a" "b" "c")`,
-			WantHeuristic: Same,
-		},
-		{
-			Input:         "(f(x)oo((a|b))bar)",
-			WantGrammar:   Spec(`(concat "f" "x" "oo" "a|b" "bar")`),
-			WantHeuristic: Diff(`"(f(x)oo((a|b))bar)"`),
-		},
-		{
-			Input:         "aorb",
-			WantGrammar:   `"aorb"`,
-			WantHeuristic: Same,
-		},
-		{
-			Input:         "aANDb",
-			WantGrammar:   `"aANDb"`,
-			WantHeuristic: Same,
-		},
-		{
-			Input:         "a oror b",
-			WantGrammar:   `(concat "a" "oror" "b")`,
-			WantHeuristic: Same,
-		},
-		{
-			Name:          "Reduced complex query mixed caps",
-			Input:         "a and b AND c or d and (e OR f) g h i or j",
-			WantGrammar:   `(or (and "a" "b" "c") (and "d" (concat (or "e" "f") "g" "h" "i")) "j")`,
-			WantHeuristic: Same,
-		},
-		{
-			Name:          "Basic reduced complex query",
-			Input:         "a and b or c and d or e",
-			WantGrammar:   `(or (and "a" "b") (and "c" "d") "e")`,
-			WantHeuristic: Same,
-		},
-		{
-			Name:          "Reduced complex query, reduction over parens",
-			Input:         "(a and b or c and d) or e",
-			WantGrammar:   `(or (and "a" "b") (and "c" "d") "e")`,
-			WantHeuristic: Same,
-		},
-		{
-			Name:          "Reduced complex query, nested 'or' trickles up",
-			Input:         "(a and b or c) or d",
-			WantGrammar:   `(or (and "a" "b") "c" "d")`,
-			WantHeuristic: Same,
-		},
-		{
-			Name:          "Reduced complex query, nested nested 'or' trickles up",
-			Input:         "(a and b or (c and d or f)) or e",
-			WantGrammar:   `(or (and "a" "b") (and "c" "d") "f" "e")`,
-			WantHeuristic: Same,
-		},
-		{
-			Name:          "No reduction on precedence defined by parens",
-			Input:         "(a and (b or c) and d) or e",
-			WantGrammar:   `(or (and "a" (or "b" "c") "d") "e")`,
-			WantHeuristic: Same,
-		},
-		{
-			Name:          "Paren reduction over operators",
-			Input:         "(((a b c))) and d",
-			WantGrammar:   Spec(`(and (concat "a" "b" "c") "d")`),
-			WantHeuristic: Diff(`(and "(((a b c)))" "d")`),
-		},
-		// Partition parameters and concatenated patterns.
-		{
-			Input:         "a (b and c) d",
-			WantGrammar:   `(concat "a" (and "b" "c") "d")`,
-			WantHeuristic: Same,
-		},
-		{
-			Input:         "(a b c) and (d e f) and (g h i)",
-			WantGrammar:   Spec(`(and (concat "a" "b" "c") (concat "d" "e" "f") (concat "g" "h" "i"))`),
-			WantHeuristic: `(and "(a b c)" "(d e f)" "(g h i)")`,
-		},
-		{
-			Input:         "(a) repo:foo (b)",
-			WantGrammar:   Spec(`(and "repo:foo" (concat "a" "b"))`),
-			WantHeuristic: Diff(`(and "repo:foo" (concat "(a)" "(b)"))`),
-		},
-		{
-			Input:         "repo:foo func( or func(.*)",
-			WantGrammar:   Spec(`expected operand at 15`),
-			WantHeuristic: Diff(`(and "repo:foo" (or "func(" "func(.*)"))`),
-		},
-		{
-			Input:         "repo:foo main { and bar {",
-			WantGrammar:   Spec(`(and (and "repo:foo" (concat "main" "{")) (concat "bar" "{"))`),
-			WantHeuristic: Diff(`(and "repo:foo" (concat "main" "{") (concat "bar" "{"))`),
-		},
-		{
-			Input:         "a b (repo:foo c d)",
-			WantGrammar:   `(concat "a" "b" (and "repo:foo" (concat "c" "d")))`,
-			WantHeuristic: Same,
-		},
-		{
-			Input:         "a b (c d repo:foo)",
-			WantGrammar:   `(concat "a" "b" (and "repo:foo" (concat "c" "d")))`,
-			WantHeuristic: Same,
-		},
-		{
-			Input:         "a repo:b repo:c (d repo:e repo:f)",
-			WantGrammar:   `(and "repo:b" "repo:c" (concat "a" (and "repo:e" "repo:f" "d")))`,
-			WantHeuristic: Same,
-		},
-		{
-			Input:         "a repo:b repo:c (repo:e repo:f (repo:g repo:h))",
-			WantGrammar:   `(and "repo:b" "repo:c" "repo:e" "repo:f" "repo:g" "repo:h" "a")`,
-			WantHeuristic: Same,
-		},
-		{
-			Input:         "a repo:b repo:c (repo:e repo:f (repo:g repo:h)) b",
-			WantGrammar:   `(and "repo:b" "repo:c" "repo:e" "repo:f" "repo:g" "repo:h" (concat "a" "b"))`,
-			WantHeuristic: Same,
-		},
-		{
-			Input:         "a repo:b repo:c (repo:e repo:f (repo:g repo:h b)) ",
-			WantGrammar:   `(and "repo:b" "repo:c" (concat "a" (and "repo:e" "repo:f" "repo:g" "repo:h" "b")))`,
-			WantHeuristic: Same,
-		},
-		{
-			Input:         "(repo:foo a (repo:bar b (repo:qux c)))",
-			WantGrammar:   `(and "repo:foo" (concat "a" (and "repo:bar" (concat "b" (and "repo:qux" "c")))))`,
-			WantHeuristic: Same,
-		},
-		{
-			Input:         "a repo:b repo:c (d repo:e repo:f e)",
-			WantGrammar:   `(and "repo:b" "repo:c" (concat "a" (and "repo:e" "repo:f" (concat "d" "e"))))`,
-			WantHeuristic: Same,
-		},
-		// Keywords as patterns.
-		{
-			Input:         "a or",
-			WantGrammar:   `(concat "a" "or")`,
-			WantHeuristic: Same,
-		},
-		{
-			Input:         "or",
-			WantGrammar:   `"or"`,
-			WantHeuristic: Same,
-		},
-		{
-			Input:         "or or or",
-			WantGrammar:   `(or "or" "or")`,
-			WantHeuristic: Same,
-		},
-		{
-			Input:         "and and andand or oror",
-			WantGrammar:   `(or (and "and" "andand") "oror")`,
-			WantHeuristic: Same,
-		},
-		// Errors.
-		{
-			Name:          "Unbalanced",
-			Input:         "(foo) (bar",
-			WantGrammar:   Spec(`unbalanced expression: unmatched closing parenthesis )`),
-			WantHeuristic: Diff(`(concat "(foo)" "(bar")`),
-		},
-		{
-			Name:          "Illegal expression on the right",
-			Input:         "a or or b",
-			WantGrammar:   "expected operand at 5",
-			WantHeuristic: Same,
-		},
-		{
-			Name:          "Illegal expression on the right, mixed operators",
-			Input:         "a and OR",
-			WantGrammar:   `(and "a" "OR")`,
-			WantHeuristic: Same,
-		},
-		{
-			Input:         "repo:foo or or or",
-			WantGrammar:   "expected operand at 12",
-			WantHeuristic: Same,
-		},
-		// Reduction.
-		{
-			Name:          "paren reduction with ands",
-			Input:         "(a and b) and (c and d)",
-			WantGrammar:   `(and "a" "b" "c" "d")`,
-			WantHeuristic: Same,
-		},
-		{
-			Name:          "paren reduction with ors",
-			Input:         "(a or b) or (c or d)",
-			WantGrammar:   `(or "a" "b" "c" "d")`,
-			WantHeuristic: Same,
-		},
-		{
-			Name:          "nested paren reduction with whitespace",
-			Input:         "(((a b c))) d",
-			WantGrammar:   Spec(`(concat "a" "b" "c" "d")`),
-			WantHeuristic: Diff(`(concat "(((a b c)))" "d")`),
-		},
-		{
-			Name:          "left paren reduction with whitespace",
-			Input:         "(a b) c d",
-			WantGrammar:   Spec(`(concat "a" "b" "c" "d")`),
-			WantHeuristic: Diff(`(concat "(a b)" "c" "d")`),
-		},
-		{
-			Name:          "right paren reduction with whitespace",
-			Input:         "a b (c d)",
-			WantGrammar:   Spec(`(concat "a" "b" "c" "d")`),
-			WantHeuristic: Diff(`(concat "a" "b" "(c d)")`),
-		},
-		{
-			Name:          "grouped paren reduction with whitespace",
-			Input:         "(a b) (c d)",
-			WantGrammar:   Spec(`(concat "a" "b" "c" "d")`),
-			WantHeuristic: Diff(`(concat "(a b)" "(c d)")`),
-		},
-		{
-			Name:          "multiple grouped paren reduction with whitespace",
-			Input:         "(a b) (c d) (e f)",
-			WantGrammar:   Spec(`(concat "a" "b" "c" "d" "e" "f")`),
-			WantHeuristic: Diff(`(concat "(a b)" "(c d)" "(e f)")`),
-		},
-		{
-			Name:          "interpolated grouped paren reduction",
-			Input:         "(a b) c d (e f)",
-			WantGrammar:   Spec(`(concat "a" "b" "c" "d" "e" "f")`),
-			WantHeuristic: Diff(`(concat "(a b)" "c" "d" "(e f)")`),
-		},
-		{
-			Name:          "mixed interpolated grouped paren reduction",
-			Input:         "(a and b and (z or q)) and (c and d) and (e and f)",
-			WantGrammar:   `(and "a" "b" (or "z" "q") "c" "d" "e" "f")`,
-			WantHeuristic: Same,
-		},
-		// Parentheses.
-		{
-			Name:          "empty paren",
-			Input:         "()",
-			WantGrammar:   Spec(`""`),
-			WantHeuristic: Diff(`"()"`),
-		},
-		{
-			Name:          "paren inside contiguous string",
-			Input:         "foo()bar",
-			WantGrammar:   Spec(`(concat "foo" "bar")`),
-			WantHeuristic: Diff(`"foo()bar"`),
-		},
-		{
-			Name:          "paren inside contiguous string",
-			Input:         "(x and regex(s)?)",
-			WantGrammar:   Spec(`(and "x" (concat "regex" "s" "?"))`),
-			WantHeuristic: Diff(`(and "x" "regex(s)?")`),
-		},
-		{
-			Name:          "paren containing whitespace inside contiguous string",
-			Input:         "foo(   )bar",
-			WantGrammar:   Spec(`(concat "foo" "bar")`),
-			WantHeuristic: Diff(`"foo(   )bar"`),
-		},
-		{
-			Name:          "nested empty paren",
-			Input:         "(x())",
-			WantGrammar:   Spec(`"x"`),
-			WantHeuristic: Diff(`"(x())"`),
-		},
-		{
-			Name:          "interpolated nested empty paren",
-			Input:         "(()x(  )(())())",
-			WantGrammar:   Spec(`"x"`),
-			WantHeuristic: Diff(`"(()x(  )(())())"`),
-		},
-		{
-			Name:          "empty paren on or",
-			Input:         "() or ()",
-			WantGrammar:   Spec(`""`),
-			WantHeuristic: Diff(`(or "()" "()")`),
-		},
-		{
-			Name:          "empty left paren on or",
-			Input:         "() or (x)",
-			WantGrammar:   Spec(`"x"`),
-			WantHeuristic: Diff(`(or "()" "(x)")`),
-		},
-		{
-			Name:          "complex interpolated nested empty paren",
-			Input:         "(()x(  )(y or () or (f))())",
-			WantGrammar:   Spec(`(concat "x" (or "y" "f"))`),
-			WantHeuristic: Diff(`(concat "()" "x" "()" (or "y" "()" "(f)") "()")`),
-		},
-		{
-			Name:          "disable parens as patterns heuristic if containing recognized operator",
-			Input:         "(() or ())",
-			WantGrammar:   Spec(`""`),
-			WantHeuristic: Diff(`(or "()" "()")`),
-		},
-		{
-			Name:          "NOT expression inside parentheses",
-			Input:         "r:foo (a/foo not .svg)",
-			WantGrammar:   `(and "r:foo" (concat "a/foo" (not ".svg")))`,
-			WantHeuristic: Same,
-		},
-		{
-			Name:          "NOT expression inside parentheses",
-			Input:         "r:foo (not .svg)",
-			WantGrammar:   `(and "r:foo" (not ".svg"))`,
-			WantHeuristic: Same,
-		},
-		// Escaping.
-		{
-			Input:         `\(\)`,
-			WantGrammar:   `"\\(\\)"`,
-			WantHeuristic: Same,
-		},
-		{
-			Input:         `\( \) ()`,
-			WantGrammar:   Spec(`(concat "\\(" "\\)")`),
-			WantHeuristic: Diff(`(concat "\\(" "\\)" "()")`),
-		},
-		{
-			Input:         `\ `,
-			WantGrammar:   `"\\ "`,
-			WantHeuristic: Same,
-		},
-		{
-			Input:         `\  \ `,
-			WantGrammar:   Spec(`(concat "\\ " "\\ ")`),
-			WantHeuristic: Diff(`(concat "\\ " "\\ ")`),
-		},
-		// Dangling parentheses heuristic.
-		{
-			Input:         `(`,
-			WantGrammar:   Spec(`expected operand at 1`),
-			WantHeuristic: Diff(`"("`),
-		},
-		{
-			Input:         `)(())(`,
-			WantGrammar:   Spec(`unbalanced expression: unmatched closing parenthesis )`),
-			WantHeuristic: Same,
-		},
-		{
-			Input:         `foo( and bar(`,
-			WantGrammar:   Spec(`expected operand at 5`),
-			WantHeuristic: Diff(`(and "foo(" "bar(")`),
-		},
-		{
-			Input:         `repo:foo foo( or bar(`,
-			WantGrammar:   Spec(`expected operand at 14`),
-			WantHeuristic: Diff(`(and "repo:foo" (or "foo(" "bar("))`),
-		},
-		{
-			Input:         `(a or (b and )) or d)`,
-			WantGrammar:   Spec(`unbalanced expression: unmatched closing parenthesis )`),
-			WantHeuristic: Same,
-		},
-		// Quotes and escape sequences.
-		{
-			Input:         `"`,
-			WantGrammar:   `"\""`,
-			WantHeuristic: Same,
-		},
-		{
-			Input:         `repo:foo' bar'`,
-			WantGrammar:   `(and "repo:foo'" "bar'")`,
-			WantHeuristic: Same,
-		},
-		{
-			Input:         `repo:'foo' 'bar'`,
-			WantGrammar:   `(and "repo:foo" "bar")`,
-			WantHeuristic: Same,
-		},
-		{
-			Input:         `repo:"foo" "bar"`,
-			WantGrammar:   `(and "repo:foo" "bar")`,
-			WantHeuristic: Same,
-		},
-		{
-			Input:         `repo:"foo bar" "foo bar"`,
-			WantGrammar:   `(and "repo:foo bar" "foo bar")`,
-			WantHeuristic: Same,
-		},
-		{
-			Input:         `repo:"fo\"o" "bar"`,
-			WantGrammar:   Spec(`(and "repo:fo\"o" "bar")`),
-			WantHeuristic: Same,
-		},
-		{
-			Input:         `repo:foo /b\/ar/`,
-			WantGrammar:   `(and "repo:foo" "b/ar")`,
-			WantHeuristic: Same,
-		},
-		{
-			Input:         `repo:foo /a/file/path`,
-			WantGrammar:   `(and "repo:foo" "/a/file/path")`,
-			WantHeuristic: Same,
-		},
-		{
-			Input:         `repo:foo /a/file/path/`,
-			WantGrammar:   `(and "repo:foo" "/a/file/path/")`,
-			WantHeuristic: Same,
-		},
-		{
-			Input:         `repo:foo /a/ /another/path/`,
-			WantGrammar:   `(and "repo:foo" (concat "a" "/another/path/"))`,
-			WantHeuristic: Same,
-		},
-		{
-			Input:         `repo:foo /\s+b\d+ar/ `,
-			WantGrammar:   `(and "repo:foo" "\\s+b\\d+ar")`,
-			WantHeuristic: Same,
-		},
-		{
-			Input:         `repo:foo /bar/ `,
-			WantGrammar:   `(and "repo:foo" "bar")`,
-			WantHeuristic: Same,
-		},
-		{
-			Input:         `\t\r\n`,
-			WantGrammar:   `"\\t\\r\\n"`,
-			WantHeuristic: Same,
-		},
-		{
-			Input:         `repo:foo\ bar \:\\`,
-			WantGrammar:   `(and "repo:foo\\ bar" "\\:\\\\")`,
-			WantHeuristic: Same,
-		},
-		{
-			Input:         `a file:\.(ts(?:(?:)|x)|js(?:(?:)|x))(?m:$)`,
-			WantGrammar:   `(and "file:\\.(ts(?:(?:)|x)|js(?:(?:)|x))(?m:$)" "a")`,
-			WantHeuristic: Same,
-		},
-		{
-			Input:         `(file:(a) file:(b))`,
-			WantGrammar:   `(and "file:(a)" "file:(b)")`,
-			WantHeuristic: Same,
-		},
-		{
-			Input:         `(repohascommitafter:"7 days")`,
-			WantGrammar:   `"repohascommitafter:7 days"`,
-			WantHeuristic: Same,
-		},
-		{
-			Input:         `(foo repohascommitafter:"7 days")`,
-			WantGrammar:   `(and "repohascommitafter:7 days" "foo")`,
-			WantHeuristic: Same,
-		},
-		// Fringe tests cases at the boundary of heuristics and invalid syntax.
-		{
-			Input:         `(0(F)(:())(:())(<0)0()`,
-			WantGrammar:   Spec(`unbalanced expression: unmatched closing parenthesis )`),
-			WantHeuristic: `"(0(F)(:())(:())(<0)0()"`,
-		},
-		// The space-looking character below is U+00A0.
-		{
-			Input:         `00 (000)`,
-			WantGrammar:   `(concat "00" "000")`,
-			WantHeuristic: `(concat "00" "(000)")`,
-		},
-	}
-	for _, tt := range cases {
-		t.Run(tt.Name, func(t *testing.T) {
-			check := func(result []Node, err error, want string) {
-				var resultStr []string
-				if err != nil {
-					if diff := cmp.Diff(want, err.Error()); diff != "" {
-						t.Fatal(diff)
-					}
-					return
-				}
-				for _, node := range result {
-					resultStr = append(resultStr, node.String())
-				}
-				got := strings.Join(resultStr, " ")
-				if diff := cmp.Diff(want, got); diff != "" {
-					t.Error(diff)
-				}
+	test := func(input string) value {
+		var queryGrammar, queryHeuristic []Node
+		var err error
+		var resultGrammar, resultHeuristic string
+
+		toString := func(nodes []Node) string {
+			var resultStr []string
+			for _, node := range nodes {
+				resultStr = append(resultStr, node.String())
 			}
-			var result []Node
-			var err error
-			result, err = parseAndOrGrammar(tt.Input) // Parse without heuristic.
-			check(result, err, string(tt.WantGrammar))
-			result, err = ParseAndOr(tt.Input, SearchTypeRegex)
-			if tt.WantHeuristic == Same {
-				check(result, err, string(tt.WantGrammar))
-			} else {
-				check(result, err, string(tt.WantHeuristic))
-			}
-		})
+			return fmt.Sprintf("%s", strings.Join(resultStr, " "))
+		}
+
+		queryGrammar, err = parseAndOrGrammar(input) // Parse without heuristic.
+		if err != nil {
+			resultGrammar = err.Error()
+		}
+		resultGrammar = toString(queryGrammar)
+
+		queryHeuristic, err = ParseAndOr(input, SearchTypeRegex)
+		if err != nil {
+			resultHeuristic = err.Error()
+		}
+
+		resultHeuristic = toString(queryHeuristic)
+		if resultHeuristic == resultGrammar {
+			resultHeuristic = "Same"
+		}
+
+		return value{
+			Grammar:   resultGrammar,
+			Heuristic: resultHeuristic,
+		}
 	}
+
+	autogold.Want("Empty string", value{Grammar: "", Heuristic: "Same"}).Equal(t, test(""))
+	autogold.Want("Whitespace", value{Grammar: "", Heuristic: "Same"}).Equal(t, test("             "))
+	autogold.Want("Single", value{Grammar: `"a"`, Heuristic: "Same"}).Equal(t, test("a"))
+	autogold.Want("Whitespace basic", value{Grammar: `(concat "a" "b")`, Heuristic: "Same"}).Equal(t, test("a b"))
+	autogold.Want("Basic", value{Grammar: `(and "a" "b" "c")`, Heuristic: "Same"}).Equal(t, test("a and b and c"))
+
+	autogold.Want("(f(x)oo((a|b))bar)", value{
+		Grammar:   `(concat "f" "x" "oo" "a|b" "bar")`,
+		Heuristic: `"(f(x)oo((a|b))bar)"`,
+	}).Equal(t, test("(f(x)oo((a|b))bar)"))
+
+	autogold.Want("aorb", value{Grammar: `"aorb"`, Heuristic: "Same"}).Equal(t, test("aorb"))
+	autogold.Want("aANDb", value{Grammar: `"aANDb"`, Heuristic: "Same"}).Equal(t, test("aANDb"))
+	autogold.Want("a oror b", value{Grammar: `(concat "a" "oror" "b")`, Heuristic: "Same"}).Equal(t, test("a oror b"))
+
+	autogold.Want("Reduced complex query mixed caps", value{
+		Grammar:   `(or (and "a" "b" "c") (and "d" (concat (or "e" "f") "g" "h" "i")) "j")`,
+		Heuristic: "Same",
+	}).Equal(t, test("a and b AND c or d and (e OR f) g h i or j"))
+
+	autogold.Want("Basic reduced complex query", value{
+		Grammar:   `(or (and "a" "b") (and "c" "d") "e")`,
+		Heuristic: "Same",
+	}).Equal(t, test("a and b or c and d or e"))
+
+	autogold.Want("Reduced complex query, reduction over parens", value{
+		Grammar:   `(or (and "a" "b") (and "c" "d") "e")`,
+		Heuristic: "Same",
+	}).Equal(t, test("(a and b or c and d) or e"))
+
+	autogold.Want("Reduced complex query, nested 'or' trickles up", value{Grammar: `(or (and "a" "b") "c" "d")`, Heuristic: "Same"}).Equal(t, test("(a and b or c) or d"))
+
+	autogold.Want("Reduced complex query, nested nested 'or' trickles up", value{
+		Grammar:   `(or (and "a" "b") (and "c" "d") "f" "e")`,
+		Heuristic: "Same",
+	}).Equal(t, test("(a and b or (c and d or f)) or e"))
+
+	autogold.Want("No reduction on precedence defined by parens", value{
+		Grammar:   `(or (and "a" (or "b" "c") "d") "e")`,
+		Heuristic: "Same",
+	}).Equal(t, test("(a and (b or c) and d) or e"))
+
+	autogold.Want("Paren reduction over operators", value{Grammar: `(and (concat "a" "b" "c") "d")`, Heuristic: `(and "(((a b c)))" "d")`}).Equal(t, test("(((a b c))) and d"))
+
+	// Partition parameters and concatenated patterns.
+	autogold.Want("a (b and c) d", value{Grammar: `(concat "a" (and "b" "c") "d")`, Heuristic: "Same"}).Equal(t, test("a (b and c) d"))
+
+	autogold.Want("(a b c) and (d e f) and (g h i)", value{
+		Grammar:   `(and (concat "a" "b" "c") (concat "d" "e" "f") (concat "g" "h" "i"))`,
+		Heuristic: `(and "(a b c)" "(d e f)" "(g h i)")`,
+	}).Equal(t, test("(a b c) and (d e f) and (g h i)"))
+
+	autogold.Want("(a) repo:foo (b)", value{
+		Grammar:   `(and "repo:foo" (concat "a" "b"))`,
+		Heuristic: `(and "repo:foo" (concat "(a)" "(b)"))`,
+	}).Equal(t, test("(a) repo:foo (b)"))
+
+	autogold.Want("repo:foo func( or func(.*)", value{Heuristic: `(and "repo:foo" (or "func(" "func(.*)"))`}).Equal(t, test("repo:foo func( or func(.*)"))
+
+	autogold.Want("repo:foo main { and bar {", value{
+		Grammar:   `(and (and "repo:foo" (concat "main" "{")) (concat "bar" "{"))`,
+		Heuristic: `(and "repo:foo" (concat "main" "{") (concat "bar" "{"))`,
+	}).Equal(t, test("repo:foo main { and bar {"))
+
+	autogold.Want("a b (repo:foo c d)", value{
+		Grammar:   `(concat "a" "b" (and "repo:foo" (concat "c" "d")))`,
+		Heuristic: "Same",
+	}).Equal(t, test("a b (repo:foo c d)"))
+
+	autogold.Want("a b (c d repo:foo)", value{
+		Grammar:   `(concat "a" "b" (and "repo:foo" (concat "c" "d")))`,
+		Heuristic: "Same",
+	}).Equal(t, test("a b (c d repo:foo)"))
+
+	autogold.Want("a repo:b repo:c (d repo:e repo:f)", value{
+		Grammar:   `(and "repo:b" "repo:c" (concat "a" (and "repo:e" "repo:f" "d")))`,
+		Heuristic: "Same",
+	}).Equal(t, test("a repo:b repo:c (d repo:e repo:f)"))
+
+	autogold.Want("a repo:b repo:c (repo:e repo:f (repo:g repo:h))", value{
+		Grammar:   `(and "repo:b" "repo:c" "repo:e" "repo:f" "repo:g" "repo:h" "a")`,
+		Heuristic: "Same",
+	}).Equal(t, test("a repo:b repo:c (repo:e repo:f (repo:g repo:h))"))
+
+	autogold.Want("a repo:b repo:c (repo:e repo:f (repo:g repo:h)) b", value{
+		Grammar:   `(and "repo:b" "repo:c" "repo:e" "repo:f" "repo:g" "repo:h" (concat "a" "b"))`,
+		Heuristic: "Same",
+	}).Equal(t, test("a repo:b repo:c (repo:e repo:f (repo:g repo:h)) b"))
+	autogold.Want("a repo:b repo:c (repo:e repo:f (repo:g repo:h b)) ", value{
+		Grammar:   `(and "repo:b" "repo:c" (concat "a" (and "repo:e" "repo:f" "repo:g" "repo:h" "b")))`,
+		Heuristic: "Same",
+	}).Equal(t, test("a repo:b repo:c (repo:e repo:f (repo:g repo:h b)) "))
+
+	autogold.Want("(repo:foo a (repo:bar b (repo:qux c)))", value{
+		Grammar:   `(and "repo:foo" (concat "a" (and "repo:bar" (concat "b" (and "repo:qux" "c")))))`,
+		Heuristic: "Same",
+	}).Equal(t, test("(repo:foo a (repo:bar b (repo:qux c)))"))
+
+	autogold.Want("a repo:b repo:c (d repo:e repo:f e)", value{
+		Grammar:   `(and "repo:b" "repo:c" (concat "a" (and "repo:e" "repo:f" (concat "d" "e"))))`,
+		Heuristic: "Same",
+	}).Equal(t, test("a repo:b repo:c (d repo:e repo:f e)"))
+
+	// Errors.
+	autogold.Want("Unbalanced", value{Heuristic: `(concat "(foo)" "(bar")`}).Equal(t, test("(foo) (bar"))
+	autogold.Want("Illegal expression on the right", value{Heuristic: "Same"}).Equal(t, test("a or or b"))
+	autogold.Want("Illegal expression on the right, mixed operators", value{Grammar: `(and "a" "OR")`, Heuristic: "Same"}).Equal(t, test("a and OR"))
+	autogold.Want("paren reduction with ands", value{Grammar: `(and "a" "b" "c" "d")`, Heuristic: "Same"}).Equal(t, test("(a and b) and (c and d)"))
+	autogold.Want("paren reduction with ors", value{Grammar: `(or "a" "b" "c" "d")`, Heuristic: "Same"}).Equal(t, test("(a or b) or (c or d)"))
+	autogold.Want("nested paren reduction with whitespace", value{Grammar: `(concat "a" "b" "c" "d")`, Heuristic: `(concat "(((a b c)))" "d")`}).Equal(t, test("(((a b c))) d"))
+	autogold.Want("left paren reduction with whitespace", value{Grammar: `(concat "a" "b" "c" "d")`, Heuristic: `(concat "(a b)" "c" "d")`}).Equal(t, test("(a b) c d"))
+	autogold.Want("right paren reduction with whitespace", value{Grammar: `(concat "a" "b" "c" "d")`, Heuristic: `(concat "a" "b" "(c d)")`}).Equal(t, test("a b (c d)"))
+	autogold.Want("grouped paren reduction with whitespace", value{Grammar: `(concat "a" "b" "c" "d")`, Heuristic: `(concat "(a b)" "(c d)")`}).Equal(t, test("(a b) (c d)"))
+
+	//Escaping
+	autogold.Want("multiple grouped paren reduction with whitespace", value{Grammar: `(concat "a" "b" "c" "d" "e" "f")`, Heuristic: `(concat "(a b)" "(c d)" "(e f)")`}).Equal(t, test("(a b) (c d) (e f)"))
+
+	autogold.Want("interpolated grouped paren reduction", value{Grammar: `(concat "a" "b" "c" "d" "e" "f")`, Heuristic: `(concat "(a b)" "c" "d" "(e f)")`}).Equal(t, test("(a b) c d (e f)"))
+
+	autogold.Want("mixed interpolated grouped paren reduction", value{
+		Grammar:   `(and "a" "b" (or "z" "q") "c" "d" "e" "f")`,
+		Heuristic: "Same",
+	}).Equal(t, test("(a and b and (z or q)) and (c and d) and (e and f)"))
+
+	autogold.Want("empty paren", value{Grammar: `""`, Heuristic: `"()"`}).Equal(t, test("()"))
+	autogold.Want("paren inside contiguous string", value{Grammar: `(concat "foo" "bar")`, Heuristic: `"foo()bar"`}).Equal(t, test("foo()bar"))
+	autogold.Want("paren inside contiguous string with and", value{
+		Grammar:   `(and "x" (concat "regex" "s" "?"))`,
+		Heuristic: `(and "x" "regex(s)?")`,
+	}).Equal(t, test("(x and regex(s)?)"))
+
+	autogold.Want("paren containing whitespace inside contiguous string", value{Grammar: `(concat "foo" "bar")`, Heuristic: `"foo(   )bar"`}).Equal(t, test("foo(   )bar"))
+	autogold.Want("nested empty paren", value{Grammar: `"x"`, Heuristic: `"(x())"`}).Equal(t, test("(x())"))
+	autogold.Want("interpolated nested empty paren", value{Grammar: `"x"`, Heuristic: `"(()x(  )(())())"`}).Equal(t, test("(()x(  )(())())"))
+	autogold.Want("empty paren on or", value{Grammar: `""`, Heuristic: `(or "()" "()")`}).Equal(t, test("() or ()"))
+	autogold.Want("empty left paren on or", value{Grammar: `"x"`, Heuristic: `(or "()" "(x)")`}).Equal(t, test("() or (x)"))
+	autogold.Want("complex interpolated nested empty paren", value{Grammar: `(concat "x" (or "y" "f"))`, Heuristic: `(concat "()" "x" "()" (or "y" "()" "(f)") "()")`}).Equal(t, test("(()x(  )(y or () or (f))())"))
+	autogold.Want("disable parens as patterns heuristic if containing recognized operator", value{Grammar: `""`, Heuristic: `(or "()" "()")`}).Equal(t, test("(() or ())"))
+
+	autogold.Want("NOT expression inside parentheses", value{
+		Grammar:   `(and "r:foo" (concat "a/foo" (not ".svg")))`,
+		Heuristic: "Same",
+	}).Equal(t, test("r:foo (a/foo not .svg)"))
+
+	autogold.Want("NOT expression at begining of group", value{Grammar: `(and "r:foo" (not ".svg"))`, Heuristic: "Same"}).Equal(t, test("r:foo (not .svg)"))
+
+	// Escaping
+	autogold.Want(`\(\)`, value{Grammar: `"\\(\\)"`, Heuristic: "Same"}).Equal(t, test(`\(\)`))
+	autogold.Want(`\( \) ()`, value{Grammar: `(concat "\\(" "\\)")`, Heuristic: `(concat "\\(" "\\)" "()")`}).Equal(t, test(`\( \) ()`))
+	autogold.Want(`\ `, value{Grammar: `"\\ "`, Heuristic: "Same"}).Equal(t, test(`\ `))
+	autogold.Want(`\  \ `, value{Grammar: `(concat "\\ " "\\ ")`, Heuristic: "Same"}).Equal(t, test(`\  \ `))
+
+	// Dangling parentheses heuristic.
+	autogold.Want(`(`, value{Heuristic: `"("`}).Equal(t, test(`(`))
+	autogold.Want(`)(())(`, value{Heuristic: "Same"}).Equal(t, test(`)(())(`))
+	autogold.Want(`foo( and bar(`, value{Heuristic: `(and "foo(" "bar(")`}).Equal(t, test(`foo( and bar(`))
+	autogold.Want(`repo:foo foo( or bar(`, value{Heuristic: `(and "repo:foo" (or "foo(" "bar("))`}).Equal(t, test(`repo:foo foo( or bar(`))
+	autogold.Want(`(a or (b and )) or d)`, value{Heuristic: "Same"}).Equal(t, test(`(a or (b and )) or d)`))
+
+	// Quotes and escape sequences.
+	autogold.Want(`"`, value{Grammar: `"\""`, Heuristic: "Same"}).Equal(t, test(`"`))
+	autogold.Want(`repo:foo' bar'`, value{Grammar: `(and "repo:foo'" "bar'")`, Heuristic: "Same"}).Equal(t, test(`repo:foo' bar'`))
+	autogold.Want(`repo:'foo' 'bar'`, value{Grammar: `(and "repo:foo" "bar")`, Heuristic: "Same"}).Equal(t, test(`repo:'foo' 'bar'`))
+	autogold.Want(`repo:"foo" "bar"`, value{Grammar: `(and "repo:foo" "bar")`, Heuristic: "Same"}).Equal(t, test(`repo:"foo" "bar"`))
+	autogold.Want(`repo:"foo bar" "foo bar"`, value{Grammar: `(and "repo:foo bar" "foo bar")`, Heuristic: "Same"}).Equal(t, test(`repo:"foo bar" "foo bar"`))
+	autogold.Want(`repo:"fo\"o" "bar"`, value{Grammar: `(and "repo:fo\"o" "bar")`, Heuristic: "Same"}).Equal(t, test(`repo:"fo\"o" "bar"`))
+	autogold.Want(`repo:foo /b\/ar/`, value{Grammar: `(and "repo:foo" "b/ar")`, Heuristic: "Same"}).Equal(t, test(`repo:foo /b\/ar/`))
+	autogold.Want(`repo:foo /a/file/path`, value{Grammar: `(and "repo:foo" "/a/file/path")`, Heuristic: "Same"}).Equal(t, test(`repo:foo /a/file/path`))
+	autogold.Want(`repo:foo /a/file/path/`, value{Grammar: `(and "repo:foo" "/a/file/path/")`, Heuristic: "Same"}).Equal(t, test(`repo:foo /a/file/path/`))
+
+	autogold.Want(`repo:foo /a/ /another/path/`, value{
+		Grammar:   `(and "repo:foo" (concat "a" "/another/path/"))`,
+		Heuristic: "Same",
+	}).Equal(t, test(`repo:foo /a/ /another/path/`))
+
+	autogold.Want(`repo:foo /\s+b\d+ar/ `, value{Grammar: `(and "repo:foo" "\\s+b\\d+ar")`, Heuristic: "Same"}).Equal(t, test(`repo:foo /\s+b\d+ar/ `))
+	autogold.Want(`repo:foo /bar/ `, value{Grammar: `(and "repo:foo" "bar")`, Heuristic: "Same"}).Equal(t, test(`repo:foo /bar/ `))
+	autogold.Want(`\t\r\n`, value{Grammar: `"\\t\\r\\n"`, Heuristic: "Same"}).Equal(t, test(`\t\r\n`))
+	autogold.Want(`repo:foo\ bar \:\\`, value{Grammar: `(and "repo:foo\\ bar" "\\:\\\\")`, Heuristic: "Same"}).Equal(t, test(`repo:foo\ bar \:\\`))
+
+	autogold.Want(`a file:\.(ts(?:(?:)|x)|js(?:(?:)|x))(?m:$)`, value{
+		Grammar:   `(and "file:\\.(ts(?:(?:)|x)|js(?:(?:)|x))(?m:$)" "a")`,
+		Heuristic: "Same",
+	}).Equal(t, test(`a file:\.(ts(?:(?:)|x)|js(?:(?:)|x))(?m:$)`))
+
+	autogold.Want(`(file:(a) file:(b))`, value{Grammar: `(and "file:(a)" "file:(b)")`, Heuristic: "Same"}).Equal(t, test(`(file:(a) file:(b))`))
+	autogold.Want(`(repohascommitafter:"7 days")`, value{Grammar: `"repohascommitafter:7 days"`, Heuristic: "Same"}).Equal(t, test(`(repohascommitafter:"7 days")`))
+
+	autogold.Want(`(foo repohascommitafter:"7 days")`, value{
+		Grammar:   `(and "repohascommitafter:7 days" "foo")`,
+		Heuristic: "Same",
+	}).Equal(t, test(`(foo repohascommitafter:"7 days")`))
+
+	// Fringe tests cases at the boundary of heuristics and invalid syntax.
+	autogold.Want(`(0(F)(:())(:())(<0)0()`, value{Heuristic: `"(0(F)(:())(:())(<0)0()"`}).Equal(t, test(`(0(F)(:())(:())(<0)0()`))
+	// The space-looking character below is U+00A0.
+	autogold.Want(`00 (000)`, value{Grammar: `(concat "00" "000")`, Heuristic: `(concat "00" "(000)")`}).Equal(t, test(`00 (000)`))
+
 }
 
 func TestScanDelimited(t *testing.T) {
@@ -911,54 +625,19 @@ func TestParseAndOrLiteral(t *testing.T) {
 }
 
 func TestScanBalancedPattern(t *testing.T) {
-	cases := []struct {
-		Input       string
-		Want        string
-		WantFailure bool
-	}{
-		{
-			Input: "foo OR bar",
-			Want:  "foo",
-		},
-		{
-			Input: "(hello there)",
-			Want:  "(hello there)",
-		},
-		{
-			Input: "( general:kenobi )",
-			Want:  "( general:kenobi )",
-		},
-		{
-			Input:       "(foo not bar)",
-			WantFailure: true,
-		},
-		{
-			Input:       "(foo OR bar)",
-			WantFailure: true,
-		},
-		{
-			Input:       "(foo not bar)",
-			WantFailure: true,
-		},
-		{
-			Input:       "repo:foo AND bar",
-			WantFailure: true,
-		},
-		{
-			Input:       "repo:foo bar",
-			WantFailure: true,
-		},
+	test := func(input string) string {
+		result, _, ok := ScanBalancedPattern([]byte(input))
+		if !ok {
+			return "ERROR"
+		}
+		return result
 	}
 
-	for _, c := range cases {
-		t.Run("scan balanced pattern", func(t *testing.T) {
-			want, _, ok := ScanBalancedPattern([]byte(c.Input))
-			if ok && c.WantFailure {
-				t.Errorf("Expected pattern to be rejected")
-			}
-			if diff := cmp.Diff(want, c.Want); diff != "" {
-				t.Error(diff)
-			}
-		})
-	}
+	autogold.Want("foo OR bar", "foo").Equal(t, test("foo OR bar"))
+	autogold.Want("(hello there)", "(hello there)").Equal(t, test("(hello there)"))
+	autogold.Want("( general:kenobi )", "( general:kenobi )").Equal(t, test("( general:kenobi )"))
+	autogold.Want("(foo OR bar)", "ERROR").Equal(t, test("(foo OR bar)"))
+	autogold.Want("(foo not bar)", "ERROR").Equal(t, test("(foo not bar)"))
+	autogold.Want("repo:foo AND bar", "ERROR").Equal(t, test("repo:foo AND bar"))
+	autogold.Want("repo:foo bar", "ERROR").Equal(t, test("repo:foo bar"))
 }
