@@ -379,7 +379,11 @@ func authenticateByCookie(r *http.Request, w http.ResponseWriter) context.Contex
 		}
 
 		// Check that the user's creation date matches what is stored in the session.
-		if !info.UserCreatedAt.Equal(usr.CreatedAt) {
+		//
+		// If the session does not have the user's creation date, it's an old (valid)
+		// session from before the check was introduced. They'll naturally fall away
+		// due to expiration, so this IsZero guard can be removed in the future.
+		if !info.UserCreatedAt.IsZero() && !info.UserCreatedAt.Equal(usr.CreatedAt) {
 			_ = deleteSession(w, r)
 			return r.Context()
 		}

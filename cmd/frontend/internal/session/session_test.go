@@ -395,3 +395,44 @@ func TestMismatchedUserCreationFails(t *testing.T) {
 		t.Fatal("session was not deleted")
 	}
 }
+
+func TestOldUserSessionSucceeds(t *testing.T) {
+	cleanup := ResetMockSessionStore(t)
+	defer cleanup()
+
+	// This user's session will _not_ have the UserCreatedAt value in the session
+	// store. When that situation occurs, we want to allow the session to continue
+	// as this is a logged-in user with a session that was created before the change.
+	db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+		return &types.User{ID: 1, CreatedAt: time.Now()}, nil
+	}
+	defer func() { db.Mocks = db.MockStores{} }()
+
+	// Start a new session for the user with ID 1. Their creation time will not be
+	// be recorded into the session store.
+	w := httptest.NewRecorder()
+	actr := &actor.Actor{UID: 1, FromSessionCookie: true}
+	session := &sessionInfo{Actor: actr, ExpiryPeriod: 9999999999999999, LastActive: time.Now()}
+	if err := SetData(w, httptest.NewRequest("GET", "/", nil), "actor", session); err != nil {
+		t.Fatal(err)
+	}
+
+	// Grab the auth cookie so we can make a request as this user.
+	var authCookies []*http.Cookie
+	for _, cookie := range w.Result().Cookies() {
+		if cookie.Expires.After(time.Now()) || cookie.MaxAge > 0 {
+			authCookies = append(authCookies, cookie)
+		}
+	}
+
+	// Perform the authenticated request and verify that the session
+	// was created successfully.
+	req := httptest.NewRequest("GET", "/", nil)
+	for _, cookie := range authCookies {
+		req.AddCookie(cookie)
+	}
+	actr = actor.FromContext(authenticateByCookie(req, w))
+	if reflect.DeepEqual(actr, &actor.Actor{}) {
+		t.Fatal("session was not created")
+	}
+}
