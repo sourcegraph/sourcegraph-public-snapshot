@@ -2,7 +2,7 @@ import { TelemetryService } from '../../../../shared/src/telemetry/telemetryServ
 import { Observable } from 'rxjs'
 import { gql, dataOrThrowErrors } from '../../../../shared/src/graphql/graphql'
 import { createAggregateError, isErrorLike, ErrorLike } from '../../../../shared/src/util/errors'
-import { map } from 'rxjs/operators'
+import { map, mapTo } from 'rxjs/operators'
 import {
     UpdateExternalServiceResult,
     UpdateExternalServiceVariables,
@@ -16,6 +16,10 @@ import {
     DeleteExternalServiceResult,
     ExternalServicesVariables,
     ExternalServicesResult,
+    SetExternalServiceReposVariables,
+    SetExternalServiceReposResult,
+    AffiliatedRepositoriesVariables,
+    AffiliatedRepositoriesResult,
 } from '../../graphql-operations'
 import { requestGraphQL } from '../../backend/graphql'
 
@@ -87,6 +91,21 @@ export function updateExternalService(
         .toPromise()
 }
 
+export function setExternalServiceRepos(variables: SetExternalServiceReposVariables): Promise<void> {
+    return requestGraphQL<SetExternalServiceReposResult, SetExternalServiceReposVariables>(
+        gql`
+            mutation SetExternalServiceRepos($id: ID!, $allRepos: Boolean!, $repos: [String!]) {
+                setExternalServiceRepos(id: $id, allRepos: $allRepos, repos: $repos) {
+                    alwaysNil
+                }
+            }
+        `,
+        variables
+    )
+        .pipe(map(dataOrThrowErrors), mapTo(undefined))
+        .toPromise()
+}
+
 export function fetchExternalService(id: Scalars['ID']): Observable<ExternalServiceFields> {
     return requestGraphQL<ExternalServiceResult, ExternalServiceVariables>(
         gql`
@@ -111,6 +130,33 @@ export function fetchExternalService(id: Scalars['ID']): Observable<ExternalServ
             return node
         })
     )
+}
+
+export function listAffiliatedRepositories(
+    args: AffiliatedRepositoriesVariables
+): Observable<NonNullable<AffiliatedRepositoriesResult>> {
+    return requestGraphQL<AffiliatedRepositoriesResult, AffiliatedRepositoriesVariables>(
+        gql`
+            query AffiliatedRepositories($user: ID!, $codeHost: ID, $query: String) {
+                affiliatedRepositories(user: $user, codeHost: $codeHost, query: $query) {
+                    nodes {
+                        name
+                        codeHost {
+                            kind
+                            id
+                            displayName
+                        }
+                        private
+                    }
+                }
+            }
+        `,
+        {
+            user: args.user,
+            codeHost: args.codeHost ?? null,
+            query: args.query ?? null,
+        }
+    ).pipe(map(dataOrThrowErrors))
 }
 
 export async function deleteExternalService(externalService: Scalars['ID']): Promise<void> {
