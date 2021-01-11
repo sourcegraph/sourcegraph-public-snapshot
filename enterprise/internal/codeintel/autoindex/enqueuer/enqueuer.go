@@ -11,7 +11,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/inference"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/observability"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -20,22 +19,22 @@ import (
 type IndexEnqueuer struct {
 	dbStore         DBStore
 	gitserverClient GitserverClient
-	operations      *observability.Operations
+	operations      *operations
 }
 
 func NewIndexEnqueuer(dbStore DBStore, gitClient GitserverClient, observationContext *observation.Context) *IndexEnqueuer {
 	return &IndexEnqueuer{
 		dbStore:         dbStore,
 		gitserverClient: gitClient,
-		operations:      observability.NewOperations(observationContext),
+		operations:      newOperations(observationContext),
 	}
 }
 
-func (s *IndexEnqueuer) QueueIndex(ctx context.Context, repositoryID int) (err error) {
+func (s *IndexEnqueuer) QueueIndex(ctx context.Context, repositoryID int) error {
 	return s.queueIndex(ctx, repositoryID, false)
 }
 
-func (s *IndexEnqueuer) ForceQueueIndex(ctx context.Context, repositoryID int) (err error) {
+func (s *IndexEnqueuer) ForceQueueIndex(ctx context.Context, repositoryID int) error {
 	return s.queueIndex(ctx, repositoryID, true)
 }
 

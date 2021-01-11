@@ -27,7 +27,7 @@ type Client struct {
 func New(dbStore DBStore, observationContext *observation.Context) *Client {
 	return &Client{
 		dbStore:    dbStore,
-		operations: makeOperations(observationContext),
+		operations: newOperations(observationContext),
 	}
 }
 

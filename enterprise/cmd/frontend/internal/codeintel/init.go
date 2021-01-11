@@ -17,8 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	codeintelresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	codeintelgqlresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/graphql"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/observability"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -67,17 +65,16 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 func newResolver(ctx context.Context, observationContext *observation.Context) (gql.CodeIntelResolver, error) {
 	hunkCache, err := codeintelresolvers.NewHunkCache(config.HunkCacheSize)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to initialize hunk cache: %s", err)
+		return nil, fmt.Errorf("failed to initialize hunk cache: %s", err)
 	}
 
 	innerResolver := codeintelresolvers.NewResolver(
 		&resolvers.DBStoreShim{services.dbStore},
 		services.lsifStore,
 		services.api,
+		services.indexEnqueuer,
 		hunkCache,
 		observationContext,
-		services.gitserverClient,
-		&enqueuer.DBStoreShim{services.dbStore},
 	)
 	resolver := codeintelgqlresolvers.NewResolver(innerResolver)
 
@@ -114,12 +111,13 @@ func newBackgroundRoutines(observationContext *observation.Context) (routines []
 }
 
 func newCommitGraphRoutines(observationContext *observation.Context) []goroutine.BackgroundRoutine {
-	dbStore := services.dbStore
-	gitserverClient := services.gitserverClient
-	operations := commitgraph.NewOperations(dbStore, observationContext)
-
 	return []goroutine.BackgroundRoutine{
-		commitgraph.NewUpdater(dbStore, gitserverClient, config.CommitGraphUpdateTaskInterval, operations),
+		commitgraph.NewUpdater(
+			services.dbStore,
+			services.gitserverClient,
+			config.CommitGraphUpdateTaskInterval,
+			observationContext,
+		),
 	}
 }
 
@@ -128,13 +126,27 @@ func newIndexingRoutines(observationContext *observation.Context) []goroutine.Ba
 		return nil
 	}
 
-	enqueuerDBStore := &enqueuer.DBStoreShim{services.dbStore}
-	gitserverClient := services.gitserverClient
-	operations := observability.NewOperations(observationContext)
-
 	return []goroutine.BackgroundRoutine{
-		indexing.NewIndexScheduler(services.dbStore, enqueuerDBStore, gitserverClient, config.IndexBatchSize, config.MinimumTimeSinceLastEnqueue, config.MinimumSearchCount, float64(config.MinimumSearchRatio)/100, config.MinimumPreciseCount, config.AutoIndexingTaskInterval, operations, observationContext),
-		indexing.NewIndexabilityUpdater(services.dbStore, gitserverClient, config.MinimumSearchCount, float64(config.MinimumSearchRatio)/100, config.MinimumPreciseCount, config.AutoIndexingTaskInterval, operations),
+		indexing.NewIndexScheduler(
+			services.dbStore,
+			services.indexEnqueuer,
+			config.IndexBatchSize,
+			config.MinimumTimeSinceLastEnqueue,
+			config.MinimumSearchCount,
+			float64(config.MinimumSearchRatio)/100,
+			config.MinimumPreciseCount,
+			config.AutoIndexingTaskInterval,
+			observationContext,
+		),
+		indexing.NewIndexabilityUpdater(
+			services.dbStore,
+			services.gitserverClient,
+			config.MinimumSearchCount,
+			float64(config.MinimumSearchRatio)/100,
+			config.MinimumPreciseCount,
+			config.AutoIndexingTaskInterval,
+			observationContext,
+		),
 	}
 }
 
