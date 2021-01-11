@@ -3,7 +3,7 @@ import * as H from 'history'
 import * as _monaco from 'monaco-editor' // type only
 import * as React from 'react'
 import { Subscription } from 'rxjs'
-import { Props as SaveToolbarProps, SaveToolbar, SaveToolbarPropsGenerator } from '../components/SaveToolbar'
+import { SaveToolbarProps, SaveToolbar, SaveToolbarPropsGenerator } from '../components/SaveToolbar'
 import * as _monacoSettingsEditorModule from './MonacoSettingsEditor' // type only
 import { EditorAction } from '../site-admin/configHelpers'
 import { ThemeProps } from '../../../shared/src/theme'
@@ -58,8 +58,6 @@ const MonacoSettingsEditor = React.lazy(async () => ({
     default: (await import('./MonacoSettingsEditor')).MonacoSettingsEditor,
 }))
 
-//const defaultSaveToolbarPropsGenerator
-
 /** Displays a MonacoSettingsEditor component without loading Monaco in the current Webpack chunk. */
 export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> extends React.PureComponent<Props<T>, State> {
     public state: State = {}
@@ -73,7 +71,7 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
         if (this.props.blockNavigationIfDirty !== false) {
             // Prevent navigation when dirty.
             this.subscriptions.add(
-                this.props.history.block((_: H.Location, action: H.Action) => {
+                this.props.history.block((location: H.Location, action: H.Action) => {
                     if (action === 'REPLACE') {
                         return undefined
                     }
@@ -110,21 +108,19 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
                 onDiscard: this.discard
             })
             saveToolbar = this.props.customSaveToolbar.saveToolbar(toolbarProps)
+        } else {
+            saveToolbar = <SaveToolbar
+                dirty={this.isDirty}
+                saving={this.props.saving}
+                onSave={this.onSave}
+                onDiscard={this.discard}
+            />
         }
 
         return (
             <div className={this.props.className || ''}>
                 {
-                    this.props.canEdit &&
-                    (
-                        saveToolbar ||
-                        <SaveToolbar
-                            dirty={this.isDirty}
-                            saving={this.props.saving}
-                            onSave={this.onSave}
-                            onDiscard={this.discard}
-                        />
-                    )
+                    this.props.canEdit && saveToolbar
                 }
                 {this.props.actions && (
                     <div className="site-admin-configuration-page__action-groups">

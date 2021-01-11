@@ -10,7 +10,7 @@ import { DynamicallyImportedMonacoSettingsEditor } from '../../../settings/Dynam
 import { getConfiguration as defaultGetConfiguration, updateConfiguration, enqueueIndexJob } from './backend'
 import allConfigSchema from './schema.json'
 import { CodeIntelAutoIndexSaveToolbar, AutoIndexProps } from '../../../components/CodeIntelAutoIndexSaveToolbar'
-import { SaveToolbarPropsGenerator, Props as SaveToolbarProps } from '../../../components/SaveToolbar'
+import { SaveToolbarPropsGenerator, SaveToolbarProps } from '../../../components/SaveToolbar'
 
 export interface CodeIntelIndexConfigurationPageProps extends RouteComponentProps<{}>, ThemeProps, TelemetryProps {
     repo: Pick<SettingsAreaRepositoryFields, 'id'>
@@ -79,6 +79,8 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
         [repo]
     )
 
+    const onDirtyChange = useCallback((dirty: boolean) => { setDirty(dirty) }, [])
+
     const saving = state === CodeIntelIndexEditorState.Saving
     const queueing = state === CodeIntelIndexEditorState.Queueing
 
@@ -92,10 +94,10 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
                 enqueueing: queueing
             }
 
-            const p = { ...props, ...autoIndexProps }
-            p.willShowError = (): boolean => !queueing && !p.saving
-            p.saveDiscardDisabled = (): boolean => saving || !dirty || queueing
-            return p
+            const mergedProps = { ...props, ...autoIndexProps }
+            mergedProps.willShowError = (): boolean => !queueing && !mergedProps.saving
+            mergedProps.saveDiscardDisabled = (): boolean => saving || !dirty || queueing
+            return mergedProps
         },
         saveToolbar: CodeIntelAutoIndexSaveToolbar,
     }
@@ -127,7 +129,7 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
                     history={history}
                     telemetryService={telemetryService}
                     customSaveToolbar={customToolbar}
-                    onDirtyChange={(dirty: boolean) => setDirty(dirty)}
+                    onDirtyChange={onDirtyChange}
                 />
             </div>
         )
