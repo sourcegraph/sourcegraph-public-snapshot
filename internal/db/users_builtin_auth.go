@@ -9,16 +9,19 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/keegancsmith/sqlf"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/randstring"
 	"golang.org/x/crypto/bcrypt"
 )
 
 func (u *UserStore) IsPassword(ctx context.Context, id int32, password string) (bool, error) {
+	u.ensureStore()
+
 	var passwd sql.NullString
-	if err := dbconn.Global.QueryRowContext(ctx, "SELECT passwd FROM users WHERE deleted_at IS NULL AND id=$1", id).Scan(&passwd); err != nil {
+	if err := u.QueryRow(ctx, sqlf.Sprintf("SELECT passwd FROM users WHERE deleted_at IS NULL AND id=%s", id)).Scan(&passwd); err != nil {
 		return false, err
 	}
 	if !passwd.Valid {
@@ -33,6 +36,8 @@ var (
 )
 
 func (u *UserStore) RenewPasswordResetCode(ctx context.Context, id int32) (string, error) {
+	u.ensureStore()
+
 	if _, err := u.GetByID(ctx, id); err != nil {
 		return "", err
 	}
@@ -41,7 +46,7 @@ func (u *UserStore) RenewPasswordResetCode(ctx context.Context, id int32) (strin
 		return "", err
 	}
 	code := base64.StdEncoding.EncodeToString(b[:])
-	res, err := dbconn.Global.ExecContext(ctx, "UPDATE users SET passwd_reset_code=$1, passwd_reset_time=now() WHERE id=$2 AND (passwd_reset_time IS NULL OR passwd_reset_time + interval '"+passwordResetRateLimit+"' < now())", code, id)
+	res, err := u.ExecResult(ctx, sqlf.Sprintf("UPDATE users SET passwd_reset_code=%s, passwd_reset_time=now() WHERE id=%s AND (passwd_reset_time IS NULL OR passwd_reset_time + interval '"+passwordResetRateLimit+"' < now())", code, id))
 	if err != nil {
 		return "", err
 	}
@@ -58,6 +63,8 @@ func (u *UserStore) RenewPasswordResetCode(ctx context.Context, id int32) (strin
 
 // SetPassword sets the user's password given a new password and a password reset code
 func (u *UserStore) SetPassword(ctx context.Context, id int32, resetCode, newPassword string) (bool, error) {
+	u.ensureStore()
+
 	// 🚨 SECURITY: no empty passwords
 	if newPassword == "" {
 		return false, errors.New("new password was empty")
@@ -66,7 +73,7 @@ func (u *UserStore) SetPassword(ctx context.Context, id int32, resetCode, newPas
 	resetLinkExpiryDuration := conf.AuthPasswordResetLinkExpiry()
 
 	// 🚨 SECURITY: check resetCode against what's in the DB and that it's not expired
-	r := dbconn.Global.QueryRowContext(ctx, "SELECT count(*) FROM users WHERE id=$1 AND deleted_at IS NULL AND passwd_reset_code=$2 AND passwd_reset_time + interval '"+strconv.Itoa(resetLinkExpiryDuration)+" seconds' > now()", id, resetCode)
+	r := u.QueryRow(ctx, sqlf.Sprintf("SELECT count(*) FROM users WHERE id=%s AND deleted_at IS NULL AND passwd_reset_code=%s AND passwd_reset_time + interval '"+strconv.Itoa(resetLinkExpiryDuration)+" seconds' > now()", id, resetCode))
 
 	var ct int
 	if err := r.Scan(&ct); err != nil {
@@ -83,7 +90,7 @@ func (u *UserStore) SetPassword(ctx context.Context, id int32, resetCode, newPas
 		return false, err
 	}
 	// 🚨 SECURITY: set the new password and clear the reset code and expiry so the same code can't be reused.
-	if _, err := dbconn.Global.ExecContext(ctx, "UPDATE users SET passwd_reset_code=NULL, passwd_reset_time=NULL, passwd=$1 WHERE id=$2", passwd, id); err != nil {
+	if err := u.Exec(ctx, sqlf.Sprintf("UPDATE users SET passwd_reset_code=NULL, passwd_reset_time=NULL, passwd=%s WHERE id=%s", passwd, id)); err != nil {
 		return false, err
 	}
 
@@ -91,12 +98,16 @@ func (u *UserStore) SetPassword(ctx context.Context, id int32, resetCode, newPas
 }
 
 func (u *UserStore) DeletePasswordResetCode(ctx context.Context, id int32) error {
-	_, err := dbconn.Global.ExecContext(ctx, "UPDATE users SET passwd_reset_code=NULL, passwd_reset_time=NULL WHERE id=$1", id)
+	u.ensureStore()
+
+	err := u.Exec(ctx, sqlf.Sprintf("UPDATE users SET passwd_reset_code=NULL, passwd_reset_time=NULL WHERE id=%s", id))
 	return err
 }
 
 // UpdatePassword updates a user's password given the current password.
 func (u *UserStore) UpdatePassword(ctx context.Context, id int32, oldPassword, newPassword string) error {
+	u.ensureStore()
+
 	// 🚨 SECURITY: No empty passwords.
 	if oldPassword == "" {
 		return errors.New("old password was empty")
@@ -120,7 +131,7 @@ func (u *UserStore) UpdatePassword(ctx context.Context, id int32, oldPassword, n
 		return err
 	}
 	// 🚨 SECURITY: Set the new password
-	if _, err := dbconn.Global.ExecContext(ctx, "UPDATE users SET passwd_reset_code=NULL, passwd_reset_time=NULL, passwd=$1 WHERE id=$2", passwd, id); err != nil {
+	if err := u.Exec(ctx, sqlf.Sprintf("UPDATE users SET passwd_reset_code=NULL, passwd_reset_time=NULL, passwd=%s WHERE id=%s", passwd, id)); err != nil {
 		return err
 	}
 
@@ -135,13 +146,15 @@ func (u *UserStore) UpdatePassword(ctx context.Context, id int32, oldPassword, n
 // A randomized password is used (instead of an empty password) to avoid bugs where an empty password
 // is considered to be no password. The random password is expected to be irretrievable.
 func (u *UserStore) RandomizePasswordAndClearPasswordResetRateLimit(ctx context.Context, id int32) error {
+	u.ensureStore()
+
 	passwd, err := hashPassword(randstring.NewLen(36))
 	if err != nil {
 		return err
 	}
 	// 🚨 SECURITY: Set the new random password and clear the reset code/expiry, so the old code
 	// can't be reused, and so a new valid reset code can be generated afterward.
-	_, err = dbconn.Global.ExecContext(ctx, "UPDATE users SET passwd_reset_code=NULL, passwd_reset_time=NULL, passwd=$1 WHERE id=$2", passwd, id)
+	err = u.Exec(ctx, sqlf.Sprintf("UPDATE users SET passwd_reset_code=NULL, passwd_reset_time=NULL, passwd=%s WHERE id=%s", passwd, id))
 	return err
 }
 
