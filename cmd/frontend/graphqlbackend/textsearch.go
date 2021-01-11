@@ -533,43 +533,40 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, c chan
 						cancel()
 					}
 
-					if args.PatternInfo.IsStructuralPat {
-						// A partition of {repo name => file list} that we will build from Zoekt matches
-						partition := make(map[string][]string)
-						var repos []*search.RepositoryRevisions
-
-						for _, m := range event.results {
-							name := string(m.Repo.Name())
-							partition[name] = append(partition[name], m.JPath)
-						}
-
-						// Filter Zoekt repos that didn't contain matches
-						for _, repo := range indexed.Repos() {
-							for key := range partition {
-								if string(repo.Repo.Name) == key {
-									repos = append(repos, repo)
-								}
-							}
-						}
-
-						// For structural search, we run callSearcherOverRepos
-						// over the set of repos and files known to contain
-						// parts of the pattern as determined by Zoekt.
-						// callSearcherOverRepos must acquire the lock, so we
-						// must release the lock held by Zoekt at this point.
-						// The Zoekt part of the search is done here as far as
-						// structural search is concerned, so the lock can be
-						// freely released.
-						mu.Unlock()
-						err := callSearcherOverRepos(repos, partition)
-						mu.Lock()
-						if err != nil {
-							searchErr = err
-						}
-					} else {
+					if !args.PatternInfo.IsStructuralPat {
 						addMatches(event.results)
 					}
 				}()
+
+				// For structural search, we run callSearcherOverRepos
+				// over the set of repos and files known to contain
+				// parts of the pattern as determined by Zoekt.
+				if args.PatternInfo.IsStructuralPat {
+					// A partition of {repo name => file list} that we will build from Zoekt matches
+					partition := make(map[string][]string)
+					var repos []*search.RepositoryRevisions
+
+					for _, m := range event.results {
+						name := string(m.Repo.Name())
+						partition[name] = append(partition[name], m.JPath)
+					}
+
+					// Filter Zoekt repos that didn't contain matches
+					for _, repo := range indexed.Repos() {
+						for key := range partition {
+							if string(repo.Repo.Name) == key {
+								repos = append(repos, repo)
+							}
+						}
+					}
+
+					err := callSearcherOverRepos(repos, partition)
+					if err != nil {
+						mu.Lock()
+						searchErr = err
+						mu.Unlock()
+					}
+				}
 			}
 		}()
 	}
