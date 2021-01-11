@@ -37,7 +37,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
--
+- Interactive mode has now been removed. [#16868](https://github.com/sourcegraph/sourcegraph/pull/16868).
 
 ## 3.23.0
 

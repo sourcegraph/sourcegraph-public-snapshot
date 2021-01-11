@@ -9,7 +9,7 @@ import {
     isFilterType,
     isAliasedFilterType,
     AliasedFilterType,
-} from '../interactive/util'
+} from './util'
 import { Omit } from 'utility-types'
 
 interface BaseFilterDefinition {

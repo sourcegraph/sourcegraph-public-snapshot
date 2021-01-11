@@ -41,8 +41,7 @@ export const SearchAlert: React.FunctionComponent<SearchAlertProps> = ({
                                         proposedQuery.query,
                                         patternType || SearchPatternType.literal,
                                         caseSensitive,
-                                        versionContext,
-                                        {}
+                                        versionContext
                                     )
                                 }
                             >
