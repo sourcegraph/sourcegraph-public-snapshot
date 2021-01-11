@@ -18,16 +18,20 @@ import (
 )
 
 type IndexEnqueuer struct {
-	dbStore         DBStore
-	gitserverClient GitserverClient
-	operations      *observability.Operations
+	dbStore          DBStore
+	gitserverClient  GitserverClient
+	maxJobsPerCommit int
+	operations       *observability.Operations
 }
+
+const defaultMaxJobsPerCommit = 25
 
 func NewIndexEnqueuer(dbStore DBStore, gitClient GitserverClient, observationContext *observation.Context) *IndexEnqueuer {
 	return &IndexEnqueuer{
-		dbStore:         dbStore,
-		gitserverClient: gitClient,
-		operations:      observability.NewOperations(observationContext),
+		dbStore:          dbStore,
+		gitserverClient:  gitClient,
+		maxJobsPerCommit: defaultMaxJobsPerCommit,
+		operations:       observability.NewOperations(observationContext),
 	}
 }
 
@@ -187,22 +191,12 @@ func (s *IndexEnqueuer) inferIndexJobsFromRepositoryStructure(ctx context.Contex
 		indexes = append(indexes, convertInferredConfiguration(repositoryID, commit, recognizer.InferIndexJobs(paths))...)
 	}
 
+	if len(indexes) > s.maxJobsPerCommit {
+		log15.Warn("Too many inferred roots. Scheduling no index jobs for repository.", "repository_id", repositoryID)
+		return nil, true, nil
+	}
+
 	return indexes, true, nil
-}
-
-func deduplicateRepositoryIDs(ids ...[]int) (repositoryIDs []int) {
-	repositoryIDMap := map[int]struct{}{}
-	for _, s := range ids {
-		for _, v := range s {
-			repositoryIDMap[v] = struct{}{}
-		}
-	}
-
-	for repositoryID := range repositoryIDMap {
-		repositoryIDs = append(repositoryIDs, repositoryID)
-	}
-
-	return repositoryIDs
 }
 
 func convertIndexConfiguration(repositoryID int, commit string, indexConfiguration config.IndexConfiguration) (indexes []store.Index) {
