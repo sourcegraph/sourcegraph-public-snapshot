@@ -16,6 +16,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - Panels in the Sourcegraph monitoring dashboards now have links to relevant alerts documentation and the new [monitoring dashboards reference](https://docs.sourcegraph.com/admin/observability/dashboards). [#16939](https://github.com/sourcegraph/sourcegraph/pull/16939)
+- Suggested filters in the search results page can now be scrolled. [#17097](https://github.com/sourcegraph/sourcegraph/pull/17097)
 
 ### Changed
 
