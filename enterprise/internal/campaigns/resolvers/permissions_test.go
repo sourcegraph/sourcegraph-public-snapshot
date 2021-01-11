@@ -88,7 +88,7 @@ func TestPermissionLevels(t *testing.T) {
 		}
 
 		// We attach the changeset to the campaign so we can test syncChangeset
-		changeset.CampaignIDs = append(changeset.CampaignIDs, c.ID)
+		changeset.Campaigns = append(changeset.Campaigns, campaigns.CampaignChangeset{CampaignID: c.ID})
 		if err := s.UpdateChangeset(ctx, changeset); err != nil {
 			t.Fatal(err)
 		}
@@ -614,7 +614,7 @@ func TestPermissionLevels(t *testing.T) {
 							// matter for the addChangesetsToCampaign mutation,
 							// since that is idempotent and we want to solely
 							// check for auth errors.
-							changeset.CampaignIDs = []int64{campaignID}
+							changeset.Campaigns = []campaigns.CampaignChangeset{{CampaignID: campaignID}}
 							if err := cstore.UpdateChangeset(ctx, changeset); err != nil {
 								t.Fatal(err)
 							}
@@ -836,7 +836,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		}
 		// We attach the two changesets to the campaign
 		for _, c := range changesets {
-			c.CampaignIDs = []int64{campaign.ID}
+			c.Campaigns = []campaigns.CampaignChangeset{{CampaignID: campaign.ID}}
 			if err := cstore.UpdateChangeset(ctx, c); err != nil {
 				t.Fatal(err)
 			}

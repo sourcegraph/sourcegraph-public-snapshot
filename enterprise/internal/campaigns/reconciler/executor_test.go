@@ -417,7 +417,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			// Create the changeset with correct associations.
 			changesetOpts := tc.changeset
 			changesetOpts.Repo = rs[0].ID
-			changesetOpts.CampaignIDs = []int64{campaign.ID}
+			changesetOpts.Campaigns = []campaigns.CampaignChangeset{{CampaignID: campaign.ID}}
 			changesetOpts.OwnedByCampaign = campaign.ID
 			if changesetSpec != nil {
 				changesetOpts.CurrentSpec = changesetSpec.ID

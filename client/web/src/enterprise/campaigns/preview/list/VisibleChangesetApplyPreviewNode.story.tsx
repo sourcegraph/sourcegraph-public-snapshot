@@ -178,6 +178,26 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
             },
         },
     },
+    'Detach changeset': {
+        __typename: 'VisibleChangesetApplyPreview',
+        operations: [ChangesetSpecOperation.DETACH],
+        delta: {
+            titleChanged: false,
+        },
+        targets: {
+            __typename: 'VisibleApplyPreviewTargetsDetach',
+            changeset: {
+                id: '123123',
+                title: 'Le open changeset',
+                repository: testRepo,
+                diffStat: {
+                    added: 2,
+                    changed: 8,
+                    deleted: 10,
+                },
+            },
+        },
+    },
 }
 
 const queryEmptyFileDiffs = () => of({ totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] })

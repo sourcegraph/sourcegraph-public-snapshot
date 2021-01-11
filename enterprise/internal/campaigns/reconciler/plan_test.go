@@ -127,7 +127,7 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 				PublicationState: campaigns.ChangesetPublicationStatePublished,
 				ExternalState:    campaigns.ChangesetExternalStateClosed,
 				OwnedByCampaign:  1234,
-				CampaignIDs:      []int64{1234},
+				Campaigns:        []campaigns.CampaignChangeset{{CampaignID: 1234}},
 			},
 			wantOperations: Operations{
 				campaigns.ReconcilerOperationReopen,
@@ -141,11 +141,12 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 				PublicationState: campaigns.ChangesetPublicationStatePublished,
 				ExternalState:    campaigns.ChangesetExternalStateOpen,
 				OwnedByCampaign:  1234,
-				CampaignIDs:      []int64{1234},
+				Campaigns:        []campaigns.CampaignChangeset{{CampaignID: 1234, Detach: true}},
 				// Important bit:
 				Closing: true,
 			},
 			wantOperations: Operations{
+				campaigns.ReconcilerOperationDetach,
 				campaigns.ReconcilerOperationClose,
 			},
 		},
@@ -157,11 +158,12 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 				PublicationState: campaigns.ChangesetPublicationStatePublished,
 				ExternalState:    campaigns.ChangesetExternalStateClosed,
 				OwnedByCampaign:  1234,
-				CampaignIDs:      []int64{1234},
+				Campaigns:        []campaigns.CampaignChangeset{{CampaignID: 1234, Detach: true}},
 				// Important bit:
 				Closing: true,
 			},
 			wantOperations: Operations{
+				campaigns.ReconcilerOperationDetach,
 				// TODO: This should probably be a noop in the future
 				campaigns.ReconcilerOperationClose,
 			},

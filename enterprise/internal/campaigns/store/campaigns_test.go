@@ -76,7 +76,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, clock ct.Cl
 		}
 
 		changeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
-			CampaignIDs: []int64{cs[0].ID},
+			Campaigns: []campaigns.CampaignChangeset{{CampaignID: cs[0].ID}},
 		})
 
 		count, err = s.CountCampaigns(ctx, CountCampaignsOpts{ChangesetID: changeset.ID})
@@ -153,7 +153,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, clock ct.Cl
 		t.Run("By ChangesetID", func(t *testing.T) {
 			for i := 1; i <= len(cs); i++ {
 				changeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
-					CampaignIDs: []int64{cs[i-1].ID},
+					Campaigns: []campaigns.CampaignChangeset{{CampaignID: cs[i-1].ID}},
 				})
 				opts := ListCampaignsOpts{ChangesetID: changeset.ID}
 

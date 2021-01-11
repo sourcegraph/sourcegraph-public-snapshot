@@ -92,7 +92,7 @@ func (r *ChangesetRewirer) createChangesetForSpec(repo *types.Repo, spec *campai
 		RepoID:              spec.RepoID,
 		ExternalServiceType: repo.ExternalRepo.ServiceType,
 
-		CampaignIDs:       []int64{r.campaignID},
+		Campaigns:         []campaigns.CampaignChangeset{{CampaignID: r.campaignID}},
 		OwnedByCampaignID: r.campaignID,
 		CurrentSpecID:     spec.ID,
 
@@ -114,7 +114,7 @@ func (r *ChangesetRewirer) updateChangesetToNewSpec(c *campaigns.Changeset, spec
 	c.CurrentSpecID = spec.ID
 
 	// Ensure that the changeset is attached to the campaign
-	c.CampaignIDs = append(c.CampaignIDs, r.campaignID)
+	c.Campaigns = append(c.Campaigns, campaigns.CampaignChangeset{CampaignID: r.campaignID})
 
 	// We need to enqueue it for the changeset reconciler, so the
 	// reconciler wakes up, compares old and new spec and, if
@@ -127,8 +127,8 @@ func (r *ChangesetRewirer) createTrackingChangeset(repo *types.Repo, externalID 
 		RepoID:              repo.ID,
 		ExternalServiceType: repo.ExternalRepo.ServiceType,
 
-		CampaignIDs: []int64{r.campaignID},
-		ExternalID:  externalID,
+		Campaigns:  []campaigns.CampaignChangeset{{CampaignID: r.campaignID}},
+		ExternalID: externalID,
 		// Note: no CurrentSpecID, because we merely track this one
 
 		PublicationState: campaigns.ChangesetPublicationStateUnpublished,
@@ -143,7 +143,7 @@ func (r *ChangesetRewirer) createTrackingChangeset(repo *types.Repo, externalID 
 func (r *ChangesetRewirer) attachTrackingChangeset(changeset *campaigns.Changeset) {
 	// We already have a changeset with the given repoID and
 	// externalID, so we can track it.
-	changeset.CampaignIDs = append(changeset.CampaignIDs, r.campaignID)
+	changeset.Campaigns = append(changeset.Campaigns, campaigns.CampaignChangeset{CampaignID: r.campaignID})
 
 	// If it's errored and not created by another campaign, we re-enqueue it.
 	if changeset.OwnedByCampaignID == 0 && changeset.ReconcilerState == campaigns.ReconcilerStateErrored {
@@ -152,6 +152,7 @@ func (r *ChangesetRewirer) attachTrackingChangeset(changeset *campaigns.Changese
 }
 
 func (r *ChangesetRewirer) closeChangeset(changeset *campaigns.Changeset) {
+	reset := false
 	if changeset.CurrentSpecID != 0 && changeset.OwnedByCampaignID == r.campaignID {
 		// If we have a current spec ID and the changeset was created by
 		// _this_ campaign that means we should detach and close it.
@@ -181,12 +182,21 @@ func (r *ChangesetRewirer) closeChangeset(changeset *campaigns.Changeset) {
 				changeset.PreviousSpecID = changeset.CurrentSpecID
 			}
 			changeset.Closing = true
-			changeset.ResetQueued()
+			reset = true
 		}
 	}
 
 	// Disassociate the changeset with the campaign.
-	changeset.RemoveCampaignID(r.campaignID)
+	for i := range changeset.Campaigns {
+		if changeset.Campaigns[i].CampaignID == r.campaignID && !changeset.Campaigns[i].Detach {
+			changeset.Campaigns[i].Detach = true
+			reset = true
+			break
+		}
+	}
+	if reset {
+		changeset.ResetQueued()
+	}
 }
 
 // checkRepoSupported checks whether the given repository is supported by campaigns

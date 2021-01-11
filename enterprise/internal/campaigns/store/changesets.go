@@ -3,7 +3,9 @@ package store
 import (
 	"context"
 	"database/sql"
+	"database/sql/driver"
 	"encoding/json"
+	"fmt"
 	"regexp"
 	"strings"
 
@@ -96,7 +98,12 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *campaigns.Chang
 		return nil, err
 	}
 
-	campaignIDs, err := jsonSetColumn(c.CampaignIDs)
+	assocsAsMap := make(map[int64]campaigns.CampaignChangeset, len(c.Campaigns))
+	for _, assoc := range c.Campaigns {
+		assocsAsMap[assoc.CampaignID] = assoc
+	}
+
+	campaigns, err := json.Marshal(assocsAsMap)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +119,7 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *campaigns.Chang
 		c.CreatedAt,
 		c.UpdatedAt,
 		metadata,
-		campaignIDs,
+		campaigns,
 		nullStringColumn(c.ExternalID),
 		c.ExternalServiceType,
 		nullStringColumn(c.ExternalBranch),
@@ -712,6 +719,49 @@ func scanChangesets(rows *sql.Rows, queryErr error) ([]*campaigns.Changeset, err
 	})
 }
 
+// jsonCampaignChangesetSet represents a "join table" set as a JSONB object
+// where the keys are the ids and the values are json objects holding the properties.
+// It implements the sql.Scanner interface so it can be used as a scan destination,
+// similar to sql.NullString.
+type jsonCampaignChangesetSet struct {
+	Assocs *[]campaigns.CampaignChangeset
+}
+
+// Scan implements the Scanner interface.
+func (n *jsonCampaignChangesetSet) Scan(value interface{}) error {
+	m := make(map[int64]campaigns.CampaignChangeset)
+
+	switch value := value.(type) {
+	case nil:
+	case []byte:
+		if err := json.Unmarshal(value, &m); err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("value is not []byte: %T", value)
+	}
+
+	if *n.Assocs == nil {
+		*n.Assocs = make([]campaigns.CampaignChangeset, 0, len(m))
+	} else {
+		*n.Assocs = (*n.Assocs)[:0]
+	}
+
+	for id, assoc := range m {
+		*n.Assocs = append(*n.Assocs, campaigns.CampaignChangeset{CampaignID: id, Detach: assoc.Detach})
+	}
+
+	return nil
+}
+
+// Value implements the driver Valuer interface.
+func (n jsonCampaignChangesetSet) Value() (driver.Value, error) {
+	if n.Assocs == nil {
+		return nil, nil
+	}
+	return *n.Assocs, nil
+}
+
 func scanChangeset(t *campaigns.Changeset, s scanner) error {
 	var metadata, syncState json.RawMessage
 
@@ -728,7 +778,7 @@ func scanChangeset(t *campaigns.Changeset, s scanner) error {
 		&t.CreatedAt,
 		&t.UpdatedAt,
 		&metadata,
-		&dbutil.JSONInt64Set{Set: &t.CampaignIDs},
+		&jsonCampaignChangesetSet{Assocs: &t.Campaigns},
 		&dbutil.NullString{S: &t.ExternalID},
 		&t.ExternalServiceType,
 		&dbutil.NullString{S: &t.ExternalBranch},

@@ -334,7 +334,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			ct.SetChangesetPublished(t, ctx, store, changeset3, "12345", oldSpec3.Spec.HeadRef)
 
 			// Apply and expect 5 changesets
-			campaign, cs := applyAndListChangesets(adminCtx, t, svc, campaignSpec2.RandID, 5)
+			campaign, cs := applyAndListChangesets(adminCtx, t, svc, campaignSpec2.RandID, 6)
 
 			// This changeset we want marked as "to be closed"
 			ct.ReloadAndAssertChangeset(t, ctx, store, wantClosed, ct.ChangesetAssertions{
@@ -461,13 +461,14 @@ func TestServiceApplyCampaign(t *testing.T) {
 			})
 			// Apply again. This should have detached the tracked changeset but it should not be closed, since the campaign is
 			// not the owner.
-			trackingCampaign, cs := applyAndListChangesets(adminCtx, t, svc, campaignSpec3.RandID, 1)
+			trackingCampaign, cs := applyAndListChangesets(adminCtx, t, svc, campaignSpec3.RandID, 2)
 
 			trackedChangesetAssertions.Closing = false
+			trackedChangesetAssertions.ReconcilerState = campaigns.ReconcilerStateQueued
 			ct.ReloadAndAssertChangeset(t, ctx, store, c2, trackedChangesetAssertions)
 
 			// But we do want to have a new changeset record that is going to create a new changeset on the code host.
-			ct.ReloadAndAssertChangeset(t, ctx, store, cs[0], ct.ChangesetAssertions{
+			ct.ReloadAndAssertChangeset(t, ctx, store, cs[1], ct.ChangesetAssertions{
 				Repo:             spec3.RepoID,
 				CurrentSpec:      spec3.ID,
 				OwnedByCampaign:  trackingCampaign.ID,
@@ -496,7 +497,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 
 			// That should close no changesets, but leave the campaign with 0 changesets,
 			// and the unpublished changesets should be detached
-			applyAndListChangesets(adminCtx, t, svc, campaignSpec2.RandID, 0)
+			applyAndListChangesets(adminCtx, t, svc, campaignSpec2.RandID, 1)
 		})
 
 		t.Run("campaign with changeset that wasn't processed before reapply", func(t *testing.T) {
@@ -797,7 +798,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 
 			// STEP 2: Now we apply a new spec without any changesets.
 			campaignSpec2 := ct.CreateCampaignSpec(t, ctx, store, "detached-closed-changeset", admin.ID)
-			applyAndListChangesets(adminCtx, t, svc, campaignSpec2.RandID, 0)
+			applyAndListChangesets(adminCtx, t, svc, campaignSpec2.RandID, 1)
 
 			// Our previously published changeset should be marked as "to be closed"
 			assertions.Closing = true
@@ -857,7 +858,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 
 				// STEP 2: Now we apply a new spec without any changesets.
 				campaignSpec2 := ct.CreateCampaignSpec(t, ctx, store, "detach-reattach-changeset", admin.ID)
-				applyAndListChangesets(adminCtx, t, svc, campaignSpec2.RandID, 0)
+				applyAndListChangesets(adminCtx, t, svc, campaignSpec2.RandID, 1)
 
 				// Our previously published changeset should be marked as "to be closed"
 				assertions.Closing = true
@@ -930,7 +931,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 
 				// STEP 2: Now we apply a new spec without any changesets.
 				campaignSpec2 := ct.CreateCampaignSpec(t, ctx, store, "detach-reattach-failed-changeset", admin.ID)
-				applyAndListChangesets(adminCtx, t, svc, campaignSpec2.RandID, 0)
+				applyAndListChangesets(adminCtx, t, svc, campaignSpec2.RandID, 1)
 
 				// Our previously published changeset should be marked as "to be closed"
 				assertions.Closing = true
@@ -939,7 +940,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				assertions.PreviousSpec = spec1.ID
 				c = ct.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
 
-				if len(c.CampaignIDs) != 0 {
+				if len(c.Campaigns) != 1 {
 					t.Fatal("Expected changeset to be detached from campaign, but wasn't")
 				}
 
@@ -1015,7 +1016,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 
 				// STEP 2: Now we apply a new spec without any changesets.
 				campaignSpec2 := ct.CreateCampaignSpec(t, ctx, store, "detach-reattach-changeset-2", admin.ID)
-				applyAndListChangesets(adminCtx, t, svc, campaignSpec2.RandID, 0)
+				applyAndListChangesets(adminCtx, t, svc, campaignSpec2.RandID, 1)
 
 				// Our previously published changeset should be marked as "to be closed"
 				assertions.Closing = true

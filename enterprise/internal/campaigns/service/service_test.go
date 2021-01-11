@@ -814,7 +814,7 @@ func testChangeset(repoID api.RepoID, campaign int64, extState campaigns.Changes
 	}
 
 	if campaign != 0 {
-		changeset.CampaignIDs = []int64{campaign}
+		changeset.Campaigns = []campaigns.CampaignChangeset{{CampaignID: campaign}}
 	}
 
 	return changeset

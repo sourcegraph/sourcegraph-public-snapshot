@@ -18,7 +18,7 @@ type TestChangesetOpts struct {
 	Campaign     int64
 	CurrentSpec  int64
 	PreviousSpec int64
-	CampaignIDs  []int64
+	Campaigns    []campaigns.CampaignChangeset
 
 	ExternalServiceType string
 	ExternalID          string
@@ -70,7 +70,7 @@ func BuildChangeset(opts TestChangesetOpts) *campaigns.Changeset {
 		RepoID:         opts.Repo,
 		CurrentSpecID:  opts.CurrentSpec,
 		PreviousSpecID: opts.PreviousSpec,
-		CampaignIDs:    opts.CampaignIDs,
+		Campaigns:      opts.Campaigns,
 
 		ExternalServiceType: opts.ExternalServiceType,
 		ExternalID:          opts.ExternalID,
@@ -99,7 +99,7 @@ func BuildChangeset(opts TestChangesetOpts) *campaigns.Changeset {
 	}
 
 	if opts.Campaign != 0 {
-		changeset.CampaignIDs = []int64{opts.Campaign}
+		changeset.Campaigns = []campaigns.CampaignChangeset{{CampaignID: opts.Campaign}}
 	}
 
 	return changeset
@@ -276,6 +276,15 @@ func SetChangesetClosed(t *testing.T, ctx context.Context, s UpdateChangeseter, 
 	c.ReconcilerState = campaigns.ReconcilerStateCompleted
 	c.Closing = false
 	c.ExternalState = campaigns.ChangesetExternalStateClosed
+
+	assocs := make([]campaigns.CampaignChangeset, 0)
+	for _, assoc := range c.Campaigns {
+		if !assoc.Detach {
+			assocs = append(assocs, assoc)
+		}
+	}
+
+	c.Campaigns = assocs
 
 	if err := s.UpdateChangeset(ctx, c); err != nil {
 		t.Fatalf("failed to update changeset: %s", err)

@@ -194,6 +194,12 @@ func (s ChangesetCheckState) Valid() bool {
 	}
 }
 
+// CampaignChangeset stores the details on the connection between the two.
+type CampaignChangeset struct {
+	CampaignID int64 `json:"-"`
+	Detach     bool  `json:"detach"`
+}
+
 // A Changeset is a changeset on a code host belonging to a Repository and many
 // Campaigns.
 type Changeset struct {
@@ -202,7 +208,7 @@ type Changeset struct {
 	CreatedAt           time.Time
 	UpdatedAt           time.Time
 	Metadata            interface{}
-	CampaignIDs         []int64
+	Campaigns           []CampaignChangeset
 	ExternalID          string
 	ExternalServiceType string
 	// ExternalBranch should always be prefixed with refs/heads/. Call git.EnsureRefPrefix before setting this value.
@@ -247,7 +253,7 @@ func (c *Changeset) RecordID() int { return int(c.ID) }
 // Clone returns a clone of a Changeset.
 func (c *Changeset) Clone() *Changeset {
 	tt := *c
-	tt.CampaignIDs = c.CampaignIDs[:len(c.CampaignIDs):len(c.CampaignIDs)]
+	tt.Campaigns = c.Campaigns[:len(c.Campaigns):len(c.Campaigns)]
 	return &tt
 }
 
@@ -320,9 +326,9 @@ func (c *Changeset) SetMetadata(meta interface{}) error {
 // RemoveCampaignID removes the given id from the Changesets CampaignIDs slice.
 // If the id is not in CampaignIDs calling this method doesn't have an effect.
 func (c *Changeset) RemoveCampaignID(id int64) {
-	for i := len(c.CampaignIDs) - 1; i >= 0; i-- {
-		if c.CampaignIDs[i] == id {
-			c.CampaignIDs = append(c.CampaignIDs[:i], c.CampaignIDs[i+1:]...)
+	for i := len(c.Campaigns) - 1; i >= 0; i-- {
+		if c.Campaigns[i].CampaignID == id {
+			c.Campaigns = append(c.Campaigns[:i], c.Campaigns[i+1:]...)
 		}
 	}
 }
@@ -576,8 +582,8 @@ func (c *Changeset) BaseRef() (string, error) {
 
 // AttachedTo returns true if the changeset is currently attached to the campaign with the given campaignID.
 func (c *Changeset) AttachedTo(campaignID int64) bool {
-	for _, cid := range c.CampaignIDs {
-		if cid == campaignID {
+	for _, assoc := range c.Campaigns {
+		if assoc.CampaignID == campaignID {
 			return true
 		}
 	}

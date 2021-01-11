@@ -121,6 +121,9 @@ func (e *executor) Run(ctx context.Context, plan *Plan) (err error) {
 		case campaigns.ReconcilerOperationSleep:
 			e.sleep()
 
+		case campaigns.ReconcilerOperationDetach:
+			e.detachChangeset()
+
 		default:
 			err = fmt.Errorf("executor operation %q not implemented", op)
 		}
@@ -359,6 +362,14 @@ func (e *executor) reopenChangeset(ctx context.Context) (err error) {
 		return errors.Wrap(err, "updating changeset")
 	}
 	return nil
+}
+
+func (e *executor) detachChangeset() {
+	for _, assoc := range e.ch.Campaigns {
+		if assoc.Detach {
+			e.ch.RemoveCampaignID(assoc.CampaignID)
+		}
+	}
 }
 
 // closeChangeset closes the given changeset on its code host if its ExternalState is OPEN or DRAFT.
