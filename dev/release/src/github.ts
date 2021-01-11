@@ -326,7 +326,6 @@ function trackingIssueTitle(version: semver.SemVer): string {
 
 function managedIssueTrackingTitle(version: semver.SemVer): string {
     return `${version.version} upgrade managed instances tracking issue`
-
 }
 
 async function getIssueByTitle(octokit: Octokit, title: string): Promise<Issue | null> {
