@@ -114,9 +114,7 @@ WHERE namespace_user_id = %s
 AND id > %s;
 `
 
-// RemainingCountMonitors provides the number of unreturned code monitors after
-// a call to Monitors with the given args
-
+// RemainingCountMonitors provides the number of unreturned code monitors after the provided ID
 func (s *Store) RemainingCountMonitors(ctx context.Context, userID int32, lastID int64) (count int32, err error) {
 	err = s.QueryRow(ctx, sqlf.Sprintf(remainingCountMonitorsFmtStr, userID, lastID)).Scan(&count)
 	return count, err
