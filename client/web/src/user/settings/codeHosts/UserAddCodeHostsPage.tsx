@@ -1,4 +1,5 @@
 import React, { useCallback, useState, useEffect } from 'react'
+import { RouteComponentProps } from 'react-router'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 
@@ -14,10 +15,11 @@ import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/
 import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 
-export interface UserAddCodeHostsPageProps {
+export interface UserAddCodeHostsPageProps extends RouteComponentProps {
     userID: Scalars['ID']
     codeHostExternalServices: Record<string, AddExternalServiceOptions>
     history: H.History
+    routingPrefix: string
 }
 
 type ServicesByKind = Partial<Record<ExternalServiceKind, ListExternalServiceFields>>
@@ -30,6 +32,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     userID,
     codeHostExternalServices,
     history,
+    routingPrefix,
 }) => {
     const [statusOrError, setStatusOrError] = useState<Status>()
 
@@ -94,7 +97,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             </div>
             <p className="text-muted mt-2">
                 Connect with providers where your source code is hosted. Then,{' '}
-                <Link className="text-primary" to="repositories">
+                <Link className="text-primary" to={`${routingPrefix}/repositories`}>
                     add repositories
                 </Link>{' '}
                 to search with Sourcegraph.
