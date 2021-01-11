@@ -1,6 +1,6 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
-import { uniq } from 'lodash'
+import { isEqual, uniq } from 'lodash'
 import * as React from 'react'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import {
@@ -590,7 +590,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                         ({ query, values, queryCount }, [currentQuery, currentValues, { forceRefresh }]) => ({
                             query: currentQuery,
                             values: currentValues,
-                            shouldRefresh: forceRefresh || query !== currentQuery || values !== currentValues,
+                            shouldRefresh: forceRefresh || query !== currentQuery || !isEqual(values, currentValues),
                             queryCount: queryCount + 1,
                         }),
                         {
@@ -927,7 +927,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         if (this.props.filters === undefined) {
             return
         }
-        const values = this.state.activeValues
+        const values = new Map(this.state.activeValues)
         values.set(filter.id, value)
         this.activeValuesChanges.next(values)
     }
