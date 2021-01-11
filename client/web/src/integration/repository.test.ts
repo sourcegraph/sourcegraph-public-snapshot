@@ -15,6 +15,7 @@ import { DiffHunkLineType } from '../graphql-operations'
 import { encodeURIPathComponent } from '../../../shared/src/util/url'
 import { ExtensionManifest } from '../../../shared/src/extensions/extensionManifest'
 import { Settings } from '../../../shared/src/settings/settings'
+import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import type * as sourcegraph from 'sourcegraph'
 
 describe('Repository', () => {
@@ -115,7 +116,7 @@ describe('Repository', () => {
                                             {
                                                 url:
                                                     'https://github.com/sourcegraph/jsonrpc2/commit/15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
-                                                serviceType: 'github',
+                                                serviceKind: ExternalServiceKind.GITHUB,
                                             },
                                         ],
                                         tree: {
@@ -166,7 +167,7 @@ describe('Repository', () => {
                                             {
                                                 url:
                                                     'https://github.com/sourcegraph/jsonrpc2/commit/9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
-                                                serviceType: 'github',
+                                                serviceKind: ExternalServiceKind.GITHUB,
                                             },
                                         ],
                                         tree: {
@@ -224,7 +225,7 @@ describe('Repository', () => {
                                             {
                                                 url:
                                                     'https://github.com/sourcegraph/jsonrpc2/commit/96c4efab7ee28f3d1cf1d248a0139cea37368b18',
-                                                serviceType: 'github',
+                                                serviceKind: ExternalServiceKind.GITHUB,
                                             },
                                         ],
                                         tree: {
@@ -290,7 +291,7 @@ describe('Repository', () => {
                                 {
                                     url:
                                         'https://github.com/sourcegraph/jsonrpc2/commit/15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
-                                    serviceType: 'github',
+                                    serviceKind: ExternalServiceKind.GITHUB,
                                 },
                             ],
                             tree: {
