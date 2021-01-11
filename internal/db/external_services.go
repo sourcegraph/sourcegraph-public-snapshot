@@ -943,6 +943,23 @@ func (e *ExternalServiceStore) Count(ctx context.Context, opt ExternalServicesLi
 	return count, nil
 }
 
+// RepoCount returns the number of repos synced by the external service with the
+// given id.
+//
+// 🚨 SECURITY: The caller must ensure that the actor is a site admin or owner of the external service.
+func (e *ExternalServiceStore) RepoCount(ctx context.Context, id int64) (int32, error) {
+	e.ensureStore()
+
+	q := sqlf.Sprintf("SELECT COUNT(*) FROM external_service_repos WHERE external_service_id = %s", id)
+	var count int32
+
+	if err := e.QueryRow(ctx, q).Scan(&count); err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
+
 // MockExternalServices mocks the external services store.
 type MockExternalServices struct {
 	Create           func(ctx context.Context, confGet func() *conf.Unified, externalService *types.ExternalService) error
