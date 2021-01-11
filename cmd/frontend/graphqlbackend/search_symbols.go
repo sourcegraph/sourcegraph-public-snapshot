@@ -127,18 +127,21 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 		defer run.Release()
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
-		mu.Lock()
-		defer mu.Unlock()
 		for event := range indexedSearchStream(ctx, indexed) {
-			common.update(&event.common)
-			tr.LogFields(otlog.Object("searchErr", event.err), otlog.Error(err), otlog.Bool("overLimitCanceled", overLimitCanceled))
-			if event.err != nil && err == nil && !overLimitCanceled {
-				err = event.err
-				tr.LazyPrintf("cancel indexed symbol search due to error: %v", err)
-				return
-			}
-			addMatches(event.results)
+			func() {
+				mu.Lock()
+				defer mu.Unlock()
+				common.update(&event.common)
+				tr.LogFields(otlog.Object("searchErr", event.err), otlog.Error(err), otlog.Bool("overLimitCanceled", overLimitCanceled))
+				if event.err != nil && err == nil && !overLimitCanceled {
+					err = event.err
+					tr.LazyPrintf("cancel indexed symbol search due to error: %v", err)
+					cancel()
+				}
+				addMatches(event.results)
+			}()
 		}
+
 	})
 
 	for _, repoRevs := range searcherRepos {
