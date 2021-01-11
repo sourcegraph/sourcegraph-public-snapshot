@@ -1,4 +1,4 @@
-package indexing
+package enqueuer
 
 import (
 	"context"
@@ -9,13 +9,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/observability"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func TestIndexSchedulerUpdateIndexConfigurationInDatabase(t *testing.T) {
+func TestIndexEnqueuerUpdateIndexConfigurationInDatabase(t *testing.T) {
 	indexConfiguration := store.IndexConfiguration{
 		ID:           1,
 		RepositoryID: 42,
@@ -51,25 +50,23 @@ func TestIndexSchedulerUpdateIndexConfigurationInDatabase(t *testing.T) {
 		}`),
 	}
 
-	mockDBStore := enqueuer.NewMockDBStore()
+	mockDBStore := NewMockDBStore()
 	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
 	mockDBStore.GetRepositoriesWithIndexConfigurationFunc.SetDefaultReturn([]int{42}, nil)
 	mockDBStore.GetIndexConfigurationByRepositoryIDFunc.SetDefaultReturn(indexConfiguration, true, nil)
 
-	mockGitserverClient := enqueuer.NewMockGitserverClient()
+	mockGitserverClient := NewMockGitserverClient()
 	mockGitserverClient.HeadFunc.SetDefaultHook(func(ctx context.Context, repositoryID int) (string, error) {
 		return fmt.Sprintf("c%d", repositoryID), nil
 	})
 
-	scheduler := &IndexScheduler{
-		dbStore:    mockDBStore,
-		operations: observability.NewOperations(&observation.TestContext),
-		enqueuer:   enqueuer.NewIndexEnqueuer(mockDBStore, mockGitserverClient, &observation.TestContext),
+	scheduler := &IndexEnqueuer{
+		dbStore:         mockDBStore,
+		gitserverClient: mockGitserverClient,
+		operations:      observability.NewOperations(&observation.TestContext),
 	}
 
-	if err := scheduler.Handle(context.Background()); err != nil {
-		t.Fatalf("unexpected error performing update: %s", err)
-	}
+	scheduler.QueueIndex(context.Background(), 42)
 
 	if len(mockDBStore.GetIndexConfigurationByRepositoryIDFunc.History()) != 1 {
 		t.Errorf("unexpected number of calls to GetIndexConfigurationByRepositoryID. want=%d have=%d", 1, len(mockDBStore.GetIndexConfigurationByRepositoryIDFunc.History()))
@@ -172,12 +169,12 @@ index_jobs:
     outfile: lsif.dump
 `)
 
-func TestIndexSchedulerUpdateIndexConfigurationInRepository(t *testing.T) {
-	mockDBStore := enqueuer.NewMockDBStore()
+func TestIndexEnqueuerUpdateIndexConfigurationInRepository(t *testing.T) {
+	mockDBStore := NewMockDBStore()
 	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
 	mockDBStore.GetRepositoriesWithIndexConfigurationFunc.SetDefaultReturn([]int{42}, nil)
 
-	mockGitserverClient := enqueuer.NewMockGitserverClient()
+	mockGitserverClient := NewMockGitserverClient()
 	mockGitserverClient.HeadFunc.SetDefaultHook(func(ctx context.Context, repositoryID int) (string, error) {
 		return fmt.Sprintf("c%d", repositoryID), nil
 	})
@@ -186,13 +183,13 @@ func TestIndexSchedulerUpdateIndexConfigurationInRepository(t *testing.T) {
 	})
 	mockGitserverClient.RawContentsFunc.SetDefaultReturn(yamlIndexConfiguration, nil)
 
-	scheduler := &IndexScheduler{
-		dbStore:    mockDBStore,
-		operations: observability.NewOperations(&observation.TestContext),
-		enqueuer:   enqueuer.NewIndexEnqueuer(mockDBStore, mockGitserverClient, &observation.TestContext),
+	scheduler := &IndexEnqueuer{
+		dbStore:         mockDBStore,
+		gitserverClient: mockGitserverClient,
+		operations:      observability.NewOperations(&observation.TestContext),
 	}
 
-	if err := scheduler.Handle(context.Background()); err != nil {
+	if err := scheduler.QueueIndex(context.Background(), 42); err != nil {
 		t.Fatalf("unexpected error performing update: %s", err)
 	}
 
@@ -260,8 +257,8 @@ func TestIndexSchedulerUpdateIndexConfigurationInRepository(t *testing.T) {
 	}
 }
 
-func TestIndexSchedulerUpdateIndexConfigurationInferred(t *testing.T) {
-	mockDBStore := enqueuer.NewMockDBStore()
+func TestIndexEnqueuerUpdateIndexConfigurationInferred(t *testing.T) {
+	mockDBStore := NewMockDBStore()
 	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
 	mockDBStore.IndexableRepositoriesFunc.SetDefaultReturn([]store.IndexableRepository{
 		{RepositoryID: 41},
@@ -273,7 +270,7 @@ func TestIndexSchedulerUpdateIndexConfigurationInferred(t *testing.T) {
 		return repositoryID%2 != 0, nil
 	})
 
-	mockGitserverClient := enqueuer.NewMockGitserverClient()
+	mockGitserverClient := NewMockGitserverClient()
 	mockGitserverClient.HeadFunc.SetDefaultHook(func(ctx context.Context, repositoryID int) (string, error) {
 		return fmt.Sprintf("c%d", repositoryID), nil
 	})
@@ -288,14 +285,16 @@ func TestIndexSchedulerUpdateIndexConfigurationInferred(t *testing.T) {
 		}
 	})
 
-	scheduler := &IndexScheduler{
-		dbStore:    mockDBStore,
-		operations: observability.NewOperations(&observation.TestContext),
-		enqueuer:   enqueuer.NewIndexEnqueuer(mockDBStore, mockGitserverClient, &observation.TestContext),
+	scheduler := &IndexEnqueuer{
+		dbStore:         mockDBStore,
+		gitserverClient: mockGitserverClient,
+		operations:      observability.NewOperations(&observation.TestContext),
 	}
 
-	if err := scheduler.Handle(context.Background()); err != nil {
-		t.Fatalf("unexpected error performing update: %s", err)
+	for _, id := range []int{41, 42, 43, 44} {
+		if err := scheduler.QueueIndex(context.Background(), id); err != nil {
+			t.Fatalf("unexpected error performing update: %s", err)
+		}
 	}
 
 	if len(mockDBStore.IsQueuedFunc.History()) != 4 {
