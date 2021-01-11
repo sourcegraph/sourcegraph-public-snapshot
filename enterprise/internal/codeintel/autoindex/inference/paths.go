@@ -38,3 +38,28 @@ func containsSegment(path, segment string) bool {
 
 	return containsSegment(dir, segment)
 }
+
+// containsNoSegments returns true if none of the given segments occur in the
+// given path.
+func containsNoSegments(path string, segments ...string) bool {
+	for _, segment := range segments {
+		if containsSegment(path, segment) {
+			return false
+		}
+	}
+
+	return true
+}
+
+// segmentBlockList is a list of paths signifying a "skippable" indexing root. These
+// values are common across languages and repositories and are likely to point to
+// code that doesn't need to be necessarily navigable. Note that this only affects
+// completely automatic index job inference and won't stop any  repositories with an
+// index configuration from indexing such paths.
+var segmentBlockList = []string{
+	"test",
+	"tests",
+	"example",
+	"examples",
+	"integration",
+}
