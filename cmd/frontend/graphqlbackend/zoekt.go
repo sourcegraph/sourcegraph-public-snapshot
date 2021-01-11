@@ -232,8 +232,6 @@ func (s *indexedSearchRequest) Search(ctx context.Context, c chan<- indexedSearc
 		since = s.since
 	}
 
-	var err error
-
 	var zoektStream streamFunc
 	switch s.typ {
 	case textRequest, symbolRequest:
@@ -241,13 +239,13 @@ func (s *indexedSearchRequest) Search(ctx context.Context, c chan<- indexedSearc
 	case fileRequest:
 		zoektStream = zoektSearchHEADOnlyFilesStream
 	default:
-		err = fmt.Errorf("unexpected indexedSearchRequest type: %q", s.typ)
+		err := fmt.Errorf("unexpected indexedSearchRequest type: %q", s.typ)
 		c <- indexedSearchEvent{common: searchResultsCommon{}, results: nil, err: err}
 		return
 	}
 
 	for event := range zoektStream(ctx, s.args, s.repos, s.typ, since) {
-		err = event.err
+		err := event.err
 
 		noResultsInTimeout := false
 		if err == errNoResultsInTimeout {
