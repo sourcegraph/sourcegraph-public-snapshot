@@ -244,7 +244,17 @@ func (s *indexedSearchRequest) Search(ctx context.Context, c chan<- indexedSearc
 		return
 	}
 
-	for event := range zoektStream(ctx, s.args, s.repos, s.typ, since) {
+	ctx, cancel := context.WithCancel(ctx)
+
+	// Ensure we drain events if we return early.
+	events := zoektStream(ctx, s.args, s.repos, s.typ, since)
+	defer func() {
+		cancel()
+		for range events {
+		}
+	}()
+
+	for event := range events {
 		err := event.err
 
 		noResultsInTimeout := false
