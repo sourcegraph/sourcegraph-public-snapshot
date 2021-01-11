@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/observability"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -62,7 +63,7 @@ func TestIndexEnqueuerUpdateIndexConfigurationInDatabase(t *testing.T) {
 	scheduler := &IndexEnqueuer{
 		dbStore:         mockDBStore,
 		gitserverClient: mockGitserverClient,
-		operations:      newOperations(&observation.TestContext),
+		operations:      observability.NewOperations(&observation.TestContext),
 	}
 
 	scheduler.QueueIndex(context.Background(), 42)
@@ -185,7 +186,7 @@ func TestIndexEnqueuerUpdateIndexConfigurationInRepository(t *testing.T) {
 	scheduler := &IndexEnqueuer{
 		dbStore:         mockDBStore,
 		gitserverClient: mockGitserverClient,
-		operations:      newOperations(&observation.TestContext),
+		operations:      observability.NewOperations(&observation.TestContext),
 	}
 
 	if err := scheduler.QueueIndex(context.Background(), 42); err != nil {
@@ -287,7 +288,7 @@ func TestIndexEnqueuerUpdateIndexConfigurationInferred(t *testing.T) {
 	scheduler := &IndexEnqueuer{
 		dbStore:         mockDBStore,
 		gitserverClient: mockGitserverClient,
-		operations:      newOperations(&observation.TestContext),
+		operations:      observability.NewOperations(&observation.TestContext),
 	}
 
 	for _, id := range []int{41, 42, 43, 44} {

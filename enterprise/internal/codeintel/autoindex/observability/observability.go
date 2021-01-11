@@ -1,4 +1,4 @@
-package enqueuer
+package observability
 
 import (
 	"fmt"
@@ -8,17 +8,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-// must be a singletone
-type operations struct {
-	queueIndex *observation.Operation
+type Operations struct {
+	QueueIndex                *observation.Operation
+	HandleIndexabilityUpdater *observation.Operation
+	HandleIndexScheduler      *observation.Operation
+	QueueRepository           *observation.Operation
 }
 
 var (
-	singletonOperations *operations
+	singletonOperations *Operations
 	once                sync.Once
 )
 
-func newOperations(observationContext *observation.Context) *operations {
+func NewOperations(observationContext *observation.Context) *Operations {
 	once.Do(func() {
 		metrics := metrics.NewOperationMetrics(
 			observationContext.Registerer,
@@ -35,8 +37,11 @@ func newOperations(observationContext *observation.Context) *operations {
 			})
 		}
 
-		singletonOperations = &operations{
-			queueIndex: op("QueueIndex"),
+		singletonOperations = &Operations{
+			HandleIndexabilityUpdater: op("HandleIndexabilityUpdate"),
+			HandleIndexScheduler:      op("HandleIndexSchedule"),
+			QueueRepository:           op("QueueRepository"),
+			QueueIndex:                op("QueueIndex"),
 		}
 	})
 	return singletonOperations

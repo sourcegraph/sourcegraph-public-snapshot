@@ -4,12 +4,12 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
-
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/observability"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -19,12 +19,12 @@ import (
 type IndexScheduler struct {
 	dbStore                     DBStore
 	enqueuer                    enqueuer.Enqueuer
+	operations                  *observability.Operations
 	batchSize                   int
 	minimumTimeSinceLastEnqueue time.Duration
 	minimumSearchCount          int
 	minimumSearchRatio          float64
 	minimumPreciseCount         int
-	operations                  *operations
 }
 
 var _ goroutine.Handler = &IndexScheduler{}
@@ -39,7 +39,7 @@ func NewIndexScheduler(
 	minimumSearchRatio float64,
 	minimumPreciseCount int,
 	interval time.Duration,
-	operations *operations,
+	operations *observability.Operations,
 	observationContext *observation.Context,
 ) goroutine.BackgroundRoutine {
 	scheduler := &IndexScheduler{
@@ -53,7 +53,7 @@ func NewIndexScheduler(
 		enqueuer:                    enqueuer.NewIndexEnqueuer(enqueuerDBStore, gitserverClient, observationContext),
 	}
 
-	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), interval, scheduler, operations.handleIndexScheduler)
+	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), interval, scheduler, operations.HandleIndexScheduler)
 }
 
 func (s *IndexScheduler) Handle(ctx context.Context) error {

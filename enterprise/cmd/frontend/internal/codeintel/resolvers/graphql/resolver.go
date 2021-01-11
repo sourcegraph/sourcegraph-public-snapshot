@@ -159,7 +159,7 @@ func (r *Resolver) UpdateRepositoryIndexConfiguration(ctx context.Context, args 
 }
 
 func (r *Resolver) QueueAutoIndexJobForRepo(ctx context.Context, id graphql.ID) (*gql.EmptyResponse, error) {
-	repositoryID, err := unmarshalLSIFIndexGQLID(id)
+	repositoryID, err := gql.UnmarshalRepositoryID(id)
 	if err != nil {
 		return nil, err
 	}

@@ -21,7 +21,7 @@ export interface CodeIntelIndexConfigurationPageProps extends RouteComponentProp
 enum CodeIntelIndexEditorState {
     Idle,
     Saving,
-    Queueing
+    Queueing,
 }
 
 export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexConfigurationPageProps> = ({
@@ -63,23 +63,22 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
         },
         [repo]
     )
-    const enqueue = useCallback(
-        async () => {
-            setState(CodeIntelIndexEditorState.Queueing)
-            setSaveError(undefined)
+    const enqueue = useCallback(async () => {
+        setState(CodeIntelIndexEditorState.Queueing)
+        setSaveError(undefined)
 
-            try {
-                await enqueueIndexJob(repo.id).toPromise()
-            } catch (error) {
-                setSaveError(error)
-            } finally {
-                setState(CodeIntelIndexEditorState.Idle)
-            }
-        },
-        [repo]
-    )
+        try {
+            await enqueueIndexJob(repo.id).toPromise()
+        } catch (error) {
+            setSaveError(error)
+        } finally {
+            setState(CodeIntelIndexEditorState.Idle)
+        }
+    }, [repo])
 
-    const onDirtyChange = useCallback((dirty: boolean) => { setDirty(dirty) }, [])
+    const onDirtyChange = useCallback((dirty: boolean) => {
+        setDirty(dirty)
+    }, [])
 
     const saving = state === CodeIntelIndexEditorState.Saving
     const queueing = state === CodeIntelIndexEditorState.Queueing
@@ -91,7 +90,7 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
         propsGenerator: (props: Readonly<SaveToolbarProps> & Readonly<{}>): SaveToolbarProps & AutoIndexProps => {
             const autoIndexProps: AutoIndexProps = {
                 onQueueJob: enqueue,
-                enqueueing: queueing
+                enqueueing: queueing,
             }
 
             const mergedProps = { ...props, ...autoIndexProps }
@@ -105,32 +104,32 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
     return fetchError ? (
         <ErrorAlert prefix="Error fetching index configuration" error={fetchError} history={history} />
     ) : (
-            <div className="code-intel-index-configuration web-content">
-                <PageTitle title="Precise code intelligence index configuration" />
-                <h2>Precise code intelligence index configuration</h2>
-                <p>
-                    Override the inferred configuration when automatically indexing repositories on{' '}
-                    <a href="https://sourcegraph.com" target="_blank" rel="noreferrer noopener">
-                        Sourcegraph.com
+        <div className="code-intel-index-configuration web-content">
+            <PageTitle title="Precise code intelligence index configuration" />
+            <h2>Precise code intelligence index configuration</h2>
+            <p>
+                Override the inferred configuration when automatically indexing repositories on{' '}
+                <a href="https://sourcegraph.com" target="_blank" rel="noreferrer noopener">
+                    Sourcegraph.com
                 </a>
                 .
             </p>
 
-                {saveError && <ErrorAlert prefix="Error saving index configuration" error={saveError} history={history} />}
+            {saveError && <ErrorAlert prefix="Error saving index configuration" error={saveError} history={history} />}
 
-                <DynamicallyImportedMonacoSettingsEditor
-                    value={configuration || ''}
-                    jsonSchema={allConfigSchema}
-                    canEdit={true}
-                    onSave={save}
-                    saving={saving}
-                    height={600}
-                    isLightTheme={isLightTheme}
-                    history={history}
-                    telemetryService={telemetryService}
-                    customSaveToolbar={customToolbar}
-                    onDirtyChange={onDirtyChange}
-                />
-            </div>
-        )
+            <DynamicallyImportedMonacoSettingsEditor
+                value={configuration || ''}
+                jsonSchema={allConfigSchema}
+                canEdit={true}
+                onSave={save}
+                saving={saving}
+                height={600}
+                isLightTheme={isLightTheme}
+                history={history}
+                telemetryService={telemetryService}
+                customSaveToolbar={customToolbar}
+                onDirtyChange={onDirtyChange}
+            />
+        </div>
+    )
 }

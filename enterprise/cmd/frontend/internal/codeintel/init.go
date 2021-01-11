@@ -18,6 +18,7 @@ import (
 	codeintelresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	codeintelgqlresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/observability"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -129,7 +130,7 @@ func newIndexingRoutines(observationContext *observation.Context) []goroutine.Ba
 
 	enqueuerDBStore := &enqueuer.DBStoreShim{services.dbStore}
 	gitserverClient := services.gitserverClient
-	operations := indexing.NewOperations(observationContext)
+	operations := observability.NewOperations(observationContext)
 
 	return []goroutine.BackgroundRoutine{
 		indexing.NewIndexScheduler(services.dbStore, enqueuerDBStore, gitserverClient, config.IndexBatchSize, config.MinimumTimeSinceLastEnqueue, config.MinimumSearchCount, float64(config.MinimumSearchRatio)/100, config.MinimumPreciseCount, config.AutoIndexingTaskInterval, operations, observationContext),

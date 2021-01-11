@@ -16,8 +16,8 @@ const disposableToFn = (disposable: _monaco.IDisposable) => () => disposable.dis
 
 interface Props<T extends object>
     extends Pick<_monacoSettingsEditorModule.Props, 'id' | 'readOnly' | 'height' | 'jsonSchema' | 'language'>,
-    ThemeProps,
-    TelemetryProps {
+        ThemeProps,
+        TelemetryProps {
     value: string
 
     actions?: EditorAction[]
@@ -59,7 +59,10 @@ const MonacoSettingsEditor = React.lazy(async () => ({
 }))
 
 /** Displays a MonacoSettingsEditor component without loading Monaco in the current Webpack chunk. */
-export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> extends React.PureComponent<Props<T>, State> {
+export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> extends React.PureComponent<
+    Props<T>,
+    State
+> {
     public state: State = {}
 
     private subscriptions = new Subscription()
@@ -105,23 +108,23 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
                 dirty: this.isDirty,
                 saving: this.props.saving,
                 onSave: this.onSave,
-                onDiscard: this.discard
+                onDiscard: this.discard,
             })
             saveToolbar = this.props.customSaveToolbar.saveToolbar(toolbarProps)
         } else {
-            saveToolbar = <SaveToolbar
-                dirty={this.isDirty}
-                saving={this.props.saving}
-                onSave={this.onSave}
-                onDiscard={this.discard}
-            />
+            saveToolbar = (
+                <SaveToolbar
+                    dirty={this.isDirty}
+                    saving={this.props.saving}
+                    onSave={this.onSave}
+                    onDiscard={this.discard}
+                />
+            )
         }
 
         return (
             <div className={this.props.className || ''}>
-                {
-                    this.props.canEdit && saveToolbar
-                }
+                {this.props.canEdit && saveToolbar}
                 {this.props.actions && (
                     <div className="site-admin-configuration-page__action-groups">
                         <div className="site-admin-configuration-page__actions">

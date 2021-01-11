@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/inference"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/observability"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -19,14 +20,14 @@ import (
 type IndexEnqueuer struct {
 	dbStore         DBStore
 	gitserverClient GitserverClient
-	operations      *operations
+	operations      *observability.Operations
 }
 
 func NewIndexEnqueuer(dbStore DBStore, gitClient GitserverClient, observationContext *observation.Context) *IndexEnqueuer {
 	return &IndexEnqueuer{
 		dbStore:         dbStore,
 		gitserverClient: gitClient,
-		operations:      newOperations(observationContext),
+		operations:      observability.NewOperations(observationContext),
 	}
 }
 
@@ -42,7 +43,7 @@ func (s *IndexEnqueuer) queueIndex(ctx context.Context, repositoryID int, force 
 	// Enable tracing on the context and trace the operation
 	ctx = ot.WithShouldTrace(ctx, true)
 
-	ctx, traceLog, endObservation := s.operations.queueIndex.WithAndLogger(ctx, &err, observation.Args{
+	ctx, traceLog, endObservation := s.operations.QueueIndex.WithAndLogger(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", repositoryID),
 		},
