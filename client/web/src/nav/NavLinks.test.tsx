@@ -53,9 +53,6 @@ describe('NavLinks', () => {
         },
     }
     const history = H.createMemoryHistory({ keyLength: 0 })
-    const NOOP_TOGGLE_MODE = (): void => {
-        /* noop */
-    }
     const commonProps = {
         extensionsController: NOOP_EXTENSIONS_CONTROLLER,
         platformContext: NOOP_PLATFORM_CONTEXT,
@@ -68,9 +65,6 @@ describe('NavLinks', () => {
         history,
         isSourcegraphDotCom: false,
         showCampaigns: true,
-        splitSearchModes: false,
-        interactiveSearchMode: false,
-        toggleSearchMode: NOOP_TOGGLE_MODE,
     }
 
     // The 3 main props that affect the desired contents of NavLinks are whether the user is signed

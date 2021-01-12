@@ -20,7 +20,6 @@ interface CodeHostItemProps {
     toggleUpdateModal: () => void
     // optional service object fields when the code host connection is active
     service?: ListExternalServiceFields
-    repoCount?: number
 
     onDidUpsert: (service: ListExternalServiceFields) => void
     onDidRemove: () => void
@@ -30,7 +29,6 @@ interface CodeHostItemProps {
 export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
     userID,
     service,
-    repoCount,
     kind,
     name,
     icon: Icon,
@@ -69,7 +67,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                     id={service.id}
                     kind={kind}
                     name={name}
-                    repoCount={repoCount}
+                    repoCount={service.repoCount}
                     onDidRemove={onDidRemove}
                     onDidCancel={toggleRemoveConnectionModal}
                     onDidError={onDidError}

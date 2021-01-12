@@ -15,6 +15,10 @@ const UserSettingsRepositoriesPage = lazyComponent(
     () => import('./repositories/UserSettingsRepositoriesPage'),
     'UserSettingsRepositoriesPage'
 )
+const UserSettingsManageRepositoriesPage = lazyComponent(
+    () => import('./repositories/UserSettingsManageRepositoriesPage'),
+    'UserSettingsManageRepositoriesPage'
+)
 
 const UserAddCodeHostsPageContainer = lazyComponent<
     UserAddCodeHostsPageContainerProps,
@@ -89,6 +93,22 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         path: '/repositories',
         render: props => (
             <UserSettingsRepositoriesPage
+                {...props}
+                userID={props.user.id}
+                routingPrefix={props.user.url + '/settings'}
+            />
+        ),
+        exact: true,
+        condition: props =>
+            window.context.externalServicesUserModeEnabled ||
+            (props.user.id === props.authenticatedUser.id &&
+                props.authenticatedUser.tags.includes('AllowUserExternalServicePublic')) ||
+            props.user.tags?.includes('AllowUserExternalServicePublic'),
+    },
+    {
+        path: '/repositories/manage',
+        render: props => (
+            <UserSettingsManageRepositoriesPage
                 {...props}
                 userID={props.user.id}
                 routingPrefix={props.user.url + '/settings'}

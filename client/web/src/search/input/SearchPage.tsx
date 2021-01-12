@@ -2,7 +2,6 @@ import * as H from 'history'
 import React, { useCallback, useEffect, useMemo } from 'react'
 import {
     PatternTypeProps,
-    InteractiveSearchProps,
     CaseSensitivityProps,
     CopyQueryButtonProps,
     RepogroupHomepageProps,
@@ -49,7 +48,6 @@ export interface SearchPageProps
         TelemetryProps,
         ExtensionsControllerProps<'executeCommand' | 'services'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
-        InteractiveSearchProps,
         CopyQueryButtonProps,
         VersionContextProps,
         RepogroupHomepageProps,

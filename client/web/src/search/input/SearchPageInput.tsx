@@ -1,8 +1,6 @@
 import * as H from 'history'
 import React, { useState, useCallback, useEffect, useMemo } from 'react'
-import { InteractiveModeInput } from './interactive/InteractiveModeInput'
 import { Form } from 'reactstrap'
-import { SearchModeToggle } from './interactive/SearchModeToggle'
 import { VersionContextDropdown } from '../../nav/VersionContextDropdown'
 import { LazyMonacoQueryInput } from './LazyMonacoQueryInput'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
@@ -18,7 +16,6 @@ import { ActivationProps } from '../../../../shared/src/components/activation/Ac
 import {
     PatternTypeProps,
     CaseSensitivityProps,
-    InteractiveSearchProps,
     CopyQueryButtonProps,
     OnboardingTourProps,
     parseSearchURLQuery,
@@ -53,7 +50,6 @@ interface Props
         TelemetryProps,
         ExtensionsControllerProps<'executeCommand' | 'services'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
-        InteractiveSearchProps,
         CopyQueryButtonProps,
         Pick<SubmitSearchParameters, 'source'>,
         VersionContextProps,
@@ -80,14 +76,13 @@ interface Props
 }
 
 export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) => {
-    /** The query cursor position and value entered by the user in the query input */
+    /** The value entered by the user in the query input */
     const [userQueryState, setUserQueryState] = useState({
         query: props.queryPrefix ? props.queryPrefix : '',
-        cursorPosition: props.queryPrefix ? props.queryPrefix.length : 0,
     })
 
     useEffect(() => {
-        setUserQueryState({ query: props.queryPrefix || '', cursorPosition: props.queryPrefix?.length || 0 })
+        setUserQueryState({ query: props.queryPrefix || '' })
     }, [props.queryPrefix])
 
     const quickLinks =
@@ -118,11 +113,11 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                     text: createStep1Tooltip(
                         tour,
                         () => {
-                            setUserQueryState({ query: 'lang:', cursorPosition: 'lang:'.length })
+                            setUserQueryState({ query: 'lang:' })
                             tour.show('filter-lang')
                         },
                         () => {
-                            setUserQueryState({ query: 'repo:', cursorPosition: 'repo:'.length })
+                            setUserQueryState({ query: 'repo:' })
                             tour.show('filter-repository')
                         }
                     ),
@@ -257,60 +252,45 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
 
     return (
         <div className="d-flex flex-row flex-shrink-past-contents">
-            {props.splitSearchModes && props.interactiveSearchMode ? (
-                <InteractiveModeInput
-                    {...props}
-                    navbarSearchState={userQueryState}
-                    onNavbarQueryChange={setUserQueryState}
-                    toggleSearchMode={props.toggleSearchMode}
-                    lowProfile={false}
-                />
-            ) : (
-                <>
-                    <Form className="flex-grow-1 flex-shrink-past-contents" onSubmit={onSubmit}>
-                        <div className="search-page__input-container">
-                            {props.splitSearchModes && (
-                                <SearchModeToggle {...props} interactiveSearchMode={props.interactiveSearchMode} />
-                            )}
-                            {!props.hideVersionContexts && (
-                                <VersionContextDropdown
-                                    history={props.history}
-                                    caseSensitive={props.caseSensitive}
-                                    patternType={props.patternType}
-                                    navbarSearchQuery={userQueryState.query}
-                                    versionContext={props.versionContext}
-                                    setVersionContext={props.setVersionContext}
-                                    availableVersionContexts={props.availableVersionContexts}
-                                />
-                            )}
-                            <LazyMonacoQueryInput
-                                {...props}
-                                hasGlobalQueryBehavior={true}
-                                queryState={userQueryState}
-                                onChange={setUserQueryState}
-                                onSubmit={onSubmit}
-                                autoFocus={showOnboardingTour ? tour.isActive() : props.autoFocus !== false}
-                                tour={showOnboardingTour ? tour : undefined}
-                            />
-                            <SearchButton />
-                        </div>
-                        {props.showQueryBuilder && !props.splitSearchModes && (
-                            <div className="search-page__input-sub-container">
-                                <Link className="btn btn-link btn-sm pl-0" to="/search/query-builder">
-                                    Query builder
-                                </Link>
-                            </div>
-                        )}
-                        <QuickLinks quickLinks={quickLinks} className="search-page__input-sub-container" />
-                        <Notices
-                            className="my-3"
-                            location="home"
-                            settingsCascade={props.settingsCascade}
+            <Form className="flex-grow-1 flex-shrink-past-contents" onSubmit={onSubmit}>
+                <div className="search-page__input-container">
+                    {!props.hideVersionContexts && (
+                        <VersionContextDropdown
                             history={props.history}
+                            caseSensitive={props.caseSensitive}
+                            patternType={props.patternType}
+                            navbarSearchQuery={userQueryState.query}
+                            versionContext={props.versionContext}
+                            setVersionContext={props.setVersionContext}
+                            availableVersionContexts={props.availableVersionContexts}
                         />
-                    </Form>
-                </>
-            )}
+                    )}
+                    <LazyMonacoQueryInput
+                        {...props}
+                        hasGlobalQueryBehavior={true}
+                        queryState={userQueryState}
+                        onChange={setUserQueryState}
+                        onSubmit={onSubmit}
+                        autoFocus={showOnboardingTour ? tour.isActive() : props.autoFocus !== false}
+                        tour={showOnboardingTour ? tour : undefined}
+                    />
+                    <SearchButton />
+                </div>
+                {props.showQueryBuilder && (
+                    <div className="search-page__input-sub-container">
+                        <Link className="btn btn-link btn-sm pl-0" to="/search/query-builder">
+                            Query builder
+                        </Link>
+                    </div>
+                )}
+                <QuickLinks quickLinks={quickLinks} className="search-page__input-sub-container" />
+                <Notices
+                    className="my-3"
+                    location="home"
+                    settingsCascade={props.settingsCascade}
+                    history={props.history}
+                />
+            </Form>
         </div>
     )
 }

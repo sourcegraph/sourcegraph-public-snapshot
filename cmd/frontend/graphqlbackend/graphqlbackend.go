@@ -23,6 +23,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -705,7 +706,7 @@ func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *struct {
 	} else if args.CloneURL != nil {
 		// Query by git clone URL
 		var err error
-		name, err = reposourceCloneURLToRepoName(ctx, *args.CloneURL)
+		name, err = cloneurls.ReposourceCloneURLToRepoName(ctx, *args.CloneURL)
 		if err != nil {
 			return nil, err
 		}

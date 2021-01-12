@@ -187,6 +187,10 @@ func (e *APIError) Unauthorized() bool {
 	return e.Code == http.StatusUnauthorized
 }
 
+func (e *APIError) AccountSuspended() bool {
+	return e.Code == http.StatusForbidden && strings.Contains(e.Message, "account was suspended")
+}
+
 // HTTPErrorCode returns err's HTTP status code, if it is an HTTP error from
 // this package. Otherwise it returns 0.
 func HTTPErrorCode(err error) int {

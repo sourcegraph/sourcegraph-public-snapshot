@@ -8,7 +8,7 @@ import { Observable } from 'rxjs'
 import { IRepository, IFile, ISymbol, ILanguage, IRepoGroup } from '../../graphql/schema'
 import { SearchSuggestion } from '../suggestions'
 import { isDefined } from '../../util/types'
-import { FilterType, isNegatableFilter } from '../interactive/util'
+import { FilterType, isNegatableFilter } from './util'
 import { first } from 'rxjs/operators'
 import { SymbolKind } from '../../graphql-operations'
 
