@@ -1163,6 +1163,8 @@ type SiteConfiguration struct {
 	AuthSessionExpiry string `json:"auth.sessionExpiry,omitempty"`
 	// AuthUserOrgMap description: Ensure that matching users are members of the specified orgs (auto-joining users to the orgs if they are not already a member). Provide a JSON object of the form `{"*": ["org1", "org2"]}`, where org1 and org2 are orgs that all users are automatically joined to. Currently the only supported key is `"*"`.
 	AuthUserOrgMap map[string][]string `json:"auth.userOrgMap,omitempty"`
+	// AutoIndexingEnabled description: Enables/disables the precise code intel auto indexing feature.
+	AutoIndexingEnabled *bool `json:"autoIndexing.enabled,omitempty"`
 	// AutomationReadAccessEnabled description: DEPRECATED: The automation feature was renamed to campaigns. Use `campaigns.readAccess.enabled` instead.
 	AutomationReadAccessEnabled *bool `json:"automation.readAccess.enabled,omitempty"`
 	// Branding description: Customize Sourcegraph homepage logo and search icon.
