@@ -952,6 +952,10 @@ enum ChangesetSpecOperation {
     Internal operation to get around slow code host updates.
     """
     SLEEP
+    """
+    The changeset is removed from some of the associated campaigns.
+    """
+    DETACH
 }
 
 """

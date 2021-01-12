@@ -21,9 +21,6 @@ export const PreviewAction: React.FunctionComponent<PreviewActionProps> = ({ nod
         return <PreviewActionNoAction reason={NoActionReasonStrings[NoActionReason.NO_ACCESS]} className={className} />
     }
     if (node.operations.length === 0) {
-        if (node.targets.__typename === 'VisibleApplyPreviewTargetsDetach') {
-            return <PreviewActionDetach className={className} />
-        }
         return <PreviewActionNoAction className={className} />
     }
     if (node.operations.includes(ChangesetSpecOperation.IMPORT)) {
@@ -49,6 +46,9 @@ export const PreviewAction: React.FunctionComponent<PreviewActionProps> = ({ nod
         node.operations.includes(ChangesetSpecOperation.PUSH)
     ) {
         return <PreviewActionUpdate className={className} />
+    }
+    if (node.operations.includes(ChangesetSpecOperation.DETACH)) {
+        return <PreviewActionDetach className={className} />
     }
     return <PreviewActionUnknown operations={node.operations.join(' => ')} className={className} />
 }
