@@ -395,6 +395,8 @@ func watchSyncer(ctx context.Context, syncer *repos.Syncer, sched scheduler, gps
 // are known to the scheduler to ensure that they are always cloned even after a
 // gitserver rebalance.
 func syncScheduler(ctx context.Context, sched scheduler, gitserverClient *gitserver.Client, store *repos.Store) {
+	baseRepoStore := idb.NewRepoStoreWith(store)
+
 	doSync := func() {
 		batchSize := 30_000
 
@@ -404,7 +406,7 @@ func syncScheduler(ctx context.Context, sched scheduler, gitserverClient *gitser
 		}
 
 		for {
-			batch, err := idb.Repos.ListDefaultRepos(ctx, opts)
+			batch, err := baseRepoStore.ListDefaultRepos(ctx, opts)
 			if err != nil {
 				log15.Error("Listing default repos", "error", err)
 				return
