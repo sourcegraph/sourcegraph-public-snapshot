@@ -360,7 +360,7 @@ func TestIndexEnqueuerUpdateIndexConfigurationInferredTooLarge(t *testing.T) {
 		dbStore:          mockDBStore,
 		gitserverClient:  mockGitserverClient,
 		maxJobsPerCommit: 20,
-		operations:       observability.NewOperations(&observation.TestContext),
+		operations:       newOperations(&observation.TestContext),
 	}
 
 	if err := scheduler.QueueIndex(context.Background(), 42); err != nil {
