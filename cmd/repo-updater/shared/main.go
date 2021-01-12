@@ -396,14 +396,28 @@ func watchSyncer(ctx context.Context, syncer *repos.Syncer, sched scheduler, gps
 // gitserver rebalance.
 func syncScheduler(ctx context.Context, sched scheduler, gitserverClient *gitserver.Client, store *repos.Store) {
 	doSync := func() {
-		defaultRepos, err := idb.Repos.ListDefaultRepos(ctx)
-		if err != nil {
-			log15.Error("Error fetching default repos", "error", err)
-			return
+		batchSize := 30_000
+
+		opts := idb.ListDefaultReposOptions{
+			Limit:   batchSize,
+			AfterID: 0,
 		}
 
-		// Ensure that all default repos are known to the scheduler
-		sched.EnsureScheduled(defaultRepos)
+		for {
+			batch, err := idb.Repos.ListDefaultRepos(ctx, opts)
+			if err != nil {
+				log15.Error("Listing default repos", "error", err)
+				return
+			}
+
+			// Ensure that default repos are known to the scheduler
+			sched.EnsureScheduled(batch)
+
+			if len(batch) < batchSize {
+				break
+			}
+			opts.AfterID = int32(batch[len(batch)-1].ID)
+		}
 
 		cloned, err := gitserverClient.ListCloned(ctx)
 		if err != nil {
