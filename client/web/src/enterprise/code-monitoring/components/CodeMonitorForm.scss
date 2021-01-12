@@ -4,8 +4,7 @@
     &__card {
         border-radius: 4px;
         // stylelint-disable-next-line declaration-property-unit-whitelist
-        margin-top: calc(1rem - 1px);
-        margin-bottom: calc(1rem - 1px);
+        margin: calc(1rem - 1px) 0;
 
         &-link {
             &:hover {
@@ -16,16 +15,12 @@
 
         &--button {
             // stylelint-disable-next-line declaration-property-unit-whitelist
-            margin-top: calc(1rem - 1px);
-            margin-bottom: calc(1rem - 1px);
+            margin: calc(1rem - 1px) 0;
             border-radius: 4px;
 
             &:hover {
                 // stylelint-disable-next-line declaration-property-unit-whitelist
-                margin-top: calc(1rem - 2px);
-                margin-bottom: calc(1rem - 2px);
-                margin-left: -1px;
-                margin-right: -1px;
+                margin: calc(1rem - 2px) -1px calc(1rem - 2px) -1px;
                 border: 2px solid #329af0;
             }
 
