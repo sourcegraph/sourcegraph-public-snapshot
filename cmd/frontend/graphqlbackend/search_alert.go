@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/hashicorp/go-multierror"
 
@@ -52,6 +53,16 @@ func alertForCappedAndExpression() *searchAlert {
 	}
 }
 
+func toSearchQueryDescription(proposed []*query.ProposedQuery) (result []*searchQueryDescription) {
+	for _, p := range proposed {
+		result = append(result, &searchQueryDescription{
+			description: p.Description,
+			query:       p.Query,
+		})
+	}
+	return result
+}
+
 // alertForQuery converts errors in the query to search alerts.
 func alertForQuery(queryString string, err error) *searchAlert {
 	switch e := err.(type) {
@@ -60,7 +71,7 @@ func alertForQuery(queryString string, err error) *searchAlert {
 			prometheusType:  "parse_syntax_error",
 			title:           capFirst(e.Msg),
 			description:     "Quoting the query may help if you want a literal match.",
-			proposedQueries: proposedQuotedQueries(queryString),
+			proposedQueries: toSearchQueryDescription(query.ProposedQuotedQueries(queryString)),
 		}
 	case *query.ValidationError:
 		return &searchAlert{
@@ -75,7 +86,7 @@ func alertForQuery(queryString string, err error) *searchAlert {
 				prometheusType:  "typecheck_regex_syntax_error",
 				title:           capFirst(e.Error()),
 				description:     "Quoting the query may help if you want a literal match instead of a regular expression match.",
-				proposedQueries: proposedQuotedQueries(queryString),
+				proposedQueries: toSearchQueryDescription(query.ProposedQuotedQueries(queryString)),
 			}
 		}
 	case *query.UnsupportedError, *query.ExpectedOperand:
@@ -631,6 +642,19 @@ func pathParentsByFrequency(paths []string) []string {
 // TODO(rvantonder): #10801.
 func (a searchAlert) wrap() *SearchResultsResolver {
 	return &SearchResultsResolver{alert: &a, start: time.Now()}
+}
+
+// capFirst capitalizes the first rune in the given string. It can be safely
+// used with UTF-8 strings.
+func capFirst(s string) string {
+	i := 0
+	return strings.Map(func(r rune) rune {
+		i++
+		if i == 1 {
+			return unicode.ToTitle(r)
+		}
+		return r
+	}, s)
 }
 
 func (a searchAlert) Results(context.Context) (*SearchResultsResolver, error) {

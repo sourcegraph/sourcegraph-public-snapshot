@@ -1,6 +1,8 @@
 package query
 
 import (
+	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
@@ -43,4 +45,36 @@ func AddRegexpField(p syntax.ParseTree, field, pattern string) string {
 		return p.String()
 	}
 	return modified.String()
+}
+
+type ProposedQuery struct {
+	Description string
+	Query       string
+}
+
+// ProposedQuotedQueries generates various ways of quoting the given query,
+// with descriptions, removing duplicates.
+const partsMsg = "treat the errored parts as literals"
+const wholeMsg = "treat the whole query as a literal"
+
+func ProposedQuotedQueries(rawQuery string) []*ProposedQuery {
+	q := syntax.ParseAllowingErrors(rawQuery)
+	// Make a map from various quotings of the query to their descriptions.
+	// This should take care of deduplicating them.
+	// The descriptions are in a particular order to make the simpler descriptions take precedence.
+	qq2d := make(map[string]string)
+	qq2d[q.WithErrorsQuoted().String()] = partsMsg
+	qq2d[fmt.Sprintf("%q", rawQuery)] = wholeMsg
+	var sqds []*ProposedQuery
+	for qq, desc := range qq2d {
+		if qq == rawQuery {
+			continue
+		}
+		sqds = append(sqds, &ProposedQuery{
+			Description: desc,
+			Query:       qq,
+		})
+	}
+	sort.Slice(sqds, func(i, j int) bool { return sqds[i].Description < sqds[j].Description })
+	return sqds
 }
