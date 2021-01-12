@@ -205,9 +205,7 @@ func (c *Container) renderDashboard() *sdk.Board {
 				}
 
 				// Build the graph panel
-				for _, opt := range o.PanelOptions.options {
-					opt(o, panel.GraphPanel)
-				}
+				o.Panel.build(o, panel)
 
 				// Attach panel to board
 				if rowPanel != nil && group.Hidden {
@@ -230,7 +228,7 @@ func (c *Container) alertDescription(o Observable, alert *ObservableAlertDefinit
 
 	// description based on thresholds. no special description for 'alert.strictCompare',
 	// because the description is pretty ambiguous to fit different alerts.
-	units := o.PanelOptions.unitType.short()
+	units := o.Panel.unitType.short()
 	if alert.greaterThan != nil {
 		// e.g. "zoekt-indexserver: 20+ indexed search request errors every 5m by code"
 		description = fmt.Sprintf("%s: %v%s+ %s", c.Name, *alert.greaterThan, units, o.Description)
@@ -486,8 +484,14 @@ type Observable struct {
 	// PossibleSolutions is provided, though the output is not converted to a list.
 	Interpretation string
 
-	// PanelOptions describes some options for how to render the metric in the Grafana panel.
-	PanelOptions ObservablePanelOptions
+	// Panel provides options for how to render the metric in the Grafana panel.
+	// A recommended set of options and customizations are available from the `Panel()`
+	// constructor.
+	//
+	// Additional customizations can be made via `ObservablePanel.With()` for cases where
+	// the provided `ObservablePanel` is insufficient - see `ObservablePanelOption` for
+	// more details.
+	Panel ObservablePanel
 }
 
 func (o Observable) validate() error {

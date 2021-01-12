@@ -16,7 +16,7 @@ var (
 			Description:       "percentage pods available",
 			Query:             fmt.Sprintf(`sum by(app) (up{app=~".*%[1]s"}) / count by (app) (up{app=~".*%[1]s"}) * 100`, containerName),
 			Critical:          monitoring.Alert().LessOrEqual(90).For(10 * time.Minute),
-			PanelOptions:      monitoring.PanelOptions().LegendFormat("{{name}}").Unit(monitoring.Percentage).Max(100).Min(0),
+			Panel:             monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Percentage).Max(100).Min(0),
 			Owner:             owner,
 			PossibleSolutions: "none",
 		}

@@ -94,9 +94,11 @@ The primary thing you'll use is to change the Grafana display from plain numbers
     Name:        "some_metric_behaviour",
     Description: "some behaviour of a metric over 5m",
     Query:       `histogram_quantile(0.99, sum by (le)(rate(search_request_duration{status="success}[5m])))`,
-+   PanelOptions: monitoring.PanelOptions().LegendFormat("duration").Unit(monitoring.Seconds),
++   Panel:       monitoring.Panel().LegendFormat("duration").Unit(monitoring.Seconds),
 }
 ```
+
+Additional customizations can be made using `ObservablePanel.With()` and [`ObservablePanelOption`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/monitoring/monitoring/README.md#type-observablepanelopton).
 
 ### Add an alert
 
@@ -114,8 +116,8 @@ You can then use the [ObservableAlertDefinition](https://sourcegraph.com/github.
     Name:        "some_metric_behaviour",
     Description: "some behaviour of a metric over 5m",
     Query:       `histogram_quantile(0.99, sum by (le)(rate(search_request_duration{status="success}[5m])))`,
-    PanelOptions: monitoring.PanelOptions().LegendFormat("duration").Unit(monitoring.Seconds),
-+   Warning:      monitoring.Alert().GreaterOrEqual(20),
+    Panel:       monitoring.Panel().LegendFormat("duration").Unit(monitoring.Seconds),
++   Warning:     monitoring.Alert().GreaterOrEqual(20),
 }
 ```
 
@@ -130,8 +132,8 @@ It's best if you also add some Markdown documentation with your best guess of wh
     Name:        "some_metric_behaviour",
     Description: "some behaviour of a metric over 5m",
     Query:       `histogram_quantile(0.99, sum by (le)(rate(search_request_duration{status="success}[5m])))`,
-    Warning:      monitoring.Alert().GreaterOrEqual(20),
-    PanelOptions: monitoring.PanelOptions().LegendFormat("duration").Unit(monitoring.Seconds),
+    Warning:     monitoring.Alert().GreaterOrEqual(20),
+    Panel:       monitoring.Panel().LegendFormat("duration").Unit(monitoring.Seconds),
 +   PossibleSolutions: `
 +       - Look at 'SERVICE' logs for details on the slow search queries.
 +   `,
@@ -143,8 +145,8 @@ It's best if you also add some Markdown documentation with your best guess of wh
     Name:        "some_metric_behaviour",
     Description: "some behaviour of a metric over 5m",
     Query:       `histogram_quantile(0.99, sum by (le)(rate(search_request_duration{status="success}[5m])))`,
-    NoAlert:      true,
-    PanelOptions: monitoring.PanelOptions().LegendFormat("duration").Unit(monitoring.Seconds),
+    NoAlert:     true,
+    Panel:       monitoring.Panel().LegendFormat("duration").Unit(monitoring.Seconds),
 +   Interpretation: `
 +       This value might be high under X, Y, and Z conditions.
 +   `,
