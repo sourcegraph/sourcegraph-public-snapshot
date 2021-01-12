@@ -8,8 +8,8 @@ import (
 )
 
 func Postgres() *monitoring.Container {
-	// In Kubernetes, codeintel-db container is called codeintel-db and the
-	// default Postgres container is called pgsql
+	// In docker-compose, codeintel-db container is called pgsql
+	// In Kubernetes, codeintel-db container is called codeintel-db
 	// Because of this, we track all database cAdvisor metrics in a single panel using this
 	// container name regex to ensure we have observability on all platforms.
 	const databaseContainerNames = "(pgsql|codeintel-db)"
