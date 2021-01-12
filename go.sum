@@ -712,8 +712,6 @@ github.com/gostaticanalysis/analysisutil v0.0.3 h1:iwp+5/UAyzQSFgQ4uR2sni99sJ8Eo
 github.com/gostaticanalysis/analysisutil v0.0.3/go.mod h1:eEOZF4jCKGi+aprrirO9e7WKB3beBRtWgqGunKl6pKE=
 github.com/goware/urlx v0.3.1 h1:BbvKl8oiXtJAzOzMqAQ0GfIhf96fKeNEZfm9ocNSUBI=
 github.com/goware/urlx v0.3.1/go.mod h1:h8uwbJy68o+tQXCGZNa9D73WN8n0r9OBae5bUnLcgjw=
-github.com/grafana-tools/sdk v0.0.0-20200908142517-0a69ce5bbb82 h1:7bn5Cs5G5IB40fgQGGotJdQLCrGxt91O85JzDMce3Ac=
-github.com/grafana-tools/sdk v0.0.0-20200908142517-0a69ce5bbb82/go.mod h1:aqBqJVTJmj0MTX9cP8wuReJPte6HyttMDzSS2u8nJwo=
 github.com/graphql-go/graphql v0.7.9 h1:5Va/Rt4l5g3YjwDnid3vFfn43faaQBq7rMcIZ0VnV34=
 github.com/graphql-go/graphql v0.7.9/go.mod h1:k6yrAYQaSP59DC5UVxbgxESlmVyojThKdORUqGDGmrI=
 github.com/gregjones/httpcache v0.0.0-20170920190843-316c5e0ff04e/go.mod h1:FecbI9+v66THATjSRHfNgh1IVFe/9kFxbXtjV0ctIMA=
@@ -1331,6 +1329,8 @@ github.com/sourcegraph/gosaml2 v0.6.1-0.20201216035416-70944041979a h1:O2mWuMjZ1
 github.com/sourcegraph/gosaml2 v0.6.1-0.20201216035416-70944041979a/go.mod h1:CtzxpPr4+bevsATaqR0rw3aqrNlX274b+3C6vFTLCk8=
 github.com/sourcegraph/gosyntect v0.0.0-20200429204402-842ed26129d0 h1:AEImdu3+4bPQegJFuRHwDQq+F6qTgnF+m2ksHA8y/W8=
 github.com/sourcegraph/gosyntect v0.0.0-20200429204402-842ed26129d0/go.mod h1:WiNJKgKTnR3psOIGzVZQjLqZjJZuoL3F8tCh25Uk8dU=
+github.com/sourcegraph/grafana-sdk v0.0.0-20210112115824-13757501ee8a h1:Wy8RU8C2H0OmsfAv6oidY5zpE26mKjGG+ypqVnR76vE=
+github.com/sourcegraph/grafana-sdk v0.0.0-20210112115824-13757501ee8a/go.mod h1:aqBqJVTJmj0MTX9cP8wuReJPte6HyttMDzSS2u8nJwo=
 github.com/sourcegraph/graphql-go v0.0.0-20201007040903-ec61a5417d66 h1:BJFJIKMLgYynYNHS1ufZ/JhMAIK2j5Elbk2rNbSRfm4=
 github.com/sourcegraph/graphql-go v0.0.0-20201007040903-ec61a5417d66/go.mod h1:9CQHMSxwO4MprSdzoIEobiHpoLtHm77vfxsvsIN5Vuc=
 github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf h1:oAdWFqhStsWiiMP/vkkHiMXqFXzl1XfUNOdxKJbd6bI=

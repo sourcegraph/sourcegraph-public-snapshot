@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const devVersion = "0.0.0+dev"                              // version string for unreleased development builds
+const devVersion = "0.0.2+dev"                              // version string for unreleased development builds
 var devTimestamp = strconv.FormatInt(time.Now().Unix(), 10) // build timestamp for unreleased development builds
 
 // version is configured at build time via ldflags like this:

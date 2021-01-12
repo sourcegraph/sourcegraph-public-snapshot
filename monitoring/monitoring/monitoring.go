@@ -58,6 +58,7 @@ func (c *Container) renderDashboard() *sdk.Board {
 	board.Time.From = "now-6h"
 	board.Time.To = "now"
 	board.SharedCrosshair = true
+	board.Editable = false
 	board.AddTags("builtin")
 	board.Templating.List = []sdk.TemplateVar{
 		{
@@ -75,7 +76,19 @@ func (c *Container) renderDashboard() *sdk.Board {
 			Type:  "custom",
 		},
 	}
-	board.Editable = false
+	board.Annotations.List = []sdk.Annotation{
+		{
+			Name:        "Version changes",
+			Datasource:  stringPtr("Prometheus"),
+			Expr:        fmt.Sprintf(`group by(version, instance) (src_service_metadata{job=%[1]q} unless (src_service_metadata{job=%[1]q} offset 1m))`, c.Name),
+			Step:        "60s",
+			TitleFormat: "v{{ version }}",
+			TagKeys:     "instance",
+			IconColor:   "rgb(255, 255, 255)",
+			Enable:      false, // disable by default for now
+			Type:        "tags",
+		},
+	}
 
 	description := sdk.NewText("")
 	description.Title = "" // Removes vertical space the title would otherwise take up
