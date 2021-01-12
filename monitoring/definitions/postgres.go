@@ -66,7 +66,8 @@ func Postgres() *monitoring.Container {
 							PanelOptions: monitoring.PanelOptions().LegendFormat("{{app}}"),
 							Warning:      monitoring.Alert().GreaterOrEqual(1).For(5 * time.Minute),
 							PossibleSolutions: `
-								- Ensure the Postgres exporter can access the Postgres database. Also, check the Postgres exporter logs for errors.`,
+								- Ensure the Postgres exporter can access the Postgres database. Also, check the Postgres exporter logs for errors.
+							`,
 							Interpretation: "This value indicates issues retrieving metrics from postgres_exporter.",
 						},
 						monitoring.Observable{
