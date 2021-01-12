@@ -90,6 +90,17 @@ func (c *Container) renderDashboard() *sdk.Board {
 			Enable:      false, // disable by default for now
 			Type:        "tags",
 		},
+		{
+			Name:        "Alert events",
+			Datasource:  stringPtr("Prometheus"),
+			Expr:        fmt.Sprintf(`ALERTS{service_name=%q}`, c.Name),
+			Step:        "60s",
+			TitleFormat: "{{ description }} ({{ name }})",
+			TagKeys:     "level,owner",
+			IconColor:   "rgba(255, 96, 96, 1)",
+			Enable:      false, // disable by default for now
+			Type:        "tags",
+		},
 	}
 
 	description := sdk.NewText("")
