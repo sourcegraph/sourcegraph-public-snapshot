@@ -71,6 +71,10 @@ The Kubernetes manifests for a Sourcegraph on Kubernetes installation are in the
 
 - Now [configure your deployment](configure.md).
 
+### Configuration
+
+See the [configuration docs](configure.md).
+
 ### Troubleshooting
 
 See the [Troubleshooting docs](troubleshoot.md).
