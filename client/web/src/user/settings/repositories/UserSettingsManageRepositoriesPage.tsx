@@ -1,4 +1,5 @@
 import React, { FormEvent, useCallback, useEffect, useState } from 'react'
+import classNames from 'classnames'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 import { RouteComponentProps } from 'react-router'
 import { PageTitle } from '../../../components/PageTitle'
@@ -182,6 +183,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             pages.push(
                 (page !== currentPage && (
                     <a
+                        key="prev"
                         className="btn px-0 text-primary user-settings-repos__pageend"
                         onClick={() => setPage(currentPage - 1)}
                     >
@@ -189,7 +191,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                         Previous
                     </a>
                 )) || (
-                    <span className="px-0 text-muted user-settings-repos__pageend">
+                    <span key="prev" className="px-0 text-muted user-settings-repos__pageend">
                         <ChevronLeftIcon className="icon-inline fill-border-color-2" />
                         Previous
                     </span>
@@ -198,19 +200,29 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         }
         pages.push(
             <a
-                className={
-                    'btn user-settings-repos__page ' +
-                    String(currentPage === page && 'user-settings-repos__page--active')
-                }
+                key={page}
+                className={classNames({
+                    'btn user-settings-repos__page': true,
+                    'user-settings-repos__page--active': currentPage === page,
+                })}
                 onClick={() => setPage(page)}
             >
-                <p className={'mb-0 ' + String((currentPage === page && 'text-muted') || 'text-primary')}>{page}</p>
+                <p
+                    className={classNames({
+                        'mb-0': true,
+                        'text-muted': currentPage === page,
+                        'text-primary': currentPage !== page,
+                    })}
+                >
+                    {page}
+                </p>
             </a>
         )
         if (page === Math.ceil(filteredRepos.length / PER_PAGE)) {
             pages.push(
                 (page !== currentPage && (
                     <a
+                        key="next"
                         className="btn px-0 text-primary user-settings-repos__pageend"
                         onClick={() => setPage(currentPage + 1)}
                     >
@@ -218,7 +230,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                         <ChevronRightIcon className="icon-inline fill-primary" />
                     </a>
                 )) || (
-                    <span className="px-0 text-muted user-settings-repos__pageend">
+                    <span key="next" className="px-0 text-muted user-settings-repos__pageend">
                         Next
                         <ChevronRightIcon className="icon-inline fill-border-color-2" />
                     </span>
