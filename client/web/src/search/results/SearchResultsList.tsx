@@ -8,7 +8,7 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { debounceTime, distinctUntilChanged, filter, first, map, skip, skipUntil } from 'rxjs/operators'
-import { parseSearchURLQuery, PatternTypeProps, InteractiveSearchProps, CaseSensitivityProps } from '..'
+import { parseSearchURLQuery, PatternTypeProps, CaseSensitivityProps } from '..'
 import { FetchFileParameters } from '../../../../shared/src/components/CodeExcerpt'
 import { FileMatch } from '../../../../shared/src/components/FileMatch'
 import { displayRepoName } from '../../../../shared/src/components/RepoFileLink'
@@ -49,7 +49,6 @@ export interface SearchResultsListProps
         ThemeProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        InteractiveSearchProps,
         VersionContextProps {
     location: H.Location
     history: H.History
@@ -74,8 +73,6 @@ export interface SearchResultsListProps
     showSavedQueryModal: boolean
     onSavedQueryModalClose: () => void
     onSaveQueryClick: () => void
-
-    interactiveSearchMode: boolean
 
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     shouldDisplayPerformanceWarning: (deployType: DeployType) => Observable<boolean>
@@ -364,7 +361,6 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                         <SearchResultTypeTabs
                                             {...this.props}
                                             query={this.props.navbarSearchQueryState.query}
-                                            filtersInQuery={this.props.filtersInQuery}
                                             className="search-results-list__tabs"
                                         />
 

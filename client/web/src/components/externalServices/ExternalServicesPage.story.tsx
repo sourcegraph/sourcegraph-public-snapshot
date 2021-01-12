@@ -26,6 +26,7 @@ const queryExternalServices: typeof _queryExternalServices = () =>
                 config: '{"githubconfig":true}',
                 warning: null,
                 lastSyncError: null,
+                repoCount: 0,
             },
         ],
     })

@@ -652,6 +652,66 @@ func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, minimal bool, opt
 	return s.getReposBySQL(ctx, minimal, fromClause, queryConds, querySuffix, scanRepo)
 }
 
+// ListDefaultRepos returns a list of default repos. Default repos are a union of
+// repos in our default_repos table and repos owned by users.
+func (s *RepoStore) ListDefaultRepos(ctx context.Context) (results []*types.RepoName, err error) {
+	tr, ctx := trace.New(ctx, "repos.ListDefaultRepos", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+	s.ensureStore()
+
+	var q = fmt.Sprintf(`
+-- source: internal/db/default_repos.go:defaultRepos.List
+SELECT
+    id,
+    name
+FROM
+    repo r
+WHERE
+    EXISTS (
+        SELECT
+        FROM
+            external_service_repos sr
+            INNER JOIN external_services s ON s.id = sr.external_service_id
+        WHERE
+			s.namespace_user_id IS NOT NULL
+			AND s.deleted_at IS NULL
+			AND r.id = sr.repo_id
+            AND r.deleted_at IS NULL)
+UNION
+    SELECT
+        r.id,
+        r.name
+    FROM
+        default_repos
+		JOIN repo r ON default_repos.repo_id = r.id
+	WHERE
+		r.deleted_at IS NULL
+`)
+
+	var repos []*types.RepoName
+
+	rows, err := s.Query(ctx, sqlf.Sprintf(q))
+	if err != nil {
+		return nil, errors.Wrap(err, "querying for indexed repos")
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var r types.RepoName
+		if err := rows.Scan(&r.ID, &r.Name); err != nil {
+			return nil, errors.Wrap(err, "scanning row from default_repos table")
+		}
+		repos = append(repos, &r)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, errors.Wrap(err, "scanning rows for default repos")
+	}
+
+	return repos, nil
+}
+
 // Create inserts repos and their sources, respectively in the repo and external_service_repos table.
 // Associated external services must already exist.
 func (s *RepoStore) Create(ctx context.Context, repos ...*types.Repo) (err error) {

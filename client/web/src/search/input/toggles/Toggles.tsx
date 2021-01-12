@@ -3,14 +3,12 @@ import * as H from 'history'
 import RegexIcon from 'mdi-react/RegexIcon'
 import classNames from 'classnames'
 import FormatLetterCaseIcon from 'mdi-react/FormatLetterCaseIcon'
-import { PatternTypeProps, CaseSensitivityProps, InteractiveSearchProps, CopyQueryButtonProps } from '../..'
+import { PatternTypeProps, CaseSensitivityProps, CopyQueryButtonProps } from '../..'
 import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
-import { isEmpty } from 'lodash'
 import { submitSearch } from '../../helpers'
 import { QueryInputToggle } from './QueryInputToggle'
 import { isErrorLike } from '../../../../../shared/src/util/errors'
 import CodeBracketsIcon from 'mdi-react/CodeBracketsIcon'
-import { generateFiltersQuery } from '../../../../../shared/src/util/url'
 import { CopyQueryButton } from './CopyQueryButton'
 import { VersionContextProps } from '../../../../../shared/src/search/util'
 import { SearchPatternType } from '../../../graphql-operations'
@@ -21,7 +19,6 @@ export interface TogglesProps
         CaseSensitivityProps,
         SettingsCascadeProps,
         CopyQueryButtonProps,
-        Partial<Pick<InteractiveSearchProps, 'filtersInQuery'>>,
         VersionContextProps {
     navbarSearchQuery: string
     history: H.History
@@ -37,7 +34,6 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
     const {
         history,
         navbarSearchQuery,
-        filtersInQuery,
         versionContext,
         hasGlobalQueryBehavior,
         patternType,
@@ -56,7 +52,7 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
             // Only submit search on toggle when the query input has global behavior (i.e. it's on the main search page
             // or global navbar). Non-global inputs don't have the canonical query and need more context, making
             // submit on-toggle undesirable. Also, only submit on toggle only when the query is non-empty.
-            const searchQueryNotEmpty = navbarSearchQuery !== '' || (filtersInQuery && !isEmpty(filtersInQuery))
+            const searchQueryNotEmpty = navbarSearchQuery !== ''
             const shouldSubmitSearch = hasGlobalQueryBehavior && searchQueryNotEmpty
             if (shouldSubmitSearch) {
                 const activation = undefined
@@ -71,11 +67,10 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
                     caseSensitive: newCaseSensitive,
                     versionContext,
                     activation,
-                    filtersInQuery,
                 })
             }
         },
-        [caseSensitive, filtersInQuery, hasGlobalQueryBehavior, history, navbarSearchQuery, patternType, versionContext]
+        [caseSensitive, hasGlobalQueryBehavior, history, navbarSearchQuery, patternType, versionContext]
     )
 
     const toggleCaseSensitivity = useCallback((): void => {
@@ -107,12 +102,7 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
         submitOnToggle({ newPatternType })
     }, [patternType, setPatternType, settingsCascade.final, submitOnToggle])
 
-    const fullQuery = [
-        navbarSearchQuery,
-        filtersInQuery && generateFiltersQuery(filtersInQuery),
-        `patternType:${patternType}`,
-        caseSensitive ? 'case:yes' : '',
-    ]
+    const fullQuery = [navbarSearchQuery, `patternType:${patternType}`, caseSensitive ? 'case:yes' : '']
         .filter(queryPart => !!queryPart)
         .join(' ')
 

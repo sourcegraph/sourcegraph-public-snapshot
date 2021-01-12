@@ -5,6 +5,7 @@ import {
     FileExternalLinksResult,
     RepositoryRedirectResult,
     ResolveRevResult,
+    ExternalServiceKind,
 } from '../graphql-operations'
 
 export const createTreeEntriesResult = (url: string, toplevelFiles: string[]): TreeEntriesResult => ({
@@ -46,12 +47,12 @@ export const createBlobContentResult = (
 
 export const createFileExternalLinksResult = (
     url: string,
-    serviceType: string = 'github'
+    serviceKind: ExternalServiceKind = ExternalServiceKind.GITHUB
 ): FileExternalLinksResult => ({
     repository: {
         commit: {
             file: {
-                externalURLs: [{ url, serviceType }],
+                externalURLs: [{ url, serviceKind }],
             },
         },
     },
@@ -59,14 +60,14 @@ export const createFileExternalLinksResult = (
 
 export const createRepositoryRedirectResult = (
     repoName: string,
-    serviceType: string = 'github'
+    serviceKind: ExternalServiceKind = ExternalServiceKind.GITHUB
 ): RepositoryRedirectResult => ({
     repositoryRedirect: {
         __typename: 'Repository',
         id: `RepositoryID:${repoName}`,
         name: repoName,
         url: `/${encodeURIPathComponent(repoName)}`,
-        externalURLs: [{ url: new URL(`https://${encodeURIPathComponent(repoName)}`).href, serviceType }],
+        externalURLs: [{ url: new URL(`https://${encodeURIPathComponent(repoName)}`).href, serviceKind }],
         description: 'bla',
         viewerCanAdminister: false,
         defaultBranch: { displayName: 'master' },

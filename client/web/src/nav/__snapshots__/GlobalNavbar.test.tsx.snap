@@ -23,7 +23,6 @@ exports[`GlobalNavbar default 1`] = `
       copyQueryButton={false}
       enableSmartQuery={false}
       extensionsController={Object {}}
-      filtersInQuery={Object {}}
       globbing={false}
       history={
         Object {
@@ -72,7 +71,6 @@ exports[`GlobalNavbar default 1`] = `
       }
       navbarSearchState={
         Object {
-          "cursorPosition": 0,
           "query": "q",
         }
       }
@@ -92,7 +90,6 @@ exports[`GlobalNavbar default 1`] = `
       showOnboardingTour={false}
       telemetryService={Object {}}
       themePreference="light"
-      toggleSearchMode={[Function]}
     />
   </div>
 </div>

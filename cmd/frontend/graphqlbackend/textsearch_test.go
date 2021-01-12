@@ -7,9 +7,11 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 
 	searchzoekt "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/zoekt"
@@ -79,7 +81,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 		Zoekt:        zoekt,
 		SearcherURLs: endpoint.Static("test"),
 	}
-	results, common, err := searchFilesInRepos(context.Background(), args)
+	results, common, err := searchFilesInRepos(context.Background(), args, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -110,9 +112,99 @@ func TestSearchFilesInRepos(t *testing.T) {
 		SearcherURLs: endpoint.Static("test"),
 	}
 
-	_, _, err = searchFilesInRepos(context.Background(), args)
+	_, _, err = searchFilesInRepos(context.Background(), args, nil)
 	if !gitserver.IsRevisionNotFound(errors.Cause(err)) {
 		t.Fatalf("searching non-existent rev expected to fail with RevisionNotFoundError got: %v", err)
+	}
+}
+
+func TestSearchFilesInReposStream(t *testing.T) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo *types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
+		repoName := repo.Name
+		switch repoName {
+		case "foo/one":
+			return []*FileMatchResolver{
+				{
+					uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
+				},
+			}, false, nil
+		case "foo/two":
+			return []*FileMatchResolver{
+				{
+					uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
+				},
+			}, false, nil
+		case "foo/three":
+			return []*FileMatchResolver{
+				{
+					uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
+				},
+			}, false, nil
+		default:
+			return nil, false, errors.New("Unexpected repo")
+		}
+	}
+	defer func() { mockSearchFilesInRepo = nil }()
+
+	zoekt := &searchbackend.Zoekt{Client: &searchzoekt.FakeSearcher{}}
+
+	q, err := query.ParseAndCheck("foo")
+	if err != nil {
+		t.Fatal(err)
+	}
+	args := &search.TextParameters{
+		PatternInfo: &search.TextPatternInfo{
+			FileMatchLimit: defaultMaxSearchResults,
+			Pattern:        "foo",
+		},
+		RepoPromise:  (&search.Promise{}).Resolve(makeRepositoryRevisions("foo/one", "foo/two", "foo/three")),
+		Query:        q,
+		Zoekt:        zoekt,
+		SearcherURLs: endpoint.Static("test"),
+	}
+
+	resultChannel := make(chan []SearchResultResolver)
+	var resultsFromChannel []*FileMatchResolver
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		var ok bool
+		var resultChunk []SearchResultResolver
+		for {
+			resultChunk, ok = <-resultChannel
+			if !ok {
+				break
+			}
+			for _, result := range resultChunk {
+				fm, _ := result.ToFileMatch()
+				resultsFromChannel = append(resultsFromChannel, fm)
+			}
+		}
+	}()
+
+	results, _, err := searchFilesInRepos(context.Background(), args, resultChannel)
+	if err != nil {
+		t.Fatal(err)
+	}
+	close(resultChannel)
+	wg.Wait()
+
+	if len(results) != 3 {
+		t.Errorf("expected three results, got %d", len(results))
+	}
+
+	// For streaming we cannot guarantee the order. Hence we use a sets to compare
+	// the slices.
+	mapForSlice := func(fms []*FileMatchResolver) map[*FileMatchResolver]struct{} {
+		m := make(map[*FileMatchResolver]struct{})
+		for _, fm := range fms {
+			m[fm] = struct{}{}
+		}
+		return m
+	}
+	if diff := cmp.Diff(mapForSlice(resultsFromChannel), mapForSlice(results)); diff != "" {
+		t.Errorf(diff)
 	}
 }
 
@@ -158,7 +250,7 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 	repos[0].ListRefs = func(context.Context, api.RepoName) ([]git.Ref, error) {
 		return []git.Ref{{Name: "refs/heads/branch3"}, {Name: "refs/heads/branch4"}}, nil
 	}
-	results, _, err := searchFilesInRepos(context.Background(), args)
+	results, _, err := searchFilesInRepos(context.Background(), args, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

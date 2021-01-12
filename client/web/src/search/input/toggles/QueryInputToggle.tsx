@@ -3,7 +3,6 @@ import * as H from 'history'
 import { fromEvent } from 'rxjs'
 import { filter } from 'rxjs/operators'
 import { PatternTypeProps, CaseSensitivityProps } from '../..'
-import { FiltersToTypeAndValue } from '../../../../../shared/src/search/interactive/util'
 import classNames from 'classnames'
 import { Key } from 'ts-key-enum'
 
@@ -24,8 +23,6 @@ export interface ToggleProps extends PatternTypeProps, CaseSensitivityProps {
      * For multiple true conditions, use the first rule that evalutes to true.
      */
     disableOn?: { condition: boolean; reason: string }[]
-    /** Filters in the query in interactive mode. */
-    filtersInQuery?: FiltersToTypeAndValue
     hasGlobalQueryBehavior?: boolean
     className?: string
     activeClassName?: string

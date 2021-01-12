@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func Test_defaultRepos_List(t *testing.T) {
+func TestListDefaultRepos(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
