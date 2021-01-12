@@ -148,6 +148,19 @@ query($campaignSpec: ID!, $first: Int!, $after: String) {
         nodes {
           __typename
         }
+        stats {
+          push
+          update
+          undraft
+          publish
+          publishDraft
+          sync
+          import
+          close
+          reopen
+          sleep
+          detach
+        }
       }
     }
   }
