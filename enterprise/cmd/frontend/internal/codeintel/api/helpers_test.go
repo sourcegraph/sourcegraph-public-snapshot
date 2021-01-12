@@ -185,6 +185,26 @@ func setMockDBStoreHasCommit(t testing.TB, mockDBStore *MockDBStore, expectedRep
 	})
 }
 
+type commitSpec struct {
+	commit string
+	exists bool
+}
+
+func setMultiMockDBStoreHasCommit(t testing.TB, mockDBStore *MockDBStore, expectedRepositoryID int, specs []commitSpec) {
+	mockDBStore.HasCommitFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string) (bool, error) {
+		if repositoryID != expectedRepositoryID {
+			t.Errorf("unexpected repository id for HasCommit. want=%d have=%d", expectedRepositoryID, repositoryID)
+		}
+		for _, s := range specs {
+			if s.commit == commit {
+				return s.exists, nil
+			}
+		}
+		t.Errorf("unexpected commit for HasCommit: %s", commit)
+		return false, nil
+	})
+}
+
 func setMockReferencePagerPageFromOffset(t testing.TB, mockReferencePager *MockReferencePager, expectedOffset int, references []lsifstore.PackageReference) {
 	mockReferencePager.PageFromOffsetFunc.SetDefaultHook(func(ctx context.Context, offset int) ([]lsifstore.PackageReference, error) {
 		if offset != expectedOffset {
