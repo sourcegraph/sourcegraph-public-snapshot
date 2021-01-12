@@ -18,7 +18,6 @@ import (
 	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
 	querytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
 )
 
@@ -56,7 +55,7 @@ func alertForCappedAndExpression() *searchAlert {
 // alertForQuery converts errors in the query to search alerts.
 func alertForQuery(queryString string, err error) *searchAlert {
 	switch e := err.(type) {
-	case *syntax.ParseError:
+	case *query.LegacyParseError:
 		return &searchAlert{
 			prometheusType:  "parse_syntax_error",
 			title:           capFirst(e.Msg),
@@ -101,7 +100,7 @@ func alertForTimeout(usedTime time.Duration, suggestTime time.Duration, r *searc
 		proposedQueries: []*searchQueryDescription{
 			{
 				description: "query with longer timeout",
-				query:       fmt.Sprintf("timeout:%v %s", suggestTime, omitQueryField(r.query.ParseTree(), query.FieldTimeout)),
+				query:       fmt.Sprintf("timeout:%v %s", suggestTime, query.OmitQueryField(r.query.ParseTree(), query.FieldTimeout)),
 				patternType: r.patternType,
 			},
 		},
@@ -162,7 +161,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 
 	// TODO(sqs): handle -repo:foo fields.
 
-	withoutRepoFields := omitQueryField(r.query.ParseTree(), query.FieldRepo)
+	withoutRepoFields := query.OmitQueryField(r.query.ParseTree(), query.FieldRepo)
 
 	switch {
 	case len(repoGroupFilters) > 1:
@@ -192,7 +191,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			proposedQueries = []*searchQueryDescription{
 				{
 					description: fmt.Sprintf("include repositories outside of repogroup:%s", repoGroupFilters[0]),
-					query:       omitQueryField(r.query.ParseTree(), query.FieldRepoGroup),
+					query:       query.OmitQueryField(r.query.ParseTree(), query.FieldRepoGroup),
 					patternType: r.patternType,
 				},
 			}
@@ -247,7 +246,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			proposedQueries = []*searchQueryDescription{
 				{
 					description: fmt.Sprintf("include repositories outside of repogroup:%s", repoGroupFilters[0]),
-					query:       omitQueryField(r.query.ParseTree(), query.FieldRepoGroup),
+					query:       query.OmitQueryField(r.query.ParseTree(), query.FieldRepoGroup),
 					patternType: r.patternType,
 				},
 			}
@@ -472,7 +471,7 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 			// add it to the user's query, but be smart. For example, if the user's
 			// query was "repo:foo" and the parent is "foobar/", then propose "repo:foobar/"
 			// not "repo:foo repo:foobar/" (which are equivalent, but shorter is better).
-			newExpr := addRegexpField(r.query.ParseTree(), query.FieldRepo, repoParentPattern)
+			newExpr := query.AddRegexpField(r.query.ParseTree(), query.FieldRepo, repoParentPattern)
 			proposedQueries = append(proposedQueries, &searchQueryDescription{
 				description: fmt.Sprintf("in repositories under %s %s", repoParent, more),
 				query:       newExpr,
@@ -491,7 +490,7 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 				if i >= maxReposToPropose {
 					break
 				}
-				newExpr := addRegexpField(r.query.ParseTree(), query.FieldRepo, "^"+regexp.QuoteMeta(pathToPropose)+"$")
+				newExpr := query.AddRegexpField(r.query.ParseTree(), query.FieldRepo, "^"+regexp.QuoteMeta(pathToPropose)+"$")
 				proposedQueries = append(proposedQueries, &searchQueryDescription{
 					description: fmt.Sprintf("in the repository %s", strings.TrimPrefix(pathToPropose, "github.com/")),
 					query:       newExpr,
@@ -604,16 +603,6 @@ func alertForMissingRepoRevs(patternType query.SearchType, missingRepoRevs []*se
 	}
 }
 
-func omitQueryField(p syntax.ParseTree, field string) string {
-	omitField := func(e syntax.Expr) *syntax.Expr {
-		if e.Field == field {
-			return nil
-		}
-		return &e
-	}
-	return syntax.Map(p, omitField).String()
-}
-
 // pathParentsByFrequency returns the most common path parents of the given paths.
 // For example, given paths [a/b a/c x/y], it would return [a x] because "a"
 // is a parent to 2 paths and "x" is a parent to 1 path.
@@ -634,35 +623,6 @@ func pathParentsByFrequency(paths []string) []string {
 		return fi > fj || (fi == fj && pi < pj) // freq desc, alpha asc
 	})
 	return parents
-}
-
-// addRegexpField adds a new expr to the query with the given field
-// and pattern value. The field is assumed to be a regexp.
-//
-// It tries to remove redundancy in the result. For example, given
-// a query like "x:foo", if given a field "x" with pattern "foobar" to add,
-// it will return a query "x:foobar" instead of "x:foo x:foobar". It is not
-// guaranteed to always return the simplest query.
-func addRegexpField(p syntax.ParseTree, field, pattern string) string {
-	var added bool
-	addRegexpField := func(e syntax.Expr) *syntax.Expr {
-		if e.Field == field && strings.Contains(pattern, e.Value) {
-			e.Value = pattern
-			added = true
-			return &e
-		}
-		return &e
-	}
-	modified := syntax.Map(p, addRegexpField)
-	if !added {
-		p = append(p, &syntax.Expr{
-			Field:     field,
-			Value:     pattern,
-			ValueType: syntax.TokenLiteral,
-		})
-		return p.String()
-	}
-	return modified.String()
 }
 
 // Wrap an alert in a SearchResultsResolver. ElapsedMilliseconds() will
