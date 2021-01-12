@@ -7,6 +7,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
@@ -60,7 +61,13 @@ func (api *CodeIntelAPI) FindClosestDumps(ctx context.Context, repositoryID int,
 			}
 		}
 
-		dumps = append(dumps, dump)
+		dumpCommitExists, err := api.dbStore.HasCommit(ctx, dump.RepositoryID, dump.Commit)
+		if err != nil {
+			return nil, err
+		}
+		if dumpCommitExists {
+			dumps = append(dumps, dump)
+		}
 	}
 
 	return dumps, nil
