@@ -1,4 +1,4 @@
-package api
+package enqueuer
 
 import (
 	"fmt"
@@ -8,36 +8,26 @@ import (
 )
 
 type operations struct {
-	definitions      *observation.Operation
-	diagnostics      *observation.Operation
-	findClosestDumps *observation.Operation
-	hover            *observation.Operation
-	ranges           *observation.Operation
-	references       *observation.Operation
+	QueueIndex *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
 	metrics := metrics.NewOperationMetrics(
 		observationContext.Registerer,
-		"codeintel_api",
+		"codeintel_autoindex_enqueuer",
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of method invocations."),
 	)
 
 	op := func(name string) *observation.Operation {
 		return observationContext.Operation(observation.Op{
-			Name:         fmt.Sprintf("codeintel.api.%s", name),
+			Name:         fmt.Sprintf("codeintel.autoindex-enqueuer.%s", name),
 			MetricLabels: []string{name},
 			Metrics:      metrics,
 		})
 	}
 
 	return &operations{
-		definitions:      op("Definitions"),
-		diagnostics:      op("Diagnostics"),
-		findClosestDumps: op("FindClosestDumps"),
-		hover:            op("Hover"),
-		ranges:           op("Ranges"),
-		references:       op("References"),
+		QueueIndex: op("QueueIndex"),
 	}
 }

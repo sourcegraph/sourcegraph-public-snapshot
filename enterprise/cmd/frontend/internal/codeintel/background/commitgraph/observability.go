@@ -14,8 +14,6 @@ type operations struct {
 	commitUpdate *observation.Operation
 }
 
-var NewOperations = newOperations
-
 func newOperations(dbStore DBStore, observationContext *observation.Context) *operations {
 	commitUpdate := observationContext.Operation(observation.Op{
 		Name: "codeintel.commitUpdater",

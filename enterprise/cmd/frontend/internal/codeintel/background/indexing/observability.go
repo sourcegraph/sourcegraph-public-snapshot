@@ -1,4 +1,4 @@
-package observability
+package indexing
 
 import (
 	"fmt"
@@ -8,19 +8,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type Operations struct {
-	QueueIndex                *observation.Operation
+type operations struct {
 	HandleIndexabilityUpdater *observation.Operation
 	HandleIndexScheduler      *observation.Operation
 	QueueRepository           *observation.Operation
 }
 
 var (
-	singletonOperations *Operations
+	singletonOperations *operations
 	once                sync.Once
 )
 
-func NewOperations(observationContext *observation.Context) *Operations {
+func newOperations(observationContext *observation.Context) *operations {
 	once.Do(func() {
 		metrics := metrics.NewOperationMetrics(
 			observationContext.Registerer,
@@ -37,11 +36,10 @@ func NewOperations(observationContext *observation.Context) *Operations {
 			})
 		}
 
-		singletonOperations = &Operations{
+		singletonOperations = &operations{
 			HandleIndexabilityUpdater: op("HandleIndexabilityUpdate"),
 			HandleIndexScheduler:      op("HandleIndexSchedule"),
 			QueueRepository:           op("QueueRepository"),
-			QueueIndex:                op("QueueIndex"),
 		}
 	})
 	return singletonOperations

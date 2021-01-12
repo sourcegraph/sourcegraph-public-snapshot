@@ -422,6 +422,21 @@ Refer to the [alert solutions reference](./alert_solutions.md#frontend-codeintel
 
 <br />
 
+#### frontend: codeintel_autoindex_enqueuer_99th_percentile_duration
+
+This code-intel panel indicates 99th percentile successful index enqueuer operation duration over 5m.
+
+
+<br />
+
+#### frontend: codeintel_autoindex_enqueuer_errors
+
+This code-intel panel indicates index enqueuer errors every 5m.
+
+Refer to the [alert solutions reference](./alert_solutions.md#frontend-codeintel-autoindex-enqueuer-errors) for relevant alerts.
+
+<br />
+
 ### Frontend: Internal service requests
 
 #### frontend: internal_indexed_search_error_responses

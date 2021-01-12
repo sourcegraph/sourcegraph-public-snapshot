@@ -7,7 +7,7 @@ import (
 )
 
 func makeTestOperation() *observation.Operation {
-	return MakeOperations(&observation.TestContext).Exec
+	return NewOperations(&observation.TestContext).Exec
 }
 
 var commandComparer = cmp.Comparer(func(x, y command) bool {

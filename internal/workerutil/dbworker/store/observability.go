@@ -18,7 +18,7 @@ type operations struct {
 	resetStalled         *observation.Operation
 }
 
-func makeOperations(storeName string, observationContext *observation.Context) *operations {
+func newOperations(storeName string, observationContext *observation.Context) *operations {
 	metrics := metrics.NewOperationMetrics(
 		observationContext.Registerer,
 		fmt.Sprintf("workerutil_dbworker_store_%s", storeName),

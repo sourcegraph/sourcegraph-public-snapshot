@@ -61,7 +61,7 @@ func TestHandle(t *testing.T) {
 	handler := &handler{
 		idSet:      newIDSet(),
 		options:    Options{},
-		operations: command.MakeOperations(&observation.TestContext),
+		operations: command.NewOperations(&observation.TestContext),
 		runnerFactory: func(dir string, logger *command.Logger, options command.Options, operations *command.Operations) command.Runner {
 			if dir == "" {
 				// The handler allocates a temporary runner to invoke the git commands,

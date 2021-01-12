@@ -36,12 +36,12 @@ func NewUpdater(
 	dbStore DBStore,
 	gitserverClient GitserverClient,
 	interval time.Duration,
-	operations *operations,
+	observationContext *observation.Context,
 ) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, &Updater{
 		dbStore:         dbStore,
 		gitserverClient: gitserverClient,
-		operations:      operations,
+		operations:      newOperations(dbStore, observationContext),
 	})
 }
 
