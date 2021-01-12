@@ -226,3 +226,6 @@ replace github.com/golang/lint => golang.org/x/lint v0.0.0-20191125180803-fdd1cd
 replace github.com/ghodss/yaml => github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152
 
 replace github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images => ./enterprise/dev/ci/images
+
+// Pending: https://github.com/grafana-tools/sdk/pull/121
+replace github.com/grafana-tools/sdk => github.com/sourcegraph/grafana-sdk v0.0.0-20210112115824-13757501ee8a

@@ -58,6 +58,7 @@ func (c *Container) renderDashboard() *sdk.Board {
 	board.Time.From = "now-6h"
 	board.Time.To = "now"
 	board.SharedCrosshair = true
+	board.Editable = false
 	board.AddTags("builtin")
 	board.Templating.List = []sdk.TemplateVar{
 		{
@@ -75,7 +76,32 @@ func (c *Container) renderDashboard() *sdk.Board {
 			Type:  "custom",
 		},
 	}
-	board.Editable = false
+	board.Annotations.List = []sdk.Annotation{
+		{
+			Name:       "Version changes",
+			Datasource: stringPtr("Prometheus"),
+			// Per version, instance generate an annotation whenever labels change
+			// inspired by https://github.com/grafana/grafana/issues/11948#issuecomment-403841249
+			Expr:        fmt.Sprintf(`group by(version, instance) (src_service_metadata{job=%[1]q} unless (src_service_metadata{job=%[1]q} offset 1m))`, c.Name),
+			Step:        "60s",
+			TitleFormat: "v{{ version }}",
+			TagKeys:     "instance",
+			IconColor:   "rgb(255, 255, 255)",
+			Enable:      false, // disable by default for now
+			Type:        "tags",
+		},
+		{
+			Name:        "Alert events",
+			Datasource:  stringPtr("Prometheus"),
+			Expr:        fmt.Sprintf(`ALERTS{service_name=%q}`, c.Name),
+			Step:        "60s",
+			TitleFormat: "{{ description }} ({{ name }})",
+			TagKeys:     "level,owner",
+			IconColor:   "rgba(255, 96, 96, 1)",
+			Enable:      false, // disable by default for now
+			Type:        "tags",
+		},
+	}
 
 	description := sdk.NewText("")
 	description.Title = "" // Removes vertical space the title would otherwise take up
