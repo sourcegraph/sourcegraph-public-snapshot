@@ -78,8 +78,10 @@ func (c *Container) renderDashboard() *sdk.Board {
 	}
 	board.Annotations.List = []sdk.Annotation{
 		{
-			Name:        "Version changes",
-			Datasource:  stringPtr("Prometheus"),
+			Name:       "Version changes",
+			Datasource: stringPtr("Prometheus"),
+			// Per version, instance generate an annotation whenever labels change
+			// inspired by https://github.com/grafana/grafana/issues/11948#issuecomment-403841249
 			Expr:        fmt.Sprintf(`group by(version, instance) (src_service_metadata{job=%[1]q} unless (src_service_metadata{job=%[1]q} offset 1m))`, c.Name),
 			Step:        "60s",
 			TitleFormat: "v{{ version }}",
