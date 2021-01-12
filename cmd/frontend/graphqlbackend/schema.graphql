@@ -1460,6 +1460,19 @@ type ChangesetApplyPreviewConnectionStats {
     The changeset is removed from some of the associated campaigns.
     """
     detach: Int!
+
+    """
+    The amount of changesets that are added to the campaign in this operation.
+    """
+    added: Int!
+    """
+    The amount of changesets that are already attached to the campaign and modified in this operation.
+    """
+    modified: Int!
+    """
+    The amount of changesets that are disassociated from the campaign in this operation.
+    """
+    removed: Int!
 }
 
 """

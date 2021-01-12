@@ -160,6 +160,10 @@ query($campaignSpec: ID!, $first: Int!, $after: String) {
           reopen
           sleep
           detach
+
+          added
+          modified
+          removed
         }
       }
     }

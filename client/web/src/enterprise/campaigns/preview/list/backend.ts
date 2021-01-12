@@ -143,6 +143,7 @@ const campaignSpecApplyPreviewConnectionFieldsFragment = gql`
                 }
                 changeset {
                     id
+                    state
                     title
                     state
                     currentSpec {

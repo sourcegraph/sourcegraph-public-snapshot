@@ -226,6 +226,10 @@ type ChangesetApplyPreviewConnectionStatsResolver interface {
 	Reopen() int32
 	Sleep() int32
 	Detach() int32
+
+	Added() int32
+	Modified() int32
+	Removed() int32
 }
 
 type ChangesetApplyPreviewConnectionResolver interface {

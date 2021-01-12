@@ -19,6 +19,7 @@ import { AuthenticatedUser } from '../../../auth'
 import { MissingCredentialsAlert } from './MissingCredentialsAlert'
 import { SupersedingCampaignSpecAlert } from '../detail/SupersedingCampaignSpecAlert'
 import { queryChangesetSpecFileDiffs, queryChangesetApplyPreview } from './list/backend'
+import { CampaignPreviewStatsBar } from './CampaignPreviewStatsBar'
 
 export interface CampaignPreviewPageProps extends ThemeProps, TelemetryProps {
     campaignSpecID: string
@@ -95,6 +96,7 @@ export const CampaignPreviewPage: React.FunctionComponent<CampaignPreviewPagePro
                 viewerCanAdminister={spec.viewerCanAdminister}
                 telemetryService={telemetryService}
             />
+            <CampaignPreviewStatsBar campaignSpec={spec} />
             <CampaignDescription history={history} description={spec.description.description} />
             <PreviewList
                 campaignSpecID={specID}
