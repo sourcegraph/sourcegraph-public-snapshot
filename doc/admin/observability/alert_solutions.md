@@ -1958,11 +1958,11 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 ## postgres: connections
 
-<p class="subtitle">connections (cloud)</p>
+<p class="subtitle">active connections (cloud)</p>
 
 **Descriptions:**
 
-- <span class="badge badge-warning">warning</span> postgres: less than 5 connections for 5m0s
+- <span class="badge badge-warning">warning</span> postgres: less than 5 active connections for 5m0s
 
 **Possible solutions:**
 
@@ -1976,14 +1976,14 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 <br />
 
-## postgres: transactions
+## postgres: transaction_durations
 
-<p class="subtitle">transaction durations (cloud)</p>
+<p class="subtitle">maximum transaction durations (cloud)</p>
 
 **Descriptions:**
 
-- <span class="badge badge-warning">warning</span> postgres: 300ms+ transaction durations for 5m0s
-- <span class="badge badge-critical">critical</span> postgres: 500ms+ transaction durations for 5m0s
+- <span class="badge badge-warning">warning</span> postgres: 300ms+ maximum transaction durations for 5m0s
+- <span class="badge badge-critical">critical</span> postgres: 500ms+ maximum transaction durations for 10m0s
 
 **Possible solutions:**
 
@@ -1991,8 +1991,8 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 ```json
 "observability.silenceAlerts": [
-  "warning_postgres_transactions",
-  "critical_postgres_transactions"
+  "warning_postgres_transaction_durations",
+  "critical_postgres_transaction_durations"
 ]
 ```
 
@@ -2000,14 +2000,15 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 ## postgres: postgres_up
 
-<p class="subtitle">current db status (cloud)</p>
+<p class="subtitle">database availability (cloud)</p>
 
 **Descriptions:**
 
-- <span class="badge badge-critical">critical</span> postgres: less than 0 current db status for 5m0s
+- <span class="badge badge-critical">critical</span> postgres: less than 0 database availability for 5m0s
 
 **Possible solutions:**
 
+- **Refer to the [dashboards reference](./dashboards.md#postgres-postgres-up)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2028,6 +2029,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions:**
 
+- **Refer to the [dashboards reference](./dashboards.md#postgres-pg-exporter-err)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2040,15 +2042,16 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 ## postgres: migration_in_progress
 
-<p class="subtitle">schema migration status (where 0 is no migration in progress) (cloud)</p>
+<p class="subtitle">active schema migration (cloud)</p>
 
 **Descriptions:**
 
-- <span class="badge badge-critical">critical</span> postgres: 1+ schema migration status (where 0 is no migration in progress) for 5m0s
+- <span class="badge badge-critical">critical</span> postgres: 1+ active schema migration for 5m0s
 
 **Possible solutions:**
 
-- The database migration has been in progress for 5 or more minutes, please contact Sourcegraph if this persists
+- The database migration has been in progress for 5 or more minutes - please contact Sourcegraph if this persists.
+- **Refer to the [dashboards reference](./dashboards.md#postgres-migration-in-progress)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2069,8 +2072,8 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions:**
 
-- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the pgsql service.
-- **Docker Compose:** Consider increasing `cpus:` of the pgsql container in `docker-compose.yml`.
+- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the (pgsql|codeintel-db) service.
+- **Docker Compose:** Consider increasing `cpus:` of the (pgsql|codeintel-db) container in `docker-compose.yml`.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2091,8 +2094,8 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions:**
 
-- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the pgsql service.
-- **Docker Compose:** Consider increasing `memory:` of the pgsql container in `docker-compose.yml`.
+- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the (pgsql|codeintel-db) service.
+- **Docker Compose:** Consider increasing `memory:` of the (pgsql|codeintel-db) container in `docker-compose.yml`.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2114,7 +2117,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the pgsql container in `docker-compose.yml`.
+- **Docker Compose:** Consider increasing `cpus:` of the (pgsql|codeintel-db) container in `docker-compose.yml`.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2136,7 +2139,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of pgsql container in `docker-compose.yml`.
+- **Docker Compose:** Consider increasing `memory:` of (pgsql|codeintel-db) container in `docker-compose.yml`.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2147,89 +2150,21 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 <br />
 
-## postgres: provisioning_container_cpu_usage_long_term
+## postgres: pods_available_percentage
 
-<p class="subtitle">container cpu usage total (90th percentile over 1d) across all cores by instance (code-intel)</p>
+<p class="subtitle">percentage pods available (cloud)</p>
 
 **Descriptions:**
 
-- <span class="badge badge-warning">warning</span> postgres: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s
+- <span class="badge badge-critical">critical</span> postgres: less than 90% percentage pods available for 10m0s
 
 **Possible solutions:**
 
-- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the codeintel-db service.
-- **Docker Compose:** Consider increasing `cpus:` of the codeintel-db container in `docker-compose.yml`.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_postgres_provisioning_container_cpu_usage_long_term"
-]
-```
-
-<br />
-
-## postgres: provisioning_container_memory_usage_long_term
-
-<p class="subtitle">container memory usage (1d maximum) by instance (code-intel)</p>
-
-**Descriptions:**
-
-- <span class="badge badge-warning">warning</span> postgres: 80%+ container memory usage (1d maximum) by instance for 336h0m0s
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the codeintel-db service.
-- **Docker Compose:** Consider increasing `memory:` of the codeintel-db container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_postgres_provisioning_container_memory_usage_long_term"
-]
-```
-
-<br />
-
-## postgres: provisioning_container_cpu_usage_short_term
-
-<p class="subtitle">container cpu usage total (5m maximum) across all cores by instance (code-intel)</p>
-
-**Descriptions:**
-
-- <span class="badge badge-warning">warning</span> postgres: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the codeintel-db container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_postgres_provisioning_container_cpu_usage_short_term"
-]
-```
-
-<br />
-
-## postgres: provisioning_container_memory_usage_short_term
-
-<p class="subtitle">container memory usage (5m maximum) by instance (code-intel)</p>
-
-**Descriptions:**
-
-- <span class="badge badge-warning">warning</span> postgres: 90%+ container memory usage (5m maximum) by instance
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of codeintel-db container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_postgres_provisioning_container_memory_usage_short_term"
+  "critical_postgres_pods_available_percentage"
 ]
 ```
 

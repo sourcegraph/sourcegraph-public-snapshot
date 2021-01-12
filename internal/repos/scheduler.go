@@ -297,6 +297,11 @@ func (s *updateScheduler) SetCloned(names []string) {
 	s.schedule.setCloned(names)
 }
 
+// EnsureScheduled ensures that all repos in repos exist in the scheduler.
+func (s *updateScheduler) EnsureScheduled(repos []*types.RepoName) {
+	s.schedule.insertNew(repos)
+}
+
 // upsert adds r to the scheduler for periodic updates. If r.ID is already in
 // the scheduler, then the fields are updated (upsert).
 //
@@ -681,6 +686,44 @@ func (s *schedule) setCloned(names []string) {
 	}
 
 	// We updated the queue, inform the scheduler loop.
+	if rescheduleTimer {
+		s.rescheduleTimer()
+	}
+}
+
+// insertNew will insert repos only if they are not known to the scheduler
+func (s *schedule) insertNew(repos []*types.RepoName) {
+	required := make(map[string]struct{}, len(repos))
+	for _, n := range repos {
+		required[strings.ToLower(string(n.Name))] = struct{}{}
+	}
+
+	configuredRepos := make([]configuredRepo, len(repos))
+	for i := range repos {
+		configuredRepos[i] = configuredRepo{
+			ID:   repos[i].ID,
+			Name: repos[i].Name,
+		}
+	}
+
+	due := timeNow().Add(minDelay)
+	rescheduleTimer := false
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	for _, repo := range configuredRepos {
+		if update := s.index[repo.ID]; update != nil {
+			continue
+		}
+		heap.Push(s, &scheduledRepoUpdate{
+			Repo:     repo,
+			Interval: minDelay,
+			Due:      due,
+		})
+		rescheduleTimer = true
+	}
+
 	if rescheduleTimer {
 		s.rescheduleTimer()
 	}

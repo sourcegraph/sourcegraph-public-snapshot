@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
@@ -55,6 +56,9 @@ func (r *schemaResolver) SetExternalServiceRepos(ctx context.Context, args struc
 		return nil, err
 	}
 	es.Config = string(buf)
+
+	// set to time.Zero to sync ASAP
+	es.NextSyncAt = time.Time{}
 
 	err = db.ExternalServices.Upsert(ctx, es)
 	if err != nil {

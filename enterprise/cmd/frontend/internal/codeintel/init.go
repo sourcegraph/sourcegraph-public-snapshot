@@ -17,6 +17,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	codeintelresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	codeintelgqlresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/graphql"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/observability"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -74,6 +76,8 @@ func newResolver(ctx context.Context, observationContext *observation.Context) (
 		services.api,
 		hunkCache,
 		observationContext,
+		services.gitserverClient,
+		&enqueuer.DBStoreShim{services.dbStore},
 	)
 	resolver := codeintelgqlresolvers.NewResolver(innerResolver)
 
@@ -124,13 +128,13 @@ func newIndexingRoutines(observationContext *observation.Context) []goroutine.Ba
 		return nil
 	}
 
-	dbStore := &indexing.DBStoreShim{services.dbStore}
+	enqueuerDBStore := &enqueuer.DBStoreShim{services.dbStore}
 	gitserverClient := services.gitserverClient
-	operations := indexing.NewOperations(observationContext)
+	operations := observability.NewOperations(observationContext)
 
 	return []goroutine.BackgroundRoutine{
-		indexing.NewIndexScheduler(dbStore, gitserverClient, config.IndexBatchSize, config.MinimumTimeSinceLastEnqueue, config.MinimumSearchCount, float64(config.MinimumSearchRatio)/100, config.MinimumPreciseCount, config.AutoIndexingTaskInterval, operations),
-		indexing.NewIndexabilityUpdater(dbStore, gitserverClient, config.MinimumSearchCount, float64(config.MinimumSearchRatio)/100, config.MinimumPreciseCount, config.AutoIndexingTaskInterval, operations),
+		indexing.NewIndexScheduler(services.dbStore, enqueuerDBStore, gitserverClient, config.IndexBatchSize, config.MinimumTimeSinceLastEnqueue, config.MinimumSearchCount, float64(config.MinimumSearchRatio)/100, config.MinimumPreciseCount, config.AutoIndexingTaskInterval, operations, observationContext),
+		indexing.NewIndexabilityUpdater(services.dbStore, gitserverClient, config.MinimumSearchCount, float64(config.MinimumSearchRatio)/100, config.MinimumPreciseCount, config.AutoIndexingTaskInterval, operations),
 	}
 }
 

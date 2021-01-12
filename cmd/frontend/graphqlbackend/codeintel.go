@@ -22,6 +22,7 @@ type CodeIntelResolver interface {
 	DeleteLSIFIndex(ctx context.Context, id graphql.ID) (*EmptyResponse, error)
 	IndexConfiguration(ctx context.Context, id graphql.ID) (IndexConfigurationResolver, error) // TODO - rename ...ForRepo
 	UpdateRepositoryIndexConfiguration(ctx context.Context, args *UpdateRepositoryIndexConfigurationArgs) (*EmptyResponse, error)
+	QueueAutoIndexJobForRepo(ctx context.Context, id graphql.ID) (*EmptyResponse, error)
 	GitBlobLSIFData(ctx context.Context, args *GitBlobLSIFDataArgs) (GitBlobLSIFDataResolver, error)
 }
 
@@ -71,6 +72,10 @@ func (defaultCodeIntelResolver) UpdateRepositoryIndexConfiguration(ctx context.C
 	return nil, codeIntelOnlyInEnterprise
 }
 
+func (defaultCodeIntelResolver) QueueAutoIndexJobForRepo(ctx context.Context, id graphql.ID) (*EmptyResponse, error) {
+	return nil, codeIntelOnlyInEnterprise
+}
+
 func (defaultCodeIntelResolver) GitBlobLSIFData(ctx context.Context, args *GitBlobLSIFDataArgs) (GitBlobLSIFDataResolver, error) {
 	return nil, codeIntelOnlyInEnterprise
 }
@@ -93,6 +98,10 @@ func (r *schemaResolver) DeleteLSIFIndex(ctx context.Context, args *struct{ ID g
 
 func (r *schemaResolver) UpdateRepositoryIndexConfigurationArgs(ctx context.Context, args *UpdateRepositoryIndexConfigurationArgs) (*EmptyResponse, error) {
 	return r.CodeIntelResolver.UpdateRepositoryIndexConfiguration(ctx, args)
+}
+
+func (r *schemaResolver) QueueAutoIndexJobForRepo(ctx context.Context, args *struct{ Repository graphql.ID }) (*EmptyResponse, error) {
+	return r.CodeIntelResolver.QueueAutoIndexJobForRepo(ctx, args.Repository)
 }
 
 type LSIFUploadsQueryArgs struct {
@@ -199,6 +208,10 @@ type IndexConfigurationResolver interface {
 type UpdateRepositoryIndexConfigurationArgs struct {
 	Repository    graphql.ID
 	Configuration string
+}
+
+type QueueAutoIndexJobArgs struct {
+	Repository graphql.ID
 }
 
 type GitTreeLSIFDataResolver interface {

@@ -195,7 +195,7 @@ var testSearchGQLQuery = `
 			name
 			url
 			externalURLs {
-				serviceType
+				serviceKind
 				url
 			}
 			label {

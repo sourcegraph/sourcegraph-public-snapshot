@@ -26,11 +26,11 @@ export const RepoLink: React.FunctionComponent<Props> = ({
 }) => {
     const [repoBase, repoName] = splitPath(displayRepoName(fullRepoName))
     const children = (
-        <>
+        <span className={className || ''}>
             {' '}
             {repoBase ? `${repoBase}/` : null}
             <span className={repoClassName}>{repoName}</span>
-        </>
+        </span>
     )
     if (to === null) {
         return children

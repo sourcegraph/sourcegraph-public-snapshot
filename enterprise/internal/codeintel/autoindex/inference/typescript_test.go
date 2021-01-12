@@ -17,7 +17,7 @@ func TestLSIFTscJobRecognizerCanIndex(t *testing.T) {
 		{paths: []string{"tsconfig.json"}, expected: true},
 		{paths: []string{"a/tsconfig.json"}, expected: true},
 		{paths: []string{"package.json"}, expected: false},
-		{paths: []string{"node_modules/foo/bar/package.json"}, expected: false},
+		{paths: []string{"node_modules/foo/bar/tsconfig.json"}, expected: false},
 		{paths: []string{"foo/bar-tsconfig.json"}, expected: false},
 	}
 

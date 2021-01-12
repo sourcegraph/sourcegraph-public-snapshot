@@ -35,7 +35,7 @@ const templates = {
         path: 'handbook/engineering/releases/patch_release_issue_template.md',
     },
     upgradeMangedInstanceIssue: {
-        owner: 'sourceraph',
+        owner: 'sourcegraph',
         repo: 'about',
         path: 'handbook/engineering/releases/upgrade_managed_issue_template.md',
     },
@@ -150,7 +150,7 @@ export async function ensurePatchReleaseIssue({
 
 /**
  * Ensures a upgrade managed instances to ($MAJOR.$MINOR) tracking issue has been created with the given
- * parameters using `templates.releaseIssue`.
+ * parameters using `templates.upgradeManagedInstanceIssue`.
  */
 export async function ensureUpgradeManagedTrackingIssue({
     version,
@@ -193,7 +193,7 @@ export async function ensureUpgradeManagedTrackingIssue({
     return ensureIssue(
         octokit,
         {
-            title: trackingIssueTitle(version),
+            title: managedIssueTrackingTitle(version),
             owner: 'sourcegraph',
             repo: 'sourcegraph',
             assignees,
@@ -322,6 +322,10 @@ function trackingIssueTitle(version: semver.SemVer): string {
         return `${version.major}.${version.minor} release tracking issue`
     }
     return `${version.version} patch release tracking issue`
+}
+
+function managedIssueTrackingTitle(version: semver.SemVer): string {
+    return `${version.version} upgrade managed instances tracking issue`
 }
 
 async function getIssueByTitle(octokit: Octokit, title: string): Promise<Issue | null> {

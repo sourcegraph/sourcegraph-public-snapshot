@@ -30,7 +30,7 @@ import {
 export const externalLinkFieldsFragment = gql`
     fragment ExternalLinkFields on ExternalLink {
         url
-        serviceType
+        serviceKind
     }
 `
 
@@ -41,7 +41,7 @@ export const repositoryFragment = gql`
         url
         externalURLs {
             url
-            serviceType
+            serviceKind
         }
         description
         viewerCanAdminister

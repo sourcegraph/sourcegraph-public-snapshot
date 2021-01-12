@@ -32,7 +32,6 @@ import { LayoutRouteProps } from './routes'
 import {
     parseSearchURLQuery,
     PatternTypeProps,
-    InteractiveSearchProps,
     CaseSensitivityProps,
     CopyQueryButtonProps,
     RepogroupHomepageProps,
@@ -79,7 +78,6 @@ export interface LayoutProps
         ActivationProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        InteractiveSearchProps,
         CopyQueryButtonProps,
         VersionContextProps,
         RepogroupHomepageProps,

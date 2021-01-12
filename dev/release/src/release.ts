@@ -156,7 +156,7 @@ const steps: Step[] = [
                     anyoneCanAddSelf: true,
                     attendees: [config.teamEmail],
                     startDateTime: new Date(config.oneWorkingDayAfterRelease).toISOString(),
-                    endDateTime: addMinutes(new Date(config.releaseDateTime), 1).toISOString(),
+                    endDateTime: addMinutes(new Date(config.oneWorkingDayAfterRelease), 1).toISOString(),
                 },
             ]
 

@@ -15,3 +15,4 @@ jobs:
                   team/cloud=@tsenart
                   team/search=@lguychard
                   team/code-intelligence=@macraig
+                  team/code-insights=@joelkw @felixfbecker
