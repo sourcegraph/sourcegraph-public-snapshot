@@ -2029,9 +2029,8 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions:**
 
-- 								- Ensure the Postgres exporter can access the Postgres database. Also, check the Postgres exporter logs for errors.
-- **Refer to the [dashboards reference](./dashboards.md#postgres-pg-exporter-err)** for more help interpreting this
-  alert and metric.
+- Ensure the Postgres exporter can access the Postgres database. Also, check the Postgres exporter logs for errors.
+- **Refer to the [dashboards reference](./dashboards.md#postgres-pg-exporter-err)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
