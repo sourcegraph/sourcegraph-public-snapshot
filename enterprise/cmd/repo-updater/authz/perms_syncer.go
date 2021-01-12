@@ -252,8 +252,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 			unauthorized := errcode.IsUnauthorized(errors.Cause(err))
 
 			// Detect GitHub account suspension error
-			ghErr, ok := err.(*github.APIError)
-			accountSuspended := ok && ghErr.AccountSuspended()
+			accountSuspended := errcode.IsAccountSuspended(errors.Cause(err))
 
 			if unauthorized || accountSuspended {
 				err = db.ExternalAccounts.TouchExpired(ctx, acct.ID)
