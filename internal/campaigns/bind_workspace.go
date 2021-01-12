@@ -30,8 +30,6 @@ func (wc *dockerBindWorkspaceCreator) Create(ctx context.Context, repo *graphql.
 	return w, errors.Wrap(wc.prepareGitRepo(ctx, w), "preparing local git repo")
 }
 
-func (*dockerBindWorkspaceCreator) DockerImages() []string { return []string{} }
-
 func (*dockerBindWorkspaceCreator) prepareGitRepo(ctx context.Context, w *dockerBindWorkspace) error {
 	if _, err := runGitCmd(ctx, w.dir, "init"); err != nil {
 		return errors.Wrap(err, "git init failed")

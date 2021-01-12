@@ -10,9 +10,9 @@ import (
 
 	"github.com/sourcegraph/src-cli/internal/campaigns/graphql"
 	"github.com/sourcegraph/src-cli/internal/exec"
+	"github.com/sourcegraph/src-cli/internal/version"
 )
 
-// dockerVolumeWorkspaceCreator creates dockerVolumeWorkspace instances.
 type dockerVolumeWorkspaceCreator struct{}
 
 var _ WorkspaceCreator = &dockerVolumeWorkspaceCreator{}
@@ -29,10 +29,6 @@ func (wc *dockerVolumeWorkspaceCreator) Create(ctx context.Context, repo *graphq
 	}
 
 	return w, errors.Wrap(wc.prepareGitRepo(ctx, w), "preparing local git repo")
-}
-
-func (*dockerVolumeWorkspaceCreator) DockerImages() []string {
-	return []string{dockerWorkspaceImage}
 }
 
 func (*dockerVolumeWorkspaceCreator) createVolume(ctx context.Context) (string, error) {
@@ -77,7 +73,7 @@ func (*dockerVolumeWorkspaceCreator) unzipRepoIntoVolume(ctx context.Context, w 
 		"--workdir", "/work",
 		"--mount", "type=bind,source=" + zip + ",target=/tmp/zip,ro",
 	}, common...)
-	opts = append(opts, dockerWorkspaceImage, "unzip", "/tmp/zip")
+	opts = append(opts, dockerVolumeWorkspaceImage, "unzip", "/tmp/zip")
 
 	if out, err := exec.CommandContext(ctx, "docker", opts...).CombinedOutput(); err != nil {
 		return errors.Wrapf(err, "unzip output:\n\n%s\n\n", string(out))
@@ -151,9 +147,19 @@ exec git diff --cached --no-prefix --binary
 	return out, nil
 }
 
-// dockerWorkspaceImage is the Docker image we'll run our unzip and git commands
-// in. This needs to match the name defined in .github/workflows/docker.yml.
-const dockerWorkspaceImage = "sourcegraph/src-campaign-volume-workspace"
+// dockerVolumeWorkspaceImage is the Docker image we'll run our unzip and git
+// commands in. This needs to match the name defined in
+// .github/workflows/docker.yml.
+var dockerVolumeWorkspaceImage = "sourcegraph/src-campaign-volume-workspace"
+
+func init() {
+	dockerTag := version.BuildTag
+	if version.BuildTag == version.DefaultBuildTag {
+		dockerTag = "latest"
+	}
+
+	dockerVolumeWorkspaceImage = dockerVolumeWorkspaceImage + ":" + dockerTag
+}
 
 // runScript is a utility function to mount the given shell script into a Docker
 // container started from the dockerWorkspaceImage, then run it and return the
@@ -183,7 +189,7 @@ func (w *dockerVolumeWorkspace) runScript(ctx context.Context, target, script st
 		"--workdir", target,
 		"--mount", "type=bind,source=" + name + ",target=/run.sh,ro",
 	}, common...)
-	opts = append(opts, dockerWorkspaceImage, "sh", "/run.sh")
+	opts = append(opts, dockerVolumeWorkspaceImage, "sh", "/run.sh")
 
 	out, err := exec.CommandContext(ctx, "docker", opts...).CombinedOutput()
 	if err != nil {

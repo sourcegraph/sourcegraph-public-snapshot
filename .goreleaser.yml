@@ -12,7 +12,7 @@ builds:
   main: ./cmd/src/
   binary: src
   ldflags:
-    - -X main.buildTag={{.Version}}
+    - -X github.com/sourcegraph/src-cli/internal/version.BuildTag={{.Version}}
   goos:
     - linux
     - windows

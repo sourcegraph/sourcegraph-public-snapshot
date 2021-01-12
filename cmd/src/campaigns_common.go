@@ -101,18 +101,9 @@ func newCampaignsApplyFlags(flagSet *flag.FlagSet, cacheDir, tempDir string) *ca
 		"If true, errors encountered while executing steps in a repository won't stop the execution of the campaign spec but only cause that repository to be skipped.",
 	)
 
-	// We default to bind workspaces on everything except ARM64 macOS at
-	// present. In the future, we'll likely want to switch the default for ARM64
-	// macOS as well, but this requires access to the hardware for testing.
-	var defaultWorkspace string
-	if runtime.GOOS == "darwin" && runtime.GOARCH == "amd64" {
-		defaultWorkspace = "volume"
-	} else {
-		defaultWorkspace = "bind"
-	}
 	flagSet.StringVar(
-		&caf.workspace, "workspace", defaultWorkspace,
-		`Workspace mode to use ("bind" or "volume")`,
+		&caf.workspace, "workspace", "auto",
+		`Workspace mode to use ("auto", "bind", or "volume")`,
 	)
 
 	flagSet.BoolVar(verbose, "v", false, "print verbose output")
@@ -180,36 +171,13 @@ func campaignsExecute(ctx context.Context, out *output.Output, svc *campaigns.Se
 		return "", "", err
 	}
 
-	// Parse flags and build up our service options.
-	var errs *multierror.Error
+	// Parse flags and build up our service and executor options.
 
 	specFile, err := campaignsOpenFileFlag(&flags.file)
 	if err != nil {
-		errs = multierror.Append(errs, err)
-	} else {
-		defer specFile.Close()
+		return "", "", err
 	}
-
-	opts := campaigns.ExecutorOpts{
-		Cache:       svc.NewExecutionCache(flags.cacheDir),
-		Creator:     svc.NewWorkspaceCreator(flags.cacheDir),
-		RepoFetcher: svc.NewRepoFetcher(flags.cacheDir, flags.cleanArchives),
-		ClearCache:  flags.clearCache,
-		KeepLogs:    flags.keepLogs,
-		Timeout:     flags.timeout,
-		TempDir:     flags.tempDir,
-	}
-	if flags.parallelism <= 0 {
-		opts.Parallelism = runtime.GOMAXPROCS(0)
-	} else {
-		opts.Parallelism = flags.parallelism
-	}
-	out.VerboseLine(output.Linef("🚧", output.StyleSuccess, "Workspace creator: %T", opts.Creator))
-	executor := svc.NewExecutor(opts)
-
-	if errs != nil {
-		return "", "", errs
-	}
+	defer specFile.Close()
 
 	pending := campaignsCreatePending(out, "Parsing campaign spec")
 	campaignSpec, rawSpec, err := campaignsParseSpec(out, svc, specFile)
@@ -229,7 +197,7 @@ func campaignsExecute(ctx context.Context, out *output.Output, svc *campaigns.Se
 		Label: "Preparing container images",
 		Max:   1.0,
 	}}, nil)
-	err = svc.SetDockerImages(ctx, opts.Creator, campaignSpec, func(perc float64) {
+	err = svc.SetDockerImages(ctx, campaignSpec, func(perc float64) {
 		imageProgress.SetValue(0, perc)
 	})
 	if err != nil {
@@ -255,6 +223,27 @@ func campaignsExecute(ctx context.Context, out *output.Output, svc *campaigns.Se
 		campaignsCompletePending(pending, "Resolved repositories")
 	}
 
+	pending = campaignsCreatePending(out, "Preparing workspaces")
+	workspaceCreator := svc.NewWorkspaceCreator(ctx, flags.cacheDir, campaignSpec.Steps)
+	pending.VerboseLine(output.Linef("🚧", output.StyleSuccess, "Workspace creator: %T", workspaceCreator))
+	campaignsCompletePending(pending, "Prepared workspaces")
+
+	opts := campaigns.ExecutorOpts{
+		Cache:       svc.NewExecutionCache(flags.cacheDir),
+		Creator:     workspaceCreator,
+		RepoFetcher: svc.NewRepoFetcher(flags.cacheDir, flags.cleanArchives),
+		ClearCache:  flags.clearCache,
+		KeepLogs:    flags.keepLogs,
+		Timeout:     flags.timeout,
+		TempDir:     flags.tempDir,
+	}
+	if flags.parallelism <= 0 {
+		opts.Parallelism = runtime.GOMAXPROCS(0)
+	} else {
+		opts.Parallelism = flags.parallelism
+	}
+
+	executor := svc.NewExecutor(opts)
 	p := newCampaignProgressPrinter(out, *verbose, opts.Parallelism)
 	specs, err := svc.ExecuteCampaignSpec(ctx, repos, executor, campaignSpec, p.PrintStatuses, flags.skipErrors)
 	if err != nil && !flags.skipErrors {

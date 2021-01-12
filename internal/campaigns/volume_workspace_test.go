@@ -51,7 +51,7 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 				"docker", "run", "--rm", "--init", "--workdir", "/work",
 				"--mount", "type=bind,source=*,target=/tmp/zip,ro",
 				"--mount", "type=volume,source="+volumeID+",target=/work",
-				dockerWorkspaceImage,
+				dockerVolumeWorkspaceImage,
 				"unzip", "/tmp/zip",
 			),
 			expect.NewGlob(
@@ -59,7 +59,7 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 				"docker", "run", "--rm", "--init", "--workdir", "/work",
 				"--mount", "type=bind,source=*,target=/run.sh,ro",
 				"--mount", "type=volume,source="+volumeID+",target=/work",
-				dockerWorkspaceImage,
+				dockerVolumeWorkspaceImage,
 				"sh", "/run.sh",
 			),
 		)
@@ -97,7 +97,7 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 				"docker", "run", "--rm", "--init", "--workdir", "/work",
 				"--mount", "type=bind,source=*,target=/tmp/zip,ro",
 				"--mount", "type=volume,source="+volumeID+",target=/work",
-				dockerWorkspaceImage,
+				dockerVolumeWorkspaceImage,
 				"unzip", "/tmp/zip",
 			),
 		)
@@ -119,7 +119,7 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 				"docker", "run", "--rm", "--init", "--workdir", "/work",
 				"--mount", "type=bind,source=*,target=/tmp/zip,ro",
 				"--mount", "type=volume,source="+volumeID+",target=/work",
-				dockerWorkspaceImage,
+				dockerVolumeWorkspaceImage,
 				"unzip", "/tmp/zip",
 			),
 			expect.NewGlob(
@@ -127,7 +127,7 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 				"docker", "run", "--rm", "--init", "--workdir", "/work",
 				"--mount", "type=bind,source=*,target=/run.sh,ro",
 				"--mount", "type=volume,source="+volumeID+",target=/work",
-				dockerWorkspaceImage,
+				dockerVolumeWorkspaceImage,
 				"sh", "/run.sh",
 			),
 		)
@@ -232,7 +232,7 @@ M  internal/campaigns/volume_workspace_test.go
 						"docker", "run", "--rm", "--init", "--workdir", "/work",
 						"--mount", "type=bind,source=*,target=/run.sh,ro",
 						"--mount", "type=volume,source="+volumeID+",target=/work",
-						dockerWorkspaceImage,
+						dockerVolumeWorkspaceImage,
 						"sh", "/run.sh",
 					),
 				)
@@ -263,7 +263,7 @@ M  internal/campaigns/volume_workspace_test.go
 						"docker", "run", "--rm", "--init", "--workdir", "/work",
 						"--mount", "type=bind,source=*,target=/run.sh,ro",
 						"--mount", "type=volume,source="+volumeID+",target=/work",
-						dockerWorkspaceImage,
+						dockerVolumeWorkspaceImage,
 						"sh", "/run.sh",
 					),
 				)
@@ -308,7 +308,7 @@ index 06471f4..5f9d3fa 100644
 						"docker", "run", "--rm", "--init", "--workdir", "/work",
 						"--mount", "type=bind,source=*,target=/run.sh,ro",
 						"--mount", "type=volume,source="+volumeID+",target=/work",
-						dockerWorkspaceImage,
+						dockerVolumeWorkspaceImage,
 						"sh", "/run.sh",
 					),
 				)
@@ -334,7 +334,7 @@ index 06471f4..5f9d3fa 100644
 				"docker", "run", "--rm", "--init", "--workdir", "/work",
 				"--mount", "type=bind,source=*,target=/run.sh,ro",
 				"--mount", "type=volume,source="+volumeID+",target=/work",
-				dockerWorkspaceImage,
+				dockerVolumeWorkspaceImage,
 				"sh", "/run.sh",
 			),
 		)
@@ -362,7 +362,7 @@ func TestVolumeWorkspace_runScript(t *testing.T) {
 					"docker", "run", "--rm", "--init", "--workdir", "/work",
 					"--mount", "type=bind,source=*,target=/run.sh,ro",
 					"--mount", "type=volume,source="+volumeID+",target=/work",
-					dockerWorkspaceImage,
+					dockerVolumeWorkspaceImage,
 					"sh", "/run.sh",
 				)
 				if err := glob(name, arg...); err != nil {

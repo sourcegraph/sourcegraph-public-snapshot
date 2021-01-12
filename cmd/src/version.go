@@ -9,12 +9,8 @@ import (
 	"net/http"
 
 	"github.com/sourcegraph/src-cli/internal/api"
+	"github.com/sourcegraph/src-cli/internal/version"
 )
-
-// buildTag is the git tag at the time of build and is used to
-// denote the binary's current version. This value is supplied
-// as an ldflag at compile time in travis.
-var buildTag = "dev"
 
 func init() {
 	usage := `
@@ -30,7 +26,7 @@ Examples:
 	var apiFlags = api.NewFlags(flagSet)
 
 	handler := func(args []string) error {
-		fmt.Printf("Current version: %s\n", buildTag)
+		fmt.Printf("Current version: %s\n", version.BuildTag)
 
 		client := cfg.apiClient(apiFlags, flagSet.Output())
 		recommendedVersion, err := getRecommendedVersion(context.Background(), client)
