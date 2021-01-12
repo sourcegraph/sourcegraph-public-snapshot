@@ -148,7 +148,7 @@ func TestAddQueryRegexpField(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			got := addRegexpField(parseTree, test.addField, test.addPattern)
+			got := query.AddRegexpField(parseTree, test.addField, test.addPattern)
 			if got != test.want {
 				t.Errorf("got %q, want %q", got, test.want)
 			}
