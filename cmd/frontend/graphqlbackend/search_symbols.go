@@ -107,7 +107,7 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 		if len(matches) > 0 {
 			common.resultCount += int32(len(matches))
 			sort.Slice(matches, func(i, j int) bool {
-				a, b := matches[i].uri, matches[j].uri
+				a, b := matches[i].URI, matches[j].URI
 				return a > b
 			})
 			unflattened = append(unflattened, matches)
@@ -266,7 +266,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 			fileMatch := &FileMatchResolver{
 				JPath:   symbolRes.symbol.Path,
 				symbols: []*searchSymbolResult{symbolRes},
-				uri:     uri,
+				URI:     uri,
 				Repo:    repoResolver,
 				// Don't get commit from GitCommitResolver.OID() because we don't want to
 				// slow search results down when they are coming from zoekt.

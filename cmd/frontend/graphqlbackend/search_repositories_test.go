@@ -39,14 +39,14 @@ func TestSearchRepositories(t *testing.T) {
 		case "foo/one":
 			return []*FileMatchResolver{
 				{
-					uri:  "git://" + string(repoName) + "?1a2b3c#" + "f.go",
+					URI:  "git://" + string(repoName) + "?1a2b3c#" + "f.go",
 					Repo: &RepositoryResolver{innerRepo: &types.Repo{ID: 123}},
 				},
 			}, &searchResultsCommon{}, nil
 		case "bar/one":
 			return []*FileMatchResolver{
 				{
-					uri:  "git://" + string(repoName) + "?1a2b3c#" + "f.go",
+					URI:  "git://" + string(repoName) + "?1a2b3c#" + "f.go",
 					Repo: &RepositoryResolver{innerRepo: &types.Repo{ID: 789}},
 				},
 			}, &searchResultsCommon{}, nil
@@ -137,7 +137,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 		case "foo/one":
 			return []*FileMatchResolver{
 				{
-					uri:  "git://" + string(repoName) + "?1a2b3c#" + "foo.go",
+					URI:  "git://" + string(repoName) + "?1a2b3c#" + "foo.go",
 					Repo: &RepositoryResolver{innerRepo: &types.Repo{ID: 123}},
 				},
 			}, &searchResultsCommon{}, nil
@@ -155,7 +155,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 		mockSearchFilesInRepos = func(args *search.TextParameters) (matches []*FileMatchResolver, common *searchResultsCommon, err error) {
 			return []*FileMatchResolver{
 				{
-					uri:  "git://" + string(repo.Repo.Name) + "?1a2b3c#" + "foo.go",
+					URI:  "git://" + string(repo.Repo.Name) + "?1a2b3c#" + "foo.go",
 					Repo: &RepositoryResolver{innerRepo: &types.Repo{ID: 123}},
 				},
 			}, &searchResultsCommon{}, nil
@@ -190,7 +190,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 		mockSearchFilesInRepos = func(args *search.TextParameters) (matches []*FileMatchResolver, common *searchResultsCommon, err error) {
 			return []*FileMatchResolver{
 				{
-					uri:  "git://" + string(repo.Repo.Name) + "?1a2b3c#" + "foo.go",
+					URI:  "git://" + string(repo.Repo.Name) + "?1a2b3c#" + "foo.go",
 					Repo: &RepositoryResolver{innerRepo: &types.Repo{ID: 123}},
 				},
 			}, &searchResultsCommon{}, nil

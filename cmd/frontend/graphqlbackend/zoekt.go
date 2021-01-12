@@ -474,7 +474,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 				JLineMatches: lines,
 				JLimitHit:    fileLimitHit,
 				MatchCount:   matchCount, // We do not use resp.MatchCount because it counts the number of lines matched, not the number of fragments.
-				uri:          fileMatchURI(repo.Name, inputRev, file.FileName),
+				URI:          fileMatchURI(repo.Name, inputRev, file.FileName),
 				symbols:      symbols,
 				Repo:         repoResolver,
 				CommitID:     api.CommitID(file.Version),
