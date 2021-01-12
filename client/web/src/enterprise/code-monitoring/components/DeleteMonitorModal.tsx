@@ -59,7 +59,7 @@ export const DeleteMonitorModal: React.FunctionComponent<DeleteModalProps> = ({
 
             <p>
                 <strong>This action cannot be undone.</strong> Code monitoring will no longer watch for trigger event
-                and all actions will immediately be removed. Event history will still be accessible.
+                and all actions will immediately be removed.
             </p>
             {(!deleteCompletedOrError || isErrorLike(deleteCompletedOrError)) && (
                 <div>
