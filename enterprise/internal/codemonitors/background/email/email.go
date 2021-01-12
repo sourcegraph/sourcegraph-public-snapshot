@@ -8,7 +8,6 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 )
@@ -34,9 +33,10 @@ type TemplateDataNewSearchResults struct {
 	SearchURL                 string
 	Description               string
 	NumberOfResultsWithDetail string
+	IsTest                    bool
 }
 
-func NewTemplateDataForNewSearchResults(ctx context.Context, monitorDescription string, queryString string, email *codemonitors.MonitorEmail, numResults int) (d *TemplateDataNewSearchResults, err error) {
+func NewTemplateDataForNewSearchResults(ctx context.Context, monitorDescription, queryString string, email *codemonitors.MonitorEmail, kind string, numResults int) (d *TemplateDataNewSearchResults, err error) {
 	var (
 		searchURL                 string
 		codeMonitorURL            string
@@ -48,7 +48,7 @@ func NewTemplateDataForNewSearchResults(ctx context.Context, monitorDescription 
 		return nil, err
 	}
 
-	codeMonitorURL, err = getCodeMonitorURL(ctx, email.Monitor, utmSourceEmail)
+	codeMonitorURL, err = getCodeMonitorURL(ctx, email.Monitor, kind, utmSourceEmail)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +72,15 @@ func NewTemplateDataForNewSearchResults(ctx context.Context, monitorDescription 
 		Description:               monitorDescription,
 		NumberOfResultsWithDetail: numberOfResultsWithDetail,
 	}, nil
+}
 
+func NewTestTemplateDataForNewSearchResults(ctx context.Context, monitorDescription string) *TemplateDataNewSearchResults {
+	return &TemplateDataNewSearchResults{
+		Priority:                  "New",
+		Description:               monitorDescription,
+		NumberOfResultsWithDetail: "There was 1 new search result for your query",
+		IsTest:                    true,
+	}
 }
 
 func sendEmail(ctx context.Context, userID int32, template txtypes.Templates, data interface{}) error {
@@ -97,8 +105,8 @@ func getSearchURL(ctx context.Context, query, utmSource string) (string, error) 
 	return sourcegraphURL(ctx, "search", query, utmSource)
 }
 
-func getCodeMonitorURL(ctx context.Context, monitorID int64, utmSource string) (string, error) {
-	return sourcegraphURL(ctx, fmt.Sprintf("code-monitoring/%s", relay.MarshalID(resolvers.MonitorKind, monitorID)), "", utmSource)
+func getCodeMonitorURL(ctx context.Context, monitorID int64, kind, utmSource string) (string, error) {
+	return sourcegraphURL(ctx, fmt.Sprintf("code-monitoring/%s", relay.MarshalID(kind, monitorID)), "", utmSource)
 }
 
 func sourcegraphURL(ctx context.Context, path, query, utmSource string) (string, error) {

@@ -20,6 +20,7 @@ type CodeMonitorsResolver interface {
 	DeleteCodeMonitor(ctx context.Context, args *DeleteCodeMonitorArgs) (*EmptyResponse, error)
 	UpdateCodeMonitor(ctx context.Context, args *UpdateCodeMonitorArgs) (MonitorResolver, error)
 	ResetTriggerQueryTimestamps(ctx context.Context, args *ResetTriggerQueryTimestampsArgs) (*EmptyResponse, error)
+	TriggerTestEmailAction(ctx context.Context, args *TriggerTestEmailActionArgs) (*EmptyResponse, error)
 }
 
 type MonitorConnectionResolver interface {
@@ -159,6 +160,11 @@ type ResetTriggerQueryTimestampsArgs struct {
 	Id graphql.ID
 }
 
+type TriggerTestEmailActionArgs struct {
+	User        graphql.ID
+	Description string
+}
+
 type CreateMonitorArgs struct {
 	Namespace   graphql.ID
 	Description string
@@ -222,5 +228,9 @@ func (d defaultCodeMonitorsResolver) UpdateCodeMonitor(ctx context.Context, args
 }
 
 func (d defaultCodeMonitorsResolver) ResetTriggerQueryTimestamps(ctx context.Context, args *ResetTriggerQueryTimestampsArgs) (*EmptyResponse, error) {
+	return nil, codeMonitorsOnlyInEnterprise
+}
+
+func (d defaultCodeMonitorsResolver) TriggerTestEmailAction(ctx context.Context, args *TriggerTestEmailActionArgs) (*EmptyResponse, error) {
 	return nil, codeMonitorsOnlyInEnterprise
 }

@@ -1,7 +1,12 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useMemo, useEffect } from 'react'
+import { Observable } from 'rxjs'
+import { delay, startWith, tap, mergeMap, catchError } from 'rxjs/operators'
 import { Toggle } from '../../../../../branded/src/components/Toggle'
+import { useEventObservable } from '../../../../../shared/src/util/useObservable'
+import { asError, isErrorLike } from '../../../../../shared/src/util/errors'
 import { AuthenticatedUser } from '../../../auth'
 import { CodeMonitorFields } from '../../../graphql-operations'
+import { triggerTestEmailAction } from '../backend'
 
 interface ActionAreaProps {
     actions: CodeMonitorFields['actions']
@@ -10,7 +15,10 @@ interface ActionAreaProps {
     disabled: boolean
     authenticatedUser: AuthenticatedUser
     onActionsChange: (action: CodeMonitorFields['actions']) => void
+    description: string
 }
+
+const LOADING = 'LOADING' as const
 
 /**
  * TODO farhan: this component is built with the assumption that each monitor has exactly one email action.
@@ -23,6 +31,7 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
     disabled,
     authenticatedUser,
     onActionsChange,
+    description
 }) => {
     const [showEmailNotificationForm, setShowEmailNotificationForm] = useState(false)
     const toggleEmailNotificationForm: React.FormEventHandler = useCallback(event => {
@@ -75,6 +84,47 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
         [setShowEmailNotificationForm]
     )
 
+    const [isTestEmailSent, setIsTestEmailSent] = useState(false)
+    const [triggerTestEmailActionRequest, triggerTestEmailResult] = useEventObservable(
+        useCallback(
+            (click: Observable<React.MouseEvent<HTMLButtonElement>>) =>
+                click.pipe(
+                    mergeMap(() =>
+                        triggerTestEmailAction(authenticatedUser.id, description).pipe(
+                            delay(1000),
+                            startWith(LOADING),
+                            tap(value => {
+                                if (value !== LOADING) {
+                                    setIsTestEmailSent(true)
+                                }
+                            }),
+                            catchError(error => [asError(error)])
+                        )
+                    )
+                ),
+            [authenticatedUser, description]
+        )
+    )
+
+    useEffect(() => {
+        if (isTestEmailSent && !description || !showEmailNotificationForm) {
+            setIsTestEmailSent(false)
+        }
+    }, [isTestEmailSent, description, showEmailNotificationForm])
+
+    const sendTestEmailButtonText = useMemo(() => {
+        if (triggerTestEmailResult === LOADING) {
+            return 'Sending email...'
+        }
+        return isTestEmailSent ? 'Test email sent!' : 'Send test email'
+    }, [isTestEmailSent, triggerTestEmailResult])
+
+    const isSendTestEmailButtonDisabled = useMemo(() => triggerTestEmailResult === LOADING || isTestEmailSent || !description, [
+        isTestEmailSent,
+        triggerTestEmailResult,
+        description
+    ])
+
     return (
         <>
             <h3 className="mb-1">Actions</h3>
@@ -110,6 +160,25 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                         <small className="text-muted">
                             Code monitors are currently limited to sending emails to your primary email address.
                         </small>
+                    </div>
+                    <div className="flex mt-4">
+                        <button
+                            type="button"
+                            className={`btn btn-sm mr-2 ${
+                                isSendTestEmailButtonDisabled ? 'btn-secondary' : 'btn-outline-secondary'
+                            }`}
+                            disabled={isSendTestEmailButtonDisabled}
+                            onClick={triggerTestEmailActionRequest}
+                        >
+                            {sendTestEmailButtonText}
+                        </button>
+                        {isTestEmailSent && triggerTestEmailResult !== LOADING && (
+                            <button type="button" className="btn btn-sm btn-link p-0" onClick={triggerTestEmailActionRequest}>
+                                Send again
+                            </button>
+                        )}
+                        {!description && <div className="action-area__test-action-error mt-2">Please provide a name for the code monitor before sending a test</div>}
+                        {isErrorLike(triggerTestEmailResult) && <div className="action-area__test-action-error mt-2">{triggerTestEmailResult.message}</div>}
                     </div>
                     <div className="flex">
                         <Toggle

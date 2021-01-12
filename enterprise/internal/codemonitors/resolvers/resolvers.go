@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	cm "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/background/email"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
@@ -179,6 +180,21 @@ func (r *Resolver) ResetTriggerQueryTimestamps(ctx context.Context, args *graphq
 		return nil, err
 	}
 	err = r.store.ResetTriggerQueryTimestamps(ctx, queryIDInt64)
+	if err != nil {
+		return nil, err
+	}
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (r *Resolver) TriggerTestEmailAction(ctx context.Context, args *graphqlbackend.TriggerTestEmailActionArgs) (*graphqlbackend.EmptyResponse, error) {
+	// TODO: Check permissions?
+	var userID int32
+	err := relay.UnmarshalSpec(args.User, &userID)
+	if err != nil {
+		return nil, err
+	}
+	data := email.NewTestTemplateDataForNewSearchResults(ctx, args.Description)
+	err = email.SendEmailForNewSearchResult(ctx, userID, data)
 	if err != nil {
 		return nil, err
 	}

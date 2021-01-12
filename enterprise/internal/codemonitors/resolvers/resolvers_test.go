@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	campaignApitest "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
 	cm "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/background/email"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/storetest"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -1060,3 +1061,35 @@ query($userName: String!, $actionCursor:String!, $actionEventCursor:String!){
 	}
 }
 `
+
+func TestTriggerTestEmailAction(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	got := email.TemplateDataNewSearchResults{}
+	email.MockSendEmailForNewSearchResult = func(ctx context.Context, userID int32, data *email.TemplateDataNewSearchResults) error {
+		got = *data
+		return nil
+	}
+
+	ctx := backend.WithAuthzBypass(context.Background())
+	dbtesting.SetupGlobalTestDB(t)
+	r := newTestResolver(t)
+
+	userID := insertTestUser(t, dbconn.Global, "cm-user1", true)
+
+	ctx = actor.WithActor(ctx, actor.FromUser(userID))
+	_, err := r.TriggerTestEmailAction(ctx, &graphqlbackend.TriggerTestEmailActionArgs{
+		User:        relay.MarshalID("User", actor.FromContext(ctx).UID),
+		Description: "A code monitor name",
+	})
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !got.IsTest {
+		t.Fatalf("Template data for testing email actions should have with .IsTest=true")
+	}
+}
