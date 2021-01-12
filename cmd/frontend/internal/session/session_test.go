@@ -411,9 +411,10 @@ func TestOldUserSessionSucceeds(t *testing.T) {
 	// Start a new session for the user with ID 1. Their creation time will not be
 	// be recorded into the session store.
 	w := httptest.NewRecorder()
+	req := httptest.NewRequest("GET", "/", nil)
 	actr := &actor.Actor{UID: 1, FromSessionCookie: true}
 	session := &sessionInfo{Actor: actr, ExpiryPeriod: 9999999999999999, LastActive: time.Now()}
-	if err := SetData(w, httptest.NewRequest("GET", "/", nil), "actor", session); err != nil {
+	if err := SetData(w, req, "actor", session); err != nil {
 		t.Fatal(err)
 	}
 
@@ -427,12 +428,20 @@ func TestOldUserSessionSucceeds(t *testing.T) {
 
 	// Perform the authenticated request and verify that the session
 	// was created successfully.
-	req := httptest.NewRequest("GET", "/", nil)
 	for _, cookie := range authCookies {
 		req.AddCookie(cookie)
 	}
 	actr = actor.FromContext(authenticateByCookie(req, w))
 	if reflect.DeepEqual(actr, &actor.Actor{}) {
 		t.Fatal("session was not created")
+	}
+
+	// Ensure that the UserCreatedAt value was set behind the scenes.
+	var info *sessionInfo
+	if err := GetData(req, "actor", &info); err != nil {
+		t.Fatal(err)
+	}
+	if info.UserCreatedAt.IsZero() {
+		t.Fatal("user creation date was not set")
 	}
 }
