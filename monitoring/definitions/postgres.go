@@ -8,8 +8,8 @@ import (
 )
 
 func Postgres() *monitoring.Container {
-	// In docker-compose, codeintel-db container is called pgsql
-	// In Kubernetes, codeintel-db container is called codeintel-db
+	// In Kubernetes, codeintel-db container is called codeintel-db and the
+	// default Postgres container is called pgsql
 	// Because of this, we track all database cAdvisor metrics in a single panel using this
 	// container name regex to ensure we have observability on all platforms.
 	const databaseContainerNames = "(pgsql|codeintel-db)"
@@ -59,14 +59,15 @@ func Postgres() *monitoring.Container {
 							Interpretation:    "A non-zero value indicates the database is online.",
 						},
 						monitoring.Observable{
-							Name:              "pg_exporter_err",
-							Description:       "errors scraping postgres exporter",
-							Owner:             monitoring.ObservableOwnerCloud,
-							Query:             "pg_exporter_last_scrape_error",
-							PanelOptions:      monitoring.PanelOptions().LegendFormat("{{app}}"),
-							Warning:           monitoring.Alert().GreaterOrEqual(1).For(5 * time.Minute),
-							PossibleSolutions: "none", // TODO(@daxmc99): how to debug this?
-							Interpretation:    "This value indicates issues retrieving metrics from postgres_exporter.",
+							Name:         "pg_exporter_err",
+							Description:  "errors scraping postgres exporter",
+							Owner:        monitoring.ObservableOwnerCloud,
+							Query:        "pg_exporter_last_scrape_error",
+							PanelOptions: monitoring.PanelOptions().LegendFormat("{{app}}"),
+							Warning:      monitoring.Alert().GreaterOrEqual(1).For(5 * time.Minute),
+							PossibleSolutions: `
+								- Ensure the Postgres exporter can access the Postgres database. Also, check the Postgres exporter logs for errors.`,
+							Interpretation: "This value indicates issues retrieving metrics from postgres_exporter.",
 						},
 						monitoring.Observable{
 							Name:           "migration_in_progress",
