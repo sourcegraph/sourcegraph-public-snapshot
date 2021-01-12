@@ -319,6 +319,22 @@ func testSyncerSync(t *testing.T, s *repos.Store) func(*testing.T) {
 				err:  "bad credentials",
 			},
 			testCase{
+				// If the source account has been suspended we should treat this as if zero repos were returned as it indicates
+				// that the source no longer has access to its repos
+				name:    string(tc.repo.Name) + "/accountsuspended",
+				sourcer: repos.NewFakeSourcer(&repos.ErrAccountSuspended{}),
+				store:   s,
+				stored: types.Repos{tc.repo.With(
+					types.Opt.RepoSources(tc.svc.URN()),
+				)},
+				now: clock.Now,
+				diff: repos.Diff{Deleted: types.Repos{tc.repo.With(
+					types.Opt.RepoSources(tc.svc.URN(), svcdup.URN()),
+				)}},
+				svcs: []*types.ExternalService{tc.svc},
+				err:  "account suspended",
+			},
+			testCase{
 				// It's expected that there could be multiple stored sources but only one will ever be returned
 				// by the code host as it can't know about others.
 				name: string(tc.repo.Name) + "/source already stored",
