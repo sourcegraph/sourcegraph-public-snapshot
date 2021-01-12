@@ -96,7 +96,7 @@ export interface Progress {
     skipped: Skipped[]
 }
 
-interface Skipped {
+export interface Skipped {
     /**
      * Why a document/shard/repository was skipped. We group counts by reason.
      *
@@ -118,6 +118,7 @@ interface Skipped {
         | 'repository-missing'
         | 'excluded-fork'
         | 'excluded-archive'
+        | 'error'
     /**
      * A short message. eg 1,200 timed out.
      */
@@ -127,7 +128,7 @@ interface Skipped {
      * count as well as a sample of the missing items.
      */
     message: string
-    severity: 'info' | 'warn'
+    severity: 'info' | 'warn' | 'error'
     /**
      * a suggested query expression to remedy the skip. eg "archived:yes" or "timeout:2m".
      */
@@ -361,12 +362,25 @@ const switchAggregateSearchResults: OperatorFunction<SearchEvent, AggregateStrea
                             return results
                     }
                 }
-                case 'E':
+                case 'E': {
+                    // Add the error as an extra skipped item
+                    const error = asError(newEvent.error)
+                    const errorSkipped: Skipped = {
+                        title: 'Error loading results',
+                        message: error.message,
+                        reason: 'error',
+                        severity: 'error',
+                    }
                     return {
                         ...results,
-                        error: asError(newEvent.error),
+                        error,
+                        progress: {
+                            ...results.progress,
+                            skipped: [errorSkipped, ...results.progress.skipped],
+                        },
                         state: 'error',
                     }
+                }
                 case 'C':
                     return {
                         ...results,

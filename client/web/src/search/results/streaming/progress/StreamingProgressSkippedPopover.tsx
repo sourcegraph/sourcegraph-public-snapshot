@@ -6,11 +6,31 @@ import { Alert, Button, Form, FormGroup, Input, Label } from 'reactstrap'
 import { Markdown } from '../../../../../../shared/src/components/Markdown'
 import { renderMarkdown } from '../../../../../../shared/src/util/markdown'
 import { SyntaxHighlightedSearchQuery } from '../../../../components/SyntaxHighlightedSearchQuery'
+import { Skipped } from '../../../stream'
 import { StreamingProgressProps } from './StreamingProgress'
 
-export const StreamingProgressSkippedPopover: React.FunctionComponent<
-    Pick<StreamingProgressProps, 'progress' | 'onSearchAgain' | 'history'>
-> = ({ progress, onSearchAgain, history }) => {
+const sortBySeverity = (a: Skipped, b: Skipped): number => {
+    const severityToNumber = (severity: Skipped['severity']): number => {
+        switch (severity) {
+            case 'error':
+                return 1
+            case 'warn':
+                return 2
+            case 'info':
+                return 3
+        }
+    }
+
+    const aSev = severityToNumber(a.severity)
+    const bSev = severityToNumber(b.severity)
+
+    return aSev - bSev
+}
+
+export const StreamingProgressSkippedPopover: React.FunctionComponent<Pick<
+    StreamingProgressProps,
+    'progress' | 'onSearchAgain' | 'history'
+>> = ({ progress, onSearchAgain, history }) => {
     const [selectedSuggestedSearches, setSelectedSuggestedSearches] = useState(new Set<string>())
     const submitHandler = useCallback(
         (event: React.FormEvent) => {
@@ -33,15 +53,17 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<
         })
     }, [])
 
+    const sortedSkippedItems = progress.skipped.sort(sortBySeverity)
+
     return (
         <>
-            {progress.skipped.map(skipped => (
-                <Alert key={skipped.reason} color={skipped.severity === 'warn' ? 'danger' : 'info'} fade={false}>
+            {sortedSkippedItems.map(skipped => (
+                <Alert key={skipped.reason} color={skipped.severity === 'info' ? 'info' : 'danger'} fade={false}>
                     <h4 className="d-flex align-items-center mb-0">
-                        {skipped.severity === 'warn' ? (
-                            <AlertCircleIcon className="icon-inline mr-2" />
-                        ) : (
+                        {skipped.severity === 'info' ? (
                             <InformationOutlineIcon className="icon-inline mr-2" />
+                        ) : (
+                            <AlertCircleIcon className="icon-inline mr-2" />
                         )}
                         <span>{skipped.title}</span>
                     </h4>
@@ -52,11 +74,11 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<
                     )}
                 </Alert>
             ))}
-            {progress.skipped.some(skipped => skipped.suggested) && (
+            {sortedSkippedItems.some(skipped => skipped.suggested) && (
                 <Form onSubmit={submitHandler}>
                     <div className="mb-2">Search again:</div>
                     <FormGroup check={true}>
-                        {progress.skipped.map(
+                        {sortedSkippedItems.map(
                             skipped =>
                                 skipped.suggested && (
                                     <Label

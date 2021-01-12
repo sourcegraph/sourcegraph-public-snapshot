@@ -47,6 +47,13 @@ describe('StreamingProgressSkippedPopover', () => {
                     },
                 },
                 {
+                    reason: 'error',
+                    message:
+                        'There was a network error retrieving search results. Check your Internet connection and try again.',
+                    severity: 'error',
+                    title: 'Error loading results',
+                },
+                {
                     reason: 'shard-timedout',
                     message: 'Search timed out',
                     severity: 'warn',
@@ -236,6 +243,16 @@ describe('StreamingProgressSkippedPopover', () => {
             repositoriesCount: 2,
             skipped: [
                 {
+                    reason: 'shard-timedout',
+                    message: 'Search timed out',
+                    severity: 'warn',
+                    title: 'Search timed out',
+                    suggested: {
+                        title: 'timeout:2m',
+                        queryExpression: 'timeout:2m',
+                    },
+                },
+                {
                     reason: 'excluded-fork',
                     message: '10k forked repositories excluded',
                     severity: 'info',
@@ -255,16 +272,6 @@ describe('StreamingProgressSkippedPopover', () => {
                         queryExpression: 'archived:yes',
                     },
                 },
-                {
-                    reason: 'shard-timedout',
-                    message: 'Search timed out',
-                    severity: 'warn',
-                    title: 'Search timed out',
-                    suggested: {
-                        title: 'timeout:2m',
-                        queryExpression: 'timeout:2m',
-                    },
-                },
             ],
         }
 
@@ -277,7 +284,7 @@ describe('StreamingProgressSkippedPopover', () => {
         const checkboxes = element.find(Input)
 
         expect(checkboxes).toHaveLength(3)
-        const checkbox1 = checkboxes.at(1)
+        const checkbox1 = checkboxes.at(0)
         checkbox1.invoke('onChange')?.({
             currentTarget: { checked: true, value: checkbox1.props().value as string },
         } as ChangeEvent<HTMLInputElement>)
@@ -292,6 +299,6 @@ describe('StreamingProgressSkippedPopover', () => {
         form.simulate('submit')
 
         sinon.assert.calledOnce(searchAgain)
-        sinon.assert.calledWith(searchAgain, ['archived:yes', 'timeout:2m'])
+        sinon.assert.calledWith(searchAgain, ['timeout:2m', 'archived:yes'])
     })
 })
