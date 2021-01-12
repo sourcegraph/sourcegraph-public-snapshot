@@ -148,14 +148,14 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 			RepoID:              githubRepo.ID,
 			ExternalID:          "5834",
 			ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
-			Campaigns:           []campaigns.CampaignChangeset{{CampaignID: campaign.ID}},
+			Campaigns:           []campaigns.CampaignAssoc{{CampaignID: campaign.ID}},
 			PublicationState:    campaigns.ChangesetPublicationStatePublished,
 		},
 		{
 			RepoID:              githubRepo.ID,
 			ExternalID:          "5849",
 			ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
-			Campaigns:           []campaigns.CampaignChangeset{{CampaignID: campaign.ID}},
+			Campaigns:           []campaigns.CampaignAssoc{{CampaignID: campaign.ID}},
 			PublicationState:    campaigns.ChangesetPublicationStatePublished,
 		},
 	}

@@ -92,7 +92,7 @@ func (r *ChangesetRewirer) createChangesetForSpec(repo *types.Repo, spec *campai
 		RepoID:              spec.RepoID,
 		ExternalServiceType: repo.ExternalRepo.ServiceType,
 
-		Campaigns:         []campaigns.CampaignChangeset{{CampaignID: r.campaignID}},
+		Campaigns:         []campaigns.CampaignAssoc{{CampaignID: r.campaignID}},
 		OwnedByCampaignID: r.campaignID,
 		CurrentSpecID:     spec.ID,
 
@@ -114,7 +114,7 @@ func (r *ChangesetRewirer) updateChangesetToNewSpec(c *campaigns.Changeset, spec
 	c.CurrentSpecID = spec.ID
 
 	// Ensure that the changeset is attached to the campaign
-	c.Campaigns = append(c.Campaigns, campaigns.CampaignChangeset{CampaignID: r.campaignID})
+	c.Campaigns = append(c.Campaigns, campaigns.CampaignAssoc{CampaignID: r.campaignID})
 
 	// We need to enqueue it for the changeset reconciler, so the
 	// reconciler wakes up, compares old and new spec and, if
@@ -127,7 +127,7 @@ func (r *ChangesetRewirer) createTrackingChangeset(repo *types.Repo, externalID 
 		RepoID:              repo.ID,
 		ExternalServiceType: repo.ExternalRepo.ServiceType,
 
-		Campaigns:  []campaigns.CampaignChangeset{{CampaignID: r.campaignID}},
+		Campaigns:  []campaigns.CampaignAssoc{{CampaignID: r.campaignID}},
 		ExternalID: externalID,
 		// Note: no CurrentSpecID, because we merely track this one
 
@@ -143,7 +143,7 @@ func (r *ChangesetRewirer) createTrackingChangeset(repo *types.Repo, externalID 
 func (r *ChangesetRewirer) attachTrackingChangeset(changeset *campaigns.Changeset) {
 	// We already have a changeset with the given repoID and
 	// externalID, so we can track it.
-	changeset.Campaigns = append(changeset.Campaigns, campaigns.CampaignChangeset{CampaignID: r.campaignID})
+	changeset.Campaigns = append(changeset.Campaigns, campaigns.CampaignAssoc{CampaignID: r.campaignID})
 
 	// If it's errored and not created by another campaign, we re-enqueue it.
 	if changeset.OwnedByCampaignID == 0 && changeset.ReconcilerState == campaigns.ReconcilerStateErrored {

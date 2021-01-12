@@ -521,7 +521,7 @@ func TestChangesetMetadata(t *testing.T) {
 		CreatedAt:           now,
 		UpdatedAt:           now,
 		Metadata:            githubPR,
-		Campaigns:           []CampaignChangeset{},
+		Campaigns:           []CampaignAssoc{},
 		ExternalID:          "12345",
 		ExternalServiceType: extsvc.TypeGitHub,
 	}

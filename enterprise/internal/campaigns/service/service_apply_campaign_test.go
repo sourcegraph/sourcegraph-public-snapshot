@@ -333,7 +333,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			changeset3 := oldChangesets.Find(campaigns.WithCurrentSpecID(oldSpec3.ID))
 			ct.SetChangesetPublished(t, ctx, store, changeset3, "12345", oldSpec3.Spec.HeadRef)
 
-			// Apply and expect 5 changesets
+			// Apply and expect 6 changesets
 			campaign, cs := applyAndListChangesets(adminCtx, t, svc, campaignSpec2.RandID, 6)
 
 			// This changeset we want marked as "to be closed"
@@ -349,6 +349,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				ReconcilerState:  campaigns.ReconcilerStateQueued,
 				PublicationState: campaigns.ChangesetPublicationStatePublished,
 				DiffStat:         ct.TestChangsetSpecDiffStat,
+				DetachFrom:       []int64{campaign.ID},
 				Closing:          true,
 			})
 
@@ -459,12 +460,13 @@ func TestServiceApplyCampaign(t *testing.T) {
 				CampaignSpec: campaignSpec3.ID,
 				HeadRef:      "refs/heads/repo-0-branch-0",
 			})
-			// Apply again. This should have detached the tracked changeset but it should not be closed, since the campaign is
+			// Apply again. This should have flagged the association as detach and it should not be closed, since the campaign is
 			// not the owner.
 			trackingCampaign, cs := applyAndListChangesets(adminCtx, t, svc, campaignSpec3.RandID, 2)
 
 			trackedChangesetAssertions.Closing = false
 			trackedChangesetAssertions.ReconcilerState = campaigns.ReconcilerStateQueued
+			trackedChangesetAssertions.DetachFrom = []int64{trackingCampaign.ID}
 			ct.ReloadAndAssertChangeset(t, ctx, store, c2, trackedChangesetAssertions)
 
 			// But we do want to have a new changeset record that is going to create a new changeset on the code host.
@@ -495,8 +497,8 @@ func TestServiceApplyCampaign(t *testing.T) {
 			// And now we apply a new spec without any changesets.
 			campaignSpec2 := ct.CreateCampaignSpec(t, ctx, store, "unpublished-changesets", admin.ID)
 
-			// That should close no changesets, but leave the campaign with 0 changesets,
-			// and the unpublished changesets should be detached
+			// That should close no changesets, but set the unpublished changesets to be detached when
+			// the reconciler picks them up.
 			applyAndListChangesets(adminCtx, t, svc, campaignSpec2.RandID, 1)
 		})
 
@@ -796,7 +798,8 @@ func TestServiceApplyCampaign(t *testing.T) {
 			}
 			c = ct.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
 
-			// STEP 2: Now we apply a new spec without any changesets.
+			// STEP 2: Now we apply a new spec without any changesets, but expect the changeset-to-be-detached to
+			// be left in the campaign (the reconciler would detach it, if the executor picked up the changeset).
 			campaignSpec2 := ct.CreateCampaignSpec(t, ctx, store, "detached-closed-changeset", admin.ID)
 			applyAndListChangesets(adminCtx, t, svc, campaignSpec2.RandID, 1)
 
@@ -805,11 +808,13 @@ func TestServiceApplyCampaign(t *testing.T) {
 			assertions.ReconcilerState = campaigns.ReconcilerStateQueued
 			// And the previous spec is recorded, because the previous run finished with reconcilerState completed.
 			assertions.PreviousSpec = spec1.ID
+			assertions.DetachFrom = []int64{campaign.ID}
 			c = ct.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
 
 			// Now we update the changeset to make it look closed.
 			ct.SetChangesetClosed(t, ctx, store, c)
 			assertions.Closing = false
+			assertions.DetachFrom = []int64{}
 			assertions.ReconcilerState = campaigns.ReconcilerStateCompleted
 			assertions.ExternalState = campaigns.ChangesetExternalStateClosed
 			c = ct.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
@@ -862,6 +867,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 
 				// Our previously published changeset should be marked as "to be closed"
 				assertions.Closing = true
+				assertions.DetachFrom = []int64{campaign.ID}
 				assertions.ReconcilerState = campaigns.ReconcilerStateQueued
 				// And the previous spec is recorded.
 				assertions.PreviousSpec = spec1.ID
@@ -870,6 +876,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				// Now we update the changeset to make it look closed.
 				ct.SetChangesetClosed(t, ctx, store, c)
 				assertions.Closing = false
+				assertions.DetachFrom = []int64{}
 				assertions.ReconcilerState = campaigns.ReconcilerStateCompleted
 				assertions.ExternalState = campaigns.ChangesetExternalStateClosed
 				ct.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
@@ -935,13 +942,14 @@ func TestServiceApplyCampaign(t *testing.T) {
 
 				// Our previously published changeset should be marked as "to be closed"
 				assertions.Closing = true
+				assertions.DetachFrom = []int64{campaign.ID}
 				assertions.ReconcilerState = campaigns.ReconcilerStateQueued
 				// And the previous spec is recorded.
 				assertions.PreviousSpec = spec1.ID
 				c = ct.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
 
 				if len(c.Campaigns) != 1 {
-					t.Fatal("Expected changeset to be detached from campaign, but wasn't")
+					t.Fatal("Expected changeset to be still attached to campaign, but wasn't")
 				}
 
 				// Now we update the changeset to simulate that closing failed.
@@ -977,6 +985,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				assertions.ReconcilerState = campaigns.ReconcilerStateQueued
 				assertions.FailureMessage = nil
 				assertions.NumFailures = 0
+				assertions.DetachFrom = []int64{}
 				ct.AssertChangeset(t, attachedChangeset, assertions)
 			})
 
@@ -1020,6 +1029,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 
 				// Our previously published changeset should be marked as "to be closed"
 				assertions.Closing = true
+				assertions.DetachFrom = []int64{campaign.ID}
 				assertions.ReconcilerState = campaigns.ReconcilerStateQueued
 				// And the previous spec is recorded.
 				assertions.PreviousSpec = spec1.ID
@@ -1045,6 +1055,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				// Assert that the previous spec is still spec 1
 				assertions.PreviousSpec = spec1.ID
 				assertions.ReconcilerState = campaigns.ReconcilerStateQueued
+				assertions.DetachFrom = []int64{}
 				ct.AssertChangeset(t, attachedChangeset, assertions)
 			})
 		})

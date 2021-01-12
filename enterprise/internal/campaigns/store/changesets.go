@@ -98,7 +98,7 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *campaigns.Chang
 		return nil, err
 	}
 
-	assocsAsMap := make(map[int64]campaigns.CampaignChangeset, len(c.Campaigns))
+	assocsAsMap := make(map[int64]campaigns.CampaignAssoc, len(c.Campaigns))
 	for _, assoc := range c.Campaigns {
 		assocsAsMap[assoc.CampaignID] = assoc
 	}
@@ -724,12 +724,12 @@ func scanChangesets(rows *sql.Rows, queryErr error) ([]*campaigns.Changeset, err
 // It implements the sql.Scanner interface so it can be used as a scan destination,
 // similar to sql.NullString.
 type jsonCampaignChangesetSet struct {
-	Assocs *[]campaigns.CampaignChangeset
+	Assocs *[]campaigns.CampaignAssoc
 }
 
 // Scan implements the Scanner interface.
 func (n *jsonCampaignChangesetSet) Scan(value interface{}) error {
-	m := make(map[int64]campaigns.CampaignChangeset)
+	m := make(map[int64]campaigns.CampaignAssoc)
 
 	switch value := value.(type) {
 	case nil:
@@ -742,13 +742,13 @@ func (n *jsonCampaignChangesetSet) Scan(value interface{}) error {
 	}
 
 	if *n.Assocs == nil {
-		*n.Assocs = make([]campaigns.CampaignChangeset, 0, len(m))
+		*n.Assocs = make([]campaigns.CampaignAssoc, 0, len(m))
 	} else {
 		*n.Assocs = (*n.Assocs)[:0]
 	}
 
 	for id, assoc := range m {
-		*n.Assocs = append(*n.Assocs, campaigns.CampaignChangeset{CampaignID: id, Detach: assoc.Detach})
+		*n.Assocs = append(*n.Assocs, campaigns.CampaignAssoc{CampaignID: id, Detach: assoc.Detach})
 	}
 
 	return nil

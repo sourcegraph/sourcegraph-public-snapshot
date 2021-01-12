@@ -194,8 +194,8 @@ func (s ChangesetCheckState) Valid() bool {
 	}
 }
 
-// CampaignChangeset stores the details on the connection between the two.
-type CampaignChangeset struct {
+// CampaignAssoc stores the details of a association to a Campaign.
+type CampaignAssoc struct {
 	CampaignID int64 `json:"-"`
 	Detach     bool  `json:"detach"`
 }
@@ -208,7 +208,7 @@ type Changeset struct {
 	CreatedAt           time.Time
 	UpdatedAt           time.Time
 	Metadata            interface{}
-	Campaigns           []CampaignChangeset
+	Campaigns           []CampaignAssoc
 	ExternalID          string
 	ExternalServiceType string
 	// ExternalBranch should always be prefixed with refs/heads/. Call git.EnsureRefPrefix before setting this value.
