@@ -9,7 +9,8 @@
 <p>
 <span class="badge badge-experimental">Experimental</span> This feature is experimental and might change or be removed in the future. We've released it as an experimental feature to provide a preview of functionality we're working on.
 </p>
-<p><b>We're very much looking for input and feedback on this feature.</b> You can either [contact us directly](https://about.sourcegraph.com/contact), [file an issue](https://github.com/sourcegraph/sourcegraph), or [tweet at us](https://twitter.com/srcgraph).</p>
+
+<p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/srcgraph">tweet at us</a>.</p>
 
 <p>It's available in Sourcegraph 3.23 with <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.23.0 and later.</p>
 </aside>
@@ -45,7 +46,8 @@ transformChanges:
     - directory: client
       branch: hello-world-client # will replace the `branch` in the `changesetTemplate`
     - directory: docker-images
-      repository: github.com/sourcegraph/sourcegraph # Optional: only apply the rule in this repository
+      # Optional: only apply the rule in this repository
+      repository: github.com/sourcegraph/sourcegraph
       branch: hello-world-infra
     - directory: monitoring
       repository: github.com/sourcegraph/sourcegraph

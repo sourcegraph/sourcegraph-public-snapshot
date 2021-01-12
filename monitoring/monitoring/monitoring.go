@@ -75,6 +75,7 @@ func (c *Container) renderDashboard() *sdk.Board {
 			Type:  "custom",
 		},
 	}
+	board.Editable = false
 
 	description := sdk.NewText("")
 	description.Title = "" // Removes vertical space the title would otherwise take up

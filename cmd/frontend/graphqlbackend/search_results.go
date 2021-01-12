@@ -757,6 +757,7 @@ func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 	rightFileMatches := make(map[string]*FileMatchResolver)
 	rightRepoMatches := make(map[string]*RepositoryResolver)
 	rightCommitMatches := make(map[string]*CommitSearchResultResolver)
+	rightDiffMatches := make(map[string]*CommitSearchResultResolver)
 
 	// accumulate matches for the right subexpression in a lookup.
 	for _, r := range right.SearchResults {
@@ -769,7 +770,11 @@ func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 			continue
 		}
 		if commitMatch, ok := r.ToCommitSearchResult(); ok {
-			rightCommitMatches[commitMatch.url] = commitMatch
+			if commitMatch.DiffPreview() != nil {
+				rightDiffMatches[commitMatch.URL()] = commitMatch
+			} else {
+				rightCommitMatches[commitMatch.URL()] = commitMatch
+			}
 			continue
 		}
 		merged = append(merged, r)
@@ -801,11 +806,18 @@ func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 		}
 
 		if leftCommitMatch, ok := leftMatch.ToCommitSearchResult(); ok {
-			rightCommitMatch := rightCommitMatches[leftCommitMatch.url]
-			if rightCommitMatch == nil {
-				// no overlap with existing matches.
-				merged = append(merged, leftMatch)
-				count++
+			if leftCommitMatch.DiffPreview() != nil {
+				rightDiffMatch := rightDiffMatches[leftCommitMatch.URL()]
+				if rightDiffMatch == nil {
+					merged = append(merged, leftCommitMatch)
+					count++
+				}
+			} else {
+				rightCommitMatch := rightCommitMatches[leftCommitMatch.URL()]
+				if rightCommitMatch == nil {
+					merged = append(merged, leftCommitMatch)
+					count++
+				}
 			}
 			continue
 		}
@@ -819,6 +831,9 @@ func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 		merged = append(merged, v)
 	}
 	for _, v := range rightCommitMatches {
+		merged = append(merged, v)
+	}
+	for _, v := range rightDiffMatches {
 		merged = append(merged, v)
 	}
 
@@ -1756,12 +1771,12 @@ func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextPara
 	defer func() {
 		tr.Finish()
 	}()
-	fileResults, fileCommon, err := searchFilesInRepos(ctx, args)
+	fileResults, fileCommon, err := searchFilesInRepos(ctx, args, a.resultChannel)
 	if args.PatternInfo.IsStructuralPat && args.PatternInfo.FileMatchLimit == defaultMaxSearchResults && len(fileResults) == 0 && err == nil {
 		// No results for structural search? Automatically search again and force Zoekt
 		// to resolve more potential file matches by setting a higher FileMatchLimit.
 		args.PatternInfo.FileMatchLimit = 1000
-		fileResults, fileCommon, err = searchFilesInRepos(ctx, args)
+		fileResults, fileCommon, err = searchFilesInRepos(ctx, args, a.resultChannel)
 		if len(fileResults) == 0 {
 			// Still no results? Give up.
 			log15.Warn("Structural search gives up after more exhaustive attempt. Results may have been missed.")
@@ -1775,7 +1790,7 @@ func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextPara
 	for i := range fileResults {
 		results[i] = fileResults[i]
 	}
-	a.report(ctx, results, fileCommon, errors.Wrap(err, "text search failed"))
+	a.collect(ctx, results, fileCommon, errors.Wrap(err, "text search failed"))
 }
 
 func (a *aggregator) doDiffSearch(ctx context.Context, tp *search.TextParameters) {

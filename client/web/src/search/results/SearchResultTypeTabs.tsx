@@ -1,14 +1,13 @@
 import * as H from 'history'
 import * as React from 'react'
 import classNames from 'classnames'
-import { CaseSensitivityProps, InteractiveSearchProps, PatternTypeProps } from '..'
+import { CaseSensitivityProps, PatternTypeProps } from '..'
 import { SearchResultTabHeader } from './SearchResultTab'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 
 interface Props
     extends Omit<PatternTypeProps, 'setPatternType'>,
         Omit<CaseSensitivityProps, 'setCaseSensitivity'>,
-        Partial<Pick<InteractiveSearchProps, 'filtersInQuery'>>,
         VersionContextProps {
     location: H.Location
     history: H.History

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -15,7 +16,7 @@ func TestQueryResolver(t *testing.T) {
 	mockLSIFStore := NewMockLSIFStore()
 	mockCodeIntelAPI := NewMockCodeIntelAPI() // returns no dumps
 
-	resolver := NewResolver(mockDBStore, mockLSIFStore, mockCodeIntelAPI, nil, &observation.TestContext)
+	resolver := NewResolver(mockDBStore, mockLSIFStore, mockCodeIntelAPI, nil, &observation.TestContext, enqueuer.NewMockGitserverClient(), enqueuer.NewMockDBStore())
 	queryResolver, err := resolver.QueryResolver(context.Background(), &gql.GitBlobLSIFDataArgs{
 		Repo:      &types.Repo{ID: 50},
 		Commit:    api.CommitID("deadbeef"),

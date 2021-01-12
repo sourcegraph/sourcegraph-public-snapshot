@@ -855,23 +855,21 @@ Refer to the [alert solutions reference](./alert_solutions.md#github-proxy-pods-
 
 ## Postgres
 
-<p class="subtitle">Metrics from postgres_exporter.</p>
-
-### Postgres: Default postgres dashboard
+<p class="subtitle">Postgres metrics, exported from postgres_exporter (only available on Kubernetes).</p>
 
 #### postgres: connections
 
-This cloud panel indicates connections.
+This cloud panel indicates active connections.
 
 Refer to the [alert solutions reference](./alert_solutions.md#postgres-connections) for relevant alerts.
 
 <br />
 
-#### postgres: transactions
+#### postgres: transaction_durations
 
-This cloud panel indicates transaction durations.
+This cloud panel indicates maximum transaction durations.
 
-Refer to the [alert solutions reference](./alert_solutions.md#postgres-transactions) for relevant alerts.
+Refer to the [alert solutions reference](./alert_solutions.md#postgres-transaction-durations) for relevant alerts.
 
 <br />
 
@@ -879,7 +877,9 @@ Refer to the [alert solutions reference](./alert_solutions.md#postgres-transacti
 
 #### postgres: postgres_up
 
-This cloud panel indicates current db status.
+This cloud panel indicates database availability.
+
+A non-zero value indicates the database is online.
 
 Refer to the [alert solutions reference](./alert_solutions.md#postgres-postgres-up) for relevant alerts.
 
@@ -889,13 +889,17 @@ Refer to the [alert solutions reference](./alert_solutions.md#postgres-postgres-
 
 This cloud panel indicates errors scraping postgres exporter.
 
+This value indicates issues retrieving metrics from postgres_exporter.
+
 Refer to the [alert solutions reference](./alert_solutions.md#postgres-pg-exporter-err) for relevant alerts.
 
 <br />
 
 #### postgres: migration_in_progress
 
-This cloud panel indicates schema migration status (where 0 is no migration in progress).
+This cloud panel indicates active schema migration.
+
+A 0 value indicates that no migration is in progress.
 
 Refer to the [alert solutions reference](./alert_solutions.md#postgres-migration-in-progress) for relevant alerts.
 
@@ -935,35 +939,13 @@ Refer to the [alert solutions reference](./alert_solutions.md#postgres-provision
 
 <br />
 
-#### postgres: provisioning_container_cpu_usage_long_term
+### Postgres: Kubernetes monitoring (ignore if using Docker Compose or server)
 
-This code-intel panel indicates container cpu usage total (90th percentile over 1d) across all cores by instance.
+#### postgres: pods_available_percentage
 
-Refer to the [alert solutions reference](./alert_solutions.md#postgres-provisioning-container-cpu-usage-long-term) for relevant alerts.
+This cloud panel indicates percentage pods available.
 
-<br />
-
-#### postgres: provisioning_container_memory_usage_long_term
-
-This code-intel panel indicates container memory usage (1d maximum) by instance.
-
-Refer to the [alert solutions reference](./alert_solutions.md#postgres-provisioning-container-memory-usage-long-term) for relevant alerts.
-
-<br />
-
-#### postgres: provisioning_container_cpu_usage_short_term
-
-This code-intel panel indicates container cpu usage total (5m maximum) across all cores by instance.
-
-Refer to the [alert solutions reference](./alert_solutions.md#postgres-provisioning-container-cpu-usage-short-term) for relevant alerts.
-
-<br />
-
-#### postgres: provisioning_container_memory_usage_short_term
-
-This code-intel panel indicates container memory usage (5m maximum) by instance.
-
-Refer to the [alert solutions reference](./alert_solutions.md#postgres-provisioning-container-memory-usage-short-term) for relevant alerts.
+Refer to the [alert solutions reference](./alert_solutions.md#postgres-pods-available-percentage) for relevant alerts.
 
 <br />
 

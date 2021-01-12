@@ -1,5 +1,5 @@
 import { Position, Range } from '@sourcegraph/extension-api-types'
-import { upperFirst } from 'lodash'
+import { upperFirst, toLower } from 'lodash'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import ExportIcon from 'mdi-react/ExportIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
@@ -10,7 +10,7 @@ import { PhabricatorIcon } from '../../../../shared/src/components/icons' // TOD
 import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { fetchFileExternalLinks } from '../backend'
 import { RevisionSpec, FileSpec } from '../../../../shared/src/util/url'
-import { ExternalLinkFields, RepositoryFields } from '../../graphql-operations'
+import { ExternalLinkFields, RepositoryFields, ExternalServiceKind } from '../../graphql-operations'
 import { useObservable } from '../../../../shared/src/util/useObservable'
 import GitlabIcon from 'mdi-react/GitlabIcon'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -162,12 +162,15 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
     // Only show the first external link for now.
     const externalURL = externalURLs[0]
 
-    const { displayName, icon } = serviceTypeDisplayNameAndIcon(externalURL.serviceType)
+    const { displayName, icon } = serviceKindDisplayNameAndIcon(externalURL.serviceKind)
     const Icon = icon || ExportIcon
 
     // Extract url to add branch, line numbers or commit range.
     let url = externalURL.url
-    if (externalURL.serviceType === 'github' || externalURL.serviceType === 'gitlab') {
+    if (
+        externalURL.serviceKind === ExternalServiceKind.GITHUB ||
+        externalURL.serviceKind === ExternalServiceKind.GITLAB
+    ) {
         // If in a branch, add branch path to the code host URL.
         if (props.revision && props.revision !== defaultBranch && !fileExternalLinksOrError) {
             url += `/tree/${props.revision}`
@@ -178,7 +181,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
         }
         // Add range or position path to the code host URL.
         if (props.range) {
-            const rangeEndPrefix = externalURL.serviceType === 'gitlab' ? '' : 'L'
+            const rangeEndPrefix = externalURL.serviceKind === ExternalServiceKind.GITLAB ? '' : 'L'
             url += `#L${props.range.start.line}-${rangeEndPrefix}${props.range.end.line}`
         } else if (props.position) {
             url += `#L${props.position.line}`
@@ -207,7 +210,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
                 url={url}
                 toggle={toggle}
                 isOpen={showPopover}
-                serviceType={externalURL.serviceType}
+                serviceKind={externalURL.serviceKind}
                 onClose={onClose}
                 onRejection={onRejection}
                 onClickInstall={onClickInstall}
@@ -217,23 +220,25 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
     )
 }
 
-export function serviceTypeDisplayNameAndIcon(
-    serviceType: string | null
+export function serviceKindDisplayNameAndIcon(
+    serviceKind: ExternalServiceKind | null
 ): { displayName: string; icon?: React.ComponentType<{ className?: string }> } {
-    switch (serviceType) {
-        case 'github':
-            return { displayName: 'GitHub', icon: GithubIcon }
-        case 'gitlab':
-            return { displayName: 'GitLab', icon: GitlabIcon }
-        case 'bitbucketServer':
-            // TODO: Why is bitbucketServer (correctly) camelCase but
-            // awscodecommit is (correctly) lowercase? Why is serviceType
-            // not type-checked for validity?
-            return { displayName: 'Bitbucket Server', icon: BitbucketIcon }
-        case 'phabricator':
-            return { displayName: 'Phabricator', icon: PhabricatorIcon }
-        case 'awscodecommit':
-            return { displayName: 'AWS CodeCommit' }
+    if (!serviceKind) {
+        return { displayName: 'code host' }
     }
-    return { displayName: serviceType ? upperFirst(serviceType) : 'code host' }
+
+    switch (serviceKind) {
+        case ExternalServiceKind.GITHUB:
+            return { displayName: 'GitHub', icon: GithubIcon }
+        case ExternalServiceKind.GITLAB:
+            return { displayName: 'GitLab', icon: GitlabIcon }
+        case ExternalServiceKind.BITBUCKETSERVER:
+            return { displayName: 'Bitbucket Server', icon: BitbucketIcon }
+        case ExternalServiceKind.PHABRICATOR:
+            return { displayName: 'Phabricator', icon: PhabricatorIcon }
+        case ExternalServiceKind.AWSCODECOMMIT:
+            return { displayName: 'AWS CodeCommit' }
+        default:
+            return { displayName: upperFirst(toLower(serviceKind)) }
+    }
 }

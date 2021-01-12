@@ -494,7 +494,7 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*se
 		return nil, err
 	}
 
-	fileResults, _, err := searchFilesInRepos(ctx, &args)
+	fileResults, _, err := searchFilesInRepos(ctx, &args, nil)
 	if err != nil {
 		return nil, err
 	}

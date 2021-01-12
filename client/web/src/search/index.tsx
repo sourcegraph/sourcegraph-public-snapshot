@@ -1,5 +1,4 @@
 import { escapeRegExp } from 'lodash'
-import { FiltersToTypeAndValue } from '../../../shared/src/search/interactive/util'
 import { replaceRange } from '../../../shared/src/util/strings'
 import { discreteValueAliases } from '../../../shared/src/search/query/filters'
 import { VersionContext } from '../schema/site.schema'
@@ -16,9 +15,6 @@ import { findFilter, FilterKind } from '../../../shared/src/search/query/validat
  * will be parsed and detected.
  *
  * @param query the URL query parameters
- * @param interactiveMode whether to parse the search URL query in interactive mode, reading query params such as `repo=` and `file=`.
- * @param navbarQueryOnly whether to only parse the query for the main query input, i.e. only the value passed to the `q=`
- * URL query parameter, as this represents the query that appears in the main query input in both modes.
  *
  */
 export function parseSearchURLQuery(query: string): string | undefined {
@@ -147,14 +143,6 @@ export interface PatternTypeProps {
 export interface CaseSensitivityProps {
     caseSensitive: boolean
     setCaseSensitivity: (caseSensitive: boolean) => void
-}
-
-export interface InteractiveSearchProps {
-    filtersInQuery: FiltersToTypeAndValue
-    onFiltersInQueryChange: (filtersInQuery: FiltersToTypeAndValue) => void
-    splitSearchModes: boolean
-    interactiveSearchMode: boolean
-    toggleSearchMode: (event: React.MouseEvent<HTMLAnchorElement>) => void
 }
 
 export interface CopyQueryButtonProps {

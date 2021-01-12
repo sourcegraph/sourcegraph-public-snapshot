@@ -47,7 +47,6 @@ export function defaultPatternTypeFromSettings(settingsCascade: SettingsCascadeO
 export function experimentalFeaturesFromSettings(
     settingsCascade: SettingsCascadeOrError
 ): {
-    splitSearchModes: boolean
     copyQueryButton: boolean
     showRepogroupHomepage: boolean
     showOnboardingTour: boolean
@@ -61,7 +60,6 @@ export function experimentalFeaturesFromSettings(
         {}
 
     const {
-        splitSearchModes = false,
         copyQueryButton = false,
         showRepogroupHomepage = false,
         showOnboardingTour = true, // Default to true if not set
@@ -72,7 +70,6 @@ export function experimentalFeaturesFromSettings(
     } = experimentalFeatures
 
     return {
-        splitSearchModes,
         copyQueryButton,
         showRepogroupHomepage,
         showOnboardingTour,

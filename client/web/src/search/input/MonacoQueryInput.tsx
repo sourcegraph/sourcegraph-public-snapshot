@@ -27,7 +27,7 @@ import {
 import { SearchPatternType } from '../../graphql-operations'
 
 export interface MonacoQueryInputProps
-    extends Omit<TogglesProps, 'navbarSearchQuery' | 'filtersInQuery'>,
+    extends Omit<TogglesProps, 'navbarSearchQuery'>,
         ThemeProps,
         CaseSensitivityProps,
         PatternTypeProps,
@@ -262,7 +262,7 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
                             id="monaco-query-input"
                             language={SOURCEGRAPH_SEARCH}
                             value={this.props.queryState.query}
-                            height={16}
+                            height={17}
                             isLightTheme={this.props.isLightTheme}
                             editorWillMount={this.editorWillMount}
                             onEditorCreated={this.onEditorCreated}
@@ -284,7 +284,7 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
 
     private onChange = (editor: Monaco.editor.IStandaloneCodeEditor, query: string): void => {
         // Cursor position is irrelevant for the Monaco query input.
-        this.props.onChange({ query, cursorPosition: 0, fromUserInput: true })
+        this.props.onChange({ query, fromUserInput: true })
     }
 
     private onSubmit = (): void => {

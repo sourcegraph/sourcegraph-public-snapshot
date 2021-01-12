@@ -156,7 +156,7 @@ const steps: Step[] = [
                     anyoneCanAddSelf: true,
                     attendees: [config.teamEmail],
                     startDateTime: new Date(config.oneWorkingDayAfterRelease).toISOString(),
-                    endDateTime: addMinutes(new Date(config.releaseDateTime), 1).toISOString(),
+                    endDateTime: addMinutes(new Date(config.oneWorkingDayAfterRelease), 1).toISOString(),
                 },
             ]
 
@@ -633,7 +633,7 @@ Campaign: ${campaignURL}`,
             const githubClient = await getAuthenticatedGitHubClient()
 
             // Set up announcement message
-            const versionAnchor = release.format().replaceAll('.', '-')
+            const versionAnchor = release.format().replace(/\./g, '-')
             const campaignURL = campaigns.campaignURL(
                 campaigns.releaseTrackingCampaign(release.version, await campaigns.sourcegraphCLIConfig())
             )
