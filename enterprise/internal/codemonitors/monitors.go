@@ -107,19 +107,6 @@ func (s *Store) TotalCountMonitors(ctx context.Context, userID int32) (count int
 	return count, err
 }
 
-const remainingCountMonitorsFmtStr = `
-SELECT COUNT(*)
-FROM cm_monitors
-WHERE namespace_user_id = %s
-AND id > %s;
-`
-
-// RemainingCountMonitors provides the number of unreturned code monitors after the provided ID
-func (s *Store) RemainingCountMonitors(ctx context.Context, userID int32, lastID int64) (count int32, err error) {
-	err = s.QueryRow(ctx, sqlf.Sprintf(remainingCountMonitorsFmtStr, userID, lastID)).Scan(&count)
-	return count, err
-}
-
 const monitorsFmtStr = `
 SELECT id, created_by, created_at, changed_by, changed_at, description, enabled, namespace_user_id, namespace_org_id
 FROM cm_monitors

@@ -36,22 +36,24 @@ func (r *Resolver) Now() time.Time {
 }
 
 func (r *Resolver) Monitors(ctx context.Context, userID int32, args *graphqlbackend.ListMonitorsArgs) (graphqlbackend.MonitorConnectionResolver, error) {
-	ms, err := r.store.Monitors(ctx, userID, args)
+	// Request one extra to determine if there are more pages
+	newArgs := *args
+	newArgs.First += 1
+
+	ms, err := r.store.Monitors(ctx, userID, &newArgs)
 	if err != nil {
 		return nil, err
 	}
 
-	total, err := r.store.TotalCountMonitors(ctx, userID)
+	totalCount, err := r.store.TotalCountMonitors(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	var remaining int32
-	if len(ms) != 0 {
-		remaining, err = r.store.RemainingCountMonitors(ctx, userID, ms[len(ms)-1].ID)
-		if err != nil {
-			return nil, err
-		}
+	hasNextPage := false
+	if len(ms) == int(args.First)+1 {
+		hasNextPage = true
+		ms = ms[:len(ms)-1]
 	}
 
 	mrs := make([]graphqlbackend.MonitorResolver, 0, len(ms))
@@ -62,7 +64,7 @@ func (r *Resolver) Monitors(ctx context.Context, userID int32, args *graphqlback
 		})
 	}
 
-	return &monitorConnection{Resolver: r, monitors: mrs, totalCount: total, remaining: remaining}, nil
+	return &monitorConnection{Resolver: r, monitors: mrs, totalCount: totalCount, hasNextPage: hasNextPage}, nil
 }
 
 func (r *Resolver) MonitorByID(ctx context.Context, ID graphql.ID) (m graphqlbackend.MonitorResolver, err error) {
@@ -432,9 +434,9 @@ func ownerForID64Query(ctx context.Context, monitorID int64) (*sqlf.Query, error
 //
 type monitorConnection struct {
 	*Resolver
-	monitors   []graphqlbackend.MonitorResolver
-	totalCount int32
-	remaining  int32
+	monitors    []graphqlbackend.MonitorResolver
+	totalCount  int32
+	hasNextPage bool
 }
 
 func (m *monitorConnection) Nodes(ctx context.Context) ([]graphqlbackend.MonitorResolver, error) {
@@ -446,7 +448,7 @@ func (m *monitorConnection) TotalCount(ctx context.Context) (int32, error) {
 }
 
 func (m *monitorConnection) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	if len(m.monitors) == 0 || m.remaining == 0 {
+	if len(m.monitors) == 0 || !m.hasNextPage {
 		return graphqlutil.HasNextPage(false), nil
 	}
 	return graphqlutil.NextPageCursor(string(m.monitors[len(m.monitors)-1].ID())), nil
