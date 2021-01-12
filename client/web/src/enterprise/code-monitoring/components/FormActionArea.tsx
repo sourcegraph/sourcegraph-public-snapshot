@@ -31,7 +31,7 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
     disabled,
     authenticatedUser,
     onActionsChange,
-    description
+    description,
 }) => {
     const [showEmailNotificationForm, setShowEmailNotificationForm] = useState(false)
     const toggleEmailNotificationForm: React.FormEventHandler = useCallback(event => {
@@ -107,7 +107,7 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
     )
 
     useEffect(() => {
-        if (isTestEmailSent && !description || !showEmailNotificationForm) {
+        if ((isTestEmailSent && !description) || !showEmailNotificationForm) {
             setIsTestEmailSent(false)
         }
     }, [isTestEmailSent, description, showEmailNotificationForm])
@@ -119,11 +119,10 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
         return isTestEmailSent ? 'Test email sent!' : 'Send test email'
     }, [isTestEmailSent, triggerTestEmailResult])
 
-    const isSendTestEmailButtonDisabled = useMemo(() => triggerTestEmailResult === LOADING || isTestEmailSent || !description, [
-        isTestEmailSent,
-        triggerTestEmailResult,
-        description
-    ])
+    const isSendTestEmailButtonDisabled = useMemo(
+        () => triggerTestEmailResult === LOADING || isTestEmailSent || !description,
+        [isTestEmailSent, triggerTestEmailResult, description]
+    )
 
     return (
         <>
@@ -173,12 +172,22 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                             {sendTestEmailButtonText}
                         </button>
                         {isTestEmailSent && triggerTestEmailResult !== LOADING && (
-                            <button type="button" className="btn btn-sm btn-link p-0" onClick={triggerTestEmailActionRequest}>
+                            <button
+                                type="button"
+                                className="btn btn-sm btn-link p-0"
+                                onClick={triggerTestEmailActionRequest}
+                            >
                                 Send again
                             </button>
                         )}
-                        {!description && <div className="action-area__test-action-error mt-2">Please provide a name for the code monitor before sending a test</div>}
-                        {isErrorLike(triggerTestEmailResult) && <div className="action-area__test-action-error mt-2">{triggerTestEmailResult.message}</div>}
+                        {!description && (
+                            <div className="action-area__test-action-error mt-2">
+                                Please provide a name for the code monitor before sending a test
+                            </div>
+                        )}
+                        {isErrorLike(triggerTestEmailResult) && (
+                            <div className="action-area__test-action-error mt-2">{triggerTestEmailResult.message}</div>
+                        )}
                     </div>
                     <div className="flex">
                         <Toggle
