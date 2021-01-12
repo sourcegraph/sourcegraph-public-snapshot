@@ -240,7 +240,7 @@ func HandleFilePathPatterns(query *search.TextPatternInfo) (zoektquery.Q, error)
 	return zoektquery.NewAnd(and...), nil
 }
 
-func buildQuery(args *search.TextParameters, repos *indexedRepoRevs, filePathPatterns zoektquery.Q, shortcircuit bool) (zoektquery.Q, error) {
+func BuildQuery(args *search.TextParameters, repos *IndexedRepoRevs, filePathPatterns zoektquery.Q, shortcircuit bool) (zoektquery.Q, error) {
 	regexString := StructuralPatToRegexpQuery(args.PatternInfo.Pattern, shortcircuit)
 	if len(regexString) == 0 {
 		return &zoektquery.Const{Value: true}, nil
@@ -250,7 +250,7 @@ func buildQuery(args *search.TextParameters, repos *indexedRepoRevs, filePathPat
 		return nil, err
 	}
 	return zoektquery.NewAnd(
-		&zoektquery.RepoBranches{Set: repos.repoBranches},
+		&zoektquery.RepoBranches{Set: repos.RepoBranches},
 		filePathPatterns,
 		&zoektquery.Regexp{
 			Regexp:        re,
@@ -266,12 +266,12 @@ func buildQuery(args *search.TextParameters, repos *indexedRepoRevs, filePathPat
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, since func(t time.Time) time.Duration) (fm []*FileMatchResolver, limitHit bool, partial map[api.RepoID]struct{}, err error) {
-	if len(repos.repoRevs) == 0 {
+func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, repos *IndexedRepoRevs, since func(t time.Time) time.Duration) (fm []*FileMatchResolver, limitHit bool, partial map[api.RepoID]struct{}, err error) {
+	if len(repos.RepoRevs) == 0 {
 		return nil, false, nil, nil
 	}
 
-	k := zoektResultCountFactor(len(repos.repoBranches), args.PatternInfo.FileMatchLimit, args.Mode == search.ZoektGlobalSearch)
+	k := zoektResultCountFactor(len(repos.RepoBranches), args.PatternInfo.FileMatchLimit, args.Mode == search.ZoektGlobalSearch)
 	searchOpts := zoektSearchOpts(ctx, k, args.PatternInfo)
 
 	if args.UseFullDeadline {
@@ -296,7 +296,7 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 	}
 
 	t0 := time.Now()
-	q, err := buildQuery(args, repos, filePathPatterns, true)
+	q, err := BuildQuery(args, repos, filePathPatterns, true)
 	if err != nil {
 		return nil, false, nil, err
 	}
@@ -313,7 +313,7 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 	// If the previous indexed search did not return a substantial number of matching file candidates or count was
 	// manually specified, run a more complete and expensive search.
 	if resp.FileCount < 10 || args.PatternInfo.FileMatchLimit != defaultMaxSearchResults {
-		q, err = buildQuery(args, repos, filePathPatterns, false)
+		q, err = BuildQuery(args, repos, filePathPatterns, false)
 		if err != nil {
 			return nil, false, nil, err
 		}
@@ -348,7 +348,7 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 			fileLimitHit = true
 			limitHit = true
 		}
-		repoRev := repos.repoRevs[file.Repository]
+		repoRev := repos.RepoRevs[file.Repository]
 		if repoResolvers[repoRev.Repo.Name] == nil {
 			repoResolvers[repoRev.Repo.Name] = &RepositoryResolver{innerRepo: repoRev.Repo.ToRepo()}
 		}

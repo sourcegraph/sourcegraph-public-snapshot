@@ -7,11 +7,9 @@ import (
 	"time"
 
 	"github.com/google/zoekt"
-	zoektquery "github.com/google/zoekt/query"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
-	"regexp/syntax"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -27,50 +25,6 @@ var (
 )
 
 const defaultMaxSearchResults = 30
-
-// indexedRepoRevs creates both the Sourcegraph and Zoekt representation of a
-// list of repository and refs to search.
-type indexedRepoRevs struct {
-	// repoRevs is the Sourcegraph representation of a the list of repoRevs
-	// repository and revisions to search.
-	repoRevs map[string]*search.RepositoryRevisions
-
-	// repoBranches will be used when we query zoekt. The order of branches
-	// must match that in a reporev such that we can map back results. IE this
-	// invariant is maintained:
-	//
-	//  repoBranches[reporev.Repo.Name][i] <-> reporev.Revs[i]
-	repoBranches map[string][]string
-
-	// NotHEADOnlySearch is true if we are searching a branch other than HEAD.
-	//
-	// This option can be removed once structural search supports searching
-	// more than HEAD.
-	NotHEADOnlySearch bool
-}
-
-// GetRepoInputRev returns the repo and inputRev associated with file.
-func (rb *indexedRepoRevs) GetRepoInputRev(file *zoekt.FileMatch) (repo *types.RepoName, inputRevs []string) {
-	repoRev := rb.repoRevs[file.Repository]
-
-	inputRevs = make([]string, 0, len(file.Branches))
-	for _, branch := range file.Branches {
-		for i, b := range rb.repoBranches[file.Repository] {
-			if branch == b {
-				// RevSpec is guaranteed to be explicit via zoektIndexedRepos
-				inputRevs = append(inputRevs, repoRev.Revs[i].RevSpec)
-			}
-		}
-	}
-
-	if len(inputRevs) == 0 {
-		// Did not find a match. This is unexpected, but we can fallback to
-		// file.Version to generate correct links.
-		inputRevs = append(inputRevs, file.Version)
-	}
-
-	return repoRev.Repo, inputRevs
-}
 
 func zoektResultCountFactor(numRepos int, fileMatchLimit int32, globalSearch bool) (k int) {
 	if globalSearch {
@@ -168,26 +122,6 @@ func contextWithoutDeadline(cOld context.Context) (context.Context, context.Canc
 	return cNew, cancel
 }
 
-func buildQuery(args *search.TextParameters, repos *indexedRepoRevs, filePathPatterns zoektquery.Q, shortcircuit bool) (zoektquery.Q, error) {
-	regexString := graphqlbackend.StructuralPatToRegexpQuery(args.PatternInfo.Pattern, shortcircuit)
-	if len(regexString) == 0 {
-		return &zoektquery.Const{Value: true}, nil
-	}
-	re, err := syntax.Parse(regexString, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
-	if err != nil {
-		return nil, err
-	}
-	return zoektquery.NewAnd(
-		&zoektquery.RepoBranches{Set: repos.repoBranches},
-		filePathPatterns,
-		&zoektquery.Regexp{
-			Regexp:        re,
-			CaseSensitive: true,
-			Content:       true,
-		},
-	), nil
-}
-
 var errNoResultsInTimeout = errors.New("no results found in specified timeout")
 
 // zoektLimitMatches is the logic which limits files based on
@@ -238,12 +172,12 @@ func zoektLimitMatches(limitHit bool, limit int, files []zoekt.FileMatch, getRep
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, since func(t time.Time) time.Duration) (fm []*graphqlbackend.FileMatchResolver, limitHit bool, partial map[api.RepoID]struct{}, err error) {
-	if len(repos.repoRevs) == 0 {
+func zoektSearch(ctx context.Context, args *search.TextParameters, repos *graphqlbackend.IndexedRepoRevs, since func(t time.Time) time.Duration) (fm []*graphqlbackend.FileMatchResolver, limitHit bool, partial map[api.RepoID]struct{}, err error) {
+	if len(repos.RepoRevs) == 0 {
 		return nil, false, nil, nil
 	}
 
-	k := zoektResultCountFactor(len(repos.repoBranches), args.PatternInfo.FileMatchLimit, args.Mode == search.ZoektGlobalSearch)
+	k := zoektResultCountFactor(len(repos.RepoBranches), args.PatternInfo.FileMatchLimit, args.Mode == search.ZoektGlobalSearch)
 	searchOpts := zoektSearchOpts(ctx, k, args.PatternInfo)
 
 	if args.UseFullDeadline {
@@ -268,7 +202,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 	}
 
 	t0 := time.Now()
-	q, err := buildQuery(args, repos, filePathPatterns, true)
+	q, err := graphqlbackend.BuildQuery(args, repos, filePathPatterns, true)
 	if err != nil {
 		return nil, false, nil, err
 	}
@@ -285,7 +219,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 	// If the previous indexed search did not return a substantial number of matching file candidates or count was
 	// manually specified, run a more complete and expensive search.
 	if resp.FileCount < 10 || args.PatternInfo.FileMatchLimit != defaultMaxSearchResults {
-		q, err = buildQuery(args, repos, filePathPatterns, false)
+		q, err = graphqlbackend.BuildQuery(args, repos, filePathPatterns, false)
 		if err != nil {
 			return nil, false, nil, err
 		}
@@ -320,7 +254,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 			fileLimitHit = true
 			limitHit = true
 		}
-		repoRev := repos.repoRevs[file.Repository]
+		repoRev := repos.RepoRevs[file.Repository]
 		if repoResolvers[repoRev.Repo.Name] == nil {
 			repoResolvers[repoRev.Repo.Name] = graphqlbackend.NewRepositoryResolver(repoRev.Repo.ToRepo())
 		}

@@ -226,7 +226,7 @@ func TestBuildQuery(t *testing.T) {
 	pattern := ":[x~*]"
 	want := "error parsing regexp: missing argument to repetition operator: `*`"
 	t.Run("build query", func(t *testing.T) {
-		_, err := buildQuery(
+		_, err := BuildQuery(
 			&search.TextParameters{
 				PatternInfo: &search.TextPatternInfo{Pattern: pattern},
 			},

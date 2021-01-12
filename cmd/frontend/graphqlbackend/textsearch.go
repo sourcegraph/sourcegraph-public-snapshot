@@ -330,7 +330,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, c chan
 		indexed = &indexedSearchRequest{
 			args:  args,
 			typ:   indexedTyp,
-			repos: &indexedRepoRevs{},
+			repos: &IndexedRepoRevs{},
 		}
 	} else {
 		indexed, err = newIndexedSearchRequest(ctx, args, indexedTyp)
