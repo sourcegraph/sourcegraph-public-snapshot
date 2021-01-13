@@ -216,7 +216,7 @@
     "open": "^7.0.4",
     "optimize-css-assets-webpack-plugin": "^5.0.3",
     "p-retry": "^4.2.0",
-    "p-timeout": "^3.2.0",
+    "p-timeout": "^4.1.0",
     "postcss": "^8.2.4",
     "postcss-focus-visible": "^5.0.0",
     "postcss-loader": "^4.1.0",
