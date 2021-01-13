@@ -41,6 +41,7 @@ const (
 	routeRepoTags       = "repo-tags"
 	routeRepoCompare    = "repo-compare"
 	routeRepoStats      = "repo-stats"
+	routeRepoSymbols    = "repo-symbols"
 	routeInsights       = "insights"
 	routeCampaigns      = "campaigns"
 	routeCodeMonitoring = "code-monitoring"
@@ -69,6 +70,7 @@ const (
 	routeSubscriptions  = "subscriptions"
 	routeStats          = "stats"
 	routeViews          = "views"
+	// routeGraphs         = "graphs"
 
 	routeSearchQueryBuilder = "search.query-builder"
 	routeSearchStream       = "search.stream"
@@ -139,10 +141,11 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/subscriptions").Methods("GET").Name(routeSubscriptions)
 	r.PathPrefix("/stats").Methods("GET").Name(routeStats)
 	r.PathPrefix("/views").Methods("GET").Name(routeViews)
+	// r.PathPrefix("/graphs").Methods("GET").Name(routeGraphs)
 
 	// Repogroup pages. Must mirror web/src/Layout.tsx
 	if envvar.SourcegraphDotComMode() {
-		repogroups := []string{"refactor-python2-to-3", "kubernetes", "golang", "react-hooks", "android", "stanford"}
+		repogroups := []string{"refactor-python2-to-3", "kubernetes", "golang", "react-hooks", "android", "stanford", "cncf"}
 		r.Path("/{Path:(?:" + strings.Join(repogroups, "|") + ")}").Methods("GET").Name(routeRepoGroups)
 		r.Path("/cncf").Methods("GET").Name(routeCncf)
 	}
@@ -174,6 +177,7 @@ func newRouter() *mux.Router {
 	repo.PathPrefix("/tags").Methods("GET").Name(routeRepoTags)
 	repo.PathPrefix("/compare").Methods("GET").Name(routeRepoCompare)
 	repo.PathPrefix("/stats").Methods("GET").Name(routeRepoStats)
+	repo.PathPrefix("/symbols").Methods("GET").Name(routeRepoSymbols)
 
 	// legacy redirects
 	repo.Path("/info").Methods("GET").Name(routeLegacyRepoLanding)
@@ -217,6 +221,7 @@ func initRouter() {
 	router.Get(routeRepoTags).Handler(handler(serveBrandedPageString("Tags", nil)))
 	router.Get(routeRepoCompare).Handler(handler(serveBrandedPageString("Compare", nil)))
 	router.Get(routeRepoStats).Handler(handler(serveBrandedPageString("Stats", nil)))
+	router.Get(routeRepoSymbols).Handler(handler(serveBrandedPageString("Symbols", nil)))
 	router.Get(routeSurvey).Handler(handler(serveBrandedPageString("Survey", nil)))
 	router.Get(routeSurveyScore).Handler(handler(serveBrandedPageString("Survey", nil)))
 	router.Get(routeRegistry).Handler(handler(serveBrandedPageString("Registry", nil)))
@@ -226,6 +231,7 @@ func initRouter() {
 	router.Get(routeSubscriptions).Handler(handler(serveBrandedPageString("Subscriptions", nil)))
 	router.Get(routeStats).Handler(handler(serveBrandedPageString("Stats", nil)))
 	router.Get(routeViews).Handler(handler(serveBrandedPageString("View", nil)))
+	// router.Get(routeGraphs).Handler(handler(serveBrandedPageString("Graphs", nil)))
 
 	router.Get(routeUserSettings).Handler(handler(serveBrandedPageString("User settings", nil)))
 	router.Get(routeUserRedirect).Handler(handler(serveBrandedPageString("User", nil)))
