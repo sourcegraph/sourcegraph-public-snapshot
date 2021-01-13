@@ -65,13 +65,18 @@ var (
 			Name:        "fs_inodes_used",
 			Description: "fs inodes in use by instance",
 			Query:       fmt.Sprintf(`sum by (name)(container_fs_inodes_total{%s})`, CadvisorNameMatcher(containerName)),
-			Warning:     monitoring.Alert().GreaterOrEqual(3e+06),
 			Panel:       monitoring.Panel().LegendFormat("{{name}}"),
+			NoAlert:     true,
 			Owner:       owner,
-			PossibleSolutions: `
-				- Refer to your OS or cloud provider's documentation for how to increase inodes.
-				- **Kubernetes:** consider provisioning more machines with less resources.
-			`,
+			Interpretation: strings.Replace(`
+				This value indicates the number of [filesystem inodes](https://en.wikipedia.org/wiki/Inode) held by containers of this service.
+				When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself.
+
+				If a high value or spikes here correlate with {{CONTAINER_NAME}} issues, the following might help:
+
+				- **Increase available inodes**: Refer to your OS or cloud provider's documentation for how to increase inodes allowed on a machine.
+				- **Kubernetes:** consider provisioning more machines for {{CONTAINER_NAME}} with less resources each.
+			`, "{{CONTAINER_NAME}}", containerName, -1),
 		}
 	}
 )
