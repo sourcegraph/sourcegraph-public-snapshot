@@ -464,7 +464,7 @@ function search({ query, version, patternType, versionContext, trace }: StreamSe
             parameters.push(['vc', versionContext])
         }
         if (trace) {
-            parameters.push(['trace', '1'])
+            parameters.push(['trace', trace])
         }
         const parameterEncoded = parameters.map(([k, v]) => k + '=' + encodeURIComponent(v)).join('&')
 
