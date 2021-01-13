@@ -944,7 +944,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#postgres-provision
 
 <br />
 
-### Postgres: Kubernetes monitoring (only available on Kubernetes)
+### Postgres: Kubernetes monitoring (ignore if using Docker Compose or server)
 
 #### postgres: pods_available_percentage
 
