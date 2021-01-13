@@ -401,7 +401,6 @@ func RepoUpdater() *monitoring.Container {
 					},
 					{
 						shared.ContainerRestarts("repo-updater", monitoring.ObservableOwnerCloud).Observable(),
-						shared.ContainerFsInodes("repo-updater", monitoring.ObservableOwnerCloud).Observable(),
 					},
 				},
 			},

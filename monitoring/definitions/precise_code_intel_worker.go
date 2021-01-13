@@ -205,7 +205,6 @@ func PreciseCodeIntelWorker() *monitoring.Container {
 					},
 					{
 						shared.ContainerRestarts("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel).Observable(),
-						shared.ContainerFsInodes("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel).Observable(),
 					},
 				},
 			},

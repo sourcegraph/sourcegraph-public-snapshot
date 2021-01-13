@@ -49,7 +49,6 @@ func Searcher() *monitoring.Container {
 					},
 					{
 						shared.ContainerRestarts("searcher", monitoring.ObservableOwnerSearch).Observable(),
-						shared.ContainerFsInodes("searcher", monitoring.ObservableOwnerSearch).Observable(),
 					},
 				},
 			},

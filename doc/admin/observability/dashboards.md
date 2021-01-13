@@ -523,21 +523,6 @@ Refer to the [alert solutions reference](./alert_solutions.md#frontend-container
 
 <br />
 
-#### frontend: fs_inodes_used
-
-This cloud panel indicates fs inodes in use by instance.
-
-This value indicates the number of [filesystem inodes](https://en.wikipedia.org/wiki/Inode) held by containers of this service.
-When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself.
-
-If a high value or spikes here correlate with (frontend|sourcegraph-frontend) issues, the following might help:
-
-- **Increase available inodes**: Refer to your OS or cloud provider documentation for how to increase inodes allowed on a machine.
-- **Kubernetes:** consider provisioning more machines for (frontend|sourcegraph-frontend) with less resources each.
-
-
-<br />
-
 ### Frontend: Provisioning indicators (not available on server)
 
 #### frontend: provisioning_container_cpu_usage_long_term
@@ -691,21 +676,6 @@ Refer to the [alert solutions reference](./alert_solutions.md#gitserver-containe
 
 <br />
 
-#### gitserver: fs_inodes_used
-
-This cloud panel indicates fs inodes in use by instance.
-
-This value indicates the number of [filesystem inodes](https://en.wikipedia.org/wiki/Inode) held by containers of this service.
-When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself.
-
-If a high value or spikes here correlate with gitserver issues, the following might help:
-
-- **Increase available inodes**: Refer to your OS or cloud provider documentation for how to increase inodes allowed on a machine.
-- **Kubernetes:** consider provisioning more machines for gitserver with less resources each.
-
-
-<br />
-
 #### gitserver: fs_io_operations
 
 This cloud panel indicates filesystem reads and writes rate by instance over 1h.
@@ -770,7 +740,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#gitserver-go-gc-du
 
 <br />
 
-### Git Server: Kubernetes monitoring (only available on Kubernetes)
+### Git Server: Kubernetes monitoring (ignore if using Docker Compose or server)
 
 #### gitserver: pods_available_percentage
 
@@ -819,21 +789,6 @@ This cloud panel indicates container restarts.
 This value is based on the number of times a container has not been seen in one minute.
 
 Refer to the [alert solutions reference](./alert_solutions.md#github-proxy-container-restarts) for relevant alerts.
-
-<br />
-
-#### github-proxy: fs_inodes_used
-
-This cloud panel indicates fs inodes in use by instance.
-
-This value indicates the number of [filesystem inodes](https://en.wikipedia.org/wiki/Inode) held by containers of this service.
-When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself.
-
-If a high value or spikes here correlate with github-proxy issues, the following might help:
-
-- **Increase available inodes**: Refer to your OS or cloud provider documentation for how to increase inodes allowed on a machine.
-- **Kubernetes:** consider provisioning more machines for github-proxy with less resources each.
-
 
 <br />
 
@@ -1170,21 +1125,6 @@ Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel
 
 <br />
 
-#### precise-code-intel-worker: fs_inodes_used
-
-This code-intel panel indicates fs inodes in use by instance.
-
-This value indicates the number of [filesystem inodes](https://en.wikipedia.org/wiki/Inode) held by containers of this service.
-When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself.
-
-If a high value or spikes here correlate with precise-code-intel-worker issues, the following might help:
-
-- **Increase available inodes**: Refer to your OS or cloud provider documentation for how to increase inodes allowed on a machine.
-- **Kubernetes:** consider provisioning more machines for precise-code-intel-worker with less resources each.
-
-
-<br />
-
 ### Precise Code Intel Worker: Provisioning indicators (not available on server)
 
 #### precise-code-intel-worker: provisioning_container_cpu_usage_long_term
@@ -1286,21 +1226,6 @@ This search panel indicates container restarts.
 This value is based on the number of times a container has not been seen in one minute.
 
 Refer to the [alert solutions reference](./alert_solutions.md#query-runner-container-restarts) for relevant alerts.
-
-<br />
-
-#### query-runner: fs_inodes_used
-
-This search panel indicates fs inodes in use by instance.
-
-This value indicates the number of [filesystem inodes](https://en.wikipedia.org/wiki/Inode) held by containers of this service.
-When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself.
-
-If a high value or spikes here correlate with query-runner issues, the following might help:
-
-- **Increase available inodes**: Refer to your OS or cloud provider documentation for how to increase inodes allowed on a machine.
-- **Kubernetes:** consider provisioning more machines for query-runner with less resources each.
-
 
 <br />
 
@@ -1666,21 +1591,6 @@ Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-conta
 
 <br />
 
-#### repo-updater: fs_inodes_used
-
-This cloud panel indicates fs inodes in use by instance.
-
-This value indicates the number of [filesystem inodes](https://en.wikipedia.org/wiki/Inode) held by containers of this service.
-When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself.
-
-If a high value or spikes here correlate with repo-updater issues, the following might help:
-
-- **Increase available inodes**: Refer to your OS or cloud provider documentation for how to increase inodes allowed on a machine.
-- **Kubernetes:** consider provisioning more machines for repo-updater with less resources each.
-
-
-<br />
-
 ### Repo Updater: Provisioning indicators (not available on server)
 
 #### repo-updater: provisioning_container_cpu_usage_long_term
@@ -1801,21 +1711,6 @@ Refer to the [alert solutions reference](./alert_solutions.md#searcher-container
 
 <br />
 
-#### searcher: fs_inodes_used
-
-This search panel indicates fs inodes in use by instance.
-
-This value indicates the number of [filesystem inodes](https://en.wikipedia.org/wiki/Inode) held by containers of this service.
-When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself.
-
-If a high value or spikes here correlate with searcher issues, the following might help:
-
-- **Increase available inodes**: Refer to your OS or cloud provider documentation for how to increase inodes allowed on a machine.
-- **Kubernetes:** consider provisioning more machines for searcher with less resources each.
-
-
-<br />
-
 ### Searcher: Provisioning indicators (not available on server)
 
 #### searcher: provisioning_container_cpu_usage_long_term
@@ -1933,21 +1828,6 @@ This code-intel panel indicates container restarts.
 This value is based on the number of times a container has not been seen in one minute.
 
 Refer to the [alert solutions reference](./alert_solutions.md#symbols-container-restarts) for relevant alerts.
-
-<br />
-
-#### symbols: fs_inodes_used
-
-This code-intel panel indicates fs inodes in use by instance.
-
-This value indicates the number of [filesystem inodes](https://en.wikipedia.org/wiki/Inode) held by containers of this service.
-When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself.
-
-If a high value or spikes here correlate with symbols issues, the following might help:
-
-- **Increase available inodes**: Refer to your OS or cloud provider documentation for how to increase inodes allowed on a machine.
-- **Kubernetes:** consider provisioning more machines for symbols with less resources each.
-
 
 <br />
 
@@ -2075,21 +1955,6 @@ Refer to the [alert solutions reference](./alert_solutions.md#syntect-server-con
 
 <br />
 
-#### syntect-server: fs_inodes_used
-
-This cloud panel indicates fs inodes in use by instance.
-
-This value indicates the number of [filesystem inodes](https://en.wikipedia.org/wiki/Inode) held by containers of this service.
-When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself.
-
-If a high value or spikes here correlate with syntect-server issues, the following might help:
-
-- **Increase available inodes**: Refer to your OS or cloud provider documentation for how to increase inodes allowed on a machine.
-- **Kubernetes:** consider provisioning more machines for syntect-server with less resources each.
-
-
-<br />
-
 ### Syntect Server: Provisioning indicators (not available on server)
 
 #### syntect-server: provisioning_container_cpu_usage_long_term
@@ -2171,21 +2036,6 @@ This search panel indicates container restarts.
 This value is based on the number of times a container has not been seen in one minute.
 
 Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-container-restarts) for relevant alerts.
-
-<br />
-
-#### zoekt-indexserver: fs_inodes_used
-
-This search panel indicates fs inodes in use by instance.
-
-This value indicates the number of [filesystem inodes](https://en.wikipedia.org/wiki/Inode) held by containers of this service.
-When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself.
-
-If a high value or spikes here correlate with zoekt-indexserver issues, the following might help:
-
-- **Increase available inodes**: Refer to your OS or cloud provider documentation for how to increase inodes allowed on a machine.
-- **Kubernetes:** consider provisioning more machines for zoekt-indexserver with less resources each.
-
 
 <br />
 
@@ -2281,21 +2131,6 @@ Refer to the [alert solutions reference](./alert_solutions.md#zoekt-webserver-co
 
 <br />
 
-#### zoekt-webserver: fs_inodes_used
-
-This search panel indicates fs inodes in use by instance.
-
-This value indicates the number of [filesystem inodes](https://en.wikipedia.org/wiki/Inode) held by containers of this service.
-When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself.
-
-If a high value or spikes here correlate with zoekt-webserver issues, the following might help:
-
-- **Increase available inodes**: Refer to your OS or cloud provider documentation for how to increase inodes allowed on a machine.
-- **Kubernetes:** consider provisioning more machines for zoekt-webserver with less resources each.
-
-
-<br />
-
 #### zoekt-webserver: fs_io_operations
 
 This search panel indicates filesystem reads and writes by instance rate over 1h.
@@ -2387,21 +2222,6 @@ This distribution panel indicates container restarts.
 This value is based on the number of times a container has not been seen in one minute.
 
 Refer to the [alert solutions reference](./alert_solutions.md#prometheus-container-restarts) for relevant alerts.
-
-<br />
-
-#### prometheus: fs_inodes_used
-
-This distribution panel indicates fs inodes in use by instance.
-
-This value indicates the number of [filesystem inodes](https://en.wikipedia.org/wiki/Inode) held by containers of this service.
-When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself.
-
-If a high value or spikes here correlate with prometheus issues, the following might help:
-
-- **Increase available inodes**: Refer to your OS or cloud provider documentation for how to increase inodes allowed on a machine.
-- **Kubernetes:** consider provisioning more machines for prometheus with less resources each.
-
 
 <br />
 
@@ -2546,21 +2366,6 @@ This code-intel panel indicates container restarts.
 This value is based on the number of times a container has not been seen in one minute.
 
 Refer to the [alert solutions reference](./alert_solutions.md#executor-queue-container-restarts) for relevant alerts.
-
-<br />
-
-#### executor-queue: fs_inodes_used
-
-This code-intel panel indicates fs inodes in use by instance.
-
-This value indicates the number of [filesystem inodes](https://en.wikipedia.org/wiki/Inode) held by containers of this service.
-When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself.
-
-If a high value or spikes here correlate with executor-queue issues, the following might help:
-
-- **Increase available inodes**: Refer to your OS or cloud provider documentation for how to increase inodes allowed on a machine.
-- **Kubernetes:** consider provisioning more machines for executor-queue with less resources each.
-
 
 <br />
 
@@ -2746,21 +2551,6 @@ This code-intel panel indicates container restarts.
 This value is based on the number of times a container has not been seen in one minute.
 
 Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel-indexer-container-restarts) for relevant alerts.
-
-<br />
-
-#### precise-code-intel-indexer: fs_inodes_used
-
-This code-intel panel indicates fs inodes in use by instance.
-
-This value indicates the number of [filesystem inodes](https://en.wikipedia.org/wiki/Inode) held by containers of this service.
-When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself.
-
-If a high value or spikes here correlate with precise-code-intel-worker issues, the following might help:
-
-- **Increase available inodes**: Refer to your OS or cloud provider documentation for how to increase inodes allowed on a machine.
-- **Kubernetes:** consider provisioning more machines for precise-code-intel-worker with less resources each.
-
 
 <br />
 

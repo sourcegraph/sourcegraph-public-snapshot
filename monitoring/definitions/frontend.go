@@ -729,7 +729,6 @@ func Frontend() *monitoring.Container {
 					},
 					{
 						shared.ContainerRestarts(containerName, monitoring.ObservableOwnerCloud).Observable(),
-						shared.ContainerFsInodes(containerName, monitoring.ObservableOwnerCloud).Observable(),
 					},
 				},
 			},

@@ -41,7 +41,6 @@ func GitHubProxy() *monitoring.Container {
 					},
 					{
 						shared.ContainerRestarts("github-proxy", monitoring.ObservableOwnerCloud).Observable(),
-						shared.ContainerFsInodes("github-proxy", monitoring.ObservableOwnerCloud).Observable(),
 					},
 				},
 			},

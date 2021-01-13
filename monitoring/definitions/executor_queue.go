@@ -109,7 +109,6 @@ func ExecutorQueue() *monitoring.Container {
 					},
 					{
 						shared.ContainerRestarts("executor-queue", monitoring.ObservableOwnerCodeIntel).Observable(),
-						shared.ContainerFsInodes("executor-queue", monitoring.ObservableOwnerCodeIntel).Observable(),
 					},
 				},
 			},

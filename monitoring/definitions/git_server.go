@@ -105,7 +105,6 @@ func GitServer() *monitoring.Container {
 					},
 					{
 						shared.ContainerRestarts("gitserver", monitoring.ObservableOwnerCloud).Observable(),
-						shared.ContainerFsInodes("gitserver", monitoring.ObservableOwnerCloud).Observable(),
 					},
 					{
 						{
@@ -149,7 +148,7 @@ func GitServer() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Kubernetes monitoring (only available on Kubernetes)",
+				Title:  "Kubernetes monitoring (ignore if using Docker Compose or server)",
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{

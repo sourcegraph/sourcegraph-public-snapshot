@@ -29,7 +29,6 @@ func QueryRunner() *monitoring.Container {
 					},
 					{
 						shared.ContainerRestarts("query-runner", monitoring.ObservableOwnerSearch).Observable(),
-						shared.ContainerFsInodes("query-runner", monitoring.ObservableOwnerSearch).Observable(),
 					},
 				},
 			},

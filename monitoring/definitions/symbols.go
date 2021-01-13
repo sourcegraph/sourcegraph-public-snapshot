@@ -49,7 +49,6 @@ func Symbols() *monitoring.Container {
 					},
 					{
 						shared.ContainerRestarts("symbols", monitoring.ObservableOwnerCodeIntel).Observable(),
-						shared.ContainerFsInodes("symbols", monitoring.ObservableOwnerCodeIntel).Observable(),
 					},
 				},
 			},

@@ -53,7 +53,6 @@ func Prometheus() *monitoring.Container {
 					},
 					{
 						shared.ContainerRestarts("prometheus", monitoring.ObservableOwnerDistribution).Observable(),
-						shared.ContainerFsInodes("prometheus", monitoring.ObservableOwnerDistribution).Observable(),
 					},
 				},
 			},

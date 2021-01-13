@@ -66,7 +66,6 @@ func SyntectServer() *monitoring.Container {
 					},
 					{
 						shared.ContainerRestarts("syntect-server", monitoring.ObservableOwnerCloud).Observable(),
-						shared.ContainerFsInodes("syntect-server", monitoring.ObservableOwnerCloud).Observable(),
 					},
 				},
 			},

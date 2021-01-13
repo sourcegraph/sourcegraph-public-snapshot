@@ -40,7 +40,6 @@ func ZoektIndexServer() *monitoring.Container {
 					},
 					{
 						shared.ContainerRestarts("zoekt-indexserver", monitoring.ObservableOwnerSearch).Observable(),
-						shared.ContainerFsInodes("zoekt-indexserver", monitoring.ObservableOwnerSearch).Observable(),
 					},
 					{
 						{

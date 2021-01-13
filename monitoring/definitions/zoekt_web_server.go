@@ -40,7 +40,6 @@ func ZoektWebServer() *monitoring.Container {
 					},
 					{
 						shared.ContainerRestarts("zoekt-webserver", monitoring.ObservableOwnerSearch).Observable(),
-						shared.ContainerFsInodes("zoekt-webserver", monitoring.ObservableOwnerSearch).Observable(),
 					},
 					{
 						{
