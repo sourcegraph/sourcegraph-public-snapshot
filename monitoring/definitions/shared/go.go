@@ -7,7 +7,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
-// Golang monitoring overviews
+// Golang monitoring overviews.
+//
+// Uses metrics exported by the Prometheus Golang library, so is available on all
+// deployment types.
 
 var (
 	GoGoroutines sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {

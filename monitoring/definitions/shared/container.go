@@ -7,8 +7,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
-// Container monitoring overviews - alert on all container failures, but only alert on extreme resource usage.
-// More granular resource usage warnings are provided by the provisioning observables.
+// Container monitoring overviews - these provide short-term overviews of container
+// behaviour for a service.
+//
+// These observables should only use cAdvisor metrics, and are thus only available on
+// Kubernetes and docker-compose deployments.
 
 var (
 	ContainerRestarts sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
@@ -20,13 +23,13 @@ var (
 			Panel:       monitoring.Panel().LegendFormat("{{name}}"),
 			Owner:       owner,
 			PossibleSolutions: strings.Replace(`
-			- **Kubernetes:**
-				- Determine if the pod was OOM killed using 'kubectl describe pod {{CONTAINER_NAME}}' (look for 'OOMKilled: true') and, if so, consider increasing the memory limit in the relevant 'Deployment.yaml'.
-				- Check the logs before the container restarted to see if there are 'panic:' messages or similar using 'kubectl logs -p {{CONTAINER_NAME}}'.
-			- **Docker Compose:**
-				- Determine if the pod was OOM killed using 'docker inspect -f \'{{json .State}}\' {{CONTAINER_NAME}}' (look for '"OOMKilled":true') and, if so, consider increasing the memory limit of the {{CONTAINER_NAME}} container in 'docker-compose.yml'.
-				- Check the logs before the container restarted to see if there are 'panic:' messages or similar using 'docker logs {{CONTAINER_NAME}}' (note this will include logs from the previous and currently running container).
-		`, "{{CONTAINER_NAME}}", containerName, -1),
+				- **Kubernetes:**
+					- Determine if the pod was OOM killed using 'kubectl describe pod {{CONTAINER_NAME}}' (look for 'OOMKilled: true') and, if so, consider increasing the memory limit in the relevant 'Deployment.yaml'.
+					- Check the logs before the container restarted to see if there are 'panic:' messages or similar using 'kubectl logs -p {{CONTAINER_NAME}}'.
+				- **Docker Compose:**
+					- Determine if the pod was OOM killed using 'docker inspect -f \'{{json .State}}\' {{CONTAINER_NAME}}' (look for '"OOMKilled":true') and, if so, consider increasing the memory limit of the {{CONTAINER_NAME}} container in 'docker-compose.yml'.
+					- Check the logs before the container restarted to see if there are 'panic:' messages or similar using 'docker logs {{CONTAINER_NAME}}' (note this will include logs from the previous and currently running container).
+			`, "{{CONTAINER_NAME}}", containerName, -1),
 		}
 	}
 
