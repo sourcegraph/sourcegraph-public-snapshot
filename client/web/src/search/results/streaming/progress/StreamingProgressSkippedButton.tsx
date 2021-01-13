@@ -6,10 +6,9 @@ import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { StreamingProgressProps } from './StreamingProgress'
 import { StreamingProgressSkippedPopover } from './StreamingProgressSkippedPopover'
 
-export const StreamingProgressSkippedButton: React.FunctionComponent<Pick<
-    StreamingProgressProps,
-    'progress' | 'onSearchAgain' | 'history'
->> = ({ progress, onSearchAgain, history }) => {
+export const StreamingProgressSkippedButton: React.FunctionComponent<
+    Pick<StreamingProgressProps, 'progress' | 'onSearchAgain' | 'history'>
+> = ({ progress, onSearchAgain, history }) => {
     const [isOpen, setIsOpen] = useState(false)
     const toggleOpen = useCallback(() => setIsOpen(previous => !previous), [setIsOpen])
 
