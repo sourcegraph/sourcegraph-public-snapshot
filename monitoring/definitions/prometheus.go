@@ -110,7 +110,7 @@ func Prometheus() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Container monitoring (not available on server)",
+				Title:  shared.TitleContainerMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -119,12 +119,11 @@ func Prometheus() *monitoring.Container {
 					},
 					{
 						shared.ContainerRestarts("prometheus", monitoring.ObservableOwnerDistribution).Observable(),
-						shared.ContainerFsInodes("prometheus", monitoring.ObservableOwnerDistribution).Observable(),
 					},
 				},
 			},
 			{
-				Title:  "Provisioning indicators (not available on server)",
+				Title:  shared.TitleProvisioningIndicators,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -138,7 +137,7 @@ func Prometheus() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Kubernetes monitoring (ignore if using Docker Compose or server)",
+				Title:  shared.TitleKubernetesMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
