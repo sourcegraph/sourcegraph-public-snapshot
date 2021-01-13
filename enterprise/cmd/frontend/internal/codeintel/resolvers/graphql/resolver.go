@@ -84,8 +84,10 @@ func (r *Resolver) DeleteLSIFUpload(ctx context.Context, id graphql.ID) (*gql.Em
 	return &gql.EmptyResponse{}, nil
 }
 
+var autoIndexingEnabled = conf.CodeIntelAutoIndexingEnabled
+
 func (r *Resolver) LSIFIndexByID(ctx context.Context, id graphql.ID) (gql.LSIFIndexResolver, error) {
-	if !conf.CodeIntelAutoIndexingEnabled() {
+	if !autoIndexingEnabled() {
 		return nil, errAutoIndexingNotEnabled
 	}
 
@@ -103,7 +105,7 @@ func (r *Resolver) LSIFIndexByID(ctx context.Context, id graphql.ID) (gql.LSIFIn
 }
 
 func (r *Resolver) LSIFIndexes(ctx context.Context, args *gql.LSIFIndexesQueryArgs) (gql.LSIFIndexConnectionResolver, error) {
-	if !conf.CodeIntelAutoIndexingEnabled() {
+	if !autoIndexingEnabled() {
 		return nil, errAutoIndexingNotEnabled
 	}
 
@@ -112,7 +114,7 @@ func (r *Resolver) LSIFIndexes(ctx context.Context, args *gql.LSIFIndexesQueryAr
 }
 
 func (r *Resolver) LSIFIndexesByRepo(ctx context.Context, args *gql.LSIFRepositoryIndexesQueryArgs) (gql.LSIFIndexConnectionResolver, error) {
-	if !conf.CodeIntelAutoIndexingEnabled() {
+	if !autoIndexingEnabled() {
 		return nil, errAutoIndexingNotEnabled
 	}
 
@@ -125,7 +127,7 @@ func (r *Resolver) LSIFIndexesByRepo(ctx context.Context, args *gql.LSIFReposito
 }
 
 func (r *Resolver) DeleteLSIFIndex(ctx context.Context, id graphql.ID) (*gql.EmptyResponse, error) {
-	if !conf.CodeIntelAutoIndexingEnabled() {
+	if !autoIndexingEnabled() {
 		return nil, errAutoIndexingNotEnabled
 	}
 
@@ -147,7 +149,7 @@ func (r *Resolver) DeleteLSIFIndex(ctx context.Context, id graphql.ID) (*gql.Emp
 }
 
 func (r *Resolver) IndexConfiguration(ctx context.Context, id graphql.ID) (gql.IndexConfigurationResolver, error) {
-	if !conf.CodeIntelAutoIndexingEnabled() {
+	if !autoIndexingEnabled() {
 		return nil, errAutoIndexingNotEnabled
 	}
 
@@ -165,7 +167,7 @@ func (r *Resolver) IndexConfiguration(ctx context.Context, id graphql.ID) (gql.I
 }
 
 func (r *Resolver) UpdateRepositoryIndexConfiguration(ctx context.Context, args *gql.UpdateRepositoryIndexConfigurationArgs) (*gql.EmptyResponse, error) {
-	if !conf.CodeIntelAutoIndexingEnabled() {
+	if !autoIndexingEnabled() {
 		return nil, errAutoIndexingNotEnabled
 	}
 
@@ -187,7 +189,7 @@ func (r *Resolver) UpdateRepositoryIndexConfiguration(ctx context.Context, args 
 }
 
 func (r *Resolver) QueueAutoIndexJobForRepo(ctx context.Context, id graphql.ID) (*gql.EmptyResponse, error) {
-	if !conf.CodeIntelAutoIndexingEnabled() {
+	if !autoIndexingEnabled() {
 		return nil, errAutoIndexingNotEnabled
 	}
 
