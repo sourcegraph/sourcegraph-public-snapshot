@@ -220,7 +220,7 @@
     "postcss": "^8.2.4",
     "postcss-focus-visible": "^5.0.0",
     "postcss-loader": "^4.1.0",
-    "prettier": "^2.1.2",
+    "prettier": "^2.2.1",
     "puppeteer": "5.5.0",
     "puppeteer-firefox": "^0.5.1",
     "raw-loader": "^4.0.1",
