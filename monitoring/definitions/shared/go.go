@@ -16,7 +16,7 @@ var (
 			Description:       "maximum active goroutines",
 			Query:             fmt.Sprintf(`max by(instance) (go_goroutines{job=~".*%s"})`, containerName),
 			Warning:           monitoring.Alert().GreaterOrEqual(10000).For(10 * time.Minute),
-			PanelOptions:      monitoring.PanelOptions().LegendFormat("{{name}}"),
+			Panel:             monitoring.Panel().LegendFormat("{{name}}"),
 			Owner:             owner,
 			PossibleSolutions: "none",
 		}
@@ -28,7 +28,7 @@ var (
 			Description:       "maximum go garbage collection duration",
 			Query:             fmt.Sprintf(`max by(instance) (go_gc_duration_seconds{job=~".*%s"})`, containerName),
 			Warning:           monitoring.Alert().GreaterOrEqual(2),
-			PanelOptions:      monitoring.PanelOptions().LegendFormat("{{name}}").Unit(monitoring.Seconds),
+			Panel:             monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
 			Owner:             owner,
 			PossibleSolutions: "none",
 		}

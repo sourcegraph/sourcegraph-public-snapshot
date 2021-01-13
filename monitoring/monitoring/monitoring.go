@@ -213,18 +213,10 @@ func (c *Container) renderDashboard() *sdk.Board {
 				panelTitle := strings.ToTitle(string([]rune(o.Description)[0])) + string([]rune(o.Description)[1:])
 				panel := sdk.NewGraph(panelTitle)
 				panel.ID = observablePanelID(groupIndex, rowIndex, i)
+
+				// Set positioning
 				setPanelSize(panel, panelWidth, 5)
 				setPanelPos(panel, i*panelWidth, offsetY)
-				panel.GraphPanel.Legend.Show = true
-				panel.GraphPanel.Fill = 1
-				panel.GraphPanel.Lines = true
-				panel.GraphPanel.Linewidth = 1
-				panel.GraphPanel.NullPointMode = "connected"
-				panel.GraphPanel.Pointradius = 2
-				panel.GraphPanel.AliasColors = map[string]string{}
-				panel.GraphPanel.Xaxis = sdk.Axis{
-					Show: true,
-				}
 
 				// Add reference links
 				panel.Links = []sdk.Link{{
@@ -240,74 +232,10 @@ func (c *Container) renderDashboard() *sdk.Board {
 					})
 				}
 
-				opt := o.PanelOptions.withDefaults()
-				leftAxis := sdk.Axis{
-					Decimals: 0,
-					Format:   string(opt.unitType),
-					LogBase:  1,
-					Show:     true,
-				}
+				// Build the graph panel
+				o.Panel.build(o, panel)
 
-				if o.Warning != nil && o.Warning.greaterThan != nil {
-					// Warning threshold
-					panel.GraphPanel.Thresholds = append(panel.GraphPanel.Thresholds, sdk.Threshold{
-						Value:     float32(*o.Warning.greaterThan),
-						Op:        "gt",
-						ColorMode: "custom",
-						Line:      true,
-						LineColor: "rgba(255, 73, 53, 0.8)",
-					})
-				}
-				if o.Critical != nil && o.Critical.greaterThan != nil {
-					// Critical threshold
-					panel.GraphPanel.Thresholds = append(panel.GraphPanel.Thresholds, sdk.Threshold{
-						Value:     float32(*o.Critical.greaterThan),
-						Op:        "gt",
-						ColorMode: "custom",
-						Line:      true,
-						LineColor: "rgba(255, 17, 36, 0.8)",
-					})
-				}
-				if o.Warning != nil && o.Warning.lessThan != nil {
-					// Warning threshold
-					panel.GraphPanel.Thresholds = append(panel.GraphPanel.Thresholds, sdk.Threshold{
-						Value:     float32(*o.Warning.lessThan),
-						Op:        "lt",
-						ColorMode: "custom",
-						Line:      true,
-						LineColor: "rgba(255, 73, 53, 0.8)",
-					})
-				}
-				if o.Critical != nil && o.Critical.lessThan != nil {
-					// Critical threshold
-					panel.GraphPanel.Thresholds = append(panel.GraphPanel.Thresholds, sdk.Threshold{
-						Value:     float32(*o.Critical.lessThan),
-						Op:        "lt",
-						ColorMode: "custom",
-						Line:      true,
-						LineColor: "rgba(255, 17, 36, 0.8)",
-					})
-				}
-
-				if opt.min != nil {
-					leftAxis.Min = sdk.NewFloatString(*opt.min)
-				}
-				if opt.max != nil {
-					leftAxis.Max = sdk.NewFloatString(*opt.max)
-				}
-				panel.GraphPanel.Yaxes = []sdk.Axis{
-					leftAxis,
-					{
-						Format:  "short",
-						LogBase: 1,
-						Show:    true,
-					},
-				}
-				panel.AddTarget(&sdk.Target{
-					Expr:         o.Query,
-					LegendFormat: opt.legendFormat,
-					Interval:     opt.interval,
-				})
+				// Attach panel to board
 				if rowPanel != nil && group.Hidden {
 					rowPanel.RowPanel.Panels = append(rowPanel.RowPanel.Panels, *panel)
 				} else {
@@ -328,7 +256,7 @@ func (c *Container) alertDescription(o Observable, alert *ObservableAlertDefinit
 
 	// description based on thresholds. no special description for 'alert.strictCompare',
 	// because the description is pretty ambiguous to fit different alerts.
-	units := o.PanelOptions.unitType.short()
+	units := o.Panel.unitType.short()
 	if alert.greaterThan != nil {
 		// e.g. "zoekt-indexserver: 20+ indexed search request errors every 5m by code"
 		description = fmt.Sprintf("%s: %v%s+ %s", c.Name, *alert.greaterThan, units, o.Description)
@@ -584,8 +512,14 @@ type Observable struct {
 	// PossibleSolutions is provided, though the output is not converted to a list.
 	Interpretation string
 
-	// PanelOptions describes some options for how to render the metric in the Grafana panel.
-	PanelOptions ObservablePanelOptions
+	// Panel provides options for how to render the metric in the Grafana panel.
+	// A recommended set of options and customizations are available from the `Panel()`
+	// constructor.
+	//
+	// Additional customizations can be made via `ObservablePanel.With()` for cases where
+	// the provided `ObservablePanel` is insufficient - see `ObservablePanelOption` for
+	// more details.
+	Panel ObservablePanel
 }
 
 func (o Observable) validate() error {
@@ -705,124 +639,4 @@ func (a *ObservableAlertDefinition) validate() error {
 		return errors.New("only one bound (greater or less) can be set")
 	}
 	return nil
-}
-
-// UnitType for controlling the unit type display on graphs.
-type UnitType string
-
-// short returns the short string description of the unit, for qualifying a
-// number of this unit type as human-readable.
-func (u UnitType) short() string {
-	switch u {
-	case Number, "":
-		return ""
-	case Milliseconds:
-		return "ms"
-	case Seconds:
-		return "s"
-	case Percentage:
-		return "%"
-	case Bytes:
-		return "B"
-	case BitsPerSecond:
-		return "bps"
-	default:
-		panic("never here")
-	}
-}
-
-// From https://sourcegraph.com/github.com/grafana/grafana@b63b82976b3708b082326c0b7d42f38d4bc261fa/-/blob/packages/grafana-data/src/valueFormats/categories.ts#L23
-const (
-	// Number is the default unit type.
-	Number UnitType = "short"
-
-	// Milliseconds for representing time.
-	Milliseconds UnitType = "dtdurationms"
-
-	// Seconds for representing time.
-	Seconds UnitType = "dtdurations"
-
-	// Percentage in the range of 0-100.
-	Percentage UnitType = "percent"
-
-	// Bytes in IEC (1024) format, e.g. for representing storage sizes.
-	Bytes UnitType = "bytes"
-
-	// BitsPerSecond, e.g. for representing network and disk IO.
-	BitsPerSecond UnitType = "bps"
-)
-
-// ObservablePanelOptions declares options for visualizing an Observable.
-type ObservablePanelOptions struct {
-	min, max     *float64
-	minAuto      bool
-	legendFormat string
-	unitType     UnitType
-	interval     string
-}
-
-// PanelOptions provides a builder for customizing an Observable visualization.
-func PanelOptions() ObservablePanelOptions { return ObservablePanelOptions{} }
-
-// Min sets the minimum value of the Y axis on the panel. The default is zero.
-func (p ObservablePanelOptions) Min(min float64) ObservablePanelOptions {
-	p.min = &min
-	return p
-}
-
-// Min sets the minimum value of the Y axis on the panel to auto, instead of
-// the default zero.
-//
-// This is generally only useful if trying to show negative numbers.
-func (p ObservablePanelOptions) MinAuto() ObservablePanelOptions {
-	p.minAuto = true
-	return p
-}
-
-// Max sets the maximum value of the Y axis on the panel. The default is auto.
-func (p ObservablePanelOptions) Max(max float64) ObservablePanelOptions {
-	p.max = &max
-	return p
-}
-
-// LegendFormat sets the panel's legend format, which may use Go template strings to select
-// labels from the Prometheus query.
-func (p ObservablePanelOptions) LegendFormat(format string) ObservablePanelOptions {
-	p.legendFormat = format
-	return p
-}
-
-// Unit sets the panel's Y axis unit type.
-func (p ObservablePanelOptions) Unit(t UnitType) ObservablePanelOptions {
-	p.unitType = t
-	return p
-}
-
-// Interval declares the panel's interval in milliseconds.
-func (p ObservablePanelOptions) Interval(ms int) ObservablePanelOptions {
-	p.interval = fmt.Sprintf("%dms", ms)
-	return p
-}
-
-func (p ObservablePanelOptions) withDefaults() ObservablePanelOptions {
-	if p.min == nil && !p.minAuto {
-		defaultMin := 0.0
-		p.min = &defaultMin
-	}
-	if p.legendFormat == "" {
-		// Important: We use "value" as the default legend format and not, say, "{{instance}}" or
-		// an empty string (Grafana defaults to all labels in that case) because:
-		//
-		// 1. Using "{{instance}}" is often wrong, see: https://about.sourcegraph.com/handbook/engineering/observability/monitoring_pillars#faq-why-can-t-i-create-a-graph-panel-with-more-than-5-cardinality-labels
-		// 2. More often than not, you actually do want to aggregate your whole query with `sum()`, `max()` or similar.
-		// 3. If "{{instance}}" or similar was the default, it would be easy for people to say "I guess that's intentional"
-		//    instead of seeing multiple "value" labels on their dashboard (which immediately makes them think
-		//    "how can I fix that?".)
-		//
-		p.legendFormat = "value"
-	}
-	if p.unitType == "" {
-		p.unitType = Number
-	}
-	return p
 }
