@@ -14,6 +14,9 @@ import (
 
 var externalURL *url.URL
 
+// To avoid a circular dependency with the codemonitors/resolvers package
+// we have to redeclare the MonitorKind.
+const MonitorKind = "CodeMonitor"
 const utmSourceEmail = "code-monitoring-email"
 const priorityCritical = "CRITICAL"
 
@@ -36,7 +39,7 @@ type TemplateDataNewSearchResults struct {
 	IsTest                    bool
 }
 
-func NewTemplateDataForNewSearchResults(ctx context.Context, monitorDescription, queryString string, email *codemonitors.MonitorEmail, kind string, numResults int) (d *TemplateDataNewSearchResults, err error) {
+func NewTemplateDataForNewSearchResults(ctx context.Context, monitorDescription, queryString string, email *codemonitors.MonitorEmail, numResults int) (d *TemplateDataNewSearchResults, err error) {
 	var (
 		searchURL                 string
 		codeMonitorURL            string
@@ -48,7 +51,7 @@ func NewTemplateDataForNewSearchResults(ctx context.Context, monitorDescription,
 		return nil, err
 	}
 
-	codeMonitorURL, err = getCodeMonitorURL(ctx, email.Monitor, kind, utmSourceEmail)
+	codeMonitorURL, err = getCodeMonitorURL(ctx, email.Monitor, utmSourceEmail)
 	if err != nil {
 		return nil, err
 	}
@@ -105,8 +108,8 @@ func getSearchURL(ctx context.Context, query, utmSource string) (string, error) 
 	return sourcegraphURL(ctx, "search", query, utmSource)
 }
 
-func getCodeMonitorURL(ctx context.Context, monitorID int64, kind, utmSource string) (string, error) {
-	return sourcegraphURL(ctx, fmt.Sprintf("code-monitoring/%s", relay.MarshalID(kind, monitorID)), "", utmSource)
+func getCodeMonitorURL(ctx context.Context, monitorID int64, utmSource string) (string, error) {
+	return sourcegraphURL(ctx, fmt.Sprintf("code-monitoring/%s", relay.MarshalID(MonitorKind, monitorID)), "", utmSource)
 }
 
 func sourcegraphURL(ctx context.Context, path, query, utmSource string) (string, error) {

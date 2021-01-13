@@ -11,7 +11,6 @@ import (
 
 	cm "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/background/email"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
@@ -222,7 +221,7 @@ func (r *actionRunner) Handle(ctx context.Context, workerStore dbworkerstore.Sto
 		return fmt.Errorf("store.AllRecipientsForEmailIDInt64: %w", err)
 	}
 
-	data, err = email.NewTemplateDataForNewSearchResults(ctx, m.Description, m.Query, e, resolvers.MonitorKind, zeroOrVal(m.NumResults))
+	data, err = email.NewTemplateDataForNewSearchResults(ctx, m.Description, m.Query, e, zeroOrVal(m.NumResults))
 	if err != nil {
 		return fmt.Errorf("email.NewTemplateDataForNewSearchResults: %w", err)
 	}

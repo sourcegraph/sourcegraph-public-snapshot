@@ -187,9 +187,12 @@ func (r *Resolver) ResetTriggerQueryTimestamps(ctx context.Context, args *graphq
 }
 
 func (r *Resolver) TriggerTestEmailAction(ctx context.Context, args *graphqlbackend.TriggerTestEmailActionArgs) (*graphqlbackend.EmptyResponse, error) {
-	// TODO: Check permissions?
+	err := r.isAllowedToCreate(ctx, args.User)
+	if err != nil {
+		return nil, err
+	}
 	var userID int32
-	err := relay.UnmarshalSpec(args.User, &userID)
+	err = relay.UnmarshalSpec(args.User, &userID)
 	if err != nil {
 		return nil, err
 	}

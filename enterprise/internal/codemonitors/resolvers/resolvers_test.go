@@ -1093,3 +1093,12 @@ func TestTriggerTestEmailAction(t *testing.T) {
 		t.Fatalf("Template data for testing email actions should have with .IsTest=true")
 	}
 }
+
+func TestMonitorKindEqualsResolvers(t *testing.T) {
+	got := email.MonitorKind
+	want := MonitorKind
+
+	if got != want {
+		t.Fatal("email.MonitorKind should match resolvers.MonitorKind")
+	}
+}
