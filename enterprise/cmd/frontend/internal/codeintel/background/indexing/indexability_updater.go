@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/inference"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -62,7 +63,14 @@ func NewIndexabilityUpdater(
 	)
 }
 
+// For mocking in tests
+var indexabilityUpdaterEnabled = conf.CodeIntelAutoIndexingEnabled
+
 func (u *IndexabilityUpdater) Handle(ctx context.Context) error {
+	if !indexabilityUpdaterEnabled() {
+		return nil
+	}
+
 	start := time.Now().UTC()
 
 	stats, err := u.dbStore.RepoUsageStatistics(ctx)
