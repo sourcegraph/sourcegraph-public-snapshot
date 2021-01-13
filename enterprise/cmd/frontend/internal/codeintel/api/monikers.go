@@ -39,7 +39,6 @@ func lookupMoniker(
 		return nil, 0, errors.Wrap(err, "store.GetPackage")
 	}
 
-	// TODO - cache
 	commitExists, err := gitserverClient.CommitExists(ctx, dump.RepositoryID, dump.Commit)
 	if err != nil {
 		return nil, 0, errors.Wrap(err, "gitserverClient.CommitExists")
