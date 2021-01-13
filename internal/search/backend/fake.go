@@ -27,7 +27,7 @@ func (ss *FakeSearcher) Search(ctx context.Context, q zoektquery.Q, opts *zoekt.
 }
 
 func (ss *FakeSearcher) StreamSearch(ctx context.Context, q zoektquery.Q, opts *zoekt.SearchOptions) <-chan StreamSearchEvent {
-	return AdaptStreamSearcher(ss).StreamSearch(ctx, q, opts)
+	return (&StreamSearchAdapter{ss}).StreamSearch(ctx, q, opts)
 }
 
 func (ss *FakeSearcher) List(ctx context.Context, q zoektquery.Q) (*zoekt.RepoList, error) {

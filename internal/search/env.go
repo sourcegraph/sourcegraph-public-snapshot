@@ -43,7 +43,7 @@ func SearcherURLs() *endpoint.Map {
 func Indexed() *backend.Zoekt {
 	indexedSearchOnce.Do(func() {
 		dial := func(endpoint string) backend.StreamSearcher {
-			return backend.NewMeteredSearcher(endpoint, backend.AdaptStreamSearcher(rpc.Client(endpoint)))
+			return backend.NewMeteredSearcher(endpoint, &backend.StreamSearchAdapter{rpc.Client(endpoint)})
 		}
 
 		var client backend.StreamSearcher

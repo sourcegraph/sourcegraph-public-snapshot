@@ -30,19 +30,13 @@ type StreamSearchEvent struct {
 	Error error
 }
 
-func AdaptStreamSearcher(s zoekt.Searcher) StreamSearcher {
-	if ss, ok := s.(StreamSearcher); ok {
-		return ss
-	}
-
-	return &streamSearchAdapter{Searcher: s}
-}
-
-type streamSearchAdapter struct {
+// StreamSearchAdapter adapts a zoekt.Searcher to conform to the StreamSearch
+// interface by calling zoekt.Searcher.Search.
+type StreamSearchAdapter struct {
 	zoekt.Searcher
 }
 
-func (s *streamSearchAdapter) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions) <-chan StreamSearchEvent {
+func (s *StreamSearchAdapter) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions) <-chan StreamSearchEvent {
 	c := make(chan StreamSearchEvent)
 
 	go func() {
@@ -57,6 +51,6 @@ func (s *streamSearchAdapter) StreamSearch(ctx context.Context, q query.Q, opts 
 	return c
 }
 
-func (s *streamSearchAdapter) String() string {
+func (s *StreamSearchAdapter) String() string {
 	return "streamSearchAdapter{" + s.Searcher.String() + "}"
 }

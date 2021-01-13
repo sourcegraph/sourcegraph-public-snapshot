@@ -33,7 +33,7 @@ func TestHorizontalSearcher(t *testing.T) {
 				listResult: &zoekt.RepoList{Repos: []*zoekt.RepoListEntry{&rle}},
 			}
 			// Return metered searcher to test that codepath
-			return NewMeteredSearcher(endpoint, AdaptStreamSearcher(client))
+			return NewMeteredSearcher(endpoint, &StreamSearchAdapter{client})
 		},
 	}
 	defer searcher.Close()
