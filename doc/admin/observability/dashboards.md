@@ -2229,11 +2229,14 @@ Refer to the [alert solutions reference](./alert_solutions.md#zoekt-webserver-pr
 
 ### Prometheus: Metrics
 
-#### prometheus: prometheus_metrics_bloat
+#### prometheus: prometheus_rule_group_evaluation
 
-This distribution panel indicates prometheus metrics payload size.
+This distribution panel indicates average prometheus rule group evaluation duration over 10m.
 
-Refer to the [alert solutions reference](./alert_solutions.md#prometheus-prometheus-metrics-bloat) for relevant alerts.
+A high value here indicates Prometheus rule evaluation is taking longer than expected.
+It might indicate that certain rule groups are taking too long to evaluate, or Prometheus is underprovisioned.
+
+Refer to the [alert solutions reference](./alert_solutions.md#prometheus-prometheus-rule-group-evaluation) for relevant alerts.
 
 <br />
 
@@ -2244,6 +2247,52 @@ Refer to the [alert solutions reference](./alert_solutions.md#prometheus-prometh
 This distribution panel indicates failed alertmanager notifications over 1m.
 
 Refer to the [alert solutions reference](./alert_solutions.md#prometheus-alertmanager-notifications-failed-total) for relevant alerts.
+
+<br />
+
+#### prometheus: alertmanager_config_status
+
+This distribution panel indicates alertmanager configuration reload status.
+
+A `1` indicates Alertmanager reloaded its configuration successfully.
+
+Refer to the [alert solutions reference](./alert_solutions.md#prometheus-alertmanager-config-status) for relevant alerts.
+
+<br />
+
+### Prometheus: Prometheus internals
+
+#### prometheus: prometheus_tsdb_op_failure
+
+This distribution panel indicates prometheus tsdb failures by operation over 1m.
+
+Refer to the [alert solutions reference](./alert_solutions.md#prometheus-prometheus-tsdb-op-failure) for relevant alerts.
+
+<br />
+
+#### prometheus: prometheus_config_status
+
+This distribution panel indicates prometheus configuration reload status.
+
+A `1` indicates Prometheus reloaded its configuration successfully.
+
+Refer to the [alert solutions reference](./alert_solutions.md#prometheus-prometheus-config-status) for relevant alerts.
+
+<br />
+
+#### prometheus: prometheus_target_sample_exceeded
+
+This distribution panel indicates prometheus scrapes that exceed the sample limit over 10m.
+
+Refer to the [alert solutions reference](./alert_solutions.md#prometheus-prometheus-target-sample-exceeded) for relevant alerts.
+
+<br />
+
+#### prometheus: prometheus_target_sample_duplicate
+
+This distribution panel indicates prometheus scrapes rejected due to duplicate timestamps over 10m.
+
+Refer to the [alert solutions reference](./alert_solutions.md#prometheus-prometheus-target-sample-duplicate) for relevant alerts.
 
 <br />
 
