@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -12,6 +13,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 
 	_ "github.com/lib/pq"
@@ -134,19 +136,90 @@ WHERE table_schema='public' AND table_type='BASE TABLE';
 	for _, table := range tables {
 		// Get postgres "describe table" output.
 		log.Println("describe", table)
+
+		comment, err := getTableComment(db, table)
+		if err != nil {
+			return "", err
+		}
+
+		columnComments, err := getColumnComments(db, table)
+		if err != nil {
+			return "", err
+		}
+
 		out, err := run("psql", "-X", "--quiet", "--dbname", dbname, "-c", fmt.Sprintf("\\d %s", table))
 		if err != nil {
 			return "", fmt.Errorf("describe %s failed: %w", table, err)
 		}
 
-		lines := strings.Split(string(out), "\n")
+		lines := strings.Split(out, "\n")
 		doc := "# " + strings.TrimSpace(lines[0]) + "\n"
 		doc += "```\n" + strings.Join(lines[1:], "\n") + "```\n"
+		if comment != "" {
+			doc += "\n" + comment + "\n"
+		}
+		for k, v := range columnComments {
+			doc += "\n## " + k + "\n\n" + v + "\n"
+		}
 		docs = append(docs, doc)
 	}
 	sort.Strings(docs)
 
 	return strings.Join(docs, "\n"), nil
+}
+
+func getTableComment(db *sql.DB, table string) (string, error) {
+	rows, err := db.Query("select obj_description($1::regclass)", table)
+	if err != nil {
+		return "", fmt.Errorf("Query: %w", err)
+	}
+	defer rows.Close()
+
+	var comment string
+	if rows.Next() {
+		if err := rows.Scan(&dbutil.NullString{S: &comment}); err != nil {
+			return "", fmt.Errorf("rows.Scan: %w", err)
+		}
+	}
+	if err = rows.Err(); err != nil {
+		return "", fmt.Errorf("rows.Err: %w", err)
+	}
+
+	return comment, nil
+}
+
+func getColumnComments(db *sql.DB, table string) (map[string]string, error) {
+	rows, err := db.Query(`
+		SELECT
+			cols.column_name,
+			(
+				SELECT pg_catalog.col_description(c.oid, cols.ordinal_position::int)
+				FROM pg_catalog.pg_class c
+				WHERE c.oid = (SELECT cols.table_name::regclass::oid) AND c.relname = cols.table_name
+			) as column_comment
+		FROM information_schema.columns cols
+		WHERE cols.table_name = $1;
+	`, table)
+	if err != nil {
+		return nil, fmt.Errorf("Query: %w", err)
+	}
+	defer rows.Close()
+
+	comments := map[string]string{}
+	for rows.Next() {
+		var k, v string
+		if err := rows.Scan(&k, &dbutil.NullString{S: &v}); err != nil {
+			return nil, fmt.Errorf("rows.Scan: %w", err)
+		}
+		if v != "" {
+			comments[k] = v
+		}
+	}
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows.Err: %w", err)
+	}
+
+	return comments, nil
 }
 
 func main() {

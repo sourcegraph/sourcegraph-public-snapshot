@@ -730,6 +730,12 @@ Referenced by:
 
 ```
 
+What a fantastic table!
+
+## repository_id
+
+What a fantastic column!
+
 # Table "public.lsif_uploads_visible_at_tip"
 ```
     Column     |  Type   | Modifiers 

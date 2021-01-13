@@ -176,6 +176,8 @@
 // 1528395770_drop_unsynced.up.sql (151B)
 // 1528395771_auto_index_add_local_steps.down.sql (301B)
 // 1528395771_auto_index_add_local_steps.up.sql (415B)
+// 1528395772_comments.down.sql (16B)
+// 1528395772_comments.up.sql (153B)
 
 package migrations
 
@@ -3764,6 +3766,46 @@ func _1528395771_auto_index_add_local_stepsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395772_commentsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x80\xfb\x5a\xa5\x10\x00\x00\x00")
+
+func _1528395772_commentsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395772_commentsDownSql,
+		"1528395772_comments.down.sql",
+	)
+}
+
+func _1528395772_commentsDownSql() (*asset, error) {
+	bytes, err := _1528395772_commentsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395772_comments.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xec, 0x6c, 0xe7, 0xaa, 0xc6, 0xdb, 0x9b, 0x52, 0x49, 0xad, 0xde, 0x34, 0x6a, 0xa9, 0x90, 0x21, 0x97, 0xcc, 0xcd, 0x35, 0xee, 0xc6, 0xd1, 0x36, 0xf1, 0xa0, 0x6c, 0xe8, 0x73, 0x42, 0x77, 0x41}}
+	return a, nil
+}
+
+var __1528395772_commentsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf6\xf7\xf5\x75\xf5\x0b\x51\xf0\xf7\x53\x08\x71\x74\xf2\x71\x55\xc8\x29\xce\x4c\x8b\x2f\x2d\xc8\xc9\x4f\x4c\x29\x56\xf0\x0c\x56\x50\x0f\xcf\x48\x2c\x51\x48\x54\x48\x4b\xcc\x2b\x49\x2c\x2e\xc9\x4c\x56\x28\x49\x4c\xca\x49\x55\x54\xb7\x46\xd6\xeb\xec\xef\x13\xea\xeb\x87\xa2\x59\xaf\x28\xb5\x20\xbf\x38\xb3\x24\xbf\xa8\x32\x3e\x33\x05\xbb\x51\xc9\xf9\x39\xa5\xb9\x79\x20\xb3\xc0\x86\x79\x86\x58\x73\x01\x02\x00\x00\xff\xff\x6e\x55\xe2\x16\x99\x00\x00\x00")
+
+func _1528395772_commentsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395772_commentsUpSql,
+		"1528395772_comments.up.sql",
+	)
+}
+
+func _1528395772_commentsUpSql() (*asset, error) {
+	bytes, err := _1528395772_commentsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395772_comments.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xd3, 0x0, 0xf6, 0x4c, 0x78, 0xd9, 0x8a, 0xf4, 0x78, 0xf0, 0x9a, 0x4, 0x26, 0xde, 0xd8, 0x44, 0x12, 0xb5, 0x81, 0xb7, 0xb1, 0xe8, 0xd2, 0x9d, 0xf7, 0x1, 0x1f, 0x97, 0x2, 0xae, 0xd6, 0x79}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -4031,6 +4073,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395770_drop_unsynced.up.sql":                                                        _1528395770_drop_unsyncedUpSql,
 	"1528395771_auto_index_add_local_steps.down.sql":                                         _1528395771_auto_index_add_local_stepsDownSql,
 	"1528395771_auto_index_add_local_steps.up.sql":                                           _1528395771_auto_index_add_local_stepsUpSql,
+	"1528395772_comments.down.sql":                                                           _1528395772_commentsDownSql,
+	"1528395772_comments.up.sql":                                                             _1528395772_commentsUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -4253,6 +4297,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395770_drop_unsynced.up.sql":                                                        {_1528395770_drop_unsyncedUpSql, map[string]*bintree{}},
 	"1528395771_auto_index_add_local_steps.down.sql":                                         {_1528395771_auto_index_add_local_stepsDownSql, map[string]*bintree{}},
 	"1528395771_auto_index_add_local_steps.up.sql":                                           {_1528395771_auto_index_add_local_stepsUpSql, map[string]*bintree{}},
+	"1528395772_comments.down.sql":                                                           {_1528395772_commentsDownSql, map[string]*bintree{}},
+	"1528395772_comments.up.sql":                                                             {_1528395772_commentsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
