@@ -227,7 +227,7 @@
     "react-docgen-typescript-webpack-plugin": "^1.1.0",
     "react-hot-loader": "^4.13.0",
     "react-test-renderer": "^16.14.0",
-    "sass": "^1.29.0",
+    "sass": "^1.32.4",
     "sass-loader": "^10.1.0",
     "shelljs": "^0.8.4",
     "signale": "^1.4.0",
