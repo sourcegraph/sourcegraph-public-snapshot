@@ -8,10 +8,9 @@ import { renderMarkdown } from '../../../../../../shared/src/util/markdown'
 import { SyntaxHighlightedSearchQuery } from '../../../../components/SyntaxHighlightedSearchQuery'
 import { StreamingProgressProps } from './StreamingProgress'
 
-export const StreamingProgressSkippedPopover: React.FunctionComponent<Pick<
-    StreamingProgressProps,
-    'progress' | 'onSearchAgain' | 'history'
->> = ({ progress, onSearchAgain, history }) => {
+export const StreamingProgressSkippedPopover: React.FunctionComponent<
+    Pick<StreamingProgressProps, 'progress' | 'onSearchAgain' | 'history'>
+> = ({ progress, onSearchAgain, history }) => {
     const [selectedSuggestedSearches, setSelectedSuggestedSearches] = useState(new Set<string>())
     const submitHandler = useCallback(
         (event: React.FormEvent) => {
