@@ -135,6 +135,11 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
         (!isErrorLike(props.repo) && props.repo && props.repo.defaultBranch && props.repo.defaultBranch.displayName) ||
         'HEAD'
 
+    // TODO(sqs): hack, hide for symbols ui
+    if (location.pathname.includes('/symbols')) {
+        return null
+    }
+
     // If neither repo or file can be loaded, return null, which will hide all code host icons
     if (!props.repo || isErrorLike(fileExternalLinksOrError)) {
         return null

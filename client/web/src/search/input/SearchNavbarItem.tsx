@@ -128,7 +128,7 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
                 hasGlobalQueryBehavior={true}
                 queryState={props.navbarSearchState}
                 onSubmit={onSubmit}
-                autoFocus={true}
+                autoFocus={false /* TODO(sqs): dont autofocus on symbol page */}
             />
             <SearchButton />
         </Form>
