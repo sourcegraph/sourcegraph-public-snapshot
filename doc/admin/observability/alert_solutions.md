@@ -1549,26 +1549,6 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 <br />
 
-## gitserver: fs_io_operations
-
-<p class="subtitle">filesystem reads and writes rate by instance over 1h (cloud)</p>
-
-**Descriptions:**
-
-- <span class="badge badge-warning">warning</span> gitserver: 5000+ filesystem reads and writes rate by instance over 1h
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_gitserver_fs_io_operations"
-]
-```
-
-<br />
-
 ## gitserver: provisioning_container_cpu_usage_long_term
 
 <p class="subtitle">container cpu usage total (90th percentile over 1d) across all cores by instance (cloud)</p>
@@ -4602,26 +4582,6 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
-## zoekt-indexserver: fs_io_operations
-
-<p class="subtitle">filesystem reads and writes rate by instance over 1h (search)</p>
-
-**Descriptions:**
-
-- <span class="badge badge-warning">warning</span> zoekt-indexserver: 5000+ filesystem reads and writes rate by instance over 1h
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_zoekt-indexserver_fs_io_operations"
-]
-```
-
-<br />
-
 ## zoekt-indexserver: provisioning_container_cpu_usage_long_term
 
 <p class="subtitle">container cpu usage total (90th percentile over 1d) across all cores by instance (search)</p>
@@ -4816,26 +4776,6 @@ with your code hosts connections or networking issues affecting communication wi
 ```json
 "observability.silenceAlerts": [
   "warning_zoekt-webserver_container_restarts"
-]
-```
-
-<br />
-
-## zoekt-webserver: fs_io_operations
-
-<p class="subtitle">filesystem reads and writes by instance rate over 1h (search)</p>
-
-**Descriptions:**
-
-- <span class="badge badge-warning">warning</span> zoekt-webserver: 5000+ filesystem reads and writes by instance rate over 1h
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_zoekt-webserver_fs_io_operations"
 ]
 ```
 

@@ -66,4 +66,21 @@ var (
 		`, "{{CONTAINER_NAME}}", containerName, -1),
 		}
 	}
+
+	// ContainerIOUsage monitors filesystem reads and writes, and is useful for services
+	// that use disk.
+	ContainerIOUsage sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
+		return Observable{
+			Name:        "fs_io_operations",
+			Description: "filesystem reads and writes rate by instance over 1h",
+			Query:       fmt.Sprintf(`sum by(name) (rate(container_fs_reads_total{%[1]s}[1h]) + rate(container_fs_writes_total{%[1]s}[1h]))`, CadvisorNameMatcher(containerName)),
+			NoAlert:     true,
+			Panel:       monitoring.Panel().LegendFormat("{{name}}"),
+			Owner:       monitoring.ObservableOwnerCloud,
+			Interpretation: `
+				This value indicates the number of filesystem read and write operations by containers of this service.
+				When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself, especially if high values or spikes correlate with {{CONTAINER_NAME}} issues.
+			`,
+		}
+	}
 )

@@ -680,7 +680,9 @@ Refer to the [alert solutions reference](./alert_solutions.md#gitserver-containe
 
 This cloud panel indicates filesystem reads and writes rate by instance over 1h.
 
-Refer to the [alert solutions reference](./alert_solutions.md#gitserver-fs-io-operations) for relevant alerts.
+This value indicates the number of filesystem read and write operations by containers of this service.
+When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself, especially if high values or spikes correlate with {{CONTAINER_NAME}} issues.
+
 
 <br />
 
@@ -2041,9 +2043,11 @@ Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-
 
 #### zoekt-indexserver: fs_io_operations
 
-This search panel indicates filesystem reads and writes rate by instance over 1h.
+This cloud panel indicates filesystem reads and writes rate by instance over 1h.
 
-Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-fs-io-operations) for relevant alerts.
+This value indicates the number of filesystem read and write operations by containers of this service.
+When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself, especially if high values or spikes correlate with {{CONTAINER_NAME}} issues.
+
 
 <br />
 
@@ -2133,9 +2137,11 @@ Refer to the [alert solutions reference](./alert_solutions.md#zoekt-webserver-co
 
 #### zoekt-webserver: fs_io_operations
 
-This search panel indicates filesystem reads and writes by instance rate over 1h.
+This cloud panel indicates filesystem reads and writes rate by instance over 1h.
 
-Refer to the [alert solutions reference](./alert_solutions.md#zoekt-webserver-fs-io-operations) for relevant alerts.
+This value indicates the number of filesystem read and write operations by containers of this service.
+When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself, especially if high values or spikes correlate with {{CONTAINER_NAME}} issues.
+
 
 <br />
 
