@@ -21,6 +21,8 @@ type HorizontalSearcher struct {
 	clients map[string]zoekt.Searcher // addr -> client
 }
 
+// StreamSearch does a search which merges the stream from every endpoint in
+// Map. The channel needs to be read until closed.
 func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions) <-chan StreamSearchEvent {
 	results := make(chan StreamSearchEvent)
 	go func() {
@@ -38,8 +40,7 @@ func (s *HorizontalSearcher) doStreamSearch(ctx context.Context, q query.Q, opts
 		return
 	}
 
-	var cancel context.CancelFunc
-	ctx, cancel = context.WithCancel(ctx)
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	c2 := make(chan StreamSearchEvent, len(clients))
@@ -56,16 +57,17 @@ func (s *HorizontalSearcher) doStreamSearch(ctx context.Context, q query.Q, opts
 	for range clients {
 		r := <-c2
 
+		// Stop stream if we encounter an error.
+		if r.Error != nil {
+			results <- StreamSearchEvent{Error: err}
+			return
+		}
+
 		if r.SearchResult != nil {
 			r.SearchResult.Files = dedupper.Dedup(r.SearchResult.Files)
 		}
 
 		results <- r
-
-		// Stop at first error
-		if r.Error != nil {
-			break
-		}
 	}
 }
 
@@ -73,49 +75,33 @@ func (s *HorizontalSearcher) doStreamSearch(ctx context.Context, q query.Q, opts
 func (s *HorizontalSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
 	start := time.Now()
 
-	clients, err := s.searchers()
-	if err != nil {
-		return nil, err
-	}
-
-	var cancel context.CancelFunc
-	ctx, cancel = context.WithCancel(ctx)
-	defer cancel()
-
-	type result struct {
-		sr  *zoekt.SearchResult
-		err error
-	}
-	results := make(chan result, len(clients))
-	for _, c := range clients {
-		go func(c zoekt.Searcher) {
-			sr, err := c.Search(ctx, q, opts)
-			results <- result{sr: sr, err: err}
-		}(c)
-	}
-
-	// During rebalancing a repository can appear on more than one replica.
-	dedupper := dedupper{}
-
 	aggregate := &zoekt.SearchResult{
 		RepoURLs:      map[string]string{},
 		LineFragments: map[string]string{},
 	}
 
-	for range clients {
-		r := <-results
-		if r.err != nil {
-			return nil, r.err
+	ctx, cancel := context.WithCancel(ctx)
+	events := s.StreamSearch(ctx, q, opts)
+	defer func() {
+		cancel()
+		// Drain events
+		for range events {
+		}
+	}()
+
+	for event := range events {
+		if event.Error != nil {
+			return nil, event.Error
 		}
 
-		aggregate.Files = append(aggregate.Files, dedupper.Dedup(r.sr.Files)...)
-		aggregate.Stats.Add(r.sr.Stats)
+		aggregate.Files = append(aggregate.Files, event.SearchResult.Files...)
+		aggregate.Stats.Add(event.SearchResult.Stats)
 
-		if len(r.sr.Files) > 0 {
-			for k, v := range r.sr.RepoURLs {
+		if len(event.SearchResult.Files) > 0 {
+			for k, v := range event.SearchResult.RepoURLs {
 				aggregate.RepoURLs[k] = v
 			}
-			for k, v := range r.sr.LineFragments {
+			for k, v := range event.SearchResult.LineFragments {
 				aggregate.LineFragments[k] = v
 			}
 		}
