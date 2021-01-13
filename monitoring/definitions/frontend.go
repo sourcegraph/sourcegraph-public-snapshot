@@ -758,7 +758,7 @@ func Frontend() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Kubernetes monitoring (ignore if using Docker Compose or server)",
+				Title:  "Kubernetes monitoring (only available on Kubernetes)",
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{

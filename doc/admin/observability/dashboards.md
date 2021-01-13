@@ -592,7 +592,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#frontend-go-gc-dur
 
 <br />
 
-### Frontend: Kubernetes monitoring (ignore if using Docker Compose or server)
+### Frontend: Kubernetes monitoring (only available on Kubernetes)
 
 #### frontend: pods_available_percentage
 
@@ -770,7 +770,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#gitserver-go-gc-du
 
 <br />
 
-### Git Server: Kubernetes monitoring (ignore if using Docker Compose or server)
+### Git Server: Kubernetes monitoring (only available on Kubernetes)
 
 #### gitserver: pods_available_percentage
 
@@ -891,7 +891,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#github-proxy-go-gc
 
 <br />
 
-### GitHub Proxy: Kubernetes monitoring (ignore if using Docker Compose or server)
+### GitHub Proxy: Kubernetes monitoring (only available on Kubernetes)
 
 #### github-proxy: pods_available_percentage
 
@@ -987,7 +987,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#postgres-provision
 
 <br />
 
-### Postgres: Kubernetes monitoring (ignore if using Docker Compose or server)
+### Postgres: Kubernetes monitoring (only available on Kubernetes)
 
 #### postgres: pods_available_percentage
 
@@ -1239,7 +1239,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel
 
 <br />
 
-### Precise Code Intel Worker: Kubernetes monitoring (ignore if using Docker Compose or server)
+### Precise Code Intel Worker: Kubernetes monitoring (only available on Kubernetes)
 
 #### precise-code-intel-worker: pods_available_percentage
 
@@ -1358,7 +1358,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#query-runner-go-gc
 
 <br />
 
-### Query Runner: Kubernetes monitoring (ignore if using Docker Compose or server)
+### Query Runner: Kubernetes monitoring (only available on Kubernetes)
 
 #### query-runner: pods_available_percentage
 
@@ -1735,7 +1735,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-go-gc
 
 <br />
 
-### Repo Updater: Kubernetes monitoring (ignore if using Docker Compose or server)
+### Repo Updater: Kubernetes monitoring (only available on Kubernetes)
 
 #### repo-updater: pods_available_percentage
 
@@ -1870,7 +1870,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#searcher-go-gc-dur
 
 <br />
 
-### Searcher: Kubernetes monitoring (ignore if using Docker Compose or server)
+### Searcher: Kubernetes monitoring (only available on Kubernetes)
 
 #### searcher: pods_available_percentage
 
@@ -2005,7 +2005,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#symbols-go-gc-dura
 
 <br />
 
-### Symbols: Kubernetes monitoring (ignore if using Docker Compose or server)
+### Symbols: Kubernetes monitoring (only available on Kubernetes)
 
 #### symbols: pods_available_percentage
 
@@ -2124,7 +2124,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#syntect-server-pro
 
 <br />
 
-### Syntect Server: Kubernetes monitoring (ignore if using Docker Compose or server)
+### Syntect Server: Kubernetes monitoring (only available on Kubernetes)
 
 #### syntect-server: pods_available_percentage
 
@@ -2231,7 +2231,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-
 
 <br />
 
-### Zoekt Index Server: Kubernetes monitoring (ignore if using Docker Compose or server)
+### Zoekt Index Server: Kubernetes monitoring (only available on Kubernetes)
 
 #### zoekt-indexserver: pods_available_percentage
 
@@ -2439,7 +2439,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#prometheus-provisi
 
 <br />
 
-### Prometheus: Kubernetes monitoring (ignore if using Docker Compose or server)
+### Prometheus: Kubernetes monitoring (only available on Kubernetes)
 
 #### prometheus: pods_available_percentage
 
@@ -2618,7 +2618,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#executor-queue-go-
 
 <br />
 
-### Executor Queue: Kubernetes monitoring (ignore if using Docker Compose or server)
+### Executor Queue: Kubernetes monitoring (only available on Kubernetes)
 
 #### executor-queue: pods_available_percentage
 
@@ -2818,7 +2818,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel
 
 <br />
 
-### Precise Code Intel Indexer: Kubernetes monitoring (ignore if using Docker Compose or server)
+### Precise Code Intel Indexer: Kubernetes monitoring (only available on Kubernetes)
 
 #### precise-code-intel-indexer: pods_available_percentage
 
