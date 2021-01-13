@@ -1,4 +1,4 @@
-package zoekt
+package backend
 
 import (
 	"context"
@@ -24,6 +24,10 @@ func (ss *FakeSearcher) Search(ctx context.Context, q zoektquery.Q, opts *zoekt.
 		return &zoekt.SearchResult{}, nil
 	}
 	return ss.Result, nil
+}
+
+func (ss *FakeSearcher) StreamSearch(ctx context.Context, q zoektquery.Q, opts *zoekt.SearchOptions) <-chan StreamSearchEvent {
+	return AdaptStreamSearcher(ss).StreamSearch(ctx, q, opts)
 }
 
 func (ss *FakeSearcher) List(ctx context.Context, q zoektquery.Q) (*zoekt.RepoList, error) {

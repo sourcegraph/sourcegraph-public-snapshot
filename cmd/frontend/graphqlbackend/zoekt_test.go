@@ -19,7 +19,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
-	searchzoekt "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
@@ -293,7 +292,7 @@ func TestIndexedSearch(t *testing.T) {
 				RepoPromise:     (&search.Promise{}).Resolve(tt.args.repos),
 				UseFullDeadline: tt.args.useFullDeadline,
 				Zoekt: &searchbackend.Zoekt{
-					Client: &searchzoekt.FakeSearcher{
+					Client: &searchbackend.FakeSearcher{
 						Result: &zoekt.SearchResult{Files: tt.args.results},
 						Repos:  zoektRepos,
 					},
@@ -710,7 +709,7 @@ func BenchmarkSearchResults(b *testing.B) {
 	zoektFileMatches := generateZoektMatches(50)
 
 	z := &searchbackend.Zoekt{
-		Client: &searchzoekt.FakeSearcher{
+		Client: &searchbackend.FakeSearcher{
 			Repos:  zoektRepos,
 			Result: &zoekt.SearchResult{Files: zoektFileMatches},
 		},
@@ -760,13 +759,13 @@ func BenchmarkIntegrationSearchResults(b *testing.B) {
 	_, repos, zoektRepos := generateRepos(5000)
 	zoektFileMatches := generateZoektMatches(50)
 
-	zoektClient, cleanup := zoektRPC(&searchzoekt.FakeSearcher{
+	zoektClient, cleanup := zoektRPC(&searchbackend.FakeSearcher{
 		Repos:  zoektRepos,
 		Result: &zoekt.SearchResult{Files: zoektFileMatches},
 	})
 	defer cleanup()
 	z := &searchbackend.Zoekt{
-		Client:       zoektClient,
+		Client:       searchbackend.AdaptStreamSearcher(zoektClient),
 		DisableCache: true,
 	}
 

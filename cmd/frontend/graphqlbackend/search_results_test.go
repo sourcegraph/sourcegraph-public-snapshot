@@ -15,7 +15,6 @@ import (
 	"go.uber.org/atomic"
 
 	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
-	searchzoekt "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -840,7 +839,7 @@ func TestSearchResultsHydration(t *testing.T) {
 	}}
 
 	z := &searchbackend.Zoekt{
-		Client: &searchzoekt.FakeSearcher{
+		Client: &searchbackend.FakeSearcher{
 			Repos:  []*zoekt.RepoListEntry{zoektRepo},
 			Result: &zoekt.SearchResult{Files: zoektFileMatches},
 		},
@@ -1277,7 +1276,7 @@ func TestEvaluateAnd(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			zoektFileMatches := generateZoektMatches(tt.zoektMatches)
 			z := &searchbackend.Zoekt{
-				Client: &searchzoekt.FakeSearcher{
+				Client: &searchbackend.FakeSearcher{
 					Repos:  zoektRepos,
 					Result: &zoekt.SearchResult{Files: zoektFileMatches, Stats: zoekt.Stats{FilesSkipped: tt.filesSkipped}},
 				},
