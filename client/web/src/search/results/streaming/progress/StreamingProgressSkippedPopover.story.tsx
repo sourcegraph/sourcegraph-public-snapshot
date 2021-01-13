@@ -36,19 +36,9 @@ add('popover', () => {
             {
                 reason: 'error',
                 message:
-                    'There was a network error retrieving search results. Check your Internet connection and try again.',
+                    'There was a network error retrieving search results. Check your Internet connection and try again.\n\nMarkdown sample:\n\n`code`\n\n* item 1\n* item2',
                 severity: 'error',
                 title: 'Error loading results',
-            },
-            {
-                reason: 'excluded-archive',
-                message: '',
-                severity: 'info',
-                title: '60k archived repositories excluded',
-                suggested: {
-                    title: 'include archived',
-                    queryExpression: 'archived:yes',
-                },
             },
             {
                 reason: 'excluded-archive',

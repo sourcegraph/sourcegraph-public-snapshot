@@ -1,8 +1,12 @@
+import classNames from 'classnames'
+import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
+import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
 import React, { useCallback, useState } from 'react'
-import { Alert, Button, Form, FormGroup, Input, Label } from 'reactstrap'
+import { Button, Collapse, Form, FormGroup, Input, Label } from 'reactstrap'
 import { Markdown } from '../../../../../../shared/src/components/Markdown'
 import { renderMarkdown } from '../../../../../../shared/src/util/markdown'
 import { SyntaxHighlightedSearchQuery } from '../../../../components/SyntaxHighlightedSearchQuery'
@@ -25,6 +29,51 @@ const sortBySeverity = (a: Skipped, b: Skipped): number => {
     const bSev = severityToNumber(b.severity)
 
     return aSev - bSev
+}
+
+const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; history: H.History; startOpen: boolean }> = ({
+    skipped,
+    history,
+    startOpen,
+}) => {
+    const [isOpen, setIsOpen] = useState(startOpen)
+
+    const toggleIsOpen = useCallback(() => setIsOpen(oldValue => !oldValue), [])
+
+    return (
+        <Button
+            className={classNames('streaming-skipped-item py-3 border-bottom w-100', {
+                'streaming-skipped-item--warn': skipped.severity !== 'info',
+            })}
+            onClick={toggleIsOpen}
+            disabled={!skipped.message}
+        >
+            <h4 className="d-flex align-items-center mb-0 w-100">
+                {skipped.severity === 'info' ? (
+                    <InformationOutlineIcon className="icon-inline mr-2 streaming-skipped-item__icon flex-shrink-0" />
+                ) : (
+                    <AlertCircleIcon className="icon-inline mr-2 streaming-skipped-item__icon flex-shrink-0" />
+                )}
+                <span className="flex-grow-1 text-left">{skipped.title}</span>
+
+                {skipped.message &&
+                    (isOpen ? (
+                        <ChevronDownIcon className="icon-inline flex-shrink-0" />
+                    ) : (
+                        <ChevronLeftIcon className="icon-inline flex-shrink-0" />
+                    ))}
+            </h4>
+            {skipped.message && (
+                <Collapse isOpen={isOpen}>
+                    <Markdown
+                        className="streaming-skipped-item__message mt-2 text-left"
+                        dangerousInnerHTML={renderMarkdown(skipped.message)}
+                        history={history}
+                    />
+                </Collapse>
+            )}
+        </Button>
+    )
 }
 
 export const StreamingProgressSkippedPopover: React.FunctionComponent<
@@ -57,25 +106,11 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<
     return (
         <>
             {sortedSkippedItems.map(skipped => (
-                <Alert key={skipped.reason} color={skipped.severity === 'info' ? 'info' : 'danger'} fade={false}>
-                    <h4 className="d-flex align-items-center mb-0">
-                        {skipped.severity === 'info' ? (
-                            <InformationOutlineIcon className="icon-inline mr-2" />
-                        ) : (
-                            <AlertCircleIcon className="icon-inline mr-2" />
-                        )}
-                        <span>{skipped.title}</span>
-                    </h4>
-                    {skipped.message && (
-                        <div className="mt-2">
-                            <Markdown dangerousInnerHTML={renderMarkdown(skipped.message)} history={history} />
-                        </div>
-                    )}
-                </Alert>
+                <SkippedMessage key={skipped.reason} skipped={skipped} history={history} startOpen={false} />
             ))}
             {sortedSkippedItems.some(skipped => skipped.suggested) && (
                 <Form onSubmit={submitHandler}>
-                    <div className="mb-2">Search again:</div>
+                    <div className="mb-2 mt-3">Search again:</div>
                     <FormGroup check={true}>
                         {sortedSkippedItems.map(
                             skipped =>
