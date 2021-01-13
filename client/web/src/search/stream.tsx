@@ -460,6 +460,10 @@ function search(
         if (versionContext) {
             parameters.push(['vc', versionContext])
         }
+        const trace = new URLSearchParams(window.location.search).get('trace')
+        if (trace) {
+            parameters.push(['trace', trace])
+        }
         const parameterEncoded = parameters.map(([k, v]) => k + '=' + encodeURIComponent(v)).join('&')
 
         const eventSource = new EventSource('/search/stream?' + parameterEncoded)
