@@ -526,7 +526,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, c chan
 					defer mu.Unlock()
 					common.update(&event.common)
 
-					tr.LogFields(otlog.Error(event.err), otlog.Bool("overLimitCanceled", overLimitCanceled))
+					tr.LogFields(otlog.Int("matches.len", len(event.results)), otlog.Error(event.err), otlog.Bool("overLimitCanceled", overLimitCanceled))
 					if event.err != nil && searchErr == nil && !overLimitCanceled {
 						searchErr = event.err
 						tr.LazyPrintf("cancel indexed search due to error: %v", event.err)
