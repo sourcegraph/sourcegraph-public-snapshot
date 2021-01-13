@@ -282,7 +282,7 @@ func paginatedSearchFilesInRepos(ctx context.Context, args *search.TextParameter
 		// fileResults is not sorted so we must sort it now. fileCommon may or
 		// may not be sorted, but we do not rely on its order.
 		sort.Slice(fileResults, func(i, j int) bool {
-			return fileResults[i].uri < fileResults[j].uri
+			return fileResults[i].URI < fileResults[j].URI
 		})
 		results := make([]SearchResultResolver, 0, len(fileResults))
 		for _, r := range fileResults {

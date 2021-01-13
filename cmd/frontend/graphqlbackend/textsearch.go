@@ -44,7 +44,7 @@ type FileMatchResolver struct {
 	JLimitHit    bool         `json:"LimitHit"`
 	MatchCount   int          // Number of matches. Different from len(JLineMatches), as multiple lines may correspond to one logical match.
 	symbols      []*searchSymbolResult
-	uri          string
+	URI          string `json:"-"`
 	Repo         *RepositoryResolver
 	CommitID     api.CommitID
 	// InputRev is the Git revspec that the user originally requested to search. It is used to
@@ -58,7 +58,7 @@ func (fm *FileMatchResolver) Equal(other *FileMatchResolver) bool {
 }
 
 func (fm *FileMatchResolver) Key() string {
-	return fm.uri
+	return fm.URI
 }
 
 func (fm *FileMatchResolver) File() *GitTreeEntryResolver {
@@ -89,7 +89,7 @@ func (fm *FileMatchResolver) RevSpec() *gitRevSpec {
 }
 
 func (fm *FileMatchResolver) Resource() string {
-	return fm.uri
+	return fm.URI
 }
 
 func (fm *FileMatchResolver) Symbols() []*symbolResolver {
@@ -218,7 +218,7 @@ func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo *ty
 			JLimitHit:    fm.LimitHit,
 			MatchCount:   fm.MatchCount,
 
-			uri:      workspace + fm.Path,
+			URI:      workspace + fm.Path,
 			Repo:     repoResolver,
 			CommitID: commit,
 			InputRev: &rev,
@@ -385,7 +385,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, c chan
 		if len(matches) > 0 {
 			common.resultCount += int32(len(matches))
 			sort.Slice(matches, func(i, j int) bool {
-				a, b := matches[i].uri, matches[j].uri
+				a, b := matches[i].URI, matches[j].URI
 				return a > b
 			})
 			unflattened = append(unflattened, matches)
@@ -626,7 +626,7 @@ func flattenFileMatches(unflattened [][]*FileMatchResolver, fileMatchLimit int) 
 	// repo. We then want to create an idempontent order of results, but
 	// ensuring every repo has atleast one result.
 	sort.Slice(unflattened, func(i, j int) bool {
-		a, b := unflattened[i][0].uri, unflattened[j][0].uri
+		a, b := unflattened[i][0].URI, unflattened[j][0].URI
 		return a > b
 	})
 	var flattened []*FileMatchResolver
@@ -652,7 +652,7 @@ func flattenFileMatches(unflattened [][]*FileMatchResolver, fileMatchLimit int) 
 	// Sort again since we constructed flattened by adding more results at the
 	// end.
 	sort.Slice(flattened, func(i, j int) bool {
-		a, b := flattened[i].uri, flattened[j].uri
+		a, b := flattened[i].URI, flattened[j].URI
 		return a > b
 	})
 

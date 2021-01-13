@@ -763,7 +763,7 @@ func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 	// accumulate matches for the right subexpression in a lookup.
 	for _, r := range right.SearchResults {
 		if fileMatch, ok := r.ToFileMatch(); ok {
-			rightFileMatches[fileMatch.uri] = fileMatch
+			rightFileMatches[fileMatch.URI] = fileMatch
 			continue
 		}
 		if repoMatch, ok := r.ToRepository(); ok {
@@ -783,7 +783,7 @@ func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 
 	for _, leftMatch := range left.SearchResults {
 		if leftFileMatch, ok := leftMatch.ToFileMatch(); ok {
-			rightFileMatch := rightFileMatches[leftFileMatch.uri]
+			rightFileMatch := rightFileMatches[leftFileMatch.URI]
 			if rightFileMatch == nil {
 				// no overlap with existing matches.
 				merged = append(merged, leftMatch)
@@ -792,7 +792,7 @@ func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 			}
 			// merge line matches with a file match that already exists.
 			rightFileMatch.appendMatches(leftFileMatch)
-			rightFileMatches[leftFileMatch.uri] = rightFileMatch
+			rightFileMatches[leftFileMatch.URI] = rightFileMatch
 			continue
 		}
 
@@ -868,7 +868,7 @@ func intersectMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 	rightFileMatches := make(map[string]*FileMatchResolver)
 	for _, r := range right.SearchResults {
 		if fileMatch, ok := r.ToFileMatch(); ok {
-			rightFileMatches[fileMatch.uri] = fileMatch
+			rightFileMatches[fileMatch.URI] = fileMatch
 		}
 	}
 
@@ -879,7 +879,7 @@ func intersectMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 			continue
 		}
 
-		rightFileMatch := rightFileMatches[leftFileMatch.uri]
+		rightFileMatch := rightFileMatches[leftFileMatch.URI]
 		if rightFileMatch == nil {
 			continue
 		}
@@ -1732,10 +1732,10 @@ func (a *aggregator) collect(ctx context.Context, results []SearchResultResolver
 
 		// Merge fileMatches from type symbol, path, file. For streaming search this
 		// code has no effect and the frontend should handle deduplication.
-		if m, ok := a.fileMatches[fm.uri]; ok {
+		if m, ok := a.fileMatches[fm.URI]; ok {
 			m.appendMatches(fm)
 		} else {
-			a.fileMatches[fm.uri] = fm
+			a.fileMatches[fm.URI] = fm
 			a.results = append(a.results, r)
 		}
 	}

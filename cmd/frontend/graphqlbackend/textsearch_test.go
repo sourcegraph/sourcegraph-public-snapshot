@@ -38,13 +38,13 @@ func TestSearchFilesInRepos(t *testing.T) {
 		case "foo/one":
 			return []*FileMatchResolver{
 				{
-					uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
+					URI: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
 				},
 			}, false, nil
 		case "foo/two":
 			return []*FileMatchResolver{
 				{
-					uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
+					URI: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
 				},
 			}, false, nil
 		case "foo/empty":
@@ -125,19 +125,19 @@ func TestSearchFilesInReposStream(t *testing.T) {
 		case "foo/one":
 			return []*FileMatchResolver{
 				{
-					uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
+					URI: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
 				},
 			}, false, nil
 		case "foo/two":
 			return []*FileMatchResolver{
 				{
-					uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
+					URI: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
 				},
 			}, false, nil
 		case "foo/three":
 			return []*FileMatchResolver{
 				{
-					uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
+					URI: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
 				},
 			}, false, nil
 		default:
@@ -215,7 +215,7 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 		case "foo":
 			return []*FileMatchResolver{
 				{
-					uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
+					URI: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
 				},
 			}, false, nil
 		default:
@@ -257,7 +257,7 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 
 	resultURIs := make([]string, len(results))
 	for i, result := range results {
-		resultURIs[i] = result.uri
+		resultURIs[i] = result.URI
 	}
 	sort.Strings(resultURIs)
 

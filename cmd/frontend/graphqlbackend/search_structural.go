@@ -193,7 +193,7 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 		matches[i] = &FileMatchResolver{
 			JPath:     file.FileName,
 			JLimitHit: fileLimitHit,
-			uri:       fileMatchURI(repoRev.Repo.Name, "", file.FileName),
+			URI:       fileMatchURI(repoRev.Repo.Name, "", file.FileName),
 			Repo:      repoResolvers[repoRev.Repo.Name],
 			CommitID:  api.CommitID(file.Version),
 		}
