@@ -21,6 +21,54 @@ type HorizontalSearcher struct {
 	clients map[string]zoekt.Searcher // addr -> client
 }
 
+func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions) <-chan StreamSearchEvent {
+	results := make(chan StreamSearchEvent)
+	go func() {
+		defer close(results)
+		s.doStreamSearch(ctx, q, opts, results)
+	}()
+
+	return results
+}
+
+func (s *HorizontalSearcher) doStreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, results chan<- StreamSearchEvent) {
+	clients, err := s.searchers()
+	if err != nil {
+		results <- StreamSearchEvent{Error: err}
+		return
+	}
+
+	var cancel context.CancelFunc
+	ctx, cancel = context.WithCancel(ctx)
+	defer cancel()
+
+	c2 := make(chan StreamSearchEvent, len(clients))
+	for _, c := range clients {
+		go func(c zoekt.Searcher) {
+			sr, err := c.Search(ctx, q, opts)
+			c2 <- StreamSearchEvent{SearchResult: sr, Error: err}
+		}(c)
+	}
+
+	// During rebalancing a repository can appear on more than one replica.
+	dedupper := dedupper{}
+
+	for range clients {
+		r := <-c2
+
+		if r.SearchResult != nil {
+			r.SearchResult.Files = dedupper.Dedup(r.SearchResult.Files)
+		}
+
+		results <- r
+
+		// Stop at first error
+		if r.Error != nil {
+			break
+		}
+	}
+}
+
 // Search aggregates search over every endpoint in Map.
 func (s *HorizontalSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
 	start := time.Now()
@@ -211,6 +259,24 @@ func equalKeys(a map[string]zoekt.Searcher, b map[string]struct{}) bool {
 		}
 	}
 	return true
+}
+
+// dedupStream runs dedupper over c
+func dedupStream(c <-chan StreamSearchEvent) <-chan StreamSearchEvent {
+	dedupper := dedupper{}
+	c2 := make(chan StreamSearchEvent)
+
+	go func() {
+		defer close(c2)
+		for r := range c {
+			if r.SearchResult != nil {
+				r.SearchResult.Files = dedupper.Dedup(r.SearchResult.Files)
+			}
+			c2 <- r
+		}
+	}()
+
+	return c2
 }
 
 type dedupper map[string]struct{}
