@@ -91,13 +91,13 @@ describe('StreamingSearchResults', () => {
         )
 
         sinon.assert.calledOnce(searchSpy)
-        sinon.assert.calledWith(
-            searchSpy,
-            'r:golang/oauth2 test f:travis  case:yes',
-            'V2',
-            SearchPatternType.regexp,
-            'test'
-        )
+        sinon.assert.calledWith(searchSpy, {
+            query: 'r:golang/oauth2 test f:travis  case:yes',
+            version: 'V2',
+            patternType: SearchPatternType.regexp,
+            versionContext: 'test',
+            trace: undefined,
+        })
 
         element.unmount()
     })
@@ -121,13 +121,13 @@ describe('StreamingSearchResults', () => {
         )
 
         sinon.assert.calledOnce(searchSpy)
-        sinon.assert.calledWith(
-            searchSpy,
-            'r:golang/oauth2 test f:travis  case:yes',
-            'V2',
-            SearchPatternType.regexp,
-            undefined
-        )
+        sinon.assert.calledWith(searchSpy, {
+            query: 'r:golang/oauth2 test f:travis  case:yes',
+            version: 'V2',
+            patternType: SearchPatternType.regexp,
+            versionContext: undefined,
+            trace: undefined,
+        })
 
         element.unmount()
     })
