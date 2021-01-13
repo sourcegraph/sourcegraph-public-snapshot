@@ -12,16 +12,20 @@ import (
 //
 // These observables should only use cAdvisor metrics, and are thus only available on
 // Kubernetes and docker-compose deployments.
+//
+// cAdvisor metrics reference: https://github.com/google/cadvisor/blob/master/docs/storage/prometheus.md#prometheus-container-metrics
 
 var (
 	ContainerRestarts sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
 		return Observable{
 			Name:        "container_restarts",
-			Description: "container restarts every 5m by instance",
-			Query:       fmt.Sprintf(`increase(cadvisor_container_restart_count{%s}[5m])`, CadvisorNameMatcher(containerName)),
-			Warning:     monitoring.Alert().GreaterOrEqual(1),
-			Panel:       monitoring.Panel().LegendFormat("{{name}}"),
-			Owner:       owner,
+			Description: "container restarts",
+			// inspired by https://stackoverflow.com/a/63782891
+			Query:          fmt.Sprintf(`(count by(name) (container_last_seen{%[1]s} unless (container_last_seen{%[1]s} offset 1m)) - 1) > 0`, CadvisorNameMatcher(containerName)),
+			Warning:        monitoring.Alert().GreaterOrEqual(1),
+			Panel:          monitoring.Panel().LegendFormat("{{name}}"),
+			Owner:          owner,
+			Interpretation: "This value is based on the number of times a container has not been seen in one minute.",
 			PossibleSolutions: strings.Replace(`
 				- **Kubernetes:**
 					- Determine if the pod was OOM killed using 'kubectl describe pod {{CONTAINER_NAME}}' (look for 'OOMKilled: true') and, if so, consider increasing the memory limit in the relevant 'Deployment.yaml'.
