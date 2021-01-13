@@ -90,7 +90,7 @@ const CampaignSpecSchemaJSON = `{
                 "value": {
                   "type": "string",
                   "description": "The value of the output, which can be a template string.",
-                  "examples": ["${{ step.stdout }}", "${{ repository.name }}" ]
+                  "examples": ["${{ step.stdout }}", "${{ repository.name }}"]
                 },
                 "format": {
                   "type": "string",
@@ -133,7 +133,7 @@ const CampaignSpecSchemaJSON = `{
           "files": {
             "type": "object",
             "description": "Files that should be mounted into or be created inside the Docker container.",
-            "additionalProperties": {"type": "string"}
+            "additionalProperties": { "type": "string" }
           }
         }
       }
@@ -248,7 +248,9 @@ const CampaignSpecSchemaJSON = `{
               "items": {
                 "type": "object",
                 "description": "An object with one field: the key is the glob pattern to match against repository names; the value will be used as the published flag for matching repositories.",
-                "additionalProperties": { "oneOf": [{ "type": "boolean" }, { "type": "string", "pattern": "^draft$" }] },
+                "additionalProperties": {
+                  "oneOf": [{ "type": "boolean" }, { "type": "string", "pattern": "^draft$" }]
+                },
                 "minProperties": 1,
                 "maxProperties": 1
               }
