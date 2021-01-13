@@ -422,6 +422,21 @@ Refer to the [alert solutions reference](./alert_solutions.md#frontend-codeintel
 
 <br />
 
+#### frontend: codeintel_autoindex_enqueuer_99th_percentile_duration
+
+This code-intel panel indicates 99th percentile successful index enqueuer operation duration over 5m.
+
+
+<br />
+
+#### frontend: codeintel_autoindex_enqueuer_errors
+
+This code-intel panel indicates index enqueuer errors every 5m.
+
+Refer to the [alert solutions reference](./alert_solutions.md#frontend-codeintel-autoindex-enqueuer-errors) for relevant alerts.
+
+<br />
+
 ### Frontend: Internal service requests
 
 #### frontend: internal_indexed_search_error_responses
@@ -500,17 +515,11 @@ Refer to the [alert solutions reference](./alert_solutions.md#frontend-container
 
 #### frontend: container_restarts
 
-This cloud panel indicates container restarts every 5m by instance.
+This cloud panel indicates container restarts.
+
+This value is based on the number of times a container has not been seen in one minute.
 
 Refer to the [alert solutions reference](./alert_solutions.md#frontend-container-restarts) for relevant alerts.
-
-<br />
-
-#### frontend: fs_inodes_used
-
-This cloud panel indicates fs inodes in use by instance.
-
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-fs-inodes-used) for relevant alerts.
 
 <br />
 
@@ -554,6 +563,8 @@ Refer to the [alert solutions reference](./alert_solutions.md#frontend-provision
 
 This cloud panel indicates maximum active goroutines.
 
+A high value here indicates a possible goroutine leak.
+
 Refer to the [alert solutions reference](./alert_solutions.md#frontend-go-goroutines) for relevant alerts.
 
 <br />
@@ -566,7 +577,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#frontend-go-gc-dur
 
 <br />
 
-### Frontend: Kubernetes monitoring (ignore if using Docker Compose or server)
+### Frontend: Kubernetes monitoring (only available on Kubernetes)
 
 #### frontend: pods_available_percentage
 
@@ -657,17 +668,11 @@ Refer to the [alert solutions reference](./alert_solutions.md#gitserver-containe
 
 #### gitserver: container_restarts
 
-This cloud panel indicates container restarts every 5m by instance.
+This cloud panel indicates container restarts.
+
+This value is based on the number of times a container has not been seen in one minute.
 
 Refer to the [alert solutions reference](./alert_solutions.md#gitserver-container-restarts) for relevant alerts.
-
-<br />
-
-#### gitserver: fs_inodes_used
-
-This cloud panel indicates fs inodes in use by instance.
-
-Refer to the [alert solutions reference](./alert_solutions.md#gitserver-fs-inodes-used) for relevant alerts.
 
 <br />
 
@@ -675,7 +680,9 @@ Refer to the [alert solutions reference](./alert_solutions.md#gitserver-fs-inode
 
 This cloud panel indicates filesystem reads and writes rate by instance over 1h.
 
-Refer to the [alert solutions reference](./alert_solutions.md#gitserver-fs-io-operations) for relevant alerts.
+This value indicates the number of filesystem read and write operations by containers of this service.
+When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself, especially if high values or spikes correlate with {{CONTAINER_NAME}} issues.
+
 
 <br />
 
@@ -720,6 +727,8 @@ Git Server is expected to use up all the memory it is provided.
 #### gitserver: go_goroutines
 
 This cloud panel indicates maximum active goroutines.
+
+A high value here indicates a possible goroutine leak.
 
 Refer to the [alert solutions reference](./alert_solutions.md#gitserver-go-goroutines) for relevant alerts.
 
@@ -777,17 +786,11 @@ Refer to the [alert solutions reference](./alert_solutions.md#github-proxy-conta
 
 #### github-proxy: container_restarts
 
-This cloud panel indicates container restarts every 5m by instance.
+This cloud panel indicates container restarts.
+
+This value is based on the number of times a container has not been seen in one minute.
 
 Refer to the [alert solutions reference](./alert_solutions.md#github-proxy-container-restarts) for relevant alerts.
-
-<br />
-
-#### github-proxy: fs_inodes_used
-
-This cloud panel indicates fs inodes in use by instance.
-
-Refer to the [alert solutions reference](./alert_solutions.md#github-proxy-fs-inodes-used) for relevant alerts.
 
 <br />
 
@@ -831,6 +834,8 @@ Refer to the [alert solutions reference](./alert_solutions.md#github-proxy-provi
 
 This cloud panel indicates maximum active goroutines.
 
+A high value here indicates a possible goroutine leak.
+
 Refer to the [alert solutions reference](./alert_solutions.md#github-proxy-go-goroutines) for relevant alerts.
 
 <br />
@@ -843,7 +848,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#github-proxy-go-gc
 
 <br />
 
-### GitHub Proxy: Kubernetes monitoring (ignore if using Docker Compose or server)
+### GitHub Proxy: Kubernetes monitoring (only available on Kubernetes)
 
 #### github-proxy: pods_available_percentage
 
@@ -939,7 +944,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#postgres-provision
 
 <br />
 
-### Postgres: Kubernetes monitoring (ignore if using Docker Compose or server)
+### Postgres: Kubernetes monitoring (only available on Kubernetes)
 
 #### postgres: pods_available_percentage
 
@@ -1114,17 +1119,11 @@ Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel
 
 #### precise-code-intel-worker: container_restarts
 
-This code-intel panel indicates container restarts every 5m by instance.
+This code-intel panel indicates container restarts.
+
+This value is based on the number of times a container has not been seen in one minute.
 
 Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel-worker-container-restarts) for relevant alerts.
-
-<br />
-
-#### precise-code-intel-worker: fs_inodes_used
-
-This code-intel panel indicates fs inodes in use by instance.
-
-Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel-worker-fs-inodes-used) for relevant alerts.
 
 <br />
 
@@ -1168,6 +1167,8 @@ Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel
 
 This code-intel panel indicates maximum active goroutines.
 
+A high value here indicates a possible goroutine leak.
+
 Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel-worker-go-goroutines) for relevant alerts.
 
 <br />
@@ -1180,7 +1181,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel
 
 <br />
 
-### Precise Code Intel Worker: Kubernetes monitoring (ignore if using Docker Compose or server)
+### Precise Code Intel Worker: Kubernetes monitoring (only available on Kubernetes)
 
 #### precise-code-intel-worker: pods_available_percentage
 
@@ -1222,17 +1223,11 @@ Refer to the [alert solutions reference](./alert_solutions.md#query-runner-conta
 
 #### query-runner: container_restarts
 
-This search panel indicates container restarts every 5m by instance.
+This search panel indicates container restarts.
+
+This value is based on the number of times a container has not been seen in one minute.
 
 Refer to the [alert solutions reference](./alert_solutions.md#query-runner-container-restarts) for relevant alerts.
-
-<br />
-
-#### query-runner: fs_inodes_used
-
-This search panel indicates fs inodes in use by instance.
-
-Refer to the [alert solutions reference](./alert_solutions.md#query-runner-fs-inodes-used) for relevant alerts.
 
 <br />
 
@@ -1276,6 +1271,8 @@ Refer to the [alert solutions reference](./alert_solutions.md#query-runner-provi
 
 This search panel indicates maximum active goroutines.
 
+A high value here indicates a possible goroutine leak.
+
 Refer to the [alert solutions reference](./alert_solutions.md#query-runner-go-goroutines) for relevant alerts.
 
 <br />
@@ -1288,7 +1285,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#query-runner-go-gc
 
 <br />
 
-### Query Runner: Kubernetes monitoring (ignore if using Docker Compose or server)
+### Query Runner: Kubernetes monitoring (only available on Kubernetes)
 
 #### query-runner: pods_available_percentage
 
@@ -1588,17 +1585,11 @@ Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-conta
 
 #### repo-updater: container_restarts
 
-This cloud panel indicates container restarts every 5m by instance.
+This cloud panel indicates container restarts.
+
+This value is based on the number of times a container has not been seen in one minute.
 
 Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-container-restarts) for relevant alerts.
-
-<br />
-
-#### repo-updater: fs_inodes_used
-
-This cloud panel indicates fs inodes in use by instance.
-
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-fs-inodes-used) for relevant alerts.
 
 <br />
 
@@ -1642,6 +1633,8 @@ Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-provi
 
 This cloud panel indicates maximum active goroutines.
 
+A high value here indicates a possible goroutine leak.
+
 Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-go-goroutines) for relevant alerts.
 
 <br />
@@ -1654,7 +1647,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-go-gc
 
 <br />
 
-### Repo Updater: Kubernetes monitoring (ignore if using Docker Compose or server)
+### Repo Updater: Kubernetes monitoring (only available on Kubernetes)
 
 #### repo-updater: pods_available_percentage
 
@@ -1712,17 +1705,11 @@ Refer to the [alert solutions reference](./alert_solutions.md#searcher-container
 
 #### searcher: container_restarts
 
-This search panel indicates container restarts every 5m by instance.
+This search panel indicates container restarts.
+
+This value is based on the number of times a container has not been seen in one minute.
 
 Refer to the [alert solutions reference](./alert_solutions.md#searcher-container-restarts) for relevant alerts.
-
-<br />
-
-#### searcher: fs_inodes_used
-
-This search panel indicates fs inodes in use by instance.
-
-Refer to the [alert solutions reference](./alert_solutions.md#searcher-fs-inodes-used) for relevant alerts.
 
 <br />
 
@@ -1766,6 +1753,8 @@ Refer to the [alert solutions reference](./alert_solutions.md#searcher-provision
 
 This search panel indicates maximum active goroutines.
 
+A high value here indicates a possible goroutine leak.
+
 Refer to the [alert solutions reference](./alert_solutions.md#searcher-go-goroutines) for relevant alerts.
 
 <br />
@@ -1778,7 +1767,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#searcher-go-gc-dur
 
 <br />
 
-### Searcher: Kubernetes monitoring (ignore if using Docker Compose or server)
+### Searcher: Kubernetes monitoring (only available on Kubernetes)
 
 #### searcher: pods_available_percentage
 
@@ -1836,17 +1825,11 @@ Refer to the [alert solutions reference](./alert_solutions.md#symbols-container-
 
 #### symbols: container_restarts
 
-This code-intel panel indicates container restarts every 5m by instance.
+This code-intel panel indicates container restarts.
+
+This value is based on the number of times a container has not been seen in one minute.
 
 Refer to the [alert solutions reference](./alert_solutions.md#symbols-container-restarts) for relevant alerts.
-
-<br />
-
-#### symbols: fs_inodes_used
-
-This code-intel panel indicates fs inodes in use by instance.
-
-Refer to the [alert solutions reference](./alert_solutions.md#symbols-fs-inodes-used) for relevant alerts.
 
 <br />
 
@@ -1890,6 +1873,8 @@ Refer to the [alert solutions reference](./alert_solutions.md#symbols-provisioni
 
 This code-intel panel indicates maximum active goroutines.
 
+A high value here indicates a possible goroutine leak.
+
 Refer to the [alert solutions reference](./alert_solutions.md#symbols-go-goroutines) for relevant alerts.
 
 <br />
@@ -1902,7 +1887,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#symbols-go-gc-dura
 
 <br />
 
-### Symbols: Kubernetes monitoring (ignore if using Docker Compose or server)
+### Symbols: Kubernetes monitoring (only available on Kubernetes)
 
 #### symbols: pods_available_percentage
 
@@ -1964,17 +1949,11 @@ Refer to the [alert solutions reference](./alert_solutions.md#syntect-server-con
 
 #### syntect-server: container_restarts
 
-This cloud panel indicates container restarts every 5m by instance.
+This cloud panel indicates container restarts.
+
+This value is based on the number of times a container has not been seen in one minute.
 
 Refer to the [alert solutions reference](./alert_solutions.md#syntect-server-container-restarts) for relevant alerts.
-
-<br />
-
-#### syntect-server: fs_inodes_used
-
-This cloud panel indicates fs inodes in use by instance.
-
-Refer to the [alert solutions reference](./alert_solutions.md#syntect-server-fs-inodes-used) for relevant alerts.
 
 <br />
 
@@ -2012,7 +1991,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#syntect-server-pro
 
 <br />
 
-### Syntect Server: Kubernetes monitoring (ignore if using Docker Compose or server)
+### Syntect Server: Kubernetes monitoring (only available on Kubernetes)
 
 #### syntect-server: pods_available_percentage
 
@@ -2054,25 +2033,21 @@ Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-
 
 #### zoekt-indexserver: container_restarts
 
-This search panel indicates container restarts every 5m by instance.
+This search panel indicates container restarts.
+
+This value is based on the number of times a container has not been seen in one minute.
 
 Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-container-restarts) for relevant alerts.
 
 <br />
 
-#### zoekt-indexserver: fs_inodes_used
-
-This search panel indicates fs inodes in use by instance.
-
-Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-fs-inodes-used) for relevant alerts.
-
-<br />
-
 #### zoekt-indexserver: fs_io_operations
 
-This search panel indicates filesystem reads and writes rate by instance over 1h.
+This cloud panel indicates filesystem reads and writes rate by instance over 1h.
 
-Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-fs-io-operations) for relevant alerts.
+This value indicates the number of filesystem read and write operations by containers of this service.
+When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself, especially if high values or spikes correlate with {{CONTAINER_NAME}} issues.
+
 
 <br />
 
@@ -2110,7 +2085,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-
 
 <br />
 
-### Zoekt Index Server: Kubernetes monitoring (ignore if using Docker Compose or server)
+### Zoekt Index Server: Kubernetes monitoring (only available on Kubernetes)
 
 #### zoekt-indexserver: pods_available_percentage
 
@@ -2152,25 +2127,21 @@ Refer to the [alert solutions reference](./alert_solutions.md#zoekt-webserver-co
 
 #### zoekt-webserver: container_restarts
 
-This search panel indicates container restarts every 5m by instance.
+This search panel indicates container restarts.
+
+This value is based on the number of times a container has not been seen in one minute.
 
 Refer to the [alert solutions reference](./alert_solutions.md#zoekt-webserver-container-restarts) for relevant alerts.
 
 <br />
 
-#### zoekt-webserver: fs_inodes_used
-
-This search panel indicates fs inodes in use by instance.
-
-Refer to the [alert solutions reference](./alert_solutions.md#zoekt-webserver-fs-inodes-used) for relevant alerts.
-
-<br />
-
 #### zoekt-webserver: fs_io_operations
 
-This search panel indicates filesystem reads and writes by instance rate over 1h.
+This cloud panel indicates filesystem reads and writes rate by instance over 1h.
 
-Refer to the [alert solutions reference](./alert_solutions.md#zoekt-webserver-fs-io-operations) for relevant alerts.
+This value indicates the number of filesystem read and write operations by containers of this service.
+When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself, especially if high values or spikes correlate with {{CONTAINER_NAME}} issues.
+
 
 <br />
 
@@ -2252,17 +2223,11 @@ Refer to the [alert solutions reference](./alert_solutions.md#prometheus-contain
 
 #### prometheus: container_restarts
 
-This distribution panel indicates container restarts every 5m by instance.
+This distribution panel indicates container restarts.
+
+This value is based on the number of times a container has not been seen in one minute.
 
 Refer to the [alert solutions reference](./alert_solutions.md#prometheus-container-restarts) for relevant alerts.
-
-<br />
-
-#### prometheus: fs_inodes_used
-
-This distribution panel indicates fs inodes in use by instance.
-
-Refer to the [alert solutions reference](./alert_solutions.md#prometheus-fs-inodes-used) for relevant alerts.
 
 <br />
 
@@ -2300,7 +2265,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#prometheus-provisi
 
 <br />
 
-### Prometheus: Kubernetes monitoring (ignore if using Docker Compose or server)
+### Prometheus: Kubernetes monitoring (only available on Kubernetes)
 
 #### prometheus: pods_available_percentage
 
@@ -2402,17 +2367,11 @@ Refer to the [alert solutions reference](./alert_solutions.md#executor-queue-con
 
 #### executor-queue: container_restarts
 
-This code-intel panel indicates container restarts every 5m by instance.
+This code-intel panel indicates container restarts.
+
+This value is based on the number of times a container has not been seen in one minute.
 
 Refer to the [alert solutions reference](./alert_solutions.md#executor-queue-container-restarts) for relevant alerts.
-
-<br />
-
-#### executor-queue: fs_inodes_used
-
-This code-intel panel indicates fs inodes in use by instance.
-
-Refer to the [alert solutions reference](./alert_solutions.md#executor-queue-fs-inodes-used) for relevant alerts.
 
 <br />
 
@@ -2456,6 +2415,8 @@ Refer to the [alert solutions reference](./alert_solutions.md#executor-queue-pro
 
 This code-intel panel indicates maximum active goroutines.
 
+A high value here indicates a possible goroutine leak.
+
 Refer to the [alert solutions reference](./alert_solutions.md#executor-queue-go-goroutines) for relevant alerts.
 
 <br />
@@ -2468,7 +2429,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#executor-queue-go-
 
 <br />
 
-### Executor Queue: Kubernetes monitoring (ignore if using Docker Compose or server)
+### Executor Queue: Kubernetes monitoring (only available on Kubernetes)
 
 #### executor-queue: pods_available_percentage
 
@@ -2591,17 +2552,11 @@ Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel
 
 #### precise-code-intel-indexer: container_restarts
 
-This code-intel panel indicates container restarts every 5m by instance.
+This code-intel panel indicates container restarts.
+
+This value is based on the number of times a container has not been seen in one minute.
 
 Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel-indexer-container-restarts) for relevant alerts.
-
-<br />
-
-#### precise-code-intel-indexer: fs_inodes_used
-
-This code-intel panel indicates fs inodes in use by instance.
-
-Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel-indexer-fs-inodes-used) for relevant alerts.
 
 <br />
 
@@ -2645,6 +2600,8 @@ Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel
 
 This code-intel panel indicates maximum active goroutines.
 
+A high value here indicates a possible goroutine leak.
+
 Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel-indexer-go-goroutines) for relevant alerts.
 
 <br />
@@ -2657,7 +2614,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel
 
 <br />
 
-### Precise Code Intel Indexer: Kubernetes monitoring (ignore if using Docker Compose or server)
+### Precise Code Intel Indexer: Kubernetes monitoring (only available on Kubernetes)
 
 #### precise-code-intel-indexer: pods_available_percentage
 

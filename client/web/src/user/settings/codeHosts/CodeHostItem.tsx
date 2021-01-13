@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react'
 
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import CircleOutlineIcon from 'mdi-react/CircleOutlineIcon'
+import CircleDashedIcon from '../../../components/CircleDashedIcon'
 
 import { AddCodeHostConnectionModal } from './AddCodeHostConnectionModal'
 import { RemoveCodeHostConnectionModal } from './RemoveCodeHostConnectionModal'
@@ -91,7 +91,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                 ) : service?.id ? (
                     <CheckCircleIcon className="icon-inline mb-0 mr-2 text-success" />
                 ) : (
-                    <CircleOutlineIcon className="icon-inline mb-0 mr-2 text-muted" />
+                    <CircleDashedIcon className="icon-inline mb-0 mr-2 add-user-code-hosts-page__icon--dashed" />
                 )}
                 <Icon className="icon-inline mb-0 mr-1" />
             </div>

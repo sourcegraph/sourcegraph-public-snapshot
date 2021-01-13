@@ -18,7 +18,7 @@ type TestChangesetOpts struct {
 	Campaign     int64
 	CurrentSpec  int64
 	PreviousSpec int64
-	CampaignIDs  []int64
+	Campaigns    []campaigns.CampaignAssoc
 
 	ExternalServiceType string
 	ExternalID          string
@@ -70,7 +70,7 @@ func BuildChangeset(opts TestChangesetOpts) *campaigns.Changeset {
 		RepoID:         opts.Repo,
 		CurrentSpecID:  opts.CurrentSpec,
 		PreviousSpecID: opts.PreviousSpec,
-		CampaignIDs:    opts.CampaignIDs,
+		Campaigns:      opts.Campaigns,
 
 		ExternalServiceType: opts.ExternalServiceType,
 		ExternalID:          opts.ExternalID,
@@ -99,7 +99,7 @@ func BuildChangeset(opts TestChangesetOpts) *campaigns.Changeset {
 	}
 
 	if opts.Campaign != 0 {
-		changeset.CampaignIDs = []int64{opts.Campaign}
+		changeset.Campaigns = []campaigns.CampaignAssoc{{CampaignID: opts.Campaign}}
 	}
 
 	return changeset
@@ -123,6 +123,8 @@ type ChangesetAssertions struct {
 
 	FailureMessage *string
 	NumFailures    int64
+
+	DetachFrom []int64
 }
 
 func AssertChangeset(t *testing.T, c *campaigns.Changeset, a ChangesetAssertions) {
@@ -178,6 +180,19 @@ func AssertChangeset(t *testing.T, c *campaigns.Changeset, a ChangesetAssertions
 
 	if diff := cmp.Diff(a.Closing, c.Closing); diff != "" {
 		t.Fatalf("changeset Closing wrong. (-want +got):\n%s", diff)
+	}
+
+	toDetach := []int64{}
+	for _, assoc := range c.Campaigns {
+		if assoc.Detach {
+			toDetach = append(toDetach, assoc.CampaignID)
+		}
+	}
+	if a.DetachFrom == nil {
+		a.DetachFrom = []int64{}
+	}
+	if diff := cmp.Diff(a.DetachFrom, toDetach); diff != "" {
+		t.Fatalf("changeset DetachFrom wrong. (-want +got):\n%s", diff)
 	}
 
 	if want := c.FailureMessage; want != nil {
@@ -276,6 +291,15 @@ func SetChangesetClosed(t *testing.T, ctx context.Context, s UpdateChangeseter, 
 	c.ReconcilerState = campaigns.ReconcilerStateCompleted
 	c.Closing = false
 	c.ExternalState = campaigns.ChangesetExternalStateClosed
+
+	assocs := make([]campaigns.CampaignAssoc, 0)
+	for _, assoc := range c.Campaigns {
+		if !assoc.Detach {
+			assocs = append(assocs, assoc)
+		}
+	}
+
+	c.Campaigns = assocs
 
 	if err := s.UpdateChangeset(ctx, c); err != nil {
 		t.Fatalf("failed to update changeset: %s", err)

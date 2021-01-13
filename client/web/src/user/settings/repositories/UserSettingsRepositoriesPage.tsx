@@ -182,9 +182,9 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             </div>
             <p className="text-muted pb-2">
                 All repositories synced with Sourcegraph from{' '}
-                <a className="text-primary" href={routingPrefix + '/external-services'}>
+                <Link className="text-primary" to={`${routingPrefix}/code-hosts`}>
                     connected code hosts
-                </a>
+                </Link>
             </p>
             {body}
         </div>

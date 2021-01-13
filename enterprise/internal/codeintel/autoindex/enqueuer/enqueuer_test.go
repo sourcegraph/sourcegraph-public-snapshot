@@ -9,7 +9,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/observability"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -64,7 +63,7 @@ func TestIndexEnqueuerUpdateIndexConfigurationInDatabase(t *testing.T) {
 		dbStore:          mockDBStore,
 		gitserverClient:  mockGitserverClient,
 		maxJobsPerCommit: defaultMaxJobsPerCommit,
-		operations:       observability.NewOperations(&observation.TestContext),
+		operations:       newOperations(&observation.TestContext),
 	}
 
 	_ = scheduler.QueueIndex(context.Background(), 42)
@@ -188,7 +187,7 @@ func TestIndexEnqueuerUpdateIndexConfigurationInRepository(t *testing.T) {
 		dbStore:          mockDBStore,
 		gitserverClient:  mockGitserverClient,
 		maxJobsPerCommit: defaultMaxJobsPerCommit,
-		operations:       observability.NewOperations(&observation.TestContext),
+		operations:       newOperations(&observation.TestContext),
 	}
 
 	if err := scheduler.QueueIndex(context.Background(), 42); err != nil {
@@ -288,7 +287,7 @@ func TestIndexEnqueuerUpdateIndexConfigurationInferred(t *testing.T) {
 		dbStore:          mockDBStore,
 		gitserverClient:  mockGitserverClient,
 		maxJobsPerCommit: defaultMaxJobsPerCommit,
-		operations:       observability.NewOperations(&observation.TestContext),
+		operations:       newOperations(&observation.TestContext),
 	}
 
 	for _, id := range []int{41, 42, 43, 44} {
@@ -361,7 +360,7 @@ func TestIndexEnqueuerUpdateIndexConfigurationInferredTooLarge(t *testing.T) {
 		dbStore:          mockDBStore,
 		gitserverClient:  mockGitserverClient,
 		maxJobsPerCommit: 20,
-		operations:       observability.NewOperations(&observation.TestContext),
+		operations:       newOperations(&observation.TestContext),
 	}
 
 	if err := scheduler.QueueIndex(context.Background(), 42); err != nil {

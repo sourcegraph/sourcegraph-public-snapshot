@@ -20,7 +20,7 @@ func ExecutorQueue() *monitoring.Container {
 							Description:       "queue size",
 							Query:             `max(src_executor_queue_total{queue="codeintel"})`,
 							Warning:           monitoring.Alert().GreaterOrEqual(100),
-							PanelOptions:      monitoring.PanelOptions().LegendFormat("unprocessed jobs"),
+							Panel:             monitoring.Panel().LegendFormat("unprocessed jobs"),
 							Owner:             monitoring.ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
@@ -29,7 +29,7 @@ func ExecutorQueue() *monitoring.Container {
 							Description:       "queue growth rate over 30m",
 							Query:             `sum(increase(src_executor_queue_total{queue="codeintel"}[30m])) / sum(increase(src_executor_queue_processor_total{queue="codeintel"}[30m]))`,
 							Warning:           monitoring.Alert().GreaterOrEqual(5),
-							PanelOptions:      monitoring.PanelOptions().LegendFormat("rate of (enqueued / processed)"),
+							Panel:             monitoring.Panel().LegendFormat("rate of (enqueued / processed)"),
 							Owner:             monitoring.ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
@@ -38,7 +38,7 @@ func ExecutorQueue() *monitoring.Container {
 							Description:       "job errors every 5m",
 							Query:             `sum(increase(src_executor_queue_processor_errors_total{queue="codeintel"}[5m]))`,
 							Warning:           monitoring.Alert().GreaterOrEqual(20),
-							PanelOptions:      monitoring.PanelOptions().LegendFormat("errors"),
+							Panel:             monitoring.Panel().LegendFormat("errors"),
 							Owner:             monitoring.ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
@@ -49,7 +49,7 @@ func ExecutorQueue() *monitoring.Container {
 							Description:    "active executors processing codeintel jobs",
 							Query:          `max(src_apiworker_apiserver_executors_total{queue="codeintel"})`,
 							NoAlert:        true,
-							PanelOptions:   monitoring.PanelOptions().LegendFormat("executors"),
+							Panel:          monitoring.Panel().LegendFormat("executors"),
 							Owner:          monitoring.ObservableOwnerCodeIntel,
 							Interpretation: "none",
 						},
@@ -58,7 +58,7 @@ func ExecutorQueue() *monitoring.Container {
 							Description:    "active jobs",
 							Query:          `sum(src_apiworker_apiserver_jobs_total{queue="codeintel"})`,
 							NoAlert:        true,
-							PanelOptions:   monitoring.PanelOptions().LegendFormat("jobs"),
+							Panel:          monitoring.Panel().LegendFormat("jobs"),
 							Owner:          monitoring.ObservableOwnerCodeIntel,
 							Interpretation: "none",
 						},
@@ -74,7 +74,7 @@ func ExecutorQueue() *monitoring.Container {
 							Description:       "99th percentile successful worker store operation duration over 5m",
 							Query:             `histogram_quantile(0.99, sum by (le)(rate(src_workerutil_dbworker_store_precise_code_intel_index_worker_store_duration_seconds_bucket{job="executor-queue"}[5m])))`,
 							Warning:           monitoring.Alert().GreaterOrEqual(20),
-							PanelOptions:      monitoring.PanelOptions().LegendFormat("operations").Unit(monitoring.Seconds),
+							Panel:             monitoring.Panel().LegendFormat("operations").Unit(monitoring.Seconds),
 							Owner:             monitoring.ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
@@ -83,7 +83,7 @@ func ExecutorQueue() *monitoring.Container {
 							Description:       "worker store errors every 5m",
 							Query:             `sum(increase(src_workerutil_dbworker_store_precise_code_intel_index_worker_store_errors_total{job="executor-queue"}[5m]))`,
 							Warning:           monitoring.Alert().GreaterOrEqual(20),
-							PanelOptions:      monitoring.PanelOptions().LegendFormat("errors"),
+							Panel:             monitoring.Panel().LegendFormat("errors"),
 							Owner:             monitoring.ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
@@ -100,7 +100,7 @@ func ExecutorQueue() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Container monitoring (not available on server)",
+				Title:  shared.TitleContainerMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -109,12 +109,11 @@ func ExecutorQueue() *monitoring.Container {
 					},
 					{
 						shared.ContainerRestarts("executor-queue", monitoring.ObservableOwnerCodeIntel).Observable(),
-						shared.ContainerFsInodes("executor-queue", monitoring.ObservableOwnerCodeIntel).Observable(),
 					},
 				},
 			},
 			{
-				Title:  "Provisioning indicators (not available on server)",
+				Title:  shared.TitleProvisioningIndicators,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -128,7 +127,7 @@ func ExecutorQueue() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Golang runtime monitoring",
+				Title:  shared.TitleGolangMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -138,7 +137,7 @@ func ExecutorQueue() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Kubernetes monitoring (ignore if using Docker Compose or server)",
+				Title:  shared.TitleKubernetesMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{

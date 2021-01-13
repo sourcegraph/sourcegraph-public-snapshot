@@ -652,9 +652,42 @@ func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, minimal bool, opt
 	return s.getReposBySQL(ctx, minimal, fromClause, queryConds, querySuffix, scanRepo)
 }
 
+type ListDefaultReposOptions struct {
+	Limit   int
+	AfterID int32
+}
+
+// ListAllDefaultRepos returns a list of all default repos. Default repos are a union of
+// repos in our default_repos table and repos owned by users.
+// It may perform multiple queries, fetching repos in batches.
+func (s *RepoStore) ListAllDefaultRepos(ctx context.Context) (results []*types.RepoName, err error) {
+	return s.listAllDefaultRepos(ctx, 10_000)
+}
+
+func (s *RepoStore) listAllDefaultRepos(ctx context.Context, batchSize int) (results []*types.RepoName, err error) {
+	opts := ListDefaultReposOptions{
+		Limit:   batchSize,
+		AfterID: 0,
+	}
+
+	for {
+		repos, err := s.ListDefaultRepos(ctx, opts)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, repos...)
+		if len(repos) < batchSize {
+			break
+		}
+		opts.AfterID = int32(repos[len(repos)-1].ID)
+	}
+
+	return results, nil
+}
+
 // ListDefaultRepos returns a list of default repos. Default repos are a union of
 // repos in our default_repos table and repos owned by users.
-func (s *RepoStore) ListDefaultRepos(ctx context.Context) (results []*types.RepoName, err error) {
+func (s *RepoStore) ListDefaultRepos(ctx context.Context, opts ListDefaultReposOptions) (results []*types.RepoName, err error) {
 	tr, ctx := trace.New(ctx, "repos.ListDefaultRepos", "")
 	defer func() {
 		tr.SetError(err)
@@ -662,7 +695,7 @@ func (s *RepoStore) ListDefaultRepos(ctx context.Context) (results []*types.Repo
 	}()
 	s.ensureStore()
 
-	var q = fmt.Sprintf(`
+	var q = sqlf.Sprintf(`
 -- source: internal/db/default_repos.go:defaultRepos.List
 SELECT
     id,
@@ -670,7 +703,8 @@ SELECT
 FROM
     repo r
 WHERE
-    EXISTS (
+    r.id > %s
+    AND EXISTS (
         SELECT
         FROM
             external_service_repos sr
@@ -679,7 +713,8 @@ WHERE
 			s.namespace_user_id IS NOT NULL
 			AND s.deleted_at IS NULL
 			AND r.id = sr.repo_id
-            AND r.deleted_at IS NULL)
+            AND r.deleted_at IS NULL
+    )
 UNION
     SELECT
         r.id,
@@ -689,11 +724,14 @@ UNION
 		JOIN repo r ON default_repos.repo_id = r.id
 	WHERE
 		r.deleted_at IS NULL
-`)
+		AND r.id > %s
+
+	ORDER BY id ASC
+	LIMIT %s`, opts.AfterID, opts.AfterID, opts.Limit)
 
 	var repos []*types.RepoName
 
-	rows, err := s.Query(ctx, sqlf.Sprintf(q))
+	rows, err := s.Query(ctx, q)
 	if err != nil {
 		return nil, errors.Wrap(err, "querying for indexed repos")
 	}

@@ -171,8 +171,9 @@ func (s *Syncer) TriggerEnqueueSyncJobs() {
 // SyncExternalService syncs repos using the supplied external service.
 func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalServiceID int64, minSyncInterval time.Duration) (err error) {
 	var (
-		diff         Diff
-		unauthorized bool
+		diff             Diff
+		unauthorized     bool
+		accountSuspended bool
 	)
 
 	if s.Logger != nil {
@@ -240,13 +241,16 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 	// Fetch repos from the source
 	var sourced types.Repos
 	if sourced, err = s.sourced(ctx, svcs, onSourced); err != nil {
-		// As a special case, if we fail due to bad credentials we should behave as if zero repos were found. This is
-		// so that revoked tokens cause repos to be removed correctly.
-		if !errcode.IsUnauthorized(err) {
+		unauthorized = errcode.IsUnauthorized(err)
+		accountSuspended = errcode.IsAccountSuspended(err)
+
+		// As a special case, if we fail due to bad credentials or account suspension we
+		// should behave as if zero repos were found. This is so that revoked tokens
+		// cause repos to be removed correctly.
+		if !unauthorized && !accountSuspended {
 			return errors.Wrap(err, "syncer.sync.sourced")
 		}
-		log15.Warn("Unauthorized while syncing", "externalService", svc.ID)
-		unauthorized = true
+		log15.Warn("Non fatal error during sync", "externalService", svc.ID, "unauthorized", unauthorized, "accountSuspended", accountSuspended)
 	}
 
 	// Unless explicitly specified with the "all" setting or the owner of the service has the "AllowUserExternalServicePrivate" tag,
@@ -366,6 +370,9 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 	if unauthorized {
 		return &ErrUnauthorized{}
 	}
+	if accountSuspended {
+		return &ErrAccountSuspended{}
+	}
 
 	return nil
 }
@@ -377,6 +384,16 @@ func (e ErrUnauthorized) Error() string {
 }
 
 func (e ErrUnauthorized) Unauthorized() bool {
+	return true
+}
+
+type ErrAccountSuspended struct{}
+
+func (e ErrAccountSuspended) Error() string {
+	return "account suspended"
+}
+
+func (e ErrAccountSuspended) AccountSuspended() bool {
 	return true
 }
 

@@ -26,7 +26,7 @@ func TestPrepareWorkspace(t *testing.T) {
 	runner := NewMockRunner()
 	handler := &handler{
 		options:    options,
-		operations: command.MakeOperations(&observation.TestContext),
+		operations: command.NewOperations(&observation.TestContext),
 	}
 
 	dir, err := handler.prepareWorkspace(context.Background(), runner, "linux", "deadbeef")
@@ -59,7 +59,7 @@ func TestPrepareWorkspaceNoRepository(t *testing.T) {
 	runner := NewMockRunner()
 	handler := &handler{
 		options:    options,
-		operations: command.MakeOperations(&observation.TestContext),
+		operations: command.NewOperations(&observation.TestContext),
 	}
 
 	dir, err := handler.prepareWorkspace(context.Background(), runner, "", "")

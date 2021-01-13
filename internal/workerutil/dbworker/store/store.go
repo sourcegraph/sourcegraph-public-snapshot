@@ -235,7 +235,7 @@ func newStore(handle *basestore.TransactableHandle, options Options, observation
 		Store:          basestore.NewWithHandle(handle),
 		options:        options,
 		columnReplacer: strings.NewReplacer(replacements...),
-		operations:     makeOperations(options.Name, observationContext),
+		operations:     newOperations(options.Name, observationContext),
 	}
 }
 

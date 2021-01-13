@@ -20,7 +20,7 @@ func SyntectServer() *monitoring.Container {
 							Description:    "syntax highlighting errors every 5m",
 							Query:          `sum(increase(src_syntax_highlighting_requests{status="error"}[5m])) / sum(increase(src_syntax_highlighting_requests[5m])) * 100`,
 							NoAlert:        true,
-							PanelOptions:   monitoring.PanelOptions().LegendFormat("error").Unit(monitoring.Percentage),
+							Panel:          monitoring.Panel().LegendFormat("error").Unit(monitoring.Percentage),
 							Owner:          monitoring.ObservableOwnerCloud,
 							Interpretation: "none",
 						},
@@ -29,7 +29,7 @@ func SyntectServer() *monitoring.Container {
 							Description:    "syntax highlighting timeouts every 5m",
 							Query:          `sum(increase(src_syntax_highlighting_requests{status="timeout"}[5m])) / sum(increase(src_syntax_highlighting_requests[5m])) * 100`,
 							NoAlert:        true,
-							PanelOptions:   monitoring.PanelOptions().LegendFormat("timeout").Unit(monitoring.Percentage),
+							Panel:          monitoring.Panel().LegendFormat("timeout").Unit(monitoring.Percentage),
 							Owner:          monitoring.ObservableOwnerCloud,
 							Interpretation: "none",
 						},
@@ -40,7 +40,7 @@ func SyntectServer() *monitoring.Container {
 							Description:    "syntax highlighting panics every 5m",
 							Query:          `sum(increase(src_syntax_highlighting_requests{status="panic"}[5m]))`,
 							NoAlert:        true,
-							PanelOptions:   monitoring.PanelOptions().LegendFormat("panic"),
+							Panel:          monitoring.Panel().LegendFormat("panic"),
 							Owner:          monitoring.ObservableOwnerCloud,
 							Interpretation: "none",
 						},
@@ -49,7 +49,7 @@ func SyntectServer() *monitoring.Container {
 							Description:    "syntax highlighter worker deaths every 5m",
 							Query:          `sum(increase(src_syntax_highlighting_requests{status="hss_worker_timeout"}[5m]))`,
 							NoAlert:        true,
-							PanelOptions:   monitoring.PanelOptions().LegendFormat("worker death"),
+							Panel:          monitoring.Panel().LegendFormat("worker death"),
 							Owner:          monitoring.ObservableOwnerCloud,
 							Interpretation: "none",
 						},
@@ -57,7 +57,7 @@ func SyntectServer() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Container monitoring (not available on server)",
+				Title:  shared.TitleContainerMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -66,12 +66,11 @@ func SyntectServer() *monitoring.Container {
 					},
 					{
 						shared.ContainerRestarts("syntect-server", monitoring.ObservableOwnerCloud).Observable(),
-						shared.ContainerFsInodes("syntect-server", monitoring.ObservableOwnerCloud).Observable(),
 					},
 				},
 			},
 			{
-				Title:  "Provisioning indicators (not available on server)",
+				Title:  shared.TitleProvisioningIndicators,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -85,7 +84,7 @@ func SyntectServer() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Kubernetes monitoring (ignore if using Docker Compose or server)",
+				Title:  shared.TitleKubernetesMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{

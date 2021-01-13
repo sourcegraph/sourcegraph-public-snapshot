@@ -74,7 +74,7 @@ func (s *defaultRepos) refreshCache(ctx context.Context) ([]*types.RepoName, err
 		return repos, nil
 	}
 
-	repos, err := Repos.ListDefaultRepos(ctx)
+	repos, err := Repos.ListAllDefaultRepos(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "querying for default repos")
 	}

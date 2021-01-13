@@ -50,12 +50,12 @@ func NewMetrics(observationContext *observation.Context, prefix string, labels m
 	)
 
 	return WorkerMetrics{
-		operations: makeOperations(observationContext, prefix, keys, values),
+		operations: newOperations(observationContext, prefix, keys, values),
 		numJobs:    numJobs,
 	}
 }
 
-func makeOperations(observationContext *observation.Context, prefix string, keys, values []string) *operations {
+func newOperations(observationContext *observation.Context, prefix string, keys, values []string) *operations {
 	metrics := metrics.NewOperationMetrics(
 		observationContext.Registerer,
 		prefix,

@@ -11,7 +11,7 @@ exports[`FormTriggerArea Error message is shown when query is invalid 1`] = `
     Trigger
   </h3>
   <div
-    className="code-monitor-form__card card p-3 my-3"
+    className="code-monitor-form__card card p-3"
   >
     <div
       className="font-weight-bold"

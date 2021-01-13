@@ -148,7 +148,7 @@ func TestAddQueryRegexpField(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			got := addRegexpField(parseTree, test.addField, test.addPattern)
+			got := query.AddRegexpField(parseTree, test.addField, test.addPattern)
 			if got != test.want {
 				t.Errorf("got %q, want %q", got, test.want)
 			}
@@ -364,6 +364,26 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 			wantAlert := test.wantAlert
 			if !reflect.DeepEqual(alert, wantAlert) {
 				t.Fatalf("test %s, have alert %+v, want: %+v", test.name, alert, test.wantAlert)
+			}
+		})
+	}
+}
+
+func TestCapFirst(t *testing.T) {
+	tests := []struct {
+		name string
+		in   string
+		want string
+	}{
+		{name: "empty", in: "", want: ""},
+		{name: "a", in: "a", want: "A"},
+		{name: "ab", in: "ab", want: "Ab"},
+		{name: "хлеб", in: "хлеб", want: "Хлеб"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := capFirst(tt.in); got != tt.want {
+				t.Errorf("makeTitle() = %v, want %v", got, tt.want)
 			}
 		})
 	}

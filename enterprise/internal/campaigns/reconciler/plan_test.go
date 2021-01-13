@@ -127,7 +127,7 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 				PublicationState: campaigns.ChangesetPublicationStatePublished,
 				ExternalState:    campaigns.ChangesetExternalStateClosed,
 				OwnedByCampaign:  1234,
-				CampaignIDs:      []int64{1234},
+				Campaigns:        []campaigns.CampaignAssoc{{CampaignID: 1234}},
 			},
 			wantOperations: Operations{
 				campaigns.ReconcilerOperationReopen,
@@ -141,7 +141,7 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 				PublicationState: campaigns.ChangesetPublicationStatePublished,
 				ExternalState:    campaigns.ChangesetExternalStateOpen,
 				OwnedByCampaign:  1234,
-				CampaignIDs:      []int64{1234},
+				Campaigns:        []campaigns.CampaignAssoc{{CampaignID: 1234}},
 				// Important bit:
 				Closing: true,
 			},
@@ -157,13 +157,41 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 				PublicationState: campaigns.ChangesetPublicationStatePublished,
 				ExternalState:    campaigns.ChangesetExternalStateClosed,
 				OwnedByCampaign:  1234,
-				CampaignIDs:      []int64{1234},
+				Campaigns:        []campaigns.CampaignAssoc{{CampaignID: 1234}},
 				// Important bit:
 				Closing: true,
 			},
 			wantOperations: Operations{
 				// TODO: This should probably be a noop in the future
 				campaigns.ReconcilerOperationClose,
+			},
+		},
+		{
+			name:         "detaching",
+			previousSpec: ct.TestSpecOpts{Published: true},
+			currentSpec:  ct.TestSpecOpts{Published: true},
+			changeset: ct.TestChangesetOpts{
+				PublicationState: campaigns.ChangesetPublicationStatePublished,
+				ExternalState:    campaigns.ChangesetExternalStateOpen,
+				OwnedByCampaign:  1234,
+				Campaigns:        []campaigns.CampaignAssoc{{CampaignID: 1234, Detach: true}},
+			},
+			wantOperations: Operations{
+				campaigns.ReconcilerOperationDetach,
+			},
+		},
+		{
+			name:         "detaching already-detached changeset",
+			previousSpec: ct.TestSpecOpts{Published: true},
+			currentSpec:  ct.TestSpecOpts{Published: true},
+			changeset: ct.TestChangesetOpts{
+				PublicationState: campaigns.ChangesetPublicationStatePublished,
+				ExternalState:    campaigns.ChangesetExternalStateClosed,
+				OwnedByCampaign:  1234,
+				Campaigns:        []campaigns.CampaignAssoc{},
+			},
+			wantOperations: Operations{
+				// Expect no operations.
 			},
 		},
 	}

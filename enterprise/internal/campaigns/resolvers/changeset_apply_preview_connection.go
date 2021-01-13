@@ -6,6 +6,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/service"
@@ -22,15 +24,16 @@ type changesetApplyPreviewConnectionResolver struct {
 	opts           store.GetRewirerMappingsOpts
 	campaignSpecID int64
 
-	once       sync.Once
-	mappings   store.RewirerMappings
-	campaign   *campaigns.Campaign
-	totalCount int
-	err        error
+	once        sync.Once
+	mappings    store.RewirerMappings
+	allMappings store.RewirerMappings
+	campaign    *campaigns.Campaign
+	totalCount  int
+	err         error
 }
 
 func (r *changesetApplyPreviewConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	_, _, totalCount, err := r.compute(ctx)
+	_, _, _, totalCount, err := r.compute(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -41,7 +44,7 @@ func (r *changesetApplyPreviewConnectionResolver) PageInfo(ctx context.Context) 
 	if r.opts.LimitOffset == nil {
 		return graphqlutil.HasNextPage(false), nil
 	}
-	_, _, totalCount, err := r.compute(ctx)
+	_, _, _, totalCount, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +55,7 @@ func (r *changesetApplyPreviewConnectionResolver) PageInfo(ctx context.Context) 
 }
 
 func (r *changesetApplyPreviewConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ChangesetApplyPreviewResolver, error) {
-	mappings, campaign, _, err := r.compute(ctx)
+	mappings, campaign, _, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +82,115 @@ func (r *changesetApplyPreviewConnectionResolver) Nodes(ctx context.Context) ([]
 	return resolvers, nil
 }
 
-func (r *changesetApplyPreviewConnectionResolver) compute(ctx context.Context) (store.RewirerMappings, *campaigns.Campaign, int, error) {
+type changesetApplyPreviewConnectionStatsResolver struct {
+	push         int32
+	update       int32
+	undraft      int32
+	publish      int32
+	publishDraft int32
+	sync         int32
+	_import      int32
+	close        int32
+	reopen       int32
+	sleep        int32
+	detach       int32
+}
+
+func (r *changesetApplyPreviewConnectionStatsResolver) Push() int32 {
+	return r.push
+}
+func (r *changesetApplyPreviewConnectionStatsResolver) Update() int32 {
+	return r.update
+}
+func (r *changesetApplyPreviewConnectionStatsResolver) Undraft() int32 {
+	return r.undraft
+}
+func (r *changesetApplyPreviewConnectionStatsResolver) Publish() int32 {
+	return r.publish
+}
+func (r *changesetApplyPreviewConnectionStatsResolver) PublishDraft() int32 {
+	return r.publishDraft
+}
+func (r *changesetApplyPreviewConnectionStatsResolver) Sync() int32 {
+	return r.sync
+}
+func (r *changesetApplyPreviewConnectionStatsResolver) Import() int32 {
+	return r._import
+}
+func (r *changesetApplyPreviewConnectionStatsResolver) Close() int32 {
+	return r.close
+}
+func (r *changesetApplyPreviewConnectionStatsResolver) Reopen() int32 {
+	return r.reopen
+}
+func (r *changesetApplyPreviewConnectionStatsResolver) Sleep() int32 {
+	return r.sleep
+}
+func (r *changesetApplyPreviewConnectionStatsResolver) Detach() int32 {
+	return r.detach
+}
+
+var _ graphqlbackend.ChangesetApplyPreviewConnectionStatsResolver = &changesetApplyPreviewConnectionStatsResolver{}
+
+func (r *changesetApplyPreviewConnectionResolver) Stats(ctx context.Context) (graphqlbackend.ChangesetApplyPreviewConnectionStatsResolver, error) {
+	_, campaign, mappings, _, err := r.compute(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	stats := &changesetApplyPreviewConnectionStatsResolver{}
+	for _, mapping := range mappings {
+		res := &changesetApplyPreviewResolver{
+			store:             r.store,
+			mapping:           mapping,
+			preloadedCampaign: campaign,
+		}
+		var ops []campaigns.ReconcilerOperation
+		if _, ok := res.ToHiddenChangesetApplyPreview(); ok {
+			// Hidden ones never perform operations.
+			continue
+		}
+
+		visRes, ok := res.ToVisibleChangesetApplyPreview()
+		if !ok {
+			return nil, errors.New("expected node to be a 'VisibleChangesetApplyPreview', but wasn't")
+		}
+		ops, err = visRes.Operations(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, op := range ops {
+			switch op {
+			case campaigns.ReconcilerOperationPush:
+				stats.push++
+			case campaigns.ReconcilerOperationUpdate:
+				stats.update++
+			case campaigns.ReconcilerOperationUndraft:
+				stats.undraft++
+			case campaigns.ReconcilerOperationPublish:
+				stats.publish++
+			case campaigns.ReconcilerOperationPublishDraft:
+				stats.publishDraft++
+			case campaigns.ReconcilerOperationSync:
+				stats.sync++
+			case campaigns.ReconcilerOperationImport:
+				stats._import++
+			case campaigns.ReconcilerOperationClose:
+				stats.close++
+			case campaigns.ReconcilerOperationReopen:
+				stats.reopen++
+			case campaigns.ReconcilerOperationSleep:
+				stats.sleep++
+			case campaigns.ReconcilerOperationDetach:
+				stats.detach++
+			}
+		}
+	}
+
+	return stats, nil
+}
+
+func (r *changesetApplyPreviewConnectionResolver) compute(ctx context.Context) (store.RewirerMappings, *campaigns.Campaign, store.RewirerMappings, int, error) {
 	r.once.Do(func() {
 		opts := r.opts
 		opts.CampaignSpecID = r.campaignSpecID
@@ -91,9 +202,8 @@ func (r *changesetApplyPreviewConnectionResolver) compute(ctx context.Context) (
 			return
 		}
 		// Dry-run reconcile the campaign with the new campaign spec.
-		r.campaign, _, err = svc.ReconcileCampaign(ctx, campaignSpec)
-		if err != nil {
-			r.err = err
+		r.campaign, _, r.err = svc.ReconcileCampaign(ctx, campaignSpec)
+		if r.err != nil {
 			return
 		}
 
@@ -105,7 +215,6 @@ func (r *changesetApplyPreviewConnectionResolver) compute(ctx context.Context) (
 		}
 		r.err = r.mappings.Hydrate(ctx, r.store)
 		if r.err != nil {
-			r.err = err
 			return
 		}
 
@@ -113,13 +222,12 @@ func (r *changesetApplyPreviewConnectionResolver) compute(ctx context.Context) (
 			CampaignSpecID: opts.CampaignSpecID,
 			CampaignID:     opts.CampaignID,
 		}
-		allMappings, err := r.store.GetRewirerMappings(ctx, allOpts)
-		if err != nil {
-			r.err = err
+		r.allMappings, r.err = r.store.GetRewirerMappings(ctx, allOpts)
+		if r.err != nil {
 			return
 		}
-		r.totalCount = len(allMappings)
+		r.totalCount = len(r.allMappings)
 	})
 
-	return r.mappings, r.campaign, r.totalCount, r.err
+	return r.mappings, r.campaign, r.allMappings, r.totalCount, r.err
 }

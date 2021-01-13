@@ -24,6 +24,9 @@ func (e *UnsupportedError) Error() string {
 	return e.Msg
 }
 
+// LegacyParseError aliases to the parse error type for the legacy parser.
+type LegacyParseError = syntax.ParseError
+
 type SearchType int
 
 const (

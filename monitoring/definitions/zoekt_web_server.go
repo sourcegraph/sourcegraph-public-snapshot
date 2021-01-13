@@ -1,7 +1,6 @@
 package definitions
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
@@ -23,7 +22,7 @@ func ZoektWebServer() *monitoring.Container {
 							Description:       "indexed search request errors every 5m by code",
 							Query:             `sum by (code)(increase(src_zoekt_request_duration_seconds_count{code!~"2.."}[5m])) / ignoring(code) group_left sum(increase(src_zoekt_request_duration_seconds_count[5m])) * 100`,
 							Warning:           monitoring.Alert().GreaterOrEqual(5).For(5 * time.Minute),
-							PanelOptions:      monitoring.PanelOptions().LegendFormat("{{code}}").Unit(monitoring.Percentage),
+							Panel:             monitoring.Panel().LegendFormat("{{code}}").Unit(monitoring.Percentage),
 							Owner:             monitoring.ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
@@ -31,7 +30,7 @@ func ZoektWebServer() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Container monitoring (not available on server)",
+				Title:  shared.TitleContainerMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -40,23 +39,12 @@ func ZoektWebServer() *monitoring.Container {
 					},
 					{
 						shared.ContainerRestarts("zoekt-webserver", monitoring.ObservableOwnerSearch).Observable(),
-						shared.ContainerFsInodes("zoekt-webserver", monitoring.ObservableOwnerSearch).Observable(),
-					},
-					{
-						{
-							Name:              "fs_io_operations",
-							Description:       "filesystem reads and writes by instance rate over 1h",
-							Query:             fmt.Sprintf(`sum by(name) (rate(container_fs_reads_total{%[1]s}[1h]) + rate(container_fs_writes_total{%[1]s}[1h]))`, shared.CadvisorNameMatcher("zoekt-webserver")),
-							Warning:           monitoring.Alert().GreaterOrEqual(5000),
-							PanelOptions:      monitoring.PanelOptions().LegendFormat("{{name}}"),
-							Owner:             monitoring.ObservableOwnerSearch,
-							PossibleSolutions: "none",
-						},
+						shared.ContainerIOUsage("zoekt-webserver", monitoring.ObservableOwnerSearch).Observable(),
 					},
 				},
 			},
 			{
-				Title:  "Provisioning indicators (not available on server)",
+				Title:  shared.TitleProvisioningIndicators,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
