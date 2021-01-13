@@ -31,8 +31,7 @@ Sourcegraph limits what information is contained in this notification.
   <body>
 	{{ if .IsTest }}
 	<p style="color: #523704; padding: 16px; background-color: #FDECCC; font-size: 14px; line-height: 21px; border-radius: 4px; margin-bottom: 50px">
-		<span style="font-weight: 700">This email is a preview.</span>
-		<span style="font-weight: 400">Links are disabled.</span>
+		<span style="font-weight: 700">This email is a preview.</span>&nbsp;<span style="font-weight: 400">Links are disabled.</span>
 	</p>
 	{{ end }}
 
@@ -67,7 +66,7 @@ Sourcegraph limits what information is contained in this notification.
       security, Sourcegraph limits what information is contained in this
       notification.
 	</p>
-	<img src="https://sourcegraphstatic.com/sourcegraph-logo.png" width="150" height="20" alt="Sourcegraph logo" />
+	<img src="https://about.sourcegraph.com/sourcegraph-logo-small.png" width="106" height="20" alt="Sourcegraph logo" />
   </body>
 </html>
 `,
