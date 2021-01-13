@@ -11,6 +11,7 @@ import (
 //
 // These observables should only use metrics exported by Kubernetes, or use Prometheus
 // metrics in a way that only applies in Kubernetes deployments.
+const TitleKubernetesMonitoring = "Kubernetes monitoring (only available on Kubernetes)"
 
 var (
 	KubernetesPodsAvailable sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {

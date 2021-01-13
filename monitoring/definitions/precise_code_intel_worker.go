@@ -196,7 +196,7 @@ func PreciseCodeIntelWorker() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Container monitoring (not available on server)",
+				Title:  shared.TitleContainerMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -209,7 +209,7 @@ func PreciseCodeIntelWorker() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Provisioning indicators (not available on server)",
+				Title:  shared.TitleProvisioningIndicators,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -223,7 +223,7 @@ func PreciseCodeIntelWorker() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Golang runtime monitoring",
+				Title:  shared.TitleGolangMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -233,7 +233,7 @@ func PreciseCodeIntelWorker() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Kubernetes monitoring (only available on Kubernetes)",
+				Title:  shared.TitleKubernetesMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{

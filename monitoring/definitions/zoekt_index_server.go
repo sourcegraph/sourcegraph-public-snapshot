@@ -29,7 +29,7 @@ func ZoektIndexServer() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Container monitoring (not available on server)",
+				Title:  shared.TitleContainerMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -43,7 +43,7 @@ func ZoektIndexServer() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Provisioning indicators (not available on server)",
+				Title:  shared.TitleProvisioningIndicators,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -57,7 +57,7 @@ func ZoektIndexServer() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Kubernetes monitoring (only available on Kubernetes)",
+				Title:  shared.TitleKubernetesMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{

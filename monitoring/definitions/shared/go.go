@@ -11,6 +11,7 @@ import (
 //
 // Uses metrics exported by the Prometheus Golang library, so is available on all
 // deployment types.
+const TitleGolangMonitoring = "Golang runtime monitoring"
 
 var (
 	GoGoroutines sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {

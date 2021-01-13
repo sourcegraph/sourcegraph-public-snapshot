@@ -14,6 +14,7 @@ import (
 // Kubernetes and docker-compose deployments.
 //
 // cAdvisor metrics reference: https://github.com/google/cadvisor/blob/master/docs/storage/prometheus.md#prometheus-container-metrics
+const TitleContainerMonitoring = "Container monitoring (not available on server)"
 
 var (
 	ContainerRestarts sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
