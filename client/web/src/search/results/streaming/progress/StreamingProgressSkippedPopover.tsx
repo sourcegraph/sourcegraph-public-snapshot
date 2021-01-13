@@ -9,18 +9,18 @@ import { SyntaxHighlightedSearchQuery } from '../../../../components/SyntaxHighl
 import { Skipped } from '../../../stream'
 import { StreamingProgressProps } from './StreamingProgress'
 
-const sortBySeverity = (a: Skipped, b: Skipped): number => {
-    const severityToNumber = (severity: Skipped['severity']): number => {
-        switch (severity) {
-            case 'error':
-                return 1
-            case 'warn':
-                return 2
-            case 'info':
-                return 3
-        }
+const severityToNumber = (severity: Skipped['severity']): number => {
+    switch (severity) {
+        case 'error':
+            return 1
+        case 'warn':
+            return 2
+        case 'info':
+            return 3
     }
+}
 
+const sortBySeverity = (a: Skipped, b: Skipped): number => {
     const aSev = severityToNumber(a.severity)
     const bSev = severityToNumber(b.severity)
 
