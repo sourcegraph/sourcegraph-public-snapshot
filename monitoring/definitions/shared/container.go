@@ -21,8 +21,8 @@ var (
 		return Observable{
 			Name:        "container_restarts",
 			Description: "container restarts",
-			// inspired by https://stackoverflow.com/a/63782891
-			Query:          fmt.Sprintf(`(count by(name) (container_last_seen{%[1]s} unless (container_last_seen{%[1]s} offset 1m)) - 1) > 0`, CadvisorNameMatcher(containerName)),
+			// inspired by https://awesome-prometheus-alerts.grep.to/rules#docker-containers
+			Query:          fmt.Sprintf(`sum by(name) (time() - container_last_seen{%s} > 60)`, CadvisorNameMatcher(containerName)),
 			Warning:        monitoring.Alert().GreaterOrEqual(1),
 			Panel:          monitoring.Panel().LegendFormat("{{name}}"),
 			Owner:          owner,
