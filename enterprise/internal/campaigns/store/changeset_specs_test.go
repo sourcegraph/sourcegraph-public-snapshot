@@ -840,8 +840,6 @@ func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Sto
 		RepoID:          repos[1].ID,
 	}
 
-	t.Logf("%+v", *repos[0])
-
 	for name, tc := range map[string]struct {
 		search []search.TextSearchTerm
 		want   RewirerMappings
