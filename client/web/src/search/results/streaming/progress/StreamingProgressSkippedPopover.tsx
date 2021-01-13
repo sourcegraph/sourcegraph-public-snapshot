@@ -42,7 +42,7 @@ const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; history: H.His
 
     return (
         <Button
-            className={classNames('streaming-skipped-item py-3 border-bottom w-100', {
+            className={classNames('streaming-skipped-item pt-3 pb-0 w-100', {
                 'streaming-skipped-item--warn': skipped.severity !== 'info',
             })}
             onClick={toggleIsOpen}
@@ -72,6 +72,7 @@ const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; history: H.His
                     />
                 </Collapse>
             )}
+            <div className="streaming-skipped-item__bottom-border-spacer mt-3" />
         </Button>
     )
 }
@@ -105,11 +106,16 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<
 
     return (
         <>
-            {sortedSkippedItems.map(skipped => (
-                <SkippedMessage key={skipped.reason} skipped={skipped} history={history} startOpen={false} />
+            {sortedSkippedItems.map((skipped, index) => (
+                <SkippedMessage
+                    key={skipped.reason}
+                    skipped={skipped}
+                    history={history}
+                    startOpen={index === 0 && skipped.severity !== 'info'} // Start with first item open, but only if it's not info severity
+                />
             ))}
             {sortedSkippedItems.some(skipped => skipped.suggested) && (
-                <Form onSubmit={submitHandler}>
+                <Form className="pb-3 px-3" onSubmit={submitHandler}>
                     <div className="mb-2 mt-3">Search again:</div>
                     <FormGroup check={true}>
                         {sortedSkippedItems.map(

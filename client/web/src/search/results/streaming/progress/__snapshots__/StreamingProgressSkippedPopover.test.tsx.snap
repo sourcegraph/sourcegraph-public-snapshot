@@ -71,10 +71,10 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
         "title": "Error loading results",
       }
     }
-    startOpen={false}
+    startOpen={true}
   >
     <Button
-      className="streaming-skipped-item py-3 border-bottom w-100 streaming-skipped-item--warn"
+      className="streaming-skipped-item pt-3 pb-0 w-100 streaming-skipped-item--warn"
       color="secondary"
       disabled={false}
       onClick={[Function]}
@@ -82,7 +82,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     >
       <button
         aria-label={null}
-        className="streaming-skipped-item py-3 border-bottom w-100 streaming-skipped-item--warn btn btn-secondary"
+        className="streaming-skipped-item pt-3 pb-0 w-100 streaming-skipped-item--warn btn btn-secondary"
         disabled={false}
         onClick={[Function]}
         type="button"
@@ -98,7 +98,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
           >
             Error loading results
           </span>
-          <Memo(ChevronLeftIcon)
+          <Memo(ChevronDownIcon)
             className="icon-inline flex-shrink-0"
           />
         </h4>
@@ -107,7 +107,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
           enter={true}
           exit={true}
           in={false}
-          isOpen={false}
+          isOpen={true}
           mountOnEnter={false}
           onEnter={[Function]}
           onEntered={[Function]}
@@ -123,7 +123,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
             appear={false}
             enter={true}
             exit={true}
-            in={false}
+            in={true}
             mountOnEnter={false}
             onEnter={[Function]}
             onEntered={[Function]}
@@ -135,7 +135,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
             unmountOnExit={false}
           >
             <div
-              className="collapse"
+              className="collapse show"
               style={Object {}}
             >
               <Markdown
@@ -158,6 +158,9 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
             </div>
           </Transition>
         </Collapse>
+        <div
+          className="streaming-skipped-item__bottom-border-spacer mt-3"
+        />
       </button>
     </Button>
   </SkippedMessage>
@@ -179,7 +182,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     startOpen={false}
   >
     <Button
-      className="streaming-skipped-item py-3 border-bottom w-100 streaming-skipped-item--warn"
+      className="streaming-skipped-item pt-3 pb-0 w-100 streaming-skipped-item--warn"
       color="secondary"
       disabled={false}
       onClick={[Function]}
@@ -187,7 +190,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     >
       <button
         aria-label={null}
-        className="streaming-skipped-item py-3 border-bottom w-100 streaming-skipped-item--warn btn btn-secondary"
+        className="streaming-skipped-item pt-3 pb-0 w-100 streaming-skipped-item--warn btn btn-secondary"
         disabled={false}
         onClick={[Function]}
         type="button"
@@ -263,6 +266,9 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
             </div>
           </Transition>
         </Collapse>
+        <div
+          className="streaming-skipped-item__bottom-border-spacer mt-3"
+        />
       </button>
     </Button>
   </SkippedMessage>
@@ -284,7 +290,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     startOpen={false}
   >
     <Button
-      className="streaming-skipped-item py-3 border-bottom w-100"
+      className="streaming-skipped-item pt-3 pb-0 w-100"
       color="secondary"
       disabled={false}
       onClick={[Function]}
@@ -292,7 +298,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     >
       <button
         aria-label={null}
-        className="streaming-skipped-item py-3 border-bottom w-100 btn btn-secondary"
+        className="streaming-skipped-item pt-3 pb-0 w-100 btn btn-secondary"
         disabled={false}
         onClick={[Function]}
         type="button"
@@ -368,6 +374,9 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
             </div>
           </Transition>
         </Collapse>
+        <div
+          className="streaming-skipped-item__bottom-border-spacer mt-3"
+        />
       </button>
     </Button>
   </SkippedMessage>
@@ -389,7 +398,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     startOpen={false}
   >
     <Button
-      className="streaming-skipped-item py-3 border-bottom w-100"
+      className="streaming-skipped-item pt-3 pb-0 w-100"
       color="secondary"
       disabled={false}
       onClick={[Function]}
@@ -397,7 +406,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     >
       <button
         aria-label={null}
-        className="streaming-skipped-item py-3 border-bottom w-100 btn btn-secondary"
+        className="streaming-skipped-item pt-3 pb-0 w-100 btn btn-secondary"
         disabled={false}
         onClick={[Function]}
         type="button"
@@ -473,6 +482,9 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
             </div>
           </Transition>
         </Collapse>
+        <div
+          className="streaming-skipped-item__bottom-border-spacer mt-3"
+        />
       </button>
     </Button>
   </SkippedMessage>
@@ -494,7 +506,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     startOpen={false}
   >
     <Button
-      className="streaming-skipped-item py-3 border-bottom w-100"
+      className="streaming-skipped-item pt-3 pb-0 w-100"
       color="secondary"
       disabled={false}
       onClick={[Function]}
@@ -502,7 +514,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     >
       <button
         aria-label={null}
-        className="streaming-skipped-item py-3 border-bottom w-100 btn btn-secondary"
+        className="streaming-skipped-item pt-3 pb-0 w-100 btn btn-secondary"
         disabled={false}
         onClick={[Function]}
         type="button"
@@ -578,15 +590,19 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
             </div>
           </Transition>
         </Collapse>
+        <div
+          className="streaming-skipped-item__bottom-border-spacer mt-3"
+        />
       </button>
     </Button>
   </SkippedMessage>
   <Form
+    className="pb-3 px-3"
     onSubmit={[Function]}
     tag="form"
   >
     <form
-      className=""
+      className="pb-3 px-3"
       onSubmit={[Function]}
     >
       <div

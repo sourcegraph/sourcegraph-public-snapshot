@@ -70,3 +70,39 @@ add('popover', () => {
         </WebStory>
     )
 })
+
+add('only info', () => {
+    const progress: Progress = {
+        durationMs: 1500,
+        matchCount: 2,
+        repositoriesCount: 2,
+        skipped: [
+            {
+                reason: 'excluded-fork',
+                message: '',
+                severity: 'info',
+                title: '10k forked repositories excluded',
+                suggested: {
+                    title: 'include forked',
+                    queryExpression: 'fork:yes',
+                },
+            },
+            {
+                reason: 'excluded-archive',
+                message: 'By default we exclude archived repositories. Include them with `archived:yes` in your query.',
+                severity: 'info',
+                title: '1 archived',
+                suggested: {
+                    title: 'include archived',
+                    queryExpression: 'archived:yes',
+                },
+            },
+        ],
+    }
+
+    return (
+        <WebStory>
+            {() => <StreamingProgressSkippedPopover progress={progress} onSearchAgain={() => {}} history={history} />}
+        </WebStory>
+    )
+})

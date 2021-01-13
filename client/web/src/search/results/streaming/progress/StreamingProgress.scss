@@ -33,7 +33,7 @@
 
         &-popover {
             width: 20rem;
-            padding: 0.5rem;
+            padding: 0;
         }
     }
 }
@@ -42,12 +42,22 @@
     background: transparent;
     border: none;
 
+    .theme-light & {
+        background: transparent;
+        border: none;
+    }
+
     &.disabled,
-    &:active,
-    &:focus {
+    &:not(:hover):focus {
         background: transparent;
         border: none;
         opacity: 1;
+
+        .theme-light & {
+            background: transparent;
+            border: none;
+            opacity: 1;
+        }
     }
 
     &__icon {
@@ -64,6 +74,10 @@
         margin-left: calc(#{$icon-inline-size} / 2 - #{$border-size} / 2);
         // Halfway past the icon, minus half the border size, plus the icon's right margin
         padding-left: calc(#{$icon-inline-size} / 2 - #{$border-size} / 2 + 0.5rem);
+    }
+
+    &__bottom-border-spacer {
+        border-bottom: 1px solid var(--border-color-2);
     }
 
     &--warn {
