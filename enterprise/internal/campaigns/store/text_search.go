@@ -8,6 +8,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/search"
 )
 
+// textSearchTermToClause generates a WHERE clause that can be used in a query
+// to represent searching for the given term over the given fields.
+//
+// Note that there must be at least one field: failing to include any fields
+// will likely result in broken queries!
 func textSearchTermToClause(term search.TextSearchTerm, fields ...*sqlf.Query) *sqlf.Query {
 	// The general SQL query format for a positive query is:
 	//
