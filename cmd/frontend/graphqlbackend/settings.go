@@ -6,10 +6,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/hashicorp/go-multierror"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -63,18 +60,6 @@ var globalSettingsAllowEdits, _ = strconv.ParseBool(env.Get("GLOBAL_SETTINGS_ALL
 func settingsCreateIfUpToDate(ctx context.Context, subject *settingsSubject, lastID *int32, authorUserID int32, contents string) (latestSetting *api.Settings, err error) {
 	if os.Getenv("GLOBAL_SETTINGS_FILE") != "" && subject.site != nil && !globalSettingsAllowEdits {
 		return nil, errors.New("Updating global settings not allowed when using GLOBAL_SETTINGS_FILE")
-	}
-
-	problems, err := conf.ValidateSetting(contents)
-	if err != nil {
-		return nil, err
-	}
-	if len(problems) > 0 {
-		var errs *multierror.Error
-		for _, p := range problems {
-			errs = multierror.Append(errs, errors.New(p))
-		}
-		return nil, errs
 	}
 
 	// Read current saved queries.
