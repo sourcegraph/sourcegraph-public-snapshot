@@ -295,14 +295,14 @@ func fileMatchResultsToSearchResults(results []*FileMatchResolver) []SearchResul
 
 // searchFilesInRepos searches a set of repos for a pattern.
 // For c != nil searchFilesInRepos will send results down c.
-func searchFilesInRepos(ctx context.Context, args *search.TextParameters, c chan<- []SearchResultResolver) (res []*FileMatchResolver, common *searchResultsCommon, err error) {
+func searchFilesInRepos(ctx context.Context, args *search.TextParameters, c chan<- []SearchResultResolver) (res []*FileMatchResolver, common *searchResultsCommon, finalErr error) {
 	if mockSearchFilesInRepos != nil {
 		return mockSearchFilesInRepos(args)
 	}
 
 	tr, ctx := trace.New(ctx, "searchFilesInRepos", fmt.Sprintf("query: %s", args.PatternInfo.Pattern))
 	defer func() {
-		tr.SetError(err)
+		tr.SetError(finalErr)
 		tr.Finish()
 	}()
 	fields := querytypes.Fields(args.Query.Fields())
@@ -333,6 +333,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, c chan
 			repos: &indexedRepoRevs{},
 		}
 	} else {
+		var err error
 		indexed, err = newIndexedSearchRequest(ctx, args, indexedTyp)
 		if err != nil {
 			return nil, nil, err
@@ -525,11 +526,10 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, c chan
 					defer mu.Unlock()
 					common.update(&event.common)
 
-					err = event.err
-					tr.LogFields(otlog.Error(err), otlog.Bool("overLimitCanceled", overLimitCanceled))
-					if err != nil && searchErr == nil && !overLimitCanceled {
-						searchErr = err
-						tr.LazyPrintf("cancel indexed search due to error: %v", err)
+					tr.LogFields(otlog.Error(event.err), otlog.Bool("overLimitCanceled", overLimitCanceled))
+					if event.err != nil && searchErr == nil && !overLimitCanceled {
+						searchErr = event.err
+						tr.LazyPrintf("cancel indexed search due to error: %v", event.err)
 						cancel()
 					}
 
