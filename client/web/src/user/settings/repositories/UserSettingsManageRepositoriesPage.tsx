@@ -55,11 +55,11 @@ const initialFetchingReposState = {
  * A page to manage the repositories a user syncs from their connected code hosts.
  */
 export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> = ({
-                                                                                       history,
-                                                                                       userID,
-                                                                                       routingPrefix,
-                                                                                       telemetryService,
-                                                                                   }) => {
+    history,
+    userID,
+    routingPrefix,
+    telemetryService,
+}) => {
     useEffect(() => {
         telemetryService.logViewEvent('UserSettingsRepositories')
     }, [telemetryService])
@@ -392,57 +392,57 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
     const rows: JSX.Element = (
         <tbody>
-        <tr className="align-items-baseline d-flex" key="header">
-            <td
-                onClick={selectAll}
-                className="user-settings-repos__repositorynode p-2 w-100 d-flex align-items-center border-top-0 border-bottom border-color-2"
-            >
-                <input
-                    className="mr-3"
-                    type="checkbox"
-                    checked={selectionState.repos.size === filteredRepos.length}
-                    onChange={selectAll}
-                />
-                <span
-                    className={
-                        ((selectionState.repos.size !== 0 && 'text-body') || 'text-muted') + ' repositories-header'
-                    }
+            <tr className="align-items-baseline d-flex" key="header">
+                <td
+                    onClick={selectAll}
+                    className="user-settings-repos__repositorynode p-2 w-100 d-flex align-items-center border-top-0 border-bottom border-color-2"
                 >
+                    <input
+                        className="mr-3"
+                        type="checkbox"
+                        checked={selectionState.repos.size === filteredRepos.length}
+                        onChange={selectAll}
+                    />
+                    <span
+                        className={
+                            ((selectionState.repos.size !== 0 && 'text-body') || 'text-muted') + ' repositories-header'
+                        }
+                    >
                         {(selectionState.repos.size > 0 &&
                             String(selectionState.repos.size) + ' repositories selected') ||
-                        'Select all'}
+                            'Select all'}
                     </span>
-            </td>
-        </tr>
-        {filteredRepos.map((repo, index) => {
-            if (index < (currentPage - 1) * PER_PAGE || index >= currentPage * PER_PAGE) {
-                return
-            }
-            return (
-                <CheckboxRepositoryNode
-                    name={repo.name}
-                    key={repo.name}
-                    onClick={onRepoClicked(repo)}
-                    checked={selectionState.repos.has(repo.name)}
-                    serviceType={repo.codeHost?.kind || ''}
-                    isPrivate={repo.private}
-                />
-            )
-        })}
+                </td>
+            </tr>
+            {filteredRepos.map((repo, index) => {
+                if (index < (currentPage - 1) * PER_PAGE || index >= currentPage * PER_PAGE) {
+                    return
+                }
+                return (
+                    <CheckboxRepositoryNode
+                        name={repo.name}
+                        key={repo.name}
+                        onClick={onRepoClicked(repo)}
+                        checked={selectionState.repos.has(repo.name)}
+                        serviceType={repo.codeHost?.kind || ''}
+                        isPrivate={repo.private}
+                    />
+                )
+            })}
         </tbody>
     )
 
     const loadingAnimation: JSX.Element = (
         <tbody>
-        <tr className="mt-2 align-items-baseline d-flex w-80">
-            <td className="user-settings-repos__shimmer w-100 h-100 p-3 border-top-0" />
-        </tr>
-        <tr className="mt-2 align-items-baseline d-flex w-30">
-            <td className="user-settings-repos__shimmer w-100 h-100 p-3 border-top-0" />
-        </tr>
-        <tr className="mt-2 align-items-baseline d-flex w-70">
-            <td className="user-settings-repos__shimmer w-100 h-100 p-3 border-top-0" />
-        </tr>
+            <tr className="mt-2 align-items-baseline d-flex w-80">
+                <td className="user-settings-repos__shimmer w-100 h-100 p-3 border-top-0" />
+            </tr>
+            <tr className="mt-2 align-items-baseline d-flex w-30">
+                <td className="user-settings-repos__shimmer w-100 h-100 p-3 border-top-0" />
+            </tr>
+            <tr className="mt-2 align-items-baseline d-flex w-70">
+                <td className="user-settings-repos__shimmer w-100 h-100 p-3 border-top-0" />
+            </tr>
         </tbody>
     )
     return (
@@ -476,9 +476,9 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                                         {
                                             // if we're selecting repos, and the repos are still loading, display the loading animation
                                             selectionState.radio === 'selected' &&
-                                            repoState.loading &&
-                                            !repoState.loaded &&
-                                            loadingAnimation
+                                                repoState.loading &&
+                                                !repoState.loaded &&
+                                                loadingAnimation
                                         }
                                         {
                                             // if the repos are loaded display the rows of repos
