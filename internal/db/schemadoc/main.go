@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 
 	_ "github.com/lib/pq"
@@ -27,7 +26,7 @@ func runIgnoreError(cmd string, args ...string) {
 // PGPORT, PGUSER etc. env variables must be set to run this script.
 //
 // First CLI argument is an optional filename to write the output to.
-func generate(log *log.Logger) (string, error) {
+func generate(log *log.Logger, databaseName string) (string, error) {
 	const dbname = "schemadoc-gen-temp"
 
 	var (
@@ -99,12 +98,8 @@ func generate(log *log.Logger) (string, error) {
 		return "", fmt.Errorf("SetupGlobalConnection: %w", err)
 	}
 
-	// Migrate the codeintel db on top of the frontend one so we capture
-	// the schema of both databases.
-	for _, databaseName := range dbutil.DatabaseNames {
-		if err := dbconn.MigrateDB(dbconn.Global, databaseName); err != nil {
-			return "", fmt.Errorf("MigrateDB: %w", err)
-		}
+	if err := dbconn.MigrateDB(dbconn.Global, databaseName); err != nil {
+		return "", fmt.Errorf("MigrateDB: %w", err)
 	}
 
 	db, err := dbconn.Open(dataSource)
@@ -155,12 +150,12 @@ WHERE table_schema='public' AND table_type='BASE TABLE';
 }
 
 func main() {
-	out, err := generate(log.New(os.Stderr, "", log.LstdFlags))
+	out, err := generate(log.New(os.Stderr, "", log.LstdFlags), os.Args[1])
 	if err != nil {
 		log.Fatal(err)
 	}
 	if len(os.Args) > 1 {
-		if err := ioutil.WriteFile(os.Args[1], []byte(out), 0644); err != nil {
+		if err := ioutil.WriteFile(os.Args[2], []byte(out), 0644); err != nil {
 			log.Fatal(err)
 		}
 	} else {
