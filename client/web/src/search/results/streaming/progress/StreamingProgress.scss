@@ -39,26 +39,8 @@
 }
 
 .streaming-skipped-item {
-    background: transparent;
-    border: none;
-
-    .theme-light & {
-        background: transparent;
-        border: none;
-    }
-
-    &.disabled,
-    &:not(:hover):focus {
-        background: transparent;
-        border: none;
-        opacity: 1;
-
-        .theme-light & {
-            background: transparent;
-            border: none;
-            opacity: 1;
-        }
-    }
+    background: transparent !important;
+    border: none !important;
 
     &__icon {
         color: var(--primary);
