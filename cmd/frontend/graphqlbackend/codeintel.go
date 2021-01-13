@@ -203,6 +203,9 @@ type UpdateRepositoryIndexConfigurationArgs struct {
 
 type GitTreeLSIFDataResolver interface {
 	Diagnostics(ctx context.Context, args *LSIFDiagnosticsArgs) (DiagnosticConnectionResolver, error)
+	Packages(ctx context.Context, args *LSIFPackagesArgs) (PackageConnectionResolver, error)
+	Symbols(ctx context.Context, args *LSIFSymbolsArgs) (SymbolConnectionResolver, error)
+	Symbol(ctx context.Context, args *LSIFSymbolArgs) (SymbolResolver, error)
 }
 
 type GitBlobLSIFDataResolver interface {
@@ -244,6 +247,29 @@ type LSIFDiagnosticsArgs struct {
 	graphqlutil.ConnectionArgs
 }
 
+type LSIFPackagesArgs struct {
+	graphqlutil.ConnectionArgs
+}
+
+type LSIFSymbolsArgs struct {
+	graphqlutil.ConnectionArgs
+	Filters *SymbolFilters
+}
+
+type LSIFSymbolArgs struct {
+	Moniker MonikerInput
+}
+
+type MonikerInput struct {
+	Identifier string
+	Scheme     string
+}
+
+type SymbolFilters struct {
+	Internals bool
+	Externals bool
+}
+
 type CodeIntelligenceRangeConnectionResolver interface {
 	Nodes(ctx context.Context) ([]CodeIntelligenceRangeResolver, error)
 }
@@ -277,4 +303,43 @@ type DiagnosticResolver interface {
 	Source() (*string, error)
 	Message() (*string, error)
 	Location(ctx context.Context) (LocationResolver, error)
+}
+
+type PackageConnectionResolver interface {
+	Nodes(ctx context.Context) ([]PackageResolver, error)
+	TotalCount(ctx context.Context) (int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
+type PackageResolver interface {
+	Name() string
+	Version() string
+	Manager() string
+}
+
+type SymbolConnectionResolver interface {
+	Nodes(ctx context.Context) ([]SymbolResolver, error)
+	TotalCount(ctx context.Context) (int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
+type SymbolResolver interface {
+	Text() string
+	Detail() *string
+	Kind() string   /* enum SymbolKind */
+	Tags() []string /* enum SymbolTag */
+	Monikers() []MonikerResolver
+	Definitions(ctx context.Context) (LocationConnectionResolver, error)
+	DefinitionsFullRanges(ctx context.Context) (LocationConnectionResolver, error)
+	References(ctx context.Context) (LocationConnectionResolver, error)
+	Hover(context.Context) (HoverResolver, error)
+	RootAncestor() SymbolResolver
+	Children() []SymbolResolver
+	Location() (path string, line, end int)
+}
+
+type MonikerResolver interface {
+	Kind() string
+	Scheme() string
+	Identifier() string
 }

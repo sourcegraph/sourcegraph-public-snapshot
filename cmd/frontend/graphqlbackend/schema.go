@@ -5747,6 +5747,12 @@ interface TreeEntry {
         """
         toolName: String
     ): TreeEntryLSIFData
+
+    """
+    TODO(sqs)
+    """
+    expSymbols(filters: SymbolFilters): ExpSymbolConnection
+    expSymbol(moniker: MonikerInput!): ExpSymbol
 }
 
 """
@@ -5886,6 +5892,12 @@ type GitTree implements TreeEntry {
         """
         toolName: String
     ): TreeEntryLSIFData
+
+    """
+    TODO(sqs)
+    """
+    expSymbols(filters: SymbolFilters): ExpSymbolConnection
+    expSymbol(moniker: MonikerInput!): ExpSymbol
 }
 
 """
@@ -6164,6 +6176,12 @@ type GitBlob implements TreeEntry & File2 {
         """
         toolName: String
     ): GitBlobLSIFData
+
+    """
+    TODO(sqs)
+    """
+    expSymbols(filters: SymbolFilters): ExpSymbolConnection
+    expSymbol(moniker: MonikerInput!): ExpSymbol
 }
 
 """
@@ -6174,6 +6192,117 @@ interface TreeEntryLSIFData {
     Code diagnostics provided through LSIF.
     """
     diagnostics(first: Int): DiagnosticConnection!
+
+    packages(first: Int): PackageConnection!
+}
+
+"""
+A list of symbols.
+"""
+type ExpSymbolConnection {
+    """
+    A list of symbols.
+    """
+    nodes: [ExpSymbol!]!
+
+    """
+    The total count of symbols in the connection. This total count may be larger than the number of nodes
+    in this object when the result is paginated.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+input MonikerInput {
+    scheme: String!
+    identifier: String!
+}
+
+enum SymbolTag {
+    DEPRECATED
+    EXPORTED
+    UNEXPORTED
+}
+
+"""
+A symbol.
+"""
+type ExpSymbol {
+    text: String!
+    detail: String
+    kind: SymbolKind!
+    tags: [SymbolTag!]!
+
+    monikers: [Moniker!]!
+
+    hover: Hover
+
+    """
+    The locations where this symbol is defined.
+    """
+    definitions: LocationConnection!
+
+    """
+    The locations where this symbol is referenced.
+    """
+    references: LocationConnection!
+
+    """
+    The URL to this symbol (using the input revision specifier, which may not be immutable).
+    """
+    url: String!
+
+    """
+    The canonical URL to this symbol (using an immutable revision specifier).
+    """
+    canonicalURL: String!
+
+    rootAncestor: ExpSymbol
+
+    children(filters: SymbolFilters): ExpSymbolConnection!
+
+    editCommits: GitCommitConnection
+}
+
+input SymbolFilters {
+    internals: Boolean!
+}
+
+type Moniker {
+    kind: String!
+    scheme: String!
+    identifier: String!
+}
+
+"""
+A list of packages.
+"""
+type PackageConnection {
+    """
+    A list of packages.
+    """
+    nodes: [Package!]!
+
+    """
+    The total count of packages in the connection. This total count may be larger than the number of nodes
+    in this object when the result is paginated.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+type Package {
+    name: String!
+    version: String!
+    manager: String!
 }
 
 """
@@ -6270,6 +6399,8 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
     Code diagnostics provided through LSIF.
     """
     diagnostics(first: Int): DiagnosticConnection!
+
+    packages(first: Int): PackageConnection!
 }
 
 """
