@@ -24,6 +24,7 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	codeinsightsMigrations "github.com/sourcegraph/sourcegraph/migrations/codeinsights"
 	codeintelMigrations "github.com/sourcegraph/sourcegraph/migrations/codeintel"
 	frontendMigrations "github.com/sourcegraph/sourcegraph/migrations/frontend"
 )
@@ -147,6 +148,10 @@ var databases = map[string]struct {
 	"codeintel": {
 		MigrationsTable: "codeintel_schema_migrations",
 		Resource:        bindata.Resource(codeintelMigrations.AssetNames(), codeintelMigrations.Asset),
+	},
+	"codeinsights": {
+		MigrationsTable: "codeinsights_schema_migrations",
+		Resource:        bindata.Resource(codeinsightsMigrations.AssetNames(), codeinsightsMigrations.Asset),
 	},
 }
 
