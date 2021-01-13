@@ -147,7 +147,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
     },
     'Reopen changeset': {
         __typename: 'VisibleChangesetApplyPreview',
-        operations: [ChangesetSpecOperation.REOPEN],
+        operations: [ChangesetSpecOperation.REOPEN, ChangesetSpecOperation.UPDATE],
         delta: {
             titleChanged: false,
         },
@@ -163,7 +163,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
     },
     'Close changeset': {
         __typename: 'VisibleChangesetApplyPreview',
-        operations: [ChangesetSpecOperation.CLOSE],
+        operations: [ChangesetSpecOperation.CLOSE, ChangesetSpecOperation.DETACH],
         delta: {
             titleChanged: false,
         },
