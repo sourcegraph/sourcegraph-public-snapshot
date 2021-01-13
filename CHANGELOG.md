@@ -13,6 +13,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Added
 
+- Add verbosity flag to `lsif upload` action. Supply `-trace=1`, `-trace=2`, or `-trace=3` to the action to specify verbosity.
+
 ### Changed
 
 ### Fixed

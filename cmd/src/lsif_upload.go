@@ -4,14 +4,15 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"net/http"
 	"net/url"
 	"os"
+	"sort"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/efritz/pentimento"
-	"github.com/mattn/go-isatty"
 	"github.com/pkg/browser"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/codeintelutils"
@@ -52,6 +53,8 @@ Examples:
 		maxPayloadSizeMb     *int
 		ignoreUploadFailures *bool
 		uploadRoute          *string
+		rawVerbosity         *int
+		verbosity            lsifUploadVerbosity
 	}
 
 	flagSet := flag.NewFlagSet("upload", flag.ExitOnError)
@@ -67,6 +70,7 @@ Examples:
 	flags.maxPayloadSizeMb = flagSet.Int("max-payload-size", 100, `The maximum upload size (in megabytes). Indexes exceeding this limit will be uploaded over multiple HTTP requests.`)
 	flags.ignoreUploadFailures = flagSet.Bool("ignore-upload-failure", false, `Exit with status code zero on upload failure.`)
 	flags.uploadRoute = flagSet.String("upload-route", "/.api/lsif/upload", "The path of the upload route.")
+	flags.rawVerbosity = flagSet.Int("trace", 0, "-trace=0 shows no logs; -trace=1 shows requests and response metadata; -trace=2 shows headers, -trace=3 shows response body")
 
 	parseAndValidateFlags := func(args []string) error {
 		flagSet.Parse(args)
@@ -146,6 +150,12 @@ Examples:
 			return errors.New("max-payload-size must be positive")
 		}
 
+		// Don't need to check upper bounds as we only compare verbosity ranges
+		// It's fine if someone supplies -trace=42, but it will just behave the
+		// same as if they supplied the highest verbosity level we define
+		// internally.
+		flags.verbosity = lsifUploadVerbosity(*flags.rawVerbosity)
+
 		if !*flags.json {
 			fmt.Println(argsString)
 		}
@@ -173,6 +183,7 @@ Examples:
 			MaxRetries:           10,
 			RetryInterval:        time.Millisecond * 250,
 			UploadProgressEvents: make(chan codeintelutils.UploadProgressEvent),
+			Logger:               &lsifUploadRequestLogger{verbosity: flags.verbosity},
 		}
 
 		var wg sync.WaitGroup
@@ -181,7 +192,7 @@ Examples:
 		go func() {
 			defer wg.Done()
 
-			if *flags.json || *flags.noProgress {
+			if *flags.json || *flags.noProgress || flags.verbosity > 0 {
 				return
 			}
 
@@ -202,19 +213,19 @@ Examples:
 		wg.Wait()                        // Wait for progress bar goroutine to clear screen
 		if err != nil {
 			if err == codeintelutils.ErrUnauthorized {
-				if *flags.gitHubToken == "" {
-					return fmt.Errorf("you must provide -github-token=TOKEN, where TOKEN is a GitHub personal access token with 'repo' or 'public_repo' scope")
+				err = errorWithHint{
+					err: err, hint: strings.Join([]string{
+						"You may need to specify or update your GitHub access token to use this endpoint.",
+						"See https://docs.sourcegraph.com/cli/references/lsif/upload.",
+					}, "\n"),
 				}
 
-				if isatty.IsTerminal(os.Stdout.Fd()) {
-					fmt.Println("You may need to specify or update your GitHub access token to use this endpoint.")
-					fmt.Println("See https://github.com/sourcegraph/src-cli#authentication.")
-				}
 			}
 
 			if *flags.ignoreUploadFailures {
-				fmt.Printf("error: %s\n", err)
-				return nil
+				// Report but don't return
+				fmt.Println(err.Error())
+				err = nil
 			}
 
 			return err
@@ -311,4 +322,77 @@ func digits(n int) int {
 		return 1 + digits(n/10)
 	}
 	return 1
+}
+
+type errorWithHint struct {
+	err  error
+	hint string
+}
+
+func (e errorWithHint) Error() string {
+	return fmt.Sprintf("error: %s\n\n%s\n", e.err, e.hint)
+}
+
+type lsifUploadVerbosity int
+
+const (
+	lsifUploadVerbosityNone                  lsifUploadVerbosity = iota // -trace=0 (default)
+	lsifUploadVerbosityTrace                                            // -trace=1
+	lsifUploadVerbosityTraceShowHeaders                                 // -trace=2
+	lsifUploadVerbosityTraceShowResponseBody                            // -trace=3
+)
+
+type lsifUploadRequestLogger struct {
+	verbosity lsifUploadVerbosity
+}
+
+func (l *lsifUploadRequestLogger) LogRequest(req *http.Request) {
+	if l.verbosity == lsifUploadVerbosityNone {
+		return
+	}
+
+	if l.verbosity >= lsifUploadVerbosityTrace {
+		fmt.Printf("> %s %s\n", req.Method, req.URL)
+	}
+
+	if l.verbosity >= lsifUploadVerbosityTraceShowHeaders {
+		fmt.Printf("> Request Headers:\n")
+		for _, k := range sortHeaders(req.Header) {
+			fmt.Printf(">     %s: %s\n", k, req.Header[k])
+		}
+	}
+
+	fmt.Printf("\n")
+}
+
+func (l *lsifUploadRequestLogger) LogResponse(req *http.Request, resp *http.Response, body []byte, elapsed time.Duration) {
+	if l.verbosity == lsifUploadVerbosityNone {
+		return
+	}
+
+	if l.verbosity >= lsifUploadVerbosityTrace {
+		fmt.Printf("< %s %s %s in %s\n", req.Method, req.URL, resp.Status, elapsed)
+	}
+
+	if l.verbosity >= lsifUploadVerbosityTraceShowHeaders {
+		fmt.Printf("< Response Headers:\n")
+		for _, k := range sortHeaders(resp.Header) {
+			fmt.Printf("<     %s: %s\n", k, resp.Header[k])
+		}
+	}
+
+	if l.verbosity >= lsifUploadVerbosityTraceShowResponseBody {
+		fmt.Printf("< Response Body: %s\n", body)
+	}
+
+	fmt.Printf("\n")
+}
+
+func sortHeaders(header http.Header) []string {
+	var keys []string
+	for k := range header {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
 }
