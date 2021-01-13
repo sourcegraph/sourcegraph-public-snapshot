@@ -18,6 +18,7 @@ var (
 			Warning:           monitoring.Alert().GreaterOrEqual(10000).For(10 * time.Minute),
 			Panel:             monitoring.Panel().LegendFormat("{{name}}"),
 			Owner:             owner,
+			Interpretation:    "A high value here indicates a possible goroutine leak.",
 			PossibleSolutions: "none",
 		}
 	}
