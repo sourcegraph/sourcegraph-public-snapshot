@@ -17,6 +17,7 @@ import { FileDiffNode } from '../../../../components/diff/FileDiffNode'
 import { FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
 import { GitBranchChangesetDescriptionInfo } from './GitBranchChangesetDescriptionInfo'
 import { ChangesetStatusCell } from '../../detail/changesets/ChangesetStatusCell'
+import classNames from 'classnames'
 
 export interface VisibleChangesetApplyPreviewNodeProps extends ThemeProps {
     node: VisibleChangesetApplyPreviewFields
@@ -63,10 +64,24 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
             </button>
             <VisibleChangesetApplyPreviewNodeStatusCell
                 node={node}
-                className="d-block d-sm-flex visible-changeset-apply-preview-node__current-state"
+                className={classNames(
+                    'visible-changeset-apply-preview-node__list-cell d-block d-sm-flex visible-changeset-apply-preview-node__current-state align-self-stretch visible-changeset-apply-preview-node__status-cell',
+                    isExpanded && 'visible-changeset-apply-preview-node__bg-expanded'
+                )}
             />
-            <PreviewAction node={node} className="visible-changeset-apply-preview-node__action" />
-            <div className="visible-changeset-apply-preview-node__information">
+            <PreviewAction
+                node={node}
+                className={classNames(
+                    'visible-changeset-apply-preview-node__list-cell visible-changeset-apply-preview-node__action align-self-stretch',
+                    isExpanded && 'visible-changeset-apply-preview-node__bg-expanded'
+                )}
+            />
+            <div
+                className={classNames(
+                    'visible-changeset-apply-preview-node__list-cell visible-changeset-apply-preview-node__information align-self-stretch',
+                    isExpanded && 'visible-changeset-apply-preview-node__bg-expanded'
+                )}
+            >
                 <div className="d-flex flex-column">
                     <ChangesetSpecTitle spec={node} />
                     <div className="mr-2">
@@ -74,7 +89,12 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
                     </div>
                 </div>
             </div>
-            <div className="d-flex justify-content-center">
+            <div
+                className={classNames(
+                    'visible-changeset-apply-preview-node__list-cell d-flex justify-content-center align-self-stretch',
+                    isExpanded && 'visible-changeset-apply-preview-node__bg-expanded'
+                )}
+            >
                 <ApplyDiffStat spec={node} />
             </div>
             {/* The button for expanding the information used on xs devices. */}

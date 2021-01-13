@@ -13,13 +13,16 @@ export const HiddenChangesetApplyPreviewNode: React.FunctionComponent<HiddenChan
     node,
 }) => (
     <>
-        <span className="d-none d-sm-block" />
+        <span className="hidden-changeset-apply-preview-node__list-cell d-none d-sm-block" />
         <HiddenChangesetApplyPreviewNodeStatusCell
             node={node}
-            className="d-block d-sm-flex hidden-changeset-apply-preview-node__current-state"
+            className="hidden-changeset-apply-preview-node__list-cell d-block d-sm-flex hidden-changeset-apply-preview-node__current-state"
         />
-        <PreviewAction node={node} className="hidden-changeset-apply-preview-node__action" />
-        <div className="d-flex flex-column hidden-changeset-apply-preview-node__information">
+        <PreviewAction
+            node={node}
+            className="hidden-changeset-apply-preview-node__list-cell hidden-changeset-apply-preview-node__action"
+        />
+        <div className="hidden-changeset-apply-preview-node__list-cell d-flex flex-column hidden-changeset-apply-preview-node__information">
             <h3 className="text-muted">
                 {node.targets.__typename === 'HiddenApplyPreviewTargetsAttach' ||
                 node.targets.__typename === 'HiddenApplyPreviewTargetsUpdate' ? (
