@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	codeintelapi "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/api"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
@@ -69,7 +70,7 @@ func TestRanges(t *testing.T) {
 			{ID: 44, RepositoryID: 50, Commit: "deadbeef1"},
 			{ID: 45, RepositoryID: 50, Commit: "deadbeef1"},
 		},
-		makeOperations(&observation.TestContext),
+		newOperations(&observation.TestContext),
 	)
 
 	ranges, err := queryResolver.Ranges(context.Background(), 10, 20)
@@ -207,7 +208,7 @@ func TestDefinitions(t *testing.T) {
 			{ID: 44, RepositoryID: 50, Commit: "deadbeef1"},
 			{ID: 45, RepositoryID: 50, Commit: "deadbeef1"},
 		},
-		makeOperations(&observation.TestContext),
+		newOperations(&observation.TestContext),
 	)
 
 	definitions, err := queryResolver.Definitions(context.Background(), 10, 15)
@@ -337,7 +338,7 @@ func TestReferences(t *testing.T) {
 			{ID: 45, RepositoryID: 50, Commit: "deadbeef1"},
 			{ID: 46, RepositoryID: 50, Commit: "deadbeef1"},
 		},
-		makeOperations(&observation.TestContext),
+		newOperations(&observation.TestContext),
 	)
 
 	cursor, err := makeCursor(map[int]string{
@@ -465,7 +466,7 @@ func TestHover(t *testing.T) {
 			{ID: 44, RepositoryID: 50, Commit: "deadbeef1"},
 			{ID: 45, RepositoryID: 50, Commit: "deadbeef1"},
 		},
-		makeOperations(&observation.TestContext),
+		newOperations(&observation.TestContext),
 	)
 
 	text, r, ok, err := queryResolver.Hover(context.Background(), 10, 15)
@@ -581,7 +582,7 @@ func TestDiagnostics(t *testing.T) {
 			{ID: 44, RepositoryID: 50, Commit: "deadbeef1"},
 			{ID: 45, RepositoryID: 50, Commit: "deadbeef1"},
 		},
-		makeOperations(&observation.TestContext),
+		newOperations(&observation.TestContext),
 	)
 
 	diagnostics, totalCount, err := queryResolver.Diagnostics(context.Background(), 3)

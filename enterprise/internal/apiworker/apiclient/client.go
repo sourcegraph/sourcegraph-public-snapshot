@@ -51,7 +51,7 @@ func New(options Options, observationContext *observation.Context) *Client {
 	return &Client{
 		options:    options,
 		client:     NewBaseClient(options.BaseClientOptions),
-		operations: makeOperations(observationContext),
+		operations: newOperations(observationContext),
 	}
 }
 

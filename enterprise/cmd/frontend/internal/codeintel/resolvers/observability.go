@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -20,7 +21,7 @@ type operations struct {
 	references    *observation.Operation
 }
 
-func makeOperations(observationContext *observation.Context) *operations {
+func newOperations(observationContext *observation.Context) *operations {
 	metrics := metrics.NewOperationMetrics(
 		observationContext.Registerer,
 		"codeintel_resolvers",

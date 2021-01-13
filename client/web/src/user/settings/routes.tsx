@@ -7,10 +7,7 @@ import { RouteComponentProps } from 'react-router'
 import type { UserAddCodeHostsPageContainerProps } from './UserAddCodeHostsPageContainer'
 
 const SettingsArea = lazyComponent(() => import('../../settings/SettingsArea'), 'SettingsArea')
-const ExternalServicesPage = lazyComponent(
-    () => import('../../components/externalServices/ExternalServicesPage'),
-    'ExternalServicesPage'
-)
+
 const UserSettingsRepositoriesPage = lazyComponent(
     () => import('./repositories/UserSettingsRepositoriesPage'),
     'UserSettingsRepositoriesPage'
@@ -73,23 +70,6 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         condition: () => window.context.accessTokensAllow !== 'none',
     },
     {
-        path: '/external-services',
-        render: props => (
-            <ExternalServicesPage
-                {...props}
-                userID={props.user.id}
-                routingPrefix={props.user.url + '/settings'}
-                afterDeleteRoute={props.user.url + '/settings/external-services'}
-            />
-        ),
-        exact: true,
-        condition: props =>
-            window.context.externalServicesUserModeEnabled ||
-            (props.user.id === props.authenticatedUser.id &&
-                props.authenticatedUser.tags.includes('AllowUserExternalServicePublic')) ||
-            props.user.tags?.includes('AllowUserExternalServicePublic'),
-    },
-    {
         path: '/repositories',
         render: props => (
             <UserSettingsRepositoriesPage
@@ -123,7 +103,15 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     },
     {
         path: '/code-hosts',
-        render: props => <UserAddCodeHostsPageContainer userID={props.user.id} history={props.history} />,
+        render: props => (
+            <UserAddCodeHostsPageContainer
+                userID={props.user.id}
+                routingPrefix={props.user.url + '/settings'}
+                history={props.history}
+                match={props.match}
+                location={props.location}
+            />
+        ),
         exact: true,
         condition: props =>
             window.context.externalServicesUserModeEnabled ||

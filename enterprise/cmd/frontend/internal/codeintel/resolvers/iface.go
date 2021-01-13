@@ -66,3 +66,7 @@ func (s *DBStoreShim) PackageReferencePager(ctx context.Context, scheme, name, v
 type LSIFStore interface {
 	api.LSIFStore
 }
+
+type IndexEnqueuer interface {
+	ForceQueueIndex(ctx context.Context, repositoryID int) error
+}

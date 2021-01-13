@@ -927,7 +927,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         if (this.props.filters === undefined) {
             return
         }
-        const values = this.state.activeValues
+        const values = new Map(this.state.activeValues)
         values.set(filter.id, value)
         this.activeValuesChanges.next(values)
     }

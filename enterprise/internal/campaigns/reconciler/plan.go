@@ -10,6 +10,7 @@ import (
 
 var operationPrecedence = map[campaigns.ReconcilerOperation]int{
 	campaigns.ReconcilerOperationPush:         0,
+	campaigns.ReconcilerOperationDetach:       0,
 	campaigns.ReconcilerOperationImport:       1,
 	campaigns.ReconcilerOperationPublish:      1,
 	campaigns.ReconcilerOperationPublishDraft: 1,
@@ -100,13 +101,24 @@ func (p *Plan) SetOp(op campaigns.ReconcilerOperation) { p.Ops = Operations{op} 
 
 // DeterminePlan looks at the given changeset to determine what action the
 // reconciler should take.
-// It loads the current ChangesetSpec and if it exists also the previous one.
+// It consumes the current and the previous changeset spec, if they exist.
 // If the current ChangesetSpec is not applied to a campaign, it returns an
 // error.
 func DeterminePlan(previousSpec, currentSpec *campaigns.ChangesetSpec, ch *campaigns.Changeset) (*Plan, error) {
 	pl := &Plan{
 		Changeset:     ch,
 		ChangesetSpec: currentSpec,
+	}
+
+	wantDetach := false
+	for _, assoc := range ch.Campaigns {
+		if assoc.Detach {
+			wantDetach = true
+			break
+		}
+	}
+	if wantDetach {
+		pl.AddOp(campaigns.ReconcilerOperationDetach)
 	}
 
 	// If it doesn't have a spec, it's an imported changeset and we can't do
@@ -118,10 +130,8 @@ func DeterminePlan(previousSpec, currentSpec *campaigns.ChangesetSpec, ch *campa
 		return pl, nil
 	}
 
-	// If it's marked as closing, we don't need to look at the specs.
 	if ch.Closing {
-		pl.SetOp(campaigns.ReconcilerOperationClose)
-		return pl, nil
+		pl.AddOp(campaigns.ReconcilerOperationClose)
 	}
 
 	delta, err := compareChangesetSpecs(previousSpec, currentSpec)

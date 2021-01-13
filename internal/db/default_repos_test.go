@@ -30,7 +30,7 @@ func TestListDefaultRepos(t *testing.T) {
 			name: "one repo",
 			repos: []*types.RepoName{
 				{
-					ID:   api.RepoID(0),
+					ID:   api.RepoID(1),
 					Name: "github.com/foo/bar",
 				},
 			},
@@ -39,11 +39,11 @@ func TestListDefaultRepos(t *testing.T) {
 			name: "a few repos",
 			repos: []*types.RepoName{
 				{
-					ID:   api.RepoID(0),
+					ID:   api.RepoID(1),
 					Name: "github.com/foo/bar",
 				},
 				{
-					ID:   api.RepoID(1),
+					ID:   api.RepoID(2),
 					Name: "github.com/baz/qux",
 				},
 			},
@@ -120,6 +120,49 @@ func TestListDefaultRepos(t *testing.T) {
 			t.Errorf("mismatch (-want +got):\n%s", diff)
 		}
 	})
+}
+
+func TestListDefaultReposInBatches(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	reposToAdd := []*types.RepoName{
+		{
+			ID:   api.RepoID(1),
+			Name: "github.com/foo/bar1",
+		},
+		{
+			ID:   api.RepoID(2),
+			Name: "github.com/baz/bar2",
+		},
+		{
+			ID:   api.RepoID(3),
+			Name: "github.com/foo/bar3",
+		},
+	}
+
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+	for _, r := range reposToAdd {
+		if _, err := dbconn.Global.ExecContext(ctx, `INSERT INTO repo(id, name) VALUES ($1, $2)`, r.ID, r.Name); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := dbconn.Global.ExecContext(ctx, `INSERT INTO default_repos(repo_id) VALUES ($1)`, r.ID); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	repos, err := Repos.listAllDefaultRepos(ctx, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	sort.Sort(types.RepoNames(repos))
+	sort.Sort(types.RepoNames(reposToAdd))
+	if diff := cmp.Diff(repos, reposToAdd, cmpopts.EquateEmpty()); diff != "" {
+		t.Errorf("mismatch (-want +got):\n%s", diff)
+	}
 }
 
 func BenchmarkDefaultRepos_List_Empty(b *testing.B) {

@@ -416,9 +416,9 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                         <h3>Your repositories</h3>
                         <p className="text-muted">
                             Repositories you own or collaborate on from{' '}
-                            <a className="text-primary" href={routingPrefix + '/external-services'}>
+                            <Link className="text-primary" to={`${routingPrefix}/code-hosts`}>
                                 connected code hosts
-                            </a>
+                            </Link>
                         </p>
                         {
                             // display radio button for 'all' or 'selected' repos

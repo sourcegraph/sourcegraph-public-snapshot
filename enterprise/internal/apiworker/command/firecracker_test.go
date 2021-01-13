@@ -116,7 +116,7 @@ func TestSetupFirecracker(t *testing.T) {
 			DiskSpace: "1T",
 		},
 	}
-	operations := MakeOperations(&observation.TestContext)
+	operations := NewOperations(&observation.TestContext)
 
 	if err := setupFirecracker(context.Background(), runner, nil, "deadbeef", "/proj", []string{"img1", "img2", "img3"}, []string{}, options, operations); err != nil {
 		t.Fatalf("unexpected error tearing down virtual machine: %s", err)
@@ -160,7 +160,7 @@ func TestSetupFirecracker(t *testing.T) {
 func TestTeardownFirecracker(t *testing.T) {
 	runner := NewMockCommandRunner()
 	options := Options{}
-	operations := MakeOperations(&observation.TestContext)
+	operations := NewOperations(&observation.TestContext)
 
 	if err := teardownFirecracker(context.Background(), runner, nil, "deadbeef", options, operations); err != nil {
 		t.Fatalf("unexpected error tearing down virtual machine: %s", err)

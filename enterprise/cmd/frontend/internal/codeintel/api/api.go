@@ -20,6 +20,6 @@ func New(dbStore DBStore, lsifStore LSIFStore, gitserverClient GitserverClient, 
 		dbStore:         dbStore,
 		lsifStore:       lsifStore,
 		gitserverClient: gitserverClient,
-		operations:      makeOperations(observationContext),
+		operations:      newOperations(observationContext),
 	}
 }

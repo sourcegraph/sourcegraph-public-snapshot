@@ -14,7 +14,7 @@ type operations struct {
 	delete  *observation.Operation
 }
 
-func makeOperations(observationContext *observation.Context) *operations {
+func newOperations(observationContext *observation.Context) *operations {
 	metrics := metrics.NewOperationMetrics(
 		observationContext.Registerer,
 		"codeintel_uploadstore",

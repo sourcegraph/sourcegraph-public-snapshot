@@ -120,7 +120,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                 </button>
             )}
             {showQueryForm && (
-                <div className="code-monitor-form__card card p-3 my-3">
+                <div className="code-monitor-form__card card p-3">
                     <div className="font-weight-bold">When there are new search results</div>
                     <span className="text-muted">
                         This trigger will fire when new search results are found for a given search query.
@@ -189,7 +189,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                 </div>
             )}
             {!showQueryForm && triggerCompleted && (
-                <div className="code-monitor-form__card card p-3 my-3">
+                <div className="code-monitor-form__card card p-3">
                     <div className="d-flex justify-content-between align-items-center">
                         <div>
                             <div className="font-weight-bold">When there are new search results</div>
