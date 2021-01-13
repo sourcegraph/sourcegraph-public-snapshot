@@ -27,10 +27,9 @@ const sortBySeverity = (a: Skipped, b: Skipped): number => {
     return aSev - bSev
 }
 
-export const StreamingProgressSkippedPopover: React.FunctionComponent<Pick<
-    StreamingProgressProps,
-    'progress' | 'onSearchAgain' | 'history'
->> = ({ progress, onSearchAgain, history }) => {
+export const StreamingProgressSkippedPopover: React.FunctionComponent<
+    Pick<StreamingProgressProps, 'progress' | 'onSearchAgain' | 'history'>
+> = ({ progress, onSearchAgain, history }) => {
     const [selectedSuggestedSearches, setSelectedSuggestedSearches] = useState(new Set<string>())
     const submitHandler = useCallback(
         (event: React.FormEvent) => {
