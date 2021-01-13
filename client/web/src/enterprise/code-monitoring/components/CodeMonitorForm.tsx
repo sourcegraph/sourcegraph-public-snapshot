@@ -198,7 +198,6 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                         authenticatedUser={authenticatedUser}
                         disabled={!formCompletion.triggerCompleted}
                         onActionsChange={onActionsChange}
-                        description={currentCodeMonitorState.description}
                     />
                 </div>
                 <hr className="code-monitor-form__horizontal-rule" />

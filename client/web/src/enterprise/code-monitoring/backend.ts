@@ -26,8 +26,6 @@ import {
     ToggleCodeMonitorEnabledVariables,
     UpdateCodeMonitorResult,
     UpdateCodeMonitorVariables,
-    TriggerTestEmailActionResult,
-    TriggerTestEmailActionVariables,
 } from '../../graphql-operations'
 
 const CodeMonitorFragment = gql`
@@ -266,28 +264,6 @@ export const sendTestEmail = (id: Scalars['ID']): Observable<void> => {
             if (!data.resetTriggerQueryTimestamps) {
                 console.log('DATA', data)
                 throw createInvalidGraphQLMutationResponseError('ResetTriggerQueryTimestamps')
-            }
-        })
-    )
-}
-
-export const triggerTestEmailAction = (user: Scalars['ID'], description: string): Observable<void> => {
-    const query = gql`
-        mutation TriggerTestEmailAction($user: ID!, $description: String!) {
-            triggerTestEmailAction(user: $user, description: $description) {
-                alwaysNil
-            }
-        }
-    `
-
-    return requestGraphQL<TriggerTestEmailActionResult, TriggerTestEmailActionVariables>(query, {
-        user,
-        description,
-    }).pipe(
-        map(dataOrThrowErrors),
-        map(data => {
-            if (!data.triggerTestEmailAction) {
-                throw createInvalidGraphQLMutationResponseError('TriggerTestEmailAction')
             }
         })
     )
