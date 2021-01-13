@@ -35,8 +35,9 @@ It also takes care of the following:
   - Overview graphs for alerts (both Sourcegraph-wide and per-service)
   - Threshold lines for alerts of all levels are rendered in graphs
 - Formatting of units, labels, and more (using either the defaults, or the [`ObservablePanelOptions` API](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/monitoring/monitoring/README.md#type-observablepaneloptions))
-- Maintaining a uniform look and feel across all dashboards
 - Providing links to [generated documentation](#documentation-generation)
+- Configuring annotation layers for alert events and version changes
+- Maintaining a uniform look and feel across all dashboards
 
 Links to generated documentation can be provided in our other generated integrations - for example, [Slack alerts](https://docs.sourcegraph.com/admin/observability/alerting#setting-up-alerting) will provide a link to the appropriate service's dashboard.
 
