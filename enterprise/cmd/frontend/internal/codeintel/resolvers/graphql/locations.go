@@ -2,6 +2,7 @@ package graphql
 
 import (
 	"context"
+	"log"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -262,6 +263,10 @@ func resolveLocations(ctx context.Context, locationResolver *CachedLocationResol
 func resolveLocation(ctx context.Context, locationResolver *CachedLocationResolver, location resolvers.AdjustedLocation) (gql.LocationResolver, error) {
 	treeResolver, err := locationResolver.Path(ctx, api.RepoID(location.Dump.RepositoryID), location.AdjustedCommit, location.Path)
 	if err != nil || treeResolver == nil {
+		// if r.symbol.Text == "Config" {
+		log.Printf("XXXXXXXX nil %+v -- %v", location, err)
+		// }
+
 		return nil, err
 	}
 
