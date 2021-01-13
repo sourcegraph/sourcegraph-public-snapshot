@@ -8,8 +8,10 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
+	"runtime"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
@@ -132,37 +134,62 @@ WHERE table_schema='public' AND table_type='BASE TABLE';
 		return "", fmt.Errorf("rows.Err: %w", err)
 	}
 
-	docs := []string{}
+	ch := make(chan string, len(tables))
 	for _, table := range tables {
-		// Get postgres "describe table" output.
-		log.Println("describe", table)
-
-		comment, err := getTableComment(db, table)
-		if err != nil {
-			return "", err
-		}
-
-		columnComments, err := getColumnComments(db, table)
-		if err != nil {
-			return "", err
-		}
-
-		out, err := run("psql", "-X", "--quiet", "--dbname", dbname, "-c", fmt.Sprintf("\\d %s", table))
-		if err != nil {
-			return "", fmt.Errorf("describe %s failed: %w", table, err)
-		}
-
-		lines := strings.Split(out, "\n")
-		doc := "# " + strings.TrimSpace(lines[0]) + "\n"
-		doc += "```\n" + strings.Join(lines[1:], "\n") + "```\n"
-		if comment != "" {
-			doc += "\n" + comment + "\n"
-		}
-		for k, v := range columnComments {
-			doc += "\n## " + k + "\n\n" + v + "\n"
-		}
-		docs = append(docs, doc)
+		ch <- table
 	}
+	close(ch)
+
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+	var docs []string
+
+	for i := 0; i < runtime.GOMAXPROCS(0); i++ {
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+
+			for table := range ch {
+				log.Println("describe", table)
+
+				comment, err := getTableComment(db, table)
+				if err != nil {
+					log.Fatalf("table comments failed: %s", err)
+					continue
+				}
+
+				columnComments, err := getColumnComments(db, table)
+				if err != nil {
+					log.Fatalf("column comments failed: %s", err.Error())
+					continue
+				}
+
+				// Get postgres "describe table" output.
+				out, err := run("psql", "-X", "--quiet", "--dbname", dbname, "-c", fmt.Sprintf("\\d %s", table))
+				if err != nil {
+					log.Fatalf("describe %s failed: %s", table, err)
+					continue
+				}
+
+				lines := strings.Split(out, "\n")
+				doc := "# " + strings.TrimSpace(lines[0]) + "\n"
+				doc += "```\n" + strings.Join(lines[1:], "\n") + "```\n"
+				if comment != "" {
+					doc += "\n" + comment + "\n"
+				}
+				for k, v := range columnComments {
+					doc += "\n## " + k + "\n\n" + v + "\n"
+				}
+
+				mu.Lock()
+				docs = append(docs, doc)
+				mu.Unlock()
+			}
+		}()
+	}
+
+	wg.Wait()
 	sort.Strings(docs)
 
 	return strings.Join(docs, "\n"), nil
