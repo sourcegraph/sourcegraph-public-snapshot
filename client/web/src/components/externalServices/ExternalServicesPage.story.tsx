@@ -27,7 +27,7 @@ const queryExternalServices: typeof _queryExternalServices = () =>
                 warning: null,
                 lastSyncError: null,
                 repoCount: 0,
-                lastSyncAt: ''
+                lastSyncAt: '',
             },
         ],
     })
