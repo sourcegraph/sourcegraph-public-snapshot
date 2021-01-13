@@ -6,19 +6,18 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/hashicorp/go-multierror"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/search/syntax"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
+	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
 )
 
 func TestChangesetSearch(t *testing.T) {
 	t.Run("parse error", func(t *testing.T) {
-		if _, err := ParseChangesetSearch(`:`); err == nil {
+		if _, err := ParseTextSearch(`:`); err == nil {
 			t.Errorf("unexpected nil error")
 		}
 	})
 
 	t.Run("invalid field", func(t *testing.T) {
-		if _, err := ParseChangesetSearch(`x:`); err == nil {
+		if _, err := ParseTextSearch(`x:`); err == nil {
 			t.Errorf("unexpected nil error")
 		} else if errs, ok := err.(*multierror.Error); !ok {
 			t.Errorf("unexpected error of type %T: %+v", err, err)
@@ -33,7 +32,7 @@ func TestChangesetSearch(t *testing.T) {
 	})
 
 	t.Run("invalid value type", func(t *testing.T) {
-		if _, err := ParseChangesetSearch(`/foo/`); err == nil {
+		if _, err := ParseTextSearch(`/foo/`); err == nil {
 			t.Errorf("unexpected nil error")
 		} else if errs, ok := err.(*multierror.Error); !ok {
 			t.Errorf("unexpected error of type %T: %+v", err, err)
@@ -48,7 +47,7 @@ func TestChangesetSearch(t *testing.T) {
 	})
 
 	t.Run("multiple errors", func(t *testing.T) {
-		if _, err := ParseChangesetSearch(`x: /foo/`); err == nil {
+		if _, err := ParseTextSearch(`x: /foo/`); err == nil {
 			t.Errorf("unexpected nil error")
 		} else if errs, ok := err.(*multierror.Error); !ok {
 			t.Errorf("unexpected error of type %T: %+v", err, err)
@@ -69,66 +68,54 @@ func TestChangesetSearch(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		for name, tc := range map[string]struct {
 			input string
-			want  store.ListChangesetsOpts
+			want  []TextSearchTerm
 		}{
 			"empty string": {
 				input: ``,
-				want: store.ListChangesetsOpts{
-					TextSearch: []store.ListChangesetsTextSearchExpr{},
-				},
+				want:  []TextSearchTerm{},
 			},
 			"single word": {
 				input: `foo`,
-				want: store.ListChangesetsOpts{
-					TextSearch: []store.ListChangesetsTextSearchExpr{
-						{Term: "foo"},
-					},
+				want: []TextSearchTerm{
+					{Term: "foo"},
 				},
 			},
 			"negated single word": {
 				input: `-foo`,
-				want: store.ListChangesetsOpts{
-					TextSearch: []store.ListChangesetsTextSearchExpr{
-						{Term: "foo", Not: true},
-					},
+				want: []TextSearchTerm{
+					{Term: "foo", Not: true},
 				},
 			},
 			"quoted phrase": {
 				input: `"foo bar"`,
-				want: store.ListChangesetsOpts{
-					TextSearch: []store.ListChangesetsTextSearchExpr{
-						{Term: "foo bar"},
-					},
+				want: []TextSearchTerm{
+					{Term: "foo bar"},
 				},
 			},
 			"negated quoted phrase": {
 				input: `-"foo bar"`,
-				want: store.ListChangesetsOpts{
-					TextSearch: []store.ListChangesetsTextSearchExpr{
-						{Term: "foo bar", Not: true},
-					},
+				want: []TextSearchTerm{
+					{Term: "foo bar", Not: true},
 				},
 			},
 			"multiple exprs": {
 				input: `foo "foo bar" -quux -"baz"`,
-				want: store.ListChangesetsOpts{
-					TextSearch: []store.ListChangesetsTextSearchExpr{
-						{Term: "foo"},
-						{Term: "foo bar"},
-						{Term: "quux", Not: true},
-						{Term: "baz", Not: true},
-					},
+				want: []TextSearchTerm{
+					{Term: "foo"},
+					{Term: "foo bar"},
+					{Term: "quux", Not: true},
+					{Term: "baz", Not: true},
 				},
 			},
 		} {
 			t.Run(name, func(t *testing.T) {
-				opts, err := ParseChangesetSearch(tc.input)
+				terms, err := ParseTextSearch(tc.input)
 				if err != nil {
 					t.Errorf("unexpected error: %+v", err)
 				}
 
-				if diff := cmp.Diff(&tc.want, opts); diff != "" {
-					t.Errorf("unexpected options (-want +have):\n%s", diff)
+				if diff := cmp.Diff(tc.want, terms); diff != "" {
+					t.Errorf("unexpected terms (-want +have):\n%s", diff)
 				}
 			})
 		}

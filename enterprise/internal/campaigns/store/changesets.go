@@ -12,6 +12,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/search"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
@@ -414,15 +415,10 @@ type ListChangesetsOpts struct {
 	ExternalCheckState  *campaigns.ChangesetCheckState
 	OwnedByCampaignID   int64
 	ExternalServiceID   string
-	TextSearch          []ListChangesetsTextSearchExpr
+	TextSearch          []search.TextSearchTerm
 }
 
-type ListChangesetsTextSearchExpr struct {
-	Term string
-	Not  bool
-}
-
-func (expr ListChangesetsTextSearchExpr) query() *sqlf.Query {
+func textSearchTermToClause(term *search.TextSearchTerm) *sqlf.Query {
 	// The general SQL query format for a positive query is:
 	//
 	// (field1 ~* value OR field2 ~* value)
@@ -435,7 +431,7 @@ func (expr ListChangesetsTextSearchExpr) query() *sqlf.Query {
 	// operators here.
 	var boolOp *sqlf.Query
 	var textOp *sqlf.Query
-	if expr.Not {
+	if term.Not {
 		boolOp = sqlf.Sprintf("AND")
 		textOp = sqlf.Sprintf("!~*")
 	} else {
@@ -446,7 +442,7 @@ func (expr ListChangesetsTextSearchExpr) query() *sqlf.Query {
 	// Since we're using regular expressions here, we need to ensure the search
 	// term is correctly quoted to avoid issues with escape characters having
 	// unexpected meaning in searches.
-	term := regexp.QuoteMeta(expr.Term)
+	quoted := regexp.QuoteMeta(term.Term)
 
 	return sqlf.Sprintf(
 		// There are a couple of things going on in this predicate.
@@ -460,10 +456,10 @@ func (expr ListChangesetsTextSearchExpr) query() *sqlf.Query {
 		// matches on word boundaries.
 		`(COALESCE(changesets.metadata->>'Title', changesets.metadata->>'title', changeset_specs.spec->>'title') %s ('\m'||%s||'\M') %s repo.name %s ('\m'||%s||'\M'))`,
 		textOp,
-		term,
+		quoted,
 		boolOp,
 		textOp,
-		term,
+		quoted,
 	)
 }
 
@@ -554,8 +550,8 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 		// query as well.
 		join = sqlf.Sprintf("LEFT JOIN changeset_specs ON changesets.current_spec_id = changeset_specs.id")
 
-		for _, expr := range opts.TextSearch {
-			preds = append(preds, expr.query())
+		for _, term := range opts.TextSearch {
+			preds = append(preds, textSearchTermToClause(&term))
 		}
 	}
 
