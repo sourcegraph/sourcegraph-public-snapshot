@@ -33,6 +33,7 @@ export const externalServiceFragment = gql`
         lastSyncError
         repoCount
         webhookURL
+        lastSyncAt
     }
 `
 

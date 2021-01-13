@@ -26,6 +26,7 @@ const fetchExternalService: typeof _fetchExternalService = () =>
         webhookURL: null,
         lastSyncError: null,
         repoCount: 0,
+        lastSyncAt: ''
     })
 
 add('View external service config', () => (
