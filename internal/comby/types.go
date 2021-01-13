@@ -7,8 +7,8 @@ type Input interface {
 type ZipPath string
 type DirPath string
 
-func (z ZipPath) Value() {}
-func (d DirPath) Value() {}
+func (ZipPath) Value() {}
+func (DirPath) Value() {}
 
 type Args struct {
 	// An Input to process (either a path to a directory or zip file)
