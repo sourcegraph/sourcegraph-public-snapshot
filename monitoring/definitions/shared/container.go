@@ -81,7 +81,7 @@ var (
 
 				If a high value or spikes here correlate with {{CONTAINER_NAME}} issues, the following might help:
 
-				- **Increase available inodes**: Refer to your OS or cloud provider's documentation for how to increase inodes allowed on a machine.
+				- **Increase available inodes**: Refer to your OS or cloud provider documentation for how to increase inodes allowed on a machine.
 				- **Kubernetes:** consider provisioning more machines for {{CONTAINER_NAME}} with less resources each.
 			`, "{{CONTAINER_NAME}}", containerName, -1),
 		}

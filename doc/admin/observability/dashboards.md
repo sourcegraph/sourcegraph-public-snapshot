@@ -532,7 +532,7 @@ When extremely high, this can indicate a resource usage problem, or can cause pr
 
 If a high value or spikes here correlate with (frontend|sourcegraph-frontend) issues, the following might help:
 
-- **Increase available inodes**: Refer to your OS or cloud provider`s documentation for how to increase inodes allowed on a machine.
+- **Increase available inodes**: Refer to your OS or cloud provider documentation for how to increase inodes allowed on a machine.
 - **Kubernetes:** consider provisioning more machines for (frontend|sourcegraph-frontend) with less resources each.
 
 
@@ -700,7 +700,7 @@ When extremely high, this can indicate a resource usage problem, or can cause pr
 
 If a high value or spikes here correlate with gitserver issues, the following might help:
 
-- **Increase available inodes**: Refer to your OS or cloud provider`s documentation for how to increase inodes allowed on a machine.
+- **Increase available inodes**: Refer to your OS or cloud provider documentation for how to increase inodes allowed on a machine.
 - **Kubernetes:** consider provisioning more machines for gitserver with less resources each.
 
 
@@ -831,7 +831,7 @@ When extremely high, this can indicate a resource usage problem, or can cause pr
 
 If a high value or spikes here correlate with github-proxy issues, the following might help:
 
-- **Increase available inodes**: Refer to your OS or cloud provider`s documentation for how to increase inodes allowed on a machine.
+- **Increase available inodes**: Refer to your OS or cloud provider documentation for how to increase inodes allowed on a machine.
 - **Kubernetes:** consider provisioning more machines for github-proxy with less resources each.
 
 
@@ -1179,7 +1179,7 @@ When extremely high, this can indicate a resource usage problem, or can cause pr
 
 If a high value or spikes here correlate with precise-code-intel-worker issues, the following might help:
 
-- **Increase available inodes**: Refer to your OS or cloud provider`s documentation for how to increase inodes allowed on a machine.
+- **Increase available inodes**: Refer to your OS or cloud provider documentation for how to increase inodes allowed on a machine.
 - **Kubernetes:** consider provisioning more machines for precise-code-intel-worker with less resources each.
 
 
@@ -1298,7 +1298,7 @@ When extremely high, this can indicate a resource usage problem, or can cause pr
 
 If a high value or spikes here correlate with query-runner issues, the following might help:
 
-- **Increase available inodes**: Refer to your OS or cloud provider`s documentation for how to increase inodes allowed on a machine.
+- **Increase available inodes**: Refer to your OS or cloud provider documentation for how to increase inodes allowed on a machine.
 - **Kubernetes:** consider provisioning more machines for query-runner with less resources each.
 
 
@@ -1675,7 +1675,7 @@ When extremely high, this can indicate a resource usage problem, or can cause pr
 
 If a high value or spikes here correlate with repo-updater issues, the following might help:
 
-- **Increase available inodes**: Refer to your OS or cloud provider`s documentation for how to increase inodes allowed on a machine.
+- **Increase available inodes**: Refer to your OS or cloud provider documentation for how to increase inodes allowed on a machine.
 - **Kubernetes:** consider provisioning more machines for repo-updater with less resources each.
 
 
@@ -1810,7 +1810,7 @@ When extremely high, this can indicate a resource usage problem, or can cause pr
 
 If a high value or spikes here correlate with searcher issues, the following might help:
 
-- **Increase available inodes**: Refer to your OS or cloud provider`s documentation for how to increase inodes allowed on a machine.
+- **Increase available inodes**: Refer to your OS or cloud provider documentation for how to increase inodes allowed on a machine.
 - **Kubernetes:** consider provisioning more machines for searcher with less resources each.
 
 
@@ -1945,7 +1945,7 @@ When extremely high, this can indicate a resource usage problem, or can cause pr
 
 If a high value or spikes here correlate with symbols issues, the following might help:
 
-- **Increase available inodes**: Refer to your OS or cloud provider`s documentation for how to increase inodes allowed on a machine.
+- **Increase available inodes**: Refer to your OS or cloud provider documentation for how to increase inodes allowed on a machine.
 - **Kubernetes:** consider provisioning more machines for symbols with less resources each.
 
 
@@ -2084,7 +2084,7 @@ When extremely high, this can indicate a resource usage problem, or can cause pr
 
 If a high value or spikes here correlate with syntect-server issues, the following might help:
 
-- **Increase available inodes**: Refer to your OS or cloud provider`s documentation for how to increase inodes allowed on a machine.
+- **Increase available inodes**: Refer to your OS or cloud provider documentation for how to increase inodes allowed on a machine.
 - **Kubernetes:** consider provisioning more machines for syntect-server with less resources each.
 
 
@@ -2183,7 +2183,7 @@ When extremely high, this can indicate a resource usage problem, or can cause pr
 
 If a high value or spikes here correlate with zoekt-indexserver issues, the following might help:
 
-- **Increase available inodes**: Refer to your OS or cloud provider`s documentation for how to increase inodes allowed on a machine.
+- **Increase available inodes**: Refer to your OS or cloud provider documentation for how to increase inodes allowed on a machine.
 - **Kubernetes:** consider provisioning more machines for zoekt-indexserver with less resources each.
 
 
@@ -2290,7 +2290,7 @@ When extremely high, this can indicate a resource usage problem, or can cause pr
 
 If a high value or spikes here correlate with zoekt-webserver issues, the following might help:
 
-- **Increase available inodes**: Refer to your OS or cloud provider`s documentation for how to increase inodes allowed on a machine.
+- **Increase available inodes**: Refer to your OS or cloud provider documentation for how to increase inodes allowed on a machine.
 - **Kubernetes:** consider provisioning more machines for zoekt-webserver with less resources each.
 
 
@@ -2399,7 +2399,7 @@ When extremely high, this can indicate a resource usage problem, or can cause pr
 
 If a high value or spikes here correlate with prometheus issues, the following might help:
 
-- **Increase available inodes**: Refer to your OS or cloud provider`s documentation for how to increase inodes allowed on a machine.
+- **Increase available inodes**: Refer to your OS or cloud provider documentation for how to increase inodes allowed on a machine.
 - **Kubernetes:** consider provisioning more machines for prometheus with less resources each.
 
 
@@ -2558,7 +2558,7 @@ When extremely high, this can indicate a resource usage problem, or can cause pr
 
 If a high value or spikes here correlate with executor-queue issues, the following might help:
 
-- **Increase available inodes**: Refer to your OS or cloud provider`s documentation for how to increase inodes allowed on a machine.
+- **Increase available inodes**: Refer to your OS or cloud provider documentation for how to increase inodes allowed on a machine.
 - **Kubernetes:** consider provisioning more machines for executor-queue with less resources each.
 
 
@@ -2758,7 +2758,7 @@ When extremely high, this can indicate a resource usage problem, or can cause pr
 
 If a high value or spikes here correlate with precise-code-intel-worker issues, the following might help:
 
-- **Increase available inodes**: Refer to your OS or cloud provider`s documentation for how to increase inodes allowed on a machine.
+- **Increase available inodes**: Refer to your OS or cloud provider documentation for how to increase inodes allowed on a machine.
 - **Kubernetes:** consider provisioning more machines for precise-code-intel-worker with less resources each.
 
 
