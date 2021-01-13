@@ -81,7 +81,7 @@ func (c *Container) renderDashboard() *sdk.Board {
 			Name:       "Alert events",
 			Datasource: stringPtr("Prometheus"),
 			// Show alerts matching the selected alert_level (see template variable above)
-			Expr:        fmt.Sprintf(`ALERTS{service_name=%q,level=~"$alert_level"}`, c.Name),
+			Expr:        fmt.Sprintf(`ALERTS{service_name=%q,level=~"$alert_level",alertstate="firing"}`, c.Name),
 			Step:        "60s",
 			TitleFormat: "{{ description }} ({{ name }})",
 			TagKeys:     "level,owner",
