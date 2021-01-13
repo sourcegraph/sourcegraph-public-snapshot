@@ -75,6 +75,26 @@
             "description": "The Docker image used to launch the Docker container in which the shell command is run.",
             "examples": ["alpine:3"]
           },
+          "outputs": {
+            "type": "object",
+            "description": "Output variables of this step that can be referenced in the changesetTemplate or other steps via outputs.<name-of-output>",
+            "additionalProperties": {
+              "type": "object",
+              "required": ["value"],
+              "properties": {
+                "value": {
+                  "type": "string",
+                  "description": "The value of the output, which can be a template string.",
+                  "examples": ["${{ step.stdout }}", "${{ repository.name }}" ]
+                },
+                "format": {
+                  "type": "string",
+                  "description": "The expected format of the output. If set, the output is being parsed in that format before being stored in the var.",
+                  "enum": ["json", "yaml", "text"]
+                }
+              }
+            }
+          },
           "env": {
             "description": "Environment variables to set in the step environment.",
             "oneOf": [
@@ -108,9 +128,11 @@
           "files": {
             "type": "object",
             "description": "Files that should be mounted into or be created inside the Docker container.",
-            "additionalProperties": {
-              "type": "string"
-            }
+            "additionalProperties": {"type": "string"}
+          },
+          "outputVariable": {
+            "type": "string",
+            "description": "The name of the variable in which to save the output of the step. The variable has to have been declared in `vars`."
           }
         }
       }
@@ -225,9 +247,7 @@
               "items": {
                 "type": "object",
                 "description": "An object with one field: the key is the glob pattern to match against repository names; the value will be used as the published flag for matching repositories.",
-                "additionalProperties": {
-                  "oneOf": [{ "type": "boolean" }, { "type": "string", "pattern": "^draft$" }]
-                },
+                "additionalProperties": { "oneOf": [{ "type": "boolean" }, { "type": "string", "pattern": "^draft$" }] },
                 "minProperties": 1,
                 "maxProperties": 1
               }
