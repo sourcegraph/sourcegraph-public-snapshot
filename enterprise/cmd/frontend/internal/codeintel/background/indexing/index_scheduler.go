@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
@@ -58,6 +59,10 @@ func NewIndexScheduler(
 }
 
 func (s *IndexScheduler) Handle(ctx context.Context) error {
+	if !conf.CodeIntelAutoIndexingEnabled() {
+		return nil
+	}
+
 	configuredRepositoryIDs, err := s.dbStore.GetRepositoriesWithIndexConfiguration(ctx)
 	if err != nil {
 		return errors.Wrap(err, "store.GetRepositoriesWithIndexConfiguration")

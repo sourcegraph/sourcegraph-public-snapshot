@@ -261,7 +261,10 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
 
                                 // Flipping these feature flags require a reload for the
                                 // UI to be rendered correctly in the navbar and the sidebar.
-                                const keys: (keyof SiteConfiguration)[] = ['campaigns.enabled', 'autoIndexing.enabled']
+                                const keys: (keyof SiteConfiguration)[] = [
+                                    'campaigns.enabled',
+                                    'codeIntelAutoIndexing.enabled',
+                                ]
 
                                 if (
                                     !keys.every(

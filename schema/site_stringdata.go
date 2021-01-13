@@ -283,8 +283,8 @@ const SiteSchemaJSON = `{
       "group": "Campaigns",
       "default": false
     },
-    "autoIndexing.enabled": {
-      "description": "Enables/disables the precise code intel auto indexing feature.",
+    "codeIntelAutoIndexing.enabled": {
+      "description": "Enables/disables the code intel auto indexing feature.",
       "type": "boolean",
       "!go": { "pointer": true },
       "group": "Code intelligence",

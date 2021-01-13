@@ -86,7 +86,7 @@ type JSContext struct {
 
 	CampaignsEnabled bool `json:"campaignsEnabled"`
 
-	AutoIndexingEnabled bool `json:"autoIndexingEnabled"`
+	CodeIntelAutoIndexingEnabled bool `json:"codeIntelAutoIndexingEnabled"`
 
 	ExperimentalFeatures schema.ExperimentalFeatures `json:"experimentalFeatures"`
 }
@@ -188,7 +188,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 		CampaignsEnabled: campaignsEnabled,
 
-		AutoIndexingEnabled: conf.AutoIndexingEnabled(),
+		CodeIntelAutoIndexingEnabled: conf.CodeIntelAutoIndexingEnabled(),
 
 		ExperimentalFeatures: conf.ExperimentalFeatures(),
 	}

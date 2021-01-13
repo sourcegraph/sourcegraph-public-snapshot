@@ -226,8 +226,8 @@ func CampaignsEnabled() bool {
 	return true
 }
 
-func AutoIndexingEnabled() bool {
-	if enabled := Get().AutoIndexingEnabled; enabled != nil {
+func CodeIntelAutoIndexingEnabled() bool {
+	if enabled := Get().CodeIntelAutoIndexingEnabled; enabled != nil {
 		return *enabled
 	}
 	return false
