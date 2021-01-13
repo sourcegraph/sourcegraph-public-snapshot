@@ -78,26 +78,28 @@ func (c *Container) renderDashboard() *sdk.Board {
 	}
 	board.Annotations.List = []sdk.Annotation{
 		{
-			Name:       "Version changes",
+			Name:       "Alert events",
 			Datasource: stringPtr("Prometheus"),
-			// Per version, instance generate an annotation whenever labels change
-			// inspired by https://github.com/grafana/grafana/issues/11948#issuecomment-403841249
-			Expr:        fmt.Sprintf(`group by(version, instance) (src_service_metadata{job=%[1]q} unless (src_service_metadata{job=%[1]q} offset 1m))`, c.Name),
-			Step:        "60s",
-			TitleFormat: "v{{ version }}",
-			TagKeys:     "instance",
-			IconColor:   "rgb(255, 255, 255)",
-			Enable:      false, // disable by default for now
-			Type:        "tags",
-		},
-		{
-			Name:        "Alert events",
-			Datasource:  stringPtr("Prometheus"),
-			Expr:        fmt.Sprintf(`ALERTS{service_name=%q}`, c.Name),
+			// Show alerts matching the selected alert_level (see template variable above)
+			Expr:        fmt.Sprintf(`ALERTS{service_name=%q,level=~"$alert_level"}`, c.Name),
 			Step:        "60s",
 			TitleFormat: "{{ description }} ({{ name }})",
 			TagKeys:     "level,owner",
 			IconColor:   "rgba(255, 96, 96, 1)",
+			Enable:      false, // disable by default for now
+			Type:        "tags",
+		},
+		{
+			Name:       "Version changes",
+			Datasource: stringPtr("Prometheus"),
+			// Per version, instance generate an annotation whenever labels change
+			// inspired by https://github.com/grafana/grafana/issues/11948#issuecomment-403841249
+			// We use `job=~.*SERVICE` because of frontend being called sourcegraph-frontend in certain environments
+			Expr:        fmt.Sprintf(`group by(version, instance) (src_service_metadata{job=~".*%[1]s"} unless (src_service_metadata{job=~".*%[1]s"} offset 1m))`, c.Name),
+			Step:        "60s",
+			TitleFormat: "v{{ version }}",
+			TagKeys:     "instance",
+			IconColor:   "rgb(255, 255, 255)",
 			Enable:      false, // disable by default for now
 			Type:        "tags",
 		},
