@@ -18,10 +18,12 @@ import (
 
 	"github.com/gchaincl/sqlhooks"
 	"github.com/inconshreveable/log15"
-	"github.com/lib/pq"
+	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/stdlib"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -33,14 +35,14 @@ var (
 	// Only use this after a call to SetupGlobalConnection.
 	Global *sql.DB
 
-	defaultDataSource      = env.Get("PGDATASOURCE", "", "Default dataSource to pass to Postgres. See https://godoc.org/github.com/lib/pq for more information.")
+	defaultDataSource      = env.Get("PGDATASOURCE", "", "Default dataSource to pass to Postgres. See https://godoc.org/github.com/jackc/pgx for more information.")
 	defaultApplicationName = env.Get("PGAPPLICATIONNAME", "sourcegraph", "The value of application_name appended to dataSource")
 )
 
 // SetupGlobalConnection connects to the given data source and stores the handle
 // globally.
 //
-// Note: github.com/lib/pq parses the environment as well. This function will
+// Note: github.com/jackc/pgx parses the environment as well. This function will
 // also use the value of PGDATASOURCE if supplied and dataSource is the empty
 // string.
 func SetupGlobalConnection(dataSource string) (err error) {
@@ -50,7 +52,7 @@ func SetupGlobalConnection(dataSource string) (err error) {
 
 // New connects to the given data source and returns the handle.
 //
-// Note: github.com/lib/pq parses the environment as well. This function will
+// Note: github.com/jackc/pgx parses the environment as well. This function will
 // also use the value of PGDATASOURCE if supplied and dataSource is the empty
 // string.
 func New(dataSource, dbNameSuffix string) (*sql.DB, error) {
@@ -62,9 +64,12 @@ func New(dataSource, dbNameSuffix string) (*sql.DB, error) {
 		return nil, errors.Wrap(err, "Error setting PGTZ=UTC")
 	}
 
-	connectionString := buildConnectionString(dataSource)
+	cfg, err := buildConfig(dataSource)
+	if err != nil {
+		return nil, err
+	}
 
-	db, err := openDBWithStartupWait(connectionString)
+	db, err := openDBWithStartupWait(cfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "DB not available")
 	}
@@ -93,33 +98,40 @@ var startupTimeout = func() time.Duration {
 	return d
 }()
 
-// buildConnectionString takes either a Postgres connection string or connection URI,
-// normalizes it, and returns a connection string with parameters appended.
-func buildConnectionString(dataSource string) string {
+// buildConfig takes either a Postgres connection string or connection URI,
+// parses it, and returns a config with additional parameters.
+func buildConfig(dataSource string) (*pgx.ConnConfig, error) {
 	if dataSource == "" {
 		dataSource = defaultDataSource
 	}
 
-	connectionString, err := pq.ParseURL(dataSource)
+	cfg, err := pgx.ParseConfig(dataSource)
 	if err != nil {
-		// Assume dataSource is either malformed or a connection string rather than a URI.
-		connectionString = dataSource
+		return nil, err
 	}
 
-	if strings.Contains(connectionString, "fallback_application_name") {
-		return connectionString
+	if cfg.RuntimeParams == nil {
+		cfg.RuntimeParams = make(map[string]string)
 	}
-	return fmt.Sprintf("%s fallback_application_name=%s", connectionString, defaultApplicationName)
+
+	// pgx doesn't support fallback_application_name so we emulate it
+	// by checking if application_name is set and setting a default
+	// value if not.
+	if _, ok := cfg.RuntimeParams["application_name"]; !ok {
+		cfg.RuntimeParams["application_name"] = defaultApplicationName
+	}
+
+	return cfg, nil
 }
 
-func openDBWithStartupWait(dataSource string) (db *sql.DB, err error) {
+func openDBWithStartupWait(cfg *pgx.ConnConfig) (db *sql.DB, err error) {
 	// Allow the DB to take up to 10s while it reports "pq: the database system is starting up".
 	startupDeadline := time.Now().Add(startupTimeout)
 	for {
 		if time.Now().After(startupDeadline) {
 			return nil, fmt.Errorf("database did not start up within %s (%v)", startupTimeout, err)
 		}
-		db, err = Open(dataSource)
+		db, err = open(cfg)
 		if err == nil {
 			err = db.Ping()
 		}
@@ -153,10 +165,21 @@ var registerOnce sync.Once
 //
 // Open assumes that the database already exists.
 func Open(dataSource string) (*sql.DB, error) {
+	cfg, err := pgx.ParseConfig(dataSource)
+	if err != nil {
+		return nil, err
+	}
+
+	return open(cfg)
+}
+
+func open(cfg *pgx.ConnConfig) (*sql.DB, error) {
+	cfgKey := stdlib.RegisterConnConfig(cfg)
+
 	registerOnce.Do(func() {
-		sql.Register("postgres-proxy", sqlhooks.Wrap(&pq.Driver{}, &hook{}))
+		sql.Register("postgres-proxy", sqlhooks.Wrap(stdlib.GetDefaultDriver(), &hook{}))
 	})
-	db, err := sql.Open("postgres-proxy", dataSource)
+	db, err := sql.Open("postgres-proxy", cfgKey)
 	if err != nil {
 		return nil, errors.Wrap(err, "postgresql open")
 	}

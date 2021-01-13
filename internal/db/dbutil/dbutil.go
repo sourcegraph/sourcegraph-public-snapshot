@@ -14,15 +14,17 @@ import (
 	"time"
 
 	// Register driver
-	"github.com/lib/pq"
+	_ "github.com/jackc/pgx/v4/stdlib"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	bindata "github.com/golang-migrate/migrate/v4/source/go_bindata"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
+	"github.com/jackc/pgconn"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	codeintelMigrations "github.com/sourcegraph/sourcegraph/migrations/codeintel"
 	frontendMigrations "github.com/sourcegraph/sourcegraph/migrations/frontend"
@@ -238,8 +240,8 @@ func (logger stdoutLogger) Verbose() bool {
 }
 
 func IsPostgresError(err error, codename string) bool {
-	e, ok := errors.Cause(err).(*pq.Error)
-	return ok && e.Code.Name() == codename
+	e, ok := errors.Cause(err).(*pgconn.PgError)
+	return ok && e.Code == codename
 }
 
 // NullTime represents a time.Time that may be null. nullTime implements the
@@ -250,6 +252,8 @@ type NullTime struct{ *time.Time }
 // Scan implements the Scanner interface.
 func (nt *NullTime) Scan(value interface{}) error {
 	*nt.Time, _ = value.(time.Time)
+	// pgx parses timestamptz columns as time.Time instances with local timezone.
+	*nt.Time = nt.Time.UTC()
 	return nil
 }
 

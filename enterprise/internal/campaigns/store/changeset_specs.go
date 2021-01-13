@@ -571,6 +571,7 @@ func (s *Store) GetRewirerMappings(ctx context.Context, opts GetRewirerMappingsO
 }
 
 func getRewirerMappingsQuery(opts GetRewirerMappingsOpts) *sqlf.Query {
+	campaignID := strconv.Itoa(int(opts.CampaignID))
 	return sqlf.Sprintf(
 		getRewirerMappingsQueryFmtstr,
 		opts.CampaignSpecID,
@@ -579,7 +580,7 @@ func getRewirerMappingsQuery(opts GetRewirerMappingsOpts) *sqlf.Query {
 		opts.CampaignSpecID,
 		opts.CampaignID,
 		opts.CampaignSpecID,
-		opts.CampaignID,
+		campaignID,
 		opts.LimitOffset.SQL(),
 	)
 }

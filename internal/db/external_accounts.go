@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strconv"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
@@ -362,7 +363,7 @@ func (*userExternalAccounts) listSQL(opt ExternalAccountsListOptions) (conds []*
 		conds = append(conds, sqlf.Sprintf("(service_type=%s AND service_id=%s AND client_id=%s)", opt.ServiceType, opt.ServiceID, opt.ClientID))
 	}
 	if opt.AccountID != 0 {
-		conds = append(conds, sqlf.Sprintf("account_id=%d", opt.AccountID))
+		conds = append(conds, sqlf.Sprintf("account_id=%s", strconv.AppendInt(nil, opt.AccountID, 10)))
 	}
 	if opt.ExcludeExpired {
 		conds = append(conds, sqlf.Sprintf("expired_at IS NULL"))

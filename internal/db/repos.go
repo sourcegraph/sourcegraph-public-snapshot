@@ -383,6 +383,11 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 		return err
 	}
 
+	// pgx parses timestamptz columns as time.Time instances with local timezone.
+	// TODO(asdine): Add a helper to scan timestamptz columns as
+	// UTC time.Time instances.
+	r.CreatedAt = r.CreatedAt.UTC()
+
 	type sourceInfo struct {
 		ID       int64
 		CloneURL string
