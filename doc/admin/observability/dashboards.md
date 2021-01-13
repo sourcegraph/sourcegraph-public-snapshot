@@ -515,7 +515,9 @@ Refer to the [alert solutions reference](./alert_solutions.md#frontend-container
 
 #### frontend: container_restarts
 
-This cloud panel indicates container restarts every 5m by instance.
+This cloud panel indicates container restarts.
+
+This value is based on the number of times a container has not been seen in one minute.
 
 Refer to the [alert solutions reference](./alert_solutions.md#frontend-container-restarts) for relevant alerts.
 
@@ -525,7 +527,14 @@ Refer to the [alert solutions reference](./alert_solutions.md#frontend-container
 
 This cloud panel indicates fs inodes in use by instance.
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-fs-inodes-used) for relevant alerts.
+This value indicates the number of [filesystem inodes](https://en.wikipedia.org/wiki/Inode) held by containers of this service.
+When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself.
+
+If a high value or spikes here correlate with (frontend|sourcegraph-frontend) issues, the following might help:
+
+- **Increase available inodes**: Refer to your OS or cloud provider`s documentation for how to increase inodes allowed on a machine.
+- **Kubernetes:** consider provisioning more machines for (frontend|sourcegraph-frontend) with less resources each.
+
 
 <br />
 
@@ -568,6 +577,8 @@ Refer to the [alert solutions reference](./alert_solutions.md#frontend-provision
 #### frontend: go_goroutines
 
 This cloud panel indicates maximum active goroutines.
+
+A high value here indicates a possible goroutine leak.
 
 Refer to the [alert solutions reference](./alert_solutions.md#frontend-go-goroutines) for relevant alerts.
 
@@ -672,7 +683,9 @@ Refer to the [alert solutions reference](./alert_solutions.md#gitserver-containe
 
 #### gitserver: container_restarts
 
-This cloud panel indicates container restarts every 5m by instance.
+This cloud panel indicates container restarts.
+
+This value is based on the number of times a container has not been seen in one minute.
 
 Refer to the [alert solutions reference](./alert_solutions.md#gitserver-container-restarts) for relevant alerts.
 
@@ -682,7 +695,14 @@ Refer to the [alert solutions reference](./alert_solutions.md#gitserver-containe
 
 This cloud panel indicates fs inodes in use by instance.
 
-Refer to the [alert solutions reference](./alert_solutions.md#gitserver-fs-inodes-used) for relevant alerts.
+This value indicates the number of [filesystem inodes](https://en.wikipedia.org/wiki/Inode) held by containers of this service.
+When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself.
+
+If a high value or spikes here correlate with gitserver issues, the following might help:
+
+- **Increase available inodes**: Refer to your OS or cloud provider`s documentation for how to increase inodes allowed on a machine.
+- **Kubernetes:** consider provisioning more machines for gitserver with less resources each.
+
 
 <br />
 
@@ -735,6 +755,8 @@ Git Server is expected to use up all the memory it is provided.
 #### gitserver: go_goroutines
 
 This cloud panel indicates maximum active goroutines.
+
+A high value here indicates a possible goroutine leak.
 
 Refer to the [alert solutions reference](./alert_solutions.md#gitserver-go-goroutines) for relevant alerts.
 
@@ -792,7 +814,9 @@ Refer to the [alert solutions reference](./alert_solutions.md#github-proxy-conta
 
 #### github-proxy: container_restarts
 
-This cloud panel indicates container restarts every 5m by instance.
+This cloud panel indicates container restarts.
+
+This value is based on the number of times a container has not been seen in one minute.
 
 Refer to the [alert solutions reference](./alert_solutions.md#github-proxy-container-restarts) for relevant alerts.
 
@@ -802,7 +826,14 @@ Refer to the [alert solutions reference](./alert_solutions.md#github-proxy-conta
 
 This cloud panel indicates fs inodes in use by instance.
 
-Refer to the [alert solutions reference](./alert_solutions.md#github-proxy-fs-inodes-used) for relevant alerts.
+This value indicates the number of [filesystem inodes](https://en.wikipedia.org/wiki/Inode) held by containers of this service.
+When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself.
+
+If a high value or spikes here correlate with github-proxy issues, the following might help:
+
+- **Increase available inodes**: Refer to your OS or cloud provider`s documentation for how to increase inodes allowed on a machine.
+- **Kubernetes:** consider provisioning more machines for github-proxy with less resources each.
+
 
 <br />
 
@@ -845,6 +876,8 @@ Refer to the [alert solutions reference](./alert_solutions.md#github-proxy-provi
 #### github-proxy: go_goroutines
 
 This cloud panel indicates maximum active goroutines.
+
+A high value here indicates a possible goroutine leak.
 
 Refer to the [alert solutions reference](./alert_solutions.md#github-proxy-go-goroutines) for relevant alerts.
 
@@ -1129,7 +1162,9 @@ Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel
 
 #### precise-code-intel-worker: container_restarts
 
-This code-intel panel indicates container restarts every 5m by instance.
+This code-intel panel indicates container restarts.
+
+This value is based on the number of times a container has not been seen in one minute.
 
 Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel-worker-container-restarts) for relevant alerts.
 
@@ -1139,7 +1174,14 @@ Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel
 
 This code-intel panel indicates fs inodes in use by instance.
 
-Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel-worker-fs-inodes-used) for relevant alerts.
+This value indicates the number of [filesystem inodes](https://en.wikipedia.org/wiki/Inode) held by containers of this service.
+When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself.
+
+If a high value or spikes here correlate with precise-code-intel-worker issues, the following might help:
+
+- **Increase available inodes**: Refer to your OS or cloud provider`s documentation for how to increase inodes allowed on a machine.
+- **Kubernetes:** consider provisioning more machines for precise-code-intel-worker with less resources each.
+
 
 <br />
 
@@ -1182,6 +1224,8 @@ Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel
 #### precise-code-intel-worker: go_goroutines
 
 This code-intel panel indicates maximum active goroutines.
+
+A high value here indicates a possible goroutine leak.
 
 Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel-worker-go-goroutines) for relevant alerts.
 
@@ -1237,7 +1281,9 @@ Refer to the [alert solutions reference](./alert_solutions.md#query-runner-conta
 
 #### query-runner: container_restarts
 
-This search panel indicates container restarts every 5m by instance.
+This search panel indicates container restarts.
+
+This value is based on the number of times a container has not been seen in one minute.
 
 Refer to the [alert solutions reference](./alert_solutions.md#query-runner-container-restarts) for relevant alerts.
 
@@ -1247,7 +1293,14 @@ Refer to the [alert solutions reference](./alert_solutions.md#query-runner-conta
 
 This search panel indicates fs inodes in use by instance.
 
-Refer to the [alert solutions reference](./alert_solutions.md#query-runner-fs-inodes-used) for relevant alerts.
+This value indicates the number of [filesystem inodes](https://en.wikipedia.org/wiki/Inode) held by containers of this service.
+When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself.
+
+If a high value or spikes here correlate with query-runner issues, the following might help:
+
+- **Increase available inodes**: Refer to your OS or cloud provider`s documentation for how to increase inodes allowed on a machine.
+- **Kubernetes:** consider provisioning more machines for query-runner with less resources each.
+
 
 <br />
 
@@ -1290,6 +1343,8 @@ Refer to the [alert solutions reference](./alert_solutions.md#query-runner-provi
 #### query-runner: go_goroutines
 
 This search panel indicates maximum active goroutines.
+
+A high value here indicates a possible goroutine leak.
 
 Refer to the [alert solutions reference](./alert_solutions.md#query-runner-go-goroutines) for relevant alerts.
 
@@ -1603,7 +1658,9 @@ Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-conta
 
 #### repo-updater: container_restarts
 
-This cloud panel indicates container restarts every 5m by instance.
+This cloud panel indicates container restarts.
+
+This value is based on the number of times a container has not been seen in one minute.
 
 Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-container-restarts) for relevant alerts.
 
@@ -1613,7 +1670,14 @@ Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-conta
 
 This cloud panel indicates fs inodes in use by instance.
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-fs-inodes-used) for relevant alerts.
+This value indicates the number of [filesystem inodes](https://en.wikipedia.org/wiki/Inode) held by containers of this service.
+When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself.
+
+If a high value or spikes here correlate with repo-updater issues, the following might help:
+
+- **Increase available inodes**: Refer to your OS or cloud provider`s documentation for how to increase inodes allowed on a machine.
+- **Kubernetes:** consider provisioning more machines for repo-updater with less resources each.
+
 
 <br />
 
@@ -1656,6 +1720,8 @@ Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-provi
 #### repo-updater: go_goroutines
 
 This cloud panel indicates maximum active goroutines.
+
+A high value here indicates a possible goroutine leak.
 
 Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-go-goroutines) for relevant alerts.
 
@@ -1727,7 +1793,9 @@ Refer to the [alert solutions reference](./alert_solutions.md#searcher-container
 
 #### searcher: container_restarts
 
-This search panel indicates container restarts every 5m by instance.
+This search panel indicates container restarts.
+
+This value is based on the number of times a container has not been seen in one minute.
 
 Refer to the [alert solutions reference](./alert_solutions.md#searcher-container-restarts) for relevant alerts.
 
@@ -1737,7 +1805,14 @@ Refer to the [alert solutions reference](./alert_solutions.md#searcher-container
 
 This search panel indicates fs inodes in use by instance.
 
-Refer to the [alert solutions reference](./alert_solutions.md#searcher-fs-inodes-used) for relevant alerts.
+This value indicates the number of [filesystem inodes](https://en.wikipedia.org/wiki/Inode) held by containers of this service.
+When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself.
+
+If a high value or spikes here correlate with searcher issues, the following might help:
+
+- **Increase available inodes**: Refer to your OS or cloud provider`s documentation for how to increase inodes allowed on a machine.
+- **Kubernetes:** consider provisioning more machines for searcher with less resources each.
+
 
 <br />
 
@@ -1780,6 +1855,8 @@ Refer to the [alert solutions reference](./alert_solutions.md#searcher-provision
 #### searcher: go_goroutines
 
 This search panel indicates maximum active goroutines.
+
+A high value here indicates a possible goroutine leak.
 
 Refer to the [alert solutions reference](./alert_solutions.md#searcher-go-goroutines) for relevant alerts.
 
@@ -1851,7 +1928,9 @@ Refer to the [alert solutions reference](./alert_solutions.md#symbols-container-
 
 #### symbols: container_restarts
 
-This code-intel panel indicates container restarts every 5m by instance.
+This code-intel panel indicates container restarts.
+
+This value is based on the number of times a container has not been seen in one minute.
 
 Refer to the [alert solutions reference](./alert_solutions.md#symbols-container-restarts) for relevant alerts.
 
@@ -1861,7 +1940,14 @@ Refer to the [alert solutions reference](./alert_solutions.md#symbols-container-
 
 This code-intel panel indicates fs inodes in use by instance.
 
-Refer to the [alert solutions reference](./alert_solutions.md#symbols-fs-inodes-used) for relevant alerts.
+This value indicates the number of [filesystem inodes](https://en.wikipedia.org/wiki/Inode) held by containers of this service.
+When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself.
+
+If a high value or spikes here correlate with symbols issues, the following might help:
+
+- **Increase available inodes**: Refer to your OS or cloud provider`s documentation for how to increase inodes allowed on a machine.
+- **Kubernetes:** consider provisioning more machines for symbols with less resources each.
+
 
 <br />
 
@@ -1904,6 +1990,8 @@ Refer to the [alert solutions reference](./alert_solutions.md#symbols-provisioni
 #### symbols: go_goroutines
 
 This code-intel panel indicates maximum active goroutines.
+
+A high value here indicates a possible goroutine leak.
 
 Refer to the [alert solutions reference](./alert_solutions.md#symbols-go-goroutines) for relevant alerts.
 
@@ -1979,7 +2067,9 @@ Refer to the [alert solutions reference](./alert_solutions.md#syntect-server-con
 
 #### syntect-server: container_restarts
 
-This cloud panel indicates container restarts every 5m by instance.
+This cloud panel indicates container restarts.
+
+This value is based on the number of times a container has not been seen in one minute.
 
 Refer to the [alert solutions reference](./alert_solutions.md#syntect-server-container-restarts) for relevant alerts.
 
@@ -1989,7 +2079,14 @@ Refer to the [alert solutions reference](./alert_solutions.md#syntect-server-con
 
 This cloud panel indicates fs inodes in use by instance.
 
-Refer to the [alert solutions reference](./alert_solutions.md#syntect-server-fs-inodes-used) for relevant alerts.
+This value indicates the number of [filesystem inodes](https://en.wikipedia.org/wiki/Inode) held by containers of this service.
+When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself.
+
+If a high value or spikes here correlate with syntect-server issues, the following might help:
+
+- **Increase available inodes**: Refer to your OS or cloud provider`s documentation for how to increase inodes allowed on a machine.
+- **Kubernetes:** consider provisioning more machines for syntect-server with less resources each.
+
 
 <br />
 
@@ -2069,7 +2166,9 @@ Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-
 
 #### zoekt-indexserver: container_restarts
 
-This search panel indicates container restarts every 5m by instance.
+This search panel indicates container restarts.
+
+This value is based on the number of times a container has not been seen in one minute.
 
 Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-container-restarts) for relevant alerts.
 
@@ -2079,7 +2178,14 @@ Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-
 
 This search panel indicates fs inodes in use by instance.
 
-Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-fs-inodes-used) for relevant alerts.
+This value indicates the number of [filesystem inodes](https://en.wikipedia.org/wiki/Inode) held by containers of this service.
+When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself.
+
+If a high value or spikes here correlate with zoekt-indexserver issues, the following might help:
+
+- **Increase available inodes**: Refer to your OS or cloud provider`s documentation for how to increase inodes allowed on a machine.
+- **Kubernetes:** consider provisioning more machines for zoekt-indexserver with less resources each.
+
 
 <br />
 
@@ -2167,7 +2273,9 @@ Refer to the [alert solutions reference](./alert_solutions.md#zoekt-webserver-co
 
 #### zoekt-webserver: container_restarts
 
-This search panel indicates container restarts every 5m by instance.
+This search panel indicates container restarts.
+
+This value is based on the number of times a container has not been seen in one minute.
 
 Refer to the [alert solutions reference](./alert_solutions.md#zoekt-webserver-container-restarts) for relevant alerts.
 
@@ -2177,7 +2285,14 @@ Refer to the [alert solutions reference](./alert_solutions.md#zoekt-webserver-co
 
 This search panel indicates fs inodes in use by instance.
 
-Refer to the [alert solutions reference](./alert_solutions.md#zoekt-webserver-fs-inodes-used) for relevant alerts.
+This value indicates the number of [filesystem inodes](https://en.wikipedia.org/wiki/Inode) held by containers of this service.
+When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself.
+
+If a high value or spikes here correlate with zoekt-webserver issues, the following might help:
+
+- **Increase available inodes**: Refer to your OS or cloud provider`s documentation for how to increase inodes allowed on a machine.
+- **Kubernetes:** consider provisioning more machines for zoekt-webserver with less resources each.
+
 
 <br />
 
@@ -2267,7 +2382,9 @@ Refer to the [alert solutions reference](./alert_solutions.md#prometheus-contain
 
 #### prometheus: container_restarts
 
-This distribution panel indicates container restarts every 5m by instance.
+This distribution panel indicates container restarts.
+
+This value is based on the number of times a container has not been seen in one minute.
 
 Refer to the [alert solutions reference](./alert_solutions.md#prometheus-container-restarts) for relevant alerts.
 
@@ -2277,7 +2394,14 @@ Refer to the [alert solutions reference](./alert_solutions.md#prometheus-contain
 
 This distribution panel indicates fs inodes in use by instance.
 
-Refer to the [alert solutions reference](./alert_solutions.md#prometheus-fs-inodes-used) for relevant alerts.
+This value indicates the number of [filesystem inodes](https://en.wikipedia.org/wiki/Inode) held by containers of this service.
+When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself.
+
+If a high value or spikes here correlate with prometheus issues, the following might help:
+
+- **Increase available inodes**: Refer to your OS or cloud provider`s documentation for how to increase inodes allowed on a machine.
+- **Kubernetes:** consider provisioning more machines for prometheus with less resources each.
+
 
 <br />
 
@@ -2417,7 +2541,9 @@ Refer to the [alert solutions reference](./alert_solutions.md#executor-queue-con
 
 #### executor-queue: container_restarts
 
-This code-intel panel indicates container restarts every 5m by instance.
+This code-intel panel indicates container restarts.
+
+This value is based on the number of times a container has not been seen in one minute.
 
 Refer to the [alert solutions reference](./alert_solutions.md#executor-queue-container-restarts) for relevant alerts.
 
@@ -2427,7 +2553,14 @@ Refer to the [alert solutions reference](./alert_solutions.md#executor-queue-con
 
 This code-intel panel indicates fs inodes in use by instance.
 
-Refer to the [alert solutions reference](./alert_solutions.md#executor-queue-fs-inodes-used) for relevant alerts.
+This value indicates the number of [filesystem inodes](https://en.wikipedia.org/wiki/Inode) held by containers of this service.
+When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself.
+
+If a high value or spikes here correlate with executor-queue issues, the following might help:
+
+- **Increase available inodes**: Refer to your OS or cloud provider`s documentation for how to increase inodes allowed on a machine.
+- **Kubernetes:** consider provisioning more machines for executor-queue with less resources each.
+
 
 <br />
 
@@ -2470,6 +2603,8 @@ Refer to the [alert solutions reference](./alert_solutions.md#executor-queue-pro
 #### executor-queue: go_goroutines
 
 This code-intel panel indicates maximum active goroutines.
+
+A high value here indicates a possible goroutine leak.
 
 Refer to the [alert solutions reference](./alert_solutions.md#executor-queue-go-goroutines) for relevant alerts.
 
@@ -2606,7 +2741,9 @@ Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel
 
 #### precise-code-intel-indexer: container_restarts
 
-This code-intel panel indicates container restarts every 5m by instance.
+This code-intel panel indicates container restarts.
+
+This value is based on the number of times a container has not been seen in one minute.
 
 Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel-indexer-container-restarts) for relevant alerts.
 
@@ -2616,7 +2753,14 @@ Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel
 
 This code-intel panel indicates fs inodes in use by instance.
 
-Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel-indexer-fs-inodes-used) for relevant alerts.
+This value indicates the number of [filesystem inodes](https://en.wikipedia.org/wiki/Inode) held by containers of this service.
+When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself.
+
+If a high value or spikes here correlate with precise-code-intel-worker issues, the following might help:
+
+- **Increase available inodes**: Refer to your OS or cloud provider`s documentation for how to increase inodes allowed on a machine.
+- **Kubernetes:** consider provisioning more machines for precise-code-intel-worker with less resources each.
+
 
 <br />
 
@@ -2659,6 +2803,8 @@ Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel
 #### precise-code-intel-indexer: go_goroutines
 
 This code-intel panel indicates maximum active goroutines.
+
+A high value here indicates a possible goroutine leak.
 
 Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel-indexer-go-goroutines) for relevant alerts.
 
