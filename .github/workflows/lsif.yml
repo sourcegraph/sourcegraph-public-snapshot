@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     container: sourcegraph/lsif-go
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Generate LSIF data
         run: lsif-go
       - name: Upload LSIF data to .com
@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     container: sourcegraph/lsif-node
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Install build dependencies
         run: apk --no-cache add python g++ make git
       - name: Install dependencies
@@ -46,7 +46,7 @@ jobs:
     runs-on: ubuntu-latest
     container: sourcegraph/lsif-node
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Install build dependencies
         run: apk --no-cache add python g++ make git
       - name: Install dependencies
@@ -70,7 +70,7 @@ jobs:
     runs-on: ubuntu-latest
     container: sourcegraph/lsif-node
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Install build dependencies
         run: apk --no-cache add python g++ make git
       - name: Install dependencies
@@ -94,7 +94,7 @@ jobs:
     runs-on: ubuntu-latest
     container: sourcegraph/lsif-node
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Install build dependencies
         run: apk --no-cache add python g++ make git
       - name: Install dependencies
@@ -118,7 +118,7 @@ jobs:
     runs-on: ubuntu-latest
     container: sourcegraph/lsif-node
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Install build dependencies
         run: apk --no-cache add python g++ make git
       - name: Install dependencies
@@ -144,7 +144,7 @@ jobs:
     runs-on: ubuntu-latest
     container: sourcegraph/lsif-node
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Install build dependencies
         run: apk --no-cache add python g++ make git
       - name: Install dependencies
@@ -170,7 +170,7 @@ jobs:
     runs-on: ubuntu-latest
     container: sourcegraph/lsif-node
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Install build dependencies
         run: apk --no-cache add python g++ make git
       - name: Install dependencies
