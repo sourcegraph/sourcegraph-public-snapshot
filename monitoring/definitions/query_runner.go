@@ -20,7 +20,7 @@ func QueryRunner() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Container monitoring (not available on server)",
+				Title:  shared.TitleContainerMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -29,12 +29,11 @@ func QueryRunner() *monitoring.Container {
 					},
 					{
 						shared.ContainerRestarts("query-runner", monitoring.ObservableOwnerSearch).Observable(),
-						shared.ContainerFsInodes("query-runner", monitoring.ObservableOwnerSearch).Observable(),
 					},
 				},
 			},
 			{
-				Title:  "Provisioning indicators (not available on server)",
+				Title:  shared.TitleProvisioningIndicators,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -48,7 +47,7 @@ func QueryRunner() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Golang runtime monitoring",
+				Title:  shared.TitleGolangMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -58,7 +57,7 @@ func QueryRunner() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Kubernetes monitoring (ignore if using Docker Compose or server)",
+				Title:  shared.TitleKubernetesMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
