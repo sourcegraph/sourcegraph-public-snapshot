@@ -22,28 +22,29 @@ const codeIntelSettingsGroup = {
     ],
 }
 
-export const enterpriseRepoSettingsSidebarGroups: RepoSettingsSideBarGroups = repoSettingsSideBarGroups.reduce<
-    RepoSettingsSideBarGroups
->((enterpriseGroups, group) => {
-    if (group === settingsGroup) {
-        return [
-            ...enterpriseGroups,
-            // Extend settings group items
-            {
-                ...group,
-                items: [
-                    ...group.items,
-                    {
-                        to: '/permissions',
-                        exact: true,
-                        label: 'Permissions',
-                    },
-                ],
-            },
-            // Insert code intel group after settings group
-            codeIntelSettingsGroup,
-        ]
-    }
+export const enterpriseRepoSettingsSidebarGroups: RepoSettingsSideBarGroups = repoSettingsSideBarGroups.reduce<RepoSettingsSideBarGroups>(
+    (enterpriseGroups, group) => {
+        if (group === settingsGroup) {
+            return [
+                ...enterpriseGroups,
+                // Extend settings group items
+                {
+                    ...group,
+                    items: [
+                        ...group.items,
+                        {
+                            to: '/permissions',
+                            exact: true,
+                            label: 'Permissions',
+                        },
+                    ],
+                },
+                // Insert code intel group after settings group
+                codeIntelSettingsGroup,
+            ]
+        }
 
-    return [...enterpriseGroups, group]
-}, [])
+        return [...enterpriseGroups, group]
+    },
+    []
+)

@@ -50,70 +50,71 @@ const codeIntelGroup: SiteAdminSideBarGroup = {
     ],
 }
 
-export const enterpriseSiteAdminSidebarGroups: SiteAdminSideBarGroups = siteAdminSidebarGroups.reduce<
-    SiteAdminSideBarGroups
->((enterpriseGroups, group) => {
-    if (group === overviewGroup) {
-        return [
-            ...enterpriseGroups,
-            // Extend overview group items
-            {
-                ...group,
-                items: [
-                    ...group.items,
-                    {
-                        label: 'License',
-                        to: '/site-admin/license',
-                    },
-                ],
-            },
-        ]
-    }
-    if (group === repositoriesGroup) {
-        return [
-            ...enterpriseGroups,
-            group,
-            // Insert codeintel group after repositories group
-            codeIntelGroup,
-        ]
-    }
-    if (group === usersGroup) {
-        return [
-            ...enterpriseGroups,
-            // Extend users group items
-            {
-                ...group,
-                items: [
-                    ...group.items,
-                    {
-                        label: 'Auth providers',
-                        to: '/site-admin/auth/providers',
-                    },
-                    {
-                        label: 'External accounts',
-                        to: '/site-admin/auth/external-accounts',
-                    },
-                ],
-            },
-        ]
-    }
-    if (group === otherGroup) {
-        return [
-            ...enterpriseGroups,
-            // Extend other group items
-            {
-                ...group,
-                items: [
-                    ...group.items,
-                    {
-                        label: 'Extensions',
-                        to: '/site-admin/registry/extensions',
-                    },
-                ],
-            },
-            // Insert dotcom group after other group (on Sourcegraph.com)
-            dotcomGroup,
-        ]
-    }
-    return [...enterpriseGroups, group]
-}, [])
+export const enterpriseSiteAdminSidebarGroups: SiteAdminSideBarGroups = siteAdminSidebarGroups.reduce<SiteAdminSideBarGroups>(
+    (enterpriseGroups, group) => {
+        if (group === overviewGroup) {
+            return [
+                ...enterpriseGroups,
+                // Extend overview group items
+                {
+                    ...group,
+                    items: [
+                        ...group.items,
+                        {
+                            label: 'License',
+                            to: '/site-admin/license',
+                        },
+                    ],
+                },
+            ]
+        }
+        if (group === repositoriesGroup) {
+            return [
+                ...enterpriseGroups,
+                group,
+                // Insert codeintel group after repositories group
+                codeIntelGroup,
+            ]
+        }
+        if (group === usersGroup) {
+            return [
+                ...enterpriseGroups,
+                // Extend users group items
+                {
+                    ...group,
+                    items: [
+                        ...group.items,
+                        {
+                            label: 'Auth providers',
+                            to: '/site-admin/auth/providers',
+                        },
+                        {
+                            label: 'External accounts',
+                            to: '/site-admin/auth/external-accounts',
+                        },
+                    ],
+                },
+            ]
+        }
+        if (group === otherGroup) {
+            return [
+                ...enterpriseGroups,
+                // Extend other group items
+                {
+                    ...group,
+                    items: [
+                        ...group.items,
+                        {
+                            label: 'Extensions',
+                            to: '/site-admin/registry/extensions',
+                        },
+                    ],
+                },
+                // Insert dotcom group after other group (on Sourcegraph.com)
+                dotcomGroup,
+            ]
+        }
+        return [...enterpriseGroups, group]
+    },
+    []
+)
