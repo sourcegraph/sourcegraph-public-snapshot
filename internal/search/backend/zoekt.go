@@ -29,3 +29,34 @@ type StreamSearchEvent struct {
 	// Error indicates an error was encountered.
 	Error error
 }
+
+func AdaptStreamSearcher(s zoekt.Searcher) StreamSearcher {
+	if ss, ok := s.(StreamSearcher); ok {
+		return ss
+	}
+
+	return &streamSearchAdapter{Searcher: s}
+}
+
+type streamSearchAdapter struct {
+	zoekt.Searcher
+}
+
+func (s *streamSearchAdapter) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions) <-chan StreamSearchEvent {
+	c := make(chan StreamSearchEvent)
+
+	go func() {
+		defer close(c)
+		sr, err := s.Search(ctx, q, opts)
+		c <- StreamSearchEvent{
+			SearchResult: sr,
+			Error:        err,
+		}
+	}()
+
+	return c
+}
+
+func (s *streamSearchAdapter) String() string {
+	return "streamSearchAdapter{" + s.Searcher.String() + "}"
+}

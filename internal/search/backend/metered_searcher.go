@@ -26,15 +26,15 @@ func init() {
 }
 
 type meteredSearcher struct {
-	zoekt.Searcher
+	StreamSearcher
 
 	hostname string
 }
 
-func NewMeteredSearcher(hostname string, z zoekt.Searcher) zoekt.Searcher {
+func NewMeteredSearcher(hostname string, z StreamSearcher) StreamSearcher {
 	return &meteredSearcher{
-		Searcher: z,
-		hostname: hostname,
+		StreamSearcher: z,
+		hostname:       hostname,
 	}
 }
 
@@ -98,7 +98,7 @@ func (m *meteredSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.Sea
 		},
 	})
 
-	zsr, err := m.Searcher.Search(ctx, q, opts)
+	zsr, err := m.StreamSearcher.Search(ctx, q, opts)
 
 	code := "200"
 	if err != nil {
@@ -155,7 +155,7 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q) (*zoekt.RepoList,
 
 	tr, ctx := trace.New(ctx, "zoekt."+cat, queryString(q), tags...)
 
-	zsl, err := m.Searcher.List(ctx, q)
+	zsl, err := m.StreamSearcher.List(ctx, q)
 
 	code := "200"
 	if err != nil {
