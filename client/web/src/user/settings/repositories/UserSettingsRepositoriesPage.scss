@@ -83,6 +83,11 @@
     background-color: inherit;
 }
 
+.user-settings-repos__spinner {
+    border: 2px solid white !important;
+    border-top: 2px solid rgba(255, 255, 255, 0.3) !important;
+}
+
 .border-color-2 {
     border-color: var(--border-color-2) !important;
 }
@@ -106,6 +111,7 @@
 .fill-primary {
     fill: var(--primary) !important;
 }
+
 
 @keyframes shimmer {
     0% {

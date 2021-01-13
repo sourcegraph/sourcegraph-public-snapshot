@@ -183,6 +183,7 @@ export const listExternalServiceFragment = gql`
         warning
         lastSyncError
         repoCount
+        lastSyncAt
     }
 `
 
