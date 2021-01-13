@@ -254,6 +254,12 @@ func (s *indexedSearchRequest) Search(ctx context.Context, c chan<- indexedSearc
 		}
 	}()
 
+	repos := make([]*types.RepoName, 0, len(s.Repos()))
+	for _, r := range s.Repos() {
+		repos = append(repos, r.Repo)
+	}
+	sort.Sort(types.RepoNames(repos))
+
 	for event := range events {
 		err := event.err
 
@@ -267,12 +273,6 @@ func (s *indexedSearchRequest) Search(ctx context.Context, c chan<- indexedSearc
 			c <- indexedSearchEvent{common: searchResultsCommon{}, results: nil, err: err}
 			return
 		}
-
-		repos := make([]*types.RepoName, 0, len(s.Repos()))
-		for _, r := range s.Repos() {
-			repos = append(repos, r.Repo)
-		}
-		sort.Sort(types.RepoNames(repos))
 
 		var timedout []*types.RepoName
 		if noResultsInTimeout {
