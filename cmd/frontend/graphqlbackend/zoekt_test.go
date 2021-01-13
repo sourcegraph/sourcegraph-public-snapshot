@@ -311,7 +311,7 @@ func TestIndexedSearch(t *testing.T) {
 				gotCommon searchResultsCommon
 				gotFm     []*FileMatchResolver
 			)
-			for event := range indexedSearchStream(tt.args.ctx, indexed) {
+			for event := range indexed.Search(tt.args.ctx) {
 				if (event.err != nil) != tt.wantErr {
 					t.Errorf("zoektSearchHEAD() error = %v, wantErr = %v", err, tt.wantErr)
 					return

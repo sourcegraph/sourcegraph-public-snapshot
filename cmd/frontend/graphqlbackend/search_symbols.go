@@ -127,7 +127,7 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 		defer run.Release()
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
-		for event := range indexedSearchStream(ctx, indexed) {
+		for event := range indexed.Search(ctx) {
 			func() {
 				mu.Lock()
 				defer mu.Unlock()

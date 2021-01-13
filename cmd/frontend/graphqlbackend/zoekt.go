@@ -209,17 +209,18 @@ type indexedSearchEvent struct {
 	err     error
 }
 
-func indexedSearchStream(ctx context.Context, indexed *indexedSearchRequest) <-chan indexedSearchEvent {
+// Search returns a search event stream. Ensure you drain the stream.
+func (s *indexedSearchRequest) Search(ctx context.Context) <-chan indexedSearchEvent {
 	c := make(chan indexedSearchEvent)
 	go func() {
 		defer close(c)
-		indexed.Search(ctx, c)
+		s.doSearch(ctx, c)
 	}()
 
 	return c
 }
 
-func (s *indexedSearchRequest) Search(ctx context.Context, c chan<- indexedSearchEvent) {
+func (s *indexedSearchRequest) doSearch(ctx context.Context, c chan<- indexedSearchEvent) {
 	if s.args == nil {
 		return
 	}

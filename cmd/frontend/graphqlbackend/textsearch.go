@@ -520,7 +520,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, c chan
 			// TODO limitHit, handleRepoSearchResult
 			defer wg.Done()
 
-			for event := range indexedSearchStream(ctx, indexed) {
+			for event := range indexed.Search(ctx) {
 				func() {
 					mu.Lock()
 					defer mu.Unlock()
