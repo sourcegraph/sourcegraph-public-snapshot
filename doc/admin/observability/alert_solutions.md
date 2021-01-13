@@ -1188,6 +1188,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Descriptions:**
 
 - <span class="badge badge-warning">warning</span> frontend: 1+ container restarts
+- <span class="badge badge-critical">critical</span> frontend: 1+ container restarts for 10m0s
 
 **Possible solutions:**
 
@@ -1202,7 +1203,8 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_container_restarts"
+  "warning_frontend_container_restarts",
+  "critical_frontend_container_restarts"
 ]
 ```
 
@@ -1529,6 +1531,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Descriptions:**
 
 - <span class="badge badge-warning">warning</span> gitserver: 1+ container restarts
+- <span class="badge badge-critical">critical</span> gitserver: 1+ container restarts for 10m0s
 
 **Possible solutions:**
 
@@ -1543,7 +1546,8 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 ```json
 "observability.silenceAlerts": [
-  "warning_gitserver_container_restarts"
+  "warning_gitserver_container_restarts",
+  "critical_gitserver_container_restarts"
 ]
 ```
 
@@ -1727,6 +1731,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Descriptions:**
 
 - <span class="badge badge-warning">warning</span> github-proxy: 1+ container restarts
+- <span class="badge badge-critical">critical</span> github-proxy: 1+ container restarts for 10m0s
 
 **Possible solutions:**
 
@@ -1741,7 +1746,8 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 ```json
 "observability.silenceAlerts": [
-  "warning_github-proxy_container_restarts"
+  "warning_github-proxy_container_restarts",
+  "critical_github-proxy_container_restarts"
 ]
 ```
 
@@ -2448,6 +2454,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Descriptions:**
 
 - <span class="badge badge-warning">warning</span> precise-code-intel-worker: 1+ container restarts
+- <span class="badge badge-critical">critical</span> precise-code-intel-worker: 1+ container restarts for 10m0s
 
 **Possible solutions:**
 
@@ -2462,7 +2469,8 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_container_restarts"
+  "warning_precise-code-intel-worker_container_restarts",
+  "critical_precise-code-intel-worker_container_restarts"
 ]
 ```
 
@@ -2695,6 +2703,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Descriptions:**
 
 - <span class="badge badge-warning">warning</span> query-runner: 1+ container restarts
+- <span class="badge badge-critical">critical</span> query-runner: 1+ container restarts for 10m0s
 
 **Possible solutions:**
 
@@ -2709,7 +2718,8 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 ```json
 "observability.silenceAlerts": [
-  "warning_query-runner_container_restarts"
+  "warning_query-runner_container_restarts",
+  "critical_query-runner_container_restarts"
 ]
 ```
 
@@ -3567,6 +3577,7 @@ with your code hosts connections or networking issues affecting communication wi
 **Descriptions:**
 
 - <span class="badge badge-warning">warning</span> repo-updater: 1+ container restarts
+- <span class="badge badge-critical">critical</span> repo-updater: 1+ container restarts for 10m0s
 
 **Possible solutions:**
 
@@ -3581,7 +3592,8 @@ with your code hosts connections or networking issues affecting communication wi
 
 ```json
 "observability.silenceAlerts": [
-  "warning_repo-updater_container_restarts"
+  "warning_repo-updater_container_restarts",
+  "critical_repo-updater_container_restarts"
 ]
 ```
 
@@ -3854,6 +3866,7 @@ with your code hosts connections or networking issues affecting communication wi
 **Descriptions:**
 
 - <span class="badge badge-warning">warning</span> searcher: 1+ container restarts
+- <span class="badge badge-critical">critical</span> searcher: 1+ container restarts for 10m0s
 
 **Possible solutions:**
 
@@ -3868,7 +3881,8 @@ with your code hosts connections or networking issues affecting communication wi
 
 ```json
 "observability.silenceAlerts": [
-  "warning_searcher_container_restarts"
+  "warning_searcher_container_restarts",
+  "critical_searcher_container_restarts"
 ]
 ```
 
@@ -4141,6 +4155,7 @@ with your code hosts connections or networking issues affecting communication wi
 **Descriptions:**
 
 - <span class="badge badge-warning">warning</span> symbols: 1+ container restarts
+- <span class="badge badge-critical">critical</span> symbols: 1+ container restarts for 10m0s
 
 **Possible solutions:**
 
@@ -4155,7 +4170,8 @@ with your code hosts connections or networking issues affecting communication wi
 
 ```json
 "observability.silenceAlerts": [
-  "warning_symbols_container_restarts"
+  "warning_symbols_container_restarts",
+  "critical_symbols_container_restarts"
 ]
 ```
 
@@ -4361,6 +4377,7 @@ with your code hosts connections or networking issues affecting communication wi
 **Descriptions:**
 
 - <span class="badge badge-warning">warning</span> syntect-server: 1+ container restarts
+- <span class="badge badge-critical">critical</span> syntect-server: 1+ container restarts for 10m0s
 
 **Possible solutions:**
 
@@ -4375,7 +4392,8 @@ with your code hosts connections or networking issues affecting communication wi
 
 ```json
 "observability.silenceAlerts": [
-  "warning_syntect-server_container_restarts"
+  "warning_syntect-server_container_restarts",
+  "critical_syntect-server_container_restarts"
 ]
 ```
 
@@ -4562,6 +4580,7 @@ with your code hosts connections or networking issues affecting communication wi
 **Descriptions:**
 
 - <span class="badge badge-warning">warning</span> zoekt-indexserver: 1+ container restarts
+- <span class="badge badge-critical">critical</span> zoekt-indexserver: 1+ container restarts for 10m0s
 
 **Possible solutions:**
 
@@ -4576,7 +4595,8 @@ with your code hosts connections or networking issues affecting communication wi
 
 ```json
 "observability.silenceAlerts": [
-  "warning_zoekt-indexserver_container_restarts"
+  "warning_zoekt-indexserver_container_restarts",
+  "critical_zoekt-indexserver_container_restarts"
 ]
 ```
 
@@ -4761,6 +4781,7 @@ with your code hosts connections or networking issues affecting communication wi
 **Descriptions:**
 
 - <span class="badge badge-warning">warning</span> zoekt-webserver: 1+ container restarts
+- <span class="badge badge-critical">critical</span> zoekt-webserver: 1+ container restarts for 10m0s
 
 **Possible solutions:**
 
@@ -4775,7 +4796,8 @@ with your code hosts connections or networking issues affecting communication wi
 
 ```json
 "observability.silenceAlerts": [
-  "warning_zoekt-webserver_container_restarts"
+  "warning_zoekt-webserver_container_restarts",
+  "critical_zoekt-webserver_container_restarts"
 ]
 ```
 
@@ -4961,6 +4983,7 @@ with your code hosts connections or networking issues affecting communication wi
 **Descriptions:**
 
 - <span class="badge badge-warning">warning</span> prometheus: 1+ container restarts
+- <span class="badge badge-critical">critical</span> prometheus: 1+ container restarts for 10m0s
 
 **Possible solutions:**
 
@@ -4975,7 +4998,8 @@ with your code hosts connections or networking issues affecting communication wi
 
 ```json
 "observability.silenceAlerts": [
-  "warning_prometheus_container_restarts"
+  "warning_prometheus_container_restarts",
+  "critical_prometheus_container_restarts"
 ]
 ```
 
@@ -5267,6 +5291,7 @@ with your code hosts connections or networking issues affecting communication wi
 **Descriptions:**
 
 - <span class="badge badge-warning">warning</span> executor-queue: 1+ container restarts
+- <span class="badge badge-critical">critical</span> executor-queue: 1+ container restarts for 10m0s
 
 **Possible solutions:**
 
@@ -5281,7 +5306,8 @@ with your code hosts connections or networking issues affecting communication wi
 
 ```json
 "observability.silenceAlerts": [
-  "warning_executor-queue_container_restarts"
+  "warning_executor-queue_container_restarts",
+  "critical_executor-queue_container_restarts"
 ]
 ```
 
@@ -5607,6 +5633,7 @@ with your code hosts connections or networking issues affecting communication wi
 **Descriptions:**
 
 - <span class="badge badge-warning">warning</span> precise-code-intel-indexer: 1+ container restarts
+- <span class="badge badge-critical">critical</span> precise-code-intel-indexer: 1+ container restarts for 10m0s
 
 **Possible solutions:**
 
@@ -5621,7 +5648,8 @@ with your code hosts connections or networking issues affecting communication wi
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-indexer_container_restarts"
+  "warning_precise-code-intel-indexer_container_restarts",
+  "critical_precise-code-intel-indexer_container_restarts"
 ]
 ```
 

@@ -3,6 +3,7 @@ package shared
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
@@ -24,6 +25,7 @@ var (
 			// inspired by https://awesome-prometheus-alerts.grep.to/rules#docker-containers
 			Query:          fmt.Sprintf(`count by(name) ((time() - container_last_seen{%s}) > 60)`, CadvisorNameMatcher(containerName)),
 			Warning:        monitoring.Alert().GreaterOrEqual(1),
+			Critical:       monitoring.Alert().GreaterOrEqual(1).For(10 * time.Minute),
 			Panel:          monitoring.Panel().LegendFormat("{{name}}"),
 			Owner:          owner,
 			Interpretation: "This value is based on the number of times a container has not been seen in one minute.",
