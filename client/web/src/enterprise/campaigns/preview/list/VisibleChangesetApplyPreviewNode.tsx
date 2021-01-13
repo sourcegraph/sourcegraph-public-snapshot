@@ -1,6 +1,10 @@
 import * as H from 'history'
 import React, { useCallback, useState } from 'react'
-import { VisibleChangesetApplyPreviewFields, VisibleChangesetSpecFields } from '../../../../graphql-operations'
+import {
+    ChangesetState,
+    VisibleChangesetApplyPreviewFields,
+    VisibleChangesetSpecFields,
+} from '../../../../graphql-operations'
 import { ThemeProps } from '../../../../../../shared/src/theme'
 import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from './backend'
 import { Link } from '../../../../../../shared/src/components/Link'
@@ -12,6 +16,7 @@ import { FileDiffConnection } from '../../../../components/diff/FileDiffConnecti
 import { FileDiffNode } from '../../../../components/diff/FileDiffNode'
 import { FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
 import { GitBranchChangesetDescriptionInfo } from './GitBranchChangesetDescriptionInfo'
+import { ChangesetStatusCell } from '../../detail/changesets/ChangesetStatusCell'
 
 export interface VisibleChangesetApplyPreviewNodeProps extends ThemeProps {
     node: VisibleChangesetApplyPreviewFields
@@ -56,6 +61,10 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
                     <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
                 )}
             </button>
+            <VisibleChangesetApplyPreviewNodeStatusCell
+                node={node}
+                className="d-block d-sm-flex visible-changeset-apply-preview-node__current-state"
+            />
             <PreviewAction node={node} className="visible-changeset-apply-preview-node__action" />
             <div className="visible-changeset-apply-preview-node__information">
                 <div className="d-flex flex-column">
@@ -264,4 +273,13 @@ const ApplyDiffStat: React.FunctionComponent<{ spec: VisibleChangesetApplyPrevie
         diffStat = spec.targets.changesetSpec.description.diffStat
     }
     return <DiffStat {...diffStat} expandedCounts={true} separateLines={true} />
+}
+
+const VisibleChangesetApplyPreviewNodeStatusCell: React.FunctionComponent<
+    Pick<VisibleChangesetApplyPreviewNodeProps, 'node'> & { className?: string }
+> = ({ node, className }) => {
+    if (node.targets.__typename === 'VisibleApplyPreviewTargetsAttach') {
+        return <ChangesetStatusCell changeset={{ state: ChangesetState.UNPUBLISHED }} className={className} />
+    }
+    return <ChangesetStatusCell changeset={{ state: node.targets.changeset.state }} className={className} />
 }

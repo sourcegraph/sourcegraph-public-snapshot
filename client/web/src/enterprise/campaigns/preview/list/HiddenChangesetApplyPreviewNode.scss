@@ -1,4 +1,5 @@
 .hidden-changeset-apply-preview-node {
+    &__current-state,
     &__action,
     &__information {
         @include media-breakpoint-down(xs) {
