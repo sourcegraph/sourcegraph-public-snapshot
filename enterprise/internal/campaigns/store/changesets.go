@@ -418,7 +418,7 @@ type ListChangesetsOpts struct {
 	TextSearch          []search.TextSearchTerm
 }
 
-func textSearchTermToClause(term *search.TextSearchTerm) *sqlf.Query {
+func textSearchTermToClause(term search.TextSearchTerm) *sqlf.Query {
 	// The general SQL query format for a positive query is:
 	//
 	// (field1 ~* value OR field2 ~* value)
@@ -551,7 +551,7 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 		join = sqlf.Sprintf("LEFT JOIN changeset_specs ON changesets.current_spec_id = changeset_specs.id")
 
 		for _, term := range opts.TextSearch {
-			preds = append(preds, textSearchTermToClause(&term))
+			preds = append(preds, textSearchTermToClause(term))
 		}
 	}
 
