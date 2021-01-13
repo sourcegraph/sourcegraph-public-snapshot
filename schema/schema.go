@@ -1279,8 +1279,6 @@ type Step struct {
 	Env interface{} `json:"env,omitempty"`
 	// Files description: Files that should be mounted into or be created inside the Docker container.
 	Files map[string]string `json:"files,omitempty"`
-	// OutputVariable description: The name of the variable in which to save the output of the step. The variable has to have been declared in `vars`.
-	OutputVariable string `json:"outputVariable,omitempty"`
 	// Outputs description: Output variables of this step that can be referenced in the changesetTemplate or other steps via outputs.<name-of-output>
 	Outputs map[string]AdditionalProperties `json:"outputs,omitempty"`
 	// Run description: The shell command to run in the container. It can also be a multi-line shell script. The working directory is the root directory of the repository checkout.

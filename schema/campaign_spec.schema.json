@@ -129,10 +129,6 @@
             "type": "object",
             "description": "Files that should be mounted into or be created inside the Docker container.",
             "additionalProperties": {"type": "string"}
-          },
-          "outputVariable": {
-            "type": "string",
-            "description": "The name of the variable in which to save the output of the step. The variable has to have been declared in `vars`."
           }
         }
       }
