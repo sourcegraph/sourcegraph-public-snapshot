@@ -263,7 +263,7 @@ func (s *ReferencePageResolver) handleDefinitionMonikersCursor(ctx context.Conte
 			continue
 		}
 
-		locations, count, err := lookupMoniker(s.dbStore, s.lsifStore, cursor.DumpID, cursor.Path, "references", moniker, cursor.SkipResults, s.limit)
+		locations, count, err := lookupMoniker(ctx, s.dbStore, s.lsifStore, s.gitserverClient, cursor.DumpID, cursor.Path, "references", moniker, cursor.SkipResults, s.limit)
 		if err != nil {
 			return nil, Cursor{}, false, err
 		}
@@ -393,7 +393,7 @@ func (s *ReferencePageResolver) resolveLocationsViaReferencePager(ctx context.Co
 		}
 
 		if _, ok := commitExistenceCache[dump.RepositoryID]; !ok {
-			commitExistenceCache[dump.RepositoryID] = map[string]struct{}{}
+			commitExistenceCache[dump.RepositoryID] = map[string]bool{}
 		}
 
 		// We've already determined the target commit doesn't exist
