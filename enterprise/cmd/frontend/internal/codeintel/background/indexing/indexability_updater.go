@@ -63,8 +63,11 @@ func NewIndexabilityUpdater(
 	)
 }
 
+// For mocking in tests
+var indexabilityUpdaterEnabled = conf.CodeIntelAutoIndexingEnabled
+
 func (u *IndexabilityUpdater) Handle(ctx context.Context) error {
-	if !conf.CodeIntelAutoIndexingEnabled() {
+	if !indexabilityUpdaterEnabled() {
 		return nil
 	}
 

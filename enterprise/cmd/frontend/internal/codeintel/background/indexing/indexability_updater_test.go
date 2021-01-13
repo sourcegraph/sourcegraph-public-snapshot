@@ -14,6 +14,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
+func init() {
+	indexabilityUpdaterEnabled = func() bool { return true }
+}
+
 func TestIndexabilityUpdater(t *testing.T) {
 	mockDBStore := NewMockDBStore()
 	mockDBStore.RepoUsageStatisticsFunc.SetDefaultReturn([]store.RepoUsageStatistics{

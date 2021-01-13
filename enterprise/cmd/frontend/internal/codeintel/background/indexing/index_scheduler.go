@@ -58,8 +58,11 @@ func NewIndexScheduler(
 	)
 }
 
+// For mocking in tests
+var indexSchedulerEnabled = conf.CodeIntelAutoIndexingEnabled
+
 func (s *IndexScheduler) Handle(ctx context.Context) error {
-	if !conf.CodeIntelAutoIndexingEnabled() {
+	if !indexSchedulerEnabled() {
 		return nil
 	}
 
