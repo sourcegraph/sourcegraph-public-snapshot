@@ -6,8 +6,8 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/search/syntax"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
-	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
 )
 
 // ParseChangesetSearch parses the given search string into a set of options
