@@ -201,12 +201,31 @@ func (s *indexedSearchRequest) Repos() map[string]*search.RepositoryRevisions {
 	return s.repos.repoRevs
 }
 
-func (s *indexedSearchRequest) Search(ctx context.Context) (searchResultsCommon, []*FileMatchResolver, error) {
+type streamFunc func(context.Context, *search.TextParameters, *indexedRepoRevs, indexedRequestType, func(t time.Time) time.Duration) <-chan zoektSearchStreamEvent
+
+type indexedSearchEvent struct {
+	common  searchResultsCommon
+	results []*FileMatchResolver
+	err     error
+}
+
+// Search returns a search event stream. Ensure you drain the stream.
+func (s *indexedSearchRequest) Search(ctx context.Context) <-chan indexedSearchEvent {
+	c := make(chan indexedSearchEvent)
+	go func() {
+		defer close(c)
+		s.doSearch(ctx, c)
+	}()
+
+	return c
+}
+
+func (s *indexedSearchRequest) doSearch(ctx context.Context, c chan<- indexedSearchEvent) {
 	if s.args == nil {
-		return searchResultsCommon{}, nil, nil
+		return
 	}
 	if len(s.Repos()) == 0 && s.args.Mode != search.ZoektGlobalSearch {
-		return searchResultsCommon{}, nil, nil
+		return
 	}
 
 	since := time.Since
@@ -214,33 +233,27 @@ func (s *indexedSearchRequest) Search(ctx context.Context) (searchResultsCommon,
 		since = s.since
 	}
 
-	var (
-		fm            []*FileMatchResolver
-		limitHit      bool
-		reposLimitHit map[api.RepoID]struct{}
-		err           error
-	)
-
+	var zoektStream streamFunc
 	switch s.typ {
-	case textRequest:
-		fm, limitHit, reposLimitHit, err = zoektSearch(ctx, s.args, s.repos, s.typ, since)
-	case symbolRequest:
-		fm, limitHit, reposLimitHit, err = zoektSearch(ctx, s.args, s.repos, s.typ, since)
+	case textRequest, symbolRequest:
+		zoektStream = zoektSearchStream
 	case fileRequest:
-		fm, limitHit, reposLimitHit, err = zoektSearchHEADOnlyFiles(ctx, s.args, s.repos, since)
+		zoektStream = zoektSearchHEADOnlyFilesStream
 	default:
-		return searchResultsCommon{}, nil, fmt.Errorf("unexpected indexedSearchRequest type: %q", s.typ)
+		err := fmt.Errorf("unexpected indexedSearchRequest type: %q", s.typ)
+		c <- indexedSearchEvent{common: searchResultsCommon{}, results: nil, err: err}
+		return
 	}
 
-	noResultsInTimeout := false
-	if err == errNoResultsInTimeout {
-		noResultsInTimeout = true
-		err = nil
-	}
+	ctx, cancel := context.WithCancel(ctx)
 
-	if err != nil {
-		return searchResultsCommon{}, nil, err
-	}
+	// Ensure we drain events if we return early.
+	events := zoektStream(ctx, s.args, s.repos, s.typ, since)
+	defer func() {
+		cancel()
+		for range events {
+		}
+	}()
 
 	repos := make([]*types.RepoName, 0, len(s.Repos()))
 	for _, r := range s.Repos() {
@@ -248,18 +261,37 @@ func (s *indexedSearchRequest) Search(ctx context.Context) (searchResultsCommon,
 	}
 	sort.Sort(types.RepoNames(repos))
 
-	var timedout []*types.RepoName
-	if noResultsInTimeout {
-		timedout = repos
-	}
+	for event := range events {
+		err := event.err
 
-	return searchResultsCommon{
-		limitHit: limitHit,
-		searched: repos,
-		indexed:  repos,
-		partial:  reposLimitHit,
-		timedout: timedout,
-	}, fm, nil
+		noResultsInTimeout := false
+		if err == errNoResultsInTimeout {
+			noResultsInTimeout = true
+			err = nil
+		}
+
+		if err != nil {
+			c <- indexedSearchEvent{common: searchResultsCommon{}, results: nil, err: err}
+			return
+		}
+
+		var timedout []*types.RepoName
+		if noResultsInTimeout {
+			timedout = repos
+		}
+
+		c <- indexedSearchEvent{
+			common: searchResultsCommon{
+				limitHit: event.limitHit,
+				searched: repos,
+				indexed:  repos,
+				partial:  event.partial,
+				timedout: timedout,
+			},
+			results: event.fm,
+			err:     nil,
+		}
+	}
 }
 
 func zoektResultCountFactor(numRepos int, fileMatchLimit int32, globalSearch bool) (k int) {
@@ -338,12 +370,40 @@ func zoektSearchOpts(ctx context.Context, k int, query *search.TextPatternInfo) 
 
 var errNoResultsInTimeout = errors.New("no results found in specified timeout")
 
+type zoektSearchStreamEvent struct {
+	fm       []*FileMatchResolver
+	limitHit bool
+	partial  map[api.RepoID]struct{}
+	err      error
+}
+
+func zoektSearchStream(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration) <-chan zoektSearchStreamEvent {
+	c := make(chan zoektSearchStreamEvent)
+	go func() {
+		defer close(c)
+		_, _, _, _ = zoektSearch(ctx, args, repos, typ, since, c)
+	}()
+
+	return c
+}
+
 // zoektSearch searches repositories using zoekt.
 //
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration) (fm []*FileMatchResolver, limitHit bool, partial map[api.RepoID]struct{}, err error) {
+func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration, c chan<- zoektSearchStreamEvent) (fm []*FileMatchResolver, limitHit bool, partial map[api.RepoID]struct{}, err error) {
+	defer func() {
+		if c != nil {
+			c <- zoektSearchStreamEvent{
+				fm:       fm,
+				limitHit: limitHit,
+				partial:  partial,
+				err:      err,
+			}
+		}
+	}()
+
 	if args == nil {
 		return nil, false, nil, nil
 	}
