@@ -42,6 +42,10 @@
     background: transparent !important;
     border: none !important;
 
+    &:disabled {
+        opacity: 1;
+    }
+
     &__icon {
         color: var(--primary);
     }
