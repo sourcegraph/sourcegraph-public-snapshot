@@ -9,6 +9,11 @@
             grid-column: 2 / -1;
         }
     }
+    &__bg-expanded {
+        @include media-breakpoint-up(sm) {
+            background-color: rgba($oc-blue-0, 0.5);
+        }
+    }
     &__expanded-section {
         background-color: rgba($oc-blue-0, 0.5);
         // Make it full width in the current row.
