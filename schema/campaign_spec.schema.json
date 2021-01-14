@@ -85,11 +85,11 @@
                 "value": {
                   "type": "string",
                   "description": "The value of the output, which can be a template string.",
-                  "examples": ["${{ step.stdout }}", "${{ repository.name }}"]
+                  "examples": ["hello world", "${{ step.stdout }}", "${{ repository.name }}"]
                 },
                 "format": {
                   "type": "string",
-                  "description": "The expected format of the output. If set, the output is being parsed in that format before being stored in the var.",
+                  "description": "The expected format of the output. If set, the output is being parsed in that format before being stored in the var. If not set, 'text' is assumed to the format.",
                   "enum": ["json", "yaml", "text"]
                 }
               }

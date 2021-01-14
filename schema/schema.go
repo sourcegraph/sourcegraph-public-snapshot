@@ -46,7 +46,7 @@ type AWSCodeCommitGitCredentials struct {
 	Username string `json:"username"`
 }
 type AdditionalProperties struct {
-	// Format description: The expected format of the output. If set, the output is being parsed in that format before being stored in the var.
+	// Format description: The expected format of the output. If set, the output is being parsed in that format before being stored in the var. If not set, 'text' is assumed to the format.
 	Format string `json:"format,omitempty"`
 	// Value description: The value of the output, which can be a template string.
 	Value string `json:"value"`
