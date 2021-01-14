@@ -8,6 +8,8 @@
 // 1000000002_add_indexes.up.sql (369B)
 // 1000000003_pg_stat_statement_ext.down.sql (62B)
 // 1000000003_pg_stat_statement_ext.up.sql (68B)
+// 1000000004_symbols.down.sql (57B)
+// 1000000004_symbols.up.sql (102B)
 
 package migrations
 
@@ -236,6 +238,46 @@ func _1000000003_pg_stat_statement_extUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1000000004_symbolsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\xc8\x29\xce\x4c\x8b\x4f\x49\x2c\x49\x8c\x2f\xae\xcc\x4d\xca\xcf\x29\xb6\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xbd\x86\xa0\x3c\x39\x00\x00\x00")
+
+func _1000000004_symbolsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1000000004_symbolsDownSql,
+		"1000000004_symbols.down.sql",
+	)
+}
+
+func _1000000004_symbolsDownSql() (*asset, error) {
+	bytes, err := _1000000004_symbolsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1000000004_symbols.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xaa, 0x5f, 0x81, 0x93, 0x8f, 0x2c, 0xb6, 0xe4, 0xec, 0x8b, 0xe7, 0x20, 0xc0, 0x9, 0x16, 0xaf, 0x8b, 0x97, 0xef, 0x85, 0x7c, 0xb5, 0x79, 0x1a, 0x9f, 0xe4, 0x2f, 0xc9, 0xce, 0x83, 0xff, 0x81}}
+	return a, nil
+}
+
+var __1000000004_symbolsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x0e\x72\x75\x0c\x71\x55\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\xf0\xf3\x0f\x51\x70\x8d\xf0\x0c\x0e\x09\x56\xc8\x29\xce\x4c\x8b\x4f\x49\x2c\x49\x8c\x2f\xae\xcc\x4d\xca\xcf\x29\x56\xd0\x48\x29\xcd\x2d\x88\xcf\x4c\x51\xc8\xcc\x2b\x49\x4d\x4f\x2d\x02\xab\xf6\x0b\xf5\xf1\xd1\x51\x00\xa9\x53\x48\xaa\x2c\x49\x4d\xd4\x04\x99\xea\xef\xeb\xeb\x19\x62\xcd\x05\x08\x00\x00\xff\xff\x05\x8b\xa2\xbc\x66\x00\x00\x00")
+
+func _1000000004_symbolsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1000000004_symbolsUpSql,
+		"1000000004_symbols.up.sql",
+	)
+}
+
+func _1000000004_symbolsUpSql() (*asset, error) {
+	bytes, err := _1000000004_symbolsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1000000004_symbols.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xef, 0x6e, 0x4f, 0x8f, 0x7d, 0x79, 0xd6, 0xe4, 0x6d, 0xb0, 0x7a, 0x66, 0x78, 0x3c, 0x44, 0x5b, 0x75, 0x9e, 0x1f, 0xe5, 0x26, 0x22, 0xab, 0xe, 0xbb, 0xd9, 0xd6, 0xec, 0x2e, 0xac, 0xdc, 0x6}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -335,6 +377,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1000000002_add_indexes.up.sql":             _1000000002_add_indexesUpSql,
 	"1000000003_pg_stat_statement_ext.down.sql": _1000000003_pg_stat_statement_extDownSql,
 	"1000000003_pg_stat_statement_ext.up.sql":   _1000000003_pg_stat_statement_extUpSql,
+	"1000000004_symbols.down.sql":               _1000000004_symbolsDownSql,
+	"1000000004_symbols.up.sql":                 _1000000004_symbolsUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -389,6 +433,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1000000002_add_indexes.up.sql":             {_1000000002_add_indexesUpSql, map[string]*bintree{}},
 	"1000000003_pg_stat_statement_ext.down.sql": {_1000000003_pg_stat_statement_extDownSql, map[string]*bintree{}},
 	"1000000003_pg_stat_statement_ext.up.sql":   {_1000000003_pg_stat_statement_extUpSql, map[string]*bintree{}},
+	"1000000004_symbols.down.sql":               {_1000000004_symbolsDownSql, map[string]*bintree{}},
+	"1000000004_symbols.up.sql":                 {_1000000004_symbolsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
