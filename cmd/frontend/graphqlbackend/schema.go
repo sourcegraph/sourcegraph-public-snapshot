@@ -1549,6 +1549,10 @@ type CampaignSpec implements Node {
         Opaque pagination cursor.
         """
         after: String
+        """
+        Search for changesets matching this query. Queries may include quoted substrings to match phrases, and words may be preceded by - to negate them.
+        """
+        search: String
     ): ChangesetApplyPreviewConnection!
 
     """
