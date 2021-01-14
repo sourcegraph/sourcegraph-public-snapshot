@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	protocol "github.com/sourcegraph/lsif-protocol"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bloomfilter"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/datastructures"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/lsif"
@@ -28,6 +29,13 @@ func TestGroupBundleData(t *testing.T) {
 				EndCharacter:       4,
 				DefinitionResultID: 3001,
 				ReferenceResultID:  0,
+				Tag: &protocol.RangeSymbolTag{
+					Type: "definition",
+					SymbolData: protocol.SymbolData{
+						Text: "foo",
+					},
+					FullRange: &protocol.RangeData{}, // TODO(sqs): empty
+				},
 			},
 			2002: {
 				StartLine:          2,
@@ -219,6 +227,28 @@ func TestGroupBundleData(t *testing.T) {
 				},
 			},
 		},
+		SymbolData: map[int]protocol.Symbol{
+			7001: {
+				SymbolData: protocol.SymbolData{Text: "foo", Kind: 4},
+				Locations: []protocol.SymbolLocation{
+					{
+						URI:       "foo.go",
+						Range:     &protocol.RangeData{Start: protocol.Pos{Character: 8}, End: protocol.Pos{Character: 11}},
+						FullRange: protocol.RangeData{End: protocol.Pos{Line: 3, Character: 9}},
+					},
+					{
+						URI:       "bar.go",
+						Range:     &protocol.RangeData{Start: protocol.Pos{Character: 8}, End: protocol.Pos{Character: 11}},
+						FullRange: protocol.RangeData{End: protocol.Pos{Line: 3, Character: 11}},
+					},
+				},
+			},
+		},
+		DocumentSymbolResults: map[int][]protocol.RangeBasedDocumentSymbol{
+			1001: {
+				{ID: 2001},
+			},
+		},
 		ImportedMonikers: datastructures.IDSetWith(4001),
 		ExportedMonikers: datastructures.IDSetWith(4003),
 		Contains: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
@@ -229,10 +259,18 @@ func TestGroupBundleData(t *testing.T) {
 		Monikers: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
 			2001: datastructures.IDSetWith(4001, 4002),
 			2002: datastructures.IDSetWith(4003, 4004),
+			7001: datastructures.IDSetWith(4001),
 		}),
 		Diagnostics: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
 			1001: datastructures.IDSetWith(1001, 1002),
 			1002: datastructures.IDSetWith(1003),
+		}),
+		DocumentSymbols: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
+			1001: datastructures.IDSetWith(1001),
+		}),
+		WorkspaceSymbols: datastructures.IDSetWith(7001),
+		Members: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
+			7001: datastructures.IDSetWith(2001),
 		}),
 	}
 
@@ -593,6 +631,68 @@ func TestGroupBundleData(t *testing.T) {
 	if diff := cmp.Diff(expectedReferences, references); diff != "" {
 		t.Errorf("unexpected references (-want +got):\n%s", diff)
 	}
+
+	var symbols []lsifstore.SymbolData
+	for v := range actualBundleData.Symbols {
+		symbols = append(symbols, v)
+	}
+	sortSymbols(symbols)
+
+	expectedSymbols := []lsifstore.SymbolData{
+		{
+			ID:         2001,
+			SymbolData: protocol.SymbolData{Text: "foo"},
+			Locations: []protocol.SymbolLocation{
+				{
+					URI: "foo.go",
+					Range: &protocol.RangeData{
+						Start: protocol.Pos{Line: 1, Character: 2},
+						End:   protocol.Pos{Line: 3, Character: 4},
+					},
+				},
+			},
+			Monikers: []lsifstore.MonikerData{
+				{Kind: "import", Scheme: "scheme A", Identifier: "ident A"},
+				{Kind: "import", Scheme: "scheme B", Identifier: "ident B"},
+			},
+		},
+		{
+			ID:         7001,
+			SymbolData: protocol.SymbolData{Text: "foo", Kind: 4},
+			Locations: []protocol.SymbolLocation{
+				{
+					URI: "foo.go",
+					Range: &protocol.RangeData{
+						Start: protocol.Pos{Line: 0, Character: 8},
+						End:   protocol.Pos{Line: 0, Character: 11},
+					},
+					FullRange: protocol.RangeData{
+						Start: protocol.Pos{Line: 0, Character: 0},
+						End:   protocol.Pos{Line: 3, Character: 9},
+					},
+				},
+				{
+					URI: "bar.go",
+					Range: &protocol.RangeData{
+						Start: protocol.Pos{Line: 0, Character: 8},
+						End:   protocol.Pos{Line: 0, Character: 11},
+					},
+					FullRange: protocol.RangeData{
+						Start: protocol.Pos{Line: 0, Character: 0},
+						End:   protocol.Pos{Line: 3, Character: 11},
+					},
+				},
+			},
+			Monikers: []lsifstore.MonikerData{
+				{Kind: "import", Scheme: "scheme A", Identifier: "ident A"},
+			},
+			Children: []uint64{2001},
+		},
+	}
+
+	if diff := cmp.Diff(expectedSymbols, symbols); diff != "" {
+		t.Errorf("unexpected symbols (-want +got):\n%s", diff)
+	}
 }
 
 //
@@ -637,10 +737,17 @@ func sortMonikerLocations(monikerLocations []lsifstore.MonikerLocations) {
 
 func sortLocations(locations []lsifstore.LocationData) {
 	sort.Slice(locations, func(i, j int) bool {
+		// TODO(sqs): should not use strings.Compare, just use "<" - and same for all other sortXyzs
 		if cmp := strings.Compare(locations[i].URI, locations[j].URI); cmp != 0 {
 			return cmp < 0
 		}
 
 		return locations[i].StartLine < locations[j].StartLine
+	})
+}
+
+func sortSymbols(symbols []lsifstore.SymbolData) {
+	sort.Slice(symbols, func(i, j int) bool {
+		return symbols[i].ID < symbols[j].ID
 	})
 }

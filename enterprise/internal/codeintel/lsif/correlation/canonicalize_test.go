@@ -30,8 +30,9 @@ func TestCanonicalizeDocuments(t *testing.T) {
 			1003: datastructures.IDSetWith(3003),
 			1004: datastructures.IDSetWith(3004),
 		}),
-		Monikers:    datastructures.NewDefaultIDSetMap(),
-		Diagnostics: datastructures.NewDefaultIDSetMap(),
+		Monikers:        datastructures.NewDefaultIDSetMap(),
+		Diagnostics:     datastructures.NewDefaultIDSetMap(),
+		DocumentSymbols: datastructures.NewDefaultIDSetMap(),
 	}
 	canonicalizeDocuments(state)
 
@@ -54,8 +55,9 @@ func TestCanonicalizeDocuments(t *testing.T) {
 			1002: datastructures.IDSetWith(3002),
 			1003: datastructures.IDSetWith(3003),
 		}),
-		Monikers:    datastructures.NewDefaultIDSetMap(),
-		Diagnostics: datastructures.NewDefaultIDSetMap(),
+		Monikers:        datastructures.NewDefaultIDSetMap(),
+		Diagnostics:     datastructures.NewDefaultIDSetMap(),
+		DocumentSymbols: datastructures.NewDefaultIDSetMap(),
 	}
 
 	if diff := cmp.Diff(expectedState, state, datastructures.Comparers...); diff != "" {
@@ -266,7 +268,8 @@ func TestCanonicalizeRanges(t *testing.T) {
 			5001: datastructures.IDSetWith(4004),
 			5002: datastructures.IDSetWith(4005),
 		}),
-		Diagnostics: datastructures.NewDefaultIDSetMap(),
+		Diagnostics:     datastructures.NewDefaultIDSetMap(),
+		DocumentSymbols: datastructures.NewDefaultIDSetMap(),
 	}
 	canonicalizeRanges(state)
 
@@ -310,7 +313,8 @@ func TestCanonicalizeRanges(t *testing.T) {
 			5001: datastructures.IDSetWith(4004),
 			5002: datastructures.IDSetWith(4005),
 		}),
-		Diagnostics: datastructures.NewDefaultIDSetMap(),
+		Diagnostics:     datastructures.NewDefaultIDSetMap(),
+		DocumentSymbols: datastructures.NewDefaultIDSetMap(),
 	}
 
 	if diff := cmp.Diff(expectedState, state, datastructures.Comparers...); diff != "" {

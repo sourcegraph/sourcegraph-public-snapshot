@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	protocol "github.com/sourcegraph/lsif-protocol"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bloomfilter"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/datastructures"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/lsif"
@@ -23,6 +24,7 @@ type GroupedBundleDataChans struct {
 	ResultChunks      chan lsifstore.IndexedResultChunkData
 	Definitions       chan lsifstore.MonikerLocations
 	References        chan lsifstore.MonikerLocations
+	Symbols           chan lsifstore.SymbolData
 	Packages          []lsifstore.Package
 	PackageReferences []lsifstore.PackageReference
 }
@@ -33,6 +35,7 @@ type GroupedBundleDataMaps struct {
 	ResultChunks      map[int]lsifstore.ResultChunkData
 	Definitions       map[string]map[string][]lsifstore.LocationData
 	References        map[string]map[string][]lsifstore.LocationData
+	Symbols           []lsifstore.SymbolData
 	Packages          []lsifstore.Package
 	PackageReferences []lsifstore.PackageReference
 }
@@ -59,6 +62,7 @@ func groupBundleData(ctx context.Context, state *State, dumpID int) (*GroupedBun
 	resultChunks := serializeResultChunks(ctx, state, numResultChunks)
 	definitionRows := gatherMonikersLocations(ctx, state, state.DefinitionData, getDefinitionResultID)
 	referenceRows := gatherMonikersLocations(ctx, state, state.ReferenceData, getReferenceResultID)
+	symbols := gatherSymbols(ctx, state, dumpID)
 	packages := gatherPackages(state, dumpID)
 	packageReferences, err := gatherPackageReferences(state, dumpID)
 	if err != nil {
@@ -73,6 +77,7 @@ func groupBundleData(ctx context.Context, state *State, dumpID int) (*GroupedBun
 		References:        referenceRows,
 		Packages:          packages,
 		PackageReferences: packageReferences,
+		Symbols:           symbols,
 	}, nil
 }
 
@@ -132,6 +137,7 @@ func serializeDocument(state *State, documentID int) lsifstore.DocumentData {
 				document.PackageInformation[toID(moniker.PackageInformationID)] = lsifstore.PackageInformationData{
 					Name:    packageInformation.Name,
 					Version: packageInformation.Version,
+					Manager: packageInformation.Manager,
 				}
 			}
 		})
@@ -315,6 +321,120 @@ func gatherMonikersLocations(ctx context.Context, state *State, data map[int]*da
 	return ch
 }
 
+func gatherSymbols(ctx context.Context, state *State, dumpID int) chan lsifstore.SymbolData {
+	byID := make(map[int]*lsifstore.SymbolData, len(state.SymbolData))
+
+	// TODO(sqs): speed this operation up by (eg) adding a DocumentID field to RangeData or another
+	// map to State that's the reverse of (State).Contains?
+	getDocumentContainingRange := func(rangeID int) int {
+		var docID int
+		state.Contains.Each(func(key int, set *datastructures.IDSet) {
+			if set.Contains(rangeID) {
+				docID = key
+			}
+		})
+		if docID == 0 {
+			panic("docID is 0")
+		}
+		return docID
+	}
+
+	// Gather symbols defined directly on ranges.
+	for id, rng := range state.RangeData {
+		if rng.Tag != nil && (rng.Tag.Type == "definition" || rng.Tag.Type == "declaration") {
+			docID := getDocumentContainingRange(id)
+			uri := state.DocumentData[docID]
+
+			byID[id] = &lsifstore.SymbolData{
+				ID:         uint64(id),
+				SymbolData: rng.Tag.SymbolData,
+				Locations: []protocol.SymbolLocation{
+					{
+						URI: uri,
+						Range: &protocol.RangeData{
+							Start: protocol.Pos{Line: rng.StartLine, Character: rng.StartCharacter},
+							End:   protocol.Pos{Line: rng.EndLine, Character: rng.EndCharacter},
+						},
+						FullRange: protocol.RangeData{
+							Start: protocol.Pos{Line: rng.Tag.FullRange.Start.Line, Character: rng.Tag.FullRange.Start.Character},
+							End:   protocol.Pos{Line: rng.Tag.FullRange.End.Line, Character: rng.Tag.FullRange.End.Character},
+						},
+					},
+				},
+			}
+		}
+	}
+
+	// Gather symbols defined by symbol vertices.
+	for id, symbol := range state.SymbolData {
+		byID[id] = &lsifstore.SymbolData{
+			ID:         uint64(id),
+			SymbolData: symbol.SymbolData,
+			Locations:  symbol.Locations,
+		}
+	}
+
+	// Set children from documentSymbolResults.
+	for _, results := range state.DocumentSymbolResults {
+		// TODO(sqs): determine document ID
+		for _, result := range results {
+			// TODO(sqs): remove this vallidation once we validate these in correlateDocumentSymbolResult
+			symbol, ok := byID[int(result.ID)]
+			if !ok {
+				panic("symbol not found")
+			}
+
+			symbolID := int(result.ID)
+			for _, child := range result.Children {
+				// Don't add duplicate children (when the child is specified both using a
+				// RangeBasedDocumentSymbol and a member edge).
+				if !state.Members.SetContains(symbolID, int(child.ID)) {
+					symbol.Children = append(symbol.Children, child.ID)
+				}
+			}
+		}
+	}
+
+	// Set children from member edges.
+	state.Members.Each(func(parent int, children *datastructures.IDSet) {
+		symbol := byID[parent]
+		children.Each(func(child int) {
+			symbol.Children = append(symbol.Children, uint64(child))
+		})
+	})
+
+	// Attach monikers.
+	for id, data := range byID {
+		if symbolMonikers := state.Monikers.Get(id); symbolMonikers != nil {
+			symbolMonikers.Each(func(monikerID int) {
+				moniker := state.MonikerData[monikerID]
+				data.Monikers = append(data.Monikers, lsifstore.MonikerData{
+					Kind:       moniker.Kind,
+					Scheme:     moniker.Scheme,
+					Identifier: moniker.Identifier,
+				})
+			})
+		}
+	}
+
+	// TODO(sqs): parallelize the sending to this channel
+	ch := make(chan lsifstore.SymbolData)
+
+	go func() {
+		defer close(ch)
+
+		for _, data := range byID {
+			select {
+			case ch <- *data:
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+
+	return ch
+}
+
 func gatherPackages(state *State, dumpID int) []lsifstore.Package {
 	uniques := make(map[string]lsifstore.Package, state.ExportedMonikers.Len())
 	state.ExportedMonikers.Each(func(id int) {
@@ -326,6 +446,7 @@ func gatherPackages(state *State, dumpID int) []lsifstore.Package {
 			Scheme:  source.Scheme,
 			Name:    packageInfo.Name,
 			Version: packageInfo.Version,
+			Manager: packageInfo.Manager,
 		}
 	})
 
@@ -342,6 +463,7 @@ func gatherPackageReferences(state *State, dumpID int) ([]lsifstore.PackageRefer
 		Scheme      string
 		Name        string
 		Version     string
+		Manager     string
 		Identifiers []string
 	}
 
@@ -355,6 +477,7 @@ func gatherPackageReferences(state *State, dumpID int) ([]lsifstore.PackageRefer
 			Scheme:      source.Scheme,
 			Name:        packageInfo.Name,
 			Version:     packageInfo.Version,
+			Manager:     packageInfo.Manager,
 			Identifiers: append(uniques[key].Identifiers, source.Identifier),
 		}
 	})
@@ -371,6 +494,7 @@ func gatherPackageReferences(state *State, dumpID int) ([]lsifstore.PackageRefer
 			Scheme:  v.Scheme,
 			Name:    v.Name,
 			Version: v.Version,
+			Manager: v.Manager,
 			Filter:  filter,
 		})
 	}
@@ -445,6 +569,18 @@ func GroupedBundleDataMapsToChans(ctx context.Context, maps *GroupedBundleDataMa
 			}
 		}
 	}()
+	symbolsChan := make(chan lsifstore.SymbolData)
+	go func() {
+		defer close(symbolsChan)
+
+		for _, symbol := range maps.Symbols {
+			select {
+			case symbolsChan <- symbol:
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
 
 	return &GroupedBundleDataChans{
 		Meta:              maps.Meta,
@@ -452,6 +588,7 @@ func GroupedBundleDataMapsToChans(ctx context.Context, maps *GroupedBundleDataMa
 		ResultChunks:      resultChunkChan,
 		Definitions:       monikerDefsChan,
 		References:        monikerRefsChan,
+		Symbols:           symbolsChan,
 		Packages:          maps.Packages,
 		PackageReferences: maps.PackageReferences,
 	}
@@ -483,6 +620,10 @@ func GroupedBundleDataChansToMaps(ctx context.Context, chans *GroupedBundleDataC
 		}
 		identMap[monikerRefs.Identifier] = monikerRefs.Locations
 	}
+	var symbols []lsifstore.SymbolData
+	for symbol := range chans.Symbols {
+		symbols = append(symbols, symbol)
+	}
 
 	return &GroupedBundleDataMaps{
 		Meta:              chans.Meta,
@@ -490,6 +631,7 @@ func GroupedBundleDataChansToMaps(ctx context.Context, chans *GroupedBundleDataC
 		ResultChunks:      resultChunkMap,
 		Definitions:       monikerDefsMap,
 		References:        monikerRefsMap,
+		Symbols:           symbols,
 		Packages:          chans.Packages,
 		PackageReferences: chans.PackageReferences,
 	}

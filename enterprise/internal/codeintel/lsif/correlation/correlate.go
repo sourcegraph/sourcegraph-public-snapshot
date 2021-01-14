@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/inconshreveable/log15"
+	protocol "github.com/sourcegraph/lsif-protocol"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/datastructures"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/existence"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/lsif"
@@ -102,16 +103,18 @@ func correlateElement(state *wrappedState, element lsif.Element) error {
 }
 
 var vertexHandlers = map[string]func(state *wrappedState, element lsif.Element) error{
-	"metaData":           correlateMetaData,
-	"document":           correlateDocument,
-	"range":              correlateRange,
-	"resultSet":          correlateResultSet,
-	"definitionResult":   correlateDefinitionResult,
-	"referenceResult":    correlateReferenceResult,
-	"hoverResult":        correlateHoverResult,
-	"moniker":            correlateMoniker,
-	"packageInformation": correlatePackageInformation,
-	"diagnosticResult":   correlateDiagnosticResult,
+	"metaData":             correlateMetaData,
+	"document":             correlateDocument,
+	"range":                correlateRange,
+	"resultSet":            correlateResultSet,
+	"definitionResult":     correlateDefinitionResult,
+	"referenceResult":      correlateReferenceResult,
+	"hoverResult":          correlateHoverResult,
+	"moniker":              correlateMoniker,
+	"packageInformation":   correlatePackageInformation,
+	"symbol":               correlateSymbol,
+	"diagnosticResult":     correlateDiagnosticResult,
+	"documentSymbolResult": correlateDocumentSymbolResult,
 }
 
 // correlateElement maps a single vertex element into the correlation state.
@@ -131,16 +134,19 @@ func correlateVertex(state *wrappedState, element lsif.Element) error {
 }
 
 var edgeHandlers = map[string]func(state *wrappedState, id int, edge lsif.Edge) error{
-	"contains":                correlateContainsEdge,
-	"next":                    correlateNextEdge,
-	"item":                    correlateItemEdge,
-	"textDocument/definition": correlateTextDocumentDefinitionEdge,
-	"textDocument/references": correlateTextDocumentReferencesEdge,
-	"textDocument/hover":      correlateTextDocumentHoverEdge,
-	"moniker":                 correlateMonikerEdge,
-	"nextMoniker":             correlateNextMonikerEdge,
-	"packageInformation":      correlatePackageInformationEdge,
-	"textDocument/diagnostic": correlateDiagnosticEdge,
+	"contains":                    correlateContainsEdge,
+	"next":                        correlateNextEdge,
+	"item":                        correlateItemEdge,
+	"textDocument/definition":     correlateTextDocumentDefinitionEdge,
+	"textDocument/references":     correlateTextDocumentReferencesEdge,
+	"textDocument/hover":          correlateTextDocumentHoverEdge,
+	"moniker":                     correlateMonikerEdge,
+	"nextMoniker":                 correlateNextMonikerEdge,
+	"packageInformation":          correlatePackageInformationEdge,
+	"textDocument/diagnostic":     correlateDiagnosticEdge,
+	"textDocument/documentSymbol": correlateTextDocumentDocumentSymbolEdge,
+	"workspace/symbol":            correlateWorkspaceSymbolEdge,
+	"member":                      correlateMemberEdge,
 }
 
 // correlateElement maps a single edge element into the correlation state.
@@ -261,6 +267,25 @@ func correlatePackageInformation(state *wrappedState, element lsif.Element) erro
 	return nil
 }
 
+func correlateSymbol(state *wrappedState, element lsif.Element) error {
+	payload, ok := element.Payload.(protocol.Symbol)
+	if !ok {
+		return ErrUnexpectedPayload
+	}
+
+	for i := range payload.Locations {
+		uri := payload.Locations[i].URI
+		relativeURI, err := filepath.Rel(state.ProjectRoot, uri)
+		if err != nil {
+			return fmt.Errorf("symbol location URI %q is not relative to project root %q (%s)", uri, state.ProjectRoot, err)
+		}
+		payload.Locations[i].URI = relativeURI
+	}
+
+	state.SymbolData[element.ID] = payload
+	return nil
+}
+
 func correlateDiagnosticResult(state *wrappedState, element lsif.Element) error {
 	payload, ok := element.Payload.([]lsif.Diagnostic)
 	if !ok {
@@ -268,6 +293,19 @@ func correlateDiagnosticResult(state *wrappedState, element lsif.Element) error 
 	}
 
 	state.DiagnosticResults[element.ID] = payload
+	return nil
+}
+
+func correlateDocumentSymbolResult(state *wrappedState, element lsif.Element) error {
+	// TODO(sqs): support inline document symbols
+	payload, ok := element.Payload.([]protocol.RangeBasedDocumentSymbol)
+	if !ok {
+		return ErrUnexpectedPayload
+	}
+
+	// TODO(sqs): validate that IDs and child IDs are all correct
+
+	state.DocumentSymbolResults[element.ID] = payload
 	return nil
 }
 
@@ -395,6 +433,8 @@ func correlateMonikerEdge(state *wrappedState, id int, edge lsif.Edge) error {
 		state.Monikers.SetAdd(edge.OutV, edge.InV)
 	} else if _, ok := state.ResultSetData[edge.OutV]; ok {
 		state.Monikers.SetAdd(edge.OutV, edge.InV)
+	} else if _, ok := state.SymbolData[edge.OutV]; ok {
+		state.Monikers.SetAdd(edge.OutV, edge.InV)
 	} else {
 		return malformedDump(id, edge.OutV, "range", "resultSet")
 	}
@@ -446,5 +486,54 @@ func correlateDiagnosticEdge(state *wrappedState, id int, edge lsif.Edge) error 
 	}
 
 	state.Diagnostics.SetAdd(edge.OutV, edge.InV)
+	return nil
+}
+
+func correlateTextDocumentDocumentSymbolEdge(state *wrappedState, id int, edge lsif.Edge) error {
+	if _, ok := state.DocumentData[edge.OutV]; !ok {
+		return malformedDump(id, edge.OutV, "document")
+	}
+
+	if _, ok := state.DocumentSymbolResults[edge.InV]; !ok {
+		return malformedDump(id, edge.InV, "documentSymbolResult")
+	}
+
+	state.DocumentSymbols.SetAdd(edge.OutV, edge.InV)
+	return nil
+}
+
+func correlateWorkspaceSymbolEdge(state *wrappedState, id int, edge lsif.Edge) error {
+	// TODO(sqs): can't validate that OutV is a project vertex because we don't track projects yet
+	for _, inV := range edge.InVs {
+		if _, ok := state.SymbolData[inV]; !ok {
+			return malformedDump(id, inV, "symbol")
+		}
+		state.WorkspaceSymbols.Add(inV)
+	}
+
+	return nil
+}
+
+func correlateMemberEdge(state *wrappedState, id int, edge lsif.Edge) error {
+	isSymbolOrRange := func(id int) bool {
+		// TODO(sqs): also allow pointing to documentSymbolResult
+		_, ok := state.SymbolData[id]
+		if !ok {
+			_, ok = state.RangeData[id]
+		}
+		return ok
+	}
+
+	if !isSymbolOrRange(edge.OutV) {
+		return malformedDump(id, edge.OutV, "range", "symbol")
+	}
+
+	for _, inV := range edge.InVs {
+		// Check that the edge points to a symbol.
+		if !isSymbolOrRange(inV) {
+			return malformedDump(id, inV, "range", "symbol")
+		}
+		state.Members.SetAdd(edge.OutV, inV)
+	}
 	return nil
 }
