@@ -13,12 +13,15 @@ import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SearchPatternType } from '../../graphql-operations'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { WebActionsNavItems as ActionsNavItems } from '../../components/shared'
+import { CodeMonitoringProps } from '../../enterprise/code-monitoring'
 
 interface SearchResultsInfoBarProps
     extends ExtensionsControllerProps<'executeCommand' | 'services'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         TelemetryProps,
-        PatternTypeProps {
+        PatternTypeProps,
+        Pick<CodeMonitoringProps, 'enableCodeMonitoring'> {
+    history: H.History
     /** The currently authenticated user or null */
     authenticatedUser: AuthenticatedUser | null
 
