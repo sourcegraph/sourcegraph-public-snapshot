@@ -17,7 +17,7 @@ import { Link } from '../../../../../shared/src/components/Link'
 import { RepositoryNode } from './RepositoryNode'
 import AddIcon from 'mdi-react/AddIcon'
 import { ErrorLike } from '../../../../../shared/src/util/errors'
-import {repeatUntil} from "../../../../../shared/src/util/rxjs/repeatUntil";
+import { repeatUntil } from '../../../../../shared/src/util/rxjs/repeatUntil'
 
 interface Props extends RouteComponentProps, TelemetryProps {
     userID: string
@@ -55,75 +55,80 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     const [errorState, setErrorState] = useState('')
 
     if (!state.fetched) {
-         queryExternalServices({ namespace: userID, first: null, after: null })
+        queryExternalServices({ namespace: userID, first: null, after: null })
             .pipe(
-                repeatUntil((result): boolean => {
-                const services: FilterValue[] = [
-                    {
-                        value: 'all',
-                        label: 'All',
-                        args: {},
-                    },
-                ]
-                let pending = true
-                const now = new Date().getTime()
-                result.nodes.map(node => {
-                    // if the next sync time is not blank, or in the future we must not be syncing
-                    if (node.nextSyncAt !== '' && now - new Date(node.nextSyncAt).getTime() < 0) {
-                        pending = false
-                    }
-                    services.push({
-                        value: node.id,
-                        label: node.displayName,
-                        tooltip: '',
-                        args: { externalServiceID: node.id },
-                    })
-                })
-                setSyncPending(pending)
-                const newFilters: FilteredConnectionFilter[] = [
-                    {
-                        label: 'Status',
-                        type: 'select',
-                        id: 'status',
-                        tooltip: 'Repository status',
-                        values: [
+                repeatUntil(
+                    (result): boolean => {
+                        const services: FilterValue[] = [
                             {
                                 value: 'all',
                                 label: 'All',
                                 args: {},
                             },
+                        ]
+                        let pending = true
+                        const now = new Date().getTime()
+                        result.nodes.map(node => {
+                            // if the next sync time is not blank, or in the future we must not be syncing
+                            if (node.nextSyncAt !== '' && now - new Date(node.nextSyncAt).getTime() < 0) {
+                                pending = false
+                            }
+                            services.push({
+                                value: node.id,
+                                label: node.displayName,
+                                tooltip: '',
+                                args: { externalServiceID: node.id },
+                            })
+                        })
+                        setSyncPending(pending)
+                        const newFilters: FilteredConnectionFilter[] = [
                             {
-                                value: 'cloned',
-                                label: 'Cloned',
-                                args: { cloned: true, notCloned: false },
+                                label: 'Status',
+                                type: 'select',
+                                id: 'status',
+                                tooltip: 'Repository status',
+                                values: [
+                                    {
+                                        value: 'all',
+                                        label: 'All',
+                                        args: {},
+                                    },
+                                    {
+                                        value: 'cloned',
+                                        label: 'Cloned',
+                                        args: { cloned: true, notCloned: false },
+                                    },
+                                    {
+                                        value: 'not-cloned',
+                                        label: 'Not Cloned',
+                                        args: { cloned: false, notCloned: true },
+                                    },
+                                ],
                             },
                             {
-                                value: 'not-cloned',
-                                label: 'Not Cloned',
-                                args: { cloned: false, notCloned: true },
+                                label: 'Code host',
+                                type: 'select',
+                                id: 'code-host',
+                                tooltip: 'Code host',
+                                values: services,
                             },
-                        ],
+                        ]
+                        setState({ filters: newFilters, fetched: true })
+                        return !pending
                     },
-                    {
-                        label: 'Code host',
-                        type: 'select',
-                        id: 'code-host',
-                        tooltip: 'Code host',
-                        values: services,
-                    },
-                ]
-                setState({ filters: newFilters, fetched: true })
-                return !pending
-            }, {delay: 2000})
-        ).toPromise().catch(error => {
-            setErrorState(String(error))
-         })
+                    { delay: 2000 }
+                )
+            )
+            .toPromise()
+            .catch(error => {
+                setErrorState(String(error))
+            })
     }
 
     const queryRepositories = useCallback(
         (args: FilteredConnectionQueryArguments): Observable<RepositoriesResult['repositories']> =>
             listUserRepositories({ ...args, id: userID }).pipe(
-                repeatUntil((result):boolean => !syncPending, {delay: 2000})
+                repeatUntil((result): boolean => !syncPending, { delay: 2000 })
             ),
         [syncPending, userID]
     )
@@ -177,10 +182,12 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
 
     return (
         <div className="user-settings-repositories-page">
-            {syncPending && <div className="alert alert-info">
-                <span className="font-weight-bold">Some repositories are still being fetched.</span>
-                These repositories may not appear in the list of repositories.
-            </div>}
+            {syncPending && (
+                <div className="alert alert-info">
+                    <span className="font-weight-bold">Some repositories are still being fetched.</span>
+                    These repositories may not appear in the list of repositories.
+                </div>
+            )}
             {errorState !== '' && <div className="alert alert-danger">{errorState}</div>}
             <PageTitle title="Repositories" />
             <div className="d-flex justify-content-between align-items-center">
