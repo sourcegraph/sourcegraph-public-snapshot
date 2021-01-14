@@ -252,6 +252,8 @@ type NullTime struct{ *time.Time }
 // Scan implements the Scanner interface.
 func (nt *NullTime) Scan(value interface{}) error {
 	*nt.Time, _ = value.(time.Time)
+	// pgx parses timestamptz columns as time.Time instances with local timezone.
+	*nt.Time = nt.Time.UTC()
 	return nil
 }
 
