@@ -38,9 +38,8 @@ var (
 	defaultDataSource      = env.Get("PGDATASOURCE", "", "Default dataSource to pass to Postgres. See https://pkg.go.dev/github.com/jackc/pgx for more information.")
 	defaultApplicationName = env.Get("PGAPPLICATIONNAME", "sourcegraph", "The value of application_name appended to dataSource")
 	// Ensure all time instances have their timezones set to UTC.
-	// The time package expects $TZ="" to set it to UTC.
 	// https://github.com/golang/go/blob/7eb31d999cf2769deb0e7bdcafc30e18f52ceb48/src/time/zoneinfo_unix.go#L29-L34
-	_ = env.Ensure("TZ", "", "timezone used by time instances")
+	_ = env.Ensure("TZ", "UTC", "timezone used by time instances")
 )
 
 // SetupGlobalConnection connects to the given data source and stores the handle
