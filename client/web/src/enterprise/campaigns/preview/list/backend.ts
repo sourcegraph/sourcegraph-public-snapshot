@@ -128,6 +128,7 @@ const campaignSpecApplyPreviewConnectionFieldsFragment = gql`
         operations
         delta {
             titleChanged
+            baseRefChanged
         }
         targets {
             __typename
@@ -144,6 +145,14 @@ const campaignSpecApplyPreviewConnectionFieldsFragment = gql`
                     id
                     title
                     state
+                    currentSpec {
+                        description {
+                            __typename
+                            ... on GitBranchChangesetDescription {
+                                baseRef
+                            }
+                        }
+                    }
                 }
             }
             ... on VisibleApplyPreviewTargetsDetach {

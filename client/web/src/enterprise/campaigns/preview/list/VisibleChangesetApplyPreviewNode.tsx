@@ -274,6 +274,13 @@ const References: React.FunctionComponent<{ spec: VisibleChangesetApplyPreviewFi
     }
     return (
         <div className="d-block d-sm-inline-block">
+            {spec.delta.baseRefChanged &&
+                spec.targets.__typename === 'VisibleApplyPreviewTargetsUpdate' &&
+                spec.targets.changeset.currentSpec?.description.__typename === 'GitBranchChangesetDescription' && (
+                    <del className="badge badge-danger mr-2">
+                        {spec.targets.changeset.currentSpec?.description.baseRef}
+                    </del>
+                )}
             <span className="badge badge-primary">{spec.targets.changesetSpec.description.baseRef}</span> &larr;{' '}
             <span className="badge badge-primary">{spec.targets.changesetSpec.description.headRef}</span>
         </div>

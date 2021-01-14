@@ -65,6 +65,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
         operations: [ChangesetSpecOperation.IMPORT],
         delta: {
             titleChanged: false,
+            baseRefChanged: false,
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsAttach',
@@ -85,6 +86,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
         operations: [ChangesetSpecOperation.PUSH, ChangesetSpecOperation.PUBLISH],
         delta: {
             titleChanged: false,
+            baseRefChanged: false,
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsAttach',
@@ -96,6 +98,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
         operations: [ChangesetSpecOperation.PUSH, ChangesetSpecOperation.PUBLISH_DRAFT],
         delta: {
             titleChanged: false,
+            baseRefChanged: false,
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsAttach',
@@ -107,6 +110,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
         operations: [],
         delta: {
             titleChanged: false,
+            baseRefChanged: false,
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsAttach',
@@ -118,6 +122,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
         operations: [ChangesetSpecOperation.UPDATE],
         delta: {
             titleChanged: true,
+            baseRefChanged: false,
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsUpdate',
@@ -126,6 +131,12 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
                 id: '123123',
                 title: 'the old title',
                 state: ChangesetState.OPEN,
+                currentSpec: {
+                    description: {
+                        __typename: 'GitBranchChangesetDescription',
+                        baseRef: 'main',
+                    },
+                },
             },
         },
     },
@@ -134,6 +145,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
         operations: [ChangesetSpecOperation.UNDRAFT],
         delta: {
             titleChanged: false,
+            baseRefChanged: false,
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsUpdate',
@@ -142,6 +154,12 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
                 id: '123123',
                 title: 'Le draft changeset',
                 state: ChangesetState.OPEN,
+                currentSpec: {
+                    description: {
+                        __typename: 'GitBranchChangesetDescription',
+                        baseRef: 'main',
+                    },
+                },
             },
         },
     },
@@ -150,6 +168,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
         operations: [ChangesetSpecOperation.REOPEN, ChangesetSpecOperation.UPDATE],
         delta: {
             titleChanged: false,
+            baseRefChanged: false,
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsUpdate',
@@ -158,6 +177,12 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
                 id: '123123',
                 title: 'Le closed changeset',
                 state: ChangesetState.OPEN,
+                currentSpec: {
+                    description: {
+                        __typename: 'GitBranchChangesetDescription',
+                        baseRef: 'main',
+                    },
+                },
             },
         },
     },
@@ -166,6 +191,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
         operations: [ChangesetSpecOperation.CLOSE, ChangesetSpecOperation.DETACH],
         delta: {
             titleChanged: false,
+            baseRefChanged: false,
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsDetach',
@@ -187,6 +213,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
         operations: [ChangesetSpecOperation.DETACH],
         delta: {
             titleChanged: false,
+            baseRefChanged: false,
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsDetach',
@@ -199,6 +226,29 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
                     added: 2,
                     changed: 8,
                     deleted: 10,
+                },
+            },
+        },
+    },
+    'Change base ref': {
+        __typename: 'VisibleChangesetApplyPreview',
+        operations: [ChangesetSpecOperation.UPDATE],
+        delta: {
+            titleChanged: false,
+            baseRefChanged: true,
+        },
+        targets: {
+            __typename: 'VisibleApplyPreviewTargetsUpdate',
+            changesetSpec: baseChangesetSpec(true),
+            changeset: {
+                id: '123123',
+                title: 'Change base ref',
+                state: ChangesetState.OPEN,
+                currentSpec: {
+                    description: {
+                        __typename: 'GitBranchChangesetDescription',
+                        baseRef: 'main',
+                    },
                 },
             },
         },
