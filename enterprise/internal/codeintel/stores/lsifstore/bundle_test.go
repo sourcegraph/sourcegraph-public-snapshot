@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	protocol "github.com/sourcegraph/lsif-protocol"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -242,6 +243,8 @@ func TestDatabaseHover(t *testing.T) {
 	}
 }
 
+const testDatabasePackageInformationID = "18" // changes when lsif-go@ad3507cb.sql is regenerated
+
 func TestDatabaseMonikersByPosition(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -262,7 +265,7 @@ func TestDatabaseMonikersByPosition(t *testing.T) {
 					Kind:                 "export",
 					Scheme:               "gomod",
 					Identifier:           "github.com/sourcegraph/lsif-go/protocol:NewMetaData",
-					PackageInformationID: "60",
+					PackageInformationID: testDatabasePackageInformationID,
 				},
 			},
 		}
@@ -339,7 +342,7 @@ func TestDatabasePackageInformation(t *testing.T) {
 	populateTestStore(t)
 	store := NewStore(dbconn.Global, &observation.TestContext)
 
-	if actual, exists, err := store.PackageInformation(context.Background(), testBundleID, "protocol/protocol.go", "60"); err != nil {
+	if actual, exists, err := store.PackageInformation(context.Background(), testBundleID, "protocol/protocol.go", testDatabasePackageInformationID); err != nil {
 		t.Fatalf("unexpected error %s", err)
 	} else if !exists {
 		t.Errorf("no package information")
@@ -354,6 +357,85 @@ func TestDatabasePackageInformation(t *testing.T) {
 		}
 	}
 }
+
+func TestDatabaseSymbols(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	populateTestStore(t)
+	store := NewStore(dbconn.Global, &observation.TestContext)
+
+	actualList, totalCount, err := store.Symbols(context.Background(), testBundleID, nil, 0, 1000)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// TODO(sqs): test totalCount
+	_ = totalCount
+
+	// Filter down the actual list to a single symbol that we test against.
+	const testMonikerIdentifier = "github.com/sourcegraph/lsif-go/protocol:ToolInfo"
+
+	actual := findSymbolsMatching(actualList, func(symbol *Symbol) bool {
+		for _, m := range symbol.Monikers {
+			if m.Identifier == testMonikerIdentifier {
+				return true
+			}
+		}
+		return false
+	})
+
+	expected := []*Symbol{
+		{
+			DumpID: testBundleID,
+			SymbolData: protocol.SymbolData{
+				Text: "ToolInfo",
+				Kind: 11,
+			},
+			Locations: []protocol.SymbolLocation{
+				{
+					URI: "protocol/protocol.go",
+					Range: &protocol.RangeData{
+						Start: protocol.Pos{Line: 66, Character: 5},
+						End:   protocol.Pos{Line: 66, Character: 13},
+					},
+					FullRange: protocol.RangeData{
+						Start: protocol.Pos{Line: 66, Character: 0},
+						End:   protocol.Pos{Line: 73, Character: 1},
+					},
+				},
+			},
+			Monikers: []MonikerData{
+				{
+					Kind:       "export",
+					Scheme:     "gomod",
+					Identifier: testMonikerIdentifier,
+				},
+			},
+		},
+	}
+	if diff := cmp.Diff(expected, actual); diff != "" {
+		t.Errorf("unexpected symbols (-want +got):\n%s", diff)
+	}
+}
+
+// TODO(sqs): steps for regenerating lsif-go@ad3507cb.sql
+//
+// NOTE: THIS WILL DELETE ALL LSIF DATA FROM YOUR LOCAL DATABASE!!!
+//
+// # FIRST: make sure the github.com/sourcegraph/lsif-go repo exists on your sourcegraph instance
+//
+// pg_dump --data-only --format plain --inserts --table 'lsif_data_*' --file lsif_backup.sql
+//
+// for table in $(psql -XAt -c "select tablename from pg_tables where schemaname='public' and tablename like 'lsif_data_%';"); do psql -c "truncate table $table"; done
+//
+// pg_dump --data-only --format plain --inserts --table 'lsif_data_*' | grep -v '^--' | grep -v '^SET' | grep -v '^SELECT' | sed 's/VALUES ([[:digit:]]\+,/VALUES (447,/g' > tmp.sql
+// mv tmp.sql enterprise/internal/codeintel/stores/lsifstore/testdata/lsif-go@ad3507cb.sql
+//
+// # RESTORE
+// # rerun the `for table` thing above, then:
+// psql -X < lsif_backup.sql
 
 func populateTestStore(t testing.TB) *Store {
 	contents, err := ioutil.ReadFile("./testdata/lsif-go@ad3507cb.sql")

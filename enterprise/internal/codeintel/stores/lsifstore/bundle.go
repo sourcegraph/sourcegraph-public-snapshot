@@ -9,6 +9,8 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 	pkgerrors "github.com/pkg/errors"
+	protocol "github.com/sourcegraph/lsif-protocol"
+	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -371,6 +373,151 @@ func (s *Store) PackageInformation(ctx context.Context, bundleID int, path, pack
 	}
 
 	return PackageInformationData{}, false, nil
+}
+
+// Packages returns all packages defined in the given path prefix. This method also returns the size
+// of the complete result set to aid in pagination (along with skip and take).
+func (s *Store) Packages(ctx context.Context, bundleID int, prefix string, skip, take int) (_ []Package, _ int, err error) {
+	ctx, endObservation := s.operations.packages.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("bundleID", bundleID),
+		log.String("prefix", prefix),
+		log.Int("skip", skip),
+		log.Int("take", take),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	paths, err := s.getPathsWithPrefix(ctx, bundleID, prefix)
+	if err != nil {
+		return nil, 0, pkgerrors.Wrap(err, "db.getPathsWithPrefix")
+	}
+
+	uniquePackages := map[PackageInformationData]struct{}{}
+	for _, path := range paths {
+		documentData, exists, err := s.getDocumentData(ctx, bundleID, path)
+		if err != nil {
+			return nil, 0, pkgerrors.Wrap(err, "db.getDocumentData")
+		}
+		if !exists {
+			return nil, 0, nil
+		}
+
+		for _, packageInformationData := range documentData.PackageInformation {
+			uniquePackages[packageInformationData] = struct{}{}
+		}
+	}
+	uniquePackageList := make([]PackageInformationData, 0, len(uniquePackages))
+	for packageInformationData := range uniquePackages {
+		uniquePackageList = append(uniquePackageList, packageInformationData)
+	}
+	sort.Slice(uniquePackageList, func(i, j int) bool {
+		a := uniquePackageList[i]
+		b := uniquePackageList[j]
+		return a.Manager < b.Manager || (a.Manager == b.Manager && a.Name < b.Name) || (a.Manager == b.Manager && a.Name == b.Name && a.Version < b.Version)
+	})
+
+	totalCount := len(uniquePackageList)
+	packageInformations := make([]Package, 0, len(uniquePackageList))
+	for _, packageInformationData := range uniquePackageList {
+		skip--
+		if skip < 0 && len(packageInformations) < take {
+			packageInformations = append(packageInformations, Package{
+				Scheme:  "TODO", // TODO(sqs)
+				Name:    packageInformationData.Name,
+				Version: packageInformationData.Version,
+				Manager: packageInformationData.Manager,
+			})
+		}
+	}
+
+	return packageInformations, totalCount, nil
+}
+
+// Symbols returns all symbols (subject to the filters).
+func (s *Store) Symbols(ctx context.Context, bundleID int, filters *gql.SymbolFilters, skip, take int) (_ []Symbol, _ int, err error) {
+	ctx, endObservation := s.operations.symbols.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("bundleID", bundleID),
+		log.Int("skip", skip),
+		log.Int("take", take),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	symbolDatas, err := s.ReadSymbols(ctx, bundleID)
+	if err != nil {
+		return nil, 0, pkgerrors.Wrap(err, "store.ReadSymbols")
+	}
+
+	rootSymbols := buildSymbolTree(symbolDatas, bundleID)
+
+	// Try to associate a moniker with each symbol.
+	allMonikers, err := s.readMonikerLocations(ctx, bundleID, "definitions", skip, take)
+	if err != nil {
+		return nil, 0, pkgerrors.Wrap(err, "store.ReadDefinitions")
+	}
+	for i := range rootSymbols {
+		WalkSymbolTree(&rootSymbols[i], func(symbol *Symbol) {
+			associateMoniker(symbol, allMonikers)
+		})
+	}
+
+	// Apply filters.
+	if filters != nil {
+		symbolIsInternal := func(symbol *Symbol) bool {
+			for _, tag := range symbol.Tags {
+				switch tag {
+				case protocol.Exported:
+					return false
+				case protocol.Unexported:
+					return true
+				}
+			}
+			// TODO(sqs): different ways of determining this based on the language and/or if the
+			// exported/unexported symbol tags are known to be in use?
+			return true // default to true
+		}
+		trimSymbolTree(&rootSymbols, func(symbol *Symbol) bool {
+			if !filters.Internals {
+				if symbolIsInternal(symbol) {
+					return false
+				}
+			}
+			return true
+		})
+	}
+
+	totalCount := len(rootSymbols) // TODO(sqs): doesnt account for skip/take
+
+	return rootSymbols, totalCount, nil
+}
+
+// Symbol looks up a symbol by its moniker.
+func (s *Store) Symbol(ctx context.Context, bundleID int, scheme, identifier string) (_ *Symbol, _ []int, err error) {
+	ctx, endObservation := s.operations.symbols.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("bundleID", bundleID),
+		log.String("scheme", scheme),
+		log.String("identifier", identifier),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	rootSymbols, _, err := s.Symbols(ctx, bundleID, nil, 0, 0)
+	if err != nil {
+		return nil, nil, pkgerrors.Wrap(err, "store.Symbols")
+	}
+
+	for _, root := range rootSymbols {
+		treePath, ok := findPathToSymbolInTree(&root, func(symbol *Symbol) bool {
+			for _, m := range symbol.Monikers {
+				if m.Scheme == scheme && m.Identifier == identifier {
+					return true
+				}
+			}
+			return false
+		})
+		if ok {
+			return &root, treePath, nil
+		}
+	}
+
+	return nil, nil, nil
 }
 
 // hover returns the hover text locations for the given range.

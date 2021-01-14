@@ -2,6 +2,7 @@ package lsifstore
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
@@ -173,4 +174,80 @@ func (s *Store) readDefinitionReferences(ctx context.Context, bundleID int, tabl
 	}
 
 	return locations[lo:hi], len(locations), nil
+}
+
+// TODO(sqs): rename readDefinitionReferences to readDefinitionReferencesForMoniker
+func (s *Store) readMonikerLocations(ctx context.Context, bundleID int, tableName string, skip, take int) (_ []MonikerLocations, err error) {
+	scanMonikerLocations := func(rows *sql.Rows, queryErr error) (_ []MonikerLocations, err error) {
+		if queryErr != nil {
+			return nil, queryErr
+		}
+		defer func() { err = basestore.CloseRows(rows, err) }()
+
+		var values []MonikerLocations
+		for rows.Next() {
+			var (
+				value MonikerLocations
+				data  []byte // raw locations data
+			)
+			if err := rows.Scan(&value.Scheme, &value.Identifier, &data); err != nil {
+				return nil, err
+			}
+
+			locations, err := s.serializer.UnmarshalLocations([]byte(data))
+			if err != nil {
+				return nil, err
+			}
+			value.Locations = locations
+
+			values = append(values, value)
+		}
+
+		return values, nil
+	}
+
+	if tableName == "definitions" {
+		tableName = "lsif_data_definitions"
+	} else {
+		panic("TODO(sqs)")
+	}
+
+	return scanMonikerLocations(s.Store.Query(
+		ctx,
+		sqlf.Sprintf(
+			`SELECT scheme, identifier, data FROM "`+tableName+`" WHERE dump_id = %s AND (identifier LIKE %s) LIMIT %d OFFSET %d`,
+			bundleID,
+			"%:%", // TODO(sqs): hack, omit "local" monikers from lsif-node with
+			take,
+			skip,
+		),
+	))
+}
+
+func (s *Store) ReadSymbols(ctx context.Context, bundleID int) (_ []SymbolData, err error) {
+	ctx, endObservation := s.operations.readSymbols.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("bundleID", bundleID),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	datas, err := basestore.ScanStrings(s.Store.Query(
+		ctx,
+		sqlf.Sprintf(
+			`SELECT data FROM lsif_data_symbols WHERE dump_id = %s`,
+			bundleID,
+		),
+	))
+	if err != nil {
+		return nil, err
+	}
+
+	symbols := make([]SymbolData, len(datas))
+	for i, data := range datas {
+		symbols[i], err = s.serializer.UnmarshalSymbol([]byte(data))
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return symbols, nil
 }

@@ -14,6 +14,7 @@ func init() {
 	gob.Register(&DocumentData{})
 	gob.Register(&ResultChunkData{})
 	gob.Register(&LocationData{})
+	gob.Register(&Symbol{})
 }
 
 type serializer struct {
@@ -41,6 +42,11 @@ func (s *serializer) MarshalResultChunkData(resultChunks ResultChunkData) ([]byt
 // MarshalLocations transforms a slice of locations into a string of bytes writable to disk.
 func (s *serializer) MarshalLocations(locations []LocationData) ([]byte, error) {
 	return s.withEncoder(func(encoder *gob.Encoder) error { return encoder.Encode(&locations) })
+}
+
+// MarshalSymbol transforms a symbol into a string of bytes writable to disk.
+func (s *serializer) MarshalSymbol(symbol SymbolData) ([]byte, error) {
+	return s.withEncoder(func(encoder *gob.Encoder) error { return encoder.Encode(&symbol) })
 }
 
 // withEncoder creates a gob encoded, calls the given function with it, then compressed the encoded output.
@@ -82,6 +88,12 @@ func (s *serializer) UnmarshalResultChunkData(data []byte) (resultChunk ResultCh
 func (s *serializer) UnmarshalLocations(data []byte) (locations []LocationData, err error) {
 	err = s.withDecoder(data, func(decoder *gob.Decoder) error { return decoder.Decode(&locations) })
 	return locations, err
+}
+
+// UnmarshalSymbol is the inverse of MarshalSymbol.
+func (s *serializer) UnmarshalSymbol(data []byte) (symbol SymbolData, err error) {
+	err = s.withDecoder(data, func(decoder *gob.Decoder) error { return decoder.Decode(&symbol) })
+	return symbol, err
 }
 
 // withDecoder creates a gob decoder with the given encoded data and calls the given function with it.

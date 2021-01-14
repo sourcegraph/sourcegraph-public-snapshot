@@ -1,5 +1,7 @@
 package lsifstore
 
+import protocol "github.com/sourcegraph/lsif-protocol"
+
 type ID string
 
 // MetaData contains data describing the overall structure of a bundle.
@@ -48,6 +50,9 @@ type PackageInformationData struct {
 
 	// Version of the package.
 	Version string
+
+	// Package manager in which the package is defined.
+	Manager string
 }
 
 // DiagnosticData carries diagnostic information attached to a range within its
@@ -61,6 +66,17 @@ type DiagnosticData struct {
 	StartCharacter int // 0-indexed, inclusive
 	EndLine        int // 0-indexed, inclusive
 	EndCharacter   int // 0-indexed, inclusive
+}
+
+// TODO(sqs): when the schema for this settles, inline the fields instead of referring to the
+// external lsif-protocol package's type definitions, so that the persisted data format is
+// explicit and less likely to be accidentally changed.
+type SymbolData struct {
+	ID uint64 // ID (unique within a bundle)
+	protocol.SymbolData
+	Locations []protocol.SymbolLocation
+	Monikers  []MonikerData // the monikers that refer to this symbol
+	Children  []uint64      // ID of children
 }
 
 // ResultChunkData represents a row of the resultChunk table. Each row is a subset
@@ -119,6 +135,7 @@ type Package struct {
 	Scheme  string
 	Name    string
 	Version string
+	Manager string
 }
 
 // PackageReferences pairs a package name/version with a dump that depends on it.
@@ -127,7 +144,17 @@ type PackageReference struct {
 	Scheme  string
 	Name    string
 	Version string
+	Manager string
 	Filter  []byte // a bloom filter of identifiers imported by this dependent
+}
+
+// Symbol TODO(sqs) move this
+type Symbol struct {
+	DumpID int
+	protocol.SymbolData
+	Locations []protocol.SymbolLocation
+	Children  []Symbol
+	Monikers  []MonikerData // the monikers that refer to this symbol
 }
 
 // Location is an LSP-like location scoped to a dump.
