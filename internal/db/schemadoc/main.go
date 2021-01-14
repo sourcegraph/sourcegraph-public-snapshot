@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"database/sql"
 	"fmt"
 	"io/ioutil"
@@ -209,10 +210,19 @@ func describeTable(db *sql.DB, table string, run func(cmd ...string) (string, er
 	}
 
 	lines := strings.Split(out, "\n")
-	doc := "# " + strings.TrimSpace(lines[0]) + "\n"
-	doc += "```\n" + strings.Join(lines[1:], "\n") + "```\n"
+
+	buf := bytes.NewBuffer(nil)
+	buf.WriteString("# ")
+	buf.WriteString(strings.TrimSpace(lines[0]))
+	buf.WriteString("\n")
+	buf.WriteString("```\n")
+	buf.WriteString(strings.Join(lines[1:], "\n"))
+	buf.WriteString("```\n")
+
 	if comment != "" {
-		doc += "\n" + comment + "\n"
+		buf.WriteString("\n")
+		buf.WriteString(comment)
+		buf.WriteString("\n")
 	}
 
 	var columns []string
@@ -222,10 +232,14 @@ func describeTable(db *sql.DB, table string, run func(cmd ...string) (string, er
 	sort.Strings(columns)
 
 	for _, k := range columns {
-		doc += "\n**" + k + "**: " + columnComments[k] + "\n"
+		buf.WriteString("\n**")
+		buf.WriteString(k)
+		buf.WriteString("**: ")
+		buf.WriteString(columnComments[k])
+		buf.WriteString("\n")
 	}
 
-	return doc, nil
+	return buf.String(), nil
 }
 
 func getTableComment(db *sql.DB, table string) (comment string, _ error) {
