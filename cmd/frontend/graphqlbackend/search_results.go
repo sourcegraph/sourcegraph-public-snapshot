@@ -903,6 +903,32 @@ func intersect(left, right *SearchResultsResolver) *SearchResultsResolver {
 	return intersectMerge(left, right)
 }
 
+// evaluateAndStream is a wrapper around evaluateAnd which temporarily suspends
+// streaming and waits for evaluateAnd to return before streaming results back on
+// r.resultChannel.
+func (r *searchResolver) evaluateAndStream(ctx context.Context, scopeParameters []query.Node, operands []query.Node) (*SearchResultsResolver, error) {
+	// Streaming disabled.
+	if r.resultChannel == nil {
+		return r.evaluateAnd(ctx, scopeParameters, operands)
+	}
+	// For streaming search we want to run the evaluation of AND expressions in batch
+	// mode. We copy r to r2 and replace the result channel with a sink.
+	r2 := *r
+	sink := make(chan []SearchResultResolver)
+	defer close(sink)
+	go func() {
+		for range sink {
+		}
+	}()
+	r2.resultChannel = sink
+
+	result, err := r2.evaluateAnd(ctx, scopeParameters, operands)
+	if err == nil && result.SearchResults != nil {
+		r.resultChannel <- result.SearchResults
+	}
+	return result, err
+}
+
 // evaluateAnd performs set intersection on result sets. It collects results for
 // all expressions that are ANDed together by searching for each subexpression
 // and then intersects those results that are in the same repo/file path. To
@@ -913,18 +939,6 @@ func intersect(left, right *SearchResultsResolver) *SearchResultsResolver {
 // doubling count again.
 func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []query.Node, operands []query.Node) (*SearchResultsResolver, error) {
 	start := time.Now()
-
-	// For streaming search we want to run the evaluation of AND expressions in batch
-	// mode. We copy r to r2 and replace the result channel with a sink. Before we
-	// return we send the (batch) result down r's result channel.
-	r2 := *r
-	sink := make(chan []SearchResultResolver)
-	defer close(sink)
-	go func() {
-		for range sink {
-		}
-	}()
-	r2.resultChannel = sink
 
 	if len(operands) == 0 {
 		return nil, nil
@@ -947,7 +961,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 	maxTryCount := 40000
 
 	// Set an overall timeout in addition to the timeouts that are set for leaf-requests.
-	ctx, cancel, err := r2.withTimeout(ctx)
+	ctx, cancel, err := r.withTimeout(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -983,7 +997,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 			return query.Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
 		})
 
-		result, err = r2.evaluatePatternExpression(ctx, scopeParameters, operands[0])
+		result, err = r.evaluatePatternExpression(ctx, scopeParameters, operands[0])
 		if err != nil {
 			return nil, err
 		}
@@ -997,11 +1011,11 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 			case <-ctx.Done():
 				usedTime := time.Since(start)
 				suggestTime := longer(2, usedTime)
-				return alertForTimeout(usedTime, suggestTime, &r2).wrap(), nil
+				return alertForTimeout(usedTime, suggestTime, r).wrap(), nil
 			default:
 			}
 
-			termResult, err = r2.evaluatePatternExpression(ctx, scopeParameters, term)
+			termResult, err = r.evaluatePatternExpression(ctx, scopeParameters, term)
 			if err != nil {
 				return nil, err
 			}
@@ -1025,10 +1039,6 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 		}
 	}
 	result.limitHit = !exhausted
-
-	if r.resultChannel != nil {
-		r.resultChannel <- result.SearchResults
-	}
 	return result, nil
 }
 
@@ -1091,7 +1101,7 @@ func (r *searchResolver) evaluateOperator(ctx context.Context, scopeParameters [
 	var result *SearchResultsResolver
 	var err error
 	if operator.Kind == query.And {
-		result, err = r.evaluateAnd(ctx, scopeParameters, operator.Operands)
+		result, err = r.evaluateAndStream(ctx, scopeParameters, operator.Operands)
 	} else {
 		result, err = r.evaluateOr(ctx, scopeParameters, operator.Operands)
 	}
