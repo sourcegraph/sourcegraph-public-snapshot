@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useState } from 'react'
 import * as H from 'history'
 import { ThemeProps } from '../../../../../../shared/src/theme'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
@@ -7,6 +7,7 @@ import { queryChangesetApplyPreview as _queryChangesetApplyPreview, queryChanges
 import { ChangesetApplyPreviewNode, ChangesetApplyPreviewNodeProps } from './ChangesetApplyPreviewNode'
 import { PreviewListHeader } from './PreviewListHeader'
 import { EmptyPreviewListElement } from './EmptyPreviewListElement'
+import { PreviewFilterRow, PreviewFilters } from './PreviewFilterRow'
 
 interface Props extends ThemeProps {
     campaignSpecID: Scalars['ID']
@@ -34,20 +35,26 @@ export const PreviewList: React.FunctionComponent<Props> = ({
     queryChangesetSpecFileDiffs,
     expandChangesetDescriptions,
 }) => {
+    const [filters, setFilters] = useState<PreviewFilters>({
+        search: null,
+    })
+
     const queryChangesetApplyPreviewConnection = useCallback(
         (args: FilteredConnectionQueryArguments) =>
             queryChangesetApplyPreview({
                 first: args.first ?? null,
                 after: args.after ?? null,
                 campaignSpec: campaignSpecID,
+                search: filters.search,
             }),
-        [campaignSpecID, queryChangesetApplyPreview]
+        [campaignSpecID, filters.search, queryChangesetApplyPreview]
     )
 
     return (
         <>
             <h3>Preview</h3>
             <hr className="mb-3" />
+            <PreviewFilterRow history={history} location={location} onFiltersChange={setFilters} />
             <FilteredConnection<ChangesetApplyPreviewFields, Omit<ChangesetApplyPreviewNodeProps, 'node'>>
                 className="mt-2"
                 nodeComponent={ChangesetApplyPreviewNode}
