@@ -2,7 +2,6 @@ package cli
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -16,6 +15,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/tmpfriend"
+
+	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
@@ -99,7 +100,7 @@ func InitDB() error {
 		// it's missing, we run the migrations and try to update the version again.
 
 		err := backend.UpdateServiceVersion(ctx, "frontend", version.Version())
-		if err != nil && !dbutil.IsPostgresError(err, "undefined_table") {
+		if err != nil && !dbutil.IsPostgresError(err, "42P01") {
 			return err
 		}
 
