@@ -2,6 +2,8 @@ import React from 'react'
 import { ChangesetSpecType, HiddenChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import { PreviewAction } from './PreviewAction'
+import { ChangesetStatusCell } from '../../detail/changesets/ChangesetStatusCell'
+import { ChangesetState } from '../../../../../../shared/src/graphql-operations'
 
 export interface HiddenChangesetApplyPreviewNodeProps {
     node: HiddenChangesetApplyPreviewFields
@@ -11,9 +13,16 @@ export const HiddenChangesetApplyPreviewNode: React.FunctionComponent<HiddenChan
     node,
 }) => (
     <>
-        <span className="d-none d-sm-block" />
-        <PreviewAction node={node} className="hidden-changeset-apply-preview-node__action" />
-        <div className="d-flex flex-column hidden-changeset-apply-preview-node__information">
+        <span className="hidden-changeset-apply-preview-node__list-cell d-none d-sm-block" />
+        <HiddenChangesetApplyPreviewNodeStatusCell
+            node={node}
+            className="hidden-changeset-apply-preview-node__list-cell d-block d-sm-flex hidden-changeset-apply-preview-node__current-state"
+        />
+        <PreviewAction
+            node={node}
+            className="hidden-changeset-apply-preview-node__list-cell hidden-changeset-apply-preview-node__action"
+        />
+        <div className="hidden-changeset-apply-preview-node__list-cell d-flex flex-column hidden-changeset-apply-preview-node__information">
             <h3 className="text-muted">
                 {node.targets.__typename === 'HiddenApplyPreviewTargetsAttach' ||
                 node.targets.__typename === 'HiddenApplyPreviewTargetsUpdate' ? (
@@ -40,3 +49,12 @@ export const HiddenChangesetApplyPreviewNode: React.FunctionComponent<HiddenChan
         <span />
     </>
 )
+
+const HiddenChangesetApplyPreviewNodeStatusCell: React.FunctionComponent<
+    HiddenChangesetApplyPreviewNodeProps & { className?: string }
+> = ({ node, className }) => {
+    if (node.targets.__typename === 'HiddenApplyPreviewTargetsAttach') {
+        return <ChangesetStatusCell changeset={{ state: ChangesetState.UNPUBLISHED }} className={className} />
+    }
+    return <ChangesetStatusCell changeset={{ state: node.targets.changeset.state }} className={className} />
+}

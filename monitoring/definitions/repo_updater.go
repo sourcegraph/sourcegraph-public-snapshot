@@ -184,7 +184,7 @@ func RepoUpdater() *monitoring.Container {
 							Description: "rate of growth of update queue length over 5 minutes",
 							Query:       `max(deriv(src_repoupdater_sched_update_queue_length[5m]))`,
 							// Alert if the derivative is positive for longer than 30 minutes
-							Critical:          monitoring.Alert().Greater(0).For(30 * time.Minute),
+							Critical:          monitoring.Alert().Greater(0).For(120 * time.Minute),
 							Panel:             monitoring.Panel().Unit(monitoring.Number),
 							Owner:             monitoring.ObservableOwnerCloud,
 							PossibleSolutions: "Check repo-updater logs for indications that the queue is not being processed. The queue length should trend downwards over time as items are sent to GitServer",

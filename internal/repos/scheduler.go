@@ -386,7 +386,7 @@ func (s *updateScheduler) DebugDump() interface{} {
 	}
 	for i, update := range s.updateQueue.heap {
 		// Copy the repoUpdate as a value so that
-		// poping off the heap here won't update the index value of the real heap, and
+		// popping off the heap here won't update the index value of the real heap, and
 		// we don't do a racy read on the repo pointer which may change concurrently in the real heap.
 		updateCopy := *update
 		updateQueue.heap[i] = &updateCopy

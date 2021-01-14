@@ -3150,7 +3150,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Descriptions:**
 
-- <span class="badge badge-critical">critical</span> repo-updater: 0+ rate of growth of update queue length over 5 minutes for 30m0s
+- <span class="badge badge-critical">critical</span> repo-updater: 0+ rate of growth of update queue length over 5 minutes for 2h0m0s
 
 **Possible solutions:**
 

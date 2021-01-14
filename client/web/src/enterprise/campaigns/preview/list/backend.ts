@@ -111,11 +111,13 @@ const campaignSpecApplyPreviewConnectionFieldsFragment = gql`
                 }
                 changeset {
                     id
+                    state
                 }
             }
             ... on HiddenApplyPreviewTargetsDetach {
                 changeset {
                     id
+                    state
                 }
             }
         }
@@ -141,12 +143,14 @@ const campaignSpecApplyPreviewConnectionFieldsFragment = gql`
                 changeset {
                     id
                     title
+                    state
                 }
             }
             ... on VisibleApplyPreviewTargetsDetach {
                 changeset {
                     id
                     title
+                    state
                     repository {
                         url
                         name
