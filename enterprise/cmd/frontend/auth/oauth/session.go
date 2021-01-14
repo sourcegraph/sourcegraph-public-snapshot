@@ -7,11 +7,13 @@ import (
 
 	goauth2 "github.com/dghubble/gologin/oauth2"
 	"github.com/inconshreveable/log15"
+	"golang.org/x/oauth2"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"golang.org/x/oauth2"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 )
 
 type SessionData struct {
@@ -56,7 +58,15 @@ func SessionIssuer(s SessionIssuerHelper, sessionKey string) http.Handler {
 			http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: OAuth token was expired.", http.StatusInternalServerError)
 			return
 		}
-		if err := session.SetActor(w, r, actr, expiryDuration); err != nil { // TODO: test session expiration
+
+		user, err := db.Users.GetByID(r.Context(), actr.UID)
+		if err != nil {
+			log15.Error("OAuth failed: error retrieving user from database.", "error", err)
+			http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not initiate session.", http.StatusInternalServerError)
+			return
+		}
+
+		if err := session.SetActor(w, r, actr, expiryDuration, user.CreatedAt); err != nil { // TODO: test session expiration
 			log15.Error("OAuth failed: could not initiate session.", "error", err)
 			http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not initiate session.", http.StatusInternalServerError)
 			return

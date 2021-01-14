@@ -19,7 +19,7 @@ func NewStore(db dbutil.DB, observationContext *observation.Context) *Store {
 	return &Store{
 		Store:      basestore.NewWithHandle(basestore.NewHandleWithDB(db, sql.TxOptions{})),
 		serializer: newSerializer(),
-		operations: makeOperations(observationContext),
+		operations: newOperations(observationContext),
 	}
 }
 

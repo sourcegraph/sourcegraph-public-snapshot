@@ -83,7 +83,7 @@ type Client struct {
 	// concurrent use. It may return different results at different times.
 	Addrs func(ctx context.Context) []string
 
-	// UserAgent is a string identifing who the client is. It will be logged in
+	// UserAgent is a string identifying who the client is. It will be logged in
 	// the telemetry in gitserver.
 	UserAgent string
 }

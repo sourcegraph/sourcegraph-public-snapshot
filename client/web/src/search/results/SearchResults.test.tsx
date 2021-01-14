@@ -23,7 +23,7 @@ describe('SearchResults', () => {
         authenticatedUser: null,
         location: history.location,
         history,
-        navbarSearchQueryState: { query: '', cursorPosition: 0 },
+        navbarSearchQueryState: { query: '' },
         fetchHighlightedFileLineRanges: HIGHLIGHTED_FILE_LINES_REQUEST,
         searchRequest: OBSERVABLE_SEARCH_REQUEST,
         isLightTheme: true,
@@ -35,17 +35,13 @@ describe('SearchResults', () => {
         deployType: 'dev',
         patternType: SearchPatternType.regexp,
         caseSensitive: false,
-        interactiveSearchMode: false,
-        filtersInQuery: {},
-        toggleSearchMode: sinon.fake(),
-        onFiltersInQueryChange: sinon.fake(),
-        splitSearchModes: false,
         setPatternType: sinon.spy(),
         setCaseSensitivity: sinon.spy(),
         versionContext: undefined,
         setVersionContext: () => undefined,
         availableVersionContexts: undefined,
         previousVersionContext: 'sg-last-version-context',
+        enableCodeMonitoring: false,
     }
 
     it('calls the search request once', () => {

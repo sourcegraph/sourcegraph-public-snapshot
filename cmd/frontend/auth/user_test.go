@@ -470,6 +470,68 @@ func newMocks(t *testing.T, m mockParams) *mocks {
 	}
 }
 
+func TestMetadataOnlyAutomaticallySetOnFirstOccurrence(t *testing.T) {
+	user := &types.User{ID: 1, DisplayName: "", AvatarURL: ""}
+
+	db.Mocks.ExternalAccounts.LookupUserAndSave = func(extsvc.AccountSpec, extsvc.AccountData) (userID int32, err error) {
+		return user.ID, nil
+	}
+	db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+		return user, nil
+	}
+	db.Mocks.Users.Update = func(userID int32, update db.UserUpdate) error {
+		user.DisplayName = *update.DisplayName
+		user.AvatarURL = *update.AvatarURL
+		return nil
+	}
+	defer func() { db.Mocks = db.MockStores{} }()
+
+	// Customers can always set their own display name and avatar URL values, but when
+	// we encounter them via e.g. code host logins, we don't want to override anything
+	// currently present. This puts the customer in full control of the experience.
+	tests := []struct {
+		description     string
+		displayName     string
+		wantDisplayName string
+		avatarURL       string
+		wantAvatarURL   string
+	}{
+		{
+			description:     "setting initial value",
+			displayName:     "first",
+			wantDisplayName: "first",
+			avatarURL:       "first.jpg",
+			wantAvatarURL:   "first.jpg",
+		},
+		{
+			description:     "applying an update",
+			displayName:     "second",
+			wantDisplayName: "first",
+			avatarURL:       "second.jpg",
+			wantAvatarURL:   "first.jpg",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.description, func(t *testing.T) {
+			ctx := context.Background()
+			op := GetAndSaveUserOp{
+				ExternalAccount: ext("github", "fake-service", "fake-client", "account-u1"),
+				UserProps:       db.NewUser{DisplayName: test.displayName, AvatarURL: test.avatarURL},
+			}
+			if _, _, err := GetAndSaveUser(ctx, op); err != nil {
+				t.Fatal(err)
+			}
+			if user.DisplayName != test.wantDisplayName {
+				t.Errorf("DisplayName: got %q, want %q", user.DisplayName, test.wantDisplayName)
+			}
+			if user.AvatarURL != test.wantAvatarURL {
+				t.Errorf("AvatarURL: got %q, want %q", user.DisplayName, test.wantAvatarURL)
+			}
+		})
+	}
+}
+
 type mockParams struct {
 	userInfos               []userInfo
 	lookupUserAndSaveErr    error

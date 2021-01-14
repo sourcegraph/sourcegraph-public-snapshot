@@ -1,4 +1,5 @@
 import { mount } from 'enzyme'
+import { createBrowserHistory } from 'history'
 import React, { ChangeEvent } from 'react'
 import { Button, Form, Input } from 'reactstrap'
 import sinon from 'sinon'
@@ -6,6 +7,8 @@ import { Progress } from '../../../stream'
 import { StreamingProgressSkippedPopover } from './StreamingProgressSkippedPopover'
 
 describe('StreamingProgressSkippedPopover', () => {
+    const history = createBrowserHistory()
+
     it('should render correctly', () => {
         const progress: Progress = {
             durationMs: 1500,
@@ -33,6 +36,24 @@ describe('StreamingProgressSkippedPopover', () => {
                     },
                 },
                 {
+                    reason: 'excluded-archive',
+                    message:
+                        'By default we exclude archived repositories. Include them with `archived:yes` in your query.',
+                    severity: 'info',
+                    title: '1 archived',
+                    suggested: {
+                        title: 'include archived',
+                        queryExpression: 'archived:yes',
+                    },
+                },
+                {
+                    reason: 'error',
+                    message:
+                        'There was a network error retrieving search results. Check your Internet connection and try again.',
+                    severity: 'error',
+                    title: 'Error loading results',
+                },
+                {
                     reason: 'shard-timedout',
                     message: 'Search timed out',
                     severity: 'warn',
@@ -45,7 +66,9 @@ describe('StreamingProgressSkippedPopover', () => {
             ],
         }
 
-        const element = mount(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} />)
+        const element = mount(
+            <StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} history={history} />
+        )
         expect(element).toMatchSnapshot()
     })
 
@@ -64,7 +87,9 @@ describe('StreamingProgressSkippedPopover', () => {
             ],
         }
 
-        const element = mount(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} />)
+        const element = mount(
+            <StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} history={history} />
+        )
         expect(element.find(Form)).toHaveLength(0)
     })
 
@@ -87,7 +112,9 @@ describe('StreamingProgressSkippedPopover', () => {
             ],
         }
 
-        const element = mount(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} />)
+        const element = mount(
+            <StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} history={history} />
+        )
         const searchAgainButton = element.find(Button)
         expect(searchAgainButton).toHaveLength(1)
         expect(searchAgainButton.prop('disabled')).toBe(true)
@@ -132,7 +159,9 @@ describe('StreamingProgressSkippedPopover', () => {
             ],
         }
 
-        const element = mount(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} />)
+        const element = mount(
+            <StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} history={history} />
+        )
 
         const checkboxes = element.find(Input)
         expect(checkboxes).toHaveLength(3)
@@ -185,7 +214,9 @@ describe('StreamingProgressSkippedPopover', () => {
             ],
         }
 
-        const element = mount(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} />)
+        const element = mount(
+            <StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} history={history} />
+        )
 
         const checkboxes = element.find(Input)
         expect(checkboxes).toHaveLength(3)
@@ -212,6 +243,16 @@ describe('StreamingProgressSkippedPopover', () => {
             repositoriesCount: 2,
             skipped: [
                 {
+                    reason: 'shard-timedout',
+                    message: 'Search timed out',
+                    severity: 'warn',
+                    title: 'Search timed out',
+                    suggested: {
+                        title: 'timeout:2m',
+                        queryExpression: 'timeout:2m',
+                    },
+                },
+                {
                     reason: 'excluded-fork',
                     message: '10k forked repositories excluded',
                     severity: 'info',
@@ -231,27 +272,19 @@ describe('StreamingProgressSkippedPopover', () => {
                         queryExpression: 'archived:yes',
                     },
                 },
-                {
-                    reason: 'shard-timedout',
-                    message: 'Search timed out',
-                    severity: 'warn',
-                    title: 'Search timed out',
-                    suggested: {
-                        title: 'timeout:2m',
-                        queryExpression: 'timeout:2m',
-                    },
-                },
             ],
         }
 
         const searchAgain = sinon.spy()
 
-        const element = mount(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={searchAgain} />)
+        const element = mount(
+            <StreamingProgressSkippedPopover progress={progress} onSearchAgain={searchAgain} history={history} />
+        )
 
         const checkboxes = element.find(Input)
 
         expect(checkboxes).toHaveLength(3)
-        const checkbox1 = checkboxes.at(1)
+        const checkbox1 = checkboxes.at(0)
         checkbox1.invoke('onChange')?.({
             currentTarget: { checked: true, value: checkbox1.props().value as string },
         } as ChangeEvent<HTMLInputElement>)
@@ -266,6 +299,6 @@ describe('StreamingProgressSkippedPopover', () => {
         form.simulate('submit')
 
         sinon.assert.calledOnce(searchAgain)
-        sinon.assert.calledWith(searchAgain, ['archived:yes', 'timeout:2m'])
+        sinon.assert.calledWith(searchAgain, ['timeout:2m', 'archived:yes'])
     })
 })

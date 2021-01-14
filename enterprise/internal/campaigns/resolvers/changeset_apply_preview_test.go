@@ -114,7 +114,7 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 	wantApplyPreview := []apitest.ChangesetApplyPreview{
 		{
 			Typename:   "VisibleChangesetApplyPreview",
-			Operations: []campaigns.ReconcilerOperation{},
+			Operations: []campaigns.ReconcilerOperation{campaigns.ReconcilerOperationDetach},
 			Targets: apitest.ChangesetApplyPreviewTargets{
 				Typename:  "VisibleApplyPreviewTargetsDetach",
 				Changeset: apitest.Changeset{ID: string(marshalChangesetID(closingChangeset.ID))},

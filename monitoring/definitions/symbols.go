@@ -19,9 +19,8 @@ func Symbols() *monitoring.Container {
 							Name:              "store_fetch_failures",
 							Description:       "store fetch failures every 5m",
 							Query:             `sum(increase(symbols_store_fetch_failed[5m]))`,
-							DataMayNotExist:   true,
 							Warning:           monitoring.Alert().GreaterOrEqual(5),
-							PanelOptions:      monitoring.PanelOptions().LegendFormat("failures"),
+							Panel:             monitoring.Panel().LegendFormat("failures"),
 							Owner:             monitoring.ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
@@ -29,9 +28,8 @@ func Symbols() *monitoring.Container {
 							Name:              "current_fetch_queue_size",
 							Description:       "current fetch queue size",
 							Query:             `sum(symbols_store_fetch_queue_size)`,
-							DataMayNotExist:   true,
 							Warning:           monitoring.Alert().GreaterOrEqual(25),
-							PanelOptions:      monitoring.PanelOptions().LegendFormat("size"),
+							Panel:             monitoring.Panel().LegendFormat("size"),
 							Owner:             monitoring.ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
@@ -42,7 +40,7 @@ func Symbols() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Container monitoring (not available on server)",
+				Title:  shared.TitleContainerMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -51,12 +49,11 @@ func Symbols() *monitoring.Container {
 					},
 					{
 						shared.ContainerRestarts("symbols", monitoring.ObservableOwnerCodeIntel).Observable(),
-						shared.ContainerFsInodes("symbols", monitoring.ObservableOwnerCodeIntel).Observable(),
 					},
 				},
 			},
 			{
-				Title:  "Provisioning indicators (not available on server)",
+				Title:  shared.TitleProvisioningIndicators,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -70,7 +67,7 @@ func Symbols() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Golang runtime monitoring",
+				Title:  shared.TitleGolangMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -80,7 +77,7 @@ func Symbols() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Kubernetes monitoring (ignore if using Docker Compose or server)",
+				Title:  shared.TitleKubernetesMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{

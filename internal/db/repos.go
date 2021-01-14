@@ -652,6 +652,104 @@ func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, minimal bool, opt
 	return s.getReposBySQL(ctx, minimal, fromClause, queryConds, querySuffix, scanRepo)
 }
 
+type ListDefaultReposOptions struct {
+	Limit   int
+	AfterID int32
+}
+
+// ListAllDefaultRepos returns a list of all default repos. Default repos are a union of
+// repos in our default_repos table and repos owned by users.
+// It may perform multiple queries, fetching repos in batches.
+func (s *RepoStore) ListAllDefaultRepos(ctx context.Context) (results []*types.RepoName, err error) {
+	return s.listAllDefaultRepos(ctx, 10_000)
+}
+
+func (s *RepoStore) listAllDefaultRepos(ctx context.Context, batchSize int) (results []*types.RepoName, err error) {
+	opts := ListDefaultReposOptions{
+		Limit:   batchSize,
+		AfterID: 0,
+	}
+
+	for {
+		repos, err := s.ListDefaultRepos(ctx, opts)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, repos...)
+		if len(repos) < batchSize {
+			break
+		}
+		opts.AfterID = int32(repos[len(repos)-1].ID)
+	}
+
+	return results, nil
+}
+
+// ListDefaultRepos returns a list of default repos. Default repos are a union of
+// repos in our default_repos table and repos owned by users.
+func (s *RepoStore) ListDefaultRepos(ctx context.Context, opts ListDefaultReposOptions) (results []*types.RepoName, err error) {
+	tr, ctx := trace.New(ctx, "repos.ListDefaultRepos", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+	s.ensureStore()
+
+	var q = sqlf.Sprintf(`
+-- source: internal/db/default_repos.go:defaultRepos.List
+SELECT
+    id,
+    name
+FROM
+    repo r
+WHERE
+    r.id > %s
+    AND EXISTS (
+        SELECT
+        FROM
+            external_service_repos sr
+            INNER JOIN external_services s ON s.id = sr.external_service_id
+        WHERE
+			s.namespace_user_id IS NOT NULL
+			AND s.deleted_at IS NULL
+			AND r.id = sr.repo_id
+            AND r.deleted_at IS NULL
+    )
+UNION
+    SELECT
+        r.id,
+        r.name
+    FROM
+        default_repos
+		JOIN repo r ON default_repos.repo_id = r.id
+	WHERE
+		r.deleted_at IS NULL
+		AND r.id > %s
+
+	ORDER BY id ASC
+	LIMIT %s`, opts.AfterID, opts.AfterID, opts.Limit)
+
+	var repos []*types.RepoName
+
+	rows, err := s.Query(ctx, q)
+	if err != nil {
+		return nil, errors.Wrap(err, "querying for indexed repos")
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var r types.RepoName
+		if err := rows.Scan(&r.ID, &r.Name); err != nil {
+			return nil, errors.Wrap(err, "scanning row from default_repos table")
+		}
+		repos = append(repos, &r)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, errors.Wrap(err, "scanning rows for default repos")
+	}
+
+	return repos, nil
+}
+
 // Create inserts repos and their sources, respectively in the repo and external_service_repos table.
 // Associated external services must already exist.
 func (s *RepoStore) Create(ctx context.Context, repos ...*types.Repo) (err error) {

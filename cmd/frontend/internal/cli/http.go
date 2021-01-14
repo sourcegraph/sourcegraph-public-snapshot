@@ -118,7 +118,10 @@ func newInternalHTTPHandler(schema *graphql.Schema, newCodeIntelUploadHandler en
 			),
 		),
 	))
-	return gcontext.ClearHandler(internalMux)
+	h := http.Handler(internalMux)
+	h = tracepkg.HTTPTraceMiddleware(h)
+	h = gcontext.ClearHandler(h)
+	return h
 }
 
 // withInternalActor wraps an existing HTTP handler by setting an internal actor in the HTTP request

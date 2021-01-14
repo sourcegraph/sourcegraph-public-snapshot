@@ -176,10 +176,10 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	}
 }
 
-func TestPermsSyncer_syncUserPerms_invalidToken(t *testing.T) {
+func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 	p := &mockProvider{
-		serviceType: extsvc.TypeGitLab,
-		serviceID:   "https://gitlab.com/",
+		serviceType: extsvc.TypeGitHub,
+		serviceID:   "https://github.com/",
 	}
 	authz.SetProviders(false, []authz.Provider{p})
 	defer authz.SetProviders(true, nil)
@@ -216,24 +216,51 @@ func TestPermsSyncer_syncUserPerms_invalidToken(t *testing.T) {
 	permsStore := edb.NewPermsStore(nil, timeutil.Now)
 	s := NewPermsSyncer(repos.NewStore(dbconn.Global, sql.TxOptions{}), permsStore, timeutil.Now, nil)
 
-	calledTouchExpired := false
-	db.Mocks.ExternalAccounts.TouchExpired = func(ctx context.Context, id int32) error {
-		calledTouchExpired = true
-		return nil
-	}
+	t.Run("invalid token", func(t *testing.T) {
+		calledTouchExpired := false
+		db.Mocks.ExternalAccounts.TouchExpired = func(ctx context.Context, id int32) error {
+			calledTouchExpired = true
+			return nil
+		}
 
-	p.fetchUserPerms = func(ctx context.Context, account *extsvc.Account) ([]extsvc.RepoID, error) {
-		return nil, &github.APIError{Code: http.StatusUnauthorized}
-	}
+		p.fetchUserPerms = func(ctx context.Context, account *extsvc.Account) ([]extsvc.RepoID, error) {
+			return nil, &github.APIError{Code: http.StatusUnauthorized}
+		}
 
-	err := s.syncUserPerms(context.Background(), 1, false)
-	if err != nil {
-		t.Fatal(err)
-	}
+		err := s.syncUserPerms(context.Background(), 1, false)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	if !calledTouchExpired {
-		t.Fatal("!calledTouchExpired")
-	}
+		if !calledTouchExpired {
+			t.Fatal("!calledTouchExpired")
+		}
+	})
+
+	t.Run("account suspension", func(t *testing.T) {
+		calledTouchExpired := false
+		db.Mocks.ExternalAccounts.TouchExpired = func(ctx context.Context, id int32) error {
+			calledTouchExpired = true
+			return nil
+		}
+
+		p.fetchUserPerms = func(ctx context.Context, account *extsvc.Account) ([]extsvc.RepoID, error) {
+			return nil, &github.APIError{
+				URL:     "https://api.github.com/user/repos",
+				Code:    http.StatusForbidden,
+				Message: "Sorry. Your account was suspended",
+			}
+		}
+
+		err := s.syncUserPerms(context.Background(), 1, false)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !calledTouchExpired {
+			t.Fatal("!calledTouchExpired")
+		}
+	})
 }
 
 func TestPermsSyncer_syncRepoPerms(t *testing.T) {

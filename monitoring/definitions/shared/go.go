@@ -7,7 +7,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
-// Golang monitoring overviews
+// Golang monitoring overviews.
+//
+// Uses metrics exported by the Prometheus Golang library, so is available on all
+// deployment types.
+const TitleGolangMonitoring = "Golang runtime monitoring"
 
 var (
 	GoGoroutines sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
@@ -15,10 +19,10 @@ var (
 			Name:              "go_goroutines",
 			Description:       "maximum active goroutines",
 			Query:             fmt.Sprintf(`max by(instance) (go_goroutines{job=~".*%s"})`, containerName),
-			DataMayNotExist:   true,
 			Warning:           monitoring.Alert().GreaterOrEqual(10000).For(10 * time.Minute),
-			PanelOptions:      monitoring.PanelOptions().LegendFormat("{{name}}"),
+			Panel:             monitoring.Panel().LegendFormat("{{name}}"),
 			Owner:             owner,
+			Interpretation:    "A high value here indicates a possible goroutine leak.",
 			PossibleSolutions: "none",
 		}
 	}
@@ -28,9 +32,8 @@ var (
 			Name:              "go_gc_duration_seconds",
 			Description:       "maximum go garbage collection duration",
 			Query:             fmt.Sprintf(`max by(instance) (go_gc_duration_seconds{job=~".*%s"})`, containerName),
-			DataMayNotExist:   true,
 			Warning:           monitoring.Alert().GreaterOrEqual(2),
-			PanelOptions:      monitoring.PanelOptions().LegendFormat("{{name}}").Unit(monitoring.Seconds),
+			Panel:             monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
 			Owner:             owner,
 			PossibleSolutions: "none",
 		}

@@ -104,17 +104,18 @@ func (r *schemaResolver) DeleteAccessToken(ctx context.Context, args *deleteAcce
 		return nil, errors.New("exactly one of byID or byToken must be specified")
 	}
 
-	var token *db.AccessToken
+	var subjectUserID int32
 	switch {
 	case args.ByID != nil:
 		accessTokenID, err := unmarshalAccessTokenID(*args.ByID)
 		if err != nil {
 			return nil, err
 		}
-		token, err = db.AccessTokens.GetByID(ctx, accessTokenID)
+		token, err := db.AccessTokens.GetByID(ctx, accessTokenID)
 		if err != nil {
 			return nil, err
 		}
+		subjectUserID = token.SubjectUserID
 
 		// 🚨 SECURITY: Only site admins and the user can delete a user's access token.
 		if err := backend.CheckSiteAdminOrSameUser(ctx, token.SubjectUserID); err != nil {
@@ -125,15 +126,22 @@ func (r *schemaResolver) DeleteAccessToken(ctx context.Context, args *deleteAcce
 		}
 
 	case args.ByToken != nil:
+		token, err := db.AccessTokens.GetByToken(ctx, *args.ByToken)
+		if err != nil {
+			return nil, err
+		}
+		subjectUserID = token.SubjectUserID
+
 		// 🚨 SECURITY: This is easier than the ByID case because anyone holding the access token's
 		// secret value is assumed to be allowed to delete it.
 		if err := db.AccessTokens.DeleteByToken(ctx, *args.ByToken); err != nil {
 			return nil, err
 		}
+
 	}
 
 	if conf.CanSendEmail() {
-		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, token.SubjectUserID, "deleted an access token"); err != nil {
+		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, subjectUserID, "deleted an access token"); err != nil {
 			log15.Warn("Failed to send email to inform user of access token deletion", "error", err)
 		}
 	}

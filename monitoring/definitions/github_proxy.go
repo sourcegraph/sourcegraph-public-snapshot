@@ -18,13 +18,12 @@ func GitHubProxy() *monitoring.Container {
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:            "github_proxy_waiting_requests",
-							Description:     "number of requests waiting on the global mutex",
-							Query:           `max(github_proxy_waiting_requests)`,
-							DataMayNotExist: true,
-							Warning:         monitoring.Alert().GreaterOrEqual(100).For(5 * time.Minute),
-							PanelOptions:    monitoring.PanelOptions().LegendFormat("requests waiting"),
-							Owner:           monitoring.ObservableOwnerCloud,
+							Name:        "github_proxy_waiting_requests",
+							Description: "number of requests waiting on the global mutex",
+							Query:       `max(github_proxy_waiting_requests)`,
+							Warning:     monitoring.Alert().GreaterOrEqual(100).For(5 * time.Minute),
+							Panel:       monitoring.Panel().LegendFormat("requests waiting"),
+							Owner:       monitoring.ObservableOwnerCloud,
 							PossibleSolutions: `
 								- **Check github-proxy logs for network connection issues.
 								- **Check github status.`,
@@ -33,7 +32,7 @@ func GitHubProxy() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Container monitoring (not available on server)",
+				Title:  shared.TitleContainerMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -42,12 +41,11 @@ func GitHubProxy() *monitoring.Container {
 					},
 					{
 						shared.ContainerRestarts("github-proxy", monitoring.ObservableOwnerCloud).Observable(),
-						shared.ContainerFsInodes("github-proxy", monitoring.ObservableOwnerCloud).Observable(),
 					},
 				},
 			},
 			{
-				Title:  "Provisioning indicators (not available on server)",
+				Title:  shared.TitleProvisioningIndicators,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -61,7 +59,7 @@ func GitHubProxy() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Golang runtime monitoring",
+				Title:  shared.TitleGolangMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -71,7 +69,7 @@ func GitHubProxy() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Kubernetes monitoring (ignore if using Docker Compose or server)",
+				Title:  shared.TitleKubernetesMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{

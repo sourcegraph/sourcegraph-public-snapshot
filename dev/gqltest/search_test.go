@@ -327,6 +327,7 @@ func TestSearch(t *testing.T) {
 			query         string
 			zeroResult    bool
 			minMatchCount int64
+			wantAlert     *gqltestutil.SearchAlert
 		}{
 			// Global search
 			{
@@ -427,6 +428,16 @@ func TestSearch(t *testing.T) {
 				name:  "commit search, nonzero result",
 				query: `repo:^github\.com/sgtest/go-diff$ type:commit count:1`,
 			},
+			{
+				name:       "commit search, non-existent ref",
+				query:      `repo:^github\.com/sgtest/go-diff$@ref/noexist type:commit count:1`,
+				zeroResult: true,
+				wantAlert: &gqltestutil.SearchAlert{
+					Title:           "Some repositories could not be searched",
+					Description:     `The repository github.com/sgtest/go-diff matched by your repo: filter could not be searched because it does not contain the revision "ref/noexist".`,
+					ProposedQueries: nil,
+				},
+			},
 			// Diff search
 			{
 				name:  "diff search, nonzero result",
@@ -467,8 +478,8 @@ func TestSearch(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				if results.Alert != nil {
-					t.Fatalf("Unexpected alert: %v", results.Alert)
+				if diff := cmp.Diff(test.wantAlert, results.Alert); diff != "" {
+					t.Fatalf("Alert mismatch (-want +got):\n%s", diff)
 				}
 
 				if test.zeroResult {
@@ -784,6 +795,11 @@ func TestSearch(t *testing.T) {
 			{
 				name:  `Or distributive property on commit`,
 				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ (type:diff or type:commit) author:felix yarn`,
+			},
+			{
+				name:            `Or match on both diff and commit returns both`,
+				query:           `repo:^github\.com/sgtest/sourcegraph-typescript$ (type:diff or type:commit) subscription after:"june 11 2019" before:"june 13 2019"`,
+				exactMatchCount: 2,
 			},
 			{
 				name:            `Or distributive property on rev`,

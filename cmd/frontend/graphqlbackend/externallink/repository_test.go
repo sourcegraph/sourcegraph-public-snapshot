@@ -41,6 +41,7 @@ func TestRepository(t *testing.T) {
 		if want := []*Resolver{
 			{
 				url:         "http://example.com/" + repoName,
+				serviceKind: "",
 				serviceType: "",
 			},
 		}; !reflect.DeepEqual(links, want) {
@@ -66,6 +67,7 @@ func TestRepository(t *testing.T) {
 		if want := []*Resolver{
 			{
 				url:         "http://phabricator.example.com/diffusion/MYREPO",
+				serviceKind: extsvc.KindPhabricator,
 				serviceType: extsvc.TypePhabricator,
 			},
 		}; !reflect.DeepEqual(links, want) {
@@ -138,7 +140,7 @@ func TestFileOrDir(t *testing.T) {
 				if want := []*Resolver{
 					{
 						url:         wantURL,
-						serviceType: "",
+						serviceKind: "",
 					},
 				}; !reflect.DeepEqual(links, want) {
 					t.Errorf("got %+v, want %+v", links, want)
@@ -169,6 +171,7 @@ func TestFileOrDir(t *testing.T) {
 		if want := []*Resolver{
 			{
 				url:         "http://phabricator.example.com/source/MYREPO/browse/mybranch/mydir/myfile;myrev",
+				serviceKind: extsvc.KindPhabricator,
 				serviceType: extsvc.TypePhabricator,
 			},
 		}; !reflect.DeepEqual(links, want) {
@@ -222,6 +225,7 @@ func TestCommit(t *testing.T) {
 		if want := []*Resolver{
 			{
 				url:         "http://example.com/" + repoName + "/commit/mycommit",
+				serviceKind: "",
 				serviceType: "",
 			},
 		}; !reflect.DeepEqual(links, want) {
@@ -247,6 +251,7 @@ func TestCommit(t *testing.T) {
 		if want := []*Resolver{
 			{
 				url:         "http://phabricator.example.com/rMYREPOmycommit",
+				serviceKind: extsvc.KindPhabricator,
 				serviceType: extsvc.TypePhabricator,
 			},
 		}; !reflect.DeepEqual(links, want) {

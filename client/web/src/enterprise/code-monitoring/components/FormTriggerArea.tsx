@@ -2,7 +2,7 @@ import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import classnames from 'classnames'
 import React, { useState, useCallback, useMemo } from 'react'
 import { Link } from '../../../../../shared/src/components/Link'
-import { FilterType } from '../../../../../shared/src/search/interactive/util'
+import { FilterType } from '../../../../../shared/src/search/query/util'
 import { buildSearchURLQuery } from '../../../../../shared/src/util/url'
 import { useInputValidation, deriveInputClassName } from '../../../../../shared/src/util/useInputValidation'
 import { SearchPatternType } from '../../../graphql-operations'
@@ -14,6 +14,7 @@ interface TriggerAreaProps {
     onQueryChange: (query: string) => void
     triggerCompleted: boolean
     setTriggerCompleted: (complete: boolean) => void
+    startExpanded: boolean
 }
 
 const isDiffOrCommit = (value: string): boolean => value === 'diff' || value === 'commit'
@@ -23,8 +24,9 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
     onQueryChange,
     triggerCompleted,
     setTriggerCompleted,
+    startExpanded,
 }) => {
-    const [showQueryForm, setShowQueryForm] = useState(false)
+    const [showQueryForm, setShowQueryForm] = useState(startExpanded)
     const toggleQueryForm: React.FormEventHandler = useCallback(event => {
         event.preventDefault()
         setShowQueryForm(show => !show)
@@ -120,7 +122,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                 </button>
             )}
             {showQueryForm && (
-                <div className="code-monitor-form__card card p-3 my-3">
+                <div className="code-monitor-form__card card p-3">
                     <div className="font-weight-bold">When there are new search results</div>
                     <span className="text-muted">
                         This trigger will fire when new search results are found for a given search query.
@@ -141,6 +143,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                     autoFocus={true}
                                     ref={queryInputReference}
                                     spellCheck={false}
+                                    data-testid="trigger-query-edit"
                                 />
                                 {queryState.kind === 'INVALID' && (
                                     <small className="trigger-area__query-input-error-message invalid-feedback test-trigger-error">
@@ -189,11 +192,14 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                 </div>
             )}
             {!showQueryForm && triggerCompleted && (
-                <div className="code-monitor-form__card card p-3 my-3">
+                <div className="code-monitor-form__card card p-3">
                     <div className="d-flex justify-content-between align-items-center">
                         <div>
                             <div className="font-weight-bold">When there are new search results</div>
-                            <code className="trigger-area__query-label text-break text-muted test-existing-query">
+                            <code
+                                className="trigger-area__query-label text-break text-muted test-existing-query"
+                                data-testid="trigger-query-existing"
+                            >
                                 {query}
                             </code>
                         </div>

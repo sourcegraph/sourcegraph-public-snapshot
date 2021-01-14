@@ -122,6 +122,18 @@ func IsUnauthorized(err error) bool {
 	})
 }
 
+// IsAccountSuspended will check if err or one of its causes was due to the
+// account being suspended
+func IsAccountSuspended(err error) bool {
+	type accountSuspendeder interface {
+		AccountSuspended() bool
+	}
+	return isErrorPredicate(err, func(err error) bool {
+		e, ok := err.(accountSuspendeder)
+		return ok && e.AccountSuspended()
+	})
+}
+
 // IsBadRequest will check if err or one of its causes is a bad request.
 func IsBadRequest(err error) bool {
 	type badRequester interface {

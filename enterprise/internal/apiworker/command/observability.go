@@ -21,7 +21,7 @@ type Operations struct {
 	Exec                      *observation.Operation
 }
 
-func MakeOperations(observationContext *observation.Context) *Operations {
+func NewOperations(observationContext *observation.Context) *Operations {
 	metrics := metrics.NewOperationMetrics(
 		observationContext.Registerer,
 		"apiworker_command",

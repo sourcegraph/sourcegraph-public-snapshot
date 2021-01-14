@@ -9,7 +9,7 @@ import {
 } from '../../../../graphql-operations'
 import { of } from 'rxjs'
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
-import { ChangesetSpecOperation } from '../../../../../../shared/src/graphql-operations'
+import { ChangesetSpecOperation, ChangesetState } from '../../../../../../shared/src/graphql-operations'
 
 const { add } = storiesOf('web/campaigns/preview/VisibleChangesetApplyPreviewNode', module).addDecorator(story => (
     <div className="p-3 container web-content preview-list__grid">{story()}</div>
@@ -125,6 +125,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
             changeset: {
                 id: '123123',
                 title: 'the old title',
+                state: ChangesetState.OPEN,
             },
         },
     },
@@ -140,12 +141,13 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
             changeset: {
                 id: '123123',
                 title: 'Le draft changeset',
+                state: ChangesetState.OPEN,
             },
         },
     },
     'Reopen changeset': {
         __typename: 'VisibleChangesetApplyPreview',
-        operations: [ChangesetSpecOperation.REOPEN],
+        operations: [ChangesetSpecOperation.REOPEN, ChangesetSpecOperation.UPDATE],
         delta: {
             titleChanged: false,
         },
@@ -155,12 +157,13 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
             changeset: {
                 id: '123123',
                 title: 'Le closed changeset',
+                state: ChangesetState.OPEN,
             },
         },
     },
     'Close changeset': {
         __typename: 'VisibleChangesetApplyPreview',
-        operations: [ChangesetSpecOperation.CLOSE],
+        operations: [ChangesetSpecOperation.CLOSE, ChangesetSpecOperation.DETACH],
         delta: {
             titleChanged: false,
         },
@@ -169,6 +172,28 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
             changeset: {
                 id: '123123',
                 title: 'Le open changeset',
+                state: ChangesetState.OPEN,
+                repository: testRepo,
+                diffStat: {
+                    added: 2,
+                    changed: 8,
+                    deleted: 10,
+                },
+            },
+        },
+    },
+    'Detach changeset': {
+        __typename: 'VisibleChangesetApplyPreview',
+        operations: [ChangesetSpecOperation.DETACH],
+        delta: {
+            titleChanged: false,
+        },
+        targets: {
+            __typename: 'VisibleApplyPreviewTargetsDetach',
+            changeset: {
+                id: '123123',
+                title: 'Le open changeset',
+                state: ChangesetState.OPEN,
                 repository: testRepo,
                 diffStat: {
                     added: 2,

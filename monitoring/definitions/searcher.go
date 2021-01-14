@@ -21,9 +21,8 @@ func Searcher() *monitoring.Container {
 							Name:              "unindexed_search_request_errors",
 							Description:       "unindexed search request errors every 5m by code",
 							Query:             `sum by (code)(increase(searcher_service_request_total{code!="200",code!="canceled"}[5m])) / ignoring(code) group_left sum(increase(searcher_service_request_total[5m])) * 100`,
-							DataMayNotExist:   true,
 							Warning:           monitoring.Alert().GreaterOrEqual(5).For(5 * time.Minute),
-							PanelOptions:      monitoring.PanelOptions().LegendFormat("{{code}}").Unit(monitoring.Percentage),
+							Panel:             monitoring.Panel().LegendFormat("{{code}}").Unit(monitoring.Percentage),
 							Owner:             monitoring.ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
@@ -32,7 +31,7 @@ func Searcher() *monitoring.Container {
 							Description:       "requests per second over 10m",
 							Query:             "sum by(instance) (rate(searcher_service_request_total[10m]))",
 							Warning:           monitoring.Alert().GreaterOrEqual(5),
-							PanelOptions:      monitoring.PanelOptions().LegendFormat("{{instance}}"),
+							Panel:             monitoring.Panel().LegendFormat("{{instance}}"),
 							Owner:             monitoring.ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
@@ -41,7 +40,7 @@ func Searcher() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Container monitoring (not available on server)",
+				Title:  shared.TitleContainerMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -50,12 +49,11 @@ func Searcher() *monitoring.Container {
 					},
 					{
 						shared.ContainerRestarts("searcher", monitoring.ObservableOwnerSearch).Observable(),
-						shared.ContainerFsInodes("searcher", monitoring.ObservableOwnerSearch).Observable(),
 					},
 				},
 			},
 			{
-				Title:  "Provisioning indicators (not available on server)",
+				Title:  shared.TitleProvisioningIndicators,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -69,7 +67,7 @@ func Searcher() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Golang runtime monitoring",
+				Title:  shared.TitleGolangMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -79,7 +77,7 @@ func Searcher() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Kubernetes monitoring (ignore if using Docker Compose or server)",
+				Title:  shared.TitleKubernetesMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{

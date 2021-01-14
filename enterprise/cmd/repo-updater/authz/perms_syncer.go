@@ -249,12 +249,19 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		extIDs, err := provider.FetchUserPerms(ctx, acct)
 		if err != nil {
 			// The "401 Unauthorized" is returned by code hosts when the token is no longer valid
-			if errcode.IsUnauthorized(errors.Cause(err)) {
+			unauthorized := errcode.IsUnauthorized(errors.Cause(err))
+
+			// Detect GitHub account suspension error
+			accountSuspended := errcode.IsAccountSuspended(errors.Cause(err))
+
+			if unauthorized || accountSuspended {
 				err = db.ExternalAccounts.TouchExpired(ctx, acct.ID)
 				if err != nil {
 					return errors.Wrapf(err, "set expired for external account %d", acct.ID)
 				}
-				log15.Debug("PermsSyncer.syncUserPerms.setExternalAccountExpired", "userID", user.ID, "id", acct.ID)
+				log15.Debug("PermsSyncer.syncUserPerms.setExternalAccountExpired",
+					"userID", user.ID, "id", acct.ID,
+					"unauthorized", unauthorized, "accountSuspended", accountSuspended)
 
 				// We still want to continue processing other external accounts
 				continue
@@ -448,8 +455,6 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	} else if err = txs.SetRepoPendingPermissions(ctx, accounts, p); err != nil {
 		return errors.Wrap(err, "set repository pending permissions")
 	}
-
-	fmt.Println(8)
 
 	log15.Debug("PermsSyncer.syncRepoPerms.synced", "repoID", repo.ID, "name", repo.Name, "count", len(extAccountIDs))
 	return nil

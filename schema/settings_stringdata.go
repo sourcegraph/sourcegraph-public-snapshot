@@ -17,12 +17,6 @@ const SettingsSchemaJSON = `{
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "splitSearchModes": {
-          "description": "Enables toggling between the current omni search mode, and experimental interactive search mode.",
-          "type": "boolean",
-          "default": false,
-          "!go": { "pointer": true }
-        },
         "codeInsights": {
           "description": "Enables code insights on directory pages.",
           "type": "boolean",

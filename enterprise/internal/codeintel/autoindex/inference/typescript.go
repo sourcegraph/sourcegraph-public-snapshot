@@ -12,54 +12,54 @@ type lsifTscJobRecognizer struct{}
 
 var _ IndexJobRecognizer = lsifTscJobRecognizer{}
 
-func (lsifTscJobRecognizer) CanIndex(paths []string) bool {
+func (r lsifTscJobRecognizer) CanIndex(paths []string) bool {
 	for _, path := range paths {
-		if filepath.Base(path) == "tsconfig.json" && !containsSegment(path, "node_modules") {
+		if r.canIndexPath(path) {
 			return true
 		}
-
-		// TODO(efritz) - check for javascript files
 	}
 
 	return false
 }
 
-func (lsifTscJobRecognizer) InferIndexJobs(paths []string) (indexes []IndexJob) {
+func (r lsifTscJobRecognizer) InferIndexJobs(paths []string) (indexes []IndexJob) {
 	for _, path := range paths {
-		if filepath.Base(path) == "tsconfig.json" && !containsSegment(path, "node_modules") {
-			var dockerSteps []DockerStep
-			for _, dir := range ancestorDirs(path) {
-				if !contains(paths, filepath.Join(dir, "package.json")) {
-					continue
-				}
+		if !r.canIndexPath(path) {
+			continue
+		}
 
-				var commands []string
-				if contains(paths, filepath.Join(dir, "yarn.lock")) {
-					commands = append(commands, "yarn --ignore-engines")
-				} else {
-					commands = append(commands, "npm install")
-				}
-
-				dockerSteps = append(dockerSteps, DockerStep{
-					Root:     dir,
-					Image:    nodeInstallImage,
-					Commands: commands,
-				})
+		var dockerSteps []DockerStep
+		for _, dir := range ancestorDirs(path) {
+			if !contains(paths, filepath.Join(dir, "package.json")) {
+				continue
 			}
 
-			n := len(dockerSteps)
-			for i := 0; i < n/2; i++ {
-				dockerSteps[i], dockerSteps[n-i-1] = dockerSteps[n-i-1], dockerSteps[i]
+			var commands []string
+			if contains(paths, filepath.Join(dir, "yarn.lock")) {
+				commands = append(commands, "yarn --ignore-engines")
+			} else {
+				commands = append(commands, "npm install")
 			}
 
-			indexes = append(indexes, IndexJob{
-				DockerSteps: dockerSteps,
-				Root:        dirWithoutDot(path),
-				Indexer:     lsifTscImage,
-				IndexerArgs: []string{"lsif-tsc", "-p", "."},
-				Outfile:     "",
+			dockerSteps = append(dockerSteps, DockerStep{
+				Root:     dir,
+				Image:    nodeInstallImage,
+				Commands: commands,
 			})
 		}
+
+		n := len(dockerSteps)
+		for i := 0; i < n/2; i++ {
+			dockerSteps[i], dockerSteps[n-i-1] = dockerSteps[n-i-1], dockerSteps[i]
+		}
+
+		indexes = append(indexes, IndexJob{
+			DockerSteps: dockerSteps,
+			Root:        dirWithoutDot(path),
+			Indexer:     lsifTscImage,
+			IndexerArgs: []string{"lsif-tsc", "-p", "."},
+			Outfile:     "",
+		})
 	}
 
 	return indexes
@@ -71,3 +71,12 @@ func (lsifTscJobRecognizer) Patterns() []*regexp.Regexp {
 		suffixPattern("package.json"),
 	}
 }
+
+func (r lsifTscJobRecognizer) canIndexPath(path string) bool {
+	// TODO(efritz) - check for javascript files
+	return filepath.Base(path) == "tsconfig.json" && containsNoSegments(path, tscSegmentBlockList...)
+}
+
+var tscSegmentBlockList = append([]string{
+	"node_modules",
+}, segmentBlockList...)

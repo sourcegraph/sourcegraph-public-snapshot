@@ -65,22 +65,6 @@ func TestRetentionUsageStatistics(t *testing.T) {
 	zeroFloat := float64(0)
 	weekly := []*types.WeeklyRetentionStats{
 		{
-			WeekStart:  userCreationDate.Add(time.Hour * time.Duration(168)).UTC(),
-			CohortSize: nil,
-			Week0:      nil,
-			Week1:      nil,
-			Week2:      nil,
-			Week3:      nil,
-			Week4:      nil,
-			Week5:      nil,
-			Week6:      nil,
-			Week7:      nil,
-			Week8:      nil,
-			Week9:      nil,
-			Week10:     nil,
-			Week11:     nil,
-		},
-		{
 			WeekStart:  userCreationDate.UTC(),
 			CohortSize: &one,
 			Week0:      &oneFloat,
@@ -98,7 +82,7 @@ func TestRetentionUsageStatistics(t *testing.T) {
 		},
 	}
 
-	for i := 1; i < 11; i++ {
+	for i := 1; i <= 11; i++ {
 		weekly = append(weekly, &types.WeeklyRetentionStats{
 			WeekStart:  userCreationDate.Add((time.Hour * time.Duration(168*i) * -1)).UTC(),
 			CohortSize: nil,

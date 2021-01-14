@@ -14,4 +14,5 @@ const (
 	ReconcilerOperationClose        ReconcilerOperation = "CLOSE"
 	ReconcilerOperationReopen       ReconcilerOperation = "REOPEN"
 	ReconcilerOperationSleep        ReconcilerOperation = "SLEEP"
+	ReconcilerOperationDetach       ReconcilerOperation = "DETACH"
 )

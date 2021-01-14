@@ -94,7 +94,7 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                 </button>
             )}
             {showEmailNotificationForm && (
-                <div className="code-monitor-form__card card p-3 my-3">
+                <div className="code-monitor-form__card card p-3">
                     <div className="font-weight-bold">Send email notifications</div>
                     <span className="text-muted">Deliver email notifications to specified recipients.</span>
                     <div className="mt-4 test-action-form">
@@ -111,12 +111,12 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                             Code monitors are currently limited to sending emails to your primary email address.
                         </small>
                     </div>
-                    <div className="flex">
+                    <div className="d-flex align-items-center my-4">
                         <Toggle
                             title="Enabled"
                             value={emailNotificationEnabled}
                             onToggle={toggleEmailNotificationEnabled}
-                            className="mr-2 my-4"
+                            className="mr-2"
                         />
                         Enabled
                     </div>
@@ -136,21 +136,19 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                 </div>
             )}
             {actionsCompleted && !showEmailNotificationForm && (
-                <div className="code-monitor-form__card card p-3 my-3">
+                <div className="code-monitor-form__card card p-3">
                     <div className="d-flex justify-content-between align-items-center">
                         <div>
                             <div className="font-weight-bold">Send email notifications</div>
                             <span className="text-muted test-existing-action-email">{authenticatedUser.email}</span>
                         </div>
-                        <div className="d-flex">
-                            <div className="flex">
-                                <Toggle
-                                    title="Enabled"
-                                    value={emailNotificationEnabled}
-                                    onToggle={toggleEmailNotificationEnabled}
-                                    className="mr-2"
-                                />
-                            </div>
+                        <div className="d-flex align-items-center">
+                            <Toggle
+                                title="Enabled"
+                                value={emailNotificationEnabled}
+                                onToggle={toggleEmailNotificationEnabled}
+                                className="mr-3"
+                            />
                             <button
                                 type="button"
                                 onClick={editForm}
@@ -163,7 +161,7 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                 </div>
             )}
             <small className="text-muted">
-                What other actions would you like to do?{' '}
+                What other actions would you like to take?{' '}
                 <a href="mailto:feedback@sourcegraph.com" target="_blank" rel="noopener">
                     Share feedback.
                 </a>

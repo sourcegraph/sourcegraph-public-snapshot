@@ -71,6 +71,11 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger *Logger,
 		imageMap[fmt.Sprintf("image%d", i)] = image
 	}
 
+	// TEMPORARY OBSERVABILITY INCREASE
+	for k, v := range imageMap {
+		log15.Info("TEMP: imageMap", "k", k, "v", v)
+	}
+
 	imageKeys := make([]string, 0, len(imageMap))
 	for k := range imageMap {
 		imageKeys = append(imageKeys, k)
@@ -104,14 +109,14 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger *Logger,
 		}
 	}
 
-	// Start the VM and wait for the SSH serer to become available
+	// Start the VM and wait for the SSH server to become available
 	startCommand := command{
 		Key: "setup.firecracker.start",
 		Command: flatten(
 			"ignite", "run",
 			commonFirecrackerFlags,
 			firecrackerResourceFlags(options.ResourceOptions),
-			firecrackerCopyfileFlags(repoDir, imageKeys, scriptPaths, options),
+			firecrackerCopyfileFlags(repoDir, imageKeys, options),
 			"--ssh",
 			"--name", name,
 			sanitizeImage(options.FirecrackerOptions.Image),
@@ -146,6 +151,21 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger *Logger,
 		}
 		if err := runner.RunCommand(ctx, rmCommand, logger); err != nil {
 			return errors.Wrap(err, fmt.Sprintf("failed to remove tarfile for %s", imageMap[key]))
+		}
+	}
+
+	// TEMPORARY OBSERVABILITY INCREASE
+	for i, scriptPath := range scriptPaths {
+		catCommand := command{
+			Key: fmt.Sprintf("setup.cat.%d", i),
+			Command: flatten(
+				"ignite", "exec", name, "--",
+				"cat", filepath.Join(firecrackerContainerDir, ScriptsPath, scriptPath),
+			),
+			Operation: operations.SetupRm,
+		}
+		if err := runner.RunCommand(ctx, catCommand, logger); err != nil {
+			return errors.Wrap(err, fmt.Sprintf("failed to cat %s", scriptPath))
 		}
 	}
 
@@ -184,19 +204,13 @@ func firecrackerResourceFlags(options ResourceOptions) []string {
 	}
 }
 
-func firecrackerCopyfileFlags(dir string, imageKeys, scriptPaths []string, options Options) []string {
-	copyfiles := make([]string, 0, len(imageKeys)+len(scriptPaths)+1)
+func firecrackerCopyfileFlags(dir string, imageKeys []string, options Options) []string {
+	copyfiles := make([]string, 0, len(imageKeys)+1)
 	for _, imageKey := range imageKeys {
 		copyfiles = append(copyfiles, fmt.Sprintf(
 			"%s:%s",
 			tarfilePathOnHost(imageKey, options),
 			tarfilePathInVM(imageKey),
-		))
-	}
-
-	for _, scriptPath := range scriptPaths {
-		copyfiles = append(copyfiles, fmt.Sprintf(
-			"%s:%s", scriptPath, scriptPath,
 		))
 	}
 
