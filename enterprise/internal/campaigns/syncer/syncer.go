@@ -272,7 +272,6 @@ func init() {
 type SyncStore interface {
 	ListChangesetSyncData(context.Context, store.ListChangesetSyncDataOpts) ([]*campaigns.ChangesetSyncData, error)
 	GetChangeset(context.Context, store.GetChangesetOpts) (*campaigns.Changeset, error)
-	ListChangesets(context.Context, store.ListChangesetsOpts) (campaigns.Changesets, int64, error)
 	UpdateChangeset(ctx context.Context, cs *campaigns.Changeset) error
 	UpsertChangesetEvents(ctx context.Context, cs ...*campaigns.ChangesetEvent) error
 	Transact(context.Context) (*store.Store, error)
@@ -411,12 +410,22 @@ func (s *changesetSyncer) computeSchedule(ctx context.Context) ([]scheduledSync,
 // SyncChangeset will sync a single changeset given its id.
 func (s *changesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 	log15.Debug("SyncChangeset", "id", id)
+
 	cs, err := s.syncStore.GetChangeset(ctx, store.GetChangesetOpts{
 		ID: id,
+
+		// Enforce precondition given in changeset sync state query.
+		ReconcilerState:  campaigns.ReconcilerStateCompleted,
+		PublicationState: campaigns.ChangesetPublicationStatePublished,
 	})
 	if err != nil {
+		if err == store.ErrNoResults {
+			log15.Debug("SyncChangeset not found", "id", id)
+			return nil
+		}
 		return err
 	}
+
 	repo, err := loadRepo(ctx, s.reposStore, cs.RepoID)
 	if err != nil {
 		return err
@@ -432,6 +441,7 @@ func (s *changesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 	if err != nil {
 		return err
 	}
+
 	return SyncChangeset(ctx, s.syncStore, source, repo, cs)
 }
 
