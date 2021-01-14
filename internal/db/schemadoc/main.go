@@ -168,7 +168,7 @@ func getTables(db *sql.DB) ([]string, error) {
 	rows, err := db.Query(`
 		SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
 		UNION
-		SELECT table_name FROM information_schema.views WHERE table_schema = 'public';
+		SELECT table_name FROM information_schema.views WHERE table_schema = 'public' AND table_name != 'pg_stat_statements';
 	`)
 	if err != nil {
 		return nil, fmt.Errorf("Query: %w", err)
