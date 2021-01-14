@@ -17,6 +17,7 @@
         "tag": "gql",
       },
     ],
+    "composite": true
   },
   "include": ["**/*", ".*", "./src/**/*.json"],
   "exclude": ["../../node_modules", "./node_modules", "./out", "src/end-to-end", "src/regression", "src/integration"],

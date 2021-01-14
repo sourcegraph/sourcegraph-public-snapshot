@@ -26,7 +26,7 @@ const webapp = gulp.parallel(
     })
 )
 
-const watchWebapp = () => gulp.watch('src/**', { delay: 0, cwd: __dirname }, webapp)
+const watchWebapp = () => gulp.watch(['src/**', '../shared/src/**'], { delay: 0, cwd: __dirname }, webapp)
 
 /**
  * Builds everything.
