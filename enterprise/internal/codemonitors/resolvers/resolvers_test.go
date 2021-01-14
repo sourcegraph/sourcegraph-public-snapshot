@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	campaignApitest "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
 	cm "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/background/email"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/email"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/storetest"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -1074,15 +1074,21 @@ func TestTriggerTestEmailAction(t *testing.T) {
 	}
 
 	ctx := backend.WithAuthzBypass(context.Background())
-	dbtesting.SetupGlobalTestDB(t)
 	r := newTestResolver(t)
 
-	userID := insertTestUser(t, dbconn.Global, "cm-user1", true)
+	userID := 1
+	namespaceID := relay.MarshalID("User", actor.FromContext(ctx).UID)
 
-	ctx = actor.WithActor(ctx, actor.FromUser(userID))
+	ctx = actor.WithActor(ctx, actor.FromUser(int32(userID)))
 	_, err := r.TriggerTestEmailAction(ctx, &graphqlbackend.TriggerTestEmailActionArgs{
-		User:        relay.MarshalID("User", actor.FromContext(ctx).UID),
+		Namespace:   namespaceID,
 		Description: "A code monitor name",
+		Email: &graphqlbackend.CreateActionEmailArgs{
+			Enabled:    true,
+			Priority:   "NORMAL",
+			Recipients: []graphql.ID{namespaceID},
+			Header:     "test header 1",
+		},
 	})
 
 	if err != nil {
