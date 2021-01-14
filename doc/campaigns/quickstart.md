@@ -9,8 +9,8 @@ In this guide, you'll create a Sourcegraph campaign that appends text to all `RE
 For more information about campaigns see the ["Campaigns"](index.md) documentation and watch the [campaigns demo video](https://www.youtube.com/watch?v=EfKwKFzOs3E).
 
 ## Requirements
-- A Sourcegraph instance with some repositories in it. See ["Quickstart"](../../index.md#quickstart) on how to setup a Sourcegraph instance.
-- A local environment matching [Requirements](./references/requirements.md)") to create Campaigns with the Sourcegraph CLI.
+- A Sourcegraph instance with some repositories in it. See "[Quickstart](../../index.md#quickstart)" on how to setup a Sourcegraph instance.
+- A local environment matching "[Requirements](./references/requirements.md)" to create Campaigns with the Sourcegraph CLI.
 
 ## Install the Sourcegraph CLI
 
