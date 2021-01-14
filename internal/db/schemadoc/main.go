@@ -144,7 +144,7 @@ func generateInternal(logger *log.Logger, databaseName, dataSource string, run f
 			for table := range ch {
 				logger.Println("describe", table)
 
-				doc, err := describe(db, table, run)
+				doc, err := describeTable(db, table, run)
 				if err != nil {
 					logger.Fatalf("error: %s", err)
 					continue
@@ -190,7 +190,7 @@ WHERE table_schema='public' AND table_type='BASE TABLE';
 	return tables, nil
 }
 
-func describe(db *sql.DB, table string, run func(cmd ...string) (string, error)) (string, error) {
+func describeTable(db *sql.DB, table string, run func(cmd ...string) (string, error)) (string, error) {
 	comment, err := getTableComment(db, table)
 	if err != nil {
 		return "", err
