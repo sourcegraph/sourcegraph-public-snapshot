@@ -29,122 +29,122 @@ const dbname = "schemadoc-gen-temp"
 
 var versionRe = lazyregexp.New(fmt.Sprintf(`\b%s\b`, regexp.QuoteMeta("9.6")))
 
+func generateInternal(logger *log.Logger, databaseName, dataSource string, run func(cmd ...string) (string, error)) (string, error) {
+	if out, err := run("createdb", dbname); err != nil {
+		return "", fmt.Errorf("createdb: %s: %w", out, err)
+	}
+
+	if err := dbconn.SetupGlobalConnection(dataSource); err != nil {
+		return "", fmt.Errorf("SetupGlobalConnection: %w", err)
+	}
+
+	if err := dbconn.MigrateDB(dbconn.Global, databaseName); err != nil {
+		return "", fmt.Errorf("MigrateDB: %w", err)
+	}
+
+	db, err := dbconn.Open(dataSource)
+	if err != nil {
+		return "", fmt.Errorf("Open: %w", err)
+	}
+	defer db.Close()
+
+	// Query names of all public tables.
+	rows, err := db.Query(`
+SELECT table_name
+FROM information_schema.tables
+WHERE table_schema='public' AND table_type='BASE TABLE';
+`)
+	if err != nil {
+		return "", fmt.Errorf("Query: %w", err)
+	}
+	tables := []string{}
+	defer rows.Close()
+	for rows.Next() {
+		var name string
+		err := rows.Scan(&name)
+		if err != nil {
+			return "", fmt.Errorf("rows.Scan: %w", err)
+		}
+		tables = append(tables, name)
+	}
+	if err = rows.Err(); err != nil {
+		return "", fmt.Errorf("rows.Err: %w", err)
+	}
+
+	ch := make(chan string, len(tables))
+	for _, table := range tables {
+		ch <- table
+	}
+	close(ch)
+
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+	var docs []string
+
+	for i := 0; i < runtime.GOMAXPROCS(0); i++ {
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+
+			for table := range ch {
+				logger.Println("describe", table)
+
+				comment, err := getTableComment(db, table)
+				if err != nil {
+					logger.Fatalf("table comments failed: %s", err)
+					continue
+				}
+
+				columnComments, err := getColumnComments(db, table)
+				if err != nil {
+					logger.Fatalf("column comments failed: %s", err.Error())
+					continue
+				}
+
+				// Get postgres "describe table" output.
+				out, err := run("psql", "-X", "--quiet", "--dbname", dbname, "-c", fmt.Sprintf("\\d %s", table))
+				if err != nil {
+					logger.Fatalf("describe %s failed: %s", table, err)
+					continue
+				}
+
+				lines := strings.Split(out, "\n")
+				doc := "# " + strings.TrimSpace(lines[0]) + "\n"
+				doc += "```\n" + strings.Join(lines[1:], "\n") + "```\n"
+				if comment != "" {
+					doc += "\n" + comment + "\n"
+				}
+
+				var columns []string
+				for k := range columnComments {
+					columns = append(columns, k)
+				}
+				sort.Strings(columns)
+
+				for _, k := range columns {
+					doc += "\n**" + k + "**: " + columnComments[k] + "\n"
+				}
+
+				mu.Lock()
+				docs = append(docs, doc)
+				mu.Unlock()
+			}
+		}()
+	}
+
+	wg.Wait()
+	sort.Strings(docs)
+
+	return strings.Join(docs, "\n"), nil
+}
+
 // This script generates markdown formatted output containing descriptions of
 // the current dabase schema, obtained from postgres. The correct PGHOST,
 // PGPORT, PGUSER etc. env variables must be set to run this script.
 //
 // First CLI argument is an optional filename to write the output to.
 func generate(logger *log.Logger, databaseName string) (string, error) {
-	generateInternal := func(logger *log.Logger, databaseName, dataSource string, run func(cmd ...string) (string, error)) (string, error) {
-		if out, err := run("createdb", dbname); err != nil {
-			return "", fmt.Errorf("createdb: %s: %w", out, err)
-		}
-
-		if err := dbconn.SetupGlobalConnection(dataSource); err != nil {
-			return "", fmt.Errorf("SetupGlobalConnection: %w", err)
-		}
-
-		if err := dbconn.MigrateDB(dbconn.Global, databaseName); err != nil {
-			return "", fmt.Errorf("MigrateDB: %w", err)
-		}
-
-		db, err := dbconn.Open(dataSource)
-		if err != nil {
-			return "", fmt.Errorf("Open: %w", err)
-		}
-		defer db.Close()
-
-		// Query names of all public tables.
-		rows, err := db.Query(`
-SELECT table_name
-FROM information_schema.tables
-WHERE table_schema='public' AND table_type='BASE TABLE';
-	`)
-		if err != nil {
-			return "", fmt.Errorf("Query: %w", err)
-		}
-		tables := []string{}
-		defer rows.Close()
-		for rows.Next() {
-			var name string
-			err := rows.Scan(&name)
-			if err != nil {
-				return "", fmt.Errorf("rows.Scan: %w", err)
-			}
-			tables = append(tables, name)
-		}
-		if err = rows.Err(); err != nil {
-			return "", fmt.Errorf("rows.Err: %w", err)
-		}
-
-		ch := make(chan string, len(tables))
-		for _, table := range tables {
-			ch <- table
-		}
-		close(ch)
-
-		var mu sync.Mutex
-		var wg sync.WaitGroup
-		var docs []string
-
-		for i := 0; i < runtime.GOMAXPROCS(0); i++ {
-			wg.Add(1)
-
-			go func() {
-				defer wg.Done()
-
-				for table := range ch {
-					logger.Println("describe", table)
-
-					comment, err := getTableComment(db, table)
-					if err != nil {
-						logger.Fatalf("table comments failed: %s", err)
-						continue
-					}
-
-					columnComments, err := getColumnComments(db, table)
-					if err != nil {
-						logger.Fatalf("column comments failed: %s", err.Error())
-						continue
-					}
-
-					// Get postgres "describe table" output.
-					out, err := run("psql", "-X", "--quiet", "--dbname", dbname, "-c", fmt.Sprintf("\\d %s", table))
-					if err != nil {
-						logger.Fatalf("describe %s failed: %s", table, err)
-						continue
-					}
-
-					lines := strings.Split(out, "\n")
-					doc := "# " + strings.TrimSpace(lines[0]) + "\n"
-					doc += "```\n" + strings.Join(lines[1:], "\n") + "```\n"
-					if comment != "" {
-						doc += "\n" + comment + "\n"
-					}
-
-					var columns []string
-					for k := range columnComments {
-						columns = append(columns, k)
-					}
-					sort.Strings(columns)
-
-					for _, k := range columns {
-						doc += "\n**" + k + "**: " + columnComments[k] + "\n"
-					}
-
-					mu.Lock()
-					docs = append(docs, doc)
-					mu.Unlock()
-				}
-			}()
-		}
-
-		wg.Wait()
-		sort.Strings(docs)
-
-		return strings.Join(docs, "\n"), nil
-	}
-
 	var (
 		dataSource string
 		run        func(cmd ...string) (string, error)
