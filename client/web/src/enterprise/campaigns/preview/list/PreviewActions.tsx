@@ -17,13 +17,11 @@ export interface PreviewActionsProps {
     className?: string
 }
 
-export const PreviewActions: React.FunctionComponent<PreviewActionsProps> = ({ node, className }) => {
-    return (
-        <div className={classNames('d-flex flex-column align-items-left justify-content-center', className)}>
-            <PreviewActionsContent node={node} />
-        </div>
-    )
-}
+export const PreviewActions: React.FunctionComponent<PreviewActionsProps> = ({ node, className }) => (
+    <div className={classNames('d-flex flex-column align-items-left justify-content-center', className)}>
+        <PreviewActionsContent node={node} />
+    </div>
+)
 
 const PreviewActionsContent: React.FunctionComponent<Pick<PreviewActionsProps, 'node'>> = ({ node }) => {
     if (node.__typename === 'HiddenChangesetApplyPreview') {
