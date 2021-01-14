@@ -161,8 +161,9 @@ type ResetTriggerQueryTimestampsArgs struct {
 }
 
 type TriggerTestEmailActionArgs struct {
-	User        graphql.ID
+	Namespace   graphql.ID
 	Description string
+	Email       *CreateActionEmailArgs
 }
 
 type CreateMonitorArgs struct {
