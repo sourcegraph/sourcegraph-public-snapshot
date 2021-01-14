@@ -3,7 +3,6 @@ package globalstatedb
 import (
 	"context"
 	"database/sql"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 
 	"github.com/google/uuid"
 	"github.com/keegancsmith/sqlf"
