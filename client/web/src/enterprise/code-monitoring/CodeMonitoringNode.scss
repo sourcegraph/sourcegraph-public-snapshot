@@ -1,9 +1,10 @@
 .code-monitoring-node {
-    cursor: pointer;
     // stylelint-disable-next-line declaration-property-unit-whitelist
     margin: -1px -1px calc(0.5rem - 1px) -1px;
+    color: initial;
 
     &:hover {
+        text-decoration: initial;
         border: 2px solid #329af0;
         // stylelint-disable-next-line declaration-property-unit-whitelist
         margin: -2px -2px calc(0.5rem - 2px) -2px;

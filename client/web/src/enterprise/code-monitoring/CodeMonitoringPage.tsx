@@ -250,7 +250,6 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                                     nodeComponentProps={{
                                         authentictedUser: props.authenticatedUser,
                                         location: props.location,
-                                        history: props.history,
                                         showCodeMonitoringTestEmailButton:
                                             (!isErrorLike(props.settingsCascade.final) &&
                                                 props.settingsCascade.final?.experimentalFeatures

@@ -19,7 +19,6 @@ describe('CreateCodeMonitorPage', () => {
         const component = mount(
             <CodeMonitorNode
                 location={history.location}
-                history={history}
                 node={mockCodeMonitor.node}
                 authentictedUser={mockUser}
                 showCodeMonitoringTestEmailButton={false}
@@ -31,7 +30,6 @@ describe('CreateCodeMonitorPage', () => {
     test('Shows "Send test email" option to site admins on enabled code monitors', () => {
         const component = mount(
             <CodeMonitorNode
-                history={history}
                 location={history.location}
                 node={mockCodeMonitor.node}
                 authentictedUser={mockUser}
@@ -44,7 +42,6 @@ describe('CreateCodeMonitorPage', () => {
     test('Does not show "Send test email" option when code monitor is disabled', () => {
         const component = mount(
             <CodeMonitorNode
-                history={history}
                 location={history.location}
                 node={{ ...mockCodeMonitor.node, enabled: false }}
                 authentictedUser={mockUser}
@@ -57,7 +54,6 @@ describe('CreateCodeMonitorPage', () => {
     test('Does not show "Send test email" option to non-site admins', () => {
         const component = mount(
             <CodeMonitorNode
-                history={history}
                 location={history.location}
                 node={mockCodeMonitor.node}
                 authentictedUser={{ ...mockUser, siteAdmin: false }}

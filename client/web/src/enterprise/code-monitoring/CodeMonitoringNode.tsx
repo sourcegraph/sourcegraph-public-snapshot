@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo } from 'react'
 import * as H from 'history'
+import { Link } from '../../../../shared/src/components/Link'
 import { Observable } from 'rxjs'
 import { catchError, startWith, mergeMap, tap } from 'rxjs/operators'
 import { asError } from '../../../../shared/src/util/errors'
@@ -12,7 +13,6 @@ import { AuthenticatedUser } from '../../auth'
 export interface CodeMonitorNodeProps {
     node: CodeMonitorFields
     location: H.Location
-    history: H.History
     authentictedUser: AuthenticatedUser
     showCodeMonitoringTestEmailButton: boolean
 }
@@ -21,7 +21,6 @@ const LOADING = 'LOADING' as const
 
 export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
     location,
-    history,
     node,
     authentictedUser,
     showCodeMonitoringTestEmailButton,
@@ -43,10 +42,9 @@ export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
     )
 
     const hasEnabledAction = useMemo(() => node.actions.nodes.filter(node => node.enabled).length > 0, [node.actions])
-    const onNodeClick = useCallback(() => history.push(`${location.pathname}/${node.id}`), [location, history, node])
 
     return (
-        <div className="code-monitoring-node card p-3" onClick={onNodeClick}>
+        <Link to={`${location.pathname}/${node.id}`} className="code-monitoring-node card p-3">
             <div className="d-flex justify-content-between align-items-center">
                 <div className="d-flex flex-column">
                     <div className="font-weight-bold">{node.description}</div>
@@ -70,9 +68,11 @@ export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
                     )}
                 </div>
                 <div className="d-flex flex-column">
-                    <div className="btn btn-link">Edit</div>
+                    <button className="btn btn-link" type="button">
+                        Edit
+                    </button>
                 </div>
             </div>
-        </div>
+        </Link>
     )
 }
