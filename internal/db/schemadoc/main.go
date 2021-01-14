@@ -34,8 +34,8 @@ var versionRe = lazyregexp.New(fmt.Sprintf(`\b%s\b`, regexp.QuoteMeta("9.6")))
 // PGPORT, PGUSER etc. env variables must be set to run this script.
 //
 // First CLI argument is an optional filename to write the output to.
-func generate(log *log.Logger, databaseName string) (string, error) {
-	do := func(dataSource string, run func(cmd ...string) (string, error)) (string, error) {
+func generate(logger *log.Logger, databaseName string) (string, error) {
+	do := func(logger *log.Logger, dataSource string, run func(cmd ...string) (string, error)) (string, error) {
 		if out, err := run("createdb", dbname); err != nil {
 			return "", fmt.Errorf("createdb: %s: %w", out, err)
 		}
@@ -94,24 +94,24 @@ WHERE table_schema='public' AND table_type='BASE TABLE';
 				defer wg.Done()
 
 				for table := range ch {
-					log.Println("describe", table)
+					logger.Println("describe", table)
 
 					comment, err := getTableComment(db, table)
 					if err != nil {
-						log.Fatalf("table comments failed: %s", err)
+						logger.Fatalf("table comments failed: %s", err)
 						continue
 					}
 
 					columnComments, err := getColumnComments(db, table)
 					if err != nil {
-						log.Fatalf("column comments failed: %s", err.Error())
+						logger.Fatalf("column comments failed: %s", err.Error())
 						continue
 					}
 
 					// Get postgres "describe table" output.
 					out, err := run("psql", "-X", "--quiet", "--dbname", dbname, "-c", fmt.Sprintf("\\d %s", table))
 					if err != nil {
-						log.Fatalf("describe %s failed: %s", table, err)
+						logger.Fatalf("describe %s failed: %s", table, err)
 						continue
 					}
 
@@ -150,30 +150,31 @@ WHERE table_schema='public' AND table_type='BASE TABLE';
 		run        func(cmd ...string) (string, error)
 	)
 	// If we are using pg9.6 use it locally since it is faster (CI \o/)
-	if out, _ := exec.Command("psql", "--version").CombinedOutput(); versionRe.Match(out) {
+	out, _ := exec.Command("psql", "--version").CombinedOutput()
+	if versionRe.Match(out) {
 		dataSource = "dbname=" + dbname
 		run = func(cmd ...string) (string, error) {
 			c := exec.Command(cmd[0], cmd[1:]...)
-			c.Stderr = log.Writer()
+			c.Stderr = logger.Writer()
 			out, err := c.Output()
 			return string(out), err
 		}
 		runIgnoreError("dropdb", dbname)
 		defer runIgnoreError("dropdb", dbname)
 
-		return do(dataSource, run)
+		return do(logger, dataSource, run)
 	}
 
-	log.Printf("Running PostgreSQL 9.6 in docker since local version is %s", strings.TrimSpace(string(out)))
+	logger.Printf("Running PostgreSQL 9.6 in docker since local version is %s", strings.TrimSpace(string(out)))
 	if err := exec.Command("docker", "image", "inspect", "postgres:9.6").Run(); err != nil {
-		log.Println("docker pull postgres9.6")
+		logger.Println("docker pull postgres9.6")
 		pull := exec.Command("docker", "pull", "postgres:9.6")
-		pull.Stdout = log.Writer()
-		pull.Stderr = log.Writer()
+		pull.Stdout = logger.Writer()
+		pull.Stderr = logger.Writer()
 		if err := pull.Run(); err != nil {
 			return "", fmt.Errorf("docker pull postgres9.6 failed: %w", err)
 		}
-		log.Println("docker pull complete")
+		logger.Println("docker pull complete")
 	}
 	runIgnoreError("docker", "rm", "--force", dbname)
 	server := exec.Command("docker", "run", "--rm", "--name", dbname, "-e", "POSTGRES_HOST_AUTH_METHOD=trust", "-p", "5433:5432", "postgres:9.6")
@@ -191,7 +192,7 @@ WHERE table_schema='public' AND table_type='BASE TABLE';
 	run = func(cmd ...string) (string, error) {
 		cmd = append([]string{"exec", "-u", "postgres", dbname}, cmd...)
 		c := exec.Command("docker", cmd...)
-		c.Stderr = log.Writer()
+		c.Stderr = logger.Writer()
 		out, err := c.Output()
 		return string(out), err
 	}
@@ -206,7 +207,7 @@ WHERE table_schema='public' AND table_type='BASE TABLE';
 		}
 		time.Sleep(time.Second)
 	}
-	return do(dataSource, run)
+	return do(logger, dataSource, run)
 }
 
 func getTableComment(db *sql.DB, table string) (string, error) {
