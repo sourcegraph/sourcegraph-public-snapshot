@@ -11,6 +11,7 @@ import (
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	zoektutil "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gituri"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -113,7 +114,7 @@ func searchZoektSymbols(ctx context.Context, commit *GitCommitResolver, branch s
 		&zoektquery.Symbol{Expr: query},
 	}
 	for _, p := range *includePatterns {
-		q, err := fileRe(p, true)
+		q, err := zoektutil.FileRe(p, true)
 		if err != nil {
 			return nil, err
 		}
