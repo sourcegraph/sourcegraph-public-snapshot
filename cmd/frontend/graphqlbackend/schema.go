@@ -4126,6 +4126,10 @@ type ExternalService implements Node {
     LastSyncAt is the time the last sync job was run for this code host
     """
     lastSyncAt: DateTime!
+    """
+    The timestamp of the next sync job
+    """
+    nextSyncAt: DateTime!
 }
 
 """

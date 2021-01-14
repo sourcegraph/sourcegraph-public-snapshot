@@ -17,6 +17,7 @@ import { Link } from '../../../../../shared/src/components/Link'
 import { RepositoryNode } from './RepositoryNode'
 import AddIcon from 'mdi-react/AddIcon'
 import { ErrorLike } from '../../../../../shared/src/util/errors'
+import {repeatUntil} from "../../../../../shared/src/util/rxjs/repeatUntil";
 
 interface Props extends RouteComponentProps, TelemetryProps {
     userID: string
@@ -50,11 +51,13 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     const emptyFilters: FilteredConnectionFilter[] = []
     const [state, setState] = useState({ filters: emptyFilters, fetched: false })
     const [hasRepos, setHasRepos] = useState(false)
+    const [syncPending, setSyncPending] = useState(false)
+    const [errorState, setErrorState] = useState('')
 
     if (!state.fetched) {
-        queryExternalServices({ namespace: userID, first: null, after: null })
-            .toPromise()
-            .then(result => {
+         queryExternalServices({ namespace: userID, first: null, after: null })
+            .pipe(
+                repeatUntil((result): boolean => {
                 const services: FilterValue[] = [
                     {
                         value: 'all',
@@ -62,7 +65,13 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                         args: {},
                     },
                 ]
+                let pending = true
+                const now = new Date().getTime()
                 result.nodes.map(node => {
+                    // if the next sync time is not blank, or in the future we must not be syncing
+                    if (node.nextSyncAt !== '' && now - new Date(node.nextSyncAt).getTime() < 0) {
+                        pending = false
+                    }
                     services.push({
                         value: node.id,
                         label: node.displayName,
@@ -70,6 +79,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                         args: { externalServiceID: node.id },
                     })
                 })
+                setSyncPending(pending)
                 const newFilters: FilteredConnectionFilter[] = [
                     {
                         label: 'Status',
@@ -103,10 +113,11 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                     },
                 ]
                 setState({ filters: newFilters, fetched: true })
-            })
-            .catch(error => {
-                console.log('ERROR', error)
-            })
+                return !pending
+            }, {delay: 2000})
+        ).toPromise().catch(error => {
+            setErrorState(String(error))
+         })
     }
 
     const queryRepositories = useCallback(
@@ -164,6 +175,11 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
 
     return (
         <div className="user-settings-repositories-page">
+            {syncPending && <div className="alert alert-info">
+                <span className="font-weight-bold">Some repositories are still being fetched.</span>
+                These repositories may not appear in the list of repositories.
+            </div>}
+            {errorState !== '' && <div className="alert alert-danger">{errorState}</div>}
             <PageTitle title="Repositories" />
             <div className="d-flex justify-content-between align-items-center">
                 <h2 className="mb-2">Repositories</h2>

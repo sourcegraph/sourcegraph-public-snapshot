@@ -155,3 +155,7 @@ func (r *externalServiceResolver) RepoCount(ctx context.Context) (int32, error) 
 func (r *externalServiceResolver) LastSyncAt() DateTime {
 	return DateTime{Time: r.externalService.LastSyncAt}
 }
+
+func (r *externalServiceResolver) NextSyncAt() DateTime {
+	return DateTime{Time: r.externalService.NextSyncAt}
+}
