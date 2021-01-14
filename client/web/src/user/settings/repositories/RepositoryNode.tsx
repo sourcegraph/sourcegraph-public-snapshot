@@ -163,8 +163,8 @@ export const CheckboxRepositoryNode: React.FunctionComponent<CheckboxRepositoryN
         [onClick]
     )
     return (
-        <tr className="user-settings-repos__repositorynode" key={name}>
-            <td className="p-2 w-100 d-flex justify-content-between border-color-2" onClick={onClick}>
+        <tr className="cursor-pointer" key={name}>
+            <td className="p-2 w-100 d-flex justify-content-between user-settings-repos__repositorynode " onClick={onClick}>
                 <div className="d-flex align-items-center">
                     <input className="mr-3" type="checkbox" onChange={onClick} checked={checked} />
                     <StatusIcon mirrorInfo={mirrorInfo} />
