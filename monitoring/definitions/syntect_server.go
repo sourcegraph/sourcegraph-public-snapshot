@@ -57,7 +57,7 @@ func SyntectServer() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Container monitoring (not available on server)",
+				Title:  shared.TitleContainerMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -66,12 +66,11 @@ func SyntectServer() *monitoring.Container {
 					},
 					{
 						shared.ContainerRestarts("syntect-server", monitoring.ObservableOwnerCloud).Observable(),
-						shared.ContainerFsInodes("syntect-server", monitoring.ObservableOwnerCloud).Observable(),
 					},
 				},
 			},
 			{
-				Title:  "Provisioning indicators (not available on server)",
+				Title:  shared.TitleProvisioningIndicators,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -85,7 +84,7 @@ func SyntectServer() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Kubernetes monitoring (ignore if using Docker Compose or server)",
+				Title:  shared.TitleKubernetesMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{

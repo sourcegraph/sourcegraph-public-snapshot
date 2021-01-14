@@ -7,7 +7,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
-// Golang monitoring overviews
+// Golang monitoring overviews.
+//
+// Uses metrics exported by the Prometheus Golang library, so is available on all
+// deployment types.
+const TitleGolangMonitoring = "Golang runtime monitoring"
 
 var (
 	GoGoroutines sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
@@ -18,6 +22,7 @@ var (
 			Warning:           monitoring.Alert().GreaterOrEqual(10000).For(10 * time.Minute),
 			Panel:             monitoring.Panel().LegendFormat("{{name}}"),
 			Owner:             owner,
+			Interpretation:    "A high value here indicates a possible goroutine leak.",
 			PossibleSolutions: "none",
 		}
 	}

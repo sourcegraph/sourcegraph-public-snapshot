@@ -122,10 +122,6 @@ func newCommitGraphRoutines(observationContext *observation.Context) []goroutine
 }
 
 func newIndexingRoutines(observationContext *observation.Context) []goroutine.BackgroundRoutine {
-	if !config.EnableAutoIndexing {
-		return nil
-	}
-
 	return []goroutine.BackgroundRoutine{
 		indexing.NewIndexScheduler(
 			services.dbStore,

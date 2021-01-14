@@ -187,9 +187,10 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
     const [externalLinks, setExternalLinks] = useState<ExternalLinkFields[] | undefined>()
 
     // The lifecycle props for repo header contributions.
-    const [repoHeaderContributionsLifecycleProps, setRepoHeaderContributionsLifecycleProps] = useState<
-        RepoHeaderContributionsLifecycleProps
-    >()
+    const [
+        repoHeaderContributionsLifecycleProps,
+        setRepoHeaderContributionsLifecycleProps,
+    ] = useState<RepoHeaderContributionsLifecycleProps>()
 
     const childBreadcrumbSetters = props.useBreadcrumb(
         useMemo(() => {

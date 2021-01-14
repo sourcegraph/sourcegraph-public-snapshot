@@ -84,6 +84,96 @@ func TestCreateCodeMonitor(t *testing.T) {
 	}
 }
 
+func TestListCodeMonitors(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := backend.WithAuthzBypass(context.Background())
+	dbtesting.SetupGlobalTestDB(t)
+	r := newTestResolver(t)
+
+	userID := insertTestUser(t, dbconn.Global, "cm-user1", true)
+	ctx = actor.WithActor(ctx, actor.FromUser(userID))
+
+	// Create a monitor.
+	_, err := r.insertTestMonitorWithOpts(ctx, t)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	args := &graphqlbackend.ListMonitorsArgs{
+		First: 5,
+	}
+	r1, err := r.Monitors(ctx, userID, args)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	requireNodeCount(t, r1, 1)
+	requireHasNextPage(t, r1, false)
+
+	// Create enough monitors to necessitate paging
+	for i := 0; i < 10; i++ {
+		_, err := r.insertTestMonitorWithOpts(ctx, t)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	r2, err := r.Monitors(ctx, userID, args)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	requireNodeCount(t, r2, 5)
+	requireHasNextPage(t, r2, true)
+
+	// The returned cursor should be usable to return the remaining monitors
+	pi, err := r2.PageInfo(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	args = &graphqlbackend.ListMonitorsArgs{
+		First: 10,
+		After: pi.EndCursor(),
+	}
+	r3, err := r.Monitors(ctx, userID, args)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	requireNodeCount(t, r3, 6)
+	requireHasNextPage(t, r3, false)
+}
+
+func requireNodeCount(t *testing.T, r graphqlbackend.MonitorConnectionResolver, c int) {
+	t.Helper()
+
+	nodes, err := r.Nodes(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(nodes) != c {
+		t.Fatalf("got %d nodes but expected %d", len(nodes), c)
+	}
+}
+
+func requireHasNextPage(t *testing.T, r graphqlbackend.MonitorConnectionResolver, hasNextPage bool) {
+	t.Helper()
+
+	pageInfo, err := r.PageInfo(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if pageInfo.HasNextPage() != hasNextPage {
+		t.Fatalf("unexpected value for HasNextPage")
+	}
+}
+
 func TestIsAllowedToEdit(t *testing.T) {
 	if testing.Short() {
 		t.Skip()

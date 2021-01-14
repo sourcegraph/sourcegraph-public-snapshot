@@ -11,6 +11,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
+func init() {
+	indexSchedulerEnabled = func() bool { return true }
+}
+
 func TestIndexSchedulerUpdate(t *testing.T) {
 	mockDBStore := NewMockDBStore()
 	mockDBStore.GetRepositoriesWithIndexConfigurationFunc.SetDefaultReturn([]int{43, 44, 45, 46}, nil)

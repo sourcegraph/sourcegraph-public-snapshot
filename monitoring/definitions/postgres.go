@@ -96,7 +96,7 @@ func Postgres() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Provisioning indicators (not available on server)",
+				Title:  shared.TitleProvisioningIndicators,
 				Hidden: true,
 				// See docstring for databaseContainerNames
 				Rows: []monitoring.Row{
@@ -111,7 +111,7 @@ func Postgres() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Kubernetes monitoring (ignore if using Docker Compose or server)",
+				Title:  shared.TitleKubernetesMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{

@@ -1,7 +1,6 @@
 package definitions
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
@@ -96,7 +95,7 @@ func GitServer() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Container monitoring (not available on server)",
+				Title:  shared.TitleContainerMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -105,23 +104,12 @@ func GitServer() *monitoring.Container {
 					},
 					{
 						shared.ContainerRestarts("gitserver", monitoring.ObservableOwnerCloud).Observable(),
-						shared.ContainerFsInodes("gitserver", monitoring.ObservableOwnerCloud).Observable(),
-					},
-					{
-						{
-							Name:              "fs_io_operations",
-							Description:       "filesystem reads and writes rate by instance over 1h",
-							Query:             fmt.Sprintf(`sum by(name) (rate(container_fs_reads_total{%[1]s}[1h]) + rate(container_fs_writes_total{%[1]s}[1h]))`, shared.CadvisorNameMatcher("gitserver")),
-							Warning:           monitoring.Alert().GreaterOrEqual(5000),
-							Panel:             monitoring.Panel().LegendFormat("{{name}}"),
-							Owner:             monitoring.ObservableOwnerCloud,
-							PossibleSolutions: "none",
-						},
+						shared.ContainerIOUsage("gitserver", monitoring.ObservableOwnerCloud).Observable(),
 					},
 				},
 			},
 			{
-				Title:  "Provisioning indicators (not available on server)",
+				Title:  shared.TitleProvisioningIndicators,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -139,7 +127,7 @@ func GitServer() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Golang runtime monitoring",
+				Title:  shared.TitleGolangMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
