@@ -915,8 +915,8 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 	start := time.Now()
 
 	// For streaming search we want to run the evaluation of AND expressions in batch
-	// mode. We copy r to r2 and replace the channel with a sink. Before we return we
-	// send the (batch) result down r's result channel.
+	// mode. We copy r to r2 and replace the result channel with a sink. Before we
+	// return we send the (batch) result down r's result channel.
 	r2 := *r
 	sink := make(chan []SearchResultResolver)
 	defer close(sink)
