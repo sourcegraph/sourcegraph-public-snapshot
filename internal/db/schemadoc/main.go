@@ -120,34 +120,7 @@ func generateInternal(logger *log.Logger, databaseName, dataSource string, run f
 	}
 	defer db.Close()
 
-	getTables := func() ([]string, error) {
-		// Query names of all public tables.
-		rows, err := db.Query(`
-SELECT table_name
-FROM information_schema.tables
-WHERE table_schema='public' AND table_type='BASE TABLE';
-`)
-		if err != nil {
-			return nil, fmt.Errorf("Query: %w", err)
-		}
-		tables := []string{}
-		defer rows.Close()
-		for rows.Next() {
-			var name string
-			err := rows.Scan(&name)
-			if err != nil {
-				return nil, fmt.Errorf("rows.Scan: %w", err)
-			}
-			tables = append(tables, name)
-		}
-		if err = rows.Err(); err != nil {
-			return nil, fmt.Errorf("rows.Err: %w", err)
-		}
-
-		return tables, nil
-	}
-
-	tables, err := getTables()
+	tables, err := getTables(db)
 	if err != nil {
 		return "", err
 	}
@@ -169,46 +142,9 @@ WHERE table_schema='public' AND table_type='BASE TABLE';
 			defer wg.Done()
 
 			for table := range ch {
-				describe := func(db *sql.DB, table string) (string, error) {
-					comment, err := getTableComment(db, table)
-					if err != nil {
-						return "", err
-					}
-
-					columnComments, err := getColumnComments(db, table)
-					if err != nil {
-						return "", err
-					}
-
-					// Get postgres "describe table" output.
-					out, err := run("psql", "-X", "--quiet", "--dbname", dbname, "-c", fmt.Sprintf("\\d %s", table))
-					if err != nil {
-						return "", err
-					}
-
-					lines := strings.Split(out, "\n")
-					doc := "# " + strings.TrimSpace(lines[0]) + "\n"
-					doc += "```\n" + strings.Join(lines[1:], "\n") + "```\n"
-					if comment != "" {
-						doc += "\n" + comment + "\n"
-					}
-
-					var columns []string
-					for k := range columnComments {
-						columns = append(columns, k)
-					}
-					sort.Strings(columns)
-
-					for _, k := range columns {
-						doc += "\n**" + k + "**: " + columnComments[k] + "\n"
-					}
-
-					return doc, nil
-				}
-
 				logger.Println("describe", table)
 
-				doc, err := describe(db, table)
+				doc, err := describe(db, table, run)
 				if err != nil {
 					logger.Fatalf("error: %s", err)
 					continue
@@ -225,6 +161,70 @@ WHERE table_schema='public' AND table_type='BASE TABLE';
 	sort.Strings(docs)
 
 	return strings.Join(docs, "\n"), nil
+}
+
+func getTables(db *sql.DB) ([]string, error) {
+	// Query names of all public tables.
+	rows, err := db.Query(`
+SELECT table_name
+FROM information_schema.tables
+WHERE table_schema='public' AND table_type='BASE TABLE';
+`)
+	if err != nil {
+		return nil, fmt.Errorf("Query: %w", err)
+	}
+	tables := []string{}
+	defer rows.Close()
+	for rows.Next() {
+		var name string
+		err := rows.Scan(&name)
+		if err != nil {
+			return nil, fmt.Errorf("rows.Scan: %w", err)
+		}
+		tables = append(tables, name)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows.Err: %w", err)
+	}
+
+	return tables, nil
+}
+
+func describe(db *sql.DB, table string, run func(cmd ...string) (string, error)) (string, error) {
+	comment, err := getTableComment(db, table)
+	if err != nil {
+		return "", err
+	}
+
+	columnComments, err := getColumnComments(db, table)
+	if err != nil {
+		return "", err
+	}
+
+	// Get postgres "describe table" output.
+	out, err := run("psql", "-X", "--quiet", "--dbname", dbname, "-c", fmt.Sprintf("\\d %s", table))
+	if err != nil {
+		return "", err
+	}
+
+	lines := strings.Split(out, "\n")
+	doc := "# " + strings.TrimSpace(lines[0]) + "\n"
+	doc += "```\n" + strings.Join(lines[1:], "\n") + "```\n"
+	if comment != "" {
+		doc += "\n" + comment + "\n"
+	}
+
+	var columns []string
+	for k := range columnComments {
+		columns = append(columns, k)
+	}
+	sort.Strings(columns)
+
+	for _, k := range columns {
+		doc += "\n**" + k + "**: " + columnComments[k] + "\n"
+	}
+
+	return doc, nil
 }
 
 func getTableComment(db *sql.DB, table string) (string, error) {
