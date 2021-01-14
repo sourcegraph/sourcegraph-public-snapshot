@@ -12,7 +12,7 @@ For more information about campaigns see the ["Campaigns"](index.md) documentati
 
 ## Install the Sourcegraph CLI
 
-In order to create campaigns we need to [install the Sourcegraph CLI](../cli/index.md) (`src`). Note that there are additional [environment requirements](./references/requirements) for campaigns to work.
+In order to create campaigns we need to [install the Sourcegraph CLI](../cli/index.md) (`src`). Note that there are additional [environment requirements](./references/requirements.md) for campaigns to work.
 
 1. Install the version of `src` that's compatible with your Sourcegraph instance:
 
