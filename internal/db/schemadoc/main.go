@@ -169,42 +169,49 @@ WHERE table_schema='public' AND table_type='BASE TABLE';
 			defer wg.Done()
 
 			for table := range ch {
+				describe := func(db *sql.DB, table string) (string, error) {
+					comment, err := getTableComment(db, table)
+					if err != nil {
+						return "", err
+					}
+
+					columnComments, err := getColumnComments(db, table)
+					if err != nil {
+						return "", err
+					}
+
+					// Get postgres "describe table" output.
+					out, err := run("psql", "-X", "--quiet", "--dbname", dbname, "-c", fmt.Sprintf("\\d %s", table))
+					if err != nil {
+						return "", err
+					}
+
+					lines := strings.Split(out, "\n")
+					doc := "# " + strings.TrimSpace(lines[0]) + "\n"
+					doc += "```\n" + strings.Join(lines[1:], "\n") + "```\n"
+					if comment != "" {
+						doc += "\n" + comment + "\n"
+					}
+
+					var columns []string
+					for k := range columnComments {
+						columns = append(columns, k)
+					}
+					sort.Strings(columns)
+
+					for _, k := range columns {
+						doc += "\n**" + k + "**: " + columnComments[k] + "\n"
+					}
+
+					return doc, nil
+				}
+
 				logger.Println("describe", table)
 
-				comment, err := getTableComment(db, table)
+				doc, err := describe(db, table)
 				if err != nil {
-					logger.Fatalf("table comments failed: %s", err)
+					logger.Fatalf("error: %s", err)
 					continue
-				}
-
-				columnComments, err := getColumnComments(db, table)
-				if err != nil {
-					logger.Fatalf("column comments failed: %s", err.Error())
-					continue
-				}
-
-				// Get postgres "describe table" output.
-				out, err := run("psql", "-X", "--quiet", "--dbname", dbname, "-c", fmt.Sprintf("\\d %s", table))
-				if err != nil {
-					logger.Fatalf("describe %s failed: %s", table, err)
-					continue
-				}
-
-				lines := strings.Split(out, "\n")
-				doc := "# " + strings.TrimSpace(lines[0]) + "\n"
-				doc += "```\n" + strings.Join(lines[1:], "\n") + "```\n"
-				if comment != "" {
-					doc += "\n" + comment + "\n"
-				}
-
-				var columns []string
-				for k := range columnComments {
-					columns = append(columns, k)
-				}
-				sort.Strings(columns)
-
-				for _, k := range columns {
-					doc += "\n**" + k + "**: " + columnComments[k] + "\n"
 				}
 
 				mu.Lock()
