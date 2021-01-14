@@ -8,7 +8,7 @@ import (
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 
-	zoektutil "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/zoekt"
+	searcherzoekt "github.com/sourcegraph/sourcegraph/cmd/searcher/search"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -85,7 +85,7 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 		defer cancel()
 	}
 
-	filePathPatterns, err := zoektutil.HandleFilePathPatterns(args.PatternInfo)
+	filePathPatterns, err := searcherzoekt.HandleFilePathPatterns(args.PatternInfo)
 	if err != nil {
 		return nil, false, nil, err
 	}
