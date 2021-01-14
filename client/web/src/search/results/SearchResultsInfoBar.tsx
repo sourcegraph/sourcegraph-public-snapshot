@@ -121,7 +121,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                                 onClick={props.onSaveQueryClick}
                                 className="btn btn-link nav-link text-decoration-none"
                             >
-                                <DownloadIcon className="icon-inline test-save-search-link" /> Save this search query
+                                <DownloadIcon className="icon-inline test-save-search-link" /> Save search
                             </button>
                         </li>
                     )}
