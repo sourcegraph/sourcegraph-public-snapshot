@@ -56,14 +56,6 @@ func SetupGlobalConnection(dataSource string) (err error) {
 // also use the value of PGDATASOURCE if supplied and dataSource is the empty
 // string.
 func New(dataSource, dbNameSuffix string) (*sql.DB, error) {
-	// Force PostgreSQL session timezone to UTC.
-	if v, ok := os.LookupEnv("PGTZ"); ok && v != "UTC" && v != "utc" {
-		log15.Warn("Ignoring PGTZ environment variable; using PGTZ=UTC.", "ignoredPGTZ", v)
-	}
-	if err := os.Setenv("PGTZ", "UTC"); err != nil {
-		return nil, errors.Wrap(err, "Error setting PGTZ=UTC")
-	}
-
 	cfg, err := buildConfig(dataSource)
 	if err != nil {
 		return nil, err
@@ -121,6 +113,20 @@ func buildConfig(dataSource string) (*pgx.ConnConfig, error) {
 		cfg.RuntimeParams["application_name"] = defaultApplicationName
 	}
 
+	// Force PostgreSQL session timezone to UTC.
+	// pgx doesn't support the PGTZ environment variable, we need to pass
+	// that information in the configuration instead.
+	tz, ok := os.LookupEnv("PGTZ")
+	if ok && tz != "UTC" && tz != "utc" {
+		log15.Warn("Ignoring PGTZ environment variable; using PGTZ=UTC.", "ignoredPGTZ", tz)
+		tz = "UTC"
+	}
+	// We set the environment variable to PGTZ to avoid bad surprises if and when
+	// it will be supported by the driver.
+	if err := os.Setenv("PGTZ", "UTC"); err != nil {
+		return nil, errors.Wrap(err, "Error setting PGTZ=UTC")
+	}
+	cfg.RuntimeParams["timezone"] = tz
 	return cfg, nil
 }
 
