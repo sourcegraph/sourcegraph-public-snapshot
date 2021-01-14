@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"sort"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	zoektrpc "github.com/google/zoekt/rpc"
 	"github.com/keegancsmith/sqlf"
 
+	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	searchzoekt "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db"
@@ -727,7 +729,13 @@ func BenchmarkSearchResults(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		resolver := &searchResolver{query: q, zoekt: z, userSettings: &schema.Settings{}}
+		resolver := &searchResolver{
+			query:        q,
+			zoekt:        z,
+			userSettings: &schema.Settings{},
+			reposMu:      &sync.Mutex{},
+			resolved:     &searchrepos.Resolved{},
+		}
 		results, err := resolver.Results(ctx)
 		if err != nil {
 			b.Fatal("Results:", err)
@@ -797,7 +805,7 @@ func BenchmarkIntegrationSearchResults(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		resolver := &searchResolver{query: q, zoekt: z}
+		resolver := &searchResolver{query: q, zoekt: z, reposMu: &sync.Mutex{}, resolved: &searchrepos.Resolved{}}
 		results, err := resolver.Results(ctx)
 		if err != nil {
 			b.Fatal("Results:", err)

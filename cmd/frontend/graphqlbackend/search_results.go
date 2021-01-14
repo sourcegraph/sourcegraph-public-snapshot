@@ -914,6 +914,18 @@ func intersect(left, right *SearchResultsResolver) *SearchResultsResolver {
 func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []query.Node, operands []query.Node) (*SearchResultsResolver, error) {
 	start := time.Now()
 
+	// For streaming search we want to run the evaluation of AND expressions in batch
+	// mode. We copy r to r2 and replace the channel with a sink. Before we return we
+	// send the (batch) result down r's result channel.
+	r2 := *r
+	sink := make(chan []SearchResultResolver)
+	defer close(sink)
+	go func() {
+		for range sink {
+		}
+	}()
+	r2.resultChannel = sink
+
 	if len(operands) == 0 {
 		return nil, nil
 	}
@@ -935,7 +947,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 	maxTryCount := 40000
 
 	// Set an overall timeout in addition to the timeouts that are set for leaf-requests.
-	ctx, cancel, err := r.withTimeout(ctx)
+	ctx, cancel, err := r2.withTimeout(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -971,7 +983,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 			return query.Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
 		})
 
-		result, err = r.evaluatePatternExpression(ctx, scopeParameters, operands[0])
+		result, err = r2.evaluatePatternExpression(ctx, scopeParameters, operands[0])
 		if err != nil {
 			return nil, err
 		}
@@ -985,11 +997,11 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 			case <-ctx.Done():
 				usedTime := time.Since(start)
 				suggestTime := longer(2, usedTime)
-				return alertForTimeout(usedTime, suggestTime, r).wrap(), nil
+				return alertForTimeout(usedTime, suggestTime, &r2).wrap(), nil
 			default:
 			}
 
-			termResult, err = r.evaluatePatternExpression(ctx, scopeParameters, term)
+			termResult, err = r2.evaluatePatternExpression(ctx, scopeParameters, term)
 			if err != nil {
 				return nil, err
 			}
@@ -1013,6 +1025,10 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 		}
 	}
 	result.limitHit = !exhausted
+
+	if r.resultChannel != nil {
+		r.resultChannel <- result.SearchResults
+	}
 	return result, nil
 }
 
