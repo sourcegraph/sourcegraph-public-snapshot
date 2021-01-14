@@ -37,6 +37,8 @@ var (
 
 	defaultDataSource      = env.Get("PGDATASOURCE", "", "Default dataSource to pass to Postgres. See https://pkg.go.dev/github.com/jackc/pgx for more information.")
 	defaultApplicationName = env.Get("PGAPPLICATIONNAME", "sourcegraph", "The value of application_name appended to dataSource")
+	// Ensure all time instances have their timezones set to UTC.
+	_ = env.Ensure("TZ", "", "timezone used by time instances")
 )
 
 // SetupGlobalConnection connects to the given data source and stores the handle
@@ -126,6 +128,14 @@ func buildConfig(dataSource string) (*pgx.ConnConfig, error) {
 		return nil, errors.Wrap(err, "Error setting PGTZ=UTC")
 	}
 	cfg.RuntimeParams["timezone"] = tz
+
+	// Ensure the TZ environment variable is set so that times are parsed correctly.
+	if _, ok := os.LookupEnv("TZ"); !ok {
+		log15.Warn("TZ environment variable not defined; using TZ=''.")
+		if err := os.Setenv("TZ", ""); err != nil {
+			return nil, errors.Wrap(err, "Error setting TZ=''")
+		}
+	}
 	return cfg, nil
 }
 
