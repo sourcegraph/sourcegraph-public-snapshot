@@ -91,13 +91,13 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
         const toURL = canCreateMonitorFromQuery ? `/code-monitoring/new?${searchParameters.toString()}` : ''
         return (
             <li className="nav-item">
-                <Link to={toURL} className={'btn btn-link nav-link text-decoration-none'}>
+                <Link to={toURL} className="btn btn-link nav-link text-decoration-none">
                     <CodeMonitoringLogo className="icon-inline" />
                     Create code monitor
                 </Link>
             </li>
         )
-    }, [props.enableCodeMonitoring, props.query, props.patternType])
+    }, [props.enableCodeMonitoring, props.query, props.patternType, props.location.search])
     return (
         <div className={classNames(props.className, 'search-results-info-bar')} data-testid="results-info-bar">
             <small className="search-results-info-bar__row">
