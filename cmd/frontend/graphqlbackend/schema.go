@@ -4122,6 +4122,10 @@ type ExternalService implements Node {
     will contain any errors that occured during the most recent completed sync.
     """
     lastSyncError: String
+    """
+    The timestamp of the next sync job
+    """
+    nextSyncAt: DateTime!
 }
 
 """
