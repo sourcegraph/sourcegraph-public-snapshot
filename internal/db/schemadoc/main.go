@@ -120,27 +120,36 @@ func generateInternal(logger *log.Logger, databaseName, dataSource string, run f
 	}
 	defer db.Close()
 
-	// Query names of all public tables.
-	rows, err := db.Query(`
+	getTables := func() ([]string, error) {
+		// Query names of all public tables.
+		rows, err := db.Query(`
 SELECT table_name
 FROM information_schema.tables
 WHERE table_schema='public' AND table_type='BASE TABLE';
 `)
-	if err != nil {
-		return "", fmt.Errorf("Query: %w", err)
-	}
-	tables := []string{}
-	defer rows.Close()
-	for rows.Next() {
-		var name string
-		err := rows.Scan(&name)
 		if err != nil {
-			return "", fmt.Errorf("rows.Scan: %w", err)
+			return nil, fmt.Errorf("Query: %w", err)
 		}
-		tables = append(tables, name)
+		tables := []string{}
+		defer rows.Close()
+		for rows.Next() {
+			var name string
+			err := rows.Scan(&name)
+			if err != nil {
+				return nil, fmt.Errorf("rows.Scan: %w", err)
+			}
+			tables = append(tables, name)
+		}
+		if err = rows.Err(); err != nil {
+			return nil, fmt.Errorf("rows.Err: %w", err)
+		}
+
+		return tables, nil
 	}
-	if err = rows.Err(); err != nil {
-		return "", fmt.Errorf("rows.Err: %w", err)
+
+	tables, err := getTables()
+	if err != nil {
+		return "", err
 	}
 
 	ch := make(chan string, len(tables))
