@@ -1,8 +1,11 @@
 package search
 
 import (
+	"archive/zip"
 	"context"
 	"errors"
+	"fmt"
+	"os"
 	"regexp/syntax"
 	"time"
 
@@ -122,6 +125,7 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 
 	k := zoektutil.ResultCountFactor(len(repoBranches), args.PatternInfo.FileMatchLimit, args.Mode == search.ZoektGlobalSearch)
 	searchOpts := zoektutil.SearchOpts(ctx, k, args.PatternInfo)
+	searchOpts.Whole = true
 
 	if args.UseFullDeadline {
 		// If the user manually specified a timeout, allow zoekt to use all of the remaining timeout.
@@ -197,6 +201,50 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 	}
 
 	return resp.Files, limitHit, partial, nil
+}
+
+func groupFilesByRepo(fileMatches []zoekt.FileMatch) map[string][]zoekt.FileMatch {
+	m := make(map[string][]zoekt.FileMatch)
+	for _, match := range fileMatches {
+		m[match.Repository] = append(m[match.Repository], match)
+	}
+	return m
+}
+
+func writeZip(path string, fileMatches []zoekt.FileMatch) (err error) {
+	f, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+
+	// TODO is this handled outside of here?
+	defer func() {
+		if err != nil {
+			rmErr := os.Remove(path)
+			if rmErr != nil {
+				// TODO is there a conventional way to handle errors during cleanup?
+				err = fmt.Errorf("error1: %s, error2: %s", err, rmErr)
+			}
+		}
+	}()
+	defer f.Close()
+
+	zw := zip.NewWriter(f)
+	defer zw.Close()
+
+	for _, match := range fileMatches {
+		mw, err := zw.Create(match.FileName)
+		if err != nil {
+			return err
+		}
+
+		_, err = mw.Write(match.Content)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 var errNoResultsInTimeout = errors.New("no results found in specified timeout")
