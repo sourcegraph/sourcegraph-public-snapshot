@@ -14,6 +14,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -66,7 +68,7 @@ func generate(logger *log.Logger, databaseName string) (string, error) {
 		pull.Stdout = logger.Writer()
 		pull.Stderr = logger.Writer()
 		if err := pull.Run(); err != nil {
-			return "", fmt.Errorf("docker pull postgres9.6 failed: %w", err)
+			return "", errors.Wrap(err, "docker pull postgres9.6")
 		}
 		logger.Println("docker pull complete")
 	}
@@ -88,7 +90,7 @@ func generate(logger *log.Logger, databaseName string) (string, error) {
 		if err := exec.Command("pg_isready", "-U", "postgres", "-d", dbname, "-h", "127.0.0.1", "-p", "5433").Run(); err == nil {
 			break
 		} else if attempts > 30 {
-			return "", fmt.Errorf("gave up waiting after 30s attempt for pg_isready: %w", err)
+			return "", errors.Wrap(err, "pg_isready timeout")
 		}
 		time.Sleep(time.Second)
 	}
@@ -103,20 +105,20 @@ func generate(logger *log.Logger, databaseName string) (string, error) {
 
 func generateInternal(logger *log.Logger, databaseName, dataSource string, run func(cmd ...string) (string, error)) (string, error) {
 	if out, err := run("createdb", dbname); err != nil {
-		return "", fmt.Errorf("createdb: %s: %w", out, err)
+		return "", errors.Wrap(err, fmt.Sprintf("run: %s", out))
 	}
 
 	if err := dbconn.SetupGlobalConnection(dataSource); err != nil {
-		return "", fmt.Errorf("SetupGlobalConnection: %w", err)
+		return "", errors.Wrap(err, "SetupGlobalConnection")
 	}
 
 	if err := dbconn.MigrateDB(dbconn.Global, databaseName); err != nil {
-		return "", fmt.Errorf("MigrateDB: %w", err)
+		return "", errors.Wrap(err, "MigrateDB")
 	}
 
 	db, err := dbconn.Open(dataSource)
 	if err != nil {
-		return "", fmt.Errorf("Open: %w", err)
+		return "", errors.Wrap(err, "Open")
 	}
 	defer db.Close()
 
@@ -163,7 +165,7 @@ func generateInternal(logger *log.Logger, databaseName, dataSource string, run f
 	return strings.Join(docs, "\n"), nil
 }
 
-func getTables(db *sql.DB) ([]string, error) {
+func getTables(db *sql.DB) (tables []string, _ error) {
 	// Query names of all public tables and views.
 	rows, err := db.Query(`
 		SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
@@ -171,20 +173,19 @@ func getTables(db *sql.DB) ([]string, error) {
 		SELECT table_name FROM information_schema.views WHERE table_schema = 'public' AND table_name != 'pg_stat_statements';
 	`)
 	if err != nil {
-		return nil, fmt.Errorf("Query: %w", err)
+		return nil, errors.Wrap(err, "db.Query")
 	}
-	tables := []string{}
 	defer rows.Close()
+
 	for rows.Next() {
 		var name string
-		err := rows.Scan(&name)
-		if err != nil {
-			return nil, fmt.Errorf("rows.Scan: %w", err)
+		if err := rows.Scan(&name); err != nil {
+			return nil, errors.Wrap(err, "rows.Scan")
 		}
 		tables = append(tables, name)
 	}
-	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("rows.Err: %w", err)
+	if err := rows.Err(); err != nil {
+		return nil, errors.Wrap(err, "rows.Err")
 	}
 
 	return tables, nil
@@ -204,7 +205,7 @@ func describeTable(db *sql.DB, table string, run func(cmd ...string) (string, er
 	// Get postgres "describe table" output.
 	out, err := run("psql", "-X", "--quiet", "--dbname", dbname, "-c", fmt.Sprintf("\\d %s", table))
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, fmt.Sprintf("run: %s", out))
 	}
 
 	lines := strings.Split(out, "\n")
@@ -227,21 +228,20 @@ func describeTable(db *sql.DB, table string, run func(cmd ...string) (string, er
 	return doc, nil
 }
 
-func getTableComment(db *sql.DB, table string) (string, error) {
+func getTableComment(db *sql.DB, table string) (comment string, _ error) {
 	rows, err := db.Query("select obj_description($1::regclass)", table)
 	if err != nil {
-		return "", fmt.Errorf("Query: %w", err)
+		return "", errors.Wrap(err, "db.Query")
 	}
 	defer rows.Close()
 
-	var comment string
 	if rows.Next() {
 		if err := rows.Scan(&dbutil.NullString{S: &comment}); err != nil {
-			return "", fmt.Errorf("rows.Scan: %w", err)
+			return "", errors.Wrap(err, "rows.Scan")
 		}
 	}
 	if err = rows.Err(); err != nil {
-		return "", fmt.Errorf("rows.Err: %w", err)
+		return "", errors.Wrap(err, "rows.Err")
 	}
 
 	return comment, nil
@@ -260,7 +260,7 @@ func getColumnComments(db *sql.DB, table string) (map[string]string, error) {
 		WHERE cols.table_name = $1;
 	`, table)
 	if err != nil {
-		return nil, fmt.Errorf("Query: %w", err)
+		return nil, errors.Wrap(err, "db.Query")
 	}
 	defer rows.Close()
 
@@ -268,14 +268,14 @@ func getColumnComments(db *sql.DB, table string) (map[string]string, error) {
 	for rows.Next() {
 		var k, v string
 		if err := rows.Scan(&k, &dbutil.NullString{S: &v}); err != nil {
-			return nil, fmt.Errorf("rows.Scan: %w", err)
+			return nil, errors.Wrap(err, "rows.Scan")
 		}
 		if v != "" {
 			comments[k] = v
 		}
 	}
-	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("rows.Err: %w", err)
+	if err := rows.Err(); err != nil {
+		return nil, errors.Wrap(err, "rows.Err")
 	}
 
 	return comments, nil
