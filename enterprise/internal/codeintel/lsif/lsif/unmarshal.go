@@ -7,6 +7,8 @@ import (
 	"strconv"
 
 	jsoniter "github.com/json-iterator/go"
+	protocol "github.com/sourcegraph/lsif-protocol"
+	"github.com/sourcegraph/lsif-protocol/reader"
 )
 
 var unmarshaller = jsoniter.ConfigFastest
@@ -36,7 +38,7 @@ func unmarshalElement(interner *Interner, line []byte) (_ Element, err error) {
 		element.Payload, err = unmarshalEdge(interner, line)
 	} else if element.Type == "vertex" {
 		if unmarshaler, ok := vertexUnmarshalers[element.Label]; ok {
-			element.Payload, err = unmarshaler(line)
+			element.Payload, err = unmarshaler(interner, line)
 		}
 	}
 
@@ -115,17 +117,19 @@ func unmarshalEdgeFast(line []byte) (Edge, bool) {
 	}, true
 }
 
-var vertexUnmarshalers = map[string]func(line []byte) (interface{}, error){
-	"metaData":           unmarshalMetaData,
-	"document":           unmarshalDocument,
-	"range":              unmarshalRange,
-	"hoverResult":        unmarshalHover,
-	"moniker":            unmarshalMoniker,
-	"packageInformation": unmarshalPackageInformation,
-	"diagnosticResult":   unmarshalDiagnosticResult,
+var vertexUnmarshalers = map[string]func(interner *Interner, line []byte) (interface{}, error){
+	"metaData":             unmarshalMetaData,
+	"document":             unmarshalDocument,
+	"range":                unmarshalRange,
+	"hoverResult":          unmarshalHover,
+	"moniker":              unmarshalMoniker,
+	"packageInformation":   unmarshalPackageInformation,
+	"symbol":               reader.UnmarshalSymbol,
+	"diagnosticResult":     unmarshalDiagnosticResult,
+	"documentSymbolResult": reader.UnmarshalDocumentSymbolResult,
 }
 
-func unmarshalMetaData(line []byte) (interface{}, error) {
+func unmarshalMetaData(interner *Interner, line []byte) (interface{}, error) {
 	var payload struct {
 		Version     string `json:"version"`
 		ProjectRoot string `json:"projectRoot"`
@@ -140,7 +144,7 @@ func unmarshalMetaData(line []byte) (interface{}, error) {
 	}, nil
 }
 
-func unmarshalDocument(line []byte) (interface{}, error) {
+func unmarshalDocument(interner *Interner, line []byte) (interface{}, error) {
 	var payload struct {
 		URI string `json:"uri"`
 	}
@@ -151,14 +155,10 @@ func unmarshalDocument(line []byte) (interface{}, error) {
 	return payload.URI, nil
 }
 
-func unmarshalRange(line []byte) (interface{}, error) {
-	type _position struct {
-		Line      int `json:"line"`
-		Character int `json:"character"`
-	}
+func unmarshalRange(interner *Interner, line []byte) (interface{}, error) {
 	var payload struct {
-		Start _position `json:"start"`
-		End   _position `json:"end"`
+		protocol.RangeData
+		Tag *protocol.RangeSymbolTag `json:"tag"`
 	}
 	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
 		return nil, err
@@ -169,6 +169,7 @@ func unmarshalRange(line []byte) (interface{}, error) {
 		StartCharacter: payload.Start.Character,
 		EndLine:        payload.End.Line,
 		EndCharacter:   payload.End.Character,
+		Tag:            payload.Tag,
 	}, nil
 }
 
@@ -177,7 +178,7 @@ var (
 	CodeFence          = []byte("```")
 )
 
-func unmarshalHover(line []byte) (interface{}, error) {
+func unmarshalHover(interner *Interner, line []byte) (interface{}, error) {
 	type _hoverResult struct {
 		Contents json.RawMessage `json:"contents"`
 	}
@@ -240,7 +241,7 @@ func unmarshalHoverPart(raw json.RawMessage) ([]byte, error) {
 	return bytes.TrimSpace([]byte(objPayload.Value)), nil
 }
 
-func unmarshalMoniker(line []byte) (interface{}, error) {
+func unmarshalMoniker(interner *Interner, line []byte) (interface{}, error) {
 	var payload struct {
 		Kind       string `json:"kind"`
 		Scheme     string `json:"scheme"`
@@ -261,10 +262,11 @@ func unmarshalMoniker(line []byte) (interface{}, error) {
 	}, nil
 }
 
-func unmarshalPackageInformation(line []byte) (interface{}, error) {
+func unmarshalPackageInformation(interner *Interner, line []byte) (interface{}, error) {
 	var payload struct {
 		Name    string `json:"name"`
 		Version string `json:"version"`
+		Manager string `json:"manager"`
 	}
 	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
 		return nil, err
@@ -273,10 +275,11 @@ func unmarshalPackageInformation(line []byte) (interface{}, error) {
 	return PackageInformation{
 		Name:    payload.Name,
 		Version: payload.Version,
+		Manager: payload.Manager,
 	}, nil
 }
 
-func unmarshalDiagnosticResult(line []byte) (interface{}, error) {
+func unmarshalDiagnosticResult(interner *Interner, line []byte) (interface{}, error) {
 	type _position struct {
 		Line      int `json:"line"`
 		Character int `json:"character"`

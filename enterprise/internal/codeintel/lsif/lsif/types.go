@@ -1,5 +1,7 @@
 package lsif
 
+import protocol "github.com/sourcegraph/lsif-protocol"
+
 type Element struct {
 	ID      int
 	Type    string
@@ -27,6 +29,8 @@ type Range struct {
 	DefinitionResultID int
 	ReferenceResultID  int
 	HoverResultID      int
+
+	Tag *protocol.RangeSymbolTag
 }
 
 func (d Range) SetDefinitionResultID(id int) Range {
@@ -38,6 +42,7 @@ func (d Range) SetDefinitionResultID(id int) Range {
 		DefinitionResultID: id,
 		ReferenceResultID:  d.ReferenceResultID,
 		HoverResultID:      d.HoverResultID,
+		Tag:                d.Tag,
 	}
 }
 
@@ -50,6 +55,7 @@ func (d Range) SetReferenceResultID(id int) Range {
 		DefinitionResultID: d.DefinitionResultID,
 		ReferenceResultID:  id,
 		HoverResultID:      d.HoverResultID,
+		Tag:                d.Tag,
 	}
 }
 
@@ -62,6 +68,7 @@ func (d Range) SetHoverResultID(id int) Range {
 		DefinitionResultID: d.DefinitionResultID,
 		ReferenceResultID:  d.ReferenceResultID,
 		HoverResultID:      id,
+		Tag:                d.Tag,
 	}
 }
 
@@ -114,6 +121,7 @@ func (d Moniker) SetPackageInformationID(id int) Moniker {
 type PackageInformation struct {
 	Name    string
 	Version string
+	Manager string
 }
 
 type Diagnostic struct {
