@@ -160,6 +160,8 @@ WHERE table_schema='public' AND table_type='BASE TABLE';
 		}
 		runIgnoreError("dropdb", dbname)
 		defer runIgnoreError("dropdb", dbname)
+
+		return do(dataSource, run)
 	} else {
 		log.Printf("Running PostgreSQL 9.6 in docker since local version is %s", strings.TrimSpace(string(out)))
 		if err := exec.Command("docker", "image", "inspect", "postgres:9.6").Run(); err != nil {
@@ -203,9 +205,8 @@ WHERE table_schema='public' AND table_type='BASE TABLE';
 			}
 			time.Sleep(time.Second)
 		}
+		return do(dataSource, run)
 	}
-
-	return do(dataSource, run)
 }
 
 func getTableComment(db *sql.DB, table string) (string, error) {
