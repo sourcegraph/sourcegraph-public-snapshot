@@ -28,6 +28,7 @@ The document content can set class names and IDs on elements (for example, Markd
     --warning-badge-color: #f59f00;
     --critical-badge-color: #f03e3e;
     --experimental-color: #b200f8;
+    --feature-color: #38757F;
 
     --table-row-bg-1: var(--body-bg);
 }
@@ -432,6 +433,16 @@ body > #page > main > #content {
     background-color: var(--experimental-color);
 }
 
+.badge-feature {
+    color: var(--feature-color);
+    background-color: var(--note-color);
+}
+
+.badge-note {
+    color: #000000;
+    background-color: var(--note-color);
+}
+
 .badge-warning {
     color: #ffffff;
     background-color: var(--warning-badge-color);
@@ -564,6 +575,7 @@ body > #page > main > #content {
 .markdown-body aside.experimental {
     border-color: var(--experimental-color);
 }
+
 .markdown-body table {
     display: block;
     width: 100%;
