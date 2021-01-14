@@ -34,6 +34,13 @@ add('popover', () => {
                 },
             },
             {
+                reason: 'error',
+                message:
+                    'There was a network error retrieving search results. Check your Internet connection and try again.',
+                severity: 'error',
+                title: 'Error loading results',
+            },
+            {
                 reason: 'excluded-archive',
                 message: '',
                 severity: 'info',

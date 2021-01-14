@@ -12,7 +12,7 @@ var (
 	OrgMembers       = &orgMembers{}
 	SavedSearches    = &savedSearches{}
 	Settings         = &settings{}
-	Users            = &users{}
+	Users            = &UserStore{}
 	UserCredentials  = &userCredentials{}
 	UserEmails       = &userEmails{}
 	EventLogs        = &eventLogs{}

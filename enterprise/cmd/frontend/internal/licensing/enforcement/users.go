@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -76,11 +77,9 @@ func NewAfterCreateUserHook() func(context.Context, dbutil.DB, *types.User) erro
 
 		// Nil info indicates no license, thus Free tier
 		if info == nil {
+			store := db.NewUserStoreWithDB(tx)
 			user.SiteAdmin = true
-			// TODO: Use db.Users.SetIsSiteAdmin when it migrated to have `*basestore.Store`
-			//  and support `With` method.
-			_, err := tx.ExecContext(ctx, "UPDATE users SET site_admin=$1 WHERE id=$2", user.SiteAdmin, user.ID)
-			if err != nil {
+			if err := store.SetIsSiteAdmin(ctx, user.ID, user.SiteAdmin); err != nil {
 				return err
 			}
 		}

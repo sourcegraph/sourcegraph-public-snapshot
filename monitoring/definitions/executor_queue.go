@@ -100,7 +100,7 @@ func ExecutorQueue() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Container monitoring (not available on server)",
+				Title:  shared.TitleContainerMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -109,12 +109,11 @@ func ExecutorQueue() *monitoring.Container {
 					},
 					{
 						shared.ContainerRestarts("executor-queue", monitoring.ObservableOwnerCodeIntel).Observable(),
-						shared.ContainerFsInodes("executor-queue", monitoring.ObservableOwnerCodeIntel).Observable(),
 					},
 				},
 			},
 			{
-				Title:  "Provisioning indicators (not available on server)",
+				Title:  shared.TitleProvisioningIndicators,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -128,7 +127,7 @@ func ExecutorQueue() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Golang runtime monitoring",
+				Title:  shared.TitleGolangMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -138,7 +137,7 @@ func ExecutorQueue() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Kubernetes monitoring (ignore if using Docker Compose or server)",
+				Title:  shared.TitleKubernetesMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{

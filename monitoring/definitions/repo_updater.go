@@ -8,10 +8,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
-// This is set a bit longer than maxSyncInterval in internal/repos/syncer.go
-const syncDurationThreshold = 9 * time.Hour
-
 func RepoUpdater() *monitoring.Container {
+	// This is set a bit longer than maxSyncInterval in internal/repos/syncer.go
+	const syncDurationThreshold = 9 * time.Hour
+
 	return &monitoring.Container{
 		Name:        "repo-updater",
 		Title:       "Repo Updater",
@@ -184,7 +184,7 @@ func RepoUpdater() *monitoring.Container {
 							Description: "rate of growth of update queue length over 5 minutes",
 							Query:       `max(deriv(src_repoupdater_sched_update_queue_length[5m]))`,
 							// Alert if the derivative is positive for longer than 30 minutes
-							Critical:          monitoring.Alert().Greater(0).For(30 * time.Minute),
+							Critical:          monitoring.Alert().Greater(0).For(120 * time.Minute),
 							Panel:             monitoring.Panel().Unit(monitoring.Number),
 							Owner:             monitoring.ObservableOwnerCloud,
 							PossibleSolutions: "Check repo-updater logs for indications that the queue is not being processed. The queue length should trend downwards over time as items are sent to GitServer",
@@ -389,7 +389,7 @@ func RepoUpdater() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Container monitoring (not available on server)",
+				Title:  shared.TitleContainerMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -401,12 +401,11 @@ func RepoUpdater() *monitoring.Container {
 					},
 					{
 						shared.ContainerRestarts("repo-updater", monitoring.ObservableOwnerCloud).Observable(),
-						shared.ContainerFsInodes("repo-updater", monitoring.ObservableOwnerCloud).Observable(),
 					},
 				},
 			},
 			{
-				Title:  "Provisioning indicators (not available on server)",
+				Title:  shared.TitleProvisioningIndicators,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -420,7 +419,7 @@ func RepoUpdater() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Golang runtime monitoring",
+				Title:  shared.TitleGolangMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -430,7 +429,7 @@ func RepoUpdater() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Kubernetes monitoring (ignore if using Docker Compose or server)",
+				Title:  shared.TitleKubernetesMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{

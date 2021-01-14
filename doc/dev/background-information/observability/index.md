@@ -31,4 +31,5 @@ Observability at Sourcegraph includes:
 - [Monitoring generator](./monitoring-generator.md)
 - [Sourcegraph Grafana](./grafana.md)
 - [Sourcegraph Prometheus](./prometheus.md)
+- [Sourcegraph cAdvisor](./cadvisor.md)
 - [Observability for site administrators](../../../admin/observability/index.md)

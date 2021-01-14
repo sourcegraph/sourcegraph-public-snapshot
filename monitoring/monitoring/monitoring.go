@@ -81,7 +81,7 @@ func (c *Container) renderDashboard() *sdk.Board {
 			Name:       "Alert events",
 			Datasource: stringPtr("Prometheus"),
 			// Show alerts matching the selected alert_level (see template variable above)
-			Expr:        fmt.Sprintf(`ALERTS{service_name=%q,level=~"$alert_level"}`, c.Name),
+			Expr:        fmt.Sprintf(`ALERTS{service_name=%q,level=~"$alert_level",alertstate="firing"}`, c.Name),
 			Step:        "60s",
 			TitleFormat: "{{ description }} ({{ name }})",
 			TagKeys:     "level,owner",
@@ -471,8 +471,8 @@ type Observable struct {
 	// If there is no clear potential resolution or there is no alert configured, "none"
 	// must be explicitly stated.
 	//
-	// Use the Interpretation field for additional guidance on understanding this Observable that isn't directly related to solving it.
-	// it, the Interpretation field can be provided as well.
+	// Use the Interpretation field for additional guidance on understanding this Observable
+	// that isn't directly related to solving it.
 	//
 	// Contacting support should not be mentioned as part of a possible solution, as it is
 	// communicated elsewhere.

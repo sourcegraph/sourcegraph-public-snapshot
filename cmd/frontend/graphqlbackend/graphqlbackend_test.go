@@ -149,6 +149,9 @@ func TestAffiliatedRepositories(t *testing.T) {
 			SiteAdmin: userID == 1,
 		}, nil
 	}
+	db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
+		return &types.User{ID: 1, SiteAdmin: true}, nil
+	}
 	cf = httpcli.NewFactory(
 		nil,
 		func(c *http.Client) error {

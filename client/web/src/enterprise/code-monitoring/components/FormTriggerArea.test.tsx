@@ -22,6 +22,7 @@ describe('FormTriggerArea', () => {
                 triggerCompleted={false}
                 onQueryChange={sinon.spy()}
                 setTriggerCompleted={sinon.spy()}
+                startExpanded={false}
             />
         )
         act(() => {

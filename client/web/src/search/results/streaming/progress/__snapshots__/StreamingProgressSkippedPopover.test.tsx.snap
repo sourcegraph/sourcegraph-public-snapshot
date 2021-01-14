@@ -11,6 +11,22 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       "repositoriesCount": 2,
       "skipped": Array [
         Object {
+          "message": "There was a network error retrieving search results. Check your Internet connection and try again.",
+          "reason": "error",
+          "severity": "error",
+          "title": "Error loading results",
+        },
+        Object {
+          "message": "Search timed out",
+          "reason": "shard-timedout",
+          "severity": "warn",
+          "suggested": Object {
+            "queryExpression": "timeout:2m",
+            "title": "timeout:2m",
+          },
+          "title": "Search timed out",
+        },
+        Object {
           "message": "10k forked repositories excluded",
           "reason": "excluded-fork",
           "severity": "info",
@@ -40,20 +56,212 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
           },
           "title": "1 archived",
         },
-        Object {
-          "message": "Search timed out",
-          "reason": "shard-timedout",
-          "severity": "warn",
-          "suggested": Object {
-            "queryExpression": "timeout:2m",
-            "title": "timeout:2m",
-          },
-          "title": "Search timed out",
-        },
       ],
     }
   }
 >
+  <Alert
+    closeAriaLabel="Close"
+    color="danger"
+    fade={false}
+    isOpen={true}
+    key="error"
+    tag="div"
+    transition={
+      Object {
+        "appear": true,
+        "baseClass": "fade",
+        "baseClassActive": "show",
+        "enter": true,
+        "exit": true,
+        "in": true,
+        "mountOnEnter": false,
+        "onEnter": [Function],
+        "onEntered": [Function],
+        "onEntering": [Function],
+        "onExit": [Function],
+        "onExited": [Function],
+        "onExiting": [Function],
+        "tag": "div",
+        "timeout": 150,
+        "unmountOnExit": true,
+      }
+    }
+  >
+    <Fade
+      appear={true}
+      baseClass=""
+      baseClassActive="show"
+      className="alert alert-danger"
+      enter={true}
+      exit={true}
+      in={true}
+      mountOnEnter={false}
+      onEnter={[Function]}
+      onEntered={[Function]}
+      onEntering={[Function]}
+      onExit={[Function]}
+      onExited={[Function]}
+      onExiting={[Function]}
+      role="alert"
+      tag="div"
+      timeout={0}
+      unmountOnExit={true}
+    >
+      <Transition
+        appear={true}
+        enter={true}
+        exit={true}
+        in={true}
+        mountOnEnter={false}
+        onEnter={[Function]}
+        onEntered={[Function]}
+        onEntering={[Function]}
+        onExit={[Function]}
+        onExited={[Function]}
+        onExiting={[Function]}
+        timeout={0}
+        unmountOnExit={true}
+      >
+        <div
+          className="alert alert-danger"
+          role="alert"
+        >
+          <h4
+            className="d-flex align-items-center mb-0"
+          >
+            <Memo(AlertCircleIcon)
+              className="icon-inline mr-2"
+            />
+            <span>
+              Error loading results
+            </span>
+          </h4>
+          <div
+            className="mt-2"
+          >
+            <Markdown
+              dangerousInnerHTML="<p>There was a network error retrieving search results. Check your Internet connection and try again.</p>
+"
+              history="[History]"
+            >
+              <div
+                className="markdown"
+                dangerouslySetInnerHTML={
+                  Object {
+                    "__html": "<p>There was a network error retrieving search results. Check your Internet connection and try again.</p>
+",
+                  }
+                }
+                onClick={[Function]}
+              />
+            </Markdown>
+          </div>
+        </div>
+      </Transition>
+    </Fade>
+  </Alert>
+  <Alert
+    closeAriaLabel="Close"
+    color="danger"
+    fade={false}
+    isOpen={true}
+    key="shard-timedout"
+    tag="div"
+    transition={
+      Object {
+        "appear": true,
+        "baseClass": "fade",
+        "baseClassActive": "show",
+        "enter": true,
+        "exit": true,
+        "in": true,
+        "mountOnEnter": false,
+        "onEnter": [Function],
+        "onEntered": [Function],
+        "onEntering": [Function],
+        "onExit": [Function],
+        "onExited": [Function],
+        "onExiting": [Function],
+        "tag": "div",
+        "timeout": 150,
+        "unmountOnExit": true,
+      }
+    }
+  >
+    <Fade
+      appear={true}
+      baseClass=""
+      baseClassActive="show"
+      className="alert alert-danger"
+      enter={true}
+      exit={true}
+      in={true}
+      mountOnEnter={false}
+      onEnter={[Function]}
+      onEntered={[Function]}
+      onEntering={[Function]}
+      onExit={[Function]}
+      onExited={[Function]}
+      onExiting={[Function]}
+      role="alert"
+      tag="div"
+      timeout={0}
+      unmountOnExit={true}
+    >
+      <Transition
+        appear={true}
+        enter={true}
+        exit={true}
+        in={true}
+        mountOnEnter={false}
+        onEnter={[Function]}
+        onEntered={[Function]}
+        onEntering={[Function]}
+        onExit={[Function]}
+        onExited={[Function]}
+        onExiting={[Function]}
+        timeout={0}
+        unmountOnExit={true}
+      >
+        <div
+          className="alert alert-danger"
+          role="alert"
+        >
+          <h4
+            className="d-flex align-items-center mb-0"
+          >
+            <Memo(AlertCircleIcon)
+              className="icon-inline mr-2"
+            />
+            <span>
+              Search timed out
+            </span>
+          </h4>
+          <div
+            className="mt-2"
+          >
+            <Markdown
+              dangerousInnerHTML="<p>Search timed out</p>
+"
+              history="[History]"
+            >
+              <div
+                className="markdown"
+                dangerouslySetInnerHTML={
+                  Object {
+                    "__html": "<p>Search timed out</p>
+",
+                  }
+                }
+                onClick={[Function]}
+              />
+            </Markdown>
+          </div>
+        </div>
+      </Transition>
+    </Fade>
+  </Alert>
   <Alert
     closeAriaLabel="Close"
     color="info"
@@ -357,107 +565,6 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       </Transition>
     </Fade>
   </Alert>
-  <Alert
-    closeAriaLabel="Close"
-    color="danger"
-    fade={false}
-    isOpen={true}
-    key="shard-timedout"
-    tag="div"
-    transition={
-      Object {
-        "appear": true,
-        "baseClass": "fade",
-        "baseClassActive": "show",
-        "enter": true,
-        "exit": true,
-        "in": true,
-        "mountOnEnter": false,
-        "onEnter": [Function],
-        "onEntered": [Function],
-        "onEntering": [Function],
-        "onExit": [Function],
-        "onExited": [Function],
-        "onExiting": [Function],
-        "tag": "div",
-        "timeout": 150,
-        "unmountOnExit": true,
-      }
-    }
-  >
-    <Fade
-      appear={true}
-      baseClass=""
-      baseClassActive="show"
-      className="alert alert-danger"
-      enter={true}
-      exit={true}
-      in={true}
-      mountOnEnter={false}
-      onEnter={[Function]}
-      onEntered={[Function]}
-      onEntering={[Function]}
-      onExit={[Function]}
-      onExited={[Function]}
-      onExiting={[Function]}
-      role="alert"
-      tag="div"
-      timeout={0}
-      unmountOnExit={true}
-    >
-      <Transition
-        appear={true}
-        enter={true}
-        exit={true}
-        in={true}
-        mountOnEnter={false}
-        onEnter={[Function]}
-        onEntered={[Function]}
-        onEntering={[Function]}
-        onExit={[Function]}
-        onExited={[Function]}
-        onExiting={[Function]}
-        timeout={0}
-        unmountOnExit={true}
-      >
-        <div
-          className="alert alert-danger"
-          role="alert"
-        >
-          <h4
-            className="d-flex align-items-center mb-0"
-          >
-            <Memo(AlertCircleIcon)
-              className="icon-inline mr-2"
-            />
-            <span>
-              Search timed out
-            </span>
-          </h4>
-          <div
-            className="mt-2"
-          >
-            <Markdown
-              dangerousInnerHTML="<p>Search timed out</p>
-"
-              history="[History]"
-            >
-              <div
-                className="markdown"
-                dangerouslySetInnerHTML={
-                  Object {
-                    "__html": "<p>Search timed out</p>
-",
-                  }
-                }
-                onClick={[Function]}
-              />
-            </Markdown>
-          </div>
-        </div>
-      </Transition>
-    </Fade>
-  </Alert>
   <Form
     onSubmit={[Function]}
     tag="form"
@@ -478,6 +585,57 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
         <div
           className="form-check"
         >
+          <Label
+            check={true}
+            className="mb-1 d-block"
+            key="timeout:2m"
+            tag="label"
+            widths={
+              Array [
+                "xs",
+                "sm",
+                "md",
+                "lg",
+                "xl",
+              ]
+            }
+          >
+            <label
+              className="mb-1 d-block form-check-label"
+            >
+              <Input
+                onChange={[Function]}
+                type="checkbox"
+                value="timeout:2m"
+              >
+                <input
+                  className="form-check-input"
+                  onChange={[Function]}
+                  type="checkbox"
+                  value="timeout:2m"
+                />
+              </Input>
+               
+              timeout:2m
+               (
+              <SyntaxHighlightedSearchQuery
+                query="timeout:2m"
+              >
+                <span
+                  className="text-monospace search-query-link"
+                >
+                  <span
+                    className="search-filter-keyword"
+                  >
+                    timeout
+                    :
+                  </span>
+                  2m
+                </span>
+              </SyntaxHighlightedSearchQuery>
+              )
+            </label>
+          </Label>
           <Label
             check={true}
             className="mb-1 d-block"
@@ -620,57 +778,6 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
                     :
                   </span>
                   yes
-                </span>
-              </SyntaxHighlightedSearchQuery>
-              )
-            </label>
-          </Label>
-          <Label
-            check={true}
-            className="mb-1 d-block"
-            key="timeout:2m"
-            tag="label"
-            widths={
-              Array [
-                "xs",
-                "sm",
-                "md",
-                "lg",
-                "xl",
-              ]
-            }
-          >
-            <label
-              className="mb-1 d-block form-check-label"
-            >
-              <Input
-                onChange={[Function]}
-                type="checkbox"
-                value="timeout:2m"
-              >
-                <input
-                  className="form-check-input"
-                  onChange={[Function]}
-                  type="checkbox"
-                  value="timeout:2m"
-                />
-              </Input>
-               
-              timeout:2m
-               (
-              <SyntaxHighlightedSearchQuery
-                query="timeout:2m"
-              >
-                <span
-                  className="text-monospace search-query-link"
-                >
-                  <span
-                    className="search-filter-keyword"
-                  >
-                    timeout
-                    :
-                  </span>
-                  2m
                 </span>
               </SyntaxHighlightedSearchQuery>
               )
