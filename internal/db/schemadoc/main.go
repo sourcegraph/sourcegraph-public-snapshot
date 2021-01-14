@@ -21,13 +21,85 @@ import (
 	_ "github.com/lib/pq"
 )
 
-func runIgnoreError(cmd string, args ...string) {
-	_ = exec.Command(cmd, args...).Run()
-}
-
 const dbname = "schemadoc-gen-temp"
 
 var versionRe = lazyregexp.New(fmt.Sprintf(`\b%s\b`, regexp.QuoteMeta("9.6")))
+
+func main() {
+	out, err := generate(log.New(os.Stderr, "", log.LstdFlags), os.Args[1])
+	if err != nil {
+		log.Fatal(err)
+	}
+	if len(os.Args) > 1 {
+		if err := ioutil.WriteFile(os.Args[2], []byte(out), 0644); err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		fmt.Print(out)
+	}
+}
+
+// This script generates markdown formatted output containing descriptions of
+// the current dabase schema, obtained from postgres. The correct PGHOST,
+// PGPORT, PGUSER etc. env variables must be set to run this script.
+//
+// First CLI argument is an optional filename to write the output to.
+func generate(logger *log.Logger, databaseName string) (string, error) {
+	// If we are using pg9.6 use it locally since it is faster (CI \o/)
+	out, _ := exec.Command("psql", "--version").CombinedOutput()
+	if versionRe.Match(out) {
+		runIgnoreError("dropdb", dbname)
+		defer runIgnoreError("dropdb", dbname)
+
+		return generateInternal(logger, databaseName, "dbname="+dbname, func(cmd ...string) (string, error) {
+			c := exec.Command(cmd[0], cmd[1:]...)
+			c.Stderr = logger.Writer()
+			out, err := c.Output()
+			return string(out), err
+		})
+	}
+
+	logger.Printf("Running PostgreSQL 9.6 in docker since local version is %s", strings.TrimSpace(string(out)))
+	if err := exec.Command("docker", "image", "inspect", "postgres:9.6").Run(); err != nil {
+		logger.Println("docker pull postgres9.6")
+		pull := exec.Command("docker", "pull", "postgres:9.6")
+		pull.Stdout = logger.Writer()
+		pull.Stderr = logger.Writer()
+		if err := pull.Run(); err != nil {
+			return "", fmt.Errorf("docker pull postgres9.6 failed: %w", err)
+		}
+		logger.Println("docker pull complete")
+	}
+	runIgnoreError("docker", "rm", "--force", dbname)
+	server := exec.Command("docker", "run", "--rm", "--name", dbname, "-e", "POSTGRES_HOST_AUTH_METHOD=trust", "-p", "5433:5432", "postgres:9.6")
+	if err := server.Start(); err != nil {
+		return "", err
+	}
+
+	defer func() {
+		_ = server.Process.Kill()
+		runIgnoreError("docker", "kill", dbname)
+		_ = server.Wait()
+	}()
+
+	attempts := 0
+	for {
+		attempts++
+		if err := exec.Command("pg_isready", "-U", "postgres", "-d", dbname, "-h", "127.0.0.1", "-p", "5433").Run(); err == nil {
+			break
+		} else if attempts > 30 {
+			return "", fmt.Errorf("gave up waiting after 30s attempt for pg_isready: %w", err)
+		}
+		time.Sleep(time.Second)
+	}
+	return generateInternal(logger, databaseName, "postgres://postgres@127.0.0.1:5433/postgres?dbname="+dbname, func(cmd ...string) (string, error) {
+		cmd = append([]string{"exec", "-u", "postgres", dbname}, cmd...)
+		c := exec.Command("docker", cmd...)
+		c.Stderr = logger.Writer()
+		out, err := c.Output()
+		return string(out), err
+	})
+}
 
 func generateInternal(logger *log.Logger, databaseName, dataSource string, run func(cmd ...string) (string, error)) (string, error) {
 	if out, err := run("createdb", dbname); err != nil {
@@ -139,68 +211,6 @@ WHERE table_schema='public' AND table_type='BASE TABLE';
 	return strings.Join(docs, "\n"), nil
 }
 
-// This script generates markdown formatted output containing descriptions of
-// the current dabase schema, obtained from postgres. The correct PGHOST,
-// PGPORT, PGUSER etc. env variables must be set to run this script.
-//
-// First CLI argument is an optional filename to write the output to.
-func generate(logger *log.Logger, databaseName string) (string, error) {
-	// If we are using pg9.6 use it locally since it is faster (CI \o/)
-	out, _ := exec.Command("psql", "--version").CombinedOutput()
-	if versionRe.Match(out) {
-		runIgnoreError("dropdb", dbname)
-		defer runIgnoreError("dropdb", dbname)
-
-		return generateInternal(logger, databaseName, "dbname="+dbname, func(cmd ...string) (string, error) {
-			c := exec.Command(cmd[0], cmd[1:]...)
-			c.Stderr = logger.Writer()
-			out, err := c.Output()
-			return string(out), err
-		})
-	}
-
-	logger.Printf("Running PostgreSQL 9.6 in docker since local version is %s", strings.TrimSpace(string(out)))
-	if err := exec.Command("docker", "image", "inspect", "postgres:9.6").Run(); err != nil {
-		logger.Println("docker pull postgres9.6")
-		pull := exec.Command("docker", "pull", "postgres:9.6")
-		pull.Stdout = logger.Writer()
-		pull.Stderr = logger.Writer()
-		if err := pull.Run(); err != nil {
-			return "", fmt.Errorf("docker pull postgres9.6 failed: %w", err)
-		}
-		logger.Println("docker pull complete")
-	}
-	runIgnoreError("docker", "rm", "--force", dbname)
-	server := exec.Command("docker", "run", "--rm", "--name", dbname, "-e", "POSTGRES_HOST_AUTH_METHOD=trust", "-p", "5433:5432", "postgres:9.6")
-	if err := server.Start(); err != nil {
-		return "", err
-	}
-
-	defer func() {
-		_ = server.Process.Kill()
-		runIgnoreError("docker", "kill", dbname)
-		_ = server.Wait()
-	}()
-
-	attempts := 0
-	for {
-		attempts++
-		if err := exec.Command("pg_isready", "-U", "postgres", "-d", dbname, "-h", "127.0.0.1", "-p", "5433").Run(); err == nil {
-			break
-		} else if attempts > 30 {
-			return "", fmt.Errorf("gave up waiting after 30s attempt for pg_isready: %w", err)
-		}
-		time.Sleep(time.Second)
-	}
-	return generateInternal(logger, databaseName, "postgres://postgres@127.0.0.1:5433/postgres?dbname="+dbname, func(cmd ...string) (string, error) {
-		cmd = append([]string{"exec", "-u", "postgres", dbname}, cmd...)
-		c := exec.Command("docker", cmd...)
-		c.Stderr = logger.Writer()
-		out, err := c.Output()
-		return string(out), err
-	})
-}
-
 func getTableComment(db *sql.DB, table string) (string, error) {
 	rows, err := db.Query("select obj_description($1::regclass)", table)
 	if err != nil {
@@ -255,16 +265,6 @@ func getColumnComments(db *sql.DB, table string) (map[string]string, error) {
 	return comments, nil
 }
 
-func main() {
-	out, err := generate(log.New(os.Stderr, "", log.LstdFlags), os.Args[1])
-	if err != nil {
-		log.Fatal(err)
-	}
-	if len(os.Args) > 1 {
-		if err := ioutil.WriteFile(os.Args[2], []byte(out), 0644); err != nil {
-			log.Fatal(err)
-		}
-	} else {
-		fmt.Print(out)
-	}
+func runIgnoreError(cmd string, args ...string) {
+	_ = exec.Command(cmd, args...).Run()
 }
