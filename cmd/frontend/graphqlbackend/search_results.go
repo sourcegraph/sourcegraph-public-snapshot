@@ -124,7 +124,10 @@ func (c *searchResultsCommon) RepositoriesCount() int32 {
 func (c *searchResultsCommon) repositoryResolvers(mask search.RepoStatus) []*RepositoryResolver {
 	var resolvers []*RepositoryResolver
 	c.status.Filter(mask, func(id api.RepoID) {
-		resolvers = append(resolvers, &RepositoryResolver{innerRepo: c.repos[id].ToRepo()})
+		r := c.repos[id]
+		if r != nil {
+			resolvers = append(resolvers, &RepositoryResolver{innerRepo: c.repos[id].ToRepo()})
+		}
 	})
 	sort.Slice(resolvers, func(a, b int) bool {
 		return resolvers[a].innerRepo.ID < resolvers[b].innerRepo.ID

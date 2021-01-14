@@ -262,16 +262,13 @@ func (s *indexedSearchRequest) doSearch(ctx context.Context, c chan<- indexedSea
 		return statusMap
 	}
 
-	// Initial progress message communicating which repos are indexed.
-	c <- indexedSearchEvent{common: searchResultsCommon{status: mkStatusMap(search.RepoStatusIndexed)}}
-
 	for event := range events {
 		err := event.err
 
-		noResultsInTimeout := false
 		if err == errNoResultsInTimeout {
 			err = nil
-			c <- indexedSearchEvent{common: searchResultsCommon{status: mkStatusMap(search.RepoStatusTimedout)}}
+			c <- indexedSearchEvent{common: searchResultsCommon{status: mkStatusMap(search.RepoStatusTimedout | search.RepoStatusIndexed)}}
+			return
 		}
 
 		if err != nil {
@@ -279,16 +276,21 @@ func (s *indexedSearchRequest) doSearch(ctx context.Context, c chan<- indexedSea
 			return
 		}
 
+		// We know that the repo for each result was searched, so include that
+		// in the statusMap.
 		var statusMap search.RepoStatusMap
-		for r := range event.partial {
-			statusMap.Update(r, search.RepoStatusLimitHit)
-		}
-		lastID := api.RepoID(-1)
+		lastID := api.RepoID(-1) // PERF: avoid Update call if we have the same repository
 		for _, fm := range event.fm {
-			if id := fm.Repo.IDInt32(); lastID != id {
-				statusMap.Update(id, search.RepoStatusSearched)
+			if id := fm.Repo.innerRepo.ID; lastID != id {
+				statusMap.Update(id, search.RepoStatusSearched|search.RepoStatusIndexed)
 				lastID = id
 			}
+		}
+
+		// Partial is populated with repositories we may have not fully
+		// searched due to limits.
+		for r := range event.partial {
+			statusMap.Update(r, search.RepoStatusLimitHit)
 		}
 
 		c <- indexedSearchEvent{
@@ -303,7 +305,7 @@ func (s *indexedSearchRequest) doSearch(ctx context.Context, c chan<- indexedSea
 
 	// Successfully searched everything. Communicate every indexed repo was
 	// searched in case it didn't have a result.
-	c <- indexedSearchEvent{common: searchResultsCommon{status: mkStatusMap(search.RepoStatusSearched)}}
+	c <- indexedSearchEvent{common: searchResultsCommon{status: mkStatusMap(search.RepoStatusSearched | search.RepoStatusIndexed)}}
 }
 
 func zoektResultCountFactor(numRepos int, fileMatchLimit int32, globalSearch bool) (k int) {

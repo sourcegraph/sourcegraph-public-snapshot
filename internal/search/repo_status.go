@@ -8,7 +8,7 @@ import (
 )
 
 // RepoStatus is a bit flag encoding the status of a search on a repository. A
-// repository can be in many states, so is any bit may be set.
+// repository can be in many states, so any bit may be set.
 type RepoStatus uint8
 
 const (
@@ -42,6 +42,8 @@ func (s RepoStatus) String() string {
 	return "RepoStatus{" + strings.Join(parts, " ") + "}"
 }
 
+// RepoStatusMap is a mutable map from repository IDs to a union of
+// RepoStatus.
 type RepoStatusMap struct {
 	m map[api.RepoID]RepoStatus
 
@@ -49,6 +51,7 @@ type RepoStatusMap struct {
 	status RepoStatus
 }
 
+// Iterate will call f for each RepoID in m.
 func (m *RepoStatusMap) Iterate(f func(api.RepoID, RepoStatus)) {
 	if m == nil {
 		return
@@ -59,6 +62,8 @@ func (m *RepoStatusMap) Iterate(f func(api.RepoID, RepoStatus)) {
 	}
 }
 
+// Filter calls f for each repo RepoID where mask is a subset of the repo
+// status.
 func (m *RepoStatusMap) Filter(mask RepoStatus, f func(api.RepoID)) {
 	if m == nil {
 		return
@@ -74,6 +79,7 @@ func (m *RepoStatusMap) Filter(mask RepoStatus, f func(api.RepoID)) {
 	}
 }
 
+// Get returns the RepoStatus for id.
 func (m *RepoStatusMap) Get(id api.RepoID) RepoStatus {
 	if m == nil {
 		return 0
@@ -81,6 +87,7 @@ func (m *RepoStatusMap) Get(id api.RepoID) RepoStatus {
 	return m.m[id]
 }
 
+// Update unions status for id with the current status.
 func (m *RepoStatusMap) Update(id api.RepoID, status RepoStatus) {
 	if m.m == nil {
 		m.m = make(map[api.RepoID]RepoStatus)
@@ -89,6 +96,7 @@ func (m *RepoStatusMap) Update(id api.RepoID, status RepoStatus) {
 	m.status |= status
 }
 
+// Union is a fast path for calling m.Update on all entries in o.
 func (m *RepoStatusMap) Union(o *RepoStatusMap) {
 	m.status |= o.status
 	if m.m == nil {
@@ -100,6 +108,7 @@ func (m *RepoStatusMap) Union(o *RepoStatusMap) {
 	}
 }
 
+// Any returns true if there are any entries which contain a status in mask.
 func (m *RepoStatusMap) Any(mask RepoStatus) bool {
 	if m == nil {
 		return false
@@ -107,18 +116,20 @@ func (m *RepoStatusMap) Any(mask RepoStatus) bool {
 	return m.status&mask != 0
 }
 
-func (m *RepoStatusMap) All(mask RepoStatus) bool {
-	if !m.Any(mask) {
+// All returns true if all entries contain status.
+func (m *RepoStatusMap) All(status RepoStatus) bool {
+	if !m.Any(status) {
 		return false
 	}
-	for _, status := range m.m {
-		if status&mask == 0 {
+	for _, s := range m.m {
+		if s&status == 0 {
 			return false
 		}
 	}
 	return true
 }
 
+// Len is the number of entries in the map.
 func (m *RepoStatusMap) Len() int {
 	if m == nil {
 		return 0
@@ -133,6 +144,8 @@ func (m *RepoStatusMap) String() string {
 	return fmt.Sprintf("RepoStatusMap{N=%d %s}", len(m.m), m.status)
 }
 
+// RepoStatusSingleton is a convenience function to contain a RepoStatusMap
+// with one entry.
 func RepoStatusSingleton(id api.RepoID, status RepoStatus) RepoStatusMap {
 	return RepoStatusMap{
 		m:      map[api.RepoID]RepoStatus{id: status},

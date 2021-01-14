@@ -368,8 +368,17 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *sea
 		repos = repos[repositoryOffset:]
 	}
 
+	// Search backends don't populate searchResultsCommon.repos, the
+	// repository searcher does. We need to do that here.
+	commonRepos := make(map[api.RepoID]*types.RepoName, len(repos))
+	for _, r := range repos {
+		commonRepos[r.Repo.ID] = r.Repo
+	}
+
 	// Search over the repos list in batches.
-	common = &searchResultsCommon{}
+	common = &searchResultsCommon{
+		repos: commonRepos,
+	}
 	for start := 0; start <= len(repos); start += batchSize {
 		if start > len(repos) {
 			break
@@ -556,26 +565,6 @@ func sliceSearchResultsCommon(common *searchResultsCommon, firstResultRepo, last
 		indexUnavailable: common.indexUnavailable,
 		repos:            make(map[api.RepoID]*types.RepoName),
 		resultCount:      common.resultCount,
-	}
-
-	doAppend := func(dst, src []*types.RepoName) []*types.RepoName {
-		sort.Slice(src, func(i, j int) bool {
-			return repoIsLess(src[i], src[j])
-		})
-		for _, r := range src {
-			if lastResultRepo == "" || string(r.Name) > lastResultRepo {
-				continue
-			}
-			if firstResultRepo != "" && string(r.Name) < firstResultRepo {
-				continue
-			}
-			final.repos[r.ID] = r
-			dst = append(dst, r)
-			if string(r.Name) == lastResultRepo {
-				break
-			}
-		}
-		return dst
 	}
 
 	for _, r := range common.repos {

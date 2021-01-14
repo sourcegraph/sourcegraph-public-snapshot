@@ -614,13 +614,18 @@ func TestSearchPagination_cloning_missing(t *testing.T) {
 			result(repoName("f"), "a.go"),
 		},
 	}
-	repoMissing := map[string]*types.RepoName{
-		"b": repoName("b"),
-		"e": repoName("e"),
+	reposStatus := func(m map[string]search.RepoStatus) search.RepoStatusMap {
+		var rsm search.RepoStatusMap
+		for name, status := range m {
+			rsm.Update(repoName(name).ID, status)
+		}
+		return rsm
 	}
-	repoCloning := map[string]*types.RepoName{
-		"d": repoName("d"),
-	}
+	status := reposStatus(map[string]search.RepoStatus{
+		"b": search.RepoStatusMissing,
+		"e": search.RepoStatusMissing,
+		"d": search.RepoStatusCloning,
+	})
 	searchRepos := []*search.RepositoryRevisions{
 		repoRevs("a", "master"),
 		repoRevs("b", "master"),
@@ -634,13 +639,9 @@ func TestSearchPagination_cloning_missing(t *testing.T) {
 		for _, repoRev := range batch {
 			if res, ok := repoResults[string(repoRev.Repo.Name)]; ok {
 				results = append(results, res...)
-				common.repos[repoRev.Repo.ID] = &types.RepoName{ID: repoRev.Repo.ID, Name: repoRev.Repo.Name}
 			}
-			if missing, ok := repoMissing[string(repoRev.Repo.Name)]; ok {
-				common.status.Update(missing.ID, search.RepoStatusMissing)
-			}
-			if cloning, ok := repoCloning[string(repoRev.Repo.Name)]; ok {
-				common.status.Update(cloning.ID, search.RepoStatusCloning)
+			if mask := status.Get(repoRev.Repo.ID); mask != 0 {
+				common.status.Update(repoRev.Repo.ID, mask)
 			}
 		}
 		return
@@ -747,7 +748,7 @@ func TestSearchPagination_cloning_missing(t *testing.T) {
 				t.Error("wantResults != results", cmp.Diff(test.wantResults, results))
 			}
 			if !cmp.Equal(test.wantCommon, common) {
-				t.Error("wantCommon != common", cmp.Diff(test.wantCommon, common))
+				t.Error("common mismatch (-want +got):\n", cmp.Diff(test.wantCommon, common))
 			}
 			if !cmp.Equal(test.wantErr, err) {
 				t.Error("wantErr != err", cmp.Diff(test.wantErr, err))

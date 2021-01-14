@@ -30,7 +30,7 @@ func AssertGolden(t testing.TB, path string, update bool, want interface{}) {
 	}
 
 	if diff := cmp.Diff(string(golden), string(data)); diff != "" {
-		t.Error(diff)
+		t.Errorf("(-want, +got):\n%s", diff)
 	}
 }
 
