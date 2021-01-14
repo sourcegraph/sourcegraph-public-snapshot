@@ -35,66 +35,6 @@ var versionRe = lazyregexp.New(fmt.Sprintf(`\b%s\b`, regexp.QuoteMeta("9.6")))
 //
 // First CLI argument is an optional filename to write the output to.
 func generate(log *log.Logger, databaseName string) (string, error) {
-	var (
-		dataSource string
-		run        func(cmd ...string) (string, error)
-	)
-	// If we are using pg9.6 use it locally since it is faster (CI \o/)
-	if out, _ := exec.Command("psql", "--version").CombinedOutput(); versionRe.Match(out) {
-		dataSource = "dbname=" + dbname
-		run = func(cmd ...string) (string, error) {
-			c := exec.Command(cmd[0], cmd[1:]...)
-			c.Stderr = log.Writer()
-			out, err := c.Output()
-			return string(out), err
-		}
-		runIgnoreError("dropdb", dbname)
-		defer runIgnoreError("dropdb", dbname)
-	} else {
-		log.Printf("Running PostgreSQL 9.6 in docker since local version is %s", strings.TrimSpace(string(out)))
-		if err := exec.Command("docker", "image", "inspect", "postgres:9.6").Run(); err != nil {
-			log.Println("docker pull postgres9.6")
-			pull := exec.Command("docker", "pull", "postgres:9.6")
-			pull.Stdout = log.Writer()
-			pull.Stderr = log.Writer()
-			if err := pull.Run(); err != nil {
-				return "", fmt.Errorf("docker pull postgres9.6 failed: %w", err)
-			}
-			log.Println("docker pull complete")
-		}
-		runIgnoreError("docker", "rm", "--force", dbname)
-		server := exec.Command("docker", "run", "--rm", "--name", dbname, "-e", "POSTGRES_HOST_AUTH_METHOD=trust", "-p", "5433:5432", "postgres:9.6")
-		if err := server.Start(); err != nil {
-			return "", err
-		}
-
-		defer func() {
-			_ = server.Process.Kill()
-			runIgnoreError("docker", "kill", dbname)
-			_ = server.Wait()
-		}()
-
-		dataSource = "postgres://postgres@127.0.0.1:5433/postgres?dbname=" + dbname
-		run = func(cmd ...string) (string, error) {
-			cmd = append([]string{"exec", "-u", "postgres", dbname}, cmd...)
-			c := exec.Command("docker", cmd...)
-			c.Stderr = log.Writer()
-			out, err := c.Output()
-			return string(out), err
-		}
-
-		attempts := 0
-		for {
-			attempts++
-			if err := exec.Command("pg_isready", "-U", "postgres", "-d", dbname, "-h", "127.0.0.1", "-p", "5433").Run(); err == nil {
-				break
-			} else if attempts > 30 {
-				return "", fmt.Errorf("gave up waiting after 30s attempt for pg_isready: %w", err)
-			}
-			time.Sleep(time.Second)
-		}
-	}
-
 	do := func(dataSource string, run func(cmd ...string) (string, error)) (string, error) {
 		if out, err := run("createdb", dbname); err != nil {
 			return "", fmt.Errorf("createdb: %s: %w", out, err)
@@ -203,6 +143,66 @@ WHERE table_schema='public' AND table_type='BASE TABLE';
 		sort.Strings(docs)
 
 		return strings.Join(docs, "\n"), nil
+	}
+
+	var (
+		dataSource string
+		run        func(cmd ...string) (string, error)
+	)
+	// If we are using pg9.6 use it locally since it is faster (CI \o/)
+	if out, _ := exec.Command("psql", "--version").CombinedOutput(); versionRe.Match(out) {
+		dataSource = "dbname=" + dbname
+		run = func(cmd ...string) (string, error) {
+			c := exec.Command(cmd[0], cmd[1:]...)
+			c.Stderr = log.Writer()
+			out, err := c.Output()
+			return string(out), err
+		}
+		runIgnoreError("dropdb", dbname)
+		defer runIgnoreError("dropdb", dbname)
+	} else {
+		log.Printf("Running PostgreSQL 9.6 in docker since local version is %s", strings.TrimSpace(string(out)))
+		if err := exec.Command("docker", "image", "inspect", "postgres:9.6").Run(); err != nil {
+			log.Println("docker pull postgres9.6")
+			pull := exec.Command("docker", "pull", "postgres:9.6")
+			pull.Stdout = log.Writer()
+			pull.Stderr = log.Writer()
+			if err := pull.Run(); err != nil {
+				return "", fmt.Errorf("docker pull postgres9.6 failed: %w", err)
+			}
+			log.Println("docker pull complete")
+		}
+		runIgnoreError("docker", "rm", "--force", dbname)
+		server := exec.Command("docker", "run", "--rm", "--name", dbname, "-e", "POSTGRES_HOST_AUTH_METHOD=trust", "-p", "5433:5432", "postgres:9.6")
+		if err := server.Start(); err != nil {
+			return "", err
+		}
+
+		defer func() {
+			_ = server.Process.Kill()
+			runIgnoreError("docker", "kill", dbname)
+			_ = server.Wait()
+		}()
+
+		dataSource = "postgres://postgres@127.0.0.1:5433/postgres?dbname=" + dbname
+		run = func(cmd ...string) (string, error) {
+			cmd = append([]string{"exec", "-u", "postgres", dbname}, cmd...)
+			c := exec.Command("docker", cmd...)
+			c.Stderr = log.Writer()
+			out, err := c.Output()
+			return string(out), err
+		}
+
+		attempts := 0
+		for {
+			attempts++
+			if err := exec.Command("pg_isready", "-U", "postgres", "-d", dbname, "-h", "127.0.0.1", "-p", "5433").Run(); err == nil {
+				break
+			} else if attempts > 30 {
+				return "", fmt.Errorf("gave up waiting after 30s attempt for pg_isready: %w", err)
+			}
+			time.Sleep(time.Second)
+		}
 	}
 
 	return do(dataSource, run)
