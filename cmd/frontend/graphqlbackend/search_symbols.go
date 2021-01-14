@@ -125,16 +125,23 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 	run.Acquire()
 	goroutine.Go(func() {
 		defer run.Release()
-		indexedCommon, matches, searchErr := indexed.Search(ctx)
-		mu.Lock()
-		defer mu.Unlock()
-		common.update(&indexedCommon)
-		tr.LogFields(otlog.Object("searchErr", searchErr), otlog.Error(err), otlog.Bool("overLimitCanceled", overLimitCanceled))
-		if searchErr != nil && err == nil && !overLimitCanceled {
-			err = searchErr
-			tr.LazyPrintf("cancel indexed symbol search due to error: %v", err)
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
+		for event := range indexed.Search(ctx) {
+			func() {
+				mu.Lock()
+				defer mu.Unlock()
+				common.update(&event.common)
+				tr.LogFields(otlog.Object("searchErr", event.err), otlog.Error(err), otlog.Bool("overLimitCanceled", overLimitCanceled))
+				if event.err != nil && err == nil && !overLimitCanceled {
+					err = event.err
+					tr.LazyPrintf("cancel indexed symbol search due to error: %v", err)
+					cancel()
+				}
+				addMatches(event.results)
+			}()
 		}
-		addMatches(matches)
+
 	})
 
 	for _, repoRevs := range searcherRepos {

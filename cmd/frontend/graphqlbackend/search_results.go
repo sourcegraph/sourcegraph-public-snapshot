@@ -1730,7 +1730,8 @@ func (a *aggregator) collect(ctx context.Context, results []SearchResultResolver
 			continue
 		}
 
-		// Merge file matches
+		// Merge fileMatches from type symbol, path, file. For streaming search this
+		// code has no effect and the frontend should handle deduplication.
 		if m, ok := a.fileMatches[fm.uri]; ok {
 			m.appendMatches(fm)
 		} else {

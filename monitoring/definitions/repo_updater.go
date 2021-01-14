@@ -8,10 +8,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
-// This is set a bit longer than maxSyncInterval in internal/repos/syncer.go
-const syncDurationThreshold = 9 * time.Hour
-
 func RepoUpdater() *monitoring.Container {
+	// This is set a bit longer than maxSyncInterval in internal/repos/syncer.go
+	const syncDurationThreshold = 9 * time.Hour
+
 	return &monitoring.Container{
 		Name:        "repo-updater",
 		Title:       "Repo Updater",
@@ -389,7 +389,7 @@ func RepoUpdater() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Container monitoring (not available on server)",
+				Title:  shared.TitleContainerMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -401,12 +401,11 @@ func RepoUpdater() *monitoring.Container {
 					},
 					{
 						shared.ContainerRestarts("repo-updater", monitoring.ObservableOwnerCloud).Observable(),
-						shared.ContainerFsInodes("repo-updater", monitoring.ObservableOwnerCloud).Observable(),
 					},
 				},
 			},
 			{
-				Title:  "Provisioning indicators (not available on server)",
+				Title:  shared.TitleProvisioningIndicators,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -420,7 +419,7 @@ func RepoUpdater() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Golang runtime monitoring",
+				Title:  shared.TitleGolangMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -430,7 +429,7 @@ func RepoUpdater() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Kubernetes monitoring (ignore if using Docker Compose or server)",
+				Title:  shared.TitleKubernetesMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{

@@ -78,13 +78,33 @@ func buildQuery(args *search.TextParameters, repos *indexedRepoRevs, filePathPat
 	), nil
 }
 
+func zoektSearchHEADOnlyFilesStream(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, _ indexedRequestType, since func(t time.Time) time.Duration) <-chan zoektSearchStreamEvent {
+	c := make(chan zoektSearchStreamEvent)
+	go func() {
+		defer close(c)
+		_, _, _, _ = zoektSearchHEADOnlyFiles(ctx, args, repos, since, c)
+	}()
+
+	return c
+}
+
 // zoektSearchHEADOnlyFiles searches repositories using zoekt, returning only the file paths containing
 // content matching the given pattern.
 //
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, since func(t time.Time) time.Duration) (fm []*FileMatchResolver, limitHit bool, partial map[api.RepoID]struct{}, err error) {
+func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, since func(t time.Time) time.Duration, c chan<- zoektSearchStreamEvent) (fm []*FileMatchResolver, limitHit bool, partial map[api.RepoID]struct{}, err error) {
+	defer func() {
+		if c != nil {
+			c <- zoektSearchStreamEvent{
+				fm:       fm,
+				limitHit: limitHit,
+				partial:  partial,
+				err:      err,
+			}
+		}
+	}()
 	if len(repos.repoRevs) == 0 {
 		return nil, false, nil, nil
 	}

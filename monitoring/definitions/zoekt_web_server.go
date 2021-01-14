@@ -1,7 +1,6 @@
 package definitions
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
@@ -31,7 +30,7 @@ func ZoektWebServer() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Container monitoring (not available on server)",
+				Title:  shared.TitleContainerMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -40,23 +39,12 @@ func ZoektWebServer() *monitoring.Container {
 					},
 					{
 						shared.ContainerRestarts("zoekt-webserver", monitoring.ObservableOwnerSearch).Observable(),
-						shared.ContainerFsInodes("zoekt-webserver", monitoring.ObservableOwnerSearch).Observable(),
-					},
-					{
-						{
-							Name:              "fs_io_operations",
-							Description:       "filesystem reads and writes by instance rate over 1h",
-							Query:             fmt.Sprintf(`sum by(name) (rate(container_fs_reads_total{%[1]s}[1h]) + rate(container_fs_writes_total{%[1]s}[1h]))`, shared.CadvisorNameMatcher("zoekt-webserver")),
-							Warning:           monitoring.Alert().GreaterOrEqual(5000),
-							Panel:             monitoring.Panel().LegendFormat("{{name}}"),
-							Owner:             monitoring.ObservableOwnerSearch,
-							PossibleSolutions: "none",
-						},
+						shared.ContainerIOUsage("zoekt-webserver", monitoring.ObservableOwnerSearch).Observable(),
 					},
 				},
 			},
 			{
-				Title:  "Provisioning indicators (not available on server)",
+				Title:  shared.TitleProvisioningIndicators,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{

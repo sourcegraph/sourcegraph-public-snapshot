@@ -73,9 +73,7 @@ interface ScheduleRepositoryPermissionsSyncActionContainerProps {
     history: H.History
 }
 
-class ScheduleRepositoryPermissionsSyncActionContainer extends React.PureComponent<
-    ScheduleRepositoryPermissionsSyncActionContainerProps
-> {
+class ScheduleRepositoryPermissionsSyncActionContainer extends React.PureComponent<ScheduleRepositoryPermissionsSyncActionContainerProps> {
     public render(): JSX.Element | null {
         return (
             <ActionContainer

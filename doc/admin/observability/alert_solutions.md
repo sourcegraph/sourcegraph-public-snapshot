@@ -1183,11 +1183,12 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 ## frontend: container_restarts
 
-<p class="subtitle">container restarts every 5m by instance (cloud)</p>
+<p class="subtitle">container restarts (cloud)</p>
 
 **Descriptions:**
 
-- <span class="badge badge-warning">warning</span> frontend: 1+ container restarts every 5m by instance
+- <span class="badge badge-warning">warning</span> frontend: 1+ container restarts
+- <span class="badge badge-critical">critical</span> frontend: 1+ container restarts for 10m0s
 
 **Possible solutions:**
 
@@ -1197,33 +1198,13 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' (frontend|sourcegraph-frontend)` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the (frontend|sourcegraph-frontend) container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs (frontend|sourcegraph-frontend)` (note this will include logs from the previous and currently running container).
+- **Refer to the [dashboards reference](./dashboards.md#frontend-container-restarts)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_container_restarts"
-]
-```
-
-<br />
-
-## frontend: fs_inodes_used
-
-<p class="subtitle">fs inodes in use by instance (cloud)</p>
-
-**Descriptions:**
-
-- <span class="badge badge-warning">warning</span> frontend: 3e+06+ fs inodes in use by instance
-
-**Possible solutions:**
-
-- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-- **Kubernetes:** consider provisioning more machines with less resources.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_frontend_fs_inodes_used"
+  "warning_frontend_container_restarts",
+  "critical_frontend_container_restarts"
 ]
 ```
 
@@ -1327,6 +1308,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions:**
 
+- **Refer to the [dashboards reference](./dashboards.md#frontend-go-goroutines)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1544,11 +1526,12 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 ## gitserver: container_restarts
 
-<p class="subtitle">container restarts every 5m by instance (cloud)</p>
+<p class="subtitle">container restarts (cloud)</p>
 
 **Descriptions:**
 
-- <span class="badge badge-warning">warning</span> gitserver: 1+ container restarts every 5m by instance
+- <span class="badge badge-warning">warning</span> gitserver: 1+ container restarts
+- <span class="badge badge-critical">critical</span> gitserver: 1+ container restarts for 10m0s
 
 **Possible solutions:**
 
@@ -1558,53 +1541,13 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' gitserver` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the gitserver container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs gitserver` (note this will include logs from the previous and currently running container).
+- **Refer to the [dashboards reference](./dashboards.md#gitserver-container-restarts)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_gitserver_container_restarts"
-]
-```
-
-<br />
-
-## gitserver: fs_inodes_used
-
-<p class="subtitle">fs inodes in use by instance (cloud)</p>
-
-**Descriptions:**
-
-- <span class="badge badge-warning">warning</span> gitserver: 3e+06+ fs inodes in use by instance
-
-**Possible solutions:**
-
-- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-- **Kubernetes:** consider provisioning more machines with less resources.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_gitserver_fs_inodes_used"
-]
-```
-
-<br />
-
-## gitserver: fs_io_operations
-
-<p class="subtitle">filesystem reads and writes rate by instance over 1h (cloud)</p>
-
-**Descriptions:**
-
-- <span class="badge badge-warning">warning</span> gitserver: 5000+ filesystem reads and writes rate by instance over 1h
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_gitserver_fs_io_operations"
+  "warning_gitserver_container_restarts",
+  "critical_gitserver_container_restarts"
 ]
 ```
 
@@ -1664,6 +1607,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions:**
 
+- **Refer to the [dashboards reference](./dashboards.md#gitserver-go-goroutines)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1782,11 +1726,12 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 ## github-proxy: container_restarts
 
-<p class="subtitle">container restarts every 5m by instance (cloud)</p>
+<p class="subtitle">container restarts (cloud)</p>
 
 **Descriptions:**
 
-- <span class="badge badge-warning">warning</span> github-proxy: 1+ container restarts every 5m by instance
+- <span class="badge badge-warning">warning</span> github-proxy: 1+ container restarts
+- <span class="badge badge-critical">critical</span> github-proxy: 1+ container restarts for 10m0s
 
 **Possible solutions:**
 
@@ -1796,33 +1741,13 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' github-proxy` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the github-proxy container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs github-proxy` (note this will include logs from the previous and currently running container).
+- **Refer to the [dashboards reference](./dashboards.md#github-proxy-container-restarts)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_github-proxy_container_restarts"
-]
-```
-
-<br />
-
-## github-proxy: fs_inodes_used
-
-<p class="subtitle">fs inodes in use by instance (cloud)</p>
-
-**Descriptions:**
-
-- <span class="badge badge-warning">warning</span> github-proxy: 3e+06+ fs inodes in use by instance
-
-**Possible solutions:**
-
-- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-- **Kubernetes:** consider provisioning more machines with less resources.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_github-proxy_fs_inodes_used"
+  "warning_github-proxy_container_restarts",
+  "critical_github-proxy_container_restarts"
 ]
 ```
 
@@ -1926,6 +1851,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions:**
 
+- **Refer to the [dashboards reference](./dashboards.md#github-proxy-go-goroutines)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2523,11 +2449,12 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 ## precise-code-intel-worker: container_restarts
 
-<p class="subtitle">container restarts every 5m by instance (code-intel)</p>
+<p class="subtitle">container restarts (code-intel)</p>
 
 **Descriptions:**
 
-- <span class="badge badge-warning">warning</span> precise-code-intel-worker: 1+ container restarts every 5m by instance
+- <span class="badge badge-warning">warning</span> precise-code-intel-worker: 1+ container restarts
+- <span class="badge badge-critical">critical</span> precise-code-intel-worker: 1+ container restarts for 10m0s
 
 **Possible solutions:**
 
@@ -2537,33 +2464,13 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' precise-code-intel-worker` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the precise-code-intel-worker container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs precise-code-intel-worker` (note this will include logs from the previous and currently running container).
+- **Refer to the [dashboards reference](./dashboards.md#precise-code-intel-worker-container-restarts)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_container_restarts"
-]
-```
-
-<br />
-
-## precise-code-intel-worker: fs_inodes_used
-
-<p class="subtitle">fs inodes in use by instance (code-intel)</p>
-
-**Descriptions:**
-
-- <span class="badge badge-warning">warning</span> precise-code-intel-worker: 3e+06+ fs inodes in use by instance
-
-**Possible solutions:**
-
-- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-- **Kubernetes:** consider provisioning more machines with less resources.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_fs_inodes_used"
+  "warning_precise-code-intel-worker_container_restarts",
+  "critical_precise-code-intel-worker_container_restarts"
 ]
 ```
 
@@ -2667,6 +2574,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions:**
 
+- **Refer to the [dashboards reference](./dashboards.md#precise-code-intel-worker-go-goroutines)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2790,11 +2698,12 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 ## query-runner: container_restarts
 
-<p class="subtitle">container restarts every 5m by instance (search)</p>
+<p class="subtitle">container restarts (search)</p>
 
 **Descriptions:**
 
-- <span class="badge badge-warning">warning</span> query-runner: 1+ container restarts every 5m by instance
+- <span class="badge badge-warning">warning</span> query-runner: 1+ container restarts
+- <span class="badge badge-critical">critical</span> query-runner: 1+ container restarts for 10m0s
 
 **Possible solutions:**
 
@@ -2804,33 +2713,13 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' query-runner` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the query-runner container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs query-runner` (note this will include logs from the previous and currently running container).
+- **Refer to the [dashboards reference](./dashboards.md#query-runner-container-restarts)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_query-runner_container_restarts"
-]
-```
-
-<br />
-
-## query-runner: fs_inodes_used
-
-<p class="subtitle">fs inodes in use by instance (search)</p>
-
-**Descriptions:**
-
-- <span class="badge badge-warning">warning</span> query-runner: 3e+06+ fs inodes in use by instance
-
-**Possible solutions:**
-
-- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-- **Kubernetes:** consider provisioning more machines with less resources.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_query-runner_fs_inodes_used"
+  "warning_query-runner_container_restarts",
+  "critical_query-runner_container_restarts"
 ]
 ```
 
@@ -2934,6 +2823,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions:**
 
+- **Refer to the [dashboards reference](./dashboards.md#query-runner-go-goroutines)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3682,11 +3572,12 @@ with your code hosts connections or networking issues affecting communication wi
 
 ## repo-updater: container_restarts
 
-<p class="subtitle">container restarts every 5m by instance (cloud)</p>
+<p class="subtitle">container restarts (cloud)</p>
 
 **Descriptions:**
 
-- <span class="badge badge-warning">warning</span> repo-updater: 1+ container restarts every 5m by instance
+- <span class="badge badge-warning">warning</span> repo-updater: 1+ container restarts
+- <span class="badge badge-critical">critical</span> repo-updater: 1+ container restarts for 10m0s
 
 **Possible solutions:**
 
@@ -3696,33 +3587,13 @@ with your code hosts connections or networking issues affecting communication wi
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' repo-updater` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the repo-updater container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs repo-updater` (note this will include logs from the previous and currently running container).
+- **Refer to the [dashboards reference](./dashboards.md#repo-updater-container-restarts)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_repo-updater_container_restarts"
-]
-```
-
-<br />
-
-## repo-updater: fs_inodes_used
-
-<p class="subtitle">fs inodes in use by instance (cloud)</p>
-
-**Descriptions:**
-
-- <span class="badge badge-warning">warning</span> repo-updater: 3e+06+ fs inodes in use by instance
-
-**Possible solutions:**
-
-- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-- **Kubernetes:** consider provisioning more machines with less resources.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_repo-updater_fs_inodes_used"
+  "warning_repo-updater_container_restarts",
+  "critical_repo-updater_container_restarts"
 ]
 ```
 
@@ -3826,6 +3697,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions:**
 
+- **Refer to the [dashboards reference](./dashboards.md#repo-updater-go-goroutines)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3989,11 +3861,12 @@ with your code hosts connections or networking issues affecting communication wi
 
 ## searcher: container_restarts
 
-<p class="subtitle">container restarts every 5m by instance (search)</p>
+<p class="subtitle">container restarts (search)</p>
 
 **Descriptions:**
 
-- <span class="badge badge-warning">warning</span> searcher: 1+ container restarts every 5m by instance
+- <span class="badge badge-warning">warning</span> searcher: 1+ container restarts
+- <span class="badge badge-critical">critical</span> searcher: 1+ container restarts for 10m0s
 
 **Possible solutions:**
 
@@ -4003,33 +3876,13 @@ with your code hosts connections or networking issues affecting communication wi
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' searcher` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the searcher container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs searcher` (note this will include logs from the previous and currently running container).
+- **Refer to the [dashboards reference](./dashboards.md#searcher-container-restarts)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_searcher_container_restarts"
-]
-```
-
-<br />
-
-## searcher: fs_inodes_used
-
-<p class="subtitle">fs inodes in use by instance (search)</p>
-
-**Descriptions:**
-
-- <span class="badge badge-warning">warning</span> searcher: 3e+06+ fs inodes in use by instance
-
-**Possible solutions:**
-
-- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-- **Kubernetes:** consider provisioning more machines with less resources.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_searcher_fs_inodes_used"
+  "warning_searcher_container_restarts",
+  "critical_searcher_container_restarts"
 ]
 ```
 
@@ -4133,6 +3986,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions:**
 
+- **Refer to the [dashboards reference](./dashboards.md#searcher-go-goroutines)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4296,11 +4150,12 @@ with your code hosts connections or networking issues affecting communication wi
 
 ## symbols: container_restarts
 
-<p class="subtitle">container restarts every 5m by instance (code-intel)</p>
+<p class="subtitle">container restarts (code-intel)</p>
 
 **Descriptions:**
 
-- <span class="badge badge-warning">warning</span> symbols: 1+ container restarts every 5m by instance
+- <span class="badge badge-warning">warning</span> symbols: 1+ container restarts
+- <span class="badge badge-critical">critical</span> symbols: 1+ container restarts for 10m0s
 
 **Possible solutions:**
 
@@ -4310,33 +4165,13 @@ with your code hosts connections or networking issues affecting communication wi
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' symbols` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the symbols container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs symbols` (note this will include logs from the previous and currently running container).
+- **Refer to the [dashboards reference](./dashboards.md#symbols-container-restarts)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_symbols_container_restarts"
-]
-```
-
-<br />
-
-## symbols: fs_inodes_used
-
-<p class="subtitle">fs inodes in use by instance (code-intel)</p>
-
-**Descriptions:**
-
-- <span class="badge badge-warning">warning</span> symbols: 3e+06+ fs inodes in use by instance
-
-**Possible solutions:**
-
-- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-- **Kubernetes:** consider provisioning more machines with less resources.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_symbols_fs_inodes_used"
+  "warning_symbols_container_restarts",
+  "critical_symbols_container_restarts"
 ]
 ```
 
@@ -4440,6 +4275,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions:**
 
+- **Refer to the [dashboards reference](./dashboards.md#symbols-go-goroutines)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4536,11 +4372,12 @@ with your code hosts connections or networking issues affecting communication wi
 
 ## syntect-server: container_restarts
 
-<p class="subtitle">container restarts every 5m by instance (cloud)</p>
+<p class="subtitle">container restarts (cloud)</p>
 
 **Descriptions:**
 
-- <span class="badge badge-warning">warning</span> syntect-server: 1+ container restarts every 5m by instance
+- <span class="badge badge-warning">warning</span> syntect-server: 1+ container restarts
+- <span class="badge badge-critical">critical</span> syntect-server: 1+ container restarts for 10m0s
 
 **Possible solutions:**
 
@@ -4550,33 +4387,13 @@ with your code hosts connections or networking issues affecting communication wi
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' syntect-server` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the syntect-server container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs syntect-server` (note this will include logs from the previous and currently running container).
+- **Refer to the [dashboards reference](./dashboards.md#syntect-server-container-restarts)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_syntect-server_container_restarts"
-]
-```
-
-<br />
-
-## syntect-server: fs_inodes_used
-
-<p class="subtitle">fs inodes in use by instance (cloud)</p>
-
-**Descriptions:**
-
-- <span class="badge badge-warning">warning</span> syntect-server: 3e+06+ fs inodes in use by instance
-
-**Possible solutions:**
-
-- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-- **Kubernetes:** consider provisioning more machines with less resources.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_syntect-server_fs_inodes_used"
+  "warning_syntect-server_container_restarts",
+  "critical_syntect-server_container_restarts"
 ]
 ```
 
@@ -4758,11 +4575,12 @@ with your code hosts connections or networking issues affecting communication wi
 
 ## zoekt-indexserver: container_restarts
 
-<p class="subtitle">container restarts every 5m by instance (search)</p>
+<p class="subtitle">container restarts (search)</p>
 
 **Descriptions:**
 
-- <span class="badge badge-warning">warning</span> zoekt-indexserver: 1+ container restarts every 5m by instance
+- <span class="badge badge-warning">warning</span> zoekt-indexserver: 1+ container restarts
+- <span class="badge badge-critical">critical</span> zoekt-indexserver: 1+ container restarts for 10m0s
 
 **Possible solutions:**
 
@@ -4772,53 +4590,13 @@ with your code hosts connections or networking issues affecting communication wi
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' zoekt-indexserver` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the zoekt-indexserver container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs zoekt-indexserver` (note this will include logs from the previous and currently running container).
+- **Refer to the [dashboards reference](./dashboards.md#zoekt-indexserver-container-restarts)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_zoekt-indexserver_container_restarts"
-]
-```
-
-<br />
-
-## zoekt-indexserver: fs_inodes_used
-
-<p class="subtitle">fs inodes in use by instance (search)</p>
-
-**Descriptions:**
-
-- <span class="badge badge-warning">warning</span> zoekt-indexserver: 3e+06+ fs inodes in use by instance
-
-**Possible solutions:**
-
-- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-- **Kubernetes:** consider provisioning more machines with less resources.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_zoekt-indexserver_fs_inodes_used"
-]
-```
-
-<br />
-
-## zoekt-indexserver: fs_io_operations
-
-<p class="subtitle">filesystem reads and writes rate by instance over 1h (search)</p>
-
-**Descriptions:**
-
-- <span class="badge badge-warning">warning</span> zoekt-indexserver: 5000+ filesystem reads and writes rate by instance over 1h
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_zoekt-indexserver_fs_io_operations"
+  "warning_zoekt-indexserver_container_restarts",
+  "critical_zoekt-indexserver_container_restarts"
 ]
 ```
 
@@ -4998,11 +4776,12 @@ with your code hosts connections or networking issues affecting communication wi
 
 ## zoekt-webserver: container_restarts
 
-<p class="subtitle">container restarts every 5m by instance (search)</p>
+<p class="subtitle">container restarts (search)</p>
 
 **Descriptions:**
 
-- <span class="badge badge-warning">warning</span> zoekt-webserver: 1+ container restarts every 5m by instance
+- <span class="badge badge-warning">warning</span> zoekt-webserver: 1+ container restarts
+- <span class="badge badge-critical">critical</span> zoekt-webserver: 1+ container restarts for 10m0s
 
 **Possible solutions:**
 
@@ -5012,53 +4791,13 @@ with your code hosts connections or networking issues affecting communication wi
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' zoekt-webserver` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the zoekt-webserver container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs zoekt-webserver` (note this will include logs from the previous and currently running container).
+- **Refer to the [dashboards reference](./dashboards.md#zoekt-webserver-container-restarts)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_zoekt-webserver_container_restarts"
-]
-```
-
-<br />
-
-## zoekt-webserver: fs_inodes_used
-
-<p class="subtitle">fs inodes in use by instance (search)</p>
-
-**Descriptions:**
-
-- <span class="badge badge-warning">warning</span> zoekt-webserver: 3e+06+ fs inodes in use by instance
-
-**Possible solutions:**
-
-- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-- **Kubernetes:** consider provisioning more machines with less resources.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_zoekt-webserver_fs_inodes_used"
-]
-```
-
-<br />
-
-## zoekt-webserver: fs_io_operations
-
-<p class="subtitle">filesystem reads and writes by instance rate over 1h (search)</p>
-
-**Descriptions:**
-
-- <span class="badge badge-warning">warning</span> zoekt-webserver: 5000+ filesystem reads and writes by instance rate over 1h
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_zoekt-webserver_fs_io_operations"
+  "warning_zoekt-webserver_container_restarts",
+  "critical_zoekt-webserver_container_restarts"
 ]
 ```
 
@@ -5239,11 +4978,12 @@ with your code hosts connections or networking issues affecting communication wi
 
 ## prometheus: container_restarts
 
-<p class="subtitle">container restarts every 5m by instance (distribution)</p>
+<p class="subtitle">container restarts (distribution)</p>
 
 **Descriptions:**
 
-- <span class="badge badge-warning">warning</span> prometheus: 1+ container restarts every 5m by instance
+- <span class="badge badge-warning">warning</span> prometheus: 1+ container restarts
+- <span class="badge badge-critical">critical</span> prometheus: 1+ container restarts for 10m0s
 
 **Possible solutions:**
 
@@ -5253,33 +4993,13 @@ with your code hosts connections or networking issues affecting communication wi
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' prometheus` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the prometheus container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs prometheus` (note this will include logs from the previous and currently running container).
+- **Refer to the [dashboards reference](./dashboards.md#prometheus-container-restarts)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_prometheus_container_restarts"
-]
-```
-
-<br />
-
-## prometheus: fs_inodes_used
-
-<p class="subtitle">fs inodes in use by instance (distribution)</p>
-
-**Descriptions:**
-
-- <span class="badge badge-warning">warning</span> prometheus: 3e+06+ fs inodes in use by instance
-
-**Possible solutions:**
-
-- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-- **Kubernetes:** consider provisioning more machines with less resources.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_prometheus_fs_inodes_used"
+  "warning_prometheus_container_restarts",
+  "critical_prometheus_container_restarts"
 ]
 ```
 
@@ -5566,11 +5286,12 @@ with your code hosts connections or networking issues affecting communication wi
 
 ## executor-queue: container_restarts
 
-<p class="subtitle">container restarts every 5m by instance (code-intel)</p>
+<p class="subtitle">container restarts (code-intel)</p>
 
 **Descriptions:**
 
-- <span class="badge badge-warning">warning</span> executor-queue: 1+ container restarts every 5m by instance
+- <span class="badge badge-warning">warning</span> executor-queue: 1+ container restarts
+- <span class="badge badge-critical">critical</span> executor-queue: 1+ container restarts for 10m0s
 
 **Possible solutions:**
 
@@ -5580,33 +5301,13 @@ with your code hosts connections or networking issues affecting communication wi
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' executor-queue` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the executor-queue container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs executor-queue` (note this will include logs from the previous and currently running container).
+- **Refer to the [dashboards reference](./dashboards.md#executor-queue-container-restarts)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_executor-queue_container_restarts"
-]
-```
-
-<br />
-
-## executor-queue: fs_inodes_used
-
-<p class="subtitle">fs inodes in use by instance (code-intel)</p>
-
-**Descriptions:**
-
-- <span class="badge badge-warning">warning</span> executor-queue: 3e+06+ fs inodes in use by instance
-
-**Possible solutions:**
-
-- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-- **Kubernetes:** consider provisioning more machines with less resources.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_executor-queue_fs_inodes_used"
+  "warning_executor-queue_container_restarts",
+  "critical_executor-queue_container_restarts"
 ]
 ```
 
@@ -5710,6 +5411,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions:**
 
+- **Refer to the [dashboards reference](./dashboards.md#executor-queue-go-goroutines)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -5926,11 +5628,12 @@ with your code hosts connections or networking issues affecting communication wi
 
 ## precise-code-intel-indexer: container_restarts
 
-<p class="subtitle">container restarts every 5m by instance (code-intel)</p>
+<p class="subtitle">container restarts (code-intel)</p>
 
 **Descriptions:**
 
-- <span class="badge badge-warning">warning</span> precise-code-intel-indexer: 1+ container restarts every 5m by instance
+- <span class="badge badge-warning">warning</span> precise-code-intel-indexer: 1+ container restarts
+- <span class="badge badge-critical">critical</span> precise-code-intel-indexer: 1+ container restarts for 10m0s
 
 **Possible solutions:**
 
@@ -5940,33 +5643,13 @@ with your code hosts connections or networking issues affecting communication wi
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' precise-code-intel-worker` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the precise-code-intel-worker container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs precise-code-intel-worker` (note this will include logs from the previous and currently running container).
+- **Refer to the [dashboards reference](./dashboards.md#precise-code-intel-indexer-container-restarts)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-indexer_container_restarts"
-]
-```
-
-<br />
-
-## precise-code-intel-indexer: fs_inodes_used
-
-<p class="subtitle">fs inodes in use by instance (code-intel)</p>
-
-**Descriptions:**
-
-- <span class="badge badge-warning">warning</span> precise-code-intel-indexer: 3e+06+ fs inodes in use by instance
-
-**Possible solutions:**
-
-- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-- **Kubernetes:** consider provisioning more machines with less resources.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-indexer_fs_inodes_used"
+  "warning_precise-code-intel-indexer_container_restarts",
+  "critical_precise-code-intel-indexer_container_restarts"
 ]
 ```
 
@@ -6070,6 +5753,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions:**
 
+- **Refer to the [dashboards reference](./dashboards.md#precise-code-intel-indexer-go-goroutines)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json

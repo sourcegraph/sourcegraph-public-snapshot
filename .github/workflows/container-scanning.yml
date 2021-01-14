@@ -21,7 +21,7 @@ jobs:
         with:
           sarif_file: results.sarif
       - name: Upload artifact
-        uses: actions/upload-artifact@v1.0.0
+        uses: actions/upload-artifact@v2.2.2
         with:
           name: AnchoreReports
           path: ./anchore-reports/

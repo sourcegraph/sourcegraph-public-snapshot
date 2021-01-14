@@ -11,11 +11,13 @@ import (
 
 	"github.com/gorilla/csrf"
 	"github.com/inconshreveable/log15"
+	"golang.org/x/oauth2"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"golang.org/x/oauth2"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 
 	"github.com/coreos/go-oidc"
 )
@@ -228,6 +230,13 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		user, err := db.Users.GetByID(r.Context(), actr.UID)
+		if err != nil {
+			log15.Error("OpenID Connect auth failed: error retrieving user from database.", "error", err)
+			http.Error(w, "Failed to retrieve user: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
 		var exp time.Duration
 		// 🚨 SECURITY: TODO(sqs): We *should* uncomment the lines below to make our own sessions
 		// only last for as long as the OP said the access token is active for. Unfortunately,
@@ -239,7 +248,7 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 		// if !idToken.Expiry.IsZero() {
 		// 	exp = time.Until(idToken.Expiry)
 		// }
-		if err := session.SetActor(w, r, actr, exp); err != nil {
+		if err := session.SetActor(w, r, actr, exp, user.CreatedAt); err != nil {
 			log15.Error("OpenID Connect auth failed: could not initiate session.", "error", err)
 			http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not initiate session.", http.StatusInternalServerError)
 			return

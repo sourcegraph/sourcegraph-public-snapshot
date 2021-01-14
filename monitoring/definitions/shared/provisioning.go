@@ -8,7 +8,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
-// Warn that instances might need more/less resources if usage is high on various time scales.
+// Provisioning indicator overviews - these provide long-term overviews of container
+// resource usage. The goal of these observables are to provide guidance on whether or not
+// a service requires more or less resources.
+//
+// These observables should only use cAdvisor metrics, and are thus only available on
+// Kubernetes and docker-compose deployments.
+const TitleProvisioningIndicators = "Provisioning indicators (not available on server)"
 
 var (
 	ProvisioningCPUUsageLongTerm sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
