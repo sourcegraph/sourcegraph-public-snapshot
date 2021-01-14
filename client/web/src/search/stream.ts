@@ -453,18 +453,21 @@ const messageHandlers: {
     alert: observeMessages,
 }
 
+export interface StreamSearchOptions {
+    query: string
+    version: string
+    patternType: SearchPatternType
+    versionContext: string | undefined
+    trace: string | undefined
+}
+
 /**
  * Initiates a streaming search. This is a type safe wrapper around Sourcegraph's streaming search API (using Server Sent Events).
  * The observable will emit each event returned from the backend.
  *
  * @param query the search query to send to Sourcegraph's backend.
  */
-function search(
-    query: string,
-    version: string,
-    patternType: SearchPatternType,
-    versionContext: string | undefined
-): Observable<SearchEvent> {
+function search({ query, version, patternType, versionContext, trace }: StreamSearchOptions): Observable<SearchEvent> {
     return new Observable<SearchEvent>(observer => {
         const parameters = [
             ['q', query],
@@ -473,6 +476,9 @@ function search(
         ]
         if (versionContext) {
             parameters.push(['vc', versionContext])
+        }
+        if (trace) {
+            parameters.push(['trace', trace])
         }
         const parameterEncoded = parameters.map(([k, v]) => k + '=' + encodeURIComponent(v)).join('&')
 
@@ -491,11 +497,6 @@ function search(
 }
 
 /** Initiate a streaming search and aggregate the results */
-export function aggregateStreamingSearch(
-    query: string,
-    version: string,
-    patternType: SearchPatternType,
-    versionContext: string | undefined
-): Observable<AggregateStreamingSearchResults> {
-    return search(query, version, patternType, versionContext).pipe(switchAggregateSearchResults)
+export function aggregateStreamingSearch(options: StreamSearchOptions): Observable<AggregateStreamingSearchResults> {
+    return search(options).pipe(switchAggregateSearchResults)
 }
