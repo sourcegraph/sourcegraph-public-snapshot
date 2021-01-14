@@ -1,5 +1,5 @@
 import * as H from 'history'
-import React, { useCallback, useMemo } from 'react'
+import React, { useMemo } from 'react'
 import ArrowCollapseVerticalIcon from 'mdi-react/ArrowCollapseVerticalIcon'
 import ArrowExpandVerticalIcon from 'mdi-react/ArrowExpandVerticalIcon'
 import classNames from 'classnames'
@@ -71,11 +71,6 @@ const QuotesInterpretedLiterallyNotice: React.FunctionComponent<SearchResultsInf
  * and a few actions like expand all and save query
  */
 export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarProps> = props => {
-    const redirectToCodeMonitoringPage = useCallback(() => {
-        const searchParameters = new URLSearchParams(props.location.search)
-        searchParameters.set('trigger-query', props.query ? `${props.query} patterntype:${props.patternType}` : '')
-        props.history.push(`/code-monitoring/new?${searchParameters.toString()}`)
-    }, [props.history, props.query, props.location.search])
     const CreateCodeMonitorButton = useMemo(() => {
         if (!props.enableCodeMonitoring || !props.query) {
             return null
@@ -102,7 +97,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                 </Link>
             </li>
         )
-    }, [props.enableCodeMonitoring, props.query, redirectToCodeMonitoringPage, props.patternType])
+    }, [props.enableCodeMonitoring, props.query, props.patternType])
     return (
         <div className={classNames(props.className, 'search-results-info-bar')} data-testid="results-info-bar">
             <small className="search-results-info-bar__row">
