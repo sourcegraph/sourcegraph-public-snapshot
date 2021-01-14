@@ -20,11 +20,11 @@
     }
     &__list-cell {
         @include media-breakpoint-up(sm) {
-            padding: 1rem;
+            padding: 0.5rem;
         }
         @include media-breakpoint-down(xs) {
-            padding-top: 0.5rem;
-            padding-bottom: 0.5rem;
+            padding-top: 0.25rem;
+            padding-bottom: 0.25rem;
         }
     }
     &__expanded-section {

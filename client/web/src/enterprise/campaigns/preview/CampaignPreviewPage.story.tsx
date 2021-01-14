@@ -123,7 +123,7 @@ add('Create', () => (
                 expandChangesetDescriptions={true}
                 campaignSpecID="123123"
                 fetchCampaignSpecById={fetchCampaignSpecCreate}
-                queryChangesetApplyPreview={queryEmptyChangesetApplyPreview}
+                queryChangesetApplyPreview={queryChangesetApplyPreview}
                 queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
                 authenticatedUser={{ url: '/users/alice' }}
             />

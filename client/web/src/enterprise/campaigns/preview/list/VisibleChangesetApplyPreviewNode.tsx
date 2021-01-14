@@ -9,7 +9,7 @@ import { ThemeProps } from '../../../../../../shared/src/theme'
 import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from './backend'
 import { Link } from '../../../../../../shared/src/components/Link'
 import { DiffStat } from '../../../../components/diff/DiffStat'
-import { PreviewAction } from './PreviewAction'
+import { PreviewActions } from './PreviewActions'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import { FileDiffConnection } from '../../../../components/diff/FileDiffConnection'
@@ -69,7 +69,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
                     isExpanded && 'visible-changeset-apply-preview-node__bg-expanded'
                 )}
             />
-            <PreviewAction
+            <PreviewActions
                 node={node}
                 className={classNames(
                     'visible-changeset-apply-preview-node__list-cell visible-changeset-apply-preview-node__action align-self-stretch',
@@ -91,7 +91,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
             </div>
             <div
                 className={classNames(
-                    'visible-changeset-apply-preview-node__list-cell d-flex justify-content-center align-self-stretch',
+                    'visible-changeset-apply-preview-node__list-cell d-flex justify-content-center align-content-center align-self-stretch',
                     isExpanded && 'visible-changeset-apply-preview-node__bg-expanded'
                 )}
             >
