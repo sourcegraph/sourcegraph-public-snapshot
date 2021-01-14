@@ -122,8 +122,10 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
 
     const queryRepositories = useCallback(
         (args: FilteredConnectionQueryArguments): Observable<RepositoriesResult['repositories']> =>
-            listUserRepositories({ ...args, id: userID }),
-        [userID]
+            listUserRepositories({ ...args, id: userID }).pipe(
+                repeatUntil((result):boolean => !syncPending, {delay: 2000})
+            ),
+        [syncPending, userID]
     )
 
     const updated = useCallback((value: Connection<SiteAdminRepositoryFields> | ErrorLike | undefined): void => {

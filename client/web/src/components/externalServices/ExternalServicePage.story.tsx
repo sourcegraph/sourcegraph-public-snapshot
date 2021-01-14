@@ -27,6 +27,7 @@ const fetchExternalService: typeof _fetchExternalService = () =>
         lastSyncError: null,
         repoCount: 0,
         lastSyncAt: '',
+        nextSyncAt: '',
     })
 
 add('View external service config', () => (
