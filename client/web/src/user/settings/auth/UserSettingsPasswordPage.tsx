@@ -1,7 +1,7 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
+// import { Link } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, filter, mergeMap, tap } from 'rxjs/operators'
 import { PasswordInput } from '../../../auth/SignInSignUpCommon'
@@ -13,6 +13,10 @@ import { ErrorAlert } from '../../../components/alerts'
 import * as H from 'history'
 import { AuthenticatedUser } from '../../../auth'
 import { UserAreaUserFields } from '../../../graphql-operations'
+
+import GitHubIcon from 'mdi-react/GithubIcon'
+import GitLabIcon from 'mdi-react/GitlabIcon'
+import { Link } from '../../../../../shared/src/components/Link'
 
 interface Props extends RouteComponentProps<{}> {
     user: UserAreaUserFields
@@ -90,8 +94,57 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
     public render(): JSX.Element | null {
         return (
             <div className="user-settings-password-page">
-                <PageTitle title="Change password" />
-                <h2>Change password</h2>
+                <PageTitle title="Account security" />
+                <div className="alert alert-warning" role="alert">
+                    Sign in connection for GitHub removed. Please set a new password for your account.
+                </div>
+                <h2 className="mb-4">Account security</h2>
+                <h3>Sign in connections</h3>
+                <span className="text-muted">
+                    Connect your account on Sourcegraph with a third-party login service to make signing in easier. This
+                    will be used to sign in to Sourcegraph in the future.
+                </span>
+                <ul className="list-group w-50 mt-3">
+                    <li key="GitHub" className="list-group-item">
+                        <div className="p-2 d-flex align-items-start ">
+                            <div className="align-self-center">
+                                <GitHubIcon className="mb-0 mr-2" />
+                            </div>
+                            <div className="flex-1 flex-column">
+                                <h3 className="m-0">GitHub</h3>
+                                <div className="text-muted">Not connected</div>
+                            </div>
+                            <div className="align-self-center">
+                                <button type="button" className="btn btn-secondary" onClick={() => {}}>
+                                    Add
+                                </button>
+                            </div>
+                        </div>
+                    </li>
+                    <li key="GitLab" className="list-group-item">
+                        <div className="p-2 d-flex align-items-start ">
+                            <div className="align-self-center">
+                                <GitLabIcon className="mb-0 mr-2" />
+                            </div>
+                            <div className="flex-1 flex-column">
+                                <h3 className="m-0">GitLab</h3>
+                                <div className="text-muted">
+                                    Artem Ruts (
+                                    <Link to="https://gitlab.com/artem.ruts" target="_blank" rel="noopener noreferrer">
+                                        @artem.ruts
+                                    </Link>
+                                    )
+                                </div>
+                            </div>
+                            <div className="align-self-center">
+                                <button type="button" className="btn btn-link text-danger px-0" onClick={() => {}}>
+                                    Remove
+                                </button>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+                <hr className="my-4" />
                 {this.props.authenticatedUser.id !== this.props.user.id ? (
                     <div className="alert alert-danger">
                         Only the user may change their password. Site admins may{' '}
@@ -106,7 +159,7 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
                             <ErrorAlert className="mb-3" error={this.state.error} history={this.props.history} />
                         )}
                         {this.state.saved && <div className="alert alert-success mb-3">Password changed!</div>}
-                        <Form onSubmit={this.handleSubmit}>
+                        <Form className="mt-3 w-50" onSubmit={this.handleSubmit}>
                             {/* Include a username field as a hint for password managers to update the saved password. */}
                             <input
                                 type="text"
