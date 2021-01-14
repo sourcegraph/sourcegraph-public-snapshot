@@ -35,7 +35,7 @@ var versionRe = lazyregexp.New(fmt.Sprintf(`\b%s\b`, regexp.QuoteMeta("9.6")))
 //
 // First CLI argument is an optional filename to write the output to.
 func generate(logger *log.Logger, databaseName string) (string, error) {
-	do := func(logger *log.Logger, dataSource string, run func(cmd ...string) (string, error)) (string, error) {
+	generateInternal := func(logger *log.Logger, databaseName, dataSource string, run func(cmd ...string) (string, error)) (string, error) {
 		if out, err := run("createdb", dbname); err != nil {
 			return "", fmt.Errorf("createdb: %s: %w", out, err)
 		}
@@ -162,7 +162,7 @@ WHERE table_schema='public' AND table_type='BASE TABLE';
 		runIgnoreError("dropdb", dbname)
 		defer runIgnoreError("dropdb", dbname)
 
-		return do(logger, dataSource, run)
+		return generateInternal(logger, databaseName, dataSource, run)
 	}
 
 	logger.Printf("Running PostgreSQL 9.6 in docker since local version is %s", strings.TrimSpace(string(out)))
@@ -207,7 +207,7 @@ WHERE table_schema='public' AND table_type='BASE TABLE';
 		}
 		time.Sleep(time.Second)
 	}
-	return do(logger, dataSource, run)
+	return generateInternal(logger, databaseName, dataSource, run)
 }
 
 func getTableComment(db *sql.DB, table string) (string, error) {
