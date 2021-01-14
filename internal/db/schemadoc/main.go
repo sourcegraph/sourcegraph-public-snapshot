@@ -25,20 +25,21 @@ func runIgnoreError(cmd string, args ...string) {
 	_ = exec.Command(cmd, args...).Run()
 }
 
+const dbname = "schemadoc-gen-temp"
+
+var versionRe = lazyregexp.New(fmt.Sprintf(`\b%s\b`, regexp.QuoteMeta("9.6")))
+
 // This script generates markdown formatted output containing descriptions of
 // the current dabase schema, obtained from postgres. The correct PGHOST,
 // PGPORT, PGUSER etc. env variables must be set to run this script.
 //
 // First CLI argument is an optional filename to write the output to.
 func generate(log *log.Logger, databaseName string) (string, error) {
-	const dbname = "schemadoc-gen-temp"
-
 	var (
 		dataSource string
 		run        func(cmd ...string) (string, error)
 	)
 	// If we are using pg9.6 use it locally since it is faster (CI \o/)
-	versionRe := lazyregexp.New(fmt.Sprintf(`\b%s\b`, regexp.QuoteMeta("9.6")))
 	if out, _ := exec.Command("psql", "--version").CombinedOutput(); versionRe.Match(out) {
 		dataSource = "dbname=" + dbname
 		run = func(cmd ...string) (string, error) {
