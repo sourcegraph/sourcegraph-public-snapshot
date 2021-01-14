@@ -89,7 +89,7 @@
     "@octokit/rest": "^16.36.0",
     "@percy/puppeteer": "^1.1.0",
     "@pollyjs/adapter": "^5.0.0",
-    "@pollyjs/core": "^5.0.0",
+    "@pollyjs/core": "^5.1.0",
     "@pollyjs/persister-fs": "^5.0.0",
     "@slack/web-api": "^5.10.0",
     "@sourcegraph/babel-plugin-transform-react-hot-loader-wrapper": "^1.0.0",

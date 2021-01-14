@@ -2294,10 +2294,10 @@
   dependencies:
     "@pollyjs/utils" "^5.0.0"
 
-"@pollyjs/core@^5.0.0":
-  version "5.0.0"
-  resolved "https://registry.npmjs.org/@pollyjs/core/-/core-5.0.0.tgz#5e61c34ce78245fe6f80768d90ce4ab135a8ec2c"
-  integrity sha512-f/v5z7aKSWdeBCZQFiQGL4aZmdWAuQWV+U/fMbAIEYjkX8Av0gWPhkFyeMfeFriYMg7Ts1XxPNI7LYroCnjn7w==
+"@pollyjs/core@^5.1.0":
+  version "5.1.0"
+  resolved "https://registry.npmjs.org/@pollyjs/core/-/core-5.1.0.tgz#6a4233ffe27dcd789bd6f31265451b35c24e090f"
+  integrity sha512-t29uNtc8Jq9MX3md+QgsfDtmsad9zLfKWiH33JdJjSilETWGPoq90xuMmWSXoXQCfIEVhIQ9rPEIvcmFpyqGCg==
   dependencies:
     "@pollyjs/utils" "^5.0.0"
     "@sindresorhus/fnv1a" "^1.2.0"
