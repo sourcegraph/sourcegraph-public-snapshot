@@ -111,6 +111,7 @@ func generate(log *log.Logger, databaseName string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("Open: %w", err)
 	}
+	defer db.Close()
 
 	// Query names of all public tables.
 	rows, err := db.Query(`
