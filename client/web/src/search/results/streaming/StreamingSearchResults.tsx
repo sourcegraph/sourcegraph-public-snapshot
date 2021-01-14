@@ -129,16 +129,18 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
         }
     }, [versionContext, currentVersionContext, setVersionContext, availableVersionContexts])
 
+    const trace = useMemo(() => new URLSearchParams(location.search).get('trace') ?? undefined, [location.search])
     const results = useObservable(
         useMemo(
             () =>
-                streamSearch(
+                streamSearch({
                     query,
-                    LATEST_VERSION,
-                    patternType ?? SearchPatternType.literal,
-                    resolveVersionContext(versionContext, availableVersionContexts)
-                ),
-            [streamSearch, query, patternType, versionContext, availableVersionContexts]
+                    version: LATEST_VERSION,
+                    patternType: patternType ?? SearchPatternType.literal,
+                    versionContext: resolveVersionContext(versionContext, availableVersionContexts),
+                    trace,
+                }),
+            [streamSearch, query, patternType, versionContext, availableVersionContexts, trace]
         )
     )
 
