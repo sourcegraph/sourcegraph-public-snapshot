@@ -80,6 +80,17 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     actionItemClass="btn btn-link nav-link text-decoration-none"
                 />
 
+                {props.showSavedQueryButton !== false && props.authenticatedUser && (
+                    <li className="nav-item">
+                        <button
+                            type="button"
+                            onClick={props.onSaveQueryClick}
+                            className="btn btn-link nav-link text-decoration-none"
+                        >
+                            <DownloadIcon className="icon-inline test-save-search-link" /> Save this search query
+                        </button>
+                    </li>
+                )}
                 {props.resultsFound && (
                     <li className="nav-item">
                         <button
@@ -93,18 +104,6 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                             ) : (
                                 <ArrowExpandVerticalIcon className="icon-inline" />
                             )}
-                        </button>
-                    </li>
-                )}
-
-                {props.showSavedQueryButton !== false && props.authenticatedUser && (
-                    <li className="nav-item">
-                        <button
-                            type="button"
-                            onClick={props.onSaveQueryClick}
-                            className="btn btn-link nav-link text-decoration-none"
-                        >
-                            <DownloadIcon className="icon-inline test-save-search-link" /> Save this search query
                         </button>
                     </li>
                 )}
