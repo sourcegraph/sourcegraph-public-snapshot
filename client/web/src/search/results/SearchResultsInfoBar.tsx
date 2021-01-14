@@ -88,7 +88,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
         }
         const searchParameters = new URLSearchParams(props.location.search)
         searchParameters.set('trigger-query', `${props.query} patterntype:${props.patternType}`)
-        const toURL = canCreateMonitorFromQuery ? `/code-monitoring/new?${searchParameters.toString()}` : ''
+        const toURL = `/code-monitoring/new?${searchParameters.toString()}`
         return (
             <li className="nav-item">
                 <Link to={toURL} className="btn btn-link nav-link text-decoration-none">
