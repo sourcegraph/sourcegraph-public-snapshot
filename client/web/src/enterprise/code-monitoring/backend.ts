@@ -271,18 +271,23 @@ export const sendTestEmail = (id: Scalars['ID']): Observable<void> => {
     )
 }
 
-export const triggerTestEmailAction = (user: Scalars['ID'], description: string): Observable<void> => {
+export const triggerTestEmailAction = ({
+    namespace,
+    description,
+    email,
+}: TriggerTestEmailActionVariables): Observable<void> => {
     const query = gql`
-        mutation TriggerTestEmailAction($user: ID!, $description: String!) {
-            triggerTestEmailAction(user: $user, description: $description) {
+        mutation TriggerTestEmailAction($namespace: ID!, $description: String!, $email: MonitorEmailInput!) {
+            triggerTestEmailAction(namespace: $namespace, description: $description, email: $email) {
                 alwaysNil
             }
         }
     `
 
     return requestGraphQL<TriggerTestEmailActionResult, TriggerTestEmailActionVariables>(query, {
-        user,
+        namespace,
         description,
+        email,
     }).pipe(
         map(dataOrThrowErrors),
         map(data => {

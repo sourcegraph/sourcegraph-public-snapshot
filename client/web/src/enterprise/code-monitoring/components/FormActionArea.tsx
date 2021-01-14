@@ -1,11 +1,11 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import { Observable } from 'rxjs'
 import { delay, startWith, tap, mergeMap, catchError } from 'rxjs/operators'
 import { Toggle } from '../../../../../branded/src/components/Toggle'
 import { useEventObservable } from '../../../../../shared/src/util/useObservable'
 import { asError, isErrorLike } from '../../../../../shared/src/util/errors'
 import { AuthenticatedUser } from '../../../auth'
-import { CodeMonitorFields } from '../../../graphql-operations'
+import { CodeMonitorFields, MonitorEmailPriority } from '../../../graphql-operations'
 import { triggerTestEmailAction } from '../backend'
 
 interface ActionAreaProps {
@@ -90,7 +90,16 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
             (click: Observable<React.MouseEvent<HTMLButtonElement>>) =>
                 click.pipe(
                     mergeMap(() =>
-                        triggerTestEmailAction(authenticatedUser.id, description).pipe(
+                        triggerTestEmailAction({
+                            namespace: authenticatedUser.id,
+                            description,
+                            email: {
+                                enabled: true,
+                                priority: MonitorEmailPriority.NORMAL,
+                                recipients: [authenticatedUser.id],
+                                header: '',
+                            },
+                        }).pipe(
                             delay(1000),
                             startWith(LOADING),
                             tap(value => {
@@ -112,17 +121,13 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
         }
     }, [isTestEmailSent, description, showEmailNotificationForm])
 
-    const sendTestEmailButtonText = useMemo(() => {
-        if (triggerTestEmailResult === LOADING) {
-            return 'Sending email...'
-        }
-        return isTestEmailSent ? 'Test email sent!' : 'Send test email'
-    }, [isTestEmailSent, triggerTestEmailResult])
-
-    const isSendTestEmailButtonDisabled = useMemo(
-        () => triggerTestEmailResult === LOADING || isTestEmailSent || !description,
-        [isTestEmailSent, triggerTestEmailResult, description]
-    )
+    const sendTestEmailButtonText =
+        triggerTestEmailResult === LOADING
+            ? 'Sending email...'
+            : isTestEmailSent
+            ? 'Test email sent!'
+            : 'Send test email'
+    const isSendTestEmailButtonDisabled = triggerTestEmailResult === LOADING || isTestEmailSent || !description
 
     return (
         <>
