@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -15,8 +16,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/tmpfriend"
-
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
