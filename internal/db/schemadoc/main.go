@@ -178,8 +178,15 @@ WHERE table_schema='public' AND table_type='BASE TABLE';
 				if comment != "" {
 					doc += "\n" + comment + "\n"
 				}
-				for k, v := range columnComments {
-					doc += "\n## " + k + "\n\n" + v + "\n"
+
+				var columns []string
+				for k := range columnComments {
+					columns = append(columns, k)
+				}
+				sort.Strings(columns)
+
+				for _, k := range columns {
+					doc += "\n**" + k + "**: " + columnComments[k] + "\n"
 				}
 
 				mu.Lock()
