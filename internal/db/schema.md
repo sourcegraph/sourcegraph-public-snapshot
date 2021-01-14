@@ -1422,3 +1422,183 @@ Indexes:
     "versions_pkey" PRIMARY KEY, btree (service)
 
 ```
+
+# View "public.branch_changeset_specs_and_changesets"
+```
+      Column       |  Type   | Modifiers 
+-------------------+---------+-----------
+ changeset_spec_id | bigint  | 
+ changeset_id      | bigint  | 
+ repo_id           | integer | 
+ campaign_spec_id  | bigint  | 
+ owner_campaign_id | bigint  | 
+
+```
+
+# View "public.external_service_sync_jobs_with_next_sync_at"
+```
+       Column        |           Type           | Modifiers 
+---------------------+--------------------------+-----------
+ id                  | integer                  | 
+ state               | text                     | 
+ failure_message     | text                     | 
+ started_at          | timestamp with time zone | 
+ finished_at         | timestamp with time zone | 
+ process_after       | timestamp with time zone | 
+ num_resets          | integer                  | 
+ num_failures        | integer                  | 
+ execution_logs      | json[]                   | 
+ external_service_id | bigint                   | 
+ next_sync_at        | timestamp with time zone | 
+
+```
+
+# View "public.lsif_dumps"
+```
+     Column      |           Type           | Modifiers 
+-----------------+--------------------------+-----------
+ id              | integer                  | 
+ commit          | text                     | 
+ root            | text                     | 
+ uploaded_at     | timestamp with time zone | 
+ state           | text                     | 
+ failure_message | text                     | 
+ started_at      | timestamp with time zone | 
+ finished_at     | timestamp with time zone | 
+ repository_id   | integer                  | 
+ indexer         | text                     | 
+ num_parts       | integer                  | 
+ uploaded_parts  | integer[]                | 
+ process_after   | timestamp with time zone | 
+ num_resets      | integer                  | 
+ upload_size     | bigint                   | 
+ num_failures    | integer                  | 
+ processed_at    | timestamp with time zone | 
+
+```
+
+# View "public.lsif_dumps_with_repository_name"
+```
+     Column      |           Type           | Modifiers 
+-----------------+--------------------------+-----------
+ id              | integer                  | 
+ commit          | text                     | 
+ root            | text                     | 
+ uploaded_at     | timestamp with time zone | 
+ state           | text                     | 
+ failure_message | text                     | 
+ started_at      | timestamp with time zone | 
+ finished_at     | timestamp with time zone | 
+ repository_id   | integer                  | 
+ indexer         | text                     | 
+ num_parts       | integer                  | 
+ uploaded_parts  | integer[]                | 
+ process_after   | timestamp with time zone | 
+ num_resets      | integer                  | 
+ upload_size     | bigint                   | 
+ num_failures    | integer                  | 
+ processed_at    | timestamp with time zone | 
+ repository_name | citext                   | 
+
+```
+
+# View "public.lsif_indexes_with_repository_name"
+```
+     Column      |           Type           | Modifiers 
+-----------------+--------------------------+-----------
+ id              | bigint                   | 
+ commit          | text                     | 
+ queued_at       | timestamp with time zone | 
+ state           | text                     | 
+ failure_message | text                     | 
+ started_at      | timestamp with time zone | 
+ finished_at     | timestamp with time zone | 
+ repository_id   | integer                  | 
+ process_after   | timestamp with time zone | 
+ num_resets      | integer                  | 
+ num_failures    | integer                  | 
+ docker_steps    | jsonb[]                  | 
+ root            | text                     | 
+ indexer         | text                     | 
+ indexer_args    | text[]                   | 
+ outfile         | text                     | 
+ log_contents    | text                     | 
+ execution_logs  | json[]                   | 
+ local_steps     | text[]                   | 
+ repository_name | citext                   | 
+
+```
+
+# View "public.lsif_uploads_with_repository_name"
+```
+     Column      |           Type           | Modifiers 
+-----------------+--------------------------+-----------
+ id              | integer                  | 
+ commit          | text                     | 
+ root            | text                     | 
+ uploaded_at     | timestamp with time zone | 
+ state           | text                     | 
+ failure_message | text                     | 
+ started_at      | timestamp with time zone | 
+ finished_at     | timestamp with time zone | 
+ repository_id   | integer                  | 
+ indexer         | text                     | 
+ num_parts       | integer                  | 
+ uploaded_parts  | integer[]                | 
+ process_after   | timestamp with time zone | 
+ num_resets      | integer                  | 
+ upload_size     | bigint                   | 
+ num_failures    | integer                  | 
+ repository_name | citext                   | 
+
+```
+
+# View "public.pg_stat_statements"
+```
+       Column        |       Type       | Modifiers 
+---------------------+------------------+-----------
+ userid              | oid              | 
+ dbid                | oid              | 
+ queryid             | bigint           | 
+ query               | text             | 
+ calls               | bigint           | 
+ total_time          | double precision | 
+ min_time            | double precision | 
+ max_time            | double precision | 
+ mean_time           | double precision | 
+ stddev_time         | double precision | 
+ rows                | bigint           | 
+ shared_blks_hit     | bigint           | 
+ shared_blks_read    | bigint           | 
+ shared_blks_dirtied | bigint           | 
+ shared_blks_written | bigint           | 
+ local_blks_hit      | bigint           | 
+ local_blks_read     | bigint           | 
+ local_blks_dirtied  | bigint           | 
+ local_blks_written  | bigint           | 
+ temp_blks_read      | bigint           | 
+ temp_blks_written   | bigint           | 
+ blk_read_time       | double precision | 
+ blk_write_time      | double precision | 
+
+```
+
+# View "public.site_config"
+```
+   Column    |  Type   | Modifiers 
+-------------+---------+-----------
+ site_id     | uuid    | 
+ initialized | boolean | 
+
+```
+
+# View "public.tracking_changeset_specs_and_changesets"
+```
+      Column       |  Type   | Modifiers 
+-------------------+---------+-----------
+ changeset_spec_id | bigint  | 
+ changeset_id      | bigint  | 
+ repo_id           | integer | 
+ campaign_spec_id  | bigint  | 
+
+```

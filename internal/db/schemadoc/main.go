@@ -164,12 +164,12 @@ func generateInternal(logger *log.Logger, databaseName, dataSource string, run f
 }
 
 func getTables(db *sql.DB) ([]string, error) {
-	// Query names of all public tables.
+	// Query names of all public tables and views.
 	rows, err := db.Query(`
-SELECT table_name
-FROM information_schema.tables
-WHERE table_schema='public' AND table_type='BASE TABLE';
-`)
+		SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+		UNION
+		SELECT table_name FROM information_schema.views WHERE table_schema = 'public';
+	`)
 	if err != nil {
 		return nil, fmt.Errorf("Query: %w", err)
 	}

@@ -117,3 +117,33 @@ Associates result set identifiers with the (document path, range identifier) pai
 **dump_id**: The identifier of the associated dump in the lsif_uploads table (state=completed).
 
 **idx**: The unique result chunk index within the associated dump. Every result set identifier present should hash to this index (modulo lsif_data_metadata.num_result_chunks).
+
+# View "public.pg_stat_statements"
+```
+       Column        |       Type       | Modifiers 
+---------------------+------------------+-----------
+ userid              | oid              | 
+ dbid                | oid              | 
+ queryid             | bigint           | 
+ query               | text             | 
+ calls               | bigint           | 
+ total_time          | double precision | 
+ min_time            | double precision | 
+ max_time            | double precision | 
+ mean_time           | double precision | 
+ stddev_time         | double precision | 
+ rows                | bigint           | 
+ shared_blks_hit     | bigint           | 
+ shared_blks_read    | bigint           | 
+ shared_blks_dirtied | bigint           | 
+ shared_blks_written | bigint           | 
+ local_blks_hit      | bigint           | 
+ local_blks_read     | bigint           | 
+ local_blks_dirtied  | bigint           | 
+ local_blks_written  | bigint           | 
+ temp_blks_read      | bigint           | 
+ temp_blks_written   | bigint           | 
+ blk_read_time       | double precision | 
+ blk_write_time      | double precision | 
+
+```
