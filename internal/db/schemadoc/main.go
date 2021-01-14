@@ -145,24 +145,18 @@ WHERE table_schema='public' AND table_type='BASE TABLE';
 //
 // First CLI argument is an optional filename to write the output to.
 func generate(logger *log.Logger, databaseName string) (string, error) {
-	var (
-		dataSource string
-		run        func(cmd ...string) (string, error)
-	)
 	// If we are using pg9.6 use it locally since it is faster (CI \o/)
 	out, _ := exec.Command("psql", "--version").CombinedOutput()
 	if versionRe.Match(out) {
-		dataSource = "dbname=" + dbname
-		run = func(cmd ...string) (string, error) {
+		runIgnoreError("dropdb", dbname)
+		defer runIgnoreError("dropdb", dbname)
+
+		return generateInternal(logger, databaseName, "dbname="+dbname, func(cmd ...string) (string, error) {
 			c := exec.Command(cmd[0], cmd[1:]...)
 			c.Stderr = logger.Writer()
 			out, err := c.Output()
 			return string(out), err
-		}
-		runIgnoreError("dropdb", dbname)
-		defer runIgnoreError("dropdb", dbname)
-
-		return generateInternal(logger, databaseName, dataSource, run)
+		})
 	}
 
 	logger.Printf("Running PostgreSQL 9.6 in docker since local version is %s", strings.TrimSpace(string(out)))
@@ -188,15 +182,6 @@ func generate(logger *log.Logger, databaseName string) (string, error) {
 		_ = server.Wait()
 	}()
 
-	dataSource = "postgres://postgres@127.0.0.1:5433/postgres?dbname=" + dbname
-	run = func(cmd ...string) (string, error) {
-		cmd = append([]string{"exec", "-u", "postgres", dbname}, cmd...)
-		c := exec.Command("docker", cmd...)
-		c.Stderr = logger.Writer()
-		out, err := c.Output()
-		return string(out), err
-	}
-
 	attempts := 0
 	for {
 		attempts++
@@ -207,7 +192,13 @@ func generate(logger *log.Logger, databaseName string) (string, error) {
 		}
 		time.Sleep(time.Second)
 	}
-	return generateInternal(logger, databaseName, dataSource, run)
+	return generateInternal(logger, databaseName, "postgres://postgres@127.0.0.1:5433/postgres?dbname="+dbname, func(cmd ...string) (string, error) {
+		cmd = append([]string{"exec", "-u", "postgres", dbname}, cmd...)
+		c := exec.Command("docker", cmd...)
+		c.Stderr = logger.Writer()
+		out, err := c.Output()
+		return string(out), err
+	})
 }
 
 func getTableComment(db *sql.DB, table string) (string, error) {
