@@ -579,8 +579,8 @@ func sliceSearchResultsCommon(common *SearchResultsCommon, firstResultRepo, last
 		}
 	})
 
-	final.Excluded.Forks = final.Excluded.Forks + common.Excluded.Forks
-	final.Excluded.Archived = final.Excluded.Archived + common.Excluded.Archived
+	final.ExcludedForks = final.ExcludedForks + common.ExcludedForks
+	final.ExcludedArchived = final.ExcludedArchived + common.ExcludedArchived
 
 	return final
 }

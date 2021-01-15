@@ -58,7 +58,13 @@ type SearchResultsCommon struct {
 
 	Status search.RepoStatusMap
 
-	Excluded searchrepos.ExcludedRepos // repo counts of excluded repos because the search query doesn't apply to them, but that we want to know about (forks, archives)
+	// ExcludedForks is the count of excluded forked repos because the search
+	// query doesn't apply to them, but that we want to know about.
+	ExcludedForks int
+
+	// ExcludedArchived is the count of excluded archived repos because the
+	// search query doesn't apply to them, but that we want to know about.
+	ExcludedArchived int
 
 	IsIndexUnavailable bool // True if indexed search is enabled but was not available during this search.
 }
@@ -83,8 +89,8 @@ func (c *SearchResultsCommon) update(other *SearchResultsCommon) {
 
 	c.Status.Union(&other.Status)
 
-	c.Excluded.Forks = c.Excluded.Forks + other.Excluded.Forks
-	c.Excluded.Archived = c.Excluded.Archived + other.Excluded.Archived
+	c.ExcludedForks = c.ExcludedForks + other.ExcludedForks
+	c.ExcludedArchived = c.ExcludedArchived + other.ExcludedArchived
 }
 
 func (c *SearchResultsCommon) String() string {
@@ -100,8 +106,8 @@ func (c *SearchResultsCommon) String() string {
 		n    int
 	}{
 		{"repos", len(c.Repos)},
-		{"excludedForks", c.Excluded.Forks},
-		{"excludedArchived", c.Excluded.Archived},
+		{"excludedForks", c.ExcludedForks},
+		{"excludedArchived", c.ExcludedArchived},
 	}
 	for _, p := range nums {
 		if p.n != 0 {
@@ -374,11 +380,11 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 		}
 	}
 
-	if sr.SearchResultsCommon.Excluded.Forks > 0 {
-		add("fork:yes", "fork:yes", int32(sr.SearchResultsCommon.Excluded.Forks), sr.IsLimitHit, "repo", scoreImportant)
+	if sr.SearchResultsCommon.ExcludedForks > 0 {
+		add("fork:yes", "fork:yes", int32(sr.SearchResultsCommon.ExcludedForks), sr.IsLimitHit, "repo", scoreImportant)
 	}
-	if sr.SearchResultsCommon.Excluded.Archived > 0 {
-		add("archived:yes", "archived:yes", int32(sr.SearchResultsCommon.Excluded.Archived), sr.IsLimitHit, "repo", scoreImportant)
+	if sr.SearchResultsCommon.ExcludedArchived > 0 {
+		add("archived:yes", "archived:yes", int32(sr.SearchResultsCommon.ExcludedArchived), sr.IsLimitHit, "repo", scoreImportant)
 	}
 	for _, result := range sr.SearchResults {
 		if fm, ok := result.ToFileMatch(); ok {
@@ -2027,8 +2033,9 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		}
 
 		agg.report(ctx, nil, &SearchResultsCommon{
-			Repos:    repos,
-			Excluded: resolved.ExcludedRepos,
+			Repos:            repos,
+			ExcludedForks:    resolved.ExcludedRepos.Forks,
+			ExcludedArchived: resolved.ExcludedRepos.Archived,
 		}, nil)
 	}
 

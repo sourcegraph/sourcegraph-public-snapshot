@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -41,10 +40,8 @@ func TestSearchProgress(t *testing.T) {
 					"cloning-1":  search.RepoStatusCloning,
 					"timedout-1": search.RepoStatusTimedout,
 				}),
-				Excluded: repos.ExcludedRepos{
-					Forks:    5,
-					Archived: 1,
-				},
+				ExcludedForks:    5,
+				ExcludedArchived: 1,
 			},
 		},
 	}
