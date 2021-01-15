@@ -9,7 +9,6 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"sort"
 	"strings"
 	"time"
 
@@ -404,13 +403,20 @@ func syncScheduler(ctx context.Context, sched scheduler, gitserverClient *gitser
 			return
 		}
 
-		// Sort so that we can perform a binary search instead of allocating a map
-		sort.Strings(cloned)
+		err = store.SetClonedRepos(ctx, cloned...)
+		if err != nil {
+			log15.Warn("failed to set cloned repository list", "error", err)
+			return
+		}
+
+		// Fetch all default repos that are NOT cloned so that we can add them to the
+		// scheduler
 
 		batchSize := 30_000
 		opts := idb.ListDefaultReposOptions{
-			Limit:   batchSize,
-			AfterID: 0,
+			Limit:        batchSize,
+			AfterID:      0,
+			OnlyUncloned: true,
 		}
 
 		for {
@@ -420,21 +426,8 @@ func syncScheduler(ctx context.Context, sched scheduler, gitserverClient *gitser
 				return
 			}
 
-			var toSchedule []*types.RepoName
-			// If one of our default repos is not cloned, we need to add it to the scheduler
-			for i, repo := range batch {
-				name := string(repo.Name)
-				idx := sort.SearchStrings(cloned, string(repo.Name))
-				found := idx < len(cloned) && cloned[idx] == name
-				if found {
-					// cloned, skip it
-					continue
-				}
-				toSchedule = append(toSchedule, batch[i])
-			}
-
 			// Ensure that uncloned repos are known to the scheduler
-			sched.EnsureScheduled(toSchedule)
+			sched.EnsureScheduled(batch)
 
 			if len(batch) < batchSize {
 				break
@@ -444,12 +437,6 @@ func syncScheduler(ctx context.Context, sched scheduler, gitserverClient *gitser
 
 		// Ensure that any uncloned repos are moved to the front of the schedule
 		sched.SetCloned(cloned)
-
-		err = store.SetClonedRepos(ctx, cloned...)
-		if err != nil {
-			log15.Warn("failed to set cloned repository list", "error", err)
-			return
-		}
 	}
 
 	for ctx.Err() == nil {
