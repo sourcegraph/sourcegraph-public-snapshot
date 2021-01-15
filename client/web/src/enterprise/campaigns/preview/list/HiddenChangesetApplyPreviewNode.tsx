@@ -4,6 +4,7 @@ import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import { PreviewActions } from './PreviewActions'
 import { ChangesetStatusCell } from '../../detail/changesets/ChangesetStatusCell'
 import { ChangesetState } from '../../../../../../shared/src/graphql-operations'
+import { PreviewNodeIndicator } from './PreviewNodeIndicator'
 
 export interface HiddenChangesetApplyPreviewNodeProps {
     node: HiddenChangesetApplyPreviewFields
@@ -18,6 +19,7 @@ export const HiddenChangesetApplyPreviewNode: React.FunctionComponent<HiddenChan
             node={node}
             className="hidden-changeset-apply-preview-node__list-cell d-block d-sm-flex hidden-changeset-apply-preview-node__current-state"
         />
+        <PreviewNodeIndicator node={node} />
         <PreviewActions
             node={node}
             className="hidden-changeset-apply-preview-node__list-cell hidden-changeset-apply-preview-node__action"

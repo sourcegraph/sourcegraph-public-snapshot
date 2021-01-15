@@ -17,6 +17,7 @@ import { FileDiffNode } from '../../../../components/diff/FileDiffNode'
 import { FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
 import { GitBranchChangesetDescriptionInfo } from './GitBranchChangesetDescriptionInfo'
 import { ChangesetStatusCell } from '../../detail/changesets/ChangesetStatusCell'
+import { PreviewNodeIndicator } from './PreviewNodeIndicator'
 
 export interface VisibleChangesetApplyPreviewNodeProps extends ThemeProps {
     node: VisibleChangesetApplyPreviewFields
@@ -65,6 +66,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
                 node={node}
                 className="visible-changeset-apply-preview-node__list-cell d-block d-sm-flex visible-changeset-apply-preview-node__current-state align-self-stretch visible-changeset-apply-preview-node__status-cell"
             />
+            <PreviewNodeIndicator node={node} />
             <PreviewActions
                 node={node}
                 className="visible-changeset-apply-preview-node__list-cell visible-changeset-apply-preview-node__action align-self-stretch"

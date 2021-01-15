@@ -17,8 +17,8 @@ export interface CampaignPreviewStatsBarProps {
 }
 
 export const CampaignPreviewStatsBar: React.FunctionComponent<CampaignPreviewStatsBarProps> = ({ campaignSpec }) => (
-    <div className="d-flex mb-3 align-items-center">
-        <h2 className="m-0 create-update-campaign-alert__badge">
+    <div className="d-flex flex-wrap mb-3 align-items-center">
+        <h2 className="m-0 align-self-center">
             <span className="badge badge-info text-uppercase mb-0">Preview</span>
         </h2>
         <div className="campaign-preview-stats-bar__divider mx-4" />
@@ -28,8 +28,8 @@ export const CampaignPreviewStatsBar: React.FunctionComponent<CampaignPreviewSta
             <PreviewStatsRemoved count={campaignSpec.applyPreview.stats.removed} />
             <PreviewStatsModified count={campaignSpec.applyPreview.stats.modified} />
         </div>
-        <div className="campaign-preview-stats-bar__divider mx-4" />
-        <div className="flex-grow-1 d-flex justify-content-between">
+        <div className="campaign-preview-stats-bar__divider d-none d-md-block mx-4" />
+        <div className="flex-grow-1 d-flex flex-wrap justify-content-between">
             <PreviewActionReopen
                 className={actionClassNames}
                 label={`${campaignSpec.applyPreview.stats.reopen} reopen`}
@@ -46,7 +46,6 @@ export const CampaignPreviewStatsBar: React.FunctionComponent<CampaignPreviewSta
                 className={actionClassNames}
                 label={`${campaignSpec.applyPreview.stats.undraft} undraft`}
             />
-            {/* <PreviewActionUnpublished className={actionClassNames} label={`${campaignSpec.applyPreview.stats.reopen} close`} /> */}
             <PreviewActionPublish
                 className={actionClassNames}
                 label={`${
@@ -62,31 +61,31 @@ export const CampaignPreviewStatsBar: React.FunctionComponent<CampaignPreviewSta
 )
 
 export const PreviewStatsAdded: React.FunctionComponent<{ count: number }> = ({ count }) => (
-    <div className="d-flex flex-column campaign-preview-stats-bar__stat mr-2">
+    <div className="d-flex flex-column campaign-preview-stats-bar__stat mr-2 text-nowrap">
         <div className="d-flex flex-column align-items-center justify-content-center">
-            <span style={{ width: '0.25rem', height: '0.25rem', backgroundColor: 'var(--oc-lime-6)' }}>&nbsp;</span>
-            <span style={{ color: 'var(--oc-lime-9)', lineHeight: '1rem' }}>+</span>
-            <span style={{ width: '0.25rem', height: '0.25rem', backgroundColor: 'var(--oc-lime-6)' }}>&nbsp;</span>
+            <span className="preview-stats-added__dot">&nbsp;</span>
+            <span className="preview-stats-added__icon">+</span>
+            <span className="preview-stats-added__dot">&nbsp;</span>
         </div>
         {count} added
     </div>
 )
 export const PreviewStatsModified: React.FunctionComponent<{ count: number }> = ({ count }) => (
-    <div className="d-flex flex-column campaign-preview-stats-bar__stat">
+    <div className="d-flex flex-column campaign-preview-stats-bar__stat text-nowrap">
         <div className="d-flex flex-column align-items-center">
-            <span style={{ width: '0.25rem', height: '0.25rem', backgroundColor: 'var(--oc-yellow-5)' }}>&nbsp;</span>
-            <span style={{ color: 'var(--oc-orange-9)', lineHeight: '1rem' }}>&bull;</span>
-            <span style={{ width: '0.25rem', height: '0.25rem', backgroundColor: 'var(--oc-yellow-5)' }}>&nbsp;</span>
+            <span className="preview-stats-modified__dot">&nbsp;</span>
+            <span className="preview-stats-modified__icon">&bull;</span>
+            <span className="preview-stats-modified__dot">&nbsp;</span>
         </div>
         {count} modified
     </div>
 )
 export const PreviewStatsRemoved: React.FunctionComponent<{ count: number }> = ({ count }) => (
-    <div className="d-flex flex-column campaign-preview-stats-bar__stat mr-2">
+    <div className="d-flex flex-column campaign-preview-stats-bar__stat mr-2 text-nowrap">
         <div className="d-flex flex-column align-items-center">
-            <span style={{ width: '0.25rem', height: '0.25rem', backgroundColor: 'var(--danger)' }}>&nbsp;</span>
-            <span style={{ color: 'var(--oc-red-9)', lineHeight: '1rem' }}>-</span>
-            <span style={{ width: '0.25rem', height: '0.25rem', backgroundColor: 'var(--danger)' }}>&nbsp;</span>
+            <span className="preview-stats-removed__dot">&nbsp;</span>
+            <span className="preview-stats-removed__icon">-</span>
+            <span className="preview-stats-removed__dot">&nbsp;</span>
         </div>
         {count} removed
     </div>
