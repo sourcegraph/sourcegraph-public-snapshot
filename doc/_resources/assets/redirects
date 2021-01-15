@@ -70,13 +70,15 @@
 /team/roadmap https://about.sourcegraph.com/direction 308
 /team/style_guide https://about.sourcegraph.com/handbook/communication/style_guide 308
 /adopt/comp https://about.sourcegraph.com/workflow 308
+/admin/auth/saml_with_microsoft_adfs /admin/auth/saml/microsoft_adfs 308
+/admin/config/critical_config /admin/migration/3_11 308
+/admin/external_service/bitbucketserver /integration/bitbucket_server 308
+/admin/install/cluster.md /admin/install/index.md 308
 /admin/monitoring /admin/observability 308
 /admin/monitoring/reporting_search_timeouts /admin/observability/troubleshooting#scenario-search-timeouts 308
 /admin/monitoring/metrics_reference /admin/observability/metrics_guide 308
 /admin/monitoring/slack_alert_channel /admin/observability/alerting#set-up-alerts-in-grafana 308
 /admin/monitoring_and_tracing /admin/observability 308
-/admin/auth/saml_with_microsoft_adfs /admin/auth/saml/microsoft_adfs 308
-/admin/install/cluster.md /admin/install/index.md 308
 /integration/google_gsuite /integration/google_workspace 308
 
 /dev/architecture/life-of-a-search-query /dev/background-information/architecture/life-of-a-search-query 308
@@ -130,13 +132,13 @@
 /dev/documentation	/dev/how-to/documentation_implementation 308
 /dev/zoekt	/dev/how-to/zoekt_local_dev 308
 
-/user/search/examples   /user/search/tutorials/examples 308
-/user/search/queries    /user/search/reference/queries 308
-/user/search/language   /user/search/reference/language 308
-/user/search/structural /user/search/reference/structural 308
-/user/search/opengrok   /user/search/how-to/opengrok 308
-/user/search/saved_searches /user/search/how-to/saved_searches 308
-/user/search/scopes /user/search/how-to/scopes 308
+/user/search/examples   /code_search/tutorials/examples 308
+/user/search/queries    /code_search/reference/queries 308
+/user/search/language   /code_search/reference/language 308
+/user/search/structural /code_search/reference/structural 308
+/user/search/opengrok   /code_search/how-to/opengrok 308
+/user/search/saved_searches /code_search/how-to/saved_searches 308
+/user/search/scopes /code_search/how-to/scopes 308
 
 /user/code_intelligence/basic_code_intelligence /user/code_intelligence/explanations/search_based_code_intelligence 308
 /user/code_intelligence/features    /user/code_intelligence/explanations/features 308
