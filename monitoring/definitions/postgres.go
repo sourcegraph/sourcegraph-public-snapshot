@@ -59,14 +59,16 @@ func Postgres() *monitoring.Container {
 							Interpretation:    "A non-zero value indicates the database is online.",
 						},
 						monitoring.Observable{
-							Name:              "pg_exporter_err",
-							Description:       "errors scraping postgres exporter",
-							Owner:             monitoring.ObservableOwnerCloud,
-							Query:             "pg_exporter_last_scrape_error",
-							Panel:             monitoring.Panel().LegendFormat("{{app}}"),
-							Warning:           monitoring.Alert().GreaterOrEqual(1).For(5 * time.Minute),
-							PossibleSolutions: "none", // TODO(@daxmc99): how to debug this?
-							Interpretation:    "This value indicates issues retrieving metrics from postgres_exporter.",
+							Name:        "pg_exporter_err",
+							Description: "errors scraping postgres exporter",
+							Owner:       monitoring.ObservableOwnerCloud,
+							Query:       "pg_exporter_last_scrape_error",
+							Panel:       monitoring.Panel().LegendFormat("{{app}}"),
+							Warning:     monitoring.Alert().GreaterOrEqual(1).For(5 * time.Minute),
+							PossibleSolutions: `
+								- Ensure the Postgres exporter can access the Postgres database. Also, check the Postgres exporter logs for errors.
+							`,
+							Interpretation: "This value indicates issues retrieving metrics from postgres_exporter.",
 						},
 						monitoring.Observable{
 							Name:           "migration_in_progress",
