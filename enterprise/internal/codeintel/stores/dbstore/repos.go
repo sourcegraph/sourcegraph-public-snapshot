@@ -17,7 +17,7 @@ func (s *Store) RepoName(ctx context.Context, repositoryID int) (_ string, err e
 	}})
 	defer endObservation(1, observation.Args{})
 
-	name, exists, err := basestore.ScanFirstString(s.Store.Query(ctx, sqlf.Sprintf(repoNameQuery, repositoryID)))``
+	name, exists, err := basestore.ScanFirstString(s.Store.Query(ctx, sqlf.Sprintf(repoNameQuery, repositoryID)))
 	if err != nil {
 		return "", err
 	}
