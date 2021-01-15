@@ -9,10 +9,10 @@ import (
 	zoektquery "github.com/google/zoekt/query"
 
 	searcherzoekt "github.com/sourcegraph/sourcegraph/cmd/searcher/search"
-	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 

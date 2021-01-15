@@ -337,7 +337,6 @@ func zoektResultCountFactor(numRepos int, fileMatchLimit int32, globalSearch boo
 	return k
 }
 
-
 var errNoResultsInTimeout = errors.New("no results found in specified timeout")
 
 type zoektSearchStreamEvent struct {

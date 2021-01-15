@@ -1,20 +1,21 @@
 package zoekt
 
 import (
-  "context"
+	"context"
 	"regexp/syntax"
-  "time"
+	"time"
 
-  "github.com/google/zoekt"
+	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
-  "github.com/opentracing/opentracing-go"
-  "github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go"
 
-  "github.com/sourcegraph/sourcegraph/internal/trace/ot"
-  "github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 const defaultMaxSearchResults = 30
+
 var defaultTimeout = 20 * time.Second
 
 func FileRe(pattern string, queryIsCaseSensitive bool) (zoektquery.Q, error) {
