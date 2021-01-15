@@ -239,7 +239,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 )) || (
                     <span key="next" className="px-0 text-muted user-settings-repos__pageend">
                         Next
-                        <ChevronRightIcon className="icon-inline fill-border-color-2" />
+                        <ChevronRightIcon className="icon-inline user-settings-repos__chevron--inactive" />
                     </span>
                 )
             )
@@ -407,7 +407,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             <tr className="align-items-baseline d-flex" key="header">
                 <td
                     onClick={selectAll}
-                    className="user-settings-repos__repositorynode p-2 w-100 d-flex align-items-center border-top-0 border-bottom border-color-2"
+                    className="user-settings-repos__repositorynode p-2 w-100 d-flex align-items-center border-top-0 border-bottom"
                 >
                     <input
                         className="mr-3"
@@ -445,17 +445,17 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     )
 
     const loadingAnimation: JSX.Element = (
-        <tbody>
-            <tr className="mt-2 align-items-baseline d-flex w-80">
-                <td className="user-settings-repos__shimmer w-100 h-100 p-3 border-top-0" />
-            </tr>
-            <tr className="mt-2 align-items-baseline d-flex w-30">
-                <td className="user-settings-repos__shimmer w-100 h-100 p-3 border-top-0" />
-            </tr>
-            <tr className="mt-2 align-items-baseline d-flex w-70">
-                <td className="user-settings-repos__shimmer w-100 h-100 p-3 border-top-0" />
-            </tr>
-        </tbody>
+        <div className="container">
+            <div className="mt-2 align-items-baseline row">
+                <td className="user-settings-repos__shimmer p-3 border-top-0 col-sm-9" />
+            </div>
+            <div className="mt-2 align-items-baseline row">
+                <td className="user-settings-repos__shimmer p-3 border-top-0 col-sm-4" />
+            </div>
+            <div className="mt-2 align-items-baseline row">
+                <td className="user-settings-repos__shimmer p-3 border-top-0 col-sm-7" />
+            </div>
+        </div>
     )
     return (
         <div className="p-2">
@@ -465,7 +465,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 Choose which repositories to sync with Sourcegraph so you can search all your code in one place.
             </p>
             <ul className="list-group">
-                <li className="list-group-item p-0 border-color-2" key="body">
+                <li className="list-group-item p-0 user-settings-repos__container" key="body">
                     <div className="p-4" key="description">
                         <h3>Your repositories</h3>
                         <p className="text-muted">

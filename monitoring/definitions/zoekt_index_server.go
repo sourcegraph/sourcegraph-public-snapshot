@@ -78,5 +78,7 @@ func ZoektIndexServer() *monitoring.Container {
 				},
 			},
 		},
+
+		NoSourcegraphDebugServer: true,
 	}
 }

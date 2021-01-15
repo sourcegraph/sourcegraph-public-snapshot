@@ -67,5 +67,7 @@ func ZoektWebServer() *monitoring.Container {
 			// kubernetes monitoring for zoekt-web-server is provided by zoekt-index-server,
 			// since both services are deployed together
 		},
+
+		NoSourcegraphDebugServer: true,
 	}
 }

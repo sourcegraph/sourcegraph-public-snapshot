@@ -569,7 +569,12 @@ func (q *updateQueue) acquireNext() (configuredRepo, bool) {
 // responsibility to ensure they're being guarded by a mutex during any heap operation,
 // i.e. heap.Fix, heap.Remove, heap.Push, heap.Pop.
 
-func (q *updateQueue) Len() int { return len(q.heap) }
+func (q *updateQueue) Len() int {
+	n := len(q.heap)
+	schedUpdateQueueLength.Set(float64(n))
+	return n
+}
+
 func (q *updateQueue) Less(i, j int) bool {
 	qi := q.heap[i]
 	qj := q.heap[j]
@@ -598,7 +603,6 @@ func (q *updateQueue) Push(x interface{}) {
 	item.Seq = q.nextSeq()
 	q.heap = append(q.heap, item)
 	q.index[item.Repo.ID] = item
-	schedUpdateQueueLength.Inc()
 }
 
 func (q *updateQueue) Pop() interface{} {
@@ -607,7 +611,6 @@ func (q *updateQueue) Pop() interface{} {
 	item.Index = -1 // for safety
 	q.heap = q.heap[0 : n-1]
 	delete(q.index, item.Repo.ID)
-	schedUpdateQueueLength.Dec()
 	return item
 }
 

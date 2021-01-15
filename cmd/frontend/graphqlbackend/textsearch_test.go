@@ -97,7 +97,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 	for _, rr := range repoRevs {
 		repoNames[rr.Repo.ID] = string(rr.Repo.Name)
 	}
-	assertReposStatus(t, repoNames, common.status, map[string]search.RepoStatus{
+	assertReposStatus(t, repoNames, common.Status, map[string]search.RepoStatus{
 		"foo/cloning":    search.RepoStatusCloning,
 		"foo/empty":      search.RepoStatusSearched,
 		"foo/missing":    search.RepoStatusMissing,

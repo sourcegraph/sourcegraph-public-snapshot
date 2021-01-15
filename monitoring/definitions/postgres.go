@@ -122,5 +122,8 @@ func Postgres() *monitoring.Container {
 				},
 			},
 		},
+
+		// This is third-party service
+		NoSourcegraphDebugServer: true,
 	}
 }

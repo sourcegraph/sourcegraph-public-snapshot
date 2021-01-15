@@ -38,7 +38,8 @@ export const Toggle: React.FunctionComponent<Props> = ({
     dataTest,
     ariaLabel,
 }) => {
-    function onClick(): void {
+    function onClick(event: React.MouseEvent<HTMLButtonElement>): void {
+        event.stopPropagation()
         if (!disabled && onToggle) {
             onToggle(!value)
         }
