@@ -133,6 +133,8 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (_ SearchImplem
 		patternType:    searchType,
 		zoekt:          search.Indexed(),
 		searcherURLs:   search.SearcherURLs(),
+		reposMu:        &sync.Mutex{},
+		resolved:       &searchrepos.Resolved{},
 	}, nil
 }
 
@@ -282,9 +284,11 @@ type searchResolver struct {
 	// searchResolver.SetResultChannel
 	resultChannel chan<- []SearchResultResolver
 
-	// Cached resolveRepositories results.
-	reposMu  sync.Mutex
-	resolved searchrepos.Resolved
+	// Cached resolveRepositories results. We use a pointer to the mutex so that we
+	// can copy the resolver, while sharing the mutex. If we didn't use a pointer,
+	// the mutex would lead to unexpected behaviour.
+	reposMu  *sync.Mutex
+	resolved *searchrepos.Resolved
 	repoErr  error
 
 	zoekt        *searchbackend.Zoekt
@@ -388,7 +392,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		defer r.reposMu.Unlock()
 		if r.resolved.RepoRevs != nil || r.resolved.MissingRepoRevs != nil || r.repoErr != nil {
 			tr.LazyPrintf("cached")
-			return r.resolved, r.repoErr
+			return *r.resolved, r.repoErr
 		}
 	}
 
@@ -453,7 +457,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 	resolved, err := searchrepos.ResolveRepositories(ctx, options)
 	tr.LazyPrintf("resolveRepositories - done")
 	if effectiveRepoFieldValues == nil {
-		r.resolved = resolved
+		r.resolved = &resolved
 		r.repoErr = err
 	}
 	return resolved, err

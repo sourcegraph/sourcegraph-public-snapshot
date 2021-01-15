@@ -936,6 +936,32 @@ func intersect(left, right *SearchResultsResolver) *SearchResultsResolver {
 	return intersectMerge(left, right)
 }
 
+// evaluateAndStream is a wrapper around evaluateAnd which temporarily suspends
+// streaming and waits for evaluateAnd to return before streaming results back on
+// r.resultChannel.
+func (r *searchResolver) evaluateAndStream(ctx context.Context, scopeParameters []query.Node, operands []query.Node) (*SearchResultsResolver, error) {
+	// Streaming disabled.
+	if r.resultChannel == nil {
+		return r.evaluateAnd(ctx, scopeParameters, operands)
+	}
+	// For streaming search we want to run the evaluation of AND expressions in batch
+	// mode. We copy r to r2 and replace the result channel with a sink.
+	r2 := *r
+	sink := make(chan []SearchResultResolver)
+	defer close(sink)
+	go func() {
+		for range sink {
+		}
+	}()
+	r2.resultChannel = sink
+
+	result, err := r2.evaluateAnd(ctx, scopeParameters, operands)
+	if err == nil && result.SearchResults != nil {
+		r.resultChannel <- result.SearchResults
+	}
+	return result, err
+}
+
 // evaluateAnd performs set intersection on result sets. It collects results for
 // all expressions that are ANDed together by searching for each subexpression
 // and then intersects those results that are in the same repo/file path. To
@@ -1108,7 +1134,7 @@ func (r *searchResolver) evaluateOperator(ctx context.Context, scopeParameters [
 	var result *SearchResultsResolver
 	var err error
 	if operator.Kind == query.And {
-		result, err = r.evaluateAnd(ctx, scopeParameters, operator.Operands)
+		result, err = r.evaluateAndStream(ctx, scopeParameters, operator.Operands)
 	} else {
 		result, err = r.evaluateOr(ctx, scopeParameters, operator.Operands)
 	}
