@@ -93,5 +93,6 @@ func SyntectServer() *monitoring.Container {
 				},
 			},
 		},
+		NoSourcegraphDebugServer: true,
 	}
 }
