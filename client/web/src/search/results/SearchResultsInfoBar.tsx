@@ -3,7 +3,6 @@ import React, { useMemo } from 'react'
 import ArrowCollapseVerticalIcon from 'mdi-react/ArrowCollapseVerticalIcon'
 import ArrowExpandVerticalIcon from 'mdi-react/ArrowExpandVerticalIcon'
 import classNames from 'classnames'
-import DownloadIcon from 'mdi-react/DownloadIcon'
 import FormatQuoteOpenIcon from 'mdi-react/FormatQuoteOpenIcon'
 import { AuthenticatedUser } from '../../auth'
 import { ContributableMenu } from '../../../../shared/src/api/protocol'
@@ -14,7 +13,6 @@ import { SearchPatternType } from '../../graphql-operations'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { WebActionsNavItems as ActionsNavItems } from '../../components/shared'
 import { CodeMonitoringProps } from '../../enterprise/code-monitoring'
-import { CodeMonitoringLogo } from '../../enterprise/code-monitoring/CodeMonitoringLogo'
 import { FilterKind, findFilter } from '../../../../shared/src/search/query/validate'
 import { Link } from '../../../../shared/src/components/Link'
 
@@ -92,7 +90,6 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
         return (
             <li className="nav-item">
                 <Link to={toURL} className="btn btn-link nav-link text-decoration-none">
-                    <CodeMonitoringLogo className="icon-inline" />
                     Create code monitor
                 </Link>
             </li>
@@ -119,9 +116,9 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                             <button
                                 type="button"
                                 onClick={props.onSaveQueryClick}
-                                className="btn btn-link nav-link text-decoration-none"
+                                className="btn btn-link nav-link text-decoration-none test-save-search-link"
                             >
-                                <DownloadIcon className="icon-inline test-save-search-link" /> Save search
+                                Save search
                             </button>
                         </li>
                     )}
