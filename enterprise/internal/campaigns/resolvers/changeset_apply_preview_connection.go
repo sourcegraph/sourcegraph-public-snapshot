@@ -248,6 +248,7 @@ func (r *changesetApplyPreviewConnectionResolver) compute(ctx context.Context) (
 		allOpts := store.GetRewirerMappingsOpts{
 			CampaignSpecID: opts.CampaignSpecID,
 			CampaignID:     opts.CampaignID,
+			TextSearch:     opts.TextSearch,
 		}
 		r.allMappings, r.err = r.store.GetRewirerMappings(ctx, allOpts)
 		if r.err != nil {
