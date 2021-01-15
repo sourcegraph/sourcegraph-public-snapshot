@@ -96,6 +96,9 @@ func generateAndWrite(databaseName, dataSource string, commandPrefix []string, d
 	// Try to drop a database if it already exists
 	_, _ = run(true, "dropdb", databaseNamePrefix+databaseName)
 
+	// Let's also try to clean up after ourselves
+	defer func() { _, _ = run(true, "dropdb", databaseNamePrefix+databaseName) }()
+
 	if out, err := run(false, "createdb", databaseNamePrefix+databaseName); err != nil {
 		return errors.Wrap(err, fmt.Sprintf("run: %s", out))
 	}
