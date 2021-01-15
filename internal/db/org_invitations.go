@@ -7,9 +7,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
-
+	"github.com/lib/pq"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 )
 
@@ -61,8 +60,8 @@ func (*orgInvitations) Create(ctx context.Context, orgID, senderUserID, recipien
 		"INSERT INTO org_invitations(org_id, sender_user_id, recipient_user_id) VALUES($1, $2, $3) RETURNING id, created_at",
 		orgID, senderUserID, recipientUserID,
 	).Scan(&t.ID, &t.CreatedAt); err != nil {
-		if pgErr, ok := err.(*pgconn.PgError); ok {
-			switch pgErr.ConstraintName {
+		if pqErr, ok := err.(*pq.Error); ok {
+			switch pqErr.Constraint {
 			case "org_invitations_singleflight":
 				return nil, errors.New("user was already invited to organization (and has not responded yet)")
 			}

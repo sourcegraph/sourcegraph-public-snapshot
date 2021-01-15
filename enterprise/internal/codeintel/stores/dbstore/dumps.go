@@ -3,7 +3,6 @@ package dbstore
 import (
 	"context"
 	"database/sql"
-	"strconv"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -356,7 +355,7 @@ func (s *Store) SoftDeleteOldDumps(ctx context.Context, maxAge time.Duration, no
 				RETURNING id, repository_id
 		)
 		SELECT u.repository_id, count(*) FROM u GROUP BY u.repository_id
-	`, now, strconv.Itoa(int(maxAge/time.Second)))))
+	`, now, maxAge/time.Second)))
 	if err != nil {
 		return 0, err
 	}

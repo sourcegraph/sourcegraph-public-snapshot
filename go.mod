@@ -92,8 +92,6 @@ require (
 	github.com/honeycombio/libhoney-go v1.14.0
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/inconshreveable/log15 v0.0.0-20200109203555-b30bc20e4fd1
-	github.com/jackc/pgconn v1.8.0
-	github.com/jackc/pgx/v4 v4.10.0
 	github.com/jmespath/go-jmespath v0.3.0 // indirect
 	github.com/jmoiron/sqlx v1.2.1-0.20190826204134-d7d95172beb5
 	github.com/joho/godotenv v1.3.0

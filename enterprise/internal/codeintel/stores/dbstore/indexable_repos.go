@@ -4,12 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
-
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -110,7 +108,7 @@ func (s *Store) IndexableRepositories(ctx context.Context, opts IndexableReposit
 		conds = append(conds, sqlf.Sprintf(
 			"(last_index_enqueued_at IS NULL OR %s - last_index_enqueued_at >= (%s || ' second')::interval)",
 			opts.now,
-			strconv.Itoa(int(opts.MinimumTimeSinceLastEnqueue/time.Second)),
+			opts.MinimumTimeSinceLastEnqueue/time.Second,
 		))
 	}
 

@@ -6,7 +6,6 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
@@ -227,7 +226,7 @@ func countChangesetsQuery(opts *CountChangesetsOpts) *sqlf.Query {
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
 	}
 	if opts.CampaignID != 0 {
-		preds = append(preds, sqlf.Sprintf("changesets.campaign_ids ? %s", strconv.Itoa(int(opts.CampaignID))))
+		preds = append(preds, sqlf.Sprintf("changesets.campaign_ids ? %s", opts.CampaignID))
 	}
 
 	if opts.ExternalState != nil {
@@ -456,7 +455,7 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 	}
 
 	if opts.CampaignID != 0 {
-		preds = append(preds, sqlf.Sprintf("changesets.campaign_ids ? %s", strconv.Itoa(int(opts.CampaignID))))
+		preds = append(preds, sqlf.Sprintf("changesets.campaign_ids ? %s", opts.CampaignID))
 	}
 
 	if len(opts.IDs) > 0 {
@@ -849,7 +848,7 @@ func getChangesetsStatsQuery(opts GetChangesetsStatsOpts) *sqlf.Query {
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
 	}
 	if opts.CampaignID != 0 {
-		preds = append(preds, sqlf.Sprintf("changesets.campaign_ids ? %s", strconv.Itoa(int(opts.CampaignID))))
+		preds = append(preds, sqlf.Sprintf("changesets.campaign_ids ? %s", opts.CampaignID))
 	}
 	return sqlf.Sprintf(getChangesetStatsFmtstr, sqlf.Join(preds, " AND "))
 }
