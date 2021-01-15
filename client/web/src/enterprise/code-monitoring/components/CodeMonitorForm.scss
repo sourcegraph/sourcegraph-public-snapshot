@@ -15,6 +15,7 @@
         }
 
         &--button {
+            cursor: pointer;
             // stylelint-disable-next-line declaration-property-unit-whitelist
             margin: calc(1rem - 1px) 0;
             border-radius: 4px;
@@ -27,6 +28,7 @@
 
             .code-monitor-form__trigger--disabled & {
                 margin: 1rem 0;
+                cursor: default;
                 &:hover {
                     border: 1px solid var(--border-color);
                 }
@@ -34,6 +36,7 @@
 
             .code-monitor-form__actions--disabled & {
                 margin: 1rem 0;
+                cursor: default;
                 &:hover {
                     border: 1px solid var(--border-color);
                 }

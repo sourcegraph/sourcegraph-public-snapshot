@@ -69,13 +69,6 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
         },
         [setActionsCompleted, setShowEmailNotificationForm, actions.nodes.length, authenticatedUser.id, onActionsChange]
     )
-    const editForm: React.FormEventHandler = useCallback(
-        event => {
-            event.preventDefault()
-            setShowEmailNotificationForm(true)
-        },
-        [setShowEmailNotificationForm]
-    )
     const cancelForm: React.FormEventHandler = useCallback(
         event => {
             event.preventDefault()
@@ -219,7 +212,7 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                 </div>
             )}
             {actionsCompleted && !showEmailNotificationForm && (
-                <div className="code-monitor-form__card card p-3">
+                <div className="code-monitor-form__card--button card p-3" onClick={toggleEmailNotificationForm}>
                     <div className="d-flex justify-content-between align-items-center">
                         <div>
                             <div className="font-weight-bold">Send email notifications</div>
@@ -232,11 +225,7 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                                 onToggle={toggleEmailNotificationEnabled}
                                 className="mr-3"
                             />
-                            <button
-                                type="button"
-                                onClick={editForm}
-                                className="btn btn-link p-0 text-left test-edit-action"
-                            >
+                            <button type="button" className="btn btn-link p-0 text-left test-edit-action">
                                 Edit
                             </button>
                         </div>
