@@ -59,22 +59,46 @@ type searchResultsCommon struct {
 	// that are in this map.
 	repos map[api.RepoID]*types.RepoName
 
-	searched []*types.RepoName         // repos that were searched
-	indexed  []*types.RepoName         // repos that were searched using an index
-	cloning  []*types.RepoName         // repos that could not be searched because they were still being cloned
-	missing  []*types.RepoName         // repos that could not be searched because they do not exist
-	excluded searchrepos.ExcludedRepos // repo counts of excluded repos because the search query doesn't apply to them, but that we want to know about (forks, archives)
+	status search.RepoStatusMap
 
-	partial map[api.RepoID]struct{} // repos that were searched, but have results that were not returned due to exceeded limits
+	excluded searchrepos.ExcludedRepos // repo counts of excluded repos because the search query doesn't apply to them, but that we want to know about (forks, archives)
 
 	maxResultsCount, resultCount int32
 
-	// timedout usually contains repos that haven't finished being fetched yet.
-	// This should only happen for large repos and the searcher caches are
-	// purged.
-	timedout []*types.RepoName
-
 	indexUnavailable bool // True if indexed search is enabled but was not available during this search.
+}
+
+func (c *searchResultsCommon) String() string {
+	if c == nil {
+		return "searchResultsCommon{}"
+	}
+
+	parts := []string{
+		fmt.Sprintf("status=%s", c.status.String()),
+	}
+	nums := []struct {
+		name string
+		n    int
+	}{
+		{"repos", len(c.repos)},
+		{"excludedForks", c.excluded.Forks},
+		{"excludedArchived", c.excluded.Archived},
+		{"resultCount", int(c.resultCount)},
+		{"maxResultCount", int(c.maxResultsCount)},
+	}
+	for _, p := range nums {
+		if p.n != 0 {
+			parts = append(parts, fmt.Sprintf("%s=%d", p.name, p.n))
+		}
+	}
+	if c.limitHit {
+		parts = append(parts, "limitHit")
+	}
+	if c.indexUnavailable {
+		parts = append(parts, "indexUnavailable")
+	}
+
+	return "searchResultsCommon{" + strings.Join(parts, " ") + "}"
 }
 
 func (c *searchResultsCommon) LimitHit() bool {
@@ -97,24 +121,38 @@ func (c *searchResultsCommon) RepositoriesCount() int32 {
 	return int32(len(c.repos))
 }
 
+func (c *searchResultsCommon) repositoryResolvers(mask search.RepoStatus) []*RepositoryResolver {
+	var resolvers []*RepositoryResolver
+	c.status.Filter(mask, func(id api.RepoID) {
+		r := c.repos[id]
+		if r != nil {
+			resolvers = append(resolvers, &RepositoryResolver{innerRepo: c.repos[id].ToRepo()})
+		}
+	})
+	sort.Slice(resolvers, func(a, b int) bool {
+		return resolvers[a].innerRepo.ID < resolvers[b].innerRepo.ID
+	})
+	return resolvers
+}
+
 func (c *searchResultsCommon) RepositoriesSearched() []*RepositoryResolver {
-	return RepositoryResolvers(c.searched)
+	return c.repositoryResolvers(search.RepoStatusSearched)
 }
 
 func (c *searchResultsCommon) IndexedRepositoriesSearched() []*RepositoryResolver {
-	return RepositoryResolvers(c.indexed)
+	return c.repositoryResolvers(search.RepoStatusIndexed)
 }
 
 func (c *searchResultsCommon) Cloning() []*RepositoryResolver {
-	return RepositoryResolvers(c.cloning)
+	return c.repositoryResolvers(search.RepoStatusCloning)
 }
 
 func (c *searchResultsCommon) Missing() []*RepositoryResolver {
-	return RepositoryResolvers(c.missing)
+	return c.repositoryResolvers(search.RepoStatusMissing)
 }
 
 func (c *searchResultsCommon) Timedout() []*RepositoryResolver {
-	return RepositoryResolvers(c.timedout)
+	return c.repositoryResolvers(search.RepoStatusTimedout)
 }
 
 func (c *searchResultsCommon) IndexUnavailable() bool {
@@ -147,22 +185,17 @@ func (c *searchResultsCommon) update(other *searchResultsCommon) {
 			c.repos[id] = r
 		}
 	}
-	c.searched = append(c.searched, other.searched...)
-	c.indexed = append(c.indexed, other.indexed...)
-	c.cloning = append(c.cloning, other.cloning...)
-	c.missing = append(c.missing, other.missing...)
+
+	c.status.Union(&other.status)
+
 	c.excluded.Forks = c.excluded.Forks + other.excluded.Forks
 	c.excluded.Archived = c.excluded.Archived + other.excluded.Archived
-	c.timedout = append(c.timedout, other.timedout...)
-	c.resultCount += other.resultCount
 
-	if c.partial == nil {
-		c.partial = other.partial
-	} else {
-		for repo := range other.partial {
-			c.partial[repo] = struct{}{}
-		}
-	}
+	c.resultCount += other.resultCount
+}
+
+func (c *searchResultsCommon) allReposTimedout() bool {
+	return c.status.All(search.RepoStatusTimedout) && c.status.Len() == len(c.repos)
 }
 
 // dedupSort sorts (by ID in ascending order) and deduplicates
@@ -218,7 +251,7 @@ func (sr *SearchResultsResolver) ResultCount() int32 { return sr.MatchCount() }
 
 func (sr *SearchResultsResolver) ApproximateResultCount() string {
 	count := sr.MatchCount()
-	if sr.LimitHit() || len(sr.cloning) > 0 || len(sr.timedout) > 0 {
+	if sr.LimitHit() || sr.status.Any(search.RepoStatusCloning|search.RepoStatusTimedout) {
 		return fmt.Sprintf("%d+", count)
 	}
 	return strconv.Itoa(int(count))
@@ -313,7 +346,7 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 			// are @ and :, both of which are disallowed in git refs
 			filter = filter + fmt.Sprintf(`@%s`, rev)
 		}
-		_, limitHit := sr.searchResultsCommon.partial[repo.IDInt32()]
+		limitHit := sr.searchResultsCommon.status.Get(repo.IDInt32())&search.RepoStatusLimitHit != 0
 		// Increment number of matches per repo. Add will override previous entry for uri
 		repoToMatchCount[uri] += lineMatchCount
 		add(filter, uri, repoToMatchCount[uri], limitHit, "repo", scoreDefault)
@@ -697,9 +730,9 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResultsReso
 	// Record what type of response we sent back via Prometheus.
 	var status, alertType string
 	switch {
-	case err == context.DeadlineExceeded || (err == nil && len(rr.searchResultsCommon.timedout) > 0 && len(rr.searchResultsCommon.timedout) == len(rr.searchResultsCommon.repos)):
+	case err == context.DeadlineExceeded || (err == nil && rr.allReposTimedout()):
 		status = "timeout"
-	case err == nil && len(rr.searchResultsCommon.timedout) > 0:
+	case err == nil && rr.searchResultsCommon.status.Any(search.RepoStatusTimedout):
 		status = "partial_timeout"
 	case err == nil && rr.alert != nil:
 		status = "alert"
@@ -1225,7 +1258,7 @@ func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*Sea
 	// In this case, or if we got a partial timeout where ALL repositories timed out,
 	// we do not return partial results and instead display a timeout alert.
 	shouldShowAlert := err == context.DeadlineExceeded
-	if err == nil && len(rr.searchResultsCommon.timedout) > 0 && len(rr.searchResultsCommon.timedout) == len(rr.searchResultsCommon.repos) {
+	if err == nil && rr.allReposTimedout() {
 		shouldShowAlert = true
 	}
 	if shouldShowAlert {
@@ -2062,14 +2095,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 
 	results, common, multiErr := agg.get()
 
-	tr.LazyPrintf("results=%d limitHit=%v cloning=%d missing=%d excludedFork=%d excludedArchived=%d timedout=%d",
-		len(results),
-		common.limitHit,
-		len(common.cloning),
-		len(common.missing),
-		common.excluded.Forks,
-		common.excluded.Archived,
-		len(common.timedout))
+	tr.LazyPrintf("results=%d %s", len(results), &common)
 
 	var alert *searchAlert
 

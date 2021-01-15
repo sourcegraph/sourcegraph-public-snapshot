@@ -14,7 +14,6 @@ import (
 	"github.com/pkg/errors"
 
 	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -25,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	querytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -610,33 +608,37 @@ func sortSearchSuggestions(s []*searchSuggestionResolver) {
 // returning common as to reflect that new information. If searchErr is a fatal error,
 // it returns a non-nil error; otherwise, if searchErr == nil or a non-fatal error, it returns a
 // nil error.
-func handleRepoSearchResult(repoRev *search.RepositoryRevisions, limitHit, timedOut bool, searchErr error) (common searchResultsCommon, fatalErr error) {
+func handleRepoSearchResult(repoRev *search.RepositoryRevisions, limitHit, timedOut bool, searchErr error) (_ searchResultsCommon, fatalErr error) {
+	var status search.RepoStatus
 	if limitHit {
-		common.limitHit = true
-		common.partial = map[api.RepoID]struct{}{repoRev.Repo.ID: {}}
+		status |= search.RepoStatusLimitHit
 	}
+
 	if vcs.IsRepoNotExist(searchErr) {
 		if vcs.IsCloneInProgress(searchErr) {
-			common.cloning = []*types.RepoName{repoRev.Repo}
+			status |= search.RepoStatusCloning
 		} else {
-			common.missing = []*types.RepoName{repoRev.Repo}
+			status |= search.RepoStatusMissing
 		}
 	} else if gitserver.IsRevisionNotFound(searchErr) {
 		if len(repoRev.Revs) == 0 || len(repoRev.Revs) == 1 && repoRev.Revs[0].RevSpec == "" {
 			// If we didn't specify an input revision, then the repo is empty and can be ignored.
 		} else {
-			return common, searchErr
+			fatalErr = searchErr
 		}
 	} else if errcode.IsNotFound(searchErr) {
-		common.missing = []*types.RepoName{repoRev.Repo}
+		status |= search.RepoStatusMissing
 	} else if errcode.IsTimeout(searchErr) || errcode.IsTemporary(searchErr) || timedOut {
-		common.timedout = []*types.RepoName{repoRev.Repo}
+		status |= search.RepoStatusTimedout
 	} else if searchErr != nil {
-		return common, searchErr
+		fatalErr = searchErr
 	} else {
-		common.searched = []*types.RepoName{repoRev.Repo}
+		status |= search.RepoStatusSearched
 	}
-	return common, nil
+	return searchResultsCommon{
+		status:   search.RepoStatusSingleton(repoRev.Repo.ID, status),
+		limitHit: limitHit,
+	}, fatalErr
 }
 
 // getRepos is a wrapper around p.Get. It returns an error if the promise

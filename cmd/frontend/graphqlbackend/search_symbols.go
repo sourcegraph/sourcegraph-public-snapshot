@@ -70,7 +70,7 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 	ctx, cancelAll := context.WithCancel(ctx)
 	defer cancelAll()
 
-	common = &searchResultsCommon{partial: make(map[api.RepoID]struct{})}
+	common = &searchResultsCommon{}
 
 	indexed, err := newIndexedSearchRequest(ctx, args, symbolRequest)
 	if err != nil {
@@ -80,17 +80,20 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 	var searcherRepos []*search.RepositoryRevisions
 	if indexed.DisableUnindexedSearch {
 		tr.LazyPrintf("disabling unindexed search")
-		common.missing = make([]*types.RepoName, len(indexed.Unindexed))
-		for i, r := range indexed.Unindexed {
-			common.missing[i] = r.Repo
+		for _, r := range indexed.Unindexed {
+			common.status.Update(r.Repo.ID, search.RepoStatusMissing)
 		}
 	} else {
 		// Limit the number of unindexed repositories searched for a single
 		// query. Searching more than this will merely flood the system and
 		// network with requests that will timeout.
-		searcherRepos, common.missing = limitSearcherRepos(indexed.Unindexed, maxUnindexedRepoRevSearchesPerQuery)
-		if len(common.missing) > 0 {
+		var missing []*types.RepoName
+		searcherRepos, missing = limitSearcherRepos(indexed.Unindexed, maxUnindexedRepoRevSearchesPerQuery)
+		if len(missing) > 0 {
 			tr.LazyPrintf("limiting unindexed repos searched to %d", maxUnindexedRepoRevSearchesPerQuery)
+			for _, r := range missing {
+				common.status.Update(r.ID, search.RepoStatusMissing)
+			}
 		}
 	}
 
