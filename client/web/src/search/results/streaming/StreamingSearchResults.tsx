@@ -42,6 +42,7 @@ import {
     resolveVersionContext,
 } from '../..'
 import { asError } from '../../../../../shared/src/util/errors'
+import { CodeMonitoringProps } from '../../../enterprise/code-monitoring'
 
 export interface StreamingSearchResultsProps
     extends SearchStreamingProps,
@@ -52,7 +53,8 @@ export interface StreamingSearchResultsProps
         ExtensionsControllerProps<'executeCommand' | 'extHostAPI' | 'services'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         TelemetryProps,
-        ThemeProps {
+        ThemeProps,
+        Pick<CodeMonitoringProps, 'enableCodeMonitoring'> {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History

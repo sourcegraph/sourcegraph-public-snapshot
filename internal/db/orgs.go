@@ -7,12 +7,12 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/jackc/pgconn"
 
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/lib/pq"
 )
 
 // OrgNotFoundError occurs when an organization is not found.
@@ -179,14 +179,14 @@ func (*orgs) Create(ctx context.Context, name string, displayName *string) (*typ
 		"INSERT INTO orgs(name, display_name, created_at, updated_at) VALUES($1, $2, $3, $4) RETURNING id",
 		newOrg.Name, newOrg.DisplayName, newOrg.CreatedAt, newOrg.UpdatedAt).Scan(&newOrg.ID)
 	if err != nil {
-		if pqErr, ok := err.(*pq.Error); ok {
-			switch pqErr.Constraint {
+		if pgErr, ok := err.(*pgconn.PgError); ok {
+			switch pgErr.ConstraintName {
 			case "orgs_name":
 				return nil, errOrgNameAlreadyExists
 			case "orgs_name_max_length", "orgs_name_valid_chars":
-				return nil, fmt.Errorf("org name invalid: %s", pqErr.Constraint)
+				return nil, fmt.Errorf("org name invalid: %s", pgErr.ConstraintName)
 			case "orgs_display_name_max_length":
-				return nil, fmt.Errorf("org display name invalid: %s", pqErr.Constraint)
+				return nil, fmt.Errorf("org display name invalid: %s", pgErr.ConstraintName)
 			}
 		}
 

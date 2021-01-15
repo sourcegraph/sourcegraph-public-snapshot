@@ -115,7 +115,7 @@ describe('StreamingProgressSkippedPopover', () => {
         const element = mount(
             <StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} history={history} />
         )
-        const searchAgainButton = element.find(Button)
+        const searchAgainButton = element.find(Form).find(Button)
         expect(searchAgainButton).toHaveLength(1)
         expect(searchAgainButton.prop('disabled')).toBe(true)
     })
@@ -170,7 +170,7 @@ describe('StreamingProgressSkippedPopover', () => {
             currentTarget: { checked: true, value: checkbox.props().value as string },
         } as ChangeEvent<HTMLInputElement>)
 
-        const searchAgainButton = element.find(Button)
+        const searchAgainButton = element.find(Form).find(Button)
         expect(searchAgainButton).toHaveLength(1)
         expect(searchAgainButton.prop('disabled')).toBe(false)
     })
@@ -225,14 +225,14 @@ describe('StreamingProgressSkippedPopover', () => {
             currentTarget: { checked: true, value: checkbox.props().value as string },
         } as ChangeEvent<HTMLInputElement>)
 
-        let searchAgainButton = element.find(Button)
+        let searchAgainButton = element.find(Form).find(Button)
         expect(searchAgainButton.prop('disabled')).toBe(false)
 
         checkbox.invoke('onChange')?.({
             currentTarget: { checked: false, value: checkbox.props().value as string },
         } as ChangeEvent<HTMLInputElement>)
 
-        searchAgainButton = element.find(Button)
+        searchAgainButton = element.find(Form).find(Button)
         expect(searchAgainButton.prop('disabled')).toBe(true)
     })
 

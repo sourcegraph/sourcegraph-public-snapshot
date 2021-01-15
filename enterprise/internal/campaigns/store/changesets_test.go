@@ -12,6 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/search"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -1537,29 +1538,29 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 
 	// All right, let's run some searches!
 	for name, tc := range map[string]struct {
-		textSearch []ListChangesetsTextSearchExpr
+		textSearch []search.TextSearchTerm
 		want       campaigns.Changesets
 	}{
 		"single changeset based on GitHub metadata title": {
-			textSearch: []ListChangesetsTextSearchExpr{
+			textSearch: []search.TextSearchTerm{
 				{Term: "on GitHub"},
 			},
 			want: campaigns.Changesets{githubChangeset},
 		},
 		"single changeset based on GitLab metadata title": {
-			textSearch: []ListChangesetsTextSearchExpr{
+			textSearch: []search.TextSearchTerm{
 				{Term: "on GitLab"},
 			},
 			want: campaigns.Changesets{gitlabChangeset},
 		},
 		"single changeset based on Bitbucket Server metadata title": {
-			textSearch: []ListChangesetsTextSearchExpr{
+			textSearch: []search.TextSearchTerm{
 				{Term: "on Bitbucket Server"},
 			},
 			want: campaigns.Changesets{bbsChangeset},
 		},
 		"all published changesets based on metadata title": {
-			textSearch: []ListChangesetsTextSearchExpr{
+			textSearch: []search.TextSearchTerm{
 				{Term: "Fix a bunch of bugs"},
 			},
 			want: campaigns.Changesets{
@@ -1569,19 +1570,19 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 			},
 		},
 		"imported changeset based on metadata title": {
-			textSearch: []ListChangesetsTextSearchExpr{
+			textSearch: []search.TextSearchTerm{
 				{Term: "Do some stuff"},
 			},
 			want: campaigns.Changesets{importedChangeset},
 		},
 		"unpublished changeset based on spec title": {
-			textSearch: []ListChangesetsTextSearchExpr{
+			textSearch: []search.TextSearchTerm{
 				{Term: "Eventually"},
 			},
 			want: campaigns.Changesets{unpublishedChangeset},
 		},
 		"negated metadata title": {
-			textSearch: []ListChangesetsTextSearchExpr{
+			textSearch: []search.TextSearchTerm{
 				{Term: "bunch of bugs", Not: true},
 			},
 			want: campaigns.Changesets{
@@ -1590,7 +1591,7 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 			},
 		},
 		"negated spec title": {
-			textSearch: []ListChangesetsTextSearchExpr{
+			textSearch: []search.TextSearchTerm{
 				{Term: "Eventually", Not: true},
 			},
 			want: campaigns.Changesets{
@@ -1601,7 +1602,7 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 			},
 		},
 		"repo name": {
-			textSearch: []ListChangesetsTextSearchExpr{
+			textSearch: []search.TextSearchTerm{
 				{Term: string(githubRepo.Name)},
 			},
 			want: campaigns.Changesets{
@@ -1611,7 +1612,7 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 			},
 		},
 		"title and repo name together": {
-			textSearch: []ListChangesetsTextSearchExpr{
+			textSearch: []search.TextSearchTerm{
 				{Term: string(githubRepo.Name)},
 				{Term: "Eventually"},
 			},
@@ -1620,7 +1621,7 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 			},
 		},
 		"multiple title matches together": {
-			textSearch: []ListChangesetsTextSearchExpr{
+			textSearch: []search.TextSearchTerm{
 				{Term: "Eventually"},
 				{Term: "fix"},
 			},
@@ -1629,7 +1630,7 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 			},
 		},
 		"negated repo name": {
-			textSearch: []ListChangesetsTextSearchExpr{
+			textSearch: []search.TextSearchTerm{
 				{Term: string(githubRepo.Name), Not: true},
 			},
 			want: campaigns.Changesets{
@@ -1638,27 +1639,27 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 			},
 		},
 		"combined negated repo names": {
-			textSearch: []ListChangesetsTextSearchExpr{
+			textSearch: []search.TextSearchTerm{
 				{Term: string(githubRepo.Name), Not: true},
 				{Term: string(gitlabRepo.Name), Not: true},
 			},
 			want: campaigns.Changesets{bbsChangeset},
 		},
 		"no results due to conflicting requirements": {
-			textSearch: []ListChangesetsTextSearchExpr{
+			textSearch: []search.TextSearchTerm{
 				{Term: string(githubRepo.Name)},
 				{Term: string(gitlabRepo.Name)},
 			},
 			want: campaigns.Changesets{},
 		},
 		"no results due to a subset of a word": {
-			textSearch: []ListChangesetsTextSearchExpr{
+			textSearch: []search.TextSearchTerm{
 				{Term: "unch"},
 			},
 			want: campaigns.Changesets{},
 		},
 		"no results due to text that doesn't exist in the search scope": {
-			textSearch: []ListChangesetsTextSearchExpr{
+			textSearch: []search.TextSearchTerm{
 				{Term: "she dreamt she was a bulldozer, she dreamt she was in an empty field"},
 			},
 			want: campaigns.Changesets{},

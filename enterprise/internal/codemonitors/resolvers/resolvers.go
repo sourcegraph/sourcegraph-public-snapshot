@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	cm "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/email"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
@@ -196,6 +197,38 @@ func (r *Resolver) ResetTriggerQueryTimestamps(ctx context.Context, args *graphq
 		return nil, err
 	}
 	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (r *Resolver) TriggerTestEmailAction(ctx context.Context, args *graphqlbackend.TriggerTestEmailActionArgs) (*graphqlbackend.EmptyResponse, error) {
+	err := r.isAllowedToCreate(ctx, args.Namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, recipient := range args.Email.Recipients {
+		if err := sendTestEmail(ctx, recipient, args.Description); err != nil {
+			return nil, err
+		}
+	}
+
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func sendTestEmail(ctx context.Context, recipient graphql.ID, description string) error {
+	var (
+		userID int32
+		orgID  int32
+	)
+	err := graphqlbackend.UnmarshalNamespaceID(recipient, &userID, &orgID)
+	if err != nil {
+		return err
+	}
+	// TODO: Send test email to org members.
+	if orgID != 0 {
+		return nil
+	}
+	data := email.NewTestTemplateDataForNewSearchResults(ctx, description)
+	return email.SendEmailForNewSearchResult(ctx, userID, data)
 }
 
 func (r *Resolver) actionIDsForMonitorIDInt64(ctx context.Context, monitorID int64) (actionIDs []graphql.ID, err error) {

@@ -99,7 +99,7 @@ func InitDB() error {
 		// it's missing, we run the migrations and try to update the version again.
 
 		err := backend.UpdateServiceVersion(ctx, "frontend", version.Version())
-		if err != nil && !dbutil.IsPostgresError(err, "undefined_table") {
+		if err != nil && !dbutil.IsPostgresError(err, "42P01") {
 			return err
 		}
 

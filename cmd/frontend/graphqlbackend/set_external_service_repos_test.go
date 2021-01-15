@@ -38,6 +38,9 @@ func TestSetExternalServiceRepos(t *testing.T) {
 			SiteAdmin: userID == 1,
 		}, nil
 	}
+	db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
+		return &types.User{ID: 1, SiteAdmin: true}, nil
+	}
 	var called bool
 	db.Mocks.ExternalServices.Upsert = func(ctx context.Context, services ...*types.ExternalService) error {
 		called = true

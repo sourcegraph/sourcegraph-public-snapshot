@@ -846,6 +846,11 @@ type Mutation {
         """
         id: ID!
     ): EmptyResponse!
+
+    """
+    Triggers a test email for a code monitor action.
+    """
+    triggerTestEmailAction(namespace: ID!, description: String!, email: MonitorEmailInput!): EmptyResponse!
 }
 
 """
@@ -1549,6 +1554,10 @@ type CampaignSpec implements Node {
         Opaque pagination cursor.
         """
         after: String
+        """
+        Search for changesets matching this query. Queries may include quoted substrings to match phrases, and words may be preceded by - to negate them.
+        """
+        search: String
     ): ChangesetApplyPreviewConnection!
 
     """
