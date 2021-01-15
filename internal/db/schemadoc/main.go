@@ -31,57 +31,76 @@ var logger = log.New(os.Stderr, "", log.LstdFlags)
 
 var versionRe = lazyregexp.New(fmt.Sprintf(`\b%s\b`, regexp.QuoteMeta("9.6")))
 
-func main() {
-	out, err := generate(os.Args[1])
-	if err != nil {
-		log.Fatal(err)
-	}
-	if len(os.Args) > 1 {
-		if err := ioutil.WriteFile(os.Args[2], []byte(out), 0644); err != nil {
-			log.Fatal(err)
-		}
-	} else {
-		fmt.Print(out)
-	}
+var databases = map[string]string{
+	"frontend":  "schema.md",
+	"codeintel": "schema.codeintel.md",
 }
 
 // This script generates markdown formatted output containing descriptions of
 // the current dabase schema, obtained from postgres. The correct PGHOST,
 // PGPORT, PGUSER etc. env variables must be set to run this script.
-//
-// First CLI argument is an optional filename to write the output to.
-func generate(databaseName string) (string, error) {
-	// If we are using pg9.6 use it locally since it is faster (CI \o/)
-	out, _ := exec.Command("psql", "--version").CombinedOutput()
-	if versionRe.Match(out) {
-		runIgnoreError("dropdb", dbname)
-		defer runIgnoreError("dropdb", dbname)
+func main() {
+	for databaseName, destinationFile := range databases {
+		// Run pg9.6 locally if it exists
+		if version, _ := exec.Command("psql", "--version").CombinedOutput(); versionRe.Match(version) {
+			if err := generateAndWrite(databaseName, "dbname="+dbname, nil, destinationFile); err != nil {
+				log.Fatal(err)
+			}
+		}
 
-		return generateInternal(databaseName, "dbname="+dbname, runWithPrefix(nil))
+		// Otherwise execute in a container for consistent output
+		logger.Printf("Running PostgreSQL 9.6 in docker")
+
+		prefix, shutdown, err := startDocker()
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer shutdown()
+
+		if err := generateAndWrite(databaseName, "postgres://postgres@127.0.0.1:5433/postgres?dbname="+dbname, prefix, destinationFile); err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
+func generateAndWrite(databaseName, dataSource string, commandPrefix []string, destinationFile string) error {
+	run := runWithPrefix(commandPrefix)
+
+	runIgnoreError("dropdb", dbname)
+	if out, err := run("createdb", dbname); err != nil {
+		return errors.Wrap(err, fmt.Sprintf("run: %s", out))
 	}
 
-	logger.Printf("Running PostgreSQL 9.6 in docker since local version is %s", strings.TrimSpace(string(out)))
+	out, err := generateInternal(databaseName, dataSource, run)
+	if err != nil {
+		return err
+	}
+
+	return ioutil.WriteFile(destinationFile, []byte(out), os.ModePerm)
+}
+
+func startDocker() (commandPrefix []string, shutdown func(), _ error) {
 	if err := exec.Command("docker", "image", "inspect", "postgres:9.6").Run(); err != nil {
 		logger.Println("docker pull postgres9.6")
 		pull := exec.Command("docker", "pull", "postgres:9.6")
 		pull.Stdout = logger.Writer()
 		pull.Stderr = logger.Writer()
 		if err := pull.Run(); err != nil {
-			return "", errors.Wrap(err, "docker pull postgres9.6")
+			return nil, nil, errors.Wrap(err, "docker pull postgres9.6")
 		}
 		logger.Println("docker pull complete")
 	}
 	runIgnoreError("docker", "rm", "--force", dbname)
 	server := exec.Command("docker", "run", "--rm", "--name", dbname, "-e", "POSTGRES_HOST_AUTH_METHOD=trust", "-p", "5433:5432", "postgres:9.6")
 	if err := server.Start(); err != nil {
-		return "", err
+		return nil, nil, err
 	}
 
-	defer func() {
+	shutdown = func() {
 		_ = server.Process.Kill()
 		runIgnoreError("docker", "kill", dbname)
 		_ = server.Wait()
-	}()
+	}
 
 	attempts := 0
 	for {
@@ -89,23 +108,22 @@ func generate(databaseName string) (string, error) {
 		if err := exec.Command("pg_isready", "-U", "postgres", "-d", dbname, "-h", "127.0.0.1", "-p", "5433").Run(); err == nil {
 			break
 		} else if attempts > 30 {
-			return "", errors.Wrap(err, "pg_isready timeout")
+			shutdown()
+			return nil, nil, errors.Wrap(err, "pg_isready timeout")
 		}
 		time.Sleep(time.Second)
 	}
-	return generateInternal(databaseName, "postgres://postgres@127.0.0.1:5433/postgres?dbname="+dbname, runWithPrefix([]string{"docker", "exec", "-u", "postgres", dbname}))
+
+	return []string{"docker", "exec", "-u", "postgres", dbname}, shutdown, nil
 }
 
 func generateInternal(databaseName, dataSource string, run func(cmd ...string) (string, error)) (string, error) {
-	if out, err := run("createdb", dbname); err != nil {
-		return "", errors.Wrap(err, fmt.Sprintf("run: %s", out))
-	}
-
-	if err := dbconn.SetupGlobalConnection(dataSource); err != nil {
+	conn, err := dbconn.New(dataSource, "schema_"+databaseName)
+	if err != nil {
 		return "", errors.Wrap(err, "SetupGlobalConnection")
 	}
 
-	if err := dbconn.MigrateDB(dbconn.Global, databaseName); err != nil {
+	if err := dbconn.MigrateDB(conn, databaseName); err != nil {
 		return "", errors.Wrap(err, "MigrateDB")
 	}
 
