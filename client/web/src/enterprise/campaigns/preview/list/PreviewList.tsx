@@ -8,6 +8,7 @@ import { ChangesetApplyPreviewNode, ChangesetApplyPreviewNodeProps } from './Cha
 import { PreviewListHeader } from './PreviewListHeader'
 import { EmptyPreviewListElement } from './EmptyPreviewListElement'
 import { PreviewFilterRow, PreviewFilters } from './PreviewFilterRow'
+import MagnifyIcon from 'mdi-react/MagnifyIcon'
 
 interface Props extends ThemeProps {
     campaignSpecID: Scalars['ID']
@@ -78,8 +79,17 @@ export const PreviewList: React.FunctionComponent<Props> = ({
                 headComponent={PreviewListHeader}
                 cursorPaging={true}
                 noSummaryIfAllNodesVisible={true}
-                emptyElement={<EmptyPreviewListElement />}
+                emptyElement={filters.search ? <EmptyPreviewSearchElement /> : <EmptyPreviewListElement />}
             />
         </>
     )
 }
+
+const EmptyPreviewSearchElement: React.FunctionComponent<{}> = () => (
+    <div className="text-muted mt-4 pt-4 mb-4 row">
+        <div className="col-12 text-center">
+            <MagnifyIcon className="icon" />
+            <div className="pt-2">No changesets matched the search.</div>
+        </div>
+    </div>
+)
