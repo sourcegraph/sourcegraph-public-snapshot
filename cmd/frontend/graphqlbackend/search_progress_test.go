@@ -25,23 +25,23 @@ func TestSearchProgress(t *testing.T) {
 	cases := map[string]*SearchResultsResolver{
 		"empty": {},
 		"timedout100": {
-			searchResultsCommon: searchResultsCommon{
-				repos:  reposMap(timedout100...),
-				status: timedout100Status,
+			SearchResultsCommon: SearchResultsCommon{
+				Repos:  reposMap(timedout100...),
+				Status: timedout100Status,
 			},
 		},
 		"all": {
 			SearchResults: []SearchResultResolver{mkFileMatch(&types.RepoName{Name: "found-1"}, "dir/file", 123)},
-			searchResultsCommon: searchResultsCommon{
-				limitHit: true,
-				repos:    reposMap(mkRepos("found-1", "missing-1", "missing-2", "cloning-1", "timedout-1")...),
-				status: mkStatusMap(map[string]search.RepoStatus{
+			SearchResultsCommon: SearchResultsCommon{
+				IsLimitHit: true,
+				Repos:      reposMap(mkRepos("found-1", "missing-1", "missing-2", "cloning-1", "timedout-1")...),
+				Status: mkStatusMap(map[string]search.RepoStatus{
 					"missing-1":  search.RepoStatusMissing,
 					"missing-2":  search.RepoStatusMissing,
 					"cloning-1":  search.RepoStatusCloning,
 					"timedout-1": search.RepoStatusTimedout,
 				}),
-				excluded: repos.ExcludedRepos{
+				Excluded: repos.ExcludedRepos{
 					Forks:    5,
 					Archived: 1,
 				},

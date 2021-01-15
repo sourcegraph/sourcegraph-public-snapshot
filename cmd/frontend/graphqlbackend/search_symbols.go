@@ -41,13 +41,13 @@ func (s *searchSymbolResult) uri() *gituri.URI {
 	return s.baseURI.WithFilePath(s.symbol.Path)
 }
 
-var mockSearchSymbols func(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, common *searchResultsCommon, err error)
+var mockSearchSymbols func(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, common *SearchResultsCommon, err error)
 
 // searchSymbols searches the given repos in parallel for symbols matching the given search query
 // it can be used for both search suggestions and search results
 //
 // May return partial results and an error
-func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, common *searchResultsCommon, err error) {
+func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, common *SearchResultsCommon, err error) {
 	if mockSearchSymbols != nil {
 		return mockSearchSymbols(ctx, args, limit)
 	}
@@ -70,7 +70,7 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 	ctx, cancelAll := context.WithCancel(ctx)
 	defer cancelAll()
 
-	common = &searchResultsCommon{}
+	common = &SearchResultsCommon{}
 
 	indexed, err := newIndexedSearchRequest(ctx, args, symbolRequest)
 	if err != nil {
@@ -81,7 +81,7 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 	if indexed.DisableUnindexedSearch {
 		tr.LazyPrintf("disabling unindexed search")
 		for _, r := range indexed.Unindexed {
-			common.status.Update(r.Repo.ID, search.RepoStatusMissing)
+			common.Status.Update(r.Repo.ID, search.RepoStatusMissing)
 		}
 	} else {
 		// Limit the number of unindexed repositories searched for a single
@@ -92,7 +92,7 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 		if len(missing) > 0 {
 			tr.LazyPrintf("limiting unindexed repos searched to %d", maxUnindexedRepoRevSearchesPerQuery)
 			for _, r := range missing {
-				common.status.Update(r.ID, search.RepoStatusMissing)
+				common.Status.Update(r.ID, search.RepoStatusMissing)
 			}
 		}
 	}
@@ -119,7 +119,7 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 			if flattenedSize > int(args.PatternInfo.FileMatchLimit) {
 				tr.LazyPrintf("cancel due to result size: %d > %d", flattenedSize, args.PatternInfo.FileMatchLimit)
 				overLimitCanceled = true
-				common.limitHit = true
+				common.IsLimitHit = true
 				cancelAll()
 			}
 		}
@@ -180,7 +180,7 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 	err = run.Wait()
 	flattened := flattenFileMatches(unflattened, int(args.PatternInfo.FileMatchLimit))
 	res2 := limitSymbolResults(flattened, limit)
-	common.limitHit = symbolCount(res2) < symbolCount(res)
+	common.IsLimitHit = symbolCount(res2) < symbolCount(res)
 	return res2, common, err
 }
 

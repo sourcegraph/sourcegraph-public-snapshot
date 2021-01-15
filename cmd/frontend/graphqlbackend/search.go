@@ -612,7 +612,7 @@ func sortSearchSuggestions(s []*searchSuggestionResolver) {
 // returning common as to reflect that new information. If searchErr is a fatal error,
 // it returns a non-nil error; otherwise, if searchErr == nil or a non-fatal error, it returns a
 // nil error.
-func handleRepoSearchResult(repoRev *search.RepositoryRevisions, limitHit, timedOut bool, searchErr error) (_ searchResultsCommon, fatalErr error) {
+func handleRepoSearchResult(repoRev *search.RepositoryRevisions, limitHit, timedOut bool, searchErr error) (_ SearchResultsCommon, fatalErr error) {
 	var status search.RepoStatus
 	if limitHit {
 		status |= search.RepoStatusLimitHit
@@ -639,9 +639,9 @@ func handleRepoSearchResult(repoRev *search.RepositoryRevisions, limitHit, timed
 	} else {
 		status |= search.RepoStatusSearched
 	}
-	return searchResultsCommon{
-		status:   search.RepoStatusSingleton(repoRev.Repo.ID, status),
-		limitHit: limitHit,
+	return SearchResultsCommon{
+		Status:     search.RepoStatusSingleton(repoRev.Repo.ID, status),
+		IsLimitHit: limitHit,
 	}, fatalErr
 }
 

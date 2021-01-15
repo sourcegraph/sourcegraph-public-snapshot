@@ -203,7 +203,7 @@ func (s *indexedSearchRequest) Repos() map[string]*search.RepositoryRevisions {
 type streamFunc func(context.Context, *search.TextParameters, *indexedRepoRevs, indexedRequestType, func(t time.Time) time.Duration) <-chan zoektSearchStreamEvent
 
 type indexedSearchEvent struct {
-	common  searchResultsCommon
+	common  SearchResultsCommon
 	results []*FileMatchResolver
 	err     error
 }
@@ -240,7 +240,7 @@ func (s *indexedSearchRequest) doSearch(ctx context.Context, c chan<- indexedSea
 		zoektStream = zoektSearchHEADOnlyFilesStream
 	default:
 		err := fmt.Errorf("unexpected indexedSearchRequest type: %q", s.typ)
-		c <- indexedSearchEvent{common: searchResultsCommon{}, results: nil, err: err}
+		c <- indexedSearchEvent{common: SearchResultsCommon{}, results: nil, err: err}
 		return
 	}
 
@@ -267,12 +267,12 @@ func (s *indexedSearchRequest) doSearch(ctx context.Context, c chan<- indexedSea
 
 		if err == errNoResultsInTimeout {
 			err = nil
-			c <- indexedSearchEvent{common: searchResultsCommon{status: mkStatusMap(search.RepoStatusTimedout | search.RepoStatusIndexed)}}
+			c <- indexedSearchEvent{common: SearchResultsCommon{Status: mkStatusMap(search.RepoStatusTimedout | search.RepoStatusIndexed)}}
 			return
 		}
 
 		if err != nil {
-			c <- indexedSearchEvent{common: searchResultsCommon{}, results: nil, err: err}
+			c <- indexedSearchEvent{common: SearchResultsCommon{}, results: nil, err: err}
 			return
 		}
 
@@ -294,9 +294,9 @@ func (s *indexedSearchRequest) doSearch(ctx context.Context, c chan<- indexedSea
 		}
 
 		c <- indexedSearchEvent{
-			common: searchResultsCommon{
-				status:   statusMap,
-				limitHit: event.limitHit,
+			common: SearchResultsCommon{
+				Status:     statusMap,
+				IsLimitHit: event.limitHit,
 			},
 			results: event.fm,
 			err:     nil,
@@ -305,7 +305,7 @@ func (s *indexedSearchRequest) doSearch(ctx context.Context, c chan<- indexedSea
 
 	// Successfully searched everything. Communicate every indexed repo was
 	// searched in case it didn't have a result.
-	c <- indexedSearchEvent{common: searchResultsCommon{status: mkStatusMap(search.RepoStatusSearched | search.RepoStatusIndexed)}}
+	c <- indexedSearchEvent{common: SearchResultsCommon{Status: mkStatusMap(search.RepoStatusSearched | search.RepoStatusIndexed)}}
 }
 
 func zoektResultCountFactor(numRepos int, fileMatchLimit int32, globalSearch bool) (k int) {
