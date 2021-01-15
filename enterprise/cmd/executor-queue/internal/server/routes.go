@@ -1,4 +1,4 @@
-package apiserver
+package server
 
 import (
 	"bytes"
@@ -11,7 +11,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/apiclient"
+
+	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 )
 
 func (h *handler) setupRoutes(router *mux.Router) {

@@ -11,6 +11,7 @@ import (
 
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
@@ -55,13 +56,13 @@ func New(options Options, observationContext *observation.Context) *Client {
 	}
 }
 
-func (c *Client) Dequeue(ctx context.Context, queueName string, job *Job) (_ bool, err error) {
+func (c *Client) Dequeue(ctx context.Context, queueName string, job *executor.Job) (_ bool, err error) {
 	ctx, endObservation := c.operations.dequeue.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("queueName", queueName),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	req, err := c.makeRequest("POST", fmt.Sprintf("%s/dequeue", queueName), DequeueRequest{
+	req, err := c.makeRequest("POST", fmt.Sprintf("%s/dequeue", queueName), executor.DequeueRequest{
 		ExecutorName: c.options.ExecutorName,
 	})
 	if err != nil {
@@ -78,7 +79,7 @@ func (c *Client) AddExecutionLogEntry(ctx context.Context, queueName string, job
 	}})
 	defer endObservation(1, observation.Args{})
 
-	req, err := c.makeRequest("POST", fmt.Sprintf("%s/addExecutionLogEntry", queueName), AddExecutionLogEntryRequest{
+	req, err := c.makeRequest("POST", fmt.Sprintf("%s/addExecutionLogEntry", queueName), executor.AddExecutionLogEntryRequest{
 		ExecutorName:      c.options.ExecutorName,
 		JobID:             jobID,
 		ExecutionLogEntry: entry,
@@ -97,7 +98,7 @@ func (c *Client) MarkComplete(ctx context.Context, queueName string, jobID int) 
 	}})
 	defer endObservation(1, observation.Args{})
 
-	req, err := c.makeRequest("POST", fmt.Sprintf("%s/markComplete", queueName), MarkCompleteRequest{
+	req, err := c.makeRequest("POST", fmt.Sprintf("%s/markComplete", queueName), executor.MarkCompleteRequest{
 		ExecutorName: c.options.ExecutorName,
 		JobID:        jobID,
 	})
@@ -115,7 +116,7 @@ func (c *Client) MarkErrored(ctx context.Context, queueName string, jobID int, e
 	}})
 	defer endObservation(1, observation.Args{})
 
-	req, err := c.makeRequest("POST", fmt.Sprintf("%s/markErrored", queueName), MarkErroredRequest{
+	req, err := c.makeRequest("POST", fmt.Sprintf("%s/markErrored", queueName), executor.MarkErroredRequest{
 		ExecutorName: c.options.ExecutorName,
 		JobID:        jobID,
 		ErrorMessage: errorMessage,
@@ -134,7 +135,7 @@ func (c *Client) MarkFailed(ctx context.Context, queueName string, jobID int, er
 	}})
 	defer endObservation(1, observation.Args{})
 
-	req, err := c.makeRequest("POST", fmt.Sprintf("%s/markFailed", queueName), MarkErroredRequest{
+	req, err := c.makeRequest("POST", fmt.Sprintf("%s/markFailed", queueName), executor.MarkErroredRequest{
 		ExecutorName: c.options.ExecutorName,
 		JobID:        jobID,
 		ErrorMessage: errorMessage,
@@ -157,7 +158,7 @@ func (c *Client) Heartbeat(ctx context.Context, jobIDs []int) (err error) {
 	}})
 	defer endObservation(1, observation.Args{})
 
-	req, err := c.makeRequest("POST", "heartbeat", HeartbeatRequest{
+	req, err := c.makeRequest("POST", "heartbeat", executor.HeartbeatRequest{
 		ExecutorName: c.options.ExecutorName,
 		JobIDs:       jobIDs,
 	})

@@ -1,4 +1,4 @@
-package apiworker
+package worker
 
 import (
 	"sort"

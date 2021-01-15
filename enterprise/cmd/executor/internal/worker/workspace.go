@@ -1,4 +1,4 @@
-package apiworker
+package worker
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 )
 
 // prepareWorkspace creates and returns a temporary director in which acts the workspace

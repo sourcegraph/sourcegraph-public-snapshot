@@ -1,4 +1,4 @@
-package apiserver
+package server
 
 import (
 	"context"
@@ -6,7 +6,8 @@ import (
 	"time"
 
 	"github.com/efritz/glock"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/apiclient"
+
+	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	workerstoremocks "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store/mocks"
 )

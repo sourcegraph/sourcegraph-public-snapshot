@@ -9,7 +9,7 @@ import (
 
 // MockCommandRunner is a mock implementation of the commandRunner interface
 // (from the package
-// github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/command)
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command)
 // used for unit testing.
 type MockCommandRunner struct {
 	// RunCommandFunc is an instance of a mock function object controlling
@@ -31,7 +31,7 @@ func NewMockCommandRunner() *MockCommandRunner {
 
 // surrogateMockCommandRunner is a copy of the commandRunner interface (from
 // the package
-// github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/command).
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command).
 // It is redefined here as it is unexported in the source packge.
 type surrogateMockCommandRunner interface {
 	RunCommand(context.Context, command, *Logger) error

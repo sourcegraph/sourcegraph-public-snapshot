@@ -1,4 +1,4 @@
-package apiserver
+package server
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 
 	"github.com/efritz/glock"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/apiclient"
+	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"

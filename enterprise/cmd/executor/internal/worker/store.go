@@ -1,10 +1,10 @@
-package apiworker
+package worker
 
 import (
 	"context"
 	"errors"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/apiclient"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
@@ -14,7 +14,7 @@ type storeShim struct {
 }
 
 type QueueStore interface {
-	Dequeue(ctx context.Context, queueName string, payload *apiclient.Job) (bool, error)
+	Dequeue(ctx context.Context, queueName string, payload *executor.Job) (bool, error)
 
 	AddExecutionLogEntry(ctx context.Context, queueName string, jobID int, entry workerutil.ExecutionLogEntry) error
 	MarkComplete(ctx context.Context, queueName string, jobID int) error
@@ -29,7 +29,7 @@ func (s *storeShim) QueuedCount(ctx context.Context, extraArguments interface{})
 }
 
 func (s *storeShim) Dequeue(ctx context.Context, extraArguments interface{}) (workerutil.Record, workerutil.Store, bool, error) {
-	var job apiclient.Job
+	var job executor.Job
 	dequeued, err := s.queueStore.Dequeue(ctx, s.queueName, &job)
 	if err != nil {
 		return nil, nil, false, err
