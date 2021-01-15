@@ -6,6 +6,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -56,8 +57,13 @@ func (s *Store) GetRepositoriesWithIndexConfiguration(ctx context.Context) (_ []
 	ctx, endObservation := s.operations.getRepositoriesWithIndexConfiguration.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
 	defer endObservation(1, observation.Args{})
 
-	return basestore.ScanInts(s.Store.Query(ctx, sqlf.Sprintf(`SELECT c.repository_id FROM lsif_index_configuration c`)))
+	return basestore.ScanInts(s.Store.Query(ctx, sqlf.Sprintf(getRepositoriesWithIndexConfigurationQuery)))
 }
+
+const getRepositoriesWithIndexConfigurationQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/index_configuration.go:GetRepositoriesWithIndexConfiguration
+SELECT c.repository_id FROM lsif_index_configuration c
+`
 
 // GetIndexConfigurationByRepositoryID returns the index configuration for a repository.
 func (s *Store) GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (_ IndexConfiguration, _ bool, err error) {
@@ -66,14 +72,17 @@ func (s *Store) GetIndexConfigurationByRepositoryID(ctx context.Context, reposit
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return scanFirstIndexConfiguration(s.Store.Query(ctx, sqlf.Sprintf(`
-		SELECT
-			c.id,
-			c.repository_id,
-			c.data
-		FROM lsif_index_configuration c WHERE c.repository_id = %s
-	`, repositoryID)))
+	return scanFirstIndexConfiguration(s.Store.Query(ctx, sqlf.Sprintf(getIndexConfigurationByRepositoryIDQuery, repositoryID)))
 }
+
+const getIndexConfigurationByRepositoryIDQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/index_configuration.go:GetIndexConfigurationByRepositoryID
+SELECT
+	c.id,
+	c.repository_id,
+	c.data
+FROM lsif_index_configuration c WHERE c.repository_id = %s
+`
 
 // UpdateIndexConfigurationByRepositoryID updates the index configuration for a repository.
 func (s *Store) UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, data []byte) (err error) {
@@ -82,8 +91,11 @@ func (s *Store) UpdateIndexConfigurationByRepositoryID(ctx context.Context, repo
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return s.Store.Exec(ctx, sqlf.Sprintf(`
-		INSERT INTO lsif_index_configuration (repository_id, data) VALUES (%s, %s)
-		ON CONFLICT (repository_id) DO UPDATE SET data = %s
-	`, repositoryID, data, data))
+	return s.Store.Exec(ctx, sqlf.Sprintf(updateIndexConfigurationByRepositoryIDQuery, repositoryID, data, data))
 }
+
+const updateIndexConfigurationByRepositoryIDQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/index_configuration.go:UpdateIndexConfigurationByRepositoryID
+INSERT INTO lsif_index_configuration (repository_id, data) VALUES (%s, %s)
+	ON CONFLICT (repository_id) DO UPDATE SET data = %s
+`
