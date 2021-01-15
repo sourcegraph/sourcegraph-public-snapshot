@@ -108,7 +108,6 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 
 	addMatches := func(matches []*FileMatchResolver) {
 		if len(matches) > 0 {
-			common.resultCount += int32(len(matches))
 			sort.Slice(matches, func(i, j int) bool {
 				a, b := matches[i].uri, matches[j].uri
 				return a > b

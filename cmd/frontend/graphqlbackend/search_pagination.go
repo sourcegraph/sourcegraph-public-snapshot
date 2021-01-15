@@ -180,7 +180,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 		return repoIsLess(resolved.RepoRevs[i].Repo, resolved.RepoRevs[j].Repo)
 	})
 
-	common := SearchResultsCommon{maxResultsCount: r.maxResults()}
+	common := SearchResultsCommon{}
 	cursor, results, fileCommon, err := paginatedSearchFilesInRepos(ctx, &args, r.pagination)
 	if err != nil {
 		return nil, err
@@ -535,7 +535,6 @@ func sliceSearchResults(results []SearchResultResolver, common *SearchResultsCom
 	// we're returning.
 	seenRepos := map[string]struct{}{}
 	finalResults := make([]SearchResultResolver, 0, limit)
-	finalResultCount := int32(0)
 	for _, r := range results[:limit] {
 		repoName := repoOfResult(r)
 		if _, ok := seenRepos[repoName]; ok {
@@ -548,10 +547,8 @@ func sliceSearchResults(results []SearchResultResolver, common *SearchResultsCom
 
 		// Include the results and copy over metadata from the common structure.
 		finalResults = append(finalResults, results...)
-		finalResultCount += int32(len(results))
 	}
 	final.common = sliceSearchResultsCommon(common, firstRepo, lastResultRepo)
-	final.common.resultCount = finalResultCount
 	final.results = finalResults
 	return
 }
@@ -564,7 +561,6 @@ func sliceSearchResultsCommon(common *SearchResultsCommon, firstResultRepo, last
 		IsLimitHit:         false, // irrelevant in paginated search
 		IsIndexUnavailable: common.IsIndexUnavailable,
 		Repos:              make(map[api.RepoID]*types.RepoName),
-		resultCount:        common.resultCount,
 	}
 
 	for _, r := range common.Repos {

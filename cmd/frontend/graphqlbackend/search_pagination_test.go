@@ -62,7 +62,6 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 		for _, r := range repos {
 			fmt.Fprintf(&b, "	%s\n", r)
 		}
-		fmt.Fprintf(&b, "common.resultCount: %v\n", r.common.resultCount)
 		fmt.Fprintf(&b, "resultOffset: %d\n", r.resultOffset)
 		fmt.Fprintf(&b, "limitHit: %v\n", r.limitHit)
 		return b.String()
@@ -105,8 +104,7 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 			want: slicedSearchResults{
 				results: []SearchResultResolver{},
 				common: &SearchResultsCommon{
-					resultCount: 0,
-					Repos:       nil,
+					Repos: nil,
 				},
 				resultOffset: 0,
 				limitHit:     false,
@@ -125,8 +123,7 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 					result(repoName("org/repo1"), "c.go"),
 				},
 				common: &SearchResultsCommon{
-					resultCount: 3,
-					Repos:       reposMap(repoName("org/repo1")),
+					Repos: reposMap(repoName("org/repo1")),
 				},
 				resultOffset: 0,
 				limitHit:     true,
@@ -144,8 +141,7 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 					result(repoName("org/repo1"), "b.go"),
 				},
 				common: &SearchResultsCommon{
-					resultCount: 2,
-					Repos:       reposMap(repoName("org/repo1")),
+					Repos: reposMap(repoName("org/repo1")),
 				},
 				resultOffset: 2,
 				limitHit:     true,
@@ -164,8 +160,7 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 					result(repoName("org/repo3"), "a.go"),
 				},
 				common: &SearchResultsCommon{
-					resultCount: 3,
-					Repos:       reposMap(repoName("org/repo2"), repoName("org/repo3")),
+					Repos: reposMap(repoName("org/repo2"), repoName("org/repo3")),
 				},
 				resultOffset: 0,
 				limitHit:     true,
@@ -184,8 +179,7 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 					result(repoName("org/repo2"), "b.go"),
 				},
 				common: &SearchResultsCommon{
-					resultCount: 3,
-					Repos:       reposMap(repoName("org/repo1"), repoName("org/repo2")),
+					Repos: reposMap(repoName("org/repo1"), repoName("org/repo2")),
 				},
 				resultOffset: 0,
 				limitHit:     true,
@@ -202,8 +196,7 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 				result(repoName("org/repo2"), "c.go"),
 			},
 			common: &SearchResultsCommon{
-				Repos:       reposMap(repoName("org/repo1"), repoName("org/repo2")),
-				resultCount: 3,
+				Repos: reposMap(repoName("org/repo1"), repoName("org/repo2")),
 			},
 			offset: 3,
 			limit:  3,
@@ -214,8 +207,7 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 					result(repoName("org/repo2"), "c.go"),
 				},
 				common: &SearchResultsCommon{
-					resultCount: 3,
-					Repos:       reposMap(repoName("org/repo2")),
+					Repos: reposMap(repoName("org/repo2")),
 				},
 				resultOffset: 0,
 				limitHit:     false,
@@ -232,8 +224,7 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 					result(repoName("org/repo1"), "b.go"),
 				},
 				common: &SearchResultsCommon{
-					resultCount: 1,
-					Repos:       reposMap(repoName("org/repo1")),
+					Repos: reposMap(repoName("org/repo1")),
 				},
 				resultOffset: 2,
 				limitHit:     true,
@@ -338,8 +329,7 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 				result(repoName("3"), "some/file0.go", "feature"),
 			},
 			wantCommon: &SearchResultsCommon{
-				Repos:       reposMap(repoName("1"), repoName("2"), repoName("3")),
-				resultCount: 10,
+				Repos: reposMap(repoName("1"), repoName("2"), repoName("3")),
 			},
 		},
 		{
@@ -390,8 +380,6 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 			},
 			wantCommon: &SearchResultsCommon{
 				Repos: reposMap(repoName("1")),
-
-				resultCount: 1,
 			},
 		},
 		{
@@ -414,8 +402,6 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 			},
 			wantCommon: &SearchResultsCommon{
 				Repos: reposMap(repoName("1")),
-
-				resultCount: 1,
 			},
 		},
 		{
@@ -668,8 +654,7 @@ func TestSearchPagination_cloning_missing(t *testing.T) {
 				result(repoName("a"), "a.go"),
 			},
 			wantCommon: &SearchResultsCommon{
-				Repos:       reposMap(repoName("a")),
-				resultCount: 1,
+				Repos: reposMap(repoName("a")),
 			},
 		},
 		{

@@ -60,10 +60,6 @@ type SearchResultsCommon struct {
 
 	Excluded searchrepos.ExcludedRepos // repo counts of excluded repos because the search query doesn't apply to them, but that we want to know about (forks, archives)
 
-	// TODO we can remove these fields, they are only used to check if we hit
-	// the limit, but in those cases IsLimitHit is true.
-	maxResultsCount, resultCount int32
-
 	IsIndexUnavailable bool // True if indexed search is enabled but was not available during this search.
 }
 
@@ -89,8 +85,6 @@ func (c *SearchResultsCommon) update(other *SearchResultsCommon) {
 
 	c.Excluded.Forks = c.Excluded.Forks + other.Excluded.Forks
 	c.Excluded.Archived = c.Excluded.Archived + other.Excluded.Archived
-
-	c.resultCount += other.resultCount
 }
 
 func (c *SearchResultsCommon) String() string {
@@ -108,8 +102,6 @@ func (c *SearchResultsCommon) String() string {
 		{"repos", len(c.Repos)},
 		{"excludedForks", c.Excluded.Forks},
 		{"excludedArchived", c.Excluded.Archived},
-		{"resultCount", int(c.resultCount)},
-		{"maxResultCount", int(c.maxResultsCount)},
 	}
 	for _, p := range nums {
 		if p.n != 0 {
@@ -131,7 +123,7 @@ func (c *SearchResultsCommon) Equal(other *SearchResultsCommon) bool {
 }
 
 func (c *SearchResultsResolver) LimitHit() bool {
-	return c.IsLimitHit || c.resultCount > c.maxResultsCount
+	return c.IsLimitHit
 }
 
 func (c *SearchResultsResolver) Repositories() []*RepositoryResolver {
@@ -872,8 +864,6 @@ func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 
 	left.SearchResults = merged
 	left.SearchResultsCommon.update(&right.SearchResultsCommon)
-	// set the count that tracks non-overlapping result count.
-	left.SearchResultsCommon.resultCount = int32(count)
 	return left
 }
 
@@ -921,8 +911,6 @@ func intersectMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 	}
 	left.SearchResults = merged
 	left.SearchResultsCommon.update(&right.SearchResultsCommon)
-	// for intersect we want the newly computed intersection size.
-	left.SearchResultsCommon.resultCount = int32(len(merged))
 	return left
 }
 
@@ -1059,7 +1047,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 		if exhausted {
 			break
 		}
-		if result.SearchResultsCommon.resultCount >= int32(want) {
+		if len(result.SearchResults) >= want {
 			break
 		}
 		// If the result size set is not big enough, and we haven't
@@ -1103,7 +1091,6 @@ func (r *searchResolver) evaluateOr(ctx context.Context, scopeParameters []query
 	// count non-content matches and there's no easy way to know.
 	if len(result.SearchResults) > wantCount {
 		result.SearchResults = result.SearchResults[:wantCount]
-		result.SearchResultsCommon.resultCount = int32(wantCount)
 		return result, nil
 	}
 	var new *SearchResultsResolver
@@ -1118,7 +1105,6 @@ func (r *searchResolver) evaluateOr(ctx context.Context, scopeParameters []query
 			// count non-content matches and there's no easy way to know.
 			if len(result.SearchResults) > wantCount {
 				result.SearchResults = result.SearchResults[:wantCount]
-				result.SearchResultsCommon.resultCount = int32(wantCount)
 				return result, nil
 			}
 		}
@@ -1246,7 +1232,6 @@ func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolve
 				srr = union(srr, newResult)
 				if len(srr.SearchResults) > wantCount {
 					srr.SearchResults = srr.SearchResults[:wantCount]
-					srr.SearchResultsCommon.resultCount = int32(wantCount)
 					break
 				}
 
@@ -1989,7 +1974,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 
 	agg := aggregator{
 		resultChannel: r.resultChannel,
-		common:        SearchResultsCommon{maxResultsCount: r.maxResults()},
 		fileMatches:   make(map[string]*FileMatchResolver),
 	}
 
