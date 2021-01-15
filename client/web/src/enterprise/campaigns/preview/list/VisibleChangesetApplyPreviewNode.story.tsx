@@ -66,6 +66,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
         delta: {
             titleChanged: false,
             baseRefChanged: false,
+            diffChanged: false,
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsAttach',
@@ -87,6 +88,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
         delta: {
             titleChanged: false,
             baseRefChanged: false,
+            diffChanged: false,
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsAttach',
@@ -99,6 +101,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
         delta: {
             titleChanged: false,
             baseRefChanged: false,
+            diffChanged: false,
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsAttach',
@@ -111,6 +114,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
         delta: {
             titleChanged: false,
             baseRefChanged: false,
+            diffChanged: false,
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsAttach',
@@ -123,6 +127,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
         delta: {
             titleChanged: true,
             baseRefChanged: false,
+            diffChanged: false,
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsUpdate',
@@ -146,6 +151,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
         delta: {
             titleChanged: false,
             baseRefChanged: false,
+            diffChanged: false,
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsUpdate',
@@ -169,6 +175,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
         delta: {
             titleChanged: false,
             baseRefChanged: false,
+            diffChanged: false,
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsUpdate',
@@ -192,6 +199,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
         delta: {
             titleChanged: false,
             baseRefChanged: false,
+            diffChanged: false,
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsDetach',
@@ -214,6 +222,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
         delta: {
             titleChanged: false,
             baseRefChanged: false,
+            diffChanged: false,
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsDetach',
@@ -236,6 +245,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
         delta: {
             titleChanged: false,
             baseRefChanged: true,
+            diffChanged: false,
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsUpdate',
@@ -248,6 +258,30 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
                     description: {
                         __typename: 'GitBranchChangesetDescription',
                         baseRef: 'main',
+                    },
+                },
+            },
+        },
+    },
+    'Change diff': {
+        __typename: 'VisibleChangesetApplyPreview',
+        operations: [ChangesetSpecOperation.UPDATE],
+        delta: {
+            titleChanged: false,
+            baseRefChanged: false,
+            diffChanged: true,
+        },
+        targets: {
+            __typename: 'VisibleApplyPreviewTargetsUpdate',
+            changesetSpec: baseChangesetSpec(true),
+            changeset: {
+                id: '123123',
+                title: 'Change base ref',
+                state: ChangesetState.OPEN,
+                currentSpec: {
+                    description: {
+                        __typename: 'GitBranchChangesetDescription',
+                        baseRef: 'master',
                     },
                 },
             },

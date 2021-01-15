@@ -128,7 +128,9 @@ const campaignSpecApplyPreviewConnectionFieldsFragment = gql`
         operations
         delta {
             titleChanged
+            bodyChanged
             baseRefChanged
+            diffChanged
         }
         targets {
             __typename

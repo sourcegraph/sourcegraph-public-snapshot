@@ -588,6 +588,7 @@ describe('Campaigns', () => {
                                         delta: {
                                             titleChanged: false,
                                             baseRefChanged: false,
+                                            diffChanged: false,
                                         },
                                         targets: {
                                             __typename: 'VisibleApplyPreviewTargetsAttach',

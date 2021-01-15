@@ -18,6 +18,7 @@ import { FilteredConnectionQueryArguments } from '../../../../components/Filtere
 import { GitBranchChangesetDescriptionInfo } from './GitBranchChangesetDescriptionInfo'
 import { ChangesetStatusCell } from '../../detail/changesets/ChangesetStatusCell'
 import { PreviewNodeIndicator } from './PreviewNodeIndicator'
+import classNames from 'classnames'
 
 export interface VisibleChangesetApplyPreviewNodeProps extends ThemeProps {
     node: VisibleChangesetApplyPreviewFields
@@ -115,6 +116,8 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
     )
 }
 
+type SelectedTab = 'diff' | 'description' | 'commits'
+
 const ExpandedSection: React.FunctionComponent<
     {
         node: VisibleChangesetApplyPreviewFields
@@ -127,6 +130,19 @@ const ExpandedSection: React.FunctionComponent<
         expandChangesetDescriptions?: boolean
     } & ThemeProps
 > = ({ node, history, isLightTheme, location, queryChangesetSpecFileDiffs, expandChangesetDescriptions }) => {
+    const [selectedTab, setSelectedTab] = useState<SelectedTab>('diff')
+    const onSelectDiff = useCallback<React.MouseEventHandler>(event => {
+        event.preventDefault()
+        setSelectedTab('diff')
+    }, [])
+    const onSelectDescription = useCallback<React.MouseEventHandler>(event => {
+        event.preventDefault()
+        setSelectedTab('description')
+    }, [])
+    const onSelectCommits = useCallback<React.MouseEventHandler>(event => {
+        event.preventDefault()
+        setSelectedTab('commits')
+    }, [])
     if (node.targets.__typename === 'VisibleApplyPreviewTargetsDetach') {
         return (
             <div className="alert alert-info mb-0">
@@ -145,19 +161,66 @@ const ExpandedSection: React.FunctionComponent<
     }
     return (
         <>
-            <h4>Commits</h4>
-            <GitBranchChangesetDescriptionInfo
-                description={node.targets.changesetSpec.description}
-                isExpandedInitially={expandChangesetDescriptions}
-            />
-            <h4>Diff</h4>
-            <ChangesetSpecFileDiffConnection
-                history={history}
-                isLightTheme={isLightTheme}
-                location={location}
-                spec={node.targets.changesetSpec}
-                queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
-            />
+            <div className="overflow-auto mb-2">
+                <ul className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap">
+                    <li className="nav-item">
+                        <a
+                            href=""
+                            onClick={onSelectDiff}
+                            className={classNames('nav-link', selectedTab === 'diff' && 'active')}
+                        >
+                            Changed files
+                            {node.delta.diffChanged && (
+                                <span className="text-success ml-2" data-tooltip="Changes in this tab">
+                                    &#11044;
+                                </span>
+                            )}
+                        </a>
+                    </li>
+                    <li className="nav-item">
+                        <a
+                            href=""
+                            onClick={onSelectDescription}
+                            className={classNames('nav-link', selectedTab === 'description' && 'active')}
+                        >
+                            Description
+                        </a>
+                    </li>
+                    <li className="nav-item">
+                        <a
+                            href=""
+                            onClick={onSelectCommits}
+                            className={classNames('nav-link', selectedTab === 'commits' && 'active')}
+                        >
+                            Commits
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            {selectedTab === 'diff' && (
+                <>
+                    {node.delta.diffChanged && (
+                        <div className="alert alert-warning">
+                            The files in this changeset have been altered from the previous version. These changes will
+                            be pushed to the target branch.
+                        </div>
+                    )}
+                    <ChangesetSpecFileDiffConnection
+                        history={history}
+                        isLightTheme={isLightTheme}
+                        location={location}
+                        spec={node.targets.changesetSpec}
+                        queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
+                    />
+                </>
+            )}
+            {selectedTab === 'description' && <h2>The description</h2>}
+            {selectedTab === 'commits' && (
+                <GitBranchChangesetDescriptionInfo
+                    description={node.targets.changesetSpec.description}
+                    isExpandedInitially={expandChangesetDescriptions}
+                />
+            )}
         </>
     )
 }
