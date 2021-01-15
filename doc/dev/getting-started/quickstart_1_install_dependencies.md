@@ -28,7 +28,7 @@ The following are two recommendations for installing these dependencies:
     optionally via `brew`
 
     ```
-    brew cask install docker
+    brew install --cask docker
     ```
 
 3.  Install Go, Node Version Manager, PostgreSQL, Redis, Git, NGINX, golang-migrate, Comby, SQLite tools, and jq with the following command:
