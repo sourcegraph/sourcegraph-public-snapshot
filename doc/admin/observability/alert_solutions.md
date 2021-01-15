@@ -1530,8 +1530,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Descriptions:**
 
-- <span class="badge badge-warning">warning</span> gitserver: 1+ container restarts
-- <span class="badge badge-critical">critical</span> gitserver: 1+ container restarts for 10m0s
+- <span class="badge badge-warning">warning</span> gitserver: 1+ container restarts for 10m0s
 
 **Possible solutions:**
 
@@ -1546,8 +1545,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 ```json
 "observability.silenceAlerts": [
-  "warning_gitserver_container_restarts",
-  "critical_gitserver_container_restarts"
+  "warning_gitserver_container_restarts"
 ]
 ```
 
@@ -4580,8 +4578,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Descriptions:**
 
-- <span class="badge badge-warning">warning</span> zoekt-indexserver: 1+ container restarts
-- <span class="badge badge-critical">critical</span> zoekt-indexserver: 1+ container restarts for 10m0s
+- <span class="badge badge-warning">warning</span> zoekt-indexserver: 1+ container restarts for 10m0s
 
 **Possible solutions:**
 
@@ -4596,8 +4593,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 ```json
 "observability.silenceAlerts": [
-  "warning_zoekt-indexserver_container_restarts",
-  "critical_zoekt-indexserver_container_restarts"
+  "warning_zoekt-indexserver_container_restarts"
 ]
 ```
 
@@ -4781,8 +4777,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Descriptions:**
 
-- <span class="badge badge-warning">warning</span> zoekt-webserver: 1+ container restarts
-- <span class="badge badge-critical">critical</span> zoekt-webserver: 1+ container restarts for 10m0s
+- <span class="badge badge-warning">warning</span> zoekt-webserver: 1+ container restarts for 10m0s
 
 **Possible solutions:**
 
@@ -4797,8 +4792,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 ```json
 "observability.silenceAlerts": [
-  "warning_zoekt-webserver_container_restarts",
-  "critical_zoekt-webserver_container_restarts"
+  "warning_zoekt-webserver_container_restarts"
 ]
 ```
 
