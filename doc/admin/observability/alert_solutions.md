@@ -1530,8 +1530,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Descriptions:**
 
-- <span class="badge badge-warning">warning</span> gitserver: 1+ container restarts
-- <span class="badge badge-critical">critical</span> gitserver: 1+ container restarts for 10m0s
+- <span class="badge badge-warning">warning</span> gitserver: 1+ container restarts for 10m0s
 
 **Possible solutions:**
 
@@ -1546,8 +1545,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 ```json
 "observability.silenceAlerts": [
-  "warning_gitserver_container_restarts",
-  "critical_gitserver_container_restarts"
+  "warning_gitserver_container_restarts"
 ]
 ```
 
@@ -1975,6 +1973,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions:**
 
+- Ensure the Postgres exporter can access the Postgres database. Also, check the Postgres exporter logs for errors.
 - **Refer to the [dashboards reference](./dashboards.md#postgres-pg-exporter-err)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -3150,7 +3149,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Descriptions:**
 
-- <span class="badge badge-critical">critical</span> repo-updater: 0+ rate of growth of update queue length over 5 minutes for 30m0s
+- <span class="badge badge-critical">critical</span> repo-updater: 0+ rate of growth of update queue length over 5 minutes for 2h0m0s
 
 **Possible solutions:**
 
@@ -4579,8 +4578,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Descriptions:**
 
-- <span class="badge badge-warning">warning</span> zoekt-indexserver: 1+ container restarts
-- <span class="badge badge-critical">critical</span> zoekt-indexserver: 1+ container restarts for 10m0s
+- <span class="badge badge-warning">warning</span> zoekt-indexserver: 1+ container restarts for 10m0s
 
 **Possible solutions:**
 
@@ -4595,8 +4593,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 ```json
 "observability.silenceAlerts": [
-  "warning_zoekt-indexserver_container_restarts",
-  "critical_zoekt-indexserver_container_restarts"
+  "warning_zoekt-indexserver_container_restarts"
 ]
 ```
 
@@ -4780,8 +4777,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Descriptions:**
 
-- <span class="badge badge-warning">warning</span> zoekt-webserver: 1+ container restarts
-- <span class="badge badge-critical">critical</span> zoekt-webserver: 1+ container restarts for 10m0s
+- <span class="badge badge-warning">warning</span> zoekt-webserver: 1+ container restarts for 10m0s
 
 **Possible solutions:**
 
@@ -4796,8 +4792,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 ```json
 "observability.silenceAlerts": [
-  "warning_zoekt-webserver_container_restarts",
-  "critical_zoekt-webserver_container_restarts"
+  "warning_zoekt-webserver_container_restarts"
 ]
 ```
 
@@ -4891,21 +4886,23 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
-## prometheus: prometheus_metrics_bloat
+## prometheus: prometheus_rule_group_evaluation
 
-<p class="subtitle">prometheus metrics payload size (distribution)</p>
+<p class="subtitle">average prometheus rule group evaluation duration over 10m (distribution)</p>
 
 **Descriptions:**
 
-- <span class="badge badge-warning">warning</span> prometheus: 20000B+ prometheus metrics payload size
+- <span class="badge badge-warning">warning</span> prometheus: 30s+ average prometheus rule group evaluation duration over 10m
 
 **Possible solutions:**
 
+- Try increasing resources for Prometheus.
+- **Refer to the [dashboards reference](./dashboards.md#prometheus-prometheus-rule-group-evaluation)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_prometheus_prometheus_metrics_bloat"
+  "warning_prometheus_prometheus_rule_group_evaluation"
 ]
 ```
 
@@ -4927,6 +4924,114 @@ with your code hosts connections or networking issues affecting communication wi
 ```json
 "observability.silenceAlerts": [
   "warning_prometheus_alertmanager_notifications_failed_total"
+]
+```
+
+<br />
+
+## prometheus: alertmanager_config_status
+
+<p class="subtitle">alertmanager configuration reload status (distribution)</p>
+
+**Descriptions:**
+
+- <span class="badge badge-warning">warning</span> prometheus: less than 1 alertmanager configuration reload status
+
+**Possible solutions:**
+
+- Ensure that your [`observability.alerts` configuration](https://docs.sourcegraph.com/admin/observability/alerting#setting-up-alerting) (in site configuration) is valid.
+- **Refer to the [dashboards reference](./dashboards.md#prometheus-alertmanager-config-status)** for more help interpreting this alert and metric.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_prometheus_alertmanager_config_status"
+]
+```
+
+<br />
+
+## prometheus: prometheus_tsdb_op_failure
+
+<p class="subtitle">prometheus tsdb failures by operation over 1m (distribution)</p>
+
+**Descriptions:**
+
+- <span class="badge badge-warning">warning</span> prometheus: 0+ prometheus tsdb failures by operation over 1m
+
+**Possible solutions:**
+
+- Check Prometheus logs for messages related to the failing operation.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_prometheus_prometheus_tsdb_op_failure"
+]
+```
+
+<br />
+
+## prometheus: prometheus_config_status
+
+<p class="subtitle">prometheus configuration reload status (distribution)</p>
+
+**Descriptions:**
+
+- <span class="badge badge-warning">warning</span> prometheus: less than 1 prometheus configuration reload status
+
+**Possible solutions:**
+
+- Check Prometheus logs for messages related to configuration loading.
+- Ensure any custom configuration you have provided Prometheus is valid.
+- **Refer to the [dashboards reference](./dashboards.md#prometheus-prometheus-config-status)** for more help interpreting this alert and metric.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_prometheus_prometheus_config_status"
+]
+```
+
+<br />
+
+## prometheus: prometheus_target_sample_exceeded
+
+<p class="subtitle">prometheus scrapes that exceed the sample limit over 10m (distribution)</p>
+
+**Descriptions:**
+
+- <span class="badge badge-warning">warning</span> prometheus: 0+ prometheus scrapes that exceed the sample limit over 10m
+
+**Possible solutions:**
+
+- Check Prometheus logs for messages related to target scrape failures.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_prometheus_prometheus_target_sample_exceeded"
+]
+```
+
+<br />
+
+## prometheus: prometheus_target_sample_duplicate
+
+<p class="subtitle">prometheus scrapes rejected due to duplicate timestamps over 10m (distribution)</p>
+
+**Descriptions:**
+
+- <span class="badge badge-warning">warning</span> prometheus: 0+ prometheus scrapes rejected due to duplicate timestamps over 10m
+
+**Possible solutions:**
+
+- Check Prometheus logs for messages related to target scrape failures.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_prometheus_prometheus_target_sample_duplicate"
 ]
 ```
 

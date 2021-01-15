@@ -111,11 +111,13 @@ const campaignSpecApplyPreviewConnectionFieldsFragment = gql`
                 }
                 changeset {
                     id
+                    state
                 }
             }
             ... on HiddenApplyPreviewTargetsDetach {
                 changeset {
                     id
+                    state
                 }
             }
         }
@@ -126,6 +128,7 @@ const campaignSpecApplyPreviewConnectionFieldsFragment = gql`
         operations
         delta {
             titleChanged
+            baseRefChanged
         }
         targets {
             __typename
@@ -141,12 +144,22 @@ const campaignSpecApplyPreviewConnectionFieldsFragment = gql`
                 changeset {
                     id
                     title
+                    state
+                    currentSpec {
+                        description {
+                            __typename
+                            ... on GitBranchChangesetDescription {
+                                baseRef
+                            }
+                        }
+                    }
                 }
             }
             ... on VisibleApplyPreviewTargetsDetach {
                 changeset {
                     id
                     title
+                    state
                     repository {
                         url
                         name

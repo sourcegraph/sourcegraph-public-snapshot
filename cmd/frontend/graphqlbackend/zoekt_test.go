@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"sort"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	zoektrpc "github.com/google/zoekt/rpc"
 	"github.com/keegancsmith/sqlf"
 
+	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	searchzoekt "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db"
@@ -46,9 +48,6 @@ func TestIndexedSearch(t *testing.T) {
 	}
 
 	reposHEAD := makeRepositoryRevisions("foo/bar", "foo/foobar")
-	repoBar := reposHEAD[0].Repo
-	repoFooBar := reposHEAD[1].Repo
-	repos := []*types.RepoName{repoBar, repoFooBar}
 	zoektRepos := []*zoekt.RepoListEntry{{
 		Repository: zoekt.Repository{
 			Name:     "foo/bar",
@@ -68,7 +67,7 @@ func TestIndexedSearch(t *testing.T) {
 		wantMatchURLs      []string
 		wantMatchInputRevs []string
 		wantUnindexed      []*search.RepositoryRevisions
-		wantCommon         searchResultsCommon
+		wantCommon         SearchResultsCommon
 		wantErr            bool
 	}{
 		{
@@ -80,9 +79,11 @@ func TestIndexedSearch(t *testing.T) {
 				useFullDeadline: false,
 				since:           func(time.Time) time.Duration { return time.Second - time.Millisecond },
 			},
-			wantCommon: searchResultsCommon{
-				searched: repos,
-				indexed:  repos,
+			wantCommon: SearchResultsCommon{
+				Status: mkStatusMap(map[string]search.RepoStatus{
+					"foo/bar":    search.RepoStatusSearched | search.RepoStatusIndexed,
+					"foo/foobar": search.RepoStatusSearched | search.RepoStatusIndexed,
+				}),
 			},
 			wantErr: false,
 		},
@@ -95,10 +96,11 @@ func TestIndexedSearch(t *testing.T) {
 				useFullDeadline: false,
 				since:           func(time.Time) time.Duration { return time.Minute },
 			},
-			wantCommon: searchResultsCommon{
-				searched: repos,
-				indexed:  repos,
-				timedout: repos,
+			wantCommon: SearchResultsCommon{
+				Status: mkStatusMap(map[string]search.RepoStatus{
+					"foo/bar":    search.RepoStatusIndexed | search.RepoStatusTimedout,
+					"foo/foobar": search.RepoStatusIndexed | search.RepoStatusTimedout,
+				}),
 			},
 		},
 		{
@@ -110,10 +112,11 @@ func TestIndexedSearch(t *testing.T) {
 				useFullDeadline: true,
 				since:           func(time.Time) time.Duration { return 0 },
 			},
-			wantCommon: searchResultsCommon{
-				searched: repos,
-				indexed:  repos,
-				timedout: repos,
+			wantCommon: SearchResultsCommon{
+				Status: mkStatusMap(map[string]search.RepoStatus{
+					"foo/bar":    search.RepoStatusIndexed | search.RepoStatusTimedout,
+					"foo/foobar": search.RepoStatusIndexed | search.RepoStatusTimedout,
+				}),
 			},
 		},
 		{
@@ -170,9 +173,11 @@ func TestIndexedSearch(t *testing.T) {
 				"",
 				"",
 			},
-			wantCommon: searchResultsCommon{
-				searched: repos,
-				indexed:  repos,
+			wantCommon: SearchResultsCommon{
+				Status: mkStatusMap(map[string]search.RepoStatus{
+					"foo/bar":    search.RepoStatusSearched | search.RepoStatusIndexed,
+					"foo/foobar": search.RepoStatusSearched | search.RepoStatusIndexed,
+				}),
 			},
 			wantErr: false,
 		},
@@ -198,9 +203,10 @@ func TestIndexedSearch(t *testing.T) {
 				},
 				since: func(time.Time) time.Duration { return 0 },
 			},
-			wantCommon: searchResultsCommon{
-				searched: []*types.RepoName{repoBar},
-				indexed:  []*types.RepoName{repoBar},
+			wantCommon: SearchResultsCommon{
+				Status: mkStatusMap(map[string]search.RepoStatus{
+					"foo/bar": search.RepoStatusSearched | search.RepoStatusIndexed,
+				}),
 			},
 			wantMatchURLs: []string{
 				"git://foo/bar?HEAD#baz.go",
@@ -232,9 +238,10 @@ func TestIndexedSearch(t *testing.T) {
 					},
 				},
 			},
-			wantCommon: searchResultsCommon{
-				searched: []*types.RepoName{repoBar},
-				indexed:  []*types.RepoName{repoBar},
+			wantCommon: SearchResultsCommon{
+				Status: mkStatusMap(map[string]search.RepoStatus{
+					"foo/bar": search.RepoStatusSearched | search.RepoStatusIndexed,
+				}),
 			},
 			wantUnindexed: makeRepositoryRevisions("foo/bar@unindexed"),
 			wantMatchURLs: []string{
@@ -308,7 +315,7 @@ func TestIndexedSearch(t *testing.T) {
 			// Once we return more than one event we have to account for the proper order of results
 			// in the tests.
 			var (
-				gotCommon searchResultsCommon
+				gotCommon SearchResultsCommon
 				gotFm     []*FileMatchResolver
 			)
 			for event := range indexed.Search(tt.args.ctx) {
@@ -727,7 +734,13 @@ func BenchmarkSearchResults(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		resolver := &searchResolver{query: q, zoekt: z, userSettings: &schema.Settings{}}
+		resolver := &searchResolver{
+			query:        q,
+			zoekt:        z,
+			userSettings: &schema.Settings{},
+			reposMu:      &sync.Mutex{},
+			resolved:     &searchrepos.Resolved{},
+		}
 		results, err := resolver.Results(ctx)
 		if err != nil {
 			b.Fatal("Results:", err)
@@ -797,7 +810,7 @@ func BenchmarkIntegrationSearchResults(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		resolver := &searchResolver{query: q, zoekt: z}
+		resolver := &searchResolver{query: q, zoekt: z, reposMu: &sync.Mutex{}, resolved: &searchrepos.Resolved{}}
 		results, err := resolver.Results(ctx)
 		if err != nil {
 			b.Fatal("Results:", err)

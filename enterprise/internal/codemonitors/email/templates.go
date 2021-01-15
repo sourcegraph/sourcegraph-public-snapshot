@@ -6,15 +6,17 @@ import (
 )
 
 var newSearchResultsEmailTemplates = txemail.MustValidate(txtypes.Templates{
-	Subject: `[{{.Priority}} event] {{.Description}}`,
+	Subject: `{{ if .IsTest }}Test: {{ end }}[{{.Priority}} event] {{.Description}}`,
 	Text: `
+{{ if .IsTest }}This email is a preview. Links are disabled.{{ end }}
+
 Code monitoring triggered a new event:
 
 {{.Description}}
 {{.NumberOfResultsWithDetail}}
 
 View search on Sourcegraph {{.SearchURL}}
-	
+
 __
 You are receiving this notification because you are a recipient on a code monitor.
 
@@ -27,6 +29,12 @@ Sourcegraph limits what information is contained in this notification.
 <!DOCTYPE html>
 <html>
   <body>
+	{{ if .IsTest }}
+	<p style="color: #523704; padding: 16px; background-color: #FDECCC; font-size: 14px; line-height: 21px; border-radius: 4px; margin-bottom: 50px">
+		<span style="font-weight: 700">This email is a preview.</span>&nbsp;<span style="font-weight: 400">Links are disabled.</span>
+	</p>
+	{{ end }}
+
     <p style="font-size: 16px; line-height: 24px">
       Code monitoring triggered a new event:
     </p>
@@ -36,8 +44,10 @@ Sourcegraph limits what information is contained in this notification.
         >{{.NumberOfResultsWithDetail}}</span
       >
     </p>
-    <p style="font-size: 16px; line-height: 24px">
-      <a href="{{.SearchURL}}">View search on Sourcegraph</a>
+	<p style="font-size: 16px; line-height: 24px">
+	  <a href="{{.SearchURL}}" {{ if .IsTest }}style="color: #9C9FA6; font-weight: 400; text-decoration: underline; cursor: default"{{ end }}>
+        View search on Sourcegraph
+	  </a>
     </p>
     <br />
     <br />
@@ -47,13 +57,16 @@ Sourcegraph limits what information is contained in this notification.
       monitor.
     </p>
     <p style="font-size: 14px; line-height: 24px">
-      <a href="{{.CodeMonitorURL}}">View code monitor</a>
+	  <a href="{{.CodeMonitorURL}}" {{ if .IsTest }}style="color: #9C9FA6; font-weight: 400; text-decoration: underline; cursor: default"{{ end }}>
+	    View code monitor
+	  </a>
     </p>
-    <p style="font-size: 12px; line-height: 24px">
+    <p style="font-size: 12px; line-height: 24px; margin-bottom: 24px">
       Search results may contain confidential data. To protect your privacy and
       security, Sourcegraph limits what information is contained in this
       notification.
-    </p>
+	</p>
+	<img src="https://about.sourcegraph.com/sourcegraph-logo-small.png" width="106" height="20" alt="Sourcegraph logo" />
   </body>
 </html>
 `,
