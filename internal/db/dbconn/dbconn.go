@@ -18,6 +18,7 @@ import (
 
 	"github.com/gchaincl/sqlhooks"
 	"github.com/inconshreveable/log15"
+	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/stdlib"
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -162,7 +163,7 @@ func openDBWithStartupWait(cfg *pgx.ConnConfig) (db *sql.DB, err error) {
 // isDatabaseLikelyStartingUp returns whether the err likely just means the PostgreSQL database is
 // starting up, and it should not be treated as a fatal error during program initialization.
 func isDatabaseLikelyStartingUp(err error) bool {
-	if strings.Contains(err.Error(), "pq: the database system is starting up") {
+	if e, ok := errors.Cause(err).(*pgconn.PgError); ok && e.Code == "57P03" {
 		// Wait for DB to start up.
 		return true
 	}
