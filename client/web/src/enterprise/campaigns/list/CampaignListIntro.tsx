@@ -41,7 +41,7 @@ const CampaignChangelogAlert: React.FunctionComponent = () => (
                     <li>
                         Campaign specs now allow{' '}
                         <a href="https://docs.sourcegraph.com/campaigns/references/campaign_spec_yaml_reference#steps-outputs">
-                            step output
+                            step outputs
                         </a>{' '}
                         to be captured for later use in templated fields
                     </li>
