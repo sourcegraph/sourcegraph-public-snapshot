@@ -156,6 +156,7 @@ Learn more about monitoring in the [monitoring architecture overview](https://ab
 
 - [grafana](../observability/grafana.md) is the frontend for service metrics, and ships with customized dashboards for Sourcegraph services.
 - [prometheus](../observability/prometheus.md) handles scraping of service metrics, and ships with recording rules, alert rules, and alerting capabilities.
+- [cadvisor](../observability/cadvisor.md) provides per-container performance metrics (scraped by Prometheus) in most Sourcegraph environments.
 - [Health checks are provided by each Sourcegraph service](../../../admin/observability/health_checks.md).
 
 Debugging includes [tracing](../../../admin/observability/tracing.md) and [logging](../../../admin/observability/logs.md).
