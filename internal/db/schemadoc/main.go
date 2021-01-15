@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 
+	"github.com/lib/pq"
 	_ "github.com/lib/pq"
 )
 
@@ -128,6 +129,11 @@ func generateInternal(logger *log.Logger, databaseName, dataSource string, run f
 		return "", err
 	}
 
+	types, err := describeTypes(db)
+	if err != nil {
+		return "", err
+	}
+
 	ch := make(chan string, len(tables))
 	for _, table := range tables {
 		ch <- table
@@ -163,7 +169,17 @@ func generateInternal(logger *log.Logger, databaseName, dataSource string, run f
 	wg.Wait()
 	sort.Strings(docs)
 
-	return strings.Join(docs, "\n"), nil
+	combined := strings.Join(docs, "\n")
+
+	if len(types) > 0 {
+		combined += "\n"
+
+		for name, values := range types {
+			combined += "# Type " + name + "\n\n- " + strings.Join(values, "\n- ") + "\n\n"
+		}
+	}
+
+	return combined, nil
 }
 
 func getTables(db *sql.DB) (tables []string, _ error) {
@@ -293,6 +309,38 @@ func getColumnComments(db *sql.DB, table string) (map[string]string, error) {
 	}
 
 	return comments, nil
+}
+
+func describeTypes(db *sql.DB) (map[string][]string, error) {
+	rows, err := db.Query(`
+		SELECT
+			t.typname as type_name,
+			array_agg(e.enumlabel ORDER BY e.enumsortorder) as values
+		FROM pg_catalog.pg_type t
+			JOIN pg_catalog.pg_namespace n ON n.oid = t.typnamespace
+			JOIN pg_catalog.pg_enum e ON t.oid = e.enumtypid
+		GROUP BY t.typname;
+	`)
+	if err != nil {
+		return nil, errors.Wrap(err, "db.Query")
+	}
+	defer rows.Close()
+
+	values := map[string][]string{}
+	for rows.Next() {
+		var k string
+		var v []string
+		if err := rows.Scan(&k, pq.Array(&v)); err != nil {
+			return nil, errors.Wrap(err, "rows.Scan")
+		}
+		values[k] = v
+	}
+	if err := rows.Err(); err != nil {
+		return nil, errors.Wrap(err, "rows.Err")
+	}
+
+	return values, nil
+
 }
 
 func runIgnoreError(cmd string, args ...string) {

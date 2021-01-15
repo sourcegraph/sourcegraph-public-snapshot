@@ -1572,3 +1572,32 @@ Indexes:
  campaign_spec_id  | bigint  | 
 
 ```
+
+# Type cm_email_priority
+
+- NORMAL
+- CRITICAL
+
+# Type critical_or_site
+
+- critical
+- site
+
+# Type lsif_index_state
+
+- queued
+- processing
+- completed
+- errored
+- failed
+
+# Type lsif_upload_state
+
+- uploading
+- queued
+- processing
+- completed
+- errored
+- deleted
+- failed
+
