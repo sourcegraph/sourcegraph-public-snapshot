@@ -1,110 +1,75 @@
-.user-settings-repos__gitlab {
-    fill: #ff5900 !important;
-}
+.user-settings-repos {
+    &__gitlab {
+        fill: #ff5900 !important;
+    }
+    &__github {
+        fill: var(--body-color) !important;
+    }
+    &__check {
+        fill: var(--color-bg-3) !important;
+    }
 
-.user-settings-repos__github {
-    fill: var(--body-color) !important;
-}
-
-.user-settings-repos__check {
-    fill: var(--color-bg-3) !important;
-}
-
-.user-settings-repos__caret {
-    fill: var(--primary) !important;
-}
-
-.theme-light {
-    .user-settings-repos__shimmer {
-        background: linear-gradient(to right, #eff1f3 4%, #e2e2e2 25%, #eff1f3 36%);
+    &__shimmer {
+        background: linear-gradient(to right, var(--color-bg-2) 4%, var(--color-bg-1) 25%, var(--color-bg-2) 36%);
         animation: shimmer 2s infinite linear;
         background-size: 1000px 100%;
         border-radius: 5px;
     }
-}
 
-.theme-dark {
-    .user-settings-repos__shimmer {
-        background: linear-gradient(to right, #14151c 4%, #454545 25%, #14151c 36%);
-        animation: shimmer 2s infinite linear;
-        background-size: 1000px 100%;
-        border-radius: 5px;
+    &__repositorynode {
+        border-color: var(--border-color-2) !important;
+
+        &:hover {
+            background-color: var(--color-bg-1);
+        }
     }
-}
 
-.user-settings-repos__repositorynode {
-    cursor: pointer;
-}
+    &__container {
+        border-color: var(--border-color-2) !important;
+    }
 
-.user-settings-repos__repositorynode:hover {
-    background-color: var(--color-bg-1);
-}
+    &__link:hover {
+        text-decoration: none;
+    }
 
-.user-settings-repos__link:hover {
-    text-decoration: none;
-}
+    &__pages {
+        display: flex;
+        align-items: baseline;
+        width: 80%;
+        flex-wrap: wrap;
+        margin-left: auto;
+        margin-right: auto;
+    }
 
-.user-settings-repos__summary {
-    font-size: 12px;
-    padding-top: 1.5rem;
-}
+    &__pageend {
+        margin-left: 0.5rem;
+        margin-right: 0.5rem;
+    }
 
-.user-settings-repos__pages {
-    display: flex;
-    align-items: baseline;
-    width: 80%;
-    flex-wrap: wrap;
-    margin-left: auto;
-    margin-right: auto;
-}
+    &__page {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 3px;
+        background-color: var(--color-bg-2);
+        margin-right: 0.25rem;
+        margin-bottom: 0.25rem;
+        width: 1.5rem;
+        height: 1.5rem;
+        font-size: 12px;
+        &--active {
+            background-color: inherit;
+        }
+        &:hover {
+            background-color: var(--color-bg-1);
+        }
+    }
 
-.user-settings-repos__pageend {
-    margin-left: 0.5rem;
-    margin-right: 0.5rem;
-}
-
-.user-settings-repos__page {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 3px;
-    background-color: var(--color-bg-2);
-    margin-right: 0.25rem;
-    margin-bottom: 0.25rem;
-    width: 1.5rem;
-    height: 1.5rem;
-    font-size: 12px;
-}
-.user-settings-repos__page:hover {
-    background-color: var(--color-bg-1);
-}
-
-.user-settings-repos__page--active {
-    background-color: inherit;
-}
-
-.border-color-2 {
-    border-color: var(--border-color-2) !important;
-}
-
-.border-top-color-2 {
-    border-top: 1px solid var(--border-color-2) !important;
-}
-
-.border-bottom-2 {
-    border-top: 2px solid;
-}
-
-.bg-color-2 {
-    background-color: var(--color-bg-2);
-}
-
-.fill-border-color-2 {
-    fill: var(--border-color-2) !important;
-}
-
-.fill-primary {
-    fill: var(--primary) !important;
+    &__chevron {
+        &--inactive {
+            fill: var(--border-color-2);
+        }
+    }
 }
 
 @keyframes shimmer {
@@ -114,28 +79,4 @@
     100% {
         background-position: 1000px 0;
     }
-}
-
-.w-80 {
-    width: 80%;
-}
-
-.w-30 {
-    width: 30%;
-}
-
-.w-70 {
-    width: 70%;
-}
-
-.repositories-header {
-    font-size: 12px;
-}
-
-.public-repos-textbox {
-    height: 10rem;
-}
-
-.no-click {
-    pointer-events: none;
 }
