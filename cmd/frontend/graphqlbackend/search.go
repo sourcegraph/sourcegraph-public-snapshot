@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math"
 	"regexp"
-	regexpsyntax "regexp/syntax"
 	"sort"
 	"strconv"
 	"sync"
@@ -366,9 +365,6 @@ func decodedViewerFinalSettings(ctx context.Context) (_ *schema.Settings, err er
 	}
 	return &settings, nil
 }
-
-// Cf. golang/go/src/regexp/syntax/parse.go.
-const regexpFlags = regexpsyntax.ClassNL | regexpsyntax.PerlX | regexpsyntax.UnicodeGroups
 
 // resolveRepositories calls ResolveRepositories, caching the result for the common case
 // where effectiveRepoFieldValues == nil.
