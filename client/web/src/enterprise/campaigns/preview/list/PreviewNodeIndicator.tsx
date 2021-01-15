@@ -1,7 +1,7 @@
 import React from 'react'
 import { ChangesetApplyPreviewFields } from '../../../../graphql-operations'
 
-const containerClassName = 'd-flex flex-column align-items-center justify-content-center align-self-stretch'
+const containerClassName = 'd-none d-sm-flex flex-column align-items-center justify-content-center align-self-stretch'
 
 export interface PreviewNodeIndicatorProps {
     node: ChangesetApplyPreviewFields
