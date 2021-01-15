@@ -2,7 +2,8 @@
   // This is set from an environment variable
   "experimentalFeatures": {
     "showRepogroupHomepage": true,
-    "showMultilineSearchConsole": true
+    "showMultilineSearchConsole": true,
+    "codeMonitoring": true
   },
   "search.repositoryGroups": {
     "test": ["github.com/gorilla/mux", "github.com/gorilla/pat"]
