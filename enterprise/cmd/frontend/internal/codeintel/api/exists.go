@@ -7,6 +7,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
@@ -41,13 +42,20 @@ func (api *CodeIntelAPI) FindClosestDumps(ctx context.Context, repositoryID int,
 		return nil, err
 	}
 
+	commitExistenceCache := map[string]bool{}
+
 	var dumps []store.Dump
 	for _, dump := range candidates {
+		// We've already determined the target commit doesn't exist
+		if exists, ok := commitExistenceCache[dump.Commit]; ok && !exists {
+			continue
+		}
+
 		// TODO(efritz) - ensure there's a valid document path
 		// for the other condition. This should probably look like
 		// an additional parameter on the following exists query.
 		if exactPath {
-			exists, err := api.lsifStore.Exists(ctx, dump.ID, strings.TrimPrefix(path, dump.Root))
+			pathExists, err := api.lsifStore.Exists(ctx, dump.ID, strings.TrimPrefix(path, dump.Root))
 			if err != nil {
 				if err == lsifstore.ErrNotFound {
 					log15.Warn("Bundle does not exist")
@@ -55,7 +63,22 @@ func (api *CodeIntelAPI) FindClosestDumps(ctx context.Context, repositoryID int,
 				}
 				return nil, errors.Wrap(err, "lsifStore.BundleClient")
 			}
-			if !exists {
+			if !pathExists {
+				continue
+			}
+		}
+
+		if dump.Commit != commit {
+			commitExists, err := api.gitserverClient.CommitExists(ctx, dump.RepositoryID, dump.Commit)
+			if err != nil {
+				return nil, errors.Wrap(err, "gitserverClient.CommitExists")
+			}
+
+			// Cache result as we're likely to have multiple
+			// dumps per commit if there are overlapping roots.
+			commitExistenceCache[dump.Commit] = commitExists
+
+			if !commitExists {
 				continue
 			}
 		}
