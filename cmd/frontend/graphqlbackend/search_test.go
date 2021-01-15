@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -549,6 +550,8 @@ func TestVersionContext(t *testing.T) {
 				query:          qinfo,
 				versionContext: &tc.versionContext,
 				userSettings:   &schema.Settings{},
+				reposMu:        &sync.Mutex{},
+				resolved:       &searchrepos.Resolved{},
 			}
 
 			db.Mocks.Repos.ListRepoNames = func(ctx context.Context, opts db.ReposListOptions) ([]*types.RepoName, error) {

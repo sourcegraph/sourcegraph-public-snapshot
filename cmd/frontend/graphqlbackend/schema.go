@@ -846,6 +846,11 @@ type Mutation {
         """
         id: ID!
     ): EmptyResponse!
+
+    """
+    Triggers a test email for a code monitor action.
+    """
+    triggerTestEmailAction(namespace: ID!, description: String!, email: MonitorEmailInput!): EmptyResponse!
 }
 
 """

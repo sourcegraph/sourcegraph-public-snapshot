@@ -147,7 +147,7 @@ The diff is then combined with information about the repository in which the cha
 
 ## Importing changesets
 
-If the campaign spec contains `importChangesets` then `src` goes through the list of `importChangesets` and for each entry it will:
+If the campaign spec contains [`importChangesets`](../references/campaign_spec_yaml_reference.md#importchangesets) then `src` goes through the list of `importChangesets` and for each entry it will:
 
 1. Resolve the repository name, trying to get to get an ID, base branch, and revision for the given repository name.
 1. Parse the `externalIDs`, checking that they're valid strings or numbers.
