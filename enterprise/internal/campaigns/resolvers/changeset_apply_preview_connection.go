@@ -158,6 +158,7 @@ func (r *changesetApplyPreviewConnectionResolver) Stats(ctx context.Context) (gr
 			store:             r.store,
 			mapping:           mapping,
 			preloadedCampaign: campaign,
+			campaignSpecID:    r.campaignSpecID,
 		}
 		var ops []campaigns.ReconcilerOperation
 		if _, ok := res.ToHiddenChangesetApplyPreview(); ok {
@@ -178,7 +179,9 @@ func (r *changesetApplyPreviewConnectionResolver) Stats(ctx context.Context) (gr
 			stats.added++
 		}
 		if _, ok := targets.ToVisibleApplyPreviewTargetsUpdate(); ok {
-			stats.modified++
+			if len(ops) > 0 {
+				stats.modified++
+			}
 		}
 		if _, ok := targets.ToVisibleApplyPreviewTargetsDetach(); ok {
 			stats.removed++
@@ -247,6 +250,10 @@ func (r *changesetApplyPreviewConnectionResolver) compute(ctx context.Context) (
 			CampaignID:     opts.CampaignID,
 		}
 		r.allMappings, r.err = r.store.GetRewirerMappings(ctx, allOpts)
+		if r.err != nil {
+			return
+		}
+		r.err = r.allMappings.Hydrate(ctx, r.store)
 		if r.err != nil {
 			return
 		}

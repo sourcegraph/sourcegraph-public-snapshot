@@ -20,6 +20,10 @@ export const PreviewNodeIndicator: React.FunctionComponent<PreviewNodeIndicatorP
             )
         case 'HiddenApplyPreviewTargetsUpdate':
         case 'VisibleApplyPreviewTargetsUpdate':
+            if (node.__typename === 'HiddenChangesetApplyPreview' || node.operations.length === 0) {
+                // If no operations, no update :P
+                return <div />
+            }
             return (
                 <div className={containerClassName}>
                     <span className="preview-node-indicator__update-dot">&nbsp;</span>
