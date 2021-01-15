@@ -425,7 +425,7 @@ func (s *Store) DeleteOldIndexes(ctx context.Context, maxAge time.Duration, now 
 	}
 	defer func() { err = tx.Done(err) }()
 
-	repositoryIDs, err := scanCounts(tx.Store.Query(ctx, sqlf.Sprintf(softDeleteOldIndexsQuery, now, maxAge/time.Second)))
+	repositoryIDs, err := scanCounts(tx.Store.Query(ctx, sqlf.Sprintf(deleteOldIndexesQuery, now, maxAge/time.Second)))
 	if err != nil {
 		return 0, err
 	}
@@ -437,7 +437,7 @@ func (s *Store) DeleteOldIndexes(ctx context.Context, maxAge time.Duration, now 
 	return count, nil
 }
 
-const softDeleteOldIndexsQuery = `
+const deleteOldIndexesQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/indexes.go:DeleteOldIndexes
 WITH deleted_indexes AS (
 	DELETE FROM lsif_indexes u WHERE %s - u.queued_at > (%s || ' second')::interval
