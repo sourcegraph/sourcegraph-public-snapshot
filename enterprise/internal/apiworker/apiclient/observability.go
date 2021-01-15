@@ -16,7 +16,7 @@ type operations struct {
 	heartbeat            *observation.Operation
 }
 
-func makeOperations(observationContext *observation.Context) *operations {
+func newOperations(observationContext *observation.Context) *operations {
 	metrics := metrics.NewOperationMetrics(
 		observationContext.Registerer,
 		"apiworker_apiclient",

@@ -5,8 +5,10 @@ import (
 	"database/sql"
 
 	"github.com/google/uuid"
+	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
+	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 )
 
@@ -24,7 +26,9 @@ func Get(ctx context.Context) (*State, error) {
 	if err == nil {
 		return configuration, nil
 	}
-	err = tryInsertNew(ctx, dbconn.Global)
+
+	b := basestore.NewWithDB(dbconn.Global, sql.TxOptions{})
+	err = tryInsertNew(ctx, b)
 	if err != nil {
 		return nil, err
 	}
@@ -52,8 +56,8 @@ func SiteInitialized(ctx context.Context) (alreadyInitialized bool, err error) {
 // accidentally deleting all user accounts and opening up their site to any attacker becoming a site
 // admin and (2) a bug in user account creation code letting attackers create site admin accounts.
 func EnsureInitialized(ctx context.Context, dbh interface {
-	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
-	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
+	QueryRow(ctx context.Context, query *sqlf.Query) *sql.Row
+	Exec(ctx context.Context, query *sqlf.Query) error
 }) (alreadyInitialized bool, err error) {
 	if err := tryInsertNew(ctx, dbh); err != nil {
 		return false, err
@@ -61,12 +65,12 @@ func EnsureInitialized(ctx context.Context, dbh interface {
 
 	// The "SELECT ... FOR UPDATE" prevents a race condition where two calls, each in their own transaction,
 	// would see this initialized value as false and then set it to true below.
-	if err := dbh.QueryRowContext(ctx, `SELECT initialized FROM global_state FOR UPDATE LIMIT 1`).Scan(&alreadyInitialized); err != nil {
+	if err := dbh.QueryRow(ctx, sqlf.Sprintf(`SELECT initialized FROM global_state FOR UPDATE LIMIT 1`)).Scan(&alreadyInitialized); err != nil {
 		return false, err
 	}
 
 	if !alreadyInitialized {
-		_, err = dbh.ExecContext(ctx, "UPDATE global_state SET initialized=true")
+		err = dbh.Exec(ctx, sqlf.Sprintf("UPDATE global_state SET initialized=true"))
 	}
 
 	return alreadyInitialized, err
@@ -82,7 +86,7 @@ func getConfiguration(ctx context.Context) (*State, error) {
 }
 
 func tryInsertNew(ctx context.Context, dbh interface {
-	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
+	Exec(ctx context.Context, query *sqlf.Query) error
 }) error {
 	siteID, err := uuid.NewRandom()
 	if err != nil {
@@ -97,18 +101,18 @@ func tryInsertNew(ctx context.Context, dbh interface {
 	// because previously global state had a siteID and now we ignore that (or someone ran `DELETE
 	// FROM global_state;` in the PostgreSQL database). In either case, it's safe to generate a new
 	// site ID and set the site as initialized.
-	_, err = dbh.ExecContext(ctx, `
+	err = dbh.Exec(ctx, sqlf.Sprintf(`
 	INSERT INTO global_state(
 		site_id,
 		initialized,
 		mgmt_password_plaintext,
 		mgmt_password_bcrypt
 	) values(
-		$1,
+		%s,
 		EXISTS (SELECT 1 FROM users WHERE deleted_at IS NULL),
 		(SELECT COALESCE((SELECT mgmt_password_plaintext FROM global_state LIMIT 1), '')),
 		(SELECT COALESCE((SELECT mgmt_password_bcrypt FROM global_state LIMIT 1), ''))
-	);`, siteID)
+	);`, siteID))
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
 			if pqErr.Constraint == "global_state_pkey" {

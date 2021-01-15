@@ -6,12 +6,15 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestOverrideAuthMiddleware(t *testing.T) {
@@ -77,6 +80,9 @@ func TestOverrideAuthMiddleware(t *testing.T) {
 		}
 		defer func() { auth.MockGetAndSaveUser = nil }()
 		db.Mocks.Users.SetIsSiteAdmin = func(int32, bool) error { return nil }
+		db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+			return &types.User{ID: id, CreatedAt: time.Now()}, nil
+		}
 		defer func() { db.Mocks = db.MockStores{} }()
 		handler.ServeHTTP(rr, req)
 		if got, want := rr.Body.String(), "user 1"; got != want {
@@ -104,6 +110,9 @@ func TestOverrideAuthMiddleware(t *testing.T) {
 		}
 		defer func() { auth.MockGetAndSaveUser = nil }()
 		db.Mocks.Users.SetIsSiteAdmin = func(int32, bool) error { return nil }
+		db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+			return &types.User{ID: id, CreatedAt: time.Now()}, nil
+		}
 		defer func() { db.Mocks = db.MockStores{} }()
 		handler.ServeHTTP(rr, req)
 		if got, want := rr.Body.String(), "user 1"; got != want {

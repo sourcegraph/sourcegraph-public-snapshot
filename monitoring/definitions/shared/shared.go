@@ -57,14 +57,22 @@ func (o Observable) WithNoAlerts(interpretation string) Observable {
 	return o
 }
 
+// sharedObservable defines the type all shared observable variables should have in this package.
 type sharedObservable func(containerName string, owner monitoring.ObservableOwner) Observable
 
-// CadvisorNameMatcher generates Prometheus matchers that capture metrics that match the given container name
-// while excluding some irrelevant series
+// CadvisorNameMatcher generates Prometheus matchers that capture metrics that match the
+// given container name while excluding some irrelevant series.
 func CadvisorNameMatcher(containerName string) string {
-	// This matcher excludes:
-	// * jaeger sidecar (jaeger-agent)
-	// * pod sidecars (_POD_)
-	// as well as matching on the name of the container exactly with "_{container}_"
-	return fmt.Sprintf(`name=~".*_%s_.*",name!~".*(_POD_|_jaeger-agent_).*"`, containerName)
+	// Name must start with the container name exactly.
+	//
+	// In docker-compose:
+	// - `name` is just the container name
+	// - suffix could be replica in docker-compose ('-0', '-1')
+	//
+	// In Kubernetes:
+	// - a `metric_relabel_configs` generates a `name` with the format `CONTAINERNAME-PODNAME`,
+	//   because cAdvisor does not consistently generate a name in all container runtimes.
+	//   See https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/deploy-sourcegraph%24+target_label:+name&patternType=literal
+	// - because of above, suffix could be pod name in Kubernetes
+	return fmt.Sprintf(`name=~"^%s.*"`, containerName)
 }

@@ -147,3 +147,7 @@ func (r *externalServiceResolver) LastSyncError(ctx context.Context) (*string, e
 	}
 	return &latestError, nil
 }
+
+func (r *externalServiceResolver) RepoCount(ctx context.Context) (int32, error) {
+	return db.ExternalServices.RepoCount(ctx, r.externalService.ID)
+}

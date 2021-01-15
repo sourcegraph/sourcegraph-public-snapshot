@@ -16,7 +16,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	idb "github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -25,12 +24,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func testStoreUpsertRepos(t *testing.T, store *repos.Store) func(*testing.T) {
-	clock := dbtesting.NewFakeClock(time.Now(), 0)
+	clock := timeutil.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
 	return func(t *testing.T) {
@@ -361,7 +361,7 @@ func testStoreUpsertRepos(t *testing.T, store *repos.Store) func(*testing.T) {
 }
 
 func testStoreUpsertSources(t *testing.T, store *repos.Store) func(*testing.T) {
-	clock := dbtesting.NewFakeClock(time.Now(), 0)
+	clock := timeutil.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
 	servicesPerKind := createExternalServices(t, store)
@@ -824,7 +824,7 @@ VALUES
 }
 
 func testSyncRateLimiters(t *testing.T, store *repos.Store) func(*testing.T) {
-	clock := dbtesting.NewFakeClock(time.Now(), 0)
+	clock := timeutil.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
 	return func(t *testing.T) {
@@ -878,7 +878,7 @@ func testStoreEnqueueSyncJobs(db *sql.DB, store *repos.Store) func(t *testing.T,
 	return func(t *testing.T, _ *repos.Store) func(*testing.T) {
 		t.Helper()
 
-		clock := dbtesting.NewFakeClock(time.Now(), 0)
+		clock := timeutil.NewFakeClock(time.Now(), 0)
 		now := clock.Now()
 
 		services := generateExternalServices(10, mkExternalServices(now)...)
@@ -1042,7 +1042,7 @@ func transact(ctx context.Context, s *repos.Store, test func(testing.TB, *repos.
 }
 
 func createExternalServices(t *testing.T, store *repos.Store) map[string]*types.ExternalService {
-	clock := dbtesting.NewFakeClock(time.Now(), 0)
+	clock := timeutil.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
 	svcs := mkExternalServices(now)

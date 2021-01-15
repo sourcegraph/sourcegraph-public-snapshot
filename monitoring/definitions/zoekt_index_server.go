@@ -1,7 +1,7 @@
 package definitions
 
 import (
-	"fmt"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
@@ -21,10 +21,9 @@ func ZoektIndexServer() *monitoring.Container {
 							Name:              "average_resolve_revision_duration",
 							Description:       "average resolve revision duration over 5m",
 							Query:             `sum(rate(resolve_revision_seconds_sum[5m])) / sum(rate(resolve_revision_seconds_count[5m]))`,
-							DataMayNotExist:   true,
 							Warning:           monitoring.Alert().GreaterOrEqual(15),
 							Critical:          monitoring.Alert().GreaterOrEqual(30),
-							PanelOptions:      monitoring.PanelOptions().LegendFormat("{{duration}}").Unit(monitoring.Seconds),
+							Panel:             monitoring.Panel().LegendFormat("{{duration}}").Unit(monitoring.Seconds),
 							Owner:             monitoring.ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
@@ -32,7 +31,7 @@ func ZoektIndexServer() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Container monitoring (not available on server)",
+				Title:  shared.TitleContainerMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -40,25 +39,20 @@ func ZoektIndexServer() *monitoring.Container {
 						shared.ContainerMemoryUsage("zoekt-indexserver", monitoring.ObservableOwnerSearch).Observable(),
 					},
 					{
-						shared.ContainerRestarts("zoekt-indexserver", monitoring.ObservableOwnerSearch).Observable(),
-						shared.ContainerFsInodes("zoekt-indexserver", monitoring.ObservableOwnerSearch).Observable(),
-					},
-					{
-						{
-							Name:              "fs_io_operations",
-							Description:       "filesystem reads and writes rate by instance over 1h",
-							Query:             fmt.Sprintf(`sum by(name) (rate(container_fs_reads_total{%[1]s}[1h]) + rate(container_fs_writes_total{%[1]s}[1h]))`, shared.CadvisorNameMatcher("zoekt-indexserver")),
-							DataMayNotExist:   true,
-							Warning:           monitoring.Alert().GreaterOrEqual(5000),
-							PanelOptions:      monitoring.PanelOptions().LegendFormat("{{name}}"),
-							Owner:             monitoring.ObservableOwnerSearch,
-							PossibleSolutions: "none",
-						},
+						// indexed-search does not have 0-downtime deploy, so deploys can
+						// cause extended container restarts. still seta warning alert for
+						// extended periods of container restarts, since this might still
+						// indicate a problem.
+						shared.ContainerRestarts("zoekt-indexserver", monitoring.ObservableOwnerSearch).
+							WithWarning(monitoring.Alert().Greater(1).For(10 * time.Minute)).
+							WithCritical(nil).
+							Observable(),
+						shared.ContainerIOUsage("zoekt-indexserver", monitoring.ObservableOwnerSearch).Observable(),
 					},
 				},
 			},
 			{
-				Title:  "Provisioning indicators (not available on server)",
+				Title:  shared.TitleProvisioningIndicators,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -72,7 +66,7 @@ func ZoektIndexServer() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Kubernetes monitoring (ignore if using Docker Compose or server)",
+				Title:  shared.TitleKubernetesMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{

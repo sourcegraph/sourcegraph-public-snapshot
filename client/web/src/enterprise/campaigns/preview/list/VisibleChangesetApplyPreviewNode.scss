@@ -1,10 +1,30 @@
 .visible-changeset-apply-preview-node {
+    &__current-state,
     &__action,
     &__information,
     &__show-details {
         @include media-breakpoint-down(xs) {
             // Make it full width in the current row.
             grid-column: 1 / -1;
+        }
+    }
+    &__bg-expanded {
+        @include media-breakpoint-up(sm) {
+            background-color: rgba($oc-blue-0, 0.5);
+        }
+    }
+    &__status-cell {
+        @include media-breakpoint-up(sm) {
+            background-color: $oc-blue-0;
+        }
+    }
+    &__list-cell {
+        @include media-breakpoint-up(sm) {
+            padding: 0.5rem;
+        }
+        @include media-breakpoint-down(xs) {
+            padding-top: 0.25rem;
+            padding-bottom: 0.25rem;
         }
     }
     &__expanded-section {

@@ -2,6 +2,7 @@
 
 exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
 <StreamingProgressSkippedPopover
+  history="[History]"
   onSearchAgain={[Function]}
   progress={
     Object {
@@ -9,6 +10,22 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       "matchCount": 2,
       "repositoriesCount": 2,
       "skipped": Array [
+        Object {
+          "message": "There was a network error retrieving search results. Check your Internet connection and try again.",
+          "reason": "error",
+          "severity": "error",
+          "title": "Error loading results",
+        },
+        Object {
+          "message": "Search timed out",
+          "reason": "shard-timedout",
+          "severity": "warn",
+          "suggested": Object {
+            "queryExpression": "timeout:2m",
+            "title": "timeout:2m",
+          },
+          "title": "Search timed out",
+        },
         Object {
           "message": "10k forked repositories excluded",
           "reason": "excluded-fork",
@@ -30,287 +47,566 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
           "title": "60k archived repositories excluded",
         },
         Object {
-          "message": "Search timed out",
-          "reason": "shard-timedout",
-          "severity": "warn",
+          "message": "By default we exclude archived repositories. Include them with \`archived:yes\` in your query.",
+          "reason": "excluded-archive",
+          "severity": "info",
           "suggested": Object {
-            "queryExpression": "timeout:2m",
-            "title": "timeout:2m",
+            "queryExpression": "archived:yes",
+            "title": "include archived",
           },
-          "title": "Search timed out",
+          "title": "1 archived",
         },
       ],
     }
   }
 >
-  <Alert
-    closeAriaLabel="Close"
-    color="info"
-    fade={false}
-    isOpen={true}
-    key="excluded-fork"
-    tag="div"
-    transition={
+  <SkippedMessage
+    history="[History]"
+    key="error"
+    skipped={
       Object {
-        "appear": true,
-        "baseClass": "fade",
-        "baseClassActive": "show",
-        "enter": true,
-        "exit": true,
-        "in": true,
-        "mountOnEnter": false,
-        "onEnter": [Function],
-        "onEntered": [Function],
-        "onEntering": [Function],
-        "onExit": [Function],
-        "onExited": [Function],
-        "onExiting": [Function],
-        "tag": "div",
-        "timeout": 150,
-        "unmountOnExit": true,
+        "message": "There was a network error retrieving search results. Check your Internet connection and try again.",
+        "reason": "error",
+        "severity": "error",
+        "title": "Error loading results",
       }
     }
+    startOpen={true}
   >
-    <Fade
-      appear={true}
-      baseClass=""
-      baseClassActive="show"
-      className="alert alert-info"
-      enter={true}
-      exit={true}
-      in={true}
-      mountOnEnter={false}
-      onEnter={[Function]}
-      onEntered={[Function]}
-      onEntering={[Function]}
-      onExit={[Function]}
-      onExited={[Function]}
-      onExiting={[Function]}
-      role="alert"
-      tag="div"
-      timeout={0}
-      unmountOnExit={true}
+    <Button
+      className="streaming-skipped-item pt-3 pb-0 w-100 streaming-skipped-item--warn"
+      color="secondary"
+      disabled={false}
+      onClick={[Function]}
+      tag="button"
     >
-      <Transition
-        appear={true}
-        enter={true}
-        exit={true}
-        in={true}
-        mountOnEnter={false}
-        onEnter={[Function]}
-        onEntered={[Function]}
-        onEntering={[Function]}
-        onExit={[Function]}
-        onExited={[Function]}
-        onExiting={[Function]}
-        timeout={0}
-        unmountOnExit={true}
+      <button
+        aria-label={null}
+        className="streaming-skipped-item pt-3 pb-0 w-100 streaming-skipped-item--warn btn btn-secondary"
+        disabled={false}
+        onClick={[Function]}
+        type="button"
       >
-        <div
-          className="alert alert-info"
-          role="alert"
+        <h4
+          className="d-flex align-items-center mb-0 w-100"
         >
-          <h4
-            className="d-flex align-items-center mb-0"
+          <Memo(AlertCircleIcon)
+            className="icon-inline mr-2 streaming-skipped-item__icon flex-shrink-0"
+          />
+          <span
+            className="flex-grow-1 text-left"
           >
-            <Memo(InformationOutlineIcon)
-              className="icon-inline mr-2"
-            />
-            <span>
-              10k forked repositories excluded
-            </span>
-          </h4>
-          <div
-            className="mt-2"
-          >
-            10k forked repositories excluded
-          </div>
-        </div>
-      </Transition>
-    </Fade>
-  </Alert>
-  <Alert
-    closeAriaLabel="Close"
-    color="info"
-    fade={false}
-    isOpen={true}
-    key="excluded-archive"
-    tag="div"
-    transition={
-      Object {
-        "appear": true,
-        "baseClass": "fade",
-        "baseClassActive": "show",
-        "enter": true,
-        "exit": true,
-        "in": true,
-        "mountOnEnter": false,
-        "onEnter": [Function],
-        "onEntered": [Function],
-        "onEntering": [Function],
-        "onExit": [Function],
-        "onExited": [Function],
-        "onExiting": [Function],
-        "tag": "div",
-        "timeout": 150,
-        "unmountOnExit": true,
-      }
-    }
-  >
-    <Fade
-      appear={true}
-      baseClass=""
-      baseClassActive="show"
-      className="alert alert-info"
-      enter={true}
-      exit={true}
-      in={true}
-      mountOnEnter={false}
-      onEnter={[Function]}
-      onEntered={[Function]}
-      onEntering={[Function]}
-      onExit={[Function]}
-      onExited={[Function]}
-      onExiting={[Function]}
-      role="alert"
-      tag="div"
-      timeout={0}
-      unmountOnExit={true}
-    >
-      <Transition
-        appear={true}
-        enter={true}
-        exit={true}
-        in={true}
-        mountOnEnter={false}
-        onEnter={[Function]}
-        onEntered={[Function]}
-        onEntering={[Function]}
-        onExit={[Function]}
-        onExited={[Function]}
-        onExiting={[Function]}
-        timeout={0}
-        unmountOnExit={true}
-      >
-        <div
-          className="alert alert-info"
-          role="alert"
+            Error loading results
+          </span>
+          <Memo(ChevronDownIcon)
+            className="icon-inline flex-shrink-0"
+          />
+        </h4>
+        <Collapse
+          appear={false}
+          enter={true}
+          exit={true}
+          in={false}
+          isOpen={true}
+          mountOnEnter={false}
+          onEnter={[Function]}
+          onEntered={[Function]}
+          onEntering={[Function]}
+          onExit={[Function]}
+          onExited={[Function]}
+          onExiting={[Function]}
+          tag="div"
+          timeout={350}
+          unmountOnExit={false}
         >
-          <h4
-            className="d-flex align-items-center mb-0"
+          <Transition
+            appear={false}
+            enter={true}
+            exit={true}
+            in={true}
+            mountOnEnter={false}
+            onEnter={[Function]}
+            onEntered={[Function]}
+            onEntering={[Function]}
+            onExit={[Function]}
+            onExited={[Function]}
+            onExiting={[Function]}
+            timeout={350}
+            unmountOnExit={false}
           >
-            <Memo(InformationOutlineIcon)
-              className="icon-inline mr-2"
-            />
-            <span>
-              60k archived repositories excluded
-            </span>
-          </h4>
-          <div
-            className="mt-2"
-          >
-            60k archived repositories excluded
-          </div>
-        </div>
-      </Transition>
-    </Fade>
-  </Alert>
-  <Alert
-    closeAriaLabel="Close"
-    color="danger"
-    fade={false}
-    isOpen={true}
+            <div
+              className="collapse show"
+              style={Object {}}
+            >
+              <Markdown
+                className="streaming-skipped-item__message mt-2 text-left"
+                dangerousInnerHTML="<p>There was a network error retrieving search results. Check your Internet connection and try again.</p>
+"
+                history="[History]"
+              >
+                <div
+                  className="streaming-skipped-item__message mt-2 text-left markdown"
+                  dangerouslySetInnerHTML={
+                    Object {
+                      "__html": "<p>There was a network error retrieving search results. Check your Internet connection and try again.</p>
+",
+                    }
+                  }
+                  onClick={[Function]}
+                />
+              </Markdown>
+            </div>
+          </Transition>
+        </Collapse>
+        <div
+          className="streaming-skipped-item__bottom-border-spacer mt-3"
+        />
+      </button>
+    </Button>
+  </SkippedMessage>
+  <SkippedMessage
+    history="[History]"
     key="shard-timedout"
-    tag="div"
-    transition={
+    skipped={
       Object {
-        "appear": true,
-        "baseClass": "fade",
-        "baseClassActive": "show",
-        "enter": true,
-        "exit": true,
-        "in": true,
-        "mountOnEnter": false,
-        "onEnter": [Function],
-        "onEntered": [Function],
-        "onEntering": [Function],
-        "onExit": [Function],
-        "onExited": [Function],
-        "onExiting": [Function],
-        "tag": "div",
-        "timeout": 150,
-        "unmountOnExit": true,
+        "message": "Search timed out",
+        "reason": "shard-timedout",
+        "severity": "warn",
+        "suggested": Object {
+          "queryExpression": "timeout:2m",
+          "title": "timeout:2m",
+        },
+        "title": "Search timed out",
       }
     }
+    startOpen={false}
   >
-    <Fade
-      appear={true}
-      baseClass=""
-      baseClassActive="show"
-      className="alert alert-danger"
-      enter={true}
-      exit={true}
-      in={true}
-      mountOnEnter={false}
-      onEnter={[Function]}
-      onEntered={[Function]}
-      onEntering={[Function]}
-      onExit={[Function]}
-      onExited={[Function]}
-      onExiting={[Function]}
-      role="alert"
-      tag="div"
-      timeout={0}
-      unmountOnExit={true}
+    <Button
+      className="streaming-skipped-item pt-3 pb-0 w-100 streaming-skipped-item--warn"
+      color="secondary"
+      disabled={false}
+      onClick={[Function]}
+      tag="button"
     >
-      <Transition
-        appear={true}
-        enter={true}
-        exit={true}
-        in={true}
-        mountOnEnter={false}
-        onEnter={[Function]}
-        onEntered={[Function]}
-        onEntering={[Function]}
-        onExit={[Function]}
-        onExited={[Function]}
-        onExiting={[Function]}
-        timeout={0}
-        unmountOnExit={true}
+      <button
+        aria-label={null}
+        className="streaming-skipped-item pt-3 pb-0 w-100 streaming-skipped-item--warn btn btn-secondary"
+        disabled={false}
+        onClick={[Function]}
+        type="button"
       >
-        <div
-          className="alert alert-danger"
-          role="alert"
+        <h4
+          className="d-flex align-items-center mb-0 w-100"
         >
-          <h4
-            className="d-flex align-items-center mb-0"
-          >
-            <Memo(AlertCircleIcon)
-              className="icon-inline mr-2"
-            />
-            <span>
-              Search timed out
-            </span>
-          </h4>
-          <div
-            className="mt-2"
+          <Memo(AlertCircleIcon)
+            className="icon-inline mr-2 streaming-skipped-item__icon flex-shrink-0"
+          />
+          <span
+            className="flex-grow-1 text-left"
           >
             Search timed out
-          </div>
-        </div>
-      </Transition>
-    </Fade>
-  </Alert>
+          </span>
+          <Memo(ChevronLeftIcon)
+            className="icon-inline flex-shrink-0"
+          />
+        </h4>
+        <Collapse
+          appear={false}
+          enter={true}
+          exit={true}
+          in={false}
+          isOpen={false}
+          mountOnEnter={false}
+          onEnter={[Function]}
+          onEntered={[Function]}
+          onEntering={[Function]}
+          onExit={[Function]}
+          onExited={[Function]}
+          onExiting={[Function]}
+          tag="div"
+          timeout={350}
+          unmountOnExit={false}
+        >
+          <Transition
+            appear={false}
+            enter={true}
+            exit={true}
+            in={false}
+            mountOnEnter={false}
+            onEnter={[Function]}
+            onEntered={[Function]}
+            onEntering={[Function]}
+            onExit={[Function]}
+            onExited={[Function]}
+            onExiting={[Function]}
+            timeout={350}
+            unmountOnExit={false}
+          >
+            <div
+              className="collapse"
+              style={Object {}}
+            >
+              <Markdown
+                className="streaming-skipped-item__message mt-2 text-left"
+                dangerousInnerHTML="<p>Search timed out</p>
+"
+                history="[History]"
+              >
+                <div
+                  className="streaming-skipped-item__message mt-2 text-left markdown"
+                  dangerouslySetInnerHTML={
+                    Object {
+                      "__html": "<p>Search timed out</p>
+",
+                    }
+                  }
+                  onClick={[Function]}
+                />
+              </Markdown>
+            </div>
+          </Transition>
+        </Collapse>
+        <div
+          className="streaming-skipped-item__bottom-border-spacer mt-3"
+        />
+      </button>
+    </Button>
+  </SkippedMessage>
+  <SkippedMessage
+    history="[History]"
+    key="excluded-fork"
+    skipped={
+      Object {
+        "message": "10k forked repositories excluded",
+        "reason": "excluded-fork",
+        "severity": "info",
+        "suggested": Object {
+          "queryExpression": "forked:yes",
+          "title": "forked:yes",
+        },
+        "title": "10k forked repositories excluded",
+      }
+    }
+    startOpen={false}
+  >
+    <Button
+      className="streaming-skipped-item pt-3 pb-0 w-100"
+      color="secondary"
+      disabled={false}
+      onClick={[Function]}
+      tag="button"
+    >
+      <button
+        aria-label={null}
+        className="streaming-skipped-item pt-3 pb-0 w-100 btn btn-secondary"
+        disabled={false}
+        onClick={[Function]}
+        type="button"
+      >
+        <h4
+          className="d-flex align-items-center mb-0 w-100"
+        >
+          <Memo(InformationOutlineIcon)
+            className="icon-inline mr-2 streaming-skipped-item__icon flex-shrink-0"
+          />
+          <span
+            className="flex-grow-1 text-left"
+          >
+            10k forked repositories excluded
+          </span>
+          <Memo(ChevronLeftIcon)
+            className="icon-inline flex-shrink-0"
+          />
+        </h4>
+        <Collapse
+          appear={false}
+          enter={true}
+          exit={true}
+          in={false}
+          isOpen={false}
+          mountOnEnter={false}
+          onEnter={[Function]}
+          onEntered={[Function]}
+          onEntering={[Function]}
+          onExit={[Function]}
+          onExited={[Function]}
+          onExiting={[Function]}
+          tag="div"
+          timeout={350}
+          unmountOnExit={false}
+        >
+          <Transition
+            appear={false}
+            enter={true}
+            exit={true}
+            in={false}
+            mountOnEnter={false}
+            onEnter={[Function]}
+            onEntered={[Function]}
+            onEntering={[Function]}
+            onExit={[Function]}
+            onExited={[Function]}
+            onExiting={[Function]}
+            timeout={350}
+            unmountOnExit={false}
+          >
+            <div
+              className="collapse"
+              style={Object {}}
+            >
+              <Markdown
+                className="streaming-skipped-item__message mt-2 text-left"
+                dangerousInnerHTML="<p>10k forked repositories excluded</p>
+"
+                history="[History]"
+              >
+                <div
+                  className="streaming-skipped-item__message mt-2 text-left markdown"
+                  dangerouslySetInnerHTML={
+                    Object {
+                      "__html": "<p>10k forked repositories excluded</p>
+",
+                    }
+                  }
+                  onClick={[Function]}
+                />
+              </Markdown>
+            </div>
+          </Transition>
+        </Collapse>
+        <div
+          className="streaming-skipped-item__bottom-border-spacer mt-3"
+        />
+      </button>
+    </Button>
+  </SkippedMessage>
+  <SkippedMessage
+    history="[History]"
+    key="excluded-archive"
+    skipped={
+      Object {
+        "message": "60k archived repositories excluded",
+        "reason": "excluded-archive",
+        "severity": "info",
+        "suggested": Object {
+          "queryExpression": "archived:yes",
+          "title": "archived:yes",
+        },
+        "title": "60k archived repositories excluded",
+      }
+    }
+    startOpen={false}
+  >
+    <Button
+      className="streaming-skipped-item pt-3 pb-0 w-100"
+      color="secondary"
+      disabled={false}
+      onClick={[Function]}
+      tag="button"
+    >
+      <button
+        aria-label={null}
+        className="streaming-skipped-item pt-3 pb-0 w-100 btn btn-secondary"
+        disabled={false}
+        onClick={[Function]}
+        type="button"
+      >
+        <h4
+          className="d-flex align-items-center mb-0 w-100"
+        >
+          <Memo(InformationOutlineIcon)
+            className="icon-inline mr-2 streaming-skipped-item__icon flex-shrink-0"
+          />
+          <span
+            className="flex-grow-1 text-left"
+          >
+            60k archived repositories excluded
+          </span>
+          <Memo(ChevronLeftIcon)
+            className="icon-inline flex-shrink-0"
+          />
+        </h4>
+        <Collapse
+          appear={false}
+          enter={true}
+          exit={true}
+          in={false}
+          isOpen={false}
+          mountOnEnter={false}
+          onEnter={[Function]}
+          onEntered={[Function]}
+          onEntering={[Function]}
+          onExit={[Function]}
+          onExited={[Function]}
+          onExiting={[Function]}
+          tag="div"
+          timeout={350}
+          unmountOnExit={false}
+        >
+          <Transition
+            appear={false}
+            enter={true}
+            exit={true}
+            in={false}
+            mountOnEnter={false}
+            onEnter={[Function]}
+            onEntered={[Function]}
+            onEntering={[Function]}
+            onExit={[Function]}
+            onExited={[Function]}
+            onExiting={[Function]}
+            timeout={350}
+            unmountOnExit={false}
+          >
+            <div
+              className="collapse"
+              style={Object {}}
+            >
+              <Markdown
+                className="streaming-skipped-item__message mt-2 text-left"
+                dangerousInnerHTML="<p>60k archived repositories excluded</p>
+"
+                history="[History]"
+              >
+                <div
+                  className="streaming-skipped-item__message mt-2 text-left markdown"
+                  dangerouslySetInnerHTML={
+                    Object {
+                      "__html": "<p>60k archived repositories excluded</p>
+",
+                    }
+                  }
+                  onClick={[Function]}
+                />
+              </Markdown>
+            </div>
+          </Transition>
+        </Collapse>
+        <div
+          className="streaming-skipped-item__bottom-border-spacer mt-3"
+        />
+      </button>
+    </Button>
+  </SkippedMessage>
+  <SkippedMessage
+    history="[History]"
+    key="excluded-archive"
+    skipped={
+      Object {
+        "message": "By default we exclude archived repositories. Include them with \`archived:yes\` in your query.",
+        "reason": "excluded-archive",
+        "severity": "info",
+        "suggested": Object {
+          "queryExpression": "archived:yes",
+          "title": "include archived",
+        },
+        "title": "1 archived",
+      }
+    }
+    startOpen={false}
+  >
+    <Button
+      className="streaming-skipped-item pt-3 pb-0 w-100"
+      color="secondary"
+      disabled={false}
+      onClick={[Function]}
+      tag="button"
+    >
+      <button
+        aria-label={null}
+        className="streaming-skipped-item pt-3 pb-0 w-100 btn btn-secondary"
+        disabled={false}
+        onClick={[Function]}
+        type="button"
+      >
+        <h4
+          className="d-flex align-items-center mb-0 w-100"
+        >
+          <Memo(InformationOutlineIcon)
+            className="icon-inline mr-2 streaming-skipped-item__icon flex-shrink-0"
+          />
+          <span
+            className="flex-grow-1 text-left"
+          >
+            1 archived
+          </span>
+          <Memo(ChevronLeftIcon)
+            className="icon-inline flex-shrink-0"
+          />
+        </h4>
+        <Collapse
+          appear={false}
+          enter={true}
+          exit={true}
+          in={false}
+          isOpen={false}
+          mountOnEnter={false}
+          onEnter={[Function]}
+          onEntered={[Function]}
+          onEntering={[Function]}
+          onExit={[Function]}
+          onExited={[Function]}
+          onExiting={[Function]}
+          tag="div"
+          timeout={350}
+          unmountOnExit={false}
+        >
+          <Transition
+            appear={false}
+            enter={true}
+            exit={true}
+            in={false}
+            mountOnEnter={false}
+            onEnter={[Function]}
+            onEntered={[Function]}
+            onEntering={[Function]}
+            onExit={[Function]}
+            onExited={[Function]}
+            onExiting={[Function]}
+            timeout={350}
+            unmountOnExit={false}
+          >
+            <div
+              className="collapse"
+              style={Object {}}
+            >
+              <Markdown
+                className="streaming-skipped-item__message mt-2 text-left"
+                dangerousInnerHTML="<p>By default we exclude archived repositories. Include them with <code>archived:yes</code> in your query.</p>
+"
+                history="[History]"
+              >
+                <div
+                  className="streaming-skipped-item__message mt-2 text-left markdown"
+                  dangerouslySetInnerHTML={
+                    Object {
+                      "__html": "<p>By default we exclude archived repositories. Include them with <code>archived:yes</code> in your query.</p>
+",
+                    }
+                  }
+                  onClick={[Function]}
+                />
+              </Markdown>
+            </div>
+          </Transition>
+        </Collapse>
+        <div
+          className="streaming-skipped-item__bottom-border-spacer mt-3"
+        />
+      </button>
+    </Button>
+  </SkippedMessage>
   <Form
+    className="pb-3 px-3"
     onSubmit={[Function]}
     tag="form"
   >
     <form
-      className=""
+      className="pb-3 px-3"
       onSubmit={[Function]}
     >
       <div
-        className="mb-2"
+        className="mb-2 mt-3"
       >
         Search again:
       </div>
@@ -321,6 +617,57 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
         <div
           className="form-check"
         >
+          <Label
+            check={true}
+            className="mb-1 d-block"
+            key="timeout:2m"
+            tag="label"
+            widths={
+              Array [
+                "xs",
+                "sm",
+                "md",
+                "lg",
+                "xl",
+              ]
+            }
+          >
+            <label
+              className="mb-1 d-block form-check-label"
+            >
+              <Input
+                onChange={[Function]}
+                type="checkbox"
+                value="timeout:2m"
+              >
+                <input
+                  className="form-check-input"
+                  onChange={[Function]}
+                  type="checkbox"
+                  value="timeout:2m"
+                />
+              </Input>
+               
+              timeout:2m
+               (
+              <SyntaxHighlightedSearchQuery
+                query="timeout:2m"
+              >
+                <span
+                  className="text-monospace search-query-link"
+                >
+                  <span
+                    className="search-filter-keyword"
+                  >
+                    timeout
+                    :
+                  </span>
+                  2m
+                </span>
+              </SyntaxHighlightedSearchQuery>
+              )
+            </label>
+          </Label>
           <Label
             check={true}
             className="mb-1 d-block"
@@ -420,7 +767,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
           <Label
             check={true}
             className="mb-1 d-block"
-            key="timeout:2m"
+            key="archived:yes"
             tag="label"
             widths={
               Array [
@@ -438,20 +785,20 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
               <Input
                 onChange={[Function]}
                 type="checkbox"
-                value="timeout:2m"
+                value="archived:yes"
               >
                 <input
                   className="form-check-input"
                   onChange={[Function]}
                   type="checkbox"
-                  value="timeout:2m"
+                  value="archived:yes"
                 />
               </Input>
                
-              timeout:2m
+              include archived
                (
               <SyntaxHighlightedSearchQuery
-                query="timeout:2m"
+                query="archived:yes"
               >
                 <span
                   className="text-monospace search-query-link"
@@ -459,10 +806,10 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
                   <span
                     className="search-filter-keyword"
                   >
-                    timeout
+                    archived
                     :
                   </span>
-                  2m
+                  yes
                 </span>
               </SyntaxHighlightedSearchQuery>
               )

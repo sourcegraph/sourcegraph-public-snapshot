@@ -54,16 +54,12 @@ const defaultProps: SearchResultsListProps = {
     caseSensitive: false,
     setCaseSensitivity: sinon.spy(),
 
-    interactiveSearchMode: false,
-    filtersInQuery: {},
-    toggleSearchMode: sinon.fake(),
-    onFiltersInQueryChange: sinon.fake(),
-    splitSearchModes: false,
     versionContext: undefined,
 
-    navbarSearchQueryState: { query: '', cursorPosition: 0 },
+    navbarSearchQueryState: { query: '' },
 
     shouldDisplayPerformanceWarning: () => of(false),
+    enableCodeMonitoring: false,
 }
 
 const { add } = storiesOf('web/search/results/SearchResultsList', module).addParameters({

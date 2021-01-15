@@ -4,14 +4,18 @@ import (
 	"context"
 	"crypto/md5"
 	"encoding/binary"
+	"fmt"
 	"reflect"
 	"sort"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 
+	searchzoekt "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -55,6 +59,9 @@ func TestSearchFilesInRepos(t *testing.T) {
 		case "foo/timedout":
 			return nil, false, context.DeadlineExceeded
 		case "foo/no-rev":
+			// TODO we do not specify a rev when searching "foo/no-rev", so it
+			// is treated as an empty repository. We need to test the fatal
+			// case of trying to search a revision which doesn't exist.
 			return nil, false, &gitserver.RevisionNotFoundError{Repo: repoName, Spec: "missing"}
 		default:
 			return nil, false, errors.New("Unexpected repo")
@@ -62,39 +69,44 @@ func TestSearchFilesInRepos(t *testing.T) {
 	}
 	defer func() { mockSearchFilesInRepo = nil }()
 
-	zoekt := &searchbackend.Zoekt{Client: &fakeSearcher{}}
+	zoekt := &searchbackend.Zoekt{Client: &searchzoekt.FakeSearcher{}}
 
 	q, err := query.ParseAndCheck("foo")
 	if err != nil {
 		t.Fatal(err)
 	}
+	repoRevs := makeRepositoryRevisions("foo/one", "foo/two", "foo/empty", "foo/cloning", "foo/missing", "foo/missing-db", "foo/timedout", "foo/no-rev")
 	args := &search.TextParameters{
 		PatternInfo: &search.TextPatternInfo{
 			FileMatchLimit: defaultMaxSearchResults,
 			Pattern:        "foo",
 		},
-		RepoPromise:  (&search.Promise{}).Resolve(makeRepositoryRevisions("foo/one", "foo/two", "foo/empty", "foo/cloning", "foo/missing", "foo/missing-db", "foo/timedout", "foo/no-rev")),
+		RepoPromise:  (&search.Promise{}).Resolve(repoRevs),
 		Query:        q,
 		Zoekt:        zoekt,
 		SearcherURLs: endpoint.Static("test"),
 	}
-	results, common, err := searchFilesInRepos(context.Background(), args)
+	results, common, err := searchFilesInRepos(context.Background(), args, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(results) != 2 {
 		t.Errorf("expected two results, got %d", len(results))
 	}
-	if v := toRepoNames(common.cloning); !reflect.DeepEqual(v, []api.RepoName{"foo/cloning"}) {
-		t.Errorf("unexpected cloning: %v", v)
+	repoNames := map[api.RepoID]string{}
+	for _, rr := range repoRevs {
+		repoNames[rr.Repo.ID] = string(rr.Repo.Name)
 	}
-	sort.Slice(common.missing, func(i, j int) bool { return common.missing[i].Name < common.missing[j].Name }) // to make deterministic
-	if v := toRepoNames(common.missing); !reflect.DeepEqual(v, []api.RepoName{"foo/missing", "foo/missing-db"}) {
-		t.Errorf("unexpected missing: %v", v)
-	}
-	if v := toRepoNames(common.timedout); !reflect.DeepEqual(v, []api.RepoName{"foo/timedout"}) {
-		t.Errorf("unexpected timedout: %v", v)
-	}
+	assertReposStatus(t, repoNames, common.status, map[string]search.RepoStatus{
+		"foo/cloning":    search.RepoStatusCloning,
+		"foo/empty":      search.RepoStatusSearched,
+		"foo/missing":    search.RepoStatusMissing,
+		"foo/missing-db": search.RepoStatusMissing,
+		"foo/no-rev":     0,
+		"foo/one":        search.RepoStatusSearched,
+		"foo/timedout":   search.RepoStatusTimedout,
+		"foo/two":        search.RepoStatusSearched,
+	})
 
 	// If we specify a rev and it isn't found, we fail the whole search since
 	// that should be checked earlier.
@@ -109,10 +121,123 @@ func TestSearchFilesInRepos(t *testing.T) {
 		SearcherURLs: endpoint.Static("test"),
 	}
 
-	_, _, err = searchFilesInRepos(context.Background(), args)
+	_, _, err = searchFilesInRepos(context.Background(), args, nil)
 	if !gitserver.IsRevisionNotFound(errors.Cause(err)) {
 		t.Fatalf("searching non-existent rev expected to fail with RevisionNotFoundError got: %v", err)
 	}
+}
+
+func TestSearchFilesInReposStream(t *testing.T) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo *types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
+		repoName := repo.Name
+		switch repoName {
+		case "foo/one":
+			return []*FileMatchResolver{
+				{
+					uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
+				},
+			}, false, nil
+		case "foo/two":
+			return []*FileMatchResolver{
+				{
+					uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
+				},
+			}, false, nil
+		case "foo/three":
+			return []*FileMatchResolver{
+				{
+					uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
+				},
+			}, false, nil
+		default:
+			return nil, false, errors.New("Unexpected repo")
+		}
+	}
+	defer func() { mockSearchFilesInRepo = nil }()
+
+	zoekt := &searchbackend.Zoekt{Client: &searchzoekt.FakeSearcher{}}
+
+	q, err := query.ParseAndCheck("foo")
+	if err != nil {
+		t.Fatal(err)
+	}
+	args := &search.TextParameters{
+		PatternInfo: &search.TextPatternInfo{
+			FileMatchLimit: defaultMaxSearchResults,
+			Pattern:        "foo",
+		},
+		RepoPromise:  (&search.Promise{}).Resolve(makeRepositoryRevisions("foo/one", "foo/two", "foo/three")),
+		Query:        q,
+		Zoekt:        zoekt,
+		SearcherURLs: endpoint.Static("test"),
+	}
+
+	resultChannel := make(chan []SearchResultResolver)
+	var resultsFromChannel []*FileMatchResolver
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		var ok bool
+		var resultChunk []SearchResultResolver
+		for {
+			resultChunk, ok = <-resultChannel
+			if !ok {
+				break
+			}
+			for _, result := range resultChunk {
+				fm, _ := result.ToFileMatch()
+				resultsFromChannel = append(resultsFromChannel, fm)
+			}
+		}
+	}()
+
+	results, _, err := searchFilesInRepos(context.Background(), args, resultChannel)
+	if err != nil {
+		t.Fatal(err)
+	}
+	close(resultChannel)
+	wg.Wait()
+
+	if len(results) != 3 {
+		t.Errorf("expected three results, got %d", len(results))
+	}
+
+	// For streaming we cannot guarantee the order. Hence we use a sets to compare
+	// the slices.
+	mapForSlice := func(fms []*FileMatchResolver) map[*FileMatchResolver]struct{} {
+		m := make(map[*FileMatchResolver]struct{})
+		for _, fm := range fms {
+			m[fm] = struct{}{}
+		}
+		return m
+	}
+	if diff := cmp.Diff(mapForSlice(resultsFromChannel), mapForSlice(results)); diff != "" {
+		t.Errorf(diff)
+	}
+}
+
+func assertReposStatus(t *testing.T, repoNames map[api.RepoID]string, got search.RepoStatusMap, want map[string]search.RepoStatus) {
+	t.Helper()
+	gotM := map[string]search.RepoStatus{}
+	got.Iterate(func(id api.RepoID, mask search.RepoStatus) {
+		name := repoNames[id]
+		if name == "" {
+			name = fmt.Sprintf("UNKNOWNREPO{ID=%d}", id)
+		}
+		gotM[name] = mask
+	})
+	if diff := cmp.Diff(want, gotM); diff != "" {
+		t.Errorf("RepoStatusMap mismatch (-want +got):\n%s", diff)
+	}
+}
+
+func mkStatusMap(m map[string]search.RepoStatus) search.RepoStatusMap {
+	var rsm search.RepoStatusMap
+	for name, status := range m {
+		rsm.Update(mkRepos(name)[0].ID, status)
+	}
+	return rsm
 }
 
 func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
@@ -137,7 +262,7 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 	}})
 	defer conf.Mock(nil)
 
-	zoekt := &searchbackend.Zoekt{Client: &fakeSearcher{}}
+	zoekt := &searchbackend.Zoekt{Client: &searchzoekt.FakeSearcher{}}
 
 	q, err := query.ParseAndCheck("foo")
 	if err != nil {
@@ -157,7 +282,7 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 	repos[0].ListRefs = func(context.Context, api.RepoName) ([]git.Ref, error) {
 		return []git.Ref{{Name: "refs/heads/branch3"}, {Name: "refs/heads/branch4"}}, nil
 	}
-	results, _, err := searchFilesInRepos(context.Background(), args)
+	results, _, err := searchFilesInRepos(context.Background(), args, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

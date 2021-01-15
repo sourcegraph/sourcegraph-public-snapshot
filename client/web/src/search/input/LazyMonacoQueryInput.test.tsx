@@ -16,7 +16,6 @@ describe('PlainQueryInput', () => {
                         location={history.location}
                         queryState={{
                             query: '',
-                            cursorPosition: 0,
                         }}
                         patternType={SearchPatternType.regexp}
                         setPatternType={noop}
@@ -45,7 +44,6 @@ describe('PlainQueryInput', () => {
                         location={history.location}
                         queryState={{
                             query: 'repo:jsonrpc2 file:async.go asyncHandler',
-                            cursorPosition: 0,
                         }}
                         patternType={SearchPatternType.regexp}
                         setPatternType={noop}

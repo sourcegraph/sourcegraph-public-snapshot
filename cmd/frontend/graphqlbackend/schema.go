@@ -573,6 +573,11 @@ type Mutation {
     updateRepositoryIndexConfiguration(repository: ID!, configuration: String!): EmptyResponse
 
     """
+    Queues the index jobs for a repository for execution.
+    """
+    queueAutoIndexJobForRepo(repository: ID!): EmptyResponse
+
+    """
     Set the permissions of a repository (i.e., which users may view it on Sourcegraph). This
     operation overwrites the previous permissions for the repository.
     """
@@ -841,6 +846,11 @@ type Mutation {
         """
         id: ID!
     ): EmptyResponse!
+
+    """
+    Triggers a test email for a code monitor action.
+    """
+    triggerTestEmailAction(namespace: ID!, description: String!, email: MonitorEmailInput!): EmptyResponse!
 }
 
 """
@@ -954,6 +964,10 @@ enum ChangesetSpecOperation {
     Internal operation to get around slow code host updates.
     """
     SLEEP
+    """
+    The changeset is removed from some of the associated campaigns.
+    """
+    DETACH
 }
 
 """
@@ -1405,6 +1419,57 @@ type VisibleChangesetApplyPreview {
 }
 
 """
+Aggregated stats on nodes in this connection.
+"""
+type ChangesetApplyPreviewConnectionStats {
+    """
+    Push a new commit to the code host.
+    """
+    push: Int!
+    """
+    Update the existing changeset on the codehost. This is purely the changeset resource on the code host,
+    not the git commit. For updates to the commit, see 'PUSH'.
+    """
+    update: Int!
+    """
+    Move the existing changeset out of being a draft.
+    """
+    undraft: Int!
+    """
+    Publish a changeset to the codehost.
+    """
+    publish: Int!
+    """
+    Publish a changeset to the codehost as a draft changeset. (Only on supported code hosts).
+    """
+    publishDraft: Int!
+    """
+    Sync the changeset with the current state on the codehost.
+    """
+    sync: Int!
+    """
+    Import an existing changeset from the code host with the ExternalID from the spec.
+    """
+    import: Int!
+    """
+    Close the changeset on the codehost.
+    """
+    close: Int!
+    """
+    Reopen the changeset on the codehost.
+    """
+    reopen: Int!
+    """
+    Internal operation to get around slow code host updates.
+    """
+    sleep: Int!
+    """
+    The changeset is removed from some of the associated campaigns.
+    """
+    detach: Int!
+}
+
+"""
 A list of preview entries.
 """
 type ChangesetApplyPreviewConnection {
@@ -1422,6 +1487,11 @@ type ChangesetApplyPreviewConnection {
     A list of preview entries.
     """
     nodes: [ChangesetApplyPreview!]!
+
+    """
+    Stats on the elements in this connnection. Does not respect pagination parameters.
+    """
+    stats: ChangesetApplyPreviewConnectionStats!
 }
 
 """
@@ -1484,6 +1554,10 @@ type CampaignSpec implements Node {
         Opaque pagination cursor.
         """
         after: String
+        """
+        Search for changesets matching this query. Queries may include quoted substrings to match phrases, and words may be preceded by - to negate them.
+        """
+        search: String
     ): ChangesetApplyPreviewConnection!
 
     """
@@ -4037,6 +4111,10 @@ type ExternalService implements Node {
     """
     namespace: ID
     """
+    The number of repos synced by the external service.
+    """
+    repoCount: Int!
+    """
     An optional URL that will be populated when webhooks have been configured for the external service.
     """
     webhookURL: String
@@ -4048,7 +4126,6 @@ type ExternalService implements Node {
     not break the API and stay backwards compatible.
     """
     warning: String
-
     """
     External services are synced with code hosts in the background. This optional field
     will contain any errors that occured during the most recent completed sync.
@@ -4459,10 +4536,16 @@ type ExternalLink {
     """
     url: String!
     """
+    The kind of external service, such as "GITHUB", or null if unknown/unrecognized. This is used solely for
+    displaying an icon that represents the service.
+    """
+    serviceKind: ExternalServiceKind
+
+    """
     The type of external service, such as "github", or null if unknown/unrecognized. This is used solely for
     displaying an icon that represents the service.
     """
-    serviceType: String
+    serviceType: String @deprecated(reason: "use name serviceKind instead")
 }
 
 """

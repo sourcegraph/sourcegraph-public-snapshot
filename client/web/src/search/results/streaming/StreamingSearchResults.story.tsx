@@ -48,7 +48,7 @@ const defaultProps: StreamingSearchResultsProps = {
     authenticatedUser: null,
     isLightTheme: true,
 
-    navbarSearchQueryState: { query: '', cursorPosition: 0 },
+    navbarSearchQueryState: { query: '' },
 
     settingsCascade: {
         subjects: null,
@@ -59,6 +59,7 @@ const defaultProps: StreamingSearchResultsProps = {
     streamSearch: () => of(streamingSearchResult),
 
     fetchHighlightedFileLineRanges: () => of(HIGHLIGHTED_FILE_LINES_LONG),
+    enableCodeMonitoring: false,
 }
 
 const { add } = storiesOf('web/search/results/streaming/StreamingSearchResults', module).addParameters({

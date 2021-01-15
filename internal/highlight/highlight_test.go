@@ -55,6 +55,29 @@ func TestPreSpansToTable_Complex(t *testing.T) {
 	}
 }
 
+// Related issue: https://github.com/sourcegraph/sourcegraph/issues/10468
+func TestSpansWithNewlinesAtTheStart(t *testing.T) {
+	// The problematic <span> with newlines at the start is in the 3rd line of the input
+	input := `<pre style="background-color:#ffffff;">
+<span style="color:#657b83;">     (</span><span style="color:#839496;">&quot;</span><span style="color:#dc322f;">\\</span><span style="color:#2aa198;">bGoogle:</span><span style="color:#dc322f;">\\</span><span style="color:#2aa198;">([^
+</span><span style="color:#2aa198;">
+]+</span><span style="color:#dc322f;">\\</span><span style="color:#2aa198;">)</span><span style="color:#839496;">&quot; </span><span style="color:#6c71c4;">0 </span><span style="color:#b58900;">t
+</span></pre>
+`
+
+	want := `<table><tr><td class="line" data-line="1"></td><td class="code"><div><span style="color:#657b83;">     (</span><span style="color:#839496;">&#34;</span><span style="color:#dc322f;">\\</span><span style="color:#2aa198;">bGoogle:</span><span style="color:#dc322f;">\\</span><span style="color:#2aa198;">([^
+</span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span style="color:#2aa198;">
+]+</span><span style="color:#dc322f;">\\</span><span style="color:#2aa198;">)</span><span style="color:#839496;">&#34; </span><span style="color:#6c71c4;">0 </span><span style="color:#b58900;">t
+</span></div></td></tr><tr><td class="line" data-line="3"></td><td class="code"><div></div></td></tr></table>`
+	got, err := preSpansToTable(input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != want {
+		t.Fatalf("\ngot:\n%s\nwant:\n%s\n", got, want)
+	}
+}
+
 func TestGeneratePlainTable(t *testing.T) {
 	input := `line 1
 line 2

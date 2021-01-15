@@ -45,15 +45,21 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
     codeMonitor,
     showDeleteButton,
     deleteCodeMonitor,
+    location,
 }) => {
     const LOADING = 'loading' as const
+
+    const triggerQueryFromURL = useMemo(
+        () => (codeMonitor ? undefined : new URLSearchParams(location.search).get('trigger-query')),
+        [codeMonitor, location.search]
+    )
 
     const [currentCodeMonitorState, setCodeMonitor] = useState<CodeMonitorFields>(
         codeMonitor ?? {
             id: '',
             description: '',
             enabled: true,
-            trigger: { id: '', query: '' },
+            trigger: { id: '', query: triggerQueryFromURL ?? '' },
             actions: {
                 nodes: [],
             },
@@ -137,7 +143,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
     return (
         <>
             <Form className="my-4 pb-5 test-monitor-form" onSubmit={requestOnSubmit}>
-                <div className="flex mb-4">
+                <div className="d-flex flex-column mb-4">
                     Name
                     <div>
                         <input
@@ -154,7 +160,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                     </div>
                     <small className="text-muted">
                         Give it a short, descriptive name to reference events on Sourcegraph and in notifications. Do
-                        not include:{' '}
+                        not include{' '}
                         <a
                             href="https://docs.sourcegraph.com/code_monitoring/explanations/best_practices#do-not-include-confidential-information-in-monitor-names"
                             target="_blank"
@@ -178,17 +184,18 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                     </small>
                 </div>
                 <hr className="code-monitor-form__horizontal-rule" />
-                <div className="create-monitor-page__triggers mb-4">
+                <div className="code-monitor-form__triggers mb-4">
                     <FormTriggerArea
                         query={currentCodeMonitorState.trigger.query}
                         onQueryChange={onQueryChange}
                         triggerCompleted={formCompletion.triggerCompleted}
                         setTriggerCompleted={setTriggerCompleted}
+                        startExpanded={!!triggerQueryFromURL}
                     />
                 </div>
                 <div
                     className={classnames({
-                        'create-monitor-page__actions--disabled': !formCompletion.triggerCompleted,
+                        'code-monitor-form__actions--disabled': !formCompletion.triggerCompleted,
                     })}
                 >
                     <FormActionArea

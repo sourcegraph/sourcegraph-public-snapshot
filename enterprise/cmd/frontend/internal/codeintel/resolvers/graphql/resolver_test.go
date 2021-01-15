@@ -18,6 +18,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
+func init() {
+	autoIndexingEnabled = func() bool { return true }
+}
+
 func TestDeleteLSIFUpload(t *testing.T) {
 	t.Cleanup(func() {
 		db.Mocks.Users.GetByCurrentAuthUser = nil

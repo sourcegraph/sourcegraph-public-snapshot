@@ -33,7 +33,46 @@
 
         &-popover {
             width: 20rem;
-            padding: 0.5rem;
+            padding: 0;
+        }
+    }
+}
+
+.streaming-skipped-item {
+    background: transparent !important;
+    border: none !important;
+
+    &:disabled {
+        opacity: 1;
+    }
+
+    &__icon {
+        color: var(--primary);
+    }
+
+    &__message {
+        $border-size: 2px;
+
+        border-left: $border-size solid var(--primary);
+
+        // Border should appear directly under the width of the icon
+        // Halfway past the icon, minus half the border size
+        margin-left: calc(#{$icon-inline-size} / 2 - #{$border-size} / 2);
+        // Halfway past the icon, minus half the border size, plus the icon's right margin
+        padding-left: calc(#{$icon-inline-size} / 2 - #{$border-size} / 2 + 0.5rem);
+    }
+
+    &__bottom-border-spacer {
+        border-bottom: 1px solid var(--border-color-2);
+    }
+
+    &--warn {
+        .streaming-skipped-item__icon {
+            color: var(--danger);
+        }
+
+        .streaming-skipped-item__message {
+            border-left-color: var(--danger);
         }
     }
 }

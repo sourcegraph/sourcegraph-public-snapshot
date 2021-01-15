@@ -331,17 +331,6 @@ Referenced by:
 
 ```
 
-# Table "public.codeintel_schema_migrations"
-```
- Column  |  Type   | Modifiers 
----------+---------+-----------
- version | bigint  | not null
- dirty   | boolean | not null
-Indexes:
-    "codeintel_schema_migrations_pkey" PRIMARY KEY, btree (version)
-
-```
-
 # Table "public.critical_and_site_config"
 ```
    Column   |           Type           |                               Modifiers                               
@@ -574,67 +563,6 @@ Indexes:
 
 ```
 
-# Table "public.lsif_data_definitions"
-```
-   Column   |  Type   | Modifiers 
-------------+---------+-----------
- dump_id    | integer | not null
- scheme     | text    | not null
- identifier | text    | not null
- data       | bytea   | 
-Indexes:
-    "lsif_data_definitions_pkey" PRIMARY KEY, btree (dump_id, scheme, identifier)
-
-```
-
-# Table "public.lsif_data_documents"
-```
- Column  |  Type   | Modifiers 
----------+---------+-----------
- dump_id | integer | not null
- path    | text    | not null
- data    | bytea   | 
-Indexes:
-    "lsif_data_documents_pkey" PRIMARY KEY, btree (dump_id, path)
-
-```
-
-# Table "public.lsif_data_metadata"
-```
-      Column       |  Type   | Modifiers 
--------------------+---------+-----------
- dump_id           | integer | not null
- num_result_chunks | integer | 
-Indexes:
-    "lsif_data_metadata_pkey" PRIMARY KEY, btree (dump_id)
-
-```
-
-# Table "public.lsif_data_references"
-```
-   Column   |  Type   | Modifiers 
-------------+---------+-----------
- dump_id    | integer | not null
- scheme     | text    | not null
- identifier | text    | not null
- data       | bytea   | 
-Indexes:
-    "lsif_data_references_pkey" PRIMARY KEY, btree (dump_id, scheme, identifier)
-
-```
-
-# Table "public.lsif_data_result_chunks"
-```
- Column  |  Type   | Modifiers 
----------+---------+-----------
- dump_id | integer | not null
- idx     | integer | not null
- data    | bytea   | 
-Indexes:
-    "lsif_data_result_chunks_pkey" PRIMARY KEY, btree (dump_id, idx)
-
-```
-
 # Table "public.lsif_dirty_repositories"
 ```
     Column     |  Type   | Modifiers 
@@ -646,6 +574,12 @@ Indexes:
     "lsif_dirty_repositories_pkey" PRIMARY KEY, btree (repository_id)
 
 ```
+
+Stores whether or not the nearest upload data for a repository is out of date (when update_token > dirty_token).
+
+**dirty_token**: Set to the value of update_token visible to the transaction that updates the commit graph. Updates of dirty_token during this time will cause a second update.
+
+**update_token**: This value is incremented on each request to update the commit graph for the repository.
 
 # Table "public.lsif_index_configuration"
 ```
@@ -661,6 +595,10 @@ Foreign-key constraints:
     "lsif_index_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
 
 ```
+
+Stores the configuration used for code intel index jobs for a repository.
+
+**data**: The raw user-supplied [configuration](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.23/-/blob/enterprise/internal/codeintel/autoindex/config/types.go#L3:6) (encoded in JSONC).
 
 # Table "public.lsif_indexable_repositories"
 ```
@@ -678,6 +616,18 @@ Indexes:
     "lsif_indexable_repositories_repository_id_key" UNIQUE CONSTRAINT, btree (repository_id)
 
 ```
+
+Stores the number of code intel events for repositories. Used for auto-index scheduling heursitics Sourcegraph Cloud.
+
+**enabled**: **Column unused.**
+
+**last_index_enqueued_at**: The last time an index for the repository was enqueued (for basic rate limiting).
+
+**last_updated_at**: The last time the event counts were updated for this repository.
+
+**precise_count**: The number of precise code intel events for the repository in the past week.
+
+**search_count**: The number of search-based code intel events for the repository in the past week.
 
 # Table "public.lsif_indexes"
 ```
@@ -709,6 +659,26 @@ Check constraints:
 
 ```
 
+Stores metadata about a code intel index job.
+
+**commit**: A 40-char revhash. Note that this commit may not be resolvable in the future.
+
+**docker_steps**: An array of pre-index [steps](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.23/-/blob/enterprise/internal/codeintel/stores/dbstore/docker_step.go#L9:6) to run.
+
+**execution_logs**: An array of [log entries](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.23/-/blob/internal/workerutil/store.go#L48:6) (encoded as JSON) from the most recent execution.
+
+**indexer**: The docker image used to run the index command (e.g. sourcegraph/lsif-go).
+
+**indexer_args**: The command run inside the indexer image to produce the index file (e.g. ['lsif-node', '-p', '.'])
+
+**local_steps**: A list of commands to run inside the indexer image prior to running the indexer command.
+
+**log_contents**: **Column deprecated in favor of execution_logs.**
+
+**outfile**: The path to the index file produced by the index command relative to the working directory.
+
+**root**: The working directory of the indexer image relative to the repository root.
+
 # Table "public.lsif_nearest_uploads"
 ```
     Column     |  Type   | Modifiers 
@@ -720,6 +690,12 @@ Indexes:
     "lsif_nearest_uploads_repository_id_commit_bytea" btree (repository_id, commit_bytea)
 
 ```
+
+Associates commits with the complete set of uploads visible from that commit. Every commit with upload data is present in this table.
+
+**commit_bytea**: A 40-char revhash. Note that this commit may not be resolvable in the future.
+
+**uploads**: Encodes an {upload_id => distance} map that includes an entry for every upload visible from the commit. There is always at least one entry with a distance of zero.
 
 # Table "public.lsif_nearest_uploads_links"
 ```
@@ -733,6 +709,14 @@ Indexes:
     "lsif_nearest_uploads_links_repository_id_commit_bytea" btree (repository_id, commit_bytea)
 
 ```
+
+Associates commits with the closest ancestor commit with usable upload data. Together, this table and lsif_nearest_uploads cover all commits with resolvable code intelligence.
+
+**ancestor_commit_bytea**: The 40-char revhash of the ancestor. Note that this commit may not be resolvable in the future.
+
+**commit_bytea**: A 40-char revhash. Note that this commit may not be resolvable in the future.
+
+**distance**: The distance bewteen the commits. Parent = 1, Grandparent = 2, etc.
 
 # Table "public.lsif_packages"
 ```
@@ -751,6 +735,16 @@ Foreign-key constraints:
 
 ```
 
+Associates an upload with the set of packages they provide within a given packages management scheme.
+
+**dump_id**: The identifier of the upload that provides the package.
+
+**name**: The package name.
+
+**scheme**: The (export) moniker scheme.
+
+**version**: The package version.
+
 # Table "public.lsif_references"
 ```
  Column  |  Type   |                          Modifiers                           
@@ -768,6 +762,18 @@ Foreign-key constraints:
     "lsif_references_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
 
 ```
+
+Associates an upload with the set of packages they require within a given packages management scheme.
+
+**dump_id**: The identifier of the upload that references the package.
+
+**filter**: A [bloom filter](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.23/-/blob/enterprise/internal/codeintel/bloomfilter/bloom_filter.go#L27:6) encoded as gzipped JSON. This bloom filter stores the set of identifiers imported from the package.
+
+**name**: The package name.
+
+**scheme**: The (import) moniker scheme.
+
+**version**: The package version.
 
 # Table "public.lsif_uploads"
 ```
@@ -802,6 +808,22 @@ Referenced by:
 
 ```
 
+Stores metadata about an LSIF index uploaded by a user.
+
+**commit**: A 40-char revhash. Note that this commit may not be resolvable in the future.
+
+**id**: Used as a logical foreign key with the (disjoint) codeintel database.
+
+**indexer**: The name of the indexer that produced the index file. If not supplied by the user it will be pulled from the index metadata.
+
+**num_parts**: The number of parts src-cli split the upload file into.
+
+**root**: The path for which the index can resolve code intelligence relative to the repository root.
+
+**upload_size**: The size of the index file (in bytes).
+
+**uploaded_parts**: The index of parts that have been successfully uploaded.
+
 # Table "public.lsif_uploads_visible_at_tip"
 ```
     Column     |  Type   | Modifiers 
@@ -812,6 +834,10 @@ Indexes:
     "lsif_uploads_visible_at_tip_repository_id_upload_id" btree (repository_id, upload_id)
 
 ```
+
+Associates a repository with the set of LSIF upload identifiers that can serve intelligence for the tip of the default branch.
+
+**upload_id**: The identifier of an upload visible at the tip of the default branch.
 
 # Table "public.names"
 ```

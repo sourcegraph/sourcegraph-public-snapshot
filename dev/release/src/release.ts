@@ -5,6 +5,7 @@ import {
     listIssues,
     getTrackingIssue,
     ensureReleaseTrackingIssue,
+    ensureUpgradeManagedTrackingIssue,
     ensurePatchReleaseIssue,
     createChangesets,
     CreatedChangeset,
@@ -27,6 +28,7 @@ export type StepID =
     | 'tracking:release-timeline'
     | 'tracking:release-issue'
     | 'tracking:patch-issue'
+    | 'tracking:release-managed-instances'
     // branch cut
     | 'changelog:cut'
     // release
@@ -148,6 +150,14 @@ const steps: Step[] = [
                     startDateTime: new Date(config.releaseDateTime).toISOString(),
                     endDateTime: addMinutes(new Date(config.releaseDateTime), 1).toISOString(),
                 },
+                {
+                    title: `Deploy Sourcegraph ${release.major}.${release.minor} to managed instances`,
+                    description: '(This is not an actual event to attend, just a calendar marker.)',
+                    anyoneCanAddSelf: true,
+                    attendees: [config.teamEmail],
+                    startDateTime: new Date(config.oneWorkingDayAfterRelease).toISOString(),
+                    endDateTime: addMinutes(new Date(config.oneWorkingDayAfterRelease), 1).toISOString(),
+                },
             ]
 
             for (const event of events) {
@@ -163,10 +173,10 @@ const steps: Step[] = [
             const {
                 releaseDateTime,
                 captainGitHubUsername,
+                oneWorkingDayAfterRelease,
                 oneWorkingDayBeforeRelease,
                 fourWorkingDaysBeforeRelease,
                 fiveWorkingDaysBeforeRelease,
-
                 captainSlackUsername,
                 slackAnnounceChannel,
                 dryRun,
@@ -178,6 +188,7 @@ const steps: Step[] = [
                 version: release,
                 assignees: [captainGitHubUsername],
                 releaseDateTime: new Date(releaseDateTime),
+                oneWorkingDayAfterRelease: new Date(oneWorkingDayAfterRelease),
                 oneWorkingDayBeforeRelease: new Date(oneWorkingDayBeforeRelease),
                 fourWorkingDaysBeforeRelease: new Date(fourWorkingDaysBeforeRelease),
                 fiveWorkingDaysBeforeRelease: new Date(fiveWorkingDaysBeforeRelease),
@@ -243,6 +254,25 @@ If you have changes that should go into this patch release, <${patchRequestTempl
                     slackAnnounceChannel
                 )
                 console.log(`Posted to Slack channel ${slackAnnounceChannel}`)
+            }
+        },
+    },
+    {
+        id: 'tracking:release-managed-instances',
+        description: 'Create a Github issue to track upgrade of managed instances MAJOR.MINOR release',
+        run: async config => {
+            const { captainGitHubUsername, oneWorkingDayAfterRelease, dryRun } = config
+            const { upcoming: release } = await releaseVersions(config)
+
+            // Create issue
+            const { url, created } = await ensureUpgradeManagedTrackingIssue({
+                version: release,
+                assignees: [captainGitHubUsername],
+                oneWorkingDayAfterRelease: new Date(oneWorkingDayAfterRelease),
+                dryRun: dryRun.trackingIssues || false,
+            })
+            if (url) {
+                console.log(created ? `Created tracking issue ${url}` : `Tracking issue already exists: ${url}`)
             }
         },
     },
@@ -603,7 +633,7 @@ Campaign: ${campaignURL}`,
             const githubClient = await getAuthenticatedGitHubClient()
 
             // Set up announcement message
-            const versionAnchor = release.format().replaceAll('.', '-')
+            const versionAnchor = release.format().replace(/\./g, '-')
             const campaignURL = campaigns.campaignURL(
                 campaigns.releaseTrackingCampaign(release.version, await campaigns.sourcegraphCLIConfig())
             )

@@ -17,7 +17,7 @@ func TestLSIFGoJobRecognizerCanIndex(t *testing.T) {
 		{paths: []string{"go.mod"}, expected: true},
 		{paths: []string{"a/go.mod"}, expected: true},
 		{paths: []string{"package.json"}, expected: false},
-		{paths: []string{"vendor/foo/bar/package.json"}, expected: false},
+		{paths: []string{"vendor/foo/bar/go.mod"}, expected: false},
 		{paths: []string{"foo/bar-go.mod"}, expected: false},
 	}
 

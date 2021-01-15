@@ -7,7 +7,6 @@ import {
     parseSearchURLQuery,
     parseSearchURLPatternType,
     PatternTypeProps,
-    InteractiveSearchProps,
     CaseSensitivityProps,
     parseSearchURL,
     resolveVersionContext,
@@ -26,7 +25,7 @@ import { ThemeProps } from '../../../../shared/src/theme'
 import { eventLogger, EventLogger } from '../../tracking/eventLogger'
 import { isSearchResults, submitSearch, toggleSearchFilter, getSearchTypeFromQuery, QueryState } from '../helpers'
 import { queryTelemetryData } from '../queryTelemetry'
-import { SearchResultsFilterBars, DynamicSearchFilter } from './SearchResultsFilterBars'
+import { DynamicSearchFilter, SearchResultsFilterBars } from './SearchResultsFilterBars'
 import { SearchResultsList } from './SearchResultsList'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { VersionContextProps } from '../../../../shared/src/search/util'
@@ -38,6 +37,7 @@ import { AuthenticatedUser } from '../../auth'
 import { SearchPatternType } from '../../../../shared/src/graphql-operations'
 import { shouldDisplayPerformanceWarning } from '../backend'
 import { VersionContextWarning } from './VersionContextWarning'
+import { CodeMonitoringProps } from '../../enterprise/code-monitoring'
 
 export interface SearchResultsProps
     extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI' | 'services'>,
@@ -47,8 +47,8 @@ export interface SearchResultsProps
         ThemeProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        InteractiveSearchProps,
-        VersionContextProps {
+        VersionContextProps,
+        Pick<CodeMonitoringProps, 'enableCodeMonitoring'> {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
@@ -151,9 +151,6 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                         const query_data = queryTelemetryData(query, caseSensitive)
                         this.props.telemetryService.log('SearchResultsQueried', {
                             code_search: { query_data },
-                            ...(this.props.splitSearchModes
-                                ? { mode: this.props.interactiveSearchMode ? 'interactive' : 'plain' }
-                                : {}),
                         })
                         if (query_data.query?.field_type && query_data.query.field_type.value_diff > 0) {
                             this.props.telemetryService.log('DiffSearchResultsQueried')
@@ -302,22 +299,18 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         return (
             <div className="test-search-results search-results d-flex flex-column w-100">
                 <PageTitle key="page-title" title={query} />
-                {!this.props.interactiveSearchMode && (
-                    <SearchResultsFilterBars
-                        navbarSearchQuery={this.props.navbarSearchQueryState.query}
-                        searchSucceeded={isSearchResults(this.state.resultsOrError)}
-                        resultsLimitHit={
-                            isSearchResults(this.state.resultsOrError) && this.state.resultsOrError.limitHit
-                        }
-                        genericFilters={filters}
-                        extensionFilters={extensionFilters}
-                        repoFilters={repoFilters}
-                        quickLinks={quickLinks}
-                        onFilterClick={this.onDynamicFilterClicked}
-                        onShowMoreResultsClick={this.showMoreResults}
-                        calculateShowMoreResultsCount={this.calculateCount}
-                    />
-                )}
+                <SearchResultsFilterBars
+                    navbarSearchQuery={this.props.navbarSearchQueryState.query}
+                    searchSucceeded={isSearchResults(this.state.resultsOrError)}
+                    resultsLimitHit={isSearchResults(this.state.resultsOrError) && this.state.resultsOrError.limitHit}
+                    genericFilters={filters}
+                    extensionFilters={extensionFilters}
+                    repoFilters={repoFilters}
+                    quickLinks={quickLinks}
+                    onFilterClick={this.onDynamicFilterClicked}
+                    onShowMoreResultsClick={this.showMoreResults}
+                    calculateShowMoreResultsCount={this.calculateCount}
+                />
                 {this.state.showVersionContextWarning && (
                     <VersionContextWarning
                         versionContext={this.props.versionContext}

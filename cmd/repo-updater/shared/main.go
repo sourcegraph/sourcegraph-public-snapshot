@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/shared/assets"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -41,6 +42,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -51,7 +53,9 @@ const port = "3182"
 type EnterpriseInit func(db *sql.DB, store *repos.Store, cf *httpcli.Factory, server *repoupdater.Server) []debugserver.Dumper
 
 func Main(enterpriseInit EnterpriseInit) {
-	ctx := context.Background()
+	// NOTE: Internal actor is required to have full visibility of the repo table
+	// 	(i.e. bypass repository authorization).
+	ctx := actor.WithInternalActor(context.Background())
 	env.Lock()
 	env.HandleHelpFlag()
 
@@ -206,7 +210,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	}()
 	server.Syncer = syncer
 
-	go syncCloned(ctx, scheduler, gitserver.DefaultClient, store)
+	go syncScheduler(ctx, scheduler, gitserver.DefaultClient, store)
 
 	go repos.RunPhabricatorRepositorySyncWorker(ctx, store)
 
@@ -331,10 +335,18 @@ func Main(enterpriseInit EnterpriseInit) {
 	},
 	)
 
+	// NOTE: Internal actor is required to have full visibility of the repo table
+	// 	(i.e. bypass repository authorization).
+	authzBypass := func(f http.Handler) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			r = r.WithContext(actor.WithInternalActor(r.Context()))
+			f.ServeHTTP(w, r)
+		}
+	}
 	httpSrv := httpserver.NewFromAddr(addr, &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
-		Handler:      ot.Middleware(handler),
+		Handler:      ot.Middleware(authzBypass(handler)),
 	})
 	goroutine.MonitorBackgroundRoutines(ctx, httpSrv)
 }
@@ -345,6 +357,9 @@ type scheduler interface {
 
 	// SetCloned ensures uncloned repos are given priority in the scheduler.
 	SetCloned([]string)
+
+	// EnsureScheduled ensures that all the repos provided are known to the scheduler
+	EnsureScheduled([]*types.RepoName)
 }
 
 func watchSyncer(ctx context.Context, syncer *repos.Syncer, sched scheduler, gps *repos.GitolitePhabricatorMetadataSyncer) {
@@ -375,10 +390,37 @@ func watchSyncer(ctx context.Context, syncer *repos.Syncer, sched scheduler, gps
 	}
 }
 
-// syncCloned will periodically list the cloned repositories on gitserver and
-// update the scheduler with the list.
-func syncCloned(ctx context.Context, sched scheduler, gitserverClient *gitserver.Client, store *repos.Store) {
+// syncScheduler will periodically list the cloned repositories on gitserver and
+// update the scheduler with the list. It also ensures that all our default repos
+// are known to the scheduler to ensure that they are always cloned even after a
+// gitserver rebalance.
+func syncScheduler(ctx context.Context, sched scheduler, gitserverClient *gitserver.Client, store *repos.Store) {
+	baseRepoStore := idb.NewRepoStoreWith(store)
+
 	doSync := func() {
+		batchSize := 30_000
+
+		opts := idb.ListDefaultReposOptions{
+			Limit:   batchSize,
+			AfterID: 0,
+		}
+
+		for {
+			batch, err := baseRepoStore.ListDefaultRepos(ctx, opts)
+			if err != nil {
+				log15.Error("Listing default repos", "error", err)
+				return
+			}
+
+			// Ensure that default repos are known to the scheduler
+			sched.EnsureScheduled(batch)
+
+			if len(batch) < batchSize {
+				break
+			}
+			opts.AfterID = int32(batch[len(batch)-1].ID)
+		}
+
 		cloned, err := gitserverClient.ListCloned(ctx)
 		if err != nil {
 			log15.Warn("failed to fetch list of cloned repositories", "error", err)

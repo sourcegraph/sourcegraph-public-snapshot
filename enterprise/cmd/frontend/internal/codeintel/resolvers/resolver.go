@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/opentracing/opentracing-go/log"
+
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/config"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
@@ -25,25 +26,35 @@ type Resolver interface {
 	DeleteIndexByID(ctx context.Context, id int) error
 	IndexConfiguration(ctx context.Context, repositoryID int) (store.IndexConfiguration, error)
 	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, configuration string) error
+	QueueAutoIndexJobForRepo(ctx context.Context, repositoryID int) error
 	QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataArgs) (QueryResolver, error)
 }
 
 type resolver struct {
-	dbStore      DBStore
-	lsifStore    LSIFStore
-	codeIntelAPI CodeIntelAPI
-	hunkCache    HunkCache
-	operations   *operations
+	dbStore       DBStore
+	lsifStore     LSIFStore
+	codeIntelAPI  CodeIntelAPI
+	indexEnqueuer IndexEnqueuer
+	hunkCache     HunkCache
+	operations    *operations
 }
 
 // NewResolver creates a new resolver with the given services.
-func NewResolver(dbStore DBStore, lsifStore LSIFStore, codeIntelAPI CodeIntelAPI, hunkCache HunkCache, observationContext *observation.Context) Resolver {
+func NewResolver(
+	dbStore DBStore,
+	lsifStore LSIFStore,
+	codeIntelAPI CodeIntelAPI,
+	indexEnqueuer IndexEnqueuer,
+	hunkCache HunkCache,
+	observationContext *observation.Context,
+) Resolver {
 	return &resolver{
-		dbStore:      dbStore,
-		lsifStore:    lsifStore,
-		codeIntelAPI: codeIntelAPI,
-		hunkCache:    hunkCache,
-		operations:   makeOperations(observationContext),
+		dbStore:       dbStore,
+		lsifStore:     lsifStore,
+		codeIntelAPI:  codeIntelAPI,
+		indexEnqueuer: indexEnqueuer,
+		hunkCache:     hunkCache,
+		operations:    newOperations(observationContext),
 	}
 }
 
@@ -88,6 +99,10 @@ func (r *resolver) UpdateIndexConfigurationByRepositoryID(ctx context.Context, r
 	}
 
 	return r.dbStore.UpdateIndexConfigurationByRepositoryID(ctx, repositoryID, []byte(configuration))
+}
+
+func (r *resolver) QueueAutoIndexJobForRepo(ctx context.Context, repositoryID int) error {
+	return r.indexEnqueuer.ForceQueueIndex(ctx, repositoryID)
 }
 
 const slowQueryResolverRequestThreshold = time.Second

@@ -255,18 +255,22 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                                 return []
                             }),
                             tap(() => {
-                                // Flipping the Campaigns feature flag
-                                // requires a reload for the
-                                // Campaigns UI to be correctly rendered in the navbar.
-                                const lastCampaignsEnabled =
-                                    (lastConfiguration &&
-                                        (jsonc.parse(lastConfiguration.effectiveContents) as SiteConfiguration)?.[
-                                            'campaigns.enabled'
-                                        ]) === true
-                                const newCampaignsEnabled =
-                                    (jsonc.parse(newContents) as SiteConfiguration)?.['campaigns.enabled'] === true
+                                const oldContents = lastConfiguration?.effectiveContents || ''
+                                const oldConfiguration = jsonc.parse(oldContents) as SiteConfiguration
+                                const newConfiguration = jsonc.parse(newContents) as SiteConfiguration
 
-                                if (lastCampaignsEnabled !== newCampaignsEnabled) {
+                                // Flipping these feature flags require a reload for the
+                                // UI to be rendered correctly in the navbar and the sidebar.
+                                const keys: (keyof SiteConfiguration)[] = [
+                                    'campaigns.enabled',
+                                    'codeIntelAutoIndexing.enabled',
+                                ]
+
+                                if (
+                                    !keys.every(
+                                        key => Boolean(oldConfiguration?.[key]) === Boolean(newConfiguration?.[key])
+                                    )
+                                ) {
                                     window.location.reload()
                                 }
                             })

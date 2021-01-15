@@ -15,23 +15,36 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
-- Panels in the Sourcegraph monitoring dashboards now have links to relevant alerts documentation and the new [monitoring dashboards reference](https://docs.sourcegraph.com/admin/observability/dashboards). [#16939](https://github.com/sourcegraph/sourcegraph/pull/16939)
+- Panels in the [Sourcegraph monitoring dashboards](https://docs.sourcegraph.com/admin/observability/metrics#grafana) now:
+  - include links to relevant alerts documentation and the new [monitoring dashboards reference](https://docs.sourcegraph.com/admin/observability/dashboards). [#16939](https://github.com/sourcegraph/sourcegraph/pull/16939)
+  - include alert events and version changes annotations that can be enabled from the top of each service dashboard. [#17198](https://github.com/sourcegraph/sourcegraph/pull/17198)
+- Suggested filters in the search results page can now be scrolled. [#17097](https://github.com/sourcegraph/sourcegraph/pull/17097)
 
 ### Changed
 
-- Dashboard links included in [monitoring alerts](https://docs.sourcegraph.com/admin/observability/alerting) now link directly to the relevant Grafana panel, instead of just the service dashboard. [#17014](https://github.com/sourcegraph/sourcegraph/pull/17014)
+- Dashboard links included in [monitoring alerts](https://docs.sourcegraph.com/admin/observability/alerting) now:
+  - link directly to the relevant Grafana panel, instead of just the service dashboard. [#17014](https://github.com/sourcegraph/sourcegraph/pull/17014)
+  - link to a time frame relevant to the alert, instead of just the past few hours. [#17034](https://github.com/sourcegraph/sourcegraph/pull/17034)
+- Added `serviceKind` field of the `ExternalServiceKind` type to `Repository.externalURLs` GraphQL API, `serviceType` field is deprecated and will be removed in the future releases. [#14979](https://github.com/sourcegraph/sourcegraph/issues/14979)
 
 ### Fixed
 
 - Imported changesets acquired an extra button to download the "generated diff", which did nothing, since imported changesets don't have a generated diff. This button has been removed. [#16778](https://github.com/sourcegraph/sourcegraph/issues/16778)
 - Quoted global filter values (case, patterntype) are now properly extracted and set in URL parameters. [#16186](https://github.com/sourcegraph/sourcegraph/issues/16186)
+- The endpoint for "Open in Sourcegraph" functionality in editor extensions now uses code host connection information to resolve the repository, which makes it more correct and respect the `repositoryPathPattern` setting. [#16846](https://github.com/sourcegraph/sourcegraph/pull/16846)
 - Fixed an issue that prevented search expressions of the form `repo:foo (rev:a or rev:b)` from evaluating all revisions [#16873](https://github.com/sourcegraph/sourcegraph/pull/16873)
 - Updated language detection library. Includes language detection for `lang:starlark`. [#16900](https://github.com/sourcegraph/sourcegraph/pull/16900)
 - Fixed retrieving status for indexed tags and deduplicated main branches in the indexing settings page. [#13787](https://github.com/sourcegraph/sourcegraph/issues/13787)
+- Specifying a ref that doesn't exist would show an alert, but still return results [#15576](https://github.com/sourcegraph/sourcegraph/issues/15576)
+- Fixed search highlighting the wrong line. [#10468](https://github.com/sourcegraph/sourcegraph/issues/10468)
+- Fixed an issue where searches of the form `foo type:file` returned results of type `path` too. [#17076](https://github.com/sourcegraph/sourcegraph/issues/17076)
+- Fixed queries like `(type:commit or type:diff)` so that if the query matches both the commit message and the diff, both are returned as results. [#16899](https://github.com/sourcegraph/sourcegraph/issues/16899)
+- Fixed container monitoring and provisioning dashboard panels not displaying metrics in certain deployment types and environments. If you continue to have issues with these panels not displaying any metrics after upgrading, please [open an issue](https://github.com/sourcegraph/sourcegraph/issues/new).
+- Fixed a nonexistent field in site configuration being marked as "required" when configuring PagerDuty alert notifications. [#17277](https://github.com/sourcegraph/sourcegraph/pull/17277)
 
 ### Removed
 
--
+- Interactive mode has now been removed. [#16868](https://github.com/sourcegraph/sourcegraph/pull/16868).
 
 ## 3.23.0
 

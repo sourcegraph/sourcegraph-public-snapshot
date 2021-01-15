@@ -283,6 +283,13 @@ const SiteSchemaJSON = `{
       "group": "Campaigns",
       "default": false
     },
+    "codeIntelAutoIndexing.enabled": {
+      "description": "Enables/disables the code intel auto indexing feature.",
+      "type": "boolean",
+      "!go": { "pointer": true },
+      "group": "Code intelligence",
+      "default": false
+    },
     "corsOrigin": {
       "description": "Required when using any of the native code host integrations for Phabricator, GitLab, or Bitbucket Server. It is a space-separated list of allowed origins for cross-origin HTTP requests which should be the base URL for your Phabricator, GitLab, or Bitbucket Server instance.",
       "type": "string",
@@ -1153,7 +1160,7 @@ const SiteSchemaJSON = `{
     "NotifierPagerduty": {
       "description": "PagerDuty notifier",
       "type": "object",
-      "required": ["type", "routingKey"],
+      "required": ["type", "integrationKey"],
       "properties": {
         "type": {
           "type": "string",

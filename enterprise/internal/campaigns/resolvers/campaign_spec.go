@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/search"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -92,6 +93,13 @@ func (r *campaignSpecResolver) ApplyPreview(ctx context.Context, args *graphqlba
 			return nil, err
 		}
 		opts.LimitOffset.Offset = id
+	}
+	if args.Search != nil {
+		var err error
+		opts.TextSearch, err = search.ParseTextSearch(*args.Search)
+		if err != nil {
+			return nil, errors.Wrap(err, "parsing search")
+		}
 	}
 
 	return &changesetApplyPreviewConnectionResolver{

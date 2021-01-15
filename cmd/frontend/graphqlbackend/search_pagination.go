@@ -147,7 +147,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 	}
 	args := search.TextParameters{
 		PatternInfo:     p,
-		RepoPromise:     (&search.Promise{}).Resolve(resolved.repoRevs),
+		RepoPromise:     (&search.Promise{}).Resolve(resolved.RepoRevs),
 		Query:           r.query,
 		UseFullDeadline: false,
 		Zoekt:           r.zoekt,
@@ -171,13 +171,13 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 
 	// Since we're searching a subset of the repositories this query would
 	// search overall, we must sort the repositories deterministically.
-	for _, repoRev := range resolved.repoRevs {
+	for _, repoRev := range resolved.RepoRevs {
 		sort.Slice(repoRev.Revs, func(i, j int) bool {
 			return repoRev.Revs[i].Less(repoRev.Revs[j])
 		})
 	}
-	sort.Slice(resolved.repoRevs, func(i, j int) bool {
-		return repoIsLess(resolved.repoRevs[i].Repo, resolved.repoRevs[j].Repo)
+	sort.Slice(resolved.RepoRevs, func(i, j int) bool {
+		return repoIsLess(resolved.RepoRevs[i].Repo, resolved.RepoRevs[j].Repo)
 	})
 
 	common := searchResultsCommon{maxResultsCount: r.maxResults()}
@@ -187,20 +187,13 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 	}
 	common.update(fileCommon)
 
-	tr.LazyPrintf("results=%d limitHit=%v cloning=%d missing=%d excludedFork=%d excludedArchived=%d timedout=%d",
-		len(results),
-		common.limitHit,
-		len(common.cloning),
-		len(common.missing),
-		common.excluded.forks,
-		common.excluded.archived,
-		len(common.timedout))
+	tr.LazyPrintf("results=%d %s", len(results), &common)
 
 	// Alert is a potential alert shown to the user.
 	var alert *searchAlert
 
-	if len(resolved.missingRepoRevs) > 0 {
-		alert = alertForMissingRepoRevs(r.patternType, resolved.missingRepoRevs)
+	if len(resolved.MissingRepoRevs) > 0 {
+		alert = alertForMissingRepoRevs(r.patternType, resolved.MissingRepoRevs)
 	}
 
 	log15.Info("next cursor for paginated search request",
@@ -267,7 +260,7 @@ func paginatedSearchFilesInRepos(ctx context.Context, args *search.TextParameter
 	return plan.execute(ctx, func(batch []*search.RepositoryRevisions) ([]SearchResultResolver, *searchResultsCommon, error) {
 		batchArgs := *args
 		batchArgs.RepoPromise = (&search.Promise{}).Resolve(batch)
-		fileResults, fileCommon, err := searchFilesInRepos(ctx, &batchArgs)
+		fileResults, fileCommon, err := searchFilesInRepos(ctx, &batchArgs, nil)
 		// Timeouts are reported through searchResultsCommon so don't report an error for them
 		if err != nil && !(err == context.DeadlineExceeded || err == context.Canceled) {
 			return nil, nil, err
@@ -275,9 +268,7 @@ func paginatedSearchFilesInRepos(ctx context.Context, args *search.TextParameter
 		if fileCommon == nil {
 			// searchFilesInRepos can return a nil structure, but the executor
 			// requires a non-nil one always (which is more sane).
-			fileCommon = &searchResultsCommon{
-				partial: map[api.RepoID]struct{}{},
-			}
+			fileCommon = &searchResultsCommon{}
 		}
 		// fileResults is not sorted so we must sort it now. fileCommon may or
 		// may not be sorted, but we do not rely on its order.
@@ -377,8 +368,17 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *sea
 		repos = repos[repositoryOffset:]
 	}
 
+	// Search backends don't populate searchResultsCommon.repos, the
+	// repository searcher does. We need to do that here.
+	commonRepos := make(map[api.RepoID]*types.RepoName, len(repos))
+	for _, r := range repos {
+		commonRepos[r.Repo.ID] = r.Repo
+	}
+
 	// Search over the repos list in batches.
-	common = &searchResultsCommon{}
+	common = &searchResultsCommon{
+		repos: commonRepos,
+	}
 	for start := 0; start <= len(repos); start += batchSize {
 		if start > len(repos) {
 			break
@@ -423,8 +423,9 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *sea
 		// first in the results and we need to know the position for the cursor
 		// RepositoryOffset.
 		potentialLastRepos := []*types.RepoName{lastRepoConsumed}
-		potentialLastRepos = append(potentialLastRepos, sliced.common.cloning...)
-		potentialLastRepos = append(potentialLastRepos, sliced.common.missing...)
+		sliced.common.status.Filter(search.RepoStatusCloning|search.RepoStatusMissing, func(id api.RepoID) {
+			potentialLastRepos = append(potentialLastRepos, sliced.common.repos[id])
+		})
 		sort.Slice(potentialLastRepos, func(i, j int) bool {
 			return repoIsLess(potentialLastRepos[i], potentialLastRepos[j])
 		})
@@ -556,35 +557,14 @@ func sliceSearchResults(results []SearchResultResolver, common *searchResultsCom
 }
 
 func sliceSearchResultsCommon(common *searchResultsCommon, firstResultRepo, lastResultRepo string) *searchResultsCommon {
-	if len(common.partial) > 0 {
+	if common.status.Any(search.RepoStatusLimitHit) {
 		panic("never here: partial results should never be present in paginated search")
 	}
 	final := &searchResultsCommon{
 		limitHit:         false, // irrelevant in paginated search
 		indexUnavailable: common.indexUnavailable,
 		repos:            make(map[api.RepoID]*types.RepoName),
-		partial:          make(map[api.RepoID]struct{}),
 		resultCount:      common.resultCount,
-	}
-
-	doAppend := func(dst, src []*types.RepoName) []*types.RepoName {
-		sort.Slice(src, func(i, j int) bool {
-			return repoIsLess(src[i], src[j])
-		})
-		for _, r := range src {
-			if lastResultRepo == "" || string(r.Name) > lastResultRepo {
-				continue
-			}
-			if firstResultRepo != "" && string(r.Name) < firstResultRepo {
-				continue
-			}
-			final.repos[r.ID] = r
-			dst = append(dst, r)
-			if string(r.Name) == lastResultRepo {
-				break
-			}
-		}
-		return dst
 	}
 
 	for _, r := range common.repos {
@@ -597,13 +577,15 @@ func sliceSearchResultsCommon(common *searchResultsCommon, firstResultRepo, last
 		final.repos[r.ID] = r
 	}
 
-	final.searched = doAppend(final.searched, common.searched)
-	final.indexed = doAppend(final.indexed, common.indexed)
-	final.cloning = doAppend(final.cloning, common.cloning)
-	final.missing = doAppend(final.missing, common.missing)
-	final.excluded.forks = final.excluded.forks + common.excluded.forks
-	final.excluded.archived = final.excluded.archived + common.excluded.archived
-	final.timedout = doAppend(final.timedout, common.timedout)
+	common.status.Iterate(func(id api.RepoID, status search.RepoStatus) {
+		if _, ok := final.repos[id]; ok {
+			final.status.Update(id, status)
+		}
+	})
+
+	final.excluded.Forks = final.excluded.Forks + common.excluded.Forks
+	final.excluded.Archived = final.excluded.Archived + common.excluded.Archived
+
 	return final
 }
 

@@ -10,6 +10,8 @@ import (
 )
 
 func GetRetentionStatistics(ctx context.Context) (*types.RetentionStats, error) {
+	weekAgo := timeNow().AddDate(0, 0, -7)
+
 	weeklyRetentionQuery := sqlf.Sprintf(`
 		WITH
 			dates AS (
@@ -61,7 +63,7 @@ func GetRetentionStatistics(ctx context.Context) (*types.RetentionStats, error) 
 		LEFT JOIN sub     ON dates.week_start_date = sub.cohort_date
 		GROUP BY week, cohorts.cohort_size
 		ORDER BY week DESC;
-		`, timeNow(), timeNow(), timeNow(), timeNow())
+		`, weekAgo, weekAgo, weekAgo, weekAgo)
 
 	rows, err := dbconn.Global.QueryContext(ctx, weeklyRetentionQuery.Query(sqlf.PostgresBindVar), weeklyRetentionQuery.Args()...)
 	if err != nil {

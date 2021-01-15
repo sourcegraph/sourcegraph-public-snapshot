@@ -11,9 +11,34 @@ Site admins can view the Grafana monitoring dashboards on a Sourcegraph instance
 
 <img src="https://user-images.githubusercontent.com/3173176/82078081-65c62780-9695-11ea-954a-84e8e9686970.png" class="screenshot" alt="Sourcegraph dashboard">
 
-### Available dashboards
+### Dashboards
 
-A complete [dashboard reference](dashboards.md) is available for more context on our available dashboards.
+A complete [dashboard reference](dashboards.md) is available for more context on our available service dashboards and panels.
+
+Additional dashboards can also be set up - see [Grafana configuration](#grafana-configuration) for more details.
+
+#### View documentation
+
+On service dashboards, each metric panel has links attached that lead to relevant [alert solutions](alert_solutions.md) or [panel documentation](dashboards.md).
+These can be accessed from the top left corner of each panel.
+
+#### View alerts
+
+The Overview dashboard includes a high-level summary of alert events across all Sourcegraph services.
+
+On service dashboards, a summary of alert events for that service is available.
+Alerts can be filtered by level using the "Filter alert level" selector at the top of the dashboard.
+This information can be overlaid on all panels in that dashboard by enabling the "Alert events" toggle.
+
+#### View version change events
+
+On service dashboards, annotations can be displayed for occasions when a Sourcegraph version change is detected by enabling the "Version changes" toggle at the top of the dashboard.
+This can be useful for correlating metrics and alerts with Sourcegraph deployment and upgrade events.
+
+#### Querying metrics
+
+Specific metrics can be queried using Grafana's Explore panel, available at `/-/debug/grafana/explore` on your Sourcegraph instance.
+The query for each individual panel can be viewed and explored by clicking on the panel and using the "Explore" option.
 
 ### Grafana configuration
 

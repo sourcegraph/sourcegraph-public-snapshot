@@ -15,7 +15,7 @@ func TestQueryResolver(t *testing.T) {
 	mockLSIFStore := NewMockLSIFStore()
 	mockCodeIntelAPI := NewMockCodeIntelAPI() // returns no dumps
 
-	resolver := NewResolver(mockDBStore, mockLSIFStore, mockCodeIntelAPI, nil, &observation.TestContext)
+	resolver := NewResolver(mockDBStore, mockLSIFStore, mockCodeIntelAPI, nil, nil, &observation.TestContext)
 	queryResolver, err := resolver.QueryResolver(context.Background(), &gql.GitBlobLSIFDataArgs{
 		Repo:      &types.Repo{ID: 50},
 		Commit:    api.CommitID("deadbeef"),

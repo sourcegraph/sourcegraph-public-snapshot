@@ -3,7 +3,7 @@ package search
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/search/syntax"
 )
 
 // ErrExpr is a base type for errors that occur in a specific expression

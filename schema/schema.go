@@ -45,6 +45,12 @@ type AWSCodeCommitGitCredentials struct {
 	// Username description: The Git username
 	Username string `json:"username"`
 }
+type AdditionalProperties struct {
+	// Format description: The expected format of the output. If set, the output is being parsed in that format before being stored in the var. If not set, 'text' is assumed to the format.
+	Format string `json:"format,omitempty"`
+	// Value description: The value of the output, which can be a template string.
+	Value string `json:"value"`
+}
 
 // AuthAccessTokens description: Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.
 type AuthAccessTokens struct {
@@ -814,7 +820,7 @@ type NotifierOpsGenie struct {
 type NotifierPagerduty struct {
 	ApiUrl string `json:"apiUrl,omitempty"`
 	// IntegrationKey description: Integration key for the PagerDuty Events API v2 - see https://developer.pagerduty.com/docs/events-api-v2/overview
-	IntegrationKey string `json:"integrationKey,omitempty"`
+	IntegrationKey string `json:"integrationKey"`
 	// Severity description: Severity level for PagerDuty alert
 	Severity string `json:"severity,omitempty"`
 	Type     string `json:"type"`
@@ -1131,8 +1137,6 @@ type SettingsExperimentalFeatures struct {
 	ShowQueryBuilder *bool `json:"showQueryBuilder,omitempty"`
 	// ShowRepogroupHomepage description: Enables the repository group homepage
 	ShowRepogroupHomepage *bool `json:"showRepogroupHomepage,omitempty"`
-	// SplitSearchModes description: Enables toggling between the current omni search mode, and experimental interactive search mode.
-	SplitSearchModes *bool `json:"splitSearchModes,omitempty"`
 }
 
 // SiteConfiguration description: Configuration for a Sourcegraph site.
@@ -1177,6 +1181,8 @@ type SiteConfiguration struct {
 	CampaignsReadAccessEnabled *bool `json:"campaigns.readAccess.enabled,omitempty"`
 	// CampaignsRestrictToAdmins description: When enabled, only site admins can create and apply campaigns.
 	CampaignsRestrictToAdmins bool `json:"campaigns.restrictToAdmins,omitempty"`
+	// CodeIntelAutoIndexingEnabled description: Enables/disables the code intel auto indexing feature.
+	CodeIntelAutoIndexingEnabled *bool `json:"codeIntelAutoIndexing.enabled,omitempty"`
 	// CorsOrigin description: Required when using any of the native code host integrations for Phabricator, GitLab, or Bitbucket Server. It is a space-separated list of allowed origins for cross-origin HTTP requests which should be the base URL for your Phabricator, GitLab, or Bitbucket Server instance.
 	CorsOrigin string `json:"corsOrigin,omitempty"`
 	// DebugSearchSymbolsParallelism description: (debug) controls the amount of symbol search parallelism. Defaults to 20. It is not recommended to change this outside of debugging scenarios. This option will be removed in a future version.
@@ -1275,6 +1281,8 @@ type Step struct {
 	Env interface{} `json:"env,omitempty"`
 	// Files description: Files that should be mounted into or be created inside the Docker container.
 	Files map[string]string `json:"files,omitempty"`
+	// Outputs description: Output variables of this step that can be referenced in the changesetTemplate or other steps via outputs.<name-of-output>
+	Outputs map[string]AdditionalProperties `json:"outputs,omitempty"`
 	// Run description: The shell command to run in the container. It can also be a multi-line shell script. The working directory is the root directory of the repository checkout.
 	Run string `json:"run"`
 }

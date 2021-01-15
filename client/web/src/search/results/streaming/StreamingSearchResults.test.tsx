@@ -58,7 +58,7 @@ describe('StreamingSearchResults', () => {
         location: history.location,
         authenticatedUser: null,
 
-        navbarSearchQueryState: { query: '', cursorPosition: 0 },
+        navbarSearchQueryState: { query: '' },
 
         settingsCascade: {
             subjects: null,
@@ -70,6 +70,7 @@ describe('StreamingSearchResults', () => {
 
         fetchHighlightedFileLineRanges: HIGHLIGHTED_FILE_LINES_REQUEST,
         isLightTheme: true,
+        enableCodeMonitoring: false,
     }
 
     it('should call streaming search API with the right parameters from URL', () => {
@@ -91,13 +92,13 @@ describe('StreamingSearchResults', () => {
         )
 
         sinon.assert.calledOnce(searchSpy)
-        sinon.assert.calledWith(
-            searchSpy,
-            'r:golang/oauth2 test f:travis  case:yes',
-            'V2',
-            SearchPatternType.regexp,
-            'test'
-        )
+        sinon.assert.calledWith(searchSpy, {
+            query: 'r:golang/oauth2 test f:travis  case:yes',
+            version: 'V2',
+            patternType: SearchPatternType.regexp,
+            versionContext: 'test',
+            trace: undefined,
+        })
 
         element.unmount()
     })
@@ -121,13 +122,13 @@ describe('StreamingSearchResults', () => {
         )
 
         sinon.assert.calledOnce(searchSpy)
-        sinon.assert.calledWith(
-            searchSpy,
-            'r:golang/oauth2 test f:travis  case:yes',
-            'V2',
-            SearchPatternType.regexp,
-            undefined
-        )
+        sinon.assert.calledWith(searchSpy, {
+            query: 'r:golang/oauth2 test f:travis  case:yes',
+            version: 'V2',
+            patternType: SearchPatternType.regexp,
+            versionContext: undefined,
+            trace: undefined,
+        })
 
         element.unmount()
     })
@@ -471,6 +472,28 @@ describe('StreamingSearchResults', () => {
         element.unmount()
     })
 
+    it('should log view, query, and results fetched events', () => {
+        const logSpy = sinon.spy()
+        const logViewEventSpy = sinon.spy()
+        const telemetryService = {
+            ...NOOP_TELEMETRY_SERVICE,
+            log: logSpy,
+            logViewEvent: logViewEventSpy,
+        }
+
+        const element = mount(
+            <BrowserRouter>
+                <StreamingSearchResults {...defaultProps} telemetryService={telemetryService} />
+            </BrowserRouter>
+        )
+
+        sinon.assert.calledOnceWithExactly(logViewEventSpy, 'SearchResults')
+        sinon.assert.calledWith(logSpy, 'SearchResultsQueried')
+        sinon.assert.calledWith(logSpy, 'SearchResultsFetched')
+
+        element.unmount()
+    })
+
     it('should log event when clicking on search result', () => {
         const logSpy = sinon.spy()
         const telemetryService = {
@@ -487,7 +510,6 @@ describe('StreamingSearchResults', () => {
         const item = element.find(FileMatch).first()
         act(() => item.prop('onSelect')())
 
-        sinon.assert.calledOnce(logSpy)
         sinon.assert.calledWith(logSpy, 'SearchResultClicked')
 
         element.unmount()

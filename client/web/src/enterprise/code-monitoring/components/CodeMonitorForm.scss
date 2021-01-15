@@ -3,6 +3,8 @@
 .code-monitor-form {
     &__card {
         border-radius: 4px;
+        // stylelint-disable-next-line declaration-property-unit-whitelist
+        margin: calc(1rem - 1px) 0;
 
         &-link {
             &:hover {
@@ -13,23 +15,23 @@
 
         &--button {
             // stylelint-disable-next-line declaration-property-unit-whitelist
-            margin: calc(16px - 1px) -1px;
+            margin: calc(1rem - 1px) 0;
             border-radius: 4px;
 
             &:hover {
                 // stylelint-disable-next-line declaration-property-unit-whitelist
-                margin: calc(16px - 2px) -2px;
+                margin: calc(1rem - 2px) -1px calc(1rem - 2px) -1px;
                 border: 2px solid #329af0;
             }
 
-            .create-monitor-page__trigger--disabled & {
+            .code-monitor-form__trigger--disabled & {
                 margin: 1rem 0;
                 &:hover {
                     border: 1px solid var(--border-color);
                 }
             }
 
-            .create-monitor-page__actions--disabled & {
+            .code-monitor-form__actions--disabled & {
                 margin: 1rem 0;
                 &:hover {
                     border: 1px solid var(--border-color);
@@ -40,9 +42,24 @@
 
     &__horizontal-rule {
         margin: 2rem 0;
+        border-top: 1px solid var(--border-color-2);
     }
 
     &__owner-dropdown {
         min-width: 50%;
+    }
+
+    &__actions {
+        &--disabled {
+            color: $gray-17 !important;
+            opacity: 0.5;
+        }
+    }
+
+    &__triggers {
+        &--disabled {
+            color: $gray-17 !important;
+            opacity: 0.5;
+        }
     }
 }

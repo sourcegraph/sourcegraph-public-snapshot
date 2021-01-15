@@ -40,6 +40,9 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 	t.Run("authenticated as user", func(t *testing.T) {
 		resetMocks()
 		mockAccessTokensCreate(t, 1, []string{authz.ScopeUserAll})
+		db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
+			return &types.User{ID: 1, SiteAdmin: false}, nil
+		}
 		gqltesting.RunTests(t, []*gqltesting.Test{
 			{
 				Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
@@ -82,7 +85,6 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
 			return &types.User{ID: 1, SiteAdmin: false}, nil
 		}
-		defer func() { db.Mocks.Users.GetByCurrentAuthUser = nil }()
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 		result, err := (&schemaResolver{}).CreateAccessToken(ctx, &createAccessTokenInput{
@@ -228,6 +230,9 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 	t.Run("authenticated as user", func(t *testing.T) {
 		resetMocks()
 		mockAccessTokens(t)
+		db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
+			return &types.User{ID: 1, SiteAdmin: false}, nil
+		}
 		gqltesting.RunTests(t, []*gqltesting.Test{
 			{
 				Context: actor.WithActor(context.Background(), &actor.Actor{UID: 2}),

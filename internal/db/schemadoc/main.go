@@ -1,14 +1,17 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
 	"regexp"
+	"runtime"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
@@ -27,7 +30,7 @@ func runIgnoreError(cmd string, args ...string) {
 // PGPORT, PGUSER etc. env variables must be set to run this script.
 //
 // First CLI argument is an optional filename to write the output to.
-func generate(log *log.Logger) (string, error) {
+func generate(log *log.Logger, databaseName string) (string, error) {
 	const dbname = "schemadoc-gen-temp"
 
 	var (
@@ -99,12 +102,8 @@ func generate(log *log.Logger) (string, error) {
 		return "", fmt.Errorf("SetupGlobalConnection: %w", err)
 	}
 
-	// Migrate the codeintel db on top of the frontend one so we capture
-	// the schema of both databases.
-	for _, databaseName := range dbutil.DatabaseNames {
-		if err := dbconn.MigrateDB(dbconn.Global, databaseName); err != nil {
-			return "", fmt.Errorf("MigrateDB: %w", err)
-		}
+	if err := dbconn.MigrateDB(dbconn.Global, databaseName); err != nil {
+		return "", fmt.Errorf("MigrateDB: %w", err)
 	}
 
 	db, err := dbconn.Open(dataSource)
@@ -135,32 +134,135 @@ WHERE table_schema='public' AND table_type='BASE TABLE';
 		return "", fmt.Errorf("rows.Err: %w", err)
 	}
 
-	docs := []string{}
+	ch := make(chan string, len(tables))
 	for _, table := range tables {
-		// Get postgres "describe table" output.
-		log.Println("describe", table)
-		out, err := run("psql", "-X", "--quiet", "--dbname", dbname, "-c", fmt.Sprintf("\\d %s", table))
-		if err != nil {
-			return "", fmt.Errorf("describe %s failed: %w", table, err)
-		}
-
-		lines := strings.Split(string(out), "\n")
-		doc := "# " + strings.TrimSpace(lines[0]) + "\n"
-		doc += "```\n" + strings.Join(lines[1:], "\n") + "```\n"
-		docs = append(docs, doc)
+		ch <- table
 	}
+	close(ch)
+
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+	var docs []string
+
+	for i := 0; i < runtime.GOMAXPROCS(0); i++ {
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+
+			for table := range ch {
+				log.Println("describe", table)
+
+				comment, err := getTableComment(db, table)
+				if err != nil {
+					log.Fatalf("table comments failed: %s", err)
+					continue
+				}
+
+				columnComments, err := getColumnComments(db, table)
+				if err != nil {
+					log.Fatalf("column comments failed: %s", err.Error())
+					continue
+				}
+
+				// Get postgres "describe table" output.
+				out, err := run("psql", "-X", "--quiet", "--dbname", dbname, "-c", fmt.Sprintf("\\d %s", table))
+				if err != nil {
+					log.Fatalf("describe %s failed: %s", table, err)
+					continue
+				}
+
+				lines := strings.Split(out, "\n")
+				doc := "# " + strings.TrimSpace(lines[0]) + "\n"
+				doc += "```\n" + strings.Join(lines[1:], "\n") + "```\n"
+				if comment != "" {
+					doc += "\n" + comment + "\n"
+				}
+
+				var columns []string
+				for k := range columnComments {
+					columns = append(columns, k)
+				}
+				sort.Strings(columns)
+
+				for _, k := range columns {
+					doc += "\n**" + k + "**: " + columnComments[k] + "\n"
+				}
+
+				mu.Lock()
+				docs = append(docs, doc)
+				mu.Unlock()
+			}
+		}()
+	}
+
+	wg.Wait()
 	sort.Strings(docs)
 
 	return strings.Join(docs, "\n"), nil
 }
 
+func getTableComment(db *sql.DB, table string) (string, error) {
+	rows, err := db.Query("select obj_description($1::regclass)", table)
+	if err != nil {
+		return "", fmt.Errorf("Query: %w", err)
+	}
+	defer rows.Close()
+
+	var comment string
+	if rows.Next() {
+		if err := rows.Scan(&dbutil.NullString{S: &comment}); err != nil {
+			return "", fmt.Errorf("rows.Scan: %w", err)
+		}
+	}
+	if err = rows.Err(); err != nil {
+		return "", fmt.Errorf("rows.Err: %w", err)
+	}
+
+	return comment, nil
+}
+
+func getColumnComments(db *sql.DB, table string) (map[string]string, error) {
+	rows, err := db.Query(`
+		SELECT
+			cols.column_name,
+			(
+				SELECT pg_catalog.col_description(c.oid, cols.ordinal_position::int)
+				FROM pg_catalog.pg_class c
+				WHERE c.oid = (SELECT cols.table_name::regclass::oid) AND c.relname = cols.table_name
+			) as column_comment
+		FROM information_schema.columns cols
+		WHERE cols.table_name = $1;
+	`, table)
+	if err != nil {
+		return nil, fmt.Errorf("Query: %w", err)
+	}
+	defer rows.Close()
+
+	comments := map[string]string{}
+	for rows.Next() {
+		var k, v string
+		if err := rows.Scan(&k, &dbutil.NullString{S: &v}); err != nil {
+			return nil, fmt.Errorf("rows.Scan: %w", err)
+		}
+		if v != "" {
+			comments[k] = v
+		}
+	}
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows.Err: %w", err)
+	}
+
+	return comments, nil
+}
+
 func main() {
-	out, err := generate(log.New(os.Stderr, "", log.LstdFlags))
+	out, err := generate(log.New(os.Stderr, "", log.LstdFlags), os.Args[1])
 	if err != nil {
 		log.Fatal(err)
 	}
 	if len(os.Args) > 1 {
-		if err := ioutil.WriteFile(os.Args[1], []byte(out), 0644); err != nil {
+		if err := ioutil.WriteFile(os.Args[2], []byte(out), 0644); err != nil {
 			log.Fatal(err)
 		}
 	} else {

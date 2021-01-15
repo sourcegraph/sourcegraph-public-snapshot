@@ -65,13 +65,14 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 func newResolver(ctx context.Context, observationContext *observation.Context) (gql.CodeIntelResolver, error) {
 	hunkCache, err := codeintelresolvers.NewHunkCache(config.HunkCacheSize)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to initialize hunk cache: %s", err)
+		return nil, fmt.Errorf("failed to initialize hunk cache: %s", err)
 	}
 
 	innerResolver := codeintelresolvers.NewResolver(
 		&resolvers.DBStoreShim{services.dbStore},
 		services.lsifStore,
 		services.api,
+		services.indexEnqueuer,
 		hunkCache,
 		observationContext,
 	)
@@ -110,27 +111,38 @@ func newBackgroundRoutines(observationContext *observation.Context) (routines []
 }
 
 func newCommitGraphRoutines(observationContext *observation.Context) []goroutine.BackgroundRoutine {
-	dbStore := services.dbStore
-	gitserverClient := services.gitserverClient
-	operations := commitgraph.NewOperations(dbStore, observationContext)
-
 	return []goroutine.BackgroundRoutine{
-		commitgraph.NewUpdater(dbStore, gitserverClient, config.CommitGraphUpdateTaskInterval, operations),
+		commitgraph.NewUpdater(
+			services.dbStore,
+			services.gitserverClient,
+			config.CommitGraphUpdateTaskInterval,
+			observationContext,
+		),
 	}
 }
 
 func newIndexingRoutines(observationContext *observation.Context) []goroutine.BackgroundRoutine {
-	if !config.EnableAutoIndexing {
-		return nil
-	}
-
-	dbStore := &indexing.DBStoreShim{services.dbStore}
-	gitserverClient := services.gitserverClient
-	operations := indexing.NewOperations(observationContext)
-
 	return []goroutine.BackgroundRoutine{
-		indexing.NewIndexScheduler(dbStore, gitserverClient, config.IndexBatchSize, config.MinimumTimeSinceLastEnqueue, config.MinimumSearchCount, float64(config.MinimumSearchRatio)/100, config.MinimumPreciseCount, config.AutoIndexingTaskInterval, operations),
-		indexing.NewIndexabilityUpdater(dbStore, gitserverClient, config.MinimumSearchCount, float64(config.MinimumSearchRatio)/100, config.MinimumPreciseCount, config.AutoIndexingTaskInterval, operations),
+		indexing.NewIndexScheduler(
+			services.dbStore,
+			services.indexEnqueuer,
+			config.IndexBatchSize,
+			config.MinimumTimeSinceLastEnqueue,
+			config.MinimumSearchCount,
+			float64(config.MinimumSearchRatio)/100,
+			config.MinimumPreciseCount,
+			config.AutoIndexingTaskInterval,
+			observationContext,
+		),
+		indexing.NewIndexabilityUpdater(
+			services.dbStore,
+			services.gitserverClient,
+			config.MinimumSearchCount,
+			float64(config.MinimumSearchRatio)/100,
+			config.MinimumPreciseCount,
+			config.AutoIndexingTaskInterval,
+			observationContext,
+		),
 	}
 }
 

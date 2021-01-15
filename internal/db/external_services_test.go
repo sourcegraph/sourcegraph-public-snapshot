@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -87,12 +88,12 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 
 func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 	tests := []struct {
-		name         string
-		kind         string
-		config       string
-		hasNamespace bool
-		setup        func(t *testing.T)
-		wantErr      string
+		name            string
+		kind            string
+		config          string
+		namespaceUserID int32
+		setup           func(t *testing.T)
+		wantErr         string
 	}{
 		{
 			name:    "0 errors - GitHub.com",
@@ -160,39 +161,61 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			wantErr: "1 error occurred:\n\t* existing external service, \"GITHUB 1\", already has a rate limit set\n\n",
 		},
 		{
-			name:         "prevent code hosts that are not allowed",
-			kind:         extsvc.KindGitHub,
-			config:       `{"url": "https://github.example.com", "repositoryQuery": ["none"], "token": "abc"}`,
-			hasNamespace: true,
-			wantErr:      `users are only allowed to add external service for https://github.com/ and https://gitlab.com/`,
+			name:            "prevent code hosts that are not allowed",
+			kind:            extsvc.KindGitHub,
+			config:          `{"url": "https://github.example.com", "repositoryQuery": ["none"], "token": "abc"}`,
+			namespaceUserID: 1,
+			wantErr:         `users are only allowed to add external service for https://github.com/ and https://gitlab.com/`,
 		},
 		{
-			name:         "gjson handles comments",
-			kind:         extsvc.KindGitHub,
-			config:       `{"url": "https://github.com", "token": "abc", "repositoryQuery": ["affiliated"]} // comment`,
-			hasNamespace: false,
-			wantErr:      "<nil>",
+			name:            "gjson handles comments",
+			kind:            extsvc.KindGitHub,
+			config:          `{"url": "https://github.com", "token": "abc", "repositoryQuery": ["affiliated"]} // comment`,
+			namespaceUserID: 1,
+			wantErr:         "<nil>",
 		},
 		{
-			name:         "prevent disallowed repositoryPathPattern field",
-			kind:         extsvc.KindGitHub,
-			config:       `{"url": "https://github.com", "repositoryPathPattern": "github/{nameWithOwner}"}`,
-			hasNamespace: true,
-			wantErr:      `field "repositoryPathPattern" is not allowed in a user-added external service`,
+			name:            "prevent disallowed repositoryPathPattern field",
+			kind:            extsvc.KindGitHub,
+			config:          `{"url": "https://github.com", "repositoryPathPattern": "github/{nameWithOwner}"}`,
+			namespaceUserID: 1,
+			wantErr:         `field "repositoryPathPattern" is not allowed in a user-added external service`,
 		},
 		{
-			name:         "prevent disallowed nameTransformations field",
-			kind:         extsvc.KindGitHub,
-			config:       `{"url": "https://github.com", "nameTransformations": [{"regex": "\\.d/","replacement": "/"},{"regex": "-git$","replacement": ""}]}`,
-			hasNamespace: true,
-			wantErr:      `field "nameTransformations" is not allowed in a user-added external service`,
+			name:            "prevent disallowed nameTransformations field",
+			kind:            extsvc.KindGitHub,
+			config:          `{"url": "https://github.com", "nameTransformations": [{"regex": "\\.d/","replacement": "/"},{"regex": "-git$","replacement": ""}]}`,
+			namespaceUserID: 1,
+			wantErr:         `field "nameTransformations" is not allowed in a user-added external service`,
 		},
 		{
-			name:         "prevent disallowed rateLimit field",
-			kind:         extsvc.KindGitHub,
-			config:       `{"url": "https://github.com", "rateLimit": {}}`,
-			hasNamespace: true,
-			wantErr:      `field "rateLimit" is not allowed in a user-added external service`,
+			name:            "prevent disallowed rateLimit field",
+			kind:            extsvc.KindGitHub,
+			config:          `{"url": "https://github.com", "rateLimit": {}}`,
+			namespaceUserID: 1,
+			wantErr:         `field "rateLimit" is not allowed in a user-added external service`,
+		},
+		{
+			name:            "duplicate kinds not allowed for user owned services",
+			kind:            extsvc.KindGitHub,
+			config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+			namespaceUserID: 1,
+			setup: func(t *testing.T) {
+				t.Cleanup(func() {
+					Mocks.ExternalServices.List = nil
+				})
+				Mocks.ExternalServices.List = func(opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
+					return []*types.ExternalService{
+						{
+							ID:          1,
+							Kind:        extsvc.KindGitHub,
+							DisplayName: "GITHUB 1",
+							Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+						},
+					}, nil
+				}
+			},
+			wantErr: `existing external service, "GITHUB 1", of same kind already added`,
 		},
 	}
 	for _, test := range tests {
@@ -202,9 +225,9 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			}
 
 			_, err := ExternalServices.ValidateConfig(context.Background(), ValidateExternalServiceConfigOptions{
-				Kind:         test.kind,
-				Config:       test.config,
-				HasNamespace: test.hasNamespace,
+				Kind:            test.kind,
+				Config:          test.config,
+				NamespaceUserID: test.namespaceUserID,
 			})
 			gotErr := fmt.Sprintf("%v", err)
 			if gotErr != test.wantErr {
@@ -431,6 +454,55 @@ func TestExternalServicesStore_Update(t *testing.T) {
 				t.Fatalf("Want unrestricted = %v, but got %v", test.wantUnrestricted, got.Unrestricted)
 			}
 		})
+	}
+}
+
+func TestCountRepoCount(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := actor.WithInternalActor(context.Background())
+
+	// Create a new external service
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	es1 := &types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "GITHUB #1",
+		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+	}
+	err := ExternalServices.Create(ctx, confGet, es1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = dbconn.Global.ExecContext(ctx, `
+INSERT INTO repo (id, name, description, fork)
+VALUES (1, 'github.com/user/repo', '', FALSE);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Insert rows to `external_service_repos` table to test the trigger.
+	q := sqlf.Sprintf(`
+INSERT INTO external_service_repos (external_service_id, repo_id, clone_url)
+VALUES (%d, 1, '')
+`, es1.ID)
+	_, err = dbconn.Global.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := ExternalServices.RepoCount(ctx, es1.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if count != 1 {
+		t.Fatalf("Expected 1, got %d", count)
 	}
 }
 
@@ -879,7 +951,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := context.Background()
 
-	clock := dbtesting.NewFakeClock(time.Now(), 0)
+	clock := timeutil.NewFakeClock(time.Now(), 0)
 
 	svcs := types.MakeExternalServices()
 

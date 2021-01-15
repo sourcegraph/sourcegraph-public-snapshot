@@ -34,6 +34,11 @@ const templates = {
         repo: 'about',
         path: 'handbook/engineering/releases/patch_release_issue_template.md',
     },
+    upgradeMangedInstanceIssue: {
+        owner: 'sourcegraph',
+        repo: 'about',
+        path: 'handbook/engineering/releases/upgrade_managed_issue_template.md',
+    },
 }
 
 /**
@@ -53,6 +58,7 @@ export async function ensureReleaseTrackingIssue({
     assignees: string[]
     releaseDateTime: Date
     oneWorkingDayBeforeRelease: Date
+    oneWorkingDayAfterRelease: Date
     fourWorkingDaysBeforeRelease: Date
     fiveWorkingDaysBeforeRelease: Date
     dryRun: boolean
@@ -136,6 +142,63 @@ export async function ensurePatchReleaseIssue({
             repo: 'sourcegraph',
             assignees,
             body: issueBody,
+            labels: ['release-tracking'],
+        },
+        dryRun
+    )
+}
+
+/**
+ * Ensures a upgrade managed instances to ($MAJOR.$MINOR) tracking issue has been created with the given
+ * parameters using `templates.upgradeManagedInstanceIssue`.
+ */
+export async function ensureUpgradeManagedTrackingIssue({
+    version,
+    assignees,
+    oneWorkingDayAfterRelease,
+    dryRun,
+}: {
+    version: semver.SemVer
+    assignees: string[]
+    oneWorkingDayAfterRelease: Date
+    dryRun: boolean
+}): Promise<{ url: string; created: boolean }> {
+    const octokit = await getAuthenticatedGitHubClient()
+    console.log(`Preparing issue from ${JSON.stringify(templates.upgradeMangedInstanceIssue)}`)
+    const issueTemplate = await getContent(octokit, templates.upgradeMangedInstanceIssue)
+    const majorMinor = `${version.major}.${version.minor}`
+    const issueBody = issueTemplate
+        .replace(/\$MAJOR/g, version.major.toString())
+        .replace(/\$MINOR/g, version.minor.toString())
+        .replace(/\$PATCH/g, version.patch.toString())
+        .replace(
+            /\$ONE_WORKING_DAY_AFTER_RELEASE/g,
+            dateMarkdown(oneWorkingDayAfterRelease, `One working day before ${majorMinor} release`)
+        )
+
+    // Release milestones are not as emphasised now as they used to be, since most teams
+    // use sprints shorter than releases to track their work. For reference, if one is
+    // available we apply it to this tracking issue, otherwise just leave it without a
+    // milestone.
+    let milestoneNumber: number | undefined
+    const milestone = await getReleaseMilestone(octokit, version)
+    if (!milestone) {
+        console.log(
+            `Milestone ${JSON.stringify(releaseMilestoneName(version))} is closed or not found — omitting from issue.`
+        )
+    } else {
+        milestoneNumber = milestone ? milestone.number : undefined
+    }
+
+    return ensureIssue(
+        octokit,
+        {
+            title: managedIssueTrackingTitle(version),
+            owner: 'sourcegraph',
+            repo: 'sourcegraph',
+            assignees,
+            body: issueBody,
+            milestone: milestoneNumber,
             labels: ['release-tracking'],
         },
         dryRun
@@ -259,6 +322,10 @@ function trackingIssueTitle(version: semver.SemVer): string {
         return `${version.major}.${version.minor} release tracking issue`
     }
     return `${version.version} patch release tracking issue`
+}
+
+function managedIssueTrackingTitle(version: semver.SemVer): string {
+    return `${version.version} upgrade managed instances tracking issue`
 }
 
 async function getIssueByTitle(octokit: Octokit, title: string): Promise<Issue | null> {

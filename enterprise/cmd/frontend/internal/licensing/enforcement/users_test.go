@@ -169,9 +169,10 @@ func TestEnforcement_AfterCreateUser(t *testing.T) {
 			}
 
 			if test.wantCalledExecContext != calledExecContext {
-				t.Fatalf("calledExecContext: want %v but got %v", test.wantCalledExecContext, calledExecContext)
-			} else if test.wantSiteAdmin != user.SiteAdmin {
-				t.Fatalf("siteAdmin: want %v but got %v", test.wantSiteAdmin, user.SiteAdmin)
+				t.Errorf("calledExecContext: want %v but got %v", test.wantCalledExecContext, calledExecContext)
+			}
+			if test.wantSiteAdmin != user.SiteAdmin {
+				t.Errorf("siteAdmin: want %v but got %v", test.wantSiteAdmin, user.SiteAdmin)
 			}
 		})
 	}

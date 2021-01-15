@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/inference"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -41,12 +42,12 @@ func NewIndexabilityUpdater(
 	minimumSearchRatio float64,
 	minimumPreciseCount int,
 	interval time.Duration,
-	operations *operations,
+	observationContext *observation.Context,
 ) goroutine.BackgroundRoutine {
 	updater := &IndexabilityUpdater{
 		dbStore:             dbStore,
 		gitserverClient:     gitserverClient,
-		operations:          operations,
+		operations:          newOperations(observationContext),
 		minimumSearchCount:  minimumSearchCount,
 		minimumSearchRatio:  minimumSearchRatio,
 		minimumPreciseCount: minimumPreciseCount,
@@ -54,10 +55,22 @@ func NewIndexabilityUpdater(
 		limiter:             rate.NewLimiter(MaxGitserverRequestsPerSecond, 1),
 	}
 
-	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), interval, updater, operations.handleIndexabilityUpdater)
+	return goroutine.NewPeriodicGoroutineWithMetrics(
+		context.Background(),
+		interval,
+		updater,
+		updater.operations.HandleIndexabilityUpdater,
+	)
 }
 
+// For mocking in tests
+var indexabilityUpdaterEnabled = conf.CodeIntelAutoIndexingEnabled
+
 func (u *IndexabilityUpdater) Handle(ctx context.Context) error {
+	if !indexabilityUpdaterEnabled() {
+		return nil
+	}
+
 	start := time.Now().UTC()
 
 	stats, err := u.dbStore.RepoUsageStatistics(ctx)
@@ -105,7 +118,7 @@ func (u *IndexabilityUpdater) queueRepository(ctx context.Context, repoUsageStat
 	// Enable tracing on the context and trace the operation
 	ctx = ot.WithShouldTrace(ctx, true)
 
-	ctx, traceLog, endObservation := u.operations.queueRepository.WithAndLogger(ctx, &err, observation.Args{
+	ctx, traceLog, endObservation := u.operations.QueueRepository.WithAndLogger(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", repoUsageStatistics.RepositoryID),
 		},

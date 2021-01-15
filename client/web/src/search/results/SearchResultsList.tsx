@@ -8,7 +8,7 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { debounceTime, distinctUntilChanged, filter, first, map, skip, skipUntil } from 'rxjs/operators'
-import { parseSearchURLQuery, PatternTypeProps, InteractiveSearchProps, CaseSensitivityProps } from '..'
+import { parseSearchURLQuery, PatternTypeProps, CaseSensitivityProps } from '..'
 import { FetchFileParameters } from '../../../../shared/src/components/CodeExcerpt'
 import { FileMatch } from '../../../../shared/src/components/FileMatch'
 import { displayRepoName } from '../../../../shared/src/components/RepoFileLink'
@@ -34,6 +34,7 @@ import { QueryState } from '../helpers'
 import { PerformanceWarningAlert } from '../../site/PerformanceWarningAlert'
 import { SearchResultsStats } from './SearchResultsStats'
 import { SearchAlert } from './SearchAlert'
+import { CodeMonitoringProps } from '../../enterprise/code-monitoring'
 
 const isSearchResults = (value: unknown): value is GQL.ISearchResults =>
     typeof value === 'object' &&
@@ -49,8 +50,8 @@ export interface SearchResultsListProps
         ThemeProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        InteractiveSearchProps,
-        VersionContextProps {
+        VersionContextProps,
+        Pick<CodeMonitoringProps, 'enableCodeMonitoring'> {
     location: H.Location
     history: H.History
     authenticatedUser: AuthenticatedUser | null
@@ -74,8 +75,6 @@ export interface SearchResultsListProps
     showSavedQueryModal: boolean
     onSavedQueryModalClose: () => void
     onSaveQueryClick: () => void
-
-    interactiveSearchMode: boolean
 
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     shouldDisplayPerformanceWarning: (deployType: DeployType) => Observable<boolean>
@@ -364,7 +363,6 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                         <SearchResultTypeTabs
                                             {...this.props}
                                             query={this.props.navbarSearchQueryState.query}
-                                            filtersInQuery={this.props.filtersInQuery}
                                             className="search-results-list__tabs"
                                         />
 

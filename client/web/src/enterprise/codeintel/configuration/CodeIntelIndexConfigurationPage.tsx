@@ -7,13 +7,21 @@ import { ErrorAlert } from '../../../components/alerts'
 import { PageTitle } from '../../../components/PageTitle'
 import { SettingsAreaRepositoryFields } from '../../../graphql-operations'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../../settings/DynamicallyImportedMonacoSettingsEditor'
-import { getConfiguration as defaultGetConfiguration, updateConfiguration } from './backend'
+import { getConfiguration as defaultGetConfiguration, updateConfiguration, enqueueIndexJob } from './backend'
 import allConfigSchema from './schema.json'
+import { CodeIntelAutoIndexSaveToolbar, AutoIndexProps } from '../../../components/CodeIntelAutoIndexSaveToolbar'
+import { SaveToolbarPropsGenerator, SaveToolbarProps } from '../../../components/SaveToolbar'
 
 export interface CodeIntelIndexConfigurationPageProps extends RouteComponentProps<{}>, ThemeProps, TelemetryProps {
     repo: Pick<SettingsAreaRepositoryFields, 'id'>
     history: H.History
     getConfiguration?: typeof defaultGetConfiguration
+}
+
+enum CodeIntelIndexEditorState {
+    Idle,
+    Saving,
+    Queueing,
 }
 
 export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexConfigurationPageProps> = ({
@@ -27,8 +35,9 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
 
     const [fetchError, setFetchError] = useState<Error>()
     const [saveError, setSaveError] = useState<Error>()
-    const [saving, setSaving] = useState(() => false)
+    const [state, setState] = useState(() => CodeIntelIndexEditorState.Idle)
     const [configuration, setConfiguration] = useState<string>()
+    const [dirty, setDirty] = useState<boolean>()
 
     useEffect(() => {
         const subscription = getConfiguration({ id: repo.id }).subscribe(configuration => {
@@ -40,7 +49,7 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
 
     const save = useCallback(
         async (content: string) => {
-            setSaving(true)
+            setState(CodeIntelIndexEditorState.Saving)
             setSaveError(undefined)
 
             try {
@@ -49,11 +58,48 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
             } catch (error) {
                 setSaveError(error)
             } finally {
-                setSaving(false)
+                setState(CodeIntelIndexEditorState.Idle)
             }
         },
         [repo]
     )
+    const enqueue = useCallback(async () => {
+        setState(CodeIntelIndexEditorState.Queueing)
+        setSaveError(undefined)
+
+        try {
+            await enqueueIndexJob(repo.id).toPromise()
+        } catch (error) {
+            setSaveError(error)
+        } finally {
+            setState(CodeIntelIndexEditorState.Idle)
+        }
+    }, [repo])
+
+    const onDirtyChange = useCallback((dirty: boolean) => {
+        setDirty(dirty)
+    }, [])
+
+    const saving = state === CodeIntelIndexEditorState.Saving
+    const queueing = state === CodeIntelIndexEditorState.Queueing
+
+    const customToolbar: {
+        propsGenerator: SaveToolbarPropsGenerator<AutoIndexProps>
+        saveToolbar: React.FunctionComponent<SaveToolbarProps & AutoIndexProps>
+    } = {
+        propsGenerator: (props: Readonly<SaveToolbarProps> & Readonly<{}>): SaveToolbarProps & AutoIndexProps => {
+            const autoIndexProps: AutoIndexProps = {
+                onQueueJob: enqueue,
+                enqueueing: queueing,
+            }
+
+            const mergedProps = { ...props, ...autoIndexProps }
+            mergedProps.willShowError = (): boolean => !queueing && !mergedProps.saving
+            mergedProps.saveDiscardDisabled = (): boolean => saving || !dirty || queueing
+            return mergedProps
+        },
+        saveToolbar: CodeIntelAutoIndexSaveToolbar,
+    }
 
     return fetchError ? (
         <ErrorAlert prefix="Error fetching index configuration" error={fetchError} history={history} />
@@ -81,6 +127,8 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
                 isLightTheme={isLightTheme}
                 history={history}
                 telemetryService={telemetryService}
+                customSaveToolbar={customToolbar}
+                onDirtyChange={onDirtyChange}
             />
         </div>
     )

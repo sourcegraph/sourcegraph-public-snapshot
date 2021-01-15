@@ -130,10 +130,10 @@ func GetAndSaveUser(ctx context.Context, op GetAndSaveUserOp) (userID int32, saf
 			return 0, "Unexpected error getting the Sourcegraph user account. Ask a site admin for help.", err
 		}
 		var userUpdate db.UserUpdate
-		if user.DisplayName != op.UserProps.DisplayName {
+		if user.DisplayName == "" && op.UserProps.DisplayName != "" {
 			userUpdate.DisplayName = &op.UserProps.DisplayName
 		}
-		if user.AvatarURL != op.UserProps.AvatarURL {
+		if user.AvatarURL == "" && op.UserProps.AvatarURL != "" {
 			userUpdate.AvatarURL = &op.UserProps.AvatarURL
 		}
 		if userUpdate != (db.UserUpdate{}) {

@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -123,7 +124,7 @@ func parseJSONTime(t testing.TB, ts string) time.Time {
 func newGitHubExternalService(t *testing.T, store *db.ExternalServiceStore) *types.ExternalService {
 	t.Helper()
 
-	clock := dbtesting.NewFakeClock(time.Now(), 0)
+	clock := timeutil.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
 	svc := types.ExternalService{
@@ -222,7 +223,7 @@ func mockRepoComparison(t *testing.T, baseRev, headRev, diff string) {
 func addChangeset(t *testing.T, ctx context.Context, s *store.Store, c *campaigns.Changeset, campaign int64) {
 	t.Helper()
 
-	c.CampaignIDs = append(c.CampaignIDs, campaign)
+	c.Campaigns = append(c.Campaigns, campaigns.CampaignAssoc{CampaignID: campaign})
 	if err := s.UpdateChangeset(ctx, c); err != nil {
 		t.Fatal(err)
 	}

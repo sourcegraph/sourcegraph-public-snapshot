@@ -214,6 +214,21 @@ export function listUserRepositories(
     )
 }
 
+export function listUserRepositoriesAndPollIfEmptyOrAnyCloning(
+    args: Partial<UserRepositoriesVariables>
+): Observable<NonNullable<UserRepositoriesResult['node']>['repositories']> {
+    return listUserRepositories(args).pipe(
+        // Poll every 5000ms if repositories are being cloned or the list is empty.
+        repeatUntil(
+            result =>
+                result.nodes &&
+                result.nodes.length > 0 &&
+                result.nodes.every(nodes => !nodes.mirrorInfo.cloneInProgress && nodes.mirrorInfo.cloned),
+            { delay: 5000 }
+        )
+    )
+}
+
 /**
  * Fetches all repositories.
  *
@@ -527,10 +542,9 @@ export function fetchAllConfigAndSettings(): Observable<AllConfig> {
     ).pipe(
         map(dataOrThrowErrors),
         map(data => {
-            const externalServices: Partial<Record<
-                ExternalServiceKind,
-                ExternalServiceConfig[]
-            >> = data.externalServices.nodes
+            const externalServices: Partial<
+                Record<ExternalServiceKind, ExternalServiceConfig[]>
+            > = data.externalServices.nodes
                 .filter(svc => svc.config)
                 .map(svc => [svc.kind, parseJSONC(svc.config) as ExternalServiceConfig] as const)
                 .reduce<Partial<{ [k in ExternalServiceKind]: ExternalServiceConfig[] }>>(

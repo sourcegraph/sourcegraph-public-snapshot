@@ -12,6 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/search"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -81,7 +82,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 				CreatedAt:           clock.Now(),
 				UpdatedAt:           clock.Now(),
 				Metadata:            githubPR,
-				CampaignIDs:         []int64{int64(i) + 1},
+				Campaigns:           []campaigns.CampaignAssoc{{CampaignID: int64(i) + 1}},
 				ExternalID:          fmt.Sprintf("foobar-%d", i),
 				ExternalServiceType: extsvc.TypeGitHub,
 				ExternalBranch:      fmt.Sprintf("refs/heads/campaigns/test/%d", i),
@@ -161,7 +162,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 			CreatedAt:           clock.Now(),
 			UpdatedAt:           clock.Now(),
 			Metadata:            githubPR,
-			CampaignIDs:         []int64{1},
+			Campaigns:           []campaigns.CampaignAssoc{{CampaignID: 1}},
 			ExternalID:          "foobar-123",
 			ExternalServiceType: extsvc.TypeGitHub,
 			ExternalBranch:      "refs/heads/campaigns/test",
@@ -631,7 +632,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		cs := &campaigns.Changeset{
 			RepoID:              repo.ID,
 			Metadata:            githubPR,
-			CampaignIDs:         []int64{1},
+			Campaigns:           []campaigns.CampaignAssoc{{CampaignID: 1}},
 			ExternalID:          fmt.Sprintf("foobar-%d", 42),
 			ExternalServiceType: extsvc.TypeGitHub,
 			ExternalBranch:      "refs/heads/campaigns/test",
@@ -796,7 +797,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 
 		for i := range have {
 			// Test that duplicates are not introduced.
-			have[i].CampaignIDs = append(have[i].CampaignIDs, have[i].CampaignIDs...)
+			have[i].Campaigns = append(have[i].Campaigns, have[i].Campaigns...)
 
 			if err := s.UpdateChangeset(ctx, have[i]); err != nil {
 				t.Fatal(err)
@@ -810,8 +811,8 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 
 		for i := range have {
 			// Test we can add to the set.
-			have[i].CampaignIDs = append(have[i].CampaignIDs, 42)
-			want[i].CampaignIDs = append(want[i].CampaignIDs, 42)
+			have[i].Campaigns = append(have[i].Campaigns, campaigns.CampaignAssoc{CampaignID: 42})
+			want[i].Campaigns = append(want[i].Campaigns, campaigns.CampaignAssoc{CampaignID: 42})
 
 			if err := s.UpdateChangeset(ctx, have[i]); err != nil {
 				t.Fatal(err)
@@ -820,8 +821,8 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		}
 
 		for i := range have {
-			sort.Slice(have[i].CampaignIDs, func(a, b int) bool {
-				return have[i].CampaignIDs[a] < have[i].CampaignIDs[b]
+			sort.Slice(have[i].Campaigns, func(a, b int) bool {
+				return have[i].Campaigns[a].CampaignID < have[i].Campaigns[b].CampaignID
 			})
 
 			if diff := cmp.Diff(have[i], want[i]); diff != "" {
@@ -831,8 +832,8 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 
 		for i := range have {
 			// Test we can remove from the set.
-			have[i].CampaignIDs = have[i].CampaignIDs[:0]
-			want[i].CampaignIDs = want[i].CampaignIDs[:0]
+			have[i].Campaigns = have[i].Campaigns[:0]
+			want[i].Campaigns = want[i].Campaigns[:0]
 
 			if err := s.UpdateChangeset(ctx, have[i]); err != nil {
 				t.Fatal(err)
@@ -1186,7 +1187,7 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 			CreatedAt:           clock.Now(),
 			UpdatedAt:           clock.Now(),
 			Metadata:            githubPR,
-			CampaignIDs:         []int64{int64(i) + 1},
+			Campaigns:           []campaigns.CampaignAssoc{{CampaignID: int64(i) + 1}},
 			ExternalID:          fmt.Sprintf("foobar-%d", i),
 			ExternalServiceType: extsvc.TypeGitHub,
 			ExternalBranch:      "refs/heads/campaigns/test",
@@ -1224,7 +1225,8 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 		if err != nil {
 			t.Fatal(err)
 		}
-		cs.CampaignIDs = []int64{c.ID}
+
+		cs.Campaigns = []campaigns.CampaignAssoc{{CampaignID: c.ID}}
 
 		if err := s.UpdateChangeset(ctx, cs); err != nil {
 			t.Fatal(err)
@@ -1311,7 +1313,7 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 	})
 
 	t.Run("ignore closed campaign", func(t *testing.T) {
-		closedCampaignID := changesets[0].CampaignIDs[0]
+		closedCampaignID := changesets[0].Campaigns[0].CampaignID
 		c, err := s.GetCampaign(ctx, GetCampaignOpts{ID: closedCampaignID})
 		if err != nil {
 			t.Fatal(err)
@@ -1330,8 +1332,8 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 
 		// If a changeset has ANY open campaigns we should list it
 		// Attach cs1 to both an open and closed campaign
-		openCampaignID := changesets[1].CampaignIDs[0]
-		changesets[0].CampaignIDs = []int64{closedCampaignID, openCampaignID}
+		openCampaignID := changesets[1].Campaigns[0].CampaignID
+		changesets[0].Campaigns = []campaigns.CampaignAssoc{{CampaignID: closedCampaignID}, {CampaignID: openCampaignID}}
 		err = s.UpdateChangeset(ctx, changesets[0])
 		if err != nil {
 			t.Fatal(err)
@@ -1536,29 +1538,29 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 
 	// All right, let's run some searches!
 	for name, tc := range map[string]struct {
-		textSearch []ListChangesetsTextSearchExpr
+		textSearch []search.TextSearchTerm
 		want       campaigns.Changesets
 	}{
 		"single changeset based on GitHub metadata title": {
-			textSearch: []ListChangesetsTextSearchExpr{
+			textSearch: []search.TextSearchTerm{
 				{Term: "on GitHub"},
 			},
 			want: campaigns.Changesets{githubChangeset},
 		},
 		"single changeset based on GitLab metadata title": {
-			textSearch: []ListChangesetsTextSearchExpr{
+			textSearch: []search.TextSearchTerm{
 				{Term: "on GitLab"},
 			},
 			want: campaigns.Changesets{gitlabChangeset},
 		},
 		"single changeset based on Bitbucket Server metadata title": {
-			textSearch: []ListChangesetsTextSearchExpr{
+			textSearch: []search.TextSearchTerm{
 				{Term: "on Bitbucket Server"},
 			},
 			want: campaigns.Changesets{bbsChangeset},
 		},
 		"all published changesets based on metadata title": {
-			textSearch: []ListChangesetsTextSearchExpr{
+			textSearch: []search.TextSearchTerm{
 				{Term: "Fix a bunch of bugs"},
 			},
 			want: campaigns.Changesets{
@@ -1568,19 +1570,19 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 			},
 		},
 		"imported changeset based on metadata title": {
-			textSearch: []ListChangesetsTextSearchExpr{
+			textSearch: []search.TextSearchTerm{
 				{Term: "Do some stuff"},
 			},
 			want: campaigns.Changesets{importedChangeset},
 		},
 		"unpublished changeset based on spec title": {
-			textSearch: []ListChangesetsTextSearchExpr{
+			textSearch: []search.TextSearchTerm{
 				{Term: "Eventually"},
 			},
 			want: campaigns.Changesets{unpublishedChangeset},
 		},
 		"negated metadata title": {
-			textSearch: []ListChangesetsTextSearchExpr{
+			textSearch: []search.TextSearchTerm{
 				{Term: "bunch of bugs", Not: true},
 			},
 			want: campaigns.Changesets{
@@ -1589,7 +1591,7 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 			},
 		},
 		"negated spec title": {
-			textSearch: []ListChangesetsTextSearchExpr{
+			textSearch: []search.TextSearchTerm{
 				{Term: "Eventually", Not: true},
 			},
 			want: campaigns.Changesets{
@@ -1600,7 +1602,7 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 			},
 		},
 		"repo name": {
-			textSearch: []ListChangesetsTextSearchExpr{
+			textSearch: []search.TextSearchTerm{
 				{Term: string(githubRepo.Name)},
 			},
 			want: campaigns.Changesets{
@@ -1610,7 +1612,7 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 			},
 		},
 		"title and repo name together": {
-			textSearch: []ListChangesetsTextSearchExpr{
+			textSearch: []search.TextSearchTerm{
 				{Term: string(githubRepo.Name)},
 				{Term: "Eventually"},
 			},
@@ -1619,7 +1621,7 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 			},
 		},
 		"multiple title matches together": {
-			textSearch: []ListChangesetsTextSearchExpr{
+			textSearch: []search.TextSearchTerm{
 				{Term: "Eventually"},
 				{Term: "fix"},
 			},
@@ -1628,7 +1630,7 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 			},
 		},
 		"negated repo name": {
-			textSearch: []ListChangesetsTextSearchExpr{
+			textSearch: []search.TextSearchTerm{
 				{Term: string(githubRepo.Name), Not: true},
 			},
 			want: campaigns.Changesets{
@@ -1637,27 +1639,27 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 			},
 		},
 		"combined negated repo names": {
-			textSearch: []ListChangesetsTextSearchExpr{
+			textSearch: []search.TextSearchTerm{
 				{Term: string(githubRepo.Name), Not: true},
 				{Term: string(gitlabRepo.Name), Not: true},
 			},
 			want: campaigns.Changesets{bbsChangeset},
 		},
 		"no results due to conflicting requirements": {
-			textSearch: []ListChangesetsTextSearchExpr{
+			textSearch: []search.TextSearchTerm{
 				{Term: string(githubRepo.Name)},
 				{Term: string(gitlabRepo.Name)},
 			},
 			want: campaigns.Changesets{},
 		},
 		"no results due to a subset of a word": {
-			textSearch: []ListChangesetsTextSearchExpr{
+			textSearch: []search.TextSearchTerm{
 				{Term: "unch"},
 			},
 			want: campaigns.Changesets{},
 		},
 		"no results due to text that doesn't exist in the search scope": {
-			textSearch: []ListChangesetsTextSearchExpr{
+			textSearch: []search.TextSearchTerm{
 				{Term: "she dreamt she was a bulldozer, she dreamt she was in an empty field"},
 			},
 			want: campaigns.Changesets{},

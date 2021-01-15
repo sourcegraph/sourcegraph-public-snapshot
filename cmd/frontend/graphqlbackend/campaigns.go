@@ -65,8 +65,9 @@ type ChangesetSpecsConnectionArgs struct {
 }
 
 type ChangesetApplyPreviewConnectionArgs struct {
-	First int32
-	After *string
+	First  int32
+	After  *string
+	Search *string
 }
 
 type CampaignArgs struct {
@@ -213,10 +214,25 @@ type HiddenApplyPreviewTargetsDetachResolver interface {
 	Changeset(ctx context.Context) (HiddenExternalChangesetResolver, error)
 }
 
+type ChangesetApplyPreviewConnectionStatsResolver interface {
+	Push() int32
+	Update() int32
+	Undraft() int32
+	Publish() int32
+	PublishDraft() int32
+	Sync() int32
+	Import() int32
+	Close() int32
+	Reopen() int32
+	Sleep() int32
+	Detach() int32
+}
+
 type ChangesetApplyPreviewConnectionResolver interface {
 	TotalCount(ctx context.Context) (int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 	Nodes(ctx context.Context) ([]ChangesetApplyPreviewResolver, error)
+	Stats(ctx context.Context) (ChangesetApplyPreviewConnectionStatsResolver, error)
 }
 
 type ChangesetSpecConnectionResolver interface {

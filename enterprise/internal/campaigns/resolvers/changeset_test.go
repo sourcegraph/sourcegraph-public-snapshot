@@ -239,6 +239,7 @@ func TestChangesetResolver(t *testing.T) {
 				Repository:  apitest.Repository{Name: string(repo.Name)},
 				ExternalURL: apitest.ExternalURL{
 					URL:         "https://github.com/sourcegraph/sourcegraph/pull/12345",
+					ServiceKind: "GITHUB",
 					ServiceType: "github",
 				},
 				State: string(campaigns.ChangesetStateOpen),
@@ -311,7 +312,7 @@ query($changeset: ID!) {
       state
       reviewState
       checkState
-      externalURL { url, serviceType }
+      externalURL { url, serviceKind, serviceType }
       nextSyncAt
       error
 
