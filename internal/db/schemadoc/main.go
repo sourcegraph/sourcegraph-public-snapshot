@@ -57,12 +57,7 @@ func generate(databaseName string) (string, error) {
 		runIgnoreError("dropdb", dbname)
 		defer runIgnoreError("dropdb", dbname)
 
-		return generateInternal(databaseName, "dbname="+dbname, func(cmd ...string) (string, error) {
-			c := exec.Command(cmd[0], cmd[1:]...)
-			c.Stderr = logger.Writer()
-			out, err := c.Output()
-			return string(out), err
-		})
+		return generateInternal(databaseName, "dbname="+dbname, runWithPrefix(nil))
 	}
 
 	logger.Printf("Running PostgreSQL 9.6 in docker since local version is %s", strings.TrimSpace(string(out)))
@@ -98,13 +93,7 @@ func generate(databaseName string) (string, error) {
 		}
 		time.Sleep(time.Second)
 	}
-	return generateInternal(databaseName, "postgres://postgres@127.0.0.1:5433/postgres?dbname="+dbname, func(cmd ...string) (string, error) {
-		cmd = append([]string{"exec", "-u", "postgres", dbname}, cmd...)
-		c := exec.Command("docker", cmd...)
-		c.Stderr = logger.Writer()
-		out, err := c.Output()
-		return string(out), err
-	})
+	return generateInternal(databaseName, "postgres://postgres@127.0.0.1:5433/postgres?dbname="+dbname, runWithPrefix([]string{"docker", "exec", "-u", "postgres", dbname}))
 }
 
 func generateInternal(databaseName, dataSource string, run func(cmd ...string) (string, error)) (string, error) {
@@ -349,7 +338,17 @@ func describeTypes(db *sql.DB) (map[string][]string, error) {
 	}
 
 	return values, nil
+}
 
+func runWithPrefix(prefix []string) func(cmd ...string) (string, error) {
+	return func(cmd ...string) (string, error) {
+		cmd = append(prefix, cmd...)
+
+		c := exec.Command(cmd[0], cmd[1:]...)
+		c.Stderr = logger.Writer()
+		out, err := c.Output()
+		return string(out), err
+	}
 }
 
 func runIgnoreError(cmd string, args ...string) {
