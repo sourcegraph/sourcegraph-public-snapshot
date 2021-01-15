@@ -42,8 +42,8 @@ export const PreviewFilterRow: React.FunctionComponent<PreviewFilterRowProps> = 
     }, [search])
 
     const onSubmit = useCallback(
-        (event?: React.FormEvent<HTMLFormElement>): void => {
-            event?.preventDefault()
+        (event: React.FormEvent<HTMLFormElement>): void => {
+            event.preventDefault()
             setSearch(searchElement.current?.value)
         },
         [setSearch, searchElement]
@@ -54,7 +54,7 @@ export const PreviewFilterRow: React.FunctionComponent<PreviewFilterRowProps> = 
             <div className="m-0 col">
                 <Form className="form-inline d-flex my-2" onSubmit={onSubmit}>
                     <input
-                        className="form-control flex-grow-1 changeset-filter__search"
+                        className="form-control flex-grow-1"
                         type="search"
                         ref={searchElement}
                         defaultValue={search}
