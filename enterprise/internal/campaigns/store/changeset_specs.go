@@ -573,6 +573,7 @@ func (s *Store) GetRewirerMappings(ctx context.Context, opts GetRewirerMappingsO
 }
 
 func getRewirerMappingsQuery(opts GetRewirerMappingsOpts) *sqlf.Query {
+	campaignID := strconv.Itoa(int(opts.CampaignID))
 	// If there's a text search, we want to add the appropriate WHERE clauses to
 	// the query.
 	//
@@ -620,7 +621,7 @@ func getRewirerMappingsQuery(opts GetRewirerMappingsOpts) *sqlf.Query {
 		opts.CampaignSpecID,
 		opts.CampaignID,
 		opts.CampaignSpecID,
-		opts.CampaignID,
+		campaignID,
 		detachTextSearch,
 		opts.LimitOffset.SQL(),
 	)
