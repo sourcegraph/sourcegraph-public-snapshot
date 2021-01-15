@@ -6,8 +6,8 @@ This document provides a high level overview of Sourcegraph's architecture so yo
 
 At its core, Sourcegraph maintains a persistent cache of all the code that is connected to it. It is persistent, because this data is critical for Sourcegraph to function, but it is ultimately a cache because the code host is the source of truth and our cache is eventually consistent.
 
-- [gitserver](../../../../cmd/gitserver/README.md) is the sharded service that stores the code and makes it accessible to other Sourcegraph services.
-- [repo-updater](../../../../cmd/repo-updater/README.md) is the singleton service that is responsible for ensuring all the code in gitserver is as up-to-date as possible while respecting code host rate limits. It is also responsible for syncing code repository metadata from the code host that is stored in the `repo` table of our Postgres database.
+- [gitserver](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/cmd/gitserver/README.md) is the sharded service that stores the code and makes it accessible to other Sourcegraph services.
+- [repo-updater](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/cmd/repo-updater/README.md) is the singleton service that is responsible for ensuring all the code in gitserver is as up-to-date as possible while respecting code host rate limits. It is also responsible for syncing code repository metadata from the code host that is stored in the `repo` table of our Postgres database.
 
 If you want to learn more about how code is synchronized, read [Life of a repository](life-of-a-repository.md).
 
@@ -140,39 +140,11 @@ TODO
 
 Sourcegraph is deployable via three supported methods:
 
-- [pure-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker) for small environments on a single server. Easiest and quickest to setup with a series of bash scripts. Little infrastructure knowledge is required. 
-- [docker-compose](https://github.com/sourcegraph/deploy-sourcegraph-docker/docker-compose) is intended to be used for small to medium production deployments, with some customization available. Easy to setup with basic infrastructure and docker knowledge required. An example of a compose deployment.
-- [kubernetes](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/master/docker-compose) is intended for all medium to large scale production deployments that require fault tolerance and high availibility. For advanced users only with significant kubernetes experience required.
+- [Kubernetes](../../../admin/install/kubernetes/index.md) is intended for all medium to large scale production deployments that require fault tolerance and high availibility. For advanced users only with significant kubernetes experience required. This deployment method is developed in [`deploy-sourcegraph`](https://github.com/sourcegraph/deploy-sourcegraph-docker).
+- [Docker-Compose](../../../admin/install/docker-compose/index.md) is intended to be used for small to medium production deployments, with some customization available. Easy to setup with basic infrastructure and docker knowledge required. A variation on this is the [pure-Docker option](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/README.md). Both of these deployment methods are developed in [`deploy-sourcegraph-docker`](https://github.com/sourcegraph/deploy-sourcegraph-docker).
+- [Server](../../../admin/install/docker/index.md) for small environments on a single server. Easiest and quickest to setup with a single command. Little infrastructure knowledge is required. This deployment method is developed in [`cmd/server`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/cmd/server).
 
-The [resource estimator](https://docs.sourcegraph.com/admin/install/resource_estimator) can guide you on the requirements for each deployment type. 
-
-If you want to learn more about deploying Sourcegraph:
-- [docker-compose](https://docs.sourcegraph.com/admin/install/docker-compose)
-- [Kubernetes](https://docs.sourcegraph.com/admin/install/kubernetes)
-
-### Internal examples
-
-The following are working internal deployments that can be used as a reference for various deployment types:
-
-#### Docker-compose
-
- - [demo.sourcegraph.com](https://demo.sourcegraph.com)
- - [devmanaged.sourcegraph.com](https://devmanaged.sourcegraph.com)
-
- Both of these are [managed instances](https://about.sourcegraph.com/handbook/engineering/distribution/managed) and are the responsibility of the Distribution team. 
-
- #### Kubernetes
-
- - [sourcegraph.com](https://sourcegraph.com) Continuously updated from [this repo](https://github.com/sourcegraph/deploy-sourcegraph-dot-com)
- - [k8s.sgdev.org](https://k8s.sgdev.org) Continously updated from [this repo](https://github.com/sourcegraph/deploy-sourcegraph-dogfood-k8s-2)
-
- These are two examples of internal Kubernetes deployments.
-
- If you want to learn more about Internal Deployments:
- - [Internal deployments of Sourcegraph](https://about.sourcegraph.com/handbook/engineering/deployments)
-
-
-
+The [resource estimator](https://docs.sourcegraph.com/admin/install/resource_estimator) can guide you on the requirements for each deployment type.
 
 ## Observability
 
