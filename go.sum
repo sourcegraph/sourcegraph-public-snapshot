@@ -778,8 +778,6 @@ github.com/hexops/autogold v1.2.0 h1:qZN9ARrud+VavYs/lZc+4cZvWrwptj3pCtms9jukeVA
 github.com/hexops/autogold v1.2.0/go.mod h1:8YhEzAjkMWmNx+uO18cGxVirXgQXjdvaMwt0Tswbo7w=
 github.com/hexops/gotextdiff v1.0.3 h1:gitA9+qJrrTCsiCl7+kh75nPqQt1cx4ZkudSTLoUqJM=
 github.com/hexops/gotextdiff v1.0.3/go.mod h1:pSWU5MAI3yDq+fZBTazCSJysOMbxWL1BSow5/V2vxeg=
-github.com/hexops/valast v1.2.0 h1:BU1kbhKePO+mct+SknfD7RWnAziq4tOZLouIqSeWmOA=
-github.com/hexops/valast v1.2.0/go.mod h1:hQo2H4eaDuesNxXXgI4kzc8+BwD5o2EFTkkEKd5P3zI=
 github.com/hexops/valast v1.3.0 h1:/dVcyUWEaQxUGbS6ImRH6cmF9DbhRyMqIxIo6kyHoPY=
 github.com/hexops/valast v1.3.0/go.mod h1:hQo2H4eaDuesNxXXgI4kzc8+BwD5o2EFTkkEKd5P3zI=
 github.com/honeycombio/libhoney-go v1.14.0 h1:e764aeqc8d1jCcqvhAFCuuZ7S8nqJsg1DMazT/yRlGM=

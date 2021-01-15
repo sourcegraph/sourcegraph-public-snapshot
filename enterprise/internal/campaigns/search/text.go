@@ -7,28 +7,31 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/search/syntax"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 )
 
-// ParseChangesetSearch parses the given search string into a set of options
-// that can be given to ListChangesets().
-//
-// At present, the only field that will be set in the options is TextSearch.
-// This will change in the future as we start to support field operators.
-func ParseChangesetSearch(search string) (*store.ListChangesetsOpts, error) {
+// TextSearchTerm represents a single term within a search string.
+type TextSearchTerm struct {
+	Term string
+	Not  bool
+}
+
+// ParseTextSearch parses a free-form text search string into a slice of
+// expressions, respecting quoted strings and negation.
+func ParseTextSearch(search string) ([]TextSearchTerm, error) {
 	tree, err := syntax.Parse(search)
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing search string")
 	}
 
-	opts := store.ListChangesetsOpts{
-		TextSearch: make([]store.ListChangesetsTextSearchExpr, 0),
-	}
 	var errs *multierror.Error
+	terms := []TextSearchTerm{}
 	for _, expr := range tree {
 		if expr.Field != "" {
-			// Eventually, we'll support some field types and these will set
-			// other options in the result. For now, though, this is an error.
+			// In the future, we may choose to support field types in campaign
+			// text search queries. When that happens, we should extend this
+			// function to accept an additional parameter defining field types
+			// and what behaviour should be implemented when they are set. Until
+			// then, we'll just error and keep this function simple.
 			errs = multierror.Append(errs, ErrUnsupportedField{
 				ErrExpr: createErrExpr(search, expr),
 				Field:   expr.Field,
@@ -38,12 +41,12 @@ func ParseChangesetSearch(search string) (*store.ListChangesetsOpts, error) {
 
 		switch expr.ValueType {
 		case syntax.TokenLiteral:
-			opts.TextSearch = append(opts.TextSearch, store.ListChangesetsTextSearchExpr{
+			terms = append(terms, TextSearchTerm{
 				Term: expr.Value,
 				Not:  expr.Not,
 			})
 		case syntax.TokenQuoted:
-			opts.TextSearch = append(opts.TextSearch, store.ListChangesetsTextSearchExpr{
+			terms = append(terms, TextSearchTerm{
 				Term: strings.Trim(expr.Value, `"`),
 				Not:  expr.Not,
 			})
@@ -57,5 +60,5 @@ func ParseChangesetSearch(search string) (*store.ListChangesetsOpts, error) {
 		}
 	}
 
-	return &opts, errs.ErrorOrNil()
+	return terms, errs.ErrorOrNil()
 }

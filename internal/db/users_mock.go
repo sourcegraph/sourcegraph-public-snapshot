@@ -32,5 +32,4 @@ func (s *MockUsers) MockGetByID_Return(t *testing.T, returns *types.User, return
 		return returns, returnsErr
 	}
 	return
-
 }
