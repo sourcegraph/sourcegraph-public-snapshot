@@ -9,6 +9,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 
@@ -391,15 +392,22 @@ func watchSyncer(ctx context.Context, syncer *repos.Syncer, sched scheduler, gps
 }
 
 // syncScheduler will periodically list the cloned repositories on gitserver and
-// update the scheduler with the list. It also ensures that all our default repos
-// are known to the scheduler to ensure that they are always cloned even after a
-// gitserver rebalance.
+// update the scheduler with the list. It also ensures that if any of our default
+// repos are missing from the cloned list they will be added for cloning ASAP.
 func syncScheduler(ctx context.Context, sched scheduler, gitserverClient *gitserver.Client, store *repos.Store) {
 	baseRepoStore := idb.NewRepoStoreWith(store)
 
 	doSync := func() {
-		batchSize := 30_000
+		cloned, err := gitserverClient.ListCloned(ctx)
+		if err != nil {
+			log15.Warn("failed to fetch list of cloned repositories", "error", err)
+			return
+		}
 
+		// Sort so that we can perform a binary search instead of allocating a map
+		sort.Strings(cloned)
+
+		batchSize := 30_000
 		opts := idb.ListDefaultReposOptions{
 			Limit:   batchSize,
 			AfterID: 0,
@@ -412,8 +420,21 @@ func syncScheduler(ctx context.Context, sched scheduler, gitserverClient *gitser
 				return
 			}
 
-			// Ensure that default repos are known to the scheduler
-			sched.EnsureScheduled(batch)
+			var toSchedule []*types.RepoName
+			// If one of our default repos is not cloned, we need to add it to the scheduler
+			for i, repo := range batch {
+				name := string(repo.Name)
+				idx := sort.SearchStrings(cloned, string(repo.Name))
+				found := idx < len(cloned) && cloned[idx] == name
+				if found {
+					// cloned, skip it
+					continue
+				}
+				toSchedule = append(toSchedule, batch[i])
+			}
+
+			// Ensure that uncloned repos are known to the scheduler
+			sched.EnsureScheduled(toSchedule)
 
 			if len(batch) < batchSize {
 				break
@@ -421,12 +442,7 @@ func syncScheduler(ctx context.Context, sched scheduler, gitserverClient *gitser
 			opts.AfterID = int32(batch[len(batch)-1].ID)
 		}
 
-		cloned, err := gitserverClient.ListCloned(ctx)
-		if err != nil {
-			log15.Warn("failed to fetch list of cloned repositories", "error", err)
-			return
-		}
-
+		// Ensure that any uncloned repos are moved to the front of the schedule
 		sched.SetCloned(cloned)
 
 		err = store.SetClonedRepos(ctx, cloned...)
