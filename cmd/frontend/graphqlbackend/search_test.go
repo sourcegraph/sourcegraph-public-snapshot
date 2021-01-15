@@ -13,7 +13,6 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/graph-gophers/graphql-go"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -552,7 +551,7 @@ func TestVersionContext(t *testing.T) {
 				versionContext: &tc.versionContext,
 				userSettings:   &schema.Settings{},
 				reposMu:        &sync.Mutex{},
-				resolved:       &repos.Resolved{},
+				resolved:       &searchrepos.Resolved{},
 			}
 
 			db.Mocks.Repos.ListRepoNames = func(ctx context.Context, opts db.ReposListOptions) ([]*types.RepoName, error) {
