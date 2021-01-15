@@ -98,7 +98,9 @@ The primary thing you'll use is to change the Grafana display from plain numbers
 }
 ```
 
-Additional customizations can be made using `ObservablePanel.With()` and [`ObservablePanelOption`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/monitoring/monitoring/README.md#type-observablepanelopton).
+The default `monitoring.Panel()` configures a panel for your observable using recommended defaults, and provides a set of recommended customization options through [`ObservablePanel`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/monitoring/monitoring/README.md#type-observablepanel).
+
+Additional customizations can be made to your observable's panel using `ObservablePanel.With()` and [`ObservablePanelOption`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/monitoring/monitoring/README.md#type-observablepaneloption).
 
 ### Add an alert
 
