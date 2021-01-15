@@ -36,7 +36,9 @@ const CampaignChangelogAlert: React.FunctionComponent = () => (
                 <h4>New campaigns features in version 3.24</h4>
                 <ul className="text-muted mb-0 pl-3">
                     <li>
-                        <code>src</code> now executes campaigns significantly faster on Intel macOS
+                        <code>src</code> now executes campaigns{' '}
+                        <a href="https://github.com/sourcegraph/src-cli/pull/412">significantly faster</a> on Intel
+                        macOS
                     </li>
                     <li>
                         Campaign specs now allow{' '}
@@ -51,7 +53,10 @@ const CampaignChangelogAlert: React.FunctionComponent = () => (
                             templating
                         </a>
                     </li>
-                    <li>The preview of a campaign spec shows even more detail of the pending operations</li>
+                    <li>
+                        When creating or updating a campaign, the preview now provides more information about the
+                        operations to be performed on each changeset
+                    </li>
                 </ul>
             </div>
         </div>
