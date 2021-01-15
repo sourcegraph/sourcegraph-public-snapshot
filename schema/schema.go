@@ -820,7 +820,7 @@ type NotifierOpsGenie struct {
 type NotifierPagerduty struct {
 	ApiUrl string `json:"apiUrl,omitempty"`
 	// IntegrationKey description: Integration key for the PagerDuty Events API v2 - see https://developer.pagerduty.com/docs/events-api-v2/overview
-	IntegrationKey string `json:"integrationKey,omitempty"`
+	IntegrationKey string `json:"integrationKey"`
 	// Severity description: Severity level for PagerDuty alert
 	Severity string `json:"severity,omitempty"`
 	Type     string `json:"type"`
