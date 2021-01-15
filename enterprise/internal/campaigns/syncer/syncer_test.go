@@ -186,9 +186,6 @@ func TestSyncerRun(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		now := time.Now()
 		store := MockSyncStore{
-			listChangesets: func(ctx context.Context, opts store.ListChangesetsOpts) (campaigns.Changesets, int64, error) {
-				return nil, 0, nil
-			},
 			listChangesetSyncData: func(ctx context.Context, opts store.ListChangesetSyncDataOpts) ([]*campaigns.ChangesetSyncData, error) {
 				return []*campaigns.ChangesetSyncData{
 					{
@@ -217,12 +214,51 @@ func TestSyncerRun(t *testing.T) {
 		}
 	})
 
+	t.Run("Sync due but reenqueued for reconciler", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+		defer cancel()
+		now := time.Now()
+		updateCalled := false
+		store := MockSyncStore{
+			getChangeset: func(context.Context, store.GetChangesetOpts) (*campaigns.Changeset, error) {
+				// Return ErrNoResults, which is the result you get when the changeset preconditions aren't met anymore.
+				// The sync data checks for the reconciler state and if it changed since the sync data was loaded,
+				// we don't get back the changeset here and skip it.
+				//
+				// If we don't return ErrNoResults, the rest of the test will fail, because not all
+				// methods of sync store are mocked.
+				return nil, store.ErrNoResults
+			},
+			updateChangeset: func(context.Context, *campaigns.Changeset) error {
+				updateCalled = true
+				return nil
+			},
+			listChangesetSyncData: func(ctx context.Context, opts store.ListChangesetSyncDataOpts) ([]*campaigns.ChangesetSyncData, error) {
+				return []*campaigns.ChangesetSyncData{
+					{
+						ChangesetID:       1,
+						UpdatedAt:         now.Add(-2 * maxSyncDelay),
+						LatestEvent:       now.Add(-2 * maxSyncDelay),
+						ExternalUpdatedAt: now.Add(-2 * maxSyncDelay),
+					},
+				}, nil
+			},
+		}
+		syncer := &changesetSyncer{
+			syncStore:        store,
+			scheduleInterval: 10 * time.Minute,
+		}
+		syncer.Run(ctx)
+		if updateCalled {
+			t.Fatal("Called UpdateChangeset, but shouldn't have")
+		}
+	})
+
 	t.Run("Sync not due", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 		defer cancel()
 		now := time.Now()
 		store := MockSyncStore{
-			listChangesets: mockListChangesets,
 			listChangesetSyncData: func(ctx context.Context, opts store.ListChangesetSyncDataOpts) ([]*campaigns.ChangesetSyncData, error) {
 				return []*campaigns.ChangesetSyncData{
 					{
@@ -254,7 +290,6 @@ func TestSyncerRun(t *testing.T) {
 		// Empty schedule but then we add an item
 		ctx, cancel := context.WithCancel(context.Background())
 		store := MockSyncStore{
-			listChangesets: mockListChangesets,
 			listChangesetSyncData: func(ctx context.Context, opts store.ListChangesetSyncDataOpts) ([]*campaigns.ChangesetSyncData, error) {
 				return []*campaigns.ChangesetSyncData{}, nil
 			},
@@ -307,7 +342,6 @@ func TestSyncRegistry(t *testing.T) {
 	}
 
 	syncStore := MockSyncStore{
-		listChangesets: mockListChangesets,
 		listChangesetSyncData: func(ctx context.Context, opts store.ListChangesetSyncDataOpts) (data []*campaigns.ChangesetSyncData, err error) {
 			return []*campaigns.ChangesetSyncData{
 				{
@@ -391,7 +425,6 @@ func TestSyncRegistry(t *testing.T) {
 type MockSyncStore struct {
 	listChangesetSyncData func(context.Context, store.ListChangesetSyncDataOpts) ([]*campaigns.ChangesetSyncData, error)
 	getChangeset          func(context.Context, store.GetChangesetOpts) (*campaigns.Changeset, error)
-	listChangesets        func(context.Context, store.ListChangesetsOpts) (campaigns.Changesets, int64, error)
 	updateChangeset       func(context.Context, *campaigns.Changeset) error
 	upsertChangesetEvents func(context.Context, ...*campaigns.ChangesetEvent) error
 	transact              func(context.Context) (*store.Store, error)
@@ -403,10 +436,6 @@ func (m MockSyncStore) ListChangesetSyncData(ctx context.Context, opts store.Lis
 
 func (m MockSyncStore) GetChangeset(ctx context.Context, opts store.GetChangesetOpts) (*campaigns.Changeset, error) {
 	return m.getChangeset(ctx, opts)
-}
-
-func (m MockSyncStore) ListChangesets(ctx context.Context, opts store.ListChangesetsOpts) (campaigns.Changesets, int64, error) {
-	return m.listChangesets(ctx, opts)
 }
 
 func (m MockSyncStore) UpdateChangeset(ctx context.Context, c *campaigns.Changeset) error {
@@ -435,8 +464,4 @@ type MockExternalServiceStore struct {
 
 func (m MockExternalServiceStore) List(ctx context.Context, args db.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 	return m.list(ctx, args)
-}
-
-func mockListChangesets(ctx context.Context, opts store.ListChangesetsOpts) (campaigns.Changesets, int64, error) {
-	return nil, 0, nil
 }

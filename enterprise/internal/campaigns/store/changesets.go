@@ -265,6 +265,8 @@ type GetChangesetOpts struct {
 	ExternalID          string
 	ExternalServiceType string
 	ExternalBranch      string
+	ReconcilerState     campaigns.ReconcilerState
+	PublicationState    campaigns.ChangesetPublicationState
 }
 
 // GetChangeset gets a changeset matching the given options.
@@ -312,6 +314,12 @@ func getChangesetQuery(opts *GetChangesetOpts) *sqlf.Query {
 	}
 	if opts.ExternalBranch != "" {
 		preds = append(preds, sqlf.Sprintf("changesets.external_branch = %s", opts.ExternalBranch))
+	}
+	if opts.ReconcilerState != "" {
+		preds = append(preds, sqlf.Sprintf("changesets.reconciler_state = %s", opts.ReconcilerState.ToDB()))
+	}
+	if opts.PublicationState != "" {
+		preds = append(preds, sqlf.Sprintf("changesets.publication_state = %s", opts.PublicationState))
 	}
 
 	return sqlf.Sprintf(
