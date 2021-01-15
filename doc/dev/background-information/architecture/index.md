@@ -76,15 +76,44 @@ The **trigger** watches for new data and if there is new data we call this an ev
 The **actions** are run in response to a trigger event. For now, the only supported action is an email notification to the primary email address of the code monitor's owner. In order for this to work, [`email.address` and `email.smtp` must be configured in site configuration](https://docs.sourcegraph.com/admin/observability/alerting#email). Code monitoring actions will be extended in the future to support webhooks.
 
 If you want to learn more about code monitoring:
+
 - [Code monitoring documentation](https://docs.sourcegraph.com/code_monitoring)
 
 ## Browser extensions
 
-TODO
+The Sourcegraph browser extensions bring the features of Sourcegraph directly into the UI of code hosts such as GitHub, GitLab and Bitbucket.
+
+With the Sourcegraph browser extension installed, users get Sourcegraph features (including code intelligence and Sourcegraph extensions) on their code host while browsing code, viewing diffs, or reviewing pull requests.
+
+This lets users get value from Sourcegraph without leaving their existing workflows on their code host, while also giving them a convenient way to jump into Sourcegraph at any time (by using the `Open in Sourcegraph` button on any repository or file). The browser extension also adds an address bar search shortcut, allowing you to search on Sourcegraph directly from the browser address bar.
+
+If you want to learn more about browser extensions:
+
+- [Sourcegraph browser extensions documentation](../../../integration/browser_extension.md)
+- [Overview of code host integrations](../web/code_host_integrations.md)
+
+## Native integrations (for code hosts)
+
+Native integrations bring Sourcegraph features directly into the UI of code hosts, in a similar way to the browser extension.
+
+Instead of requiring a browser extension, native integrations inject a script by extending the code host directly (for example, using the code host's plugin architecture). The advantage is that Sourcegraph can be enabled for all users of a code host instance, without any action required from each user.
+
+If you want to learn more about native integrations:
+
+- [Overview of code host integrations](../web/code_host_integrations.md)
 
 ## Sourcegraph extension API
 
-TODO
+The Sourcegraph extension API allows developers to write extensions that extend the functionality of Sourcegraph.
+
+Extensions that use the API can add elements and interactions to the Sourcegraph UI, such as:
+
+- adding action buttons in the toolbar
+- decorating specific lines of code in a file
+- contributing hover tooltip information on specific tokens in a file
+- decorating files in directory listings
+
+Some core features of Sourcegraph, like displaying code intelligence hover tooltips, are implemented using the extension API.
 
 If you want to learn more about our extension API:
 
