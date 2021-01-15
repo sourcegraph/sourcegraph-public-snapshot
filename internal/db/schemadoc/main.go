@@ -25,7 +25,11 @@ import (
 	_ "github.com/lib/pq"
 )
 
-const dbname = "schemadoc-gen-temp"
+type runFunc func(quiet bool, cmd ...string) (string, error)
+
+const databaseNamePrefix = "schemadoc-gen-temp-"
+
+const containerName = "schemadoc"
 
 var logger = log.New(os.Stderr, "", log.LstdFlags)
 
@@ -40,34 +44,53 @@ var databases = map[string]string{
 // the current dabase schema, obtained from postgres. The correct PGHOST,
 // PGPORT, PGUSER etc. env variables must be set to run this script.
 func main() {
-	for databaseName, destinationFile := range databases {
-		// Run pg9.6 locally if it exists
-		if version, _ := exec.Command("psql", "--version").CombinedOutput(); versionRe.Match(version) {
-			if err := generateAndWrite(databaseName, "dbname="+dbname, nil, destinationFile); err != nil {
-				log.Fatal(err)
+	if err := mainErr(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func mainErr() error {
+	// Run pg9.6 locally if it exists
+	if version, _ := exec.Command("psql", "--version").CombinedOutput(); versionRe.Match(version) {
+		for databaseName, destinationFile := range databases {
+			if err := generateAndWrite(databaseName, "dbname="+databaseNamePrefix+databaseName, nil, destinationFile); err != nil {
+				return err
 			}
 		}
 
-		// Otherwise execute in a container for consistent output
-		logger.Printf("Running PostgreSQL 9.6 in docker")
+		return nil
+	}
 
-		prefix, shutdown, err := startDocker()
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer shutdown()
+	// Otherwise execute in a container for consistent output
+	logger.Printf("Running PostgreSQL 9.6 in docker")
 
-		if err := generateAndWrite(databaseName, "postgres://postgres@127.0.0.1:5433/postgres?dbname="+dbname, prefix, destinationFile); err != nil {
-			log.Fatal(err)
+	prefix, shutdown, err := startDocker()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer shutdown()
+
+	for databaseName, destinationFile := range databases {
+		if err := generateAndWrite(
+			databaseName,
+			"postgres://postgres@127.0.0.1:5433/postgres?dbname="+databaseNamePrefix+databaseName,
+			prefix,
+			destinationFile,
+		); err != nil {
+			return err
 		}
 	}
+
+	return nil
 }
 
 func generateAndWrite(databaseName, dataSource string, commandPrefix []string, destinationFile string) error {
 	run := runWithPrefix(commandPrefix)
 
-	runIgnoreError("dropdb", dbname)
-	if out, err := run("createdb", dbname); err != nil {
+	// Try to drop a database if it already exists
+	_, _ = run(true, "dropdb", databaseNamePrefix+databaseName)
+
+	if out, err := run(false, "createdb", databaseNamePrefix+databaseName); err != nil {
 		return errors.Wrap(err, fmt.Sprintf("run: %s", out))
 	}
 
@@ -90,22 +113,26 @@ func startDocker() (commandPrefix []string, shutdown func(), _ error) {
 		}
 		logger.Println("docker pull complete")
 	}
-	runIgnoreError("docker", "rm", "--force", dbname)
-	server := exec.Command("docker", "run", "--rm", "--name", dbname, "-e", "POSTGRES_HOST_AUTH_METHOD=trust", "-p", "5433:5432", "postgres:9.6")
+
+	run := runWithPrefix(nil)
+
+	_, _ = run(true, "docker", "rm", "--force", containerName)
+	server := exec.Command("docker", "run", "--rm", "--name", containerName, "-e", "POSTGRES_HOST_AUTH_METHOD=trust", "-p", "5433:5432", "postgres:9.6")
 	if err := server.Start(); err != nil {
-		return nil, nil, err
+		return nil, nil, errors.Wrap(err, "docker run")
 	}
 
 	shutdown = func() {
 		_ = server.Process.Kill()
-		runIgnoreError("docker", "kill", dbname)
+		_, _ = run(true, "docker", "kill", containerName)
 		_ = server.Wait()
 	}
 
 	attempts := 0
 	for {
 		attempts++
-		if err := exec.Command("pg_isready", "-U", "postgres", "-d", dbname, "-h", "127.0.0.1", "-p", "5433").Run(); err == nil {
+		// TODO - not sure why this would work...?
+		if err := exec.Command("pg_isready", "-U", "postgres", "-h", "127.0.0.1", "-p", "5433").Run(); err == nil {
 			break
 		} else if attempts > 30 {
 			shutdown()
@@ -114,14 +141,19 @@ func startDocker() (commandPrefix []string, shutdown func(), _ error) {
 		time.Sleep(time.Second)
 	}
 
-	return []string{"docker", "exec", "-u", "postgres", dbname}, shutdown, nil
+	return []string{"docker", "exec", "-u", "postgres", containerName}, shutdown, nil
 }
 
-func generateInternal(databaseName, dataSource string, run func(cmd ...string) (string, error)) (string, error) {
-	conn, err := dbconn.New(dataSource, "schema_"+databaseName)
+func generateInternal(databaseName, dataSource string, run runFunc) (string, error) {
+	conn, err := dbconn.NewRaw(dataSource)
 	if err != nil {
 		return "", errors.Wrap(err, "SetupGlobalConnection")
 	}
+	defer func() {
+		if err := conn.Close(); err != nil {
+			log.Fatal(err)
+		}
+	}()
 
 	if err := dbconn.MigrateDB(conn, databaseName); err != nil {
 		return "", errors.Wrap(err, "MigrateDB")
@@ -131,7 +163,11 @@ func generateInternal(databaseName, dataSource string, run func(cmd ...string) (
 	if err != nil {
 		return "", errors.Wrap(err, "Open")
 	}
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			log.Fatal(err)
+		}
+	}()
 
 	tables, err := getTables(db)
 	if err != nil {
@@ -162,7 +198,7 @@ func generateInternal(databaseName, dataSource string, run func(cmd ...string) (
 			for table := range ch {
 				logger.Println("describe", table)
 
-				doc, err := describeTable(db, table, run)
+				doc, err := describeTable(db, databaseName, table, run)
 				if err != nil {
 					logger.Fatalf("error: %s", err)
 					continue
@@ -230,7 +266,7 @@ func getTables(db *sql.DB) (tables []string, _ error) {
 	return tables, nil
 }
 
-func describeTable(db *sql.DB, table string, run func(cmd ...string) (string, error)) (string, error) {
+func describeTable(db *sql.DB, databaseName, table string, run runFunc) (string, error) {
 	comment, err := getTableComment(db, table)
 	if err != nil {
 		return "", err
@@ -242,7 +278,7 @@ func describeTable(db *sql.DB, table string, run func(cmd ...string) (string, er
 	}
 
 	// Get postgres "describe table" output.
-	out, err := run("psql", "-X", "--quiet", "--dbname", dbname, "-c", fmt.Sprintf("\\d %s", table))
+	out, err := run(false, "psql", "-X", "--quiet", "--dbname", databaseNamePrefix+databaseName, "-c", fmt.Sprintf("\\d %s", table))
 	if err != nil {
 		return "", errors.Wrap(err, fmt.Sprintf("run: %s", out))
 	}
@@ -364,17 +400,16 @@ func describeTypes(db *sql.DB) (map[string][]string, error) {
 	return values, nil
 }
 
-func runWithPrefix(prefix []string) func(cmd ...string) (string, error) {
-	return func(cmd ...string) (string, error) {
+func runWithPrefix(prefix []string) runFunc {
+	return func(quiet bool, cmd ...string) (string, error) {
 		cmd = append(prefix, cmd...)
 
 		c := exec.Command(cmd[0], cmd[1:]...)
-		c.Stderr = logger.Writer()
+		if !quiet {
+			c.Stderr = logger.Writer()
+		}
+
 		out, err := c.Output()
 		return string(out), err
 	}
-}
-
-func runIgnoreError(cmd string, args ...string) {
-	_ = exec.Command(cmd, args...).Run()
 }
