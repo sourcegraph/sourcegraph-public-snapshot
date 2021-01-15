@@ -699,7 +699,7 @@ func (s *RepoStore) ListDefaultRepos(ctx context.Context, opts ListDefaultReposO
 
 	cloneClause := sqlf.Sprintf("TRUE")
 	if opts.OnlyUncloned {
-		cloneClause = sqlf.Sprintf("not r.cloned")
+		cloneClause = sqlf.Sprintf("NOT r.cloned")
 	}
 
 	q := sqlf.Sprintf(`
