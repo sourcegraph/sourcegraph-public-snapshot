@@ -63,9 +63,9 @@ export const CampaignPreviewStatsBar: React.FunctionComponent<CampaignPreviewSta
 export const PreviewStatsAdded: React.FunctionComponent<{ count: number }> = ({ count }) => (
     <div className="d-flex flex-column campaign-preview-stats-bar__stat mr-2 text-nowrap">
         <div className="d-flex flex-column align-items-center justify-content-center">
-            <span className="preview-stats-added__dot">&nbsp;</span>
+            <span className="preview-stats-added__line">&nbsp;</span>
             <span className="preview-stats-added__icon">+</span>
-            <span className="preview-stats-added__dot">&nbsp;</span>
+            <span className="preview-stats-added__line">&nbsp;</span>
         </div>
         {count} added
     </div>
@@ -73,9 +73,9 @@ export const PreviewStatsAdded: React.FunctionComponent<{ count: number }> = ({ 
 export const PreviewStatsModified: React.FunctionComponent<{ count: number }> = ({ count }) => (
     <div className="d-flex flex-column campaign-preview-stats-bar__stat text-nowrap">
         <div className="d-flex flex-column align-items-center">
-            <span className="preview-stats-modified__dot">&nbsp;</span>
+            <span className="preview-stats-modified__line">&nbsp;</span>
             <span className="preview-stats-modified__icon">&bull;</span>
-            <span className="preview-stats-modified__dot">&nbsp;</span>
+            <span className="preview-stats-modified__line">&nbsp;</span>
         </div>
         {count} modified
     </div>
@@ -83,9 +83,9 @@ export const PreviewStatsModified: React.FunctionComponent<{ count: number }> = 
 export const PreviewStatsRemoved: React.FunctionComponent<{ count: number }> = ({ count }) => (
     <div className="d-flex flex-column campaign-preview-stats-bar__stat mr-2 text-nowrap">
         <div className="d-flex flex-column align-items-center">
-            <span className="preview-stats-removed__dot">&nbsp;</span>
+            <span className="preview-stats-removed__line">&nbsp;</span>
             <span className="preview-stats-removed__icon">-</span>
-            <span className="preview-stats-removed__dot">&nbsp;</span>
+            <span className="preview-stats-removed__line">&nbsp;</span>
         </div>
         {count} removed
     </div>

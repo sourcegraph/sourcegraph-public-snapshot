@@ -9,7 +9,7 @@
 }
 
 .preview-stats-added {
-    &__dot {
+    &__line {
         width: 0.25rem;
         height: 0.25rem;
         background-color: var(--oc-lime-6);
@@ -21,7 +21,7 @@
 }
 
 .preview-stats-modified {
-    &__dot {
+    &__line {
         width: 0.25rem;
         height: 0.25rem;
         background-color: var(--oc-yellow-5);
@@ -33,7 +33,7 @@
 }
 
 .preview-stats-removed {
-    &__dot {
+    &__line {
         width: 0.25rem;
         height: 0.25rem;
         background-color: var(--danger);
