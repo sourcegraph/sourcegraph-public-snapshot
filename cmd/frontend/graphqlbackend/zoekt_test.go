@@ -999,9 +999,11 @@ func TestZoektFileMatchToSymbolResults(t *testing.T) {
 		Version:    "deadbeef",
 		LineMatches: []zoekt.LineMatch{{
 			// Skips missing symbol info (shouldn't happen in practice).
+			Line:          []byte(""),
 			LineNumber:    5,
 			LineFragments: []zoekt.LineFragmentMatch{{}},
 		}, {
+			Line:       []byte("symbol a symbol b"),
 			LineNumber: 10,
 			LineFragments: []zoekt.LineFragmentMatch{{
 				SymbolInfo: symbolInfo("a"),
@@ -1009,9 +1011,16 @@ func TestZoektFileMatchToSymbolResults(t *testing.T) {
 				SymbolInfo: symbolInfo("b"),
 			}},
 		}, {
+			Line:       []byte("symbol c"),
 			LineNumber: 15,
 			LineFragments: []zoekt.LineFragmentMatch{{
 				SymbolInfo: symbolInfo("c"),
+			}},
+		}, {
+			Line:       []byte(`bar() { var regex = /.*\//; function baz() { }  } `),
+			LineNumber: 20,
+			LineFragments: []zoekt.LineFragmentMatch{{
+				SymbolInfo: symbolInfo("baz"),
 			}},
 		}},
 	}
@@ -1042,15 +1051,23 @@ func TestZoektFileMatchToSymbolResults(t *testing.T) {
 	}
 
 	want := []protocol.Symbol{{
-		Name: "a",
-		Line: 10,
+		Name:    "a",
+		Line:    10,
+		Pattern: "/^symbol a symbol b$/",
 	}, {
-		Name: "b",
-		Line: 10,
+		Name:    "b",
+		Line:    10,
+		Pattern: "/^symbol a symbol b$/",
 	}, {
-		Name: "c",
-		Line: 15,
-	}}
+		Name:    "c",
+		Line:    15,
+		Pattern: "/^symbol c$/",
+	}, {
+		Name:    "baz",
+		Line:    20,
+		Pattern: `/^bar() { var regex = \/.*\\\/\/; function baz() { }  } $/`,
+	},
+	}
 	for i := range want {
 		want[i].Kind = "kind"
 		want[i].Parent = "parent"
