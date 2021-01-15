@@ -96,7 +96,7 @@ func shardMatchLimitHandler(resultsResolver *SearchResultsResolver) (search.Skip
 }
 
 func excludedForkHandler(resultsResolver *SearchResultsResolver) (search.Skipped, bool) {
-	forks := resultsResolver.excluded.Forks
+	forks := resultsResolver.ExcludedForks
 	if forks == 0 {
 		return search.Skipped{}, false
 	}
@@ -115,7 +115,7 @@ func excludedForkHandler(resultsResolver *SearchResultsResolver) (search.Skipped
 }
 
 func excludedArchiveHandler(resultsResolver *SearchResultsResolver) (search.Skipped, bool) {
-	archived := resultsResolver.excluded.Archived
+	archived := resultsResolver.ExcludedArchived
 	if archived == 0 {
 		return search.Skipped{}, false
 	}
