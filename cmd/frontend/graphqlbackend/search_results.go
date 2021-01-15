@@ -50,12 +50,14 @@ import (
 // SearchResultsCommon contains fields that should be returned by all funcs
 // that contribute to the overall search result set.
 type SearchResultsCommon struct {
-	IsLimitHit bool // whether the limit on results was hit
+	// IsLimitHit is true if we do not have all results that match the query.
+	IsLimitHit bool
 
 	// Repos that were matched by the repo-related filters. This should only
 	// be set once by search, when we have resolved Repos.
 	Repos map[api.RepoID]*types.RepoName
 
+	// Status is a RepoStatusMap of repository search statuses.
 	Status search.RepoStatusMap
 
 	// ExcludedForks is the count of excluded forked repos because the search
@@ -66,7 +68,8 @@ type SearchResultsCommon struct {
 	// search query doesn't apply to them, but that we want to know about.
 	ExcludedArchived int
 
-	IsIndexUnavailable bool // True if indexed search is enabled but was not available during this search.
+	// IsIndexUnavailable is true if indexed search was unavailable.
+	IsIndexUnavailable bool
 }
 
 // update updates c with the other data, deduping as necessary. It modifies c but
