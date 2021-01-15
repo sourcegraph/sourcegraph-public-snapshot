@@ -119,38 +119,41 @@ func (s *Store) GetIndexByID(ctx context.Context, id int) (_ Index, _ bool, err 
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return scanFirstIndex(s.Store.Query(ctx, sqlf.Sprintf(`
-		SELECT
-			u.id,
-			u.commit,
-			u.queued_at,
-			u.state,
-			u.failure_message,
-			u.started_at,
-			u.finished_at,
-			u.process_after,
-			u.num_resets,
-			u.num_failures,
-			u.repository_id,
-			u.repository_name,
-			u.docker_steps,
-			u.root,
-			u.indexer,
-			u.indexer_args,
-			u.outfile,
-			u.execution_logs,
-			s.rank,
-			u.local_steps
-		FROM lsif_indexes_with_repository_name u
-		LEFT JOIN (
-			SELECT r.id, RANK() OVER (ORDER BY COALESCE(r.process_after, r.queued_at)) as rank
-			FROM lsif_indexes_with_repository_name r
-			WHERE r.state = 'queued'
-		) s
-		ON u.id = s.id
-		WHERE u.id = %s
-	`, id)))
+	return scanFirstIndex(s.Store.Query(ctx, sqlf.Sprintf(getIndexByIDQuery, id)))
 }
+
+const getIndexByIDQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/indexes.go:GetIndexByID
+SELECT
+	u.id,
+	u.commit,
+	u.queued_at,
+	u.state,
+	u.failure_message,
+	u.started_at,
+	u.finished_at,
+	u.process_after,
+	u.num_resets,
+	u.num_failures,
+	u.repository_id,
+	u.repository_name,
+	u.docker_steps,
+	u.root,
+	u.indexer,
+	u.indexer_args,
+	u.outfile,
+	u.execution_logs,
+	s.rank,
+	u.local_steps
+FROM lsif_indexes_with_repository_name u
+LEFT JOIN (
+	SELECT r.id, RANK() OVER (ORDER BY COALESCE(r.process_after, r.queued_at)) as rank
+	FROM lsif_indexes_with_repository_name r
+	WHERE r.state = 'queued'
+) s
+ON u.id = s.id
+WHERE u.id = %s
+`
 
 type GetIndexesOptions struct {
 	RepositoryID int
@@ -201,46 +204,46 @@ func (s *Store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Ind
 		return nil, 0, err
 	}
 
-	indexes, err := scanIndexes(tx.Store.Query(
-		ctx,
-		sqlf.Sprintf(`
-			SELECT
-				u.id,
-				u.commit,
-				u.queued_at,
-				u.state,
-				u.failure_message,
-				u.started_at,
-				u.finished_at,
-				u.process_after,
-				u.num_resets,
-				u.num_failures,
-				u.repository_id,
-				u.repository_name,
-				u.docker_steps,
-				u.root,
-				u.indexer,
-				u.indexer_args,
-				u.outfile,
-				u.execution_logs,
-				s.rank,
-				u.local_steps
-			FROM lsif_indexes_with_repository_name u
-			LEFT JOIN (
-				SELECT r.id, RANK() OVER (ORDER BY COALESCE(r.process_after, r.queued_at)) as rank
-				FROM lsif_indexes_with_repository_name r
-				WHERE r.state = 'queued'
-			) s
-			ON u.id = s.id
-			WHERE %s ORDER BY queued_at DESC LIMIT %d OFFSET %d
-		`, sqlf.Join(conds, " AND "), opts.Limit, opts.Offset),
-	))
+	indexes, err := scanIndexes(tx.Store.Query(ctx, sqlf.Sprintf(getIndexesQuery, sqlf.Join(conds, " AND "), opts.Limit, opts.Offset)))
 	if err != nil {
 		return nil, 0, err
 	}
 
 	return indexes, count, nil
 }
+
+const getIndexesQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/indexes.go:GetIndexes
+SELECT
+	u.id,
+	u.commit,
+	u.queued_at,
+	u.state,
+	u.failure_message,
+	u.started_at,
+	u.finished_at,
+	u.process_after,
+	u.num_resets,
+	u.num_failures,
+	u.repository_id,
+	u.repository_name,
+	u.docker_steps,
+	u.root,
+	u.indexer,
+	u.indexer_args,
+	u.outfile,
+	u.execution_logs,
+	s.rank,
+	u.local_steps
+FROM lsif_indexes_with_repository_name u
+LEFT JOIN (
+	SELECT r.id, RANK() OVER (ORDER BY COALESCE(r.process_after, r.queued_at)) as rank
+	FROM lsif_indexes_with_repository_name r
+	WHERE r.state = 'queued'
+) s
+ON u.id = s.id
+WHERE %s ORDER BY queued_at DESC LIMIT %d OFFSET %d
+`
 
 // makeIndexSearchCondition returns a disjunction of LIKE clauses against all searchable columns of an index.
 func makeIndexSearchCondition(term string) *sqlf.Query {
@@ -267,16 +270,18 @@ func (s *Store) IsQueued(ctx context.Context, repositoryID int, commit string) (
 	}})
 	defer endObservation(1, observation.Args{})
 
-	count, _, err := basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(`
-		SELECT COUNT(*) WHERE EXISTS (
-			SELECT id FROM lsif_uploads_with_repository_name WHERE state != 'deleted' AND repository_id = %s AND commit = %s
-			UNION
-			SELECT id FROM lsif_indexes_with_repository_name WHERE repository_id = %s AND commit = %s
-		)
-	`, repositoryID, commit, repositoryID, commit)))
-
+	count, _, err := basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(isQueuedQuery, repositoryID, commit, repositoryID, commit)))
 	return count > 0, err
 }
+
+const isQueuedQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/indexes.go:IsQueued
+SELECT COUNT(*) WHERE EXISTS (
+	SELECT id FROM lsif_uploads_with_repository_name WHERE state != 'deleted' AND repository_id = %s AND commit = %s
+	UNION
+	SELECT id FROM lsif_indexes_with_repository_name WHERE repository_id = %s AND commit = %s
+)
+`
 
 // InsertIndex inserts a new index and returns its identifier.
 func (s *Store) InsertIndex(ctx context.Context, index Index) (_ int, err error) {
@@ -297,21 +302,8 @@ func (s *Store) InsertIndex(ctx context.Context, index Index) (_ int, err error)
 
 	id, _, err := basestore.ScanFirstInt(s.Store.Query(
 		ctx,
-		sqlf.Sprintf(`
-			INSERT INTO lsif_indexes (
-				state,
-				commit,
-				repository_id,
-				docker_steps,
-				local_steps,
-				root,
-				indexer,
-				indexer_args,
-				outfile,
-				execution_logs
-			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-			RETURNING id
-		`,
+		sqlf.Sprintf(
+			insertIndexQuery,
 			index.State,
 			index.Commit,
 			index.RepositoryID,
@@ -327,6 +319,23 @@ func (s *Store) InsertIndex(ctx context.Context, index Index) (_ int, err error)
 
 	return id, err
 }
+
+const insertIndexQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/indexes.go:InsertIndex
+INSERT INTO lsif_indexes (
+	state,
+	commit,
+	repository_id,
+	docker_steps,
+	local_steps,
+	root,
+	indexer,
+	indexer_args,
+	outfile,
+	execution_logs
+) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+RETURNING id
+`
 
 var indexColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("u.id"),
@@ -366,16 +375,14 @@ func (s *Store) DeleteIndexByID(ctx context.Context, id int) (_ bool, err error)
 	}
 	defer func() { err = tx.Done(err) }()
 
-	_, exists, err := basestore.ScanFirstInt(tx.Store.Query(
-		ctx,
-		sqlf.Sprintf(`
-			DELETE FROM lsif_indexes
-			WHERE id = %s
-			RETURNING repository_id
-		`, id),
-	))
+	_, exists, err := basestore.ScanFirstInt(tx.Store.Query(ctx, sqlf.Sprintf(deleteIndexByIDQuery, id)))
 	return exists, err
 }
+
+const deleteIndexByIDQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/indexes.go:DeleteIndexByID
+DELETE FROM lsif_indexes WHERE id = %s RETURNING repository_id
+`
 
 // DeleteIndexesWithoutRepository deletes indexes associated with repositories that were deleted at least
 // DeletedRepositoryGracePeriod ago. This returns the repository identifier mapped to the number of indexes
@@ -387,17 +394,20 @@ func (s *Store) DeleteIndexesWithoutRepository(ctx context.Context, now time.Tim
 	// TODO(efritz) - this would benefit from an index on repository_id. We currently have
 	// a similar one on this index, but only for uploads that are completed or visible at tip.
 
-	return scanCounts(s.Store.Query(ctx, sqlf.Sprintf(`
-		WITH deleted_repos AS (
-			SELECT r.id AS id FROM repo r
-			WHERE
-				%s - r.deleted_at >= %s * interval '1 second' AND
-				EXISTS (SELECT 1 from lsif_indexes u WHERE u.repository_id = r.id)
-		),
-		deleted_uploads AS (
-			DELETE FROM lsif_indexes u WHERE repository_id IN (SELECT id FROM deleted_repos)
-			RETURNING u.id, u.repository_id
-		)
-		SELECT d.repository_id, COUNT(*) FROM deleted_uploads d GROUP BY d.repository_id
-	`, now.UTC(), DeletedRepositoryGracePeriod/time.Second)))
+	return scanCounts(s.Store.Query(ctx, sqlf.Sprintf(deleteIndexesWithoutRepositoryQuery, now.UTC(), DeletedRepositoryGracePeriod/time.Second)))
 }
+
+const deleteIndexesWithoutRepositoryQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/indexes.go:DeleteIndexesWithoutRepository
+WITH deleted_repos AS (
+	SELECT r.id AS id FROM repo r
+	WHERE
+		%s - r.deleted_at >= %s * interval '1 second' AND
+		EXISTS (SELECT 1 from lsif_indexes u WHERE u.repository_id = r.id)
+),
+deleted_uploads AS (
+	DELETE FROM lsif_indexes u WHERE repository_id IN (SELECT id FROM deleted_repos)
+	RETURNING u.id, u.repository_id
+)
+SELECT d.repository_id, COUNT(*) FROM deleted_uploads d GROUP BY d.repository_id
+`
