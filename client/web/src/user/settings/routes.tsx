@@ -27,6 +27,11 @@ const ExternalServicePage = lazyComponent(
     'ExternalServicePage'
 )
 
+const UserSettingsPasswordPage = lazyComponent(
+    () => import('./auth/UserSettingsPasswordPage'),
+    'UserSettingsPasswordPage'
+)
+
 export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     {
         path: '',
@@ -57,7 +62,7 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     {
         path: '/password',
         exact: true,
-        render: lazyComponent(() => import('./auth/UserSettingsPasswordPage'), 'UserSettingsPasswordPage'),
+        render: props => <UserSettingsPasswordPage {...props} context={window.context} />,
     },
     {
         path: '/emails',

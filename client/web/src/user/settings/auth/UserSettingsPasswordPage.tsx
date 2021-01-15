@@ -17,11 +17,13 @@ import { UserAreaUserFields } from '../../../graphql-operations'
 import GitHubIcon from 'mdi-react/GithubIcon'
 import GitLabIcon from 'mdi-react/GitlabIcon'
 import { Link } from '../../../../../shared/src/components/Link'
+import { SourcegraphContext } from '../../../jscontext'
 
 interface Props extends RouteComponentProps<{}> {
     user: UserAreaUserFields
     authenticatedUser: AuthenticatedUser
     history: H.History
+    context: Pick<SourcegraphContext, 'authProviders' | 'sourcegraphDotComMode'>
 }
 
 interface State {
@@ -92,6 +94,7 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
+        debugger
         return (
             <div className="user-settings-password-page">
                 <PageTitle title="Account security" />
