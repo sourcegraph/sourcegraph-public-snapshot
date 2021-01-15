@@ -733,7 +733,7 @@ UNION
 	WHERE
 		r.deleted_at IS NULL
 		AND r.id > %s
-        AND %s
+		AND %s
 
 	ORDER BY id ASC
 	LIMIT %s`, opts.AfterID, cloneClause, opts.AfterID, cloneClause, opts.Limit)
