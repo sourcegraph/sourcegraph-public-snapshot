@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"sort"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	zoektrpc "github.com/google/zoekt/rpc"
 	"github.com/keegancsmith/sqlf"
 
+	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	searchzoekt "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db"
@@ -46,9 +48,6 @@ func TestIndexedSearch(t *testing.T) {
 	}
 
 	reposHEAD := makeRepositoryRevisions("foo/bar", "foo/foobar")
-	repoBar := reposHEAD[0].Repo
-	repoFooBar := reposHEAD[1].Repo
-	repos := []*types.RepoName{repoBar, repoFooBar}
 	zoektRepos := []*zoekt.RepoListEntry{{
 		Repository: zoekt.Repository{
 			Name:     "foo/bar",
@@ -81,8 +80,10 @@ func TestIndexedSearch(t *testing.T) {
 				since:           func(time.Time) time.Duration { return time.Second - time.Millisecond },
 			},
 			wantCommon: searchResultsCommon{
-				searched: repos,
-				indexed:  repos,
+				status: mkStatusMap(map[string]search.RepoStatus{
+					"foo/bar":    search.RepoStatusSearched | search.RepoStatusIndexed,
+					"foo/foobar": search.RepoStatusSearched | search.RepoStatusIndexed,
+				}),
 			},
 			wantErr: false,
 		},
@@ -96,9 +97,10 @@ func TestIndexedSearch(t *testing.T) {
 				since:           func(time.Time) time.Duration { return time.Minute },
 			},
 			wantCommon: searchResultsCommon{
-				searched: repos,
-				indexed:  repos,
-				timedout: repos,
+				status: mkStatusMap(map[string]search.RepoStatus{
+					"foo/bar":    search.RepoStatusIndexed | search.RepoStatusTimedout,
+					"foo/foobar": search.RepoStatusIndexed | search.RepoStatusTimedout,
+				}),
 			},
 		},
 		{
@@ -111,9 +113,10 @@ func TestIndexedSearch(t *testing.T) {
 				since:           func(time.Time) time.Duration { return 0 },
 			},
 			wantCommon: searchResultsCommon{
-				searched: repos,
-				indexed:  repos,
-				timedout: repos,
+				status: mkStatusMap(map[string]search.RepoStatus{
+					"foo/bar":    search.RepoStatusIndexed | search.RepoStatusTimedout,
+					"foo/foobar": search.RepoStatusIndexed | search.RepoStatusTimedout,
+				}),
 			},
 		},
 		{
@@ -171,8 +174,10 @@ func TestIndexedSearch(t *testing.T) {
 				"",
 			},
 			wantCommon: searchResultsCommon{
-				searched: repos,
-				indexed:  repos,
+				status: mkStatusMap(map[string]search.RepoStatus{
+					"foo/bar":    search.RepoStatusSearched | search.RepoStatusIndexed,
+					"foo/foobar": search.RepoStatusSearched | search.RepoStatusIndexed,
+				}),
 			},
 			wantErr: false,
 		},
@@ -199,8 +204,9 @@ func TestIndexedSearch(t *testing.T) {
 				since: func(time.Time) time.Duration { return 0 },
 			},
 			wantCommon: searchResultsCommon{
-				searched: []*types.RepoName{repoBar},
-				indexed:  []*types.RepoName{repoBar},
+				status: mkStatusMap(map[string]search.RepoStatus{
+					"foo/bar": search.RepoStatusSearched | search.RepoStatusIndexed,
+				}),
 			},
 			wantMatchURLs: []string{
 				"git://foo/bar?HEAD#baz.go",
@@ -233,8 +239,9 @@ func TestIndexedSearch(t *testing.T) {
 				},
 			},
 			wantCommon: searchResultsCommon{
-				searched: []*types.RepoName{repoBar},
-				indexed:  []*types.RepoName{repoBar},
+				status: mkStatusMap(map[string]search.RepoStatus{
+					"foo/bar": search.RepoStatusSearched | search.RepoStatusIndexed,
+				}),
 			},
 			wantUnindexed: makeRepositoryRevisions("foo/bar@unindexed"),
 			wantMatchURLs: []string{
@@ -727,7 +734,13 @@ func BenchmarkSearchResults(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		resolver := &searchResolver{query: q, zoekt: z, userSettings: &schema.Settings{}}
+		resolver := &searchResolver{
+			query:        q,
+			zoekt:        z,
+			userSettings: &schema.Settings{},
+			reposMu:      &sync.Mutex{},
+			resolved:     &searchrepos.Resolved{},
+		}
 		results, err := resolver.Results(ctx)
 		if err != nil {
 			b.Fatal("Results:", err)
@@ -797,7 +810,7 @@ func BenchmarkIntegrationSearchResults(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		resolver := &searchResolver{query: q, zoekt: z}
+		resolver := &searchResolver{query: q, zoekt: z, reposMu: &sync.Mutex{}, resolved: &searchrepos.Resolved{}}
 		results, err := resolver.Results(ctx)
 		if err != nil {
 			b.Fatal("Results:", err)

@@ -10,7 +10,7 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/background/email"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/email"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/storetest"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"

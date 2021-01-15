@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -950,7 +951,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := context.Background()
 
-	clock := dbtesting.NewFakeClock(time.Now(), 0)
+	clock := timeutil.NewFakeClock(time.Now(), 0)
 
 	svcs := types.MakeExternalServices()
 

@@ -10,17 +10,17 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 func MakeRepo(name, serviceID, serviceType string, services ...*ExternalService) *Repo {
-	clock := dbtesting.NewFakeClock(time.Now(), 0)
+	clock := timeutil.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
 	repo := Repo{
@@ -105,7 +105,7 @@ func GenerateRepos(n int, base ...*Repo) Repos {
 
 // MakeExternalServices creates one configured external service per kind and returns the list.
 func MakeExternalServices() ExternalServices {
-	clock := dbtesting.NewFakeClock(time.Now(), 0)
+	clock := timeutil.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
 	githubSvc := ExternalService{

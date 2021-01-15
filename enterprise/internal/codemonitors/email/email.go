@@ -8,13 +8,15 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 )
 
 var externalURL *url.URL
 
+// To avoid a circular dependency with the codemonitors/resolvers package
+// we have to redeclare the MonitorKind.
+const MonitorKind = "CodeMonitor"
 const utmSourceEmail = "code-monitoring-email"
 const priorityCritical = "CRITICAL"
 
@@ -34,9 +36,10 @@ type TemplateDataNewSearchResults struct {
 	SearchURL                 string
 	Description               string
 	NumberOfResultsWithDetail string
+	IsTest                    bool
 }
 
-func NewTemplateDataForNewSearchResults(ctx context.Context, monitorDescription string, queryString string, email *codemonitors.MonitorEmail, numResults int) (d *TemplateDataNewSearchResults, err error) {
+func NewTemplateDataForNewSearchResults(ctx context.Context, monitorDescription, queryString string, email *codemonitors.MonitorEmail, numResults int) (d *TemplateDataNewSearchResults, err error) {
 	var (
 		searchURL                 string
 		codeMonitorURL            string
@@ -72,7 +75,15 @@ func NewTemplateDataForNewSearchResults(ctx context.Context, monitorDescription 
 		Description:               monitorDescription,
 		NumberOfResultsWithDetail: numberOfResultsWithDetail,
 	}, nil
+}
 
+func NewTestTemplateDataForNewSearchResults(ctx context.Context, monitorDescription string) *TemplateDataNewSearchResults {
+	return &TemplateDataNewSearchResults{
+		Priority:                  "New",
+		Description:               monitorDescription,
+		NumberOfResultsWithDetail: "There was 1 new search result for your query",
+		IsTest:                    true,
+	}
 }
 
 func sendEmail(ctx context.Context, userID int32, template txtypes.Templates, data interface{}) error {
@@ -98,7 +109,7 @@ func getSearchURL(ctx context.Context, query, utmSource string) (string, error) 
 }
 
 func getCodeMonitorURL(ctx context.Context, monitorID int64, utmSource string) (string, error) {
-	return sourcegraphURL(ctx, fmt.Sprintf("code-monitoring/%s", relay.MarshalID(resolvers.MonitorKind, monitorID)), "", utmSource)
+	return sourcegraphURL(ctx, fmt.Sprintf("code-monitoring/%s", relay.MarshalID(MonitorKind, monitorID)), "", utmSource)
 }
 
 func sourcegraphURL(ctx context.Context, path, query, utmSource string) (string, error) {
