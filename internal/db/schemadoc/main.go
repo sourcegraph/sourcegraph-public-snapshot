@@ -172,11 +172,18 @@ func generateInternal(logger *log.Logger, databaseName, dataSource string, run f
 	combined := strings.Join(docs, "\n")
 
 	if len(types) > 0 {
-		combined += "\n"
+		buf := bytes.NewBuffer(nil)
+		buf.WriteString("\n")
 
 		for name, values := range types {
-			combined += "# Type " + name + "\n\n- " + strings.Join(values, "\n- ") + "\n\n"
+			buf.WriteString("# Type ")
+			buf.WriteString(name)
+			buf.WriteString("\n\n- ")
+			buf.WriteString(strings.Join(values, "\n- "))
+			buf.WriteString("\n\n")
 		}
+
+		combined += buf.String()
 	}
 
 	return combined, nil
