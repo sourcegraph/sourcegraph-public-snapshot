@@ -424,7 +424,7 @@ func externalServiceValidate(ctx context.Context, req *protocol.ExternalServiceS
 var mockRepoLookup func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)
 
 func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (result *protocol.RepoLookupResult, err error) {
-	// Sourcegraph.com: this is on the user path, do not block forever if codehost is being
+	// Sourcegraph.com: this is on the user path, do not block for ever if codehost is being
 	// bad. Ideally block before cloudflare 504s the request (1min).
 	// Other: we only speak to our database, so response should be in a few ms.
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
@@ -472,11 +472,6 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 			return s.remoteRepoSync(ctx, codehost, string(args.Repo))
 		}
 
-		// We don't sync private repos on demand
-		if repo.Private {
-			return
-		}
-
 		// TODO a queue with single flighting to speak to remote for args.Repo?
 
 		// We have (potentially stale) data we can return to the user right now. Do that
@@ -484,27 +479,29 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		// are ignored since if they do exist in our DB they would have been added by a
 		// user owned code host connection in which case they'll be kept up to date by
 		// our background syncer.
-		go func() {
-			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-			defer cancel()
-			repoResult, err := s.remoteRepoSync(ctx, codehost, string(args.Repo))
-			if err != nil {
-				log15.Error("async remoteRepoSync failed", "repo", args.Repo, "error", err)
-				return
-			}
-
-			// Since we are only dealing with public repos here we can safely assume that
-			// when a repository stored in the database is not accessible anymore, no other
-			// external service should have access to it, we can then remove it.
-			if repoResult.ErrorNotFound || repoResult.ErrorUnauthorized {
-				err = s.Store.UpsertRepos(ctx, repo.With(func(r *types.Repo) {
-					r.DeletedAt = s.Now()
-				}))
+		if !repo.Private {
+			go func() {
+				ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+				defer cancel()
+				repoResult, err := s.remoteRepoSync(ctx, codehost, string(args.Repo))
 				if err != nil {
-					log15.Error("failed to delete inaccessible repo", "repo", args.Repo, "error", err)
+					log15.Error("async remoteRepoSync failed", "repo", args.Repo, "error", err)
+					return
 				}
-			}
-		}()
+
+				// Since we are only dealing with public repos here we can safely assume that
+				// when a repository stored in the database is not accessible anymore, no other
+				// external service should have access to it, we can then remove it.
+				if repoResult.ErrorNotFound || repoResult.ErrorUnauthorized {
+					err = s.Store.UpsertRepos(ctx, repo.With(func(r *types.Repo) {
+						r.DeletedAt = s.Now()
+					}))
+					if err != nil {
+						log15.Error("failed to delete inaccessible repo", "repo", args.Repo, "error", err)
+					}
+				}
+			}()
+		}
 	}
 
 	if repo == nil {
