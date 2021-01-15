@@ -19,6 +19,7 @@ type DBStore interface {
 	DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (map[int]int, error)
 	HardDeleteUploadByID(ctx context.Context, ids ...int) error
 	SoftDeleteOldUploads(ctx context.Context, maxAge time.Duration, now time.Time) (int, error)
+	DeleteOldIndexes(ctx context.Context, maxAge time.Duration, now time.Time) (int, error)
 	DirtyRepositories(ctx context.Context) (map[int]int, error)
 	DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (map[int]int, error)
 	DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_ int, err error)
