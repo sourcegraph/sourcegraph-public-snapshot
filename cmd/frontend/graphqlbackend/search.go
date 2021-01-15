@@ -287,7 +287,9 @@ type searchResolver struct {
 	// searchResolver.SetResultChannel
 	resultChannel chan<- []SearchResultResolver
 
-	// Cached resolveRepositories results.
+	// Cached resolveRepositories results. We use a pointer to the mutex so that we
+	// can copy the resolver, while sharing the mutex. If we didn't use a pointer,
+	// the mutex would lead to unexpected behaviour.
 	reposMu  *sync.Mutex
 	resolved *searchrepos.Resolved
 	repoErr  error
