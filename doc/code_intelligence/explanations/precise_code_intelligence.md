@@ -7,13 +7,7 @@ Precise code intelligence relies on [LSIF](https://github.com/Microsoft/language
 
 ## Getting started
 
-First navigate to your [global settings](https://sourcegraph.example.com/site-admin/global-settings) on your Sourcegraph instance and enable LSIF:
-
-```json
-  "codeIntel.lsif": true
-```
-
-Then select a language specific guide from the list below to generate and upload LSIF files for your repository. The LSIF data is used by Sourcegraph instances to power code intelligence requests (such as hovers, definitions, and references). If you don't see a guide for the language you need below, follow our general [quickstart guide](../lsif_quickstart.md) to setup precise code intelligence.
+First select a language specific guide from the list below to generate and upload LSIF files for your repository. The LSIF data is used by Sourcegraph instances to power code intelligence requests (such as hovers, definitions, and references). If you don't see a guide for the language you need below, follow our general [quickstart guide](../lsif_quickstart.md) to setup precise code intelligence.
 
 - [Go](../how-to/index_a_go_repository.md)
 - [JavaScript/TypeScript](../how-to/index_a_typescript_and_javascript_repository.md)

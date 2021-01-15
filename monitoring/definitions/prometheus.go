@@ -20,7 +20,7 @@ func Prometheus() *monitoring.Container {
 							Description:       "prometheus metrics payload size",
 							Query:             `http_response_size_bytes{handler="prometheus",job!="kubernetes-apiservers",job!="kubernetes-nodes",quantile="0.5"}`,
 							Warning:           monitoring.Alert().GreaterOrEqual(20000),
-							PanelOptions:      monitoring.PanelOptions().Unit(monitoring.Bytes).LegendFormat("{{instance}}"),
+							Panel:             monitoring.Panel().Unit(monitoring.Bytes).LegendFormat("{{instance}}"),
 							Owner:             monitoring.ObservableOwnerDistribution,
 							PossibleSolutions: "none",
 						},
@@ -36,7 +36,7 @@ func Prometheus() *monitoring.Container {
 							Description:       "failed alertmanager notifications over 1m",
 							Query:             `sum by(integration) (rate(alertmanager_notifications_failed_total[1m]))`,
 							Warning:           monitoring.Alert().Greater(0),
-							PanelOptions:      monitoring.PanelOptions().LegendFormat("{{integration}}"),
+							Panel:             monitoring.Panel().LegendFormat("{{integration}}"),
 							Owner:             monitoring.ObservableOwnerDistribution,
 							PossibleSolutions: "Ensure that your [`observability.alerts` configuration](https://docs.sourcegraph.com/admin/observability/alerting#setting-up-alerting) (in site configuration) is valid.",
 						},
@@ -44,7 +44,7 @@ func Prometheus() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Container monitoring (not available on server)",
+				Title:  shared.TitleContainerMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -53,12 +53,11 @@ func Prometheus() *monitoring.Container {
 					},
 					{
 						shared.ContainerRestarts("prometheus", monitoring.ObservableOwnerDistribution).Observable(),
-						shared.ContainerFsInodes("prometheus", monitoring.ObservableOwnerDistribution).Observable(),
 					},
 				},
 			},
 			{
-				Title:  "Provisioning indicators (not available on server)",
+				Title:  shared.TitleProvisioningIndicators,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -72,7 +71,7 @@ func Prometheus() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Kubernetes monitoring (ignore if using Docker Compose or server)",
+				Title:  shared.TitleKubernetesMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{

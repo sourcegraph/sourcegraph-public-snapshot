@@ -45,15 +45,21 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
     codeMonitor,
     showDeleteButton,
     deleteCodeMonitor,
+    location,
 }) => {
     const LOADING = 'loading' as const
+
+    const triggerQueryFromURL = useMemo(
+        () => (codeMonitor ? undefined : new URLSearchParams(location.search).get('trigger-query')),
+        [codeMonitor, location.search]
+    )
 
     const [currentCodeMonitorState, setCodeMonitor] = useState<CodeMonitorFields>(
         codeMonitor ?? {
             id: '',
             description: '',
             enabled: true,
-            trigger: { id: '', query: '' },
+            trigger: { id: '', query: triggerQueryFromURL ?? '' },
             actions: {
                 nodes: [],
             },
@@ -184,6 +190,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                         onQueryChange={onQueryChange}
                         triggerCompleted={formCompletion.triggerCompleted}
                         setTriggerCompleted={setTriggerCompleted}
+                        startExpanded={!!triggerQueryFromURL}
                     />
                 </div>
                 <div

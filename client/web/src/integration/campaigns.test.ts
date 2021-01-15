@@ -570,6 +570,7 @@ describe('Campaigns', () => {
                                         operations: [ChangesetSpecOperation.PUSH, ChangesetSpecOperation.PUBLISH],
                                         delta: {
                                             titleChanged: false,
+                                            baseRefChanged: false,
                                         },
                                         targets: {
                                             __typename: 'VisibleApplyPreviewTargetsAttach',

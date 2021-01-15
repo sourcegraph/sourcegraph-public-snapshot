@@ -65,8 +65,9 @@ type ChangesetSpecsConnectionArgs struct {
 }
 
 type ChangesetApplyPreviewConnectionArgs struct {
-	First int32
-	After *string
+	First  int32
+	After  *string
+	Search *string
 }
 
 type CampaignArgs struct {

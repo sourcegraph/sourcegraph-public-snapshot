@@ -304,11 +304,22 @@ func TestIndexedSearch(t *testing.T) {
 
 			indexed.since = tt.args.since
 
-			gotCommon, gotFm, err := indexed.Search(tt.args.ctx)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("zoektSearchHEAD() error = %v, wantErr = %v", err, tt.wantErr)
-				return
+			// This is a quick fix which will break once we enable the zoekt client for true streaming.
+			// Once we return more than one event we have to account for the proper order of results
+			// in the tests.
+			var (
+				gotCommon searchResultsCommon
+				gotFm     []*FileMatchResolver
+			)
+			for event := range indexed.Search(tt.args.ctx) {
+				if (event.err != nil) != tt.wantErr {
+					t.Errorf("zoektSearchHEAD() error = %v, wantErr = %v", err, tt.wantErr)
+					return
+				}
+				gotCommon.update(&event.common)
+				gotFm = append(gotFm, event.results...)
 			}
+
 			if diff := cmp.Diff(&tt.wantCommon, &gotCommon, cmpopts.EquateEmpty()); diff != "" {
 				t.Errorf("common mismatch (-want +got):\n%s", diff)
 			}

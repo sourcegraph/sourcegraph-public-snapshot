@@ -7,6 +7,51 @@ import (
 	"github.com/grafana-tools/sdk"
 )
 
+// UnitType for controlling the unit type display on graphs.
+type UnitType string
+
+// short returns the short string description of the unit, for qualifying a
+// number of this unit type as human-readable.
+func (u UnitType) short() string {
+	switch u {
+	case Number, "":
+		return ""
+	case Milliseconds:
+		return "ms"
+	case Seconds:
+		return "s"
+	case Percentage:
+		return "%"
+	case Bytes:
+		return "B"
+	case BitsPerSecond:
+		return "bps"
+	default:
+		panic("never here")
+	}
+}
+
+// From https://sourcegraph.com/github.com/grafana/grafana@b63b82976b3708b082326c0b7d42f38d4bc261fa/-/blob/packages/grafana-data/src/valueFormats/categories.ts#L23
+const (
+	// Number is the default unit type.
+	Number UnitType = "short"
+
+	// Milliseconds for representing time.
+	Milliseconds UnitType = "dtdurationms"
+
+	// Seconds for representing time.
+	Seconds UnitType = "dtdurations"
+
+	// Percentage in the range of 0-100.
+	Percentage UnitType = "percent"
+
+	// Bytes in IEC (1024) format, e.g. for representing storage sizes.
+	Bytes UnitType = "bytes"
+
+	// BitsPerSecond, e.g. for representing network and disk IO.
+	BitsPerSecond UnitType = "bps"
+)
+
 // setPanelSize is a helper to set a panel's size.
 func setPanelSize(p *sdk.Panel, width, height int) {
 	p.GridPos.W = &width

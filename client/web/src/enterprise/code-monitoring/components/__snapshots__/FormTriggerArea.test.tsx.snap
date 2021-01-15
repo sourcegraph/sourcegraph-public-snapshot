@@ -5,6 +5,7 @@ exports[`FormTriggerArea Error message is shown when query is invalid 1`] = `
   onQueryChange={[Function]}
   query="test"
   setTriggerCompleted={[Function]}
+  startExpanded={false}
   triggerCompleted={false}
 >
   <h3>
@@ -38,6 +39,7 @@ exports[`FormTriggerArea Error message is shown when query is invalid 1`] = `
           <input
             autoFocus={true}
             className="trigger-area__query-input-field form-control my-2 test-trigger-input is-invalid"
+            data-testid="trigger-query-edit"
             onChange={[Function]}
             required={true}
             spellCheck={false}
