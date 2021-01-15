@@ -16,8 +16,9 @@ import { RouteComponentProps } from 'react-router'
 import { Link } from '../../../../../shared/src/components/Link'
 import { RepositoryNode } from './RepositoryNode'
 import AddIcon from 'mdi-react/AddIcon'
-import { ErrorLike } from '../../../../../shared/src/util/errors'
+import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { repeatUntil } from '../../../../../shared/src/util/rxjs/repeatUntil'
+import { ErrorAlert } from '../../../components/alerts'
 
 interface Props extends RouteComponentProps, TelemetryProps {
     userID: string
@@ -38,6 +39,8 @@ const Row: React.FunctionComponent<RowProps> = props => (
     />
 )
 
+type Status = undefined | 'pending' | ErrorLike
+
 /**
  * A page displaying the repositories for this user.
  */
@@ -51,8 +54,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     const emptyFilters: FilteredConnectionFilter[] = []
     const [state, setState] = useState({ filters: emptyFilters, fetched: false })
     const [hasRepos, setHasRepos] = useState(false)
-    const [syncPending, setSyncPending] = useState(false)
-    const [errorState, setErrorState] = useState('')
+    const [pendingOrError, setPendingOrError] = useState<Status>()
 
     if (!state.fetched) {
         queryExternalServices({ namespace: userID, first: null, after: null })
@@ -80,7 +82,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                                 args: { externalServiceID: node.id },
                             })
                         })
-                        setSyncPending(pending)
+                        setPendingOrError(pending && 'pending')
                         const newFilters: FilteredConnectionFilter[] = [
                             {
                                 label: 'Status',
@@ -121,7 +123,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             )
             .toPromise()
             .catch(error => {
-                setErrorState(String(error))
+                setPendingOrError(asError(error))
             })
     }
 
@@ -133,11 +135,11 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                         result.nodes &&
                         result.nodes.length > 0 &&
                         result.nodes.every(nodes => !nodes.mirrorInfo.cloneInProgress && nodes.mirrorInfo.cloned) &&
-                        !syncPending,
+                        !(pendingOrError === 'pending'),
                     { delay: 2000 }
                 )
             ),
-        [syncPending, userID]
+        [pendingOrError, userID]
     )
 
     const updated = useCallback((value: Connection<SiteAdminRepositoryFields> | ErrorLike | undefined): void => {
@@ -189,13 +191,13 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
 
     return (
         <div className="user-settings-repositories-page">
-            {syncPending && (
+            {pendingOrError === 'pending' && (
                 <div className="alert alert-info">
                     <span className="font-weight-bold">Some repositories are still being fetched.</span>
                     These repositories may not appear in the list of repositories.
                 </div>
             )}
-            {errorState !== '' && <div className="alert alert-danger">{errorState}</div>}
+            {isErrorLike(pendingOrError) && <ErrorAlert error={pendingOrError} icon={true} history={history} />}
             <PageTitle title="Repositories" />
             <div className="d-flex justify-content-between align-items-center">
                 <h2 className="mb-2">Repositories</h2>

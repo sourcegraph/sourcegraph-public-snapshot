@@ -15,8 +15,8 @@ import {
 import { ErrorAlert } from '../../../components/alerts'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { repeatUntil } from '../../../../../shared/src/util/rxjs/repeatUntil'
+import { LoaderButton } from '../../../components/LoaderButton'
 
 interface Props extends RouteComponentProps, TelemetryProps {
     userID: string
@@ -510,18 +510,19 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 </li>
             </ul>
             <Form className="mt-4 d-flex" onSubmit={submit}>
-                <button
-                    type="submit"
+                <LoaderButton
+                    loading={fetchingRepos.loading}
                     className="btn btn-primary test-goto-add-external-service-page mr-2"
+                    spinnerClassName="user-settings-repos__spinner"
+                    alwaysShowLabel={true}
+                    type="submit"
+                    label={
+                        (!fetchingRepos.loading && 'Save changes') ||
+                        (!fetchingRepos.slow && 'Fetching repositories...') ||
+                        'Still working...'
+                    }
                     disabled={fetchingRepos.loading}
-                >
-                    {(!fetchingRepos.loading && 'Save changes') || (
-                        <>
-                            <LoadingSpinner className="icon-inline mr-2 user-settings-repos__spinner" />
-                            {(!fetchingRepos.slow && 'Fetching repositories...') || 'Still working...'}
-                        </>
-                    )}
-                </button>
+                />
 
                 <Link
                     className="btn btn-secondary test-goto-add-external-service-page"
