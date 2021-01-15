@@ -6,9 +6,9 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/apiclient"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/apiserver"
+	apiserver "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor-queue/internal/server"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"

@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
@@ -27,7 +28,7 @@ func TestDequeue(t *testing.T) {
 	}
 
 	testRoute(t, spec, func(client *Client) {
-		var job Job
+		var job executor.Job
 		dequeued, err := client.Dequeue(context.Background(), "test_queue", &job)
 		if err != nil {
 			t.Fatalf("unexpected error dequeueing record: %s", err)

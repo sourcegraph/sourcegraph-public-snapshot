@@ -1,4 +1,4 @@
-package apiworker
+package worker
 
 import (
 	"context"
@@ -8,8 +8,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/apiclient"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -23,14 +23,14 @@ func TestHandle(t *testing.T) {
 	store := NewMockStore()
 	runner := NewMockRunner()
 
-	job := apiclient.Job{
+	job := executor.Job{
 		ID:             42,
 		Commit:         "deadbeef",
 		RepositoryName: "linux",
 		VirtualMachineFiles: map[string]string{
 			"test.txt": "<file payload>",
 		},
-		DockerSteps: []apiclient.DockerStep{
+		DockerSteps: []executor.DockerStep{
 			{
 				Image:    "go",
 				Commands: []string{"go", "mod", "install"},
@@ -44,7 +44,7 @@ func TestHandle(t *testing.T) {
 				Env:      []string{},
 			},
 		},
-		CliSteps: []apiclient.CliStep{
+		CliSteps: []executor.CliStep{
 			{
 				Commands: []string{"campaigns", "help"},
 				Dir:      "",

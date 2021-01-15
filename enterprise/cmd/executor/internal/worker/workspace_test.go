@@ -1,4 +1,4 @@
-package apiworker
+package worker
 
 import (
 	"context"
@@ -7,8 +7,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/apiclient"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 

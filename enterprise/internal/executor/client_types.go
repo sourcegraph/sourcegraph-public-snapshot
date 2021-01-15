@@ -1,4 +1,4 @@
-package apiclient
+package executor
 
 import "github.com/sourcegraph/sourcegraph/internal/workerutil"
 
