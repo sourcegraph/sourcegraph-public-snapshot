@@ -52,16 +52,25 @@ func main() {
 func mainErr() error {
 	// Run pg9.6 locally if it exists
 	if version, _ := exec.Command("psql", "--version").CombinedOutput(); versionRe.Match(version) {
-		for databaseName, destinationFile := range databases {
-			if err := generateAndWrite(databaseName, "dbname="+databaseNamePrefix+databaseName, nil, destinationFile); err != nil {
-				return err
-			}
-		}
-
-		return nil
+		return mainLocal()
 	}
 
-	// Otherwise execute in a container for consistent output
+	return mainContainer()
+}
+
+func mainLocal() error {
+	dataSourcePrefix := "dbname=" + databaseNamePrefix
+
+	for databaseName, destinationFile := range databases {
+		if err := generateAndWrite(databaseName, dataSourcePrefix+databaseName, nil, destinationFile); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func mainContainer() error {
 	logger.Printf("Running PostgreSQL 9.6 in docker")
 
 	prefix, shutdown, err := startDocker()
@@ -70,13 +79,10 @@ func mainErr() error {
 	}
 	defer shutdown()
 
+	dataSourcePrefix := "postgres://postgres@127.0.0.1:5433/postgres?dbname=" + databaseNamePrefix
+
 	for databaseName, destinationFile := range databases {
-		if err := generateAndWrite(
-			databaseName,
-			"postgres://postgres@127.0.0.1:5433/postgres?dbname="+databaseNamePrefix+databaseName,
-			prefix,
-			destinationFile,
-		); err != nil {
+		if err := generateAndWrite(databaseName, dataSourcePrefix+databaseName, prefix, destinationFile); err != nil {
 			return err
 		}
 	}
