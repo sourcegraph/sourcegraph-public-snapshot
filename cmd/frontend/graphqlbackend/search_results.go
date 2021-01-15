@@ -38,6 +38,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/progress"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -46,90 +47,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-// SearchResultsCommon contains fields that should be returned by all funcs
-// that contribute to the overall search result set.
-type SearchResultsCommon struct {
-	// IsLimitHit is true if we do not have all results that match the query.
-	IsLimitHit bool
-
-	// Repos that were matched by the repo-related filters. This should only
-	// be set once by search, when we have resolved Repos.
-	Repos map[api.RepoID]*types.RepoName
-
-	// Status is a RepoStatusMap of repository search statuses.
-	Status search.RepoStatusMap
-
-	// ExcludedForks is the count of excluded forked repos because the search
-	// query doesn't apply to them, but that we want to know about.
-	ExcludedForks int
-
-	// ExcludedArchived is the count of excluded archived repos because the
-	// search query doesn't apply to them, but that we want to know about.
-	ExcludedArchived int
-
-	// IsIndexUnavailable is true if indexed search was unavailable.
-	IsIndexUnavailable bool
-}
-
-// update updates c with the other data, deduping as necessary. It modifies c but
-// does not modify other.
-func (c *SearchResultsCommon) update(other *SearchResultsCommon) {
-	if other == nil {
-		return
-	}
-
-	c.IsLimitHit = c.IsLimitHit || other.IsLimitHit
-	c.IsIndexUnavailable = c.IsIndexUnavailable || other.IsIndexUnavailable
-
-	if c.Repos == nil {
-		c.Repos = other.Repos
-	} else {
-		for id, r := range other.Repos {
-			c.Repos[id] = r
-		}
-	}
-
-	c.Status.Union(&other.Status)
-
-	c.ExcludedForks = c.ExcludedForks + other.ExcludedForks
-	c.ExcludedArchived = c.ExcludedArchived + other.ExcludedArchived
-}
-
-func (c *SearchResultsCommon) String() string {
-	if c == nil {
-		return "SearchResultsCommon{}"
-	}
-
-	parts := []string{
-		fmt.Sprintf("status=%s", c.Status.String()),
-	}
-	nums := []struct {
-		name string
-		n    int
-	}{
-		{"repos", len(c.Repos)},
-		{"excludedForks", c.ExcludedForks},
-		{"excludedArchived", c.ExcludedArchived},
-	}
-	for _, p := range nums {
-		if p.n != 0 {
-			parts = append(parts, fmt.Sprintf("%s=%d", p.name, p.n))
-		}
-	}
-	if c.IsLimitHit {
-		parts = append(parts, "limitHit")
-	}
-	if c.IsIndexUnavailable {
-		parts = append(parts, "indexUnavailable")
-	}
-
-	return "SearchResultsCommon{" + strings.Join(parts, " ") + "}"
-}
-
-func (c *SearchResultsCommon) Equal(other *SearchResultsCommon) bool {
-	return reflect.DeepEqual(c, other)
-}
 
 func (c *SearchResultsResolver) LimitHit() bool {
 	return c.IsLimitHit
@@ -221,7 +138,7 @@ func dedupSort(repos *types.RepoNames) {
 // SearchResultsResolver is a resolver for the GraphQL type `SearchResults`
 type SearchResultsResolver struct {
 	SearchResults []SearchResultResolver
-	SearchResultsCommon
+	progress.SearchResultsCommon
 	alert *searchAlert
 	start time.Time // when the results started being computed
 
@@ -872,7 +789,7 @@ func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 	}
 
 	left.SearchResults = merged
-	left.SearchResultsCommon.update(&right.SearchResultsCommon)
+	left.SearchResultsCommon.Update(&right.SearchResultsCommon)
 	return left
 }
 
@@ -919,7 +836,7 @@ func intersectMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 		merged = append(merged, leftMatch)
 	}
 	left.SearchResults = merged
-	left.SearchResultsCommon.update(&right.SearchResultsCommon)
+	left.SearchResultsCommon.Update(&right.SearchResultsCommon)
 	return left
 }
 
@@ -1744,21 +1661,21 @@ type aggregator struct {
 
 	mu       sync.Mutex
 	results  []SearchResultResolver
-	common   SearchResultsCommon
+	common   progress.SearchResultsCommon
 	multiErr *multierror.Error
 	// fileMatches is a map from git:// URI of the file to FileMatch resolver
 	// to merge multiple results of different types for the same file
 	fileMatches map[string]*FileMatchResolver
 }
 
-func (a *aggregator) get() ([]SearchResultResolver, SearchResultsCommon, *multierror.Error) {
+func (a *aggregator) get() ([]SearchResultResolver, progress.SearchResultsCommon, *multierror.Error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	return a.results, a.common, a.multiErr
 }
 
 // report sends results down resultChannel and collects the results.
-func (a *aggregator) report(ctx context.Context, results []SearchResultResolver, common *SearchResultsCommon, err error) {
+func (a *aggregator) report(ctx context.Context, results []SearchResultResolver, common *progress.SearchResultsCommon, err error) {
 	if a.resultChannel != nil {
 		a.resultChannel <- results
 	}
@@ -1768,7 +1685,7 @@ func (a *aggregator) report(ctx context.Context, results []SearchResultResolver,
 
 // collect the results. This doesn't send down resultChannel. Should only be
 // used by streaming supported backends.
-func (a *aggregator) collect(ctx context.Context, results []SearchResultResolver, common *SearchResultsCommon, err error) {
+func (a *aggregator) collect(ctx context.Context, results []SearchResultResolver, common *progress.SearchResultsCommon, err error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	// Timeouts are reported through SearchResultsCommon so don't report an error for them
@@ -1792,7 +1709,7 @@ func (a *aggregator) collect(ctx context.Context, results []SearchResultResolver
 		}
 	}
 	if common != nil {
-		a.common.update(common)
+		a.common.Update(common)
 	}
 }
 
@@ -2035,7 +1952,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			repos[repoRev.Repo.ID] = repoRev.Repo
 		}
 
-		agg.report(ctx, nil, &SearchResultsCommon{
+		agg.report(ctx, nil, &progress.SearchResultsCommon{
 			Repos:            repos,
 			ExcludedForks:    resolved.ExcludedRepos.Forks,
 			ExcludedArchived: resolved.ExcludedRepos.Archived,

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/progress"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -24,14 +25,14 @@ func TestSearchProgress(t *testing.T) {
 	cases := map[string]*SearchResultsResolver{
 		"empty": {},
 		"timedout100": {
-			SearchResultsCommon: SearchResultsCommon{
+			SearchResultsCommon: progress.SearchResultsCommon{
 				Repos:  reposMap(timedout100...),
 				Status: timedout100Status,
 			},
 		},
 		"all": {
 			SearchResults: []SearchResultResolver{mkFileMatch(&types.RepoName{Name: "found-1"}, "dir/file", 123)},
-			SearchResultsCommon: SearchResultsCommon{
+			SearchResultsCommon: progress.SearchResultsCommon{
 				IsLimitHit: true,
 				Repos:      reposMap(mkRepos("found-1", "missing-1", "missing-2", "cloning-1", "timedout-1")...),
 				Status: mkStatusMap(map[string]search.RepoStatus{

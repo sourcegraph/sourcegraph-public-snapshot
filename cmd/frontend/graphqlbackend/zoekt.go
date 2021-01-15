@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gituri"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/progress"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
@@ -201,7 +202,7 @@ func (s *indexedSearchRequest) Repos() map[string]*search.RepositoryRevisions {
 type streamFunc func(context.Context, *search.TextParameters, *indexedRepoRevs, indexedRequestType, func(t time.Time) time.Duration) <-chan zoektSearchStreamEvent
 
 type indexedSearchEvent struct {
-	common  SearchResultsCommon
+	common  progress.SearchResultsCommon
 	results []*FileMatchResolver
 	err     error
 }
@@ -238,7 +239,7 @@ func (s *indexedSearchRequest) doSearch(ctx context.Context, c chan<- indexedSea
 		zoektStream = zoektSearchHEADOnlyFilesStream
 	default:
 		err := fmt.Errorf("unexpected indexedSearchRequest type: %q", s.typ)
-		c <- indexedSearchEvent{common: SearchResultsCommon{}, results: nil, err: err}
+		c <- indexedSearchEvent{common: progress.SearchResultsCommon{}, results: nil, err: err}
 		return
 	}
 
@@ -265,12 +266,12 @@ func (s *indexedSearchRequest) doSearch(ctx context.Context, c chan<- indexedSea
 
 		if err == errNoResultsInTimeout {
 			err = nil
-			c <- indexedSearchEvent{common: SearchResultsCommon{Status: mkStatusMap(search.RepoStatusTimedout | search.RepoStatusIndexed)}}
+			c <- indexedSearchEvent{common: progress.SearchResultsCommon{Status: mkStatusMap(search.RepoStatusTimedout | search.RepoStatusIndexed)}}
 			return
 		}
 
 		if err != nil {
-			c <- indexedSearchEvent{common: SearchResultsCommon{}, results: nil, err: err}
+			c <- indexedSearchEvent{common: progress.SearchResultsCommon{}, results: nil, err: err}
 			return
 		}
 
@@ -292,7 +293,7 @@ func (s *indexedSearchRequest) doSearch(ctx context.Context, c chan<- indexedSea
 		}
 
 		c <- indexedSearchEvent{
-			common: SearchResultsCommon{
+			common: progress.SearchResultsCommon{
 				Status:     statusMap,
 				IsLimitHit: event.limitHit,
 			},
@@ -303,7 +304,7 @@ func (s *indexedSearchRequest) doSearch(ctx context.Context, c chan<- indexedSea
 
 	// Successfully searched everything. Communicate every indexed repo was
 	// searched in case it didn't have a result.
-	c <- indexedSearchEvent{common: SearchResultsCommon{Status: mkStatusMap(search.RepoStatusSearched | search.RepoStatusIndexed)}}
+	c <- indexedSearchEvent{common: progress.SearchResultsCommon{Status: mkStatusMap(search.RepoStatusSearched | search.RepoStatusIndexed)}}
 }
 
 var errNoResultsInTimeout = errors.New("no results found in specified timeout")
