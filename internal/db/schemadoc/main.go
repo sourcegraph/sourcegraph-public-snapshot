@@ -27,10 +27,12 @@ import (
 
 const dbname = "schemadoc-gen-temp"
 
+var logger = log.New(os.Stderr, "", log.LstdFlags)
+
 var versionRe = lazyregexp.New(fmt.Sprintf(`\b%s\b`, regexp.QuoteMeta("9.6")))
 
 func main() {
-	out, err := generate(log.New(os.Stderr, "", log.LstdFlags), os.Args[1])
+	out, err := generate(os.Args[1])
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -48,14 +50,14 @@ func main() {
 // PGPORT, PGUSER etc. env variables must be set to run this script.
 //
 // First CLI argument is an optional filename to write the output to.
-func generate(logger *log.Logger, databaseName string) (string, error) {
+func generate(databaseName string) (string, error) {
 	// If we are using pg9.6 use it locally since it is faster (CI \o/)
 	out, _ := exec.Command("psql", "--version").CombinedOutput()
 	if versionRe.Match(out) {
 		runIgnoreError("dropdb", dbname)
 		defer runIgnoreError("dropdb", dbname)
 
-		return generateInternal(logger, databaseName, "dbname="+dbname, func(cmd ...string) (string, error) {
+		return generateInternal(databaseName, "dbname="+dbname, func(cmd ...string) (string, error) {
 			c := exec.Command(cmd[0], cmd[1:]...)
 			c.Stderr = logger.Writer()
 			out, err := c.Output()
@@ -96,7 +98,7 @@ func generate(logger *log.Logger, databaseName string) (string, error) {
 		}
 		time.Sleep(time.Second)
 	}
-	return generateInternal(logger, databaseName, "postgres://postgres@127.0.0.1:5433/postgres?dbname="+dbname, func(cmd ...string) (string, error) {
+	return generateInternal(databaseName, "postgres://postgres@127.0.0.1:5433/postgres?dbname="+dbname, func(cmd ...string) (string, error) {
 		cmd = append([]string{"exec", "-u", "postgres", dbname}, cmd...)
 		c := exec.Command("docker", cmd...)
 		c.Stderr = logger.Writer()
@@ -105,7 +107,7 @@ func generate(logger *log.Logger, databaseName string) (string, error) {
 	})
 }
 
-func generateInternal(logger *log.Logger, databaseName, dataSource string, run func(cmd ...string) (string, error)) (string, error) {
+func generateInternal(databaseName, dataSource string, run func(cmd ...string) (string, error)) (string, error) {
 	if out, err := run("createdb", dbname); err != nil {
 		return "", errors.Wrap(err, fmt.Sprintf("run: %s", out))
 	}
