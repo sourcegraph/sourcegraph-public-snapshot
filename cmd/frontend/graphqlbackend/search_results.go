@@ -68,6 +68,32 @@ type searchResultsCommon struct {
 	indexUnavailable bool // True if indexed search is enabled but was not available during this search.
 }
 
+// update updates c with the other data, deduping as necessary. It modifies c but
+// does not modify other.
+func (c *searchResultsCommon) update(other *searchResultsCommon) {
+	if other == nil {
+		return
+	}
+
+	c.limitHit = c.limitHit || other.limitHit
+	c.indexUnavailable = c.indexUnavailable || other.indexUnavailable
+
+	if c.repos == nil {
+		c.repos = other.repos
+	} else {
+		for id, r := range other.repos {
+			c.repos[id] = r
+		}
+	}
+
+	c.status.Union(&other.status)
+
+	c.excluded.Forks = c.excluded.Forks + other.excluded.Forks
+	c.excluded.Archived = c.excluded.Archived + other.excluded.Archived
+
+	c.resultCount += other.resultCount
+}
+
 func (c *searchResultsCommon) String() string {
 	if c == nil {
 		return "searchResultsCommon{}"
@@ -101,11 +127,15 @@ func (c *searchResultsCommon) String() string {
 	return "searchResultsCommon{" + strings.Join(parts, " ") + "}"
 }
 
-func (c *searchResultsCommon) LimitHit() bool {
+func (c *searchResultsCommon) Equal(other *searchResultsCommon) bool {
+	return reflect.DeepEqual(c, other)
+}
+
+func (c *SearchResultsResolver) LimitHit() bool {
 	return c.limitHit || c.resultCount > c.maxResultsCount
 }
 
-func (c *searchResultsCommon) Repositories() []*RepositoryResolver {
+func (c *SearchResultsResolver) Repositories() []*RepositoryResolver {
 	repos := c.repos
 	resolvers := make([]*RepositoryResolver, 0, len(repos))
 	for _, r := range repos {
@@ -117,11 +147,11 @@ func (c *searchResultsCommon) Repositories() []*RepositoryResolver {
 	return resolvers
 }
 
-func (c *searchResultsCommon) RepositoriesCount() int32 {
+func (c *SearchResultsResolver) RepositoriesCount() int32 {
 	return int32(len(c.repos))
 }
 
-func (c *searchResultsCommon) repositoryResolvers(mask search.RepoStatus) []*RepositoryResolver {
+func (c *SearchResultsResolver) repositoryResolvers(mask search.RepoStatus) []*RepositoryResolver {
 	var resolvers []*RepositoryResolver
 	c.status.Filter(mask, func(id api.RepoID) {
 		r := c.repos[id]
@@ -135,32 +165,28 @@ func (c *searchResultsCommon) repositoryResolvers(mask search.RepoStatus) []*Rep
 	return resolvers
 }
 
-func (c *searchResultsCommon) RepositoriesSearched() []*RepositoryResolver {
+func (c *SearchResultsResolver) RepositoriesSearched() []*RepositoryResolver {
 	return c.repositoryResolvers(search.RepoStatusSearched)
 }
 
-func (c *searchResultsCommon) IndexedRepositoriesSearched() []*RepositoryResolver {
+func (c *SearchResultsResolver) IndexedRepositoriesSearched() []*RepositoryResolver {
 	return c.repositoryResolvers(search.RepoStatusIndexed)
 }
 
-func (c *searchResultsCommon) Cloning() []*RepositoryResolver {
+func (c *SearchResultsResolver) Cloning() []*RepositoryResolver {
 	return c.repositoryResolvers(search.RepoStatusCloning)
 }
 
-func (c *searchResultsCommon) Missing() []*RepositoryResolver {
+func (c *SearchResultsResolver) Missing() []*RepositoryResolver {
 	return c.repositoryResolvers(search.RepoStatusMissing)
 }
 
-func (c *searchResultsCommon) Timedout() []*RepositoryResolver {
+func (c *SearchResultsResolver) Timedout() []*RepositoryResolver {
 	return c.repositoryResolvers(search.RepoStatusTimedout)
 }
 
-func (c *searchResultsCommon) IndexUnavailable() bool {
+func (c *SearchResultsResolver) IndexUnavailable() bool {
 	return c.indexUnavailable
-}
-
-func (c *searchResultsCommon) Equal(other *searchResultsCommon) bool {
-	return reflect.DeepEqual(c, other)
 }
 
 func RepositoryResolvers(repos types.RepoNames) []*RepositoryResolver {
@@ -168,33 +194,7 @@ func RepositoryResolvers(repos types.RepoNames) []*RepositoryResolver {
 	return toRepositoryResolvers(repos)
 }
 
-// update updates c with the other data, deduping as necessary. It modifies c but
-// does not modify other.
-func (c *searchResultsCommon) update(other *searchResultsCommon) {
-	if other == nil {
-		return
-	}
-
-	c.limitHit = c.limitHit || other.limitHit
-	c.indexUnavailable = c.indexUnavailable || other.indexUnavailable
-
-	if c.repos == nil {
-		c.repos = other.repos
-	} else {
-		for id, r := range other.repos {
-			c.repos[id] = r
-		}
-	}
-
-	c.status.Union(&other.status)
-
-	c.excluded.Forks = c.excluded.Forks + other.excluded.Forks
-	c.excluded.Archived = c.excluded.Archived + other.excluded.Archived
-
-	c.resultCount += other.resultCount
-}
-
-func (c *searchResultsCommon) allReposTimedout() bool {
+func (c *SearchResultsResolver) allReposTimedout() bool {
 	return c.status.All(search.RepoStatusTimedout) && c.status.Len() == len(c.repos)
 }
 
