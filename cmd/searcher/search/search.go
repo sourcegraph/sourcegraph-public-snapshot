@@ -13,6 +13,7 @@ package search
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -23,6 +24,7 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	nettrace "golang.org/x/net/trace"
@@ -188,55 +190,93 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 		}
 	}(time.Now())
 
-	// Compile pattern before fetching from store incase it is bad.
-	var rg *readerGrep
 	if !p.IsStructuralPat {
-		rg, err = compile(&p.PatternInfo)
+		rg, err := compile(&p.PatternInfo)
 		if err != nil {
 			return nil, false, false, badRequestError{err.Error()}
 		}
-	}
 
-	if p.FetchTimeout == "" {
-		p.FetchTimeout = "500ms"
-	}
-	fetchTimeout, err := time.ParseDuration(p.FetchTimeout)
-	if err != nil {
-		return nil, false, false, err
-	}
-	prepareCtx, cancel := context.WithTimeout(ctx, fetchTimeout)
-	defer cancel()
-
-	getZf := func() (string, *store.ZipFile, error) {
-		path, err := s.Store.PrepareZip(prepareCtx, p.Repo, p.Commit)
-		if err != nil {
-			return "", nil, err
+		if p.FetchTimeout == "" {
+			p.FetchTimeout = "500ms"
 		}
-		zf, err := s.Store.ZipCache.Get(path)
-		return path, zf, err
-	}
+		fetchTimeout, err := time.ParseDuration(p.FetchTimeout)
+		if err != nil {
+			return nil, false, false, err
+		}
+		prepareCtx, cancel := context.WithTimeout(ctx, fetchTimeout)
+		defer cancel()
 
-	zipPath, zf, err := store.GetZipFileWithRetry(getZf)
-	if err != nil {
-		return nil, false, false, errors.Wrap(err, "failed to get archive")
-	}
-	defer zf.Close()
+		getZf := func() (string, *store.ZipFile, error) {
+			path, err := s.Store.PrepareZip(prepareCtx, p.Repo, p.Commit)
+			if err != nil {
+				return "", nil, err
+			}
+			zf, err := s.Store.ZipCache.Get(path)
+			return path, zf, err
+		}
 
-	nFiles := uint64(len(zf.Files))
-	bytes := int64(len(zf.Data))
-	tr.LazyPrintf("files=%d bytes=%d", nFiles, bytes)
-	span.LogFields(
-		otlog.Uint64("archive.files", nFiles),
-		otlog.Int64("archive.size", bytes))
-	archiveFiles.Observe(float64(nFiles))
-	archiveSize.Observe(float64(bytes))
+		_, zf, err := store.GetZipFileWithRetry(getZf)
+		if err != nil {
+			return nil, false, false, errors.Wrap(err, "failed to get archive")
+		}
+		defer zf.Close()
 
-	if p.IsStructuralPat {
-		matches, limitHit, err = structuralSearch(ctx, zipPath, p.Pattern, p.CombyRule, p.Languages, p.IncludePatterns, p.Repo)
+		nFiles := uint64(len(zf.Files))
+		bytes := int64(len(zf.Data))
+		tr.LazyPrintf("files=%d bytes=%d", nFiles, bytes)
+		span.LogFields(
+			otlog.Uint64("archive.files", nFiles),
+			otlog.Int64("archive.size", bytes))
+		archiveFiles.Observe(float64(nFiles))
+		archiveSize.Observe(float64(bytes))
+
+		matches, limitHit, err := regexSearch(ctx, rg, zf, p.FileMatchLimit, p.PatternMatchesContent, p.PatternMatchesPath, p.IsNegated)
+		return matches, limitHit, false, err
 	} else {
-		matches, limitHit, err = regexSearch(ctx, rg, zf, p.FileMatchLimit, p.PatternMatchesContent, p.PatternMatchesPath, p.IsNegated)
+		repoBranches := map[string][]string{string(p.Repo): {"HEAD"}}
+		args := &search.TextParameters{
+			PatternInfo: &search.TextPatternInfo{
+				Pattern:         p.Pattern,
+				IsNegated:       p.IsNegated,
+				IsRegExp:        p.IsRegExp,
+				IsStructuralPat: p.IsStructuralPat,
+				CombyRule:       p.CombyRule,
+				IsWordMatch:     p.IsWordMatch,
+				IsCaseSensitive: p.IsCaseSensitive,
+				FileMatchLimit:  int32(p.FileMatchLimit),
+				IncludePatterns: p.IncludePatterns,
+				ExcludePattern:  p.ExcludePattern,
+				// FilePatternsReposMustInclude: p.FilePatternsReposMustInclude, // TODO why don't these exist?
+				// FilePatternsReposMustExclude: p.FilePatternsReposMustExclude,
+				PathPatternsAreCaseSensitive: p.PathPatternsAreCaseSensitive,
+				PatternMatchesContent:        p.PatternMatchesContent,
+				PatternMatchesPath:           p.PatternMatchesPath,
+				Languages:                    p.Languages,
+			}, // TODO how to convert to pattern info type. Is there a more graceful way to convert between these two types? Why do they both exist?
+			Zoekt: search.Indexed(), // TODO save this on the struct?
+			// RepoPromise: nil // TODO is this necessary?
+			Mode: search.ZoektGlobalSearch, // TODO what does this actually mean?
+			// Query: query.QueryInfo, // TODO is this needed?
+			UseFullDeadline: true,
+			// SearcherURLs: // TODO is this needed?
+		}
+
+		// TODO clean this up, etc.
+		path := fmt.Sprintf("/tmp/%s.zip", base64.StdEncoding.EncodeToString([]byte(p.Repo)))
+
+		// TODO what is partial?
+		zoektMatches, limitHit, _, err := zoektSearch(ctx, args, repoBranches, time.Since, nil)
+		if err != nil {
+			return nil, false, false, err
+		}
+
+		if err = writeZip(path, zoektMatches); err != nil {
+			return nil, false, false, err
+		}
+
+		matches, limitHit, err := structuralSearch(ctx, path, p.Pattern, p.CombyRule, p.Languages, p.IncludePatterns, p.Repo)
+		return matches, limitHit, false, err
 	}
-	return matches, limitHit, false, err
 }
 
 func validateParams(p *protocol.Request) error {

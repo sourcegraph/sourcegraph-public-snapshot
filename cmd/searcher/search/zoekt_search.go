@@ -94,7 +94,7 @@ func zoektSearchHEADOnlyFilesStream(ctx context.Context, args *search.TextParame
 	c := make(chan zoektSearchStreamEvent)
 	go func() {
 		defer close(c)
-		_, _, _, _ = zoektSearchHEADOnlyFiles(ctx, args, repoBranches, since, c)
+		_, _, _, _ = zoektSearch(ctx, args, repoBranches, since, c)
 	}()
 
 	return c
@@ -102,13 +102,13 @@ func zoektSearchHEADOnlyFilesStream(ctx context.Context, args *search.TextParame
 
 const defaultMaxSearchResults = 30
 
-// zoektSearchHEADOnlyFiles searches repositories using zoekt, returning only the file paths containing
+// zoektSearch searches repositories using zoekt, returning only the file paths containing
 // content matching the given pattern.
 //
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, repoBranches map[string][]string, since func(t time.Time) time.Duration, c chan<- zoektSearchStreamEvent) (fm []zoekt.FileMatch, limitHit bool, partial map[api.RepoID]struct{}, err error) {
+func zoektSearch(ctx context.Context, args *search.TextParameters, repoBranches map[string][]string, since func(t time.Time) time.Duration, c chan<- zoektSearchStreamEvent) (fm []zoekt.FileMatch, limitHit bool, partial map[api.RepoID]struct{}, err error) {
 	defer func() {
 		if c != nil {
 			c <- zoektSearchStreamEvent{
@@ -203,13 +203,14 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 	return resp.Files, limitHit, partial, nil
 }
 
-func groupFilesByRepo(fileMatches []zoekt.FileMatch) map[string][]zoekt.FileMatch {
-	m := make(map[string][]zoekt.FileMatch)
-	for _, match := range fileMatches {
-		m[match.Repository] = append(m[match.Repository], match)
-	}
-	return m
-}
+// TODO is this necessary? It looks like a request will always only be for one repo
+// func groupFilesByRepo(fileMatches []zoekt.FileMatch) map[string][]zoekt.FileMatch {
+// 	m := make(map[string][]zoekt.FileMatch)
+// 	for _, match := range fileMatches {
+// 		m[match.Repository] = append(m[match.Repository], match)
+// 	}
+// 	return m
+// }
 
 func writeZip(path string, fileMatches []zoekt.FileMatch) (err error) {
 	f, err := os.Create(path)
