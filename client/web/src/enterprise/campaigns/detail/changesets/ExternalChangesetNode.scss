@@ -9,8 +9,10 @@
             grid-column: 2 / -1;
         }
     }
-    &__expanded-section {
+    &__bg-expanded {
         background-color: rgba($oc-blue-0, 0.5);
+    }
+    &__expanded-section {
         // Make it full width in the current row.
         grid-column: 2 / -1;
         @include media-breakpoint-down(xs) {
