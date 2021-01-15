@@ -5,8 +5,8 @@ import (
 	"database/sql"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
@@ -114,8 +114,8 @@ func tryInsertNew(ctx context.Context, dbh interface {
 		(SELECT COALESCE((SELECT mgmt_password_bcrypt FROM global_state LIMIT 1), ''))
 	);`, siteID))
 	if err != nil {
-		if pgErr, ok := err.(*pgconn.PgError); ok {
-			if pgErr.ConstraintName == "global_state_pkey" {
+		if pqErr, ok := err.(*pq.Error); ok {
+			if pqErr.Constraint == "global_state_pkey" {
 				// The row we were trying to insert already exists.
 				// Don't treat this as an error.
 				err = nil

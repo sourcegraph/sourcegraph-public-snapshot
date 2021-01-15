@@ -7,9 +7,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
-
+	"github.com/lib/pq"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 )
 
@@ -58,8 +57,8 @@ RETURNING id
 `,
 		release.RegistryExtensionID, release.CreatorUserID, release.ReleaseVersion, release.ReleaseTag, release.Manifest, release.Bundle, release.SourceMap,
 	).Scan(&id); err != nil {
-		if pgErr, ok := err.(*pgconn.PgError); ok {
-			if pgErr.Message == "invalid input syntax for type json" {
+		if pqErr, ok := err.(*pq.Error); ok {
+			if pqErr.Message == "invalid input syntax for type json" {
 				return 0, errInvalidJSONInManifest
 			}
 		}
