@@ -61,13 +61,20 @@ func TestExecutor_Integration(t *testing.T) {
 
 		repos     []*graphql.Repository
 		archives  []mockRepoArchive
+		template  *ChangesetTemplate
 		steps     []Step
 		transform *TransformChanges
 
 		executorTimeout time.Duration
 
-		wantFilesChanged filesByRepository
-		wantErrInclude   string
+		wantFilesChanged  filesByRepository
+		wantTitle         string
+		wantBody          string
+		wantCommitMessage string
+		wantAuthorName    string
+		wantAuthorEmail   string
+
+		wantErrInclude string
 	}{
 		{
 			name:  "success",
@@ -196,6 +203,73 @@ func TestExecutor_Integration(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:  "templated changesetTemplate",
+			repos: []*graphql.Repository{srcCLIRepo},
+			archives: []mockRepoArchive{
+				{repo: srcCLIRepo, files: map[string]string{
+					"README.md": "# Welcome to the README\n",
+					"main.go":   "package main\n\nfunc main() {\n\tfmt.Println(     \"Hello World\")\n}\n",
+				}},
+			},
+			steps: []Step{
+				{
+					Run:       `go fmt main.go`,
+					Container: "doesntmatter:13",
+					Outputs: Outputs{
+						"myOutputName1": Output{
+							Value: "${{ index step.modified_files 0 }}",
+						},
+					},
+				},
+				{
+					Run:       `echo -n "Hello World!"`,
+					Container: "alpine:13",
+					Outputs: Outputs{
+						"myOutputName2": Output{
+							Value:  `thisStepStdout: "${{ step.stdout }}"`,
+							Format: "yaml",
+						},
+						"myOutputName3": Output{
+							Value: "cool-suffix",
+						},
+					},
+				},
+			},
+			template: &ChangesetTemplate{
+				Title: "myOutputName1=${{ outputs.myOutputName1}}",
+				Body: `myOutputName1=${{ outputs.myOutputName1}},myOutputName2=${{ outputs.myOutputName2.thisStepStdout }}
+modified_files=${{ steps.modified_files }}
+added_files=${{ steps.added_files }}
+deleted_files=${{ steps.deleted_files }}
+renamed_files=${{ steps.renamed_files }}
+repository_name=${{ repository.name }}`,
+				Branch: "templated-branch-${{ outputs.myOutputName3 }}",
+				Commit: ExpandedGitCommitDescription{
+					Message: "myOutputName1=${{ outputs.myOutputName1}},myOutputName2=${{ outputs.myOutputName2.thisStepStdout }}",
+					Author: &GitCommitAuthor{
+						Name:  "myOutputName1=${{ outputs.myOutputName1}}",
+						Email: "myOutputName1=${{ outputs.myOutputName1}}",
+					},
+				},
+			},
+
+			wantFilesChanged: filesByRepository{
+				srcCLIRepo.ID: filesByBranch{
+					"templated-branch-cool-suffix": []string{"main.go"},
+				},
+			},
+			wantTitle: "myOutputName1=main.go",
+			wantBody: `myOutputName1=main.go,myOutputName2=Hello World!
+modified_files=[main.go]
+added_files=[]
+deleted_files=[]
+renamed_files=[]
+repository_name=github.com/sourcegraph/src-cli`,
+			wantCommitMessage: "myOutputName1=main.go,myOutputName2=Hello World!",
+			wantAuthorName:    "myOutputName1=main.go",
+			wantAuthorEmail:   "myOutputName1=main.go",
+		},
 	}
 
 	for _, tc := range tests {
@@ -236,6 +310,9 @@ func TestExecutor_Integration(t *testing.T) {
 				executor := newExecutor(opts, client, featuresAllEnabled())
 
 				template := &ChangesetTemplate{Branch: changesetTemplateBranch}
+				if tc.template != nil {
+					template = tc.template
+				}
 
 				for _, r := range tc.repos {
 					executor.AddTask(r, tc.steps, tc.transform, template)
@@ -264,6 +341,19 @@ func TestExecutor_Integration(t *testing.T) {
 				for _, spec := range specs {
 					if have, want := len(spec.Commits), 1; have != want {
 						t.Fatalf("wrong number of commits. want=%d, have=%d", want, have)
+					}
+
+					attrs := []struct{ name, want, have string }{
+						{name: "title", want: tc.wantTitle, have: spec.Title},
+						{name: "body", want: tc.wantBody, have: spec.Body},
+						{name: "commit.Message", want: tc.wantCommitMessage, have: spec.Commits[0].Message},
+						{name: "commit.AuthorEmail", want: tc.wantAuthorEmail, have: spec.Commits[0].AuthorEmail},
+						{name: "commit.AuthorName", want: tc.wantAuthorName, have: spec.Commits[0].AuthorName},
+					}
+					for _, attr := range attrs {
+						if attr.want != "" && attr.have != attr.want {
+							t.Errorf("wrong %q attribute. want=%q, have=%q", attr.name, attr.want, attr.have)
+						}
 					}
 
 					wantFiles, ok := tc.wantFilesChanged[spec.BaseRepository]
@@ -548,13 +638,13 @@ func newZipArchivesMux(t *testing.T, callback http.HandlerFunc, archives ...mock
 
 // inMemoryExecutionCache provides an in-memory cache for testing purposes.
 type inMemoryExecutionCache struct {
-	cache map[string]string
+	cache map[string]ExecutionResult
 	mu    sync.RWMutex
 }
 
 func newInMemoryExecutionCache() *inMemoryExecutionCache {
 	return &inMemoryExecutionCache{
-		cache: make(map[string]string),
+		cache: make(map[string]ExecutionResult),
 	}
 }
 
@@ -565,22 +655,22 @@ func (c *inMemoryExecutionCache) size() int {
 	return len(c.cache)
 }
 
-func (c *inMemoryExecutionCache) Get(ctx context.Context, key ExecutionCacheKey) (string, bool, error) {
+func (c *inMemoryExecutionCache) Get(ctx context.Context, key ExecutionCacheKey) (ExecutionResult, bool, error) {
 	k, err := key.Key()
 	if err != nil {
-		return "", false, err
+		return ExecutionResult{}, false, err
 	}
 
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	if diff, ok := c.cache[k]; ok {
-		return diff, true, nil
+	if res, ok := c.cache[k]; ok {
+		return res, true, nil
 	}
-	return "", false, nil
+	return ExecutionResult{}, false, nil
 }
 
-func (c *inMemoryExecutionCache) Set(ctx context.Context, key ExecutionCacheKey, diff string) error {
+func (c *inMemoryExecutionCache) Set(ctx context.Context, key ExecutionCacheKey, result ExecutionResult) error {
 	k, err := key.Key()
 	if err != nil {
 		return err
@@ -589,7 +679,7 @@ func (c *inMemoryExecutionCache) Set(ctx context.Context, key ExecutionCacheKey,
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	c.cache[k] = diff
+	c.cache[k] = result
 	return nil
 }
 

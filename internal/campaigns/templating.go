@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/src-cli/internal/campaigns/graphql"
 )
 
-func renderTemplate(name, tmpl string, out io.Writer, stepCtx *StepContext) error {
+func renderStepTemplate(name, tmpl string, out io.Writer, stepCtx *StepContext) error {
 	t, err := parseAsTemplate(name, tmpl, stepCtx)
 	if err != nil {
 		return errors.Wrap(err, "parsing step run")
@@ -24,13 +24,13 @@ func parseAsTemplate(name, input string, stepCtx *StepContext) (*template.Templa
 	return template.New(name).Delims("${{", "}}").Funcs(stepCtx.ToFuncMap()).Parse(input)
 }
 
-func renderMap(m map[string]string, stepCtx *StepContext) (map[string]string, error) {
+func renderStepMap(m map[string]string, stepCtx *StepContext) (map[string]string, error) {
 	rendered := make(map[string]string, len(m))
 
 	for k, v := range rendered {
 		var out bytes.Buffer
 
-		if err := renderTemplate(k, v, &out, stepCtx); err != nil {
+		if err := renderStepTemplate(k, v, &out, stepCtx); err != nil {
 			return rendered, err
 		}
 
@@ -40,44 +40,64 @@ func renderMap(m map[string]string, stepCtx *StepContext) (map[string]string, er
 	return rendered, nil
 }
 
-// StepContext represents the contextual information available when executing a
-// step that's defined in a campaign spec.
+// StepContext represents the contextual information available when rendering a
+// step's fields, such as "run" or "outputs", as templates.
 type StepContext struct {
+	// Outputs are the outputs set by the current and all previous steps.
+	Outputs map[string]interface{}
+	// Step is the result of the current step. Empty when evaluating the "run" field
+	// but filled when evaluating the "outputs" field.
+	Step StepResult
+	// PreviousStep is the result of the previous step. Empty when there is no
+	// previous step.
 	PreviousStep StepResult
-	Repository   graphql.Repository
+	// Repository is the Sourcegraph repository in which the steps are executed.
+	Repository graphql.Repository
 }
 
 // ToFuncMap returns a template.FuncMap to access fields on the StepContext in a
 // text/template.
 func (stepCtx *StepContext) ToFuncMap() template.FuncMap {
+	newStepResult := func(res *StepResult) map[string]interface{} {
+		m := map[string]interface{}{
+			"modified_files": "",
+			"added_files":    "",
+			"deleted_files":  "",
+			"renamed_files":  "",
+			"stdout":         "",
+			"stderr":         "",
+		}
+		if res == nil {
+			return m
+		}
+
+		m["modified_files"] = res.ModifiedFiles()
+		m["added_files"] = res.AddedFiles()
+		m["deleted_files"] = res.DeletedFiles()
+		m["renamed_files"] = res.RenamedFiles()
+
+		if res.Stdout != nil {
+			m["stdout"] = res.Stdout.String()
+		}
+
+		if res.Stderr != nil {
+			m["stderr"] = res.Stderr.String()
+		}
+
+		return m
+	}
+
 	return template.FuncMap{
-		"join": func(list []string, sep string) string {
-			return strings.Join(list, sep)
-		},
-		"split": func(s string, sep string) []string {
-			return strings.Split(s, sep)
-		},
+		"join":  strings.Join,
+		"split": strings.Split,
 		"previous_step": func() map[string]interface{} {
-			result := map[string]interface{}{
-				"modified_files": stepCtx.PreviousStep.ModifiedFiles(),
-				"added_files":    stepCtx.PreviousStep.AddedFiles(),
-				"deleted_files":  stepCtx.PreviousStep.DeletedFiles(),
-				"renamed_files":  stepCtx.PreviousStep.RenamedFiles(),
-			}
-
-			if stepCtx.PreviousStep.Stdout != nil {
-				result["stdout"] = stepCtx.PreviousStep.Stdout.String()
-			} else {
-				result["stdout"] = ""
-			}
-
-			if stepCtx.PreviousStep.Stderr != nil {
-				result["stderr"] = stepCtx.PreviousStep.Stderr.String()
-			} else {
-				result["stderr"] = ""
-			}
-
-			return result
+			return newStepResult(&stepCtx.PreviousStep)
+		},
+		"step": func() map[string]interface{} {
+			return newStepResult(&stepCtx.Step)
+		},
+		"outputs": func() map[string]interface{} {
+			return stepCtx.Outputs
 		},
 		"repository": func() map[string]interface{} {
 			return map[string]interface{}{
@@ -101,10 +121,10 @@ type StepResult struct {
 
 // StepChanges are the changes made to files by a previous step in a repository.
 type StepChanges struct {
-	Modified []string
-	Added    []string
-	Deleted  []string
-	Renamed  []string
+	Modified []string `json:"modified"`
+	Added    []string `json:"added"`
+	Deleted  []string `json:"deleted"`
+	Renamed  []string `json:"renamed"`
 }
 
 // ModifiedFiles returns the files modified by a step.
@@ -137,6 +157,64 @@ func (r StepResult) RenamedFiles() []string {
 		return r.files.Renamed
 	}
 	return []string{}
+}
+
+// ChangesetTemplateContext represents the contextual information available
+// when rendering a field of the ChangesetTemplate as a template.
+type ChangesetTemplateContext struct {
+	// Steps are the changes made by all steps that were executed.
+	Steps *StepChanges
+
+	// Outputs are the outputs defined and initialized by the steps.
+	Outputs map[string]interface{}
+
+	// Repository is the repository in which the steps were executed.
+	Repository graphql.Repository
+}
+
+// ToFuncMap returns a template.FuncMap to access fields on the StepContext in a
+// text/template.
+func (tmplCtx *ChangesetTemplateContext) ToFuncMap() template.FuncMap {
+	return template.FuncMap{
+		"join":  strings.Join,
+		"split": strings.Split,
+		"repository": func() map[string]interface{} {
+			return map[string]interface{}{
+				"search_result_paths": tmplCtx.Repository.SearchResultPaths(),
+				"name":                tmplCtx.Repository.Name,
+			}
+		},
+		"outputs": func() map[string]interface{} {
+			return tmplCtx.Outputs
+		},
+		"steps": func() map[string]interface{} {
+			// Wrap the *StepChanges in a StepResult so we can use nil-safe
+			// methods.
+			res := StepResult{files: tmplCtx.Steps}
+
+			return map[string]interface{}{
+				"modified_files": res.ModifiedFiles(),
+				"added_files":    res.AddedFiles(),
+				"deleted_files":  res.DeletedFiles(),
+				"renamed_files":  res.RenamedFiles(),
+			}
+		},
+	}
+}
+
+func renderChangesetTemplateField(name, tmpl string, tmplCtx *ChangesetTemplateContext) (string, error) {
+	var out bytes.Buffer
+
+	t, err := template.New(name).Delims("${{", "}}").Funcs(tmplCtx.ToFuncMap()).Parse(tmpl)
+	if err != nil {
+		return "", err
+	}
+
+	if err := t.Execute(&out, tmplCtx); err != nil {
+		return "", err
+	}
+
+	return out.String(), nil
 }
 
 func parseGitStatus(out []byte) (StepChanges, error) {

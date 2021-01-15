@@ -13,6 +13,9 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Added
 
+- `steps` in campaign specs can now have [`outputs`](https://docs.sourcegraph.com/campaigns/references/campaign_spec_yaml_reference#steps-outputs) that support [templating](https://docs.sourcegraph.com/campaigns/references/campaign_spec_templating). [#424](https://github.com/sourcegraph/src-cli/pull/424)
+- `changesetTemplate` fields in campaign specs now also support [templating](https://docs.sourcegraph.com/campaigns/references/campaign_spec_templating). [#424](https://github.com/sourcegraph/src-cli/pull/424)
+
 ### Changed
 
 ### Fixed

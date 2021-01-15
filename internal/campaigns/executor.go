@@ -57,6 +57,7 @@ type Executor interface {
 type Task struct {
 	Repository *graphql.Repository
 	Steps      []Step
+	Outputs    map[string]interface{}
 
 	Template         *ChangesetTemplate `json:"-"`
 	TransformChanges *TransformChanges  `json:"-"`
@@ -177,7 +178,13 @@ func newExecutor(opts ExecutorOpts, client api.Client, features featureFlags) *e
 }
 
 func (x *executor) AddTask(repo *graphql.Repository, steps []Step, transform *TransformChanges, template *ChangesetTemplate) {
-	task := &Task{repo, steps, template, transform}
+	task := &Task{
+		Repository:       repo,
+		Steps:            steps,
+		Template:         template,
+		TransformChanges: transform,
+	}
+
 	x.tasks = append(x.tasks, task)
 
 	x.statusesMu.Lock()
@@ -249,11 +256,11 @@ func (x *executor) do(ctx context.Context, task *Task) (err error) {
 		}
 	} else {
 		var (
-			diff  string
-			found bool
+			result ExecutionResult
+			found  bool
 		)
 
-		diff, found, err = x.cache.Get(ctx, cacheKey)
+		result, found, err = x.cache.Get(ctx, cacheKey)
 		if err != nil {
 			err = errors.Wrapf(err, "checking cache for %q", task.Repository.Name)
 			return
@@ -263,7 +270,7 @@ func (x *executor) do(ctx context.Context, task *Task) (err error) {
 			// add it to the list of specs that are displayed to the user and
 			// send to the server. Instead, we can just report that the task is
 			// complete and move on.
-			if len(diff) == 0 {
+			if len(result.Diff) == 0 {
 				x.updateTaskStatus(task, func(status *TaskStatus) {
 					status.Cached = true
 					status.FinishedAt = time.Now()
@@ -273,7 +280,7 @@ func (x *executor) do(ctx context.Context, task *Task) (err error) {
 			}
 
 			var specs []*ChangesetSpec
-			specs, err = createChangesetSpecs(task, diff, x.features)
+			specs, err = createChangesetSpecs(task, result, x.features)
 			if err != nil {
 				return err
 			}
@@ -317,7 +324,7 @@ func (x *executor) do(ctx context.Context, task *Task) (err error) {
 	defer cancel()
 
 	// Actually execute the steps.
-	diff, err := runSteps(runCtx, x.fetcher, x.creator, task.Repository, task.Steps, log, x.tempDir, func(currentlyExecuting string) {
+	result, err := runSteps(runCtx, x.fetcher, x.creator, task.Repository, task.Steps, log, x.tempDir, func(currentlyExecuting string) {
 		x.updateTaskStatus(task, func(status *TaskStatus) {
 			status.CurrentlyExecuting = currentlyExecuting
 		})
@@ -331,20 +338,20 @@ func (x *executor) do(ctx context.Context, task *Task) (err error) {
 	}
 
 	// Build the changeset specs.
-	specs, err := createChangesetSpecs(task, string(diff), x.features)
+	specs, err := createChangesetSpecs(task, result, x.features)
 	if err != nil {
 		return err
 	}
 
 	// Add to the cache. We don't use runCtx here because we want to write to
 	// the cache even if we've now reached the timeout.
-	if err = x.cache.Set(ctx, cacheKey, string(diff)); err != nil {
+	if err = x.cache.Set(ctx, cacheKey, result); err != nil {
 		err = errors.Wrapf(err, "caching result for %q", task.Repository.Name)
 	}
 
 	// If the steps didn't result in any diff, we don't need to add it to the
 	// list of specs that are displayed to the user and send to the server.
-	if len(diff) == 0 {
+	if len(result.Diff) == 0 {
 		return
 	}
 
@@ -397,8 +404,14 @@ func reachedTimeout(cmdCtx context.Context, err error) bool {
 	return errors.Is(err, context.DeadlineExceeded)
 }
 
-func createChangesetSpecs(task *Task, completeDiff string, features featureFlags) ([]*ChangesetSpec, error) {
+func createChangesetSpecs(task *Task, result ExecutionResult, features featureFlags) ([]*ChangesetSpec, error) {
 	repo := task.Repository.Name
+
+	tmplCtx := &ChangesetTemplateContext{
+		Steps:      result.ChangedFiles,
+		Outputs:    result.Outputs,
+		Repository: *task.Repository,
+	}
 
 	var authorName string
 	var authorEmail string
@@ -410,8 +423,38 @@ func createChangesetSpecs(task *Task, completeDiff string, features featureFlags
 			authorEmail = "campaigns@sourcegraph.com"
 		}
 	} else {
-		authorName = task.Template.Commit.Author.Name
-		authorEmail = task.Template.Commit.Author.Email
+		var err error
+		authorName, err = renderChangesetTemplateField("authorName", task.Template.Commit.Author.Name, tmplCtx)
+		if err != nil {
+			return nil, err
+		}
+		authorEmail, err = renderChangesetTemplateField("authorEmail", task.Template.Commit.Author.Email, tmplCtx)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	title, err := renderChangesetTemplateField("title", task.Template.Title, tmplCtx)
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := renderChangesetTemplateField("body", task.Template.Body, tmplCtx)
+	if err != nil {
+		return nil, err
+	}
+
+	message, err := renderChangesetTemplateField("message", task.Template.Commit.Message, tmplCtx)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: As a next step, we should extend the ChangesetTemplateContext to also include
+	// TransformChanges.Group and then change validateGroups and groupFileDiffs to, for each group,
+	// render the branch name *before* grouping the diffs.
+	defaultBranch, err := renderChangesetTemplateField("branch", task.Template.Branch, tmplCtx)
+	if err != nil {
+		return nil, err
 	}
 
 	newSpec := func(branch, diff string) *ChangesetSpec {
@@ -422,11 +465,11 @@ func createChangesetSpecs(task *Task, completeDiff string, features featureFlags
 				BaseRev:        task.Repository.Rev(),
 				HeadRepository: task.Repository.ID,
 				HeadRef:        "refs/heads/" + branch,
-				Title:          task.Template.Title,
-				Body:           task.Template.Body,
+				Title:          title,
+				Body:           body,
 				Commits: []GitCommitDescription{
 					{
-						Message:     task.Template.Commit.Message,
+						Message:     message,
 						AuthorName:  authorName,
 						AuthorEmail: authorEmail,
 						Diff:        diff,
@@ -446,7 +489,8 @@ func createChangesetSpecs(task *Task, completeDiff string, features featureFlags
 			return specs, err
 		}
 
-		diffsByBranch, err := groupFileDiffs(completeDiff, task.Template.Branch, groups)
+		// TODO: Regarding 'defaultBranch', see comment above
+		diffsByBranch, err := groupFileDiffs(result.Diff, defaultBranch, groups)
 		if err != nil {
 			return specs, errors.Wrap(err, "grouping diffs failed")
 		}
@@ -455,7 +499,7 @@ func createChangesetSpecs(task *Task, completeDiff string, features featureFlags
 			specs = append(specs, newSpec(branch, diff))
 		}
 	} else {
-		specs = append(specs, newSpec(task.Template.Branch, string(completeDiff)))
+		specs = append(specs, newSpec(defaultBranch, result.Diff))
 	}
 
 	return specs, nil

@@ -71,8 +71,16 @@ type Step struct {
 	Container string            `json:"container,omitempty" yaml:"container"`
 	Env       env.Environment   `json:"env,omitempty" yaml:"env"`
 	Files     map[string]string `json:"files,omitempty" yaml:"files,omitempty"`
+	Outputs   Outputs           `json:"outputs,omitempty" yaml:"outputs,omitempty"`
 
 	image string
+}
+
+type Outputs map[string]Output
+
+type Output struct {
+	Value  string `json:"value,omitempty" yaml:"value,omitempty"`
+	Format string `json:"format,omitempty" yaml:"format,omitempty"`
 }
 
 type TransformChanges struct {
