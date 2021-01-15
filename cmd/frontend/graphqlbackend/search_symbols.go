@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"unicode/utf8"
 
 	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
@@ -299,26 +300,58 @@ func makeFileMatchURIFromSymbol(symbolResult *searchSymbolResult, inputRev strin
 	return uri
 }
 
-func symbolRange(s protocol.Symbol) lsp.Range {
-	ch := ctagsSymbolCharacter(s)
-	return lsp.Range{
-		Start: lsp.Position{Line: s.Line - 1, Character: ch},
-		End:   lsp.Position{Line: s.Line - 1, Character: ch + len(s.Name)},
+// unescapePattern expects a regexp pattern of the form /^ ... $/ and unescapes
+// the pattern inside it.
+func unescapePattern(pattern string) string {
+	pattern = strings.TrimSuffix(strings.TrimPrefix(pattern, "/^"), "$/")
+	var start int
+	var r rune
+	var escaped []rune
+	buf := []byte(pattern)
+
+	next := func() rune {
+		r, start := utf8.DecodeRune(buf)
+		buf = buf[start:]
+		return r
 	}
+
+	for len(buf) > 0 {
+		r = next()
+		if r == '\\' && len(buf[start:]) > 0 {
+			r = next()
+			if r == '/' || r == '\\' {
+				escaped = append(escaped, r)
+				continue
+			}
+			escaped = append(escaped, '\\', r)
+			continue
+		}
+		escaped = append(escaped, r)
+	}
+	return string(escaped)
 }
 
-// ctagsSymbolCharacter only outputs the line number, not the character (or range). Use the regexp it provides to
-// guess the character.
-func ctagsSymbolCharacter(s protocol.Symbol) int {
+// computeSymbolOffset calculates a symbol offset based on the the only Symbol
+// data member that currently exposes line content: the symbols Pattern member,
+// which has the form /^ ... $/. We find the offset of the symbol name in this
+// line, after escaping the Pattern.
+func computeSymbolOffset(s protocol.Symbol) int {
 	if s.Pattern == "" {
 		return 0
 	}
-	pattern := strings.TrimPrefix(s.Pattern, "/^")
-	i := strings.Index(pattern, s.Name)
+	i := strings.Index(unescapePattern(s.Pattern), s.Name)
 	if i >= 0 {
 		return i
 	}
 	return 0
+}
+
+func symbolRange(s protocol.Symbol) lsp.Range {
+	offset := computeSymbolOffset(s)
+	return lsp.Range{
+		Start: lsp.Position{Line: s.Line - 1, Character: offset},
+		End:   lsp.Position{Line: s.Line - 1, Character: offset + len(s.Name)},
+	}
 }
 
 func ctagsKindToLSPSymbolKind(kind string) lsp.SymbolKind {
