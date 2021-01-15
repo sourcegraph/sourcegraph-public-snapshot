@@ -10,7 +10,7 @@ import {
     FilterValue,
 } from '../../../components/FilteredConnection'
 import { Observable } from 'rxjs'
-import { listUserRepositoriesAndPollIfEmptyOrAnyCloning } from '../../../site-admin/backend'
+import { listUserRepositories } from '../../../site-admin/backend'
 import { queryExternalServices } from '../../../components/externalServices/backend'
 import { RouteComponentProps } from 'react-router'
 import { Link } from '../../../../../shared/src/components/Link'
@@ -127,8 +127,15 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
 
     const queryRepositories = useCallback(
         (args: FilteredConnectionQueryArguments): Observable<RepositoriesResult['repositories']> =>
-            listUserRepositoriesAndPollIfEmptyOrAnyCloning({ ...args, id: userID }).pipe(
-                repeatUntil((result): boolean => !syncPending, { delay: 2000 })
+            listUserRepositories({ ...args, id: userID }).pipe(
+                repeatUntil(
+                    (result): boolean =>
+                        result.nodes &&
+                        result.nodes.length > 0 &&
+                        result.nodes.every(nodes => !nodes.mirrorInfo.cloneInProgress && nodes.mirrorInfo.cloned) &&
+                        !syncPending,
+                    { delay: 2000 }
+                )
             ),
         [syncPending, userID]
     )
