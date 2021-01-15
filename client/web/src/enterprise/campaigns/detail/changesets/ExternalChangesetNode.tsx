@@ -92,7 +92,12 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
             <span className={classNames('align-self-stretch d-none d-md-flex', node.reviewState && 'p-2')}>
                 {node.reviewState && <ChangesetReviewStatusCell reviewState={node.reviewState} />}
             </span>
-            <div className={classNames('align-self-stretch d-none d-md-flex', node.diffStat && 'p-2')}>
+            <div
+                className={classNames(
+                    'align-self-stretch d-none d-md-flex justify-content-center',
+                    node.diffStat && 'p-2'
+                )}
+            >
                 {node.diffStat && <DiffStat {...node.diffStat} expandedCounts={true} separateLines={true} />}
             </div>
             {/* The button for expanding the information used on xs devices. */}
