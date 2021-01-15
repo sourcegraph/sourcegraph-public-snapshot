@@ -15,6 +15,24 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+-
+
+### Changed
+
+-
+
+### Fixed
+
+-
+
+### Removed
+
+-
+
+## 3.24.0
+
+### Added
+
 - Panels in the [Sourcegraph monitoring dashboards](https://docs.sourcegraph.com/admin/observability/metrics#grafana) now:
   - include links to relevant alerts documentation and the new [monitoring dashboards reference](https://docs.sourcegraph.com/admin/observability/dashboards). [#16939](https://github.com/sourcegraph/sourcegraph/pull/16939)
   - include alert events and version changes annotations that can be enabled from the top of each service dashboard. [#17198](https://github.com/sourcegraph/sourcegraph/pull/17198)
