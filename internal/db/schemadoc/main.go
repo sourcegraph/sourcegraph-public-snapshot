@@ -184,11 +184,17 @@ func generateInternal(databaseName, dataSource string, run func(cmd ...string) (
 		buf := bytes.NewBuffer(nil)
 		buf.WriteString("\n")
 
-		for name, values := range types {
+		var typeNames []string
+		for k := range types {
+			typeNames = append(typeNames, k)
+		}
+		sort.Strings(typeNames)
+
+		for _, name := range typeNames {
 			buf.WriteString("# Type ")
 			buf.WriteString(name)
 			buf.WriteString("\n\n- ")
-			buf.WriteString(strings.Join(values, "\n- "))
+			buf.WriteString(strings.Join(types[name], "\n- "))
 			buf.WriteString("\n\n")
 		}
 
