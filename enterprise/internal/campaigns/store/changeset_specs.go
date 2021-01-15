@@ -10,6 +10,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/search"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
@@ -504,6 +505,7 @@ type GetRewirerMappingsOpts struct {
 	CampaignID     int64
 
 	LimitOffset *db.LimitOffset
+	TextSearch  []search.TextSearchTerm
 }
 
 // GetRewirerMappings returns RewirerMappings between changeset specs and changesets.
@@ -571,15 +573,56 @@ func (s *Store) GetRewirerMappings(ctx context.Context, opts GetRewirerMappingsO
 }
 
 func getRewirerMappingsQuery(opts GetRewirerMappingsOpts) *sqlf.Query {
+	campaignID := strconv.Itoa(int(opts.CampaignID))
+	// If there's a text search, we want to add the appropriate WHERE clauses to
+	// the query.
+	//
+	// This gets a little tricky: we want to search both the changeset name and
+	// the repository name. These are exposed somewhat differently depending on
+	// which subquery we're adding the clause to in the big UNION query that's
+	// going to get run: the two views expose changeset_name and repo_name
+	// fields, whereas the detached changeset subquery has to query the fields
+	// directly, since it's just a simple JOIN. As a result, we need two sets of
+	// everything.
+	var detachTextSearch *sqlf.Query
+	var viewTextSearch *sqlf.Query
+	if len(opts.TextSearch) > 0 {
+		detachSearches := make([]*sqlf.Query, len(opts.TextSearch))
+		viewSearches := make([]*sqlf.Query, len(opts.TextSearch))
+
+		for i, term := range opts.TextSearch {
+			detachSearches[i] = textSearchTermToClause(
+				term,
+				sqlf.Sprintf("COALESCE(changesets.metadata->>'Title', changesets.metadata->>'title')"),
+				sqlf.Sprintf("repo.name"),
+			)
+
+			viewSearches[i] = textSearchTermToClause(
+				term,
+				sqlf.Sprintf("changeset_name"),
+				sqlf.Sprintf("repo_name"),
+			)
+		}
+
+		detachTextSearch = sqlf.Sprintf("AND %s", sqlf.Join(detachSearches, " AND "))
+		viewTextSearch = sqlf.Sprintf("AND %s", sqlf.Join(viewSearches, " AND "))
+	} else {
+		detachTextSearch = sqlf.Sprintf("")
+		viewTextSearch = sqlf.Sprintf("")
+	}
+
 	return sqlf.Sprintf(
 		getRewirerMappingsQueryFmtstr,
 		opts.CampaignSpecID,
+		viewTextSearch,
 		opts.CampaignID,
 		opts.CampaignSpecID,
+		viewTextSearch,
 		opts.CampaignSpecID,
 		opts.CampaignID,
 		opts.CampaignSpecID,
-		opts.CampaignID,
+		campaignID,
+		detachTextSearch,
 		opts.LimitOffset.SQL(),
 	)
 }
@@ -596,6 +639,7 @@ SELECT mappings.changeset_spec_id, mappings.changeset_id, mappings.repo_id FROM 
 		tracking_changeset_specs_and_changesets
 	WHERE
 		campaign_spec_id = %s
+		%s -- text search query, if provided
 
 	UNION ALL
 
@@ -607,6 +651,7 @@ SELECT mappings.changeset_spec_id, mappings.changeset_id, mappings.repo_id FROM 
 		branch_changeset_specs_and_changesets
 	WHERE
 		campaign_spec_id = %s
+		%s -- text search query, if provided
 	GROUP BY changeset_spec_id, repo_id
 
 	UNION ALL
@@ -634,6 +679,7 @@ SELECT mappings.changeset_spec_id, mappings.changeset_id, mappings.repo_id FROM 
 				GROUP BY changeset_spec_id, repo_id
 		) AND
 		changesets.campaign_ids ? %s
+		%s -- text search query, if provided
 ) AS mappings
 ORDER BY mappings.changeset_spec_id ASC, mappings.changeset_id ASC
 -- LIMIT, OFFSET

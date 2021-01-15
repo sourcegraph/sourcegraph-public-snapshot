@@ -5,17 +5,21 @@ import (
 	"strings"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
 const (
 	DefaultUploadPageSize = 50
 	DefaultIndexPageSize  = 50
 )
+
+var errAutoIndexingNotEnabled = errors.New("precise code intelligence auto indexing is not enabled")
 
 // Resolver is the main interface to code intel-related operations exposted to the GraphQL API. This
 // resolver concerns itself with GraphQL/API-specific behaviors (auth, validation, marshaling, etc.).
@@ -80,7 +84,13 @@ func (r *Resolver) DeleteLSIFUpload(ctx context.Context, id graphql.ID) (*gql.Em
 	return &gql.EmptyResponse{}, nil
 }
 
+var autoIndexingEnabled = conf.CodeIntelAutoIndexingEnabled
+
 func (r *Resolver) LSIFIndexByID(ctx context.Context, id graphql.ID) (gql.LSIFIndexResolver, error) {
+	if !autoIndexingEnabled() {
+		return nil, errAutoIndexingNotEnabled
+	}
+
 	indexID, err := unmarshalLSIFIndexGQLID(id)
 	if err != nil {
 		return nil, err
@@ -95,11 +105,19 @@ func (r *Resolver) LSIFIndexByID(ctx context.Context, id graphql.ID) (gql.LSIFIn
 }
 
 func (r *Resolver) LSIFIndexes(ctx context.Context, args *gql.LSIFIndexesQueryArgs) (gql.LSIFIndexConnectionResolver, error) {
+	if !autoIndexingEnabled() {
+		return nil, errAutoIndexingNotEnabled
+	}
+
 	// Delegate behavior to LSIFIndexesByRepo with no specified repository identifier
 	return r.LSIFIndexesByRepo(ctx, &gql.LSIFRepositoryIndexesQueryArgs{LSIFIndexesQueryArgs: args})
 }
 
 func (r *Resolver) LSIFIndexesByRepo(ctx context.Context, args *gql.LSIFRepositoryIndexesQueryArgs) (gql.LSIFIndexConnectionResolver, error) {
+	if !autoIndexingEnabled() {
+		return nil, errAutoIndexingNotEnabled
+	}
+
 	opts, err := makeGetIndexesOptions(ctx, args)
 	if err != nil {
 		return nil, err
@@ -109,6 +127,10 @@ func (r *Resolver) LSIFIndexesByRepo(ctx context.Context, args *gql.LSIFReposito
 }
 
 func (r *Resolver) DeleteLSIFIndex(ctx context.Context, id graphql.ID) (*gql.EmptyResponse, error) {
+	if !autoIndexingEnabled() {
+		return nil, errAutoIndexingNotEnabled
+	}
+
 	// 🚨 SECURITY: Only site admins may delete LSIF data for now
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
@@ -127,6 +149,10 @@ func (r *Resolver) DeleteLSIFIndex(ctx context.Context, id graphql.ID) (*gql.Emp
 }
 
 func (r *Resolver) IndexConfiguration(ctx context.Context, id graphql.ID) (gql.IndexConfigurationResolver, error) {
+	if !autoIndexingEnabled() {
+		return nil, errAutoIndexingNotEnabled
+	}
+
 	repositoryID, err := gql.UnmarshalRepositoryID(id)
 	if err != nil {
 		return nil, err
@@ -141,6 +167,10 @@ func (r *Resolver) IndexConfiguration(ctx context.Context, id graphql.ID) (gql.I
 }
 
 func (r *Resolver) UpdateRepositoryIndexConfiguration(ctx context.Context, args *gql.UpdateRepositoryIndexConfigurationArgs) (*gql.EmptyResponse, error) {
+	if !autoIndexingEnabled() {
+		return nil, errAutoIndexingNotEnabled
+	}
+
 	// 🚨 SECURITY: Only site admins may configure indexing jobs for now
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
@@ -159,6 +189,10 @@ func (r *Resolver) UpdateRepositoryIndexConfiguration(ctx context.Context, args 
 }
 
 func (r *Resolver) QueueAutoIndexJobForRepo(ctx context.Context, id graphql.ID) (*gql.EmptyResponse, error) {
+	if !autoIndexingEnabled() {
+		return nil, errAutoIndexingNotEnabled
+	}
+
 	repositoryID, err := gql.UnmarshalRepositoryID(id)
 	if err != nil {
 		return nil, err

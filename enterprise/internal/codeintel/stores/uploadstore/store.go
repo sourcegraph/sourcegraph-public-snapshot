@@ -54,7 +54,7 @@ func create(ctx context.Context, config *Config, observationContext *observation
 		return nil, fmt.Errorf("unknown upload store backend '%s'", config.Backend)
 	}
 
-	store, err := newStore(ctx, config, makeOperations(observationContext))
+	store, err := newStore(ctx, config, newOperations(observationContext))
 	if err != nil {
 		return nil, err
 	}

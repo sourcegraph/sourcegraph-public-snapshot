@@ -63,7 +63,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e
 	github.com/gomodule/oauth1 v0.0.0-20181215000758-9a59ed3b0a84
 	github.com/gomodule/redigo v2.0.0+incompatible
-	github.com/google/go-cmp v0.5.2
+	github.com/google/go-cmp v0.5.4
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/go-github/v28 v28.1.1
 	github.com/google/go-github/v31 v31.0.0
@@ -88,9 +88,12 @@ require (
 	github.com/hashicorp/go-hclog v0.14.1 // indirect
 	github.com/hashicorp/go-multierror v1.1.0
 	github.com/hashicorp/go-retryablehttp v0.6.7 // indirect
+	github.com/hexops/autogold v1.2.0
 	github.com/honeycombio/libhoney-go v1.14.0
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/inconshreveable/log15 v0.0.0-20200109203555-b30bc20e4fd1
+	github.com/jackc/pgconn v1.8.0
+	github.com/jackc/pgx/v4 v4.10.0
 	github.com/jmespath/go-jmespath v0.3.0 // indirect
 	github.com/jmoiron/sqlx v1.2.1-0.20190826204134-d7d95172beb5
 	github.com/joho/godotenv v1.3.0
@@ -178,12 +181,12 @@ require (
 	go.uber.org/atomic v1.7.0
 	go.uber.org/automaxprocs v1.3.0
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
-	golang.org/x/net v0.0.0-20201006153459-a7d1128ccaa0
+	golang.org/x/net v0.0.0-20201021035429-f5854403a974
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
-	golang.org/x/sync v0.0.0-20200625203802-6e8e738ad208
+	golang.org/x/sync v0.0.0-20201020160332-67f06af15bc9
 	golang.org/x/sys v0.0.0-20201214210602-f9fddec55a1e
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e
-	golang.org/x/tools v0.0.0-20200915031644-64986481280e
+	golang.org/x/tools v0.0.0-20210104081019-d8d6ddbec6ee
 	google.golang.org/api v0.29.0
 	google.golang.org/appengine v1.6.6 // indirect
 	google.golang.org/genproto v0.0.0-20200413115906-b5235f65be36 // indirect
@@ -226,3 +229,6 @@ replace github.com/golang/lint => golang.org/x/lint v0.0.0-20191125180803-fdd1cd
 replace github.com/ghodss/yaml => github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152
 
 replace github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images => ./enterprise/dev/ci/images
+
+// Pending: https://github.com/grafana-tools/sdk/pull/121
+replace github.com/grafana-tools/sdk => github.com/sourcegraph/grafana-sdk v0.0.0-20210112115824-13757501ee8a

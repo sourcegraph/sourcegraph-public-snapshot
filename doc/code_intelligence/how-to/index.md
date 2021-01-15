@@ -1,7 +1,6 @@
 # How-to guides
 
 ## General
-- [Enable LSIF](enable_lsif.md)
 - [Add a GitHub repository to your Sourcegraph instance](add_a_repository.md)
 
 ## Automate uploading LSIF data

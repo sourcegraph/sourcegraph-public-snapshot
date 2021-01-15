@@ -20,3 +20,7 @@ type GitserverClient interface {
 	Head(ctx context.Context, repositoryID int) (string, error)
 	ListFiles(ctx context.Context, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error)
 }
+
+type IndexEnqueuer interface {
+	QueueIndex(ctx context.Context, repositoryID int) error
+}

@@ -6,7 +6,7 @@ import { SearchPatternType } from '../../../shared/src/graphql-operations'
 import { Observable } from 'rxjs'
 import { ISavedSearch } from '../../../shared/src/graphql/schema'
 import { EventLogResult } from './backend'
-import { AggregateStreamingSearchResults } from './stream'
+import { AggregateStreamingSearchResults, StreamSearchOptions } from './stream'
 import { findFilter, FilterKind } from '../../../shared/src/search/query/validate'
 
 /**
@@ -172,12 +172,7 @@ export interface HomePanelsProps {
 }
 
 export interface SearchStreamingProps {
-    streamSearch: (
-        query: string,
-        version: string,
-        patternType: SearchPatternType,
-        versionContext: string | undefined
-    ) => Observable<AggregateStreamingSearchResults>
+    streamSearch: (options: StreamSearchOptions) => Observable<AggregateStreamingSearchResults>
 }
 
 /**

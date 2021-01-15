@@ -3,13 +3,16 @@ package store
 import (
 	"context"
 	"database/sql"
+	"database/sql/driver"
 	"encoding/json"
-	"regexp"
+	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/search"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
@@ -96,7 +99,12 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *campaigns.Chang
 		return nil, err
 	}
 
-	campaignIDs, err := jsonSetColumn(c.CampaignIDs)
+	assocsAsMap := make(map[int64]campaigns.CampaignAssoc, len(c.Campaigns))
+	for _, assoc := range c.Campaigns {
+		assocsAsMap[assoc.CampaignID] = assoc
+	}
+
+	campaigns, err := json.Marshal(assocsAsMap)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +120,7 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *campaigns.Chang
 		c.CreatedAt,
 		c.UpdatedAt,
 		metadata,
-		campaignIDs,
+		campaigns,
 		nullStringColumn(c.ExternalID),
 		c.ExternalServiceType,
 		nullStringColumn(c.ExternalBranch),
@@ -219,7 +227,7 @@ func countChangesetsQuery(opts *CountChangesetsOpts) *sqlf.Query {
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
 	}
 	if opts.CampaignID != 0 {
-		preds = append(preds, sqlf.Sprintf("changesets.campaign_ids ? %s", opts.CampaignID))
+		preds = append(preds, sqlf.Sprintf("changesets.campaign_ids ? %s", strconv.Itoa(int(opts.CampaignID))))
 	}
 
 	if opts.ExternalState != nil {
@@ -407,57 +415,7 @@ type ListChangesetsOpts struct {
 	ExternalCheckState  *campaigns.ChangesetCheckState
 	OwnedByCampaignID   int64
 	ExternalServiceID   string
-	TextSearch          []ListChangesetsTextSearchExpr
-}
-
-type ListChangesetsTextSearchExpr struct {
-	Term string
-	Not  bool
-}
-
-func (expr ListChangesetsTextSearchExpr) query() *sqlf.Query {
-	// The general SQL query format for a positive query is:
-	//
-	// (field1 ~* value OR field2 ~* value)
-	//
-	// For negative queries, we negate both the regex and boolean
-	//
-	// (field !~* value AND field !~* value)
-	//
-	// Note that we're using the case insensitive versions of the regex
-	// operators here.
-	var boolOp *sqlf.Query
-	var textOp *sqlf.Query
-	if expr.Not {
-		boolOp = sqlf.Sprintf("AND")
-		textOp = sqlf.Sprintf("!~*")
-	} else {
-		boolOp = sqlf.Sprintf("OR")
-		textOp = sqlf.Sprintf("~*")
-	}
-
-	// Since we're using regular expressions here, we need to ensure the search
-	// term is correctly quoted to avoid issues with escape characters having
-	// unexpected meaning in searches.
-	term := regexp.QuoteMeta(expr.Term)
-
-	return sqlf.Sprintf(
-		// There are a couple of things going on in this predicate.
-		//
-		// The COALESCE() is required to handle the actual title on the
-		// changeset, if it has been published or if it's tracked.
-		// Unfortunately, the metadata field isn't standard, so we have to get
-		// both variations that exist between the code hosts we support.
-		//
-		// The ugly ('\m'||%s||'\M') construction gives us a regex that only
-		// matches on word boundaries.
-		`(COALESCE(changesets.metadata->>'Title', changesets.metadata->>'title', changeset_specs.spec->>'title') %s ('\m'||%s||'\M') %s repo.name %s ('\m'||%s||'\M'))`,
-		textOp,
-		term,
-		boolOp,
-		textOp,
-		term,
-	)
+	TextSearch          []search.TextSearchTerm
 }
 
 // ListChangesets lists Changesets with the given filters.
@@ -498,7 +456,7 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 	}
 
 	if opts.CampaignID != 0 {
-		preds = append(preds, sqlf.Sprintf("changesets.campaign_ids ? %s", opts.CampaignID))
+		preds = append(preds, sqlf.Sprintf("changesets.campaign_ids ? %s", strconv.Itoa(int(opts.CampaignID))))
 	}
 
 	if len(opts.IDs) > 0 {
@@ -547,8 +505,17 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 		// query as well.
 		join = sqlf.Sprintf("LEFT JOIN changeset_specs ON changesets.current_spec_id = changeset_specs.id")
 
-		for _, expr := range opts.TextSearch {
-			preds = append(preds, expr.query())
+		for _, term := range opts.TextSearch {
+			preds = append(preds, textSearchTermToClause(
+				term,
+				// The COALESCE() is required to handle the actual title on the
+				// changeset, if it has been published or if it's tracked.
+				// Unfortunately, the metadata field isn't standard, so we have
+				// to get both variations that exist between the code hosts we
+				// support.
+				sqlf.Sprintf("COALESCE(changesets.metadata->>'Title', changesets.metadata->>'title', changeset_specs.spec->>'title')"),
+				sqlf.Sprintf("repo.name"),
+			))
 		}
 	}
 
@@ -712,6 +679,49 @@ func scanChangesets(rows *sql.Rows, queryErr error) ([]*campaigns.Changeset, err
 	})
 }
 
+// jsonCampaignChangesetSet represents a "join table" set as a JSONB object
+// where the keys are the ids and the values are json objects holding the properties.
+// It implements the sql.Scanner interface so it can be used as a scan destination,
+// similar to sql.NullString.
+type jsonCampaignChangesetSet struct {
+	Assocs *[]campaigns.CampaignAssoc
+}
+
+// Scan implements the Scanner interface.
+func (n *jsonCampaignChangesetSet) Scan(value interface{}) error {
+	m := make(map[int64]campaigns.CampaignAssoc)
+
+	switch value := value.(type) {
+	case nil:
+	case []byte:
+		if err := json.Unmarshal(value, &m); err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("value is not []byte: %T", value)
+	}
+
+	if *n.Assocs == nil {
+		*n.Assocs = make([]campaigns.CampaignAssoc, 0, len(m))
+	} else {
+		*n.Assocs = (*n.Assocs)[:0]
+	}
+
+	for id, assoc := range m {
+		*n.Assocs = append(*n.Assocs, campaigns.CampaignAssoc{CampaignID: id, Detach: assoc.Detach})
+	}
+
+	return nil
+}
+
+// Value implements the driver Valuer interface.
+func (n jsonCampaignChangesetSet) Value() (driver.Value, error) {
+	if n.Assocs == nil {
+		return nil, nil
+	}
+	return *n.Assocs, nil
+}
+
 func scanChangeset(t *campaigns.Changeset, s scanner) error {
 	var metadata, syncState json.RawMessage
 
@@ -728,7 +738,7 @@ func scanChangeset(t *campaigns.Changeset, s scanner) error {
 		&t.CreatedAt,
 		&t.UpdatedAt,
 		&metadata,
-		&dbutil.JSONInt64Set{Set: &t.CampaignIDs},
+		&jsonCampaignChangesetSet{Assocs: &t.Campaigns},
 		&dbutil.NullString{S: &t.ExternalID},
 		&t.ExternalServiceType,
 		&dbutil.NullString{S: &t.ExternalBranch},
@@ -839,7 +849,7 @@ func getChangesetsStatsQuery(opts GetChangesetsStatsOpts) *sqlf.Query {
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
 	}
 	if opts.CampaignID != 0 {
-		preds = append(preds, sqlf.Sprintf("changesets.campaign_ids ? %s", opts.CampaignID))
+		preds = append(preds, sqlf.Sprintf("changesets.campaign_ids ? %s", strconv.Itoa(int(opts.CampaignID))))
 	}
 	return sqlf.Sprintf(getChangesetStatsFmtstr, sqlf.Join(preds, " AND "))
 }

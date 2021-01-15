@@ -6,12 +6,12 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-
+	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/lib/pq"
+	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type orgMembers struct{}
@@ -26,8 +26,8 @@ func (*orgMembers) Create(ctx context.Context, orgID, userID int32) (*types.OrgM
 		"INSERT INTO org_members(org_id, user_id) VALUES($1, $2) RETURNING id, created_at, updated_at",
 		m.OrgID, m.UserID).Scan(&m.ID, &m.CreatedAt, &m.UpdatedAt)
 	if err != nil {
-		if pqErr, ok := err.(*pq.Error); ok {
-			if pqErr.Constraint == "org_members_org_id_user_id_key" {
+		if pgErr, ok := err.(*pgconn.PgError); ok {
+			if pgErr.ConstraintName == "org_members_org_id_user_id_key" {
 				return nil, errors.New("user is already a member of the organization")
 			}
 		}
@@ -112,7 +112,7 @@ func (*orgMembers) getBySQL(ctx context.Context, query string, args ...interface
 // The provided dbh is used as the DB handle to execute the query. It may be either a global
 // DB handle or a transaction. If nil, the global DB handle is used.
 func (*orgMembers) CreateMembershipInOrgsForAllUsers(ctx context.Context, dbh interface {
-	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
+	Exec(ctx context.Context, query *sqlf.Query) error
 }, orgNames []string) error {
 	if len(orgNames) == 0 {
 		return nil
@@ -135,8 +135,8 @@ func (*orgMembers) CreateMembershipInOrgsForAllUsers(ctx context.Context, dbh in
 		sqlf.Join(orgNameVars, ","))
 
 	if dbh == nil {
-		dbh = dbconn.Global
+		dbh = basestore.NewWithDB(dbconn.Global, sql.TxOptions{})
 	}
-	_, err := dbh.ExecContext(ctx, sqlQuery.Query(sqlf.PostgresBindVar), sqlQuery.Args()...)
+	err := dbh.Exec(ctx, sqlQuery)
 	return err
 }

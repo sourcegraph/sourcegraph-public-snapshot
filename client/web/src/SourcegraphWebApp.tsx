@@ -177,6 +177,11 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      * Wether to enable enable contextual syntax highlighting and hovers for search queries
      */
     enableSmartQuery: boolean
+
+    /**
+     * Whether the code monitoring feature flag is enabled.
+     */
+    enableCodeMonitoring: boolean
 }
 
 const notificationClassNames = {
@@ -260,6 +265,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             showMultilineSearchConsole: false,
             showQueryBuilder: false,
             enableSmartQuery: false,
+            enableCodeMonitoring: false,
         }
     }
 
@@ -410,6 +416,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     showMultilineSearchConsole={this.state.showMultilineSearchConsole}
                                     showQueryBuilder={this.state.showQueryBuilder}
                                     enableSmartQuery={this.state.enableSmartQuery}
+                                    enableCodeMonitoring={this.state.enableCodeMonitoring}
                                     fetchSavedSearches={fetchSavedSearches}
                                     fetchRecentSearches={fetchRecentSearches}
                                     fetchRecentFileViews={fetchRecentFileViews}

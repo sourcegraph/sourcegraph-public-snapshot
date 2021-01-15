@@ -964,6 +964,10 @@ enum ChangesetSpecOperation {
     Internal operation to get around slow code host updates.
     """
     SLEEP
+    """
+    The changeset is removed from some of the associated campaigns.
+    """
+    DETACH
 }
 
 """
@@ -1415,6 +1419,57 @@ type VisibleChangesetApplyPreview {
 }
 
 """
+Aggregated stats on nodes in this connection.
+"""
+type ChangesetApplyPreviewConnectionStats {
+    """
+    Push a new commit to the code host.
+    """
+    push: Int!
+    """
+    Update the existing changeset on the codehost. This is purely the changeset resource on the code host,
+    not the git commit. For updates to the commit, see 'PUSH'.
+    """
+    update: Int!
+    """
+    Move the existing changeset out of being a draft.
+    """
+    undraft: Int!
+    """
+    Publish a changeset to the codehost.
+    """
+    publish: Int!
+    """
+    Publish a changeset to the codehost as a draft changeset. (Only on supported code hosts).
+    """
+    publishDraft: Int!
+    """
+    Sync the changeset with the current state on the codehost.
+    """
+    sync: Int!
+    """
+    Import an existing changeset from the code host with the ExternalID from the spec.
+    """
+    import: Int!
+    """
+    Close the changeset on the codehost.
+    """
+    close: Int!
+    """
+    Reopen the changeset on the codehost.
+    """
+    reopen: Int!
+    """
+    Internal operation to get around slow code host updates.
+    """
+    sleep: Int!
+    """
+    The changeset is removed from some of the associated campaigns.
+    """
+    detach: Int!
+}
+
+"""
 A list of preview entries.
 """
 type ChangesetApplyPreviewConnection {
@@ -1432,6 +1487,11 @@ type ChangesetApplyPreviewConnection {
     A list of preview entries.
     """
     nodes: [ChangesetApplyPreview!]!
+
+    """
+    Stats on the elements in this connnection. Does not respect pagination parameters.
+    """
+    stats: ChangesetApplyPreviewConnectionStats!
 }
 
 """
@@ -1494,6 +1554,10 @@ type CampaignSpec implements Node {
         Opaque pagination cursor.
         """
         after: String
+        """
+        Search for changesets matching this query. Queries may include quoted substrings to match phrases, and words may be preceded by - to negate them.
+        """
+        search: String
     ): ChangesetApplyPreviewConnection!
 
     """

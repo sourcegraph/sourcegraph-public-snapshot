@@ -10,10 +10,13 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/time/rate"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/observability"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
+
+func init() {
+	indexabilityUpdaterEnabled = func() bool { return true }
+}
 
 func TestIndexabilityUpdater(t *testing.T) {
 	mockDBStore := NewMockDBStore()
@@ -38,7 +41,7 @@ func TestIndexabilityUpdater(t *testing.T) {
 	updater := &IndexabilityUpdater{
 		dbStore:            mockDBStore,
 		gitserverClient:    mockGitserverClient,
-		operations:         observability.NewOperations(&observation.TestContext),
+		operations:         newOperations(&observation.TestContext),
 		limiter:            rate.NewLimiter(MaxGitserverRequestsPerSecond, 1),
 		enableIndexingCNCF: false,
 	}

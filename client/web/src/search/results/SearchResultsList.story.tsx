@@ -59,6 +59,7 @@ const defaultProps: SearchResultsListProps = {
     navbarSearchQueryState: { query: '' },
 
     shouldDisplayPerformanceWarning: () => of(false),
+    enableCodeMonitoring: false,
 }
 
 const { add } = storiesOf('web/search/results/SearchResultsList', module).addParameters({

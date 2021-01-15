@@ -31,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
@@ -1729,7 +1730,8 @@ func (a *aggregator) collect(ctx context.Context, results []SearchResultResolver
 			continue
 		}
 
-		// Merge file matches
+		// Merge fileMatches from type symbol, path, file. For streaming search this
+		// code has no effect and the frontend should handle deduplication.
 		if m, ok := a.fileMatches[fm.uri]; ok {
 			m.appendMatches(fm)
 		} else {
@@ -2081,7 +2083,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		alert = newAlert // takes higher precedence
 	}
 
-	if len(results) == 0 && r.patternType != query.SearchTypeStructural && matchHoleRegexp.MatchString(r.originalQuery) {
+	if len(results) == 0 && r.patternType != query.SearchTypeStructural && comby.MatchHoleRegexp.MatchString(r.originalQuery) {
 		alert = alertForStructuralSearchNotSet(r.originalQuery)
 	}
 

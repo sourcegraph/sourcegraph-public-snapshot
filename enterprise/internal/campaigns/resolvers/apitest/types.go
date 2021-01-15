@@ -247,6 +247,21 @@ type ChangesetApplyPreviewConnection struct {
 	Nodes      []ChangesetApplyPreview
 	TotalCount int
 	PageInfo   PageInfo
+	Stats      ChangesetApplyPreviewConnectionStats
+}
+
+type ChangesetApplyPreviewConnectionStats struct {
+	Push         int32
+	Update       int32
+	Undraft      int32
+	Publish      int32
+	PublishDraft int32
+	Sync         int32
+	Import       int32
+	Close        int32
+	Reopen       int32
+	Sleep        int32
+	Detach       int32
 }
 
 type ChangesetApplyPreview struct {

@@ -13,8 +13,8 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/inference"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/observability"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -25,7 +25,7 @@ const MaxGitserverRequestsPerSecond = 20
 type IndexabilityUpdater struct {
 	dbStore             DBStore
 	gitserverClient     GitserverClient
-	operations          *observability.Operations
+	operations          *operations
 	minimumSearchCount  int
 	minimumSearchRatio  float64
 	minimumPreciseCount int
@@ -42,12 +42,12 @@ func NewIndexabilityUpdater(
 	minimumSearchRatio float64,
 	minimumPreciseCount int,
 	interval time.Duration,
-	operations *observability.Operations,
+	observationContext *observation.Context,
 ) goroutine.BackgroundRoutine {
 	updater := &IndexabilityUpdater{
 		dbStore:             dbStore,
 		gitserverClient:     gitserverClient,
-		operations:          operations,
+		operations:          newOperations(observationContext),
 		minimumSearchCount:  minimumSearchCount,
 		minimumSearchRatio:  minimumSearchRatio,
 		minimumPreciseCount: minimumPreciseCount,
@@ -55,10 +55,22 @@ func NewIndexabilityUpdater(
 		limiter:             rate.NewLimiter(MaxGitserverRequestsPerSecond, 1),
 	}
 
-	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), interval, updater, operations.HandleIndexabilityUpdater)
+	return goroutine.NewPeriodicGoroutineWithMetrics(
+		context.Background(),
+		interval,
+		updater,
+		updater.operations.HandleIndexabilityUpdater,
+	)
 }
 
+// For mocking in tests
+var indexabilityUpdaterEnabled = conf.CodeIntelAutoIndexingEnabled
+
 func (u *IndexabilityUpdater) Handle(ctx context.Context) error {
+	if !indexabilityUpdaterEnabled() {
+		return nil
+	}
+
 	start := time.Now().UTC()
 
 	stats, err := u.dbStore.RepoUsageStatistics(ctx)

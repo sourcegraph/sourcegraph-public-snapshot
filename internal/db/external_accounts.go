@@ -5,11 +5,12 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strconv"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	otlog "github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -87,35 +88,29 @@ func (s *userExternalAccounts) AssociateUserAndSave(ctx context.Context, userID 
 
 	// This "upsert" may cause us to return an ephemeral failure due to a race condition, but it
 	// won't result in inconsistent data.  Wrap in transaction.
-	tx, err := dbconn.Global.BeginTx(ctx, nil)
+
+	// Temporarily use basestore here until we've migrated all of userExternalAccounts
+	bs := basestore.NewWithDB(dbconn.Global, sql.TxOptions{})
+	tx, err := bs.Transact(ctx)
 	if err != nil {
 		return err
 	}
-	defer func() {
-		if err != nil {
-			rollErr := tx.Rollback()
-			if rollErr != nil {
-				err = multierror.Append(err, rollErr)
-			}
-			return
-		}
-		err = tx.Commit()
-	}()
+	defer tx.Done(err)
 
 	// Find whether the account exists and, if so, which user ID the account is associated with.
 	var exists bool
 	var existingID, associatedUserID int32
-	err = tx.QueryRowContext(ctx, `
+	err = tx.QueryRow(ctx, sqlf.Sprintf(`
 -- source: internal/db/external_accounts.go:userExternalAccounts.AssociateUserAndSave
 SELECT id, user_id
 FROM user_external_accounts
 WHERE
-	service_type = $1
-AND service_id = $2
-AND client_id = $3
-AND account_id = $4
+	service_type = %s
+AND service_id = %s
+AND client_id = %s
+AND account_id = %s
 AND deleted_at IS NULL
-`, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID).Scan(&existingID, &associatedUserID)
+`, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID)).Scan(&existingID, &associatedUserID)
 	if err != nil && err != sql.ErrNoRows {
 		return err
 	}
@@ -133,22 +128,22 @@ AND deleted_at IS NULL
 	}
 
 	// Update the external account (it exists).
-	res, err := tx.ExecContext(ctx, `
+	res, err := tx.ExecResult(ctx, sqlf.Sprintf(`
 -- source: internal/db/external_accounts.go:userExternalAccounts.AssociateUserAndSave
 UPDATE user_external_accounts
 SET
-	auth_data = $6,
-	account_data = $7,
+	auth_data = %s,
+	account_data = %s,
 	updated_at = now(),
 	expired_at = NULL
 WHERE
-	service_type = $1
-AND service_id = $2
-AND client_id = $3
-AND account_id = $4
-AND user_id = $5
+	service_type = %s
+AND service_id = %s
+AND client_id = %s
+AND account_id = %s
+AND user_id = %s
 AND deleted_at IS NULL
-`, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, userID, data.AuthData, data.Data)
+`, data.AuthData, data.Data, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, userID))
 	if err != nil {
 		return err
 	}
@@ -172,38 +167,27 @@ func (s *userExternalAccounts) CreateUserAndSave(ctx context.Context, newUser Ne
 		return Mocks.ExternalAccounts.CreateUserAndSave(newUser, spec, data)
 	}
 
-	// Wrap in transaction.
-	tx, err := dbconn.Global.BeginTx(ctx, nil)
+	tx, err := Users.Transact(ctx)
 	if err != nil {
 		return 0, err
 	}
-	defer func() {
-		if err != nil {
-			rollErr := tx.Rollback()
-			if rollErr != nil {
-				err = multierror.Append(err, rollErr)
-			}
-			return
-		}
-		err = tx.Commit()
-	}()
+	defer tx.Done(err)
 
-	createdUser, err := Users.create(ctx, tx, newUser)
+	createdUser, err := tx.create(ctx, newUser)
 	if err != nil {
 		return 0, err
 	}
 
-	err = s.insert(ctx, tx, createdUser.ID, spec, data)
+	err = s.insert(ctx, tx.Store, createdUser.ID, spec, data)
 	return createdUser.ID, err
 }
 
-func (s *userExternalAccounts) insert(ctx context.Context, tx *sql.Tx, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) error {
-	_, err := tx.ExecContext(ctx, `
+func (s *userExternalAccounts) insert(ctx context.Context, tx *basestore.Store, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) error {
+	return tx.Exec(ctx, sqlf.Sprintf(`
 -- source: internal/db/external_accounts.go:userExternalAccounts.insert
 INSERT INTO user_external_accounts (user_id, service_type, service_id, client_id, account_id, auth_data, account_data)
-VALUES ($1, $2, $3, $4, $5, $6, $7)
-`, userID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, data.AuthData, data.Data)
-	return err
+VALUES (%s, %s, %s, %s, %s, %s, %s)
+`, userID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, data.AuthData, data.Data))
 }
 
 // TouchExpired sets the given user external account to be expired now.
@@ -362,7 +346,7 @@ func (*userExternalAccounts) listSQL(opt ExternalAccountsListOptions) (conds []*
 		conds = append(conds, sqlf.Sprintf("(service_type=%s AND service_id=%s AND client_id=%s)", opt.ServiceType, opt.ServiceID, opt.ClientID))
 	}
 	if opt.AccountID != 0 {
-		conds = append(conds, sqlf.Sprintf("account_id=%d", opt.AccountID))
+		conds = append(conds, sqlf.Sprintf("account_id=%d", strconv.Itoa(int(opt.AccountID))))
 	}
 	if opt.ExcludeExpired {
 		conds = append(conds, sqlf.Sprintf("expired_at IS NULL"))

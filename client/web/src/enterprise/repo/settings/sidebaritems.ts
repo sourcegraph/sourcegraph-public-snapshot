@@ -10,40 +10,41 @@ const codeIntelSettingsGroup = {
             label: 'Uploads',
         },
         {
-            to: '/code-intelligence/index-configuration',
-            label: 'Index configuration',
-            condition: () => Boolean(window.context?.sourcegraphDotComMode),
-        },
-        {
             to: '/code-intelligence/indexes',
             label: 'Auto indexing',
-            condition: () => Boolean(window.context?.sourcegraphDotComMode),
+            condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
+        },
+        {
+            to: '/code-intelligence/index-configuration',
+            label: 'Index configuration',
+            condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
         },
     ],
 }
 
-export const enterpriseRepoSettingsSidebarGroups: RepoSettingsSideBarGroups = repoSettingsSideBarGroups.reduce<
-    RepoSettingsSideBarGroups
->((enterpriseGroups, group) => {
-    if (group === settingsGroup) {
-        return [
-            ...enterpriseGroups,
-            // Extend settings group items
-            {
-                ...group,
-                items: [
-                    ...group.items,
-                    {
-                        to: '/permissions',
-                        exact: true,
-                        label: 'Permissions',
-                    },
-                ],
-            },
-            // Insert code intel group after settings group
-            codeIntelSettingsGroup,
-        ]
-    }
+export const enterpriseRepoSettingsSidebarGroups: RepoSettingsSideBarGroups = repoSettingsSideBarGroups.reduce<RepoSettingsSideBarGroups>(
+    (enterpriseGroups, group) => {
+        if (group === settingsGroup) {
+            return [
+                ...enterpriseGroups,
+                // Extend settings group items
+                {
+                    ...group,
+                    items: [
+                        ...group.items,
+                        {
+                            to: '/permissions',
+                            exact: true,
+                            label: 'Permissions',
+                        },
+                    ],
+                },
+                // Insert code intel group after settings group
+                codeIntelSettingsGroup,
+            ]
+        }
 
-    return [...enterpriseGroups, group]
-}, [])
+        return [...enterpriseGroups, group]
+    },
+    []
+)

@@ -8,9 +8,8 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/observability"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
@@ -18,8 +17,8 @@ import (
 
 type IndexScheduler struct {
 	dbStore                     DBStore
-	enqueuer                    enqueuer.Enqueuer
-	operations                  *observability.Operations
+	indexEnqueuer               IndexEnqueuer
+	operations                  *operations
 	batchSize                   int
 	minimumTimeSinceLastEnqueue time.Duration
 	minimumSearchCount          int
@@ -31,32 +30,42 @@ var _ goroutine.Handler = &IndexScheduler{}
 
 func NewIndexScheduler(
 	dbStore DBStore,
-	enqueuerDBStore enqueuer.DBStore,
-	gitserverClient enqueuer.GitserverClient,
+	indexEnqueuer IndexEnqueuer,
 	batchSize int,
 	minimumTimeSinceLastEnqueue time.Duration,
 	minimumSearchCount int,
 	minimumSearchRatio float64,
 	minimumPreciseCount int,
 	interval time.Duration,
-	operations *observability.Operations,
 	observationContext *observation.Context,
 ) goroutine.BackgroundRoutine {
 	scheduler := &IndexScheduler{
 		dbStore:                     dbStore,
+		indexEnqueuer:               indexEnqueuer,
 		batchSize:                   batchSize,
 		minimumTimeSinceLastEnqueue: minimumTimeSinceLastEnqueue,
 		minimumSearchCount:          minimumSearchCount,
 		minimumSearchRatio:          minimumSearchRatio,
 		minimumPreciseCount:         minimumPreciseCount,
-		operations:                  operations,
-		enqueuer:                    enqueuer.NewIndexEnqueuer(enqueuerDBStore, gitserverClient, observationContext),
+		operations:                  newOperations(observationContext),
 	}
 
-	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), interval, scheduler, operations.HandleIndexScheduler)
+	return goroutine.NewPeriodicGoroutineWithMetrics(
+		context.Background(),
+		interval,
+		scheduler,
+		scheduler.operations.HandleIndexScheduler,
+	)
 }
 
+// For mocking in tests
+var indexSchedulerEnabled = conf.CodeIntelAutoIndexingEnabled
+
 func (s *IndexScheduler) Handle(ctx context.Context) error {
+	if !indexSchedulerEnabled() {
+		return nil
+	}
+
 	configuredRepositoryIDs, err := s.dbStore.GetRepositoriesWithIndexConfiguration(ctx)
 	if err != nil {
 		return errors.Wrap(err, "store.GetRepositoriesWithIndexConfiguration")
@@ -80,7 +89,7 @@ func (s *IndexScheduler) Handle(ctx context.Context) error {
 
 	var queueErr error
 	for _, repositoryID := range deduplicateRepositoryIDs(configuredRepositoryIDs, indexableRepositoryIDs) {
-		if err := s.enqueuer.QueueIndex(ctx, repositoryID); err != nil {
+		if err := s.indexEnqueuer.QueueIndex(ctx, repositoryID); err != nil {
 			if isRepoNotExist(err) {
 				continue
 			}

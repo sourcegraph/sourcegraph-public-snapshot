@@ -33,8 +33,6 @@ COPY --from=monitoring_builder /generated/grafana/* /sg_config_grafana/provision
 ADD entry.sh /
 
 USER root
-# hadolint ignore=DL3018
-RUN apk add --no-cache curl
 
 EXPOSE 3370
 USER grafana
