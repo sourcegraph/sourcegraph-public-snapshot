@@ -1,0 +1,9 @@
+.campaign-preview-stats-bar {
+    &__stat {
+        color: $gray-10;
+    }
+    &__divider {
+        border: 1px solid var(--border-color);
+        height: 2rem;
+    }
+}

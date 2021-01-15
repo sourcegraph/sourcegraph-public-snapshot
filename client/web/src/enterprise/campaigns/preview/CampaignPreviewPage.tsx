@@ -89,6 +89,7 @@ export const CampaignPreviewPage: React.FunctionComponent<CampaignPreviewPagePro
                 viewerCampaignsCodeHosts={spec.viewerCampaignsCodeHosts}
             />
             <SupersedingCampaignSpecAlert spec={spec.supersedingCampaignSpec} />
+            <CampaignPreviewStatsBar campaignSpec={spec} />
             <CreateUpdateCampaignAlert
                 history={history}
                 specID={spec.id}
@@ -96,7 +97,6 @@ export const CampaignPreviewPage: React.FunctionComponent<CampaignPreviewPagePro
                 viewerCanAdminister={spec.viewerCanAdminister}
                 telemetryService={telemetryService}
             />
-            <CampaignPreviewStatsBar campaignSpec={spec} />
             <CampaignDescription history={history} description={spec.description.description} />
             <PreviewList
                 campaignSpecID={specID}
