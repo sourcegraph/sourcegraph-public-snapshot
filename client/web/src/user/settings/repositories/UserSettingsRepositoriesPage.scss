@@ -8,9 +8,6 @@
     &__check {
         fill: var(--color-bg-3) !important;
     }
-    &__caret {
-        fill: var(--primary) !important;
-    }
 
     &__shimmer {
         background: linear-gradient(to right, var(--color-bg-2) 4%, var(--color-bg-1) 25%, var(--color-bg-2) 36%);
@@ -36,7 +33,6 @@
     }
 
     &__summary {
-        font-size: 12px;
         padding-top: 1.5rem;
     }
 

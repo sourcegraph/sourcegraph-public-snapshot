@@ -125,7 +125,7 @@ export const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({
                     </div>
                     <div>
                         {isPrivate && <div className="badge badge-secondary text-muted">Private</div>}
-                        <ChevronRightIcon className="icon-inline ml-2 user-settings-repos__caret" />
+                        <ChevronRightIcon className="icon-inline ml-2 text-primary" />
                     </div>
                 </a>
             </td>

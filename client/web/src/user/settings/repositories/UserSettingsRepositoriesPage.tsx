@@ -192,5 +192,5 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
 }
 
 const TotalCountSummary: React.FunctionComponent<{ totalCount: number }> = ({ totalCount }) => (
-    <p className="user-settings-repos__summary">{totalCount} repositories total</p>
+    <small className="user-settings-repos__summary">{totalCount} repositories total</small>
 )
