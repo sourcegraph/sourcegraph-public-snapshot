@@ -187,7 +187,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repoBranches 
 	}
 
 	limitHit, files, _ := zoektutil.LimitMatches(limitHit, int(args.PatternInfo.FileMatchLimit), resp.Files, func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool) {
-		return repo, revs, true
+		return repo, revs, false
 	})
 	resp.Files = files
 
