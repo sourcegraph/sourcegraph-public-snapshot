@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"regexp"
 	"sort"
 	"strconv"
 	"sync"
@@ -68,42 +67,26 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (_ SearchImplem
 		}
 	}
 
-	useNewParser := getBoolPtr(settings.SearchMigrateParser, true)
-	tr.LogFields(otlog.Bool("useNewParser", useNewParser))
-
 	searchType, err := detectSearchType(args.Version, args.PatternType)
 	if err != nil {
 		return nil, err
 	}
-	searchType = overrideSearchType(args.Query, searchType, useNewParser)
+	searchType = overrideSearchType(args.Query, searchType)
 
 	if searchType == query.SearchTypeStructural && !conf.StructuralSearchEnabled() {
 		return nil, errors.New("Structural search is disabled in the site configuration.")
 	}
 
 	var queryInfo query.QueryInfo
-	if useNewParser {
-		globbing := getBoolPtr(settings.SearchGlobbing, false)
-		tr.LogFields(otlog.Bool("globbing", globbing))
-		queryInfo, err = query.ProcessAndOr(args.Query, query.ParserOptions{SearchType: searchType, Globbing: globbing})
-		if err != nil {
-			return alertForQuery(args.Query, err), nil
-		}
-		if getBoolPtr(settings.SearchUppercase, false) {
-			q := queryInfo.(*query.AndOrQuery)
-			q.Query = query.SearchUppercase(q.Query)
-		}
-	} else {
-		var queryString string
-		if searchType == query.SearchTypeLiteral {
-			queryString = query.ConvertToLiteral(args.Query)
-		} else {
-			queryString = args.Query
-		}
-		queryInfo, err = query.Process(queryString, searchType)
-		if err != nil {
-			return alertForQuery(queryString, err), nil
-		}
+	globbing := getBoolPtr(settings.SearchGlobbing, false)
+	tr.LogFields(otlog.Bool("globbing", globbing))
+	queryInfo, err = query.ProcessAndOr(args.Query, query.ParserOptions{SearchType: searchType, Globbing: globbing})
+	if err != nil {
+		return alertForQuery(args.Query, err), nil
+	}
+	if getBoolPtr(settings.SearchUppercase, false) {
+		q := queryInfo.(*query.AndOrQuery)
+		q.Query = query.SearchUppercase(q.Query)
 	}
 	tr.LazyPrintf("parsing done")
 
@@ -224,42 +207,24 @@ func detectSearchType(version string, patternType *string) (query.SearchType, er
 
 var patternTypeRegex = lazyregexp.New(`(?i)patterntype:([a-zA-Z"']+)`)
 
-func overrideSearchType(input string, searchType query.SearchType, useNewParser bool) query.SearchType {
-	if useNewParser {
-		q, err := query.ParseAndOr(input, query.SearchTypeLiteral)
-		q = query.LowercaseFieldNames(q)
-		if err != nil {
-			// If parsing fails, return the default search type. Any actual
-			// parse errors will be raised by subsequent parser calls.
-			return searchType
-		}
-		query.VisitField(q, "patterntype", func(value string, _ bool, _ query.Annotation) {
-			switch value {
-			case "regex", "regexp":
-				searchType = query.SearchTypeRegex
-			case "literal":
-				searchType = query.SearchTypeLiteral
-			case "structural":
-				searchType = query.SearchTypeStructural
-			}
-		})
-	} else {
-		// The patterntype field is Singular, but not enforced since we do not
-		// properly parse the input. The regex extraction, takes the left-most
-		// "patterntype:value" match.
-		patternFromField := patternTypeRegex.FindStringSubmatch(input)
-		if len(patternFromField) > 1 {
-			extracted := patternFromField[1]
-			if match, _ := regexp.MatchString("regex", extracted); match {
-				searchType = query.SearchTypeRegex
-			} else if match, _ := regexp.MatchString("literal", extracted); match {
-				searchType = query.SearchTypeLiteral
-
-			} else if match, _ := regexp.MatchString("structural", extracted); match {
-				searchType = query.SearchTypeStructural
-			}
-		}
+func overrideSearchType(input string, searchType query.SearchType) query.SearchType {
+	q, err := query.ParseAndOr(input, query.SearchTypeLiteral)
+	q = query.LowercaseFieldNames(q)
+	if err != nil {
+		// If parsing fails, return the default search type. Any actual
+		// parse errors will be raised by subsequent parser calls.
+		return searchType
 	}
+	query.VisitField(q, "patterntype", func(value string, _ bool, _ query.Annotation) {
+		switch value {
+		case "regex", "regexp":
+			searchType = query.SearchTypeRegex
+		case "literal":
+			searchType = query.SearchTypeLiteral
+		case "structural":
+			searchType = query.SearchTypeStructural
+		}
+	})
 	return searchType
 }
 

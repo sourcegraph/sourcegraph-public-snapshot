@@ -1095,7 +1095,7 @@ type Settings struct {
 	SearchIncludeArchived *bool `json:"search.includeArchived,omitempty"`
 	// SearchIncludeForks description: Whether searches should include searching forked repositories.
 	SearchIncludeForks *bool `json:"search.includeForks,omitempty"`
-	// SearchMigrateParser description: If false, disables the new and/or-compatible parser for all search queries. It is a flag to aid transition to the new parser.
+	// SearchMigrateParser description: REMOVED. Previously, a flag to enable and/or-expressions in queries as an aid transition to new language features in versions <= 3.24.0.
 	SearchMigrateParser *bool `json:"search.migrateParser,omitempty"`
 	// SearchRepositoryGroups description: Named groups of repositories that can be referenced in a search query using the `repogroup:` operator. The list can contain string literals (to include single repositories) and JSON objects with a "regex" field (to include all repositories matching the regular expression). Retrieving repogroups via the GQL interface will currently exclude repositories matched by regex patterns. #14208.
 	SearchRepositoryGroups map[string][]interface{} `json:"search.repositoryGroups,omitempty"`

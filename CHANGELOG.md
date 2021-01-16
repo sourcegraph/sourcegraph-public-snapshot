@@ -27,7 +27,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
--
+- Removed the `search.migrateParser` setting. Enabling/disabling this flag no longer has any effect. [#17344](https://github.com/sourcegraph/sourcegraph/pull/17344)
 
 ## 3.24.0
 
