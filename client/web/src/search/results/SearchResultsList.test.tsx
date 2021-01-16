@@ -121,6 +121,7 @@ describe('SearchResultsList', () => {
         navbarSearchQueryState: { query: '' },
 
         shouldDisplayPerformanceWarning: () => of(false),
+        enableCodeMonitoring: false,
     }
 
     it('displays loading text when results is undefined', () => {

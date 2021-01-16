@@ -1,9 +1,11 @@
 package api
 
 import (
+	"context"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 )
@@ -58,7 +60,7 @@ func TestDecodeOrCreateCursor(t *testing.T) {
 		Monikers:  []lsifstore.MonikerData{testMoniker1, testMoniker2},
 	}
 
-	if cursor, err := DecodeOrCreateCursor("sub1/main.go", 10, 20, 42, "", mockDBStore, mockLSIFStore); err != nil {
+	if cursor, err := DecodeOrCreateCursor(context.Background(), "sub1/main.go", 10, 20, 42, "", mockDBStore, mockLSIFStore); err != nil {
 		t.Fatalf("unexpected error decoding cursor: %s", err)
 	} else if diff := cmp.Diff(expectedCursor, cursor); diff != "" {
 		t.Errorf("unexpected cursor (-want +got):\n%s", diff)
@@ -70,7 +72,7 @@ func TestDecodeOrCreateCursorUnknownDump(t *testing.T) {
 	mockLSIFStore := NewMockLSIFStore()
 	setMockDBStoreGetDumpByID(t, mockDBStore, nil)
 
-	if _, err := DecodeOrCreateCursor("sub1/main.go", 10, 20, 42, "", mockDBStore, mockLSIFStore); err != ErrMissingDump {
+	if _, err := DecodeOrCreateCursor(context.Background(), "sub1/main.go", 10, 20, 42, "", mockDBStore, mockLSIFStore); err != ErrMissingDump {
 		t.Fatalf("unexpected error decoding cursor. want=%q have =%q", ErrMissingDump, err)
 	}
 }
@@ -102,7 +104,7 @@ func TestDecodeOrCreateCursorExisting(t *testing.T) {
 	mockDBStore := NewMockDBStore()
 	mockLSIFStore := NewMockLSIFStore()
 
-	if cursor, err := DecodeOrCreateCursor("", 0, 0, 0, EncodeCursor(expectedCursor), mockDBStore, mockLSIFStore); err != nil {
+	if cursor, err := DecodeOrCreateCursor(context.Background(), "", 0, 0, 0, EncodeCursor(expectedCursor), mockDBStore, mockLSIFStore); err != nil {
 		t.Fatalf("unexpected error decoding cursor: %s", err)
 	} else if diff := cmp.Diff(expectedCursor, cursor); diff != "" {
 		t.Errorf("unexpected cursor (-want +got):\n%s", diff)

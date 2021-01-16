@@ -386,7 +386,7 @@ func (s *updateScheduler) DebugDump() interface{} {
 	}
 	for i, update := range s.updateQueue.heap {
 		// Copy the repoUpdate as a value so that
-		// poping off the heap here won't update the index value of the real heap, and
+		// popping off the heap here won't update the index value of the real heap, and
 		// we don't do a racy read on the repo pointer which may change concurrently in the real heap.
 		updateCopy := *update
 		updateQueue.heap[i] = &updateCopy
@@ -569,7 +569,12 @@ func (q *updateQueue) acquireNext() (configuredRepo, bool) {
 // responsibility to ensure they're being guarded by a mutex during any heap operation,
 // i.e. heap.Fix, heap.Remove, heap.Push, heap.Pop.
 
-func (q *updateQueue) Len() int { return len(q.heap) }
+func (q *updateQueue) Len() int {
+	n := len(q.heap)
+	schedUpdateQueueLength.Set(float64(n))
+	return n
+}
+
 func (q *updateQueue) Less(i, j int) bool {
 	qi := q.heap[i]
 	qj := q.heap[j]
@@ -598,7 +603,6 @@ func (q *updateQueue) Push(x interface{}) {
 	item.Seq = q.nextSeq()
 	q.heap = append(q.heap, item)
 	q.index[item.Repo.ID] = item
-	schedUpdateQueueLength.Inc()
 }
 
 func (q *updateQueue) Pop() interface{} {
@@ -607,7 +611,6 @@ func (q *updateQueue) Pop() interface{} {
 	item.Index = -1 // for safety
 	q.heap = q.heap[0 : n-1]
 	delete(q.index, item.Repo.ID)
-	schedUpdateQueueLength.Dec()
 	return item
 }
 

@@ -37,6 +37,7 @@ import { AuthenticatedUser } from '../../auth'
 import { SearchPatternType } from '../../../../shared/src/graphql-operations'
 import { shouldDisplayPerformanceWarning } from '../backend'
 import { VersionContextWarning } from './VersionContextWarning'
+import { CodeMonitoringProps } from '../../enterprise/code-monitoring'
 
 export interface SearchResultsProps
     extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI' | 'services'>,
@@ -46,7 +47,8 @@ export interface SearchResultsProps
         ThemeProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        VersionContextProps {
+        VersionContextProps,
+        Pick<CodeMonitoringProps, 'enableCodeMonitoring'> {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History

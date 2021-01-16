@@ -9,7 +9,6 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"net"
 	"os"
 	"strconv"
 	"strings"
@@ -134,14 +133,16 @@ func openDBWithStartupWait(dataSource string) (db *sql.DB, err error) {
 // isDatabaseLikelyStartingUp returns whether the err likely just means the PostgreSQL database is
 // starting up, and it should not be treated as a fatal error during program initialization.
 func isDatabaseLikelyStartingUp(err error) bool {
-	if strings.Contains(err.Error(), "pq: the database system is starting up") {
+	msg := err.Error()
+	if strings.Contains(msg, "the database system is starting up") {
 		// Wait for DB to start up.
 		return true
 	}
-	if e, ok := errors.Cause(err).(net.Error); ok && strings.Contains(e.Error(), "connection refused") {
+	if strings.Contains(msg, "connection refused") || strings.Contains(msg, "failed to receive message") {
 		// Wait for DB to start listening.
 		return true
 	}
+
 	return false
 }
 

@@ -14,6 +14,7 @@ interface TriggerAreaProps {
     onQueryChange: (query: string) => void
     triggerCompleted: boolean
     setTriggerCompleted: (complete: boolean) => void
+    startExpanded: boolean
 }
 
 const isDiffOrCommit = (value: string): boolean => value === 'diff' || value === 'commit'
@@ -23,8 +24,9 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
     onQueryChange,
     triggerCompleted,
     setTriggerCompleted,
+    startExpanded,
 }) => {
-    const [showQueryForm, setShowQueryForm] = useState(false)
+    const [showQueryForm, setShowQueryForm] = useState(startExpanded)
     const toggleQueryForm: React.FormEventHandler = useCallback(event => {
         event.preventDefault()
         setShowQueryForm(show => !show)
@@ -86,13 +88,6 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
         [setTriggerCompleted, setShowQueryForm, onQueryChange, queryState]
     )
 
-    const editForm: React.FormEventHandler = useCallback(
-        event => {
-            event.preventDefault()
-            setShowQueryForm(true)
-        },
-        [setShowQueryForm]
-    )
     const cancelForm: React.FormEventHandler = useCallback(
         event => {
             event.preventDefault()
@@ -141,6 +136,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                     autoFocus={true}
                                     ref={queryInputReference}
                                     spellCheck={false}
+                                    data-testid="trigger-query-edit"
                                 />
                                 {queryState.kind === 'INVALID' && (
                                     <small className="trigger-area__query-input-error-message invalid-feedback test-trigger-error">
@@ -189,20 +185,19 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                 </div>
             )}
             {!showQueryForm && triggerCompleted && (
-                <div className="code-monitor-form__card card p-3">
+                <div className="code-monitor-form__card--button card p-3" onClick={toggleQueryForm}>
                     <div className="d-flex justify-content-between align-items-center">
                         <div>
                             <div className="font-weight-bold">When there are new search results</div>
-                            <code className="trigger-area__query-label text-break text-muted test-existing-query">
+                            <code
+                                className="trigger-area__query-label text-break text-muted test-existing-query"
+                                data-testid="trigger-query-existing"
+                            >
                                 {query}
                             </code>
                         </div>
                         <div>
-                            <button
-                                type="button"
-                                onClick={editForm}
-                                className="btn btn-link p-0 text-left test-edit-trigger"
-                            >
+                            <button type="button" className="btn btn-link p-0 text-left test-edit-trigger">
                                 Edit
                             </button>
                         </div>

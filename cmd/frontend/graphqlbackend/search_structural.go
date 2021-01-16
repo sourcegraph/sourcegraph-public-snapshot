@@ -8,55 +8,13 @@ import (
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 
+	searcherzoekt "github.com/sourcegraph/sourcegraph/cmd/searcher/search"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
-
-func HandleFilePathPatterns(query *search.TextPatternInfo) (zoektquery.Q, error) {
-	var and []zoektquery.Q
-
-	// Zoekt uses regular expressions for file paths.
-	// Unhandled cases: PathPatternsAreCaseSensitive and whitespace in file path patterns.
-	for _, p := range query.IncludePatterns {
-		q, err := fileRe(p, query.IsCaseSensitive)
-		if err != nil {
-			return nil, err
-		}
-		and = append(and, q)
-	}
-	if query.ExcludePattern != "" {
-		q, err := fileRe(query.ExcludePattern, query.IsCaseSensitive)
-		if err != nil {
-			return nil, err
-		}
-		and = append(and, &zoektquery.Not{Child: q})
-	}
-
-	// For conditionals that happen on a repo we can use type:repo queries. eg
-	// (type:repo file:foo) (type:repo file:bar) will match all repos which
-	// contain a filename matching "foo" and a filename matchinb "bar".
-	//
-	// Note: (type:repo file:foo file:bar) will only find repos with a
-	// filename containing both "foo" and "bar".
-	for _, p := range query.FilePatternsReposMustInclude {
-		q, err := fileRe(p, query.IsCaseSensitive)
-		if err != nil {
-			return nil, err
-		}
-		and = append(and, &zoektquery.Type{Type: zoektquery.TypeRepo, Child: q})
-	}
-	for _, p := range query.FilePatternsReposMustExclude {
-		q, err := fileRe(p, query.IsCaseSensitive)
-		if err != nil {
-			return nil, err
-		}
-		and = append(and, &zoektquery.Not{Child: &zoektquery.Type{Type: zoektquery.TypeRepo, Child: q}})
-	}
-
-	return zoektquery.NewAnd(and...), nil
-}
 
 func buildQuery(args *search.TextParameters, repos *indexedRepoRevs, filePathPatterns zoektquery.Q, shortcircuit bool) (zoektquery.Q, error) {
 	regexString := comby.StructuralPatToRegexpQuery(args.PatternInfo.Pattern, shortcircuit)
@@ -78,19 +36,39 @@ func buildQuery(args *search.TextParameters, repos *indexedRepoRevs, filePathPat
 	), nil
 }
 
+func zoektSearchHEADOnlyFilesStream(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, _ indexedRequestType, since func(t time.Time) time.Duration) <-chan zoektSearchStreamEvent {
+	c := make(chan zoektSearchStreamEvent)
+	go func() {
+		defer close(c)
+		_, _, _, _ = zoektSearchHEADOnlyFiles(ctx, args, repos, since, c)
+	}()
+
+	return c
+}
+
 // zoektSearchHEADOnlyFiles searches repositories using zoekt, returning only the file paths containing
 // content matching the given pattern.
 //
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, since func(t time.Time) time.Duration) (fm []*FileMatchResolver, limitHit bool, partial map[api.RepoID]struct{}, err error) {
+func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, since func(t time.Time) time.Duration, c chan<- zoektSearchStreamEvent) (fm []*FileMatchResolver, limitHit bool, partial map[api.RepoID]struct{}, err error) {
+	defer func() {
+		if c != nil {
+			c <- zoektSearchStreamEvent{
+				fm:       fm,
+				limitHit: limitHit,
+				partial:  partial,
+				err:      err,
+			}
+		}
+	}()
 	if len(repos.repoRevs) == 0 {
 		return nil, false, nil, nil
 	}
 
-	k := zoektResultCountFactor(len(repos.repoBranches), args.PatternInfo.FileMatchLimit, args.Mode == search.ZoektGlobalSearch)
-	searchOpts := zoektSearchOpts(ctx, k, args.PatternInfo)
+	k := zoektutil.ResultCountFactor(len(repos.repoBranches), args.PatternInfo.FileMatchLimit, args.Mode == search.ZoektGlobalSearch)
+	searchOpts := zoektutil.SearchOpts(ctx, k, args.PatternInfo)
 
 	if args.UseFullDeadline {
 		// If the user manually specified a timeout, allow zoekt to use all of the remaining timeout.
@@ -108,7 +86,7 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 		defer cancel()
 	}
 
-	filePathPatterns, err := HandleFilePathPatterns(args.PatternInfo)
+	filePathPatterns, err := searcherzoekt.HandleFilePathPatterns(args.PatternInfo)
 	if err != nil {
 		return nil, false, nil, err
 	}
@@ -150,7 +128,7 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 		return nil, false, nil, nil
 	}
 
-	limitHit, files, partial := zoektLimitMatches(limitHit, int(args.PatternInfo.FileMatchLimit), resp.Files, func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool) {
+	limitHit, files, partial := zoektutil.LimitMatches(limitHit, int(args.PatternInfo.FileMatchLimit), resp.Files, func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool) {
 		repo, inputRevs := repos.GetRepoInputRev(file)
 		return repo, inputRevs, true
 	})

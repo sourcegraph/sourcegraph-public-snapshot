@@ -1,4 +1,5 @@
 import React, { FormEvent, useCallback, useEffect, useState } from 'react'
+import classNames from 'classnames'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 import { RouteComponentProps } from 'react-router'
 import { PageTitle } from '../../../components/PageTitle'
@@ -182,6 +183,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             pages.push(
                 (page !== currentPage && (
                     <a
+                        key="prev"
                         className="btn px-0 text-primary user-settings-repos__pageend"
                         onClick={() => setPage(currentPage - 1)}
                     >
@@ -189,7 +191,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                         Previous
                     </a>
                 )) || (
-                    <span className="px-0 text-muted user-settings-repos__pageend">
+                    <span key="prev" className="px-0 text-muted user-settings-repos__pageend">
                         <ChevronLeftIcon className="icon-inline fill-border-color-2" />
                         Previous
                     </span>
@@ -198,19 +200,29 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         }
         pages.push(
             <a
-                className={
-                    'btn user-settings-repos__page ' +
-                    String(currentPage === page && 'user-settings-repos__page--active')
-                }
+                key={page}
+                className={classNames({
+                    'btn user-settings-repos__page': true,
+                    'user-settings-repos__page--active': currentPage === page,
+                })}
                 onClick={() => setPage(page)}
             >
-                <p className={'mb-0 ' + String((currentPage === page && 'text-muted') || 'text-primary')}>{page}</p>
+                <p
+                    className={classNames({
+                        'mb-0': true,
+                        'text-muted': currentPage === page,
+                        'text-primary': currentPage !== page,
+                    })}
+                >
+                    {page}
+                </p>
             </a>
         )
         if (page === Math.ceil(filteredRepos.length / PER_PAGE)) {
             pages.push(
                 (page !== currentPage && (
                     <a
+                        key="next"
                         className="btn px-0 text-primary user-settings-repos__pageend"
                         onClick={() => setPage(currentPage + 1)}
                     >
@@ -218,9 +230,9 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                         <ChevronRightIcon className="icon-inline fill-primary" />
                     </a>
                 )) || (
-                    <span className="px-0 text-muted user-settings-repos__pageend">
+                    <span key="next" className="px-0 text-muted user-settings-repos__pageend">
                         Next
-                        <ChevronRightIcon className="icon-inline fill-border-color-2" />
+                        <ChevronRightIcon className="icon-inline user-settings-repos__chevron--inactive" />
                     </span>
                 )
             )
@@ -353,12 +365,12 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             <tr className="align-items-baseline d-flex" key="header">
                 <td
                     onClick={selectAll}
-                    className="user-settings-repos__repositorynode p-2 w-100 d-flex align-items-center border-top-0 border-bottom border-color-2"
+                    className="user-settings-repos__repositorynode p-2 w-100 d-flex align-items-center border-top-0 border-bottom"
                 >
                     <input
                         className="mr-3"
                         type="checkbox"
-                        checked={selectionState.repos.size === filteredRepos.length}
+                        checked={selectionState.repos.size !== 0 && selectionState.repos.size === filteredRepos.length}
                         onChange={selectAll}
                     />
                     <span
@@ -391,17 +403,17 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     )
 
     const loadingAnimation: JSX.Element = (
-        <tbody>
-            <tr className="mt-2 align-items-baseline d-flex w-80">
-                <td className="user-settings-repos__shimmer w-100 h-100 p-3 border-top-0" />
-            </tr>
-            <tr className="mt-2 align-items-baseline d-flex w-30">
-                <td className="user-settings-repos__shimmer w-100 h-100 p-3 border-top-0" />
-            </tr>
-            <tr className="mt-2 align-items-baseline d-flex w-70">
-                <td className="user-settings-repos__shimmer w-100 h-100 p-3 border-top-0" />
-            </tr>
-        </tbody>
+        <div className="container">
+            <div className="mt-2 align-items-baseline row">
+                <td className="user-settings-repos__shimmer p-3 border-top-0 col-sm-9" />
+            </div>
+            <div className="mt-2 align-items-baseline row">
+                <td className="user-settings-repos__shimmer p-3 border-top-0 col-sm-4" />
+            </div>
+            <div className="mt-2 align-items-baseline row">
+                <td className="user-settings-repos__shimmer p-3 border-top-0 col-sm-7" />
+            </div>
+        </div>
     )
     return (
         <div className="p-2">
@@ -411,7 +423,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 Choose which repositories to sync with Sourcegraph so you can search all your code in one place.
             </p>
             <ul className="list-group">
-                <li className="list-group-item p-0 border-color-2" key="body">
+                <li className="list-group-item p-0 user-settings-repos__container" key="body">
                     <div className="p-4" key="description">
                         <h3>Your repositories</h3>
                         <p className="text-muted">

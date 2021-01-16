@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	cm "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/email"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
@@ -36,14 +37,26 @@ func (r *Resolver) Now() time.Time {
 }
 
 func (r *Resolver) Monitors(ctx context.Context, userID int32, args *graphqlbackend.ListMonitorsArgs) (graphqlbackend.MonitorConnectionResolver, error) {
-	ms, err := r.store.Monitors(ctx, userID, args)
+	// Request one extra to determine if there are more pages
+	newArgs := *args
+	newArgs.First += 1
+
+	ms, err := r.store.Monitors(ctx, userID, &newArgs)
 	if err != nil {
 		return nil, err
 	}
+
 	totalCount, err := r.store.TotalCountMonitors(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
+
+	hasNextPage := false
+	if len(ms) == int(args.First)+1 {
+		hasNextPage = true
+		ms = ms[:len(ms)-1]
+	}
+
 	mrs := make([]graphqlbackend.MonitorResolver, 0, len(ms))
 	for _, m := range ms {
 		mrs = append(mrs, &monitor{
@@ -51,7 +64,8 @@ func (r *Resolver) Monitors(ctx context.Context, userID int32, args *graphqlback
 			Monitor:  m,
 		})
 	}
-	return &monitorConnection{Resolver: r, monitors: mrs, totalCount: totalCount}, nil
+
+	return &monitorConnection{Resolver: r, monitors: mrs, totalCount: totalCount, hasNextPage: hasNextPage}, nil
 }
 
 func (r *Resolver) MonitorByID(ctx context.Context, ID graphql.ID) (m graphqlbackend.MonitorResolver, err error) {
@@ -183,6 +197,38 @@ func (r *Resolver) ResetTriggerQueryTimestamps(ctx context.Context, args *graphq
 		return nil, err
 	}
 	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (r *Resolver) TriggerTestEmailAction(ctx context.Context, args *graphqlbackend.TriggerTestEmailActionArgs) (*graphqlbackend.EmptyResponse, error) {
+	err := r.isAllowedToCreate(ctx, args.Namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, recipient := range args.Email.Recipients {
+		if err := sendTestEmail(ctx, recipient, args.Description); err != nil {
+			return nil, err
+		}
+	}
+
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func sendTestEmail(ctx context.Context, recipient graphql.ID, description string) error {
+	var (
+		userID int32
+		orgID  int32
+	)
+	err := graphqlbackend.UnmarshalNamespaceID(recipient, &userID, &orgID)
+	if err != nil {
+		return err
+	}
+	// TODO: Send test email to org members.
+	if orgID != 0 {
+		return nil
+	}
+	data := email.NewTestTemplateDataForNewSearchResults(ctx, description)
+	return email.SendEmailForNewSearchResult(ctx, userID, data)
 }
 
 func (r *Resolver) actionIDsForMonitorIDInt64(ctx context.Context, monitorID int64) (actionIDs []graphql.ID, err error) {
@@ -421,8 +467,9 @@ func ownerForID64Query(ctx context.Context, monitorID int64) (*sqlf.Query, error
 //
 type monitorConnection struct {
 	*Resolver
-	monitors   []graphqlbackend.MonitorResolver
-	totalCount int32
+	monitors    []graphqlbackend.MonitorResolver
+	totalCount  int32
+	hasNextPage bool
 }
 
 func (m *monitorConnection) Nodes(ctx context.Context) ([]graphqlbackend.MonitorResolver, error) {
@@ -434,7 +481,7 @@ func (m *monitorConnection) TotalCount(ctx context.Context) (int32, error) {
 }
 
 func (m *monitorConnection) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	if len(m.monitors) == 0 {
+	if len(m.monitors) == 0 || !m.hasNextPage {
 		return graphqlutil.HasNextPage(false), nil
 	}
 	return graphqlutil.NextPageCursor(string(m.monitors[len(m.monitors)-1].ID())), nil

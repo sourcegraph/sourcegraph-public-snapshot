@@ -45,7 +45,6 @@ Code intelligence provides advanced code navigation features that let developers
 
 ## [How-tos](how-to/index.md)
 
-- [Enable LSIF](how-to/enable_lsif.md)
 - [Add a GitHub repository to your Sourcegraph instance](how-to/add_a_repository.md)
 - [LSIF quickstart guide](lsif_quickstart.md)
 - [Add LSIF to many repositories](how-to/adding_lsif_to_many_repos.md)

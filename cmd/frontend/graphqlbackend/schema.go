@@ -846,6 +846,11 @@ type Mutation {
         """
         id: ID!
     ): EmptyResponse!
+
+    """
+    Triggers a test email for a code monitor action.
+    """
+    triggerTestEmailAction(namespace: ID!, description: String!, email: MonitorEmailInput!): EmptyResponse!
 }
 
 """
@@ -1462,6 +1467,19 @@ type ChangesetApplyPreviewConnectionStats {
     The changeset is removed from some of the associated campaigns.
     """
     detach: Int!
+
+    """
+    The amount of changesets that are added to the campaign in this operation.
+    """
+    added: Int!
+    """
+    The amount of changesets that are already attached to the campaign and modified in this operation.
+    """
+    modified: Int!
+    """
+    The amount of changesets that are disassociated from the campaign in this operation.
+    """
+    removed: Int!
 }
 
 """
@@ -1549,6 +1567,10 @@ type CampaignSpec implements Node {
         Opaque pagination cursor.
         """
         after: String
+        """
+        Search for changesets matching this query. Queries may include quoted substrings to match phrases, and words may be preceded by - to negate them.
+        """
+        search: String
     ): ChangesetApplyPreviewConnection!
 
     """

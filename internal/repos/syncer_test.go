@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	idb "github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
@@ -27,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -87,7 +87,7 @@ func testSyncerSyncWithErrors(t *testing.T, store *repos.Store) func(t *testing.
 		} {
 			tc := tc
 			t.Run(tc.name, func(t *testing.T) {
-				clock := dbtesting.NewFakeClock(time.Now(), time.Second)
+				clock := timeutil.NewFakeClock(time.Now(), time.Second)
 				now := clock.Now
 				ctx := context.Background()
 
@@ -230,7 +230,7 @@ func testSyncerSync(t *testing.T, s *repos.Store) func(*testing.T) {
 		types.Opt.RepoSources(bitbucketCloudService.URN()),
 	)
 
-	clock := dbtesting.NewFakeClock(time.Now(), 0)
+	clock := timeutil.NewFakeClock(time.Now(), 0)
 
 	svcdup := types.ExternalService{
 		Kind:        extsvc.KindGitHub,
@@ -317,6 +317,22 @@ func testSyncerSync(t *testing.T, s *repos.Store) func(*testing.T) {
 				)}},
 				svcs: []*types.ExternalService{tc.svc},
 				err:  "bad credentials",
+			},
+			testCase{
+				// If the source account has been suspended we should treat this as if zero repos were returned as it indicates
+				// that the source no longer has access to its repos
+				name:    string(tc.repo.Name) + "/accountsuspended",
+				sourcer: repos.NewFakeSourcer(&repos.ErrAccountSuspended{}),
+				store:   s,
+				stored: types.Repos{tc.repo.With(
+					types.Opt.RepoSources(tc.svc.URN()),
+				)},
+				now: clock.Now,
+				diff: repos.Diff{Deleted: types.Repos{tc.repo.With(
+					types.Opt.RepoSources(tc.svc.URN(), svcdup.URN()),
+				)}},
+				svcs: []*types.ExternalService{tc.svc},
+				err:  "account suspended",
 			},
 			testCase{
 				// It's expected that there could be multiple stored sources but only one will ever be returned
@@ -608,7 +624,7 @@ func testSyncerSync(t *testing.T, s *repos.Store) func(*testing.T) {
 
 				now := tc.now
 				if now == nil {
-					clock := dbtesting.NewFakeClock(time.Now(), time.Second)
+					clock := timeutil.NewFakeClock(time.Now(), time.Second)
 					now = clock.Now
 				}
 
@@ -660,7 +676,7 @@ func testSyncerSync(t *testing.T, s *repos.Store) func(*testing.T) {
 }
 
 func testSyncRepo(t *testing.T, s *repos.Store) func(*testing.T) {
-	clock := dbtesting.NewFakeClock(time.Now(), time.Second)
+	clock := timeutil.NewFakeClock(time.Now(), time.Second)
 
 	servicesPerKind := createExternalServices(t, s)
 
