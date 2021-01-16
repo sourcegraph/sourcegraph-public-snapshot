@@ -10,8 +10,10 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 const defaultMaxSearchResults = 30
@@ -97,4 +99,77 @@ func SearchOpts(ctx context.Context, k int, query *search.TextPatternInfo) zoekt
 	}
 
 	return searchOpts
+}
+
+func ResultCountFactor(numRepos int, fileMatchLimit int32, globalSearch bool) (k int) {
+	if globalSearch {
+		// for globalSearch, numRepos = 0, but effectively we are searching over all
+		// indexed repos, hence k should be 1
+		k = 1
+	} else {
+		// If we're only searching a small number of repositories, return more
+		// comprehensive results. This is arbitrary.
+		switch {
+		case numRepos <= 5:
+			k = 100
+		case numRepos <= 10:
+			k = 10
+		case numRepos <= 25:
+			k = 8
+		case numRepos <= 50:
+			k = 5
+		case numRepos <= 100:
+			k = 3
+		case numRepos <= 500:
+			k = 2
+		default:
+			k = 1
+		}
+	}
+	if fileMatchLimit > defaultMaxSearchResults {
+		k = int(float64(k) * 3 * float64(fileMatchLimit) / float64(defaultMaxSearchResults))
+	}
+	return k
+}
+
+// LimitMatches is the logic which limits files based on
+// limit. Additionally it calculates the set of repos with partial
+// results. This information is not returned by zoekt, so if zoekt indicates a
+// limit has been hit, we include all repos in partial.
+func LimitMatches(limitHit bool, limit int, files []zoekt.FileMatch, getRepoInputRev func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool)) (bool, []zoekt.FileMatch, map[api.RepoID]struct{}) {
+	var resultFiles []zoekt.FileMatch
+	var partialFiles []zoekt.FileMatch
+
+	resultFiles = files
+	if limitHit {
+		partialFiles = files
+	}
+
+	if len(files) > limit {
+		resultFiles = files[:limit]
+		if !limitHit {
+			limitHit = true
+			partialFiles = files[limit:]
+		}
+	}
+
+	if len(partialFiles) == 0 {
+		return limitHit, resultFiles, nil
+	}
+
+	partial := make(map[api.RepoID]struct{})
+	last := ""
+	for _, file := range partialFiles {
+		// PERF: skip lookup if it is the same repo as the last result
+		if file.Repository == last {
+			continue
+		}
+		last = file.Repository
+
+		if repo, _, ok := getRepoInputRev(&file); ok {
+			partial[repo.ID] = struct{}{}
+		}
+	}
+
+	return limitHit, resultFiles, partial
 }
