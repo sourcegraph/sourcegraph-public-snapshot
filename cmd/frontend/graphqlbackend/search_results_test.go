@@ -748,41 +748,6 @@ func TestRoundStr(t *testing.T) {
 	}
 }
 
-func TestValidateRepoHasFileUsage(t *testing.T) {
-	q, err := query.ParseAndCheck("repohasfile:test type:symbol")
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = validateRepoHasFileUsage(q)
-	if err == nil {
-		t.Errorf("Expected error but got nil")
-	}
-
-	validQueries := []string{
-		"repohasfile:go",
-		"repohasfile:go error",
-		"repohasfile:test type:repo .",
-		"type:repo",
-		"repohasfile",
-		"foo bar type:repo",
-		"repohasfile:test type:path .",
-		"repohasfile:test type:symbol .",
-		"foo",
-		"bar",
-		"\"repohasfile\"",
-	}
-	for _, validQuery := range validQueries {
-		q, err = query.ParseAndCheck(validQuery)
-		if err != nil {
-			t.Fatal(err)
-		}
-		err = validateRepoHasFileUsage(q)
-		if err != nil {
-			t.Errorf("Expected no error, but got %v", err)
-		}
-	}
-}
-
 func TestSearchResultsHydration(t *testing.T) {
 	id := 42
 	repoName := "reponame-foobar"
