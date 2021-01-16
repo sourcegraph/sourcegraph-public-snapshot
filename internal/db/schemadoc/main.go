@@ -46,6 +46,7 @@ func generate(log *log.Logger, databaseName string) (string, error) {
 		runIgnoreError("dropdb", dbname)
 		defer runIgnoreError("dropdb", dbname)
 	} else {
+		// TODO: need handling for timescaledb here.
 		log.Printf("Running PostgreSQL 9.6 in docker since local version is %s", strings.TrimSpace(string(out)))
 		if err := exec.Command("docker", "image", "inspect", "postgres:9.6").Run(); err != nil {
 			log.Println("docker pull postgres9.6")

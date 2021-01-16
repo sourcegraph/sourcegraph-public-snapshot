@@ -67,6 +67,7 @@ DBNAME='squasher'
 SERVER_VERSION=$(psql --version)
 
 if [ "${SERVER_VERSION}" != 9.6 ]; then
+  # TODO: handling of timescaledb
   echo "running PostgreSQL 9.6 in docker since local version is ${SERVER_VERSION}"
   docker image inspect postgres:9.6 >/dev/null || docker pull postgres:9.6
   docker rm --force "${DBNAME}" 2>/dev/null || true
