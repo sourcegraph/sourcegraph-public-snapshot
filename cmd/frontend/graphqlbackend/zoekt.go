@@ -306,37 +306,6 @@ func (s *indexedSearchRequest) doSearch(ctx context.Context, c chan<- indexedSea
 	c <- indexedSearchEvent{common: SearchResultsCommon{Status: mkStatusMap(search.RepoStatusSearched | search.RepoStatusIndexed)}}
 }
 
-func zoektResultCountFactor(numRepos int, fileMatchLimit int32, globalSearch bool) (k int) {
-	if globalSearch {
-		// for globalSearch, numRepos = 0, but effectively we are searching over all
-		// indexed repos, hence k should be 1
-		k = 1
-	} else {
-		// If we're only searching a small number of repositories, return more
-		// comprehensive results. This is arbitrary.
-		switch {
-		case numRepos <= 5:
-			k = 100
-		case numRepos <= 10:
-			k = 10
-		case numRepos <= 25:
-			k = 8
-		case numRepos <= 50:
-			k = 5
-		case numRepos <= 100:
-			k = 3
-		case numRepos <= 500:
-			k = 2
-		default:
-			k = 1
-		}
-	}
-	if fileMatchLimit > defaultMaxSearchResults {
-		k = int(float64(k) * 3 * float64(fileMatchLimit) / float64(defaultMaxSearchResults))
-	}
-	return k
-}
-
 var errNoResultsInTimeout = errors.New("no results found in specified timeout")
 
 type zoektSearchStreamEvent struct {
@@ -395,7 +364,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 		finalQuery = zoektquery.NewAnd(&zoektquery.RepoBranches{Set: repos.repoBranches}, queryExceptRepos)
 	}
 
-	k := zoektResultCountFactor(len(repos.repoBranches), args.PatternInfo.FileMatchLimit, args.Mode == search.ZoektGlobalSearch)
+	k := zoektutil.ResultCountFactor(len(repos.repoBranches), args.PatternInfo.FileMatchLimit, args.Mode == search.ZoektGlobalSearch)
 	searchOpts := zoektutil.SearchOpts(ctx, k, args.PatternInfo)
 
 	if deadline, ok := ctx.Deadline(); ok {
@@ -462,7 +431,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 		}
 	}
 
-	limitHit, files, partial := zoektLimitMatches(limitHit, int(args.PatternInfo.FileMatchLimit), resp.Files, getRepoInputRev)
+	limitHit, files, partial := zoektutil.LimitMatches(limitHit, int(args.PatternInfo.FileMatchLimit), resp.Files, getRepoInputRev)
 	resp.Files = files
 
 	matches := make([]*FileMatchResolver, 0, len(resp.Files))
@@ -513,48 +482,6 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 	}
 
 	return matches, limitHit, partial, nil
-}
-
-// zoektLimitMatches is the logic which limits files based on
-// limit. Additionally it calculates the set of repos with partial
-// results. This information is not returned by zoekt, so if zoekt indicates a
-// limit has been hit, we include all repos in partial.
-func zoektLimitMatches(limitHit bool, limit int, files []zoekt.FileMatch, getRepoInputRev func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool)) (bool, []zoekt.FileMatch, map[api.RepoID]struct{}) {
-	var resultFiles []zoekt.FileMatch
-	var partialFiles []zoekt.FileMatch
-
-	resultFiles = files
-	if limitHit {
-		partialFiles = files
-	}
-
-	if len(files) > limit {
-		resultFiles = files[:limit]
-		if !limitHit {
-			limitHit = true
-			partialFiles = files[limit:]
-		}
-	}
-
-	if len(partialFiles) == 0 {
-		return limitHit, resultFiles, nil
-	}
-
-	partial := make(map[api.RepoID]struct{})
-	last := ""
-	for _, file := range partialFiles {
-		// PERF: skip lookup if it is the same repo as the last result
-		if file.Repository == last {
-			continue
-		}
-		last = file.Repository
-
-		if repo, _, ok := getRepoInputRev(&file); ok {
-			partial[repo.ID] = struct{}{}
-		}
-	}
-
-	return limitHit, resultFiles, partial
 }
 
 func zoektFileMatchToLineMatches(maxLineFragmentMatches int, file *zoekt.FileMatch) ([]*lineMatch, int) {

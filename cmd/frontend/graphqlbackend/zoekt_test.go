@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -505,7 +506,7 @@ func TestZoektResultCountFactor(t *testing.T) {
 	}
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
-			got := zoektResultCountFactor(tt.numRepos, tt.pattern.FileMatchLimit, tt.globalSearch)
+			got := zoektutil.ResultCountFactor(tt.numRepos, tt.pattern.FileMatchLimit, tt.globalSearch)
 			if tt.want != got {
 				t.Fatalf("Want scaling factor %d but got %d", tt.want, got)
 			}
