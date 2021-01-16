@@ -208,12 +208,10 @@ func writeZip(path string, fileMatches []zoekt.FileMatch) (err error) {
 		return err
 	}
 
-	// TODO is this handled outside of here?
 	defer func() {
 		if err != nil {
 			rmErr := os.Remove(path)
 			if rmErr != nil {
-				// TODO is there a conventional way to handle errors during cleanup?
 				err = fmt.Errorf("error1: %s, error2: %s", err, rmErr)
 			}
 		}
