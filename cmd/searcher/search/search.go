@@ -17,12 +17,16 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	nettrace "golang.org/x/net/trace"
@@ -189,8 +193,44 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 	}(time.Now())
 
 	if p.IsStructuralPat && p.CombyRule == `where "zoekt" == "zoekt"` {
-		// Reserved for calling the new structural search path that directly uses Zoekt.
-		return nil, false, false, badRequestError{"reserved rule, unsupported request"}
+		repoBranches := map[string][]string{string(p.Repo): {"HEAD"}}
+		args := &search.TextParameters{
+			PatternInfo: &search.TextPatternInfo{
+				Pattern:                      p.Pattern,
+				IsNegated:                    p.IsNegated,
+				IsRegExp:                     p.IsRegExp,
+				IsStructuralPat:              p.IsStructuralPat,
+				CombyRule:                    p.CombyRule,
+				IsWordMatch:                  p.IsWordMatch,
+				IsCaseSensitive:              p.IsCaseSensitive,
+				FileMatchLimit:               int32(p.FileMatchLimit),
+				ExcludePattern:               p.ExcludePattern,
+				PathPatternsAreCaseSensitive: p.PathPatternsAreCaseSensitive,
+				PatternMatchesContent:        p.PatternMatchesContent,
+				PatternMatchesPath:           p.PatternMatchesPath,
+				Languages:                    p.Languages,
+			},
+			Zoekt: search.Indexed(),
+		}
+
+		u, err := uuid.NewRandom()
+		if err != nil {
+			return nil, false, false, err
+		}
+		path := filepath.Join(s.Store.Path, fmt.Sprintf("%s.zip", u))
+
+		zoektMatches, limitHit, _, err := zoektSearch(ctx, args, repoBranches, time.Since, nil)
+		if err != nil {
+			return nil, false, false, err
+		}
+
+		if err = writeZip(path, zoektMatches); err != nil {
+			return nil, false, false, err
+		}
+		defer os.Remove(path)
+
+		matches, limitHit, err := structuralSearch(ctx, path, p.Pattern, p.CombyRule, p.Languages, nil, p.Repo)
+		return matches, limitHit, false, err
 	}
 
 	// Compile pattern before fetching from store incase it is bad.
