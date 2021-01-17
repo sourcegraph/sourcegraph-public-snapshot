@@ -923,6 +923,26 @@ type ParentSourcegraph struct {
 	Url string `json:"url,omitempty"`
 }
 
+// PerforceAuthorization description: If non-null, enforces Perforce depot permissions.
+type PerforceAuthorization struct {
+}
+
+// PerforceConnection description: Configuration for a connection to Perforce Server.
+type PerforceConnection struct {
+	// Authorization description: If non-null, enforces Perforce depot permissions.
+	Authorization *PerforceAuthorization `json:"authorization,omitempty"`
+	// Depots description: Depots can have arbitrary paths, e.g. a path to depot root or a subdirectory.
+	Depots []string `json:"depots,omitempty"`
+	// MaxChanges description: Only import at most n changes when possible (git p4 clone --max-changes).
+	MaxChanges float64 `json:"maxChanges,omitempty"`
+	// P4Passwd description: The plain password of the user (P4PASSWD).
+	P4Passwd string `json:"p4.passwd"`
+	// P4Port description: The Perforce Server address to be used for p4 CLI (P4PORT).
+	P4Port string `json:"p4.port"`
+	// P4User description: The user to be authenticated for p4 CLI (P4USER).
+	P4User string `json:"p4.user"`
+}
+
 // PermissionsUserMapping description: Settings for Sourcegraph permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This setting cannot be enabled if repository permissions for any specific external service are enabled (i.e., when the external service's `authorization` field is set).
 type PermissionsUserMapping struct {
 	// BindID description: The type of identifier to identify a user. The default is "email", which uses the email address to identify a user. Use "username" to identify a user by their username. Changing this setting will erase any permissions created for users that do not yet exist.
