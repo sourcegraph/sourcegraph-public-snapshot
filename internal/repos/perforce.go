@@ -26,9 +26,13 @@ func NewPerforceSource(svc *types.ExternalService) (*PerforceSource, error) {
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
+	return newPerforceSource(svc, &c)
+}
+
+func newPerforceSource(svc *types.ExternalService, c *schema.PerforceConnection) (*PerforceSource, error) {
 	return &PerforceSource{
 		svc:    svc,
-		config: &c,
+		config: c,
 	}, nil
 }
 
@@ -44,7 +48,7 @@ func (s PerforceSource) makeRepo(depot string) *types.Repo {
 	if !strings.HasSuffix(depot, "/") {
 		depot += "/"
 	}
-	name := strings.TrimLeft(depot, "/")
+	name := strings.Trim(depot, "/")
 	urn := s.svc.URN()
 	return &types.Repo{
 		Name: api.RepoName(name),
