@@ -3,7 +3,10 @@ package repos
 import (
 	"context"
 	"fmt"
+	"strings"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -32,7 +35,36 @@ func NewPerforceSource(svc *types.ExternalService) (*PerforceSource, error) {
 // ListRepos returns all Perforce depots accessible to all connections
 // configured in Sourcegraph via the external services configuration.
 func (s PerforceSource) ListRepos(ctx context.Context, results chan SourceResult) {
-	// TODO
+	for _, depot := range s.config.Depots {
+		results <- SourceResult{Source: s, Repo: s.makeRepo(depot)}
+	}
+}
+
+func (s PerforceSource) makeRepo(depot string) *types.Repo {
+	if !strings.HasSuffix(depot, "/") {
+		depot += "/"
+	}
+	name := strings.TrimLeft(depot, "/")
+	urn := s.svc.URN()
+	return &types.Repo{
+		Name: api.RepoName(name),
+		URI:  name,
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          depot,
+			ServiceType: extsvc.TypePerforce,
+			ServiceID:   s.config.P4Port,
+		},
+		Private: true,
+		Sources: map[string]*types.SourceInfo{
+			urn: {
+				ID:       urn,
+				CloneURL: "perforce:" + depot, // e.g. perforce://Sourcegraph/
+			},
+		},
+		Metadata: map[string]interface{}{
+			"depot": depot,
+		},
+	}
 }
 
 // ExternalServices returns a singleton slice containing the external service.
