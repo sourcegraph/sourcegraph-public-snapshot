@@ -102,6 +102,12 @@ const SiteSchemaJSON = `{
           "default": false,
           "!go": { "pointer": true }
         },
+        "perforce": {
+          "description": "Allow adding Perforce code host connections",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "enabled"
+        },
         "tls.external": {
           "description": "Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.",
           "type": "object",
