@@ -25,6 +25,7 @@ const modalTitles: Record<ExternalServiceKind, string> = {
     // These are just for type completeness and serve as placeholders for a bright future.
     [ExternalServiceKind.BITBUCKETCLOUD]: 'Unsupported',
     [ExternalServiceKind.GITOLITE]: 'Unsupported',
+    [ExternalServiceKind.PERFORCE]: 'Unsupported',
     [ExternalServiceKind.PHABRICATOR]: 'Unsupported',
     [ExternalServiceKind.AWSCODECOMMIT]: 'Unsupported',
     [ExternalServiceKind.OTHER]: 'Unsupported',
@@ -71,6 +72,7 @@ const helpTexts: Record<ExternalServiceKind, JSX.Element> = {
     // These are just for type completeness and serve as placeholders for a bright future.
     [ExternalServiceKind.BITBUCKETCLOUD]: <span>Unsupported</span>,
     [ExternalServiceKind.GITOLITE]: <span>Unsupported</span>,
+    [ExternalServiceKind.PERFORCE]: <span>Unsupported</span>,
     [ExternalServiceKind.PHABRICATOR]: <span>Unsupported</span>,
     [ExternalServiceKind.AWSCODECOMMIT]: <span>Unsupported</span>,
     [ExternalServiceKind.OTHER]: <span>Unsupported</span>,
