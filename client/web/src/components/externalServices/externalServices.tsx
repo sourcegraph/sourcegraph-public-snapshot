@@ -13,6 +13,7 @@ import githubSchemaJSON from '../../../../../schema/github.schema.json'
 import gitlabSchemaJSON from '../../../../../schema/gitlab.schema.json'
 import gitoliteSchemaJSON from '../../../../../schema/gitolite.schema.json'
 import otherExternalServiceSchemaJSON from '../../../../../schema/other_external_service.schema.json'
+import perforceSchemaJSON from '../../../../../schema/perforce.schema.json'
 import phabricatorSchemaJSON from '../../../../../schema/phabricator.schema.json'
 import { PhabricatorIcon } from '../../../../shared/src/components/icons'
 import { EditorAction } from '../../site-admin/configHelpers'
@@ -1112,6 +1113,65 @@ const GENERIC_GIT: AddExternalServiceOptions = {
         },
     ],
 }
+const PERFORCE: AddExternalServiceOptions = {
+    kind: ExternalServiceKind.PERFORCE,
+    title: 'Perforce',
+    icon: GitIcon,
+    jsonSchema: perforceSchemaJSON,
+    defaultDisplayName: 'Perforce',
+    defaultConfig: `{
+  "p4.port": "ssl:111.222.333.444:1666",
+  "p4.user": "admin",
+  "p4.passwd": "<secure password>",
+  "depots": []
+}`,
+    instructions: (
+        <div>
+            <ol>
+                <li>
+                    In the configuration below, set <Field>p4.port</Field> to be the Perforce Server address.
+                </li>
+                <li>
+                    Set the <Field>p4.user</Field> field to be the authenticated user.
+                </li>
+                <li>
+                    Set the <Field>p4.passwd</Field> field to be the plain password of the authenticated user.
+                </li>
+            </ol>
+            <p>
+                See{' '}
+                <a
+                    rel="noopener noreferrer"
+                    target="_blank"
+                    href="https://docs.sourcegraph.com/admin/external_service/perforce#configuration"
+                >
+                    the docs for more advanced options
+                </a>
+                , or try one of the buttons below.
+            </p>
+        </div>
+    ),
+    editorActions: [
+        {
+            id: 'setMaxChanges',
+            label: 'Set max changes',
+            run: (config: string) => {
+                const value = '1000'
+                const edits = setProperty(config, ['maxChanges'], value, defaultFormattingOptions)
+                return { edits, selectText: value }
+            },
+        },
+        {
+            id: 'enforcePermissions',
+            label: 'Enforce permissions',
+            run: (config: string) => {
+                const value = {}
+                const edits = setProperty(config, ['authorization'], value, defaultFormattingOptions)
+                return { edits, selectText: '"authorization": {}' }
+            },
+        },
+    ],
+}
 
 export const codeHostExternalServices: Record<string, AddExternalServiceOptions> = {
     github: GITHUB_DOTCOM,
@@ -1124,6 +1184,7 @@ export const codeHostExternalServices: Record<string, AddExternalServiceOptions>
     srcservegit: SRC_SERVE_GIT,
     gitolite: GITOLITE,
     git: GENERIC_GIT,
+    perforce: PERFORCE,
 }
 
 export const nonCodeHostExternalServices: Record<string, AddExternalServiceOptions> = {
@@ -1144,4 +1205,5 @@ export const defaultExternalServices: Record<ExternalServiceKind, AddExternalSer
     [ExternalServiceKind.PHABRICATOR]: PHABRICATOR_SERVICE,
     [ExternalServiceKind.OTHER]: GENERIC_GIT,
     [ExternalServiceKind.AWSCODECOMMIT]: AWS_CODE_COMMIT,
+    [ExternalServiceKind.PERFORCE]: PERFORCE,
 }
