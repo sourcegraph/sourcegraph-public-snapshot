@@ -272,7 +272,7 @@ steps:
 
 > NOTE: This feature is only available in Sourcegraph 3.24 and later.
 
-Output variables that are set after the [`steps.run`](#steps-run) command has been executed. These variables are available as `outputs.<name>` <a href="campaign_spec_templating">template variables</a> in subsequent step's `run`, `env`, and `outputs` properties and the [`changesetTemplate`](#changesettemplate).
+Output variables that are set after the [`steps.run`](#steps-run) command has been executed. These variables are available in the global `outputs` namespace as `outputs.<name>` <a href="campaign_spec_templating">template variables</a> in subsequent step's `run`, `env`, and `outputs` properties and the [`changesetTemplate`](#changesettemplate). Two steps with the same output variable name will overwrite the previous contents.
 
 ### Examples
 
