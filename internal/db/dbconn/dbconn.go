@@ -58,6 +58,21 @@ func SetupGlobalConnection(dataSource string) (err error) {
 // also use the value of PGDATASOURCE if supplied and dataSource is the empty
 // string.
 func New(dataSource, dbNameSuffix string) (*sql.DB, error) {
+	db, err := NewRaw(dataSource)
+	if err != nil {
+		return nil, err
+	}
+
+	registerPrometheusCollector(db, dbNameSuffix)
+	configureConnectionPool(db)
+	return db, nil
+}
+
+// NewRaw connects to the given data source and returns the handle.
+//
+// Prefer to call New as it also configures a connection pool and metrics.
+// Use this method only in internal utilities (such as schemadoc).
+func NewRaw(dataSource string) (*sql.DB, error) {
 	cfg, err := buildConfig(dataSource)
 	if err != nil {
 		return nil, err
@@ -67,8 +82,6 @@ func New(dataSource, dbNameSuffix string) (*sql.DB, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "DB not available")
 	}
-	registerPrometheusCollector(db, dbNameSuffix)
-	configureConnectionPool(db)
 	return db, nil
 }
 
@@ -106,6 +119,12 @@ func buildConfig(dataSource string) (*pgx.ConnConfig, error) {
 
 	if cfg.RuntimeParams == nil {
 		cfg.RuntimeParams = make(map[string]string)
+	}
+
+	// pgx doesn't support dbname so we emulate it
+	if dbname, ok := cfg.RuntimeParams["dbname"]; ok {
+		cfg.Database = dbname
+		delete(cfg.RuntimeParams, "dbname")
 	}
 
 	// pgx doesn't support fallback_application_name so we emulate it
