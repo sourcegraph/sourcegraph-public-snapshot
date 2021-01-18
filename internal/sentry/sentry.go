@@ -60,12 +60,21 @@ func Init() {
 				return
 			}
 
-			if conf.Get().Log.Sentry == nil {
+			sentryConfig := conf.Get().Log.Sentry
+			if sentryConfig == nil {
 				return
 			}
 
+			// Create a local variable to not mutate the original config object
+			backendDSN := sentryConfig.BackendDSN
+
+			// Fallback to default DSN if the backend DSN is not specified separately
+			if backendDSN == "" {
+				backendDSN = sentryConfig.Dsn
+			}
+
 			// An empty dsn value is ignored: not an error.
-			if err := initClient(conf.Get().Log.Sentry.Dsn); err != nil {
+			if err := initClient(backendDSN); err != nil {
 				log15.Error("sentry.initClient", "error", err)
 			}
 		})
