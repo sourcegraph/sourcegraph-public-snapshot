@@ -201,7 +201,7 @@
     "jest": "^25.5.4",
     "jsdom": "^15.2.1",
     "json-schema-ref-parser": "^9.0.6",
-    "json-schema-to-typescript": "^9.1.1",
+    "json-schema-to-typescript": "^10.1.3",
     "latest-version": "^5.1.0",
     "license-checker": "^25.0.1",
     "message-port-polyfill": "^0.2.0",
