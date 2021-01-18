@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -17,6 +18,7 @@ func TestHover(t *testing.T) {
 
 	setMockDBStoreGetDumpByID(t, mockDBStore, map[int]store.Dump{42: testDump1})
 	setmockLSIFStoreHover(t, mockLSIFStore, 42, "main.go", 10, 50, "text", testRange1, true)
+	mockGitserverClient.CommitExistsFunc.SetDefaultReturn(true, nil)
 
 	api := New(mockDBStore, mockLSIFStore, mockGitserverClient, &observation.TestContext)
 	text, r, exists, err := api.Hover(context.Background(), "sub1/main.go", 10, 50, 42)
@@ -40,6 +42,7 @@ func TestHoverUnknownDump(t *testing.T) {
 	mockLSIFStore := NewMockLSIFStore()
 	mockGitserverClient := NewMockGitserverClient()
 	setMockDBStoreGetDumpByID(t, mockDBStore, nil)
+	mockGitserverClient.CommitExistsFunc.SetDefaultReturn(true, nil)
 
 	api := New(mockDBStore, mockLSIFStore, mockGitserverClient, &observation.TestContext)
 	if _, _, _, err := api.Hover(context.Background(), "sub1/main.go", 10, 50, 42); err != ErrMissingDump {
@@ -68,6 +71,7 @@ func TestHoverRemoteDefinitionHoverText(t *testing.T) {
 		hoverSpec{42, "main.go", 10, 50, "", lsifstore.Range{}, false},
 		hoverSpec{50, "foo.go", 10, 50, "text", testRange4, true},
 	)
+	mockGitserverClient.CommitExistsFunc.SetDefaultReturn(true, nil)
 
 	api := New(mockDBStore, mockLSIFStore, mockGitserverClient, &observation.TestContext)
 	text, r, exists, err := api.Hover(context.Background(), "sub1/main.go", 10, 50, 42)
@@ -97,6 +101,7 @@ func TestHoverUnknownDefinition(t *testing.T) {
 	setmockLSIFStoreMonikersByPosition(t, mockLSIFStore, 42, "main.go", 10, 50, [][]lsifstore.MonikerData{{testMoniker1}})
 	setmockLSIFStorePackageInformation(t, mockLSIFStore, 42, "main.go", "1234", testPackageInformation)
 	setMockDBStoreGetPackage(t, mockDBStore, "gomod", "leftpad", "0.1.0", store.Dump{}, false)
+	mockGitserverClient.CommitExistsFunc.SetDefaultReturn(true, nil)
 
 	api := New(mockDBStore, mockLSIFStore, mockGitserverClient, &observation.TestContext)
 	_, _, exists, err := api.Hover(context.Background(), "sub1/main.go", 10, 50, 42)

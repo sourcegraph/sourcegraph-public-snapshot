@@ -88,13 +88,6 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
         [setTriggerCompleted, setShowQueryForm, onQueryChange, queryState]
     )
 
-    const editForm: React.FormEventHandler = useCallback(
-        event => {
-            event.preventDefault()
-            setShowQueryForm(true)
-        },
-        [setShowQueryForm]
-    )
     const cancelForm: React.FormEventHandler = useCallback(
         event => {
             event.preventDefault()
@@ -192,7 +185,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                 </div>
             )}
             {!showQueryForm && triggerCompleted && (
-                <div className="code-monitor-form__card card p-3">
+                <div className="code-monitor-form__card--button card p-3" onClick={toggleQueryForm}>
                     <div className="d-flex justify-content-between align-items-center">
                         <div>
                             <div className="font-weight-bold">When there are new search results</div>
@@ -204,11 +197,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                             </code>
                         </div>
                         <div>
-                            <button
-                                type="button"
-                                onClick={editForm}
-                                className="btn btn-link p-0 text-left test-edit-trigger"
-                            >
+                            <button type="button" className="btn btn-link p-0 text-left test-edit-trigger">
                                 Edit
                             </button>
                         </div>

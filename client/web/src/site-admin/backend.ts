@@ -214,6 +214,21 @@ export function listUserRepositories(
     )
 }
 
+export function listUserRepositoriesAndPollIfEmptyOrAnyCloning(
+    args: Partial<UserRepositoriesVariables>
+): Observable<NonNullable<UserRepositoriesResult['node']>['repositories']> {
+    return listUserRepositories(args).pipe(
+        // Poll every 5000ms if repositories are being cloned or the list is empty.
+        repeatUntil(
+            result =>
+                result.nodes &&
+                result.nodes.length > 0 &&
+                result.nodes.every(nodes => !nodes.mirrorInfo.cloneInProgress && nodes.mirrorInfo.cloned),
+            { delay: 5000 }
+        )
+    )
+}
+
 /**
  * Fetches all repositories.
  *

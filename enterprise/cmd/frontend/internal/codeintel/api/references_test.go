@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 )
@@ -13,6 +14,7 @@ import (
 func TestHandleSameDumpCursor(t *testing.T) {
 	mockDBStore := NewMockDBStore()
 	mockLSIFStore := NewMockLSIFStore()
+	mockGitserverClient := NewMockGitserverClient()
 
 	setMockDBStoreGetDumpByID(t, mockDBStore, map[int]store.Dump{42: testDump1})
 	setmockLSIFStoreReferences(t, mockLSIFStore, 42, "main.go", 23, 34, []lsifstore.Location{
@@ -26,13 +28,15 @@ func TestHandleSameDumpCursor(t *testing.T) {
 		{DumpID: 42, Path: "bar.go", Range: testRange3},
 		{DumpID: 42, Path: "bar.go", Range: testRange4},
 	})
+	mockGitserverClient.CommitExistsFunc.SetDefaultReturn(true, nil)
 
 	rpr := &ReferencePageResolver{
-		dbStore:      mockDBStore,
-		lsifStore:    mockLSIFStore,
-		repositoryID: 100,
-		commit:       testCommit,
-		limit:        5,
+		dbStore:         mockDBStore,
+		lsifStore:       mockLSIFStore,
+		gitserverClient: mockGitserverClient,
+		repositoryID:    100,
+		commit:          testCommit,
+		limit:           5,
 	}
 
 	t.Run("partial results", func(t *testing.T) {
@@ -120,6 +124,7 @@ func TestHandleSameDumpCursor(t *testing.T) {
 func TestHandleSameDumpMonikersCursor(t *testing.T) {
 	mockDBStore := NewMockDBStore()
 	mockLSIFStore := NewMockLSIFStore()
+	mockGitserverClient := NewMockGitserverClient()
 
 	setMockDBStoreGetDumpByID(t, mockDBStore, map[int]store.Dump{42: testDump1})
 	setmockLSIFStoreReferences(t, mockLSIFStore, 42, "main.go", 23, 34, []lsifstore.Location{
@@ -127,13 +132,15 @@ func TestHandleSameDumpMonikersCursor(t *testing.T) {
 		{DumpID: 42, Path: "foo.go", Range: testRange2},
 		{DumpID: 42, Path: "foo.go", Range: testRange3},
 	})
+	mockGitserverClient.CommitExistsFunc.SetDefaultReturn(true, nil)
 
 	rpr := &ReferencePageResolver{
-		dbStore:      mockDBStore,
-		lsifStore:    mockLSIFStore,
-		repositoryID: 100,
-		commit:       testCommit,
-		limit:        5,
+		dbStore:         mockDBStore,
+		lsifStore:       mockLSIFStore,
+		gitserverClient: mockGitserverClient,
+		repositoryID:    100,
+		commit:          testCommit,
+		limit:           5,
 	}
 
 	t.Run("partial results", func(t *testing.T) {
@@ -228,17 +235,20 @@ func TestHandleSameDumpMonikersCursor(t *testing.T) {
 func TestHandleDefinitionMonikersCursor(t *testing.T) {
 	mockDBStore := NewMockDBStore()
 	mockLSIFStore := NewMockLSIFStore()
+	mockGitserverClient := NewMockGitserverClient()
 
 	setMockDBStoreGetDumpByID(t, mockDBStore, map[int]store.Dump{42: testDump1, 50: testDump2})
 	setmockLSIFStorePackageInformation(t, mockLSIFStore, 42, "main.go", "1234", testPackageInformation)
 	setMockDBStoreGetPackage(t, mockDBStore, "gomod", "leftpad", "0.1.0", testDump2, true)
+	mockGitserverClient.CommitExistsFunc.SetDefaultReturn(true, nil)
 
 	rpr := &ReferencePageResolver{
-		dbStore:      mockDBStore,
-		lsifStore:    mockLSIFStore,
-		repositoryID: 100,
-		commit:       testCommit,
-		limit:        5,
+		dbStore:         mockDBStore,
+		lsifStore:       mockLSIFStore,
+		gitserverClient: mockGitserverClient,
+		repositoryID:    100,
+		commit:          testCommit,
+		limit:           5,
 	}
 
 	t.Run("partial results", func(t *testing.T) {
@@ -336,6 +346,7 @@ func TestHandleDefinitionMonikersCursor(t *testing.T) {
 func TestHandleSameRepoCursor(t *testing.T) {
 	mockDBStore := NewMockDBStore()
 	mockLSIFStore := NewMockLSIFStore()
+	mockGitserverClient := NewMockGitserverClient()
 	mockReferencePager := NewMockReferencePager()
 
 	setMockDBStoreGetDumpByID(t, mockDBStore, map[int]store.Dump{42: testDump1, 50: testDump2, 51: testDump3, 52: testDump4})
@@ -345,6 +356,7 @@ func TestHandleSameRepoCursor(t *testing.T) {
 		{DumpID: 51, Filter: readTestFilter(t, "normal", "1")},
 		{DumpID: 52, Filter: readTestFilter(t, "normal", "1")},
 	})
+	mockGitserverClient.CommitExistsFunc.SetDefaultReturn(true, nil)
 
 	t.Run("partial results", func(t *testing.T) {
 		setmockLSIFStoreMonikerResults(t, mockLSIFStore, 50, "references", "gomod", "bar", 0, 5, []lsifstore.Location{
@@ -358,6 +370,7 @@ func TestHandleSameRepoCursor(t *testing.T) {
 		rpr := &ReferencePageResolver{
 			dbStore:         mockDBStore,
 			lsifStore:       mockLSIFStore,
+			gitserverClient: mockGitserverClient,
 			repositoryID:    100,
 			commit:          testCommit,
 			remoteDumpLimit: 5,
@@ -439,6 +452,7 @@ func TestHandleSameRepoCursor(t *testing.T) {
 		rpr := &ReferencePageResolver{
 			dbStore:         mockDBStore,
 			lsifStore:       mockLSIFStore,
+			gitserverClient: mockGitserverClient,
 			repositoryID:    100,
 			commit:          testCommit,
 			remoteDumpLimit: 5,
@@ -487,6 +501,7 @@ func TestHandleSameRepoCursor(t *testing.T) {
 func TestHandleSameRepoCursorMultipleDumpBatches(t *testing.T) {
 	mockDBStore := NewMockDBStore()
 	mockLSIFStore := NewMockLSIFStore()
+	mockGitserverClient := NewMockGitserverClient()
 	mockReferencePager := NewMockReferencePager()
 
 	setMockDBStoreGetDumpByID(t, mockDBStore, map[int]store.Dump{42: testDump1, 50: testDump2, 51: testDump3, 52: testDump4})
@@ -499,10 +514,12 @@ func TestHandleSameRepoCursorMultipleDumpBatches(t *testing.T) {
 		{DumpID: 51, Path: "baz.go", Range: testRange3},
 		{DumpID: 51, Path: "bonk.go", Range: testRange4},
 	}, 2)
+	mockGitserverClient.CommitExistsFunc.SetDefaultReturn(true, nil)
 
 	rpr := &ReferencePageResolver{
 		dbStore:         mockDBStore,
 		lsifStore:       mockLSIFStore,
+		gitserverClient: mockGitserverClient,
 		repositoryID:    100,
 		commit:          testCommit,
 		remoteDumpLimit: 2,
@@ -562,6 +579,7 @@ func TestHandleSameRepoCursorMultipleDumpBatches(t *testing.T) {
 func TestHandleRemoteRepoCursor(t *testing.T) {
 	mockDBStore := NewMockDBStore()
 	mockLSIFStore := NewMockLSIFStore()
+	mockGitserverClient := NewMockGitserverClient()
 	mockReferencePager := NewMockReferencePager()
 
 	setMockDBStoreGetDumpByID(t, mockDBStore, map[int]store.Dump{42: testDump1, 50: testDump2, 51: testDump3, 52: testDump4})
@@ -571,6 +589,7 @@ func TestHandleRemoteRepoCursor(t *testing.T) {
 		{DumpID: 51, Filter: readTestFilter(t, "normal", "1")},
 		{DumpID: 52, Filter: readTestFilter(t, "normal", "1")},
 	})
+	mockGitserverClient.CommitExistsFunc.SetDefaultReturn(true, nil)
 
 	t.Run("partial results", func(t *testing.T) {
 		setmockLSIFStoreMonikerResults(t, mockLSIFStore, 50, "references", "gomod", "bar", 0, 5, []lsifstore.Location{
@@ -584,6 +603,7 @@ func TestHandleRemoteRepoCursor(t *testing.T) {
 		rpr := &ReferencePageResolver{
 			dbStore:         mockDBStore,
 			lsifStore:       mockLSIFStore,
+			gitserverClient: mockGitserverClient,
 			repositoryID:    100,
 			commit:          testCommit,
 			remoteDumpLimit: 5,
@@ -665,6 +685,7 @@ func TestHandleRemoteRepoCursor(t *testing.T) {
 		rpr := &ReferencePageResolver{
 			dbStore:         mockDBStore,
 			lsifStore:       mockLSIFStore,
+			gitserverClient: mockGitserverClient,
 			repositoryID:    100,
 			commit:          testCommit,
 			remoteDumpLimit: 5,
@@ -702,6 +723,7 @@ func TestHandleRemoteRepoCursor(t *testing.T) {
 func TestHandleRemoteRepoCursorMultipleDumpBatches(t *testing.T) {
 	mockDBStore := NewMockDBStore()
 	mockLSIFStore := NewMockLSIFStore()
+	mockGitserverClient := NewMockGitserverClient()
 	mockReferencePager := NewMockReferencePager()
 
 	setMockDBStoreGetDumpByID(t, mockDBStore, map[int]store.Dump{42: testDump1, 50: testDump2, 51: testDump3, 52: testDump4})
@@ -714,10 +736,12 @@ func TestHandleRemoteRepoCursorMultipleDumpBatches(t *testing.T) {
 		{DumpID: 51, Path: "baz.go", Range: testRange3},
 		{DumpID: 51, Path: "bonk.go", Range: testRange4},
 	}, 2)
+	mockGitserverClient.CommitExistsFunc.SetDefaultReturn(true, nil)
 
 	rpr := &ReferencePageResolver{
 		dbStore:         mockDBStore,
 		lsifStore:       mockLSIFStore,
+		gitserverClient: mockGitserverClient,
 		repositoryID:    100,
 		commit:          testCommit,
 		remoteDumpLimit: 2,

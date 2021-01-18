@@ -1,0 +1,45 @@
+.campaign-preview-stats-bar {
+    &__stat {
+        color: $gray-10;
+    }
+    &__divider {
+        border: 1px solid var(--border-color);
+        height: 2rem;
+    }
+}
+
+.preview-stats-added {
+    &__line {
+        width: 0.25rem;
+        height: 0.25rem;
+        background-color: var(--oc-lime-6);
+    }
+    &__icon {
+        line-height: 1rem;
+        color: var(--oc-lime-9);
+    }
+}
+
+.preview-stats-modified {
+    &__line {
+        width: 0.25rem;
+        height: 0.25rem;
+        background-color: var(--oc-yellow-5);
+    }
+    &__icon {
+        line-height: 1rem;
+        color: var(--oc-orange-9);
+    }
+}
+
+.preview-stats-removed {
+    &__line {
+        width: 0.25rem;
+        height: 0.25rem;
+        background-color: var(--danger);
+    }
+    &__icon {
+        line-height: 1rem;
+        color: var(--oc-red-9);
+    }
+}

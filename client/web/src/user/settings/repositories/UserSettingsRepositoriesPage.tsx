@@ -10,7 +10,7 @@ import {
     FilterValue,
 } from '../../../components/FilteredConnection'
 import { Observable } from 'rxjs'
-import { listUserRepositories } from '../../../site-admin/backend'
+import { listUserRepositoriesAndPollIfEmptyOrAnyCloning } from '../../../site-admin/backend'
 import { queryExternalServices } from '../../../components/externalServices/backend'
 import { RouteComponentProps } from 'react-router'
 import { Link } from '../../../../../shared/src/components/Link'
@@ -111,7 +111,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
 
     const queryRepositories = useCallback(
         (args: FilteredConnectionQueryArguments): Observable<RepositoriesResult['repositories']> =>
-            listUserRepositories({ ...args, id: userID }),
+            listUserRepositoriesAndPollIfEmptyOrAnyCloning({ ...args, id: userID }),
         [userID]
     )
 
@@ -134,9 +134,9 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             <div className="card p-3 m-2">
                 <h3 className="mb-1">You have not added any repositories to Sourcegraph</h3>
                 <p className="text-muted mb-0">
-                    <a className="text-primary" href={routingPrefix + '/external-services'}>
+                    <Link className="text-primary" to={`${routingPrefix}/code-hosts`}>
                         Connect a code host
-                    </a>{' '}
+                    </Link>{' '}
                     to start adding your repositories to Sourcegraph.
                 </p>
             </div>
@@ -192,5 +192,5 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
 }
 
 const TotalCountSummary: React.FunctionComponent<{ totalCount: number }> = ({ totalCount }) => (
-    <p className="user-settings-repos__summary">{totalCount} repositories total</p>
+    <small>{totalCount} repositories total</small>
 )

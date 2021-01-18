@@ -9,7 +9,9 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/jsonx"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
@@ -28,6 +30,15 @@ func (o *settings) CreateIfUpToDate(ctx context.Context, subject api.SettingsSub
 	// Validate JSON syntax before saving.
 	if _, errs := jsonx.Parse(contents, jsonx.ParseOptions{Comments: true, TrailingCommas: true}); len(errs) > 0 {
 		return nil, fmt.Errorf("invalid settings JSON: %v", errs)
+	}
+
+	// Validate setting schema
+	problems, err := conf.ValidateSetting(contents)
+	if err != nil {
+		return nil, err
+	}
+	if len(problems) > 0 {
+		return nil, fmt.Errorf("invalid settings: %s", strings.Join(problems, ","))
 	}
 
 	s := api.Settings{

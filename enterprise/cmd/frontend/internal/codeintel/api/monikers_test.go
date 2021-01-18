@@ -1,9 +1,11 @@
 package api
 
 import (
+	"context"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 )
@@ -11,6 +13,7 @@ import (
 func TestLookupMoniker(t *testing.T) {
 	mockDBStore := NewMockDBStore()
 	mockLSIFStore := NewMockLSIFStore()
+	mockGitserverClient := NewMockGitserverClient()
 
 	setmockLSIFStorePackageInformation(t, mockLSIFStore, 42, "sub2/main.go", "1234", testPackageInformation)
 	setMockDBStoreGetPackage(t, mockDBStore, "gomod", "leftpad", "0.1.0", testDump2, true)
@@ -21,8 +24,9 @@ func TestLookupMoniker(t *testing.T) {
 		{DumpID: 42, Path: "bar.go", Range: testRange4},
 		{DumpID: 42, Path: "baz.go", Range: testRange5},
 	}, 15)
+	mockGitserverClient.CommitExistsFunc.SetDefaultReturn(true, nil)
 
-	locations, totalCount, err := lookupMoniker(mockDBStore, mockLSIFStore, 42, "sub2/main.go", "definitions", testMoniker2, 10, 5)
+	locations, totalCount, err := lookupMoniker(context.Background(), mockDBStore, mockLSIFStore, mockGitserverClient, 42, "sub2/main.go", "definitions", testMoniker2, 10, 5)
 	if err != nil {
 		t.Fatalf("unexpected error querying moniker: %s", err)
 	}
@@ -45,8 +49,9 @@ func TestLookupMoniker(t *testing.T) {
 func TestLookupMonikerNoPackageInformationID(t *testing.T) {
 	mockDBStore := NewMockDBStore()
 	mockLSIFStore := NewMockLSIFStore()
+	mockGitserverClient := NewMockGitserverClient()
 
-	_, totalCount, err := lookupMoniker(mockDBStore, mockLSIFStore, 42, "sub/main.go", "definitions", testMoniker3, 10, 5)
+	_, totalCount, err := lookupMoniker(context.Background(), mockDBStore, mockLSIFStore, mockGitserverClient, 42, "sub/main.go", "definitions", testMoniker3, 10, 5)
 	if err != nil {
 		t.Fatalf("unexpected error querying moniker: %s", err)
 	}
@@ -58,11 +63,12 @@ func TestLookupMonikerNoPackageInformationID(t *testing.T) {
 func TestLookupMonikerNoPackage(t *testing.T) {
 	mockDBStore := NewMockDBStore()
 	mockLSIFStore := NewMockLSIFStore()
+	mockGitserverClient := NewMockGitserverClient()
 
 	setmockLSIFStorePackageInformation(t, mockLSIFStore, 42, "main.go", "1234", testPackageInformation)
 	setMockDBStoreGetPackage(t, mockDBStore, "gomod", "leftpad", "0.1.0", store.Dump{}, false)
 
-	_, totalCount, err := lookupMoniker(mockDBStore, mockLSIFStore, 42, "main.go", "definitions", testMoniker1, 10, 5)
+	_, totalCount, err := lookupMoniker(context.Background(), mockDBStore, mockLSIFStore, mockGitserverClient, 42, "main.go", "definitions", testMoniker1, 10, 5)
 	if err != nil {
 		t.Fatalf("unexpected error querying moniker: %s", err)
 	}

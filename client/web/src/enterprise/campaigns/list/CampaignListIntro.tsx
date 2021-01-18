@@ -30,38 +30,32 @@ export const CampaignListIntro: React.FunctionComponent<CampaignListIntroProps> 
 )
 
 const CampaignChangelogAlert: React.FunctionComponent = () => (
-    <DismissibleAlert className="campaign-list-intro__alert" partialStorageKey="campaign-list-intro-changelog-3.23">
+    <DismissibleAlert className="campaign-list-intro__alert" partialStorageKey="campaign-list-intro-changelog-3.24">
         <div className="campaign-list-intro__card card h-100 p-2">
             <div className="card-body">
-                <h4>New campaigns features in version 3.23</h4>
+                <h4>New campaigns features in version 3.24</h4>
                 <ul className="text-muted mb-0 pl-3">
-                    <li>Changesets in a campaign can be searched by title and repository name</li>
                     <li>
-                        Multiple changesets can be created from a single repository using the experimental{' '}
-                        <a
-                            href="https://docs.sourcegraph.com/campaigns/references/campaign_spec_yaml_reference#transformchanges"
-                            target="_blank"
-                            rel="noopener"
-                            className="text-monospace"
-                        >
-                            transformChanges
-                        </a>{' '}
-                        block in a campaign spec
+                        <code>src</code> now executes campaigns{' '}
+                        <a href="https://github.com/sourcegraph/src-cli/pull/412">significantly faster</a> on Intel
+                        macOS
                     </li>
                     <li>
-                        Steps in campaign specs can now{' '}
-                        <a
-                            href="https://docs.sourcegraph.com/campaigns/references/campaign_spec_yaml_reference#examples-7"
-                            target="_blank"
-                            rel="noopener"
-                        >
-                            pass environment variables
+                        Campaign specs now allow{' '}
+                        <a href="https://docs.sourcegraph.com/campaigns/references/campaign_spec_yaml_reference#steps-outputs">
+                            step outputs
                         </a>{' '}
-                        on to containers
+                        to be captured for later use in templated fields
                     </li>
                     <li>
-                        The preview of a campaign spec now includes detailed information about what will change, instead
-                        of only showing the desired state
+                        Campaign spec <code>changesetTemplate</code> fields now support{' '}
+                        <a href="https://docs.sourcegraph.com/campaigns/references/campaign_spec_templating">
+                            templating
+                        </a>
+                    </li>
+                    <li>
+                        When creating or updating a campaign, the preview now provides more information about the
+                        operations to be performed on each changeset
                     </li>
                 </ul>
             </div>

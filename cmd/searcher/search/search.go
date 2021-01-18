@@ -188,6 +188,11 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 		}
 	}(time.Now())
 
+	if p.IsStructuralPat && p.CombyRule == `where "zoekt" == "zoekt"` {
+		// Reserved for calling the new structural search path that directly uses Zoekt.
+		return nil, false, false, badRequestError{"reserved rule, unsupported request"}
+	}
+
 	// Compile pattern before fetching from store incase it is bad.
 	var rg *readerGrep
 	if !p.IsStructuralPat {

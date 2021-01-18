@@ -820,7 +820,7 @@ type NotifierOpsGenie struct {
 type NotifierPagerduty struct {
 	ApiUrl string `json:"apiUrl,omitempty"`
 	// IntegrationKey description: Integration key for the PagerDuty Events API v2 - see https://developer.pagerduty.com/docs/events-api-v2/overview
-	IntegrationKey string `json:"integrationKey,omitempty"`
+	IntegrationKey string `json:"integrationKey"`
 	// Severity description: Severity level for PagerDuty alert
 	Severity string `json:"severity,omitempty"`
 	Type     string `json:"type"`
@@ -1049,6 +1049,8 @@ type SearchScope struct {
 
 // Sentry description: Configuration for Sentry
 type Sentry struct {
+	// BackendDSN description: Sentry Data Source Name (DSN) for backend errors. Per the Sentry docs (https://docs.sentry.io/quickstart/#about-the-dsn), it should match the following pattern: '{PROTOCOL}://{PUBLIC_KEY}@{HOST}/{PATH}{PROJECT_ID}'.
+	BackendDSN string `json:"backendDSN,omitempty"`
 	// Dsn description: Sentry Data Source Name (DSN). Per the Sentry docs (https://docs.sentry.io/quickstart/#about-the-dsn), it should match the following pattern: '{PROTOCOL}://{PUBLIC_KEY}@{HOST}/{PATH}{PROJECT_ID}'.
 	Dsn string `json:"dsn,omitempty"`
 }
