@@ -540,7 +540,7 @@ func buildCommitOpts(repo *types.Repo, extSvc *types.ExternalService, spec *camp
 type ErrNoSSHPush struct{}
 
 func (e ErrNoSSHPush) Error() string {
-	return "campaigns currently do not support pushing commits via SSH, only HTTP(s) is supported right now"
+	return "campaigns currently do not support pushing commits via SSH, only HTTP(s) is supported. See https://docs.sourcegraph.com/admin/repo/auth for information on which settings can cause SSH to be used."
 }
 
 func (e ErrNoSSHPush) NonRetryable() bool { return true }
