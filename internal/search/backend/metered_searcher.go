@@ -52,9 +52,14 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 func (m *meteredSearcher) doStreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, c chan<- StreamSearchEvent) {
 	start := time.Now()
 
+	// isLeaf is true if this is a zoekt.Searcher which does a network
+	// call. False if we are an aggregator. We use this to decide if we need
+	// to add RPC tracing and adjust how we record metrics.
+	isLeaf := m.hostname != ""
+
 	var cat string
 	var tags []trace.Tag
-	if m.hostname == "" {
+	if !isLeaf {
 		cat = "SearchAll"
 	} else {
 		cat = "Search"
@@ -80,7 +85,7 @@ func (m *meteredSearcher) doStreamSearch(ctx context.Context, q query.Q, opts *z
 	}
 	defer tr.Finish()
 
-	if opts != nil && ot.ShouldTrace(ctx) {
+	if isLeaf && opts != nil && ot.ShouldTrace(ctx) {
 		// Replace any existing spanContext with a new one, given we've done additional tracing
 		spanContext := make(map[string]string)
 		if err := ot.GetTracer(ctx).Inject(opentracing.SpanFromContext(ctx).Context(), opentracing.TextMap, opentracing.TextMapCarrier(spanContext)); err == nil {
@@ -94,21 +99,23 @@ func (m *meteredSearcher) doStreamSearch(ctx context.Context, q query.Q, opts *z
 
 	// Instrument the RPC layer
 	var writeRequestStart, writeRequestDone time.Time
-	ctx = rpc.WithClientTrace(ctx, &rpc.ClientTrace{
-		WriteRequestStart: func() {
-			tr.LogFields(log.String("event", "rpc.write_request_start"))
-			writeRequestStart = time.Now()
-		},
+	if isLeaf {
+		ctx = rpc.WithClientTrace(ctx, &rpc.ClientTrace{
+			WriteRequestStart: func() {
+				tr.LogFields(log.String("event", "rpc.write_request_start"))
+				writeRequestStart = time.Now()
+			},
 
-		WriteRequestDone: func(err error) {
-			fields := []log.Field{log.String("event", "rpc.write_request_done")}
-			if err != nil {
-				fields = append(fields, log.String("rpc.write_request.error", err.Error()))
-			}
-			tr.LogFields(fields...)
-			writeRequestDone = time.Now()
-		},
-	})
+			WriteRequestDone: func(err error) {
+				fields := []log.Field{log.String("event", "rpc.write_request_done")}
+				if err != nil {
+					fields = append(fields, log.String("rpc.write_request.error", err.Error()))
+				}
+				tr.LogFields(fields...)
+				writeRequestDone = time.Now()
+			},
+		})
+	}
 
 	var (
 		code  = "200" // final code to record
@@ -122,7 +129,7 @@ func (m *meteredSearcher) doStreamSearch(ctx context.Context, q query.Q, opts *z
 			tr.SetError(err)
 		}
 
-		if first {
+		if first && isLeaf {
 			first = false
 			tr.LogFields(
 				log.Int64("rpc.queue_latency_ms", writeRequestStart.Sub(start).Milliseconds()),
