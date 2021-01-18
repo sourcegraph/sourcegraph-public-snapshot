@@ -138,7 +138,7 @@ func dedupSort(repos *types.RepoNames) {
 // SearchResultsResolver is a resolver for the GraphQL type `SearchResults`
 type SearchResultsResolver struct {
 	SearchResults []SearchResultResolver
-	streaming.SearchResultsCommon
+	streaming.Stats
 	alert *searchAlert
 	start time.Time // when the results started being computed
 
@@ -263,7 +263,7 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 			// are @ and :, both of which are disallowed in git refs
 			filter = filter + fmt.Sprintf(`@%s`, rev)
 		}
-		limitHit := sr.SearchResultsCommon.Status.Get(repo.IDInt32())&search.RepoStatusLimitHit != 0
+		limitHit := sr.Stats.Status.Get(repo.IDInt32())&search.RepoStatusLimitHit != 0
 		// Increment number of matches per repo. Add will override previous entry for uri
 		repoToMatchCount[uri] += lineMatchCount
 		add(filter, uri, repoToMatchCount[uri], limitHit, "repo", scoreDefault)
@@ -300,11 +300,11 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 		}
 	}
 
-	if sr.SearchResultsCommon.ExcludedForks > 0 {
-		add("fork:yes", "fork:yes", int32(sr.SearchResultsCommon.ExcludedForks), sr.IsLimitHit, "repo", scoreImportant)
+	if sr.Stats.ExcludedForks > 0 {
+		add("fork:yes", "fork:yes", int32(sr.Stats.ExcludedForks), sr.IsLimitHit, "repo", scoreImportant)
 	}
-	if sr.SearchResultsCommon.ExcludedArchived > 0 {
-		add("archived:yes", "archived:yes", int32(sr.SearchResultsCommon.ExcludedArchived), sr.IsLimitHit, "repo", scoreImportant)
+	if sr.Stats.ExcludedArchived > 0 {
+		add("archived:yes", "archived:yes", int32(sr.Stats.ExcludedArchived), sr.IsLimitHit, "repo", scoreImportant)
 	}
 	for _, result := range sr.SearchResults {
 		if fm, ok := result.ToFileMatch(); ok {
@@ -628,7 +628,7 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResultsReso
 		if !result.cursor.Finished {
 			// For stable result queries limitHit = true implies
 			// there is a next cursor, and more results may exist.
-			result.SearchResultsCommon.IsLimitHit = true
+			result.Stats.IsLimitHit = true
 		}
 		return result, err
 	}
@@ -649,7 +649,7 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResultsReso
 	switch {
 	case err == context.DeadlineExceeded || (err == nil && rr.allReposTimedout()):
 		status = "timeout"
-	case err == nil && rr.SearchResultsCommon.Status.Any(search.RepoStatusTimedout):
+	case err == nil && rr.Stats.Status.Any(search.RepoStatusTimedout):
 		status = "partial_timeout"
 	case err == nil && rr.alert != nil:
 		status = "alert"
@@ -789,7 +789,7 @@ func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 	}
 
 	left.SearchResults = merged
-	left.SearchResultsCommon.Update(&right.SearchResultsCommon)
+	left.Stats.Update(&right.Stats)
 	return left
 }
 
@@ -836,7 +836,7 @@ func intersectMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 		merged = append(merged, leftMatch)
 	}
 	left.SearchResults = merged
-	left.SearchResultsCommon.Update(&right.SearchResultsCommon)
+	left.Stats.Update(&right.Stats)
 	return left
 }
 
@@ -1013,7 +1013,7 @@ func (r *searchResolver) evaluateOr(ctx context.Context, scopeParameters []query
 	if result == nil {
 		return nil, nil
 	}
-	// Do not rely on result.SearchResultsCommon.resultCount because it may
+	// Do not rely on result.Stats.resultCount because it may
 	// count non-content matches and there's no easy way to know.
 	if len(result.SearchResults) > wantCount {
 		result.SearchResults = result.SearchResults[:wantCount]
@@ -1027,7 +1027,7 @@ func (r *searchResolver) evaluateOr(ctx context.Context, scopeParameters []query
 		}
 		if new != nil {
 			result = union(result, new)
-			// Do not rely on result.SearchResultsCommon.resultCount because it may
+			// Do not rely on result.Stats.resultCount because it may
 			// count non-content matches and there's no easy way to know.
 			if len(result.SearchResults) > wantCount {
 				result.SearchResults = result.SearchResults[:wantCount]
@@ -1661,21 +1661,21 @@ type aggregator struct {
 
 	mu       sync.Mutex
 	results  []SearchResultResolver
-	common   streaming.SearchResultsCommon
+	common   streaming.Stats
 	multiErr *multierror.Error
 	// fileMatches is a map from git:// URI of the file to FileMatch resolver
 	// to merge multiple results of different types for the same file
 	fileMatches map[string]*FileMatchResolver
 }
 
-func (a *aggregator) get() ([]SearchResultResolver, streaming.SearchResultsCommon, *multierror.Error) {
+func (a *aggregator) get() ([]SearchResultResolver, streaming.Stats, *multierror.Error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	return a.results, a.common, a.multiErr
 }
 
 // report sends results down resultChannel and collects the results.
-func (a *aggregator) report(ctx context.Context, results []SearchResultResolver, common *streaming.SearchResultsCommon, err error) {
+func (a *aggregator) report(ctx context.Context, results []SearchResultResolver, common *streaming.Stats, err error) {
 	if a.resultChannel != nil {
 		a.resultChannel <- results
 	}
@@ -1685,10 +1685,10 @@ func (a *aggregator) report(ctx context.Context, results []SearchResultResolver,
 
 // collect the results. This doesn't send down resultChannel. Should only be
 // used by streaming supported backends.
-func (a *aggregator) collect(ctx context.Context, results []SearchResultResolver, common *streaming.SearchResultsCommon, err error) {
+func (a *aggregator) collect(ctx context.Context, results []SearchResultResolver, common *streaming.Stats, err error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	// Timeouts are reported through SearchResultsCommon so don't report an error for them
+	// Timeouts are reported through Stats so don't report an error for them
 	if err != nil && !isContextError(ctx, err) {
 		a.multiErr = multierror.Append(a.multiErr, errors.Wrap(err, "repository search failed"))
 	}
@@ -1952,7 +1952,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			repos[repoRev.Repo.ID] = repoRev.Repo
 		}
 
-		agg.report(ctx, nil, &streaming.SearchResultsCommon{
+		agg.report(ctx, nil, &streaming.Stats{
 			Repos:            repos,
 			ExcludedForks:    resolved.ExcludedRepos.Forks,
 			ExcludedArchived: resolved.ExcludedRepos.Archived,
@@ -2063,10 +2063,10 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	r.sortResults(ctx, results)
 
 	resultsResolver := SearchResultsResolver{
-		start:               start,
-		SearchResultsCommon: common,
-		SearchResults:       results,
-		alert:               alert,
+		start:         start,
+		Stats:         common,
+		SearchResults: results,
+		alert:         alert,
 	}
 
 	return &resultsResolver, multiErr.ErrorOrNil()

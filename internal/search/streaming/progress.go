@@ -10,9 +10,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-// SearchResultsCommon contains fields that should be returned by all funcs
+// Stats contains fields that should be returned by all funcs
 // that contribute to the overall search result set.
-type SearchResultsCommon struct {
+type Stats struct {
 	// IsLimitHit is true if we do not have all results that match the query.
 	IsLimitHit bool
 
@@ -37,7 +37,7 @@ type SearchResultsCommon struct {
 
 // update updates c with the other data, deduping as necessary. It modifies c but
 // does not modify other.
-func (c *SearchResultsCommon) Update(other *SearchResultsCommon) {
+func (c *Stats) Update(other *Stats) {
 	if other == nil {
 		return
 	}
@@ -59,9 +59,9 @@ func (c *SearchResultsCommon) Update(other *SearchResultsCommon) {
 	c.ExcludedArchived = c.ExcludedArchived + other.ExcludedArchived
 }
 
-func (c *SearchResultsCommon) String() string {
+func (c *Stats) String() string {
 	if c == nil {
-		return "SearchResultsCommon{}"
+		return "Stats{}"
 	}
 
 	parts := []string{
@@ -87,9 +87,9 @@ func (c *SearchResultsCommon) String() string {
 		parts = append(parts, "indexUnavailable")
 	}
 
-	return "SearchResultsCommon{" + strings.Join(parts, " ") + "}"
+	return "Stats{" + strings.Join(parts, " ") + "}"
 }
 
-func (c *SearchResultsCommon) Equal(other *SearchResultsCommon) bool {
+func (c *Stats) Equal(other *Stats) bool {
 	return reflect.DeepEqual(c, other)
 }

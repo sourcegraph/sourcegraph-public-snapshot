@@ -284,7 +284,7 @@ func fileMatchURI(name api.RepoName, ref, path string) string {
 	return b.String()
 }
 
-var mockSearchFilesInRepos func(args *search.TextParameters) ([]*FileMatchResolver, *streaming.SearchResultsCommon, error)
+var mockSearchFilesInRepos func(args *search.TextParameters) ([]*FileMatchResolver, *streaming.Stats, error)
 
 func fileMatchResultsToSearchResults(results []*FileMatchResolver) []SearchResultResolver {
 	results2 := make([]SearchResultResolver, len(results))
@@ -296,7 +296,7 @@ func fileMatchResultsToSearchResults(results []*FileMatchResolver) []SearchResul
 
 // searchFilesInRepos searches a set of repos for a pattern.
 // For c != nil searchFilesInRepos will send results down c.
-func searchFilesInRepos(ctx context.Context, args *search.TextParameters, c chan<- []SearchResultResolver) (res []*FileMatchResolver, common *streaming.SearchResultsCommon, finalErr error) {
+func searchFilesInRepos(ctx context.Context, args *search.TextParameters, c chan<- []SearchResultResolver) (res []*FileMatchResolver, common *streaming.Stats, finalErr error) {
 	if mockSearchFilesInRepos != nil {
 		return mockSearchFilesInRepos(args)
 	}
@@ -315,7 +315,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, c chan
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	common = &streaming.SearchResultsCommon{}
+	common = &streaming.Stats{}
 
 	indexedTyp := textRequest
 	if args.PatternInfo.IsStructuralPat {

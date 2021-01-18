@@ -69,7 +69,7 @@ func TestIndexedSearch(t *testing.T) {
 		wantMatchURLs      []string
 		wantMatchInputRevs []string
 		wantUnindexed      []*search.RepositoryRevisions
-		wantCommon         streaming.SearchResultsCommon
+		wantCommon         streaming.Stats
 		wantErr            bool
 	}{
 		{
@@ -81,7 +81,7 @@ func TestIndexedSearch(t *testing.T) {
 				useFullDeadline: false,
 				since:           func(time.Time) time.Duration { return time.Second - time.Millisecond },
 			},
-			wantCommon: streaming.SearchResultsCommon{
+			wantCommon: streaming.Stats{
 				Status: mkStatusMap(map[string]search.RepoStatus{
 					"foo/bar":    search.RepoStatusSearched | search.RepoStatusIndexed,
 					"foo/foobar": search.RepoStatusSearched | search.RepoStatusIndexed,
@@ -98,7 +98,7 @@ func TestIndexedSearch(t *testing.T) {
 				useFullDeadline: false,
 				since:           func(time.Time) time.Duration { return time.Minute },
 			},
-			wantCommon: streaming.SearchResultsCommon{
+			wantCommon: streaming.Stats{
 				Status: mkStatusMap(map[string]search.RepoStatus{
 					"foo/bar":    search.RepoStatusIndexed | search.RepoStatusTimedout,
 					"foo/foobar": search.RepoStatusIndexed | search.RepoStatusTimedout,
@@ -114,7 +114,7 @@ func TestIndexedSearch(t *testing.T) {
 				useFullDeadline: true,
 				since:           func(time.Time) time.Duration { return 0 },
 			},
-			wantCommon: streaming.SearchResultsCommon{
+			wantCommon: streaming.Stats{
 				Status: mkStatusMap(map[string]search.RepoStatus{
 					"foo/bar":    search.RepoStatusIndexed | search.RepoStatusTimedout,
 					"foo/foobar": search.RepoStatusIndexed | search.RepoStatusTimedout,
@@ -175,7 +175,7 @@ func TestIndexedSearch(t *testing.T) {
 				"",
 				"",
 			},
-			wantCommon: streaming.SearchResultsCommon{
+			wantCommon: streaming.Stats{
 				Status: mkStatusMap(map[string]search.RepoStatus{
 					"foo/bar":    search.RepoStatusSearched | search.RepoStatusIndexed,
 					"foo/foobar": search.RepoStatusSearched | search.RepoStatusIndexed,
@@ -205,7 +205,7 @@ func TestIndexedSearch(t *testing.T) {
 				},
 				since: func(time.Time) time.Duration { return 0 },
 			},
-			wantCommon: streaming.SearchResultsCommon{
+			wantCommon: streaming.Stats{
 				Status: mkStatusMap(map[string]search.RepoStatus{
 					"foo/bar": search.RepoStatusSearched | search.RepoStatusIndexed,
 				}),
@@ -240,7 +240,7 @@ func TestIndexedSearch(t *testing.T) {
 					},
 				},
 			},
-			wantCommon: streaming.SearchResultsCommon{
+			wantCommon: streaming.Stats{
 				Status: mkStatusMap(map[string]search.RepoStatus{
 					"foo/bar": search.RepoStatusSearched | search.RepoStatusIndexed,
 				}),
@@ -317,7 +317,7 @@ func TestIndexedSearch(t *testing.T) {
 			// Once we return more than one event we have to account for the proper order of results
 			// in the tests.
 			var (
-				gotCommon streaming.SearchResultsCommon
+				gotCommon streaming.Stats
 				gotFm     []*FileMatchResolver
 			)
 			for event := range indexed.Search(tt.args.ctx) {

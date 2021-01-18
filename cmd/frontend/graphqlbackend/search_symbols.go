@@ -43,13 +43,13 @@ func (s *searchSymbolResult) uri() *gituri.URI {
 	return s.baseURI.WithFilePath(s.symbol.Path)
 }
 
-var mockSearchSymbols func(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, common *streaming.SearchResultsCommon, err error)
+var mockSearchSymbols func(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, common *streaming.Stats, err error)
 
 // searchSymbols searches the given repos in parallel for symbols matching the given search query
 // it can be used for both search suggestions and search results
 //
 // May return partial results and an error
-func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, common *streaming.SearchResultsCommon, err error) {
+func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, common *streaming.Stats, err error) {
 	if mockSearchSymbols != nil {
 		return mockSearchSymbols(ctx, args, limit)
 	}
@@ -72,7 +72,7 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 	ctx, cancelAll := context.WithCancel(ctx)
 	defer cancelAll()
 
-	common = &streaming.SearchResultsCommon{}
+	common = &streaming.Stats{}
 
 	indexed, err := newIndexedSearchRequest(ctx, args, symbolRequest)
 	if err != nil {
