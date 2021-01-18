@@ -191,12 +191,12 @@ func progressEvent(resultsResolver *graphqlbackend.SearchResultsResolver) api.Pr
 	}
 
 	missing := make([]api.Namer, 0, len(resultsResolver.Missing()))
-	for _, r := range resultsResolver.Timedout() {
+	for _, r := range resultsResolver.Missing() {
 		missing = append(missing, r)
 	}
 
 	cloning := make([]api.Namer, 0, len(resultsResolver.Cloning()))
-	for _, r := range resultsResolver.Timedout() {
+	for _, r := range resultsResolver.Cloning() {
 		cloning = append(cloning, r)
 	}
 

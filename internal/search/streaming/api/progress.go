@@ -1,85 +1,184 @@
 package api
 
-// Progress is an aggregate type representing a progress update.
-type Progress struct {
-	// Done is true if this is a final progress event.
-	Done bool `json:"done"`
-
-	// RepositoriesCount is the number of repositories being searched. It is
-	// non-nil once the set of repositories has been resolved.
-	RepositoriesCount *int `json:"repositoriesCount"`
-
-	// MatchCount is number of non-overlapping matches. If skipped is
-	// non-empty, then this is a lower bound.
-	MatchCount int `json:"matchCount"`
-
-	// DurationMs is the wall clock time in milliseconds for this search.
-	DurationMs int `json:"durationMs"`
-
-	// Skipped is a description of shards or documents that were skipped. This
-	// has a deterministic ordering. More important reasons will be listed
-	// first. If a search is repeated, the final skipped list will be the
-	// same.  However, within a search stream when a new skipped reason is
-	// found, it may appear anywhere in the list.
-	Skipped []Skipped `json:"skipped"`
-}
-
-// Skipped is a description of shards or documents that were skipped.
-type Skipped struct {
-	// Reason is why a document/shard/repository was skipped. We group counts
-	// by reason. eg ShardTimeout
-	Reason SkippedReason `json:"reason"`
-	// Title is a short message. eg "1,200 timed out".
-	Title string `json:"title"`
-	// Message is a message to show the user. Usually includes information
-	// explaining the reason, count as well as a sample of the missing items.
-	Message  string          `json:"message"`
-	Severity SkippedSeverity `json:"severity"`
-	// Suggested is a query expression to remedy the skip. eg "archived:yes".
-	Suggested *SkippedSuggested `json:"suggested,omitempty"`
-}
-
-// SkippedSuggested is a query to suggest to the user to resolve the reason
-// for skipping.
-type SkippedSuggested struct {
-	Title           string `json:"title"`
-	QueryExpression string `json:"queryExpression"`
-}
-
-// SkippedReason is an enum for Skipped.Reason.
-type SkippedReason string
-
-const (
-	// DocumentMatchLimit is when we found too many matches in a document, so
-	// we stopped searching it.
-	DocumentMatchLimit SkippedReason = "document-match-limit"
-	// ShardMatchLimit is when we found too many matches in a
-	// shard/repository, so we stopped searching it.
-	ShardMatchLimit = "shard-match-limit"
-	// RepositoryLimit is when we did not search a repository because the set
-	// of repositories to search was too large.
-	RepositoryLimit = "repository-limit"
-	// ShardTimeout is when we ran out of time before searching a
-	// shard/repository.
-	ShardTimeout = "shard-timeout"
-	// RepositoryCloning is when we could not search a repository because it
-	// is not cloned.
-	RepositoryCloning = "repository-cloning"
-	// RepositoryMissing is when we could not search a repository because it
-	// is not cloned and we failed to find it on the remote code host.
-	RepositoryMissing = "repository-missing"
-	// ExcludedFork is when we did not search a repository because it is a
-	// fork.
-	ExcludedFork = "repository-fork"
-	// ExcludedArchive is when we did not search a repository because it is
-	// archived.
-	ExcludedArchive = "excluded-archive"
+import (
+	"fmt"
+	"strconv"
+	"strings"
 )
 
-// SkippedSeverity is an enum for Skipped.Severity.
-type SkippedSeverity string
+// BuildProgressEvent builds a progress event from a final results resolver.
+func BuildProgressEvent(stats ProgressStats) Progress {
+	skipped := []Skipped{}
 
-const (
-	SeverityInfo SkippedSeverity = "info"
-	SeverityWarn                 = "warn"
-)
+	for _, handler := range skippedHandlers {
+		if sk, ok := handler(stats); ok {
+			skipped = append(skipped, sk)
+		}
+	}
+
+	return Progress{
+		RepositoriesCount: intPtr(stats.RepositoriesCount),
+		MatchCount:        stats.MatchCount,
+		DurationMs:        stats.ElapsedMilliseconds,
+		Skipped:           skipped,
+	}
+}
+
+type Namer interface {
+	Name() string
+}
+
+type ProgressStats struct {
+	MatchCount          int
+	ElapsedMilliseconds int
+	RepositoriesCount   int
+	ExcludedArchived    int
+	ExcludedForks       int
+
+	Timedout []Namer
+	Missing  []Namer
+	Cloning  []Namer
+
+	LimitHit bool
+}
+
+func skippedReposHandler(repos []Namer, titleVerb, messageReason string, base Skipped) (Skipped, bool) {
+	if len(repos) == 0 {
+		return Skipped{}, false
+	}
+
+	amount := number(len(repos))
+	base.Title = fmt.Sprintf("%s %s", amount, titleVerb)
+
+	if len(repos) == 1 {
+		base.Message = fmt.Sprintf("`%s` %s. Try searching again or reducing the scope of your query with `repo:`,  `repogroup:` or other filters.", repos[0].Name(), messageReason)
+	} else {
+		sampleSize := 10
+		if sampleSize > len(repos) {
+			sampleSize = len(repos)
+		}
+
+		var b strings.Builder
+		_, _ = fmt.Fprintf(&b, "%s repositories %s. Try searching again or reducing the scope of your query with `repo:`, `repogroup:` or other filters.", amount, messageReason)
+		for _, repo := range repos[:sampleSize] {
+			_, _ = fmt.Fprintf(&b, "\n* `%s`", repo.Name())
+		}
+		if sampleSize < len(repos) {
+			b.WriteString("\n* ...")
+		}
+		base.Message = b.String()
+	}
+
+	return base, true
+}
+
+func repositoryCloningHandler(resultsResolver ProgressStats) (Skipped, bool) {
+	repos := resultsResolver.Cloning
+	messageReason := fmt.Sprintf("could not be searched since %s still cloning", plural("it is", "they are", len(repos)))
+	return skippedReposHandler(repos, "cloning", messageReason, Skipped{
+		Reason:   RepositoryCloning,
+		Severity: SeverityInfo,
+	})
+}
+
+func repositoryMissingHandler(resultsResolver ProgressStats) (Skipped, bool) {
+	return skippedReposHandler(resultsResolver.Missing, "missing", "could not be searched", Skipped{
+		Reason:   RepositoryMissing,
+		Severity: SeverityInfo,
+	})
+}
+
+func shardTimeoutHandler(resultsResolver ProgressStats) (Skipped, bool) {
+	// This is not the same, but once we expose this more granular details
+	// from our backend it will be shard specific.
+	return skippedReposHandler(resultsResolver.Timedout, "timed out", "could not be searched in time", Skipped{
+		Reason:   ShardTimeout,
+		Severity: SeverityWarn,
+	})
+}
+
+func shardMatchLimitHandler(resultsResolver ProgressStats) (Skipped, bool) {
+	// We don't have the details of repo vs shard vs document limits yet. So
+	// we just pretend all our shard limits.
+	if !resultsResolver.LimitHit {
+		return Skipped{}, false
+	}
+
+	return Skipped{
+		Reason:   ShardMatchLimit,
+		Title:    "result limit hit",
+		Message:  "Not all results have been returned due to hitting a match limit. Sourcegraph has limits for the number of results returned from a line, document and repository.",
+		Severity: SeverityInfo,
+	}, true
+}
+
+func excludedForkHandler(resultsResolver ProgressStats) (Skipped, bool) {
+	forks := resultsResolver.ExcludedForks
+	if forks == 0 {
+		return Skipped{}, false
+	}
+
+	amount := number(forks)
+	return Skipped{
+		Reason:   ExcludedFork,
+		Title:    fmt.Sprintf("%s forked", amount),
+		Message:  "By default we exclude forked repositories. Include them with `fork:yes` in your query.",
+		Severity: SeverityInfo,
+		Suggested: &SkippedSuggested{
+			Title:           "include forked",
+			QueryExpression: "fork:yes",
+		},
+	}, true
+}
+
+func excludedArchiveHandler(resultsResolver ProgressStats) (Skipped, bool) {
+	archived := resultsResolver.ExcludedArchived
+	if archived == 0 {
+		return Skipped{}, false
+	}
+
+	amount := number(archived)
+	return Skipped{
+		Reason:   ExcludedArchive,
+		Title:    fmt.Sprintf("%s archived", amount),
+		Message:  "By default we exclude archived repositories. Include them with `archived:yes` in your query.",
+		Severity: SeverityInfo,
+		Suggested: &SkippedSuggested{
+			Title:           "include archived",
+			QueryExpression: "archived:yes",
+		},
+	}, true
+}
+
+// TODO implement all skipped reasons
+var skippedHandlers = []func(stats ProgressStats) (Skipped, bool){
+	repositoryMissingHandler,
+	repositoryCloningHandler,
+	// documentMatchLimitHandler,
+	shardMatchLimitHandler,
+	// repositoryLimitHandler,
+	shardTimeoutHandler,
+	excludedForkHandler,
+	excludedArchiveHandler,
+}
+
+func intPtr(i int) *int {
+	return &i
+}
+
+func number(i int) string {
+	if i < 1000 {
+		return strconv.Itoa(i)
+	}
+	if i < 10000 {
+		return fmt.Sprintf("%d,%d", i/1000, i%1000)
+	}
+	return fmt.Sprintf("%dk", i/1000)
+}
+
+func plural(one, many string, n int) string {
+	if n == 1 {
+		return one
+	}
+	return many
+}

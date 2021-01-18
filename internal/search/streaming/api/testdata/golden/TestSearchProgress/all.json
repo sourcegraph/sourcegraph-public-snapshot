@@ -17,12 +17,6 @@
     "severity": "info"
    },
    {
-    "reason": "shard-match-limit",
-    "title": "result limit hit",
-    "message": "Not all results have been returned due to hitting a match limit. Sourcegraph has limits for the number of results returned from a line, document and repository.",
-    "severity": "info"
-   },
-   {
     "reason": "shard-timeout",
     "title": "1 timed out",
     "message": "`timedout-1` could not be searched in time. Try searching again or reducing the scope of your query with `repo:`,  `repogroup:` or other filters.",
