@@ -18,26 +18,26 @@ import (
 // Upload is a subset of the lsif_uploads table and stores both processed and unprocessed
 // records.
 type Upload struct {
-	ID              int        `json:"id"`
-	Commit          string     `json:"commit"`
-	Root            string     `json:"root"`
-	VisibleAtTip    bool       `json:"visibleAtTip"`
-	UploadedAt      time.Time  `json:"uploadedAt"`
-	State           string     `json:"state"`
-	FailureMessage  *string    `json:"failureMessage"`
-	StartedAt       *time.Time `json:"startedAt"`
-	FinishedAt      *time.Time `json:"finishedAt"`
-	ProcessAfter    *time.Time `json:"processAfter"`
-	NumResets       int        `json:"numResets"`
-	NumFailures     int        `json:"numFailures"`
-	RepositoryID    int        `json:"repositoryId"`
-	RepositoryName  string     `json:"repositoryName"`
-	Indexer         string     `json:"indexer"`
-	NumParts        int        `json:"numParts"`
-	UploadedParts   []int      `json:"uploadedParts"`
-	UploadSize      *int64     `json:"uploadSize"`
-	Rank            *int       `json:"placeInQueue"`
-	AssociatedIndex *int       `json:"associatedIndex"`
+	ID                int        `json:"id"`
+	Commit            string     `json:"commit"`
+	Root              string     `json:"root"`
+	VisibleAtTip      bool       `json:"visibleAtTip"`
+	UploadedAt        time.Time  `json:"uploadedAt"`
+	State             string     `json:"state"`
+	FailureMessage    *string    `json:"failureMessage"`
+	StartedAt         *time.Time `json:"startedAt"`
+	FinishedAt        *time.Time `json:"finishedAt"`
+	ProcessAfter      *time.Time `json:"processAfter"`
+	NumResets         int        `json:"numResets"`
+	NumFailures       int        `json:"numFailures"`
+	RepositoryID      int        `json:"repositoryId"`
+	RepositoryName    string     `json:"repositoryName"`
+	Indexer           string     `json:"indexer"`
+	NumParts          int        `json:"numParts"`
+	UploadedParts     []int      `json:"uploadedParts"`
+	UploadSize        *int64     `json:"uploadSize"`
+	Rank              *int       `json:"placeInQueue"`
+	AssociatedIndexID *int       `json:"associatedIndex"`
 }
 
 func (u Upload) RecordID() int {
@@ -74,6 +74,7 @@ func scanUploads(rows *sql.Rows, queryErr error) (_ []Upload, err error) {
 			&upload.NumParts,
 			pq.Array(&rawUploadedParts),
 			&upload.UploadSize,
+			&upload.AssociatedIndexID,
 			&upload.Rank,
 		); err != nil {
 			return nil, err
@@ -157,6 +158,7 @@ SELECT
 	u.num_parts,
 	u.uploaded_parts,
 	u.upload_size,
+	u.associated_index_id,
 	s.rank
 FROM lsif_uploads_with_repository_name u
 LEFT JOIN (
@@ -288,6 +290,7 @@ SELECT
 	u.num_parts,
 	u.uploaded_parts,
 	u.upload_size,
+	u.associated_index_id,
 	s.rank
 FROM lsif_uploads_with_repository_name u
 LEFT JOIN (
@@ -341,6 +344,7 @@ func (s *Store) InsertUpload(ctx context.Context, upload Upload) (_ int, err err
 			upload.NumParts,
 			pq.Array(upload.UploadedParts),
 			upload.UploadSize,
+			upload.AssociatedIndexID,
 		),
 	))
 
@@ -357,8 +361,9 @@ INSERT INTO lsif_uploads (
 	state,
 	num_parts,
 	uploaded_parts,
-	upload_size
-) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+	upload_size,
+	associated_index_id
+) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING id
 `
 
@@ -413,6 +418,7 @@ var uploadColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("u.num_parts"),
 	sqlf.Sprintf("u.uploaded_parts"),
 	sqlf.Sprintf("u.upload_size"),
+	sqlf.Sprintf("u.associated_index_id"),
 	sqlf.Sprintf("NULL"),
 }
 
