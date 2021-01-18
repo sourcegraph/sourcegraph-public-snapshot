@@ -418,7 +418,7 @@ changesetTemplate:
 The title of the changeset on the code host.
 
 <aside class="note">
-<span class="badge badge-feature">Templating</span> <code>changesetTemplate.title</code> can include <a href="campaign_spec_templating">template variables</a> starting with Sourcegraph 3.24 and <a href="../cli/index.md">Sourcegraph CLI</a> 3.24.
+<span class="badge badge-feature">Templating</span> <code>changesetTemplate.title</code> can include <a href="campaign_spec_templating">template variables</a> starting with Sourcegraph 3.24 and <a href="../../cli">Sourcegraph CLI</a> 3.24.
 </aside>
 
 ## [`changesetTemplate.body`](#changesettemplate-body)
@@ -426,7 +426,7 @@ The title of the changeset on the code host.
 The body (description) of the changeset on the code host. If the code supports Markdown you can use it here.
 
 <aside class="note">
-<span class="badge badge-feature">Templating</span> <code>changesetTemplate.title</code> can include <a href="campaign_spec_templating">template variables</a> starting with Sourcegraph 3.24 and <a href="../cli/index.md">Sourcegraph CLI</a> 3.24.
+<span class="badge badge-feature">Templating</span> <code>changesetTemplate.title</code> can include <a href="campaign_spec_templating">template variables</a> starting with Sourcegraph 3.24 and <a href="../../cli">Sourcegraph CLI</a> 3.24.
 </aside>
 
 ## [`changesetTemplate.branch`](#changesettemplate-branch)
@@ -434,7 +434,7 @@ The body (description) of the changeset on the code host. If the code supports M
 The name of the Git branch to create or update on each repository with the changes.
 
 <aside class="note">
-<span class="badge badge-feature">Templating</span> <code>changesetTemplate.title</code> can include <a href="campaign_spec_templating">template variables</a> starting with Sourcegraph 3.24 and <a href="../cli/index.md">Sourcegraph CLI</a> 3.24.
+<span class="badge badge-feature">Templating</span> <code>changesetTemplate.title</code> can include <a href="campaign_spec_templating">template variables</a> starting with Sourcegraph 3.24 and <a href="../../cli">Sourcegraph CLI</a> 3.24.
 </aside>
 
 ## [`changesetTemplate.commit`](#changesettemplate-commit)
@@ -446,7 +446,7 @@ The Git commit to create with the changes.
 The Git commit message.
 
 <aside class="note">
-<span class="badge badge-feature">Templating</span> <code>changesetTemplate.title</code> can include <a href="campaign_spec_templating">template variables</a> starting with Sourcegraph 3.24 and <a href="../cli/index.md">Sourcegraph CLI</a> 3.24.
+<span class="badge badge-feature">Templating</span> <code>changesetTemplate.title</code> can include <a href="campaign_spec_templating">template variables</a> starting with Sourcegraph 3.24 and <a href="../../cli">Sourcegraph CLI</a> 3.24.
 </aside>
 
 ## [`changesetTemplate.commit.author`](#changesettemplate-commit-author)
@@ -454,7 +454,7 @@ The Git commit message.
 The `name` and `email` of the Git commit author.
 
 <aside class="note">
-<span class="badge badge-feature">Templating</span> <code>changesetTemplate.title</code> can include <a href="campaign_spec_templating">template variables</a> starting with Sourcegraph 3.24 and <a href="../cli/index.md">Sourcegraph CLI</a> 3.24.
+<span class="badge badge-feature">Templating</span> <code>changesetTemplate.title</code> can include <a href="campaign_spec_templating">template variables</a> starting with Sourcegraph 3.24 and <a href="../../cli">Sourcegraph CLI</a> 3.24.
 </aside>
 
 ### Examples

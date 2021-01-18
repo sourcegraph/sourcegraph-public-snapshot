@@ -6,7 +6,7 @@
 </style>
 
 <aside class="experimental">
-<span class="badge badge-experimental">Experimental</span> This feature is experimental and might change in the future. It's available in Sourcegraph 3.22 with <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.21.5 and later.
+<span class="badge badge-experimental">Experimental</span> This feature is experimental and might change in the future. It's available in Sourcegraph 3.22 with <a href="../../cli">Sourcegraph CLI</a> 3.21.5 and later.
 </aside>
 
 ## Overview
@@ -51,7 +51,7 @@ Template variables are supported in the following fields:
 - [`steps.files`](campaign_spec_yaml_reference.md#steps-run) values
 - [`steps.outputs.<name>.value`](campaign_spec_yaml_reference.md#steps-outputs)
 
-Additionally, with Sourcegraph 3.24 and [Sourcegraph CLI](../cli/index.md) 3.24 or later:
+Additionally, with Sourcegraph 3.24 and [Sourcegraph CLI](../../cli/index.md) 3.24 or later:
 
 - [`changesetTemplate.title`](campaign_spec_yaml_reference.md#changesettemplate-title)
 - [`changesetTemplate.body`](campaign_spec_yaml_reference.md#changesettemplate-body)
@@ -94,23 +94,23 @@ The following template variables are available in the fields under `steps`:
 
 - `${{ step.modified_files }}`
 
-    Only in `steps.outputs`: List of files that have been modified by the just-executed step. Empty list if no files have been modified. (Requires Sourcegraph 3.24 and [Sourcegraph CLI](../cli/index.md) 3.24 or later)
+    Only in `steps.outputs`: List of files that have been modified by the just-executed step. Empty list if no files have been modified. (Requires Sourcegraph 3.24 and [Sourcegraph CLI](../../cli/index.md) 3.24 or later)
 - `${{ step.added_files }}`
 
-    Only in `steps.outputs`: List of files that have been added by the just-executed step. Empty list if no files have been added. (Requires Sourcegraph 3.24 and [Sourcegraph CLI](../cli/index.md) 3.24 or later)
+    Only in `steps.outputs`: List of files that have been added by the just-executed step. Empty list if no files have been added. (Requires Sourcegraph 3.24 and [Sourcegraph CLI](../../cli/index.md) 3.24 or later)
 - `${{ step.deleted_files }}`
 
-    Only in `steps.outputs`: List of files that have been deleted by the just-executed step. Empty list if no files have been deleted. (Requires Sourcegraph 3.24 and [Sourcegraph CLI](../cli/index.md) 3.24 or later)
+    Only in `steps.outputs`: List of files that have been deleted by the just-executed step. Empty list if no files have been deleted. (Requires Sourcegraph 3.24 and [Sourcegraph CLI](../../cli/index.md) 3.24 or later)
 - `${{ step.stdout }}`
 
-    Only in `steps.outputs`: The complete output of the just-executed step on standard output. (Requires Sourcegraph 3.24 and [Sourcegraph CLI](../cli/index.md) 3.24 or later)
+    Only in `steps.outputs`: The complete output of the just-executed step on standard output. (Requires Sourcegraph 3.24 and [Sourcegraph CLI](../../cli/index.md) 3.24 or later)
 - `${{ step.stderr }}`
 
-    Only in `steps.outputs`: The complete output of the just-executed step on standard error. (Requires Sourcegraph 3.24 and [Sourcegraph CLI](../cli/index.md) 3.24 or later)
+    Only in `steps.outputs`: The complete output of the just-executed step on standard error. (Requires Sourcegraph 3.24 and [Sourcegraph CLI](../../cli/index.md) 3.24 or later)
 
 ### `changesetTemplate` context
 
-**Requires Sourcegraph 3.24 and [Sourcegraph CLI](../cli/index.md) 3.24 or later**.
+**Requires Sourcegraph 3.24 and [Sourcegraph CLI](../../cli/index.md) 3.24 or later**.
 
 The following template variables are available in the fields under `changesetTemplate`:
 
