@@ -633,15 +633,15 @@ func TestSoftDeleteOldUploads(t *testing.T) {
 	t4 := t1.Add(time.Minute * 6)
 
 	insertUploads(t, dbconn.Global,
-		Upload{ID: 1, FinishedAt: &t1},
-		Upload{ID: 2, FinishedAt: &t2}, // visible
-		Upload{ID: 3, FinishedAt: &t2},
-		Upload{ID: 4, FinishedAt: &t3}, // visible
-		Upload{ID: 5, FinishedAt: &t3},
-		Upload{ID: 6, FinishedAt: &t4}, // too new
-		Upload{ID: 7, FinishedAt: &t4}, // too new
+		Upload{ID: 1, State: "completed", FinishedAt: &t1},
+		Upload{ID: 2, State: "completed", FinishedAt: &t2}, // visible
+		Upload{ID: 3, State: "errored", FinishedAt: &t2},
+		Upload{ID: 4, State: "completed", FinishedAt: &t3}, // visible
+		Upload{ID: 5, State: "completed", FinishedAt: &t3},
+		Upload{ID: 6, State: "completed", FinishedAt: &t4}, // too new
+		Upload{ID: 7, State: "errored", FinishedAt: &t4},   // too new
 		Upload{ID: 8, State: "uploaded", UploadedAt: t3},
-		Upload{ID: 9, State: "uploaded", UploadedAt: t4},
+		Upload{ID: 9, State: "uploaded", UploadedAt: t4}, // too new
 	)
 	insertVisibleAtTip(t, dbconn.Global, 50, 2, 4)
 
@@ -658,7 +658,7 @@ func TestSoftDeleteOldUploads(t *testing.T) {
 		4: "completed",
 		5: "deleted",
 		6: "completed",
-		7: "completed",
+		7: "errored",
 		8: "deleted",
 		9: "uploaded",
 	}

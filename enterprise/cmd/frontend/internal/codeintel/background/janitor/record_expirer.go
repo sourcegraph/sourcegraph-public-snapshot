@@ -46,7 +46,15 @@ func (e *RecordExpirer) Handle(ctx context.Context) error {
 		e.metrics.numUploadRecordsRemoved.Add(float64(count))
 	}
 
-	// TODO (efritz)- expire old index records
+	count, err = tx.DeleteOldIndexes(ctx, e.ttl, time.Now())
+	if err != nil {
+		return errors.Wrap(err, "DeleteOldIndexes")
+	}
+	if count > 0 {
+		log15.Debug("Deleted old index records", "count", count)
+		e.metrics.numIndexRecordsRemoved.Add(float64(count))
+	}
+
 	return nil
 }
 
