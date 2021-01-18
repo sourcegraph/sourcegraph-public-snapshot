@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -109,7 +110,7 @@ func (s *Store) IndexableRepositories(ctx context.Context, opts IndexableReposit
 		conds = append(conds, sqlf.Sprintf(
 			"(last_index_enqueued_at IS NULL OR %s - last_index_enqueued_at >= (%s || ' second')::interval)",
 			opts.now,
-			opts.MinimumTimeSinceLastEnqueue/time.Second,
+			strconv.Itoa(int(opts.MinimumTimeSinceLastEnqueue/time.Second)),
 		))
 	}
 

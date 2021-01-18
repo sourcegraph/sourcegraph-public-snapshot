@@ -14,7 +14,9 @@ import (
 	"time"
 
 	// Register driver
-	"github.com/lib/pq"
+
+	"github.com/jackc/pgconn"
+	_ "github.com/lib/pq"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
@@ -23,6 +25,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	codeintelMigrations "github.com/sourcegraph/sourcegraph/migrations/codeintel"
 	frontendMigrations "github.com/sourcegraph/sourcegraph/migrations/frontend"
@@ -238,8 +241,8 @@ func (logger stdoutLogger) Verbose() bool {
 }
 
 func IsPostgresError(err error, codename string) bool {
-	e, ok := errors.Cause(err).(*pq.Error)
-	return ok && e.Code.Name() == codename
+	e, ok := errors.Cause(err).(*pgconn.PgError)
+	return ok && e.Code == codename
 }
 
 // NullTime represents a time.Time that may be null. nullTime implements the
