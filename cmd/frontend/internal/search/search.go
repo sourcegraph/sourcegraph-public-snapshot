@@ -176,7 +176,17 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	pr := progress(resultsResolver)
+	pr := api.BuildProgressEvent(api.ProgressStats{
+		MatchCount:          int(resultsResolver.MatchCount()),
+		ElapsedMilliseconds: int(resultsResolver.ElapsedMilliseconds()),
+		RepositoriesCount:   int(resultsResolver.RepositoriesCount()),
+		ExcludedArchived:    resultsResolver.ExcludedArchived,
+		ExcludedForks:       resultsResolver.ExcludedForks,
+		Timedout:            toNamer(resultsResolver.Timedout),
+		Missing:             toNamer(resultsResolver.Missing),
+		Cloning:             toNamer(resultsResolver.Cloning),
+		LimitHit:            resultsResolver.IsLimitHit,
+	})
 	pr.Done = true
 	_ = eventWriter.Event("progress", pr)
 
@@ -184,34 +194,13 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	_ = eventWriter.Event("done", map[string]interface{}{})
 }
 
-func progress(resultsResolver *graphqlbackend.SearchResultsResolver) api.Progress {
-	timedout := make([]api.Namer, 0, len(resultsResolver.Timedout()))
-	for _, r := range resultsResolver.Timedout() {
-		timedout = append(timedout, r)
+func toNamer(f func() []*graphqlbackend.RepositoryResolver) []api.Namer {
+	rs := f()
+	n := make([]api.Namer, 0, len(rs))
+	for _, r := range rs {
+		n = append(n, r)
 	}
-
-	missing := make([]api.Namer, 0, len(resultsResolver.Missing()))
-	for _, r := range resultsResolver.Missing() {
-		missing = append(missing, r)
-	}
-
-	cloning := make([]api.Namer, 0, len(resultsResolver.Cloning()))
-	for _, r := range resultsResolver.Cloning() {
-		cloning = append(cloning, r)
-	}
-
-	pr := api.BuildProgressEvent(api.ProgressStats{
-		MatchCount:          int(resultsResolver.MatchCount()),
-		ElapsedMilliseconds: int(resultsResolver.ElapsedMilliseconds()),
-		RepositoriesCount:   int(resultsResolver.RepositoriesCount()),
-		ExcludedArchived:    resultsResolver.ExcludedArchived,
-		ExcludedForks:       resultsResolver.ExcludedForks,
-		Timedout:            timedout,
-		Missing:             missing,
-		LimitHit:            resultsResolver.IsLimitHit,
-		Cloning:             cloning,
-	})
-	return pr
+	return n
 }
 
 type searchResolver interface {
