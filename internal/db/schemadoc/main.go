@@ -156,7 +156,7 @@ func startDocker() (commandPrefix []string, shutdown func(), _ error) {
 func generateInternal(databaseName, dataSource string, run runFunc) (string, error) {
 	conn, err := dbconn.NewRaw(dataSource)
 	if err != nil {
-		return "", errors.Wrap(err, "SetupGlobalConnection")
+		return "", errors.Wrap(err, "NewRaw")
 	}
 	defer func() {
 		if err := conn.Close(); err != nil {
