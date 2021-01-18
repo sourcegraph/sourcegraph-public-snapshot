@@ -176,7 +176,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	pr := progressEvent(resultsResolver)
+	pr := progress(resultsResolver)
 	pr.Done = true
 	_ = eventWriter.Event("progress", pr)
 
@@ -184,7 +184,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	_ = eventWriter.Event("done", map[string]interface{}{})
 }
 
-func progressEvent(resultsResolver *graphqlbackend.SearchResultsResolver) api.Progress {
+func progress(resultsResolver *graphqlbackend.SearchResultsResolver) api.Progress {
 	timedout := make([]api.Namer, 0, len(resultsResolver.Timedout()))
 	for _, r := range resultsResolver.Timedout() {
 		timedout = append(timedout, r)
