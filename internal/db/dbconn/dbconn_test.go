@@ -1,36 +1,62 @@
 package dbconn
 
-import "testing"
+import (
+	"testing"
+)
 
-func TestBuildConnectionString(t *testing.T) {
+func TestBuildConfig(t *testing.T) {
 	tests := []struct {
-		name                   string
-		dataSource             string
-		wantedConnectionString string
+		name                    string
+		dataSource              string
+		expectedApplicationName string
+		fails                   bool
 	}{
 		{
-			name:                   "empty dataSource",
-			dataSource:             "",
-			wantedConnectionString: " fallback_application_name=sourcegraph",
+			name:                    "empty dataSource",
+			dataSource:              "",
+			expectedApplicationName: defaultApplicationName,
+			fails:                   false,
 		}, {
-			name:                   "connection string",
-			dataSource:             "dbname=sourcegraph host=localhost sslmode=verify-full user=sourcegraph",
-			wantedConnectionString: "dbname=sourcegraph host=localhost sslmode=verify-full user=sourcegraph fallback_application_name=sourcegraph",
+			name:                    "connection string",
+			dataSource:              "dbname=sourcegraph host=localhost sslmode=verify-full user=sourcegraph",
+			expectedApplicationName: defaultApplicationName,
+			fails:                   false,
 		}, {
-			name:                   "postgres URL",
-			dataSource:             "postgres://sourcegraph@localhost/sourcegraph?sslmode=verify-full",
-			wantedConnectionString: "dbname=sourcegraph host=localhost sslmode=verify-full user=sourcegraph fallback_application_name=sourcegraph",
+			name:                    "connection string with application name",
+			dataSource:              "dbname=sourcegraph host=localhost sslmode=verify-full user=sourcegraph application_name=foo",
+			expectedApplicationName: "foo",
+			fails:                   false,
 		}, {
-			name:                   "invalid URL",
-			dataSource:             "invalid string",
-			wantedConnectionString: "invalid string fallback_application_name=sourcegraph",
+			name:                    "postgres URL",
+			dataSource:              "postgres://sourcegraph@localhost/sourcegraph?sslmode=verify-full",
+			expectedApplicationName: defaultApplicationName,
+			fails:                   false,
+		}, {
+			name:                    "postgres URL with fallback",
+			dataSource:              "postgres://sourcegraph@localhost/sourcegraph?sslmode=verify-full&application_name=foo",
+			expectedApplicationName: "foo",
+			fails:                   false,
+		}, {
+			name:       "invalid URL",
+			dataSource: "invalid string",
+			fails:      true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := buildConnectionString(tt.dataSource); got != tt.wantedConnectionString {
-				t.Errorf("buildConnectionString() = %v, want %v", got, tt.wantedConnectionString)
+			cfg, err := buildConfig(tt.dataSource)
+			if tt.fails {
+				if err == nil {
+					t.Fatal("error expected")
+				}
+
+				return
+			}
+
+			fb, ok := cfg.RuntimeParams["application_name"]
+			if !ok || fb != tt.expectedApplicationName {
+				t.Fatalf("wrong application_name: got %q want %q", fb, tt.expectedApplicationName)
 			}
 		})
 	}

@@ -3,6 +3,7 @@ package dbstore
 import (
 	"context"
 	"database/sql"
+	"strconv"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -354,7 +355,7 @@ func (s *Store) SoftDeleteOldDumps(ctx context.Context, maxAge time.Duration, no
 	}
 	defer func() { err = tx.Done(err) }()
 
-	repositoryIDs, err := scanCounts(tx.Store.Query(ctx, sqlf.Sprintf(softDeleteOldDumpsQuery, now, maxAge/time.Second)))
+	repositoryIDs, err := scanCounts(tx.Store.Query(ctx, sqlf.Sprintf(softDeleteOldDumpsQuery, now, strconv.Itoa(int(maxAge/time.Second)))))
 	if err != nil {
 		return 0, err
 	}

@@ -11,6 +11,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/inconshreveable/log15"
+	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
@@ -279,12 +280,12 @@ func (u *UserStore) create(ctx context.Context, info NewUser) (newUser *types.Us
 		sqlf.Sprintf("INSERT INTO users(username, display_name, avatar_url, created_at, updated_at, passwd, invalidated_sessions_at, site_admin) VALUES(%s, %s, %s, %s, %s, %s, %s, %s AND NOT EXISTS(SELECT * FROM users)) RETURNING id, site_admin",
 			info.Username, info.DisplayName, avatarURL, createdAt, updatedAt, passwd, invalidatedSessionsAt, !alreadyInitialized)).Scan(&id, &siteAdmin)
 	if err != nil {
-		if pqErr, ok := err.(*pq.Error); ok {
-			switch pqErr.Constraint {
+		if pgErr, ok := err.(*pgconn.PgError); ok {
+			switch pgErr.ConstraintName {
 			case "users_username":
 				return nil, errCannotCreateUser{errorCodeUsernameExists}
 			case "users_username_max_length", "users_username_valid_chars", "users_display_name_max_length":
-				return nil, errCannotCreateUser{pqErr.Constraint}
+				return nil, errCannotCreateUser{pgErr.ConstraintName}
 			}
 		}
 		return nil, err
@@ -308,8 +309,8 @@ func (u *UserStore) create(ctx context.Context, info NewUser) (newUser *types.Us
 			err = u.Exec(ctx, sqlf.Sprintf("INSERT INTO user_emails(user_id, email, verification_code, is_primary) VALUES (%s, %s, %s, true)", id, info.Email, info.EmailVerificationCode))
 		}
 		if err != nil {
-			if pqErr, ok := err.(*pq.Error); ok {
-				switch pqErr.Constraint {
+			if pgErr, ok := err.(*pgconn.PgError); ok {
+				switch pgErr.ConstraintName {
 				case "user_emails_unique_verified_email":
 					return nil, errCannotCreateUser{errorCodeEmailExists}
 				}
@@ -421,7 +422,7 @@ func (u *UserStore) Update(ctx context.Context, id int32, update UserUpdate) (er
 	query := sqlf.Sprintf("UPDATE users SET %s WHERE id=%d", sqlf.Join(fieldUpdates, ", "), id)
 	res, err := tx.ExecResult(ctx, query)
 	if err != nil {
-		if pqErr, ok := err.(*pq.Error); ok && pqErr.Constraint == "users_username" {
+		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.ConstraintName == "users_username" {
 			return errCannotCreateUser{errorCodeUsernameExists}
 		}
 		return err
