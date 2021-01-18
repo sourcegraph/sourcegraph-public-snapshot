@@ -38,7 +38,18 @@ func NewMeteredSearcher(hostname string, z StreamSearcher) StreamSearcher {
 	}
 }
 
-func (m *meteredSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
+func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions) <-chan StreamSearchEvent {
+	c := make(chan StreamSearchEvent)
+
+	go func() {
+		defer close(c)
+		m.doStreamSearch(ctx, q, opts, c)
+	}()
+
+	return c
+}
+
+func (m *meteredSearcher) doStreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, c chan<- StreamSearchEvent) {
 	start := time.Now()
 
 	var cat string
@@ -67,6 +78,7 @@ func (m *meteredSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.Sea
 			log.Int("opts.max_doc_display_count", opts.MaxDocDisplayCount),
 		)
 	}
+	defer tr.Finish()
 
 	if opts != nil && ot.ShouldTrace(ctx) {
 		// Replace any existing spanContext with a new one, given we've done additional tracing
@@ -98,43 +110,55 @@ func (m *meteredSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.Sea
 		},
 	})
 
-	zsr, err := m.StreamSearcher.Search(ctx, q, opts)
-
-	code := "200"
-	if err != nil {
-		code = "error"
-	}
-
-	d := time.Since(start)
-	requestDuration.WithLabelValues(m.hostname, cat, code).Observe(d.Seconds())
-
-	tr.SetError(err)
-	tr.LogFields(
-		log.Int64("rpc.queue_latency_ms", writeRequestStart.Sub(start).Milliseconds()),
-		log.Int64("rpc.write_duration_ms", writeRequestDone.Sub(writeRequestStart).Milliseconds()),
+	var (
+		code  = "200" // final code to record
+		first = true
 	)
-	if zsr != nil {
-		tr.LogFields(
-			log.Int("filematches", len(zsr.Files)),
-			log.Int64("rpc.latency_ms", (d-zsr.Stats.Duration-zsr.Stats.Wait).Milliseconds()),
-			log.Int64("stats.content_bytes_loaded", zsr.Stats.ContentBytesLoaded),
-			log.Int64("stats.index_bytes_loaded", zsr.Stats.IndexBytesLoaded),
-			log.Int("stats.crashes", zsr.Stats.Crashes),
-			log.Int64("stats.duration_ms", zsr.Stats.Duration.Milliseconds()),
-			log.Int("stats.file_count", zsr.Stats.FileCount),
-			log.Int("stats.shard_files_considered", zsr.Stats.ShardFilesConsidered),
-			log.Int("stats.files_considered", zsr.Stats.FilesConsidered),
-			log.Int("stats.files_loaded", zsr.Stats.FilesLoaded),
-			log.Int("stats.files_skipped", zsr.Stats.FilesSkipped),
-			log.Int("stats.shards_skipped", zsr.Stats.ShardsSkipped),
-			log.Int("stats.match_count", zsr.Stats.MatchCount),
-			log.Int("stats.ngram_matches", zsr.Stats.NgramMatches),
-			log.Int64("stats.wait_ms", zsr.Stats.Wait.Milliseconds()),
-		)
-	}
-	tr.Finish()
+	for event := range m.StreamSearcher.StreamSearch(ctx, q, opts) {
+		zsr, err := event.SearchResult, event.Error
 
-	return zsr, err
+		if err != nil {
+			code = "error"
+			tr.SetError(err)
+		}
+
+		if first {
+			first = false
+			tr.LogFields(
+				log.Int64("rpc.queue_latency_ms", writeRequestStart.Sub(start).Milliseconds()),
+				log.Int64("rpc.write_duration_ms", writeRequestDone.Sub(writeRequestStart).Milliseconds()),
+			)
+		}
+
+		if zsr != nil {
+			tr.LogFields(
+				log.Int("filematches", len(zsr.Files)),
+				log.Int64("rpc.latency_ms", (time.Since(start)-zsr.Stats.Duration-zsr.Stats.Wait).Milliseconds()),
+				log.Int64("stats.content_bytes_loaded", zsr.Stats.ContentBytesLoaded),
+				log.Int64("stats.index_bytes_loaded", zsr.Stats.IndexBytesLoaded),
+				log.Int("stats.crashes", zsr.Stats.Crashes),
+				log.Int64("stats.duration_ms", zsr.Stats.Duration.Milliseconds()),
+				log.Int("stats.file_count", zsr.Stats.FileCount),
+				log.Int("stats.shard_files_considered", zsr.Stats.ShardFilesConsidered),
+				log.Int("stats.files_considered", zsr.Stats.FilesConsidered),
+				log.Int("stats.files_loaded", zsr.Stats.FilesLoaded),
+				log.Int("stats.files_skipped", zsr.Stats.FilesSkipped),
+				log.Int("stats.shards_skipped", zsr.Stats.ShardsSkipped),
+				log.Int("stats.match_count", zsr.Stats.MatchCount),
+				log.Int("stats.ngram_matches", zsr.Stats.NgramMatches),
+				log.Int64("stats.wait_ms", zsr.Stats.Wait.Milliseconds()),
+			)
+		}
+
+		c <- event
+	}
+
+	// Record total duration of stream
+	requestDuration.WithLabelValues(m.hostname, cat, code).Observe(time.Since(start).Seconds())
+}
+
+func (m *meteredSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
+	return AggregateStreamSearch(ctx, m.StreamSearch, q, opts)
 }
 
 func (m *meteredSearcher) List(ctx context.Context, q query.Q) (*zoekt.RepoList, error) {
@@ -171,6 +195,10 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q) (*zoekt.RepoList,
 	tr.Finish()
 
 	return zsl, err
+}
+
+func (m *meteredSearcher) String() string {
+	return "MeteredSearcher{" + m.StreamSearcher.String() + "}"
 }
 
 func queryString(q query.Q) string {

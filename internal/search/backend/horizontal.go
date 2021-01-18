@@ -73,6 +73,12 @@ func (s *HorizontalSearcher) doStreamSearch(ctx context.Context, q query.Q, opts
 
 // Search aggregates search over every endpoint in Map.
 func (s *HorizontalSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
+	return AggregateStreamSearch(ctx, s.StreamSearch, q, opts)
+}
+
+// AggregateStreamSearch aggregates the stream events into a single batch
+// result.
+func AggregateStreamSearch(ctx context.Context, streamSearch func(context.Context, query.Q, *zoekt.SearchOptions) <-chan StreamSearchEvent, q query.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
 	start := time.Now()
 
 	aggregate := &zoekt.SearchResult{
@@ -81,7 +87,7 @@ func (s *HorizontalSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
-	events := s.StreamSearch(ctx, q, opts)
+	events := streamSearch(ctx, q, opts)
 	defer func() {
 		cancel()
 		// Drain events
