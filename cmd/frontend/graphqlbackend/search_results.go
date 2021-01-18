@@ -38,8 +38,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/progress"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -138,7 +138,7 @@ func dedupSort(repos *types.RepoNames) {
 // SearchResultsResolver is a resolver for the GraphQL type `SearchResults`
 type SearchResultsResolver struct {
 	SearchResults []SearchResultResolver
-	progress.SearchResultsCommon
+	streaming.SearchResultsCommon
 	alert *searchAlert
 	start time.Time // when the results started being computed
 
@@ -1661,21 +1661,21 @@ type aggregator struct {
 
 	mu       sync.Mutex
 	results  []SearchResultResolver
-	common   progress.SearchResultsCommon
+	common   streaming.SearchResultsCommon
 	multiErr *multierror.Error
 	// fileMatches is a map from git:// URI of the file to FileMatch resolver
 	// to merge multiple results of different types for the same file
 	fileMatches map[string]*FileMatchResolver
 }
 
-func (a *aggregator) get() ([]SearchResultResolver, progress.SearchResultsCommon, *multierror.Error) {
+func (a *aggregator) get() ([]SearchResultResolver, streaming.SearchResultsCommon, *multierror.Error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	return a.results, a.common, a.multiErr
 }
 
 // report sends results down resultChannel and collects the results.
-func (a *aggregator) report(ctx context.Context, results []SearchResultResolver, common *progress.SearchResultsCommon, err error) {
+func (a *aggregator) report(ctx context.Context, results []SearchResultResolver, common *streaming.SearchResultsCommon, err error) {
 	if a.resultChannel != nil {
 		a.resultChannel <- results
 	}
@@ -1685,7 +1685,7 @@ func (a *aggregator) report(ctx context.Context, results []SearchResultResolver,
 
 // collect the results. This doesn't send down resultChannel. Should only be
 // used by streaming supported backends.
-func (a *aggregator) collect(ctx context.Context, results []SearchResultResolver, common *progress.SearchResultsCommon, err error) {
+func (a *aggregator) collect(ctx context.Context, results []SearchResultResolver, common *streaming.SearchResultsCommon, err error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	// Timeouts are reported through SearchResultsCommon so don't report an error for them
@@ -1952,7 +1952,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			repos[repoRev.Repo.ID] = repoRev.Repo
 		}
 
-		agg.report(ctx, nil, &progress.SearchResultsCommon{
+		agg.report(ctx, nil, &streaming.SearchResultsCommon{
 			Repos:            repos,
 			ExcludedForks:    resolved.ExcludedRepos.Forks,
 			ExcludedArchived: resolved.ExcludedRepos.Archived,

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -175,12 +176,42 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	pr := resultsResolver.Progress()
+	pr := progressEvent(resultsResolver)
 	pr.Done = true
 	_ = eventWriter.Event("progress", pr)
 
 	// TODO done event includes progress
 	_ = eventWriter.Event("done", map[string]interface{}{})
+}
+
+func progressEvent(resultsResolver *graphqlbackend.SearchResultsResolver) api.Progress {
+	timedout := make([]api.Namer, 0, len(resultsResolver.Timedout()))
+	for _, r := range resultsResolver.Timedout() {
+		timedout = append(timedout, r)
+	}
+
+	missing := make([]api.Namer, 0, len(resultsResolver.Missing()))
+	for _, r := range resultsResolver.Timedout() {
+		missing = append(missing, r)
+	}
+
+	cloning := make([]api.Namer, 0, len(resultsResolver.Cloning()))
+	for _, r := range resultsResolver.Timedout() {
+		cloning = append(cloning, r)
+	}
+
+	pr := api.BuildProgressEvent(api.ProgressStats{
+		MatchCount:          int(resultsResolver.MatchCount()),
+		ElapsedMilliseconds: int(resultsResolver.ElapsedMilliseconds()),
+		RepositoriesCount:   int(resultsResolver.RepositoriesCount()),
+		ExcludedArchived:    resultsResolver.ExcludedArchived,
+		ExcludedForks:       resultsResolver.ExcludedForks,
+		Timedout:            timedout,
+		Missing:             missing,
+		LimitHit:            resultsResolver.IsLimitHit,
+		Cloning:             cloning,
+	})
+	return pr
 }
 
 type searchResolver interface {

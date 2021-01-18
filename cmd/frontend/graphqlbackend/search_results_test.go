@@ -21,9 +21,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
-	"github.com/sourcegraph/sourcegraph/internal/search/progress"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchquerytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -94,8 +94,8 @@ func TestSearchResults(t *testing.T) {
 		db.Mocks.Repos.MockGet(t, 1)
 		db.Mocks.Repos.Count = mockCount
 
-		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *progress.SearchResultsCommon, error) {
-			return nil, &progress.SearchResultsCommon{}, nil
+		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *streaming.SearchResultsCommon, error) {
+			return nil, &streaming.SearchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 
@@ -129,14 +129,14 @@ func TestSearchResults(t *testing.T) {
 		db.Mocks.Repos.Count = mockCount
 
 		calledSearchRepositories := false
-		mockSearchRepositories = func(args *search.TextParameters) ([]SearchResultResolver, *progress.SearchResultsCommon, error) {
+		mockSearchRepositories = func(args *search.TextParameters) ([]SearchResultResolver, *streaming.SearchResultsCommon, error) {
 			calledSearchRepositories = true
-			return nil, &progress.SearchResultsCommon{}, nil
+			return nil, &streaming.SearchResultsCommon{}, nil
 		}
 		defer func() { mockSearchRepositories = nil }()
 
 		calledSearchSymbols := false
-		mockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, common *progress.SearchResultsCommon, err error) {
+		mockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, common *streaming.SearchResultsCommon, err error) {
 			calledSearchSymbols = true
 			if want := `(foo\d).*?(bar\*)`; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
@@ -147,14 +147,14 @@ func TestSearchResults(t *testing.T) {
 		defer func() { mockSearchSymbols = nil }()
 
 		calledSearchFilesInRepos := atomic.NewBool(false)
-		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *progress.SearchResultsCommon, error) {
+		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *streaming.SearchResultsCommon, error) {
 			calledSearchFilesInRepos.Store(true)
 			if want := `(foo\d).*?(bar\*)`; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
 			}
 			repo := &types.RepoName{ID: 1, Name: "repo"}
 			fm := mkFileMatch(repo, "dir/file", 123)
-			return []*FileMatchResolver{fm}, &progress.SearchResultsCommon{}, nil
+			return []*FileMatchResolver{fm}, &streaming.SearchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 
@@ -194,14 +194,14 @@ func TestSearchResults(t *testing.T) {
 		db.Mocks.Repos.Count = mockCount
 
 		calledSearchRepositories := false
-		mockSearchRepositories = func(args *search.TextParameters) ([]SearchResultResolver, *progress.SearchResultsCommon, error) {
+		mockSearchRepositories = func(args *search.TextParameters) ([]SearchResultResolver, *streaming.SearchResultsCommon, error) {
 			calledSearchRepositories = true
-			return nil, &progress.SearchResultsCommon{}, nil
+			return nil, &streaming.SearchResultsCommon{}, nil
 		}
 		defer func() { mockSearchRepositories = nil }()
 
 		calledSearchSymbols := false
-		mockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, common *progress.SearchResultsCommon, err error) {
+		mockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, common *streaming.SearchResultsCommon, err error) {
 			calledSearchSymbols = true
 			if want := `"foo\\d \"bar*\""`; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
@@ -212,14 +212,14 @@ func TestSearchResults(t *testing.T) {
 		defer func() { mockSearchSymbols = nil }()
 
 		calledSearchFilesInRepos := atomic.NewBool(false)
-		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *progress.SearchResultsCommon, error) {
+		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *streaming.SearchResultsCommon, error) {
 			calledSearchFilesInRepos.Store(true)
 			if want := `foo\\d "bar\*"`; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
 			}
 			repo := &types.RepoName{ID: 1, Name: "repo"}
 			fm := mkFileMatch(repo, "dir/file", 123)
-			return []*FileMatchResolver{fm}, &progress.SearchResultsCommon{}, nil
+			return []*FileMatchResolver{fm}, &streaming.SearchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 
@@ -973,7 +973,7 @@ func TestCheckDiffCommitSearchLimits(t *testing.T) {
 func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 	type fields struct {
 		results             []SearchResultResolver
-		searchResultsCommon progress.SearchResultsCommon
+		searchResultsCommon streaming.SearchResultsCommon
 		alert               *searchAlert
 		start               time.Time
 	}
@@ -1000,7 +1000,7 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 			name: "file matches limit hit",
 			fields: fields{
 				results:             []SearchResultResolver{&FileMatchResolver{}},
-				searchResultsCommon: progress.SearchResultsCommon{IsLimitHit: true},
+				searchResultsCommon: streaming.SearchResultsCommon{IsLimitHit: true},
 			},
 			want: "1+",
 		},
@@ -1035,7 +1035,7 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 						},
 					},
 				},
-				searchResultsCommon: progress.SearchResultsCommon{IsLimitHit: true},
+				searchResultsCommon: streaming.SearchResultsCommon{IsLimitHit: true},
 			},
 			want: "2+",
 		},

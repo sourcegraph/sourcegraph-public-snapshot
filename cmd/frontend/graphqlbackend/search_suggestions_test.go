@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/progress"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -48,7 +48,7 @@ func TestSearchSuggestions(t *testing.T) {
 		}
 	}
 
-	mockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, common *progress.SearchResultsCommon, err error) {
+	mockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, common *streaming.SearchResultsCommon, err error) {
 		// TODO test symbol suggestions
 		return nil, nil, nil
 	}
@@ -104,7 +104,7 @@ func TestSearchSuggestions(t *testing.T) {
 		defer git.ResetMocks()
 
 		calledSearchFilesInRepos := atomic.NewBool(false)
-		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *progress.SearchResultsCommon, error) {
+		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *streaming.SearchResultsCommon, error) {
 			calledSearchFilesInRepos.Store(true)
 			if want := "foo"; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
@@ -112,7 +112,7 @@ func TestSearchSuggestions(t *testing.T) {
 			fm := mkFileMatch(&types.RepoName{Name: "repo"}, "dir/file")
 			fm.uri = "git://repo?rev#dir/file"
 			fm.CommitID = "rev"
-			return []*FileMatchResolver{fm}, &progress.SearchResultsCommon{}, nil
+			return []*FileMatchResolver{fm}, &streaming.SearchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 		for _, v := range searchVersions {
@@ -161,7 +161,7 @@ func TestSearchSuggestions(t *testing.T) {
 		backend.Mocks.Repos.MockResolveRev_NoCheck(t, api.CommitID("deadbeef"))
 
 		calledSearchFilesInRepos := atomic.NewBool(false)
-		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *progress.SearchResultsCommon, error) {
+		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *streaming.SearchResultsCommon, error) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledSearchFilesInRepos.Store(true)
@@ -178,7 +178,7 @@ func TestSearchSuggestions(t *testing.T) {
 				mk("repo3", "dir/foo-repo3-file-name-match"),
 				mk("repo1", "dir/foo-repo1-file-name-match"),
 				mk("repo", "dir/file-content-match"),
-			}, &progress.SearchResultsCommon{}, nil
+			}, &streaming.SearchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 
@@ -241,7 +241,7 @@ func TestSearchSuggestions(t *testing.T) {
 		defer func() { mockShowLangSuggestions = nil }()
 
 		calledSearchFilesInRepos := atomic.NewBool(false)
-		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *progress.SearchResultsCommon, error) {
+		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *streaming.SearchResultsCommon, error) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledSearchFilesInRepos.Store(true)
@@ -254,7 +254,7 @@ func TestSearchSuggestions(t *testing.T) {
 			}
 			return []*FileMatchResolver{
 				mkFileMatch(&types.RepoName{Name: "foo-repo"}, "dir/file"),
-			}, &progress.SearchResultsCommon{}, nil
+			}, &streaming.SearchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 
@@ -362,7 +362,7 @@ func TestSearchSuggestions(t *testing.T) {
 		defer func() { mockShowLangSuggestions = nil }()
 
 		calledSearchFilesInRepos := atomic.NewBool(false)
-		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *progress.SearchResultsCommon, error) {
+		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *streaming.SearchResultsCommon, error) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledSearchFilesInRepos.Store(true)
@@ -375,7 +375,7 @@ func TestSearchSuggestions(t *testing.T) {
 			}
 			return []*FileMatchResolver{
 				mkFileMatch(&types.RepoName{Name: "foo-repo"}, "dir/bar-file"),
-			}, &progress.SearchResultsCommon{}, nil
+			}, &streaming.SearchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 
