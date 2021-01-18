@@ -38,7 +38,7 @@ func TestSearchProgress(t *testing.T) {
 			Timedout:            []Namer{repo{"timedout-1"}},
 			Missing:             []Namer{repo{"missing-1"}, repo{"missing-2"}},
 			Cloning:             []Namer{repo{"cloning-1"}},
-			LimitHit:            false,
+			LimitHit:            true,
 		},
 	}
 
