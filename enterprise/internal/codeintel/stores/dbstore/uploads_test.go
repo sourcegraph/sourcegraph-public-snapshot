@@ -619,3 +619,70 @@ func TestHardDeleteUploadByID(t *testing.T) {
 		t.Fatalf("unexpected record")
 	}
 }
+
+func TestSoftDeleteOldUploads(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	store := testStore()
+
+	t1 := time.Unix(1587396557, 0).UTC()
+	t2 := t1.Add(time.Minute)
+	t3 := t1.Add(time.Minute * 4)
+	t4 := t1.Add(time.Minute * 6)
+
+	insertUploads(t, dbconn.Global,
+		Upload{ID: 1, State: "completed", FinishedAt: &t1},
+		Upload{ID: 2, State: "completed", FinishedAt: &t2}, // visible
+		Upload{ID: 3, State: "errored", FinishedAt: &t2},
+		Upload{ID: 4, State: "completed", FinishedAt: &t3}, // visible
+		Upload{ID: 5, State: "completed", FinishedAt: &t3},
+		Upload{ID: 6, State: "completed", FinishedAt: &t4}, // too new
+		Upload{ID: 7, State: "errored", FinishedAt: &t4},   // too new
+		Upload{ID: 8, State: "uploaded", UploadedAt: t3},
+		Upload{ID: 9, State: "uploaded", UploadedAt: t4}, // too new
+	)
+	insertVisibleAtTip(t, dbconn.Global, 50, 2, 4)
+
+	if count, err := store.SoftDeleteOldUploads(context.Background(), time.Minute, t1.Add(time.Minute*6)); err != nil {
+		t.Fatalf("unexpected error pruning uploads: %s", err)
+	} else if count != 4 {
+		t.Fatalf("unexpected number of uploads deleted: want=%d have=%d", 4, count)
+	}
+
+	expectedStates := map[int]string{
+		1: "deleted",
+		2: "completed",
+		3: "deleted",
+		4: "completed",
+		5: "deleted",
+		6: "completed",
+		7: "errored",
+		8: "deleted",
+		9: "uploaded",
+	}
+
+	// Ensure record was deleted
+	if states, err := getStates(1, 2, 3, 4, 5, 6, 7, 8, 9); err != nil {
+		t.Fatalf("unexpected error getting states: %s", err)
+	} else if diff := cmp.Diff(expectedStates, states); diff != "" {
+		t.Errorf("unexpected upload (-want +got):\n%s", diff)
+	}
+
+	// Ensure repository was marked as dirty
+	repositoryIDs, err := store.DirtyRepositories(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error listing dirty repositories: %s", err)
+	}
+
+	var keys []int
+	for repositoryID := range repositoryIDs {
+		keys = append(keys, repositoryID)
+	}
+	sort.Ints(keys)
+
+	if len(keys) != 1 || keys[0] != 50 {
+		t.Errorf("expected repository to be marked dirty")
+	}
+}

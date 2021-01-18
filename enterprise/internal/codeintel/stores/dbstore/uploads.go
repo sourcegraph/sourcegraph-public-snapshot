@@ -3,6 +3,7 @@ package dbstore
 import (
 	"context"
 	"database/sql"
+	"strconv"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -502,4 +503,52 @@ func (s *Store) HardDeleteUploadByID(ctx context.Context, ids ...int) (err error
 const hardDeleteUploadByIDQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:HardDeleteUploadByID
 DELETE FROM lsif_uploads WHERE id IN (%s)
+`
+
+// SoftDeleteOldUploads marks uploads older than the given age that are not visible at the tip of the default branch
+// as deleted. The associated repositories will be marked as dirty so that their commit graphs are updated in the
+// background.
+func (s *Store) SoftDeleteOldUploads(ctx context.Context, maxAge time.Duration, now time.Time) (count int, err error) {
+	ctx, endObservation := s.operations.softDeleteOldUploads.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("maxAge", maxAge.String()),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	tx, err := s.transact(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	seconds := strconv.Itoa(int(maxAge / time.Second))
+	repositoryIDs, err := scanCounts(tx.Store.Query(ctx, sqlf.Sprintf(softDeleteOldUploadsQuery, now, seconds, now, seconds)))
+	if err != nil {
+		return 0, err
+	}
+
+	for repositoryID, numUpdated := range repositoryIDs {
+		if err := tx.MarkRepositoryAsDirty(ctx, repositoryID); err != nil {
+			return 0, err
+		}
+
+		count += numUpdated
+	}
+
+	return count, nil
+}
+
+const softDeleteOldUploadsQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:SoftDeleteOldUploads
+WITH u AS (
+	UPDATE lsif_uploads u
+		SET state = 'deleted'
+		WHERE
+			(
+				%s - u.finished_at > (%s || ' second')::interval OR
+				(u.finished_at IS NULL AND %s - u.uploaded_at > (%s || ' second')::interval)
+			) AND
+				u.id NOT IN (SELECT uv.upload_id FROM lsif_uploads_visible_at_tip uv WHERE uv.repository_id = u.repository_id)
+		RETURNING id, repository_id
+)
+SELECT u.repository_id, count(*) FROM u GROUP BY u.repository_id
 `
