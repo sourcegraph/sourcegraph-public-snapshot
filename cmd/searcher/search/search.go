@@ -15,14 +15,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strconv"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
@@ -213,23 +212,23 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 			Zoekt: search.Indexed(),
 		}
 
-		u, err := uuid.NewRandom()
-		if err != nil {
-			return nil, false, false, err
-		}
-		path := filepath.Join(s.Store.Path, fmt.Sprintf("%s.zip", u))
-
 		zoektMatches, limitHit, _, err := zoektSearch(ctx, args, repoBranches, time.Since, nil)
 		if err != nil {
 			return nil, false, false, err
 		}
 
-		if err = writeZip(path, zoektMatches); err != nil {
+		zipFile, err := ioutil.TempFile("", "*.zip")
+		if err != nil {
 			return nil, false, false, err
 		}
-		defer os.Remove(path)
+		defer zipFile.Close()
+		defer os.Remove(zipFile.Name())
 
-		matches, limitHit, err := structuralSearch(ctx, path, p.Pattern, p.CombyRule, p.Languages, nil, p.Repo)
+		if err = writeZip(zipFile, zoektMatches); err != nil {
+			return nil, false, false, err
+		}
+
+		matches, limitHit, err := structuralSearch(ctx, zipFile.Name(), p.Pattern, p.CombyRule, p.Languages, nil, p.Repo)
 		return matches, limitHit, false, err
 	}
 

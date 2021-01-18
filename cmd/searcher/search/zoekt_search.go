@@ -4,7 +4,6 @@ import (
 	"archive/zip"
 	"context"
 	"errors"
-	"fmt"
 	"os"
 	"regexp/syntax"
 	"time"
@@ -202,22 +201,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repoBranches 
 	return resp.Files, limitHit, partial, nil
 }
 
-func writeZip(path string, fileMatches []zoekt.FileMatch) (err error) {
-	f, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-
-	defer func() {
-		if err != nil {
-			rmErr := os.Remove(path)
-			if rmErr != nil {
-				err = fmt.Errorf("error1: %s, error2: %s", err, rmErr)
-			}
-		}
-	}()
-	defer f.Close()
-
+func writeZip(f *os.File, fileMatches []zoekt.FileMatch) (err error) {
 	zw := zip.NewWriter(f)
 	defer zw.Close()
 
