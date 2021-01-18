@@ -18,7 +18,7 @@ import phabricatorSchemaJSON from '../../../../../schema/phabricator.schema.json
 import { PhabricatorIcon } from '../../../../shared/src/components/icons'
 import { EditorAction } from '../../site-admin/configHelpers'
 import { ExternalServiceKind } from '../../graphql-operations'
-import PerforceIcon from './PerforceIcon'
+import { PerforceIcon } from '../PerforceIcon'
 
 /**
  * Metadata associated with adding a given external service.
