@@ -137,7 +137,7 @@ func (h *UploadHandler) handleEnqueueErr(w http.ResponseWriter, r *http.Request,
 		Root:              sanitizeRoot(getQuery(r, "root")),
 		RepositoryID:      repositoryID,
 		Indexer:           getQuery(r, "indexerName"),
-		AssociatedIndexID: getQueryInt(r, "associatedIndexID"),
+		AssociatedIndexID: getQueryInt(r, "associatedIndexId"),
 	}
 
 	if !hasQuery(r, "multiPart") && !hasQuery(r, "uploadId") {
