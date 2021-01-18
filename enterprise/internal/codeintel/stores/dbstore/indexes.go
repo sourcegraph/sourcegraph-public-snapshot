@@ -3,6 +3,7 @@ package dbstore
 import (
 	"context"
 	"database/sql"
+	"strconv"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -425,7 +426,7 @@ func (s *Store) DeleteOldIndexes(ctx context.Context, maxAge time.Duration, now 
 	}
 	defer func() { err = tx.Done(err) }()
 
-	repositoryIDs, err := scanCounts(tx.Store.Query(ctx, sqlf.Sprintf(deleteOldIndexesQuery, now, maxAge/time.Second)))
+	repositoryIDs, err := scanCounts(tx.Store.Query(ctx, sqlf.Sprintf(deleteOldIndexesQuery, now, strconv.Itoa(int(maxAge/time.Second)))))
 	if err != nil {
 		return 0, err
 	}

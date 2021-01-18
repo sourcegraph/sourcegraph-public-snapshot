@@ -3,6 +3,7 @@ package dbstore
 import (
 	"context"
 	"database/sql"
+	"strconv"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -519,7 +520,7 @@ func (s *Store) SoftDeleteOldUploads(ctx context.Context, maxAge time.Duration, 
 	}
 	defer func() { err = tx.Done(err) }()
 
-	seconds := maxAge / time.Second
+	seconds := strconv.Itoa(int(maxAge / time.Second))
 	repositoryIDs, err := scanCounts(tx.Store.Query(ctx, sqlf.Sprintf(softDeleteOldUploadsQuery, now, seconds, now, seconds)))
 	if err != nil {
 		return 0, err
