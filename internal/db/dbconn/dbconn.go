@@ -73,14 +73,6 @@ func New(dataSource, dbNameSuffix string) (*sql.DB, error) {
 // Prefer to call New as it also configures a connection pool and metrics.
 // Use this method only in internal utilities (such as schemadoc).
 func NewRaw(dataSource string) (*sql.DB, error) {
-	// Force PostgreSQL session timezone to UTC.
-	if v, ok := os.LookupEnv("PGTZ"); ok && v != "UTC" && v != "utc" {
-		log15.Warn("Ignoring PGTZ environment variable; using PGTZ=UTC.", "ignoredPGTZ", v)
-	}
-	if err := os.Setenv("PGTZ", "UTC"); err != nil {
-		return nil, errors.Wrap(err, "Error setting PGTZ=UTC")
-	}
-
 	cfg, err := buildConfig(dataSource)
 	if err != nil {
 		return nil, err
