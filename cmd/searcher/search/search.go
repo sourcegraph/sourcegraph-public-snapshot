@@ -133,6 +133,8 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(&resp)
 }
 
+const maxFileMatchLimit = 100
+
 func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []protocol.FileMatch, limitHit, deadlineHit bool, err error) {
 	tr := nettrace.New("search", fmt.Sprintf("%s@%s", p.Repo, p.Commit))
 	tr.LazyPrintf("%s", p.Pattern)
@@ -192,6 +194,13 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 	}(time.Now())
 
 	if p.IsStructuralPat && p.CombyRule == `where "zoekt" == "zoekt"` {
+
+		// Since we are returning file content, limit the number of file matches until streaming from Zoekt is implemented
+		fileMatchLimit := p.FileMatchLimit
+		if fileMatchLimit > maxFileMatchLimit {
+			fileMatchLimit = maxFileMatchLimit
+		}
+
 		repoBranches := map[string][]string{string(p.Repo): {"HEAD"}}
 		args := &search.TextParameters{
 			PatternInfo: &search.TextPatternInfo{
