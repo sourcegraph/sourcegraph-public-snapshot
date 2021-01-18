@@ -211,7 +211,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 				CombyRule:                    p.CombyRule,
 				IsWordMatch:                  p.IsWordMatch,
 				IsCaseSensitive:              p.IsCaseSensitive,
-				FileMatchLimit:               int32(p.FileMatchLimit),
+				FileMatchLimit:               int32(fileMatchLimit),
 				ExcludePattern:               p.ExcludePattern,
 				PathPatternsAreCaseSensitive: p.PathPatternsAreCaseSensitive,
 				PatternMatchesContent:        p.PatternMatchesContent,
