@@ -151,7 +151,13 @@ func (s *Store) UpdatePackageReferences(ctx context.Context, references []lsifst
 
 	inserter := batch.NewBatchInserter(ctx, s.Store.Handle().DB(), "lsif_references", "dump_id", "scheme", "name", "version", "filter")
 	for _, r := range references {
-		if err := inserter.Insert(ctx, r.DumpID, r.Scheme, r.Name, r.Version, r.Filter); err != nil {
+		filter := r.Filter
+		// avoid not null constraint
+		if r.Filter == nil {
+			filter = []byte{}
+		}
+
+		if err := inserter.Insert(ctx, r.DumpID, r.Scheme, r.Name, r.Version, filter); err != nil {
 			return err
 		}
 	}
