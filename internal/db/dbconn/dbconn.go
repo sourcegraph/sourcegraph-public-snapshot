@@ -121,6 +121,12 @@ func buildConfig(dataSource string) (*pgx.ConnConfig, error) {
 		cfg.RuntimeParams = make(map[string]string)
 	}
 
+	// pgx doesn't support dbname so we emulate it
+	if dbname, ok := cfg.RuntimeParams["dbname"]; ok {
+		cfg.Database = dbname
+		delete(cfg.RuntimeParams, "dbname")
+	}
+
 	// pgx doesn't support fallback_application_name so we emulate it
 	// by checking if application_name is set and setting a default
 	// value if not.

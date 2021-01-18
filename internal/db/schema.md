@@ -1432,6 +1432,8 @@ Indexes:
  repo_id           | integer | 
  campaign_spec_id  | bigint  | 
  owner_campaign_id | bigint  | 
+ repo_name         | citext  | 
+ changeset_name    | text    | 
 
 ```
 
@@ -1570,6 +1572,8 @@ Indexes:
  changeset_id      | bigint  | 
  repo_id           | integer | 
  campaign_spec_id  | bigint  | 
+ repo_name         | citext  | 
+ changeset_name    | text    | 
 
 ```
 

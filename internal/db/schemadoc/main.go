@@ -154,29 +154,19 @@ func startDocker() (commandPrefix []string, shutdown func(), _ error) {
 }
 
 func generateInternal(databaseName, dataSource string, run runFunc) (string, error) {
-	conn, err := dbconn.NewRaw(dataSource)
+	db, err := dbconn.NewRaw(dataSource)
 	if err != nil {
 		return "", errors.Wrap(err, "NewRaw")
-	}
-	defer func() {
-		if err := conn.Close(); err != nil {
-			log.Fatal(err)
-		}
-	}()
-
-	if err := dbconn.MigrateDB(conn, databaseName); err != nil {
-		return "", errors.Wrap(err, "MigrateDB")
-	}
-
-	db, err := dbconn.Open(dataSource)
-	if err != nil {
-		return "", errors.Wrap(err, "Open")
 	}
 	defer func() {
 		if err := db.Close(); err != nil {
 			log.Fatal(err)
 		}
 	}()
+
+	if err := dbconn.MigrateDB(db, databaseName); err != nil {
+		return "", errors.Wrap(err, "MigrateDB")
+	}
 
 	tables, err := getTables(db)
 	if err != nil {
