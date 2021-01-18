@@ -158,6 +158,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                 history={history}
                 location={location}
                 totalCountSummaryComponent={TotalCountSummary}
+                inputClassName="user-settings-repos__filter-input"
             />
         )
     }
