@@ -3,6 +3,7 @@ package dbstore
 import (
 	"context"
 	"database/sql"
+	"strconv"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -410,4 +411,38 @@ deleted_uploads AS (
 	RETURNING u.id, u.repository_id
 )
 SELECT d.repository_id, COUNT(*) FROM deleted_uploads d GROUP BY d.repository_id
+`
+
+// DeleteOldIndexes deletes indexes older than the given age.
+func (s *Store) DeleteOldIndexes(ctx context.Context, maxAge time.Duration, now time.Time) (count int, err error) {
+	ctx, endObservation := s.operations.deleteOldIndexes.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("maxAge", maxAge.String()),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	tx, err := s.transact(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	repositoryIDs, err := scanCounts(tx.Store.Query(ctx, sqlf.Sprintf(deleteOldIndexesQuery, now, strconv.Itoa(int(maxAge/time.Second)))))
+	if err != nil {
+		return 0, err
+	}
+
+	for _, numUpdated := range repositoryIDs {
+		count += numUpdated
+	}
+
+	return count, nil
+}
+
+const deleteOldIndexesQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/indexes.go:DeleteOldIndexes
+WITH deleted_indexes AS (
+	DELETE FROM lsif_indexes u WHERE %s - u.queued_at > (%s || ' second')::interval
+	RETURNING u.id, u.repository_id
+)
+SELECT d.repository_id, COUNT(*) FROM deleted_indexes d GROUP BY d.repository_id
 `

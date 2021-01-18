@@ -37,17 +37,24 @@ func (e *RecordExpirer) Handle(ctx context.Context) error {
 	}
 	defer func() { err = tx.Done(err) }()
 
-	count, err := tx.SoftDeleteOldDumps(ctx, e.ttl, time.Now())
+	count, err := tx.SoftDeleteOldUploads(ctx, e.ttl, time.Now())
 	if err != nil {
-		return errors.Wrap(err, "SoftDeleteOldDumps")
+		return errors.Wrap(err, "SoftDeleteOldUploads")
 	}
 	if count > 0 {
-		log15.Debug("Deleted old dump records", "count", count)
+		log15.Debug("Deleted old upload records", "count", count)
 		e.metrics.numUploadRecordsRemoved.Add(float64(count))
 	}
 
-	// TODO (efritz)- expire old upload (non-dump) records
-	// TODO (efritz)- expire old index records
+	count, err = tx.DeleteOldIndexes(ctx, e.ttl, time.Now())
+	if err != nil {
+		return errors.Wrap(err, "DeleteOldIndexes")
+	}
+	if count > 0 {
+		log15.Debug("Deleted old index records", "count", count)
+		e.metrics.numIndexRecordsRemoved.Add(float64(count))
+	}
+
 	return nil
 }
 
