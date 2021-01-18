@@ -23,7 +23,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -85,17 +84,6 @@ func NewRaw(dataSource string) (*sql.DB, error) {
 	return db, nil
 }
 
-func MigrateDB(db *sql.DB, databaseName string) error {
-	m, err := dbutil.NewMigrate(db, databaseName)
-	if err != nil {
-		return err
-	}
-	if err := dbutil.DoMigrate(m); err != nil {
-		return errors.Wrap(err, "Failed to migrate the DB. Please contact support@sourcegraph.com for further assistance")
-	}
-	return nil
-}
-
 var startupTimeout = func() time.Duration {
 	str := env.Get("DB_STARTUP_TIMEOUT", "10s", "keep trying for this long to connect to PostgreSQL database before failing")
 	d, err := time.ParseDuration(str)
@@ -155,6 +143,7 @@ func buildConfig(dataSource string) (*pgx.ConnConfig, error) {
 			return nil, errors.Wrap(err, "Error setting TZ=''")
 		}
 	}
+
 	return cfg, nil
 }
 
@@ -219,6 +208,16 @@ func open(cfg *pgx.ConnConfig) (*sql.DB, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "postgresql open")
 	}
+
+	// Set max open and idle connections
+	maxOpen, _ := strconv.Atoi(cfg.RuntimeParams["max_conns"])
+	if maxOpen == 0 {
+		maxOpen = 30
+	}
+	db.SetMaxOpenConns(maxOpen)
+	db.SetMaxIdleConns(maxOpen)
+	db.SetConnMaxLifetime(time.Minute)
+
 	return db, nil
 }
 

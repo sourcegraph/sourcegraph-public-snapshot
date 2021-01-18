@@ -6,7 +6,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
 func TestMigrations(t *testing.T) {
@@ -18,14 +17,14 @@ func TestMigrations(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 
 	migrate := func() {
-		for _, databaseName := range dbutil.DatabaseNames {
+		for _, databaseName := range dbconn.DatabaseNames {
 			if err := dbconn.MigrateDB(dbconn.Global, databaseName); err != nil {
 				t.Errorf("error running initial migrations: %s", err)
 			}
 		}
 	}
 
-	for _, databaseName := range dbutil.DatabaseNames {
+	for _, databaseName := range dbconn.DatabaseNames {
 		t.Run(databaseName, func(t *testing.T) {
 			// Dropping a squash schema _all_ the way down just drops the entire public
 			// schema. Because we have a "combined" database that runs migrations for
@@ -34,7 +33,7 @@ func TestMigrations(t *testing.T) {
 			// migrations, so we prep our tests by re-migrating up on each iteration.
 			migrate()
 
-			m, err := dbutil.NewMigrate(dbconn.Global, databaseName)
+			m, err := dbconn.NewMigrate(dbconn.Global, databaseName)
 			if err != nil {
 				t.Errorf("error constructing migrations: %s", err)
 			}
@@ -42,7 +41,7 @@ func TestMigrations(t *testing.T) {
 			if err := m.Down(); err != nil {
 				t.Errorf("error running down migrations: %s", err)
 			}
-			if err := dbutil.DoMigrate(m); err != nil {
+			if err := dbconn.DoMigrate(m); err != nil {
 				t.Errorf("error running up migrations: %s", err)
 			}
 		})

@@ -13,9 +13,11 @@ import (
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
@@ -285,7 +287,7 @@ func deleteEverything() {
 	ctx := context.Background()
 
 	dsn := dbutil.PostgresDSN("", "sourcegraph", os.Getenv)
-	db, err := dbutil.NewDB(dsn, "campaigns-reconciler")
+	db, err := dbconn.New(dsn, "campaigns-reconciler")
 	if err != nil {
 		log.Fatalf("failed to initialize db store: %v", err)
 	}
