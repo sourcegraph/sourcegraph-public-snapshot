@@ -25,8 +25,6 @@ import { InsightsNavItem } from '../insights/InsightsNavLink'
 import { CodeMonitoringNavItem } from '../enterprise/code-monitoring/CodeMonitoringNavItem'
 import { AuthenticatedUser } from '../auth'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
-import { ExtensionsNavItem } from '../extensions/ExtensionsNavItem'
-
 interface Props
     extends SettingsCascadeProps<Settings>,
         KeyboardShortcutsProps,
@@ -84,11 +82,6 @@ export class NavLinks extends React.PureComponent<Props> {
                             <CodeMonitoringNavItem />
                         </li>
                     )}
-                {!this.props.minimalNavLinks && (
-                    <li className="nav-item">
-                        <ExtensionsNavItem />
-                    </li>
-                )}
                 {!this.props.minimalNavLinks && this.props.showCampaigns && (
                     <li className="nav-item">
                         <CampaignsNavItem />
