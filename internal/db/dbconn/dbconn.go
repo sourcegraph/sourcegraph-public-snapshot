@@ -9,7 +9,6 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"net"
 	"os"
 	"strconv"
 	"strings"
@@ -18,12 +17,10 @@ import (
 
 	"github.com/gchaincl/sqlhooks"
 	"github.com/inconshreveable/log15"
-	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/stdlib"
+	"github.com/lib/pq"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -35,17 +32,14 @@ var (
 	// Only use this after a call to SetupGlobalConnection.
 	Global *sql.DB
 
-	defaultDataSource      = env.Get("PGDATASOURCE", "", "Default dataSource to pass to Postgres. See https://pkg.go.dev/github.com/jackc/pgx for more information.")
+	defaultDataSource      = env.Get("PGDATASOURCE", "", "Default dataSource to pass to Postgres. See https://godoc.org/github.com/lib/pq for more information.")
 	defaultApplicationName = env.Get("PGAPPLICATIONNAME", "sourcegraph", "The value of application_name appended to dataSource")
-	// Ensure all time instances have their timezones set to UTC.
-	// https://github.com/golang/go/blob/7eb31d999cf2769deb0e7bdcafc30e18f52ceb48/src/time/zoneinfo_unix.go#L29-L34
-	_ = env.Ensure("TZ", "UTC", "timezone used by time instances")
 )
 
 // SetupGlobalConnection connects to the given data source and stores the handle
 // globally.
 //
-// Note: github.com/jackc/pgx parses the environment as well. This function will
+// Note: github.com/lib/pq parses the environment as well. This function will
 // also use the value of PGDATASOURCE if supplied and dataSource is the empty
 // string.
 func SetupGlobalConnection(dataSource string) (err error) {
@@ -55,16 +49,21 @@ func SetupGlobalConnection(dataSource string) (err error) {
 
 // New connects to the given data source and returns the handle.
 //
-// Note: github.com/jackc/pgx parses the environment as well. This function will
+// Note: github.com/lib/pq parses the environment as well. This function will
 // also use the value of PGDATASOURCE if supplied and dataSource is the empty
 // string.
 func New(dataSource, dbNameSuffix string) (*sql.DB, error) {
-	cfg, err := buildConfig(dataSource)
-	if err != nil {
-		return nil, err
+	// Force PostgreSQL session timezone to UTC.
+	if v, ok := os.LookupEnv("PGTZ"); ok && v != "UTC" && v != "utc" {
+		log15.Warn("Ignoring PGTZ environment variable; using PGTZ=UTC.", "ignoredPGTZ", v)
+	}
+	if err := os.Setenv("PGTZ", "UTC"); err != nil {
+		return nil, errors.Wrap(err, "Error setting PGTZ=UTC")
 	}
 
-	db, err := openDBWithStartupWait(cfg)
+	connectionString := buildConnectionString(dataSource)
+
+	db, err := openDBWithStartupWait(connectionString)
 	if err != nil {
 		return nil, errors.Wrap(err, "DB not available")
 	}
@@ -93,61 +92,33 @@ var startupTimeout = func() time.Duration {
 	return d
 }()
 
-// buildConfig takes either a Postgres connection string or connection URI,
-// parses it, and returns a config with additional parameters.
-func buildConfig(dataSource string) (*pgx.ConnConfig, error) {
+// buildConnectionString takes either a Postgres connection string or connection URI,
+// normalizes it, and returns a connection string with parameters appended.
+func buildConnectionString(dataSource string) string {
 	if dataSource == "" {
 		dataSource = defaultDataSource
 	}
 
-	cfg, err := pgx.ParseConfig(dataSource)
+	connectionString, err := pq.ParseURL(dataSource)
 	if err != nil {
-		return nil, err
+		// Assume dataSource is either malformed or a connection string rather than a URI.
+		connectionString = dataSource
 	}
 
-	if cfg.RuntimeParams == nil {
-		cfg.RuntimeParams = make(map[string]string)
+	if strings.Contains(connectionString, "fallback_application_name") {
+		return connectionString
 	}
-
-	// pgx doesn't support fallback_application_name so we emulate it
-	// by checking if application_name is set and setting a default
-	// value if not.
-	if _, ok := cfg.RuntimeParams["application_name"]; !ok {
-		cfg.RuntimeParams["application_name"] = defaultApplicationName
-	}
-
-	// Force PostgreSQL session timezone to UTC.
-	// pgx doesn't support the PGTZ environment variable, we need to pass
-	// that information in the configuration instead.
-	tz := "UTC"
-	if v, ok := os.LookupEnv("PGTZ"); ok && v != "UTC" && v != "utc" {
-		log15.Warn("Ignoring PGTZ environment variable; using PGTZ=UTC.", "ignoredPGTZ", v)
-	}
-	// We set the environment variable to PGTZ to avoid bad surprises if and when
-	// it will be supported by the driver.
-	if err := os.Setenv("PGTZ", "UTC"); err != nil {
-		return nil, errors.Wrap(err, "Error setting PGTZ=UTC")
-	}
-	cfg.RuntimeParams["timezone"] = tz
-
-	// Ensure the TZ environment variable is set so that times are parsed correctly.
-	if _, ok := os.LookupEnv("TZ"); !ok {
-		log15.Warn("TZ environment variable not defined; using TZ=''.")
-		if err := os.Setenv("TZ", ""); err != nil {
-			return nil, errors.Wrap(err, "Error setting TZ=''")
-		}
-	}
-	return cfg, nil
+	return fmt.Sprintf("%s fallback_application_name=%s", connectionString, defaultApplicationName)
 }
 
-func openDBWithStartupWait(cfg *pgx.ConnConfig) (db *sql.DB, err error) {
+func openDBWithStartupWait(dataSource string) (db *sql.DB, err error) {
 	// Allow the DB to take up to 10s while it reports "pq: the database system is starting up".
 	startupDeadline := time.Now().Add(startupTimeout)
 	for {
 		if time.Now().After(startupDeadline) {
 			return nil, fmt.Errorf("database did not start up within %s (%v)", startupTimeout, err)
 		}
-		db, err = open(cfg)
+		db, err = Open(dataSource)
 		if err == nil {
 			err = db.Ping()
 		}
@@ -162,14 +133,16 @@ func openDBWithStartupWait(cfg *pgx.ConnConfig) (db *sql.DB, err error) {
 // isDatabaseLikelyStartingUp returns whether the err likely just means the PostgreSQL database is
 // starting up, and it should not be treated as a fatal error during program initialization.
 func isDatabaseLikelyStartingUp(err error) bool {
-	if strings.Contains(err.Error(), "pq: the database system is starting up") {
+	msg := err.Error()
+	if strings.Contains(msg, "the database system is starting up") {
 		// Wait for DB to start up.
 		return true
 	}
-	if e, ok := errors.Cause(err).(net.Error); ok && strings.Contains(e.Error(), "connection refused") {
+	if strings.Contains(msg, "connection refused") || strings.Contains(msg, "failed to receive message") {
 		// Wait for DB to start listening.
 		return true
 	}
+
 	return false
 }
 
@@ -181,21 +154,10 @@ var registerOnce sync.Once
 //
 // Open assumes that the database already exists.
 func Open(dataSource string) (*sql.DB, error) {
-	cfg, err := pgx.ParseConfig(dataSource)
-	if err != nil {
-		return nil, err
-	}
-
-	return open(cfg)
-}
-
-func open(cfg *pgx.ConnConfig) (*sql.DB, error) {
-	cfgKey := stdlib.RegisterConnConfig(cfg)
-
 	registerOnce.Do(func() {
-		sql.Register("postgres-proxy", sqlhooks.Wrap(stdlib.GetDefaultDriver(), &hook{}))
+		sql.Register("postgres-proxy", sqlhooks.Wrap(&pq.Driver{}, &hook{}))
 	})
-	db, err := sql.Open("postgres-proxy", cfgKey)
+	db, err := sql.Open("postgres-proxy", dataSource)
 	if err != nil {
 		return nil, errors.Wrap(err, "postgresql open")
 	}

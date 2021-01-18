@@ -94,6 +94,11 @@ type changesetApplyPreviewConnectionStatsResolver struct {
 	reopen       int32
 	sleep        int32
 	detach       int32
+	unpublished  int32
+
+	added    int32
+	modified int32
+	removed  int32
 }
 
 func (r *changesetApplyPreviewConnectionStatsResolver) Push() int32 {
@@ -129,6 +134,15 @@ func (r *changesetApplyPreviewConnectionStatsResolver) Sleep() int32 {
 func (r *changesetApplyPreviewConnectionStatsResolver) Detach() int32 {
 	return r.detach
 }
+func (r *changesetApplyPreviewConnectionStatsResolver) Added() int32 {
+	return r.added
+}
+func (r *changesetApplyPreviewConnectionStatsResolver) Modified() int32 {
+	return r.modified
+}
+func (r *changesetApplyPreviewConnectionStatsResolver) Removed() int32 {
+	return r.removed
+}
 
 var _ graphqlbackend.ChangesetApplyPreviewConnectionStatsResolver = &changesetApplyPreviewConnectionStatsResolver{}
 
@@ -144,6 +158,7 @@ func (r *changesetApplyPreviewConnectionResolver) Stats(ctx context.Context) (gr
 			store:             r.store,
 			mapping:           mapping,
 			preloadedCampaign: campaign,
+			campaignSpecID:    r.campaignSpecID,
 		}
 		var ops []campaigns.ReconcilerOperation
 		if _, ok := res.ToHiddenChangesetApplyPreview(); ok {
@@ -158,6 +173,18 @@ func (r *changesetApplyPreviewConnectionResolver) Stats(ctx context.Context) (gr
 		ops, err = visRes.Operations(ctx)
 		if err != nil {
 			return nil, err
+		}
+		targets := visRes.Targets()
+		if _, ok := targets.ToVisibleApplyPreviewTargetsAttach(); ok {
+			stats.added++
+		}
+		if _, ok := targets.ToVisibleApplyPreviewTargetsUpdate(); ok {
+			if len(ops) > 0 {
+				stats.modified++
+			}
+		}
+		if _, ok := targets.ToVisibleApplyPreviewTargetsDetach(); ok {
+			stats.removed++
 		}
 		for _, op := range ops {
 			switch op {
@@ -221,8 +248,13 @@ func (r *changesetApplyPreviewConnectionResolver) compute(ctx context.Context) (
 		allOpts := store.GetRewirerMappingsOpts{
 			CampaignSpecID: opts.CampaignSpecID,
 			CampaignID:     opts.CampaignID,
+			TextSearch:     opts.TextSearch,
 		}
 		r.allMappings, r.err = r.store.GetRewirerMappings(ctx, allOpts)
+		if r.err != nil {
+			return
+		}
+		r.err = r.allMappings.Hydrate(ctx, r.store)
 		if r.err != nil {
 			return
 		}

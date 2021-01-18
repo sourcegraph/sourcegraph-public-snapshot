@@ -146,5 +146,8 @@ func Prometheus() *monitoring.Container {
 				},
 			},
 		},
+
+		// This is third-party service
+		NoSourcegraphDebugServer: true,
 	}
 }

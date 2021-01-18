@@ -283,7 +283,7 @@ func fileMatchURI(name api.RepoName, ref, path string) string {
 	return b.String()
 }
 
-var mockSearchFilesInRepos func(args *search.TextParameters) ([]*FileMatchResolver, *searchResultsCommon, error)
+var mockSearchFilesInRepos func(args *search.TextParameters) ([]*FileMatchResolver, *SearchResultsCommon, error)
 
 func fileMatchResultsToSearchResults(results []*FileMatchResolver) []SearchResultResolver {
 	results2 := make([]SearchResultResolver, len(results))
@@ -295,7 +295,7 @@ func fileMatchResultsToSearchResults(results []*FileMatchResolver) []SearchResul
 
 // searchFilesInRepos searches a set of repos for a pattern.
 // For c != nil searchFilesInRepos will send results down c.
-func searchFilesInRepos(ctx context.Context, args *search.TextParameters, c chan<- []SearchResultResolver) (res []*FileMatchResolver, common *searchResultsCommon, finalErr error) {
+func searchFilesInRepos(ctx context.Context, args *search.TextParameters, c chan<- []SearchResultResolver) (res []*FileMatchResolver, common *SearchResultsCommon, finalErr error) {
 	if mockSearchFilesInRepos != nil {
 		return mockSearchFilesInRepos(args)
 	}
@@ -314,7 +314,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, c chan
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	common = &searchResultsCommon{}
+	common = &SearchResultsCommon{}
 
 	indexedTyp := textRequest
 	if args.PatternInfo.IsStructuralPat {
@@ -357,7 +357,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, c chan
 	if indexed.DisableUnindexedSearch {
 		tr.LazyPrintf("disabling unindexed search")
 		for _, r := range indexed.Unindexed {
-			common.status.Update(r.Repo.ID, search.RepoStatusMissing)
+			common.Status.Update(r.Repo.ID, search.RepoStatusMissing)
 		}
 	} else {
 		// Limit the number of unindexed repositories searched for a single
@@ -368,7 +368,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, c chan
 		if len(missing) > 0 {
 			tr.LazyPrintf("limiting unindexed repos searched to %d", maxUnindexedRepoRevSearchesPerQuery)
 			for _, r := range missing {
-				common.status.Update(r.ID, search.RepoStatusMissing)
+				common.Status.Update(r.ID, search.RepoStatusMissing)
 			}
 		}
 	}
@@ -386,7 +386,6 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, c chan
 	// addMatches assumes the caller holds mu.
 	addMatches := func(matches []*FileMatchResolver) {
 		if len(matches) > 0 {
-			common.resultCount += int32(len(matches))
 			sort.Slice(matches, func(i, j int) bool {
 				a, b := matches[i].uri, matches[j].uri
 				return a > b
@@ -406,7 +405,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, c chan
 			if flattenedSize > int(args.PatternInfo.FileMatchLimit) {
 				tr.LazyPrintf("cancel due to result size: %d > %d", flattenedSize, args.PatternInfo.FileMatchLimit)
 				overLimitCanceled = true
-				common.limitHit = true
+				common.IsLimitHit = true
 				cancel()
 			}
 		}

@@ -7,6 +7,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
+
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -54,7 +55,7 @@ func (api *CodeIntelAPI) definitionsRaw(ctx context.Context, dump store.Dump, pa
 		return resolveLocationsWithDump(dump, locations), nil
 	}
 
-	rangeMonikers, err := api.lsifStore.MonikersByPosition(context.Background(), dump.ID, pathInBundle, line, character)
+	rangeMonikers, err := api.lsifStore.MonikersByPosition(ctx, dump.ID, pathInBundle, line, character)
 	if err != nil {
 		if err == lsifstore.ErrNotFound {
 			log15.Warn("Bundle does not exist")
@@ -66,7 +67,7 @@ func (api *CodeIntelAPI) definitionsRaw(ctx context.Context, dump store.Dump, pa
 	for _, monikers := range rangeMonikers {
 		for _, moniker := range monikers {
 			if moniker.Kind == "import" {
-				locations, _, err := lookupMoniker(api.dbStore, api.lsifStore, dump.ID, pathInBundle, "definitions", moniker, 0, DefintionMonikersLimit)
+				locations, _, err := lookupMoniker(ctx, api.dbStore, api.lsifStore, api.gitserverClient, dump.ID, pathInBundle, "definitions", moniker, 0, DefintionMonikersLimit)
 				if err != nil {
 					return nil, err
 				}
@@ -78,7 +79,7 @@ func (api *CodeIntelAPI) definitionsRaw(ctx context.Context, dump store.Dump, pa
 				// of our own bundle in case there was a definition that wasn't properly attached
 				// to a result set but did have the correct monikers attached.
 
-				locations, _, err := api.lsifStore.MonikerResults(context.Background(), dump.ID, "definitions", moniker.Scheme, moniker.Identifier, 0, DefintionMonikersLimit)
+				locations, _, err := api.lsifStore.MonikerResults(ctx, dump.ID, "definitions", moniker.Scheme, moniker.Identifier, 0, DefintionMonikersLimit)
 				if err != nil {
 					if err == lsifstore.ErrNotFound {
 						log15.Warn("Bundle does not exist")

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/opentracing/opentracing-go/log"
+
 	codeintelapi "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/api"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
@@ -252,7 +253,7 @@ func (r *queryResolver) References(ctx context.Context, line, character, limit i
 			continue
 		}
 
-		cursor, err := codeintelapi.DecodeOrCreateCursor(adjustedPath, adjustedPosition.Line, adjustedPosition.Character, r.uploads[i].ID, rawCursor, r.dbStore, r.lsifStore)
+		cursor, err := codeintelapi.DecodeOrCreateCursor(ctx, adjustedPath, adjustedPosition.Line, adjustedPosition.Character, r.uploads[i].ID, rawCursor, r.dbStore, r.lsifStore)
 		if err != nil {
 			return nil, "", err
 		}

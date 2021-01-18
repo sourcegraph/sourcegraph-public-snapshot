@@ -554,6 +554,23 @@ describe('Campaigns', () => {
                                       },
                             supersedingCampaignSpec: null,
                             viewerCanAdminister: true,
+                            applyPreview: {
+                                stats: {
+                                    close: 10,
+                                    detach: 10,
+                                    import: 10,
+                                    publish: 10,
+                                    publishDraft: 10,
+                                    push: 10,
+                                    reopen: 10,
+                                    undraft: 10,
+                                    update: 10,
+
+                                    added: 5,
+                                    modified: 10,
+                                    removed: 3,
+                                },
+                            },
                             viewerCampaignsCodeHosts: {
                                 totalCount: 0,
                                 nodes: [],

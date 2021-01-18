@@ -5,6 +5,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/db/batch"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -19,30 +20,33 @@ func (s *Store) GetPackage(ctx context.Context, scheme, name, version string) (_
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return scanFirstDump(s.Store.Query(ctx, sqlf.Sprintf(`
-		SELECT
-			d.id,
-			d.commit,
-			d.root,
-			EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip where repository_id = d.repository_id and upload_id = d.id) AS visible_at_tip,
-			d.uploaded_at,
-			d.state,
-			d.failure_message,
-			d.started_at,
-			d.finished_at,
-			d.process_after,
-			d.num_resets,
-			d.num_failures,
-			d.repository_id,
-			d.repository_name,
-			d.indexer
-		FROM lsif_packages p
-		JOIN lsif_dumps_with_repository_name d ON d.id = p.dump_id
-		WHERE p.scheme = %s AND p.name = %s AND p.version = %s
-		ORDER BY d.uploaded_at DESC
-		LIMIT 1
-	`, scheme, name, version)))
+	return scanFirstDump(s.Store.Query(ctx, sqlf.Sprintf(getPackageQuery, scheme, name, version)))
 }
+
+const getPackageQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/packages.go:GetPackage
+SELECT
+	d.id,
+	d.commit,
+	d.root,
+	EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip where repository_id = d.repository_id and upload_id = d.id) AS visible_at_tip,
+	d.uploaded_at,
+	d.state,
+	d.failure_message,
+	d.started_at,
+	d.finished_at,
+	d.process_after,
+	d.num_resets,
+	d.num_failures,
+	d.repository_id,
+	d.repository_name,
+	d.indexer
+FROM lsif_packages p
+JOIN lsif_dumps_with_repository_name d ON d.id = p.dump_id
+WHERE p.scheme = %s AND p.name = %s AND p.version = %s
+ORDER BY d.uploaded_at DESC
+LIMIT 1
+`
 
 // UpdatePackages upserts package data tied to the given upload.
 func (s *Store) UpdatePackages(ctx context.Context, packages []lsifstore.Package) (err error) {

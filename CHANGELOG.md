@@ -15,6 +15,24 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+-
+
+### Changed
+
+-
+
+### Fixed
+
+-
+
+### Removed
+
+-
+
+## 3.24.0
+
+### Added
+
 - Panels in the [Sourcegraph monitoring dashboards](https://docs.sourcegraph.com/admin/observability/metrics#grafana) now:
   - include links to relevant alerts documentation and the new [monitoring dashboards reference](https://docs.sourcegraph.com/admin/observability/dashboards). [#16939](https://github.com/sourcegraph/sourcegraph/pull/16939)
   - include alert events and version changes annotations that can be enabled from the top of each service dashboard. [#17198](https://github.com/sourcegraph/sourcegraph/pull/17198)
@@ -27,6 +45,7 @@ All notable changes to Sourcegraph are documented in this file.
   - link to a time frame relevant to the alert, instead of just the past few hours. [#17034](https://github.com/sourcegraph/sourcegraph/pull/17034)
 - Added `serviceKind` field of the `ExternalServiceKind` type to `Repository.externalURLs` GraphQL API, `serviceType` field is deprecated and will be removed in the future releases. [#14979](https://github.com/sourcegraph/sourcegraph/issues/14979)
 - Deprecated the GraphQL fields `SearchResults.repositoriesSearched` and `SearchResults.indexedRepositoriesSearched`.
+- The minimum Kubernetes version required to use the [Kubernetes deployment option](https://docs.sourcegraph.com/admin/install/kubernetes) is now [v1.15 (released June 2019)](https://kubernetes.io/blog/2019/06/19/kubernetes-1-15-release-announcement/).
 
 ### Fixed
 
@@ -42,6 +61,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed queries like `(type:commit or type:diff)` so that if the query matches both the commit message and the diff, both are returned as results. [#16899](https://github.com/sourcegraph/sourcegraph/issues/16899)
 - Fixed container monitoring and provisioning dashboard panels not displaying metrics in certain deployment types and environments. If you continue to have issues with these panels not displaying any metrics after upgrading, please [open an issue](https://github.com/sourcegraph/sourcegraph/issues/new).
 - Fixed a nonexistent field in site configuration being marked as "required" when configuring PagerDuty alert notifications. [#17277](https://github.com/sourcegraph/sourcegraph/pull/17277)
+- Fixed cases of incorrect highlighting for symbol definitions in the definitions panel. [#17258](https://github.com/sourcegraph/sourcegraph/pull/17258)
 
 ### Removed
 

@@ -11,7 +11,6 @@ import (
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 
@@ -23,7 +22,6 @@ import (
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -203,7 +201,7 @@ func (s *indexedSearchRequest) Repos() map[string]*search.RepositoryRevisions {
 type streamFunc func(context.Context, *search.TextParameters, *indexedRepoRevs, indexedRequestType, func(t time.Time) time.Duration) <-chan zoektSearchStreamEvent
 
 type indexedSearchEvent struct {
-	common  searchResultsCommon
+	common  SearchResultsCommon
 	results []*FileMatchResolver
 	err     error
 }
@@ -240,7 +238,7 @@ func (s *indexedSearchRequest) doSearch(ctx context.Context, c chan<- indexedSea
 		zoektStream = zoektSearchHEADOnlyFilesStream
 	default:
 		err := fmt.Errorf("unexpected indexedSearchRequest type: %q", s.typ)
-		c <- indexedSearchEvent{common: searchResultsCommon{}, results: nil, err: err}
+		c <- indexedSearchEvent{common: SearchResultsCommon{}, results: nil, err: err}
 		return
 	}
 
@@ -267,12 +265,12 @@ func (s *indexedSearchRequest) doSearch(ctx context.Context, c chan<- indexedSea
 
 		if err == errNoResultsInTimeout {
 			err = nil
-			c <- indexedSearchEvent{common: searchResultsCommon{status: mkStatusMap(search.RepoStatusTimedout | search.RepoStatusIndexed)}}
+			c <- indexedSearchEvent{common: SearchResultsCommon{Status: mkStatusMap(search.RepoStatusTimedout | search.RepoStatusIndexed)}}
 			return
 		}
 
 		if err != nil {
-			c <- indexedSearchEvent{common: searchResultsCommon{}, results: nil, err: err}
+			c <- indexedSearchEvent{common: SearchResultsCommon{}, results: nil, err: err}
 			return
 		}
 
@@ -294,9 +292,9 @@ func (s *indexedSearchRequest) doSearch(ctx context.Context, c chan<- indexedSea
 		}
 
 		c <- indexedSearchEvent{
-			common: searchResultsCommon{
-				status:   statusMap,
-				limitHit: event.limitHit,
+			common: SearchResultsCommon{
+				Status:     statusMap,
+				IsLimitHit: event.limitHit,
 			},
 			results: event.fm,
 			err:     nil,
@@ -305,81 +303,7 @@ func (s *indexedSearchRequest) doSearch(ctx context.Context, c chan<- indexedSea
 
 	// Successfully searched everything. Communicate every indexed repo was
 	// searched in case it didn't have a result.
-	c <- indexedSearchEvent{common: searchResultsCommon{status: mkStatusMap(search.RepoStatusSearched | search.RepoStatusIndexed)}}
-}
-
-func zoektResultCountFactor(numRepos int, fileMatchLimit int32, globalSearch bool) (k int) {
-	if globalSearch {
-		// for globalSearch, numRepos = 0, but effectively we are searching over all
-		// indexed repos, hence k should be 1
-		k = 1
-	} else {
-		// If we're only searching a small number of repositories, return more
-		// comprehensive results. This is arbitrary.
-		switch {
-		case numRepos <= 5:
-			k = 100
-		case numRepos <= 10:
-			k = 10
-		case numRepos <= 25:
-			k = 8
-		case numRepos <= 50:
-			k = 5
-		case numRepos <= 100:
-			k = 3
-		case numRepos <= 500:
-			k = 2
-		default:
-			k = 1
-		}
-	}
-	if fileMatchLimit > defaultMaxSearchResults {
-		k = int(float64(k) * 3 * float64(fileMatchLimit) / float64(defaultMaxSearchResults))
-	}
-	return k
-}
-
-func getSpanContext(ctx context.Context) (shouldTrace bool, spanContext map[string]string) {
-	if !ot.ShouldTrace(ctx) {
-		return false, nil
-	}
-
-	spanContext = make(map[string]string)
-	if err := ot.GetTracer(ctx).Inject(opentracing.SpanFromContext(ctx).Context(), opentracing.TextMap, opentracing.TextMapCarrier(spanContext)); err != nil {
-		log15.Warn("Error injecting span context into map: %s", err)
-		return true, nil
-	}
-	return true, spanContext
-}
-
-func zoektSearchOpts(ctx context.Context, k int, query *search.TextPatternInfo) zoekt.SearchOptions {
-	shouldTrace, spanContext := getSpanContext(ctx)
-	searchOpts := zoekt.SearchOptions{
-		Trace:                  shouldTrace,
-		SpanContext:            spanContext,
-		MaxWallTime:            defaultTimeout,
-		ShardMaxMatchCount:     100 * k,
-		TotalMaxMatchCount:     100 * k,
-		ShardMaxImportantMatch: 15 * k,
-		TotalMaxImportantMatch: 25 * k,
-		MaxDocDisplayCount:     2 * defaultMaxSearchResults,
-	}
-
-	// We want zoekt to return more than FileMatchLimit results since we use
-	// the extra results to populate reposLimitHit. Additionally the defaults
-	// are very low, so we always want to return at least 2000.
-	if query.FileMatchLimit > defaultMaxSearchResults {
-		searchOpts.MaxDocDisplayCount = 2 * int(query.FileMatchLimit)
-	}
-	if searchOpts.MaxDocDisplayCount < 2000 {
-		searchOpts.MaxDocDisplayCount = 2000
-	}
-
-	if userProbablyWantsToWaitLonger := query.FileMatchLimit > defaultMaxSearchResults; userProbablyWantsToWaitLonger {
-		searchOpts.MaxWallTime *= time.Duration(3 * float64(query.FileMatchLimit) / float64(defaultMaxSearchResults))
-	}
-
-	return searchOpts
+	c <- indexedSearchEvent{common: SearchResultsCommon{Status: mkStatusMap(search.RepoStatusSearched | search.RepoStatusIndexed)}}
 }
 
 var errNoResultsInTimeout = errors.New("no results found in specified timeout")
@@ -440,8 +364,8 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 		finalQuery = zoektquery.NewAnd(&zoektquery.RepoBranches{Set: repos.repoBranches}, queryExceptRepos)
 	}
 
-	k := zoektResultCountFactor(len(repos.repoBranches), args.PatternInfo.FileMatchLimit, args.Mode == search.ZoektGlobalSearch)
-	searchOpts := zoektSearchOpts(ctx, k, args.PatternInfo)
+	k := zoektutil.ResultCountFactor(len(repos.repoBranches), args.PatternInfo.FileMatchLimit, args.Mode == search.ZoektGlobalSearch)
+	searchOpts := zoektutil.SearchOpts(ctx, k, args.PatternInfo)
 
 	if deadline, ok := ctx.Deadline(); ok {
 		// If the user manually specified a timeout, allow zoekt to use all of the remaining timeout.
@@ -507,7 +431,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 		}
 	}
 
-	limitHit, files, partial := zoektLimitMatches(limitHit, int(args.PatternInfo.FileMatchLimit), resp.Files, getRepoInputRev)
+	limitHit, files, partial := zoektutil.LimitMatches(limitHit, int(args.PatternInfo.FileMatchLimit), resp.Files, getRepoInputRev)
 	resp.Files = files
 
 	matches := make([]*FileMatchResolver, 0, len(resp.Files))
@@ -560,48 +484,6 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 	return matches, limitHit, partial, nil
 }
 
-// zoektLimitMatches is the logic which limits files based on
-// limit. Additionally it calculates the set of repos with partial
-// results. This information is not returned by zoekt, so if zoekt indicates a
-// limit has been hit, we include all repos in partial.
-func zoektLimitMatches(limitHit bool, limit int, files []zoekt.FileMatch, getRepoInputRev func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool)) (bool, []zoekt.FileMatch, map[api.RepoID]struct{}) {
-	var resultFiles []zoekt.FileMatch
-	var partialFiles []zoekt.FileMatch
-
-	resultFiles = files
-	if limitHit {
-		partialFiles = files
-	}
-
-	if len(files) > limit {
-		resultFiles = files[:limit]
-		if !limitHit {
-			limitHit = true
-			partialFiles = files[limit:]
-		}
-	}
-
-	if len(partialFiles) == 0 {
-		return limitHit, resultFiles, nil
-	}
-
-	partial := make(map[api.RepoID]struct{})
-	last := ""
-	for _, file := range partialFiles {
-		// PERF: skip lookup if it is the same repo as the last result
-		if file.Repository == last {
-			continue
-		}
-		last = file.Repository
-
-		if repo, _, ok := getRepoInputRev(&file); ok {
-			partial[repo.ID] = struct{}{}
-		}
-	}
-
-	return limitHit, resultFiles, partial
-}
-
 func zoektFileMatchToLineMatches(maxLineFragmentMatches int, file *zoekt.FileMatch) ([]*lineMatch, int) {
 	var matchCount int
 	lines := make([]*lineMatch, 0, len(file.LineMatches))
@@ -629,6 +511,38 @@ func zoektFileMatchToLineMatches(maxLineFragmentMatches int, file *zoekt.FileMat
 	}
 
 	return lines, matchCount
+}
+
+func escape(s string) string {
+	isSpecial := func(c rune) bool {
+		switch c {
+		case '\\', '/':
+			return true
+		default:
+			return false
+		}
+	}
+
+	// Avoid extra work by counting additions. regexp.QuoteMeta does the same,
+	// but is more efficient since it does it via bytes.
+	count := 0
+	for _, c := range s {
+		if isSpecial(c) {
+			count++
+		}
+	}
+	if count == 0 {
+		return string(s)
+	}
+
+	escaped := make([]rune, 0, len(s)+count)
+	for _, c := range s {
+		if isSpecial(c) {
+			escaped = append(escaped, '\\')
+		}
+		escaped = append(escaped, c)
+	}
+	return string(escaped)
 }
 
 func zoektFileMatchToSymbolResults(repo *RepositoryResolver, inputRev string, file *zoekt.FileMatch) []*searchSymbolResult {
@@ -662,6 +576,11 @@ func zoektFileMatchToSymbolResults(repo *RepositoryResolver, inputRev string, fi
 					ParentKind: m.SymbolInfo.ParentKind,
 					Path:       file.FileName,
 					Line:       l.LineNumber,
+					// symbolRange requires a Pattern /^...$/ containing the line of the symbol to compute the symbol's offsets.
+					// This Pattern is directly accessible on the unindexed code path. But on the indexed code path, we need to
+					// populate it, or we will always compute a 0 offset, which messes up API use (e.g., highlighting).
+					// It must escape `/` or `\` in the line.
+					Pattern: fmt.Sprintf("/^%s$/", escape(string(l.Line))),
 				},
 				lang:    lang,
 				baseURI: baseURI,

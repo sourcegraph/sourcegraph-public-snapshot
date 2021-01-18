@@ -377,7 +377,7 @@ func TestStoreRequeue(t *testing.T) {
 	if state != "queued" {
 		t.Errorf("unexpected state. want=%q have=%q", "queued", state)
 	}
-	if processAfter == nil || !processAfter.Equal(after) {
+	if processAfter == nil || *processAfter != after {
 		t.Errorf("unexpected process after. want=%s have=%s", after, processAfter)
 	}
 }

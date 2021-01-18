@@ -99,7 +99,7 @@ func InitDB() error {
 		// it's missing, we run the migrations and try to update the version again.
 
 		err := backend.UpdateServiceVersion(ctx, "frontend", version.Version())
-		if err != nil && !dbutil.IsPostgresError(err, "42P01") {
+		if err != nil && !dbutil.IsPostgresError(err, "undefined_table") {
 			return err
 		}
 
@@ -198,8 +198,6 @@ func Main(enterpriseSetupHook func() enterprise.Services) error {
 	globals.WatchExternalURL(defaultExternalURL(nginxAddr, httpAddr))
 	globals.WatchPermissionsUserMapping()
 
-	goroutine.Go(func() { bg.MigrateAllSettingsMOTDToNotices(context.Background()) })
-	goroutine.Go(func() { bg.MigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(context.Background()) })
 	goroutine.Go(func() { bg.CheckRedisCacheEvictionPolicy() })
 	goroutine.Go(func() { bg.DeleteOldCacheDataInRedis() })
 	goroutine.Go(func() { bg.DeleteOldEventLogsInPostgres(context.Background()) })

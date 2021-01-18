@@ -64,27 +64,29 @@ func (s *Store) SameRepoPager(ctx context.Context, repositoryID int, commit, sch
 		sqlf.Sprintf("r.dump_id IN (%s)", makeVisibleUploadsQuery(repositoryID, commit)),
 	}
 
-	totalCount, _, err := basestore.ScanFirstInt(tx.Store.Query(
-		ctx,
-		sqlf.Sprintf(`SELECT COUNT(*) FROM lsif_references r WHERE %s`, sqlf.Join(conds, " AND ")),
-	))
+	totalCount, _, err := basestore.ScanFirstInt(tx.Store.Query(ctx, sqlf.Sprintf(sameRepoPagerCountQuery, sqlf.Join(conds, " AND "))))
 	if err != nil {
 		return 0, nil, tx.Done(err)
 	}
 
 	pageFromOffset := func(ctx context.Context, offset int) ([]lsifstore.PackageReference, error) {
-		return scanPackageReferences(tx.Store.Query(
-			ctx,
-			sqlf.Sprintf(`
-				SELECT d.id, r.scheme, r.name, r.version, r.filter FROM lsif_references r
-				LEFT JOIN lsif_dumps_with_repository_name d ON d.id = r.dump_id
-				WHERE %s ORDER BY d.root LIMIT %d OFFSET %d
-			`, sqlf.Join(conds, " AND "), limit, offset),
-		))
+		return scanPackageReferences(tx.Store.Query(ctx, sqlf.Sprintf(sameRepoPagerQuery, sqlf.Join(conds, " AND "), limit, offset)))
 	}
 
 	return totalCount, newReferencePager(pageFromOffset, tx.Done), nil
 }
+
+const sameRepoPagerCountQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/references.go:SameRepoPager
+SELECT COUNT(*) FROM lsif_references r WHERE %s
+`
+
+const sameRepoPagerQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/references.go:SameRepoPager
+SELECT d.id, r.scheme, r.name, r.version, r.filter FROM lsif_references r
+LEFT JOIN lsif_dumps_with_repository_name d ON d.id = r.dump_id
+WHERE %s ORDER BY d.root LIMIT %d OFFSET %d
+`
 
 // PackageReferencePager returns a ReferencePager for dumps that belong to a remote repository (distinct from the given repository id)
 // and reference the package with the given scheme, name, and version. All resulting dumps are visible at the tip of their repository's
@@ -112,28 +114,31 @@ func (s *Store) PackageReferencePager(ctx context.Context, scheme, name, version
 		sqlf.Sprintf("EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip WHERE repository_id = d.repository_id AND upload_id = d.id)"),
 	}
 
-	totalCount, _, err := basestore.ScanFirstInt(tx.Store.Query(
-		ctx,
-		sqlf.Sprintf(`
-			SELECT COUNT(*) FROM lsif_references r
-			LEFT JOIN lsif_dumps_with_repository_name d ON d.id = r.dump_id
-			WHERE %s
-		`, sqlf.Join(conds, " AND ")),
-	))
+	totalCount, _, err := basestore.ScanFirstInt(tx.Store.Query(ctx, sqlf.Sprintf(packageReferencePagerCountQuery, sqlf.Join(conds, " AND "))))
 	if err != nil {
 		return 0, nil, tx.Done(err)
 	}
 
 	pageFromOffset := func(ctx context.Context, offset int) ([]lsifstore.PackageReference, error) {
-		return scanPackageReferences(tx.Store.Query(ctx, sqlf.Sprintf(`
-			SELECT d.id, r.scheme, r.name, r.version, r.filter FROM lsif_references r
-			LEFT JOIN lsif_dumps_with_repository_name d ON d.id = r.dump_id
-			WHERE %s ORDER BY d.repository_id, d.root LIMIT %d OFFSET %d
-		`, sqlf.Join(conds, " AND "), limit, offset)))
+		return scanPackageReferences(tx.Store.Query(ctx, sqlf.Sprintf(packageReferencePagerQuery, sqlf.Join(conds, " AND "), limit, offset)))
 	}
 
 	return totalCount, newReferencePager(pageFromOffset, tx.Done), nil
 }
+
+const packageReferencePagerCountQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/references.go:PackageReferencePager
+SELECT COUNT(*) FROM lsif_references r
+LEFT JOIN lsif_dumps_with_repository_name d ON d.id = r.dump_id
+WHERE %s
+`
+
+const packageReferencePagerQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/references.go:PackageReferencePager
+SELECT d.id, r.scheme, r.name, r.version, r.filter FROM lsif_references r
+LEFT JOIN lsif_dumps_with_repository_name d ON d.id = r.dump_id
+WHERE %s ORDER BY d.repository_id, d.root LIMIT %d OFFSET %d
+`
 
 // UpdatePackageReferences inserts reference data tied to the given upload.
 func (s *Store) UpdatePackageReferences(ctx context.Context, references []lsifstore.PackageReference) (err error) {
@@ -146,12 +151,7 @@ func (s *Store) UpdatePackageReferences(ctx context.Context, references []lsifst
 
 	inserter := batch.NewBatchInserter(ctx, s.Store.Handle().DB(), "lsif_references", "dump_id", "scheme", "name", "version", "filter")
 	for _, r := range references {
-		filter := r.Filter
-		// avoid not null constraint
-		if r.Filter == nil {
-			filter = []byte{}
-		}
-		if err := inserter.Insert(ctx, r.DumpID, r.Scheme, r.Name, r.Version, filter); err != nil {
+		if err := inserter.Insert(ctx, r.DumpID, r.Scheme, r.Name, r.Version, r.Filter); err != nil {
 			return err
 		}
 	}

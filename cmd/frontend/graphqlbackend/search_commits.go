@@ -525,7 +525,7 @@ type searchCommitsInReposParameters struct {
 	ResultChannel chan<- []SearchResultResolver
 }
 
-func searchCommitsInRepos(ctx context.Context, args *search.TextParametersForCommitParameters, params searchCommitsInReposParameters) ([]SearchResultResolver, *searchResultsCommon, error) {
+func searchCommitsInRepos(ctx context.Context, args *search.TextParametersForCommitParameters, params searchCommitsInReposParameters) ([]SearchResultResolver, *SearchResultsCommon, error) {
 	var err error
 	tr, ctx := trace.New(ctx, params.TraceName, fmt.Sprintf("query: %+v, numRepoRevs: %d", args.PatternInfo, len(args.Repos)))
 	defer func() {
@@ -559,7 +559,7 @@ func searchCommitsInRepos(ctx context.Context, args *search.TextParametersForCom
 		wg          sync.WaitGroup
 		mu          sync.Mutex
 		unflattened [][]*CommitSearchResultResolver
-		common      = &searchResultsCommon{}
+		common      = &SearchResultsCommon{}
 	)
 	for _, repoRev := range args.Repos {
 		// Skip the repo if no revisions were resolved for it
@@ -606,7 +606,7 @@ func searchCommitsInRepos(ctx context.Context, args *search.TextParametersForCom
 }
 
 // searchCommitDiffsInRepos searches a set of repos for matching commit diffs.
-func searchCommitDiffsInRepos(ctx context.Context, args *search.TextParametersForCommitParameters, resultChannel chan<- []SearchResultResolver) ([]SearchResultResolver, *searchResultsCommon, error) {
+func searchCommitDiffsInRepos(ctx context.Context, args *search.TextParametersForCommitParameters, resultChannel chan<- []SearchResultResolver) ([]SearchResultResolver, *SearchResultsCommon, error) {
 	return searchCommitsInRepos(ctx, args, searchCommitsInReposParameters{
 		TraceName:     "searchCommitDiffsInRepos",
 		ErrorName:     "diffs",
@@ -620,7 +620,7 @@ func searchCommitDiffsInRepos(ctx context.Context, args *search.TextParametersFo
 }
 
 // searchCommitLogInRepos searches a set of repos for matching commits.
-func searchCommitLogInRepos(ctx context.Context, args *search.TextParametersForCommitParameters, resultChannel chan<- []SearchResultResolver) ([]SearchResultResolver, *searchResultsCommon, error) {
+func searchCommitLogInRepos(ctx context.Context, args *search.TextParametersForCommitParameters, resultChannel chan<- []SearchResultResolver) ([]SearchResultResolver, *SearchResultsCommon, error) {
 	var terms []string
 	if args.PatternInfo.Pattern != "" {
 		terms = append(terms, args.PatternInfo.Pattern)

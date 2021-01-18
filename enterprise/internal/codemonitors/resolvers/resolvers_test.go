@@ -58,8 +58,8 @@ func TestCreateCodeMonitor(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if diff := cmp.Diff(want, got.(*monitor).Monitor); diff != "" {
-		t.Error(diff)
+	if !reflect.DeepEqual(want, got.(*monitor).Monitor) {
+		t.Fatalf("\ngot:\t %+v,\nwant:\t %+v", got.(*monitor).Monitor, want)
 	}
 
 	// Toggle field enabled from true to false.

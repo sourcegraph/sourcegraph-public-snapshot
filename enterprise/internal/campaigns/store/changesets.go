@@ -6,7 +6,6 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
@@ -227,7 +226,7 @@ func countChangesetsQuery(opts *CountChangesetsOpts) *sqlf.Query {
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
 	}
 	if opts.CampaignID != 0 {
-		preds = append(preds, sqlf.Sprintf("changesets.campaign_ids ? %s", strconv.Itoa(int(opts.CampaignID))))
+		preds = append(preds, sqlf.Sprintf("changesets.campaign_ids ? %s", opts.CampaignID))
 	}
 
 	if opts.ExternalState != nil {
@@ -266,6 +265,8 @@ type GetChangesetOpts struct {
 	ExternalID          string
 	ExternalServiceType string
 	ExternalBranch      string
+	ReconcilerState     campaigns.ReconcilerState
+	PublicationState    campaigns.ChangesetPublicationState
 }
 
 // GetChangeset gets a changeset matching the given options.
@@ -313,6 +314,12 @@ func getChangesetQuery(opts *GetChangesetOpts) *sqlf.Query {
 	}
 	if opts.ExternalBranch != "" {
 		preds = append(preds, sqlf.Sprintf("changesets.external_branch = %s", opts.ExternalBranch))
+	}
+	if opts.ReconcilerState != "" {
+		preds = append(preds, sqlf.Sprintf("changesets.reconciler_state = %s", opts.ReconcilerState.ToDB()))
+	}
+	if opts.PublicationState != "" {
+		preds = append(preds, sqlf.Sprintf("changesets.publication_state = %s", opts.PublicationState))
 	}
 
 	return sqlf.Sprintf(
@@ -456,7 +463,7 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 	}
 
 	if opts.CampaignID != 0 {
-		preds = append(preds, sqlf.Sprintf("changesets.campaign_ids ? %s", strconv.Itoa(int(opts.CampaignID))))
+		preds = append(preds, sqlf.Sprintf("changesets.campaign_ids ? %s", opts.CampaignID))
 	}
 
 	if len(opts.IDs) > 0 {
@@ -849,7 +856,7 @@ func getChangesetsStatsQuery(opts GetChangesetsStatsOpts) *sqlf.Query {
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
 	}
 	if opts.CampaignID != 0 {
-		preds = append(preds, sqlf.Sprintf("changesets.campaign_ids ? %s", strconv.Itoa(int(opts.CampaignID))))
+		preds = append(preds, sqlf.Sprintf("changesets.campaign_ids ? %s", opts.CampaignID))
 	}
 	return sqlf.Sprintf(getChangesetStatsFmtstr, sqlf.Join(preds, " AND "))
 }

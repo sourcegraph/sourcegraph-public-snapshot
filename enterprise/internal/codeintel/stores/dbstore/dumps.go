@@ -3,7 +3,6 @@ package dbstore
 import (
 	"context"
 	"database/sql"
-	"strconv"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -88,26 +87,29 @@ func (s *Store) GetDumpByID(ctx context.Context, id int) (_ Dump, _ bool, err er
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return scanFirstDump(s.Store.Query(ctx, sqlf.Sprintf(`
-		SELECT
-			d.id,
-			d.commit,
-			d.root,
-			`+visibleAtTipFragment+` AS visible_at_tip,
-			d.uploaded_at,
-			d.state,
-			d.failure_message,
-			d.started_at,
-			d.finished_at,
-			d.process_after,
-			d.num_resets,
-			d.num_failures,
-			d.repository_id,
-			d.repository_name,
-			d.indexer
-		FROM lsif_dumps_with_repository_name d WHERE d.id = %s
-	`, id)))
+	return scanFirstDump(s.Store.Query(ctx, sqlf.Sprintf(getDumpByIDQuery, id)))
 }
+
+const getDumpByIDQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/dumps.go:GetDumpByID
+SELECT
+	d.id,
+	d.commit,
+	d.root,
+	` + visibleAtTipFragment + ` AS visible_at_tip,
+	d.uploaded_at,
+	d.state,
+	d.failure_message,
+	d.started_at,
+	d.finished_at,
+	d.process_after,
+	d.num_resets,
+	d.num_failures,
+	d.repository_id,
+	d.repository_name,
+	d.indexer
+FROM lsif_dumps_with_repository_name d WHERE d.id = %s
+`
 
 const visibleAtTipFragment = `EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip WHERE repository_id = d.repository_id AND upload_id = d.id)`
 
@@ -145,33 +147,32 @@ func (s *Store) FindClosestDumps(ctx context.Context, repositoryID int, commit, 
 	}()
 
 	conds := makeFindClosestDumpConditions(path, rootMustEnclosePath, indexer)
-
-	return scanDumps(s.Store.Query(
-		ctx,
-		sqlf.Sprintf(`
-			WITH visible_uploads AS (%s)
-			SELECT
-				d.id,
-				d.commit,
-				d.root,
-				`+visibleAtTipFragment+` AS visible_at_tip,
-				d.uploaded_at,
-				d.state,
-				d.failure_message,
-				d.started_at,
-				d.finished_at,
-				d.process_after,
-				d.num_resets,
-				d.num_failures,
-				d.repository_id,
-				d.repository_name,
-				d.indexer
-			FROM visible_uploads vu
-			JOIN lsif_dumps_with_repository_name d ON d.id = vu.upload_id
-			WHERE %s
-		`, makeVisibleUploadsQuery(repositoryID, commit), sqlf.Join(conds, " AND ")),
-	))
+	return scanDumps(s.Store.Query(ctx, sqlf.Sprintf(findClosestDumpsQuery, makeVisibleUploadsQuery(repositoryID, commit), sqlf.Join(conds, " AND "))))
 }
+
+const findClosestDumpsQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/dumps.go:FindClosestDumps
+WITH visible_uploads AS (%s)
+SELECT
+	d.id,
+	d.commit,
+	d.root,
+	` + visibleAtTipFragment + ` AS visible_at_tip,
+	d.uploaded_at,
+	d.state,
+	d.failure_message,
+	d.started_at,
+	d.finished_at,
+	d.process_after,
+	d.num_resets,
+	d.num_failures,
+	d.repository_id,
+	d.repository_name,
+	d.indexer
+FROM visible_uploads vu
+JOIN lsif_dumps_with_repository_name d ON d.id = vu.upload_id
+WHERE %s
+`
 
 // FindClosestDumpsFromGraphFragment returns the set of dumps that can most accurately answer queries for the given repository, commit,
 // path, and optional indexer by only considering the given fragment of the full git graph. See FindClosestDumps for additional details.
@@ -201,16 +202,10 @@ func (s *Store) FindClosestDumpsFromGraphFragment(ctx context.Context, repositor
 		commits = append(commits, commit)
 	}
 
-	commitGraphView, err := scanCommitGraphView(s.Store.Query(ctx, sqlf.Sprintf(`
-		WITH visible_uploads AS (%s)
-		SELECT
-			vu.upload_id,
-			encode(vu.commit_bytea, 'hex'),
-			md5(u.root || ':' || u.indexer) as token,
-			vu.distance
-		FROM visible_uploads vu
-		JOIN lsif_uploads u ON u.id = vu.upload_id
-	`, makeVisibleUploadCandidatesQuery(repositoryID, commits...))))
+	commitGraphView, err := scanCommitGraphView(s.Store.Query(ctx, sqlf.Sprintf(
+		findClosestDumpsFromGraphFragmentCommitGraphQuery,
+		makeVisibleUploadCandidatesQuery(repositoryID, commits...)),
+	))
 	if err != nil {
 		return nil, err
 	}
@@ -229,30 +224,42 @@ func (s *Store) FindClosestDumpsFromGraphFragment(ctx context.Context, repositor
 
 	conds := makeFindClosestDumpConditions(path, rootMustEnclosePath, indexer)
 
-	return scanDumps(s.Store.Query(
-		ctx,
-		sqlf.Sprintf(`
-			SELECT
-				d.id,
-				d.commit,
-				d.root,
-				`+visibleAtTipFragment+` AS visible_at_tip,
-				d.uploaded_at,
-				d.state,
-				d.failure_message,
-				d.started_at,
-				d.finished_at,
-				d.process_after,
-				d.num_resets,
-				d.num_failures,
-				d.repository_id,
-				d.repository_name,
-				d.indexer
-			FROM lsif_dumps_with_repository_name d
-			WHERE d.id IN (%s) AND %s
-		`, sqlf.Join(ids, ","), sqlf.Join(conds, " AND ")),
-	))
+	return scanDumps(s.Store.Query(ctx, sqlf.Sprintf(findClosestDumpsFromGraphFragmentQuery, sqlf.Join(ids, ","), sqlf.Join(conds, " AND "))))
 }
+
+const findClosestDumpsFromGraphFragmentCommitGraphQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/dumps.go:FindClosestDumpsFromGraphFragment
+WITH visible_uploads AS (%s)
+SELECT
+	vu.upload_id,
+	encode(vu.commit_bytea, 'hex'),
+	md5(u.root || ':' || u.indexer) as token,
+	vu.distance
+FROM visible_uploads vu
+JOIN lsif_uploads u ON u.id = vu.upload_id
+`
+
+const findClosestDumpsFromGraphFragmentQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/dumps.go:FindClosestDumpsFromGraphFragment
+SELECT
+	d.id,
+	d.commit,
+	d.root,
+	` + visibleAtTipFragment + ` AS visible_at_tip,
+	d.uploaded_at,
+	d.state,
+	d.failure_message,
+	d.started_at,
+	d.finished_at,
+	d.process_after,
+	d.num_resets,
+	d.num_failures,
+	d.repository_id,
+	d.repository_name,
+	d.indexer
+FROM lsif_dumps_with_repository_name d
+WHERE d.id IN (%s) AND %s
+`
 
 // makeVisibleUploadCandidatesQuery returns a SQL query returning the set of uploads
 // visible from the given commits. This is done by looking at each commit's row in the
@@ -270,51 +277,52 @@ func makeVisibleUploadCandidatesQuery(repositoryID int, commits ...string) *sqlf
 		commitQueries = append(commitQueries, sqlf.Sprintf("%s", dbutil.CommitBytea(commit)))
 	}
 
-	return sqlf.Sprintf(`
-		SELECT
-			nu.repository_id,
-			upload_id::integer,
-			nu.commit_bytea,
-			u_distance::text::integer as distance
-		FROM lsif_nearest_uploads nu
-		CROSS JOIN jsonb_each(nu.uploads) as u(upload_id, u_distance)
-		WHERE nu.repository_id = %s AND nu.commit_bytea IN (%s)
-		UNION (
-			SELECT
-				nu.repository_id,
-				upload_id::integer,
-				ul.commit_bytea,
-				u_distance::text::integer + ul.distance as distance
-			FROM lsif_nearest_uploads_links ul
-			JOIN lsif_nearest_uploads nu ON nu.repository_id = ul.repository_id AND nu.commit_bytea = ul.ancestor_commit_bytea
-			CROSS JOIN jsonb_each(nu.uploads) as u(upload_id, u_distance)
-			WHERE nu.repository_id = %s AND ul.commit_bytea IN (%s)
-		)
-	`,
-		repositoryID,
-		sqlf.Join(commitQueries, ", "),
-		repositoryID,
-		sqlf.Join(commitQueries, ", "),
-	)
+	return sqlf.Sprintf(visibleUploadCandidatesQuery, repositoryID, sqlf.Join(commitQueries, ", "), repositoryID, sqlf.Join(commitQueries, ", "))
 }
+
+const visibleUploadCandidatesQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/dumps.go:makeVisibleUploadCandidatesQuery
+SELECT
+	nu.repository_id,
+	upload_id::integer,
+	nu.commit_bytea,
+	u_distance::text::integer as distance
+FROM lsif_nearest_uploads nu
+CROSS JOIN jsonb_each(nu.uploads) as u(upload_id, u_distance)
+WHERE nu.repository_id = %s AND nu.commit_bytea IN (%s)
+UNION (
+	SELECT
+		nu.repository_id,
+		upload_id::integer,
+		ul.commit_bytea,
+		u_distance::text::integer + ul.distance as distance
+	FROM lsif_nearest_uploads_links ul
+	JOIN lsif_nearest_uploads nu ON nu.repository_id = ul.repository_id AND nu.commit_bytea = ul.ancestor_commit_bytea
+	CROSS JOIN jsonb_each(nu.uploads) as u(upload_id, u_distance)
+	WHERE nu.repository_id = %s AND ul.commit_bytea IN (%s)
+)
+`
 
 // makeVisibleUploadsQuery returns a SQL query returning the set of identifiers of uploads
 // visible from the given commit. This is done by removing the "shadowed" values created
 // by looking at a commit and it's ancestors visible commits.
 func makeVisibleUploadsQuery(repositoryID int, commit string) *sqlf.Query {
-	return sqlf.Sprintf(`
-		SELECT
-			t.upload_id
-		FROM (
-			SELECT
-				t.*,
-				row_number() OVER (PARTITION BY root, indexer ORDER BY distance) AS r
-			FROM (%s) t
-			JOIN lsif_uploads u ON u.id = upload_id
-		) t
-		WHERE t.r <= 1
-	`, makeVisibleUploadCandidatesQuery(repositoryID, commit))
+	return sqlf.Sprintf(visibleUploadsQuery, makeVisibleUploadCandidatesQuery(repositoryID, commit))
 }
+
+const visibleUploadsQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/dumps.go:makeVisibleUploadsQuery
+SELECT
+	t.upload_id
+FROM (
+	SELECT
+		t.*,
+		row_number() OVER (PARTITION BY root, indexer ORDER BY distance) AS r
+	FROM (%s) t
+	JOIN lsif_uploads u ON u.id = upload_id
+) t
+WHERE t.r <= 1
+`
 
 func makeFindClosestDumpConditions(path string, rootMustEnclosePath bool, indexer string) (conds []*sqlf.Query) {
 	if rootMustEnclosePath {
@@ -346,17 +354,7 @@ func (s *Store) SoftDeleteOldDumps(ctx context.Context, maxAge time.Duration, no
 	}
 	defer func() { err = tx.Done(err) }()
 
-	repositoryIDs, err := scanCounts(tx.Store.Query(ctx, sqlf.Sprintf(`
-		WITH u AS (
-			UPDATE lsif_uploads u
-				SET state = 'deleted'
-				WHERE
-					%s - u.finished_at > (%s || ' second')::interval AND
-					u.id NOT IN (SELECT uv.upload_id FROM lsif_uploads_visible_at_tip uv WHERE uv.repository_id = u.repository_id)
-				RETURNING id, repository_id
-		)
-		SELECT u.repository_id, count(*) FROM u GROUP BY u.repository_id
-	`, now, strconv.Itoa(int(maxAge/time.Second)))))
+	repositoryIDs, err := scanCounts(tx.Store.Query(ctx, sqlf.Sprintf(softDeleteOldDumpsQuery, now, maxAge/time.Second)))
 	if err != nil {
 		return 0, err
 	}
@@ -372,6 +370,19 @@ func (s *Store) SoftDeleteOldDumps(ctx context.Context, maxAge time.Duration, no
 	return count, nil
 }
 
+const softDeleteOldDumpsQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/dumps.go:SoftDeleteOldDumps
+WITH u AS (
+	UPDATE lsif_uploads u
+		SET state = 'deleted'
+		WHERE
+			%s - u.finished_at > (%s || ' second')::interval AND
+			u.id NOT IN (SELECT uv.upload_id FROM lsif_uploads_visible_at_tip uv WHERE uv.repository_id = u.repository_id)
+		RETURNING id, repository_id
+)
+SELECT u.repository_id, count(*) FROM u GROUP BY u.repository_id
+`
+
 // DeleteOverlapapingDumps deletes all completed uploads for the given repository with the same
 // commit, root, and indexer. This is necessary to perform during conversions before changing
 // the state of a processing upload to completed as there is a unique index on these four columns.
@@ -384,9 +395,12 @@ func (s *Store) DeleteOverlappingDumps(ctx context.Context, repositoryID int, co
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return s.Store.Exec(ctx, sqlf.Sprintf(`
-		UPDATE lsif_uploads
-		SET state = 'deleted'
-		WHERE repository_id = %s AND commit = %s AND root = %s AND indexer = %s AND state = 'completed'
-	`, repositoryID, commit, root, indexer))
+	return s.Store.Exec(ctx, sqlf.Sprintf(deleteOverlappingDumpsQuery, repositoryID, commit, root, indexer))
 }
+
+const deleteOverlappingDumpsQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/dumps.go:DeleteOverlappingDumps
+UPDATE lsif_uploads
+SET state = 'deleted'
+WHERE repository_id = %s AND commit = %s AND root = %s AND indexer = %s AND state = 'completed'
+`

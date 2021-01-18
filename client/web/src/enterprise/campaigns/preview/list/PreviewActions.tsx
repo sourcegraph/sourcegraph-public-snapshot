@@ -76,79 +76,106 @@ const PreviewAction: React.FunctionComponent<PreviewActionProps> = ({ operation,
 
 const iconClassNames = 'm-0 text-nowrap'
 
-export const PreviewActionPublish: React.FunctionComponent<{ className?: string }> = ({ className }) => (
+export const PreviewActionPublish: React.FunctionComponent<{ label?: string; className?: string }> = ({
+    label = 'Publish',
+    className,
+}) => (
     <div className={classNames(className, iconClassNames)}>
         <UploadIcon className="icon-inline mr-1" data-tooltip="This changeset will be published to its code host" />
-        <span>Publish</span>
+        <span>{label}</span>
     </div>
 )
-export const PreviewActionPublishDraft: React.FunctionComponent<{ className?: string }> = ({ className }) => (
+export const PreviewActionPublishDraft: React.FunctionComponent<{ label?: string; className?: string }> = ({
+    label = 'Publish draft',
+    className,
+}) => (
     <div className={classNames(className, iconClassNames)}>
         <UploadIcon
             className="text-muted mr-1 icon-inline"
             data-tooltip="This changeset will be published as a draft to its code host"
         />
-        <span>Publish draft</span>
+        <span>{label}</span>
     </div>
 )
-export const PreviewActionImport: React.FunctionComponent<{ className?: string }> = ({ className }) => (
+export const PreviewActionImport: React.FunctionComponent<{ label?: string; className?: string }> = ({
+    label = 'Import',
+    className,
+}) => (
     <div className={classNames(className, iconClassNames)}>
         <ImportIcon
             className="icon-inline mr-1"
             data-tooltip="This changeset will be imported and tracked in this campaign"
         />
-        <span>Import</span>
+        <span>{label}</span>
     </div>
 )
-export const PreviewActionClose: React.FunctionComponent<{ className?: string }> = ({ className }) => (
+export const PreviewActionClose: React.FunctionComponent<{ label?: string; className?: string }> = ({
+    label = 'Close',
+    className,
+}) => (
     <div className={classNames(className, iconClassNames)}>
         <CloseCircleOutlineIcon
             className="text-danger mr-1 icon-inline"
             data-tooltip="This changeset will be closed on the code host"
         />
-        <span>Close</span>
+        <span>{label}</span>
     </div>
 )
-export const PreviewActionDetach: React.FunctionComponent<{ className?: string }> = ({ className }) => (
+export const PreviewActionDetach: React.FunctionComponent<{ label?: string; className?: string }> = ({
+    label = 'Detach',
+    className,
+}) => (
     <div className={classNames(className, iconClassNames)}>
         <TrashIcon
             className="text-danger mr-1 icon-inline"
             data-tooltip="This changeset will be removed from the campaign"
         />
-        <span>Detach</span>
+        <span>{label}</span>
     </div>
 )
-export const PreviewActionReopen: React.FunctionComponent<{ className?: string }> = ({ className }) => (
+export const PreviewActionReopen: React.FunctionComponent<{ label?: string; className?: string }> = ({
+    label = 'Reopen',
+    className,
+}) => (
     <div className={classNames(className, iconClassNames)}>
         <SourceBranchRefreshIcon
             className="icon-inline text-success mr-1"
             data-tooltip="This changeset will be reopened on the code host"
         />
-        <span>Reopen</span>
+        <span>{label}</span>
     </div>
 )
-export const PreviewActionUndraft: React.FunctionComponent<{ className?: string }> = ({ className }) => (
+export const PreviewActionUndraft: React.FunctionComponent<{ label?: string; className?: string }> = ({
+    label = 'Undraft',
+    className,
+}) => (
     <div className={classNames(className, iconClassNames)}>
         <SourceBranchCheckIcon
             className="icon-inline text-success mr-1"
             data-tooltip="This changeset will be marked as ready for review on the code host"
         />
-        <span>Undraft</span>
+        <span>{label}</span>
     </div>
 )
-export const PreviewActionUpdate: React.FunctionComponent<{ className?: string }> = ({ className }) => (
+export const PreviewActionUpdate: React.FunctionComponent<{ label?: string; className?: string }> = ({
+    label = 'Update',
+    className,
+}) => (
     <div className={classNames(className, iconClassNames)}>
         <SourceBranchSyncIcon
             className="icon-inline mr-1"
             data-tooltip="This changeset will be updated on the code host"
         />
-        <span>Update</span>
+        <span>{label}</span>
     </div>
 )
-export const PreviewActionPush: React.FunctionComponent<{ className?: string }> = ({ className }) => (
+export const PreviewActionPush: React.FunctionComponent<{ label?: string; className?: string }> = ({
+    label = 'Push',
+    className,
+}) => (
     <div className={classNames(className, iconClassNames)}>
         <UploadNetworkIcon className="icon-inline mr-1" data-tooltip="A new commit will be pushed to the code host" />
-        <span>Push</span>
+        <span>{label}</span>
     </div>
 )
 export const PreviewActionUnknown: React.FunctionComponent<{ className?: string; operations: string }> = ({
