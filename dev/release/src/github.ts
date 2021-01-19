@@ -118,8 +118,16 @@ const getTemplates = () => {
     return { releaseIssue, patchReleaseIssue, upgradeManagedInstanceIssue }
 }
 
+interface MaybeIssue {
+    title: string
+    url: string
+    created: boolean
+}
+
 /**
  * Ensures tracking issues for the given release.
+ *
+ * The first returned issue is considered the parent issue.
  */
 export async function ensureTrackingIssues({
     version,
@@ -133,7 +141,7 @@ export async function ensureTrackingIssues({
     releaseDate: Date
     oneWorkingDayAfterRelease: Date
     dryRun: boolean
-}): Promise<{ title: string; url: string; created: boolean }[]> {
+}): Promise<MaybeIssue[]> {
     const octokit = await getAuthenticatedGitHubClient()
     const templates = getTemplates()
     const release = releaseName(version)
@@ -160,8 +168,8 @@ export async function ensureTrackingIssues({
     }
 
     // Create issues
-    let firstIssueReference: { title: string; url: string } | undefined
-    const created: { title: string; url: string; created: boolean }[] = []
+    let parentIssue: MaybeIssue | undefined
+    const created: MaybeIssue[] = []
     for (const template of issueTemplates) {
         const body = await execTemplate(octokit, template, {
             version,
@@ -173,9 +181,7 @@ export async function ensureTrackingIssues({
             {
                 title: template.title(version),
                 labels: template.labels,
-                body: firstIssueReference
-                    ? `${body}\n\n---\n\nAlso see [${firstIssueReference.title}](${firstIssueReference.url})`
-                    : body,
+                body: parentIssue ? `${body}\n\n---\n\nAlso see [${parentIssue.title}](${parentIssue.url})` : body,
                 assignees,
                 owner: 'sourcegraph',
                 repo: 'sourcegraph',
@@ -183,8 +189,9 @@ export async function ensureTrackingIssues({
             },
             dryRun
         )
-        if (!firstIssueReference) {
-            firstIssueReference = { ...issue }
+        // if this is the first issue, we treat it as the parent issue
+        if (!parentIssue) {
+            parentIssue = { ...issue }
         }
         created.push({ ...issue })
     }
@@ -226,7 +233,7 @@ async function ensureIssue(
         labels?: string[]
     },
     dryRun: boolean
-): Promise<{ title: string; url: string; created: boolean }> {
+): Promise<MaybeIssue> {
     const issueData = {
         title,
         owner,
