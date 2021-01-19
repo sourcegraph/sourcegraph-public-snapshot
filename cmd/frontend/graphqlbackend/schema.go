@@ -4093,6 +4093,7 @@ enum ExternalServiceKind {
     GITHUB
     GITLAB
     GITOLITE
+    PERFORCE
     PHABRICATOR
     OTHER
 }

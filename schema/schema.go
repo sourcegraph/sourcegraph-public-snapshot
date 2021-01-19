@@ -439,6 +439,8 @@ type ExperimentalFeatures struct {
 	EnablePermissionsWebhooks bool `json:"enablePermissionsWebhooks,omitempty"`
 	// EventLogging description: Enables user event logging inside of the Sourcegraph instance. This will allow admins to have greater visibility of user activity, such as frequently viewed pages, frequent searches, and more. These event logs (and any specific user actions) are only stored locally, and never leave this Sourcegraph instance.
 	EventLogging string `json:"eventLogging,omitempty"`
+	// Perforce description: Allow adding Perforce code host connections
+	Perforce string `json:"perforce,omitempty"`
 	// SearchIndexBranches description: A map from repository name to a list of extra revs (branch, ref, tag, commit sha, etc) to index for a repository. We always index the default branch ("HEAD") and revisions in version contexts. This allows specifying additional revisions. Sourcegraph can index up to 64 branches per repository.
 	SearchIndexBranches map[string][]string `json:"search.index.branches,omitempty"`
 	// SearchMultipleRevisionsPerRepository description: DEPRECATED. Always on. Will be removed in 3.19.
@@ -921,6 +923,26 @@ type OtherExternalServiceConnection struct {
 // ParentSourcegraph description: URL to fetch unreachable repository details from. Defaults to "https://sourcegraph.com"
 type ParentSourcegraph struct {
 	Url string `json:"url,omitempty"`
+}
+
+// PerforceAuthorization description: If non-null, enforces Perforce depot permissions.
+type PerforceAuthorization struct {
+}
+
+// PerforceConnection description: Configuration for a connection to Perforce Server.
+type PerforceConnection struct {
+	// Authorization description: If non-null, enforces Perforce depot permissions.
+	Authorization *PerforceAuthorization `json:"authorization,omitempty"`
+	// Depots description: Depots can have arbitrary paths, e.g. a path to depot root or a subdirectory.
+	Depots []string `json:"depots,omitempty"`
+	// MaxChanges description: Only import at most n changes when possible (git p4 clone --max-changes).
+	MaxChanges float64 `json:"maxChanges,omitempty"`
+	// P4Passwd description: The plain password of the user (P4PASSWD).
+	P4Passwd string `json:"p4.passwd"`
+	// P4Port description: The Perforce Server address to be used for p4 CLI (P4PORT).
+	P4Port string `json:"p4.port"`
+	// P4User description: The user to be authenticated for p4 CLI (P4USER).
+	P4User string `json:"p4.user"`
 }
 
 // PermissionsUserMapping description: Settings for Sourcegraph permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This setting cannot be enabled if repository permissions for any specific external service are enabled (i.e., when the external service's `authorization` field is set).
