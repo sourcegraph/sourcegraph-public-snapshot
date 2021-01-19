@@ -5,12 +5,12 @@ var (
 	ExternalServices = &ExternalServiceStore{}
 	DefaultRepos     = &DefaultRepoStore{}
 	Repos            = &RepoStore{}
-	Phabricator      = &phabricator{}
-	QueryRunnerState = &queryRunnerState{}
-	Namespaces       = &namespaces{}
+	Phabricator      = &PhabricatorStore{}
+	QueryRunnerState = &QueryRunnerStateStore{}
+	Namespaces       = &NamespaceStore{}
 	Orgs             = &OrgStore{}
 	OrgMembers       = &OrgMemberStore{}
-	SavedSearches    = &savedSearches{}
+	SavedSearches    = &SavedSearchStore{}
 	Settings         = &settings{}
 	Users            = &UserStore{}
 	UserCredentials  = &userCredentials{}
