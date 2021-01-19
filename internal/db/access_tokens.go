@@ -104,7 +104,7 @@ func (s *AccessTokenStore) Create(ctx context.Context, subjectUserID int32, scop
 		return 0, "", errors.New("access tokens without scopes are not supported")
 	}
 
-	if err := dbconn.Global.QueryRowContext(ctx,
+	if err := s.Handle().DB().QueryRowContext(ctx,
 		// Include users table query (with "FOR UPDATE") to ensure that subject/creator users have
 		// not been deleted. If they were deleted, the query will return an error.
 		`
@@ -149,7 +149,7 @@ func (s *AccessTokenStore) Lookup(ctx context.Context, tokenHexEncoded string, r
 		return 0, errors.Wrap(err, "AccessTokens.Lookup")
 	}
 
-	if err := dbconn.Global.QueryRowContext(ctx,
+	if err := s.Handle().DB().QueryRowContext(ctx,
 		// Ensure that subject and creator users still exist.
 		`
 UPDATE access_tokens t SET last_used_at=now()
@@ -252,7 +252,7 @@ created_at DESC
 		limitOffset.SQL(),
 	)
 
-	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	rows, err := s.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -277,7 +277,7 @@ func (s *AccessTokenStore) Count(ctx context.Context, opt AccessTokensListOption
 
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM access_tokens WHERE (%s)", sqlf.Join(opt.sqlConditions(), ") AND ("))
 	var count int
-	if err := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count); err != nil {
+	if err := s.QueryRow(ctx, q).Scan(&count); err != nil {
 		return 0, err
 	}
 	return count, nil
@@ -312,7 +312,7 @@ func (s *AccessTokenStore) delete(ctx context.Context, cond *sqlf.Query) error {
 	conds := []*sqlf.Query{cond, sqlf.Sprintf("deleted_at IS NULL")}
 	q := sqlf.Sprintf("UPDATE access_tokens SET deleted_at=now() WHERE (%s)", sqlf.Join(conds, ") AND ("))
 
-	res, err := dbconn.Global.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	res, err := s.ExecResult(ctx, q)
 	if err != nil {
 		return err
 	}
