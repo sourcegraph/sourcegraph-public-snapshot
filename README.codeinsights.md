@@ -27,11 +27,11 @@ See [migrations/README.md](migrations/README.md) for more information
 ## Insert data
 
 ```
-INSERT INTO histogram_events(time,value,metadata,repo_id) VALUES(now(), 0.5, '{"hello": "world"}', 2);
+INSERT INTO gauge_events(time,value,metadata,repo_id) VALUES(now(), 0.5, '{"hello": "world"}', 2);
 ```
 
 ## Query data
 
 ```
-SELECT * FROM histogram_events ORDER BY time DESC LIMIT 100;
+SELECT * FROM gauge_events ORDER BY time DESC LIMIT 100;
 ```
