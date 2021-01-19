@@ -7,12 +7,12 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"reflect"
 	"sort"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
@@ -29,8 +29,8 @@ func TestBitbucketCloudSource_ListRepos(t *testing.T) {
 			sort.Strings(have)
 			sort.Strings(want)
 
-			if !reflect.DeepEqual(have, want) {
-				t.Error(cmp.Diff(have, want))
+			if diff := cmp.Diff(want, have); diff != "" {
+				t.Errorf("Mismatch (-want +got):\n%s", diff)
 			}
 		}
 	}

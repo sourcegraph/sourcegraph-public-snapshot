@@ -24,6 +24,7 @@ import { Form } from '../../../branded/src/components/Form'
 import { ErrorMessage } from './alerts'
 import { hasProperty } from '../../../shared/src/util/types'
 import { Scalars } from '../../../shared/src/graphql-operations'
+import classNames from 'classnames'
 
 /** Checks if the passed value satisfies the GraphQL Node interface */
 const hasID = (value: unknown): value is { id: Scalars['ID'] } =>
@@ -286,7 +287,7 @@ class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureCom
             <>
                 {this.props.connectionQuery && summary}
                 {this.props.connection && this.props.connection.nodes.length > 0 && (
-                    <ListComponent className={`filtered-connection__nodes ${this.props.listClassName || ''}`}>
+                    <ListComponent className={classNames('filtered-connection__nodes', this.props.listClassName)}>
                         {HeadComponent && (
                             <HeadComponent
                                 nodes={this.props.connection.nodes}
@@ -301,9 +302,10 @@ class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureCom
                 {!this.props.loading && !this.props.noShowMore && this.props.connection && hasNextPage && (
                     <button
                         type="button"
-                        className={`btn btn-secondary btn-sm filtered-connection__show-more ${
-                            this.props.showMoreClassName || ''
-                        }`}
+                        className={classNames(
+                            'btn btn-secondary btn-sm filtered-connection__show-more',
+                            this.props.showMoreClassName
+                        )}
                         onClick={this.onClickShowMore}
                     >
                         Show more
@@ -369,6 +371,9 @@ interface FilteredConnectionDisplayProps extends ConnectionDisplayProps {
 
     /** Called when a filter is selected and on initial render. */
     onValueSelect?: (filter: FilteredConnectionFilter, value: FilterValue) => void
+
+    /** CSS class name for the <input> element */
+    inputClassName?: string
 }
 
 /**
@@ -821,9 +826,11 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         const compactnessClass = `filtered-connection--${this.props.compact ? 'compact' : 'noncompact'}`
         return (
             <div
-                className={`filtered-connection test-filtered-connection ${compactnessClass} ${
-                    this.props.className || ''
-                }`}
+                className={classNames(
+                    'filtered-connection test-filtered-connection',
+                    compactnessClass,
+                    this.props.className
+                )}
             >
                 {(!this.props.hideSearch || this.props.filters) && (
                     <Form
@@ -841,7 +848,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                         )}
                         {!this.props.hideSearch && (
                             <input
-                                className="form-control filtered-connection__filter"
+                                className={classNames('form-control', this.props.inputClassName)}
                                 type="search"
                                 placeholder={`Search ${this.props.pluralNoun}...`}
                                 name="query"

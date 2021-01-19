@@ -343,7 +343,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     )
 
     const filterControls: JSX.Element = (
-        <Form className="w-100 d-inline-flex justify-content-between flex-row filtered-connection__form mt-3">
+        <Form className="w-100 d-inline-flex justify-content-between flex-row mt-3">
             <div className="d-inline-flex flex-row mr-3 align-items-baseline">
                 <p className="text-xl-center text-nowrap mr-2">Code Host:</p>
                 <select
@@ -360,7 +360,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 </select>
             </div>
             <input
-                className="form-control filtered-connection__filter"
+                className="form-control user-settings-repos__filter-input"
                 type="search"
                 placeholder="Search repositories..."
                 name="query"
@@ -417,7 +417,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     <input
                         className="mr-3"
                         type="checkbox"
-                        checked={selectionState.repos.size === filteredRepos.length}
+                        checked={selectionState.repos.size !== 0 && selectionState.repos.size === filteredRepos.length}
                         onChange={selectAll}
                     />
                     <span
@@ -486,10 +486,10 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                         {
                             // if we're in 'selected' mode, show a list of all the repos on the code hosts to select from
                             selectionState.radio === 'selected' && (
-                                <div className="filtered-connection ml-4">
+                                <div className="ml-4">
                                     {filterControls}
                                     {repoState.error !== '' && <ErrorAlert error={repoState.error} history={history} />}
-                                    <table className="filtered-connection test-filtered-connection filtered-connection--noncompact table">
+                                    <table className="table">
                                         {
                                             // if we're selecting repos, and the repos are still loading, display the loading animation
                                             selectionState.radio === 'selected' &&

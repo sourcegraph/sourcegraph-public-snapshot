@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { PageTitle } from '../../../components/PageTitle'
 import { RepositoriesResult, SiteAdminRepositoryFields, UserRepositoriesResult } from '../../../graphql-operations'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
@@ -16,9 +16,11 @@ import { RouteComponentProps } from 'react-router'
 import { Link } from '../../../../../shared/src/components/Link'
 import { RepositoryNode } from './RepositoryNode'
 import AddIcon from 'mdi-react/AddIcon'
-import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
+import { ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { repeatUntil } from '../../../../../shared/src/util/rxjs/repeatUntil'
 import { ErrorAlert } from '../../../components/alerts'
+import { useObservable } from '../../../../../shared/src/util/useObservable'
+import { map } from 'rxjs/operators'
 
 interface Props extends RouteComponentProps, TelemetryProps {
     userID: string
@@ -40,6 +42,7 @@ const Row: React.FunctionComponent<RowProps> = props => (
 )
 
 type Status = undefined | 'pending' | ErrorLike
+const emptyFilters: FilteredConnectionFilter[] = []
 
 /**
  * A page displaying the repositories for this user.
@@ -51,83 +54,82 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     routingPrefix,
     telemetryService,
 }) => {
-    const emptyFilters: FilteredConnectionFilter[] = []
-    const [state, setState] = useState({ filters: emptyFilters, fetched: false })
     const [hasRepos, setHasRepos] = useState(false)
     const [pendingOrError, setPendingOrError] = useState<Status>()
 
-    if (!state.fetched) {
-        queryExternalServices({ namespace: userID, first: null, after: null })
-            .pipe(
-                repeatUntil(
-                    (result): boolean => {
-                        const services: FilterValue[] = [
-                            {
-                                value: 'all',
-                                label: 'All',
-                                args: {},
-                            },
-                        ]
-                        let pending: Status
-                        const now = new Date().getTime()
-                        for (const node of result.nodes) {
-                            // if the next sync time is not blank, or in the future we must not be syncing
-                            if (node.nextSyncAt !== '' && now - new Date(node.nextSyncAt).getTime() < 0) {
-                                pending = 'pending'
-                            }
-                            services.push({
-                                value: node.id,
-                                label: node.displayName,
-                                tooltip: '',
-                                args: { externalServiceID: node.id },
-                            })
-                        }
+    const filters =
+        useObservable<FilteredConnectionFilter[]>(
+            useMemo(
+                () =>
+                    queryExternalServices({ namespace: userID, first: null, after: null }).pipe(
+                        repeatUntil(
+                            result => {
+                                let pending: Status
+                                const now = new Date().getTime()
+                                for (const node of result.nodes) {
+                                    // if the next sync time is not blank, or in the future we must not be syncing
+                                    if (node.nextSyncAt !== '' && now - new Date(node.nextSyncAt).getTime() > 0) {
+                                        pending = 'pending'
+                                    }
+                                }
 
-                        setPendingOrError(pending)
+                                setPendingOrError(pending)
+                                return pending !== 'pending'
+                            },
+                            { delay: 2000 }
+                        ),
+                        map(result => {
+                            const services: FilterValue[] = [
+                                {
+                                    value: 'all',
+                                    label: 'All',
+                                    args: {},
+                                },
+                                ...result.nodes.map(node => ({
+                                    value: node.id,
+                                    label: node.displayName,
+                                    tooltip: '',
+                                    args: { externalServiceID: node.id },
+                                })),
+                            ]
 
-                        const newFilters: FilteredConnectionFilter[] = [
-                            {
-                                label: 'Status',
-                                type: 'select',
-                                id: 'status',
-                                tooltip: 'Repository status',
-                                values: [
-                                    {
-                                        value: 'all',
-                                        label: 'All',
-                                        args: {},
-                                    },
-                                    {
-                                        value: 'cloned',
-                                        label: 'Cloned',
-                                        args: { cloned: true, notCloned: false },
-                                    },
-                                    {
-                                        value: 'not-cloned',
-                                        label: 'Not Cloned',
-                                        args: { cloned: false, notCloned: true },
-                                    },
-                                ],
-                            },
-                            {
-                                label: 'Code host',
-                                type: 'select',
-                                id: 'code-host',
-                                tooltip: 'Code host',
-                                values: services,
-                            },
-                        ]
-                        setState({ filters: newFilters, fetched: true })
-                        return !pending
-                    },
-                    { delay: 2000 }
-                )
+                            return [
+                                {
+                                    label: 'Status',
+                                    type: 'select',
+                                    id: 'status',
+                                    tooltip: 'Repository status',
+                                    values: [
+                                        {
+                                            value: 'all',
+                                            label: 'All',
+                                            args: {},
+                                        },
+                                        {
+                                            value: 'cloned',
+                                            label: 'Cloned',
+                                            args: { cloned: true, notCloned: false },
+                                        },
+                                        {
+                                            value: 'not-cloned',
+                                            label: 'Not Cloned',
+                                            args: { cloned: false, notCloned: true },
+                                        },
+                                    ],
+                                },
+                                {
+                                    label: 'Code host',
+                                    type: 'select',
+                                    id: 'code-host',
+                                    tooltip: 'Code host',
+                                    values: services,
+                                },
+                            ]
+                        })
+                    ),
+                [userID]
             )
-            .toPromise()
-            .catch(error => {
-                setPendingOrError(asError(error))
-            })
-    }
+        ) || emptyFilters
 
     const queryRepositories = useCallback(
         (args: FilteredConnectionQueryArguments): Observable<RepositoriesResult['repositories']> =>
@@ -158,14 +160,14 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     }, [telemetryService])
 
     let body: JSX.Element
-    if (state.filters[1] && state.filters[1].values.length === 1) {
+    if (filters[1] && filters[1].values.length === 1) {
         body = (
             <div className="card p-3 m-2">
                 <h3 className="mb-1">You have not added any repositories to Sourcegraph</h3>
                 <p className="text-muted mb-0">
-                    <a className="text-primary" href={routingPrefix + '/external-services'}>
+                    <Link className="text-primary" to={`${routingPrefix}/code-hosts`}>
                         Connect a code host
-                    </a>{' '}
+                    </Link>{' '}
                     to start adding your repositories to Sourcegraph.
                 </p>
             </div>
@@ -183,10 +185,11 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                 listComponent="table"
                 listClassName="w-100"
                 onUpdate={updated}
-                filters={state.filters}
+                filters={filters}
                 history={history}
                 location={location}
                 totalCountSummaryComponent={TotalCountSummary}
+                inputClassName="user-settings-repos__filter-input"
             />
         )
     }
@@ -203,7 +206,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             <PageTitle title="Repositories" />
             <div className="d-flex justify-content-between align-items-center">
                 <h2 className="mb-2">Repositories</h2>
-                {state.filters[1] && state.filters[1].values.length !== 1 && (
+                {filters[1] && filters[1].values.length !== 1 && (
                     <Link
                         className="btn btn-primary test-goto-add-external-service-page"
                         to={`${routingPrefix}/repositories/manage`}

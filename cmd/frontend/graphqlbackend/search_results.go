@@ -39,6 +39,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -46,90 +47,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-// SearchResultsCommon contains fields that should be returned by all funcs
-// that contribute to the overall search result set.
-type SearchResultsCommon struct {
-	// IsLimitHit is true if we do not have all results that match the query.
-	IsLimitHit bool
-
-	// Repos that were matched by the repo-related filters. This should only
-	// be set once by search, when we have resolved Repos.
-	Repos map[api.RepoID]*types.RepoName
-
-	// Status is a RepoStatusMap of repository search statuses.
-	Status search.RepoStatusMap
-
-	// ExcludedForks is the count of excluded forked repos because the search
-	// query doesn't apply to them, but that we want to know about.
-	ExcludedForks int
-
-	// ExcludedArchived is the count of excluded archived repos because the
-	// search query doesn't apply to them, but that we want to know about.
-	ExcludedArchived int
-
-	// IsIndexUnavailable is true if indexed search was unavailable.
-	IsIndexUnavailable bool
-}
-
-// update updates c with the other data, deduping as necessary. It modifies c but
-// does not modify other.
-func (c *SearchResultsCommon) update(other *SearchResultsCommon) {
-	if other == nil {
-		return
-	}
-
-	c.IsLimitHit = c.IsLimitHit || other.IsLimitHit
-	c.IsIndexUnavailable = c.IsIndexUnavailable || other.IsIndexUnavailable
-
-	if c.Repos == nil {
-		c.Repos = other.Repos
-	} else {
-		for id, r := range other.Repos {
-			c.Repos[id] = r
-		}
-	}
-
-	c.Status.Union(&other.Status)
-
-	c.ExcludedForks = c.ExcludedForks + other.ExcludedForks
-	c.ExcludedArchived = c.ExcludedArchived + other.ExcludedArchived
-}
-
-func (c *SearchResultsCommon) String() string {
-	if c == nil {
-		return "SearchResultsCommon{}"
-	}
-
-	parts := []string{
-		fmt.Sprintf("status=%s", c.Status.String()),
-	}
-	nums := []struct {
-		name string
-		n    int
-	}{
-		{"repos", len(c.Repos)},
-		{"excludedForks", c.ExcludedForks},
-		{"excludedArchived", c.ExcludedArchived},
-	}
-	for _, p := range nums {
-		if p.n != 0 {
-			parts = append(parts, fmt.Sprintf("%s=%d", p.name, p.n))
-		}
-	}
-	if c.IsLimitHit {
-		parts = append(parts, "limitHit")
-	}
-	if c.IsIndexUnavailable {
-		parts = append(parts, "indexUnavailable")
-	}
-
-	return "SearchResultsCommon{" + strings.Join(parts, " ") + "}"
-}
-
-func (c *SearchResultsCommon) Equal(other *SearchResultsCommon) bool {
-	return reflect.DeepEqual(c, other)
-}
 
 func (c *SearchResultsResolver) LimitHit() bool {
 	return c.IsLimitHit
@@ -221,7 +138,7 @@ func dedupSort(repos *types.RepoNames) {
 // SearchResultsResolver is a resolver for the GraphQL type `SearchResults`
 type SearchResultsResolver struct {
 	SearchResults []SearchResultResolver
-	SearchResultsCommon
+	streaming.Stats
 	alert *searchAlert
 	start time.Time // when the results started being computed
 
@@ -346,7 +263,7 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 			// are @ and :, both of which are disallowed in git refs
 			filter = filter + fmt.Sprintf(`@%s`, rev)
 		}
-		limitHit := sr.SearchResultsCommon.Status.Get(repo.IDInt32())&search.RepoStatusLimitHit != 0
+		limitHit := sr.Stats.Status.Get(repo.IDInt32())&search.RepoStatusLimitHit != 0
 		// Increment number of matches per repo. Add will override previous entry for uri
 		repoToMatchCount[uri] += lineMatchCount
 		add(filter, uri, repoToMatchCount[uri], limitHit, "repo", scoreDefault)
@@ -383,11 +300,11 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 		}
 	}
 
-	if sr.SearchResultsCommon.ExcludedForks > 0 {
-		add("fork:yes", "fork:yes", int32(sr.SearchResultsCommon.ExcludedForks), sr.IsLimitHit, "repo", scoreImportant)
+	if sr.Stats.ExcludedForks > 0 {
+		add("fork:yes", "fork:yes", int32(sr.Stats.ExcludedForks), sr.IsLimitHit, "repo", scoreImportant)
 	}
-	if sr.SearchResultsCommon.ExcludedArchived > 0 {
-		add("archived:yes", "archived:yes", int32(sr.SearchResultsCommon.ExcludedArchived), sr.IsLimitHit, "repo", scoreImportant)
+	if sr.Stats.ExcludedArchived > 0 {
+		add("archived:yes", "archived:yes", int32(sr.Stats.ExcludedArchived), sr.IsLimitHit, "repo", scoreImportant)
 	}
 	for _, result := range sr.SearchResults {
 		if fm, ok := result.ToFileMatch(); ok {
@@ -711,7 +628,7 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResultsReso
 		if !result.cursor.Finished {
 			// For stable result queries limitHit = true implies
 			// there is a next cursor, and more results may exist.
-			result.SearchResultsCommon.IsLimitHit = true
+			result.Stats.IsLimitHit = true
 		}
 		return result, err
 	}
@@ -732,7 +649,7 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResultsReso
 	switch {
 	case err == context.DeadlineExceeded || (err == nil && rr.allReposTimedout()):
 		status = "timeout"
-	case err == nil && rr.SearchResultsCommon.Status.Any(search.RepoStatusTimedout):
+	case err == nil && rr.Stats.Status.Any(search.RepoStatusTimedout):
 		status = "partial_timeout"
 	case err == nil && rr.alert != nil:
 		status = "alert"
@@ -872,7 +789,7 @@ func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 	}
 
 	left.SearchResults = merged
-	left.SearchResultsCommon.update(&right.SearchResultsCommon)
+	left.Stats.Update(&right.Stats)
 	return left
 }
 
@@ -919,7 +836,7 @@ func intersectMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 		merged = append(merged, leftMatch)
 	}
 	left.SearchResults = merged
-	left.SearchResultsCommon.update(&right.SearchResultsCommon)
+	left.Stats.Update(&right.Stats)
 	return left
 }
 
@@ -1096,7 +1013,7 @@ func (r *searchResolver) evaluateOr(ctx context.Context, scopeParameters []query
 	if result == nil {
 		return nil, nil
 	}
-	// Do not rely on result.SearchResultsCommon.resultCount because it may
+	// Do not rely on result.Stats.resultCount because it may
 	// count non-content matches and there's no easy way to know.
 	if len(result.SearchResults) > wantCount {
 		result.SearchResults = result.SearchResults[:wantCount]
@@ -1110,7 +1027,7 @@ func (r *searchResolver) evaluateOr(ctx context.Context, scopeParameters []query
 		}
 		if new != nil {
 			result = union(result, new)
-			// Do not rely on result.SearchResultsCommon.resultCount because it may
+			// Do not rely on result.Stats.resultCount because it may
 			// count non-content matches and there's no easy way to know.
 			if len(result.SearchResults) > wantCount {
 				result.SearchResults = result.SearchResults[:wantCount]
@@ -1744,21 +1661,21 @@ type aggregator struct {
 
 	mu       sync.Mutex
 	results  []SearchResultResolver
-	common   SearchResultsCommon
+	common   streaming.Stats
 	multiErr *multierror.Error
 	// fileMatches is a map from git:// URI of the file to FileMatch resolver
 	// to merge multiple results of different types for the same file
 	fileMatches map[string]*FileMatchResolver
 }
 
-func (a *aggregator) get() ([]SearchResultResolver, SearchResultsCommon, *multierror.Error) {
+func (a *aggregator) get() ([]SearchResultResolver, streaming.Stats, *multierror.Error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	return a.results, a.common, a.multiErr
 }
 
 // report sends results down resultChannel and collects the results.
-func (a *aggregator) report(ctx context.Context, results []SearchResultResolver, common *SearchResultsCommon, err error) {
+func (a *aggregator) report(ctx context.Context, results []SearchResultResolver, common *streaming.Stats, err error) {
 	if a.resultChannel != nil {
 		a.resultChannel <- results
 	}
@@ -1768,10 +1685,10 @@ func (a *aggregator) report(ctx context.Context, results []SearchResultResolver,
 
 // collect the results. This doesn't send down resultChannel. Should only be
 // used by streaming supported backends.
-func (a *aggregator) collect(ctx context.Context, results []SearchResultResolver, common *SearchResultsCommon, err error) {
+func (a *aggregator) collect(ctx context.Context, results []SearchResultResolver, common *streaming.Stats, err error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	// Timeouts are reported through SearchResultsCommon so don't report an error for them
+	// Timeouts are reported through Stats so don't report an error for them
 	if err != nil && !isContextError(ctx, err) {
 		a.multiErr = multierror.Append(a.multiErr, errors.Wrap(err, "repository search failed"))
 	}
@@ -1792,7 +1709,7 @@ func (a *aggregator) collect(ctx context.Context, results []SearchResultResolver
 		}
 	}
 	if common != nil {
-		a.common.update(common)
+		a.common.Update(common)
 	}
 }
 
@@ -1957,11 +1874,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		return nil, &badRequestError{err}
 	}
 
-	err = validateRepoHasFileUsage(r.query)
-	if err != nil {
-		return nil, err
-	}
-
 	resultTypes := r.determineResultTypes(args, forceOnlyResultType)
 	tr.LazyPrintf("resultTypes: %v", resultTypes)
 	var (
@@ -2035,7 +1947,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			repos[repoRev.Repo.ID] = repoRev.Repo
 		}
 
-		agg.report(ctx, nil, &SearchResultsCommon{
+		agg.report(ctx, nil, &streaming.Stats{
 			Repos:            repos,
 			ExcludedForks:    resolved.ExcludedRepos.Forks,
 			ExcludedArchived: resolved.ExcludedRepos.Archived,
@@ -2146,10 +2058,10 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	r.sortResults(ctx, results)
 
 	resultsResolver := SearchResultsResolver{
-		start:               start,
-		SearchResultsCommon: common,
-		SearchResults:       results,
-		alert:               alert,
+		start:         start,
+		Stats:         common,
+		SearchResults: results,
+		alert:         alert,
 	}
 
 	return &resultsResolver, multiErr.ErrorOrNil()
@@ -2276,15 +2188,6 @@ func orderedFuzzyRegexp(pieces []string) string {
 		return pieces[0]
 	}
 	return "(" + strings.Join(pieces, ").*?(") + ")"
-}
-
-// Validates usage of the `repohasfile` filter
-func validateRepoHasFileUsage(q query.QueryInfo) error {
-	// Query only contains "repohasfile:" and "type:symbol"
-	if len(q.Fields()) == 2 && q.Fields()["repohasfile"] != nil && q.Fields()["type"] != nil && len(q.Fields()["type"]) == 1 && q.Fields()["type"][0].Value() == "symbol" {
-		return errors.New("repohasfile does not currently return symbol results. Support for symbol results is coming soon. Subscribe to https://github.com/sourcegraph/sourcegraph/issues/4610 for updates")
-	}
-	return nil
 }
 
 // logSlowSearchesThreshold returns the minimum duration configured in site

@@ -32,17 +32,17 @@ func TestEventLogs_ValidInfo(t *testing.T) {
 		{
 			name:  "EmptyName",
 			event: &Event{UserID: 1, URL: "http://sourcegraph.com", Source: "WEB"},
-			err:   `INSERT: pq: new row for relation "event_logs" violates check constraint "event_logs_check_name_not_empty"`,
+			err:   `INSERT: ERROR: new row for relation "event_logs" violates check constraint "event_logs_check_name_not_empty" (SQLSTATE 23514)`,
 		},
 		{
 			name:  "InvalidUser",
 			event: &Event{Name: "test_event", URL: "http://sourcegraph.com", Source: "WEB"},
-			err:   `INSERT: pq: new row for relation "event_logs" violates check constraint "event_logs_check_has_user"`,
+			err:   `INSERT: ERROR: new row for relation "event_logs" violates check constraint "event_logs_check_has_user" (SQLSTATE 23514)`,
 		},
 		{
 			name:  "EmptySource",
 			event: &Event{Name: "test_event", URL: "http://sourcegraph.com", UserID: 1},
-			err:   `INSERT: pq: new row for relation "event_logs" violates check constraint "event_logs_check_source_not_empty"`,
+			err:   `INSERT: ERROR: new row for relation "event_logs" violates check constraint "event_logs_check_source_not_empty" (SQLSTATE 23514)`,
 		},
 
 		{

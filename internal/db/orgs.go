@@ -2,17 +2,20 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
-	"github.com/hashicorp/go-multierror"
+	"github.com/jackc/pgconn"
 
+	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/lib/pq"
 )
 
 // OrgNotFoundError occurs when an organization is not found.
@@ -30,12 +33,48 @@ func (e *OrgNotFoundError) NotFound() bool {
 
 var errOrgNameAlreadyExists = errors.New("organization name is already taken (by a user or another organization)")
 
-type orgs struct{}
+type OrgStore struct {
+	*basestore.Store
+
+	once sync.Once
+}
+
+// NewOrgStoreWithDB instantiates and returns a new OrgStore with prepared statements.
+func NewOrgStoreWithDB(db dbutil.DB) *OrgStore {
+	return &OrgStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+}
+
+// NewOrgStoreWithDB instantiates and returns a new OrgStore using the other store handle.
+func NewOrgStoreWith(other basestore.ShareableStore) *OrgStore {
+	return &OrgStore{Store: basestore.NewWithHandle(other.Handle())}
+}
+
+func (s *OrgStore) With(other basestore.ShareableStore) *OrgStore {
+	return &OrgStore{Store: s.Store.With(other)}
+}
+
+func (s *OrgStore) Transact(ctx context.Context) (*OrgStore, error) {
+	txBase, err := s.Store.Transact(ctx)
+	return &OrgStore{Store: txBase}, err
+}
+
+// ensureStore instantiates a basestore.Store if necessary, using the dbconn.Global handle.
+// This function ensures access to dbconn happens after the rest of the code or tests have
+// initialized it.
+func (o *OrgStore) ensureStore() {
+	o.once.Do(func() {
+		if o.Store == nil {
+			o.Store = basestore.NewWithDB(dbconn.Global, sql.TxOptions{})
+		}
+	})
+}
 
 // GetByUserID returns a list of all organizations for the user. An empty slice is
 // returned if the user is not authenticated or is not a member of any org.
-func (*orgs) GetByUserID(ctx context.Context, userID int32) ([]*types.Org, error) {
-	rows, err := dbconn.Global.QueryContext(ctx, "SELECT orgs.id, orgs.name, orgs.display_name,  orgs.created_at, orgs.updated_at FROM org_members LEFT OUTER JOIN orgs ON org_members.org_id = orgs.id WHERE user_id=$1 AND orgs.deleted_at IS NULL", userID)
+func (o *OrgStore) GetByUserID(ctx context.Context, userID int32) ([]*types.Org, error) {
+	o.ensureStore()
+
+	rows, err := o.Handle().DB().QueryContext(ctx, "SELECT orgs.id, orgs.name, orgs.display_name,  orgs.created_at, orgs.updated_at FROM org_members LEFT OUTER JOIN orgs ON org_members.org_id = orgs.id WHERE user_id=$1 AND orgs.deleted_at IS NULL", userID)
 	if err != nil {
 		return []*types.Org{}, err
 	}
@@ -58,7 +97,7 @@ func (*orgs) GetByUserID(ctx context.Context, userID int32) ([]*types.Org, error
 	return orgs, nil
 }
 
-func (o *orgs) GetByID(ctx context.Context, orgID int32) (*types.Org, error) {
+func (o *OrgStore) GetByID(ctx context.Context, orgID int32) (*types.Org, error) {
 	if Mocks.Orgs.GetByID != nil {
 		return Mocks.Orgs.GetByID(ctx, orgID)
 	}
@@ -72,7 +111,7 @@ func (o *orgs) GetByID(ctx context.Context, orgID int32) (*types.Org, error) {
 	return orgs[0], nil
 }
 
-func (o *orgs) GetByName(ctx context.Context, name string) (*types.Org, error) {
+func (o *OrgStore) GetByName(ctx context.Context, name string) (*types.Org, error) {
 	if Mocks.Orgs.GetByName != nil {
 		return Mocks.Orgs.GetByName(ctx, name)
 	}
@@ -86,7 +125,7 @@ func (o *orgs) GetByName(ctx context.Context, name string) (*types.Org, error) {
 	return orgs[0], nil
 }
 
-func (o *orgs) Count(ctx context.Context, opt OrgsListOptions) (int, error) {
+func (o *OrgStore) Count(ctx context.Context, opt OrgsListOptions) (int, error) {
 	if Mocks.Orgs.Count != nil {
 		return Mocks.Orgs.Count(ctx, opt)
 	}
@@ -108,7 +147,7 @@ type OrgsListOptions struct {
 	*LimitOffset
 }
 
-func (o *orgs) List(ctx context.Context, opt *OrgsListOptions) ([]*types.Org, error) {
+func (o *OrgStore) List(ctx context.Context, opt *OrgsListOptions) ([]*types.Org, error) {
 	if Mocks.Orgs.List != nil {
 		return Mocks.Orgs.List(ctx, opt)
 	}
@@ -120,7 +159,7 @@ func (o *orgs) List(ctx context.Context, opt *OrgsListOptions) ([]*types.Org, er
 	return o.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 }
 
-func (*orgs) listSQL(opt OrgsListOptions) *sqlf.Query {
+func (*OrgStore) listSQL(opt OrgsListOptions) *sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
 	if opt.Query != "" {
 		query := "%" + opt.Query + "%"
@@ -129,8 +168,10 @@ func (*orgs) listSQL(opt OrgsListOptions) *sqlf.Query {
 	return sqlf.Sprintf("(%s)", sqlf.Join(conds, ") AND ("))
 }
 
-func (*orgs) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.Org, error) {
-	rows, err := dbconn.Global.QueryContext(ctx, "SELECT id, name, display_name, created_at, updated_at FROM orgs "+query, args...)
+func (o *OrgStore) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.Org, error) {
+	o.ensureStore()
+
+	rows, err := o.Handle().DB().QueryContext(ctx, "SELECT id, name, display_name, created_at, updated_at FROM orgs "+query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -152,41 +193,36 @@ func (*orgs) getBySQL(ctx context.Context, query string, args ...interface{}) ([
 	return orgs, nil
 }
 
-func (*orgs) Create(ctx context.Context, name string, displayName *string) (*types.Org, error) {
-	tx, err := dbconn.Global.BeginTx(ctx, nil)
+func (o *OrgStore) Create(ctx context.Context, name string, displayName *string) (newOrg *types.Org, err error) {
+	o.ensureStore()
+
+	tx, err := o.Transact(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer func() {
-		if err != nil {
-			rollErr := tx.Rollback()
-			if rollErr != nil {
-				err = multierror.Append(err, rollErr)
-			}
-			return
-		}
-		err = tx.Commit()
+		err = tx.Done(err)
 	}()
 
-	newOrg := types.Org{
+	newOrg = &types.Org{
 		Name:        name,
 		DisplayName: displayName,
 	}
 	newOrg.CreatedAt = time.Now()
 	newOrg.UpdatedAt = newOrg.CreatedAt
-	err = tx.QueryRowContext(
+	err = tx.Handle().DB().QueryRowContext(
 		ctx,
 		"INSERT INTO orgs(name, display_name, created_at, updated_at) VALUES($1, $2, $3, $4) RETURNING id",
 		newOrg.Name, newOrg.DisplayName, newOrg.CreatedAt, newOrg.UpdatedAt).Scan(&newOrg.ID)
 	if err != nil {
-		if pqErr, ok := err.(*pq.Error); ok {
-			switch pqErr.Constraint {
+		if pgErr, ok := err.(*pgconn.PgError); ok {
+			switch pgErr.ConstraintName {
 			case "orgs_name":
 				return nil, errOrgNameAlreadyExists
 			case "orgs_name_max_length", "orgs_name_valid_chars":
-				return nil, fmt.Errorf("org name invalid: %s", pqErr.Constraint)
+				return nil, fmt.Errorf("org name invalid: %s", pgErr.ConstraintName)
 			case "orgs_display_name_max_length":
-				return nil, fmt.Errorf("org display name invalid: %s", pqErr.Constraint)
+				return nil, fmt.Errorf("org display name invalid: %s", pgErr.ConstraintName)
 			}
 		}
 
@@ -194,14 +230,14 @@ func (*orgs) Create(ctx context.Context, name string, displayName *string) (*typ
 	}
 
 	// Reserve organization name in shared users+orgs namespace.
-	if _, err := tx.ExecContext(ctx, "INSERT INTO names(name, org_id) VALUES($1, $2)", newOrg.Name, newOrg.ID); err != nil {
+	if _, err := tx.Handle().DB().ExecContext(ctx, "INSERT INTO names(name, org_id) VALUES($1, $2)", newOrg.Name, newOrg.ID); err != nil {
 		return nil, errOrgNameAlreadyExists
 	}
 
-	return &newOrg, nil
+	return newOrg, nil
 }
 
-func (o *orgs) Update(ctx context.Context, id int32, displayName *string) (*types.Org, error) {
+func (o *OrgStore) Update(ctx context.Context, id int32, displayName *string) (*types.Org, error) {
 	org, err := o.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -225,24 +261,17 @@ func (o *orgs) Update(ctx context.Context, id int32, displayName *string) (*type
 	return org, nil
 }
 
-func (o *orgs) Delete(ctx context.Context, id int32) error {
+func (o *OrgStore) Delete(ctx context.Context, id int32) (err error) {
 	// Wrap in transaction because we delete from multiple tables.
-	tx, err := dbconn.Global.BeginTx(ctx, nil)
+	tx, err := o.Transact(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() {
-		if err != nil {
-			rollErr := tx.Rollback()
-			if rollErr != nil {
-				err = multierror.Append(err, rollErr)
-			}
-			return
-		}
-		err = tx.Commit()
+		err = tx.Done(err)
 	}()
 
-	res, err := tx.ExecContext(ctx, "UPDATE orgs SET deleted_at=now() WHERE id=$1 AND deleted_at IS NULL", id)
+	res, err := tx.Handle().DB().ExecContext(ctx, "UPDATE orgs SET deleted_at=now() WHERE id=$1 AND deleted_at IS NULL", id)
 	if err != nil {
 		return err
 	}
@@ -255,14 +284,14 @@ func (o *orgs) Delete(ctx context.Context, id int32) error {
 	}
 
 	// Release the organization name so it can be used by another user or org.
-	if _, err := tx.ExecContext(ctx, "DELETE FROM names WHERE org_id=$1", id); err != nil {
+	if _, err := tx.Handle().DB().ExecContext(ctx, "DELETE FROM names WHERE org_id=$1", id); err != nil {
 		return err
 	}
 
-	if _, err := tx.ExecContext(ctx, "UPDATE org_invitations SET deleted_at=now() WHERE deleted_at IS NULL AND org_id=$1", id); err != nil {
+	if _, err := tx.Handle().DB().ExecContext(ctx, "UPDATE org_invitations SET deleted_at=now() WHERE deleted_at IS NULL AND org_id=$1", id); err != nil {
 		return err
 	}
-	if _, err := tx.ExecContext(ctx, "UPDATE registry_extensions SET deleted_at=now() WHERE deleted_at IS NULL AND publisher_org_id=$1", id); err != nil {
+	if _, err := tx.Handle().DB().ExecContext(ctx, "UPDATE registry_extensions SET deleted_at=now() WHERE deleted_at IS NULL AND publisher_org_id=$1", id); err != nil {
 		return err
 	}
 

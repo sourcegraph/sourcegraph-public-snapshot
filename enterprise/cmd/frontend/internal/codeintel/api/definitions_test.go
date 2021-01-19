@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -21,6 +22,7 @@ func TestDefinitions(t *testing.T) {
 		{DumpID: 42, Path: "bar.go", Range: testRange2},
 		{DumpID: 42, Path: "baz.go", Range: testRange3},
 	})
+	mockGitserverClient.CommitExistsFunc.SetDefaultReturn(true, nil)
 
 	api := New(mockDBStore, mockLSIFStore, mockGitserverClient, &observation.TestContext)
 	definitions, err := api.Definitions(context.Background(), "sub1/main.go", 10, 50, 42)
@@ -43,6 +45,7 @@ func TestDefinitionsUnknownDump(t *testing.T) {
 	mockLSIFStore := NewMockLSIFStore()
 	mockGitserverClient := NewMockGitserverClient()
 	setMockDBStoreGetDumpByID(t, mockDBStore, nil)
+	mockGitserverClient.CommitExistsFunc.SetDefaultReturn(true, nil)
 
 	api := New(mockDBStore, mockLSIFStore, mockGitserverClient, &observation.TestContext)
 	if _, err := api.Definitions(context.Background(), "sub1/main.go", 10, 50, 25); err != ErrMissingDump {
@@ -63,6 +66,7 @@ func TestDefinitionViaSameDumpMoniker(t *testing.T) {
 		{DumpID: 42, Path: "bar.go", Range: testRange2},
 		{DumpID: 42, Path: "baz.go", Range: testRange3},
 	}, 3)
+	mockGitserverClient.CommitExistsFunc.SetDefaultReturn(true, nil)
 
 	api := New(mockDBStore, mockLSIFStore, mockGitserverClient, &observation.TestContext)
 	definitions, err := api.Definitions(context.Background(), "sub1/main.go", 10, 50, 42)
@@ -95,6 +99,7 @@ func TestDefinitionViaRemoteDumpMoniker(t *testing.T) {
 		{DumpID: 50, Path: "bar.go", Range: testRange2},
 		{DumpID: 50, Path: "baz.go", Range: testRange3},
 	}, 15)
+	mockGitserverClient.CommitExistsFunc.SetDefaultReturn(true, nil)
 
 	api := New(mockDBStore, mockLSIFStore, mockGitserverClient, &observation.TestContext)
 	definitions, err := api.Definitions(context.Background(), "sub1/main.go", 10, 50, 42)

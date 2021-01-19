@@ -1,4 +1,4 @@
-## Configuring SAML
+# Configuring SAML
 
 To configure Sourcegraph to use SAML authentication, you'll need to do 2 things:
 

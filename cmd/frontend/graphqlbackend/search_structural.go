@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -66,8 +67,8 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 		return nil, false, nil, nil
 	}
 
-	k := zoektResultCountFactor(len(repos.repoBranches), args.PatternInfo.FileMatchLimit, args.Mode == search.ZoektGlobalSearch)
-	searchOpts := zoektSearchOpts(ctx, k, args.PatternInfo)
+	k := zoektutil.ResultCountFactor(len(repos.repoBranches), args.PatternInfo.FileMatchLimit, args.Mode == search.ZoektGlobalSearch)
+	searchOpts := zoektutil.SearchOpts(ctx, k, args.PatternInfo)
 
 	if args.UseFullDeadline {
 		// If the user manually specified a timeout, allow zoekt to use all of the remaining timeout.
@@ -127,10 +128,15 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 		return nil, false, nil, nil
 	}
 
-	limitHit, files, partial := zoektLimitMatches(limitHit, int(args.PatternInfo.FileMatchLimit), resp.Files, func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool) {
+	matchLimiter := zoektutil.MatchLimiter{Limit: int(args.PatternInfo.FileMatchLimit)}
+	repoRevFunc := func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool) {
 		repo, inputRevs := repos.GetRepoInputRev(file)
 		return repo, inputRevs, true
-	})
+	}
+
+	var files []zoekt.FileMatch
+	partial, files = matchLimiter.Slice(resp.Files, repoRevFunc)
+	limitHit = limitHit || len(partial) > 0
 	resp.Files = files
 
 	maxLineMatches := 25 + k

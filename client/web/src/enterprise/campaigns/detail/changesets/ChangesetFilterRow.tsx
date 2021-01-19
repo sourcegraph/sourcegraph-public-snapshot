@@ -89,7 +89,7 @@ export const ChangesetFilterRow: React.FunctionComponent<ChangesetFilterRowProps
                 <div className="m-0 col">
                     <Form className="form-inline d-flex my-2" onSubmit={onSubmit}>
                         <input
-                            className="form-control flex-grow-1 changeset-filter__search"
+                            className="form-control flex-grow-1"
                             type="search"
                             ref={searchElement}
                             defaultValue={search}

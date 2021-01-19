@@ -15,7 +15,7 @@
     }
     &__status-cell {
         @include media-breakpoint-up(sm) {
-            background-color: $oc-blue-0;
+            background-color: var(--oc-blue-0);
         }
     }
     &__list-cell {
@@ -28,12 +28,24 @@
         }
     }
     &__expanded-section {
-        background-color: rgba($oc-blue-0, 0.5);
+        // Make it full width in the current row.
+        grid-column: 2 / -1;
         @include media-breakpoint-down(xs) {
             // Make it full width in the current row.
             grid-column: 1 / -1;
         }
-        // Make it full width in the current row.
-        grid-column: 2 / -1;
+    }
+}
+
+.theme-dark {
+    .visible-changeset-apply-preview-node {
+        &__status-cell {
+            @include media-breakpoint-up(sm) {
+                background-color: var(--oc-gray-7);
+            }
+        }
+        &__bg-expanded {
+            background-color: rgba($oc-gray-7, 0.5);
+        }
     }
 }

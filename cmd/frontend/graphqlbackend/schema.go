@@ -1467,6 +1467,19 @@ type ChangesetApplyPreviewConnectionStats {
     The changeset is removed from some of the associated campaigns.
     """
     detach: Int!
+
+    """
+    The amount of changesets that are added to the campaign in this operation.
+    """
+    added: Int!
+    """
+    The amount of changesets that are already attached to the campaign and modified in this operation.
+    """
+    modified: Int!
+    """
+    The amount of changesets that are disassociated from the campaign in this operation.
+    """
+    removed: Int!
 }
 
 """
@@ -3340,6 +3353,8 @@ type SearchResults {
     """
     repositoriesCount: Int!
     """
+    DEPRECATED in v3.24. Will be removed in v3.26.
+
     Repositories that were actually searched. Excludes repositories that would have been searched but were not
     because a timeout or error occurred while performing the search, or because the result limit was already
     reached, or because they were excluded due to being forks or archives.
@@ -3348,10 +3363,14 @@ type SearchResults {
     would be searched if further requests were made.
     """
     repositoriesSearched: [Repository!]!
+        @deprecated(reason: "expensive to calculate and unused by official clients. Will be removed in v3.26.")
     """
+    DEPRECATED in v3.24. Will be removed in v3.26.
+
     Indexed repositories searched. This is a subset of repositoriesSearched.
     """
     indexedRepositoriesSearched: [Repository!]!
+        @deprecated(reason: "expensive to calculate and unused by official clients. Will be removed in v3.26.")
     """
     Repositories that are busy cloning onto gitserver.
     In paginated search requests, some repositories may be cloning. These are reported here
@@ -4074,6 +4093,7 @@ enum ExternalServiceKind {
     GITHUB
     GITLAB
     GITOLITE
+    PERFORCE
     PHABRICATOR
     OTHER
 }

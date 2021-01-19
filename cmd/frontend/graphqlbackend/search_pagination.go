@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -157,11 +158,6 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 		return nil, &badRequestError{err}
 	}
 
-	err = validateRepoHasFileUsage(r.query)
-	if err != nil {
-		return nil, err
-	}
-
 	resultTypes := r.determineResultTypes(args, "")
 	tr.LazyPrintf("resultTypes: %v", resultTypes)
 
@@ -180,12 +176,12 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 		return repoIsLess(resolved.RepoRevs[i].Repo, resolved.RepoRevs[j].Repo)
 	})
 
-	common := SearchResultsCommon{}
+	common := streaming.Stats{}
 	cursor, results, fileCommon, err := paginatedSearchFilesInRepos(ctx, &args, r.pagination)
 	if err != nil {
 		return nil, err
 	}
-	common.update(fileCommon)
+	common.Update(fileCommon)
 
 	tr.LazyPrintf("results=%d %s", len(results), &common)
 
@@ -204,11 +200,11 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 	)
 
 	return &SearchResultsResolver{
-		start:               start,
-		SearchResultsCommon: common,
-		SearchResults:       results,
-		alert:               alert,
-		cursor:              cursor,
+		start:         start,
+		Stats:         common,
+		SearchResults: results,
+		alert:         alert,
+		cursor:        cursor,
 	}, nil
 }
 
@@ -244,7 +240,7 @@ func repoIsLess(i, j *types.RepoName) bool {
 //    top of the penalty we incur from the larger `count:` mentioned in point
 //    2 above (in the worst case scenario).
 //
-func paginatedSearchFilesInRepos(ctx context.Context, args *search.TextParameters, pagination *searchPaginationInfo) (*searchCursor, []SearchResultResolver, *SearchResultsCommon, error) {
+func paginatedSearchFilesInRepos(ctx context.Context, args *search.TextParameters, pagination *searchPaginationInfo) (*searchCursor, []SearchResultResolver, *streaming.Stats, error) {
 	repos, err := getRepos(ctx, args.RepoPromise)
 	if err != nil {
 		return nil, nil, nil, err
@@ -257,18 +253,18 @@ func paginatedSearchFilesInRepos(ctx context.Context, args *search.TextParameter
 		searchBucketMin:     10,
 		searchBucketMax:     1000,
 	}
-	return plan.execute(ctx, func(batch []*search.RepositoryRevisions) ([]SearchResultResolver, *SearchResultsCommon, error) {
+	return plan.execute(ctx, func(batch []*search.RepositoryRevisions) ([]SearchResultResolver, *streaming.Stats, error) {
 		batchArgs := *args
 		batchArgs.RepoPromise = (&search.Promise{}).Resolve(batch)
 		fileResults, fileCommon, err := searchFilesInRepos(ctx, &batchArgs, nil)
-		// Timeouts are reported through SearchResultsCommon so don't report an error for them
+		// Timeouts are reported through Stats so don't report an error for them
 		if err != nil && !(err == context.DeadlineExceeded || err == context.Canceled) {
 			return nil, nil, err
 		}
 		if fileCommon == nil {
 			// searchFilesInRepos can return a nil structure, but the executor
 			// requires a non-nil one always (which is more sane).
-			fileCommon = &SearchResultsCommon{}
+			fileCommon = &streaming.Stats{}
 		}
 		// fileResults is not sorted so we must sort it now. fileCommon may or
 		// may not be sorted, but we do not rely on its order.
@@ -315,9 +311,9 @@ type repoPaginationPlan struct {
 
 // executor is a function which searches a batch of repositories.
 //
-// A non-nil SearchResultsCommon must always be returned, even if an error is
+// A non-nil Stats must always be returned, even if an error is
 // returned.
-type executor func(batch []*search.RepositoryRevisions) ([]SearchResultResolver, *SearchResultsCommon, error)
+type executor func(batch []*search.RepositoryRevisions) ([]SearchResultResolver, *streaming.Stats, error)
 
 // repoOfResult is a helper function to resolve the repo associated with a result type.
 func repoOfResult(result SearchResultResolver) string {
@@ -342,7 +338,7 @@ func repoOfResult(result SearchResultResolver) string {
 //
 // If the executor returns any error, the search will be cancelled and the error
 // returned.
-func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *searchCursor, results []SearchResultResolver, common *SearchResultsCommon, err error) {
+func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *searchCursor, results []SearchResultResolver, common *streaming.Stats, err error) {
 	// Determine how large the batches of repositories we will search over will be.
 	var totalRepos int
 	if p.mockNumTotalRepos != nil {
@@ -368,7 +364,7 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *sea
 		repos = repos[repositoryOffset:]
 	}
 
-	// Search backends don't populate SearchResultsCommon.repos, the
+	// Search backends don't populate Stats.repos, the
 	// repository searcher does. We need to do that here.
 	commonRepos := make(map[api.RepoID]*types.RepoName, len(repos))
 	for _, r := range repos {
@@ -376,7 +372,7 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *sea
 	}
 
 	// Search over the repos list in batches.
-	common = &SearchResultsCommon{
+	common = &streaming.Stats{
 		Repos: commonRepos,
 	}
 	for start := 0; start <= len(repos); start += batchSize {
@@ -387,7 +383,7 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *sea
 		batch := repos[start:clamp(start+batchSize, 0, len(repos))]
 		batchResults, batchCommon, err := exec(batch)
 		if batchCommon == nil {
-			panic("never here: repoPaginationPlan.executor illegally returned nil SearchResultsCommon structure")
+			panic("never here: repoPaginationPlan.executor illegally returned nil Stats structure")
 		}
 		if err != nil {
 			return nil, nil, nil, err
@@ -395,7 +391,7 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *sea
 
 		// Accumulate the results and stop if we have enough for the user.
 		results = append(results, batchResults...)
-		common.update(batchCommon)
+		common.Update(batchCommon)
 
 		if len(results) >= resultOffset+int(p.pagination.limit) {
 			break
@@ -452,7 +448,7 @@ type slicedSearchResults struct {
 	results []SearchResultResolver
 
 	// common is the new common results structure, updated to reflect the sliced results only.
-	common *SearchResultsCommon
+	common *streaming.Stats
 
 	// resultOffset indicates where the search would continue within the last
 	// repository whose results were consumed. For example:
@@ -468,9 +464,9 @@ type slicedSearchResults struct {
 }
 
 // sliceSearchResults effectively slices results[offset:offset+limit] and
-// returns an updated SearchResultsCommon structure to reflect that, as well as
+// returns an updated Stats structure to reflect that, as well as
 // information about the slicing that was performed.
-func sliceSearchResults(results []SearchResultResolver, common *SearchResultsCommon, offset, limit int) (final slicedSearchResults) {
+func sliceSearchResults(results []SearchResultResolver, common *streaming.Stats, offset, limit int) (final slicedSearchResults) {
 	firstRepo := ""
 	if len(results[:offset]) > 0 {
 		firstRepo = repoOfResult(results[offset])
@@ -531,7 +527,7 @@ func sliceSearchResults(results []SearchResultResolver, common *SearchResultsCom
 		final.resultOffset++
 	}
 
-	// Construct the new SearchResultsCommon structure for just the results
+	// Construct the new Stats structure for just the results
 	// we're returning.
 	seenRepos := map[string]struct{}{}
 	finalResults := make([]SearchResultResolver, 0, limit)
@@ -553,11 +549,11 @@ func sliceSearchResults(results []SearchResultResolver, common *SearchResultsCom
 	return
 }
 
-func sliceSearchResultsCommon(common *SearchResultsCommon, firstResultRepo, lastResultRepo string) *SearchResultsCommon {
+func sliceSearchResultsCommon(common *streaming.Stats, firstResultRepo, lastResultRepo string) *streaming.Stats {
 	if common.Status.Any(search.RepoStatusLimitHit) {
 		panic("never here: partial results should never be present in paginated search")
 	}
-	final := &SearchResultsCommon{
+	final := &streaming.Stats{
 		IsLimitHit:         false, // irrelevant in paginated search
 		IsIndexUnavailable: common.IsIndexUnavailable,
 		Repos:              make(map[api.RepoID]*types.RepoName),

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/sourcegraph/internal/gituri"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -255,6 +255,19 @@ func TestLimitingSymbolResults(t *testing.T) {
 					t.Error(cmp.Diff(res2, tc.want))
 				}
 			})
+		}
+	})
+}
+
+func TestSymbolRange(t *testing.T) {
+	t.Run("unescaped pattern", func(t *testing.T) {
+		want := lsp.Range{
+			Start: lsp.Position{Line: 0, Character: 37},
+			End:   lsp.Position{Line: 0, Character: 40},
+		}
+		got := symbolRange(protocol.Symbol{Line: 1, Name: "baz", Pattern: `/^bar() { var regex = \/.*\\\/\/; function baz() { }  } $/`})
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Fatal(diff)
 		}
 	})
 }

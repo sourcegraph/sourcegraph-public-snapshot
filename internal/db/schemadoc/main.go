@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"database/sql"
 	"fmt"
 	"io/ioutil"
@@ -14,124 +15,167 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 
+	"github.com/lib/pq"
 	_ "github.com/lib/pq"
 )
 
-func runIgnoreError(cmd string, args ...string) {
-	_ = exec.Command(cmd, args...).Run()
+type runFunc func(quiet bool, cmd ...string) (string, error)
+
+const databaseNamePrefix = "schemadoc-gen-temp-"
+
+const containerName = "schemadoc"
+
+var logger = log.New(os.Stderr, "", log.LstdFlags)
+
+var versionRe = lazyregexp.New(fmt.Sprintf(`\b%s\b`, regexp.QuoteMeta("9.6")))
+
+var databases = map[string]string{
+	"frontend":  "schema.md",
+	"codeintel": "schema.codeintel.md",
 }
 
 // This script generates markdown formatted output containing descriptions of
 // the current dabase schema, obtained from postgres. The correct PGHOST,
 // PGPORT, PGUSER etc. env variables must be set to run this script.
-//
-// First CLI argument is an optional filename to write the output to.
-func generate(log *log.Logger, databaseName string) (string, error) {
-	const dbname = "schemadoc-gen-temp"
+func main() {
+	if err := mainErr(); err != nil {
+		log.Fatal(err)
+	}
+}
 
-	var (
-		dataSource string
-		run        func(cmd ...string) (string, error)
-	)
-	// If we are using pg9.6 use it locally since it is faster (CI \o/)
-	versionRe := lazyregexp.New(fmt.Sprintf(`\b%s\b`, regexp.QuoteMeta("9.6")))
-	if out, _ := exec.Command("psql", "--version").CombinedOutput(); versionRe.Match(out) {
-		dataSource = "dbname=" + dbname
-		run = func(cmd ...string) (string, error) {
-			c := exec.Command(cmd[0], cmd[1:]...)
-			c.Stderr = log.Writer()
-			out, err := c.Output()
-			return string(out), err
-		}
-		runIgnoreError("dropdb", dbname)
-		defer runIgnoreError("dropdb", dbname)
-	} else {
-		log.Printf("Running PostgreSQL 9.6 in docker since local version is %s", strings.TrimSpace(string(out)))
-		if err := exec.Command("docker", "image", "inspect", "postgres:9.6").Run(); err != nil {
-			log.Println("docker pull postgres9.6")
-			pull := exec.Command("docker", "pull", "postgres:9.6")
-			pull.Stdout = log.Writer()
-			pull.Stderr = log.Writer()
-			if err := pull.Run(); err != nil {
-				return "", fmt.Errorf("docker pull postgres9.6 failed: %w", err)
-			}
-			log.Println("docker pull complete")
-		}
-		runIgnoreError("docker", "rm", "--force", dbname)
-		server := exec.Command("docker", "run", "--rm", "--name", dbname, "-e", "POSTGRES_HOST_AUTH_METHOD=trust", "-p", "5433:5432", "postgres:9.6")
-		if err := server.Start(); err != nil {
-			return "", err
-		}
+func mainErr() error {
+	// Run pg9.6 locally if it exists
+	if version, _ := exec.Command("psql", "--version").CombinedOutput(); versionRe.Match(version) {
+		return mainLocal()
+	}
 
-		defer func() {
-			_ = server.Process.Kill()
-			runIgnoreError("docker", "kill", dbname)
-			_ = server.Wait()
-		}()
+	return mainContainer()
+}
 
-		dataSource = "postgres://postgres@127.0.0.1:5433/postgres?dbname=" + dbname
-		run = func(cmd ...string) (string, error) {
-			cmd = append([]string{"exec", "-u", "postgres", dbname}, cmd...)
-			c := exec.Command("docker", cmd...)
-			c.Stderr = log.Writer()
-			out, err := c.Output()
-			return string(out), err
-		}
+func mainLocal() error {
+	dataSourcePrefix := "dbname=" + databaseNamePrefix
 
-		attempts := 0
-		for {
-			attempts++
-			if err := exec.Command("pg_isready", "-U", "postgres", "-d", dbname, "-h", "127.0.0.1", "-p", "5433").Run(); err == nil {
-				break
-			} else if attempts > 30 {
-				return "", fmt.Errorf("gave up waiting after 30s attempt for pg_isready: %w", err)
-			}
-			time.Sleep(time.Second)
+	for databaseName, destinationFile := range databases {
+		if err := generateAndWrite(databaseName, dataSourcePrefix+databaseName, nil, destinationFile); err != nil {
+			return err
 		}
 	}
 
-	if out, err := run("createdb", dbname); err != nil {
-		return "", fmt.Errorf("createdb: %s: %w", out, err)
-	}
+	return nil
+}
 
-	if err := dbconn.SetupGlobalConnection(dataSource); err != nil {
-		return "", fmt.Errorf("SetupGlobalConnection: %w", err)
-	}
+func mainContainer() error {
+	logger.Printf("Running PostgreSQL 9.6 in docker")
 
-	if err := dbconn.MigrateDB(dbconn.Global, databaseName); err != nil {
-		return "", fmt.Errorf("MigrateDB: %w", err)
-	}
-
-	db, err := dbconn.Open(dataSource)
+	prefix, shutdown, err := startDocker()
 	if err != nil {
-		return "", fmt.Errorf("Open: %w", err)
+		log.Fatal(err)
+	}
+	defer shutdown()
+
+	dataSourcePrefix := "postgres://postgres@127.0.0.1:5433/postgres?dbname=" + databaseNamePrefix
+
+	for databaseName, destinationFile := range databases {
+		if err := generateAndWrite(databaseName, dataSourcePrefix+databaseName, prefix, destinationFile); err != nil {
+			return err
+		}
 	}
 
-	// Query names of all public tables.
-	rows, err := db.Query(`
-SELECT table_name
-FROM information_schema.tables
-WHERE table_schema='public' AND table_type='BASE TABLE';
-	`)
+	return nil
+}
+
+func generateAndWrite(databaseName, dataSource string, commandPrefix []string, destinationFile string) error {
+	run := runWithPrefix(commandPrefix)
+
+	// Try to drop a database if it already exists
+	_, _ = run(true, "dropdb", databaseNamePrefix+databaseName)
+
+	// Let's also try to clean up after ourselves
+	defer func() { _, _ = run(true, "dropdb", databaseNamePrefix+databaseName) }()
+
+	if out, err := run(false, "createdb", databaseNamePrefix+databaseName); err != nil {
+		return errors.Wrap(err, fmt.Sprintf("run: %s", out))
+	}
+
+	out, err := generateInternal(databaseName, dataSource, run)
 	if err != nil {
-		return "", fmt.Errorf("Query: %w", err)
+		return err
 	}
-	tables := []string{}
-	defer rows.Close()
-	for rows.Next() {
-		var name string
-		err := rows.Scan(&name)
-		if err != nil {
-			return "", fmt.Errorf("rows.Scan: %w", err)
+
+	return ioutil.WriteFile(destinationFile, []byte(out), os.ModePerm)
+}
+
+func startDocker() (commandPrefix []string, shutdown func(), _ error) {
+	if err := exec.Command("docker", "image", "inspect", "postgres:9.6").Run(); err != nil {
+		logger.Println("docker pull postgres9.6")
+		pull := exec.Command("docker", "pull", "postgres:9.6")
+		pull.Stdout = logger.Writer()
+		pull.Stderr = logger.Writer()
+		if err := pull.Run(); err != nil {
+			return nil, nil, errors.Wrap(err, "docker pull postgres9.6")
 		}
-		tables = append(tables, name)
+		logger.Println("docker pull complete")
 	}
-	if err = rows.Err(); err != nil {
-		return "", fmt.Errorf("rows.Err: %w", err)
+
+	run := runWithPrefix(nil)
+
+	_, _ = run(true, "docker", "rm", "--force", containerName)
+	server := exec.Command("docker", "run", "--rm", "--name", containerName, "-e", "POSTGRES_HOST_AUTH_METHOD=trust", "-p", "5433:5432", "postgres:9.6")
+	if err := server.Start(); err != nil {
+		return nil, nil, errors.Wrap(err, "docker run")
+	}
+
+	shutdown = func() {
+		_ = server.Process.Kill()
+		_, _ = run(true, "docker", "kill", containerName)
+		_ = server.Wait()
+	}
+
+	attempts := 0
+	for {
+		attempts++
+		// TODO - not sure why this would work...?
+		if err := exec.Command("pg_isready", "-U", "postgres", "-h", "127.0.0.1", "-p", "5433").Run(); err == nil {
+			break
+		} else if attempts > 30 {
+			shutdown()
+			return nil, nil, errors.Wrap(err, "pg_isready timeout")
+		}
+		time.Sleep(time.Second)
+	}
+
+	return []string{"docker", "exec", "-u", "postgres", containerName}, shutdown, nil
+}
+
+func generateInternal(databaseName, dataSource string, run runFunc) (string, error) {
+	db, err := dbconn.NewRaw(dataSource)
+	if err != nil {
+		return "", errors.Wrap(err, "NewRaw")
+	}
+	defer func() {
+		if err := db.Close(); err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	if err := dbconn.MigrateDB(db, databaseName); err != nil {
+		return "", errors.Wrap(err, "MigrateDB")
+	}
+
+	tables, err := getTables(db)
+	if err != nil {
+		return "", err
+	}
+
+	types, err := describeTypes(db)
+	if err != nil {
+		return "", err
 	}
 
 	ch := make(chan string, len(tables))
@@ -151,42 +195,12 @@ WHERE table_schema='public' AND table_type='BASE TABLE';
 			defer wg.Done()
 
 			for table := range ch {
-				log.Println("describe", table)
+				logger.Println("describe", table)
 
-				comment, err := getTableComment(db, table)
+				doc, err := describeTable(db, databaseName, table, run)
 				if err != nil {
-					log.Fatalf("table comments failed: %s", err)
+					logger.Fatalf("error: %s", err)
 					continue
-				}
-
-				columnComments, err := getColumnComments(db, table)
-				if err != nil {
-					log.Fatalf("column comments failed: %s", err.Error())
-					continue
-				}
-
-				// Get postgres "describe table" output.
-				out, err := run("psql", "-X", "--quiet", "--dbname", dbname, "-c", fmt.Sprintf("\\d %s", table))
-				if err != nil {
-					log.Fatalf("describe %s failed: %s", table, err)
-					continue
-				}
-
-				lines := strings.Split(out, "\n")
-				doc := "# " + strings.TrimSpace(lines[0]) + "\n"
-				doc += "```\n" + strings.Join(lines[1:], "\n") + "```\n"
-				if comment != "" {
-					doc += "\n" + comment + "\n"
-				}
-
-				var columns []string
-				for k := range columnComments {
-					columns = append(columns, k)
-				}
-				sort.Strings(columns)
-
-				for _, k := range columns {
-					doc += "\n**" + k + "**: " + columnComments[k] + "\n"
 				}
 
 				mu.Lock()
@@ -199,24 +213,122 @@ WHERE table_schema='public' AND table_type='BASE TABLE';
 	wg.Wait()
 	sort.Strings(docs)
 
-	return strings.Join(docs, "\n"), nil
+	combined := strings.Join(docs, "\n")
+
+	if len(types) > 0 {
+		buf := bytes.NewBuffer(nil)
+		buf.WriteString("\n")
+
+		var typeNames []string
+		for k := range types {
+			typeNames = append(typeNames, k)
+		}
+		sort.Strings(typeNames)
+
+		for _, name := range typeNames {
+			buf.WriteString("# Type ")
+			buf.WriteString(name)
+			buf.WriteString("\n\n- ")
+			buf.WriteString(strings.Join(types[name], "\n- "))
+			buf.WriteString("\n\n")
+		}
+
+		combined += buf.String()
+	}
+
+	return combined, nil
 }
 
-func getTableComment(db *sql.DB, table string) (string, error) {
-	rows, err := db.Query("select obj_description($1::regclass)", table)
+func getTables(db *sql.DB) (tables []string, _ error) {
+	// Query names of all public tables and views.
+	rows, err := db.Query(`
+		SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+		UNION
+		SELECT table_name FROM information_schema.views WHERE table_schema = 'public' AND table_name != 'pg_stat_statements';
+	`)
 	if err != nil {
-		return "", fmt.Errorf("Query: %w", err)
+		return nil, errors.Wrap(err, "db.Query")
 	}
 	defer rows.Close()
 
-	var comment string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, errors.Wrap(err, "rows.Scan")
+		}
+		tables = append(tables, name)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, errors.Wrap(err, "rows.Err")
+	}
+
+	return tables, nil
+}
+
+func describeTable(db *sql.DB, databaseName, table string, run runFunc) (string, error) {
+	comment, err := getTableComment(db, table)
+	if err != nil {
+		return "", err
+	}
+
+	columnComments, err := getColumnComments(db, table)
+	if err != nil {
+		return "", err
+	}
+
+	// Get postgres "describe table" output.
+	out, err := run(false, "psql", "-X", "--quiet", "--dbname", databaseNamePrefix+databaseName, "-c", fmt.Sprintf("\\d %s", table))
+	if err != nil {
+		return "", errors.Wrap(err, fmt.Sprintf("run: %s", out))
+	}
+
+	lines := strings.Split(out, "\n")
+
+	buf := bytes.NewBuffer(nil)
+	buf.WriteString("# ")
+	buf.WriteString(strings.TrimSpace(lines[0]))
+	buf.WriteString("\n")
+	buf.WriteString("```\n")
+	buf.WriteString(strings.Join(lines[1:], "\n"))
+	buf.WriteString("```\n")
+
+	if comment != "" {
+		buf.WriteString("\n")
+		buf.WriteString(comment)
+		buf.WriteString("\n")
+	}
+
+	var columns []string
+	for k := range columnComments {
+		columns = append(columns, k)
+	}
+	sort.Strings(columns)
+
+	for _, k := range columns {
+		buf.WriteString("\n**")
+		buf.WriteString(k)
+		buf.WriteString("**: ")
+		buf.WriteString(columnComments[k])
+		buf.WriteString("\n")
+	}
+
+	return buf.String(), nil
+}
+
+func getTableComment(db *sql.DB, table string) (comment string, _ error) {
+	rows, err := db.Query("select obj_description($1::regclass)", table)
+	if err != nil {
+		return "", errors.Wrap(err, "db.Query")
+	}
+	defer rows.Close()
+
 	if rows.Next() {
 		if err := rows.Scan(&dbutil.NullString{S: &comment}); err != nil {
-			return "", fmt.Errorf("rows.Scan: %w", err)
+			return "", errors.Wrap(err, "rows.Scan")
 		}
 	}
 	if err = rows.Err(); err != nil {
-		return "", fmt.Errorf("rows.Err: %w", err)
+		return "", errors.Wrap(err, "rows.Err")
 	}
 
 	return comment, nil
@@ -235,7 +347,7 @@ func getColumnComments(db *sql.DB, table string) (map[string]string, error) {
 		WHERE cols.table_name = $1;
 	`, table)
 	if err != nil {
-		return nil, fmt.Errorf("Query: %w", err)
+		return nil, errors.Wrap(err, "db.Query")
 	}
 	defer rows.Close()
 
@@ -243,29 +355,60 @@ func getColumnComments(db *sql.DB, table string) (map[string]string, error) {
 	for rows.Next() {
 		var k, v string
 		if err := rows.Scan(&k, &dbutil.NullString{S: &v}); err != nil {
-			return nil, fmt.Errorf("rows.Scan: %w", err)
+			return nil, errors.Wrap(err, "rows.Scan")
 		}
 		if v != "" {
 			comments[k] = v
 		}
 	}
-	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("rows.Err: %w", err)
+	if err := rows.Err(); err != nil {
+		return nil, errors.Wrap(err, "rows.Err")
 	}
 
 	return comments, nil
 }
 
-func main() {
-	out, err := generate(log.New(os.Stderr, "", log.LstdFlags), os.Args[1])
+func describeTypes(db *sql.DB) (map[string][]string, error) {
+	rows, err := db.Query(`
+		SELECT
+			t.typname as type_name,
+			array_agg(e.enumlabel ORDER BY e.enumsortorder) as values
+		FROM pg_catalog.pg_type t
+			JOIN pg_catalog.pg_namespace n ON n.oid = t.typnamespace
+			JOIN pg_catalog.pg_enum e ON t.oid = e.enumtypid
+		GROUP BY t.typname;
+	`)
 	if err != nil {
-		log.Fatal(err)
+		return nil, errors.Wrap(err, "db.Query")
 	}
-	if len(os.Args) > 1 {
-		if err := ioutil.WriteFile(os.Args[2], []byte(out), 0644); err != nil {
-			log.Fatal(err)
+	defer rows.Close()
+
+	values := map[string][]string{}
+	for rows.Next() {
+		var k string
+		var v []string
+		if err := rows.Scan(&k, pq.Array(&v)); err != nil {
+			return nil, errors.Wrap(err, "rows.Scan")
 		}
-	} else {
-		fmt.Print(out)
+		values[k] = v
+	}
+	if err := rows.Err(); err != nil {
+		return nil, errors.Wrap(err, "rows.Err")
+	}
+
+	return values, nil
+}
+
+func runWithPrefix(prefix []string) runFunc {
+	return func(quiet bool, cmd ...string) (string, error) {
+		cmd = append(prefix, cmd...)
+
+		c := exec.Command(cmd[0], cmd[1:]...)
+		if !quiet {
+			c.Stderr = logger.Writer()
+		}
+
+		out, err := c.Output()
+		return string(out), err
 	}
 }

@@ -5,6 +5,7 @@
 
 | Name | Description | Default Value |
 |------|-------------|---------------|
+| `-associated-index-id` | ID of the associated index record for this upload. For internal use only. | `-1` |
 | `-commit` | The 40-character hash of the commit. Defaults to the currently checked-out commit. |  |
 | `-file` | The path to the LSIF dump file. | `./dump.lsif` |
 | `-github-token` | A GitHub access token with 'public_repo' scope that Sourcegraph uses to verify you have access to the repository. |  |
@@ -16,13 +17,16 @@
 | `-open` | Open the LSIF upload page in your browser. | `false` |
 | `-repo` | The name of the repository (e.g. github.com/gorilla/mux). By default, derived from the origin remote. |  |
 | `-root` | The path in the repository that matches the LSIF projectRoot (e.g. cmd/project1). Defaults to the directory where the dump file is located. |  |
-| `-upload-route` | The path of the upload route. | `/.api/lsif/upload` |
+| `-trace` | -trace=0 shows no logs; -trace=1 shows requests and response metadata; -trace=2 shows headers, -trace=3 shows response body | `0` |
+| `-upload-route` | The path of the upload route. For internal use only. | `/.api/lsif/upload` |
 
 
 ## Usage
 
 ```
 Usage of 'src lsif upload':
+  -associated-index-id int
+    	ID of the associated index record for this upload. For internal use only. (default -1)
   -commit string
     	The 40-character hash of the commit. Defaults to the currently checked-out commit.
   -file string
@@ -45,8 +49,10 @@ Usage of 'src lsif upload':
     	The name of the repository (e.g. github.com/gorilla/mux). By default, derived from the origin remote.
   -root string
     	The path in the repository that matches the LSIF projectRoot (e.g. cmd/project1). Defaults to the directory where the dump file is located.
+  -trace int
+    	-trace=0 shows no logs; -trace=1 shows requests and response metadata; -trace=2 shows headers, -trace=3 shows response body
   -upload-route string
-    	The path of the upload route. (default "/.api/lsif/upload")
+    	The path of the upload route. For internal use only. (default "/.api/lsif/upload")
 
 Examples:
 

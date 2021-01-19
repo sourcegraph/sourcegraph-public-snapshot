@@ -756,6 +756,60 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 				}
 			}
 		})
+
+		t.Run("ReconcilerState", func(t *testing.T) {
+			for _, c := range changesets {
+				opts := GetChangesetOpts{ID: c.ID, ReconcilerState: c.ReconcilerState}
+
+				have, err := s.GetChangeset(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+				want := c
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatal(diff)
+				}
+
+				if c.ReconcilerState == campaigns.ReconcilerStateErrored {
+					c.ReconcilerState = campaigns.ReconcilerStateCompleted
+				} else {
+					opts.ReconcilerState = campaigns.ReconcilerStateErrored
+				}
+				_, err = s.GetChangeset(ctx, opts)
+				if err != ErrNoResults {
+					t.Fatalf("unexpected error, want=%q have=%q", ErrNoResults, err)
+				}
+			}
+		})
+
+		t.Run("PublicationState", func(t *testing.T) {
+			for _, c := range changesets {
+				opts := GetChangesetOpts{ID: c.ID, PublicationState: c.PublicationState}
+
+				have, err := s.GetChangeset(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+				want := c
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatal(diff)
+				}
+
+				// Toggle publication state
+				if c.PublicationState == campaigns.ChangesetPublicationStateUnpublished {
+					opts.PublicationState = campaigns.ChangesetPublicationStatePublished
+				} else {
+					opts.PublicationState = campaigns.ChangesetPublicationStateUnpublished
+				}
+
+				_, err = s.GetChangeset(ctx, opts)
+				if err != ErrNoResults {
+					t.Fatalf("unexpected error, want=%q have=%q", ErrNoResults, err)
+				}
+			}
+		})
 	})
 
 	t.Run("Update", func(t *testing.T) {

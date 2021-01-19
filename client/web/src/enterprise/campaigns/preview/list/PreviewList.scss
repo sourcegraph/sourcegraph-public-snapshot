@@ -2,7 +2,10 @@
     &__grid {
         display: grid;
         grid-template-columns:
-            [caret] min-content [current_state] min-content [action] min-content [info] minmax(auto, 1fr)
+            [caret] min-content [current_state] min-content [indicator] min-content [action] min-content [info] minmax(
+                auto,
+                1fr
+            )
             [diffstat] min-content [end];
         align-items: center;
     }

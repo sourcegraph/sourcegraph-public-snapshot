@@ -620,7 +620,7 @@ func getRewirerMappingsQuery(opts GetRewirerMappingsOpts) *sqlf.Query {
 		opts.CampaignSpecID,
 		opts.CampaignID,
 		opts.CampaignSpecID,
-		opts.CampaignID,
+		strconv.Itoa(int(opts.CampaignID)),
 		detachTextSearch,
 		opts.LimitOffset.SQL(),
 	)

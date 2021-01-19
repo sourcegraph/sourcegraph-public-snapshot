@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"unicode/utf8"
 
 	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
@@ -22,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gituri"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -41,13 +43,13 @@ func (s *searchSymbolResult) uri() *gituri.URI {
 	return s.baseURI.WithFilePath(s.symbol.Path)
 }
 
-var mockSearchSymbols func(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, common *SearchResultsCommon, err error)
+var mockSearchSymbols func(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, common *streaming.Stats, err error)
 
 // searchSymbols searches the given repos in parallel for symbols matching the given search query
 // it can be used for both search suggestions and search results
 //
 // May return partial results and an error
-func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, common *SearchResultsCommon, err error) {
+func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, common *streaming.Stats, err error) {
 	if mockSearchSymbols != nil {
 		return mockSearchSymbols(ctx, args, limit)
 	}
@@ -70,7 +72,7 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 	ctx, cancelAll := context.WithCancel(ctx)
 	defer cancelAll()
 
-	common = &SearchResultsCommon{}
+	common = &streaming.Stats{}
 
 	indexed, err := newIndexedSearchRequest(ctx, args, symbolRequest)
 	if err != nil {
@@ -133,7 +135,7 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 			func() {
 				mu.Lock()
 				defer mu.Unlock()
-				common.update(&event.common)
+				common.Update(&event.common)
 				tr.LogFields(otlog.Object("searchErr", event.err), otlog.Error(err), otlog.Bool("overLimitCanceled", overLimitCanceled))
 				if event.err != nil && err == nil && !overLimitCanceled {
 					err = event.err
@@ -170,7 +172,7 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 					run.Error(repoErr)
 				}
 			}
-			common.update(&repoCommon)
+			common.Update(&repoCommon)
 			if repoSymbols != nil {
 				addMatches(repoSymbols)
 			}
@@ -299,26 +301,58 @@ func makeFileMatchURIFromSymbol(symbolResult *searchSymbolResult, inputRev strin
 	return uri
 }
 
-func symbolRange(s protocol.Symbol) lsp.Range {
-	ch := ctagsSymbolCharacter(s)
-	return lsp.Range{
-		Start: lsp.Position{Line: s.Line - 1, Character: ch},
-		End:   lsp.Position{Line: s.Line - 1, Character: ch + len(s.Name)},
+// unescapePattern expects a regexp pattern of the form /^ ... $/ and unescapes
+// the pattern inside it.
+func unescapePattern(pattern string) string {
+	pattern = strings.TrimSuffix(strings.TrimPrefix(pattern, "/^"), "$/")
+	var start int
+	var r rune
+	var escaped []rune
+	buf := []byte(pattern)
+
+	next := func() rune {
+		r, start := utf8.DecodeRune(buf)
+		buf = buf[start:]
+		return r
 	}
+
+	for len(buf) > 0 {
+		r = next()
+		if r == '\\' && len(buf[start:]) > 0 {
+			r = next()
+			if r == '/' || r == '\\' {
+				escaped = append(escaped, r)
+				continue
+			}
+			escaped = append(escaped, '\\', r)
+			continue
+		}
+		escaped = append(escaped, r)
+	}
+	return string(escaped)
 }
 
-// ctagsSymbolCharacter only outputs the line number, not the character (or range). Use the regexp it provides to
-// guess the character.
-func ctagsSymbolCharacter(s protocol.Symbol) int {
+// computeSymbolOffset calculates a symbol offset based on the the only Symbol
+// data member that currently exposes line content: the symbols Pattern member,
+// which has the form /^ ... $/. We find the offset of the symbol name in this
+// line, after escaping the Pattern.
+func computeSymbolOffset(s protocol.Symbol) int {
 	if s.Pattern == "" {
 		return 0
 	}
-	pattern := strings.TrimPrefix(s.Pattern, "/^")
-	i := strings.Index(pattern, s.Name)
+	i := strings.Index(unescapePattern(s.Pattern), s.Name)
 	if i >= 0 {
 		return i
 	}
 	return 0
+}
+
+func symbolRange(s protocol.Symbol) lsp.Range {
+	offset := computeSymbolOffset(s)
+	return lsp.Range{
+		Start: lsp.Position{Line: s.Line - 1, Character: offset},
+		End:   lsp.Position{Line: s.Line - 1, Character: offset + len(s.Name)},
+	}
 }
 
 func ctagsKindToLSPSymbolKind(kind string) lsp.SymbolKind {

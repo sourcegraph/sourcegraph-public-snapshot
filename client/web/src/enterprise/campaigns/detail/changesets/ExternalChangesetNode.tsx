@@ -18,6 +18,7 @@ import { ErrorAlert } from '../../../../components/alerts'
 import { ChangesetFileDiff } from './ChangesetFileDiff'
 import { ExternalChangesetInfoCell } from './ExternalChangesetInfoCell'
 import { DownloadDiffButton } from './DownloadDiffButton'
+import classNames from 'classnames'
 
 export interface ExternalChangesetNodeProps extends ThemeProps {
     node: ExternalChangesetFields
@@ -66,24 +67,37 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                     <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
                 )}
             </button>
-            <ChangesetStatusCell changeset={node} className="external-changeset-node__state d-block d-sm-flex" />
+            <ChangesetStatusCell
+                changeset={node}
+                className="p-2 align-self-stretch external-changeset-node__state d-block d-sm-flex"
+            />
             <ExternalChangesetInfoCell
                 node={node}
                 viewerCanAdminister={viewerCanAdminister}
-                className="external-changeset-node__information"
+                className="p-2 align-self-stretch external-changeset-node__information"
             />
-            <div className="d-flex d-md-none justify-content-start external-changeset-node__statuses">
+            <div
+                className={classNames(
+                    'd-flex d-md-none justify-content-start external-changeset-node__statuses',
+                    (node.checkState || node.reviewState || node.diffStat) && 'p-2'
+                )}
+            >
                 {node.checkState && <ChangesetCheckStatusCell checkState={node.checkState} className="mr-3" />}
                 {node.reviewState && <ChangesetReviewStatusCell reviewState={node.reviewState} className="mr-3" />}
                 {node.diffStat && <DiffStat {...node.diffStat} expandedCounts={true} separateLines={true} />}
             </div>
-            <span className="d-none d-md-inline">
+            <span className={classNames('align-self-stretch d-none d-md-flex', node.checkState && 'p-2')}>
                 {node.checkState && <ChangesetCheckStatusCell checkState={node.checkState} />}
             </span>
-            <span className="d-none d-md-inline">
+            <span className={classNames('align-self-stretch d-none d-md-flex', node.reviewState && 'p-2')}>
                 {node.reviewState && <ChangesetReviewStatusCell reviewState={node.reviewState} />}
             </span>
-            <div className="d-none d-md-flex justify-content-center">
+            <div
+                className={classNames(
+                    'align-self-stretch d-none d-md-flex justify-content-center',
+                    node.diffStat && 'p-2'
+                )}
+            >
                 {node.diffStat && <DiffStat {...node.diffStat} expandedCounts={true} separateLines={true} />}
             </div>
             {/* The button for expanding the information used on xs devices. */}
@@ -102,8 +116,8 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
             </button>
             {isExpanded && (
                 <>
-                    <div />
-                    <div className="external-changeset-node__expanded-section p-2">
+                    <div className="external-changeset-node__bg-expanded align-self-stretch" />
+                    <div className="external-changeset-node__expanded-section external-changeset-node__bg-expanded p-2">
                         {node.currentSpec?.type === ChangesetSpecType.BRANCH && (
                             <DownloadDiffButton changesetID={node.id} />
                         )}

@@ -141,16 +141,21 @@ In the workspace:
 
 ### 4. Saving a changeset spec
 
-The produced diff is added to the local cache so that re-executing the same steps in the same repository can be skipped if the base branch did not changed.
+`src` adds the produced diff to the local cache, so that re-executing the same steps in the same repository can be skipped if the base branch has not changed.
 
-The diff is then combined with information about the repository in which the changes have been made (the name and ID of the repository, the revision of its base branch) and together with the `changesetTemplate` turned into a changeset spec: a description of what the changeset should look like.
+`src` then creates a changeset spec from:
+- the diff
+- information about the repository in which the changes have been made (the name and ID of the repository, the revision of its base branch) 
+- the `changesetTemplate`
+
+A changeset spec is a description of what the changeset should look like.
 
 ## Importing changesets
 
-If the campaign spec contains [`importChangesets`](../references/campaign_spec_yaml_reference.md#importchangesets) then `src` goes through the list of `importChangesets` and for each entry it will:
+If the campaign spec contains [`importChangesets`](../references/campaign_spec_yaml_reference.md#importchangesets) then `src` goes through the list of `importChangesets` and for each entry it:
 
-1. Resolve the repository name, trying to get to get an ID, base branch, and revision for the given repository name.
-1. Parse the `externalIDs`, checking that they're valid strings or numbers.
+1. Resolves the repository name, trying to get to get an ID, base branch, and revision for the given repository name.
+1. Parses the `externalIDs`, checking that they're valid strings or numbers.
 1. For each external ID it saves a changeset spec that describes that a changeset with the given external ID, in the given repository, should be imported and tracked in the campaign.
 
 ## Sending changeset specs

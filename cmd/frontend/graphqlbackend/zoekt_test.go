@@ -19,7 +19,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
-	searchzoekt "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
@@ -28,6 +27,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -67,7 +68,7 @@ func TestIndexedSearch(t *testing.T) {
 		wantMatchURLs      []string
 		wantMatchInputRevs []string
 		wantUnindexed      []*search.RepositoryRevisions
-		wantCommon         SearchResultsCommon
+		wantCommon         streaming.Stats
 		wantErr            bool
 	}{
 		{
@@ -79,7 +80,7 @@ func TestIndexedSearch(t *testing.T) {
 				useFullDeadline: false,
 				since:           func(time.Time) time.Duration { return time.Second - time.Millisecond },
 			},
-			wantCommon: SearchResultsCommon{
+			wantCommon: streaming.Stats{
 				Status: mkStatusMap(map[string]search.RepoStatus{
 					"foo/bar":    search.RepoStatusSearched | search.RepoStatusIndexed,
 					"foo/foobar": search.RepoStatusSearched | search.RepoStatusIndexed,
@@ -96,7 +97,7 @@ func TestIndexedSearch(t *testing.T) {
 				useFullDeadline: false,
 				since:           func(time.Time) time.Duration { return time.Minute },
 			},
-			wantCommon: SearchResultsCommon{
+			wantCommon: streaming.Stats{
 				Status: mkStatusMap(map[string]search.RepoStatus{
 					"foo/bar":    search.RepoStatusIndexed | search.RepoStatusTimedout,
 					"foo/foobar": search.RepoStatusIndexed | search.RepoStatusTimedout,
@@ -112,7 +113,7 @@ func TestIndexedSearch(t *testing.T) {
 				useFullDeadline: true,
 				since:           func(time.Time) time.Duration { return 0 },
 			},
-			wantCommon: SearchResultsCommon{
+			wantCommon: streaming.Stats{
 				Status: mkStatusMap(map[string]search.RepoStatus{
 					"foo/bar":    search.RepoStatusIndexed | search.RepoStatusTimedout,
 					"foo/foobar": search.RepoStatusIndexed | search.RepoStatusTimedout,
@@ -173,7 +174,7 @@ func TestIndexedSearch(t *testing.T) {
 				"",
 				"",
 			},
-			wantCommon: SearchResultsCommon{
+			wantCommon: streaming.Stats{
 				Status: mkStatusMap(map[string]search.RepoStatus{
 					"foo/bar":    search.RepoStatusSearched | search.RepoStatusIndexed,
 					"foo/foobar": search.RepoStatusSearched | search.RepoStatusIndexed,
@@ -203,7 +204,7 @@ func TestIndexedSearch(t *testing.T) {
 				},
 				since: func(time.Time) time.Duration { return 0 },
 			},
-			wantCommon: SearchResultsCommon{
+			wantCommon: streaming.Stats{
 				Status: mkStatusMap(map[string]search.RepoStatus{
 					"foo/bar": search.RepoStatusSearched | search.RepoStatusIndexed,
 				}),
@@ -238,7 +239,7 @@ func TestIndexedSearch(t *testing.T) {
 					},
 				},
 			},
-			wantCommon: SearchResultsCommon{
+			wantCommon: streaming.Stats{
 				Status: mkStatusMap(map[string]search.RepoStatus{
 					"foo/bar": search.RepoStatusSearched | search.RepoStatusIndexed,
 				}),
@@ -292,7 +293,7 @@ func TestIndexedSearch(t *testing.T) {
 				RepoPromise:     (&search.Promise{}).Resolve(tt.args.repos),
 				UseFullDeadline: tt.args.useFullDeadline,
 				Zoekt: &searchbackend.Zoekt{
-					Client: &searchzoekt.FakeSearcher{
+					Client: &searchbackend.FakeSearcher{
 						Result: &zoekt.SearchResult{Files: tt.args.results},
 						Repos:  zoektRepos,
 					},
@@ -315,7 +316,7 @@ func TestIndexedSearch(t *testing.T) {
 			// Once we return more than one event we have to account for the proper order of results
 			// in the tests.
 			var (
-				gotCommon SearchResultsCommon
+				gotCommon streaming.Stats
 				gotFm     []*FileMatchResolver
 			)
 			for event := range indexed.Search(tt.args.ctx) {
@@ -323,7 +324,7 @@ func TestIndexedSearch(t *testing.T) {
 					t.Errorf("zoektSearchHEAD() error = %v, wantErr = %v", err, tt.wantErr)
 					return
 				}
-				gotCommon.update(&event.common)
+				gotCommon.Update(&event.common)
 				gotFm = append(gotFm, event.results...)
 			}
 
@@ -505,7 +506,7 @@ func TestZoektResultCountFactor(t *testing.T) {
 	}
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
-			got := zoektResultCountFactor(tt.numRepos, tt.pattern.FileMatchLimit, tt.globalSearch)
+			got := zoektutil.ResultCountFactor(tt.numRepos, tt.pattern.FileMatchLimit, tt.globalSearch)
 			if tt.want != got {
 				t.Fatalf("Want scaling factor %d but got %d", tt.want, got)
 			}
@@ -709,7 +710,7 @@ func BenchmarkSearchResults(b *testing.B) {
 	zoektFileMatches := generateZoektMatches(50)
 
 	z := &searchbackend.Zoekt{
-		Client: &searchzoekt.FakeSearcher{
+		Client: &searchbackend.FakeSearcher{
 			Repos:  zoektRepos,
 			Result: &zoekt.SearchResult{Files: zoektFileMatches},
 		},
@@ -759,13 +760,13 @@ func BenchmarkIntegrationSearchResults(b *testing.B) {
 	_, repos, zoektRepos := generateRepos(5000)
 	zoektFileMatches := generateZoektMatches(50)
 
-	zoektClient, cleanup := zoektRPC(&searchzoekt.FakeSearcher{
+	zoektClient, cleanup := zoektRPC(&searchbackend.FakeSearcher{
 		Repos:  zoektRepos,
 		Result: &zoekt.SearchResult{Files: zoektFileMatches},
 	})
 	defer cleanup()
 	z := &searchbackend.Zoekt{
-		Client:       zoektClient,
+		Client:       &searchbackend.StreamSearchAdapter{zoektClient},
 		DisableCache: true,
 	}
 
@@ -999,9 +1000,11 @@ func TestZoektFileMatchToSymbolResults(t *testing.T) {
 		Version:    "deadbeef",
 		LineMatches: []zoekt.LineMatch{{
 			// Skips missing symbol info (shouldn't happen in practice).
+			Line:          []byte(""),
 			LineNumber:    5,
 			LineFragments: []zoekt.LineFragmentMatch{{}},
 		}, {
+			Line:       []byte("symbol a symbol b"),
 			LineNumber: 10,
 			LineFragments: []zoekt.LineFragmentMatch{{
 				SymbolInfo: symbolInfo("a"),
@@ -1009,9 +1012,16 @@ func TestZoektFileMatchToSymbolResults(t *testing.T) {
 				SymbolInfo: symbolInfo("b"),
 			}},
 		}, {
+			Line:       []byte("symbol c"),
 			LineNumber: 15,
 			LineFragments: []zoekt.LineFragmentMatch{{
 				SymbolInfo: symbolInfo("c"),
+			}},
+		}, {
+			Line:       []byte(`bar() { var regex = /.*\//; function baz() { }  } `),
+			LineNumber: 20,
+			LineFragments: []zoekt.LineFragmentMatch{{
+				SymbolInfo: symbolInfo("baz"),
 			}},
 		}},
 	}
@@ -1042,15 +1052,23 @@ func TestZoektFileMatchToSymbolResults(t *testing.T) {
 	}
 
 	want := []protocol.Symbol{{
-		Name: "a",
-		Line: 10,
+		Name:    "a",
+		Line:    10,
+		Pattern: "/^symbol a symbol b$/",
 	}, {
-		Name: "b",
-		Line: 10,
+		Name:    "b",
+		Line:    10,
+		Pattern: "/^symbol a symbol b$/",
 	}, {
-		Name: "c",
-		Line: 15,
-	}}
+		Name:    "c",
+		Line:    15,
+		Pattern: "/^symbol c$/",
+	}, {
+		Name:    "baz",
+		Line:    20,
+		Pattern: `/^bar() { var regex = \/.*\\\/\/; function baz() { }  } $/`,
+	},
+	}
 	for i := range want {
 		want[i].Kind = "kind"
 		want[i].Parent = "parent"

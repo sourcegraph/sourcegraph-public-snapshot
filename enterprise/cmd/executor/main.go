@@ -10,7 +10,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -48,7 +48,7 @@ func main() {
 	go debugserver.NewServerRoutine().Start()
 
 	routines := []goroutine.BackgroundRoutine{
-		apiworker.NewWorker(config.APIWorkerOptions(nil), observationContext),
+		worker.NewWorker(config.APIWorkerOptions(nil), observationContext),
 	}
 	if !config.DisableHealthServer {
 		routines = append(routines, httpserver.NewFromAddr(addr, &http.Server{

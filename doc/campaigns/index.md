@@ -45,10 +45,7 @@ Create a campaign by specifying a search query to get a list of repositories and
 <a class="btn" href="references/requirements">Requirements</a>
 </div>
 
-> NOTE: This documentation describes the campaign functionality shipped in Sourcegraph 3.19 and src-cli 3.18, and later versions of both. [Click here](https://docs.sourcegraph.com/@3.18/user/campaigns) to read the documentation for campaigns in older versions of Sourcegraph and src-cli.
->
->
-> We highly recommend using the latest versions of Sourcegraph and src-cli with campaigns, since we're steadily shipping new features and improvements.
+> NOTE: We highly recommend using the latest versions of Sourcegraph and src-cli with campaigns, since we're steadily shipping new features and improvements.
 
 ## Getting started
 
@@ -102,5 +99,5 @@ Create a campaign by specifying a search query to get a list of repositories and
 
 - [Requirements](references/requirements.md)
 - [Campaign spec YAML reference](references/campaign_spec_yaml_reference.md)
-- <span class="badge badge-experimental">Experimental</span> [Campaign spec templating](references/campaign_spec_templating.md)
+- [Campaign spec templating](references/campaign_spec_templating.md)
 - [Troubleshooting](references/troubleshooting.md)

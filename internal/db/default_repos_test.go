@@ -165,6 +165,54 @@ func TestListDefaultReposInBatches(t *testing.T) {
 	}
 }
 
+func TestListDefaultReposUncloned(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	reposToAdd := []*types.RepoName{
+		{
+			ID:   api.RepoID(1),
+			Name: "github.com/foo/bar1",
+		},
+		{
+			ID:   api.RepoID(2),
+			Name: "github.com/baz/bar2",
+		},
+		{
+			ID:   api.RepoID(3),
+			Name: "github.com/foo/bar3",
+		},
+	}
+
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+	for _, r := range reposToAdd {
+		cloned := int(r.ID) > 1
+		if _, err := dbconn.Global.ExecContext(ctx, `INSERT INTO repo(id, name, cloned) VALUES ($1, $2, $3)`, r.ID, r.Name, cloned); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := dbconn.Global.ExecContext(ctx, `INSERT INTO default_repos(repo_id) VALUES ($1)`, r.ID); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	repos, err := Repos.ListDefaultRepos(ctx, ListDefaultReposOptions{
+		Limit:        3,
+		AfterID:      0,
+		OnlyUncloned: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	sort.Sort(types.RepoNames(repos))
+	sort.Sort(types.RepoNames(reposToAdd))
+	if diff := cmp.Diff(repos, reposToAdd[:1], cmpopts.EquateEmpty()); diff != "" {
+		t.Errorf("mismatch (-want +got):\n%s", diff)
+	}
+}
+
 func BenchmarkDefaultRepos_List_Empty(b *testing.B) {
 	dbtesting.SetupGlobalTestDB(b)
 	ctx := context.Background()
