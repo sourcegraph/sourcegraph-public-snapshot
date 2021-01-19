@@ -8,7 +8,7 @@ var (
 	Phabricator      = &phabricator{}
 	QueryRunnerState = &queryRunnerState{}
 	Namespaces       = &namespaces{}
-	Orgs             = &orgs{}
+	Orgs             = &OrgStore{}
 	OrgMembers       = &orgMembers{}
 	SavedSearches    = &savedSearches{}
 	Settings         = &settings{}
