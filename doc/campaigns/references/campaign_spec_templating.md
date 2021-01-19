@@ -28,7 +28,7 @@ steps:
     container: unibeautify/goimports
 ```
 
-Before executing the first `run` command `repository.search_result_paths` will be replaced with the relative-to-root-dir file paths of each search resulted yielded by `repositoriesMatchingQuery`. By using the [template helper function](#template-helper-functions) `join`, an argument list of whitespace-separated values is constructed.
+Before executing the first `run` command, `repository.search_result_paths` will be replaced with the relative-to-root-dir file paths of each search result yielded by `repositoriesMatchingQuery`. By using the [template helper function](#template-helper-functions) `join`, an argument list of whitespace-separated values is constructed.
 
 The final `run` value, that will be executed, will look similar to this:
 
@@ -221,7 +221,7 @@ steps:
 changesetTemplate:
   # [...]
 
-  # Since templating fields use Go's `text/templates` and `goreleaserConfig` was
+  # Since templating fields use Go's `text/template` and `goreleaserConfig` was
   # parsed as YAML we can iterate over every field:
   body: |
     This repository has a `gorelaserConfig`: ${{ outputs.goreleaserConfigExists.exists }}.
