@@ -2,9 +2,10 @@ package db
 
 import (
 	"context"
+	"testing"
+
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"testing"
 )
 
 func TestUserPublicRepos_Set(t *testing.T) {
