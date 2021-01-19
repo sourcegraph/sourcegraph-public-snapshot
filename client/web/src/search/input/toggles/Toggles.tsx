@@ -138,7 +138,7 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
                 isActive={patternType === SearchPatternType.regexp}
                 onToggle={toggleRegexp}
                 icon={RegexIcon}
-                className="test-regexp-toggle"
+                className="toggle-container__regexp-button test-regexp-toggle"
                 activeClassName="test-regexp-toggle--active"
                 disableOn={[
                     {
