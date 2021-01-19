@@ -114,6 +114,31 @@ func TestHorizontalSearcher(t *testing.T) {
 	searcher.Close()
 }
 
+func TestDoStreamSearch(t *testing.T) {
+	var endpoints atomicMap
+	endpoints.Store(prefixMap{"1"})
+
+	searcher := &HorizontalSearcher{
+		Map: &endpoints,
+		Dial: func(endpoint string) StreamSearcher {
+			client := &mockSearcher{
+				searchResult: nil,
+				searchError:  fmt.Errorf("test error"),
+			}
+			// Return metered searcher to test that codepath
+			return NewMeteredSearcher(endpoint, &StreamSearchAdapter{client})
+		},
+	}
+	defer searcher.Close()
+
+	c := searcher.StreamSearch(context.Background(), nil, nil)
+	for event := range c {
+		if event.Error == nil {
+			t.Fatalf("received non-nil error, but expected an error")
+		}
+	}
+}
+
 func TestSyncSearchers(t *testing.T) {
 	// This test exists to ensure we test the slow path for
 	// HorizontalSearcher.searchers. The slow-path is
