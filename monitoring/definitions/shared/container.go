@@ -28,7 +28,7 @@ var (
 			Owner:   owner,
 			Interpretation: strings.Replace(`
 				This value is the number of times a container has not been seen for more than one minute. If you observe this
-				value change outside of those situations, it could indicate pods are beeing OOM killed or terminated for some other reasons.
+				value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.
 
 				- **Kubernetes:**
 					- Determine if the pod was OOM killed using 'kubectl describe pod {{CONTAINER_NAME}}' (look for 'OOMKilled: true') and, if so, consider increasing the memory limit in the relevant 'Deployment.yaml'.
