@@ -400,7 +400,7 @@ func RepoUpdater() *monitoring.Container {
 							Observable(),
 					},
 					{
-						shared.ContainerRestarts("repo-updater", monitoring.ObservableOwnerCloud).Observable(),
+						shared.ContainerMissing("repo-updater", monitoring.ObservableOwnerCloud).Observable(),
 					},
 				},
 			},

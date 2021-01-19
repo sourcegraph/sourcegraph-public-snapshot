@@ -103,14 +103,7 @@ func GitServer() *monitoring.Container {
 						shared.ContainerMemoryUsage("gitserver", monitoring.ObservableOwnerCloud).Observable(),
 					},
 					{
-						// git server does not have 0-downtime deploy, so deploys can
-						// cause extended container restarts. still seta warning alert for
-						// extended periods of container restarts, since this might still
-						// indicate a problem.
-						shared.ContainerRestarts("gitserver", monitoring.ObservableOwnerCloud).
-							WithWarning(monitoring.Alert().Greater(1).For(10 * time.Minute)).
-							WithCritical(nil).
-							Observable(),
+						shared.ContainerMissing("gitserver", monitoring.ObservableOwnerCloud).Observable(),
 						shared.ContainerIOUsage("gitserver", monitoring.ObservableOwnerCloud).Observable(),
 					},
 				},
