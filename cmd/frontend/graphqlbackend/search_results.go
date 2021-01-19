@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math"
 	"path"
-	"reflect"
 	"regexp"
 	"sort"
 	"strconv"
@@ -1085,7 +1084,7 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, scopePar
 		return nil, nil
 	}
 	// Unreachable.
-	return nil, fmt.Errorf("unrecognized type %s in evaluatePatternExpression", reflect.TypeOf(node).String())
+	return nil, fmt.Errorf("unrecognized type %T in evaluatePatternExpression", node)
 }
 
 // evaluate evaluates all expressions of a search query.
@@ -1168,7 +1167,7 @@ func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolve
 		}
 	default:
 		// Unreachable.
-		return nil, fmt.Errorf("unrecognized type %s in searchResolver Results", reflect.TypeOf(r.query).String())
+		return nil, fmt.Errorf("unrecognized type %T in searchResolver Results", r.query)
 	}
 	// copy userSettings from searchResolver to SearchResultsResolver
 	if srr != nil {
