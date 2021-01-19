@@ -133,6 +133,8 @@ If there is an alert you are aware of and you wish to silence notifications for 
 }
 ```
 
+**NOTE**: On [sourcegraph.com](https://sourcegraph.com) you need to edit the ConfigMap [here](https://github.com/sourcegraph/deploy-sourcegraph-dot-com/blob/release/base/frontend/sourcegraph-frontend.ConfigMap.yaml) and push to the `release` branch.
+
 You can find the appropriate identifier for each alert in [alert solutions](./alert_solutions.md).
 
 ## Setting up alerting: before Sourcegraph 3.17
