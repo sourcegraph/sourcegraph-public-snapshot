@@ -439,7 +439,7 @@ func TestInsertUploadWithAssociatedIndexID(t *testing.T) {
 		Indexer:           "lsif-go",
 		NumParts:          1,
 		UploadedParts:     []int{0},
-		AssociatedIndexID: &associatedIndexID,
+		AssociatedIndexID: &associatedIndexIDArg,
 	})
 	if err != nil {
 		t.Fatalf("unexpected error enqueueing upload: %s", err)

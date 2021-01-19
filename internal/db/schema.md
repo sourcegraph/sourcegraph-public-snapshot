@@ -779,24 +779,25 @@ Associates an upload with the set of packages they require within a given packag
 
 # Table "public.lsif_uploads"
 ```
-     Column      |           Type           |                        Modifiers                        
------------------+--------------------------+---------------------------------------------------------
- id              | integer                  | not null default nextval('lsif_dumps_id_seq'::regclass)
- commit          | text                     | not null
- root            | text                     | not null default ''::text
- uploaded_at     | timestamp with time zone | not null default now()
- state           | text                     | not null default 'queued'::text
- failure_message | text                     | 
- started_at      | timestamp with time zone | 
- finished_at     | timestamp with time zone | 
- repository_id   | integer                  | not null
- indexer         | text                     | not null
- num_parts       | integer                  | not null
- uploaded_parts  | integer[]                | not null
- process_after   | timestamp with time zone | 
- num_resets      | integer                  | not null default 0
- upload_size     | bigint                   | 
- num_failures    | integer                  | not null default 0
+       Column        |           Type           |                        Modifiers                        
+---------------------+--------------------------+---------------------------------------------------------
+ id                  | integer                  | not null default nextval('lsif_dumps_id_seq'::regclass)
+ commit              | text                     | not null
+ root                | text                     | not null default ''::text
+ uploaded_at         | timestamp with time zone | not null default now()
+ state               | text                     | not null default 'queued'::text
+ failure_message     | text                     | 
+ started_at          | timestamp with time zone | 
+ finished_at         | timestamp with time zone | 
+ repository_id       | integer                  | not null
+ indexer             | text                     | not null
+ num_parts           | integer                  | not null
+ uploaded_parts      | integer[]                | not null
+ process_after       | timestamp with time zone | 
+ num_resets          | integer                  | not null default 0
+ upload_size         | bigint                   | 
+ num_failures        | integer                  | not null default 0
+ associated_index_id | bigint                   | 
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text
@@ -1475,50 +1476,52 @@ Indexes:
 
 # View "public.lsif_dumps"
 ```
-     Column      |           Type           | Modifiers 
------------------+--------------------------+-----------
- id              | integer                  | 
- commit          | text                     | 
- root            | text                     | 
- uploaded_at     | timestamp with time zone | 
- state           | text                     | 
- failure_message | text                     | 
- started_at      | timestamp with time zone | 
- finished_at     | timestamp with time zone | 
- repository_id   | integer                  | 
- indexer         | text                     | 
- num_parts       | integer                  | 
- uploaded_parts  | integer[]                | 
- process_after   | timestamp with time zone | 
- num_resets      | integer                  | 
- upload_size     | bigint                   | 
- num_failures    | integer                  | 
- processed_at    | timestamp with time zone | 
+       Column        |           Type           | Modifiers 
+---------------------+--------------------------+-----------
+ id                  | integer                  | 
+ commit              | text                     | 
+ root                | text                     | 
+ uploaded_at         | timestamp with time zone | 
+ state               | text                     | 
+ failure_message     | text                     | 
+ started_at          | timestamp with time zone | 
+ finished_at         | timestamp with time zone | 
+ repository_id       | integer                  | 
+ indexer             | text                     | 
+ num_parts           | integer                  | 
+ uploaded_parts      | integer[]                | 
+ process_after       | timestamp with time zone | 
+ num_resets          | integer                  | 
+ upload_size         | bigint                   | 
+ num_failures        | integer                  | 
+ associated_index_id | bigint                   | 
+ processed_at        | timestamp with time zone | 
 
 ```
 
 # View "public.lsif_dumps_with_repository_name"
 ```
-     Column      |           Type           | Modifiers 
------------------+--------------------------+-----------
- id              | integer                  | 
- commit          | text                     | 
- root            | text                     | 
- uploaded_at     | timestamp with time zone | 
- state           | text                     | 
- failure_message | text                     | 
- started_at      | timestamp with time zone | 
- finished_at     | timestamp with time zone | 
- repository_id   | integer                  | 
- indexer         | text                     | 
- num_parts       | integer                  | 
- uploaded_parts  | integer[]                | 
- process_after   | timestamp with time zone | 
- num_resets      | integer                  | 
- upload_size     | bigint                   | 
- num_failures    | integer                  | 
- processed_at    | timestamp with time zone | 
- repository_name | citext                   | 
+       Column        |           Type           | Modifiers 
+---------------------+--------------------------+-----------
+ id                  | integer                  | 
+ commit              | text                     | 
+ root                | text                     | 
+ uploaded_at         | timestamp with time zone | 
+ state               | text                     | 
+ failure_message     | text                     | 
+ started_at          | timestamp with time zone | 
+ finished_at         | timestamp with time zone | 
+ repository_id       | integer                  | 
+ indexer             | text                     | 
+ num_parts           | integer                  | 
+ uploaded_parts      | integer[]                | 
+ process_after       | timestamp with time zone | 
+ num_resets          | integer                  | 
+ upload_size         | bigint                   | 
+ num_failures        | integer                  | 
+ associated_index_id | bigint                   | 
+ processed_at        | timestamp with time zone | 
+ repository_name     | citext                   | 
 
 ```
 
@@ -1551,25 +1554,26 @@ Indexes:
 
 # View "public.lsif_uploads_with_repository_name"
 ```
-     Column      |           Type           | Modifiers 
------------------+--------------------------+-----------
- id              | integer                  | 
- commit          | text                     | 
- root            | text                     | 
- uploaded_at     | timestamp with time zone | 
- state           | text                     | 
- failure_message | text                     | 
- started_at      | timestamp with time zone | 
- finished_at     | timestamp with time zone | 
- repository_id   | integer                  | 
- indexer         | text                     | 
- num_parts       | integer                  | 
- uploaded_parts  | integer[]                | 
- process_after   | timestamp with time zone | 
- num_resets      | integer                  | 
- upload_size     | bigint                   | 
- num_failures    | integer                  | 
- repository_name | citext                   | 
+       Column        |           Type           | Modifiers 
+---------------------+--------------------------+-----------
+ id                  | integer                  | 
+ commit              | text                     | 
+ root                | text                     | 
+ uploaded_at         | timestamp with time zone | 
+ state               | text                     | 
+ failure_message     | text                     | 
+ started_at          | timestamp with time zone | 
+ finished_at         | timestamp with time zone | 
+ repository_id       | integer                  | 
+ indexer             | text                     | 
+ num_parts           | integer                  | 
+ uploaded_parts      | integer[]                | 
+ process_after       | timestamp with time zone | 
+ num_resets          | integer                  | 
+ upload_size         | bigint                   | 
+ num_failures        | integer                  | 
+ associated_index_id | bigint                   | 
+ repository_name     | citext                   | 
 
 ```
 
