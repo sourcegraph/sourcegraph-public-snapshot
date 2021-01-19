@@ -68,12 +68,12 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                                 args: {},
                             },
                         ]
-                        let pending = true
+                        let pending: Status
                         const now = new Date().getTime()
-                        result.nodes.map(node => {
+                        for (const node of result.nodes) {
                             // if the next sync time is not blank, or in the future we must not be syncing
                             if (node.nextSyncAt !== '' && now - new Date(node.nextSyncAt).getTime() < 0) {
-                                pending = false
+                                pending = 'pending'
                             }
                             services.push({
                                 value: node.id,
@@ -81,8 +81,10 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                                 tooltip: '',
                                 args: { externalServiceID: node.id },
                             })
-                        })
-                        setPendingOrError(pending && 'pending')
+                        }
+
+                        setPendingOrError(pending)
+
                         const newFilters: FilteredConnectionFilter[] = [
                             {
                                 label: 'Status',

@@ -270,7 +270,8 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             }
             setFetchingRepos({ loading: true, slow: false })
             const started = new Date().getTime()
-            queryExternalServices({
+
+            const externalServiceSubscription = queryExternalServices({
                 first: null,
                 after: null,
                 namespace: userID,
@@ -278,30 +279,34 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 .pipe(
                     repeatUntil(
                         result => {
-                            let done = true
-                            for (const codeHost of result.nodes) {
-                                if (codeHost.lastSyncAt === syncTimes.get(codeHost.id)) {
-                                    done = false
-                                }
-                            }
-                            // if the lastSyncAt has been updated for all code hosts, return to the repositories page
-                            if (done) {
-                                history.push(routingPrefix + '/repositories')
-                            }
                             // if the background job takes too long we should update the button
                             // text to indicate we're still working on it
                             if (new Date().getTime() - started >= 15000) {
                                 setFetchingRepos({ loading: true, slow: true })
                             }
-                            return done
+
+                            // if the lastSyncAt has changed for all hosts then we're done
+                            if (result.nodes.every(codeHost => codeHost.lastSyncAt !== syncTimes.get(codeHost.id))) {
+                                // push the user back to the repo list page
+                                history.push(routingPrefix + '/repositories')
+                                // cancel the repeatUntil
+                                return true
+                            }
+                            // keep repeating
+                            return false
                         },
                         { delay: 2000 }
                     )
                 )
-                .toPromise()
-                .catch(error => {
-                    setRepoState({ ...repoState, error: String(error) })
-                })
+                .subscribe(
+                    () => {},
+                    error => {
+                        setRepoState({ ...repoState, error: String(error) })
+                    },
+                    () => {
+                        externalServiceSubscription.unsubscribe()
+                    }
+                )
         },
         [codeHosts.hosts, history, repoState, routingPrefix, selectionState.radio, selectionState.repos, userID]
     )
