@@ -1,14 +1,9 @@
-import React from 'react'
+import React, { SVGProps } from 'react'
 
-export const CodeMonitoringLogo: React.FunctionComponent<{ className?: string }> = (props: { className?: string }) => (
-    <svg
-        width="20"
-        height="20"
-        viewBox="0 0 20 20"
-        fill="currentColor"
-        xmlns="http://www.w3.org/2000/svg"
-        className={props.className}
-    >
+export const CodeMonitoringLogo: React.FunctionComponent<SVGProps<SVGSVGElement>> = (
+    props: SVGProps<SVGSVGElement>
+) => (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" {...props}>
         <path
             fillRule="evenodd"
             clipRule="evenodd"
