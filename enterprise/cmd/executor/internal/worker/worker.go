@@ -2,7 +2,13 @@ package worker
 
 import (
 	"context"
+	"errors"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
+
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
@@ -54,6 +60,10 @@ func NewWorker(options Options, observationContext *observation.Context) gorouti
 	queueStore := apiclient.New(options.ClientOptions, observationContext)
 	store := &storeShim{queueName: options.QueueName, queueStore: queueStore}
 
+	if !connectToFrontend(queueStore) {
+		os.Exit(1)
+	}
+
 	handler := &handler{
 		idSet:         idSet,
 		options:       options,
@@ -69,5 +79,42 @@ func NewWorker(options Options, observationContext *observation.Context) gorouti
 	return goroutine.CombinedRoutine{
 		indexer,
 		goroutine.NewPeriodicGoroutine(context.Background(), options.HeartbeatInterval, heartbeat),
+	}
+}
+
+func connectToFrontend(queueStore *apiclient.Client) bool {
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+
+	signals := make(chan os.Signal, 2)
+	signal.Notify(signals, syscall.SIGHUP, syscall.SIGINT)
+	defer signal.Stop(signals)
+
+	log15.Info("Connecting to Sourcegraph instance")
+
+outerLoop:
+	for {
+		select {
+		case <-ticker.C:
+		case <-signals:
+			log15.Error("Signal received while connecting to Sourcegraph")
+			return false
+		}
+
+		err := queueStore.Ping(context.Background(), nil)
+		if err == nil {
+			log15.Info("Connected to Sourcegraph instance")
+			return true
+		}
+
+		for ex := err; ex != nil; ex = errors.Unwrap(ex) {
+			if e, ok := ex.(*os.SyscallError); ok {
+				if e.Syscall == "connect" {
+					continue outerLoop
+				}
+			}
+		}
+
+		log15.Error("Failed to connect to Sourcegraph instance", "error", err)
 	}
 }
