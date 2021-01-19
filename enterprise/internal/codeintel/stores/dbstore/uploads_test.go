@@ -421,6 +421,65 @@ func TestInsertUploadQueued(t *testing.T) {
 	}
 }
 
+func TestInsertUploadWithAssociatedIndexID(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	store := testStore()
+
+	insertRepo(t, dbconn.Global, 50, "")
+
+	associatedIndexIDArg := 42
+	id, err := store.InsertUpload(context.Background(), Upload{
+		Commit:            makeCommit(1),
+		Root:              "sub/",
+		State:             "queued",
+		RepositoryID:      50,
+		Indexer:           "lsif-go",
+		NumParts:          1,
+		UploadedParts:     []int{0},
+		AssociatedIndexID: &associatedIndexID,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error enqueueing upload: %s", err)
+	}
+
+	rank := 1
+	associatedIndexIDResult := 42
+	expected := Upload{
+		ID:                id,
+		Commit:            makeCommit(1),
+		Root:              "sub/",
+		VisibleAtTip:      false,
+		UploadedAt:        time.Time{},
+		State:             "queued",
+		FailureMessage:    nil,
+		StartedAt:         nil,
+		FinishedAt:        nil,
+		RepositoryID:      50,
+		RepositoryName:    "n-50",
+		Indexer:           "lsif-go",
+		NumParts:          1,
+		UploadedParts:     []int{0},
+		Rank:              &rank,
+		AssociatedIndexID: &associatedIndexIDResult,
+	}
+
+	if upload, exists, err := store.GetUploadByID(context.Background(), id); err != nil {
+		t.Fatalf("unexpected error getting upload: %s", err)
+	} else if !exists {
+		t.Fatal("expected record to exist")
+	} else {
+		// Update auto-generated timestamp
+		expected.UploadedAt = upload.UploadedAt
+
+		if diff := cmp.Diff(expected, upload); diff != "" {
+			t.Errorf("unexpected upload (-want +got):\n%s", diff)
+		}
+	}
+}
+
 func TestMarkQueued(t *testing.T) {
 	if testing.Short() {
 		t.Skip()

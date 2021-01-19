@@ -172,7 +172,7 @@ SELECT
 	d.repository_id,
 	d.repository_name,
 	d.indexer,
-	d.associated_index_id,
+	d.associated_index_id
 FROM visible_uploads vu
 JOIN lsif_dumps_with_repository_name d ON d.id = vu.upload_id
 WHERE %s
@@ -261,7 +261,7 @@ SELECT
 	d.repository_id,
 	d.repository_name,
 	d.indexer,
-	d.associated_index_id,
+	d.associated_index_id
 FROM lsif_dumps_with_repository_name d
 WHERE d.id IN (%s) AND %s
 `
