@@ -1,11 +1,11 @@
 import copy from 'copy-to-clipboard'
-import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 import { Tooltip } from '../../../../../branded/src/components/tooltip/Tooltip'
 import React, { useCallback } from 'react'
 import classNames from 'classnames'
 import { Observable, merge, of } from 'rxjs'
 import { tap, switchMapTo, startWith, delay } from 'rxjs/operators'
 import { useEventObservable } from '../../../../../shared/src/util/useObservable'
+import { CopyContentIcon } from '../../../../../shared/src/components/icons'
 
 interface Props {
     fullQuery: string
@@ -36,7 +36,7 @@ export const CopyQueryButton: React.FunctionComponent<Props> = (props: Props) =>
             data-tooltip={copied ? 'Copied!' : 'Copy query to clipboard'}
             onClick={nextClick}
         >
-            <ContentCopyIcon className="icon-inline" />
+            <CopyContentIcon size={20} className="icon-inline" />
         </button>
     )
 }
