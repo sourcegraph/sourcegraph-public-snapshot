@@ -1,7 +1,7 @@
 package db
 
 var (
-	AccessTokens     = &accessTokens{}
+	AccessTokens     = &AccessTokenStore{}
 	ExternalServices = &ExternalServiceStore{}
 	DefaultRepos     = &defaultRepos{}
 	Repos            = &RepoStore{}
