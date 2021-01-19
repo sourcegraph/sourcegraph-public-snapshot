@@ -518,7 +518,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#frontend-container
 This cloud panel indicates container missing.
 
 This value is the number of times a container has not been seen for more than one minute. If you observe this
-value change outside of those situations, it could indicate pods are beeing OOM killed or terminated for some other reasons.
+value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.
 
 - **Kubernetes:**
 	- Determine if the pod was OOM killed using `kubectl describe pod (frontend|sourcegraph-frontend)` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
@@ -678,7 +678,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#gitserver-containe
 This cloud panel indicates container missing.
 
 This value is the number of times a container has not been seen for more than one minute. If you observe this
-value change outside of those situations, it could indicate pods are beeing OOM killed or terminated for some other reasons.
+value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.
 
 - **Kubernetes:**
 	- Determine if the pod was OOM killed using `kubectl describe pod gitserver` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
@@ -803,7 +803,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#github-proxy-conta
 This cloud panel indicates container missing.
 
 This value is the number of times a container has not been seen for more than one minute. If you observe this
-value change outside of those situations, it could indicate pods are beeing OOM killed or terminated for some other reasons.
+value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.
 
 - **Kubernetes:**
 	- Determine if the pod was OOM killed using `kubectl describe pod github-proxy` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
@@ -1143,7 +1143,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel
 This code-intel panel indicates container missing.
 
 This value is the number of times a container has not been seen for more than one minute. If you observe this
-value change outside of those situations, it could indicate pods are beeing OOM killed or terminated for some other reasons.
+value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.
 
 - **Kubernetes:**
 	- Determine if the pod was OOM killed using `kubectl describe pod precise-code-intel-worker` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
@@ -1254,7 +1254,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#query-runner-conta
 This search panel indicates container missing.
 
 This value is the number of times a container has not been seen for more than one minute. If you observe this
-value change outside of those situations, it could indicate pods are beeing OOM killed or terminated for some other reasons.
+value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.
 
 - **Kubernetes:**
 	- Determine if the pod was OOM killed using `kubectl describe pod query-runner` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
@@ -1623,7 +1623,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-conta
 This cloud panel indicates container missing.
 
 This value is the number of times a container has not been seen for more than one minute. If you observe this
-value change outside of those situations, it could indicate pods are beeing OOM killed or terminated for some other reasons.
+value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.
 
 - **Kubernetes:**
 	- Determine if the pod was OOM killed using `kubectl describe pod repo-updater` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
@@ -1750,7 +1750,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#searcher-container
 This search panel indicates container missing.
 
 This value is the number of times a container has not been seen for more than one minute. If you observe this
-value change outside of those situations, it could indicate pods are beeing OOM killed or terminated for some other reasons.
+value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.
 
 - **Kubernetes:**
 	- Determine if the pod was OOM killed using `kubectl describe pod searcher` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
@@ -1877,7 +1877,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#symbols-container-
 This code-intel panel indicates container missing.
 
 This value is the number of times a container has not been seen for more than one minute. If you observe this
-value change outside of those situations, it could indicate pods are beeing OOM killed or terminated for some other reasons.
+value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.
 
 - **Kubernetes:**
 	- Determine if the pod was OOM killed using `kubectl describe pod symbols` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
@@ -2008,7 +2008,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#syntect-server-con
 This cloud panel indicates container missing.
 
 This value is the number of times a container has not been seen for more than one minute. If you observe this
-value change outside of those situations, it could indicate pods are beeing OOM killed or terminated for some other reasons.
+value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.
 
 - **Kubernetes:**
 	- Determine if the pod was OOM killed using `kubectl describe pod syntect-server` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
@@ -2099,7 +2099,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-
 This search panel indicates container missing.
 
 This value is the number of times a container has not been seen for more than one minute. If you observe this
-value change outside of those situations, it could indicate pods are beeing OOM killed or terminated for some other reasons.
+value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.
 
 - **Kubernetes:**
 	- Determine if the pod was OOM killed using `kubectl describe pod zoekt-indexserver` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
@@ -2200,7 +2200,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#zoekt-webserver-co
 This search panel indicates container missing.
 
 This value is the number of times a container has not been seen for more than one minute. If you observe this
-value change outside of those situations, it could indicate pods are beeing OOM killed or terminated for some other reasons.
+value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.
 
 - **Kubernetes:**
 	- Determine if the pod was OOM killed using `kubectl describe pod zoekt-webserver` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
@@ -2352,7 +2352,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#prometheus-contain
 This distribution panel indicates container missing.
 
 This value is the number of times a container has not been seen for more than one minute. If you observe this
-value change outside of those situations, it could indicate pods are beeing OOM killed or terminated for some other reasons.
+value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.
 
 - **Kubernetes:**
 	- Determine if the pod was OOM killed using `kubectl describe pod prometheus` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
@@ -2503,7 +2503,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#executor-queue-con
 This code-intel panel indicates container missing.
 
 This value is the number of times a container has not been seen for more than one minute. If you observe this
-value change outside of those situations, it could indicate pods are beeing OOM killed or terminated for some other reasons.
+value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.
 
 - **Kubernetes:**
 	- Determine if the pod was OOM killed using `kubectl describe pod executor-queue` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
@@ -2695,7 +2695,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel
 This code-intel panel indicates container missing.
 
 This value is the number of times a container has not been seen for more than one minute. If you observe this
-value change outside of those situations, it could indicate pods are beeing OOM killed or terminated for some other reasons.
+value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.
 
 - **Kubernetes:**
 	- Determine if the pod was OOM killed using `kubectl describe pod precise-code-intel-worker` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
