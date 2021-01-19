@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/search"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -674,4 +675,296 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 			}
 		})
 	})
+}
+
+func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
+	repoStore := db.NewRepoStoreWith(s)
+	esStore := db.NewExternalServicesStoreWith(s)
+
+	// OK, let's set up an interesting scenario. We're going to set up a
+	// campaign that tracks two changesets in different repositories, and
+	// creates two changesets in those same repositories with different names.
+
+	// First up, let's create the repos.
+	repos := []*types.Repo{
+		ct.TestRepo(t, esStore, extsvc.KindGitHub),
+		ct.TestRepo(t, esStore, extsvc.KindGitLab),
+	}
+	for _, repo := range repos {
+		if err := repoStore.Create(ctx, repo); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// Create a user.
+	user := ct.CreateTestUser(t, false)
+
+	// Next, we need a campaign spec.
+	oldCampaignSpec := ct.CreateCampaignSpec(t, ctx, s, "text", user.ID)
+
+	// That's enough to create a campaign, so let's do that.
+	campaign := ct.CreateCampaign(t, ctx, s, "text", user.ID, oldCampaignSpec.ID)
+
+	// Now we can create the changeset specs.
+	oldTrackedGitHubSpec := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
+		User:         user.ID,
+		Repo:         repos[0].ID,
+		CampaignSpec: oldCampaignSpec.ID,
+		ExternalID:   "1234",
+	})
+	oldTrackedGitLabSpec := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
+		User:         user.ID,
+		Repo:         repos[1].ID,
+		CampaignSpec: oldCampaignSpec.ID,
+		ExternalID:   "1234",
+	})
+	oldBranchGitHubSpec := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
+		User:         user.ID,
+		Repo:         repos[0].ID,
+		CampaignSpec: oldCampaignSpec.ID,
+		HeadRef:      "main",
+		Published:    true,
+		Title:        "GitHub branch",
+	})
+	oldBranchGitLabSpec := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
+		User:         user.ID,
+		Repo:         repos[1].ID,
+		CampaignSpec: oldCampaignSpec.ID,
+		HeadRef:      "main",
+		Published:    true,
+		Title:        "GitLab branch",
+	})
+
+	// We also need actual changesets.
+	oldTrackedGitHub := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+		Repo:                repos[0].ID,
+		Campaign:            campaign.ID,
+		CurrentSpec:         oldTrackedGitHubSpec.ID,
+		ExternalServiceType: repos[0].ExternalRepo.ServiceType,
+		ExternalID:          "1234",
+		OwnedByCampaign:     campaign.ID,
+		Metadata: map[string]interface{}{
+			"Title": "Tracked GitHub",
+		},
+	})
+	oldTrackedGitLab := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+		Repo:                repos[1].ID,
+		Campaign:            campaign.ID,
+		CurrentSpec:         oldTrackedGitLabSpec.ID,
+		ExternalServiceType: repos[1].ExternalRepo.ServiceType,
+		ExternalID:          "1234",
+		OwnedByCampaign:     campaign.ID,
+		Metadata: map[string]interface{}{
+			"title": "Tracked GitLab",
+		},
+	})
+	oldBranchGitHub := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+		Repo:                repos[0].ID,
+		Campaign:            campaign.ID,
+		CurrentSpec:         oldBranchGitHubSpec.ID,
+		ExternalServiceType: repos[0].ExternalRepo.ServiceType,
+		ExternalID:          "5678",
+		OwnedByCampaign:     campaign.ID,
+		Metadata: map[string]interface{}{
+			"Title": "GitHub branch",
+		},
+	})
+	oldBranchGitLab := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+		Repo:                repos[1].ID,
+		Campaign:            campaign.ID,
+		CurrentSpec:         oldBranchGitLabSpec.ID,
+		ExternalServiceType: repos[1].ExternalRepo.ServiceType,
+		ExternalID:          "5678",
+		OwnedByCampaign:     campaign.ID,
+		Metadata: map[string]interface{}{
+			"title": "GitLab branch",
+		},
+	})
+	// Cool. Now let's set up a new campaign spec.
+	newCampaignSpec := ct.CreateCampaignSpec(t, ctx, s, "text", user.ID)
+
+	// And we need all new changeset specs to go into that spec.
+	newTrackedGitHub := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
+		User:         user.ID,
+		Repo:         repos[0].ID,
+		CampaignSpec: newCampaignSpec.ID,
+		ExternalID:   "1234",
+	})
+	newTrackedGitLab := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
+		User:         user.ID,
+		Repo:         repos[1].ID,
+		CampaignSpec: newCampaignSpec.ID,
+		ExternalID:   "1234",
+	})
+	newBranchGitHub := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
+		User:         user.ID,
+		Repo:         repos[0].ID,
+		CampaignSpec: newCampaignSpec.ID,
+		HeadRef:      "main",
+		Published:    true,
+		Title:        "New GitHub branch",
+	})
+	newBranchGitLab := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
+		User:         user.ID,
+		Repo:         repos[1].ID,
+		CampaignSpec: newCampaignSpec.ID,
+		HeadRef:      "main",
+		Published:    true,
+		Title:        "New GitLab branch",
+	})
+
+	// A couple of hundred lines of boilerplate later, we have a scenario! Let's
+	// use it.
+
+	// Well, OK, I lied: we're not _quite_ done with the boilerplate. To keep
+	// the test cases somewhat readable, we'll define the four possible mappings
+	// we can get before we get to defining the test cases.
+	trackedGitHub := &RewirerMapping{
+		ChangesetSpecID: newTrackedGitHub.ID,
+		ChangesetID:     oldTrackedGitHub.ID,
+		RepoID:          repos[0].ID,
+	}
+	trackedGitLab := &RewirerMapping{
+		ChangesetSpecID: newTrackedGitLab.ID,
+		ChangesetID:     oldTrackedGitLab.ID,
+		RepoID:          repos[1].ID,
+	}
+	branchGitHub := &RewirerMapping{
+		ChangesetSpecID: newBranchGitHub.ID,
+		ChangesetID:     oldBranchGitHub.ID,
+		RepoID:          repos[0].ID,
+	}
+	branchGitLab := &RewirerMapping{
+		ChangesetSpecID: newBranchGitLab.ID,
+		ChangesetID:     oldBranchGitLab.ID,
+		RepoID:          repos[1].ID,
+	}
+
+	for name, tc := range map[string]struct {
+		search []search.TextSearchTerm
+		want   RewirerMappings
+	}{
+		"nil search": {
+			want: RewirerMappings{trackedGitHub, trackedGitLab, branchGitHub, branchGitLab},
+		},
+		"empty search": {
+			search: []search.TextSearchTerm{},
+			want:   RewirerMappings{trackedGitHub, trackedGitLab, branchGitHub, branchGitLab},
+		},
+		"no matches": {
+			search: []search.TextSearchTerm{{Term: "this is not a thing"}},
+			want:   nil,
+		},
+		"no matches due to conflicting requirements": {
+			search: []search.TextSearchTerm{
+				{Term: "GitHub"},
+				{Term: "GitLab"},
+			},
+			want: nil,
+		},
+		"no matches due to even more conflicting requirements": {
+			search: []search.TextSearchTerm{
+				{Term: "GitHub"},
+				{Term: "GitHub", Not: true},
+			},
+			want: nil,
+		},
+		"one term, matched on title": {
+			search: []search.TextSearchTerm{{Term: "New GitHub branch"}},
+			want:   RewirerMappings{branchGitHub},
+		},
+		"two terms, matched on title AND title": {
+			search: []search.TextSearchTerm{
+				{Term: "New GitHub"},
+				{Term: "branch"},
+			},
+			want: RewirerMappings{branchGitHub},
+		},
+		"two terms, matched on title AND repo": {
+			search: []search.TextSearchTerm{
+				{Term: "New"},
+				{Term: string(repos[0].Name)},
+			},
+			want: RewirerMappings{branchGitHub},
+		},
+		"one term, matched on repo": {
+			search: []search.TextSearchTerm{{Term: string(repos[0].Name)}},
+			want:   RewirerMappings{trackedGitHub, branchGitHub},
+		},
+		"one negated term, three title matches": {
+			search: []search.TextSearchTerm{{Term: "New GitHub branch", Not: true}},
+			want:   RewirerMappings{trackedGitHub, trackedGitLab, branchGitLab},
+		},
+		"two negated terms, one title AND repo match": {
+			search: []search.TextSearchTerm{
+				{Term: "New", Not: true},
+				{Term: string(repos[0].Name), Not: true},
+			},
+			want: RewirerMappings{trackedGitLab},
+		},
+		"mixed positive and negative terms": {
+			search: []search.TextSearchTerm{
+				{Term: "New", Not: true},
+				{Term: string(repos[0].Name)},
+			},
+			want: RewirerMappings{trackedGitHub},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Run("no limits", func(t *testing.T) {
+				have, err := s.GetRewirerMappings(ctx, GetRewirerMappingsOpts{
+					CampaignSpecID: newCampaignSpec.ID,
+					CampaignID:     campaign.ID,
+					TextSearch:     tc.search,
+				})
+				if err != nil {
+					t.Errorf("unexpected error: %+v", err)
+				}
+
+				if diff := cmp.Diff(have, tc.want); diff != "" {
+					t.Errorf("unexpected mappings (-have +want):\n%s", diff)
+				}
+			})
+
+			t.Run("with limit", func(t *testing.T) {
+				have, err := s.GetRewirerMappings(ctx, GetRewirerMappingsOpts{
+					CampaignSpecID: newCampaignSpec.ID,
+					CampaignID:     campaign.ID,
+					LimitOffset:    &db.LimitOffset{Limit: 1},
+					TextSearch:     tc.search,
+				})
+				if err != nil {
+					t.Errorf("unexpected error: %+v", err)
+				}
+
+				var want RewirerMappings
+				if len(tc.want) > 0 {
+					want = tc.want[0:1]
+				}
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Errorf("unexpected mappings (-have +want):\n%s", diff)
+				}
+			})
+
+			t.Run("with offset and limit", func(t *testing.T) {
+				have, err := s.GetRewirerMappings(ctx, GetRewirerMappingsOpts{
+					CampaignSpecID: newCampaignSpec.ID,
+					CampaignID:     campaign.ID,
+					LimitOffset:    &db.LimitOffset{Offset: 1, Limit: 1},
+					TextSearch:     tc.search,
+				})
+				if err != nil {
+					t.Errorf("unexpected error: %+v", err)
+				}
+
+				var want RewirerMappings
+				if len(tc.want) > 1 {
+					want = tc.want[1:2]
+				}
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Errorf("unexpected mappings (-have +want):\n%s", diff)
+				}
+			})
+		})
+	}
 }

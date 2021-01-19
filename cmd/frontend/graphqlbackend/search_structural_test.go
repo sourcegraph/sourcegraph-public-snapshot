@@ -3,13 +3,14 @@ package graphqlbackend
 import (
 	"context"
 	"errors"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
 
-	searchzoekt "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/zoekt"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
@@ -77,7 +78,7 @@ func TestStructuralSearchRepoFilter(t *testing.T) {
 	}}
 
 	z := &searchbackend.Zoekt{
-		Client: &searchzoekt.FakeSearcher{
+		Client: &searchbackend.FakeSearcher{
 			Repos:  []*zoekt.RepoListEntry{zoektRepo},
 			Result: &zoekt.SearchResult{Files: zoektFileMatches},
 		},
@@ -96,6 +97,8 @@ func TestStructuralSearchRepoFilter(t *testing.T) {
 		zoekt:        z,
 		searcherURLs: endpoint.Static("test"),
 		userSettings: &schema.Settings{},
+		reposMu:      &sync.Mutex{},
+		resolved:     &repos.Resolved{},
 	}
 	results, err := resolver.Results(ctx)
 	if err != nil {

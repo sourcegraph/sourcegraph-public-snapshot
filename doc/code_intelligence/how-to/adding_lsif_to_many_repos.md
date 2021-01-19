@@ -64,8 +64,6 @@ Watch the video or follow the written directions below:
      intelligence: Uploads. You should also be able to explore the code at that
      revision with precise code navigation.
 
-1. Enable LSIF in [global settings](../../../admin/config/settings.md): `"codeIntel.lsif": true`.
-
 1. Merge the pull requests created by the campaign and close the campaign. The
    GitHub action should now run on each push, generating LSIF data for the
    pushed revision and uploading this data to your Sourcegraph instance.

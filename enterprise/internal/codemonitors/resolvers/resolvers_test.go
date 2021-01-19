@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	campaignApitest "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
 	cm "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/email"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/storetest"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -57,8 +58,8 @@ func TestCreateCodeMonitor(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if !reflect.DeepEqual(want, got.(*monitor).Monitor) {
-		t.Fatalf("\ngot:\t %+v,\nwant:\t %+v", got.(*monitor).Monitor, want)
+	if diff := cmp.Diff(want, got.(*monitor).Monitor); diff != "" {
+		t.Error(diff)
 	}
 
 	// Toggle field enabled from true to false.
@@ -1150,3 +1151,50 @@ query($userName: String!, $actionCursor:String!, $actionEventCursor:String!){
 	}
 }
 `
+
+func TestTriggerTestEmailAction(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	got := email.TemplateDataNewSearchResults{}
+	email.MockSendEmailForNewSearchResult = func(ctx context.Context, userID int32, data *email.TemplateDataNewSearchResults) error {
+		got = *data
+		return nil
+	}
+
+	ctx := backend.WithAuthzBypass(context.Background())
+	r := newTestResolver(t)
+
+	userID := 1
+	namespaceID := relay.MarshalID("User", actor.FromContext(ctx).UID)
+
+	ctx = actor.WithActor(ctx, actor.FromUser(int32(userID)))
+	_, err := r.TriggerTestEmailAction(ctx, &graphqlbackend.TriggerTestEmailActionArgs{
+		Namespace:   namespaceID,
+		Description: "A code monitor name",
+		Email: &graphqlbackend.CreateActionEmailArgs{
+			Enabled:    true,
+			Priority:   "NORMAL",
+			Recipients: []graphql.ID{namespaceID},
+			Header:     "test header 1",
+		},
+	})
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !got.IsTest {
+		t.Fatalf("Template data for testing email actions should have with .IsTest=true")
+	}
+}
+
+func TestMonitorKindEqualsResolvers(t *testing.T) {
+	got := email.MonitorKind
+	want := MonitorKind
+
+	if got != want {
+		t.Fatal("email.MonitorKind should match resolvers.MonitorKind")
+	}
+}

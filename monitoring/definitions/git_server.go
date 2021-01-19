@@ -103,7 +103,7 @@ func GitServer() *monitoring.Container {
 						shared.ContainerMemoryUsage("gitserver", monitoring.ObservableOwnerCloud).Observable(),
 					},
 					{
-						shared.ContainerRestarts("gitserver", monitoring.ObservableOwnerCloud).Observable(),
+						shared.ContainerMissing("gitserver", monitoring.ObservableOwnerCloud).Observable(),
 						shared.ContainerIOUsage("gitserver", monitoring.ObservableOwnerCloud).Observable(),
 					},
 				},

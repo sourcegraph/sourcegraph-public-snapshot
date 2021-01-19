@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"reflect"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -14,7 +15,6 @@ import (
 	"go.uber.org/atomic"
 
 	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
-	searchzoekt "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -22,6 +22,7 @@ import (
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchquerytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -92,8 +93,8 @@ func TestSearchResults(t *testing.T) {
 		db.Mocks.Repos.MockGet(t, 1)
 		db.Mocks.Repos.Count = mockCount
 
-		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *searchResultsCommon, error) {
-			return nil, &searchResultsCommon{}, nil
+		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *streaming.Stats, error) {
+			return nil, &streaming.Stats{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 
@@ -127,14 +128,14 @@ func TestSearchResults(t *testing.T) {
 		db.Mocks.Repos.Count = mockCount
 
 		calledSearchRepositories := false
-		mockSearchRepositories = func(args *search.TextParameters) ([]SearchResultResolver, *searchResultsCommon, error) {
+		mockSearchRepositories = func(args *search.TextParameters) ([]SearchResultResolver, *streaming.Stats, error) {
 			calledSearchRepositories = true
-			return nil, &searchResultsCommon{}, nil
+			return nil, &streaming.Stats{}, nil
 		}
 		defer func() { mockSearchRepositories = nil }()
 
 		calledSearchSymbols := false
-		mockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, common *searchResultsCommon, err error) {
+		mockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, common *streaming.Stats, err error) {
 			calledSearchSymbols = true
 			if want := `(foo\d).*?(bar\*)`; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
@@ -145,14 +146,14 @@ func TestSearchResults(t *testing.T) {
 		defer func() { mockSearchSymbols = nil }()
 
 		calledSearchFilesInRepos := atomic.NewBool(false)
-		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *searchResultsCommon, error) {
+		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *streaming.Stats, error) {
 			calledSearchFilesInRepos.Store(true)
 			if want := `(foo\d).*?(bar\*)`; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
 			}
 			repo := &types.RepoName{ID: 1, Name: "repo"}
 			fm := mkFileMatch(repo, "dir/file", 123)
-			return []*FileMatchResolver{fm}, &searchResultsCommon{}, nil
+			return []*FileMatchResolver{fm}, &streaming.Stats{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 
@@ -192,14 +193,14 @@ func TestSearchResults(t *testing.T) {
 		db.Mocks.Repos.Count = mockCount
 
 		calledSearchRepositories := false
-		mockSearchRepositories = func(args *search.TextParameters) ([]SearchResultResolver, *searchResultsCommon, error) {
+		mockSearchRepositories = func(args *search.TextParameters) ([]SearchResultResolver, *streaming.Stats, error) {
 			calledSearchRepositories = true
-			return nil, &searchResultsCommon{}, nil
+			return nil, &streaming.Stats{}, nil
 		}
 		defer func() { mockSearchRepositories = nil }()
 
 		calledSearchSymbols := false
-		mockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, common *searchResultsCommon, err error) {
+		mockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, common *streaming.Stats, err error) {
 			calledSearchSymbols = true
 			if want := `"foo\\d \"bar*\""`; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
@@ -210,14 +211,14 @@ func TestSearchResults(t *testing.T) {
 		defer func() { mockSearchSymbols = nil }()
 
 		calledSearchFilesInRepos := atomic.NewBool(false)
-		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *searchResultsCommon, error) {
+		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *streaming.Stats, error) {
 			calledSearchFilesInRepos.Store(true)
 			if want := `foo\\d "bar\*"`; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
 			}
 			repo := &types.RepoName{ID: 1, Name: "repo"}
 			fm := mkFileMatch(repo, "dir/file", 123)
-			return []*FileMatchResolver{fm}, &searchResultsCommon{}, nil
+			return []*FileMatchResolver{fm}, &streaming.Stats{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 
@@ -747,41 +748,6 @@ func TestRoundStr(t *testing.T) {
 	}
 }
 
-func TestValidateRepoHasFileUsage(t *testing.T) {
-	q, err := query.ParseAndCheck("repohasfile:test type:symbol")
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = validateRepoHasFileUsage(q)
-	if err == nil {
-		t.Errorf("Expected error but got nil")
-	}
-
-	validQueries := []string{
-		"repohasfile:go",
-		"repohasfile:go error",
-		"repohasfile:test type:repo .",
-		"type:repo",
-		"repohasfile",
-		"foo bar type:repo",
-		"repohasfile:test type:path .",
-		"repohasfile:test type:symbol .",
-		"foo",
-		"bar",
-		"\"repohasfile\"",
-	}
-	for _, validQuery := range validQueries {
-		q, err = query.ParseAndCheck(validQuery)
-		if err != nil {
-			t.Fatal(err)
-		}
-		err = validateRepoHasFileUsage(q)
-		if err != nil {
-			t.Errorf("Expected no error, but got %v", err)
-		}
-	}
-}
-
 func TestSearchResultsHydration(t *testing.T) {
 	id := 42
 	repoName := "reponame-foobar"
@@ -839,7 +805,7 @@ func TestSearchResultsHydration(t *testing.T) {
 	}}
 
 	z := &searchbackend.Zoekt{
-		Client: &searchzoekt.FakeSearcher{
+		Client: &searchbackend.FakeSearcher{
 			Repos:  []*zoekt.RepoListEntry{zoektRepo},
 			Result: &zoekt.SearchResult{Files: zoektFileMatches},
 		},
@@ -852,7 +818,7 @@ func TestSearchResultsHydration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	resolver := &searchResolver{query: q, zoekt: z, userSettings: &schema.Settings{}}
+	resolver := &searchResolver{query: q, zoekt: z, userSettings: &schema.Settings{}, reposMu: &sync.Mutex{}, resolved: &searchrepos.Resolved{}}
 	results, err := resolver.Results(ctx)
 	if err != nil {
 		t.Fatal("Results:", err)
@@ -971,7 +937,7 @@ func TestCheckDiffCommitSearchLimits(t *testing.T) {
 func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 	type fields struct {
 		results             []SearchResultResolver
-		searchResultsCommon searchResultsCommon
+		searchResultsCommon streaming.Stats
 		alert               *searchAlert
 		start               time.Time
 	}
@@ -998,7 +964,7 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 			name: "file matches limit hit",
 			fields: fields{
 				results:             []SearchResultResolver{&FileMatchResolver{}},
-				searchResultsCommon: searchResultsCommon{limitHit: true},
+				searchResultsCommon: streaming.Stats{IsLimitHit: true},
 			},
 			want: "1+",
 		},
@@ -1033,7 +999,7 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 						},
 					},
 				},
-				searchResultsCommon: searchResultsCommon{limitHit: true},
+				searchResultsCommon: streaming.Stats{IsLimitHit: true},
 			},
 			want: "2+",
 		},
@@ -1041,10 +1007,10 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			sr := &SearchResultsResolver{
-				SearchResults:       tt.fields.results,
-				searchResultsCommon: tt.fields.searchResultsCommon,
-				alert:               tt.fields.alert,
-				start:               tt.fields.start,
+				SearchResults: tt.fields.results,
+				Stats:         tt.fields.searchResultsCommon,
+				alert:         tt.fields.alert,
+				start:         tt.fields.start,
 			}
 			if got := sr.ApproximateResultCount(); got != tt.want {
 				t.Errorf("searchResultsResolver.ApproximateResultCount() = %v, want %v", got, tt.want)
@@ -1276,7 +1242,7 @@ func TestEvaluateAnd(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			zoektFileMatches := generateZoektMatches(tt.zoektMatches)
 			z := &searchbackend.Zoekt{
-				Client: &searchzoekt.FakeSearcher{
+				Client: &searchbackend.FakeSearcher{
 					Repos:  zoektRepos,
 					Result: &zoekt.SearchResult{Files: zoektFileMatches, Stats: zoekt.Stats{FilesSkipped: tt.filesSkipped}},
 				},
@@ -1301,7 +1267,7 @@ func TestEvaluateAnd(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			resolver := &searchResolver{query: q, zoekt: z, userSettings: &schema.Settings{}}
+			resolver := &searchResolver{query: q, zoekt: z, userSettings: &schema.Settings{}, reposMu: &sync.Mutex{}, resolved: &searchrepos.Resolved{}}
 			results, err := resolver.Results(ctx)
 			if err != nil {
 				t.Fatal("Results:", err)

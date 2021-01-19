@@ -4,10 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -108,7 +110,7 @@ func (s *Store) IndexableRepositories(ctx context.Context, opts IndexableReposit
 		conds = append(conds, sqlf.Sprintf(
 			"(last_index_enqueued_at IS NULL OR %s - last_index_enqueued_at >= (%s || ' second')::interval)",
 			opts.now,
-			opts.MinimumTimeSinceLastEnqueue/time.Second,
+			strconv.Itoa(int(opts.MinimumTimeSinceLastEnqueue/time.Second)),
 		))
 	}
 
@@ -116,18 +118,21 @@ func (s *Store) IndexableRepositories(ctx context.Context, opts IndexableReposit
 		conds = append(conds, sqlf.Sprintf("true"))
 	}
 
-	return scanIndexableRepositories(s.Store.Query(ctx, sqlf.Sprintf(`
-		SELECT
-			repository_id,
-			search_count,
-			precise_count,
-			last_index_enqueued_at,
-			enabled
-		FROM lsif_indexable_repositories
-		WHERE enabled is not false AND (enabled is true OR (%s))
-		LIMIT %s
-	`, sqlf.Join(conds, " AND "), opts.Limit)))
+	return scanIndexableRepositories(s.Store.Query(ctx, sqlf.Sprintf(indexableRepositoriesQuery, sqlf.Join(conds, " AND "), opts.Limit)))
 }
+
+const indexableRepositoriesQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/indexable_repos.go:IndexableRepositories
+SELECT
+	repository_id,
+	search_count,
+	precise_count,
+	last_index_enqueued_at,
+	enabled
+FROM lsif_indexable_repositories
+WHERE enabled is not false AND (enabled is true OR (%s))
+LIMIT %s
+`
 
 // UpdateIndexableRepository updates the metadata for an indexable repository. If the repository is not
 // already marked as indexable, a new record will be created.
@@ -166,12 +171,13 @@ func (s *Store) UpdateIndexableRepository(ctx context.Context, indexableReposito
 		return nil
 	}
 
-	return s.Store.Exec(ctx, sqlf.Sprintf(`
-		UPDATE lsif_indexable_repositories
-		SET %s, last_updated_at = %s
-		WHERE repository_id = %s
-	`, sqlf.Join(pairs, ","), now, indexableRepository.RepositoryID))
+	return s.Store.Exec(ctx, sqlf.Sprintf(updateIndexableRepositoryQuery, sqlf.Join(pairs, ","), now, indexableRepository.RepositoryID))
 }
+
+const updateIndexableRepositoryQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/indexable_repos.go:UpdateIndexableRepository
+UPDATE lsif_indexable_repositories SET %s, last_updated_at = %s WHERE repository_id = %s
+`
 
 // ResetIndexableRepositories zeroes the event counts for indexable repositories that have not been updated
 // since lastUpdatedBefore.
@@ -180,12 +186,10 @@ func (s *Store) ResetIndexableRepositories(ctx context.Context, lastUpdatedBefor
 	ctx, endObservation := s.operations.resetIndexableRepositories.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
 	defer endObservation(1, observation.Args{})
 
-	return s.Store.Exec(ctx, sqlf.Sprintf(
-		`
-		UPDATE lsif_indexable_repositories
-		SET search_count = 0, precise_count = 0
-		WHERE last_updated_at < %s
-	`,
-		lastUpdatedBefore,
-	))
+	return s.Store.Exec(ctx, sqlf.Sprintf(resetIndexableRepositoriesQuery, lastUpdatedBefore))
 }
+
+const resetIndexableRepositoriesQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/indexable_repos.go:ResetIndexableRepositories
+UPDATE lsif_indexable_repositories SET search_count = 0, precise_count = 0 WHERE last_updated_at < %s
+`

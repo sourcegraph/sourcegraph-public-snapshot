@@ -3,6 +3,7 @@ package dbstore
 import (
 	"context"
 	"database/sql"
+	"strconv"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -98,11 +99,6 @@ func scanFirstUpload(rows *sql.Rows, err error) (Upload, bool, error) {
 	return uploads[0], true, nil
 }
 
-// scanFirstUploadInterface scans a slice of uploads from the return value of `*Store.query` and returns the first.
-func scanFirstUploadInterface(rows *sql.Rows, err error) (interface{}, bool, error) {
-	return scanFirstUpload(rows, err)
-}
-
 // scanFirstUploadRecord scans a slice of uploads from the return value of `*Store.query` and returns the first.
 func scanFirstUploadRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
 	return scanFirstUpload(rows, err)
@@ -136,37 +132,40 @@ func (s *Store) GetUploadByID(ctx context.Context, id int) (_ Upload, _ bool, er
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return scanFirstUpload(s.Store.Query(ctx, sqlf.Sprintf(`
-		SELECT
-			u.id,
-			u.commit,
-			u.root,
-			EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip where repository_id = u.repository_id and upload_id = u.id) AS visible_at_tip,
-			u.uploaded_at,
-			u.state,
-			u.failure_message,
-			u.started_at,
-			u.finished_at,
-			u.process_after,
-			u.num_resets,
-			u.num_failures,
-			u.repository_id,
-			u.repository_name,
-			u.indexer,
-			u.num_parts,
-			u.uploaded_parts,
-			u.upload_size,
-			s.rank
-		FROM lsif_uploads_with_repository_name u
-		LEFT JOIN (
-			SELECT r.id, RANK() OVER (ORDER BY COALESCE(r.process_after, r.uploaded_at)) as rank
-			FROM lsif_uploads_with_repository_name r
-			WHERE r.state = 'queued'
-		) s
-		ON u.id = s.id
-		WHERE u.state != 'deleted' AND u.id = %s
-	`, id)))
+	return scanFirstUpload(s.Store.Query(ctx, sqlf.Sprintf(getUploadByIDQuery, id)))
 }
+
+const getUploadByIDQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:GetUploadByID
+SELECT
+	u.id,
+	u.commit,
+	u.root,
+	EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip where repository_id = u.repository_id and upload_id = u.id) AS visible_at_tip,
+	u.uploaded_at,
+	u.state,
+	u.failure_message,
+	u.started_at,
+	u.finished_at,
+	u.process_after,
+	u.num_resets,
+	u.num_failures,
+	u.repository_id,
+	u.repository_name,
+	u.indexer,
+	u.num_parts,
+	u.uploaded_parts,
+	u.upload_size,
+	s.rank
+FROM lsif_uploads_with_repository_name u
+LEFT JOIN (
+	SELECT r.id, RANK() OVER (ORDER BY COALESCE(r.process_after, r.uploaded_at)) as rank
+	FROM lsif_uploads_with_repository_name r
+	WHERE r.state = 'queued'
+) s
+ON u.id = s.id
+WHERE u.state != 'deleted' AND u.id = %s
+`
 
 type GetUploadsOptions struct {
 	RepositoryID   int
@@ -186,21 +185,20 @@ func (s *Store) DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore 
 	}})
 	defer endObservation(1, observation.Args{})
 
-	count, _, err := basestore.ScanFirstInt(s.Store.Query(
-		ctx,
-		sqlf.Sprintf(`
-			WITH deleted AS (
-				UPDATE lsif_uploads
-				SET state = 'deleted'
-				WHERE state = 'uploading' AND uploaded_at < %s
-				RETURNING repository_id
-			)
-			SELECT count(*) FROM deleted
-		`, uploadedBefore),
-	))
-
+	count, _, err := basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(deleteUploadsStuckUploadingQuery, uploadedBefore)))
 	return count, err
 }
+
+const deleteUploadsStuckUploadingQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:DeleteUploadsStuckUploading
+WITH deleted AS (
+	UPDATE lsif_uploads
+	SET state = 'deleted'
+	WHERE state = 'uploading' AND uploaded_at < %s
+	RETURNING repository_id
+)
+SELECT count(*) FROM deleted
+`
 
 // GetUploads returns a list of uploads and the total count of records matching the given conditions.
 func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upload, _ int, err error) {
@@ -242,7 +240,7 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 
 	count, _, err := basestore.ScanFirstInt(tx.Store.Query(
 		ctx,
-		sqlf.Sprintf(`SELECT COUNT(*) FROM lsif_uploads_with_repository_name u WHERE %s`, sqlf.Join(conds, " AND ")),
+		sqlf.Sprintf(getUploadsCountQuery, sqlf.Join(conds, " AND ")),
 	))
 	if err != nil {
 		return nil, 0, err
@@ -255,45 +253,50 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 		orderExpression = sqlf.Sprintf("uploaded_at DESC")
 	}
 
-	uploads, err := scanUploads(tx.Store.Query(
-		ctx,
-		sqlf.Sprintf(`
-			SELECT
-				u.id,
-				u.commit,
-				u.root,
-				EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip where repository_id = u.repository_id and upload_id = u.id) AS visible_at_tip,
-				u.uploaded_at,
-				u.state,
-				u.failure_message,
-				u.started_at,
-				u.finished_at,
-				u.process_after,
-				u.num_resets,
-				u.num_failures,
-				u.repository_id,
-				u.repository_name,
-				u.indexer,
-				u.num_parts,
-				u.uploaded_parts,
-				u.upload_size,
-				s.rank
-			FROM lsif_uploads_with_repository_name u
-			LEFT JOIN (
-				SELECT r.id, RANK() OVER (ORDER BY COALESCE(r.process_after, r.uploaded_at)) as rank
-				FROM lsif_uploads_with_repository_name r
-				WHERE r.state = 'queued'
-			) s
-			ON u.id = s.id
-			WHERE %s ORDER BY %s LIMIT %d OFFSET %d
-		`, sqlf.Join(conds, " AND "), orderExpression, opts.Limit, opts.Offset),
-	))
+	uploads, err := scanUploads(tx.Store.Query(ctx, sqlf.Sprintf(getUploadsQuery, sqlf.Join(conds, " AND "), orderExpression, opts.Limit, opts.Offset)))
 	if err != nil {
 		return nil, 0, err
 	}
 
 	return uploads, count, nil
 }
+
+const getUploadsCountQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:GetUploads
+SELECT COUNT(*) FROM lsif_uploads_with_repository_name u WHERE %s
+`
+
+const getUploadsQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:GetUploads
+SELECT
+	u.id,
+	u.commit,
+	u.root,
+	EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip where repository_id = u.repository_id and upload_id = u.id) AS visible_at_tip,
+	u.uploaded_at,
+	u.state,
+	u.failure_message,
+	u.started_at,
+	u.finished_at,
+	u.process_after,
+	u.num_resets,
+	u.num_failures,
+	u.repository_id,
+	u.repository_name,
+	u.indexer,
+	u.num_parts,
+	u.uploaded_parts,
+	u.upload_size,
+	s.rank
+FROM lsif_uploads_with_repository_name u
+LEFT JOIN (
+	SELECT r.id, RANK() OVER (ORDER BY COALESCE(r.process_after, r.uploaded_at)) as rank
+	FROM lsif_uploads_with_repository_name r
+	WHERE r.state = 'queued'
+) s
+ON u.id = s.id
+WHERE %s ORDER BY %s LIMIT %d OFFSET %d
+`
 
 // makeSearchCondition returns a disjunction of LIKE clauses against all searchable columns of an upload.
 func makeSearchCondition(term string) *sqlf.Query {
@@ -327,19 +330,8 @@ func (s *Store) InsertUpload(ctx context.Context, upload Upload) (_ int, err err
 
 	id, _, err := basestore.ScanFirstInt(s.Store.Query(
 		ctx,
-		sqlf.Sprintf(`
-			INSERT INTO lsif_uploads (
-				commit,
-				root,
-				repository_id,
-				indexer,
-				state,
-				num_parts,
-				uploaded_parts,
-				upload_size
-			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-			RETURNING id
-		`,
+		sqlf.Sprintf(
+			insertUploadQuery,
 			upload.Commit,
 			upload.Root,
 			upload.RepositoryID,
@@ -354,6 +346,21 @@ func (s *Store) InsertUpload(ctx context.Context, upload Upload) (_ int, err err
 	return id, err
 }
 
+const insertUploadQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:InsertUpload
+INSERT INTO lsif_uploads (
+	commit,
+	root,
+	repository_id,
+	indexer,
+	state,
+	num_parts,
+	uploaded_parts,
+	upload_size
+) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+RETURNING id
+`
+
 // AddUploadPart adds the part index to the given upload's uploaded parts array. This method is idempotent
 // (the resulting array is deduplicated on update).
 func (s *Store) AddUploadPart(ctx context.Context, uploadID, partIndex int) (err error) {
@@ -363,12 +370,13 @@ func (s *Store) AddUploadPart(ctx context.Context, uploadID, partIndex int) (err
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return s.Store.Exec(ctx, sqlf.Sprintf(`
-		UPDATE lsif_uploads
-		SET uploaded_parts = array(SELECT DISTINCT * FROM unnest(array_append(uploaded_parts, %s)))
-		WHERE id = %s
-	`, partIndex, uploadID))
+	return s.Store.Exec(ctx, sqlf.Sprintf(addUploadPartQuery, partIndex, uploadID))
 }
+
+const addUploadPartQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:AddUploadPart
+UPDATE lsif_uploads SET uploaded_parts = array(SELECT DISTINCT * FROM unnest(array_append(uploaded_parts, %s))) WHERE id = %s
+`
 
 // MarkQueued updates the state of the upload to queued and updates the upload size.
 func (s *Store) MarkQueued(ctx context.Context, id int, uploadSize *int64) (err error) {
@@ -377,8 +385,13 @@ func (s *Store) MarkQueued(ctx context.Context, id int, uploadSize *int64) (err 
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return s.Store.Exec(ctx, sqlf.Sprintf(`UPDATE lsif_uploads SET state = 'queued', upload_size = %s WHERE id = %s`, uploadSize, id))
+	return s.Store.Exec(ctx, sqlf.Sprintf(markQueuedQuery, uploadSize, id))
 }
+
+const markQueuedQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:MarkQueued
+UPDATE lsif_uploads SET state = 'queued', upload_size = %s WHERE id = %s
+`
 
 var uploadColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("u.id"),
@@ -417,15 +430,7 @@ func (s *Store) DeleteUploadByID(ctx context.Context, id int) (_ bool, err error
 	}
 	defer func() { err = tx.Done(err) }()
 
-	repositoryID, deleted, err := basestore.ScanFirstInt(tx.Store.Query(
-		ctx,
-		sqlf.Sprintf(`
-			UPDATE lsif_uploads
-			SET state = 'deleted'
-			WHERE id = %s
-			RETURNING repository_id
-		`, id),
-	))
+	repositoryID, deleted, err := basestore.ScanFirstInt(tx.Store.Query(ctx, sqlf.Sprintf(deleteUploadByIDQuery, id)))
 	if err != nil {
 		return false, err
 	}
@@ -440,6 +445,11 @@ func (s *Store) DeleteUploadByID(ctx context.Context, id int) (_ bool, err error
 	return true, nil
 }
 
+const deleteUploadByIDQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:DeleteUploadByID
+UPDATE lsif_uploads SET state = 'deleted' WHERE id = %s RETURNING repository_id
+`
+
 // DeletedRepositoryGracePeriod is the minimum allowable duration between a repo deletion
 // and the upload and index records for that repository being deleted.
 const DeletedRepositoryGracePeriod = time.Minute * 30
@@ -451,25 +461,27 @@ func (s *Store) DeleteUploadsWithoutRepository(ctx context.Context, now time.Tim
 	ctx, endObservation := s.operations.deleteUploadsWithoutRepository.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
 	defer endObservation(1, observation.Args{})
 
-	// TODO(efritz) - this would benefit from an index on repository_id. We currently have
-	// a similar one on this index, but only for uploads that are  completed or visible at tip.
-
-	return scanCounts(s.Store.Query(ctx, sqlf.Sprintf(`
-		WITH deleted_repos AS (
-			SELECT r.id AS id FROM repo r
-			WHERE
-				%s - r.deleted_at >= %s * interval '1 second' AND
-				EXISTS (SELECT 1 from lsif_uploads u WHERE u.repository_id = r.id)
-		),
-		deleted_uploads AS (
-			UPDATE lsif_uploads u
-			SET state = 'deleted'
-			WHERE u.repository_id IN (SELECT id FROM deleted_repos)
-			RETURNING u.id, u.repository_id
-		)
-		SELECT d.repository_id, COUNT(*) FROM deleted_uploads d GROUP BY d.repository_id
-	`, now.UTC(), DeletedRepositoryGracePeriod/time.Second)))
+	return scanCounts(s.Store.Query(ctx, sqlf.Sprintf(deleteUploadsWithoutRepositoryQuery, now.UTC(), DeletedRepositoryGracePeriod/time.Second)))
 }
+
+const deleteUploadsWithoutRepositoryQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:DeleteUploadsWithoutRepository
+-- TODO(efritz) - this would benefit from an index on repository_id. We currently have
+-- a similar one on this index, but only for uploads that are completed or visible at tip.
+WITH deleted_repos AS (
+	SELECT r.id AS id FROM repo r
+	WHERE
+		%s - r.deleted_at >= %s * interval '1 second' AND
+		EXISTS (SELECT 1 from lsif_uploads u WHERE u.repository_id = r.id)
+),
+deleted_uploads AS (
+	UPDATE lsif_uploads u
+	SET state = 'deleted'
+	WHERE u.repository_id IN (SELECT id FROM deleted_repos)
+	RETURNING u.id, u.repository_id
+)
+SELECT d.repository_id, COUNT(*) FROM deleted_uploads d GROUP BY d.repository_id
+`
 
 // HardDeleteUploadByID deletes the upload record with the given identifier.
 func (s *Store) HardDeleteUploadByID(ctx context.Context, ids ...int) (err error) {
@@ -485,5 +497,58 @@ func (s *Store) HardDeleteUploadByID(ctx context.Context, ids ...int) (err error
 		idQueries = append(idQueries, sqlf.Sprintf("%s", id))
 	}
 
-	return s.Store.Exec(ctx, sqlf.Sprintf(`DELETE FROM lsif_uploads WHERE id IN (%s)`, sqlf.Join(idQueries, ", ")))
+	return s.Store.Exec(ctx, sqlf.Sprintf(hardDeleteUploadByIDQuery, sqlf.Join(idQueries, ", ")))
 }
+
+const hardDeleteUploadByIDQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:HardDeleteUploadByID
+DELETE FROM lsif_uploads WHERE id IN (%s)
+`
+
+// SoftDeleteOldUploads marks uploads older than the given age that are not visible at the tip of the default branch
+// as deleted. The associated repositories will be marked as dirty so that their commit graphs are updated in the
+// background.
+func (s *Store) SoftDeleteOldUploads(ctx context.Context, maxAge time.Duration, now time.Time) (count int, err error) {
+	ctx, endObservation := s.operations.softDeleteOldUploads.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("maxAge", maxAge.String()),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	tx, err := s.transact(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	seconds := strconv.Itoa(int(maxAge / time.Second))
+	repositoryIDs, err := scanCounts(tx.Store.Query(ctx, sqlf.Sprintf(softDeleteOldUploadsQuery, now, seconds, now, seconds)))
+	if err != nil {
+		return 0, err
+	}
+
+	for repositoryID, numUpdated := range repositoryIDs {
+		if err := tx.MarkRepositoryAsDirty(ctx, repositoryID); err != nil {
+			return 0, err
+		}
+
+		count += numUpdated
+	}
+
+	return count, nil
+}
+
+const softDeleteOldUploadsQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:SoftDeleteOldUploads
+WITH u AS (
+	UPDATE lsif_uploads u
+		SET state = 'deleted'
+		WHERE
+			(
+				%s - u.finished_at > (%s || ' second')::interval OR
+				(u.finished_at IS NULL AND %s - u.uploaded_at > (%s || ' second')::interval)
+			) AND
+				u.id NOT IN (SELECT uv.upload_id FROM lsif_uploads_visible_at_tip uv WHERE uv.repository_id = u.repository_id)
+		RETURNING id, repository_id
+)
+SELECT u.repository_id, count(*) FROM u GROUP BY u.repository_id
+`

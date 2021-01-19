@@ -702,11 +702,11 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, campaign
 		opts.PublicationState = &published
 	}
 	if args.Search != nil {
-		ts, err := search.ParseChangesetSearch(*args.Search)
+		var err error
+		opts.TextSearch, err = search.ParseTextSearch(*args.Search)
 		if err != nil {
 			return opts, false, errors.Wrap(err, "parsing search")
 		}
-		opts.TextSearch = ts.TextSearch
 		// Since we search for the repository name in text searches, the
 		// presence or absence of results may leak information about hidden
 		// repositories.

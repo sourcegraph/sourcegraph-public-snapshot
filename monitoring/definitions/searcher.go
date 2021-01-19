@@ -48,7 +48,7 @@ func Searcher() *monitoring.Container {
 						shared.ContainerMemoryUsage("searcher", monitoring.ObservableOwnerSearch).Observable(),
 					},
 					{
-						shared.ContainerRestarts("searcher", monitoring.ObservableOwnerSearch).Observable(),
+						shared.ContainerMissing("searcher", monitoring.ObservableOwnerSearch).Observable(),
 					},
 				},
 			},

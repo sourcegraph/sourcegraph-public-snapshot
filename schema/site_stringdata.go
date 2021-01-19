@@ -102,6 +102,12 @@ const SiteSchemaJSON = `{
           "default": false,
           "!go": { "pointer": true }
         },
+        "perforce": {
+          "description": "Allow adding Perforce code host connections",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "enabled"
+        },
         "tls.external": {
           "description": "Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.",
           "type": "object",
@@ -281,6 +287,13 @@ const SiteSchemaJSON = `{
       "description": "When enabled, only site admins can create and apply campaigns.",
       "type": "boolean",
       "group": "Campaigns",
+      "default": false
+    },
+    "codeIntelAutoIndexing.enabled": {
+      "description": "Enables/disables the code intel auto indexing feature.",
+      "type": "boolean",
+      "!go": { "pointer": true },
+      "group": "Code intelligence",
       "default": false
     },
     "corsOrigin": {
@@ -652,6 +665,11 @@ const SiteSchemaJSON = `{
           "properties": {
             "dsn": {
               "description": "Sentry Data Source Name (DSN). Per the Sentry docs (https://docs.sentry.io/quickstart/#about-the-dsn), it should match the following pattern: '{PROTOCOL}://{PUBLIC_KEY}@{HOST}/{PATH}{PROJECT_ID}'.",
+              "type": "string",
+              "pattern": "^https?://"
+            },
+            "backendDSN": {
+              "description": "Sentry Data Source Name (DSN) for backend errors. Per the Sentry docs (https://docs.sentry.io/quickstart/#about-the-dsn), it should match the following pattern: '{PROTOCOL}://{PUBLIC_KEY}@{HOST}/{PATH}{PROJECT_ID}'.",
               "type": "string",
               "pattern": "^https?://"
             }
@@ -1153,7 +1171,7 @@ const SiteSchemaJSON = `{
     "NotifierPagerduty": {
       "description": "PagerDuty notifier",
       "type": "object",
-      "required": ["type", "routingKey"],
+      "required": ["type", "integrationKey"],
       "properties": {
         "type": {
           "type": "string",

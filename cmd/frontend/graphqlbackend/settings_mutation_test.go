@@ -17,6 +17,9 @@ func TestSettingsMutation_EditSettings(t *testing.T) {
 	db.Mocks.Users.GetByID = func(context.Context, int32) (*types.User, error) {
 		return &types.User{ID: 1}, nil
 	}
+	db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
+		return &types.User{ID: 1, SiteAdmin: false}, nil
+	}
 	db.Mocks.Settings.GetLatest = func(context.Context, api.SettingsSubject) (*api.Settings, error) {
 		return &api.Settings{ID: 1, Contents: "{}"}, nil
 	}
@@ -64,6 +67,9 @@ func TestSettingsMutation_OverwriteSettings(t *testing.T) {
 	resetMocks()
 	db.Mocks.Users.GetByID = func(context.Context, int32) (*types.User, error) {
 		return &types.User{ID: 1}, nil
+	}
+	db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
+		return &types.User{ID: 1, SiteAdmin: false}, nil
 	}
 	db.Mocks.Settings.GetLatest = func(context.Context, api.SettingsSubject) (*api.Settings, error) {
 		return &api.Settings{ID: 1, Contents: "{}"}, nil

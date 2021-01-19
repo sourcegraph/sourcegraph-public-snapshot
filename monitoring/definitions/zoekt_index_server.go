@@ -37,7 +37,7 @@ func ZoektIndexServer() *monitoring.Container {
 						shared.ContainerMemoryUsage("zoekt-indexserver", monitoring.ObservableOwnerSearch).Observable(),
 					},
 					{
-						shared.ContainerRestarts("zoekt-indexserver", monitoring.ObservableOwnerSearch).Observable(),
+						shared.ContainerMissing("zoekt-indexserver", monitoring.ObservableOwnerSearch).Observable(),
 						shared.ContainerIOUsage("zoekt-indexserver", monitoring.ObservableOwnerSearch).Observable(),
 					},
 				},
@@ -69,5 +69,7 @@ func ZoektIndexServer() *monitoring.Container {
 				},
 			},
 		},
+
+		NoSourcegraphDebugServer: true,
 	}
 }

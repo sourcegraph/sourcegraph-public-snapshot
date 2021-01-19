@@ -65,7 +65,7 @@ func SyntectServer() *monitoring.Container {
 						shared.ContainerMemoryUsage("syntect-server", monitoring.ObservableOwnerCloud).Observable(),
 					},
 					{
-						shared.ContainerRestarts("syntect-server", monitoring.ObservableOwnerCloud).Observable(),
+						shared.ContainerMissing("syntect-server", monitoring.ObservableOwnerCloud).Observable(),
 					},
 				},
 			},
@@ -93,5 +93,6 @@ func SyntectServer() *monitoring.Container {
 				},
 			},
 		},
+		NoSourcegraphDebugServer: true,
 	}
 }

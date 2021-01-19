@@ -32,6 +32,25 @@ func New(dbStore DBStore, observationContext *observation.Context) *Client {
 }
 
 // Head determines the tip commit of the default branch for the given repository.
+func (c *Client) CommitExists(ctx context.Context, repositoryID int, commit string) (_ bool, err error) {
+	ctx, endObservation := c.operations.commitExists.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+		log.String("commit", commit),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	out, err := c.execGitCommand(ctx, repositoryID, "cat-file", "-t", commit)
+	if err == nil {
+		return true, nil
+	}
+
+	if strings.Contains(out, "Not a valid object name") {
+		err = nil
+	}
+	return false, err
+}
+
+// Head determines the tip commit of the default branch for the given repository.
 func (c *Client) Head(ctx context.Context, repositoryID int) (_ string, err error) {
 	ctx, endObservation := c.operations.head.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),

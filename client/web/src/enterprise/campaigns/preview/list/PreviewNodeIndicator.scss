@@ -1,0 +1,29 @@
+.preview-node-indicator {
+    &__attach-dot {
+        width: 0.25rem;
+        height: calc(50% - 0.5rem);
+        background-color: var(--oc-lime-6);
+    }
+    &__attach-icon {
+        color: var(--oc-lime-9);
+        line-height: 1rem;
+    }
+    &__update-dot {
+        width: 0.25rem;
+        height: calc(50% - 0.5rem);
+        background-color: var(--oc-yellow-5);
+    }
+    &__update-icon {
+        color: var(--oc-orange-9);
+        line-height: 1rem;
+    }
+    &__detach-dot {
+        width: 0.25rem;
+        height: calc(50% - 0.5rem);
+        background-color: var(--danger);
+    }
+    &__detach-icon {
+        color: var(--oc-red-9);
+        line-height: 1rem;
+    }
+}

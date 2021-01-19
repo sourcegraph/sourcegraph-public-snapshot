@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type changesetApplyPreviewResolver struct {
@@ -182,13 +183,40 @@ func (r *visibleChangesetApplyPreviewResolver) computePlan(ctx context.Context) 
 			return
 		}
 
+		// Clone all entities to ensure they're not modified when used
+		// by the changeset and changeset spec resolvers. Otherwise, the
+		// changeset always appears as "processing".
+		var (
+			mappingChangeset     *campaigns.Changeset
+			mappingChangesetSpec *campaigns.ChangesetSpec
+			mappingRepo          *types.Repo
+		)
+		if r.mapping.Changeset != nil {
+			mappingChangeset = r.mapping.Changeset.Clone()
+		}
+		if r.mapping.ChangesetSpec != nil {
+			mappingChangesetSpec = r.mapping.ChangesetSpec.Clone()
+		}
+		if r.mapping.Repo != nil {
+			mappingRepo = r.mapping.Repo.Clone()
+		}
+
 		// Then, dry-run the rewirer to simulate how the changeset would look like _after_ an apply operation.
-		rewirer := rewirer.New(store.RewirerMappings{r.mapping}, campaign.ID)
+		rewirer := rewirer.New(store.RewirerMappings{{
+			ChangesetSpecID: r.mapping.ChangesetSpecID,
+			ChangesetID:     r.mapping.ChangesetID,
+			RepoID:          r.mapping.RepoID,
+
+			ChangesetSpec: mappingChangesetSpec,
+			Changeset:     mappingChangeset,
+			Repo:          mappingRepo,
+		}}, campaign.ID)
 		changesets, err := rewirer.Rewire()
 		if err != nil {
 			r.planErr = err
 			return
 		}
+
 		if len(changesets) != 1 {
 			r.planErr = errors.New("rewirer did not return changeset")
 			return

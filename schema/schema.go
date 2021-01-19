@@ -45,6 +45,12 @@ type AWSCodeCommitGitCredentials struct {
 	// Username description: The Git username
 	Username string `json:"username"`
 }
+type AdditionalProperties struct {
+	// Format description: The expected format of the output. If set, the output is being parsed in that format before being stored in the var. If not set, 'text' is assumed to the format.
+	Format string `json:"format,omitempty"`
+	// Value description: The value of the output, which can be a template string.
+	Value string `json:"value"`
+}
 
 // AuthAccessTokens description: Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.
 type AuthAccessTokens struct {
@@ -433,6 +439,8 @@ type ExperimentalFeatures struct {
 	EnablePermissionsWebhooks bool `json:"enablePermissionsWebhooks,omitempty"`
 	// EventLogging description: Enables user event logging inside of the Sourcegraph instance. This will allow admins to have greater visibility of user activity, such as frequently viewed pages, frequent searches, and more. These event logs (and any specific user actions) are only stored locally, and never leave this Sourcegraph instance.
 	EventLogging string `json:"eventLogging,omitempty"`
+	// Perforce description: Allow adding Perforce code host connections
+	Perforce string `json:"perforce,omitempty"`
 	// SearchIndexBranches description: A map from repository name to a list of extra revs (branch, ref, tag, commit sha, etc) to index for a repository. We always index the default branch ("HEAD") and revisions in version contexts. This allows specifying additional revisions. Sourcegraph can index up to 64 branches per repository.
 	SearchIndexBranches map[string][]string `json:"search.index.branches,omitempty"`
 	// SearchMultipleRevisionsPerRepository description: DEPRECATED. Always on. Will be removed in 3.19.
@@ -814,7 +822,7 @@ type NotifierOpsGenie struct {
 type NotifierPagerduty struct {
 	ApiUrl string `json:"apiUrl,omitempty"`
 	// IntegrationKey description: Integration key for the PagerDuty Events API v2 - see https://developer.pagerduty.com/docs/events-api-v2/overview
-	IntegrationKey string `json:"integrationKey,omitempty"`
+	IntegrationKey string `json:"integrationKey"`
 	// Severity description: Severity level for PagerDuty alert
 	Severity string `json:"severity,omitempty"`
 	Type     string `json:"type"`
@@ -915,6 +923,26 @@ type OtherExternalServiceConnection struct {
 // ParentSourcegraph description: URL to fetch unreachable repository details from. Defaults to "https://sourcegraph.com"
 type ParentSourcegraph struct {
 	Url string `json:"url,omitempty"`
+}
+
+// PerforceAuthorization description: If non-null, enforces Perforce depot permissions.
+type PerforceAuthorization struct {
+}
+
+// PerforceConnection description: Configuration for a connection to Perforce Server.
+type PerforceConnection struct {
+	// Authorization description: If non-null, enforces Perforce depot permissions.
+	Authorization *PerforceAuthorization `json:"authorization,omitempty"`
+	// Depots description: Depots can have arbitrary paths, e.g. a path to depot root or a subdirectory.
+	Depots []string `json:"depots,omitempty"`
+	// MaxChanges description: Only import at most n changes when possible (git p4 clone --max-changes).
+	MaxChanges float64 `json:"maxChanges,omitempty"`
+	// P4Passwd description: The plain password of the user (P4PASSWD).
+	P4Passwd string `json:"p4.passwd"`
+	// P4Port description: The Perforce Server address to be used for p4 CLI (P4PORT).
+	P4Port string `json:"p4.port"`
+	// P4User description: The user to be authenticated for p4 CLI (P4USER).
+	P4User string `json:"p4.user"`
 }
 
 // PermissionsUserMapping description: Settings for Sourcegraph permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This setting cannot be enabled if repository permissions for any specific external service are enabled (i.e., when the external service's `authorization` field is set).
@@ -1043,6 +1071,8 @@ type SearchScope struct {
 
 // Sentry description: Configuration for Sentry
 type Sentry struct {
+	// BackendDSN description: Sentry Data Source Name (DSN) for backend errors. Per the Sentry docs (https://docs.sentry.io/quickstart/#about-the-dsn), it should match the following pattern: '{PROTOCOL}://{PUBLIC_KEY}@{HOST}/{PATH}{PROJECT_ID}'.
+	BackendDSN string `json:"backendDSN,omitempty"`
 	// Dsn description: Sentry Data Source Name (DSN). Per the Sentry docs (https://docs.sentry.io/quickstart/#about-the-dsn), it should match the following pattern: '{PROTOCOL}://{PUBLIC_KEY}@{HOST}/{PATH}{PROJECT_ID}'.
 	Dsn string `json:"dsn,omitempty"`
 }
@@ -1089,7 +1119,7 @@ type Settings struct {
 	SearchIncludeArchived *bool `json:"search.includeArchived,omitempty"`
 	// SearchIncludeForks description: Whether searches should include searching forked repositories.
 	SearchIncludeForks *bool `json:"search.includeForks,omitempty"`
-	// SearchMigrateParser description: If false, disables the new and/or-compatible parser for all search queries. It is a flag to aid transition to the new parser.
+	// SearchMigrateParser description: REMOVED. Previously, a flag to enable and/or-expressions in queries as an aid transition to new language features in versions <= 3.24.0.
 	SearchMigrateParser *bool `json:"search.migrateParser,omitempty"`
 	// SearchRepositoryGroups description: Named groups of repositories that can be referenced in a search query using the `repogroup:` operator. The list can contain string literals (to include single repositories) and JSON objects with a "regex" field (to include all repositories matching the regular expression). Retrieving repogroups via the GQL interface will currently exclude repositories matched by regex patterns. #14208.
 	SearchRepositoryGroups map[string][]interface{} `json:"search.repositoryGroups,omitempty"`
@@ -1175,6 +1205,8 @@ type SiteConfiguration struct {
 	CampaignsReadAccessEnabled *bool `json:"campaigns.readAccess.enabled,omitempty"`
 	// CampaignsRestrictToAdmins description: When enabled, only site admins can create and apply campaigns.
 	CampaignsRestrictToAdmins bool `json:"campaigns.restrictToAdmins,omitempty"`
+	// CodeIntelAutoIndexingEnabled description: Enables/disables the code intel auto indexing feature.
+	CodeIntelAutoIndexingEnabled *bool `json:"codeIntelAutoIndexing.enabled,omitempty"`
 	// CorsOrigin description: Required when using any of the native code host integrations for Phabricator, GitLab, or Bitbucket Server. It is a space-separated list of allowed origins for cross-origin HTTP requests which should be the base URL for your Phabricator, GitLab, or Bitbucket Server instance.
 	CorsOrigin string `json:"corsOrigin,omitempty"`
 	// DebugSearchSymbolsParallelism description: (debug) controls the amount of symbol search parallelism. Defaults to 20. It is not recommended to change this outside of debugging scenarios. This option will be removed in a future version.
@@ -1273,6 +1305,8 @@ type Step struct {
 	Env interface{} `json:"env,omitempty"`
 	// Files description: Files that should be mounted into or be created inside the Docker container.
 	Files map[string]string `json:"files,omitempty"`
+	// Outputs description: Output variables of this step that can be referenced in the changesetTemplate or other steps via outputs.<name-of-output>
+	Outputs map[string]AdditionalProperties `json:"outputs,omitempty"`
 	// Run description: The shell command to run in the container. It can also be a multi-line shell script. The working directory is the root directory of the repository checkout.
 	Run string `json:"run"`
 }

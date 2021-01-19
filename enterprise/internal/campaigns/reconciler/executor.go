@@ -535,10 +535,24 @@ func buildCommitOpts(repo *types.Repo, extSvc *types.ExternalService, spec *camp
 	return opts, nil
 }
 
+// ErrNoSSHPush is returned by buildPushConfig if the clone URL of the
+// repository uses the ssh:// scheme, which is currently not supported by campaigns.
+type ErrNoSSHPush struct{}
+
+func (e ErrNoSSHPush) Error() string {
+	return "campaigns currently do not support pushing commits via SSH, only HTTP(s) is supported. See https://docs.sourcegraph.com/admin/repo/auth for information on which settings can cause SSH to be used."
+}
+
+func (e ErrNoSSHPush) NonRetryable() bool { return true }
+
 func buildPushConfig(extSvcType, cloneURL string, a auth.Authenticator) (*protocol.PushConfig, error) {
 	u, err := url.Parse(cloneURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing repository clone URL")
+	}
+
+	if u.Scheme == "ssh" {
+		return nil, ErrNoSSHPush{}
 	}
 
 	switch av := a.(type) {

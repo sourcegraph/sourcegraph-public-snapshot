@@ -6,6 +6,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -18,13 +19,7 @@ func (s *Store) ReadMeta(ctx context.Context, bundleID int) (_ MetaData, err err
 	}})
 	defer endObservation(1, observation.Args{})
 
-	numResultChunks, ok, err := basestore.ScanFirstInt(s.Store.Query(
-		ctx,
-		sqlf.Sprintf(
-			`SELECT num_result_chunks FROM lsif_data_metadata WHERE dump_id = %s`,
-			bundleID,
-		),
-	))
+	numResultChunks, ok, err := basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(readMetaQuery, bundleID)))
 	if err != nil {
 		return MetaData{}, err
 	}
@@ -35,6 +30,11 @@ func (s *Store) ReadMeta(ctx context.Context, bundleID int) (_ MetaData, err err
 	return MetaData{NumResultChunks: numResultChunks}, nil
 }
 
+const readMetaQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/data_read.go:ReadMeta
+SELECT num_result_chunks FROM lsif_data_metadata WHERE dump_id = %s
+`
+
 func (s *Store) PathsWithPrefix(ctx context.Context, bundleID int, prefix string) (_ []string, err error) {
 	ctx, endObservation := s.operations.pathsWithPrefix.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
@@ -42,20 +42,18 @@ func (s *Store) PathsWithPrefix(ctx context.Context, bundleID int, prefix string
 	}})
 	defer endObservation(1, observation.Args{})
 
-	paths, err := basestore.ScanStrings(s.Store.Query(
-		ctx,
-		sqlf.Sprintf(
-			`SELECT path FROM lsif_data_documents WHERE dump_id = %s AND path LIKE %s ORDER BY path`,
-			bundleID,
-			prefix+"%",
-		),
-	))
+	paths, err := basestore.ScanStrings(s.Store.Query(ctx, sqlf.Sprintf(pathsWithPrefixQuery, bundleID, prefix+"%")))
 	if err != nil {
 		return nil, err
 	}
 
 	return paths, nil
 }
+
+const pathsWithPrefixQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/data_read.go:PathsWithPrefix
+SELECT path FROM lsif_data_documents WHERE dump_id = %s AND path LIKE %s ORDER BY path
+`
 
 func (s *Store) ReadDocument(ctx context.Context, bundleID int, path string) (_ DocumentData, _ bool, err error) {
 	ctx, endObservation := s.operations.readDocument.With(ctx, &err, observation.Args{LogFields: []log.Field{
@@ -64,14 +62,7 @@ func (s *Store) ReadDocument(ctx context.Context, bundleID int, path string) (_ 
 	}})
 	defer endObservation(1, observation.Args{})
 
-	data, ok, err := basestore.ScanFirstString(s.Store.Query(
-		ctx,
-		sqlf.Sprintf(
-			`SELECT data FROM lsif_data_documents WHERE dump_id = %s AND path = %s LIMIT 1`,
-			bundleID,
-			path,
-		),
-	))
+	data, ok, err := basestore.ScanFirstString(s.Store.Query(ctx, sqlf.Sprintf(readDocumentQuery, bundleID, path)))
 	if err != nil || !ok {
 		return DocumentData{}, false, err
 	}
@@ -84,6 +75,11 @@ func (s *Store) ReadDocument(ctx context.Context, bundleID int, path string) (_ 
 	return documentData, true, nil
 }
 
+const readDocumentQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/data_read.go:ReadDocument
+SELECT data FROM lsif_data_documents WHERE dump_id = %s AND path = %s LIMIT 1
+`
+
 func (s *Store) ReadResultChunk(ctx context.Context, bundleID int, id int) (_ ResultChunkData, _ bool, err error) {
 	ctx, endObservation := s.operations.readResultChunk.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
@@ -91,14 +87,7 @@ func (s *Store) ReadResultChunk(ctx context.Context, bundleID int, id int) (_ Re
 	}})
 	defer endObservation(1, observation.Args{})
 
-	data, ok, err := basestore.ScanFirstString(s.Store.Query(
-		ctx,
-		sqlf.Sprintf(
-			`SELECT data FROM lsif_data_result_chunks WHERE dump_id = %s AND idx = %s LIMIT 1`,
-			bundleID,
-			id,
-		),
-	))
+	data, ok, err := basestore.ScanFirstString(s.Store.Query(ctx, sqlf.Sprintf(readResultChunkQuery, bundleID, id)))
 	if err != nil || !ok {
 		return ResultChunkData{}, false, err
 	}
@@ -110,6 +99,11 @@ func (s *Store) ReadResultChunk(ctx context.Context, bundleID int, id int) (_ Re
 
 	return resultChunkData, true, nil
 }
+
+const readResultChunkQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/data_read.go:ReadResultChunk
+SELECT data FROM lsif_data_result_chunks WHERE dump_id = %s AND idx = %s LIMIT 1
+`
 
 func (s *Store) ReadDefinitions(ctx context.Context, bundleID int, scheme, identifier string, skip, take int) (_ []LocationData, _ int, err error) {
 	ctx, endObservation := s.operations.readDefinitions.With(ctx, &err, observation.Args{LogFields: []log.Field{
@@ -138,15 +132,7 @@ func (s *Store) ReadReferences(ctx context.Context, bundleID int, scheme, identi
 }
 
 func (s *Store) readDefinitionReferences(ctx context.Context, bundleID int, tableName, scheme, identifier string, skip, take int) (_ []LocationData, _ int, err error) {
-	data, ok, err := basestore.ScanFirstString(s.Store.Query(
-		ctx,
-		sqlf.Sprintf(
-			`SELECT data FROM "`+tableName+`" WHERE dump_id = %s AND scheme = %s AND identifier = %s LIMIT 1`,
-			bundleID,
-			scheme,
-			identifier,
-		),
-	))
+	data, ok, err := basestore.ScanFirstString(s.Store.Query(ctx, sqlf.Sprintf(readDefinitionReferencesQuery, sqlf.Sprintf(tableName), bundleID, scheme, identifier)))
 	if err != nil || !ok {
 		return nil, 0, err
 	}
@@ -174,3 +160,8 @@ func (s *Store) readDefinitionReferences(ctx context.Context, bundleID int, tabl
 
 	return locations[lo:hi], len(locations), nil
 }
+
+const readDefinitionReferencesQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/data_read.go:readDefinitionReferences
+SELECT data FROM %s WHERE dump_id = %s AND scheme = %s AND identifier = %s LIMIT 1
+`

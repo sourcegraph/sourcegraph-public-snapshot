@@ -513,13 +513,20 @@ Refer to the [alert solutions reference](./alert_solutions.md#frontend-container
 
 <br />
 
-#### frontend: container_restarts
+#### frontend: container_missing
 
-This cloud panel indicates container restarts.
+This cloud panel indicates container missing.
 
-This value is based on the number of times a container has not been seen in one minute.
+This value is the number of times a container has not been seen for more than one minute. If you observe this
+value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-container-restarts) for relevant alerts.
+- **Kubernetes:**
+	- Determine if the pod was OOM killed using `kubectl describe pod (frontend|sourcegraph-frontend)` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p (frontend|sourcegraph-frontend)`.
+- **Docker Compose:**
+	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' (frontend|sourcegraph-frontend)` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the (frontend|sourcegraph-frontend) container in `docker-compose.yml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs (frontend|sourcegraph-frontend)` (note this will include logs from the previous and currently running container).
+
 
 <br />
 
@@ -666,13 +673,20 @@ Refer to the [alert solutions reference](./alert_solutions.md#gitserver-containe
 
 <br />
 
-#### gitserver: container_restarts
+#### gitserver: container_missing
 
-This cloud panel indicates container restarts.
+This cloud panel indicates container missing.
 
-This value is based on the number of times a container has not been seen in one minute.
+This value is the number of times a container has not been seen for more than one minute. If you observe this
+value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.
 
-Refer to the [alert solutions reference](./alert_solutions.md#gitserver-container-restarts) for relevant alerts.
+- **Kubernetes:**
+	- Determine if the pod was OOM killed using `kubectl describe pod gitserver` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p gitserver`.
+- **Docker Compose:**
+	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' gitserver` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the gitserver container in `docker-compose.yml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs gitserver` (note this will include logs from the previous and currently running container).
+
 
 <br />
 
@@ -784,13 +798,20 @@ Refer to the [alert solutions reference](./alert_solutions.md#github-proxy-conta
 
 <br />
 
-#### github-proxy: container_restarts
+#### github-proxy: container_missing
 
-This cloud panel indicates container restarts.
+This cloud panel indicates container missing.
 
-This value is based on the number of times a container has not been seen in one minute.
+This value is the number of times a container has not been seen for more than one minute. If you observe this
+value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.
 
-Refer to the [alert solutions reference](./alert_solutions.md#github-proxy-container-restarts) for relevant alerts.
+- **Kubernetes:**
+	- Determine if the pod was OOM killed using `kubectl describe pod github-proxy` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p github-proxy`.
+- **Docker Compose:**
+	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' github-proxy` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the github-proxy container in `docker-compose.yml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs github-proxy` (note this will include logs from the previous and currently running container).
+
 
 <br />
 
@@ -1117,13 +1138,20 @@ Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel
 
 <br />
 
-#### precise-code-intel-worker: container_restarts
+#### precise-code-intel-worker: container_missing
 
-This code-intel panel indicates container restarts.
+This code-intel panel indicates container missing.
 
-This value is based on the number of times a container has not been seen in one minute.
+This value is the number of times a container has not been seen for more than one minute. If you observe this
+value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.
 
-Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel-worker-container-restarts) for relevant alerts.
+- **Kubernetes:**
+	- Determine if the pod was OOM killed using `kubectl describe pod precise-code-intel-worker` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p precise-code-intel-worker`.
+- **Docker Compose:**
+	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' precise-code-intel-worker` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the precise-code-intel-worker container in `docker-compose.yml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs precise-code-intel-worker` (note this will include logs from the previous and currently running container).
+
 
 <br />
 
@@ -1221,13 +1249,20 @@ Refer to the [alert solutions reference](./alert_solutions.md#query-runner-conta
 
 <br />
 
-#### query-runner: container_restarts
+#### query-runner: container_missing
 
-This search panel indicates container restarts.
+This search panel indicates container missing.
 
-This value is based on the number of times a container has not been seen in one minute.
+This value is the number of times a container has not been seen for more than one minute. If you observe this
+value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.
 
-Refer to the [alert solutions reference](./alert_solutions.md#query-runner-container-restarts) for relevant alerts.
+- **Kubernetes:**
+	- Determine if the pod was OOM killed using `kubectl describe pod query-runner` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p query-runner`.
+- **Docker Compose:**
+	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' query-runner` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the query-runner container in `docker-compose.yml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs query-runner` (note this will include logs from the previous and currently running container).
+
 
 <br />
 
@@ -1583,13 +1618,20 @@ Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-conta
 
 <br />
 
-#### repo-updater: container_restarts
+#### repo-updater: container_missing
 
-This cloud panel indicates container restarts.
+This cloud panel indicates container missing.
 
-This value is based on the number of times a container has not been seen in one minute.
+This value is the number of times a container has not been seen for more than one minute. If you observe this
+value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-container-restarts) for relevant alerts.
+- **Kubernetes:**
+	- Determine if the pod was OOM killed using `kubectl describe pod repo-updater` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p repo-updater`.
+- **Docker Compose:**
+	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' repo-updater` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the repo-updater container in `docker-compose.yml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs repo-updater` (note this will include logs from the previous and currently running container).
+
 
 <br />
 
@@ -1703,13 +1745,20 @@ Refer to the [alert solutions reference](./alert_solutions.md#searcher-container
 
 <br />
 
-#### searcher: container_restarts
+#### searcher: container_missing
 
-This search panel indicates container restarts.
+This search panel indicates container missing.
 
-This value is based on the number of times a container has not been seen in one minute.
+This value is the number of times a container has not been seen for more than one minute. If you observe this
+value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.
 
-Refer to the [alert solutions reference](./alert_solutions.md#searcher-container-restarts) for relevant alerts.
+- **Kubernetes:**
+	- Determine if the pod was OOM killed using `kubectl describe pod searcher` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p searcher`.
+- **Docker Compose:**
+	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' searcher` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the searcher container in `docker-compose.yml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs searcher` (note this will include logs from the previous and currently running container).
+
 
 <br />
 
@@ -1823,13 +1872,20 @@ Refer to the [alert solutions reference](./alert_solutions.md#symbols-container-
 
 <br />
 
-#### symbols: container_restarts
+#### symbols: container_missing
 
-This code-intel panel indicates container restarts.
+This code-intel panel indicates container missing.
 
-This value is based on the number of times a container has not been seen in one minute.
+This value is the number of times a container has not been seen for more than one minute. If you observe this
+value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.
 
-Refer to the [alert solutions reference](./alert_solutions.md#symbols-container-restarts) for relevant alerts.
+- **Kubernetes:**
+	- Determine if the pod was OOM killed using `kubectl describe pod symbols` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p symbols`.
+- **Docker Compose:**
+	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' symbols` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the symbols container in `docker-compose.yml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs symbols` (note this will include logs from the previous and currently running container).
+
 
 <br />
 
@@ -1947,13 +2003,20 @@ Refer to the [alert solutions reference](./alert_solutions.md#syntect-server-con
 
 <br />
 
-#### syntect-server: container_restarts
+#### syntect-server: container_missing
 
-This cloud panel indicates container restarts.
+This cloud panel indicates container missing.
 
-This value is based on the number of times a container has not been seen in one minute.
+This value is the number of times a container has not been seen for more than one minute. If you observe this
+value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.
 
-Refer to the [alert solutions reference](./alert_solutions.md#syntect-server-container-restarts) for relevant alerts.
+- **Kubernetes:**
+	- Determine if the pod was OOM killed using `kubectl describe pod syntect-server` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p syntect-server`.
+- **Docker Compose:**
+	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' syntect-server` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the syntect-server container in `docker-compose.yml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs syntect-server` (note this will include logs from the previous and currently running container).
+
 
 <br />
 
@@ -2031,13 +2094,20 @@ Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-
 
 <br />
 
-#### zoekt-indexserver: container_restarts
+#### zoekt-indexserver: container_missing
 
-This search panel indicates container restarts.
+This search panel indicates container missing.
 
-This value is based on the number of times a container has not been seen in one minute.
+This value is the number of times a container has not been seen for more than one minute. If you observe this
+value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.
 
-Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-container-restarts) for relevant alerts.
+- **Kubernetes:**
+	- Determine if the pod was OOM killed using `kubectl describe pod zoekt-indexserver` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p zoekt-indexserver`.
+- **Docker Compose:**
+	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' zoekt-indexserver` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the zoekt-indexserver container in `docker-compose.yml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs zoekt-indexserver` (note this will include logs from the previous and currently running container).
+
 
 <br />
 
@@ -2125,13 +2195,20 @@ Refer to the [alert solutions reference](./alert_solutions.md#zoekt-webserver-co
 
 <br />
 
-#### zoekt-webserver: container_restarts
+#### zoekt-webserver: container_missing
 
-This search panel indicates container restarts.
+This search panel indicates container missing.
 
-This value is based on the number of times a container has not been seen in one minute.
+This value is the number of times a container has not been seen for more than one minute. If you observe this
+value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.
 
-Refer to the [alert solutions reference](./alert_solutions.md#zoekt-webserver-container-restarts) for relevant alerts.
+- **Kubernetes:**
+	- Determine if the pod was OOM killed using `kubectl describe pod zoekt-webserver` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p zoekt-webserver`.
+- **Docker Compose:**
+	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' zoekt-webserver` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the zoekt-webserver container in `docker-compose.yml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs zoekt-webserver` (note this will include logs from the previous and currently running container).
+
 
 <br />
 
@@ -2185,11 +2262,14 @@ Refer to the [alert solutions reference](./alert_solutions.md#zoekt-webserver-pr
 
 ### Prometheus: Metrics
 
-#### prometheus: prometheus_metrics_bloat
+#### prometheus: prometheus_rule_group_evaluation
 
-This distribution panel indicates prometheus metrics payload size.
+This distribution panel indicates average prometheus rule group evaluation duration over 10m.
 
-Refer to the [alert solutions reference](./alert_solutions.md#prometheus-prometheus-metrics-bloat) for relevant alerts.
+A high value here indicates Prometheus rule evaluation is taking longer than expected.
+It might indicate that certain rule groups are taking too long to evaluate, or Prometheus is underprovisioned.
+
+Refer to the [alert solutions reference](./alert_solutions.md#prometheus-prometheus-rule-group-evaluation) for relevant alerts.
 
 <br />
 
@@ -2200,6 +2280,52 @@ Refer to the [alert solutions reference](./alert_solutions.md#prometheus-prometh
 This distribution panel indicates failed alertmanager notifications over 1m.
 
 Refer to the [alert solutions reference](./alert_solutions.md#prometheus-alertmanager-notifications-failed-total) for relevant alerts.
+
+<br />
+
+#### prometheus: alertmanager_config_status
+
+This distribution panel indicates alertmanager configuration reload status.
+
+A `1` indicates Alertmanager reloaded its configuration successfully.
+
+Refer to the [alert solutions reference](./alert_solutions.md#prometheus-alertmanager-config-status) for relevant alerts.
+
+<br />
+
+### Prometheus: Prometheus internals
+
+#### prometheus: prometheus_tsdb_op_failure
+
+This distribution panel indicates prometheus tsdb failures by operation over 1m.
+
+Refer to the [alert solutions reference](./alert_solutions.md#prometheus-prometheus-tsdb-op-failure) for relevant alerts.
+
+<br />
+
+#### prometheus: prometheus_config_status
+
+This distribution panel indicates prometheus configuration reload status.
+
+A `1` indicates Prometheus reloaded its configuration successfully.
+
+Refer to the [alert solutions reference](./alert_solutions.md#prometheus-prometheus-config-status) for relevant alerts.
+
+<br />
+
+#### prometheus: prometheus_target_sample_exceeded
+
+This distribution panel indicates prometheus scrapes that exceed the sample limit over 10m.
+
+Refer to the [alert solutions reference](./alert_solutions.md#prometheus-prometheus-target-sample-exceeded) for relevant alerts.
+
+<br />
+
+#### prometheus: prometheus_target_sample_duplicate
+
+This distribution panel indicates prometheus scrapes rejected due to duplicate timestamps over 10m.
+
+Refer to the [alert solutions reference](./alert_solutions.md#prometheus-prometheus-target-sample-duplicate) for relevant alerts.
 
 <br />
 
@@ -2221,13 +2347,20 @@ Refer to the [alert solutions reference](./alert_solutions.md#prometheus-contain
 
 <br />
 
-#### prometheus: container_restarts
+#### prometheus: container_missing
 
-This distribution panel indicates container restarts.
+This distribution panel indicates container missing.
 
-This value is based on the number of times a container has not been seen in one minute.
+This value is the number of times a container has not been seen for more than one minute. If you observe this
+value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.
 
-Refer to the [alert solutions reference](./alert_solutions.md#prometheus-container-restarts) for relevant alerts.
+- **Kubernetes:**
+	- Determine if the pod was OOM killed using `kubectl describe pod prometheus` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p prometheus`.
+- **Docker Compose:**
+	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' prometheus` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the prometheus container in `docker-compose.yml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs prometheus` (note this will include logs from the previous and currently running container).
+
 
 <br />
 
@@ -2365,13 +2498,20 @@ Refer to the [alert solutions reference](./alert_solutions.md#executor-queue-con
 
 <br />
 
-#### executor-queue: container_restarts
+#### executor-queue: container_missing
 
-This code-intel panel indicates container restarts.
+This code-intel panel indicates container missing.
 
-This value is based on the number of times a container has not been seen in one minute.
+This value is the number of times a container has not been seen for more than one minute. If you observe this
+value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.
 
-Refer to the [alert solutions reference](./alert_solutions.md#executor-queue-container-restarts) for relevant alerts.
+- **Kubernetes:**
+	- Determine if the pod was OOM killed using `kubectl describe pod executor-queue` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p executor-queue`.
+- **Docker Compose:**
+	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' executor-queue` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the executor-queue container in `docker-compose.yml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs executor-queue` (note this will include logs from the previous and currently running container).
+
 
 <br />
 
@@ -2550,13 +2690,20 @@ Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel
 
 <br />
 
-#### precise-code-intel-indexer: container_restarts
+#### precise-code-intel-indexer: container_missing
 
-This code-intel panel indicates container restarts.
+This code-intel panel indicates container missing.
 
-This value is based on the number of times a container has not been seen in one minute.
+This value is the number of times a container has not been seen for more than one minute. If you observe this
+value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.
 
-Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel-indexer-container-restarts) for relevant alerts.
+- **Kubernetes:**
+	- Determine if the pod was OOM killed using `kubectl describe pod precise-code-intel-worker` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p precise-code-intel-worker`.
+- **Docker Compose:**
+	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' precise-code-intel-worker` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the precise-code-intel-worker container in `docker-compose.yml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs precise-code-intel-worker` (note this will include logs from the previous and currently running container).
+
 
 <br />
 

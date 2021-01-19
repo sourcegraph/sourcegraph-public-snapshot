@@ -157,8 +157,8 @@ steps:
 
 The shell command to run in the container. It can also be a multi-line shell script. The working directory is the root directory of the repository checkout.
 
-<aside class="experimental">
-<span class="badge badge-experimental">Experimental</span> <code>steps.run</code> can include <a href="campaign_spec_templating">template variables</a> in Sourcegraph 3.22 and <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.21.5.
+<aside class="note">
+<span class="badge badge-feature">Templating</span> <code>steps.run</code> can include <a href="campaign_spec_templating">template variables</a> in Sourcegraph 3.22 and <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.21.5.
 </aside>
 
 ## [`steps.container`](#steps-run)
@@ -175,8 +175,8 @@ Environment variables to set in the environment when running this command.
 
 These may be defined either as an [object](#environment-object) or (in Sourcegraph 3.23 and later) as an [array](#environment-array).
 
-<aside class="experimental">
-<span class="badge badge-experimental">Experimental</span> The value for each entry in <code>steps.env</code> can include <a href="campaign_spec_templating">template variables</a> in Sourcegraph 3.22 and <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.21.5.
+<aside class="note">
+<span class="badge badge-feature">Templating</span> The value for each entry in <code>steps.env</code> can include <a href="campaign_spec_templating">template variables</a> in Sourcegraph 3.22 and <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.21.5.
 </aside>
 
 ### Environment object
@@ -235,8 +235,8 @@ Files to create on the host machine and mount into the container when running `s
 
 `steps.files` is an object, where the key is the name of the file _inside the container_ and the value is the content of the file.
 
-<aside class="experimental">
-<span class="badge badge-experimental">Experimental</span> The value for each entry in <code>steps.files</code> can include <a href="campaign_spec_templating">template variables</a> in Sourcegraph 3.22 and <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.21.5.
+<aside class="note">
+<span class="badge badge-feature">Templating</span> The value for each entry in <code>steps.files</code> can include <a href="campaign_spec_templating">template variables</a> in Sourcegraph 3.22 and <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.21.5.
 </aside>
 
 ### Examples
@@ -268,6 +268,81 @@ steps:
         .dir-locals.el
 ```
 
+## [`steps.outputs`](#steps-outputs)
+
+> NOTE: This feature is only available in Sourcegraph 3.24 and later.
+
+Output variables that are set after the [`steps.run`](#steps-run) command has been executed. These variables are available in the global `outputs` namespace as `outputs.<name>` <a href="campaign_spec_templating">template variables</a> in the `run`, `env`, and `outputs` properties of subsequent steps, and the [`changesetTemplate`](#changesettemplate). Two steps with the same output variable name will overwrite the previous contents.
+
+### Examples
+
+```yaml
+steps:
+  - run: yarn upgrade
+    container: alpine:3
+    outputs:
+      # Set output `friendlyMessage`
+      friendlyMessage:
+        value: "Hello there!"
+```
+
+```yaml
+steps:
+  - run: echo "Hello there!" >> message.txt && cat message.txt
+    container: alpine:3
+    outputs:
+      friendlyMessage:
+        # `value` supports templating variables and can access the just-executed
+        # step's stdout/stderr.
+        value: "${{ step.stdout }}"
+```
+
+```yaml
+steps:
+  - run: echo "Hello there!"
+    container: alpine:3
+    outputs:
+      stepOneOutput:
+        value: "${{ step.stdout }}"
+  - run: echo "We have access to the output here: ${{ outputs.stepOneOutput }}"
+    container: alpine:3
+    outputs:
+      stepTwoOutput:
+        value: "here too: ${{ outputs.stepOneOutput }}"
+```
+
+```yaml
+steps:
+  - run: cat .goreleaser.yml >&2
+    container: alpine:3
+    outputs:
+      goreleaserConfig:
+        value: "${{ step.stderr }}"
+        # Specifying a `format` tells Sourcegraph CLI how to parse the value before
+        # making it available as a template variable.
+        format: yaml
+
+changesetTemplate:
+  # [...]
+  body: |
+    The `goreleaser.yml` defines the following `before.hooks`:
+    ${{ outputs.goreleaserConfig.before.hooks }}
+```
+
+## [`steps.outputs.<name>.value`](#steps-outputs-name-value)
+
+The value the output should be set to.
+
+<aside class="note">
+<span class="badge badge-feature">Templating</span> <code>steps.outputs.$name.value</code> can include <a href="campaign_spec_templating">template variables</a>.
+</aside>
+
+## [`steps.outputs.<name>.format`](#steps-outputs-name-format)
+
+The format of the corresponding [`steps.outputs.<name>.value`](#outputs-value). When this is set to something other than `text`, it will be parsed as the given format.
+
+Possible values: `text`, `yaml`, `json`. Default is `text`.
+
 ## [`importChangesets`](#importchangesets)
 
 An array describing which already-existing changesets should be imported from the code host into the campaign.
@@ -281,6 +356,7 @@ importChangesets:
   - repository: github.com/sourcegraph/src-cli
     externalIDs: [260, 271]
 ```
+
 
 ## [`importChangesets.repository`](#importchangesets-repository)
 
@@ -341,13 +417,25 @@ changesetTemplate:
 
 The title of the changeset on the code host.
 
+<aside class="note">
+<span class="badge badge-feature">Templating</span> <code>changesetTemplate.title</code> can include <a href="campaign_spec_templating">template variables</a> starting with Sourcegraph 3.24 and <a href="../../cli">Sourcegraph CLI</a> 3.24.
+</aside>
+
 ## [`changesetTemplate.body`](#changesettemplate-body)
 
 The body (description) of the changeset on the code host. If the code supports Markdown you can use it here.
 
+<aside class="note">
+<span class="badge badge-feature">Templating</span> <code>changesetTemplate.title</code> can include <a href="campaign_spec_templating">template variables</a> starting with Sourcegraph 3.24 and <a href="../../cli">Sourcegraph CLI</a> 3.24.
+</aside>
+
 ## [`changesetTemplate.branch`](#changesettemplate-branch)
 
 The name of the Git branch to create or update on each repository with the changes.
+
+<aside class="note">
+<span class="badge badge-feature">Templating</span> <code>changesetTemplate.title</code> can include <a href="campaign_spec_templating">template variables</a> starting with Sourcegraph 3.24 and <a href="../../cli">Sourcegraph CLI</a> 3.24.
+</aside>
 
 ## [`changesetTemplate.commit`](#changesettemplate-commit)
 
@@ -357,9 +445,17 @@ The Git commit to create with the changes.
 
 The Git commit message.
 
+<aside class="note">
+<span class="badge badge-feature">Templating</span> <code>changesetTemplate.title</code> can include <a href="campaign_spec_templating">template variables</a> starting with Sourcegraph 3.24 and <a href="../../cli">Sourcegraph CLI</a> 3.24.
+</aside>
+
 ## [`changesetTemplate.commit.author`](#changesettemplate-commit-author)
 
 The `name` and `email` of the Git commit author.
+
+<aside class="note">
+<span class="badge badge-feature">Templating</span> <code>changesetTemplate.title</code> can include <a href="campaign_spec_templating">template variables</a> starting with Sourcegraph 3.24 and <a href="../../cli">Sourcegraph CLI</a> 3.24.
+</aside>
 
 ### Examples
 

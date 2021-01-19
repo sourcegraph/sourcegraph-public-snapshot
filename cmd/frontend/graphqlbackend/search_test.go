@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -283,15 +284,12 @@ func TestDetectSearchType(t *testing.T) {
 	for _, test := range testCases {
 		t.Run(test.name, func(*testing.T) {
 			got, err := detectSearchType(test.version, test.patternType)
-			useNewParser := []bool{true, false}
-			for _, parserOpt := range useNewParser {
-				got = overrideSearchType(test.input, got, parserOpt)
-				if err != nil {
-					t.Fatal(err)
-				}
-				if got != test.want {
-					t.Errorf("failed %v, got %v, expected %v", test.name, got, test.want)
-				}
+			got = overrideSearchType(test.input, got)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got != test.want {
+				t.Errorf("failed %v, got %v, expected %v", test.name, got, test.want)
 			}
 		})
 	}
@@ -549,6 +547,8 @@ func TestVersionContext(t *testing.T) {
 				query:          qinfo,
 				versionContext: &tc.versionContext,
 				userSettings:   &schema.Settings{},
+				reposMu:        &sync.Mutex{},
+				resolved:       &searchrepos.Resolved{},
 			}
 
 			db.Mocks.Repos.ListRepoNames = func(ctx context.Context, opts db.ReposListOptions) ([]*types.RepoName, error) {

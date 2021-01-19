@@ -6,9 +6,9 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/apiclient"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
+	apiworker "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )

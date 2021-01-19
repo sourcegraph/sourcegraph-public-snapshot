@@ -27,6 +27,13 @@ type Container struct {
 
 	// Groups of observable information about the container.
 	Groups []Group
+
+	// NoSourcegraphDebugServer indicates if this container does not export the standard
+	// Sourcegraph debug server (package `internal/debugserver`).
+	//
+	// This is used to configure monitoring features that depend on information exported
+	// by the standard Sourcegraph debug server.
+	NoSourcegraphDebugServer bool
 }
 
 func (c *Container) validate() error {
@@ -89,7 +96,11 @@ func (c *Container) renderDashboard() *sdk.Board {
 			Enable:      false, // disable by default for now
 			Type:        "tags",
 		},
-		{
+	}
+	// Annotation layers that require a service to export information required by the
+	// Sourcegraph debug server - see the `NoSourcegraphDebugServer` docstring.
+	if !c.NoSourcegraphDebugServer {
+		board.Annotations.List = append(board.Annotations.List, sdk.Annotation{
 			Name:       "Version changes",
 			Datasource: stringPtr("Prometheus"),
 			// Per version, instance generate an annotation whenever labels change
@@ -102,7 +113,7 @@ func (c *Container) renderDashboard() *sdk.Board {
 			IconColor:   "rgb(255, 255, 255)",
 			Enable:      false, // disable by default for now
 			Type:        "tags",
-		},
+		})
 	}
 
 	description := sdk.NewText("")
@@ -539,7 +550,7 @@ func (o Observable) validate() error {
 		if allAlertsEmpty && !o.NoAlert {
 			return fmt.Errorf("Warning or Critical must be set or explicitly disable alerts with NoAlert")
 		} else if !allAlertsEmpty && o.NoAlert {
-			return fmt.Errorf("No Warning or Critical alert is set, but NoAlert is also true")
+			return fmt.Errorf("An alert is set, but NoAlert is also true")
 		}
 		// PossibleSolutions if there are no alerts is redundant and likely an error
 		if o.PossibleSolutions != "" {

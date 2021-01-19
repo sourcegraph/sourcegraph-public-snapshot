@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -157,11 +158,6 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 		return nil, &badRequestError{err}
 	}
 
-	err = validateRepoHasFileUsage(r.query)
-	if err != nil {
-		return nil, err
-	}
-
 	resultTypes := r.determineResultTypes(args, "")
 	tr.LazyPrintf("resultTypes: %v", resultTypes)
 
@@ -180,21 +176,14 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 		return repoIsLess(resolved.RepoRevs[i].Repo, resolved.RepoRevs[j].Repo)
 	})
 
-	common := searchResultsCommon{maxResultsCount: r.maxResults()}
+	common := streaming.Stats{}
 	cursor, results, fileCommon, err := paginatedSearchFilesInRepos(ctx, &args, r.pagination)
 	if err != nil {
 		return nil, err
 	}
-	common.update(fileCommon)
+	common.Update(fileCommon)
 
-	tr.LazyPrintf("results=%d limitHit=%v cloning=%d missing=%d excludedFork=%d excludedArchived=%d timedout=%d",
-		len(results),
-		common.limitHit,
-		len(common.cloning),
-		len(common.missing),
-		common.excluded.Forks,
-		common.excluded.Archived,
-		len(common.timedout))
+	tr.LazyPrintf("results=%d %s", len(results), &common)
 
 	// Alert is a potential alert shown to the user.
 	var alert *searchAlert
@@ -211,11 +200,11 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 	)
 
 	return &SearchResultsResolver{
-		start:               start,
-		searchResultsCommon: common,
-		SearchResults:       results,
-		alert:               alert,
-		cursor:              cursor,
+		start:         start,
+		Stats:         common,
+		SearchResults: results,
+		alert:         alert,
+		cursor:        cursor,
 	}, nil
 }
 
@@ -251,7 +240,7 @@ func repoIsLess(i, j *types.RepoName) bool {
 //    top of the penalty we incur from the larger `count:` mentioned in point
 //    2 above (in the worst case scenario).
 //
-func paginatedSearchFilesInRepos(ctx context.Context, args *search.TextParameters, pagination *searchPaginationInfo) (*searchCursor, []SearchResultResolver, *searchResultsCommon, error) {
+func paginatedSearchFilesInRepos(ctx context.Context, args *search.TextParameters, pagination *searchPaginationInfo) (*searchCursor, []SearchResultResolver, *streaming.Stats, error) {
 	repos, err := getRepos(ctx, args.RepoPromise)
 	if err != nil {
 		return nil, nil, nil, err
@@ -264,20 +253,18 @@ func paginatedSearchFilesInRepos(ctx context.Context, args *search.TextParameter
 		searchBucketMin:     10,
 		searchBucketMax:     1000,
 	}
-	return plan.execute(ctx, func(batch []*search.RepositoryRevisions) ([]SearchResultResolver, *searchResultsCommon, error) {
+	return plan.execute(ctx, func(batch []*search.RepositoryRevisions) ([]SearchResultResolver, *streaming.Stats, error) {
 		batchArgs := *args
 		batchArgs.RepoPromise = (&search.Promise{}).Resolve(batch)
 		fileResults, fileCommon, err := searchFilesInRepos(ctx, &batchArgs, nil)
-		// Timeouts are reported through searchResultsCommon so don't report an error for them
+		// Timeouts are reported through Stats so don't report an error for them
 		if err != nil && !(err == context.DeadlineExceeded || err == context.Canceled) {
 			return nil, nil, err
 		}
 		if fileCommon == nil {
 			// searchFilesInRepos can return a nil structure, but the executor
 			// requires a non-nil one always (which is more sane).
-			fileCommon = &searchResultsCommon{
-				partial: map[api.RepoID]struct{}{},
-			}
+			fileCommon = &streaming.Stats{}
 		}
 		// fileResults is not sorted so we must sort it now. fileCommon may or
 		// may not be sorted, but we do not rely on its order.
@@ -324,9 +311,9 @@ type repoPaginationPlan struct {
 
 // executor is a function which searches a batch of repositories.
 //
-// A non-nil searchResultsCommon must always be returned, even if an error is
+// A non-nil Stats must always be returned, even if an error is
 // returned.
-type executor func(batch []*search.RepositoryRevisions) ([]SearchResultResolver, *searchResultsCommon, error)
+type executor func(batch []*search.RepositoryRevisions) ([]SearchResultResolver, *streaming.Stats, error)
 
 // repoOfResult is a helper function to resolve the repo associated with a result type.
 func repoOfResult(result SearchResultResolver) string {
@@ -351,7 +338,7 @@ func repoOfResult(result SearchResultResolver) string {
 //
 // If the executor returns any error, the search will be cancelled and the error
 // returned.
-func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *searchCursor, results []SearchResultResolver, common *searchResultsCommon, err error) {
+func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *searchCursor, results []SearchResultResolver, common *streaming.Stats, err error) {
 	// Determine how large the batches of repositories we will search over will be.
 	var totalRepos int
 	if p.mockNumTotalRepos != nil {
@@ -377,8 +364,17 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *sea
 		repos = repos[repositoryOffset:]
 	}
 
+	// Search backends don't populate Stats.repos, the
+	// repository searcher does. We need to do that here.
+	commonRepos := make(map[api.RepoID]*types.RepoName, len(repos))
+	for _, r := range repos {
+		commonRepos[r.Repo.ID] = r.Repo
+	}
+
 	// Search over the repos list in batches.
-	common = &searchResultsCommon{}
+	common = &streaming.Stats{
+		Repos: commonRepos,
+	}
 	for start := 0; start <= len(repos); start += batchSize {
 		if start > len(repos) {
 			break
@@ -387,7 +383,7 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *sea
 		batch := repos[start:clamp(start+batchSize, 0, len(repos))]
 		batchResults, batchCommon, err := exec(batch)
 		if batchCommon == nil {
-			panic("never here: repoPaginationPlan.executor illegally returned nil searchResultsCommon structure")
+			panic("never here: repoPaginationPlan.executor illegally returned nil Stats structure")
 		}
 		if err != nil {
 			return nil, nil, nil, err
@@ -395,7 +391,7 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *sea
 
 		// Accumulate the results and stop if we have enough for the user.
 		results = append(results, batchResults...)
-		common.update(batchCommon)
+		common.Update(batchCommon)
 
 		if len(results) >= resultOffset+int(p.pagination.limit) {
 			break
@@ -423,8 +419,9 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *sea
 		// first in the results and we need to know the position for the cursor
 		// RepositoryOffset.
 		potentialLastRepos := []*types.RepoName{lastRepoConsumed}
-		potentialLastRepos = append(potentialLastRepos, sliced.common.cloning...)
-		potentialLastRepos = append(potentialLastRepos, sliced.common.missing...)
+		sliced.common.Status.Filter(search.RepoStatusCloning|search.RepoStatusMissing, func(id api.RepoID) {
+			potentialLastRepos = append(potentialLastRepos, sliced.common.Repos[id])
+		})
 		sort.Slice(potentialLastRepos, func(i, j int) bool {
 			return repoIsLess(potentialLastRepos[i], potentialLastRepos[j])
 		})
@@ -451,7 +448,7 @@ type slicedSearchResults struct {
 	results []SearchResultResolver
 
 	// common is the new common results structure, updated to reflect the sliced results only.
-	common *searchResultsCommon
+	common *streaming.Stats
 
 	// resultOffset indicates where the search would continue within the last
 	// repository whose results were consumed. For example:
@@ -467,9 +464,9 @@ type slicedSearchResults struct {
 }
 
 // sliceSearchResults effectively slices results[offset:offset+limit] and
-// returns an updated searchResultsCommon structure to reflect that, as well as
+// returns an updated Stats structure to reflect that, as well as
 // information about the slicing that was performed.
-func sliceSearchResults(results []SearchResultResolver, common *searchResultsCommon, offset, limit int) (final slicedSearchResults) {
+func sliceSearchResults(results []SearchResultResolver, common *streaming.Stats, offset, limit int) (final slicedSearchResults) {
 	firstRepo := ""
 	if len(results[:offset]) > 0 {
 		firstRepo = repoOfResult(results[offset])
@@ -494,7 +491,7 @@ func sliceSearchResults(results []SearchResultResolver, common *searchResultsCom
 	// Break results into repositories because for each result we need to add
 	// the respective repository to the new common structure.
 	reposByName := map[string]*types.RepoName{}
-	for _, r := range common.repos {
+	for _, r := range common.Repos {
 		reposByName[string(r.Name)] = r
 	}
 	resultsByRepo := map[*types.RepoName][]SearchResultResolver{}
@@ -530,11 +527,10 @@ func sliceSearchResults(results []SearchResultResolver, common *searchResultsCom
 		final.resultOffset++
 	}
 
-	// Construct the new searchResultsCommon structure for just the results
+	// Construct the new Stats structure for just the results
 	// we're returning.
 	seenRepos := map[string]struct{}{}
 	finalResults := make([]SearchResultResolver, 0, limit)
-	finalResultCount := int32(0)
 	for _, r := range results[:limit] {
 		repoName := repoOfResult(r)
 		if _, ok := seenRepos[repoName]; ok {
@@ -547,63 +543,41 @@ func sliceSearchResults(results []SearchResultResolver, common *searchResultsCom
 
 		// Include the results and copy over metadata from the common structure.
 		finalResults = append(finalResults, results...)
-		finalResultCount += int32(len(results))
 	}
 	final.common = sliceSearchResultsCommon(common, firstRepo, lastResultRepo)
-	final.common.resultCount = finalResultCount
 	final.results = finalResults
 	return
 }
 
-func sliceSearchResultsCommon(common *searchResultsCommon, firstResultRepo, lastResultRepo string) *searchResultsCommon {
-	if len(common.partial) > 0 {
+func sliceSearchResultsCommon(common *streaming.Stats, firstResultRepo, lastResultRepo string) *streaming.Stats {
+	if common.Status.Any(search.RepoStatusLimitHit) {
 		panic("never here: partial results should never be present in paginated search")
 	}
-	final := &searchResultsCommon{
-		limitHit:         false, // irrelevant in paginated search
-		indexUnavailable: common.indexUnavailable,
-		repos:            make(map[api.RepoID]*types.RepoName),
-		partial:          make(map[api.RepoID]struct{}),
-		resultCount:      common.resultCount,
+	final := &streaming.Stats{
+		IsLimitHit:         false, // irrelevant in paginated search
+		IsIndexUnavailable: common.IsIndexUnavailable,
+		Repos:              make(map[api.RepoID]*types.RepoName),
 	}
 
-	doAppend := func(dst, src []*types.RepoName) []*types.RepoName {
-		sort.Slice(src, func(i, j int) bool {
-			return repoIsLess(src[i], src[j])
-		})
-		for _, r := range src {
-			if lastResultRepo == "" || string(r.Name) > lastResultRepo {
-				continue
-			}
-			if firstResultRepo != "" && string(r.Name) < firstResultRepo {
-				continue
-			}
-			final.repos[r.ID] = r
-			dst = append(dst, r)
-			if string(r.Name) == lastResultRepo {
-				break
-			}
-		}
-		return dst
-	}
-
-	for _, r := range common.repos {
+	for _, r := range common.Repos {
 		if lastResultRepo == "" || string(r.Name) > lastResultRepo {
 			continue
 		}
 		if firstResultRepo != "" && string(r.Name) < firstResultRepo {
 			continue
 		}
-		final.repos[r.ID] = r
+		final.Repos[r.ID] = r
 	}
 
-	final.searched = doAppend(final.searched, common.searched)
-	final.indexed = doAppend(final.indexed, common.indexed)
-	final.cloning = doAppend(final.cloning, common.cloning)
-	final.missing = doAppend(final.missing, common.missing)
-	final.excluded.Forks = final.excluded.Forks + common.excluded.Forks
-	final.excluded.Archived = final.excluded.Archived + common.excluded.Archived
-	final.timedout = doAppend(final.timedout, common.timedout)
+	common.Status.Iterate(func(id api.RepoID, status search.RepoStatus) {
+		if _, ok := final.Repos[id]; ok {
+			final.Status.Update(id, status)
+		}
+	})
+
+	final.ExcludedForks = final.ExcludedForks + common.ExcludedForks
+	final.ExcludedArchived = final.ExcludedArchived + common.ExcludedArchived
+
 	return final
 }
 

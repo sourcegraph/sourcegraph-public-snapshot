@@ -575,6 +575,12 @@ Indexes:
 
 ```
 
+Stores whether or not the nearest upload data for a repository is out of date (when update_token > dirty_token).
+
+**dirty_token**: Set to the value of update_token visible to the transaction that updates the commit graph. Updates of dirty_token during this time will cause a second update.
+
+**update_token**: This value is incremented on each request to update the commit graph for the repository.
+
 # Table "public.lsif_index_configuration"
 ```
     Column     |  Type   |                               Modifiers                               
@@ -589,6 +595,10 @@ Foreign-key constraints:
     "lsif_index_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
 
 ```
+
+Stores the configuration used for code intel index jobs for a repository.
+
+**data**: The raw user-supplied [configuration](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.23/-/blob/enterprise/internal/codeintel/autoindex/config/types.go#L3:6) (encoded in JSONC).
 
 # Table "public.lsif_indexable_repositories"
 ```
@@ -606,6 +616,18 @@ Indexes:
     "lsif_indexable_repositories_repository_id_key" UNIQUE CONSTRAINT, btree (repository_id)
 
 ```
+
+Stores the number of code intel events for repositories. Used for auto-index scheduling heursitics Sourcegraph Cloud.
+
+**enabled**: **Column unused.**
+
+**last_index_enqueued_at**: The last time an index for the repository was enqueued (for basic rate limiting).
+
+**last_updated_at**: The last time the event counts were updated for this repository.
+
+**precise_count**: The number of precise code intel events for the repository in the past week.
+
+**search_count**: The number of search-based code intel events for the repository in the past week.
 
 # Table "public.lsif_indexes"
 ```
@@ -637,6 +659,26 @@ Check constraints:
 
 ```
 
+Stores metadata about a code intel index job.
+
+**commit**: A 40-char revhash. Note that this commit may not be resolvable in the future.
+
+**docker_steps**: An array of pre-index [steps](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.23/-/blob/enterprise/internal/codeintel/stores/dbstore/docker_step.go#L9:6) to run.
+
+**execution_logs**: An array of [log entries](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.23/-/blob/internal/workerutil/store.go#L48:6) (encoded as JSON) from the most recent execution.
+
+**indexer**: The docker image used to run the index command (e.g. sourcegraph/lsif-go).
+
+**indexer_args**: The command run inside the indexer image to produce the index file (e.g. ['lsif-node', '-p', '.'])
+
+**local_steps**: A list of commands to run inside the indexer image prior to running the indexer command.
+
+**log_contents**: **Column deprecated in favor of execution_logs.**
+
+**outfile**: The path to the index file produced by the index command relative to the working directory.
+
+**root**: The working directory of the indexer image relative to the repository root.
+
 # Table "public.lsif_nearest_uploads"
 ```
     Column     |  Type   | Modifiers 
@@ -648,6 +690,12 @@ Indexes:
     "lsif_nearest_uploads_repository_id_commit_bytea" btree (repository_id, commit_bytea)
 
 ```
+
+Associates commits with the complete set of uploads visible from that commit. Every commit with upload data is present in this table.
+
+**commit_bytea**: A 40-char revhash. Note that this commit may not be resolvable in the future.
+
+**uploads**: Encodes an {upload_id => distance} map that includes an entry for every upload visible from the commit. There is always at least one entry with a distance of zero.
 
 # Table "public.lsif_nearest_uploads_links"
 ```
@@ -661,6 +709,14 @@ Indexes:
     "lsif_nearest_uploads_links_repository_id_commit_bytea" btree (repository_id, commit_bytea)
 
 ```
+
+Associates commits with the closest ancestor commit with usable upload data. Together, this table and lsif_nearest_uploads cover all commits with resolvable code intelligence.
+
+**ancestor_commit_bytea**: The 40-char revhash of the ancestor. Note that this commit may not be resolvable in the future.
+
+**commit_bytea**: A 40-char revhash. Note that this commit may not be resolvable in the future.
+
+**distance**: The distance bewteen the commits. Parent = 1, Grandparent = 2, etc.
 
 # Table "public.lsif_packages"
 ```
@@ -679,6 +735,16 @@ Foreign-key constraints:
 
 ```
 
+Associates an upload with the set of packages they provide within a given packages management scheme.
+
+**dump_id**: The identifier of the upload that provides the package.
+
+**name**: The package name.
+
+**scheme**: The (export) moniker scheme.
+
+**version**: The package version.
+
 # Table "public.lsif_references"
 ```
  Column  |  Type   |                          Modifiers                           
@@ -696,6 +762,18 @@ Foreign-key constraints:
     "lsif_references_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
 
 ```
+
+Associates an upload with the set of packages they require within a given packages management scheme.
+
+**dump_id**: The identifier of the upload that references the package.
+
+**filter**: A [bloom filter](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.23/-/blob/enterprise/internal/codeintel/bloomfilter/bloom_filter.go#L27:6) encoded as gzipped JSON. This bloom filter stores the set of identifiers imported from the package.
+
+**name**: The package name.
+
+**scheme**: The (import) moniker scheme.
+
+**version**: The package version.
 
 # Table "public.lsif_uploads"
 ```
@@ -730,6 +808,22 @@ Referenced by:
 
 ```
 
+Stores metadata about an LSIF index uploaded by a user.
+
+**commit**: A 40-char revhash. Note that this commit may not be resolvable in the future.
+
+**id**: Used as a logical foreign key with the (disjoint) codeintel database.
+
+**indexer**: The name of the indexer that produced the index file. If not supplied by the user it will be pulled from the index metadata.
+
+**num_parts**: The number of parts src-cli split the upload file into.
+
+**root**: The path for which the index can resolve code intelligence relative to the repository root.
+
+**upload_size**: The size of the index file (in bytes).
+
+**uploaded_parts**: The index of parts that have been successfully uploaded.
+
 # Table "public.lsif_uploads_visible_at_tip"
 ```
     Column     |  Type   | Modifiers 
@@ -740,6 +834,10 @@ Indexes:
     "lsif_uploads_visible_at_tip_repository_id_upload_id" btree (repository_id, upload_id)
 
 ```
+
+Associates a repository with the set of LSIF upload identifiers that can serve intelligence for the tip of the default branch.
+
+**upload_id**: The identifier of an upload visible at the tip of the default branch.
 
 # Table "public.names"
 ```
@@ -1324,3 +1422,186 @@ Indexes:
     "versions_pkey" PRIMARY KEY, btree (service)
 
 ```
+
+# View "public.branch_changeset_specs_and_changesets"
+```
+      Column       |  Type   | Modifiers 
+-------------------+---------+-----------
+ changeset_spec_id | bigint  | 
+ changeset_id      | bigint  | 
+ repo_id           | integer | 
+ campaign_spec_id  | bigint  | 
+ owner_campaign_id | bigint  | 
+ repo_name         | citext  | 
+ changeset_name    | text    | 
+
+```
+
+# View "public.external_service_sync_jobs_with_next_sync_at"
+```
+       Column        |           Type           | Modifiers 
+---------------------+--------------------------+-----------
+ id                  | integer                  | 
+ state               | text                     | 
+ failure_message     | text                     | 
+ started_at          | timestamp with time zone | 
+ finished_at         | timestamp with time zone | 
+ process_after       | timestamp with time zone | 
+ num_resets          | integer                  | 
+ num_failures        | integer                  | 
+ execution_logs      | json[]                   | 
+ external_service_id | bigint                   | 
+ next_sync_at        | timestamp with time zone | 
+
+```
+
+# View "public.lsif_dumps"
+```
+     Column      |           Type           | Modifiers 
+-----------------+--------------------------+-----------
+ id              | integer                  | 
+ commit          | text                     | 
+ root            | text                     | 
+ uploaded_at     | timestamp with time zone | 
+ state           | text                     | 
+ failure_message | text                     | 
+ started_at      | timestamp with time zone | 
+ finished_at     | timestamp with time zone | 
+ repository_id   | integer                  | 
+ indexer         | text                     | 
+ num_parts       | integer                  | 
+ uploaded_parts  | integer[]                | 
+ process_after   | timestamp with time zone | 
+ num_resets      | integer                  | 
+ upload_size     | bigint                   | 
+ num_failures    | integer                  | 
+ processed_at    | timestamp with time zone | 
+
+```
+
+# View "public.lsif_dumps_with_repository_name"
+```
+     Column      |           Type           | Modifiers 
+-----------------+--------------------------+-----------
+ id              | integer                  | 
+ commit          | text                     | 
+ root            | text                     | 
+ uploaded_at     | timestamp with time zone | 
+ state           | text                     | 
+ failure_message | text                     | 
+ started_at      | timestamp with time zone | 
+ finished_at     | timestamp with time zone | 
+ repository_id   | integer                  | 
+ indexer         | text                     | 
+ num_parts       | integer                  | 
+ uploaded_parts  | integer[]                | 
+ process_after   | timestamp with time zone | 
+ num_resets      | integer                  | 
+ upload_size     | bigint                   | 
+ num_failures    | integer                  | 
+ processed_at    | timestamp with time zone | 
+ repository_name | citext                   | 
+
+```
+
+# View "public.lsif_indexes_with_repository_name"
+```
+     Column      |           Type           | Modifiers 
+-----------------+--------------------------+-----------
+ id              | bigint                   | 
+ commit          | text                     | 
+ queued_at       | timestamp with time zone | 
+ state           | text                     | 
+ failure_message | text                     | 
+ started_at      | timestamp with time zone | 
+ finished_at     | timestamp with time zone | 
+ repository_id   | integer                  | 
+ process_after   | timestamp with time zone | 
+ num_resets      | integer                  | 
+ num_failures    | integer                  | 
+ docker_steps    | jsonb[]                  | 
+ root            | text                     | 
+ indexer         | text                     | 
+ indexer_args    | text[]                   | 
+ outfile         | text                     | 
+ log_contents    | text                     | 
+ execution_logs  | json[]                   | 
+ local_steps     | text[]                   | 
+ repository_name | citext                   | 
+
+```
+
+# View "public.lsif_uploads_with_repository_name"
+```
+     Column      |           Type           | Modifiers 
+-----------------+--------------------------+-----------
+ id              | integer                  | 
+ commit          | text                     | 
+ root            | text                     | 
+ uploaded_at     | timestamp with time zone | 
+ state           | text                     | 
+ failure_message | text                     | 
+ started_at      | timestamp with time zone | 
+ finished_at     | timestamp with time zone | 
+ repository_id   | integer                  | 
+ indexer         | text                     | 
+ num_parts       | integer                  | 
+ uploaded_parts  | integer[]                | 
+ process_after   | timestamp with time zone | 
+ num_resets      | integer                  | 
+ upload_size     | bigint                   | 
+ num_failures    | integer                  | 
+ repository_name | citext                   | 
+
+```
+
+# View "public.site_config"
+```
+   Column    |  Type   | Modifiers 
+-------------+---------+-----------
+ site_id     | uuid    | 
+ initialized | boolean | 
+
+```
+
+# View "public.tracking_changeset_specs_and_changesets"
+```
+      Column       |  Type   | Modifiers 
+-------------------+---------+-----------
+ changeset_spec_id | bigint  | 
+ changeset_id      | bigint  | 
+ repo_id           | integer | 
+ campaign_spec_id  | bigint  | 
+ repo_name         | citext  | 
+ changeset_name    | text    | 
+
+```
+
+# Type cm_email_priority
+
+- NORMAL
+- CRITICAL
+
+# Type critical_or_site
+
+- critical
+- site
+
+# Type lsif_index_state
+
+- queued
+- processing
+- completed
+- errored
+- failed
+
+# Type lsif_upload_state
+
+- uploading
+- queued
+- processing
+- completed
+- errored
+- deleted
+- failed
+

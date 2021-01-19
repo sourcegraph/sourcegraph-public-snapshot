@@ -57,6 +57,23 @@ export const campaignSpecFragment = gql`
         diffStat {
             ...DiffStatFields
         }
+        applyPreview {
+            stats {
+                close
+                detach
+                import
+                publish
+                publishDraft
+                push
+                reopen
+                undraft
+                update
+
+                added
+                modified
+                removed
+            }
+        }
         supersedingCampaignSpec {
             ...SupersedingCampaignSpecFields
         }

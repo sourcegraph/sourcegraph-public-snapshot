@@ -22,7 +22,7 @@ import { CodeMonitoringLogo } from './CodeMonitoringLogo'
 export interface CodeMonitoringPageProps
     extends BreadcrumbsProps,
         BreadcrumbSetters,
-        Pick<CodeMonitoringProps, 'fetchUserCodeMonitors' | 'toggleCodeMonitorEnabled'>,
+        Pick<CodeMonitoringProps, 'fetchUserCodeMonitors'>,
         SettingsCascadeProps<Settings> {
     authenticatedUser: AuthenticatedUser
     location: H.Location
@@ -32,7 +32,7 @@ export interface CodeMonitoringPageProps
 type CodeMonitorFilter = 'all' | 'user'
 
 export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps> = props => {
-    const { authenticatedUser, fetchUserCodeMonitors, toggleCodeMonitorEnabled } = props
+    const { authenticatedUser, fetchUserCodeMonitors } = props
 
     const queryConnection = useCallback(
         (args: Partial<ListUserCodeMonitorsVariables>) =>
@@ -255,7 +255,6 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                                                 props.settingsCascade.final?.experimentalFeatures
                                                     ?.showCodeMonitoringTestEmailButton) ||
                                             false,
-                                        toggleCodeMonitorEnabled,
                                     }}
                                     noun="code monitor"
                                     pluralNoun="code monitors"

@@ -38,7 +38,11 @@ func ZoektWebServer() *monitoring.Container {
 						shared.ContainerMemoryUsage("zoekt-webserver", monitoring.ObservableOwnerSearch).Observable(),
 					},
 					{
-						shared.ContainerRestarts("zoekt-webserver", monitoring.ObservableOwnerSearch).Observable(),
+						// indexed-search does not have 0-downtime deploy, so deploys can
+						// cause extended container restarts. still seta warning alert for
+						// extended periods of container restarts, since this might still
+						// indicate a problem.
+						shared.ContainerMissing("zoekt-webserver", monitoring.ObservableOwnerSearch).Observable(),
 						shared.ContainerIOUsage("zoekt-webserver", monitoring.ObservableOwnerSearch).Observable(),
 					},
 				},
@@ -60,5 +64,7 @@ func ZoektWebServer() *monitoring.Container {
 			// kubernetes monitoring for zoekt-web-server is provided by zoekt-index-server,
 			// since both services are deployed together
 		},
+
+		NoSourcegraphDebugServer: true,
 	}
 }

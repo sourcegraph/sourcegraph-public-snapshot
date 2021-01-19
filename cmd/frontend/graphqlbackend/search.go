@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"regexp"
-	regexpsyntax "regexp/syntax"
 	"sort"
 	"strconv"
 	"sync"
@@ -15,7 +13,6 @@ import (
 	"github.com/pkg/errors"
 
 	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -25,8 +22,8 @@ import (
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	querytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -71,42 +68,26 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (_ SearchImplem
 		}
 	}
 
-	useNewParser := getBoolPtr(settings.SearchMigrateParser, true)
-	tr.LogFields(otlog.Bool("useNewParser", useNewParser))
-
 	searchType, err := detectSearchType(args.Version, args.PatternType)
 	if err != nil {
 		return nil, err
 	}
-	searchType = overrideSearchType(args.Query, searchType, useNewParser)
+	searchType = overrideSearchType(args.Query, searchType)
 
 	if searchType == query.SearchTypeStructural && !conf.StructuralSearchEnabled() {
 		return nil, errors.New("Structural search is disabled in the site configuration.")
 	}
 
 	var queryInfo query.QueryInfo
-	if useNewParser {
-		globbing := getBoolPtr(settings.SearchGlobbing, false)
-		tr.LogFields(otlog.Bool("globbing", globbing))
-		queryInfo, err = query.ProcessAndOr(args.Query, query.ParserOptions{SearchType: searchType, Globbing: globbing})
-		if err != nil {
-			return alertForQuery(args.Query, err), nil
-		}
-		if getBoolPtr(settings.SearchUppercase, false) {
-			q := queryInfo.(*query.AndOrQuery)
-			q.Query = query.SearchUppercase(q.Query)
-		}
-	} else {
-		var queryString string
-		if searchType == query.SearchTypeLiteral {
-			queryString = query.ConvertToLiteral(args.Query)
-		} else {
-			queryString = args.Query
-		}
-		queryInfo, err = query.Process(queryString, searchType)
-		if err != nil {
-			return alertForQuery(queryString, err), nil
-		}
+	globbing := getBoolPtr(settings.SearchGlobbing, false)
+	tr.LogFields(otlog.Bool("globbing", globbing))
+	queryInfo, err = query.ProcessAndOr(args.Query, query.ParserOptions{SearchType: searchType, Globbing: globbing})
+	if err != nil {
+		return alertForQuery(args.Query, err), nil
+	}
+	if getBoolPtr(settings.SearchUppercase, false) {
+		q := queryInfo.(*query.AndOrQuery)
+		q.Query = query.SearchUppercase(q.Query)
 	}
 	tr.LazyPrintf("parsing done")
 
@@ -136,6 +117,8 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (_ SearchImplem
 		patternType:    searchType,
 		zoekt:          search.Indexed(),
 		searcherURLs:   search.SearcherURLs(),
+		reposMu:        &sync.Mutex{},
+		resolved:       &searchrepos.Resolved{},
 	}, nil
 }
 
@@ -225,42 +208,24 @@ func detectSearchType(version string, patternType *string) (query.SearchType, er
 
 var patternTypeRegex = lazyregexp.New(`(?i)patterntype:([a-zA-Z"']+)`)
 
-func overrideSearchType(input string, searchType query.SearchType, useNewParser bool) query.SearchType {
-	if useNewParser {
-		q, err := query.ParseAndOr(input, query.SearchTypeLiteral)
-		q = query.LowercaseFieldNames(q)
-		if err != nil {
-			// If parsing fails, return the default search type. Any actual
-			// parse errors will be raised by subsequent parser calls.
-			return searchType
-		}
-		query.VisitField(q, "patterntype", func(value string, _ bool, _ query.Annotation) {
-			switch value {
-			case "regex", "regexp":
-				searchType = query.SearchTypeRegex
-			case "literal":
-				searchType = query.SearchTypeLiteral
-			case "structural":
-				searchType = query.SearchTypeStructural
-			}
-		})
-	} else {
-		// The patterntype field is Singular, but not enforced since we do not
-		// properly parse the input. The regex extraction, takes the left-most
-		// "patterntype:value" match.
-		patternFromField := patternTypeRegex.FindStringSubmatch(input)
-		if len(patternFromField) > 1 {
-			extracted := patternFromField[1]
-			if match, _ := regexp.MatchString("regex", extracted); match {
-				searchType = query.SearchTypeRegex
-			} else if match, _ := regexp.MatchString("literal", extracted); match {
-				searchType = query.SearchTypeLiteral
-
-			} else if match, _ := regexp.MatchString("structural", extracted); match {
-				searchType = query.SearchTypeStructural
-			}
-		}
+func overrideSearchType(input string, searchType query.SearchType) query.SearchType {
+	q, err := query.ParseAndOr(input, query.SearchTypeLiteral)
+	q = query.LowercaseFieldNames(q)
+	if err != nil {
+		// If parsing fails, return the default search type. Any actual
+		// parse errors will be raised by subsequent parser calls.
+		return searchType
 	}
+	query.VisitField(q, "patterntype", func(value string, _ bool, _ query.Annotation) {
+		switch value {
+		case "regex", "regexp":
+			searchType = query.SearchTypeRegex
+		case "literal":
+			searchType = query.SearchTypeLiteral
+		case "structural":
+			searchType = query.SearchTypeStructural
+		}
+	})
 	return searchType
 }
 
@@ -285,13 +250,23 @@ type searchResolver struct {
 	// searchResolver.SetResultChannel
 	resultChannel chan<- []SearchResultResolver
 
-	// Cached resolveRepositories results.
-	reposMu  sync.Mutex
-	resolved searchrepos.Resolved
+	// Cached resolveRepositories results. We use a pointer to the mutex so that we
+	// can copy the resolver, while sharing the mutex. If we didn't use a pointer,
+	// the mutex would lead to unexpected behaviour.
+	reposMu  *sync.Mutex
+	resolved *searchrepos.Resolved
 	repoErr  error
 
 	zoekt        *searchbackend.Zoekt
 	searcherURLs *endpoint.Map
+}
+
+// SearchEvent is an event on a search stream. It contains fields which can be
+// aggregated up into a final result.
+type SearchEvent struct {
+	Results []SearchResultResolver
+	Stats   streaming.Stats
+	Error   error
 }
 
 // SetResultChannel will send all results down c.
@@ -367,9 +342,6 @@ func decodedViewerFinalSettings(ctx context.Context) (_ *schema.Settings, err er
 	return &settings, nil
 }
 
-// Cf. golang/go/src/regexp/syntax/parse.go.
-const regexpFlags = regexpsyntax.ClassNL | regexpsyntax.PerlX | regexpsyntax.UnicodeGroups
-
 // resolveRepositories calls ResolveRepositories, caching the result for the common case
 // where effectiveRepoFieldValues == nil.
 func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoFieldValues []string) (searchrepos.Resolved, error) {
@@ -394,7 +366,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		defer r.reposMu.Unlock()
 		if r.resolved.RepoRevs != nil || r.resolved.MissingRepoRevs != nil || r.repoErr != nil {
 			tr.LazyPrintf("cached")
-			return r.resolved, r.repoErr
+			return *r.resolved, r.repoErr
 		}
 	}
 
@@ -459,7 +431,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 	resolved, err := searchrepos.ResolveRepositories(ctx, options)
 	tr.LazyPrintf("resolveRepositories - done")
 	if effectiveRepoFieldValues == nil {
-		r.resolved = resolved
+		r.resolved = &resolved
 		r.repoErr = err
 	}
 	return resolved, err
@@ -614,33 +586,37 @@ func sortSearchSuggestions(s []*searchSuggestionResolver) {
 // returning common as to reflect that new information. If searchErr is a fatal error,
 // it returns a non-nil error; otherwise, if searchErr == nil or a non-fatal error, it returns a
 // nil error.
-func handleRepoSearchResult(repoRev *search.RepositoryRevisions, limitHit, timedOut bool, searchErr error) (common searchResultsCommon, fatalErr error) {
+func handleRepoSearchResult(repoRev *search.RepositoryRevisions, limitHit, timedOut bool, searchErr error) (_ streaming.Stats, fatalErr error) {
+	var status search.RepoStatus
 	if limitHit {
-		common.limitHit = true
-		common.partial = map[api.RepoID]struct{}{repoRev.Repo.ID: {}}
+		status |= search.RepoStatusLimitHit
 	}
+
 	if vcs.IsRepoNotExist(searchErr) {
 		if vcs.IsCloneInProgress(searchErr) {
-			common.cloning = []*types.RepoName{repoRev.Repo}
+			status |= search.RepoStatusCloning
 		} else {
-			common.missing = []*types.RepoName{repoRev.Repo}
+			status |= search.RepoStatusMissing
 		}
 	} else if gitserver.IsRevisionNotFound(searchErr) {
 		if len(repoRev.Revs) == 0 || len(repoRev.Revs) == 1 && repoRev.Revs[0].RevSpec == "" {
 			// If we didn't specify an input revision, then the repo is empty and can be ignored.
 		} else {
-			return common, searchErr
+			fatalErr = searchErr
 		}
 	} else if errcode.IsNotFound(searchErr) {
-		common.missing = []*types.RepoName{repoRev.Repo}
+		status |= search.RepoStatusMissing
 	} else if errcode.IsTimeout(searchErr) || errcode.IsTemporary(searchErr) || timedOut {
-		common.timedout = []*types.RepoName{repoRev.Repo}
+		status |= search.RepoStatusTimedout
 	} else if searchErr != nil {
-		return common, searchErr
+		fatalErr = searchErr
 	} else {
-		common.searched = []*types.RepoName{repoRev.Repo}
+		status |= search.RepoStatusSearched
 	}
-	return common, nil
+	return streaming.Stats{
+		Status:     search.RepoStatusSingleton(repoRev.Repo.ID, status),
+		IsLimitHit: limitHit,
+	}, fatalErr
 }
 
 // getRepos is a wrapper around p.Get. It returns an error if the promise
