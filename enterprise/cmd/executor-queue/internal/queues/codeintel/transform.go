@@ -68,7 +68,7 @@ func transformRecord(index store.Index, config *Config) (apiclient.Job, error) {
 					"-root", root,
 					"-upload-route", uploadRoute,
 					"-file", outfile,
-					"-associatedIndex", strconv.Itoa(index.ID),
+					"-associated-index-id", strconv.Itoa(index.ID),
 				},
 				Dir: index.Root,
 				Env: []string{
