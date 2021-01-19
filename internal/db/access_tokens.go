@@ -6,12 +6,16 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
+	"sync"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
+
+	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
 // AccessToken describes an access token. The actual token (that a caller must supply to
@@ -30,8 +34,42 @@ type AccessToken struct {
 // but it does not exist.
 var ErrAccessTokenNotFound = errors.New("access token not found")
 
-// accessTokens implements autocert.Cache
-type accessTokens struct{}
+// AccessTokenStore implements autocert.Cache
+type AccessTokenStore struct {
+	*basestore.Store
+
+	once sync.Once
+}
+
+// NewAccessTokenStoreWithDB instantiates and returns a new AccessTokenStore with prepared statements.
+func NewAccessTokenStoreWithDB(db dbutil.DB) *AccessTokenStore {
+	return &AccessTokenStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+}
+
+// NewAccessTokenStoreWithDB instantiates and returns a new AccessTokenStore using the other store handle.
+func NewAccessTokenStoreWith(other basestore.ShareableStore) *AccessTokenStore {
+	return &AccessTokenStore{Store: basestore.NewWithHandle(other.Handle())}
+}
+
+func (s *AccessTokenStore) With(other basestore.ShareableStore) *AccessTokenStore {
+	return &AccessTokenStore{Store: s.Store.With(other)}
+}
+
+func (s *AccessTokenStore) Transact(ctx context.Context) (*AccessTokenStore, error) {
+	txBase, err := s.Store.Transact(ctx)
+	return &AccessTokenStore{Store: txBase}, err
+}
+
+// ensureStore instantiates a basestore.Store if necessary, using the dbconn.Global handle.
+// This function ensures access to dbconn happens after the rest of the code or tests have
+// initialized it.
+func (s *AccessTokenStore) ensureStore() {
+	s.once.Do(func() {
+		if s.Store == nil {
+			s.Store = basestore.NewWithDB(dbconn.Global, sql.TxOptions{})
+		}
+	})
+}
 
 // Create creates an access token for the specified user. The secret token value itself is
 // returned. The caller is responsible for presenting this value to the end user; Sourcegraph does
@@ -48,10 +86,11 @@ type accessTokens struct{}
 //
 // 🚨 SECURITY: The caller must ensure that the actor is permitted to create tokens for the
 // specified user (i.e., that the actor is either the user or a site admin).
-func (s *accessTokens) Create(ctx context.Context, subjectUserID int32, scopes []string, note string, creatorUserID int32) (id int64, token string, err error) {
+func (s *AccessTokenStore) Create(ctx context.Context, subjectUserID int32, scopes []string, note string, creatorUserID int32) (id int64, token string, err error) {
 	if Mocks.AccessTokens.Create != nil {
 		return Mocks.AccessTokens.Create(subjectUserID, scopes, note, creatorUserID)
 	}
+	s.ensureStore()
 
 	var b [20]byte
 	if _, err := rand.Read(b[:]); err != nil {
@@ -65,7 +104,7 @@ func (s *accessTokens) Create(ctx context.Context, subjectUserID int32, scopes [
 		return 0, "", errors.New("access tokens without scopes are not supported")
 	}
 
-	if err := dbconn.Global.QueryRowContext(ctx,
+	if err := s.Handle().DB().QueryRowContext(ctx,
 		// Include users table query (with "FOR UPDATE") to ensure that subject/creator users have
 		// not been deleted. If they were deleted, the query will return an error.
 		`
@@ -95,10 +134,11 @@ INSERT INTO access_tokens(subject_user_id, scopes, value_sha256, note, creator_u
 //
 // 🚨 SECURITY: This returns a user ID if and only if the tokenHexEncoded corresponds to a valid,
 // non-deleted access token.
-func (s *accessTokens) Lookup(ctx context.Context, tokenHexEncoded string, requiredScope string) (subjectUserID int32, err error) {
+func (s *AccessTokenStore) Lookup(ctx context.Context, tokenHexEncoded string, requiredScope string) (subjectUserID int32, err error) {
 	if Mocks.AccessTokens.Lookup != nil {
 		return Mocks.AccessTokens.Lookup(tokenHexEncoded, requiredScope)
 	}
+	s.ensureStore()
 
 	if requiredScope == "" {
 		return 0, errors.New("no scope provided in access token lookup")
@@ -109,7 +149,7 @@ func (s *accessTokens) Lookup(ctx context.Context, tokenHexEncoded string, requi
 		return 0, errors.Wrap(err, "AccessTokens.Lookup")
 	}
 
-	if err := dbconn.Global.QueryRowContext(ctx,
+	if err := s.Handle().DB().QueryRowContext(ctx,
 		// Ensure that subject and creator users still exist.
 		`
 UPDATE access_tokens t SET last_used_at=now()
@@ -135,7 +175,7 @@ RETURNING t.subject_user_id
 // GetByID retrieves the access token (if any) given its ID.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is permitted to view this access token.
-func (s *accessTokens) GetByID(ctx context.Context, id int64) (*AccessToken, error) {
+func (s *AccessTokenStore) GetByID(ctx context.Context, id int64) (*AccessToken, error) {
 	if Mocks.AccessTokens.GetByID != nil {
 		return Mocks.AccessTokens.GetByID(id)
 	}
@@ -146,7 +186,7 @@ func (s *accessTokens) GetByID(ctx context.Context, id int64) (*AccessToken, err
 // GetByToken retrieves the access token (if any) given its hex encoded string.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is permitted to view this access token.
-func (s *accessTokens) GetByToken(ctx context.Context, tokenHexEncoded string) (*AccessToken, error) {
+func (s *AccessTokenStore) GetByToken(ctx context.Context, tokenHexEncoded string) (*AccessToken, error) {
 	token, err := hex.DecodeString(tokenHexEncoded)
 	if err != nil {
 		return nil, errors.Wrap(err, "AccessTokens.GetByToken")
@@ -155,7 +195,9 @@ func (s *accessTokens) GetByToken(ctx context.Context, tokenHexEncoded string) (
 	return s.get(ctx, []*sqlf.Query{sqlf.Sprintf("value_sha256=%s", toSHA256Bytes(token))})
 }
 
-func (s *accessTokens) get(ctx context.Context, conds []*sqlf.Query) (*AccessToken, error) {
+func (s *AccessTokenStore) get(ctx context.Context, conds []*sqlf.Query) (*AccessToken, error) {
+	s.ensureStore()
+
 	results, err := s.list(ctx, conds, nil)
 	if err != nil {
 		return nil, err
@@ -192,11 +234,13 @@ func (o AccessTokensListOptions) sqlConditions() []*sqlf.Query {
 //
 // 🚨 SECURITY: The caller must ensure that the actor is permitted to list with the specified
 // options.
-func (s *accessTokens) List(ctx context.Context, opt AccessTokensListOptions) ([]*AccessToken, error) {
+func (s *AccessTokenStore) List(ctx context.Context, opt AccessTokensListOptions) ([]*AccessToken, error) {
 	return s.list(ctx, opt.sqlConditions(), opt.LimitOffset)
 }
 
-func (s *accessTokens) list(ctx context.Context, conds []*sqlf.Query, limitOffset *LimitOffset) ([]*AccessToken, error) {
+func (s *AccessTokenStore) list(ctx context.Context, conds []*sqlf.Query, limitOffset *LimitOffset) ([]*AccessToken, error) {
+	s.ensureStore()
+
 	q := sqlf.Sprintf(`
 SELECT id, subject_user_id, scopes, note, creator_user_id, created_at, last_used_at FROM access_tokens
 WHERE (%s)
@@ -208,7 +252,7 @@ created_at DESC
 		limitOffset.SQL(),
 	)
 
-	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	rows, err := s.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -228,10 +272,12 @@ created_at DESC
 // Count counts all access tokens that satisfy the options (ignoring limit and offset).
 //
 // 🚨 SECURITY: The caller must ensure that the actor is permitted to count the tokens.
-func (s *accessTokens) Count(ctx context.Context, opt AccessTokensListOptions) (int, error) {
+func (s *AccessTokenStore) Count(ctx context.Context, opt AccessTokensListOptions) (int, error) {
+	s.ensureStore()
+
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM access_tokens WHERE (%s)", sqlf.Join(opt.sqlConditions(), ") AND ("))
 	var count int
-	if err := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count); err != nil {
+	if err := s.QueryRow(ctx, q).Scan(&count); err != nil {
 		return 0, err
 	}
 	return count, nil
@@ -240,28 +286,33 @@ func (s *accessTokens) Count(ctx context.Context, opt AccessTokensListOptions) (
 // DeleteByID deletes an access token given its ID and associated subject user.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is permitted to delete the token.
-func (s *accessTokens) DeleteByID(ctx context.Context, id int64, subjectUserID int32) error {
+func (s *AccessTokenStore) DeleteByID(ctx context.Context, id int64, subjectUserID int32) error {
 	if Mocks.AccessTokens.DeleteByID != nil {
 		return Mocks.AccessTokens.DeleteByID(id, subjectUserID)
 	}
+	s.ensureStore()
+
 	return s.delete(ctx, sqlf.Sprintf("id=%d AND subject_user_id=%d", id, subjectUserID))
 }
 
 // DeleteByToken deletes an access token given the secret token value itself (i.e., the same value
 // that an API client would use to authenticate).
-func (s *accessTokens) DeleteByToken(ctx context.Context, tokenHexEncoded string) error {
+func (s *AccessTokenStore) DeleteByToken(ctx context.Context, tokenHexEncoded string) error {
 	token, err := hex.DecodeString(tokenHexEncoded)
 	if err != nil {
 		return errors.Wrap(err, "AccessTokens.DeleteByToken")
 	}
+
 	return s.delete(ctx, sqlf.Sprintf("value_sha256=%s", toSHA256Bytes(token)))
 }
 
-func (s *accessTokens) delete(ctx context.Context, cond *sqlf.Query) error {
+func (s *AccessTokenStore) delete(ctx context.Context, cond *sqlf.Query) error {
+	s.ensureStore()
+
 	conds := []*sqlf.Query{cond, sqlf.Sprintf("deleted_at IS NULL")}
 	q := sqlf.Sprintf("UPDATE access_tokens SET deleted_at=now() WHERE (%s)", sqlf.Join(conds, ") AND ("))
 
-	res, err := dbconn.Global.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	res, err := s.ExecResult(ctx, q)
 	if err != nil {
 		return err
 	}
