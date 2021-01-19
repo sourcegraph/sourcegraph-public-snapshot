@@ -120,9 +120,6 @@ func readProcessPipes(stdout, stderr io.Reader) (*bytes.Buffer, *sync.WaitGroup)
 			m.Lock()
 			fmt.Fprintf(out, "%s: %s\n", prefix, scanner.Text())
 			m.Unlock()
-
-			// TEMPORARY OBSERVABILITY INCREASE
-			log15.Info("TEMP: command output", "prefix", prefix, "text", scanner.Text())
 		}
 	}
 
@@ -143,16 +140,7 @@ func monitorCommand(cmd *exec.Cmd, pipeReaderWaitGroup *sync.WaitGroup) (int, er
 
 	pipeReaderWaitGroup.Wait()
 
-	err := cmd.Wait()
-	{
-		// TEMPORARY OBSERVABILITY INCREASE
-		ec := -1
-		if cmd.ProcessState != nil {
-			ec = cmd.ProcessState.ExitCode()
-		}
-		log15.Info("TEMP: run complete", "args", cmd.Args, "exitCode", ec)
-	}
-	if err != nil {
+	if err := cmd.Wait(); err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			return exitErr.ExitCode(), nil
 		}
