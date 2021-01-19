@@ -1,4 +1,4 @@
-package search
+package api
 
 // Progress is an aggregate type representing a progress update.
 type Progress struct {

@@ -22,6 +22,7 @@ import (
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchquerytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -92,8 +93,8 @@ func TestSearchResults(t *testing.T) {
 		db.Mocks.Repos.MockGet(t, 1)
 		db.Mocks.Repos.Count = mockCount
 
-		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *SearchResultsCommon, error) {
-			return nil, &SearchResultsCommon{}, nil
+		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *streaming.Stats, error) {
+			return nil, &streaming.Stats{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 
@@ -127,14 +128,14 @@ func TestSearchResults(t *testing.T) {
 		db.Mocks.Repos.Count = mockCount
 
 		calledSearchRepositories := false
-		mockSearchRepositories = func(args *search.TextParameters) ([]SearchResultResolver, *SearchResultsCommon, error) {
+		mockSearchRepositories = func(args *search.TextParameters) ([]SearchResultResolver, *streaming.Stats, error) {
 			calledSearchRepositories = true
-			return nil, &SearchResultsCommon{}, nil
+			return nil, &streaming.Stats{}, nil
 		}
 		defer func() { mockSearchRepositories = nil }()
 
 		calledSearchSymbols := false
-		mockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, common *SearchResultsCommon, err error) {
+		mockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, common *streaming.Stats, err error) {
 			calledSearchSymbols = true
 			if want := `(foo\d).*?(bar\*)`; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
@@ -145,14 +146,14 @@ func TestSearchResults(t *testing.T) {
 		defer func() { mockSearchSymbols = nil }()
 
 		calledSearchFilesInRepos := atomic.NewBool(false)
-		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *SearchResultsCommon, error) {
+		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *streaming.Stats, error) {
 			calledSearchFilesInRepos.Store(true)
 			if want := `(foo\d).*?(bar\*)`; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
 			}
 			repo := &types.RepoName{ID: 1, Name: "repo"}
 			fm := mkFileMatch(repo, "dir/file", 123)
-			return []*FileMatchResolver{fm}, &SearchResultsCommon{}, nil
+			return []*FileMatchResolver{fm}, &streaming.Stats{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 
@@ -192,14 +193,14 @@ func TestSearchResults(t *testing.T) {
 		db.Mocks.Repos.Count = mockCount
 
 		calledSearchRepositories := false
-		mockSearchRepositories = func(args *search.TextParameters) ([]SearchResultResolver, *SearchResultsCommon, error) {
+		mockSearchRepositories = func(args *search.TextParameters) ([]SearchResultResolver, *streaming.Stats, error) {
 			calledSearchRepositories = true
-			return nil, &SearchResultsCommon{}, nil
+			return nil, &streaming.Stats{}, nil
 		}
 		defer func() { mockSearchRepositories = nil }()
 
 		calledSearchSymbols := false
-		mockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, common *SearchResultsCommon, err error) {
+		mockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, common *streaming.Stats, err error) {
 			calledSearchSymbols = true
 			if want := `"foo\\d \"bar*\""`; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
@@ -210,14 +211,14 @@ func TestSearchResults(t *testing.T) {
 		defer func() { mockSearchSymbols = nil }()
 
 		calledSearchFilesInRepos := atomic.NewBool(false)
-		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *SearchResultsCommon, error) {
+		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *streaming.Stats, error) {
 			calledSearchFilesInRepos.Store(true)
 			if want := `foo\\d "bar\*"`; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
 			}
 			repo := &types.RepoName{ID: 1, Name: "repo"}
 			fm := mkFileMatch(repo, "dir/file", 123)
-			return []*FileMatchResolver{fm}, &SearchResultsCommon{}, nil
+			return []*FileMatchResolver{fm}, &streaming.Stats{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 
@@ -936,7 +937,7 @@ func TestCheckDiffCommitSearchLimits(t *testing.T) {
 func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 	type fields struct {
 		results             []SearchResultResolver
-		searchResultsCommon SearchResultsCommon
+		searchResultsCommon streaming.Stats
 		alert               *searchAlert
 		start               time.Time
 	}
@@ -963,7 +964,7 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 			name: "file matches limit hit",
 			fields: fields{
 				results:             []SearchResultResolver{&FileMatchResolver{}},
-				searchResultsCommon: SearchResultsCommon{IsLimitHit: true},
+				searchResultsCommon: streaming.Stats{IsLimitHit: true},
 			},
 			want: "1+",
 		},
@@ -998,7 +999,7 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 						},
 					},
 				},
-				searchResultsCommon: SearchResultsCommon{IsLimitHit: true},
+				searchResultsCommon: streaming.Stats{IsLimitHit: true},
 			},
 			want: "2+",
 		},
@@ -1006,10 +1007,10 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			sr := &SearchResultsResolver{
-				SearchResults:       tt.fields.results,
-				SearchResultsCommon: tt.fields.searchResultsCommon,
-				alert:               tt.fields.alert,
-				start:               tt.fields.start,
+				SearchResults: tt.fields.results,
+				Stats:         tt.fields.searchResultsCommon,
+				alert:         tt.fields.alert,
+				start:         tt.fields.start,
 			}
 			if got := sr.ApproximateResultCount(); got != tt.want {
 				t.Errorf("searchResultsResolver.ApproximateResultCount() = %v, want %v", got, tt.want)

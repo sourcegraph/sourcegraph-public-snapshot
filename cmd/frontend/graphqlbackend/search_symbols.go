@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gituri"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -42,13 +43,13 @@ func (s *searchSymbolResult) uri() *gituri.URI {
 	return s.baseURI.WithFilePath(s.symbol.Path)
 }
 
-var mockSearchSymbols func(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, common *SearchResultsCommon, err error)
+var mockSearchSymbols func(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, common *streaming.Stats, err error)
 
 // searchSymbols searches the given repos in parallel for symbols matching the given search query
 // it can be used for both search suggestions and search results
 //
 // May return partial results and an error
-func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, common *SearchResultsCommon, err error) {
+func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, common *streaming.Stats, err error) {
 	if mockSearchSymbols != nil {
 		return mockSearchSymbols(ctx, args, limit)
 	}
@@ -71,7 +72,7 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 	ctx, cancelAll := context.WithCancel(ctx)
 	defer cancelAll()
 
-	common = &SearchResultsCommon{}
+	common = &streaming.Stats{}
 
 	indexed, err := newIndexedSearchRequest(ctx, args, symbolRequest)
 	if err != nil {
@@ -134,7 +135,7 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 			func() {
 				mu.Lock()
 				defer mu.Unlock()
-				common.update(&event.common)
+				common.Update(&event.common)
 				tr.LogFields(otlog.Object("searchErr", event.err), otlog.Error(err), otlog.Bool("overLimitCanceled", overLimitCanceled))
 				if event.err != nil && err == nil && !overLimitCanceled {
 					err = event.err
@@ -171,7 +172,7 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 					run.Error(repoErr)
 				}
 			}
-			common.update(&repoCommon)
+			common.Update(&repoCommon)
 			if repoSymbols != nil {
 				addMatches(repoSymbols)
 			}
