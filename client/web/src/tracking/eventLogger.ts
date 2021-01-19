@@ -84,7 +84,7 @@ export class EventLogger implements TelemetryService {
             sameSite: 'Strict',
             // Specify the Domain attribute to ensure subdomains (about.sourcegraph.com) can receive this cookie.
             // https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#define_where_cookies_are_sent
-            domain: 'sourcegraph.com',
+            domain: location.hostname,
         })
         localStorage.removeItem(ANONYMOUS_USER_ID_KEY)
         this.anonymousUserId = anonymousUserId
