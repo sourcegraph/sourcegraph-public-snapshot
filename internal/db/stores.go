@@ -7,7 +7,7 @@ var (
 	Repos            = &RepoStore{}
 	Phabricator      = &PhabricatorStore{}
 	QueryRunnerState = &QueryRunnerStateStore{}
-	Namespaces       = &namespaces{}
+	Namespaces       = &NamespaceStore{}
 	Orgs             = &OrgStore{}
 	OrgMembers       = &orgMembers{}
 	SavedSearches    = &SavedSearchStore{}
