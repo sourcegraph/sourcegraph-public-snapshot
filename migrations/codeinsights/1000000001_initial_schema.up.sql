@@ -2,7 +2,14 @@ BEGIN;
 
 CREATE EXTENSION IF NOT EXISTS timescaledb;
 
-CREATE TABLE histogram_events (
+-- Records events over time associated with a repository (or none, i.e. globally) where a single
+-- numerical value is going arbitrarily up and down.
+--
+-- Repository association is based on both repository ID and name. The ID can be used to refer to
+-- a specific repository, or lookup the current name of a repository after it has been e.g. renamed.
+-- The name can be used to refer to the name of the repository at the time of the event's creation,
+-- for example to trace the change in a gauge back to a repository being renamed.
+CREATE TABLE gauge_events (
     -- The timestamp of the recorded event.
     time TIMESTAMPTZ NOT NULL,
 
@@ -27,6 +34,6 @@ CREATE TABLE histogram_events (
 
 -- Create hypertable, partitioning histogram events by time.
 -- See https://docs.timescale.com/latest/using-timescaledb/hypertables
-SELECT create_hypertable('histogram_events', 'time');
+SELECT create_hypertable('gauge_events', 'time');
 
 COMMIT;
