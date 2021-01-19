@@ -72,7 +72,7 @@ func (p *PhabricatorStore) Create(ctx context.Context, callsign string, name api
 		Name:     name,
 		URL:      phabURL,
 	}
-	err := dbconn.Global.QueryRowContext(
+	err := p.Handle().DB().QueryRowContext(
 		ctx,
 		"INSERT INTO phabricator_repos(callsign, repo_name, url) VALUES($1, $2, $3) RETURNING id",
 		r.Callsign, r.Name, r.URL).Scan(&r.ID)
@@ -90,7 +90,7 @@ func (p *PhabricatorStore) CreateOrUpdate(ctx context.Context, callsign string, 
 		Name:     name,
 		URL:      phabURL,
 	}
-	err := dbconn.Global.QueryRowContext(
+	err := p.Handle().DB().QueryRowContext(
 		ctx,
 		"UPDATE phabricator_repos SET callsign=$1, url=$2, updated_at=now() WHERE repo_name=$3 RETURNING id",
 		r.Callsign, r.URL, r.Name).Scan(&r.ID)
@@ -117,7 +117,7 @@ func (p *PhabricatorStore) CreateIfNotExists(ctx context.Context, callsign strin
 func (p *PhabricatorStore) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.PhabricatorRepo, error) {
 	p.ensureStore()
 
-	rows, err := dbconn.Global.QueryContext(ctx, "SELECT id, callsign, repo_name, url FROM phabricator_repos "+query, args...)
+	rows, err := p.Handle().DB().QueryContext(ctx, "SELECT id, callsign, repo_name, url FROM phabricator_repos "+query, args...)
 	if err != nil {
 		return nil, err
 	}
