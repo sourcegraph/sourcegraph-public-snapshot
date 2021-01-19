@@ -81,6 +81,8 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	flushTicker := time.NewTicker(100 * time.Millisecond)
 	defer flushTicker.Stop()
 
+	first := true
+
 	for {
 		var results []graphqlbackend.SearchResultResolver
 		var ok bool
@@ -127,6 +129,12 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if len(matchesBuf) == cap(matchesBuf) {
 				flushMatchesBuf()
 			}
+		}
+
+		// Instantly send results if we have not sent any yet.
+		if first && len(matchesBuf) > 0 {
+			first = false
+			flushMatchesBuf()
 		}
 	}
 
