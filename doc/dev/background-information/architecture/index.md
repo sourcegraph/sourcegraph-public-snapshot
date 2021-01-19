@@ -15,9 +15,9 @@ If you want to learn more about how code is synchronized, read [Life of a reposi
 
 Devs can search across all the code that is connected to their Sourcegraph instance.
 
-By default, Sourcegraph uses [zoekt](https://github.com/sourcegraph/zoekt) to create a trigram index of the default branch of every repository so that searches are fast. This trigram index is the reason why Sourcegraph search is more powerful and faster than what is usually provided by code hosts. 
+By default, Sourcegraph uses [zoekt](https://github.com/sourcegraph/zoekt) to create a trigram index of the default branch of every repository so that searches are fast. This trigram index is the reason why Sourcegraph search is more powerful and faster than what is usually provided by code hosts.
 
-- [zoekt-indexserver](https://sourcegraph.com/github.com/sourcegraph/zoekt/-/tree/cmd/zoekt-sourcegraph-indexserver) 
+- [zoekt-indexserver](https://sourcegraph.com/github.com/sourcegraph/zoekt/-/tree/cmd/zoekt-sourcegraph-indexserver)
 - [zoekt-webserver](https://sourcegraph.com/github.com/sourcegraph/zoekt/-/tree/cmd/zoekt-webserver)
 
 Sourcegraph also has a fast search path for code that isn't indexed yet, or for code that will never be indexed (for example: code that is not on a default branch). Indexing every branch of every repository isn't a pragmatic use of resources for most customers, so this decision balances optimizing the common case (searching all default branches) with space savings (not indexing everything).
@@ -38,7 +38,7 @@ Code intelligence surfaces data (for example: doc comments for a symbol) and act
 
 By default, Sourcegraph provides imprecise [search-based code intelligence](../../../code_intelligence/explanations/search_based_code_intelligence.md). This reuses all the architecture that makes search fast, but it can result in false positives (for example: finding two definitions for a symbol, or references that aren't actually references), or false negatives (for example: not able to find the definition or all references). This is the default because it works with no extra configuration and is pretty good for many use cases and languages. We support a lot of languages this way because it only requires writing a few regular expressions.
 
-With some setup, customer can enable [precise code intelligence](../../../code_intelligence/explanations/precise_code_intelligence.md). Repositories add a step to their build pipeline that computes the index for that revision of code and uploads it to Sourcegraph. We have to write language specific indexers, so adding precise code intel support for new languages is a non-trivial task. 
+With some setup, customer can enable [precise code intelligence](../../../code_intelligence/explanations/precise_code_intelligence.md). Repositories add a step to their build pipeline that computes the index for that revision of code and uploads it to Sourcegraph. We have to write language specific indexers, so adding precise code intel support for new languages is a non-trivial task.
 
 If you want to learn more about code intelligence:
 
@@ -63,7 +63,30 @@ If you want to learn more about campaigns:
 
 ## Code insights
 
-TODO
+Code insights surface higher-level, aggregated information to leaders in engineering organizations in dashboards.
+For example, code insights can track the number of matches of a search query over time, the number of code intelligence diagnostic warnings in a code base, usage of different programming languages or even data from external services, like test coverage from Codecov.
+Use cases for this are tracking usage of libraries across an organization, tracking tech debt, migrations, code base health and much more.
+
+Code insights are currently feature-flagged - set `"experimentalFeatures": { "codeInsights": true }` in your user settings to enable them.
+
+Code insights currently work through [**extensions**](./#sourcegraph-extension-aPI).
+A code insight extension can register a _view provider_ that contributes a graph to either the repository/directory page, the [search homepage](https://sourcegraph.com/search), or the [global "Insights" dashboard](https://sourcegraph.com/insights) reachable from the navbar.
+It is called on-demand on the client (the browser) to return the data needed for the chart.
+_How_ that extension produces the data is up to the extension - it can run search queries, query code intelligence data or analyze Git data using the Sourcegraph GraphQL API, or it can query an external service using its public API, e.g. Codecov.
+
+To enable a code insight, install one of the [code insights extensions](https://sourcegraph.com/extensions?query=category%3A%22Insights%22).
+The extension can then be configured in your [user settings](https://sourcegraph.com/user/settings) according to the examples in the extension README.
+Just like other extensions, it's also possible to install and configure them organization-wide.
+
+Because of code insights currently being run on-demand in the client, the performance of code insights is bound to the performance of the underlying data source.
+Search queries for example are relatively fast as long as the scope doesn't include many repositories, but performance degrades when trying to include a lot of repositories.
+We're actively working on removing this limitation.
+
+If you want to learn more about code insights:
+
+- [Code insights product document (PD)](https://docs.google.com/document/d/1d34gCpt_rUOMAun8phcjNsFofGaaA_N_8znmgaugdKw/edit)
+- [Original code insights RFC](https://docs.google.com/document/d/1EHzor6I1GhVVIpl70mH-c10b1tNEl_p1xRMJ9qHQfoc/edit)
+- [Code insights team page](https://about.sourcegraph.com/handbook/engineering/code-insights)
 
 ## Code monitoring
 
