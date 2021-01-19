@@ -37,5 +37,25 @@ func (s *UserPublicRepoStore) ensureStore() {
 
 func (s *UserPublicRepoStore) SetUserRepo(ctx context.Context, userID int32, repoID api.RepoID) error {
 	s.ensureStore()
-	return s.store.Exec(ctx, sqlf.Sprintf("INSERT INTO user_public_repos(user_id, repo_id) VALUES %v %v", userID, repoID))
+
+	return s.store.Exec(ctx, sqlf.Sprintf("INSERT INTO user_public_repos(user_id, repo_id) VALUES (%v, %v)", userID, repoID))
+}
+
+func (s *UserPublicRepoStore) ListByUser(ctx context.Context, userID int32) ([]int32, error) {
+	s.ensureStore()
+
+	rows, err := s.store.Query(ctx, sqlf.Sprintf("SELECT repo_id FROM user_public_repos WHERE user_id = %v", userID))
+	if err != nil {
+		return nil, err
+	}
+	out := []int32{}
+	for rows.Next() {
+		var v int32
+		err = rows.Scan(&v)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, v)
+	}
+	return out, nil
 }
