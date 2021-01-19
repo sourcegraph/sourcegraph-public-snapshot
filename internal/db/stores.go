@@ -10,7 +10,7 @@ var (
 	Namespaces       = &namespaces{}
 	Orgs             = &OrgStore{}
 	OrgMembers       = &orgMembers{}
-	SavedSearches    = &savedSearches{}
+	SavedSearches    = &SavedSearchStore{}
 	Settings         = &settings{}
 	Users            = &UserStore{}
 	UserCredentials  = &userCredentials{}

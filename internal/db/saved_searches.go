@@ -3,25 +3,64 @@ package db
 import (
 	"context"
 	"database/sql"
+	"sync"
 
 	"github.com/keegancsmith/sqlf"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-type savedSearches struct{}
+type SavedSearchStore struct {
+	*basestore.Store
+
+	once sync.Once
+}
+
+// NewSavedSearchStoreWithDB instantiates and returns a new SavedSearchStore with prepared statements.
+func NewSavedSearchStoreWithDB(db dbutil.DB) *SavedSearchStore {
+	return &SavedSearchStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+}
+
+// NewSavedSearchStoreWithDB instantiates and returns a new SavedSearchStore using the other store handle.
+func NewSavedSearchStoreWith(other basestore.ShareableStore) *SavedSearchStore {
+	return &SavedSearchStore{Store: basestore.NewWithHandle(other.Handle())}
+}
+
+func (s *SavedSearchStore) With(other basestore.ShareableStore) *SavedSearchStore {
+	return &SavedSearchStore{Store: s.Store.With(other)}
+}
+
+func (s *SavedSearchStore) Transact(ctx context.Context) (*SavedSearchStore, error) {
+	txBase, err := s.Store.Transact(ctx)
+	return &SavedSearchStore{Store: txBase}, err
+}
+
+// ensureStore instantiates a basestore.Store if necessary, using the dbconn.Global handle.
+// This function ensures access to dbconn happens after the rest of the code or tests have
+// initialized it.
+func (s *SavedSearchStore) ensureStore() {
+	s.once.Do(func() {
+		if s.Store == nil {
+			s.Store = basestore.NewWithDB(dbconn.Global, sql.TxOptions{})
+		}
+	})
+}
 
 // IsEmpty tells if there are no saved searches (at all) on this Sourcegraph
 // instance.
-func (s *savedSearches) IsEmpty(ctx context.Context) (bool, error) {
+func (s *SavedSearchStore) IsEmpty(ctx context.Context) (bool, error) {
+	s.ensureStore()
+
 	q := `SELECT true FROM saved_searches LIMIT 1`
 	var isNotEmpty bool
-	err := dbconn.Global.QueryRow(q).Scan(&isNotEmpty)
+	err := s.Handle().DB().QueryRowContext(ctx, q).Scan(&isNotEmpty)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return true, nil
@@ -36,10 +75,11 @@ func (s *savedSearches) IsEmpty(ctx context.Context) (bool, error) {
 // 🚨 SECURITY: This method does NOT verify the user's identity or that the
 // user is an admin. It is the callers responsibility to ensure that only users
 // with the proper permissions can access the returned saved searches.
-func (s *savedSearches) ListAll(ctx context.Context) (savedSearches []api.SavedQuerySpecAndConfig, err error) {
+func (s *SavedSearchStore) ListAll(ctx context.Context) (savedSearches []api.SavedQuerySpecAndConfig, err error) {
 	if Mocks.SavedSearches.ListAll != nil {
 		return Mocks.SavedSearches.ListAll(ctx)
 	}
+	s.ensureStore()
 
 	tr, ctx := trace.New(ctx, "db.SavedSearches.ListAll", "")
 	defer func() {
@@ -58,7 +98,7 @@ func (s *savedSearches) ListAll(ctx context.Context) (savedSearches []api.SavedQ
 		org_id,
 		slack_webhook_url FROM saved_searches
 	`)
-	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar))
+	rows, err := s.Query(ctx, q)
 	if err != nil {
 		return nil, errors.Wrap(err, "QueryContext")
 	}
@@ -93,12 +133,14 @@ func (s *savedSearches) ListAll(ctx context.Context) (savedSearches []api.SavedQ
 // 🚨 SECURITY: This method does NOT verify the user's identity or that the
 // user is an admin. It is the callers responsibility to ensure this response
 // only makes it to users with proper permissions to access the saved search.
-func (s *savedSearches) GetByID(ctx context.Context, id int32) (*api.SavedQuerySpecAndConfig, error) {
+func (s *SavedSearchStore) GetByID(ctx context.Context, id int32) (*api.SavedQuerySpecAndConfig, error) {
 	if Mocks.SavedSearches.GetByID != nil {
 		return Mocks.SavedSearches.GetByID(ctx, id)
 	}
+	s.ensureStore()
+
 	var sq api.SavedQuerySpecAndConfig
-	err := dbconn.Global.QueryRowContext(ctx, `SELECT
+	err := s.Handle().DB().QueryRowContext(ctx, `SELECT
 		id,
 		description,
 		query,
@@ -135,12 +177,14 @@ func (s *savedSearches) GetByID(ctx context.Context, id int32) (*api.SavedQueryS
 // user is an admin. It is the callers responsibility to ensure that only the
 // specified user or users with proper permissions can access the returned
 // saved searches.
-func (s *savedSearches) ListSavedSearchesByUserID(ctx context.Context, userID int32) ([]*types.SavedSearch, error) {
+func (s *SavedSearchStore) ListSavedSearchesByUserID(ctx context.Context, userID int32) ([]*types.SavedSearch, error) {
 	if Mocks.SavedSearches.ListSavedSearchesByUserID != nil {
 		return Mocks.SavedSearches.ListSavedSearchesByUserID(ctx, userID)
 	}
+	s.ensureStore()
+
 	var savedSearches []*types.SavedSearch
-	orgs, err := Orgs.GetByUserID(ctx, userID)
+	orgs, err := Orgs.With(s).GetByUserID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +213,7 @@ func (s *savedSearches) ListSavedSearchesByUserID(ctx context.Context, userID in
 		slack_webhook_url
 		FROM saved_searches %v`, conds)
 
-	rows, err := dbconn.Global.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	rows, err := s.Query(ctx, query)
 	if err != nil {
 		return nil, errors.Wrap(err, "QueryContext(2)")
 	}
@@ -190,7 +234,9 @@ func (s *savedSearches) ListSavedSearchesByUserID(ctx context.Context, userID in
 // user is an admin. It is the callers responsibility to ensure only admins or
 // members of the specified organization can access the returned saved
 // searches.
-func (s *savedSearches) ListSavedSearchesByOrgID(ctx context.Context, orgID int32) ([]*types.SavedSearch, error) {
+func (s *SavedSearchStore) ListSavedSearchesByOrgID(ctx context.Context, orgID int32) ([]*types.SavedSearch, error) {
+	s.ensureStore()
+
 	var savedSearches []*types.SavedSearch
 	conds := sqlf.Sprintf("WHERE org_id=%d", orgID)
 	query := sqlf.Sprintf(`SELECT
@@ -204,7 +250,7 @@ func (s *savedSearches) ListSavedSearchesByOrgID(ctx context.Context, orgID int3
 		slack_webhook_url
 		FROM saved_searches %v`, conds)
 
-	rows, err := dbconn.Global.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	rows, err := s.Query(ctx, query)
 	if err != nil {
 		return nil, errors.Wrap(err, "QueryContext")
 	}
@@ -225,10 +271,11 @@ func (s *savedSearches) ListSavedSearchesByOrgID(ctx context.Context, orgID int3
 // 🚨 SECURITY: This method does NOT verify the user's identity or that the
 // user is an admin. It is the callers responsibility to ensure the user has
 // proper permissions to create the saved search.
-func (s *savedSearches) Create(ctx context.Context, newSavedSearch *types.SavedSearch) (savedQuery *types.SavedSearch, err error) {
+func (s *SavedSearchStore) Create(ctx context.Context, newSavedSearch *types.SavedSearch) (savedQuery *types.SavedSearch, err error) {
 	if Mocks.SavedSearches.Create != nil {
 		return Mocks.SavedSearches.Create(ctx, newSavedSearch)
 	}
+	s.ensureStore()
 
 	if newSavedSearch.ID != 0 {
 		return nil, errors.New("newSavedSearch.ID must be zero")
@@ -249,7 +296,7 @@ func (s *savedSearches) Create(ctx context.Context, newSavedSearch *types.SavedS
 		OrgID:       newSavedSearch.OrgID,
 	}
 
-	err = dbconn.Global.QueryRowContext(ctx, `INSERT INTO saved_searches(
+	err = s.Handle().DB().QueryRowContext(ctx, `INSERT INTO saved_searches(
 			description,
 			query,
 			notify_owner,
@@ -275,10 +322,11 @@ func (s *savedSearches) Create(ctx context.Context, newSavedSearch *types.SavedS
 // 🚨 SECURITY: This method does NOT verify the user's identity or that the
 // user is an admin. It is the callers responsibility to ensure the user has
 // proper permissions to perform the update.
-func (s *savedSearches) Update(ctx context.Context, savedSearch *types.SavedSearch) (savedQuery *types.SavedSearch, err error) {
+func (s *SavedSearchStore) Update(ctx context.Context, savedSearch *types.SavedSearch) (savedQuery *types.SavedSearch, err error) {
 	if Mocks.SavedSearches.Update != nil {
 		return Mocks.SavedSearches.Update(ctx, savedSearch)
 	}
+	s.ensureStore()
 
 	tr, ctx := trace.New(ctx, "db.SavedSearches.Update", "")
 	defer func() {
@@ -308,7 +356,7 @@ func (s *savedSearches) Update(ctx context.Context, savedSearch *types.SavedSear
 	}
 
 	updateQuery := sqlf.Sprintf(`UPDATE saved_searches SET %s WHERE ID=%v RETURNING id`, sqlf.Join(fieldUpdates, ", "), savedSearch.ID)
-	if err := dbconn.Global.QueryRowContext(ctx, updateQuery.Query(sqlf.PostgresBindVar), updateQuery.Args()...).Scan(&savedQuery.ID); err != nil {
+	if err := s.QueryRow(ctx, updateQuery).Scan(&savedQuery.ID); err != nil {
 		return nil, err
 	}
 	return savedQuery, nil
@@ -319,19 +367,17 @@ func (s *savedSearches) Update(ctx context.Context, savedSearch *types.SavedSear
 // 🚨 SECURITY: This method does NOT verify the user's identity or that the
 // user is an admin. It is the callers responsibility to ensure the user has
 // proper permissions to perform the delete.
-func (s *savedSearches) Delete(ctx context.Context, id int32) (err error) {
+func (s *SavedSearchStore) Delete(ctx context.Context, id int32) (err error) {
 	if Mocks.SavedSearches.Delete != nil {
 		return Mocks.SavedSearches.Delete(ctx, id)
 	}
+	s.ensureStore()
 
 	tr, ctx := trace.New(ctx, "db.SavedSearches.Delete", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	_, err = dbconn.Global.ExecContext(ctx, `DELETE FROM saved_searches WHERE ID=$1`, id)
-	if err != nil {
-		return err
-	}
-	return nil
+	_, err = s.Handle().DB().ExecContext(ctx, `DELETE FROM saved_searches WHERE ID=$1`, id)
+	return err
 }
