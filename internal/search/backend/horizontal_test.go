@@ -114,7 +114,7 @@ func TestHorizontalSearcher(t *testing.T) {
 	searcher.Close()
 }
 
-func TestHorizontalSearcherError(t *testing.T) {
+func TestDoStreamSearch(t *testing.T) {
 	var endpoints atomicMap
 	endpoints.Store(prefixMap{"1"})
 
