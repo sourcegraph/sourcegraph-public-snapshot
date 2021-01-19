@@ -453,6 +453,7 @@ export const initNewExtensionAPI = (
         updateContext,
         registerContributions: entryToRegister => proxy(addWithRollback(state.contributionEntries, entryToRegister)),
         getContributions: (scope, extraContext) =>
+            // TODO(tj): memoize access from mainthread
             proxySubscribable(
                 combineLatest([
                     state.contributionEntries.pipe(

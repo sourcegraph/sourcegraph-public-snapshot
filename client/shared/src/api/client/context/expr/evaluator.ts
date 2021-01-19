@@ -6,9 +6,6 @@ import { ExpressionNode, Parser, TemplateParser } from './parser'
  * A parsed context expression (that can evaluate to anything)
  */
 export class Expression<T> {
-    // TODO(tj): need to call exec on ext host side, but proxying
-    // Expressions isn't ideal. manually call exec on root expression nodes
-
     constructor(private root: ExpressionNode) {}
 
     public exec<C>(context: Context<C>): T {

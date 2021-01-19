@@ -117,6 +117,8 @@ export interface FlatExtensionHostAPI {
     /**
      * Register contributions and return an unsubscribable that deregisters the contributions.
      * Any expressions in the contributions need to be already parsed for fast re-evaluation.
+     *
+     * TODO(tj): client apps should register RAW contributions! parse on ext host and update description
      */
     registerContributions: (entryToRegister: ContributionsEntry) => sourcegraph.Unsubscribable & ProxyMarked
 

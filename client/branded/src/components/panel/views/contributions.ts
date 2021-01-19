@@ -10,6 +10,7 @@ export function registerPanelToolbarContributions(
     return syncSubscription(
         extensionHostAPI.then(extensionHostAPI =>
             extensionHostAPI.registerContributions({
+                // TODO(tj): parse on host side instead
                 contributions: parseContributionExpressions({
                     actions: [
                         {

@@ -14,6 +14,7 @@ export function registerSearchStatsContributions({
     const ACTION_ID = 'search.stats'
     subscriptions.add(
         extensionsController.services.contribution.registerContributions({
+            // TODO(tj): parse on host side instead
             contributions: parseContributionExpressions({
                 actions: [
                     {
