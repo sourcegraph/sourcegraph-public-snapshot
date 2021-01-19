@@ -239,6 +239,32 @@ func (r *changesetResolver) Title(ctx context.Context) (*string, error) {
 	return &desc.Title, nil
 }
 
+func (r *changesetResolver) Author() (*graphqlbackend.PersonResolver, error) {
+	if r.changeset.IsImporting() {
+		return nil, nil
+	}
+
+	if !r.changeset.Published() {
+		return nil, nil
+	}
+
+	name, err := r.changeset.AuthorName()
+	if err != nil {
+		return nil, err
+	}
+	email, err := r.changeset.AuthorEmail()
+	if err != nil {
+		return nil, err
+	}
+
+	return graphqlbackend.NewPersonResolver(
+		name,
+		email,
+		// Try to find the corresponding Sourcegraph user.
+		true,
+	), nil
+}
+
 func (r *changesetResolver) Body(ctx context.Context) (*string, error) {
 	if r.changeset.IsImporting() {
 		return nil, nil

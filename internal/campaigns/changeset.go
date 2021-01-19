@@ -347,6 +347,34 @@ func (c *Changeset) Title() (string, error) {
 	}
 }
 
+// AuthorName of the Changeset.
+func (c *Changeset) AuthorName() (string, error) {
+	switch m := c.Metadata.(type) {
+	case *github.PullRequest:
+		return m.Author.Login, nil
+	case *bitbucketserver.PullRequest:
+		return m.Author.User.Name, nil
+	case *gitlab.MergeRequest:
+		return m.Author.Username, nil
+	default:
+		return "", errors.New("unknown changeset type")
+	}
+}
+
+// AuthorEmail of the Changeset.
+func (c *Changeset) AuthorEmail() (string, error) {
+	switch m := c.Metadata.(type) {
+	case *github.PullRequest:
+		return m.Author.Email, nil
+	case *bitbucketserver.PullRequest:
+		return m.Author.User.EmailAddress, nil
+	case *gitlab.MergeRequest:
+		return m.Author.Email, nil
+	default:
+		return "", errors.New("unknown changeset type")
+	}
+}
+
 // ExternalCreatedAt is when the Changeset was created on the codehost. When it
 // cannot be determined when the changeset was created, a zero-value timestamp
 // is returned.

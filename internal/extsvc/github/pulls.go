@@ -11,6 +11,7 @@ import (
 	"github.com/Masterminds/semver"
 	"github.com/pkg/errors"
 	"github.com/segmentio/fasthash/fnv1"
+
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -25,6 +26,8 @@ type Actor struct {
 	AvatarURL string
 	Login     string
 	URL       string
+	// Email is only set if the actor is a user.
+	Email string
 }
 
 // A Team represents a team on Github.
@@ -990,6 +993,9 @@ fragment actor on Actor {
   avatarUrl
   login
   url
+  ... on User {
+    email
+  }
 }
 
 fragment label on Label {
