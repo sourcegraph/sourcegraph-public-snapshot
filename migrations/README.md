@@ -4,13 +4,15 @@ The children of this directory contain migrations for each Postgres database ins
 
 - `frontend` is the main database (things should go here unless there is a good reason)
 - `codeintel` is a database containing only processed LSIF data (which can become extremely large)
+- `codeinsights` is a TimescaleDB database, containing only Code Insights time series data.
 
 The migration path for each database instance is the same and is described below. Each of the database instances described here are deployed separately, but are designed to be _overlayable_ to reduce friction during development. That is, we assume that the names in each database do not overlap so that the same connection parameters can be used for both database instances. Each database also has a uniquely named schema versions table:
 
-| database    | schema version table name     |
-| ----------- | ----------------------------- |
-| `frontend`  | `schema_migrations`           |
-| `codeintel` | `codeintel_schema_migrations` |
+| database       | schema version table name        |
+| -------------- | -------------------------------- |
+| `frontend`     | `schema_migrations`              |
+| `codeintel`    | `codeintel_schema_migrations`    |
+| `codeinsights` | `codeinsights_schema_migrations` |
 
 Migrations are handled by the [migrate](https://github.com/golang-migrate/migrate/tree/master/cmd/migrate#installation) tool. Migrations get applied automatically at application startup. The CLI tool can also be used to manually test migrations.
 
@@ -81,6 +83,12 @@ Running down migrations in a rollback **should NOT** be necessary if all migrati
 
   ```
   kubectl exec $(kubectl get pod -l app=pgsql-codeintel -o jsonpath='{.items[0].metadata.name}') -- psql -U sg -c 'SELECT * FROM codeintel_schema_migrations'
+  ```
+
+  **codeinsights database**:
+
+  ```
+  kubectl exec $(kubectl get pod -l app=codeinsights-db -o jsonpath='{.items[0].metadata.name}') -- psql -U sg -c 'SELECT * FROM codeinsights_schema_migrations'
   ```
 
   For each dirty database, follow the steps in the _Dirty schema_ section below.
