@@ -126,3 +126,5 @@ WHERE metadata @> '{"languages": ["Go"]}'
 ORDER BY time
 DESC LIMIT 100;
 ```
+
+See https://www.postgresql.org/docs/9.6/functions-json.html for more operator possibilities. Only ?, ?&, ?|, and @> operators are indexed (gin index)
