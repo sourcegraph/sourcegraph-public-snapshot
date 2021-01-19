@@ -6,7 +6,7 @@ var (
 	DefaultRepos     = &defaultRepos{}
 	Repos            = &RepoStore{}
 	Phabricator      = &phabricator{}
-	QueryRunnerState = &queryRunnerState{}
+	QueryRunnerState = &QueryRunnerStateStore{}
 	Namespaces       = &namespaces{}
 	Orgs             = &orgs{}
 	OrgMembers       = &orgMembers{}
