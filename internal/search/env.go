@@ -8,7 +8,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/google/zoekt"
 	"github.com/google/zoekt/query"
 	"github.com/google/zoekt/rpc"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -43,11 +42,11 @@ func SearcherURLs() *endpoint.Map {
 
 func Indexed() *backend.Zoekt {
 	indexedSearchOnce.Do(func() {
-		dial := func(endpoint string) zoekt.Searcher {
-			return backend.NewMeteredSearcher(endpoint, rpc.Client(endpoint))
+		dial := func(endpoint string) backend.StreamSearcher {
+			return backend.NewMeteredSearcher(endpoint, &backend.StreamSearchAdapter{rpc.Client(endpoint)})
 		}
 
-		var client zoekt.Searcher
+		var client backend.StreamSearcher
 		if indexers := Indexers(); indexers.Enabled() {
 			client = backend.NewMeteredSearcher(
 				"", // no hostname means its the aggregator

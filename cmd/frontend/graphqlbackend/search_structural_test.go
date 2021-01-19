@@ -11,7 +11,6 @@ import (
 	"github.com/google/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
-	searchzoekt "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
@@ -79,7 +78,7 @@ func TestStructuralSearchRepoFilter(t *testing.T) {
 	}}
 
 	z := &searchbackend.Zoekt{
-		Client: &searchzoekt.FakeSearcher{
+		Client: &searchbackend.FakeSearcher{
 			Repos:  []*zoekt.RepoListEntry{zoektRepo},
 			Result: &zoekt.SearchResult{Files: zoektFileMatches},
 		},
