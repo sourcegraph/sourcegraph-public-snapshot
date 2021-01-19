@@ -86,7 +86,7 @@ func connectToFrontend(queueStore *apiclient.Client) bool {
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
-	signals := make(chan os.Signal, 2)
+	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGHUP, syscall.SIGINT)
 	defer signal.Stop(signals)
 
