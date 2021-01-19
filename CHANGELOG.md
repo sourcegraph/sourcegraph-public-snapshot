@@ -27,7 +27,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
--
+- Removed the `search.migrateParser` setting. As of 3.20 and onward, a new parser processes search queries by default. Previously, `search.migrateParser` was available to enable the legacy parser. Enabling/disabling this setting now no longer has any effect. [#17344](https://github.com/sourcegraph/sourcegraph/pull/17344)
 
 ## 3.24.0
 
