@@ -261,6 +261,14 @@ type searchResolver struct {
 	searcherURLs *endpoint.Map
 }
 
+// SearchEvent is an event on a search stream. It contains fields which can be
+// aggregated up into a final result.
+type SearchEvent struct {
+	Results []SearchResultResolver
+	Stats   streaming.Stats
+	Error   error
+}
+
 // SetResultChannel will send all results down c.
 //
 // This is how our streaming and our batch interface co-exist. When this is
