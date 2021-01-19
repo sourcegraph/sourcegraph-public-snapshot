@@ -9,7 +9,7 @@ var (
 	QueryRunnerState = &queryRunnerState{}
 	Namespaces       = &namespaces{}
 	Orgs             = &OrgStore{}
-	OrgMembers       = &orgMembers{}
+	OrgMembers       = &OrgMemberStore{}
 	SavedSearches    = &savedSearches{}
 	Settings         = &settings{}
 	Users            = &UserStore{}
