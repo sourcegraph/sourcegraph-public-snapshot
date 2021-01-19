@@ -5,7 +5,7 @@ var (
 	ExternalServices = &ExternalServiceStore{}
 	DefaultRepos     = &DefaultRepoStore{}
 	Repos            = &RepoStore{}
-	Phabricator      = &phabricator{}
+	Phabricator      = &PhabricatorStore{}
 	QueryRunnerState = &QueryRunnerStateStore{}
 	Namespaces       = &namespaces{}
 	Orgs             = &OrgStore{}

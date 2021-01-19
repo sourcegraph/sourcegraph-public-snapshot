@@ -4,18 +4,55 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"sync"
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-type phabricator struct{}
+type PhabricatorStore struct {
+	*basestore.Store
+
+	once sync.Once
+}
+
+// NewPhabricatorStoreWithDB instantiates and returns a new PhabricatorStore with prepared statements.
+func NewPhabricatorStoreWithDB(db dbutil.DB) *PhabricatorStore {
+	return &PhabricatorStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+}
+
+// NewPhabricatorStoreWithDB instantiates and returns a new PhabricatorStore using the other store handle.
+func NewPhabricatorStoreWith(other basestore.ShareableStore) *PhabricatorStore {
+	return &PhabricatorStore{Store: basestore.NewWithHandle(other.Handle())}
+}
+
+func (s *PhabricatorStore) With(other basestore.ShareableStore) *PhabricatorStore {
+	return &PhabricatorStore{Store: s.Store.With(other)}
+}
+
+func (s *PhabricatorStore) Transact(ctx context.Context) (*PhabricatorStore, error) {
+	txBase, err := s.Store.Transact(ctx)
+	return &PhabricatorStore{Store: txBase}, err
+}
+
+// ensureStore instantiates a basestore.Store if necessary, using the dbconn.Global handle.
+// This function ensures access to dbconn happens after the rest of the code or tests have
+// initialized it.
+func (s *PhabricatorStore) ensureStore() {
+	s.once.Do(func() {
+		if s.Store == nil {
+			s.Store = basestore.NewWithDB(dbconn.Global, sql.TxOptions{})
+		}
+	})
+}
 
 type errPhabricatorRepoNotFound struct {
 	args []interface{}
@@ -27,13 +64,15 @@ func (err errPhabricatorRepoNotFound) Error() string {
 
 func (err errPhabricatorRepoNotFound) NotFound() bool { return true }
 
-func (*phabricator) Create(ctx context.Context, callsign string, name api.RepoName, phabURL string) (*types.PhabricatorRepo, error) {
+func (p *PhabricatorStore) Create(ctx context.Context, callsign string, name api.RepoName, phabURL string) (*types.PhabricatorRepo, error) {
+	p.ensureStore()
+
 	r := &types.PhabricatorRepo{
 		Callsign: callsign,
 		Name:     name,
 		URL:      phabURL,
 	}
-	err := dbconn.Global.QueryRowContext(
+	err := p.Handle().DB().QueryRowContext(
 		ctx,
 		"INSERT INTO phabricator_repos(callsign, repo_name, url) VALUES($1, $2, $3) RETURNING id",
 		r.Callsign, r.Name, r.URL).Scan(&r.ID)
@@ -43,13 +82,15 @@ func (*phabricator) Create(ctx context.Context, callsign string, name api.RepoNa
 	return r, nil
 }
 
-func (p *phabricator) CreateOrUpdate(ctx context.Context, callsign string, name api.RepoName, phabURL string) (*types.PhabricatorRepo, error) {
+func (p *PhabricatorStore) CreateOrUpdate(ctx context.Context, callsign string, name api.RepoName, phabURL string) (*types.PhabricatorRepo, error) {
+	p.ensureStore()
+
 	r := &types.PhabricatorRepo{
 		Callsign: callsign,
 		Name:     name,
 		URL:      phabURL,
 	}
-	err := dbconn.Global.QueryRowContext(
+	err := p.Handle().DB().QueryRowContext(
 		ctx,
 		"UPDATE phabricator_repos SET callsign=$1, url=$2, updated_at=now() WHERE repo_name=$3 RETURNING id",
 		r.Callsign, r.URL, r.Name).Scan(&r.ID)
@@ -62,7 +103,7 @@ func (p *phabricator) CreateOrUpdate(ctx context.Context, callsign string, name 
 	return r, nil
 }
 
-func (p *phabricator) CreateIfNotExists(ctx context.Context, callsign string, name api.RepoName, phabURL string) (*types.PhabricatorRepo, error) {
+func (p *PhabricatorStore) CreateIfNotExists(ctx context.Context, callsign string, name api.RepoName, phabURL string) (*types.PhabricatorRepo, error) {
 	repo, err := p.GetByName(ctx, name)
 	if err != nil {
 		if _, ok := err.(errPhabricatorRepoNotFound); !ok {
@@ -73,8 +114,10 @@ func (p *phabricator) CreateIfNotExists(ctx context.Context, callsign string, na
 	return repo, nil
 }
 
-func (*phabricator) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.PhabricatorRepo, error) {
-	rows, err := dbconn.Global.QueryContext(ctx, "SELECT id, callsign, repo_name, url FROM phabricator_repos "+query, args...)
+func (p *PhabricatorStore) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.PhabricatorRepo, error) {
+	p.ensureStore()
+
+	rows, err := p.Handle().DB().QueryContext(ctx, "SELECT id, callsign, repo_name, url FROM phabricator_repos "+query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +138,7 @@ func (*phabricator) getBySQL(ctx context.Context, query string, args ...interfac
 	return repos, nil
 }
 
-func (p *phabricator) getOneBySQL(ctx context.Context, query string, args ...interface{}) (*types.PhabricatorRepo, error) {
+func (p *PhabricatorStore) getOneBySQL(ctx context.Context, query string, args ...interface{}) (*types.PhabricatorRepo, error) {
 	rows, err := p.getBySQL(ctx, query, args...)
 	if err != nil {
 		return nil, err
@@ -106,10 +149,11 @@ func (p *phabricator) getOneBySQL(ctx context.Context, query string, args ...int
 	return rows[0], nil
 }
 
-func (p *phabricator) GetByName(ctx context.Context, name api.RepoName) (*types.PhabricatorRepo, error) {
+func (p *PhabricatorStore) GetByName(ctx context.Context, name api.RepoName) (*types.PhabricatorRepo, error) {
 	if Mocks.Phabricator.GetByName != nil {
 		return Mocks.Phabricator.GetByName(name)
 	}
+	p.ensureStore()
 
 	opt := ExternalServicesListOptions{
 		Kinds: []string{extsvc.KindPhabricator},
