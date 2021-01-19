@@ -128,3 +128,20 @@ DESC LIMIT 100;
 ```
 
 See https://www.postgresql.org/docs/9.6/functions-json.html for more operator possibilities. Only ?, ?&, ?|, and @> operators are indexed (gin index)
+
+### Get average/min/max value every 1h for
+
+```
+SELECT
+    value,
+    time_bucket(INTERVAL '1 hour', time) AS bucket,
+    AVG(value),
+    MAX(value),
+    MIN(value)
+FROM gauge_events
+GROUP BY value, bucket;
+```
+
+Note: This is not optimized, we can use materialized views to do continuous aggregation.
+
+See https://docs.timescale.com/latest/using-timescaledb/continuous-aggregates
