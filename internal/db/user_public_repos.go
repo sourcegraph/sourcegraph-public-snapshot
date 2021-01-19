@@ -37,6 +37,5 @@ func (s *UserPublicRepoStore) ensureStore() {
 
 func (s *UserPublicRepoStore) SetUserRepo(ctx context.Context, userID int32, repoID api.RepoID) error {
 	s.ensureStore()
-	_, err := s.store.Query(ctx, sqlf.Sprintf("INSERT INTO user_public_repos(user_id, repo_id) VALUES %v %v", userID, repoID))
-	return err
+	return s.store.Exec(ctx, sqlf.Sprintf("INSERT INTO user_public_repos(user_id, repo_id) VALUES %v %v", userID, repoID))
 }
