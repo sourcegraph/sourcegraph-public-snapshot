@@ -150,9 +150,6 @@ func (m *OrgMemberStore) getBySQL(ctx context.Context, query string, args ...int
 
 // CreateMembershipInOrgsForAllUsers causes *ALL* users to become members of every org in the
 // orgNames list.
-//
-// The provided dbh is used as the DB handle to execute the query. It may be either a global
-// DB handle or a transaction. If nil, the global DB handle is used.
 func (m *OrgMemberStore) CreateMembershipInOrgsForAllUsers(ctx context.Context, orgNames []string) error {
 	if len(orgNames) == 0 {
 		return nil
