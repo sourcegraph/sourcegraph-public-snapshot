@@ -1,0 +1,24 @@
+.hover-overlay--gerrit {
+    background-color: white;
+    border: 1px solid rgba(0, 0, 0, 0.125);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.hover-overlay-mount__gerrit {
+    // Styles for the overlay mount
+}
+
+.hover-overlay__close-button {
+    border: none;
+    background-color: transparent;
+}
+
+.hover-overlay__action {
+    color: rgb(42, 102, 217);
+    padding: 6px;
+}
+
+.hover-overlay__action svg {
+    height: 16px;
+    width: 16px;
+}

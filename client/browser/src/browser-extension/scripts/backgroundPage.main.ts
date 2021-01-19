@@ -203,6 +203,7 @@ async function main(): Promise<void> {
             )
         ) {
             // Inject content script whenever a new tab was opened with a URL for which we have permission
+            console.debug('Injecting conrent scripts:', origin, changeInfo.status, tabId, changeInfo)
             await browser.tabs.executeScript(tabId, { file: 'js/inject.bundle.js', runAt: 'document_end' })
         }
     })

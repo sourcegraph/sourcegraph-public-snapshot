@@ -87,6 +87,7 @@ import { bitbucketServerCodeHost } from '../bitbucket/codeHost'
 import { githubCodeHost } from '../github/codeHost'
 import { gitlabCodeHost } from '../gitlab/codeHost'
 import { phabricatorCodeHost } from '../phabricator/codeHost'
+import { gerritCodeHost } from '../gerrit/codeHost'
 import { CodeView, trackCodeViews, fetchFileContentForDiffOrFileInfo } from './codeViews'
 import { ContentView, handleContentViews } from './contentViews'
 import { applyDecorations, initializeExtensions, renderCommandPalette, renderGlobalDebug } from './extensions'
@@ -142,7 +143,7 @@ export type MountGetter = (container: HTMLElement) => HTMLElement | null
  */
 export type CodeHostContext = RawRepoSpec & Partial<RevisionSpec> & { privateRepository: boolean }
 
-export type CodeHostType = 'github' | 'phabricator' | 'bitbucket-server' | 'gitlab'
+export type CodeHostType = 'github' | 'phabricator' | 'bitbucket-server' | 'gitlab' | 'gerrit'
 
 /** Information for adding code intelligence to code views on arbitrary code hosts. */
 export interface CodeHost extends ApplyLinkPreviewOptions {
@@ -436,6 +437,7 @@ function initCodeIntelligence({
             this.state = hoverifier.hoverState
             this.subscription.add(
                 hoverifier.hoverStateUpdates.subscribe(update => {
+                    console.log('Sourcegraph: hoverStateUpdates update.hoverOverlayProps', update.hoverOverlayProps)
                     this.setState(update)
                 })
             )
@@ -870,7 +872,7 @@ export function handleCodeHost({
             codeViewEvent.subscriptions.add(() => console.log('Code view removed'))
 
             const { element, diffOrBlobInfo, getPositionAdjuster, getToolbarMount, toolbarButtonProps } = codeViewEvent
-
+            console.log({ diffOrBlobInfo })
             const initializeModelAndViewerForFileInfo = (
                 fileInfo: FileInfoWithContent & FileInfoWithRepoName
             ): CodeEditorWithPartialModel => {
@@ -1082,7 +1084,13 @@ export function handleCodeHost({
 
 const SHOW_DEBUG = (): boolean => localStorage.getItem('debug') !== null
 
-const CODE_HOSTS: CodeHost[] = [bitbucketServerCodeHost, githubCodeHost, gitlabCodeHost, phabricatorCodeHost]
+const CODE_HOSTS: CodeHost[] = [
+    bitbucketServerCodeHost,
+    githubCodeHost,
+    gitlabCodeHost,
+    phabricatorCodeHost,
+    gerritCodeHost,
+]
 export const determineCodeHost = (): CodeHost | undefined => CODE_HOSTS.find(codeHost => codeHost.check())
 
 export function injectCodeIntelligenceToCodeHost(
