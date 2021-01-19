@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -9,6 +10,9 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
+	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -33,12 +37,48 @@ func (c *cachedRepos) Repos() ([]*types.RepoName, bool) {
 	return append([]*types.RepoName{}, c.repos...), time.Since(c.fetched) > defaultReposMaxAge
 }
 
-type defaultRepos struct {
+type DefaultRepoStore struct {
+	*basestore.Store
+
 	cache atomic.Value
-	mu    sync.Mutex
+	once  sync.Once
+
+	mu sync.Mutex
 }
 
-func (s *defaultRepos) List(ctx context.Context) (results []*types.RepoName, err error) {
+// NewDefaultRepoStoreWithDB instantiates and returns a new DefaultRepoStore with prepared statements.
+func NewDefaultRepoStoreWithDB(db dbutil.DB) *DefaultRepoStore {
+	return &DefaultRepoStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+}
+
+// NewDefaultRepoStoreWithDB instantiates and returns a new DefaultRepoStore using the other store handle.
+func NewDefaultRepoStoreWith(other basestore.ShareableStore) *DefaultRepoStore {
+	return &DefaultRepoStore{Store: basestore.NewWithHandle(other.Handle())}
+}
+
+func (s *DefaultRepoStore) With(other basestore.ShareableStore) *DefaultRepoStore {
+	return &DefaultRepoStore{Store: s.Store.With(other)}
+}
+
+func (s *DefaultRepoStore) Transact(ctx context.Context) (*DefaultRepoStore, error) {
+	txBase, err := s.Store.Transact(ctx)
+	return &DefaultRepoStore{Store: txBase}, err
+}
+
+// ensureStore instantiates a basestore.Store if necessary, using the dbconn.Global handle.
+// This function ensures access to dbconn happens after the rest of the code or tests have
+// initialized it.
+func (s *DefaultRepoStore) ensureStore() {
+	s.once.Do(func() {
+		if s.Store == nil {
+			s.Store = basestore.NewWithDB(dbconn.Global, sql.TxOptions{})
+		}
+	})
+}
+
+func (s *DefaultRepoStore) List(ctx context.Context) (results []*types.RepoName, err error) {
+	s.ensureStore()
+
 	cached, _ := s.cache.Load().(*cachedRepos)
 	repos, needsUpdate := cached.Repos()
 	if !needsUpdate {
@@ -63,7 +103,7 @@ func (s *defaultRepos) List(ctx context.Context) (results []*types.RepoName, err
 	return repos, nil
 }
 
-func (s *defaultRepos) refreshCache(ctx context.Context) ([]*types.RepoName, error) {
+func (s *DefaultRepoStore) refreshCache(ctx context.Context) ([]*types.RepoName, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -74,7 +114,7 @@ func (s *defaultRepos) refreshCache(ctx context.Context) ([]*types.RepoName, err
 		return repos, nil
 	}
 
-	repos, err := Repos.ListAllDefaultRepos(ctx)
+	repos, err := Repos.With(s).ListAllDefaultRepos(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "querying for default repos")
 	}
@@ -88,6 +128,6 @@ func (s *defaultRepos) refreshCache(ctx context.Context) ([]*types.RepoName, err
 	return repos, nil
 }
 
-func (s *defaultRepos) resetCache() {
+func (s *DefaultRepoStore) resetCache() {
 	s.cache.Store(&cachedRepos{})
 }

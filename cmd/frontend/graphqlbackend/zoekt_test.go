@@ -19,7 +19,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
-	searchzoekt "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
@@ -28,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -68,7 +68,7 @@ func TestIndexedSearch(t *testing.T) {
 		wantMatchURLs      []string
 		wantMatchInputRevs []string
 		wantUnindexed      []*search.RepositoryRevisions
-		wantCommon         SearchResultsCommon
+		wantCommon         streaming.Stats
 		wantErr            bool
 	}{
 		{
@@ -80,7 +80,7 @@ func TestIndexedSearch(t *testing.T) {
 				useFullDeadline: false,
 				since:           func(time.Time) time.Duration { return time.Second - time.Millisecond },
 			},
-			wantCommon: SearchResultsCommon{
+			wantCommon: streaming.Stats{
 				Status: mkStatusMap(map[string]search.RepoStatus{
 					"foo/bar":    search.RepoStatusSearched | search.RepoStatusIndexed,
 					"foo/foobar": search.RepoStatusSearched | search.RepoStatusIndexed,
@@ -97,7 +97,7 @@ func TestIndexedSearch(t *testing.T) {
 				useFullDeadline: false,
 				since:           func(time.Time) time.Duration { return time.Minute },
 			},
-			wantCommon: SearchResultsCommon{
+			wantCommon: streaming.Stats{
 				Status: mkStatusMap(map[string]search.RepoStatus{
 					"foo/bar":    search.RepoStatusIndexed | search.RepoStatusTimedout,
 					"foo/foobar": search.RepoStatusIndexed | search.RepoStatusTimedout,
@@ -113,7 +113,7 @@ func TestIndexedSearch(t *testing.T) {
 				useFullDeadline: true,
 				since:           func(time.Time) time.Duration { return 0 },
 			},
-			wantCommon: SearchResultsCommon{
+			wantCommon: streaming.Stats{
 				Status: mkStatusMap(map[string]search.RepoStatus{
 					"foo/bar":    search.RepoStatusIndexed | search.RepoStatusTimedout,
 					"foo/foobar": search.RepoStatusIndexed | search.RepoStatusTimedout,
@@ -174,7 +174,7 @@ func TestIndexedSearch(t *testing.T) {
 				"",
 				"",
 			},
-			wantCommon: SearchResultsCommon{
+			wantCommon: streaming.Stats{
 				Status: mkStatusMap(map[string]search.RepoStatus{
 					"foo/bar":    search.RepoStatusSearched | search.RepoStatusIndexed,
 					"foo/foobar": search.RepoStatusSearched | search.RepoStatusIndexed,
@@ -204,7 +204,7 @@ func TestIndexedSearch(t *testing.T) {
 				},
 				since: func(time.Time) time.Duration { return 0 },
 			},
-			wantCommon: SearchResultsCommon{
+			wantCommon: streaming.Stats{
 				Status: mkStatusMap(map[string]search.RepoStatus{
 					"foo/bar": search.RepoStatusSearched | search.RepoStatusIndexed,
 				}),
@@ -239,7 +239,7 @@ func TestIndexedSearch(t *testing.T) {
 					},
 				},
 			},
-			wantCommon: SearchResultsCommon{
+			wantCommon: streaming.Stats{
 				Status: mkStatusMap(map[string]search.RepoStatus{
 					"foo/bar": search.RepoStatusSearched | search.RepoStatusIndexed,
 				}),
@@ -293,7 +293,7 @@ func TestIndexedSearch(t *testing.T) {
 				RepoPromise:     (&search.Promise{}).Resolve(tt.args.repos),
 				UseFullDeadline: tt.args.useFullDeadline,
 				Zoekt: &searchbackend.Zoekt{
-					Client: &searchzoekt.FakeSearcher{
+					Client: &searchbackend.FakeSearcher{
 						Result: &zoekt.SearchResult{Files: tt.args.results},
 						Repos:  zoektRepos,
 					},
@@ -316,7 +316,7 @@ func TestIndexedSearch(t *testing.T) {
 			// Once we return more than one event we have to account for the proper order of results
 			// in the tests.
 			var (
-				gotCommon SearchResultsCommon
+				gotCommon streaming.Stats
 				gotFm     []*FileMatchResolver
 			)
 			for event := range indexed.Search(tt.args.ctx) {
@@ -324,7 +324,7 @@ func TestIndexedSearch(t *testing.T) {
 					t.Errorf("zoektSearchHEAD() error = %v, wantErr = %v", err, tt.wantErr)
 					return
 				}
-				gotCommon.update(&event.common)
+				gotCommon.Update(&event.common)
 				gotFm = append(gotFm, event.results...)
 			}
 
@@ -710,7 +710,7 @@ func BenchmarkSearchResults(b *testing.B) {
 	zoektFileMatches := generateZoektMatches(50)
 
 	z := &searchbackend.Zoekt{
-		Client: &searchzoekt.FakeSearcher{
+		Client: &searchbackend.FakeSearcher{
 			Repos:  zoektRepos,
 			Result: &zoekt.SearchResult{Files: zoektFileMatches},
 		},
@@ -760,13 +760,13 @@ func BenchmarkIntegrationSearchResults(b *testing.B) {
 	_, repos, zoektRepos := generateRepos(5000)
 	zoektFileMatches := generateZoektMatches(50)
 
-	zoektClient, cleanup := zoektRPC(&searchzoekt.FakeSearcher{
+	zoektClient, cleanup := zoektRPC(&searchbackend.FakeSearcher{
 		Repos:  zoektRepos,
 		Result: &zoekt.SearchResult{Files: zoektFileMatches},
 	})
 	defer cleanup()
 	z := &searchbackend.Zoekt{
-		Client:       zoektClient,
+		Client:       &searchbackend.StreamSearchAdapter{zoektClient},
 		DisableCache: true,
 	}
 

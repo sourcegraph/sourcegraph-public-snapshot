@@ -3,11 +3,14 @@ package db
 import (
 	"context"
 	"database/sql"
-
-	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"sync"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/pkg/errors"
+
+	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
 // A Namespace is a username or an organization name. No user may have a username that is equal to
@@ -28,7 +31,41 @@ var (
 	ErrNamespaceNotFound    = errors.New("namespace not found")
 )
 
-type namespaces struct{}
+type NamespaceStore struct {
+	*basestore.Store
+
+	once sync.Once
+}
+
+// NewNamespaceStoreWithDB instantiates and returns a new NamespaceStore with prepared statements.
+func NewNamespaceStoreWithDB(db dbutil.DB) *NamespaceStore {
+	return &NamespaceStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+}
+
+// NewNamespaceStoreWithDB instantiates and returns a new NamespaceStore using the other store handle.
+func NewNamespaceStoreWith(other basestore.ShareableStore) *NamespaceStore {
+	return &NamespaceStore{Store: basestore.NewWithHandle(other.Handle())}
+}
+
+func (s *NamespaceStore) With(other basestore.ShareableStore) *NamespaceStore {
+	return &NamespaceStore{Store: s.Store.With(other)}
+}
+
+func (s *NamespaceStore) Transact(ctx context.Context) (*NamespaceStore, error) {
+	txBase, err := s.Store.Transact(ctx)
+	return &NamespaceStore{Store: txBase}, err
+}
+
+// ensureStore instantiates a basestore.Store if necessary, using the dbconn.Global handle.
+// This function ensures access to dbconn happens after the rest of the code or tests have
+// initialized it.
+func (s *NamespaceStore) ensureStore() {
+	s.once.Do(func() {
+		if s.Store == nil {
+			s.Store = basestore.NewWithDB(dbconn.Global, sql.TxOptions{})
+		}
+	})
+}
 
 // GetByID looks up the namespace by an ID.
 //
@@ -37,7 +74,7 @@ type namespaces struct{}
 // returned; if neither are given, ErrNamespaceNoID is returned.
 //
 // If no namespace is found, ErrNamespaceNotFound is returned.
-func (*namespaces) GetByID(
+func (s *NamespaceStore) GetByID(
 	ctx context.Context,
 	orgID, userID int32,
 ) (*Namespace, error) {
@@ -57,7 +94,7 @@ func (*namespaces) GetByID(
 	}
 
 	var n Namespace
-	if err := getNamespace(ctx, &n, preds); err != nil {
+	if err := s.getNamespace(ctx, &n, preds); err != nil {
 		return nil, err
 	}
 	return &n, nil
@@ -68,7 +105,7 @@ func (*namespaces) GetByID(
 // organization names.
 //
 // If no namespace is found, ErrNamespaceNotFound is returned.
-func (*namespaces) GetByName(
+func (s *NamespaceStore) GetByName(
 	ctx context.Context,
 	name string,
 ) (*Namespace, error) {
@@ -77,7 +114,7 @@ func (*namespaces) GetByName(
 	}
 
 	var n Namespace
-	if err := getNamespace(ctx, &n, []*sqlf.Query{
+	if err := s.getNamespace(ctx, &n, []*sqlf.Query{
 		sqlf.Sprintf("name = %s", name),
 	}); err != nil {
 		return nil, err
@@ -85,12 +122,13 @@ func (*namespaces) GetByName(
 	return &n, nil
 }
 
-func getNamespace(ctx context.Context, n *Namespace, preds []*sqlf.Query) error {
+func (s *NamespaceStore) getNamespace(ctx context.Context, n *Namespace, preds []*sqlf.Query) error {
+	s.ensureStore()
+
 	q := getNamespaceQuery(preds)
-	err := dbconn.Global.QueryRowContext(
+	err := s.QueryRow(
 		ctx,
-		q.Query(sqlf.PostgresBindVar),
-		q.Args()...,
+		q,
 	).Scan(&n.Name, &n.User, &n.Organization)
 
 	if err == sql.ErrNoRows {

@@ -339,50 +339,6 @@ func makeFindClosestDumpConditions(path string, rootMustEnclosePath bool, indexe
 	return conds
 }
 
-// SoftDeleteOldDumps marks dumps older than the given age that are not visible at the tip of the default branch
-// as deleted. The associated repositories will be marked as dirty so that their commit graphs are updated in the
-// background.
-func (s *Store) SoftDeleteOldDumps(ctx context.Context, maxAge time.Duration, now time.Time) (count int, err error) {
-	ctx, endObservation := s.operations.softDeleteOldDumps.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("maxAge", maxAge.String()),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	tx, err := s.transact(ctx)
-	if err != nil {
-		return 0, err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	repositoryIDs, err := scanCounts(tx.Store.Query(ctx, sqlf.Sprintf(softDeleteOldDumpsQuery, now, maxAge/time.Second)))
-	if err != nil {
-		return 0, err
-	}
-
-	for repositoryID, numUpdated := range repositoryIDs {
-		if err := tx.MarkRepositoryAsDirty(ctx, repositoryID); err != nil {
-			return 0, err
-		}
-
-		count += numUpdated
-	}
-
-	return count, nil
-}
-
-const softDeleteOldDumpsQuery = `
--- source: enterprise/internal/codeintel/stores/dbstore/dumps.go:SoftDeleteOldDumps
-WITH u AS (
-	UPDATE lsif_uploads u
-		SET state = 'deleted'
-		WHERE
-			%s - u.finished_at > (%s || ' second')::interval AND
-			u.id NOT IN (SELECT uv.upload_id FROM lsif_uploads_visible_at_tip uv WHERE uv.repository_id = u.repository_id)
-		RETURNING id, repository_id
-)
-SELECT u.repository_id, count(*) FROM u GROUP BY u.repository_id
-`
-
 // DeleteOverlapapingDumps deletes all completed uploads for the given repository with the same
 // commit, root, and indexer. This is necessary to perform during conversions before changing
 // the state of a processing upload to completed as there is a unique index on these four columns.

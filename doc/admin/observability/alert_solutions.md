@@ -1181,35 +1181,6 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 <br />
 
-## frontend: container_restarts
-
-<p class="subtitle">container restarts (cloud)</p>
-
-**Descriptions:**
-
-- <span class="badge badge-warning">warning</span> frontend: 1+ container restarts
-- <span class="badge badge-critical">critical</span> frontend: 1+ container restarts for 10m0s
-
-**Possible solutions:**
-
-- **Kubernetes:**
-	- Determine if the pod was OOM killed using `kubectl describe pod (frontend|sourcegraph-frontend)` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p (frontend|sourcegraph-frontend)`.
-- **Docker Compose:**
-	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' (frontend|sourcegraph-frontend)` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the (frontend|sourcegraph-frontend) container in `docker-compose.yml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs (frontend|sourcegraph-frontend)` (note this will include logs from the previous and currently running container).
-- **Refer to the [dashboards reference](./dashboards.md#frontend-container-restarts)** for more help interpreting this alert and metric.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_frontend_container_restarts",
-  "critical_frontend_container_restarts"
-]
-```
-
-<br />
-
 ## frontend: provisioning_container_cpu_usage_long_term
 
 <p class="subtitle">container cpu usage total (90th percentile over 1d) across all cores by instance (cloud)</p>
@@ -1524,33 +1495,6 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 <br />
 
-## gitserver: container_restarts
-
-<p class="subtitle">container restarts (cloud)</p>
-
-**Descriptions:**
-
-- <span class="badge badge-warning">warning</span> gitserver: 1+ container restarts for 10m0s
-
-**Possible solutions:**
-
-- **Kubernetes:**
-	- Determine if the pod was OOM killed using `kubectl describe pod gitserver` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p gitserver`.
-- **Docker Compose:**
-	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' gitserver` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the gitserver container in `docker-compose.yml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs gitserver` (note this will include logs from the previous and currently running container).
-- **Refer to the [dashboards reference](./dashboards.md#gitserver-container-restarts)** for more help interpreting this alert and metric.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_gitserver_container_restarts"
-]
-```
-
-<br />
-
 ## gitserver: provisioning_container_cpu_usage_long_term
 
 <p class="subtitle">container cpu usage total (90th percentile over 1d) across all cores by instance (cloud)</p>
@@ -1717,35 +1661,6 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ```json
 "observability.silenceAlerts": [
   "warning_github-proxy_container_memory_usage"
-]
-```
-
-<br />
-
-## github-proxy: container_restarts
-
-<p class="subtitle">container restarts (cloud)</p>
-
-**Descriptions:**
-
-- <span class="badge badge-warning">warning</span> github-proxy: 1+ container restarts
-- <span class="badge badge-critical">critical</span> github-proxy: 1+ container restarts for 10m0s
-
-**Possible solutions:**
-
-- **Kubernetes:**
-	- Determine if the pod was OOM killed using `kubectl describe pod github-proxy` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p github-proxy`.
-- **Docker Compose:**
-	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' github-proxy` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the github-proxy container in `docker-compose.yml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs github-proxy` (note this will include logs from the previous and currently running container).
-- **Refer to the [dashboards reference](./dashboards.md#github-proxy-container-restarts)** for more help interpreting this alert and metric.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_github-proxy_container_restarts",
-  "critical_github-proxy_container_restarts"
 ]
 ```
 
@@ -2446,35 +2361,6 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 <br />
 
-## precise-code-intel-worker: container_restarts
-
-<p class="subtitle">container restarts (code-intel)</p>
-
-**Descriptions:**
-
-- <span class="badge badge-warning">warning</span> precise-code-intel-worker: 1+ container restarts
-- <span class="badge badge-critical">critical</span> precise-code-intel-worker: 1+ container restarts for 10m0s
-
-**Possible solutions:**
-
-- **Kubernetes:**
-	- Determine if the pod was OOM killed using `kubectl describe pod precise-code-intel-worker` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p precise-code-intel-worker`.
-- **Docker Compose:**
-	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' precise-code-intel-worker` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the precise-code-intel-worker container in `docker-compose.yml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs precise-code-intel-worker` (note this will include logs from the previous and currently running container).
-- **Refer to the [dashboards reference](./dashboards.md#precise-code-intel-worker-container-restarts)** for more help interpreting this alert and metric.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_container_restarts",
-  "critical_precise-code-intel-worker_container_restarts"
-]
-```
-
-<br />
-
 ## precise-code-intel-worker: provisioning_container_cpu_usage_long_term
 
 <p class="subtitle">container cpu usage total (90th percentile over 1d) across all cores by instance (code-intel)</p>
@@ -2690,35 +2576,6 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ```json
 "observability.silenceAlerts": [
   "warning_query-runner_container_cpu_usage"
-]
-```
-
-<br />
-
-## query-runner: container_restarts
-
-<p class="subtitle">container restarts (search)</p>
-
-**Descriptions:**
-
-- <span class="badge badge-warning">warning</span> query-runner: 1+ container restarts
-- <span class="badge badge-critical">critical</span> query-runner: 1+ container restarts for 10m0s
-
-**Possible solutions:**
-
-- **Kubernetes:**
-	- Determine if the pod was OOM killed using `kubectl describe pod query-runner` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p query-runner`.
-- **Docker Compose:**
-	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' query-runner` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the query-runner container in `docker-compose.yml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs query-runner` (note this will include logs from the previous and currently running container).
-- **Refer to the [dashboards reference](./dashboards.md#query-runner-container-restarts)** for more help interpreting this alert and metric.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_query-runner_container_restarts",
-  "critical_query-runner_container_restarts"
 ]
 ```
 
@@ -3569,35 +3426,6 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
-## repo-updater: container_restarts
-
-<p class="subtitle">container restarts (cloud)</p>
-
-**Descriptions:**
-
-- <span class="badge badge-warning">warning</span> repo-updater: 1+ container restarts
-- <span class="badge badge-critical">critical</span> repo-updater: 1+ container restarts for 10m0s
-
-**Possible solutions:**
-
-- **Kubernetes:**
-	- Determine if the pod was OOM killed using `kubectl describe pod repo-updater` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p repo-updater`.
-- **Docker Compose:**
-	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' repo-updater` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the repo-updater container in `docker-compose.yml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs repo-updater` (note this will include logs from the previous and currently running container).
-- **Refer to the [dashboards reference](./dashboards.md#repo-updater-container-restarts)** for more help interpreting this alert and metric.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_repo-updater_container_restarts",
-  "critical_repo-updater_container_restarts"
-]
-```
-
-<br />
-
 ## repo-updater: provisioning_container_cpu_usage_long_term
 
 <p class="subtitle">container cpu usage total (90th percentile over 1d) across all cores by instance (cloud)</p>
@@ -3853,35 +3681,6 @@ with your code hosts connections or networking issues affecting communication wi
 ```json
 "observability.silenceAlerts": [
   "warning_searcher_container_memory_usage"
-]
-```
-
-<br />
-
-## searcher: container_restarts
-
-<p class="subtitle">container restarts (search)</p>
-
-**Descriptions:**
-
-- <span class="badge badge-warning">warning</span> searcher: 1+ container restarts
-- <span class="badge badge-critical">critical</span> searcher: 1+ container restarts for 10m0s
-
-**Possible solutions:**
-
-- **Kubernetes:**
-	- Determine if the pod was OOM killed using `kubectl describe pod searcher` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p searcher`.
-- **Docker Compose:**
-	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' searcher` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the searcher container in `docker-compose.yml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs searcher` (note this will include logs from the previous and currently running container).
-- **Refer to the [dashboards reference](./dashboards.md#searcher-container-restarts)** for more help interpreting this alert and metric.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_searcher_container_restarts",
-  "critical_searcher_container_restarts"
 ]
 ```
 
@@ -4147,35 +3946,6 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
-## symbols: container_restarts
-
-<p class="subtitle">container restarts (code-intel)</p>
-
-**Descriptions:**
-
-- <span class="badge badge-warning">warning</span> symbols: 1+ container restarts
-- <span class="badge badge-critical">critical</span> symbols: 1+ container restarts for 10m0s
-
-**Possible solutions:**
-
-- **Kubernetes:**
-	- Determine if the pod was OOM killed using `kubectl describe pod symbols` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p symbols`.
-- **Docker Compose:**
-	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' symbols` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the symbols container in `docker-compose.yml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs symbols` (note this will include logs from the previous and currently running container).
-- **Refer to the [dashboards reference](./dashboards.md#symbols-container-restarts)** for more help interpreting this alert and metric.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_symbols_container_restarts",
-  "critical_symbols_container_restarts"
-]
-```
-
-<br />
-
 ## symbols: provisioning_container_cpu_usage_long_term
 
 <p class="subtitle">container cpu usage total (90th percentile over 1d) across all cores by instance (code-intel)</p>
@@ -4369,35 +4139,6 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
-## syntect-server: container_restarts
-
-<p class="subtitle">container restarts (cloud)</p>
-
-**Descriptions:**
-
-- <span class="badge badge-warning">warning</span> syntect-server: 1+ container restarts
-- <span class="badge badge-critical">critical</span> syntect-server: 1+ container restarts for 10m0s
-
-**Possible solutions:**
-
-- **Kubernetes:**
-	- Determine if the pod was OOM killed using `kubectl describe pod syntect-server` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p syntect-server`.
-- **Docker Compose:**
-	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' syntect-server` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the syntect-server container in `docker-compose.yml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs syntect-server` (note this will include logs from the previous and currently running container).
-- **Refer to the [dashboards reference](./dashboards.md#syntect-server-container-restarts)** for more help interpreting this alert and metric.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_syntect-server_container_restarts",
-  "critical_syntect-server_container_restarts"
-]
-```
-
-<br />
-
 ## syntect-server: provisioning_container_cpu_usage_long_term
 
 <p class="subtitle">container cpu usage total (90th percentile over 1d) across all cores by instance (cloud)</p>
@@ -4572,33 +4313,6 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
-## zoekt-indexserver: container_restarts
-
-<p class="subtitle">container restarts (search)</p>
-
-**Descriptions:**
-
-- <span class="badge badge-warning">warning</span> zoekt-indexserver: 1+ container restarts for 10m0s
-
-**Possible solutions:**
-
-- **Kubernetes:**
-	- Determine if the pod was OOM killed using `kubectl describe pod zoekt-indexserver` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p zoekt-indexserver`.
-- **Docker Compose:**
-	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' zoekt-indexserver` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the zoekt-indexserver container in `docker-compose.yml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs zoekt-indexserver` (note this will include logs from the previous and currently running container).
-- **Refer to the [dashboards reference](./dashboards.md#zoekt-indexserver-container-restarts)** for more help interpreting this alert and metric.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_zoekt-indexserver_container_restarts"
-]
-```
-
-<br />
-
 ## zoekt-indexserver: provisioning_container_cpu_usage_long_term
 
 <p class="subtitle">container cpu usage total (90th percentile over 1d) across all cores by instance (search)</p>
@@ -4766,33 +4480,6 @@ with your code hosts connections or networking issues affecting communication wi
 ```json
 "observability.silenceAlerts": [
   "warning_zoekt-webserver_container_memory_usage"
-]
-```
-
-<br />
-
-## zoekt-webserver: container_restarts
-
-<p class="subtitle">container restarts (search)</p>
-
-**Descriptions:**
-
-- <span class="badge badge-warning">warning</span> zoekt-webserver: 1+ container restarts for 10m0s
-
-**Possible solutions:**
-
-- **Kubernetes:**
-	- Determine if the pod was OOM killed using `kubectl describe pod zoekt-webserver` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p zoekt-webserver`.
-- **Docker Compose:**
-	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' zoekt-webserver` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the zoekt-webserver container in `docker-compose.yml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs zoekt-webserver` (note this will include logs from the previous and currently running container).
-- **Refer to the [dashboards reference](./dashboards.md#zoekt-webserver-container-restarts)** for more help interpreting this alert and metric.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_zoekt-webserver_container_restarts"
 ]
 ```
 
@@ -5081,35 +4768,6 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
-## prometheus: container_restarts
-
-<p class="subtitle">container restarts (distribution)</p>
-
-**Descriptions:**
-
-- <span class="badge badge-warning">warning</span> prometheus: 1+ container restarts
-- <span class="badge badge-critical">critical</span> prometheus: 1+ container restarts for 10m0s
-
-**Possible solutions:**
-
-- **Kubernetes:**
-	- Determine if the pod was OOM killed using `kubectl describe pod prometheus` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p prometheus`.
-- **Docker Compose:**
-	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' prometheus` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the prometheus container in `docker-compose.yml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs prometheus` (note this will include logs from the previous and currently running container).
-- **Refer to the [dashboards reference](./dashboards.md#prometheus-container-restarts)** for more help interpreting this alert and metric.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_prometheus_container_restarts",
-  "critical_prometheus_container_restarts"
-]
-```
-
-<br />
-
 ## prometheus: provisioning_container_cpu_usage_long_term
 
 <p class="subtitle">container cpu usage total (90th percentile over 1d) across all cores by instance (distribution)</p>
@@ -5384,35 +5042,6 @@ with your code hosts connections or networking issues affecting communication wi
 ```json
 "observability.silenceAlerts": [
   "warning_executor-queue_container_memory_usage"
-]
-```
-
-<br />
-
-## executor-queue: container_restarts
-
-<p class="subtitle">container restarts (code-intel)</p>
-
-**Descriptions:**
-
-- <span class="badge badge-warning">warning</span> executor-queue: 1+ container restarts
-- <span class="badge badge-critical">critical</span> executor-queue: 1+ container restarts for 10m0s
-
-**Possible solutions:**
-
-- **Kubernetes:**
-	- Determine if the pod was OOM killed using `kubectl describe pod executor-queue` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p executor-queue`.
-- **Docker Compose:**
-	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' executor-queue` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the executor-queue container in `docker-compose.yml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs executor-queue` (note this will include logs from the previous and currently running container).
-- **Refer to the [dashboards reference](./dashboards.md#executor-queue-container-restarts)** for more help interpreting this alert and metric.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_executor-queue_container_restarts",
-  "critical_executor-queue_container_restarts"
 ]
 ```
 
@@ -5726,35 +5355,6 @@ with your code hosts connections or networking issues affecting communication wi
 ```json
 "observability.silenceAlerts": [
   "warning_precise-code-intel-indexer_container_memory_usage"
-]
-```
-
-<br />
-
-## precise-code-intel-indexer: container_restarts
-
-<p class="subtitle">container restarts (code-intel)</p>
-
-**Descriptions:**
-
-- <span class="badge badge-warning">warning</span> precise-code-intel-indexer: 1+ container restarts
-- <span class="badge badge-critical">critical</span> precise-code-intel-indexer: 1+ container restarts for 10m0s
-
-**Possible solutions:**
-
-- **Kubernetes:**
-	- Determine if the pod was OOM killed using `kubectl describe pod precise-code-intel-worker` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p precise-code-intel-worker`.
-- **Docker Compose:**
-	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' precise-code-intel-worker` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the precise-code-intel-worker container in `docker-compose.yml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs precise-code-intel-worker` (note this will include logs from the previous and currently running container).
-- **Refer to the [dashboards reference](./dashboards.md#precise-code-intel-indexer-container-restarts)** for more help interpreting this alert and metric.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-indexer_container_restarts",
-  "critical_precise-code-intel-indexer_container_restarts"
 ]
 ```
 

@@ -38,12 +38,18 @@ func (o Observable) Observable() monitoring.Observable { return monitoring.Obser
 // WithWarning overrides this Observable's warning-level alert with the given alert.
 func (o Observable) WithWarning(a *monitoring.ObservableAlertDefinition) Observable {
 	o.Warning = a
+	if a != nil {
+		o.NoAlert = false
+	}
 	return o
 }
 
 // WithCritical overrides this Observable's critical-level alert with the given alert.
 func (o Observable) WithCritical(a *monitoring.ObservableAlertDefinition) Observable {
 	o.Critical = a
+	if a != nil {
+		o.NoAlert = false
+	}
 	return o
 }
 

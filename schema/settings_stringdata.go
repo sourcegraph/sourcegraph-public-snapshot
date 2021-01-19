@@ -312,7 +312,7 @@ const SettingsSchemaJSON = `{
       }
     },
     "search.migrateParser": {
-      "description": "If false, disables the new and/or-compatible parser for all search queries. It is a flag to aid transition to the new parser.",
+      "description": "REMOVED. Previously, a flag to enable and/or-expressions in queries as an aid transition to new language features in versions <= 3.24.0.",
       "type": "boolean",
       "default": true,
       "!go": {

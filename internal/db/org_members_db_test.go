@@ -79,13 +79,13 @@ func TestOrgMembers_CreateMembershipInOrgsForAllUsers(t *testing.T) {
 	}
 
 	// Try twice; it should be idempotent.
-	if err := OrgMembers.CreateMembershipInOrgsForAllUsers(ctx, nil, []string{"org1", "org3"}); err != nil {
+	if err := OrgMembers.CreateMembershipInOrgsForAllUsers(ctx, []string{"org1", "org3"}); err != nil {
 		t.Fatal(err)
 	}
 	if err := check(); err != nil {
 		t.Fatal(err)
 	}
-	if err := OrgMembers.CreateMembershipInOrgsForAllUsers(ctx, nil, []string{"org1", "org3"}); err != nil {
+	if err := OrgMembers.CreateMembershipInOrgsForAllUsers(ctx, []string{"org1", "org3"}); err != nil {
 		t.Fatal(err)
 	}
 	if err := check(); err != nil {
@@ -93,7 +93,7 @@ func TestOrgMembers_CreateMembershipInOrgsForAllUsers(t *testing.T) {
 	}
 
 	// Passing an org that does not exist should not be an error.
-	if err := OrgMembers.CreateMembershipInOrgsForAllUsers(ctx, nil, []string{"doesntexist"}); err != nil {
+	if err := OrgMembers.CreateMembershipInOrgsForAllUsers(ctx, []string{"doesntexist"}); err != nil {
 		t.Fatal(err)
 	}
 	if err := check(); err != nil {
@@ -101,7 +101,7 @@ func TestOrgMembers_CreateMembershipInOrgsForAllUsers(t *testing.T) {
 	}
 
 	// An empty list shouldn't be an error.
-	if err := OrgMembers.CreateMembershipInOrgsForAllUsers(ctx, nil, []string{}); err != nil {
+	if err := OrgMembers.CreateMembershipInOrgsForAllUsers(ctx, []string{}); err != nil {
 		t.Fatal(err)
 	}
 	if err := check(); err != nil {

@@ -1,8 +1,6 @@
 package definitions
 
 import (
-	"time"
-
 	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
@@ -39,14 +37,7 @@ func ZoektIndexServer() *monitoring.Container {
 						shared.ContainerMemoryUsage("zoekt-indexserver", monitoring.ObservableOwnerSearch).Observable(),
 					},
 					{
-						// indexed-search does not have 0-downtime deploy, so deploys can
-						// cause extended container restarts. still seta warning alert for
-						// extended periods of container restarts, since this might still
-						// indicate a problem.
-						shared.ContainerRestarts("zoekt-indexserver", monitoring.ObservableOwnerSearch).
-							WithWarning(monitoring.Alert().Greater(1).For(10 * time.Minute)).
-							WithCritical(nil).
-							Observable(),
+						shared.ContainerMissing("zoekt-indexserver", monitoring.ObservableOwnerSearch).Observable(),
 						shared.ContainerIOUsage("zoekt-indexserver", monitoring.ObservableOwnerSearch).Observable(),
 					},
 				},

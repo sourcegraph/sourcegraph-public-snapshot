@@ -10,6 +10,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/hashicorp/go-multierror"
 	"github.com/kylelemons/godebug/pretty"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -1137,6 +1138,32 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			}
 			`,
 			assert: equals("<nil>"),
+		},
+		{
+			kind:   extsvc.KindPerforce,
+			desc:   "without p4.port, p4.user, p4.passwd",
+			config: `{}`,
+			assert: includes(
+				`p4.port is required`,
+				`p4.user is required`,
+				`p4.passwd is required`,
+			),
+		},
+		{
+			kind: extsvc.KindPerforce,
+			desc: "invalid depot path",
+			config: `
+			{
+				"p4.port": "ssl:111.222.333.444:1666",
+				"p4.user": "admin",
+				"p4.passwd": "<secure password>",
+				"depots": ["//abc", "abc/", "//abc/"]
+			}
+`,
+			assert: includes(
+				`depots.0: Does not match pattern '^\/[\/\w]+/$'`,
+				`depots.1: Does not match pattern '^\/[\/\w]+/$'`,
+			),
 		},
 		{
 			kind:   extsvc.KindPhabricator,

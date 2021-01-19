@@ -20,7 +20,7 @@ func TestHorizontalSearcher(t *testing.T) {
 
 	searcher := &HorizontalSearcher{
 		Map: &endpoints,
-		Dial: func(endpoint string) zoekt.Searcher {
+		Dial: func(endpoint string) StreamSearcher {
 			var rle zoekt.RepoListEntry
 			rle.Repository.Name = endpoint
 			client := &mockSearcher{
@@ -33,7 +33,7 @@ func TestHorizontalSearcher(t *testing.T) {
 				listResult: &zoekt.RepoList{Repos: []*zoekt.RepoListEntry{&rle}},
 			}
 			// Return metered searcher to test that codepath
-			return NewMeteredSearcher(endpoint, client)
+			return NewMeteredSearcher(endpoint, &StreamSearchAdapter{client})
 		},
 	}
 	defer searcher.Close()
@@ -130,7 +130,7 @@ func TestSyncSearchers(t *testing.T) {
 	dialNumCounter := 0
 	searcher := &HorizontalSearcher{
 		Map: &endpoints,
-		Dial: func(endpoint string) zoekt.Searcher {
+		Dial: func(endpoint string) StreamSearcher {
 			dialNumCounter++
 			return &mock{
 				dialNum: dialNumCounter,
@@ -317,6 +317,10 @@ func (s *mockSearcher) Search(context.Context, query.Q, *zoekt.SearchOptions) (*
 		res = &sr
 	}
 	return res, s.searchError
+}
+
+func (s *mockSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions) <-chan StreamSearchEvent {
+	return (&StreamSearchAdapter{s}).StreamSearch(ctx, q, opts)
 }
 
 func (s *mockSearcher) List(context.Context, query.Q) (*zoekt.RepoList, error) {
