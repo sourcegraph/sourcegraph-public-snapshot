@@ -518,7 +518,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 <LoaderButton
                     loading={fetchingRepos.loading}
                     className="btn btn-primary test-goto-add-external-service-page mr-2"
-                    spinnerClassName="user-settings-repos__spinner"
                     alwaysShowLabel={true}
                     type="submit"
                     label={
