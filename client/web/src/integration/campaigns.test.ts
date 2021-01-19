@@ -589,6 +589,10 @@ describe('Campaigns', () => {
                                             titleChanged: false,
                                             baseRefChanged: false,
                                             diffChanged: false,
+                                            bodyChanged: false,
+                                            authorEmailChanged: false,
+                                            authorNameChanged: false,
+                                            commitMessageChanged: false,
                                         },
                                         targets: {
                                             __typename: 'VisibleApplyPreviewTargetsAttach',

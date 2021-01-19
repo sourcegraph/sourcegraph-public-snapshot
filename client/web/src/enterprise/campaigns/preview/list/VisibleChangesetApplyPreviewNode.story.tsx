@@ -67,6 +67,10 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
             titleChanged: false,
             baseRefChanged: false,
             diffChanged: false,
+            bodyChanged: false,
+            authorEmailChanged: false,
+            authorNameChanged: false,
+            commitMessageChanged: false,
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsAttach',
@@ -89,6 +93,10 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
             titleChanged: false,
             baseRefChanged: false,
             diffChanged: false,
+            bodyChanged: false,
+            authorEmailChanged: false,
+            authorNameChanged: false,
+            commitMessageChanged: false,
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsAttach',
@@ -102,6 +110,10 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
             titleChanged: false,
             baseRefChanged: false,
             diffChanged: false,
+            bodyChanged: false,
+            authorEmailChanged: false,
+            authorNameChanged: false,
+            commitMessageChanged: false,
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsAttach',
@@ -115,6 +127,10 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
             titleChanged: false,
             baseRefChanged: false,
             diffChanged: false,
+            bodyChanged: false,
+            authorEmailChanged: false,
+            authorNameChanged: false,
+            commitMessageChanged: false,
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsAttach',
@@ -128,6 +144,10 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
             titleChanged: true,
             baseRefChanged: false,
             diffChanged: false,
+            bodyChanged: false,
+            authorEmailChanged: false,
+            authorNameChanged: false,
+            commitMessageChanged: false,
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsUpdate',
@@ -142,6 +162,52 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
                         baseRef: 'main',
                     },
                 },
+                author: {
+                    displayName: 'Alice',
+                    email: 'alice@email.test',
+                    user: {
+                        displayName: 'Alice',
+                        url: '/users/alice',
+                        username: 'alice',
+                    },
+                },
+            },
+        },
+    },
+    'Update changeset body': {
+        __typename: 'VisibleChangesetApplyPreview',
+        operations: [ChangesetSpecOperation.UPDATE],
+        delta: {
+            titleChanged: false,
+            baseRefChanged: false,
+            diffChanged: false,
+            bodyChanged: true,
+            authorEmailChanged: false,
+            authorNameChanged: false,
+            commitMessageChanged: false,
+        },
+        targets: {
+            __typename: 'VisibleApplyPreviewTargetsUpdate',
+            changesetSpec: baseChangesetSpec(true),
+            changeset: {
+                id: '123123',
+                title: 'the old title',
+                state: ChangesetState.OPEN,
+                currentSpec: {
+                    description: {
+                        __typename: 'GitBranchChangesetDescription',
+                        baseRef: 'main',
+                    },
+                },
+                author: {
+                    displayName: 'Alice',
+                    email: 'alice@email.test',
+                    user: {
+                        displayName: 'Alice',
+                        url: '/users/alice',
+                        username: 'alice',
+                    },
+                },
             },
         },
     },
@@ -152,6 +218,10 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
             titleChanged: false,
             baseRefChanged: false,
             diffChanged: false,
+            bodyChanged: false,
+            authorEmailChanged: false,
+            authorNameChanged: false,
+            commitMessageChanged: false,
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsUpdate',
@@ -166,6 +236,15 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
                         baseRef: 'main',
                     },
                 },
+                author: {
+                    displayName: 'Alice',
+                    email: 'alice@email.test',
+                    user: {
+                        displayName: 'Alice',
+                        url: '/users/alice',
+                        username: 'alice',
+                    },
+                },
             },
         },
     },
@@ -176,6 +255,10 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
             titleChanged: false,
             baseRefChanged: false,
             diffChanged: false,
+            bodyChanged: false,
+            authorEmailChanged: false,
+            authorNameChanged: false,
+            commitMessageChanged: false,
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsUpdate',
@@ -190,6 +273,15 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
                         baseRef: 'main',
                     },
                 },
+                author: {
+                    displayName: 'Alice',
+                    email: 'alice@email.test',
+                    user: {
+                        displayName: 'Alice',
+                        url: '/users/alice',
+                        username: 'alice',
+                    },
+                },
             },
         },
     },
@@ -200,6 +292,10 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
             titleChanged: false,
             baseRefChanged: false,
             diffChanged: false,
+            bodyChanged: false,
+            authorEmailChanged: false,
+            authorNameChanged: false,
+            commitMessageChanged: false,
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsDetach',
@@ -223,6 +319,10 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
             titleChanged: false,
             baseRefChanged: false,
             diffChanged: false,
+            bodyChanged: false,
+            authorEmailChanged: false,
+            authorNameChanged: false,
+            commitMessageChanged: false,
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsDetach',
@@ -246,6 +346,10 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
             titleChanged: false,
             baseRefChanged: true,
             diffChanged: false,
+            bodyChanged: false,
+            authorEmailChanged: false,
+            authorNameChanged: false,
+            commitMessageChanged: false,
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsUpdate',
@@ -260,6 +364,15 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
                         baseRef: 'main',
                     },
                 },
+                author: {
+                    displayName: 'Alice',
+                    email: 'alice@email.test',
+                    user: {
+                        displayName: 'Alice',
+                        url: '/users/alice',
+                        username: 'alice',
+                    },
+                },
             },
         },
     },
@@ -270,6 +383,10 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
             titleChanged: false,
             baseRefChanged: false,
             diffChanged: true,
+            bodyChanged: false,
+            authorEmailChanged: false,
+            authorNameChanged: false,
+            commitMessageChanged: false,
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsUpdate',
@@ -282,6 +399,15 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
                     description: {
                         __typename: 'GitBranchChangesetDescription',
                         baseRef: 'master',
+                    },
+                },
+                author: {
+                    displayName: 'Alice',
+                    email: 'alice@email.test',
+                    user: {
+                        displayName: 'Alice',
+                        url: '/users/alice',
+                        username: 'alice',
                     },
                 },
             },
@@ -298,6 +424,12 @@ for (const storyName of Object.keys(visibleChangesetApplyPreviewNodeStories)) {
                 <VisibleChangesetApplyPreviewNode
                     {...props}
                     node={visibleChangesetApplyPreviewNodeStories[storyName]}
+                    authenticatedUser={{
+                        url: '/users/alice',
+                        displayName: 'Alice',
+                        username: 'alice',
+                        email: 'alice@email.test',
+                    }}
                     queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
                 />
             )}

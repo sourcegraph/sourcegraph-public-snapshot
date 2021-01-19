@@ -19,11 +19,14 @@ import { GitBranchChangesetDescriptionInfo } from './GitBranchChangesetDescripti
 import { ChangesetStatusCell } from '../../detail/changesets/ChangesetStatusCell'
 import { PreviewNodeIndicator } from './PreviewNodeIndicator'
 import classNames from 'classnames'
+import { PersonLink } from '../../../../person/PersonLink'
+import { PreviewPageAuthenticatedUser } from '../CampaignPreviewPage'
 
 export interface VisibleChangesetApplyPreviewNodeProps extends ThemeProps {
     node: VisibleChangesetApplyPreviewFields
     history: H.History
     location: H.Location
+    authenticatedUser: PreviewPageAuthenticatedUser
 
     /** Used for testing. **/
     queryChangesetSpecFileDiffs?: typeof _queryChangesetSpecFileDiffs
@@ -36,6 +39,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
     isLightTheme,
     history,
     location,
+    authenticatedUser,
 
     queryChangesetSpecFileDiffs,
     expandChangesetDescriptions = false,
@@ -106,6 +110,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
                             history={history}
                             isLightTheme={isLightTheme}
                             location={location}
+                            authenticatedUser={authenticatedUser}
                             queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
                             expandChangesetDescriptions={expandChangesetDescriptions}
                         />
@@ -123,13 +128,22 @@ const ExpandedSection: React.FunctionComponent<
         node: VisibleChangesetApplyPreviewFields
         history: H.History
         location: H.Location
+        authenticatedUser: PreviewPageAuthenticatedUser
 
         /** Used for testing. **/
         queryChangesetSpecFileDiffs?: typeof _queryChangesetSpecFileDiffs
         /** Expand changeset descriptions, for testing only. **/
         expandChangesetDescriptions?: boolean
     } & ThemeProps
-> = ({ node, history, isLightTheme, location, queryChangesetSpecFileDiffs, expandChangesetDescriptions }) => {
+> = ({
+    node,
+    history,
+    isLightTheme,
+    location,
+    authenticatedUser,
+    queryChangesetSpecFileDiffs,
+    expandChangesetDescriptions,
+}) => {
     const [selectedTab, setSelectedTab] = useState<SelectedTab>('diff')
     const onSelectDiff = useCallback<React.MouseEventHandler>(event => {
         event.preventDefault()
@@ -184,6 +198,11 @@ const ExpandedSection: React.FunctionComponent<
                             className={classNames('nav-link', selectedTab === 'description' && 'active')}
                         >
                             Description
+                            {(node.delta.titleChanged || node.delta.bodyChanged) && (
+                                <span className="text-success ml-2" data-tooltip="Changes in this tab">
+                                    &#11044;
+                                </span>
+                            )}
                         </a>
                     </li>
                     <li className="nav-item">
@@ -194,6 +213,13 @@ const ExpandedSection: React.FunctionComponent<
                         >
                             Commits
                         </a>
+                        {(node.delta.authorEmailChanged ||
+                            node.delta.authorNameChanged ||
+                            node.delta.commitMessageChanged) && (
+                            <span className="text-success ml-2" data-tooltip="Changes in this tab">
+                                &#11044;
+                            </span>
+                        )}
                     </li>
                 </ul>
             </div>
@@ -214,7 +240,29 @@ const ExpandedSection: React.FunctionComponent<
                     />
                 </>
             )}
-            {selectedTab === 'description' && <h2>The description</h2>}
+            {selectedTab === 'description' && (
+                <>
+                    <h3>
+                        {node.targets.changesetSpec.description.title}{' '}
+                        <small>
+                            by{' '}
+                            <PersonLink
+                                person={
+                                    node.targets.__typename === 'VisibleApplyPreviewTargetsUpdate' &&
+                                    node.targets.changeset.author
+                                        ? node.targets.changeset.author
+                                        : {
+                                              email: authenticatedUser.email,
+                                              displayName: authenticatedUser.displayName || authenticatedUser.username,
+                                              user: authenticatedUser,
+                                          }
+                                }
+                            />
+                        </small>
+                    </h3>
+                    <p>{node.targets.changesetSpec.description.body}</p>
+                </>
+            )}
             {selectedTab === 'commits' && (
                 <GitBranchChangesetDescriptionInfo
                     description={node.targets.changesetSpec.description}

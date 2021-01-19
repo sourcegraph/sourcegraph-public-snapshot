@@ -11,6 +11,7 @@ import {
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { requestGraphQL } from '../../../../backend/graphql'
+import { personLinkFieldsFragment } from '../../../../person/PersonLink'
 
 const changesetSpecFieldsFragment = gql`
     fragment CommonChangesetSpecFields on ChangesetSpec {
@@ -131,6 +132,9 @@ const campaignSpecApplyPreviewConnectionFieldsFragment = gql`
             bodyChanged
             baseRefChanged
             diffChanged
+            authorEmailChanged
+            authorNameChanged
+            commitMessageChanged
         }
         targets {
             __typename
@@ -155,6 +159,9 @@ const campaignSpecApplyPreviewConnectionFieldsFragment = gql`
                             }
                         }
                     }
+                    author {
+                        ...PersonLinkFields
+                    }
                 }
             }
             ... on VisibleApplyPreviewTargetsDetach {
@@ -177,6 +184,8 @@ const campaignSpecApplyPreviewConnectionFieldsFragment = gql`
     }
 
     ${changesetSpecFieldsFragment}
+
+    ${personLinkFieldsFragment}
 `
 
 export const queryChangesetApplyPreview = ({

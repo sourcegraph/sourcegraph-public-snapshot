@@ -21,11 +21,13 @@ import { SupersedingCampaignSpecAlert } from '../detail/SupersedingCampaignSpecA
 import { queryChangesetSpecFileDiffs, queryChangesetApplyPreview } from './list/backend'
 import { CampaignPreviewStatsBar } from './CampaignPreviewStatsBar'
 
+export type PreviewPageAuthenticatedUser = Pick<AuthenticatedUser, 'url' | 'displayName' | 'username' | 'email'>
+
 export interface CampaignPreviewPageProps extends ThemeProps, TelemetryProps {
     campaignSpecID: string
     history: H.History
     location: H.Location
-    authenticatedUser: Pick<AuthenticatedUser, 'url'>
+    authenticatedUser: PreviewPageAuthenticatedUser
 
     /** Used for testing. */
     fetchCampaignSpecById?: typeof _fetchCampaignSpecById
@@ -102,6 +104,7 @@ export const CampaignPreviewPage: React.FunctionComponent<CampaignPreviewPagePro
                 campaignSpecID={specID}
                 history={history}
                 location={location}
+                authenticatedUser={authenticatedUser}
                 isLightTheme={isLightTheme}
                 queryChangesetApplyPreview={queryChangesetApplyPreview}
                 queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
