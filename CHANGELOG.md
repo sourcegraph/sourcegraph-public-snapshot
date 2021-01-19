@@ -19,6 +19,12 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Removed
 
+## 3.24.1
+
+### Added
+
+- Internal changes to the `src lsif upload` command. [#430](https://github.com/sourcegraph/src-cli/pull/430)
+
 ## 3.24.0
 
 ### Added
