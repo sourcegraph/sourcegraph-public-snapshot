@@ -253,24 +253,6 @@ func equalKeys(a map[string]StreamSearcher, b map[string]struct{}) bool {
 	return true
 }
 
-// dedupStream runs dedupper over c
-func dedupStream(c <-chan StreamSearchEvent) <-chan StreamSearchEvent {
-	dedupper := dedupper{}
-	c2 := make(chan StreamSearchEvent)
-
-	go func() {
-		defer close(c2)
-		for r := range c {
-			if r.SearchResult != nil {
-				r.SearchResult.Files = dedupper.Dedup(r.SearchResult.Files)
-			}
-			c2 <- r
-		}
-	}()
-
-	return c2
-}
-
 type dedupper map[string]struct{}
 
 // Dedup will in-place filter out matches on Repositories we already have
