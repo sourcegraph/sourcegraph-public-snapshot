@@ -3,7 +3,7 @@ package db
 var (
 	AccessTokens     = &AccessTokenStore{}
 	ExternalServices = &ExternalServiceStore{}
-	DefaultRepos     = &defaultRepos{}
+	DefaultRepos     = &DefaultRepoStore{}
 	Repos            = &RepoStore{}
 	Phabricator      = &phabricator{}
 	QueryRunnerState = &queryRunnerState{}
