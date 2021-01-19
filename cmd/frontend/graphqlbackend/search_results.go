@@ -1957,11 +1957,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		return nil, &badRequestError{err}
 	}
 
-	err = validateRepoHasFileUsage(r.query)
-	if err != nil {
-		return nil, err
-	}
-
 	resultTypes := r.determineResultTypes(args, forceOnlyResultType)
 	tr.LazyPrintf("resultTypes: %v", resultTypes)
 	var (
@@ -2276,15 +2271,6 @@ func orderedFuzzyRegexp(pieces []string) string {
 		return pieces[0]
 	}
 	return "(" + strings.Join(pieces, ").*?(") + ")"
-}
-
-// Validates usage of the `repohasfile` filter
-func validateRepoHasFileUsage(q query.QueryInfo) error {
-	// Query only contains "repohasfile:" and "type:symbol"
-	if len(q.Fields()) == 2 && q.Fields()["repohasfile"] != nil && q.Fields()["type"] != nil && len(q.Fields()["type"]) == 1 && q.Fields()["type"][0].Value() == "symbol" {
-		return errors.New("repohasfile does not currently return symbol results. Support for symbol results is coming soon. Subscribe to https://github.com/sourcegraph/sourcegraph/issues/4610 for updates")
-	}
-	return nil
 }
 
 // logSlowSearchesThreshold returns the minimum duration configured in site

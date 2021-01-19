@@ -157,11 +157,6 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 		return nil, &badRequestError{err}
 	}
 
-	err = validateRepoHasFileUsage(r.query)
-	if err != nil {
-		return nil, err
-	}
-
 	resultTypes := r.determineResultTypes(args, "")
 	tr.LazyPrintf("resultTypes: %v", resultTypes)
 
