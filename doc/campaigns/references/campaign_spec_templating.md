@@ -78,20 +78,20 @@ The following template variables are available in the fields under `steps`.
 
 They are evaluated before the execution of each entry in `steps`, except for the `step.*` variables, which only contain values _after_ the step has executed.
 
-| Template variable | Description |
-| --- | --- |
-| `repository.search_result_paths` | Unique list of file paths relative to the repository root directory in which the search results of the `repositoriesMatchingQuery`s have been found. |
-| `repository.name` | Full name of the repository in which the step is being executed. |
-| `previous_step.modified_files` | List of files that have been modified by the previous step in `steps`. Empty list if no files have been modified. |
-| `previous_step.added_files` | List of files that have been added by the previous step in `steps`. Empty list if no files have been added. |
-| `previous_step.deleted_files` | List of files that have been deleted by the previous step in `steps`. Empty list if no files have been deleted. |
-| `previous_step.stdout` | The complete output of the previous step on standard output. |
-| `previous_step.stderr` | The complete output of the previous step on standard error. |
-| `step.modified_files` | Only in `steps.outputs`: List of files that have been modified by the just-executed step. Empty list if no files have been modified. </br><i><small>Requires Sourcegraph 3.24 and [Sourcegraph CLI](../../cli/index.md) 3.24 or later</small></i>. |
-| `step.added_files` | Only in `steps.outputs`: List of files that have been added by the just-executed step. Empty list if no files have been added. </br><i><small>Requires Sourcegraph 3.24 and [Sourcegraph CLI](../../cli/index.md) 3.24 or later</small></i>. |
-| `step.deleted_files` | Only in `steps.outputs`: List of files that have been deleted by the just-executed step. Empty list if no files have been deleted. </br><i><small>Requires Sourcegraph 3.24 and [Sourcegraph CLI](../../cli/index.md) 3.24 or later</small></i>. |
-| `step.stdout` | Only in `steps.outputs`: The complete output of the just-executed step on standard output.</br><i><small>Requires Sourcegraph 3.24 and [Sourcegraph CLI](../../cli/index.md) 3.24 or later</small></i>. |
-| `step.stderr` | Only in `steps.outputs`: The complete output of the just-executed step on standard error. </br><i><small>Requires Sourcegraph 3.24 and [Sourcegraph CLI](../../cli/index.md) 3.24 or later</small></i>. |
+| Template variable | Type | Description |
+| --- | --- | --- |
+| `repository.search_result_paths` | `list of strings` | Unique list of file paths relative to the repository root directory in which the search results of the `repositoriesMatchingQuery`s have been found. |
+| `repository.name` | `string` | Full name of the repository in which the step is being executed. |
+| `previous_step.modified_files` | `list of strings` | List of files that have been modified by the previous step in `steps`. Empty list if no files have been modified. |
+| `previous_step.added_files` | `list of strings` | List of files that have been added by the previous step in `steps`. Empty list if no files have been added. |
+| `previous_step.deleted_files` | `list of strings` | List of files that have been deleted by the previous step in `steps`. Empty list if no files have been deleted. |
+| `previous_step.stdout` | `string` | The complete output of the previous step on standard output. |
+| `previous_step.stderr` | `string` | The complete output of the previous step on standard error. |
+| `step.modified_files` | `list of strings` | Only in `steps.outputs`: List of files that have been modified by the just-executed step. Empty list if no files have been modified. </br><i><small>Requires Sourcegraph 3.24 and [Sourcegraph CLI](../../cli/index.md) 3.24 or later</small></i>. |
+| `step.added_files` | `list of strings` | Only in `steps.outputs`: List of files that have been added by the just-executed step. Empty list if no files have been added. </br><i><small>Requires Sourcegraph 3.24 and [Sourcegraph CLI](../../cli/index.md) 3.24 or later</small></i>. |
+| `step.deleted_files` | `list of strings` | Only in `steps.outputs`: List of files that have been deleted by the just-executed step. Empty list if no files have been deleted. </br><i><small>Requires Sourcegraph 3.24 and [Sourcegraph CLI](../../cli/index.md) 3.24 or later</small></i>. |
+| `step.stdout` | `string` | Only in `steps.outputs`: The complete output of the just-executed step on standard output.</br><i><small>Requires Sourcegraph 3.24 and [Sourcegraph CLI](../../cli/index.md) 3.24 or later</small></i>. |
+| `step.stderr` | `string` | Only in `steps.outputs`: The complete output of the just-executed step on standard error. </br><i><small>Requires Sourcegraph 3.24 and [Sourcegraph CLI](../../cli/index.md) 3.24 or later</small></i>. |
 
 ### `changesetTemplate` context
 
@@ -101,14 +101,14 @@ The following template variables are available in the fields under `changesetTem
 
 They are evaluated after the execution of all entries in `steps`.
 
-| Template variable | Description |
-| --- | --- |
-| `repository.search_result_paths` | Unique list of file paths relative to the repository root directory in which the search results of the `repositoriesMatchingQuery`s have been found. |
-| `repository.name` | Full name of the repository in which the step is being executed. |
-| `steps.modified_files` | List of files that have been modified by the `steps`. Empty list if no files have been modified. |
-| `steps.added_files` | List of files that have been added by the `steps`. Empty list if no files have been added. |
-| `steps.deleted_files` | List of files that have been deleted by the `steps`. Empty list if no files have been deleted. |
-| `outputs.<name>` | Value of an [`output`](campaign_spec_yaml_reference.md#steps-outputs) set by `steps`. If the [`outputs.<name>.format`](campaign_spec_yaml_reference.md#steps-outputs-format) is `yaml` or `json` and the `value` a data structure (i.e. array, object, ...), then subfields can be accessed too. See "[Examples](#examples)" below. |
+| Template variable | Type | Description |
+| --- | --- | --- |
+| `repository.search_result_paths` | `list of strings` | Unique list of file paths relative to the repository root directory in which the search results of the `repositoriesMatchingQuery`s have been found. |
+| `repository.name` | `string` | Full name of the repository in which the step is being executed. |
+| `steps.modified_files` | `list of strings` | List of files that have been modified by the `steps`. Empty list if no files have been modified. |
+| `steps.added_files` | `list of strings` | List of files that have been added by the `steps`. Empty list if no files have been added. |
+| `steps.deleted_files` | `list of strings` | List of files that have been deleted by the `steps`. Empty list if no files have been deleted. |
+| `outputs.<name>` | depends on `outputs.<name>.format`, default: `string`| Value of an [`output`](campaign_spec_yaml_reference.md#steps-outputs) set by `steps`. If the [`outputs.<name>.format`](campaign_spec_yaml_reference.md#steps-outputs-format) is `yaml` or `json` and the `value` a data structure (i.e. array, object, ...), then subfields can be accessed too. See "[Examples](#examples)" below. |
 
 ## Template helper functions
 
