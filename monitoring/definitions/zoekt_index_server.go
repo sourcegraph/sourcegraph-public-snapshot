@@ -43,7 +43,7 @@ func ZoektIndexServer() *monitoring.Container {
 						// cause extended container restarts. still seta warning alert for
 						// extended periods of container restarts, since this might still
 						// indicate a problem.
-						shared.ContainerRestarts("zoekt-indexserver", monitoring.ObservableOwnerSearch).
+						shared.ContainerMissing("zoekt-indexserver", monitoring.ObservableOwnerSearch).
 							WithWarning(monitoring.Alert().Greater(1).For(10 * time.Minute)).
 							WithCritical(nil).
 							Observable(),

@@ -48,7 +48,7 @@ func Symbols() *monitoring.Container {
 						shared.ContainerMemoryUsage("symbols", monitoring.ObservableOwnerCodeIntel).Observable(),
 					},
 					{
-						shared.ContainerRestarts("symbols", monitoring.ObservableOwnerCodeIntel).Observable(),
+						shared.ContainerMissing("symbols", monitoring.ObservableOwnerCodeIntel).Observable(),
 					},
 				},
 			},

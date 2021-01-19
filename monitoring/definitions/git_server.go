@@ -107,7 +107,7 @@ func GitServer() *monitoring.Container {
 						// cause extended container restarts. still seta warning alert for
 						// extended periods of container restarts, since this might still
 						// indicate a problem.
-						shared.ContainerRestarts("gitserver", monitoring.ObservableOwnerCloud).
+						shared.ContainerMissing("gitserver", monitoring.ObservableOwnerCloud).
 							WithWarning(monitoring.Alert().Greater(1).For(10 * time.Minute)).
 							WithCritical(nil).
 							Observable(),
