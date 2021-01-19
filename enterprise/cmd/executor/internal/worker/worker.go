@@ -60,7 +60,7 @@ func NewWorker(options Options, observationContext *observation.Context) gorouti
 	queueStore := apiclient.New(options.ClientOptions, observationContext)
 	store := &storeShim{queueName: options.QueueName, queueStore: queueStore}
 
-	if !connectToFrontend(queueStore) {
+	if !connectToFrontend(queueStore, options) {
 		os.Exit(1)
 	}
 
@@ -82,7 +82,14 @@ func NewWorker(options Options, observationContext *observation.Context) gorouti
 	}
 }
 
-func connectToFrontend(queueStore *apiclient.Client) bool {
+// connectToFrontend will ping the configured Sourcegraph instance until it receives a 200 response.
+// For the first minute, "connection refused" errors will not be emitted. This is to stop log spam
+// in dev environments where the executor may start up before the frontend. This method returns true
+// after a ping is successful and returns false if a user signal is received.
+func connectToFrontend(queueStore *apiclient.Client, options Options) bool {
+	start := time.Now()
+	log15.Info("Connecting to Sourcegraph instance", "url", options.ClientOptions.EndpointOptions.URL)
+
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
@@ -90,31 +97,30 @@ func connectToFrontend(queueStore *apiclient.Client) bool {
 	signal.Notify(signals, syscall.SIGHUP, syscall.SIGINT)
 	defer signal.Stop(signals)
 
-	log15.Info("Connecting to Sourcegraph instance")
-
-outerLoop:
 	for {
-		select {
-		case <-ticker.C:
-		case <-signals:
-			log15.Error("Signal received while connecting to Sourcegraph")
-			return false
-		}
-
 		err := queueStore.Ping(context.Background(), nil)
 		if err == nil {
 			log15.Info("Connected to Sourcegraph instance")
 			return true
 		}
 
+		quiet := false
 		for ex := err; ex != nil; ex = errors.Unwrap(ex) {
-			if e, ok := ex.(*os.SyscallError); ok {
-				if e.Syscall == "connect" {
-					continue outerLoop
-				}
+			var e *os.SyscallError
+			if errors.As(ex, &e) && e.Syscall == "connect" && time.Since(start) < time.Minute {
+				quiet = true
 			}
 		}
 
-		log15.Error("Failed to connect to Sourcegraph instance", "error", err)
+		if !quiet {
+			log15.Error("Failed to connect to Sourcegraph instance", "error", err)
+		}
+
+		select {
+		case <-ticker.C:
+		case <-signals:
+			log15.Error("Signal received while connecting to Sourcegraph")
+			return false
+		}
 	}
 }
