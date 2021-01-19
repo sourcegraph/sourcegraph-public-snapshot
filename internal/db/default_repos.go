@@ -41,8 +41,9 @@ type DefaultRepoStore struct {
 	*basestore.Store
 
 	cache atomic.Value
-	mu    sync.Mutex
 	once  sync.Once
+
+	mu sync.Mutex
 }
 
 // NewDefaultRepoStoreWithDB instantiates and returns a new DefaultRepoStore with prepared statements.
