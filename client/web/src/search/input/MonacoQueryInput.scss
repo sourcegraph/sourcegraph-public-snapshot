@@ -1,6 +1,7 @@
 .monaco-query-input-container {
     position: relative;
     border: 1px solid $input-border-color;
+    border-right-color: transparent;
     // Match padding from the regular query input.
     padding-left: 0.75rem;
     background-color: var(--input-bg);
@@ -61,7 +62,7 @@
     }
 
     &__toggle-container {
-        padding-right: 0.35rem;
+        padding-right: 0.5rem;
         padding-left: 0.35rem;
     }
 }
