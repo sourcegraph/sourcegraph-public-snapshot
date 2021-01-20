@@ -22,7 +22,7 @@ By default, Sourcegraph uses [zoekt](https://github.com/sourcegraph/zoekt) to cr
 
 Sourcegraph also has a fast search path for code that isn't indexed yet, or for code that will never be indexed (for example: code that is not on a default branch). Indexing every branch of every repository isn't a pragmatic use of resources for most customers, so this decision balances optimizing the common case (searching all default branches) with space savings (not indexing everything).
 
-- [searcher](../../../../cmd/searcher/README.md) implements the non-indexed search.
+- [searcher](https://github.com/sourcegraph/sourcegraph/blob/main/cmd/searcher/README.md) implements the non-indexed search.
 
 Syntax highlighting for any code view, including search results, is provided by [Syntect server](https://sourcegraph.com/github.com/sourcegraph/syntect_server).
 
