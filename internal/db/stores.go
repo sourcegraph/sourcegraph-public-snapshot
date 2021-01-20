@@ -18,7 +18,7 @@ var (
 	UserPublicRepos  = &UserPublicRepoStore{}
 	EventLogs        = &eventLogs{}
 
-	SurveyResponses = &surveyResponses{}
+	SurveyResponses = &SurveyResponseStore{}
 
 	ExternalAccounts = &userExternalAccounts{}
 
