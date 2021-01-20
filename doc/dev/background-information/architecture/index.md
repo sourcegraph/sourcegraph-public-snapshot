@@ -64,8 +64,8 @@ If you want to learn more about campaigns:
 ## Code insights
 
 Code insights surface higher-level, aggregated information to leaders in engineering organizations in dashboards.
-For example, code insights can track the number of matches of a search query over time, the number of code intelligence diagnostic warnings in a code base, usage of different programming languages or even data from external services, like test coverage from Codecov.
-Use cases for this are tracking usage of libraries across an organization, tracking tech debt, migrations, code base health and much more.
+For example, code insights can track the number of matches of a search query over time, the number of code intelligence diagnostic warnings in a code base, usage of different programming languages, or even data from external services, like test coverage from Codecov.
+Sample use cases for this are for tracking migrations, usage of libraries across an organization, tech debt, code base health, and much more.
 
 Code insights are currently feature-flagged - set `"experimentalFeatures": { "codeInsights": true }` in your user settings to enable them.
 
@@ -79,14 +79,14 @@ The extension can then be configured in your [user settings](https://sourcegraph
 Just like other extensions, it's also possible to install and configure them organization-wide.
 
 Because of code insights currently being run on-demand in the client, the performance of code insights is bound to the performance of the underlying data source.
-Search queries for example are relatively fast as long as the scope doesn't include many repositories, but performance degrades when trying to include a lot of repositories.
-We're actively working on removing this limitation.
+For example, search queries are relatively fast as long as the scope doesn't include many repositories, but performance degrades when trying to include a lot of repositories.
+We're actively working on removing this limitation. 
 
 If you want to learn more about code insights:
 
+- [Code insights team page](https://about.sourcegraph.com/handbook/engineering/code-insights)
 - [Code insights product document (PD)](https://docs.google.com/document/d/1d34gCpt_rUOMAun8phcjNsFofGaaA_N_8znmgaugdKw/edit)
 - [Original code insights RFC](https://docs.google.com/document/d/1EHzor6I1GhVVIpl70mH-c10b1tNEl_p1xRMJ9qHQfoc/edit)
-- [Code insights team page](https://about.sourcegraph.com/handbook/engineering/code-insights)
 
 ## Code monitoring
 
@@ -157,7 +157,11 @@ If you want to learn more about src-cli:
 
 ## Editor extensions
 
-TODO
+Sourcegraph editor extensions will bring Sourcegraph features like search, code intelligence, and Sourcegraph extensions into your IDE. (Switching between Sourcegraph and an IDE when viewing a file is separately powered by Sourcegraph extensions.) 
+
+The editor extension is still in the exploratory phase of determining priority and scope. For more information: 
+
+- [PD19: IDE Extension (Research & Exploration)](https://docs.google.com/document/d/1LpShKInGJo0BBDnRQW4yz4_CjhjK_FYcwse4LYXGImE/edit#)
 
 ## Deployment
 
