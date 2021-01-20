@@ -1664,9 +1664,6 @@ type aggregator struct {
 	results  []SearchResultResolver
 	common   streaming.Stats
 	multiErr *multierror.Error
-	// fileMatches is a map from git:// URI of the file to FileMatch resolver
-	// to merge multiple results of different types for the same file
-	fileMatches map[string]*FileMatchResolver
 }
 
 func (a *aggregator) get() ([]SearchResultResolver, streaming.Stats, *multierror.Error) {
@@ -1704,32 +1701,13 @@ func (a *aggregator) collect(ctx context.Context, results []SearchResultResolver
 	if err != nil && !isContextError(ctx, err) {
 		a.multiErr = multierror.Append(a.multiErr, errors.Wrap(err, "repository search failed"))
 	}
-	for _, r := range results {
-		fm, ok := r.ToFileMatch()
-		if !ok {
-			a.results = append(a.results, r)
-			continue
-		}
-
-		// Merge fileMatches from type symbol, path, file. For streaming search this
-		// code has no effect and the frontend should handle deduplication.
-		if m, ok := a.fileMatches[fm.uri]; ok {
-			m.appendMatches(fm)
-		} else {
-			a.fileMatches[fm.uri] = fm
-			a.results = append(a.results, r)
-		}
-	}
-	if common != nil {
-		a.common.Update(common)
-	}
+	a.results = append(a.results, results...)
+	a.common.Update(common)
 }
 
 func (a *aggregator) doRepoSearch(ctx context.Context, args *search.TextParameters, limit int32) {
 	tr, ctx := trace.New(ctx, "doRepoSearch", "")
-	defer func() {
-		tr.Finish()
-	}()
+	defer tr.Finish()
 	repoResults, repoCommon, err := searchRepositories(ctx, args, limit)
 	a.report(ctx, repoResults, repoCommon, errors.Wrap(err, "repository search failed"))
 }
@@ -1907,7 +1885,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 
 	agg := aggregator{
 		resultChannel: r.resultChannel,
-		fileMatches:   make(map[string]*FileMatchResolver),
 	}
 
 	isFileOrPath := func() bool {
