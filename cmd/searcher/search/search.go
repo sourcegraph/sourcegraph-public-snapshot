@@ -15,17 +15,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 	"time"
 
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	nettrace "golang.org/x/net/trace"
@@ -195,56 +192,8 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 	}(time.Now())
 
 	if p.IsStructuralPat && p.CombyRule == `where "zoekt" == "zoekt"` {
-		// Since we are returning file content, limit the number of file matches until streaming from Zoekt is implemented
-		fileMatchLimit := p.FileMatchLimit
-		if fileMatchLimit > maxFileMatchLimit {
-			fileMatchLimit = maxFileMatchLimit
-		}
-
-		repoBranches := map[string][]string{string(p.Repo): {"HEAD"}}
-		args := &search.TextParameters{
-			PatternInfo: &search.TextPatternInfo{
-				Pattern:                      p.Pattern,
-				IsNegated:                    p.IsNegated,
-				IsRegExp:                     p.IsRegExp,
-				IsStructuralPat:              p.IsStructuralPat,
-				CombyRule:                    p.CombyRule,
-				IsWordMatch:                  p.IsWordMatch,
-				IsCaseSensitive:              p.IsCaseSensitive,
-				FileMatchLimit:               int32(fileMatchLimit),
-				ExcludePattern:               p.ExcludePattern,
-				PathPatternsAreCaseSensitive: p.PathPatternsAreCaseSensitive,
-				PatternMatchesContent:        p.PatternMatchesContent,
-				PatternMatchesPath:           p.PatternMatchesPath,
-				Languages:                    p.Languages,
-			},
-			Zoekt: nil,
-		}
-
-		if args.Zoekt == nil {
-			// TODO(@camdencheek): remove this once the zoekt endpoints are sent with the request:
-			// https://github.com/sourcegraph/sourcegraph/pull/17387#pullrequestreview-571951086
-			return nil, false, false, fmt.Errorf("cannot do indexed search because Zoekt client is unset")
-		}
-
-		zoektMatches, limitHit, _, err := zoektSearch(ctx, args, repoBranches, time.Since, nil)
-		if err != nil {
-			return nil, false, false, err
-		}
-
-		zipFile, err := ioutil.TempFile("", "*.zip")
-		if err != nil {
-			return nil, false, false, err
-		}
-		defer zipFile.Close()
-		defer os.Remove(zipFile.Name())
-
-		if err = writeZip(zipFile, zoektMatches); err != nil {
-			return nil, false, false, err
-		}
-
-		matches, limitHit, err := structuralSearch(ctx, zipFile.Name(), p.Pattern, p.CombyRule, p.Languages, nil, p.Repo)
-		return matches, limitHit, false, err
+		// Execute the new structural search path that directly calls Zoekt.
+		return structuralSearchWithZoekt(ctx, p)
 	}
 
 	// Compile pattern before fetching from store incase it is bad.
