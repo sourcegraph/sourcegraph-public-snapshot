@@ -199,7 +199,7 @@ func (s *indexedSearchRequest) Repos() map[string]*search.RepositoryRevisions {
 	return s.repos.repoRevs
 }
 
-type streamFunc func(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration, c chan<- SearchEvent)
+type streamFunc func(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration, c SearchStream)
 
 type indexedSearchEvent struct {
 	common  streaming.Stats
@@ -247,21 +247,12 @@ func (s *indexedSearchRequest) doSearch(ctx context.Context, c chan<- SearchEven
 	zoektStream(ctx, s.args, s.repos, s.typ, since, c)
 }
 
-var errNoResultsInTimeout = errors.New("no results found in specified timeout")
-
-type zoektSearchStreamEvent struct {
-	fm       []*FileMatchResolver
-	limitHit bool
-	partial  map[api.RepoID]struct{}
-	err      error
-}
-
 // zoektSearch searches repositories using zoekt.
 //
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration, c chan<- SearchEvent) {
+func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration, c SearchStream) {
 	if args == nil {
 		return
 	}
