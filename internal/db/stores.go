@@ -11,17 +11,18 @@ var (
 	Orgs             = &OrgStore{}
 	OrgMembers       = &OrgMemberStore{}
 	SavedSearches    = &SavedSearchStore{}
-	Settings         = &settings{}
+	Settings         = &SettingStore{}
 	Users            = &UserStore{}
-	UserCredentials  = &userCredentials{}
-	UserEmails       = &userEmails{}
-	EventLogs        = &eventLogs{}
+	UserCredentials  = &UserCredentialsStore{}
+	UserEmails       = &UserEmailsStore{}
+	UserPublicRepos  = &UserPublicRepoStore{}
+	EventLogs        = &EventLogStore{}
 
-	SurveyResponses = &surveyResponses{}
+	SurveyResponses = &SurveyResponseStore{}
 
 	ExternalAccounts = &userExternalAccounts{}
 
-	OrgInvitations = &orgInvitations{}
+	OrgInvitations = &OrgInvitationStore{}
 
 	Authz AuthzStore = &authzStore{}
 

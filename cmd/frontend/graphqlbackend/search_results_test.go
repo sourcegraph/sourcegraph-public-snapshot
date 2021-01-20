@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"reflect"
+	"sort"
 	"strings"
 	"sync"
 	"testing"
@@ -62,12 +63,24 @@ func TestSearchResults(t *testing.T) {
 				t.Fatal("unexpected result type", result)
 			}
 		}
+		// dedup results since we expect our clients to do dedupping
+		if len(resultDescriptions) > 1 {
+			sort.Strings(resultDescriptions)
+			dedup := resultDescriptions[:1]
+			for _, s := range resultDescriptions[1:] {
+				if s != dedup[len(dedup)-1] {
+					dedup = append(dedup, s)
+				}
+			}
+			resultDescriptions = dedup
+		}
 		return resultDescriptions
 	}
 	testCallResults := func(t *testing.T, query, version string, want []string) {
+		t.Helper()
 		results := getResults(t, query, version)
-		if !reflect.DeepEqual(results, want) {
-			t.Errorf("got %v, want %v", results, want)
+		if d := cmp.Diff(want, results); d != "" {
+			t.Errorf("unexpected results (-want, +got):\n%s", d)
 		}
 	}
 
@@ -167,8 +180,8 @@ func TestSearchResults(t *testing.T) {
 		if !calledSearchFilesInRepos.Load() {
 			t.Error("!calledSearchFilesInRepos")
 		}
-		if !calledSearchSymbols {
-			t.Error("!calledSearchSymbols")
+		if calledSearchSymbols {
+			t.Error("calledSearchSymbols")
 		}
 	})
 
@@ -202,8 +215,8 @@ func TestSearchResults(t *testing.T) {
 		calledSearchSymbols := false
 		mockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, common *streaming.Stats, err error) {
 			calledSearchSymbols = true
-			if d := cmp.Diff(`foo\\d "bar\*"`, args.PatternInfo.Pattern); d != "" {
-				t.Errorf("(-want, +got):\n%s", d)
+			if want := `"foo\\d \"bar*\""`; args.PatternInfo.Pattern != want {
+				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
 			}
 			// TODO return mock results here and assert that they are output as results
 			return nil, nil, nil
@@ -213,8 +226,8 @@ func TestSearchResults(t *testing.T) {
 		calledSearchFilesInRepos := atomic.NewBool(false)
 		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *streaming.Stats, error) {
 			calledSearchFilesInRepos.Store(true)
-			if d := cmp.Diff(`foo\\d "bar\*"`, args.PatternInfo.Pattern); d != "" {
-				t.Errorf("(-want, +got):\n%s", d)
+			if want := `foo\\d "bar\*"`; args.PatternInfo.Pattern != want {
+				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
 			}
 			repo := &types.RepoName{ID: 1, Name: "repo"}
 			fm := mkFileMatch(repo, "dir/file", 123)
@@ -232,7 +245,7 @@ func TestSearchResults(t *testing.T) {
 		if !calledSearchFilesInRepos.Load() {
 			t.Error("!calledSearchFilesInRepos")
 		}
-		if !calledSearchSymbols {
+		if calledSearchSymbols {
 			t.Error("calledSearchSymbols")
 		}
 	})

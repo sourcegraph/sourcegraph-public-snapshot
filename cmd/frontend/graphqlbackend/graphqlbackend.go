@@ -853,6 +853,14 @@ func (r *codeHostRepositoryConnectionResolver) Nodes(ctx context.Context) ([]*co
 			// signal the collector to finish
 			close(results)
 		}()
+
+		// are we allowed to show the user private repos?
+		allowPrivate, err := allowPrivate(ctx, r.userID)
+		if err != nil {
+			r.err = err
+			return
+		}
+
 		// collect all results
 		r.nodes = []*codeHostRepositoryResolver{}
 		for repos := range results {
@@ -861,15 +869,14 @@ func (r *codeHostRepositoryConnectionResolver) Nodes(ctx context.Context) ([]*co
 				if r.query != "" && !strings.Contains(strings.ToLower(repo.Name), r.query) {
 					continue
 				}
+				if !allowPrivate && repo.Private {
+					continue
+				}
 				r.nodes = append(r.nodes, &codeHostRepositoryResolver{
 					codeHost: svcsByID[repo.CodeHostID],
 					repo:     &repo,
 				})
 			}
-		}
-		if err != nil {
-			r.err = err
-			return
 		}
 		sort.Slice(r.nodes, func(i, j int) bool {
 			return r.nodes[i].repo.Name < r.nodes[j].repo.Name
@@ -895,4 +902,11 @@ func (r *codeHostRepositoryResolver) CodeHost(ctx context.Context) *externalServ
 	return &externalServiceResolver{
 		externalService: r.codeHost,
 	}
+}
+
+func allowPrivate(ctx context.Context, userID int32) (bool, error) {
+	if conf.ExternalServiceUserMode() == conf.ExternalServiceModeAll {
+		return true, nil
+	}
+	return db.Users.HasTag(ctx, userID, db.TagAllowUserExternalServicePrivate)
 }
