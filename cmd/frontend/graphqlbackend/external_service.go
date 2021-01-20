@@ -151,3 +151,11 @@ func (r *externalServiceResolver) LastSyncError(ctx context.Context) (*string, e
 func (r *externalServiceResolver) RepoCount(ctx context.Context) (int32, error) {
 	return db.ExternalServices.RepoCount(ctx, r.externalService.ID)
 }
+
+func (r *externalServiceResolver) LastSyncAt() DateTime {
+	return DateTime{Time: r.externalService.LastSyncAt}
+}
+
+func (r *externalServiceResolver) NextSyncAt() DateTime {
+	return DateTime{Time: r.externalService.NextSyncAt}
+}

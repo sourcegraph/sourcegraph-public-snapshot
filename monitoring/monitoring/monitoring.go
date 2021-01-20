@@ -416,6 +416,21 @@ const (
 	ObservableOwnerCloud        ObservableOwner = "cloud"
 )
 
+// toMarkdown returns a Markdown string that also links to the owner's team page
+func (o ObservableOwner) toMarkdown() string {
+	var teamName string
+	// special cases for differences in how a team is named in ObservableOwner and how
+	// they are named in the handbook.
+	// see https://about.sourcegraph.com/company/team/org_chart#engineering
+	switch o {
+	case ObservableOwnerCodeIntel:
+		teamName = "code-intelligence"
+	default:
+		teamName = string(o)
+	}
+	return fmt.Sprintf("[Sourcegraph %s team](https://about.sourcegraph.com/handbook/engineering/%s)", upperFirst(teamName), teamName)
+}
+
 // Observable describes a metric about a container that can be observed. For example, memory usage.
 //
 // These correspond to Grafana graphs.

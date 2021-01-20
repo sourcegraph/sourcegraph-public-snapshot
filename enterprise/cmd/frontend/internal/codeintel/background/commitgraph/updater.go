@@ -14,7 +14,6 @@ import (
 	basegitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 // Updater periodically re-calculates the commit and upload visibility graph for repositories
@@ -93,9 +92,6 @@ func (u *Updater) tryUpdate(ctx context.Context, repositoryID, dirtyToken int) (
 // the repository can be unmarked as long as the repository is not marked as dirty again before
 // the update completes.
 func (u *Updater) update(ctx context.Context, repositoryID, dirtyToken int) (err error) {
-	// Enable tracing on the context and trace the operation
-	ctx = ot.WithShouldTrace(ctx, true)
-
 	ctx, traceLog, endObservation := u.operations.commitUpdate.WithAndLogger(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", repositoryID),

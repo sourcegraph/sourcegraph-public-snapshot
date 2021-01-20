@@ -22,7 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
@@ -185,7 +185,7 @@ func getRepoStore() (*db.RepoStore, error) {
 		}
 	})
 
-	h, err := dbutil.NewDB(dsn, "gitserver")
+	h, err := dbconn.New(dsn, "gitserver")
 	if err != nil {
 		return nil, err
 	}

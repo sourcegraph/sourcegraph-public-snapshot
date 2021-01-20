@@ -44,22 +44,4 @@
             right: 0;
         }
     }
-
-    &__ghost {
-        position: absolute;
-
-        // Add buffer area so that resizables inside a position:relative will continue to receive
-        // onMouseMove events even when enlarging in a direction that causes the cursor to be on top
-        // of elements in a different position:relative context.
-        top: -100px;
-        left: -100px;
-        right: -100px;
-        bottom: -100px;
-
-        display: none;
-        z-index: 999999;
-        &--resizing {
-            display: block;
-        }
-    }
 }

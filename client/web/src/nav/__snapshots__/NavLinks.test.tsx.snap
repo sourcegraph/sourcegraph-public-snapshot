@@ -24,6 +24,7 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
     >
       <svg
         class="icon-inline d-lg-none"
+        data-tooltip="Campaigns"
         fill="currentColor"
         height="20"
         viewBox="0 -3 38 38"
@@ -411,6 +412,7 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
     >
       <svg
         class="icon-inline d-lg-none"
+        data-tooltip="Campaigns"
         fill="currentColor"
         height="20"
         viewBox="0 -3 38 38"
@@ -808,6 +810,7 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
     >
       <svg
         class="icon-inline d-lg-none"
+        data-tooltip="Campaigns"
         fill="currentColor"
         height="20"
         viewBox="0 -3 38 38"
@@ -1176,6 +1179,7 @@ exports[`NavLinks authed self-hosted /search 1`] = `
     >
       <svg
         class="icon-inline d-lg-none"
+        data-tooltip="Campaigns"
         fill="currentColor"
         height="20"
         viewBox="0 -3 38 38"
@@ -1554,6 +1558,7 @@ exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
     >
       <svg
         class="icon-inline d-lg-none"
+        data-tooltip="Campaigns"
         fill="currentColor"
         height="20"
         viewBox="0 -3 38 38"
@@ -1696,6 +1701,7 @@ exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
     >
       <svg
         class="icon-inline d-lg-none"
+        data-tooltip="Campaigns"
         fill="currentColor"
         height="20"
         viewBox="0 -3 38 38"
@@ -1848,6 +1854,7 @@ exports[`NavLinks unauthed self-hosted /foo 1`] = `
     >
       <svg
         class="icon-inline d-lg-none"
+        data-tooltip="Campaigns"
         fill="currentColor"
         height="20"
         viewBox="0 -3 38 38"
@@ -1978,6 +1985,7 @@ exports[`NavLinks unauthed self-hosted /search 1`] = `
     >
       <svg
         class="icon-inline d-lg-none"
+        data-tooltip="Campaigns"
         fill="currentColor"
         height="20"
         viewBox="0 -3 38 38"

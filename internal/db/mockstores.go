@@ -26,7 +26,5 @@ type MockStores struct {
 
 	Authz MockAuthz
 
-	Secrets MockSecrets
-
 	EventLogs MockEventLogs
 }

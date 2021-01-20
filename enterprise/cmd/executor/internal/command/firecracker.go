@@ -71,11 +71,6 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger *Logger,
 		imageMap[fmt.Sprintf("image%d", i)] = image
 	}
 
-	// TEMPORARY OBSERVABILITY INCREASE
-	for k, v := range imageMap {
-		log15.Info("TEMP: imageMap", "k", k, "v", v)
-	}
-
 	imageKeys := make([]string, 0, len(imageMap))
 	for k := range imageMap {
 		imageKeys = append(imageKeys, k)
@@ -151,21 +146,6 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger *Logger,
 		}
 		if err := runner.RunCommand(ctx, rmCommand, logger); err != nil {
 			return errors.Wrap(err, fmt.Sprintf("failed to remove tarfile for %s", imageMap[key]))
-		}
-	}
-
-	// TEMPORARY OBSERVABILITY INCREASE
-	for i, scriptPath := range scriptPaths {
-		catCommand := command{
-			Key: fmt.Sprintf("setup.cat.%d", i),
-			Command: flatten(
-				"ignite", "exec", name, "--",
-				"cat", filepath.Join(firecrackerContainerDir, ScriptsPath, scriptPath),
-			),
-			Operation: operations.SetupRm,
-		}
-		if err := runner.RunCommand(ctx, catCommand, logger); err != nil {
-			return errors.Wrap(err, fmt.Sprintf("failed to cat %s", scriptPath))
 		}
 	}
 
