@@ -391,9 +391,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 	// addMatches assumes the caller holds mu.
 	addMatches := func(matches []*FileMatchResolver) {
 		if len(matches) > 0 {
-
 			aggMatches = append(aggMatches, matches...)
-
 			// Send matches down the results channel.
 			if c != nil {
 				c <- fileMatchResultsToSearchResults(matches)
