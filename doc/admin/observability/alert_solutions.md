@@ -29,7 +29,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -55,7 +55,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -79,7 +79,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -103,7 +103,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -125,7 +125,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -148,7 +148,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -172,7 +172,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -196,7 +196,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -222,7 +222,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -248,7 +248,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -272,7 +272,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -296,7 +296,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -318,7 +318,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -341,7 +341,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -368,7 +368,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -395,7 +395,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -419,7 +419,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -443,7 +443,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -465,7 +465,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -488,7 +488,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -510,7 +510,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -532,7 +532,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -554,7 +554,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -576,7 +576,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -598,7 +598,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -620,7 +620,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -642,7 +642,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -664,7 +664,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -686,7 +686,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -708,7 +708,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -730,7 +730,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -752,7 +752,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -774,7 +774,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -796,7 +796,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -818,7 +818,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -840,7 +840,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -862,7 +862,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -884,7 +884,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -906,7 +906,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -928,7 +928,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -950,7 +950,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -972,7 +972,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -994,7 +994,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -1016,7 +1016,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -1038,7 +1038,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -1060,7 +1060,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -1082,7 +1082,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -1105,7 +1105,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -1128,7 +1128,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -1151,7 +1151,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -1173,7 +1173,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -1195,7 +1195,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -1218,7 +1218,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).</sub>
+<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
 
 <br />
 
@@ -1241,7 +1241,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).</sub>
+<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
 
 <br />
 
@@ -1265,7 +1265,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -1289,7 +1289,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -1313,7 +1313,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -1337,7 +1337,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -1361,7 +1361,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -1385,7 +1385,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -1399,7 +1399,6 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
-- **Refer to the [dashboards reference](./dashboards.md#frontend-go-goroutines)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1408,7 +1407,9 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#frontend-go-goroutines).
+
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -1430,7 +1431,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -1452,7 +1453,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -1477,7 +1478,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -1495,7 +1496,6 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 - **Check if the problem may be an intermittent and temporary peak** using the "Container monitoring" section at the bottom of the Git Server dashboard.
 - **Single container deployments:** Consider upgrading to a [Docker Compose deployment](../install/docker-compose/migrate.md) which offers better scalability and resource isolation.
 - **Kubernetes and Docker Compose:** Check that you are running a similar number of git server replicas and that their CPU/memory limits are allocated according to what is shown in the [Sourcegraph resource estimator](../install/resource_estimator.md).
-- **Refer to the [dashboards reference](./dashboards.md#gitserver-running-git-commands)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1505,7 +1505,9 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#gitserver-running-git-commands).
+
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -1529,7 +1531,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -1554,7 +1556,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -1583,7 +1585,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -1607,7 +1609,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -1631,7 +1633,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -1655,7 +1657,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -1679,7 +1681,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -1693,7 +1695,6 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
-- **Refer to the [dashboards reference](./dashboards.md#gitserver-go-goroutines)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1702,7 +1703,9 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#gitserver-go-goroutines).
+
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -1724,7 +1727,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -1746,7 +1749,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -1770,7 +1773,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -1794,7 +1797,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -1818,7 +1821,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -1842,7 +1845,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -1866,7 +1869,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -1890,7 +1893,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -1914,7 +1917,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -1928,7 +1931,6 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
-- **Refer to the [dashboards reference](./dashboards.md#github-proxy-go-goroutines)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1937,7 +1939,9 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#github-proxy-go-goroutines).
+
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -1959,7 +1963,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -1981,7 +1985,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -2003,7 +2007,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -2027,7 +2031,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -2041,7 +2045,6 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
-- **Refer to the [dashboards reference](./dashboards.md#postgres-postgres-up)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2050,7 +2053,9 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#postgres-postgres-up).
+
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -2065,7 +2070,6 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Possible solutions**
 
 - Ensure the Postgres exporter can access the Postgres database. Also, check the Postgres exporter logs for errors.
-- **Refer to the [dashboards reference](./dashboards.md#postgres-pg-exporter-err)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2074,7 +2078,9 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#postgres-pg-exporter-err).
+
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -2089,7 +2095,6 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Possible solutions**
 
 - The database migration has been in progress for 5 or more minutes - please contact Sourcegraph if this persists.
-- **Refer to the [dashboards reference](./dashboards.md#postgres-migration-in-progress)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2098,7 +2103,9 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#postgres-migration-in-progress).
+
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -2122,7 +2129,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -2146,7 +2153,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -2170,7 +2177,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -2194,7 +2201,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -2216,7 +2223,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -2238,7 +2245,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2260,7 +2267,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2282,7 +2289,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2304,7 +2311,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2326,7 +2333,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2348,7 +2355,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2370,7 +2377,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2392,7 +2399,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2414,7 +2421,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2436,7 +2443,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2458,7 +2465,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2480,7 +2487,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2502,7 +2509,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2531,7 +2538,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2555,7 +2562,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2579,7 +2586,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2603,7 +2610,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2627,7 +2634,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2651,7 +2658,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2675,7 +2682,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2689,7 +2696,6 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
-- **Refer to the [dashboards reference](./dashboards.md#precise-code-intel-worker-go-goroutines)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2698,7 +2704,9 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#precise-code-intel-worker-go-goroutines).
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2720,7 +2728,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2742,7 +2750,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2771,7 +2779,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -2795,7 +2803,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -2819,7 +2827,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -2843,7 +2851,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -2867,7 +2875,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -2891,7 +2899,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -2915,7 +2923,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -2929,7 +2937,6 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
-- **Refer to the [dashboards reference](./dashboards.md#query-runner-go-goroutines)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2938,7 +2945,9 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#query-runner-go-goroutines).
+
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -2960,7 +2969,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -2982,7 +2991,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -3011,7 +3020,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -3040,7 +3049,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -3069,7 +3078,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -3092,7 +3101,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -3115,7 +3124,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -3138,7 +3147,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -3161,7 +3170,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -3184,7 +3193,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -3207,7 +3216,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -3230,7 +3239,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -3253,7 +3262,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -3276,7 +3285,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -3299,7 +3308,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -3322,7 +3331,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -3345,7 +3354,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -3368,7 +3377,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -3391,7 +3400,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -3415,7 +3424,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -3438,7 +3447,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -3462,7 +3471,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -3486,7 +3495,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -3509,7 +3518,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -3532,7 +3541,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -3556,7 +3565,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -3579,7 +3588,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -3602,7 +3611,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -3625,7 +3634,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -3648,7 +3657,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -3671,7 +3680,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -3694,7 +3703,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -3718,7 +3727,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -3742,7 +3751,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -3766,7 +3775,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -3790,7 +3799,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -3814,7 +3823,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -3838,7 +3847,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -3852,7 +3861,6 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions**
 
-- **Refer to the [dashboards reference](./dashboards.md#repo-updater-go-goroutines)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3861,7 +3869,9 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#repo-updater-go-goroutines).
+
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -3883,7 +3893,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -3905,7 +3915,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -3927,7 +3937,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -3949,7 +3959,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -3978,7 +3988,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -4002,7 +4012,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -4026,7 +4036,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -4050,7 +4060,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -4074,7 +4084,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -4098,7 +4108,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -4122,7 +4132,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -4136,7 +4146,6 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions**
 
-- **Refer to the [dashboards reference](./dashboards.md#searcher-go-goroutines)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4145,7 +4154,9 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#searcher-go-goroutines).
+
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -4167,7 +4178,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -4189,7 +4200,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -4211,7 +4222,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -4233,7 +4244,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -4262,7 +4273,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -4286,7 +4297,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -4310,7 +4321,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -4334,7 +4345,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -4358,7 +4369,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -4382,7 +4393,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -4406,7 +4417,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -4420,7 +4431,6 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions**
 
-- **Refer to the [dashboards reference](./dashboards.md#symbols-go-goroutines)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4429,7 +4439,9 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#symbols-go-goroutines).
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -4451,7 +4463,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -4473,7 +4485,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -4497,7 +4509,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -4521,7 +4533,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -4545,7 +4557,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -4569,7 +4581,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -4593,7 +4605,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -4617,7 +4629,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -4639,7 +4651,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).</sub>
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />
 
@@ -4663,7 +4675,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -4687,7 +4699,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -4711,7 +4723,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -4735,7 +4747,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -4759,7 +4771,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -4783,7 +4795,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -4807,7 +4819,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -4829,7 +4841,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -4851,7 +4863,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -4875,7 +4887,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -4899,7 +4911,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -4923,7 +4935,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -4947,7 +4959,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -4971,7 +4983,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -4995,7 +5007,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -5010,7 +5022,6 @@ with your code hosts connections or networking issues affecting communication wi
 **Possible solutions**
 
 - Try increasing resources for Prometheus.
-- **Refer to the [dashboards reference](./dashboards.md#prometheus-prometheus-rule-group-evaluation)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -5019,7 +5030,9 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).</sub>
+> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#prometheus-prometheus-rule-group-evaluation).
+
+<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
 
 <br />
 
@@ -5042,7 +5055,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).</sub>
+<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
 
 <br />
 
@@ -5057,7 +5070,6 @@ with your code hosts connections or networking issues affecting communication wi
 **Possible solutions**
 
 - Ensure that your [`observability.alerts` configuration](https://docs.sourcegraph.com/admin/observability/alerting#setting-up-alerting) (in site configuration) is valid.
-- **Refer to the [dashboards reference](./dashboards.md#prometheus-alertmanager-config-status)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -5066,7 +5078,9 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).</sub>
+> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#prometheus-alertmanager-config-status).
+
+<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
 
 <br />
 
@@ -5089,7 +5103,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).</sub>
+<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
 
 <br />
 
@@ -5105,7 +5119,6 @@ with your code hosts connections or networking issues affecting communication wi
 
 - Check Prometheus logs for messages related to configuration loading.
 - Ensure any custom configuration you have provided Prometheus is valid.
-- **Refer to the [dashboards reference](./dashboards.md#prometheus-prometheus-config-status)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -5114,7 +5127,9 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).</sub>
+> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#prometheus-prometheus-config-status).
+
+<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
 
 <br />
 
@@ -5137,7 +5152,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).</sub>
+<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
 
 <br />
 
@@ -5160,7 +5175,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).</sub>
+<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
 
 <br />
 
@@ -5184,7 +5199,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).</sub>
+<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
 
 <br />
 
@@ -5208,7 +5223,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).</sub>
+<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
 
 <br />
 
@@ -5232,7 +5247,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).</sub>
+<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
 
 <br />
 
@@ -5256,7 +5271,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).</sub>
+<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
 
 <br />
 
@@ -5280,7 +5295,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).</sub>
+<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
 
 <br />
 
@@ -5304,7 +5319,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).</sub>
+<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
 
 <br />
 
@@ -5326,7 +5341,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).</sub>
+<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
 
 <br />
 
@@ -5348,7 +5363,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -5370,7 +5385,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -5392,7 +5407,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -5414,7 +5429,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -5436,7 +5451,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -5465,7 +5480,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -5489,7 +5504,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -5513,7 +5528,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -5537,7 +5552,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -5561,7 +5576,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -5585,7 +5600,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -5609,7 +5624,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -5623,7 +5638,6 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions**
 
-- **Refer to the [dashboards reference](./dashboards.md#executor-queue-go-goroutines)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -5632,7 +5646,9 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#executor-queue-go-goroutines).
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -5654,7 +5670,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -5676,7 +5692,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -5698,7 +5714,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -5720,7 +5736,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -5742,7 +5758,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -5764,7 +5780,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -5786,7 +5802,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -5808,7 +5824,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -5832,7 +5848,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -5856,7 +5872,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -5880,7 +5896,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -5904,7 +5920,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -5928,7 +5944,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -5952,7 +5968,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -5966,7 +5982,6 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions**
 
-- **Refer to the [dashboards reference](./dashboards.md#precise-code-intel-indexer-go-goroutines)** for more help interpreting this alert and metric.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -5975,7 +5990,9 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#precise-code-intel-indexer-go-goroutines).
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -5997,7 +6014,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -6019,7 +6036,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).</sub>
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 

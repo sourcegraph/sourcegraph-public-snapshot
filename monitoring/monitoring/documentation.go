@@ -138,16 +138,16 @@ func (d *documentation) renderAlertSolutionEntry(c *Container, o Observable) err
 		possibleSolutions, _ := toMarkdown(o.PossibleSolutions, true)
 		fmt.Fprintf(&d.alertSolutions, "%s\n", possibleSolutions)
 	}
-	// add link to panel information IF there are additional details available
-	if o.Interpretation != "" && o.Interpretation != "none" {
-		fmt.Fprintf(&d.alertSolutions, "- **Refer to the [dashboards reference](./%s#%s)** for more help interpreting this alert and metric.\n",
-			dashboardsDocsFile, observableDocAnchor(c, o))
-	}
 	// add silencing configuration as another solution
 	fmt.Fprintf(&d.alertSolutions, "- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:\n\n")
 	fmt.Fprintf(&d.alertSolutions, "```json\n%s\n```\n\n", fmt.Sprintf(`"observability.silenceAlerts": [
 %s
 ]`, strings.Join(prometheusAlertNames, ",\n")))
+	// add link to panel information IF there are additional details available
+	if o.Interpretation != "" && o.Interpretation != "none" {
+		fmt.Fprintf(&d.alertSolutions, "> NOTE: More help interpreting this metric is available in the [dashboards reference](./%s#%s).\n\n",
+			dashboardsDocsFile, observableDocAnchor(c, o))
+	}
 	// add owner
 	fprintOwnedBy(&d.alertSolutions, o.Owner)
 	// render break for readability
@@ -165,7 +165,7 @@ func (d *documentation) renderDashboardPanelEntry(c *Container, o Observable) er
 	}
 	// add link to alert solutions IF there is an alert attached
 	if !o.NoAlert {
-		fmt.Fprintf(&d.dashboards, "Refer to the [alert solutions reference](./%s#%s) for alerts related to this panel.\n\n",
+		fmt.Fprintf(&d.dashboards, "> NOTE: Alerts related to this panel are available in the [alert solutions reference](./%s#%s).\n\n",
 			alertSolutionsFile, observableDocAnchor(c, o))
 	}
 	// add owner
