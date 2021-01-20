@@ -535,7 +535,8 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 					}
 
 					if !args.PatternInfo.IsStructuralPat {
-						// TODO: (stefan) Convert back to filematch for the time being to limit snowballing of changes.
+						// Converting back to FileMatch for the time being to limit snowballing of
+						// changes during move to streaming.
 						fms := make([]*FileMatchResolver, 0, len(event.Results))
 						for _, match := range event.Results {
 							fms = append(fms, match.(*FileMatchResolver))
@@ -555,7 +556,10 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 					for _, m := range event.Results {
 						fm, ok := m.ToFileMatch()
 						if !ok {
-							panic("this should always be a FileMath")
+							mu.Lock()
+							searchErr = fmt.Errorf("structual search: Events from indexed.Search could not be converted to FileMatch")
+							mu.Unlock()
+							return
 						}
 						name := string(fm.Repo.Name())
 						partition[name] = append(partition[name], fm.JPath)
