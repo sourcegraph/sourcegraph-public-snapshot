@@ -24,7 +24,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
--
+- Fixes an issue that prevented the hard deletion of a user if they had saved searches. [#181](https://github.com/sourcegraph/customer/issues/181)
 
 ### Removed
 
