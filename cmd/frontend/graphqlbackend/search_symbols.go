@@ -109,9 +109,7 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 
 	addMatches := func(matches []*FileMatchResolver) {
 		if len(matches) > 0 {
-
 			aggMatches = append(aggMatches, matches...)
-
 			if len(aggMatches) > int(args.PatternInfo.FileMatchLimit) {
 				tr.LazyPrintf("cancel due to result size: %d > %d", len(aggMatches), args.PatternInfo.FileMatchLimit)
 				overLimitCanceled = true
