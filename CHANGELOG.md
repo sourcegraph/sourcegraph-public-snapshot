@@ -16,7 +16,6 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - New site config option `"log": { "sentry": { "backendDSN": "<REDACTED>" } }` to use a separate Sentry project for backend errors. [#17363](https://github.com/sourcegraph/sourcegraph/pull/17363)
-- Symbol results are now part of the default search types. [#17425](https://github.com/sourcegraph/sourcegraph/pull/17425)
 
 ### Changed
 
