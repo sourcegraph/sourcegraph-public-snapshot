@@ -5,23 +5,60 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+	"sync"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/jsonx"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-type settings struct{}
+type SettingStore struct {
+	*basestore.Store
 
-func (o *settings) CreateIfUpToDate(ctx context.Context, subject api.SettingsSubject, lastID *int32, authorUserID *int32, contents string) (latestSetting *api.Settings, err error) {
+	once sync.Once
+}
+
+// NewSettingStoreWithDB instantiates and returns a new SettingStore with prepared statements.
+func NewSettingStoreWithDB(db dbutil.DB) *SettingStore {
+	return &SettingStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+}
+
+// NewSettingStoreWithDB instantiates and returns a new SettingStore using the other store handle.
+func NewSettingStoreWith(other basestore.ShareableStore) *SettingStore {
+	return &SettingStore{Store: basestore.NewWithHandle(other.Handle())}
+}
+
+func (s *SettingStore) With(other basestore.ShareableStore) *SettingStore {
+	return &SettingStore{Store: s.Store.With(other)}
+}
+
+func (s *SettingStore) Transact(ctx context.Context) (*SettingStore, error) {
+	txBase, err := s.Store.Transact(ctx)
+	return &SettingStore{Store: txBase}, err
+}
+
+// ensureStore instantiates a basestore.Store if necessary, using the dbconn.Global handle.
+// This function ensures access to dbconn happens after the rest of the code or tests have
+// initialized it.
+func (s *SettingStore) ensureStore() {
+	s.once.Do(func() {
+		if s.Store == nil {
+			s.Store = basestore.NewWithDB(dbconn.Global, sql.TxOptions{})
+		}
+	})
+}
+
+func (o *SettingStore) CreateIfUpToDate(ctx context.Context, subject api.SettingsSubject, lastID *int32, authorUserID *int32, contents string) (latestSetting *api.Settings, err error) {
 	if Mocks.Settings.CreateIfUpToDate != nil {
 		return Mocks.Settings.CreateIfUpToDate(ctx, subject, lastID, authorUserID, contents)
 	}
+	o.ensureStore()
 
 	if strings.TrimSpace(contents) == "" {
 		return nil, fmt.Errorf("blank settings are invalid (you can clear the settings by entering an empty JSON object: {})")
@@ -47,30 +84,23 @@ func (o *settings) CreateIfUpToDate(ctx context.Context, subject api.SettingsSub
 		Contents:     contents,
 	}
 
-	tx, err := dbconn.Global.BeginTx(ctx, nil)
+	tx, err := o.Transact(ctx)
 	if err != nil {
 		return nil, err
 	}
-
 	defer func() {
-		if err != nil {
-			rollErr := tx.Rollback()
-			if rollErr != nil {
-				err = multierror.Append(err, rollErr)
-			}
-			return
-		}
-		err = tx.Commit()
+		err = tx.Done(err)
 	}()
 
-	latestSetting, err = o.getLatest(ctx, tx, subject)
+	latestSetting, err = tx.getLatest(ctx, subject)
 	if err != nil {
 		return nil, err
 	}
 
 	creatorIsUpToDate := latestSetting != nil && lastID != nil && latestSetting.ID == *lastID
 	if latestSetting == nil || creatorIsUpToDate {
-		err := tx.QueryRow(
+		err := tx.Handle().DB().QueryRowContext(
+			ctx,
 			"INSERT INTO settings(org_id, user_id, author_user_id, contents) VALUES($1, $2, $3, $4) RETURNING id, created_at",
 			s.Subject.Org, s.Subject.User, s.AuthorUserID, s.Contents).Scan(&s.ID, &s.CreatedAt)
 		if err != nil {
@@ -82,12 +112,13 @@ func (o *settings) CreateIfUpToDate(ctx context.Context, subject api.SettingsSub
 	return latestSetting, nil
 }
 
-func (o *settings) GetLatest(ctx context.Context, subject api.SettingsSubject) (*api.Settings, error) {
+func (o *SettingStore) GetLatest(ctx context.Context, subject api.SettingsSubject) (*api.Settings, error) {
 	if Mocks.Settings.GetLatest != nil {
 		return Mocks.Settings.GetLatest(ctx, subject)
 	}
+	o.ensureStore()
 
-	return o.getLatest(ctx, dbconn.Global, subject)
+	return o.getLatest(ctx, subject)
 }
 
 // ListAll lists ALL settings (across all users, orgs, etc).
@@ -101,12 +132,13 @@ func (o *settings) GetLatest(ctx context.Context, subject api.SettingsSubject) (
 //
 // 🚨 SECURITY: This method does NOT verify the user is an admin. The caller is
 // responsible for ensuring this or that the response never makes it to a user.
-func (o *settings) ListAll(ctx context.Context, impreciseSubstring string) (_ []*api.Settings, err error) {
+func (o *SettingStore) ListAll(ctx context.Context, impreciseSubstring string) (_ []*api.Settings, err error) {
 	tr, ctx := trace.New(ctx, "db.Settings.ListAll", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
+	o.ensureStore()
 
 	q := sqlf.Sprintf(`
 		WITH q AS (
@@ -122,14 +154,14 @@ func (o *settings) ListAll(ctx context.Context, impreciseSubstring string) (_ []
 		WHERE contents LIKE %s
 		ORDER BY q.org_id, q.user_id, q.author_user_id, q.id DESC
 	`, "%"+impreciseSubstring+"%")
-	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	rows, err := o.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}
 	return o.parseQueryRows(ctx, rows)
 }
 
-func (o *settings) getLatest(ctx context.Context, queryTarget queryable, subject api.SettingsSubject) (*api.Settings, error) {
+func (o *SettingStore) getLatest(ctx context.Context, subject api.SettingsSubject) (*api.Settings, error) {
 	var cond *sqlf.Query
 	switch {
 	case subject.Org != nil:
@@ -146,7 +178,7 @@ func (o *settings) getLatest(ctx context.Context, queryTarget queryable, subject
 		LEFT JOIN users ON users.id=s.author_user_id
 		WHERE %s
 		ORDER BY id DESC LIMIT 1`, cond)
-	rows, err := queryTarget.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	rows, err := o.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -170,13 +202,7 @@ func (o *settings) getLatest(ctx context.Context, queryTarget queryable, subject
 	return settings[0], nil
 }
 
-// queryable allows us to reuse the same logic for certain operations both
-// inside and outside an explicit transaction.
-type queryable interface {
-	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
-}
-
-func (o *settings) parseQueryRows(ctx context.Context, rows *sql.Rows) ([]*api.Settings, error) {
+func (o *SettingStore) parseQueryRows(ctx context.Context, rows *sql.Rows) ([]*api.Settings, error) {
 	settings := []*api.Settings{}
 	defer rows.Close()
 	for rows.Next() {
