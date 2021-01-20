@@ -60,7 +60,7 @@ func NewUserEmailsStoreWithDB(db dbutil.DB) *UserEmailsStore {
 	return &UserEmailsStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
-// NewUserEmailsStoreWith instantiates and returns a new OrgStore using the other store handle.
+// NewUserEmailsStoreWith instantiates and returns a new UserEmailsStore using the other store handle.
 func NewUserEmailsStoreWith(other basestore.ShareableStore) *UserEmailsStore {
 	return &UserEmailsStore{Store: basestore.NewWithHandle(other.Handle())}
 }
