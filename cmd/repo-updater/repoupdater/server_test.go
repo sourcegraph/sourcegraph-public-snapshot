@@ -389,8 +389,8 @@ func testServerSetRepoEnabled(t *testing.T, store *repos.Store) func(t *testing.
 				}
 
 				have, want := apiExternalServices(svcs...), res.ExternalServices
-				if !reflect.DeepEqual(have, want) {
-					t.Errorf("stored external services:\n%s", cmp.Diff(have, want))
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Errorf("stored external services:\n%s", diff)
 				}
 			})
 		}
@@ -593,7 +593,8 @@ func testServerRepoExternalServices(t *testing.T, store *repos.Store) func(t *te
 					t.Errorf("have err: %q, want: %q", have, want)
 				}
 
-				if have, want := res, tc.svcs; !reflect.DeepEqual(have, want) {
+				have, want := res, tc.svcs
+				if diff := cmp.Diff(have, want); diff != "" {
 					t.Errorf("response:\n%s", cmp.Diff(have, want))
 				}
 			})

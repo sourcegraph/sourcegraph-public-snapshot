@@ -5,6 +5,8 @@ import (
 	"database/sql"
 
 	"github.com/hashicorp/go-multierror"
+
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
@@ -19,7 +21,7 @@ type TransactableHandle struct {
 
 // NewHandle returns a new transactable database handle connected to the given dsn (data store name).
 func NewHandle(postgresDSN, app string, txOptions sql.TxOptions) (*TransactableHandle, error) {
-	db, err := dbutil.NewDB(postgresDSN, app)
+	db, err := dbconn.New(postgresDSN, app)
 	if err != nil {
 		return nil, err
 	}
