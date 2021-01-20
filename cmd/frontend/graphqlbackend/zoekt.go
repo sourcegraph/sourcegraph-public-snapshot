@@ -201,12 +201,6 @@ func (s *indexedSearchRequest) Repos() map[string]*search.RepositoryRevisions {
 
 type streamFunc func(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration, c SearchStream)
 
-type indexedSearchEvent struct {
-	common  streaming.Stats
-	results []*FileMatchResolver
-	err     error
-}
-
 // Search returns a search event stream. Ensure you drain the stream.
 func (s *indexedSearchRequest) Search(ctx context.Context) <-chan SearchEvent {
 	c := make(chan SearchEvent)
