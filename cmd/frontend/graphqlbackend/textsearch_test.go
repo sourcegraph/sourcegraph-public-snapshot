@@ -70,7 +70,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 
 	zoekt := &searchbackend.Zoekt{Client: &searchbackend.FakeSearcher{}}
 
-	q, err := query.ParseAndCheck("foo")
+	q, err := query.ParseLiteral("foo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -156,7 +156,7 @@ func TestSearchFilesInReposStream(t *testing.T) {
 
 	zoekt := &searchbackend.Zoekt{Client: &searchbackend.FakeSearcher{}}
 
-	q, err := query.ParseAndCheck("foo")
+	q, err := query.ParseLiteral("foo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -263,7 +263,7 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 
 	zoekt := &searchbackend.Zoekt{Client: &searchbackend.FakeSearcher{}}
 
-	q, err := query.ParseAndCheck("foo")
+	q, err := query.ParseLiteral("foo")
 	if err != nil {
 		t.Fatal(err)
 	}
