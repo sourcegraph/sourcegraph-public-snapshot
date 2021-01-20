@@ -94,7 +94,7 @@ func NewDB(t testing.TB, dsn string) *sql.DB {
 }
 
 func dbConn(t testing.TB, cfg *url.URL) *sql.DB {
-	db, err := dbconn.New(cfg.String(), t.Name())
+	db, err := dbconn.NewRaw(cfg.String())
 	if err != nil {
 		t.Fatalf("failed to connect to database %q: %s", cfg, err)
 	}
