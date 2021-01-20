@@ -84,10 +84,10 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	first := true
 
 	for {
-		var results []graphqlbackend.SearchResultResolver
+		var event graphqlbackend.SearchEvent
 		var ok bool
 		select {
-		case results, ok = <-resultsStream:
+		case event, ok = <-resultsStream:
 		case <-flushTicker.C:
 			ok = true
 			flushMatchesBuf()
@@ -97,7 +97,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		for _, result := range results {
+		for _, result := range event.Results {
 			if fm, ok := result.ToFileMatch(); ok {
 				if syms := fm.Symbols(); len(syms) > 0 {
 					// Inlining to avoid exporting a bunch of stuff from
@@ -213,7 +213,7 @@ func toNamer(f func() []*graphqlbackend.RepositoryResolver) []api.Namer {
 
 type searchResolver interface {
 	Results(context.Context) (*graphqlbackend.SearchResultsResolver, error)
-	SetResultChannel(c chan<- []graphqlbackend.SearchResultResolver)
+	SetStream(c graphqlbackend.SearchStream)
 }
 
 func defaultNewSearchResolver(ctx context.Context, args *graphqlbackend.SearchArgs) (searchResolver, error) {
@@ -284,14 +284,14 @@ type finalResult struct {
 //
 //   - results is written to 0 or more times before closing.
 //   - final is written to once.
-func newResultsStream(ctx context.Context, search searchResolver) (results <-chan []graphqlbackend.SearchResultResolver, final <-chan finalResult) {
-	resultsC := make(chan []graphqlbackend.SearchResultResolver)
+func newResultsStream(ctx context.Context, search searchResolver) (results <-chan graphqlbackend.SearchEvent, final <-chan finalResult) {
+	resultsC := make(chan graphqlbackend.SearchEvent)
 	finalC := make(chan finalResult, 1)
 	go func() {
 		defer close(finalC)
 		defer close(resultsC)
 
-		search.SetResultChannel(resultsC)
+		search.SetStream(resultsC)
 
 		r, err := search.Results(ctx)
 		finalC <- finalResult{resultsResolver: r, err: err}

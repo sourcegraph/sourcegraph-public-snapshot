@@ -728,7 +728,7 @@ func Frontend() *monitoring.Container {
 						shared.ContainerMemoryUsage(containerName, monitoring.ObservableOwnerCloud).Observable(),
 					},
 					{
-						shared.ContainerRestarts(containerName, monitoring.ObservableOwnerCloud).Observable(),
+						shared.ContainerMissing(containerName, monitoring.ObservableOwnerCloud).Observable(),
 					},
 				},
 			},

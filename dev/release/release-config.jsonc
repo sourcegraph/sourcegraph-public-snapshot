@@ -18,11 +18,8 @@
     "upcomingRelease": "3.24.0",
 
     // Release dates
+    "releaseDate": "20 January 2021 10:00 PST",
     "oneWorkingDayAfterRelease": "21 January 2021 10:00 PST",
-    "releaseDateTime": "20 January 2021 10:00 PST",
-    "oneWorkingDayBeforeRelease": "19 January 2021 10:00 PST",
-    "fourWorkingDaysBeforeRelease": "15 January 2021 10:00 PST",
-    "fiveWorkingDaysBeforeRelease": "14 January 2021 10:00 PST",
 
     // Channel where messages from the tooling are posted
     "slackAnnounceChannel": "dev-announce",
@@ -37,6 +34,7 @@
     "dryRun": {
         "tags": false,
         "changesets": false,
-        "trackingIssues": false
+        "trackingIssues": false,
+        "calendar": false
     }
 }

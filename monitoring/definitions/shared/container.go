@@ -3,7 +3,6 @@ package shared
 import (
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
@@ -18,18 +17,19 @@ import (
 const TitleContainerMonitoring = "Container monitoring (not available on server)"
 
 var (
-	ContainerRestarts sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
+	ContainerMissing sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
 		return Observable{
-			Name:        "container_restarts",
-			Description: "container restarts",
+			Name:        "container_missing",
+			Description: "container missing",
 			// inspired by https://awesome-prometheus-alerts.grep.to/rules#docker-containers
-			Query:          fmt.Sprintf(`count by(name) ((time() - container_last_seen{%s}) > 60)`, CadvisorNameMatcher(containerName)),
-			Warning:        monitoring.Alert().GreaterOrEqual(1),
-			Critical:       monitoring.Alert().GreaterOrEqual(1).For(10 * time.Minute),
-			Panel:          monitoring.Panel().LegendFormat("{{name}}"),
-			Owner:          owner,
-			Interpretation: "This value is based on the number of times a container has not been seen in one minute.",
-			PossibleSolutions: strings.Replace(`
+			Query:   fmt.Sprintf(`count by(name) ((time() - container_last_seen{%s}) > 60)`, CadvisorNameMatcher(containerName)),
+			NoAlert: true,
+			Panel:   monitoring.Panel().LegendFormat("{{name}}"),
+			Owner:   owner,
+			Interpretation: strings.Replace(`
+				This value is the number of times a container has not been seen for more than one minute. If you observe this
+				value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.
+
 				- **Kubernetes:**
 					- Determine if the pod was OOM killed using 'kubectl describe pod {{CONTAINER_NAME}}' (look for 'OOMKilled: true') and, if so, consider increasing the memory limit in the relevant 'Deployment.yaml'.
 					- Check the logs before the container restarted to see if there are 'panic:' messages or similar using 'kubectl logs -p {{CONTAINER_NAME}}'.

@@ -194,6 +194,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                 },
                 "location": "[Location path=/code-monitoring]",
                 "showCodeMonitoringTestEmailButton": false,
+                "toggleCodeMonitorEnabled": [Function],
               }
             }
             noun="code monitor"
@@ -491,6 +492,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                     },
                     "location": "[Location path=/code-monitoring]",
                     "showCodeMonitoringTestEmailButton": false,
+                    "toggleCodeMonitorEnabled": [Function],
                   }
                 }
                 noun="code monitor"
@@ -540,6 +542,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                       }
                     }
                     showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <AnchorLink
                       className="code-monitoring-node card p-3"
@@ -568,10 +571,40 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             </div>
                           </div>
                           <div
-                            className="d-flex flex-column"
+                            className="d-flex"
                           >
+                            <div
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                onClick={[Function]}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
                             <button
-                              className="btn btn-link"
+                              className="btn btn-link code-monitoring-node__edit-button"
                               type="button"
                             >
                               Edit
@@ -620,6 +653,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                       }
                     }
                     showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <AnchorLink
                       className="code-monitoring-node card p-3"
@@ -648,10 +682,40 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             </div>
                           </div>
                           <div
-                            className="d-flex flex-column"
+                            className="d-flex"
                           >
+                            <div
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                onClick={[Function]}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
                             <button
-                              className="btn btn-link"
+                              className="btn btn-link code-monitoring-node__edit-button"
                               type="button"
                             >
                               Edit
@@ -700,6 +764,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                       }
                     }
                     showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <AnchorLink
                       className="code-monitoring-node card p-3"
@@ -728,10 +793,40 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             </div>
                           </div>
                           <div
-                            className="d-flex flex-column"
+                            className="d-flex"
                           >
+                            <div
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                onClick={[Function]}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
                             <button
-                              className="btn btn-link"
+                              className="btn btn-link code-monitoring-node__edit-button"
                               type="button"
                             >
                               Edit
@@ -780,6 +875,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                       }
                     }
                     showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <AnchorLink
                       className="code-monitoring-node card p-3"
@@ -808,10 +904,40 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             </div>
                           </div>
                           <div
-                            className="d-flex flex-column"
+                            className="d-flex"
                           >
+                            <div
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                onClick={[Function]}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
                             <button
-                              className="btn btn-link"
+                              className="btn btn-link code-monitoring-node__edit-button"
                               type="button"
                             >
                               Edit
@@ -860,6 +986,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                       }
                     }
                     showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <AnchorLink
                       className="code-monitoring-node card p-3"
@@ -888,10 +1015,40 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             </div>
                           </div>
                           <div
-                            className="d-flex flex-column"
+                            className="d-flex"
                           >
+                            <div
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                onClick={[Function]}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
                             <button
-                              className="btn btn-link"
+                              className="btn btn-link code-monitoring-node__edit-button"
                               type="button"
                             >
                               Edit
@@ -940,6 +1097,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                       }
                     }
                     showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <AnchorLink
                       className="code-monitoring-node card p-3"
@@ -968,10 +1126,40 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             </div>
                           </div>
                           <div
-                            className="d-flex flex-column"
+                            className="d-flex"
                           >
+                            <div
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                onClick={[Function]}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
                             <button
-                              className="btn btn-link"
+                              className="btn btn-link code-monitoring-node__edit-button"
                               type="button"
                             >
                               Edit
@@ -1020,6 +1208,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                       }
                     }
                     showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <AnchorLink
                       className="code-monitoring-node card p-3"
@@ -1048,10 +1237,40 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             </div>
                           </div>
                           <div
-                            className="d-flex flex-column"
+                            className="d-flex"
                           >
+                            <div
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                onClick={[Function]}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
                             <button
-                              className="btn btn-link"
+                              className="btn btn-link code-monitoring-node__edit-button"
                               type="button"
                             >
                               Edit
@@ -1100,6 +1319,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                       }
                     }
                     showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <AnchorLink
                       className="code-monitoring-node card p-3"
@@ -1128,10 +1348,40 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             </div>
                           </div>
                           <div
-                            className="d-flex flex-column"
+                            className="d-flex"
                           >
+                            <div
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                onClick={[Function]}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
                             <button
-                              className="btn btn-link"
+                              className="btn btn-link code-monitoring-node__edit-button"
                               type="button"
                             >
                               Edit
@@ -1180,6 +1430,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                       }
                     }
                     showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <AnchorLink
                       className="code-monitoring-node card p-3"
@@ -1208,10 +1459,40 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             </div>
                           </div>
                           <div
-                            className="d-flex flex-column"
+                            className="d-flex"
                           >
+                            <div
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                onClick={[Function]}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
                             <button
-                              className="btn btn-link"
+                              className="btn btn-link code-monitoring-node__edit-button"
                               type="button"
                             >
                               Edit
@@ -1260,6 +1541,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                       }
                     }
                     showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <AnchorLink
                       className="code-monitoring-node card p-3"
@@ -1288,10 +1570,40 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             </div>
                           </div>
                           <div
-                            className="d-flex flex-column"
+                            className="d-flex"
                           >
+                            <div
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                onClick={[Function]}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
                             <button
-                              className="btn btn-link"
+                              className="btn btn-link code-monitoring-node__edit-button"
                               type="button"
                             >
                               Edit
@@ -1517,6 +1829,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                 },
                 "location": "[Location path=/code-monitoring]",
                 "showCodeMonitoringTestEmailButton": false,
+                "toggleCodeMonitorEnabled": [Function],
               }
             }
             noun="code monitor"
@@ -1632,6 +1945,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                     },
                     "location": "[Location path=/code-monitoring]",
                     "showCodeMonitoringTestEmailButton": false,
+                    "toggleCodeMonitorEnabled": [Function],
                   }
                 }
                 noun="code monitor"
@@ -1681,6 +1995,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                       }
                     }
                     showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <AnchorLink
                       className="code-monitoring-node card p-3"
@@ -1709,10 +2024,40 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                             </div>
                           </div>
                           <div
-                            className="d-flex flex-column"
+                            className="d-flex"
                           >
+                            <div
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                onClick={[Function]}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
                             <button
-                              className="btn btn-link"
+                              className="btn btn-link code-monitoring-node__edit-button"
                               type="button"
                             >
                               Edit
@@ -1761,6 +2106,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                       }
                     }
                     showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <AnchorLink
                       className="code-monitoring-node card p-3"
@@ -1789,10 +2135,40 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                             </div>
                           </div>
                           <div
-                            className="d-flex flex-column"
+                            className="d-flex"
                           >
+                            <div
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                onClick={[Function]}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
                             <button
-                              className="btn btn-link"
+                              className="btn btn-link code-monitoring-node__edit-button"
                               type="button"
                             >
                               Edit
@@ -1841,6 +2217,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                       }
                     }
                     showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <AnchorLink
                       className="code-monitoring-node card p-3"
@@ -1869,10 +2246,40 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                             </div>
                           </div>
                           <div
-                            className="d-flex flex-column"
+                            className="d-flex"
                           >
+                            <div
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                onClick={[Function]}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
                             <button
-                              className="btn btn-link"
+                              className="btn btn-link code-monitoring-node__edit-button"
                               type="button"
                             >
                               Edit
@@ -2098,6 +2505,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                 },
                 "location": "[Location path=/code-monitoring]",
                 "showCodeMonitoringTestEmailButton": false,
+                "toggleCodeMonitorEnabled": [Function],
               }
             }
             noun="code monitor"
@@ -2447,6 +2855,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                     },
                     "location": "[Location path=/code-monitoring]",
                     "showCodeMonitoringTestEmailButton": false,
+                    "toggleCodeMonitorEnabled": [Function],
                   }
                 }
                 noun="code monitor"
@@ -2496,6 +2905,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                       }
                     }
                     showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <AnchorLink
                       className="code-monitoring-node card p-3"
@@ -2524,10 +2934,40 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             </div>
                           </div>
                           <div
-                            className="d-flex flex-column"
+                            className="d-flex"
                           >
+                            <div
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                onClick={[Function]}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
                             <button
-                              className="btn btn-link"
+                              className="btn btn-link code-monitoring-node__edit-button"
                               type="button"
                             >
                               Edit
@@ -2576,6 +3016,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                       }
                     }
                     showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <AnchorLink
                       className="code-monitoring-node card p-3"
@@ -2604,10 +3045,40 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             </div>
                           </div>
                           <div
-                            className="d-flex flex-column"
+                            className="d-flex"
                           >
+                            <div
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                onClick={[Function]}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
                             <button
-                              className="btn btn-link"
+                              className="btn btn-link code-monitoring-node__edit-button"
                               type="button"
                             >
                               Edit
@@ -2656,6 +3127,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                       }
                     }
                     showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <AnchorLink
                       className="code-monitoring-node card p-3"
@@ -2684,10 +3156,40 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             </div>
                           </div>
                           <div
-                            className="d-flex flex-column"
+                            className="d-flex"
                           >
+                            <div
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                onClick={[Function]}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
                             <button
-                              className="btn btn-link"
+                              className="btn btn-link code-monitoring-node__edit-button"
                               type="button"
                             >
                               Edit
@@ -2736,6 +3238,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                       }
                     }
                     showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <AnchorLink
                       className="code-monitoring-node card p-3"
@@ -2764,10 +3267,40 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             </div>
                           </div>
                           <div
-                            className="d-flex flex-column"
+                            className="d-flex"
                           >
+                            <div
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                onClick={[Function]}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
                             <button
-                              className="btn btn-link"
+                              className="btn btn-link code-monitoring-node__edit-button"
                               type="button"
                             >
                               Edit
@@ -2816,6 +3349,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                       }
                     }
                     showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <AnchorLink
                       className="code-monitoring-node card p-3"
@@ -2844,10 +3378,40 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             </div>
                           </div>
                           <div
-                            className="d-flex flex-column"
+                            className="d-flex"
                           >
+                            <div
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                onClick={[Function]}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
                             <button
-                              className="btn btn-link"
+                              className="btn btn-link code-monitoring-node__edit-button"
                               type="button"
                             >
                               Edit
@@ -2896,6 +3460,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                       }
                     }
                     showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <AnchorLink
                       className="code-monitoring-node card p-3"
@@ -2924,10 +3489,40 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             </div>
                           </div>
                           <div
-                            className="d-flex flex-column"
+                            className="d-flex"
                           >
+                            <div
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                onClick={[Function]}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
                             <button
-                              className="btn btn-link"
+                              className="btn btn-link code-monitoring-node__edit-button"
                               type="button"
                             >
                               Edit
@@ -2976,6 +3571,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                       }
                     }
                     showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <AnchorLink
                       className="code-monitoring-node card p-3"
@@ -3004,10 +3600,40 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             </div>
                           </div>
                           <div
-                            className="d-flex flex-column"
+                            className="d-flex"
                           >
+                            <div
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                onClick={[Function]}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
                             <button
-                              className="btn btn-link"
+                              className="btn btn-link code-monitoring-node__edit-button"
                               type="button"
                             >
                               Edit
@@ -3056,6 +3682,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                       }
                     }
                     showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <AnchorLink
                       className="code-monitoring-node card p-3"
@@ -3084,10 +3711,40 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             </div>
                           </div>
                           <div
-                            className="d-flex flex-column"
+                            className="d-flex"
                           >
+                            <div
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                onClick={[Function]}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
                             <button
-                              className="btn btn-link"
+                              className="btn btn-link code-monitoring-node__edit-button"
                               type="button"
                             >
                               Edit
@@ -3136,6 +3793,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                       }
                     }
                     showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <AnchorLink
                       className="code-monitoring-node card p-3"
@@ -3164,10 +3822,40 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             </div>
                           </div>
                           <div
-                            className="d-flex flex-column"
+                            className="d-flex"
                           >
+                            <div
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                onClick={[Function]}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
                             <button
-                              className="btn btn-link"
+                              className="btn btn-link code-monitoring-node__edit-button"
                               type="button"
                             >
                               Edit
@@ -3216,6 +3904,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                       }
                     }
                     showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <AnchorLink
                       className="code-monitoring-node card p-3"
@@ -3244,10 +3933,40 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             </div>
                           </div>
                           <div
-                            className="d-flex flex-column"
+                            className="d-flex"
                           >
+                            <div
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                onClick={[Function]}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
                             <button
-                              className="btn btn-link"
+                              className="btn btn-link code-monitoring-node__edit-button"
                               type="button"
                             >
                               Edit
@@ -3296,6 +4015,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                       }
                     }
                     showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <AnchorLink
                       className="code-monitoring-node card p-3"
@@ -3324,10 +4044,40 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             </div>
                           </div>
                           <div
-                            className="d-flex flex-column"
+                            className="d-flex"
                           >
+                            <div
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                onClick={[Function]}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
                             <button
-                              className="btn btn-link"
+                              className="btn btn-link code-monitoring-node__edit-button"
                               type="button"
                             >
                               Edit
@@ -3376,6 +4126,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                       }
                     }
                     showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <AnchorLink
                       className="code-monitoring-node card p-3"
@@ -3404,10 +4155,40 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             </div>
                           </div>
                           <div
-                            className="d-flex flex-column"
+                            className="d-flex"
                           >
+                            <div
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                onClick={[Function]}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
                             <button
-                              className="btn btn-link"
+                              className="btn btn-link code-monitoring-node__edit-button"
                               type="button"
                             >
                               Edit

@@ -11,7 +11,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 // Worker is a generic consumer of records from the workerutil store.
@@ -189,9 +188,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 // error only if there is an issue committing the transaction - no handler errors will bubble
 // up.
 func (w *Worker) handle(tx Store, record Record) (err error) {
-	// Enable tracing on the context and trace the remainder of the operation including the
-	// transaction commit call in the following deferred function.
-	ctx, endOperation := w.options.Metrics.operations.handle.With(ot.WithShouldTrace(w.ctx, true), &err, observation.Args{})
+	ctx, endOperation := w.options.Metrics.operations.handle.With(w.ctx, &err, observation.Args{})
 	defer endOperation(1, observation.Args{})
 
 	defer func() {

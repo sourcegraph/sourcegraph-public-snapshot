@@ -105,16 +105,6 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 	}
 	sort.Strings(imageNames)
 
-	// TEMPORARY OBSERVABILITY INCREASE
-	for _, dockerStep := range job.DockerSteps {
-		log15.Info("TEMP: docker step", "step", fmt.Sprintf("%+v", dockerStep))
-	}
-
-	// TEMPORARY OBSERVABILITY INCREASE
-	for _, cliStep := range job.CliSteps {
-		log15.Info("TEMP: cli step", "step", fmt.Sprintf("%+v", cliStep))
-	}
-
 	scriptNames := make([]string, 0, len(job.DockerSteps))
 	for i, dockerStep := range job.DockerSteps {
 		scriptName := scriptNameFromJobStep(job, i)

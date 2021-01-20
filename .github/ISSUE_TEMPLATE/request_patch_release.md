@@ -43,8 +43,8 @@ I have read [when and why we perform patch releases](https://about.sourcegraph.c
 
 - If there is [already an upcoming patch release](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aissue+label%3Arelease-tracking+), add the listed commits alongside a link to this issue
 - If there is no upcoming patch release, create a new one:
-  - Update [`dev/release/release-config.jsonc`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/dev/release/release-config.jsonc) with the patch release in `upcomingRelease` (and open a PR to `main` to update it)
-  - `cd dev/release && yarn build && yarn run release tracking:patch-issue`
+  - Update [`dev/release/release-config.jsonc`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/dev/release/release-config.jsonc) with the patch release in `upcomingRelease` and `releaseDate` (and open a PR to `main` to update it)
+  - `yarn release tracking:issues`
   - Add the listed commits alongside a link to this issue to the generated [release tracking issue](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aissue+label%3Arelease-tracking+)
 
 Comment and close this issue once the relevant commit(s) have been cherry-picked into the release branch.

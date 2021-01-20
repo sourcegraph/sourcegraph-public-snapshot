@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"reflect"
+	"sort"
 	"strings"
 	"sync"
 	"testing"
@@ -62,12 +63,24 @@ func TestSearchResults(t *testing.T) {
 				t.Fatal("unexpected result type", result)
 			}
 		}
+		// dedup results since we expect our clients to do dedupping
+		if len(resultDescriptions) > 1 {
+			sort.Strings(resultDescriptions)
+			dedup := resultDescriptions[:1]
+			for _, s := range resultDescriptions[1:] {
+				if s != dedup[len(dedup)-1] {
+					dedup = append(dedup, s)
+				}
+			}
+			resultDescriptions = dedup
+		}
 		return resultDescriptions
 	}
 	testCallResults := func(t *testing.T, query, version string, want []string) {
+		t.Helper()
 		results := getResults(t, query, version)
-		if !reflect.DeepEqual(results, want) {
-			t.Errorf("got %v, want %v", results, want)
+		if d := cmp.Diff(want, results); d != "" {
+			t.Errorf("unexpected results (-want, +got):\n%s", d)
 		}
 	}
 
