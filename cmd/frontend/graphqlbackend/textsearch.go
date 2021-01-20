@@ -527,22 +527,26 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 		go func() {
 			// TODO limitHit, handleRepoSearchResult
 			defer wg.Done()
-
 			for event := range indexed.Search(ctx) {
 				func() {
 					mu.Lock()
 					defer mu.Unlock()
-					common.Update(&event.common)
+					common.Update(&event.Stats)
 
-					tr.LogFields(otlog.Int("matches.len", len(event.results)), otlog.Error(event.err), otlog.Bool("overLimitCanceled", overLimitCanceled))
-					if event.err != nil && searchErr == nil && !overLimitCanceled {
-						searchErr = event.err
-						tr.LazyPrintf("cancel indexed search due to error: %v", event.err)
+					tr.LogFields(otlog.Int("matches.len", len(event.Results)), otlog.Error(event.Error), otlog.Bool("overLimitCanceled", overLimitCanceled))
+					if event.Error != nil && searchErr == nil && !overLimitCanceled {
+						searchErr = event.Error
+						tr.LazyPrintf("cancel indexed search due to error: %v", event.Error)
 						cancel()
 					}
 
 					if !args.PatternInfo.IsStructuralPat {
-						addMatches(event.results)
+						// TODO: (stefan) Convert back to filematch for the time being to limit snowballing of changes.
+						fms := make([]*FileMatchResolver, 0, len(event.Results))
+						for _, match := range event.Results {
+							fms = append(fms, match.(*FileMatchResolver))
+						}
+						addMatches(fms)
 					}
 				}()
 
@@ -554,9 +558,13 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 					partition := make(map[string][]string)
 					var repos []*search.RepositoryRevisions
 
-					for _, m := range event.results {
-						name := string(m.Repo.Name())
-						partition[name] = append(partition[name], m.JPath)
+					for _, m := range event.Results {
+						fm, ok := m.ToFileMatch()
+						if !ok {
+							panic("this should always be a FileMath")
+						}
+						name := string(fm.Repo.Name())
+						partition[name] = append(partition[name], fm.JPath)
 					}
 
 					// Filter Zoekt repos that didn't contain matches

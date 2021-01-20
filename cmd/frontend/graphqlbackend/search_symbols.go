@@ -135,14 +135,19 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 			func() {
 				mu.Lock()
 				defer mu.Unlock()
-				common.Update(&event.common)
-				tr.LogFields(otlog.Object("searchErr", event.err), otlog.Error(err), otlog.Bool("overLimitCanceled", overLimitCanceled))
-				if event.err != nil && err == nil && !overLimitCanceled {
-					err = event.err
+				common.Update(&event.Stats)
+				tr.LogFields(otlog.Object("searchErr", event.Error), otlog.Error(err), otlog.Bool("overLimitCanceled", overLimitCanceled))
+				if event.Error != nil && err == nil && !overLimitCanceled {
+					err = event.Error
 					tr.LazyPrintf("cancel indexed symbol search due to error: %v", err)
 					cancel()
+
 				}
-				addMatches(event.results)
+				fms := make([]*FileMatchResolver, 0, len(event.Results))
+				for _, match := range event.Results {
+					fms = append(fms, match.(*FileMatchResolver))
+				}
+				addMatches(fms)
 			}()
 		}
 
