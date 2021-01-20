@@ -198,8 +198,6 @@ If you want to learn more about observability:
 - [Observability developer documentation](../observability/index.md)
 - [Observability at Sourcegraph](https://about.sourcegraph.com/handbook/engineering/observability)
 
-<!-- content below here has not been reorganized or refreshed yet -->
-
 ## Diagram
 
 You can click on each component to jump to its respective code repository or subtree.
@@ -209,37 +207,3 @@ You can click on each component to jump to its respective code repository or sub
 
 Note that almost every service has a link back to the frontend, from which is gathers configuration updates.
 These edges are omitted for clarity.
-
-## Clients
-
-We maintain multiple Sourcegraph clients:
-
-- [Web application](https://github.com/sourcegraph/sourcegraph/tree/main/client/web)
-- [Browser extensions](https://github.com/sourcegraph/sourcegraph/tree/main/client/browser)
-- [src-cli](https://github.com/sourcegraph/src-cli)
-- [Editor integrations](https://docs.sourcegraph.com/integration/editor)
-  - [Visual Studio Code](https://github.com/sourcegraph/sourcegraph-vscode)
-  - [Atom](https://github.com/sourcegraph/sourcegraph-atom)
-  - [JetBrains IDEs](https://github.com/sourcegraph/sourcegraph-jetbrains)
-  - [Sublime Text 3](https://github.com/sourcegraph/sourcegraph-sublime)
-
-These clients generally communicate with a Sourcegraph instance (either https://sourcegraph.com or a private customer instance) through our [GraphQL API](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/frontend/graphqlbackend/schema.graphql). There are also a small number of REST endpoints for specific use-cases.
-
-## Services
-
-Our backend is composed of multiple services:
-
-- Most are Go services found in the [cmd](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/cmd) and [enterprise/cmd](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/enterprise/cmd) folders.
-
-## Infrastructure
-
-- [sourcegraph/infrastructure](https://github.com/sourcegraph/infrastructure) contains Terraform configurations for Cloudflare DNS and Site 24x7 monitoring, as well as build steps for various Docker images. Only private Docker images should be added here, public ones belong in the main repository.
-- [sourcegraph/deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) contains YAML that can be used by customers to deploy Sourcegraph to a Kubernetes cluster.
-- [sourcegraph/deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker) contains a pure-Docker cluster deployment reference that some one-off customers use to deploy Sourcegraph to a non-Kubernetes cluster.
-  - [sourcegraph/deploy-sourcegraph-dot-com](https://github.com/sourcegraph/deploy-sourcegraph-dot-com) is a fork of the above that is used to deploy to the Kubernetes cluster that serves https://sourcegraph.com.
-
-## References
-
-Here are some references to help you understand how multiple systems fit together:
-
-- [Life of a ping](life-of-a-ping.md)
