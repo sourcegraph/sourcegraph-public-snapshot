@@ -190,7 +190,17 @@ func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo *ty
 		return nil, false, err
 	}
 
-	matches, limitHit, err := searcher.Search(ctx, searcherURLs, gitserverRepo, commit, info, fetchTimeout)
+	var indexerEndpoints []string
+	if info.IsStructuralPat {
+		endpoints, err := search.Indexers().Map.Endpoints()
+		for key := range endpoints {
+			indexerEndpoints = append(indexerEndpoints, key)
+		}
+		if err != nil {
+			return nil, false, err
+		}
+	}
+	matches, limitHit, err := searcher.Search(ctx, searcherURLs, gitserverRepo, commit, info, fetchTimeout, indexerEndpoints)
 	if err != nil {
 		return nil, false, err
 	}
@@ -255,7 +265,7 @@ func repoShouldBeSearched(ctx context.Context, searcherURLs *endpoint.Map, searc
 func repoHasFilesWithNamesMatching(ctx context.Context, searcherURLs *endpoint.Map, include bool, repoHasFileFlag []string, gitserverRepo api.RepoName, commit api.CommitID, fetchTimeout time.Duration) (bool, error) {
 	for _, pattern := range repoHasFileFlag {
 		p := search.TextPatternInfo{IsRegExp: true, FileMatchLimit: 1, IncludePatterns: []string{pattern}, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
-		matches, _, err := searcher.Search(ctx, searcherURLs, gitserverRepo, commit, &p, fetchTimeout)
+		matches, _, err := searcher.Search(ctx, searcherURLs, gitserverRepo, commit, &p, fetchTimeout, []string{})
 		if err != nil {
 			return false, err
 		}

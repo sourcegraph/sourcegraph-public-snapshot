@@ -43,7 +43,7 @@ var (
 var MockSearch func(ctx context.Context, repo api.RepoName, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*protocol.FileMatch, limitHit bool, err error)
 
 // Search searches repo@commit with p.
-func Search(ctx context.Context, searcherURLs *endpoint.Map, repo api.RepoName, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*protocol.FileMatch, limitHit bool, err error) {
+func Search(ctx context.Context, searcherURLs *endpoint.Map, repo api.RepoName, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration, indexerEndpoints []string) (matches []*protocol.FileMatch, limitHit bool, err error) {
 	if MockSearch != nil {
 		return MockSearch(ctx, repo, commit, p, fetchTimeout)
 	}
@@ -65,6 +65,7 @@ func Search(ctx context.Context, searcherURLs *endpoint.Map, repo api.RepoName, 
 		"CombyRule":       []string{p.CombyRule},
 
 		"PathPatternsAreRegExps": []string{"true"},
+		"IndexerEndpoints":       indexerEndpoints,
 	}
 	if deadline, ok := ctx.Deadline(); ok {
 		t, err := deadline.MarshalText()

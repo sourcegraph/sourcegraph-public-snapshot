@@ -9,15 +9,42 @@ import (
 	"time"
 
 	"github.com/google/zoekt"
-	zoektquery "github.com/google/zoekt/query"
+
+	"sync"
+	"sync/atomic"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
+
+	zoektquery "github.com/google/zoekt/query"
+	zoektrpc "github.com/google/zoekt/rpc"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
+
+var zoektOnce sync.Once
+var endpointMap atomicEndpoints
+var zoektClient backend.StreamSearcher
+
+func getZoektClient(indexerEndpoints []string) backend.StreamSearcher {
+	zoektOnce.Do(func() {
+		dial := func(endpoint string) backend.StreamSearcher {
+			return backend.NewMeteredSearcher(endpoint, &backend.StreamSearchAdapter{zoektrpc.Client(endpoint)})
+		}
+		zoektClient = backend.NewMeteredSearcher(
+			"", // no hostname means its the aggregator
+			&backend.HorizontalSearcher{
+				Map:  &endpointMap,
+				Dial: dial,
+			},
+		)
+	})
+	endpointMap.Set(indexerEndpoints)
+	return zoektClient
+}
 
 func HandleFilePathPatterns(query *search.TextPatternInfo) (zoektquery.Q, error) {
 	var and []zoektquery.Q
@@ -247,4 +274,47 @@ func contextWithoutDeadline(cOld context.Context) (context.Context, context.Canc
 	}()
 
 	return cNew, cancel
+}
+
+// atomicEndpoints allows us to update the endpoints used by our zoekt client.
+type atomicEndpoints struct {
+	endpoints atomic.Value
+}
+
+func (a *atomicEndpoints) Endpoints() (map[string]struct{}, error) {
+	eps := a.endpoints.Load()
+	if eps == nil {
+		return nil, errors.New("endpoints have not been set")
+	}
+	return eps.(map[string]struct{}), nil
+}
+
+func (a *atomicEndpoints) Set(endpoints []string) {
+	if !a.needsUpdate(endpoints) {
+		return
+	}
+
+	eps := make(map[string]struct{}, len(endpoints))
+	for _, addr := range endpoints {
+		eps[addr] = struct{}{}
+	}
+	a.endpoints.Store(eps)
+}
+
+func (a *atomicEndpoints) needsUpdate(endpoints []string) bool {
+	old, err := a.Endpoints()
+	if err != nil {
+		return true
+	}
+	if len(old) != len(endpoints) {
+		return true
+	}
+
+	for _, addr := range endpoints {
+		if _, ok := old[addr]; !ok {
+			return true
+		}
+	}
+
+	return false
 }
