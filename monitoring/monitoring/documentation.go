@@ -36,6 +36,7 @@ To learn more about Sourcegraph's metrics and how to view these dashboards, see 
 
 `
 
+// fprintSubtitle prints subtitle-class text
 func fprintSubtitle(w io.Writer, text string) {
 	fmt.Fprintf(w, "<p class=\"subtitle\">%s</p>\n\n", text)
 }
@@ -46,6 +47,11 @@ func fprintSubtitle(w io.Writer, text string) {
 func fprintObservableHeader(w io.Writer, c *Container, o *Observable, headerLevel int) {
 	fmt.Fprint(w, strings.Repeat("#", headerLevel))
 	fmt.Fprintf(w, " %s: %s\n\n", c.Name, o.Name)
+}
+
+// fprintOwnedBy prints information about who owns a particular monitoring definition.
+func fprintOwnedBy(w io.Writer, owner ObservableOwner) {
+	fmt.Fprintf(w, "<sub>*Managed by the %s.*</sub>\n", owner.toMarkdown())
 }
 
 // Create an anchor link that matches `fprintObservableHeader`
@@ -101,11 +107,11 @@ func (d *documentation) renderAlertSolutionEntry(c *Container, o Observable) err
 	}
 
 	fprintObservableHeader(&d.alertSolutions, c, &o, 2)
-	fprintSubtitle(&d.alertSolutions, fmt.Sprintf(`%s (%s)`, o.Description, o.Owner))
+	fprintSubtitle(&d.alertSolutions, o.Description)
 
 	var prometheusAlertNames []string // collect names for silencing configuration
 	// Render descriptions of various levels of this alert
-	fmt.Fprintf(&d.alertSolutions, "**Descriptions:**\n\n")
+	fmt.Fprintf(&d.alertSolutions, "**Descriptions**\n\n")
 	for _, alert := range []struct {
 		level     string
 		threshold *ObservableAlertDefinition
@@ -127,29 +133,31 @@ func (d *documentation) renderAlertSolutionEntry(c *Container, o Observable) err
 	fmt.Fprint(&d.alertSolutions, "\n")
 
 	// Render solutions for dealing with this alert
-	fmt.Fprintf(&d.alertSolutions, "**Possible solutions:**\n\n")
+	fmt.Fprintf(&d.alertSolutions, "**Possible solutions**\n\n")
 	if o.PossibleSolutions != "none" {
 		possibleSolutions, _ := toMarkdown(o.PossibleSolutions, true)
 		fmt.Fprintf(&d.alertSolutions, "%s\n", possibleSolutions)
-	}
-	// add link to panel information IF there are additional details available
-	if o.Interpretation != "" && o.Interpretation != "none" {
-		fmt.Fprintf(&d.alertSolutions, "- **Refer to the [dashboards reference](./%s#%s)** for more help interpreting this alert and metric.\n",
-			dashboardsDocsFile, observableDocAnchor(c, o))
 	}
 	// add silencing configuration as another solution
 	fmt.Fprintf(&d.alertSolutions, "- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:\n\n")
 	fmt.Fprintf(&d.alertSolutions, "```json\n%s\n```\n\n", fmt.Sprintf(`"observability.silenceAlerts": [
 %s
 ]`, strings.Join(prometheusAlertNames, ",\n")))
+	// add link to panel information IF there are additional details available
+	if o.Interpretation != "" && o.Interpretation != "none" {
+		fmt.Fprintf(&d.alertSolutions, "> NOTE: More help interpreting this metric is available in the [dashboards reference](./%s#%s).\n\n",
+			dashboardsDocsFile, observableDocAnchor(c, o))
+	}
+	// add owner
+	fprintOwnedBy(&d.alertSolutions, o.Owner)
 	// render break for readability
-	fmt.Fprint(&d.alertSolutions, "<br />\n\n")
+	fmt.Fprint(&d.alertSolutions, "\n<br />\n\n")
 	return nil
 }
 
 func (d *documentation) renderDashboardPanelEntry(c *Container, o Observable) error {
 	fprintObservableHeader(&d.dashboards, c, &o, 4)
-	fmt.Fprintf(&d.dashboards, "This %s panel indicates %s.\n\n", o.Owner, o.Description)
+	fmt.Fprintf(&d.dashboards, "This panel indicates %s.\n\n", o.Description)
 	// render interpretation reference if available
 	if o.Interpretation != "" && o.Interpretation != "none" {
 		interpretation, _ := toMarkdown(o.Interpretation, false)
@@ -157,9 +165,11 @@ func (d *documentation) renderDashboardPanelEntry(c *Container, o Observable) er
 	}
 	// add link to alert solutions IF there is an alert attached
 	if !o.NoAlert {
-		fmt.Fprintf(&d.dashboards, "Refer to the [alert solutions reference](./%s#%s) for relevant alerts.\n",
+		fmt.Fprintf(&d.dashboards, "> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./%s#%s).\n\n",
 			alertSolutionsFile, observableDocAnchor(c, o))
 	}
+	// add owner
+	fprintOwnedBy(&d.dashboards, o.Owner)
 	// render break for readability
 	fmt.Fprint(&d.dashboards, "\n<br />\n\n")
 	return nil
