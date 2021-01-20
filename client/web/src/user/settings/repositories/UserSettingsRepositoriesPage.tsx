@@ -9,16 +9,18 @@ import {
     FilteredConnectionQueryArguments,
     FilterValue,
 } from '../../../components/FilteredConnection'
-import { Observable } from 'rxjs'
-import { listUserRepositoriesAndPollIfEmptyOrAnyCloning } from '../../../site-admin/backend'
+import { EMPTY, Observable } from 'rxjs'
+import { listUserRepositories } from '../../../site-admin/backend'
 import { queryExternalServices } from '../../../components/externalServices/backend'
 import { RouteComponentProps } from 'react-router'
 import { Link } from '../../../../../shared/src/components/Link'
 import { RepositoryNode } from './RepositoryNode'
 import AddIcon from 'mdi-react/AddIcon'
-import { ErrorLike } from '../../../../../shared/src/util/errors'
+import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
+import { repeatUntil } from '../../../../../shared/src/util/rxjs/repeatUntil'
+import { ErrorAlert } from '../../../components/alerts'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
-import { map } from 'rxjs/operators'
+import { catchError, map } from 'rxjs/operators'
 
 interface Props extends RouteComponentProps, TelemetryProps {
     userID: string
@@ -39,6 +41,7 @@ const Row: React.FunctionComponent<RowProps> = props => (
     />
 )
 
+type Status = undefined | 'pending' | ErrorLike
 const emptyFilters: FilteredConnectionFilter[] = []
 
 /**
@@ -52,12 +55,29 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     telemetryService,
 }) => {
     const [hasRepos, setHasRepos] = useState(false)
+    const [pendingOrError, setPendingOrError] = useState<Status>()
 
     const filters =
         useObservable<FilteredConnectionFilter[]>(
             useMemo(
                 () =>
                     queryExternalServices({ namespace: userID, first: null, after: null }).pipe(
+                        repeatUntil(
+                            result => {
+                                let pending: Status
+                                const now = new Date().getTime()
+                                for (const node of result.nodes) {
+                                    // if the next sync time is not blank, or in the future we must not be syncing
+                                    if (node.nextSyncAt !== '' && now - new Date(node.nextSyncAt).getTime() > 0) {
+                                        pending = 'pending'
+                                    }
+                                }
+
+                                setPendingOrError(pending)
+                                return pending !== 'pending'
+                            },
+                            { delay: 2000 }
+                        ),
                         map(result => {
                             const services: FilterValue[] = [
                                 {
@@ -105,6 +125,10 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                                     values: services,
                                 },
                             ]
+                        }),
+                        catchError(error => {
+                            setPendingOrError(asError(error))
+                            return EMPTY
                         })
                     ),
                 [userID]
@@ -113,8 +137,17 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
 
     const queryRepositories = useCallback(
         (args: FilteredConnectionQueryArguments): Observable<RepositoriesResult['repositories']> =>
-            listUserRepositoriesAndPollIfEmptyOrAnyCloning({ ...args, id: userID }),
-        [userID]
+            listUserRepositories({ ...args, id: userID }).pipe(
+                repeatUntil(
+                    (result): boolean =>
+                        result.nodes &&
+                        result.nodes.length > 0 &&
+                        result.nodes.every(nodes => !nodes.mirrorInfo.cloneInProgress && nodes.mirrorInfo.cloned) &&
+                        !(pendingOrError === 'pending'),
+                    { delay: 2000 }
+                )
+            ),
+        [pendingOrError, userID]
     )
 
     const updated = useCallback((value: Connection<SiteAdminRepositoryFields> | ErrorLike | undefined): void => {
@@ -167,6 +200,13 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
 
     return (
         <div className="user-settings-repositories-page">
+            {pendingOrError === 'pending' && (
+                <div className="alert alert-info">
+                    <span className="font-weight-bold">Some repositories are still being fetched.</span>
+                    These repositories may not appear in the list of repositories.
+                </div>
+            )}
+            {isErrorLike(pendingOrError) && <ErrorAlert error={pendingOrError} icon={true} history={history} />}
             <PageTitle title="Repositories" />
             <div className="d-flex justify-content-between align-items-center">
                 <h2 className="mb-2">Repositories</h2>
