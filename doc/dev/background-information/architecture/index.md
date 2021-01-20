@@ -207,3 +207,7 @@ You can click on each component to jump to its respective code repository or sub
 
 Note that almost every service has a link back to the frontend, from which is gathers configuration updates.
 These edges are omitted for clarity.
+
+## Other resources
+
+- [Life of a ping](life-of-a-ping.md)
