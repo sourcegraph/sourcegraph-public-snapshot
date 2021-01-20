@@ -26,5 +26,5 @@ var (
 
 	Authz AuthzStore = &authzStore{}
 
-	Secrets = &secrets{}
+	Secrets = &SecretStore{}
 )
