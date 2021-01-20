@@ -87,6 +87,7 @@ Create a campaign by specifying a search query to get a list of repositories and
 - [Site admin configuration for campaigns](how-tos/site_admin_configuration.md)
 - [Configuring user credentials for campaigns](how-tos/configuring_user_credentials.md)
 - <span class="badge badge-experimental">Experimental</span> [Creating multiple changesets in large repositories](how-tos/creating_multiple_changesets_in_large_repositories.md)
+- [Handling errored changesets](how-tos/handling_errored_changesets.md)
 
 ## Tutorials
 
