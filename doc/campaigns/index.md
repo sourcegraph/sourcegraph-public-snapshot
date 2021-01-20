@@ -75,6 +75,7 @@ Create a campaign by specifying a search query to get a list of repositories and
 - [Permissions in campaigns](explanations/permissions_in_campaigns.md)
 - [Campaigns design](explanations/campaigns_design.md)
 - [How `src` executes a campaign spec](explanations/how_src_executes_a_campaign_spec.md)
+- [Re-executing campaign specs multiple times](explanations/reexecuting_campaign_specs_multiple_times.md)
 
 ## How-tos
 
