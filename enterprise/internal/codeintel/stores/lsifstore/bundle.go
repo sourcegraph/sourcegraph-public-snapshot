@@ -325,7 +325,7 @@ func (s *Store) MonikerResults(ctx context.Context, bundleID int, tableName, sch
 			err = pkgerrors.Wrap(err, "store.ReadDefinitions")
 		}
 	} else if tableName == "references" {
-		if rows, totalCount, err = s.rreadReferences(ctx, bundleID, scheme, identifier, skip, take); err != nil {
+		if rows, totalCount, err = s.readReferences(ctx, bundleID, scheme, identifier, skip, take); err != nil {
 			err = pkgerrors.Wrap(err, "store.ReadReferences")
 		}
 	}

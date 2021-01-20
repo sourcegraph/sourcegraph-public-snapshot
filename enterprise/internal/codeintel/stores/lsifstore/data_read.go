@@ -118,7 +118,7 @@ func (s *Store) readDefinitions(ctx context.Context, bundleID int, scheme, ident
 	return s.readDefinitionReferences(ctx, bundleID, "lsif_data_definitions", scheme, identifier, skip, take)
 }
 
-func (s *Store) rreadReferences(ctx context.Context, bundleID int, scheme, identifier string, skip, take int) (_ []LocationData, _ int, err error) {
+func (s *Store) readReferences(ctx context.Context, bundleID int, scheme, identifier string, skip, take int) (_ []LocationData, _ int, err error) {
 	ctx, endObservation := s.operations.readReferences.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("scheme", scheme),

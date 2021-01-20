@@ -198,7 +198,7 @@ func TestReadWriteReferences(t *testing.T) {
 		t.Fatalf("unexpected error while writing references: %s", err)
 	}
 
-	references, _, err := store.rreadReferences(ctx, 42, "scheme C", "ident C", 0, 100)
+	references, _, err := store.readReferences(ctx, 42, "scheme C", "ident C", 0, 100)
 	if err != nil {
 		t.Fatalf("unexpected error reading from database: %s", err)
 	}
