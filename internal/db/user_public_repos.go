@@ -43,10 +43,5 @@ func (s *UserPublicRepoStore) SetUserRepo(ctx context.Context, userID int32, rep
 
 func (s *UserPublicRepoStore) ListByUser(ctx context.Context, userID int32) ([]int32, error) {
 	s.ensureStore()
-
-	rows, err := basestore.ScanInt32s(s.store.Query(ctx, sqlf.Sprintf("SELECT repo_id FROM user_public_repos WHERE user_id = %v", userID)))
-	if err != nil {
-		return nil, err
-	}
-	return rows, nil
+	return basestore.ScanInt32s(s.store.Query(ctx, sqlf.Sprintf("SELECT repo_id FROM user_public_repos WHERE user_id = %v", userID)))
 }
