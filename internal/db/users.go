@@ -529,6 +529,9 @@ func (u *UserStore) HardDelete(ctx context.Context, id int32) (err error) {
 	if err := tx.Exec(ctx, sqlf.Sprintf("DELETE FROM settings WHERE user_id=%s", id)); err != nil {
 		return err
 	}
+	if err := tx.Exec(ctx, sqlf.Sprintf("DELETE FROM saved_searches WHERE user_id=%s", id)); err != nil {
+		return err
+	}
 
 	// Settings that were merely authored by this user should not be deleted. They may be global or
 	// org settings that apply to other users, too. There is currently no way to hard-delete

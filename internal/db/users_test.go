@@ -565,6 +565,15 @@ func TestUsers_Delete(t *testing.T) {
 				t.Fatal(err)
 			}
 
+			// Create a saved search owned by the user.
+			if _, err := SavedSearches.Create(ctx, &types.SavedSearch{
+				Description: "desc",
+				Query:       "foo",
+				UserID:      &user.ID,
+			}); err != nil {
+				t.Fatal(err)
+			}
+
 			if hard {
 				// Hard delete user.
 				if err := Users.HardDelete(ctx, user.ID); err != nil {
