@@ -550,7 +550,7 @@ func (o Observable) validate() error {
 		if allAlertsEmpty && !o.NoAlert {
 			return fmt.Errorf("Warning or Critical must be set or explicitly disable alerts with NoAlert")
 		} else if !allAlertsEmpty && o.NoAlert {
-			return fmt.Errorf("No Warning or Critical alert is set, but NoAlert is also true")
+			return fmt.Errorf("An alert is set, but NoAlert is also true")
 		}
 		// PossibleSolutions if there are no alerts is redundant and likely an error
 		if o.PossibleSolutions != "" {

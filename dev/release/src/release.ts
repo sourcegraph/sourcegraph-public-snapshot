@@ -450,10 +450,8 @@ cc @${config.captainGitHubUsername}
                             `comby -in-place 'latestReleaseDockerServerImageBuild = newBuild(":[1]")' "latestReleaseDockerServerImageBuild = newBuild(\\"${release.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
                             `comby -in-place 'latestReleaseDockerComposeOrPureDocker = newBuild(":[1]")' "latestReleaseDockerComposeOrPureDocker = newBuild(\\"${release.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
 
-                            // Support previous release for now
-                            notPatchRelease
-                                ? `comby -in-place 'env["MINIMUM_UPGRADEABLE_VERSION"] = ":[1]"' 'env["MINIMUM_UPGRADEABLE_VERSION"] = "${previous.version}"' enterprise/dev/ci/ci/*.go`
-                                : 'echo "Skipping bumping of upgradable version for patch release"',
+                            // Support current release as the "previous release" going forward
+                            `comby -in-place 'env["MINIMUM_UPGRADEABLE_VERSION"] = ":[1]"' 'env["MINIMUM_UPGRADEABLE_VERSION"] = "${release.version}"' enterprise/dev/ci/ci/*.go`,
 
                             // Add a stub to add upgrade guide entries
                             notPatchRelease

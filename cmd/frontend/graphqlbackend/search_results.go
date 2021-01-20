@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math"
 	"path"
-	"reflect"
 	"regexp"
 	"sort"
 	"strconv"
@@ -860,7 +859,7 @@ func (r *searchResolver) evaluateAndStream(ctx context.Context, scopeParameters 
 	// For streaming search we want to run the evaluation of AND expressions in batch
 	// mode. We copy r to r2 and replace the result channel with a sink.
 	r2 := *r
-	sink := make(chan []SearchResultResolver)
+	sink := make(chan SearchEvent)
 	defer close(sink)
 	go func() {
 		for range sink {
@@ -869,8 +868,10 @@ func (r *searchResolver) evaluateAndStream(ctx context.Context, scopeParameters 
 	r2.resultChannel = sink
 
 	result, err := r2.evaluateAnd(ctx, scopeParameters, operands)
-	if err == nil && result.SearchResults != nil {
-		r.resultChannel <- result.SearchResults
+	r.resultChannel <- SearchEvent{
+		Results: result.SearchResults,
+		Stats:   result.Stats,
+		Error:   err,
 	}
 	return result, err
 }
@@ -1085,7 +1086,7 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, scopePar
 		return nil, nil
 	}
 	// Unreachable.
-	return nil, fmt.Errorf("unrecognized type %s in evaluatePatternExpression", reflect.TypeOf(node).String())
+	return nil, fmt.Errorf("unrecognized type %T in evaluatePatternExpression", node)
 }
 
 // evaluate evaluates all expressions of a search query.
@@ -1168,7 +1169,7 @@ func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolve
 		}
 	default:
 		// Unreachable.
-		return nil, fmt.Errorf("unrecognized type %s in searchResolver Results", reflect.TypeOf(r.query).String())
+		return nil, fmt.Errorf("unrecognized type %T in searchResolver Results", r.query)
 	}
 	// copy userSettings from searchResolver to SearchResultsResolver
 	if srr != nil {
@@ -1573,7 +1574,7 @@ func (r *searchResolver) determineResultTypes(args search.TextParameters, forceO
 	} else {
 		resultTypes, _ = r.query.StringValues(query.FieldType)
 		if len(resultTypes) == 0 {
-			resultTypes = []string{"file", "path", "repo"}
+			resultTypes = []string{"file", "path", "repo", "symbol"}
 		}
 	}
 	for _, resultType := range resultTypes {
@@ -1657,7 +1658,7 @@ func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameter
 type aggregator struct {
 	// resultChannel if non-nil will send all results we receive down it. See
 	// searchResolver.SetResultChannel
-	resultChannel chan<- []SearchResultResolver
+	resultChannel SearchStream
 
 	mu       sync.Mutex
 	results  []SearchResultResolver
@@ -1674,10 +1675,21 @@ func (a *aggregator) get() ([]SearchResultResolver, streaming.Stats, *multierror
 	return a.results, a.common, a.multiErr
 }
 
+func statsDeref(s *streaming.Stats) streaming.Stats {
+	if s == nil {
+		return streaming.Stats{}
+	}
+	return *s
+}
+
 // report sends results down resultChannel and collects the results.
 func (a *aggregator) report(ctx context.Context, results []SearchResultResolver, common *streaming.Stats, err error) {
 	if a.resultChannel != nil {
-		a.resultChannel <- results
+		a.resultChannel <- SearchEvent{
+			Results: results,
+			Stats:   statsDeref(common),
+			Error:   err,
+		}
 	}
 
 	a.collect(ctx, results, common, err)

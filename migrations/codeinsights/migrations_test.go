@@ -8,10 +8,10 @@ import (
 	"strings"
 	"testing"
 
-	migrations "github.com/sourcegraph/sourcegraph/migrations/frontend"
+	migrations "github.com/sourcegraph/sourcegraph/migrations/codeinsights"
 )
 
-const FirstMigration = 1528395733
+const FirstMigration = 1000000000
 
 func TestIDConstraints(t *testing.T) {
 	ups, err := filepath.Glob("*.up.sql")

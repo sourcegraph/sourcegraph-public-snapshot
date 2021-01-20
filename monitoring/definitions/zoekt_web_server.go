@@ -42,10 +42,7 @@ func ZoektWebServer() *monitoring.Container {
 						// cause extended container restarts. still seta warning alert for
 						// extended periods of container restarts, since this might still
 						// indicate a problem.
-						shared.ContainerRestarts("zoekt-webserver", monitoring.ObservableOwnerSearch).
-							WithWarning(monitoring.Alert().Greater(1).For(10 * time.Minute)).
-							WithCritical(nil).
-							Observable(),
+						shared.ContainerMissing("zoekt-webserver", monitoring.ObservableOwnerSearch).Observable(),
 						shared.ContainerIOUsage("zoekt-webserver", monitoring.ObservableOwnerSearch).Observable(),
 					},
 				},

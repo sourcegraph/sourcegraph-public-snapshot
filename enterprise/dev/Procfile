@@ -14,6 +14,7 @@ zoekt-indexserver-0: ./dev/zoekt/wrapper indexserver 0
 zoekt-indexserver-1: ./dev/zoekt/wrapper indexserver 1
 zoekt-webserver-0: ./dev/zoekt/wrapper webserver 0
 zoekt-webserver-1: ./dev/zoekt/wrapper webserver 1
+codeinsights-db: ./dev/codeinsights-db.sh
 keycloak: ./dev/auth-provider/keycloak.sh
 jaeger: ./dev/jaeger.sh
 docsite: ./dev/docsite.sh -config doc/docsite.json serve -http=localhost:5080 || echo error starting docsite

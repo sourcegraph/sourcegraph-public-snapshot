@@ -1,6 +1,0 @@
-BEGIN;
-
-DROP INDEX IF EXISTS repo_cloned;
-ALTER TABLE repo DROP COLUMN cloned;
-
-COMMIT;

@@ -296,10 +296,15 @@ func fileMatchResultsToSearchResults(results []*FileMatchResolver) []SearchResul
 
 // searchFilesInRepos searches a set of repos for a pattern.
 // For c != nil searchFilesInRepos will send results down c.
-func searchFilesInRepos(ctx context.Context, args *search.TextParameters, c chan<- []SearchResultResolver) (res []*FileMatchResolver, common *streaming.Stats, finalErr error) {
+func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream SearchStream) (res []*FileMatchResolver, common *streaming.Stats, finalErr error) {
 	if mockSearchFilesInRepos != nil {
 		return mockSearchFilesInRepos(args)
 	}
+
+	c, cleanup := resultStream(stream)
+	defer func() {
+		cleanup(common)
+	}()
 
 	tr, ctx := trace.New(ctx, "searchFilesInRepos", fmt.Sprintf("query: %s", args.PatternInfo.Pattern))
 	defer func() {

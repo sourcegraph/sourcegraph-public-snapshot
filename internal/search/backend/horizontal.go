@@ -59,7 +59,7 @@ func (s *HorizontalSearcher) doStreamSearch(ctx context.Context, q query.Q, opts
 
 		// Stop stream if we encounter an error.
 		if r.Error != nil {
-			results <- StreamSearchEvent{Error: err}
+			results <- r
 			return
 		}
 
