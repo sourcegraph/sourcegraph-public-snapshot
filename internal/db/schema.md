@@ -1348,6 +1348,8 @@ Indexes:
 ---------+---------+-----------
  user_id | integer | 
  repo_id | integer | 
+Indexes:
+    "user_public_repos_user_id_repo_id_key" UNIQUE CONSTRAINT, btree (user_id, repo_id)
 Foreign-key constraints:
     "repo_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     "user_fk" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
