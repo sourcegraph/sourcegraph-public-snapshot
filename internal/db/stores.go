@@ -11,7 +11,7 @@ var (
 	Orgs             = &OrgStore{}
 	OrgMembers       = &OrgMemberStore{}
 	SavedSearches    = &SavedSearchStore{}
-	Settings         = &settings{}
+	Settings         = &SettingStore{}
 	Users            = &UserStore{}
 	UserCredentials  = &userCredentials{}
 	UserEmails       = &UserEmailsStore{}
