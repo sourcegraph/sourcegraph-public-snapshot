@@ -103,22 +103,17 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 		run = parallel.NewRun(conf.SearchSymbolsParallelism())
 		mu  sync.Mutex
 
-		unflattened       [][]*FileMatchResolver
-		flattenedSize     int
+		aggMatches        []*FileMatchResolver
 		overLimitCanceled bool
 	)
 
 	addMatches := func(matches []*FileMatchResolver) {
 		if len(matches) > 0 {
-			sort.Slice(matches, func(i, j int) bool {
-				a, b := matches[i].uri, matches[j].uri
-				return a > b
-			})
-			unflattened = append(unflattened, matches)
-			flattenedSize += len(matches)
 
-			if flattenedSize > int(args.PatternInfo.FileMatchLimit) {
-				tr.LazyPrintf("cancel due to result size: %d > %d", flattenedSize, args.PatternInfo.FileMatchLimit)
+			aggMatches = append(aggMatches, matches...)
+
+			if len(aggMatches) > int(args.PatternInfo.FileMatchLimit) {
+				tr.LazyPrintf("cancel due to result size: %d > %d", len(aggMatches), args.PatternInfo.FileMatchLimit)
 				overLimitCanceled = true
 				common.IsLimitHit = true
 				cancelAll()
@@ -184,8 +179,14 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 		})
 	}
 	err = run.Wait()
-	flattened := flattenFileMatches(unflattened, int(args.PatternInfo.FileMatchLimit))
-	res2 := limitSymbolResults(flattened, limit)
+	sort.Slice(aggMatches, func(i, j int) bool {
+		a, b := aggMatches[i].uri, aggMatches[j].uri
+		return a > b
+	})
+	if limit := int(args.PatternInfo.FileMatchLimit); limit < len(aggMatches) {
+		aggMatches = aggMatches[:limit]
+	}
+	res2 := limitSymbolResults(aggMatches, limit)
 	common.IsLimitHit = symbolCount(res2) < symbolCount(res)
 	return res2, common, err
 }

@@ -384,32 +384,26 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 		wg                sync.WaitGroup
 		mu                sync.Mutex
 		searchErr         error
-		unflattened       [][]*FileMatchResolver
-		flattenedSize     int
+		aggMatches        []*FileMatchResolver
 		overLimitCanceled bool // canceled because we were over the limit
 	)
 
 	// addMatches assumes the caller holds mu.
 	addMatches := func(matches []*FileMatchResolver) {
 		if len(matches) > 0 {
-			sort.Slice(matches, func(i, j int) bool {
-				a, b := matches[i].uri, matches[j].uri
-				return a > b
-			})
-			unflattened = append(unflattened, matches)
+
+			aggMatches = append(aggMatches, matches...)
 
 			// Send matches down the results channel.
 			if c != nil {
 				c <- fileMatchResultsToSearchResults(matches)
 			}
 
-			flattenedSize += len(matches)
-
 			// Stop searching once we have found enough matches. This does
 			// lead to potentially unstable result ordering, but is worth
 			// it for the performance benefit.
-			if flattenedSize > int(args.PatternInfo.FileMatchLimit) {
-				tr.LazyPrintf("cancel due to result size: %d > %d", flattenedSize, args.PatternInfo.FileMatchLimit)
+			if len(aggMatches) > int(args.PatternInfo.FileMatchLimit) {
+				tr.LazyPrintf("cancel due to result size: %d > %d", len(aggMatches), args.PatternInfo.FileMatchLimit)
 				overLimitCanceled = true
 				common.IsLimitHit = true
 				cancel()
@@ -603,8 +597,14 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 		return nil, common, searchErr
 	}
 
-	flattened := flattenFileMatches(unflattened, int(args.PatternInfo.FileMatchLimit))
-	return flattened, common, nil
+	sort.Slice(aggMatches, func(i, j int) bool {
+		a, b := aggMatches[i].uri, aggMatches[j].uri
+		return a > b
+	})
+	if limit := int(args.PatternInfo.FileMatchLimit); limit < len(aggMatches) {
+		aggMatches = aggMatches[:limit]
+	}
+	return aggMatches, common, nil
 }
 
 // limitSearcherRepos limits the number of repo@revs searched by the unindexed searcher codepath.
@@ -627,50 +627,4 @@ func limitSearcherRepos(unindexed []*search.RepositoryRevisions, limit int) (sea
 	}
 	searcherRepos = unindexed[:len(unindexed)-limitedRepos]
 	return
-}
-
-func flattenFileMatches(unflattened [][]*FileMatchResolver, fileMatchLimit int) []*FileMatchResolver {
-	// Return early so we don't have to worry about empty lists in later
-	// calculations.
-	if len(unflattened) == 0 {
-		return nil
-	}
-
-	// We pass in a limit to each repository so we may end up with R*limit
-	// results where R is the number of repositories we searched. To ensure we
-	// have results from all repositories unflattened contains the results per
-	// repo. We then want to create an idempontent order of results, but
-	// ensuring every repo has atleast one result.
-	sort.Slice(unflattened, func(i, j int) bool {
-		a, b := unflattened[i][0].uri, unflattened[j][0].uri
-		return a > b
-	})
-	var flattened []*FileMatchResolver
-	initialPortion := fileMatchLimit / len(unflattened)
-	for _, matches := range unflattened {
-		if initialPortion < len(matches) {
-			flattened = append(flattened, matches[:initialPortion]...)
-		} else {
-			flattened = append(flattened, matches...)
-		}
-	}
-	// We now have at most initialPortion from each repo. We add the rest of the
-	// results until we hit our limit.
-	for _, matches := range unflattened {
-		low := initialPortion
-		high := low + (fileMatchLimit - len(flattened))
-		if high <= len(matches) {
-			flattened = append(flattened, matches[low:high]...)
-		} else if low < len(matches) {
-			flattened = append(flattened, matches[low:]...)
-		}
-	}
-	// Sort again since we constructed flattened by adding more results at the
-	// end.
-	sort.Slice(flattened, func(i, j int) bool {
-		a, b := flattened[i].uri, flattened[j].uri
-		return a > b
-	})
-
-	return flattened
 }
