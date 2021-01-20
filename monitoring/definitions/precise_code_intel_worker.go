@@ -204,7 +204,7 @@ func PreciseCodeIntelWorker() *monitoring.Container {
 						shared.ContainerMemoryUsage("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel).Observable(),
 					},
 					{
-						shared.ContainerRestarts("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel).Observable(),
+						shared.ContainerMissing("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel).Observable(),
 					},
 				},
 			},

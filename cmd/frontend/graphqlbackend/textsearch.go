@@ -12,6 +12,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -283,7 +284,7 @@ func fileMatchURI(name api.RepoName, ref, path string) string {
 	return b.String()
 }
 
-var mockSearchFilesInRepos func(args *search.TextParameters) ([]*FileMatchResolver, *SearchResultsCommon, error)
+var mockSearchFilesInRepos func(args *search.TextParameters) ([]*FileMatchResolver, *streaming.Stats, error)
 
 func fileMatchResultsToSearchResults(results []*FileMatchResolver) []SearchResultResolver {
 	results2 := make([]SearchResultResolver, len(results))
@@ -295,7 +296,7 @@ func fileMatchResultsToSearchResults(results []*FileMatchResolver) []SearchResul
 
 // searchFilesInRepos searches a set of repos for a pattern.
 // For c != nil searchFilesInRepos will send results down c.
-func searchFilesInRepos(ctx context.Context, args *search.TextParameters, c chan<- []SearchResultResolver) (res []*FileMatchResolver, common *SearchResultsCommon, finalErr error) {
+func searchFilesInRepos(ctx context.Context, args *search.TextParameters, c chan<- []SearchResultResolver) (res []*FileMatchResolver, common *streaming.Stats, finalErr error) {
 	if mockSearchFilesInRepos != nil {
 		return mockSearchFilesInRepos(args)
 	}
@@ -314,7 +315,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, c chan
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	common = &SearchResultsCommon{}
+	common = &streaming.Stats{}
 
 	indexedTyp := textRequest
 	if args.PatternInfo.IsStructuralPat {
@@ -508,7 +509,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, c chan
 							cancel()
 						}
 					}
-					common.update(&repoCommon)
+					common.Update(&repoCommon)
 					addMatches(matches)
 				}(limitCtx, limitDone) // ends the Go routine for a call to searcher for a repo
 			} // ends the for loop iterating over repo's revs
@@ -526,7 +527,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, c chan
 				func() {
 					mu.Lock()
 					defer mu.Unlock()
-					common.update(&event.common)
+					common.Update(&event.common)
 
 					tr.LogFields(otlog.Int("matches.len", len(event.results)), otlog.Error(event.err), otlog.Bool("overLimitCanceled", overLimitCanceled))
 					if event.err != nil && searchErr == nil && !overLimitCanceled {

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { PageTitle } from '../../../components/PageTitle'
 import { RepositoriesResult, SiteAdminRepositoryFields, UserRepositoriesResult } from '../../../graphql-operations'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
@@ -17,6 +17,8 @@ import { Link } from '../../../../../shared/src/components/Link'
 import { RepositoryNode } from './RepositoryNode'
 import AddIcon from 'mdi-react/AddIcon'
 import { ErrorLike } from '../../../../../shared/src/util/errors'
+import { useObservable } from '../../../../../shared/src/util/useObservable'
+import { map } from 'rxjs/operators'
 
 interface Props extends RouteComponentProps, TelemetryProps {
     userID: string
@@ -37,6 +39,8 @@ const Row: React.FunctionComponent<RowProps> = props => (
     />
 )
 
+const emptyFilters: FilteredConnectionFilter[] = []
+
 /**
  * A page displaying the repositories for this user.
  */
@@ -47,67 +51,65 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     routingPrefix,
     telemetryService,
 }) => {
-    const emptyFilters: FilteredConnectionFilter[] = []
-    const [state, setState] = useState({ filters: emptyFilters, fetched: false })
     const [hasRepos, setHasRepos] = useState(false)
 
-    if (!state.fetched) {
-        queryExternalServices({ namespace: userID, first: null, after: null })
-            .toPromise()
-            .then(result => {
-                const services: FilterValue[] = [
-                    {
-                        value: 'all',
-                        label: 'All',
-                        args: {},
-                    },
-                ]
-                result.nodes.map(node => {
-                    services.push({
-                        value: node.id,
-                        label: node.displayName,
-                        tooltip: '',
-                        args: { externalServiceID: node.id },
-                    })
-                })
-                const newFilters: FilteredConnectionFilter[] = [
-                    {
-                        label: 'Status',
-                        type: 'select',
-                        id: 'status',
-                        tooltip: 'Repository status',
-                        values: [
-                            {
-                                value: 'all',
-                                label: 'All',
-                                args: {},
-                            },
-                            {
-                                value: 'cloned',
-                                label: 'Cloned',
-                                args: { cloned: true, notCloned: false },
-                            },
-                            {
-                                value: 'not-cloned',
-                                label: 'Not Cloned',
-                                args: { cloned: false, notCloned: true },
-                            },
-                        ],
-                    },
-                    {
-                        label: 'Code host',
-                        type: 'select',
-                        id: 'code-host',
-                        tooltip: 'Code host',
-                        values: services,
-                    },
-                ]
-                setState({ filters: newFilters, fetched: true })
-            })
-            .catch(error => {
-                console.log('ERROR', error)
-            })
-    }
+    const filters =
+        useObservable<FilteredConnectionFilter[]>(
+            useMemo(
+                () =>
+                    queryExternalServices({ namespace: userID, first: null, after: null }).pipe(
+                        map(result => {
+                            const services: FilterValue[] = [
+                                {
+                                    value: 'all',
+                                    label: 'All',
+                                    args: {},
+                                },
+                                ...result.nodes.map(node => ({
+                                    value: node.id,
+                                    label: node.displayName,
+                                    tooltip: '',
+                                    args: { externalServiceID: node.id },
+                                })),
+                            ]
+
+                            return [
+                                {
+                                    label: 'Status',
+                                    type: 'select',
+                                    id: 'status',
+                                    tooltip: 'Repository status',
+                                    values: [
+                                        {
+                                            value: 'all',
+                                            label: 'All',
+                                            args: {},
+                                        },
+                                        {
+                                            value: 'cloned',
+                                            label: 'Cloned',
+                                            args: { cloned: true, notCloned: false },
+                                        },
+                                        {
+                                            value: 'not-cloned',
+                                            label: 'Not Cloned',
+                                            args: { cloned: false, notCloned: true },
+                                        },
+                                    ],
+                                },
+                                {
+                                    label: 'Code host',
+                                    type: 'select',
+                                    id: 'code-host',
+                                    tooltip: 'Code host',
+                                    values: services,
+                                },
+                            ]
+                        })
+                    ),
+                [userID]
+            )
+        ) || emptyFilters
 
     const queryRepositories = useCallback(
         (args: FilteredConnectionQueryArguments): Observable<RepositoriesResult['repositories']> =>
@@ -129,7 +131,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     }, [telemetryService])
 
     let body: JSX.Element
-    if (state.filters[1] && state.filters[1].values.length === 1) {
+    if (filters[1] && filters[1].values.length === 1) {
         body = (
             <div className="card p-3 m-2">
                 <h3 className="mb-1">You have not added any repositories to Sourcegraph</h3>
@@ -154,10 +156,11 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                 listComponent="table"
                 listClassName="w-100"
                 onUpdate={updated}
-                filters={state.filters}
+                filters={filters}
                 history={history}
                 location={location}
                 totalCountSummaryComponent={TotalCountSummary}
+                inputClassName="user-settings-repos__filter-input"
             />
         )
     }
@@ -167,7 +170,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             <PageTitle title="Repositories" />
             <div className="d-flex justify-content-between align-items-center">
                 <h2 className="mb-2">Repositories</h2>
-                {state.filters[1] && state.filters[1].values.length !== 1 && (
+                {filters[1] && filters[1].values.length !== 1 && (
                     <Link
                         className="btn btn-primary test-goto-add-external-service-page"
                         to={`${routingPrefix}/repositories/manage`}

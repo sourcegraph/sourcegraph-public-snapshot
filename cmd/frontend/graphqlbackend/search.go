@@ -22,6 +22,7 @@ import (
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	querytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -258,6 +259,14 @@ type searchResolver struct {
 
 	zoekt        *searchbackend.Zoekt
 	searcherURLs *endpoint.Map
+}
+
+// SearchEvent is an event on a search stream. It contains fields which can be
+// aggregated up into a final result.
+type SearchEvent struct {
+	Results []SearchResultResolver
+	Stats   streaming.Stats
+	Error   error
 }
 
 // SetResultChannel will send all results down c.
@@ -577,7 +586,7 @@ func sortSearchSuggestions(s []*searchSuggestionResolver) {
 // returning common as to reflect that new information. If searchErr is a fatal error,
 // it returns a non-nil error; otherwise, if searchErr == nil or a non-fatal error, it returns a
 // nil error.
-func handleRepoSearchResult(repoRev *search.RepositoryRevisions, limitHit, timedOut bool, searchErr error) (_ SearchResultsCommon, fatalErr error) {
+func handleRepoSearchResult(repoRev *search.RepositoryRevisions, limitHit, timedOut bool, searchErr error) (_ streaming.Stats, fatalErr error) {
 	var status search.RepoStatus
 	if limitHit {
 		status |= search.RepoStatusLimitHit
@@ -604,7 +613,7 @@ func handleRepoSearchResult(repoRev *search.RepositoryRevisions, limitHit, timed
 	} else {
 		status |= search.RepoStatusSearched
 	}
-	return SearchResultsCommon{
+	return streaming.Stats{
 		Status:     search.RepoStatusSingleton(repoRev.Repo.ID, status),
 		IsLimitHit: limitHit,
 	}, fatalErr

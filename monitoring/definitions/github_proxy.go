@@ -40,7 +40,7 @@ func GitHubProxy() *monitoring.Container {
 						shared.ContainerMemoryUsage("github-proxy", monitoring.ObservableOwnerCloud).Observable(),
 					},
 					{
-						shared.ContainerRestarts("github-proxy", monitoring.ObservableOwnerCloud).Observable(),
+						shared.ContainerMissing("github-proxy", monitoring.ObservableOwnerCloud).Observable(),
 					},
 				},
 			},

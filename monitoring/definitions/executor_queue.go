@@ -108,7 +108,7 @@ func ExecutorQueue() *monitoring.Container {
 						shared.ContainerMemoryUsage("executor-queue", monitoring.ObservableOwnerCodeIntel).Observable(),
 					},
 					{
-						shared.ContainerRestarts("executor-queue", monitoring.ObservableOwnerCodeIntel).Observable(),
+						shared.ContainerMissing("executor-queue", monitoring.ObservableOwnerCodeIntel).Observable(),
 					},
 				},
 			},

@@ -188,7 +188,7 @@ func (u *UserStore) Create(ctx context.Context, info NewUser) (newUser *types.Us
 	if err != nil {
 		return nil, err
 	}
-	defer tx.Done(err)
+	defer func() { err = tx.Done(err) }()
 	return tx.create(ctx, info)
 }
 
@@ -341,7 +341,7 @@ func (u *UserStore) create(ctx context.Context, info NewUser) (newUser *types.Us
 		for _, err := range errs {
 			log15.Warn(err.Error())
 		}
-		if err := OrgMembers.CreateMembershipInOrgsForAllUsers(ctx, u, orgs); err != nil {
+		if err := OrgMembers.With(u).CreateMembershipInOrgsForAllUsers(ctx, orgs); err != nil {
 			return nil, err
 		}
 
@@ -394,7 +394,7 @@ func (u *UserStore) Update(ctx context.Context, id int32, update UserUpdate) (er
 	if err != nil {
 		return err
 	}
-	defer tx.Done(err)
+	defer func() { err = tx.Done(err) }()
 
 	fieldUpdates := []*sqlf.Query{
 		sqlf.Sprintf("updated_at=now()"), // always update updated_at timestamp
@@ -448,7 +448,7 @@ func (u *UserStore) Delete(ctx context.Context, id int32) (err error) {
 	if err != nil {
 		return err
 	}
-	defer tx.Done(err)
+	defer func() { err = tx.Done(err) }()
 
 	res, err := tx.ExecResult(ctx, sqlf.Sprintf("UPDATE users SET deleted_at=now() WHERE id=%s AND deleted_at IS NULL", id))
 	if err != nil {
@@ -497,7 +497,7 @@ func (u *UserStore) HardDelete(ctx context.Context, id int32) (err error) {
 	if err != nil {
 		return err
 	}
-	defer tx.Done(err)
+	defer func() { err = tx.Done(err) }()
 
 	if err := tx.Exec(ctx, sqlf.Sprintf("DELETE FROM names WHERE user_id=%s", id)); err != nil {
 		return err
@@ -669,7 +669,7 @@ func (u *UserStore) InvalidateSessionsByID(ctx context.Context, id int32) (err e
 	if err != nil {
 		return err
 	}
-	defer tx.Done(err)
+	defer func() { err = tx.Done(err) }()
 
 	query := sqlf.Sprintf(`
 		UPDATE users

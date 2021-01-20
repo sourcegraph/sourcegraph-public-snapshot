@@ -118,7 +118,7 @@ func Prometheus() *monitoring.Container {
 						shared.ContainerMemoryUsage("prometheus", monitoring.ObservableOwnerDistribution).Observable(),
 					},
 					{
-						shared.ContainerRestarts("prometheus", monitoring.ObservableOwnerDistribution).Observable(),
+						shared.ContainerMissing("prometheus", monitoring.ObservableOwnerDistribution).Observable(),
 					},
 				},
 			},
