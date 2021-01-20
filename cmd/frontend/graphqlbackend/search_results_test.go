@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	searchquerytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -519,7 +518,7 @@ func TestSearchResolver_getPatternInfo(t *testing.T) {
 	}
 	for queryStr, want := range tests {
 		t.Run(queryStr, func(t *testing.T) {
-			query, err := query.ParseAndCheck(queryStr)
+			query, err := query.ParseRegexp(queryStr)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -827,7 +826,7 @@ func TestSearchResultsHydration(t *testing.T) {
 
 	ctx := context.Background()
 
-	q, err := query.ParseAndCheck(`foobar index:only count:350`)
+	q, err := query.ParseLiteral(`foobar index:only count:350`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -881,7 +880,7 @@ func TestCheckDiffCommitSearchLimits(t *testing.T) {
 		name        string
 		resultType  string
 		numRepoRevs int
-		fields      map[string][]*searchquerytypes.Value
+		fields      []query.Node
 		wantError   error
 	}{
 		{
@@ -898,7 +897,7 @@ func TestCheckDiffCommitSearchLimits(t *testing.T) {
 		},
 		{
 			name:        "commit_search_warns_on_repos_greater_than_search_limit_with_time_filter",
-			fields:      map[string][]*searchquerytypes.Value{"after": nil},
+			fields:      []query.Node{query.Parameter{Field: "after"}},
 			resultType:  "commit",
 			numRepoRevs: 20000,
 			wantError:   TimeLimitErr{ResultType: "commit", Max: 10000},
@@ -911,14 +910,14 @@ func TestCheckDiffCommitSearchLimits(t *testing.T) {
 		},
 		{
 			name:        "no_search_limit_on_queries_including_after_filter",
-			fields:      map[string][]*searchquerytypes.Value{"after": nil},
+			fields:      []query.Node{query.Parameter{Field: "after"}},
 			resultType:  "commit",
 			numRepoRevs: 200,
 			wantError:   nil,
 		},
 		{
 			name:        "no_search_limit_on_queries_including_before_filter",
-			fields:      map[string][]*searchquerytypes.Value{"before": nil},
+			fields:      []query.Node{query.Parameter{Field: "before"}},
 			resultType:  "commit",
 			numRepoRevs: 200,
 			wantError:   nil,
@@ -937,7 +936,7 @@ func TestCheckDiffCommitSearchLimits(t *testing.T) {
 			context.Background(),
 			&search.TextParameters{
 				RepoPromise: (&search.Promise{}).Resolve(repoRevs),
-				Query:       &query.OrdinaryQuery{Query: &query.Query{Fields: test.fields}},
+				Query:       &query.AndOrQuery{Query: test.fields},
 			},
 			test.resultType)
 
