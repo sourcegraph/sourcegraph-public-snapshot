@@ -54,7 +54,16 @@ func TestChangesetSpecResolver(t *testing.T) {
 	testRev := api.CommitID("b69072d5f687b31b9f6ae3ceafdc24c259c4b9ec")
 	mockBackendCommits(t, testRev)
 
-	s, err := graphqlbackend.NewSchema(&Resolver{store: store}, nil, nil)
+	campaignSpec, err := campaigns.NewCampaignSpecFromRaw(`name: awesome-test`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	campaignSpec.NamespaceUserID = userID
+	if err := store.CreateCampaignSpec(ctx, campaignSpec); err != nil {
+		t.Fatal(err)
+	}
+
+	s, err := graphqlbackend.NewSchema(&Resolver{store: store}, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,8 +78,9 @@ func TestChangesetSpecResolver(t *testing.T) {
 			rawSpec: ct.NewRawChangesetSpecGitBranch(repoID, string(testRev)),
 			want: func(spec *campaigns.ChangesetSpec) apitest.ChangesetSpec {
 				return apitest.ChangesetSpec{
-					Typename: "VisibleChangesetSpec",
-					ID:       string(marshalChangesetSpecRandID(spec.RandID)),
+					Typename:   "VisibleChangesetSpec",
+					ID:         string(marshalChangesetSpecRandID(spec.RandID)),
+					Operations: []campaigns.ReconcilerOperation{},
 					Description: apitest.ChangesetSpecDescription{
 						Typename: "GitBranchChangesetDescription",
 						BaseRepository: apitest.Repository{
@@ -124,8 +134,9 @@ func TestChangesetSpecResolver(t *testing.T) {
 			rawSpec: ct.NewPublishedRawChangesetSpecGitBranch(repoID, string(testRev), campaigns.PublishedValue{Val: "draft"}),
 			want: func(spec *campaigns.ChangesetSpec) apitest.ChangesetSpec {
 				return apitest.ChangesetSpec{
-					Typename: "VisibleChangesetSpec",
-					ID:       string(marshalChangesetSpecRandID(spec.RandID)),
+					Typename:   "VisibleChangesetSpec",
+					ID:         string(marshalChangesetSpecRandID(spec.RandID)),
+					Operations: []campaigns.ReconcilerOperation{campaigns.ReconcilerOperationPush, campaigns.ReconcilerOperationPublishDraft},
 					Description: apitest.ChangesetSpecDescription{
 						Typename: "GitBranchChangesetDescription",
 						BaseRepository: apitest.Repository{
@@ -179,8 +190,9 @@ func TestChangesetSpecResolver(t *testing.T) {
 			rawSpec: ct.NewRawChangesetSpecExisting(repoID, "9999"),
 			want: func(spec *campaigns.ChangesetSpec) apitest.ChangesetSpec {
 				return apitest.ChangesetSpec{
-					Typename: "VisibleChangesetSpec",
-					ID:       string(marshalChangesetSpecRandID(spec.RandID)),
+					Typename:   "VisibleChangesetSpec",
+					ID:         string(marshalChangesetSpecRandID(spec.RandID)),
+					Operations: []campaigns.ReconcilerOperation{campaigns.ReconcilerOperationImport},
 					Description: apitest.ChangesetSpecDescription{
 						Typename: "ExistingChangesetReference",
 						BaseRepository: apitest.Repository{
@@ -202,6 +214,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 			}
 			spec.UserID = userID
 			spec.RepoID = repo.ID
+			spec.CampaignSpecID = campaignSpec.ID
 
 			if err := store.CreateChangesetSpec(ctx, spec); err != nil {
 				t.Fatal(err)
@@ -226,6 +239,19 @@ query($id: ID!) {
 
     ... on VisibleChangesetSpec {
       id
+
+      operations
+      changeset { id }
+      delta {
+          titleChanged
+          bodyChanged
+          undraft
+          baseRefChanged
+          diffChanged
+          commitMessageChanged
+          authorNameChanged
+          authorEmailChanged
+      }
 
       description {
         __typename

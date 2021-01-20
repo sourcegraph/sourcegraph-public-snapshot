@@ -1,5 +1,5 @@
 /* eslint-disable id-length */
-import { Observable, fromEvent, Subscription, OperatorFunction, pipe } from 'rxjs'
+import { Observable, fromEvent, Subscription, OperatorFunction, pipe, Subscriber } from 'rxjs'
 import { defaultIfEmpty, map, scan } from 'rxjs/operators'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { SearchPatternType } from '../graphql-operations'
@@ -9,15 +9,18 @@ import { SearchPatternType } from '../graphql-operations'
 // change anything and everything here. We are iteratively improving this
 // until it is no longer a proof of concept and instead works well.
 
-type SearchEvent =
-    | { type: 'filematches'; matches: FileMatch[] }
-    | { type: 'repomatches'; matches: RepositoryMatch[] }
-    | { type: 'commitmatches'; matches: CommitMatch[] }
-    | { type: 'symbolmatches'; matches: FileSymbolMatch[] }
-    | { type: 'filters'; filters: Filter[] }
-    | { type: 'alert'; alert: Alert }
+export type SearchEvent =
+    | { type: 'matches'; data: Match[] }
+    | { type: 'progress'; data: Progress }
+    | { type: 'filters'; data: Filter[] }
+    | { type: 'alert'; data: Alert }
+    | { type: 'error'; data: Error }
+    | { type: 'done'; data: {} }
 
-interface FileMatch extends RepositoryMatch {
+type Match = FileMatch | RepositoryMatch | CommitMatch | FileSymbolMatch
+
+interface FileMatch {
+    type: 'file'
     name: string
     repository: string
     branches?: string[]
@@ -31,7 +34,8 @@ interface LineMatch {
     offsetAndLengths: number[][]
 }
 
-interface FileSymbolMatch extends Omit<FileMatch, 'lineMatches'> {
+interface FileSymbolMatch extends Omit<FileMatch, 'lineMatches' | 'type'> {
+    type: 'symbol'
     symbols: SymbolMatch[]
 }
 
@@ -51,6 +55,7 @@ type MarkdownText = string
  * @see GQL.IGenericSearchResultInterface
  */
 interface CommitMatch {
+    type: 'commit'
     icon: string
     label: MarkdownText
     url: string
@@ -60,9 +65,83 @@ interface CommitMatch {
     ranges: number[][]
 }
 
-type RepositoryMatch = Pick<FileMatch, 'repository' | 'branches'>
+type RepositoryMatch = { type: 'repo' } & Pick<FileMatch, 'repository' | 'branches'>
 
-interface Filter {
+/**
+ * An aggregate type representing a progress update.
+ * Should be replaced when a new ones come in.
+ */
+export interface Progress {
+    /**
+     * True if this is the final progress update for this stream
+     */
+    done: boolean
+
+    /**
+     * The number of repositories matching the repo: filter. Is set once they
+     * are resolved.
+     */
+    repositoriesCount?: number
+
+    // The number of non-overlapping matches. If skipped is non-empty, then
+    // this is a lower bound.
+    matchCount: number
+
+    // Wall clock time in milliseconds for this search.
+    durationMs: number
+
+    /**
+     * A description of shards or documents that were skipped. This has a
+     * deterministic ordering. More important reasons will be listed first. If
+     * a search is repeated, the final skipped list will be the same.
+     * However, within a search stream when a new skipped reason is found, it
+     * may appear anywhere in the list.
+     */
+    skipped: Skipped[]
+}
+
+interface Skipped {
+    /**
+     * Why a document/shard/repository was skipped. We group counts by reason.
+     *
+     * - document-match-limit :: we found too many matches in a document, so we stopped searching it.
+     * - shard-match-limit :: we found too many matches in a shard/repository, so we stopped searching it.
+     * - repository-limit :: we did not search a repository because the set of repositories to search was too large.
+     * - shard-timeout :: we ran out of time before searching a shard/repository.
+     * - repository-cloning :: we could not search a repository because it is not cloned.
+     * - repository-missing :: we could not search a repository because it is not cloned and we failed to find it on the remote code host.
+     * - excluded-fork :: we did not search a repository because it is a fork.
+     * - excluded-archive :: we did not search a repository because it is archived.
+     */
+    reason:
+        | 'document-match-limit'
+        | 'shard-match-limit'
+        | 'repository-limit'
+        | 'shard-timedout'
+        | 'repository-cloning'
+        | 'repository-missing'
+        | 'excluded-fork'
+        | 'excluded-archive'
+    /**
+     * A short message. eg 1,200 timed out.
+     */
+    title: string
+    /**
+     * A message to show the user. Usually includes information explaining the reason,
+     * count as well as a sample of the missing items.
+     */
+    message: string
+    severity: 'info' | 'warn'
+    /**
+     * a suggested query expression to remedy the skip. eg "archived:yes" or "timeout:2m".
+     */
+    suggested?: {
+        title: string
+        queryExpression: string
+    }
+}
+
+export interface Filter {
     value: string
     label: string
     count: number
@@ -89,7 +168,7 @@ const toGQLLineMatch = (line: LineMatch): GQL.ILineMatch => ({
     preview: line.line,
 })
 
-function toGQLFileMatchBase(fm: Omit<FileMatch, 'lineMatches'>): GQL.IFileMatch {
+function toGQLFileMatchBase(fm: Omit<FileMatch, 'lineMatches' | 'type'>): GQL.IFileMatch {
     let revision = ''
     if (fm.branches) {
         const branch = fm.branches[0]
@@ -169,7 +248,6 @@ function toGQLRepositoryMatch(repo: RepositoryMatch): GQL.IRepository {
     return gqlRepo as GQL.IRepository
 }
 
-//
 function toGQLCommitMatch(commit: CommitMatch): GQL.ICommitSearchResult {
     const match = {
         __typename: 'SearchResultMatch',
@@ -196,110 +274,123 @@ function toGQLCommitMatch(commit: CommitMatch): GQL.ICommitSearchResult {
     return gqlCommit as GQL.ICommitSearchResult
 }
 
-const toGQLSearchFilter = (filter: Omit<Filter, 'type'>): GQL.ISearchFilter => ({
-    __typename: 'SearchFilter',
-    ...filter,
-})
+export interface AggregateStreamingSearchResults {
+    results: GQL.SearchResult[]
+    alert?: Alert
+    filters: Filter[]
+    progress: Progress
+}
 
-const toGQLSearchAlert = (alert: Alert): GQL.ISearchAlert => ({
-    __typename: 'SearchAlert',
-    title: alert.title,
-    description: alert.description || null,
-    proposedQueries:
-        alert.proposedQueries?.map(pq => ({
-            __typename: 'SearchQueryDescription',
-            description: pq.description || null,
-            query: pq.query,
-        })) || null,
-})
-
-const emptyGQLSearchResults: GQL.ISearchResults = {
-    __typename: 'SearchResults',
-    matchCount: 0,
-    resultCount: 0,
-    approximateResultCount: '',
-    limitHit: false,
-    sparkline: [],
-    repositories: [],
-    repositoriesCount: 0,
-    repositoriesSearched: [],
-    indexedRepositoriesSearched: [],
-    cloning: [],
-    missing: [],
-    timedout: [],
-    indexUnavailable: false,
-    alert: null,
-    elapsedMilliseconds: 0,
-    dynamicFilters: [],
+const emptyAggregateResults: AggregateStreamingSearchResults = {
     results: [],
-    pageInfo: { __typename: 'PageInfo', endCursor: null, hasNextPage: false },
+    filters: [],
+    progress: {
+        done: false,
+        durationMs: 0,
+        matchCount: 0,
+        skipped: [],
+    },
+}
+
+function toGQLSearchResult(match: Match): GQL.SearchResult {
+    switch (match.type) {
+        case 'file':
+            return toGQLFileMatch(match)
+        case 'repo':
+            return toGQLRepositoryMatch(match)
+        case 'commit':
+            return toGQLCommitMatch(match)
+        case 'symbol':
+            return toGQLSymbolMatch(match)
+    }
 }
 
 /**
- * Converts a stream of SearchEvents into an aggregated GQL.ISearchResult
+ * Converts a stream of SearchEvents into AggregateStreamingSearchResults
  */
-export const switchToGQLISearchResults: OperatorFunction<SearchEvent, GQL.ISearchResults> = pipe(
-    scan((results: GQL.ISearchResults, newEvent: SearchEvent) => {
+const switchAggregateSearchResults: OperatorFunction<SearchEvent, AggregateStreamingSearchResults> = pipe(
+    scan((results: AggregateStreamingSearchResults, newEvent: SearchEvent) => {
         switch (newEvent.type) {
-            case 'filematches':
+            case 'matches':
                 return {
                     ...results,
-                    // File matches are additive
-                    results: results.results.concat(newEvent.matches.map(toGQLFileMatch)),
+                    // Matches are additive
+                    results: results.results.concat(newEvent.data.map(toGQLSearchResult)),
                 }
 
-            case 'repomatches':
+            case 'progress':
                 return {
                     ...results,
-                    // Repository matches are additive
-                    results: results.results.concat(newEvent.matches.map(toGQLRepositoryMatch)),
-                }
-
-            case 'commitmatches':
-                return {
-                    ...results,
-                    // Generic matches are additive
-                    results: results.results.concat(newEvent.matches.map(toGQLCommitMatch)),
-                }
-
-            case 'symbolmatches':
-                return {
-                    ...results,
-                    // symbol matches are additive
-                    results: results.results.concat(newEvent.matches.map(toGQLSymbolMatch)),
+                    // Progress updates replace
+                    progress: newEvent.data,
                 }
 
             case 'filters':
                 return {
                     ...results,
                     // New filter results replace all previous ones
-                    dynamicFilters: newEvent.filters.map(toGQLSearchFilter),
+                    filters: newEvent.data,
                 }
 
             case 'alert':
                 return {
                     ...results,
-                    alert: toGQLSearchAlert(newEvent.alert),
+                    alert: newEvent.data,
                 }
+
+            default:
+                return results
         }
-    }, emptyGQLSearchResults),
-    defaultIfEmpty(emptyGQLSearchResults)
+    }, emptyAggregateResults),
+    defaultIfEmpty(emptyAggregateResults)
 )
 
-const observeMessages = <T extends {}>(eventSource: EventSource, eventName: SearchEvent['type']): Observable<T> =>
-    fromEvent(eventSource, eventName).pipe(
-        map((event: Event) => {
-            if (!(event instanceof MessageEvent)) {
-                throw new TypeError(`internal error: expected MessageEvent in streaming search ${eventName}`)
-            }
-            try {
-                const parsedData = JSON.parse(event.data) as T
-                return parsedData
-            } catch {
-                throw new Error(`Could not parse ${eventName} message data in streaming search`)
-            }
-        })
-    )
+const observeMessages = <T extends SearchEvent>(
+    type: T['type'],
+    eventSource: EventSource,
+    observer: Subscriber<SearchEvent>
+): Subscription =>
+    fromEvent(eventSource, type)
+        .pipe(
+            map((event: Event) => {
+                if (!(event instanceof MessageEvent)) {
+                    throw new TypeError(`internal error: expected MessageEvent in streaming search ${type}`)
+                }
+                try {
+                    const parsedData = JSON.parse(event.data) as T['data']
+                    return parsedData
+                } catch {
+                    throw new Error(`Could not parse ${type} message data in streaming search`)
+                }
+            }),
+            map(data => ({ type, data } as T))
+        )
+        .subscribe(observer)
+
+type MessageHandler<EventType extends SearchEvent['type'] = SearchEvent['type']> = (
+    type: EventType,
+    eventSource: EventSource,
+    observer: Subscriber<SearchEvent>
+) => Subscription
+
+const messageHandlers: {
+    [EventType in SearchEvent['type']]: MessageHandler<EventType>
+} = {
+    done: (type, eventSource, observer) =>
+        fromEvent(eventSource, type).subscribe(() => {
+            observer.complete()
+            eventSource.close()
+        }),
+    error: (type, eventSource, observer) =>
+        fromEvent(eventSource, type).subscribe(error => {
+            observer.error(error)
+            eventSource.close()
+        }),
+    matches: observeMessages,
+    progress: observeMessages,
+    filters: observeMessages,
+    alert: observeMessages,
+}
 
 /**
  * Initiates a streaming search. This is a type safe wrapper around Sourcegraph's streaming search API (using Server Sent Events).
@@ -307,7 +398,7 @@ const observeMessages = <T extends {}>(eventSource: EventSource, eventName: Sear
  *
  * @param query the search query to send to Sourcegraph's backend.
  */
-export function search(
+function search(
     query: string,
     version: string,
     patternType: SearchPatternType,
@@ -326,51 +417,24 @@ export function search(
 
         const eventSource = new EventSource('/search/stream?' + parameterEncoded)
         const subscriptions = new Subscription()
-        subscriptions.add(
-            observeMessages<FileMatch[]>(eventSource, 'filematches')
-                .pipe(map(matches => ({ type: 'filematches' as const, matches })))
-                .subscribe(observer)
-        )
-        subscriptions.add(
-            observeMessages<FileSymbolMatch[]>(eventSource, 'symbolmatches')
-                .pipe(map(matches => ({ type: 'symbolmatches' as const, matches })))
-                .subscribe(observer)
-        )
-        subscriptions.add(
-            observeMessages<RepositoryMatch[]>(eventSource, 'repomatches')
-                .pipe(map(matches => ({ type: 'repomatches' as const, matches })))
-                .subscribe(observer)
-        )
-        subscriptions.add(
-            observeMessages<CommitMatch[]>(eventSource, 'commitmatches')
-                .pipe(map(matches => ({ type: 'commitmatches' as const, matches })))
-                .subscribe(observer)
-        )
-        subscriptions.add(
-            observeMessages<Filter[]>(eventSource, 'filters')
-                .pipe(map(filters => ({ type: 'filters' as const, filters })))
-                .subscribe(observer)
-        )
-        subscriptions.add(
-            observeMessages<Alert>(eventSource, 'alert')
-                .pipe(map(alert => ({ type: 'alert' as const, alert })))
-                .subscribe(observer)
-        )
-        subscriptions.add(
-            fromEvent(eventSource, 'done').subscribe(() => {
-                observer.complete()
-                eventSource.close()
-            })
-        )
-        subscriptions.add(
-            fromEvent(eventSource, 'error').subscribe(error => {
-                observer.error(error)
-                eventSource.close()
-            })
-        )
+        for (const [eventType, handleMessages] of Object.entries(messageHandlers)) {
+            subscriptions.add(
+                (handleMessages as MessageHandler)(eventType as SearchEvent['type'], eventSource, observer)
+            )
+        }
         return () => {
             subscriptions.unsubscribe()
             eventSource.close()
         }
     })
+}
+
+/** Initiate a streaming search and aggregate the results */
+export function aggregateStreamingSearch(
+    query: string,
+    version: string,
+    patternType: SearchPatternType,
+    versionContext: string | undefined
+): Observable<AggregateStreamingSearchResults> {
+    return search(query, version, patternType, versionContext).pipe(switchAggregateSearchResults)
 }

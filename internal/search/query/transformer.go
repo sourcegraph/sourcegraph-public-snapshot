@@ -11,7 +11,7 @@ import (
 )
 
 // SubstituteAliases substitutes field name aliases for their canonical names.
-func SubstituteAliases(nodes []Node) []Node {
+func SubstituteAliases(searchType SearchType) func(nodes []Node) []Node {
 	aliases := map[string]string{
 		"r":        FieldRepo,
 		"g":        FieldRepoGroup,
@@ -24,15 +24,24 @@ func SubstituteAliases(nodes []Node) []Node {
 		"msg":      FieldMessage,
 		"revision": FieldRev,
 	}
-	return MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
-		if field == "content" {
-			return Pattern{Value: value, Negated: negated, Annotation: annotation}
-		}
-		if canonical, ok := aliases[field]; ok {
-			field = canonical
-		}
-		return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
-	})
+	var mapper func(nodes []Node) []Node
+	mapper = func(nodes []Node) []Node {
+		return MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
+			if field == "content" {
+				if searchType == SearchTypeRegex {
+					annotation.Labels.set(Regexp)
+				} else {
+					annotation.Labels.set(Literal)
+				}
+				return Pattern{Value: value, Negated: negated, Annotation: annotation}
+			}
+			if canonical, ok := aliases[field]; ok {
+				field = canonical
+			}
+			return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
+		})
+	}
+	return mapper
 }
 
 // LowercaseFieldNames performs strings.ToLower on every field name.
@@ -496,9 +505,11 @@ func space(patterns []Pattern) Pattern {
 }
 
 // substituteConcat returns a function that concatenates all contiguous patterns
-// in the tree, rooted by a concat operator. The callback parameter defines how
-// the function concatenates patterns. The return value of callback is
-// substituted in-place in the tree.
+// in the tree, rooted by a concat operator. Concat operators containing negated
+// patterns are lifted out: (concat "a" (not "b")) -> ("a" (not "b"))
+//
+// The callback parameter defines how the function concatenates patterns. The
+// return value of callback is substituted in-place in the tree.
 func substituteConcat(callback func([]Pattern) Pattern) func(nodes []Node) []Node {
 	isPattern := func(node Node) bool {
 		if pattern, ok := node.(Pattern); ok && !pattern.Negated {

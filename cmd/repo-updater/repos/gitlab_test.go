@@ -17,9 +17,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -138,7 +140,7 @@ func TestGitLabSource_GetRepo(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			svc := &ExternalService{
+			svc := &types.ExternalService{
 				Kind: extsvc.KindGitLab,
 				Config: marshalJSON(t, &schema.GitLabConnection{
 					Url: "https://gitlab.com",
@@ -172,7 +174,7 @@ func TestGitLabSource_makeRepo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	svc := ExternalService{ID: 1, Kind: extsvc.KindGitLab}
+	svc := types.ExternalService{ID: 1, Kind: extsvc.KindGitLab}
 
 	tests := []struct {
 		name   string
@@ -277,6 +279,8 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 				SourceBranch: p.mr.SourceBranch,
 				TargetBranch: p.mr.TargetBranch,
 			}, nil, gitlab.ErrMergeRequestAlreadyExists)
+			p.mockGetMergeRequestNotes(p.mr.IID, nil, 20, nil)
+			p.mockGetMergeRequestPipelines(p.mr.IID, nil, 20, nil)
 			p.mockGetOpenMergeRequestByRefs(p.mr, nil)
 
 			exists, err := p.source.CreateChangeset(p.ctx, p.changeset)
@@ -298,6 +302,8 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 				SourceBranch: p.mr.SourceBranch,
 				TargetBranch: p.mr.TargetBranch,
 			}, p.mr, nil)
+			p.mockGetMergeRequestNotes(p.mr.IID, nil, 20, nil)
+			p.mockGetMergeRequestPipelines(p.mr.IID, nil, 20, nil)
 
 			exists, err := p.source.CreateChangeset(p.ctx, p.changeset)
 			if exists {
@@ -342,11 +348,13 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 
 		t.Run("success", func(t *testing.T) {
 			want := &gitlab.MergeRequest{}
-			mr := &gitlab.MergeRequest{}
+			mr := &gitlab.MergeRequest{IID: 2}
 
 			p := newGitLabChangesetSourceTestProvider(t)
 			p.changeset.Changeset.Metadata = mr
 			p.mockUpdateMergeRequest(mr, want, gitlab.UpdateMergeRequestStateEventClose, nil)
+			p.mockGetMergeRequestNotes(mr.IID, nil, 20, nil)
+			p.mockGetMergeRequestPipelines(mr.IID, nil, 20, nil)
 
 			if err := p.source.CloseChangeset(p.ctx, p.changeset); err != nil {
 				t.Errorf("unexpected error: %+v", err)
@@ -383,11 +391,13 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 
 		t.Run("success", func(t *testing.T) {
 			want := &gitlab.MergeRequest{}
-			mr := &gitlab.MergeRequest{}
+			mr := &gitlab.MergeRequest{IID: 2}
 
 			p := newGitLabChangesetSourceTestProvider(t)
 			p.changeset.Changeset.Metadata = mr
 			p.mockUpdateMergeRequest(mr, want, gitlab.UpdateMergeRequestStateEventReopen, nil)
+			p.mockGetMergeRequestNotes(mr.IID, nil, 20, nil)
+			p.mockGetMergeRequestPipelines(mr.IID, nil, 20, nil)
 
 			if err := p.source.ReopenChangeset(p.ctx, p.changeset); err != nil {
 				t.Errorf("unexpected error: %+v", err)
@@ -612,12 +622,14 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 		})
 
 		t.Run("success", func(t *testing.T) {
-			in := &gitlab.MergeRequest{}
+			in := &gitlab.MergeRequest{IID: 2}
 			out := &gitlab.MergeRequest{}
 
 			p := newGitLabChangesetSourceTestProvider(t)
 			p.changeset.Changeset.Metadata = in
 			p.mockUpdateMergeRequest(in, out, "", nil)
+			p.mockGetMergeRequestNotes(in.IID, nil, 20, nil)
+			p.mockGetMergeRequestPipelines(in.IID, nil, 20, nil)
 
 			if err := p.source.UpdateChangeset(p.ctx, p.changeset); err != nil {
 				t.Errorf("unexpected non-nil error: %+v", err)
@@ -728,6 +740,43 @@ func TestReadPipelinesUntilSeen(t *testing.T) {
 	})
 }
 
+func TestGitLabSource_WithAuthenticator(t *testing.T) {
+	p := newGitLabChangesetSourceTestProvider(t)
+
+	t.Run("supported", func(t *testing.T) {
+		src, err := p.source.WithAuthenticator(&auth.OAuthBearerToken{})
+		if err != nil {
+			t.Errorf("unexpected non-nil error: %v", err)
+		}
+
+		if gs, ok := src.(*GitLabSource); !ok {
+			t.Error("cannot coerce Source into GitLabSource")
+		} else if gs == nil {
+			t.Error("unexpected nil Source")
+		}
+	})
+
+	t.Run("unsupported", func(t *testing.T) {
+		for name, tc := range map[string]auth.Authenticator{
+			"nil":         nil,
+			"BasicAuth":   &auth.BasicAuth{},
+			"OAuthClient": &auth.OAuthClient{},
+		} {
+			t.Run(name, func(t *testing.T) {
+				src, err := p.source.WithAuthenticator(tc)
+				if err == nil {
+					t.Error("unexpected nil error")
+				} else if _, ok := err.(UnsupportedAuthenticatorError); !ok {
+					t.Errorf("unexpected error of type %T: %v", err, err)
+				}
+				if src != nil {
+					t.Errorf("expected non-nil Source: %v", src)
+				}
+			})
+		}
+	})
+}
+
 // panicDoer provides a httpcli.Doer implementation that panics if any attempt
 // is made to issue a HTTP request; thereby ensuring that our unit tests don't
 // actually try to talk to GitLab.
@@ -749,6 +798,7 @@ type gitLabChangesetSourceTestProvider struct {
 // objects, along with a handful of methods to mock underlying
 // internal/extsvc/gitlab functions.
 func newGitLabChangesetSourceTestProvider(t *testing.T) *gitLabChangesetSourceTestProvider {
+	prov := gitlab.NewClientProvider(&url.URL{}, &panicDoer{})
 	p := &gitLabChangesetSourceTestProvider{
 		changeset: &Changeset{
 			Changeset: &campaigns.Changeset{},
@@ -769,7 +819,8 @@ func newGitLabChangesetSourceTestProvider(t *testing.T) *gitLabChangesetSourceTe
 			TargetBranch: "base",
 		},
 		source: &GitLabSource{
-			client: gitlab.NewClientProvider(&url.URL{}, &panicDoer{}).GetClient(),
+			client:   prov.GetClient(),
+			provider: prov,
 		},
 		t: t,
 	}

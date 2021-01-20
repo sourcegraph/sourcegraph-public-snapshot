@@ -7,8 +7,11 @@ import (
 func init() {
 	conf.ContributeValidator(func(cfg conf.Unified) conf.Problems {
 		if cfg.SiteConfiguration.LicenseKey != "" {
-			if _, _, err := ParseProductLicenseKeyWithBuiltinOrGenerationKey(cfg.SiteConfiguration.LicenseKey); err != nil {
+			info, _, err := ParseProductLicenseKeyWithBuiltinOrGenerationKey(cfg.SiteConfiguration.LicenseKey)
+			if err != nil {
 				return conf.NewSiteProblems("should provide a valid license key")
+			} else if err = info.hasUnknownPlan(); EnforceTiers && err != nil {
+				return conf.NewSiteProblems(err.Error())
 			}
 		}
 		return nil

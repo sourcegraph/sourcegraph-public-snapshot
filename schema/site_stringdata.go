@@ -234,6 +234,12 @@ const SiteSchemaJSON = `{
               ]
             }
           ]
+        },
+        "enablePermissionsWebhooks": {
+          "description": "Enables webhook consumers to sync permissions from external services faster than the defaults schedule",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": false }
         }
       },
       "examples": [
@@ -270,6 +276,12 @@ const SiteSchemaJSON = `{
       "type": "boolean",
       "!go": { "pointer": true },
       "group": "Campaigns"
+    },
+    "campaigns.restrictToAdmins": {
+      "description": "When enabled, only site admins can create and apply campaigns.",
+      "type": "boolean",
+      "group": "Campaigns",
+      "default": false
     },
     "corsOrigin": {
       "description": "Required when using any of the native code host integrations for Phabricator, GitLab, or Bitbucket Server. It is a space-separated list of allowed origins for cross-origin HTTP requests which should be the base URL for your Phabricator, GitLab, or Bitbucket Server instance.",
@@ -426,9 +438,9 @@ const SiteSchemaJSON = `{
       "group": "Security"
     },
     "externalService.userMode": {
-      "description": "Enable to allow users to add external services for public reposirories to the Sourcegraph instance.",
+      "description": "Enable to allow users to add external services for public and private repositories to the Sourcegraph instance.",
       "type": "string",
-      "enum": ["public", "disabled"],
+      "enum": ["public", "disabled", "all"],
       "default": "disabled"
     },
     "permissions.userMapping": {
@@ -530,6 +542,10 @@ const SiteSchemaJSON = `{
           "type": "string"
         },
         "disableTLS": {
+          "description": "DEPRECATED: use noVerifyTLS instead, this field will be removed in a future release",
+          "type": "boolean"
+        },
+        "noVerifyTLS": {
           "description": "Disable TLS verification",
           "type": "boolean"
         }
@@ -806,6 +822,12 @@ const SiteSchemaJSON = `{
       "description": "The minimum number of Unicode code points that a password must contain.",
       "type": "integer",
       "default": 12,
+      "group": "Authentication"
+    },
+    "auth.passwordResetLinkExpiry": {
+      "description": "The duration (in seconds) that a password reset link is considered valid.",
+      "type": "integer",
+      "default": 14400,
       "group": "Authentication"
     },
     "update.channel": {

@@ -23,10 +23,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/src-d/enry/v2"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestats"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -40,9 +40,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"github.com/src-d/enry/v2"
 )
 
 // searchResultsCommon contains fields that should be returned by all funcs
@@ -200,7 +201,7 @@ func (sr *SearchResultsResolver) ApproximateResultCount() string {
 func (sr *SearchResultsResolver) Alert() *searchAlert { return sr.alert }
 
 func (sr *SearchResultsResolver) ElapsedMilliseconds() int32 {
-	return int32(time.Since(sr.start).Nanoseconds() / int64(time.Millisecond))
+	return int32(time.Since(sr.start).Milliseconds())
 }
 
 // commonFileFilters are common filters used. It is used by DynamicFilters to
@@ -500,7 +501,7 @@ loop:
 			continue
 		case *CommitSearchResultResolver:
 			// Diff searches are cheap, because we implicitly have author date info.
-			addPoint(m.commit.author.date)
+			addPoint(m.commit.commit.Author.Date)
 		case *FileMatchResolver:
 			// File match searches are more expensive, because we must blame the
 			// (first) line in order to know its placement in our sparkline.
@@ -1079,21 +1080,19 @@ func (r *searchResolver) evaluate(ctx context.Context, q []query.Node) (*SearchR
 	return result, nil
 }
 
-// setRepoCacheInvalidation sets whether resolved repos should be invalidated when
+// invalidateRepoCache returns whether resolved repos should be invalidated when
 // evaluating subexpressions. If a query contains more than one repo or repogroup
 // field, we should invalidate resolved repos, since multiple repo or repogroups
 // imply that different repos may need to be resolved.
-func (r *searchResolver) setRepoCacheInvalidation() {
+func invalidateRepoCache(q []query.Node) bool {
 	var seenRepo, seenRepoGroup int
-	query.VisitField(r.query.(*query.AndOrQuery).Query, "repo", func(_ string, _ bool, _ query.Annotation) {
+	query.VisitField(q, "repo", func(_ string, _ bool, _ query.Annotation) {
 		seenRepo += 1
 	})
-	query.VisitField(r.query.(*query.AndOrQuery).Query, "repogroup", func(_ string, _ bool, _ query.Annotation) {
+	query.VisitField(q, "repogroup", func(_ string, _ bool, _ query.Annotation) {
 		seenRepoGroup += 1
 	})
-	if seenRepo+seenRepoGroup > 1 {
-		r.invalidateRepoCache = true
-	}
+	return seenRepo+seenRepoGroup > 1
 }
 
 func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolver, err error) {
@@ -1115,6 +1114,9 @@ func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolve
 			wantCount, _ = strconv.Atoi(countStr) // Invariant: count is validated.
 		}
 
+		if invalidateRepoCache(q.Query) {
+			r.invalidateRepoCache = true
+		}
 		for _, disjunct := range query.Dnf(q.Query) {
 			disjunct = query.ConcatRevFilters(disjunct)
 			newResult, err := r.evaluate(ctx, disjunct)
@@ -1624,6 +1626,10 @@ func alertOnSearchLimit(resultTypes []string, args *search.TextParameters) ([]st
 }
 
 type aggregator struct {
+	// resultChannel if non-nil will send all results we receive down it. See
+	// searchResolver.SetResultChannel
+	resultChannel chan<- []SearchResultResolver
+
 	mu       sync.Mutex
 	results  []SearchResultResolver
 	common   searchResultsCommon
@@ -1633,7 +1639,24 @@ type aggregator struct {
 	fileMatches map[string]*FileMatchResolver
 }
 
+func (a *aggregator) get() ([]SearchResultResolver, searchResultsCommon, *multierror.Error) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	return a.results, a.common, a.multiErr
+}
+
+// report sends results down resultChannel and collects the results.
 func (a *aggregator) report(ctx context.Context, results []SearchResultResolver, common *searchResultsCommon, err error) {
+	if a.resultChannel != nil {
+		a.resultChannel <- results
+	}
+
+	a.collect(ctx, results, common, err)
+}
+
+// collect the results. This doesn't send down resultChannel. Should only be
+// used by non-streaming supported backends.
+func (a *aggregator) collect(ctx context.Context, results []SearchResultResolver, common *searchResultsCommon, err error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	// Timeouts are reported through searchResultsCommon so don't report an error for them
@@ -1716,30 +1739,16 @@ func (a *aggregator) doDiffSearch(ctx context.Context, tp *search.TextParameters
 	defer func() {
 		tr.Finish()
 	}()
-	old := tp.PatternInfo
-	patternInfo := &search.CommitPatternInfo{
-		Pattern:                      old.Pattern,
-		IsRegExp:                     old.IsRegExp,
-		IsCaseSensitive:              old.IsCaseSensitive,
-		FileMatchLimit:               old.FileMatchLimit,
-		IncludePatterns:              old.IncludePatterns,
-		ExcludePattern:               old.ExcludePattern,
-		PathPatternsAreRegExps:       true,
-		PathPatternsAreCaseSensitive: tp.PatternInfo.PathPatternsAreCaseSensitive,
-	}
-	repos, err := getRepos(ctx, tp.RepoPromise)
+
+	args, err := resolveCommitParameters(ctx, tp)
 	if err != nil {
-		log15.Warn("doDiffSearch: error while getting repos from promise:", err.Error())
+		log15.Warn("doDiffSearch: error while resolving commit parameters", "error", err)
 		return
 	}
 
-	args := search.TextParametersForCommitParameters{
-		PatternInfo: patternInfo,
-		Repos:       repos,
-		Query:       tp.Query,
-	}
-	diffResults, diffCommon, err := searchCommitDiffsInRepos(ctx, &args)
-	a.report(ctx, diffResults, diffCommon, errors.Wrap(err, "diff search failed"))
+	// searchCommitDiffsInRepos supports streamings, so we use a.collect.
+	diffResults, diffCommon, err := searchCommitDiffsInRepos(ctx, args, a.resultChannel)
+	a.collect(ctx, diffResults, diffCommon, errors.Wrap(err, "diff search failed"))
 }
 
 func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParameters) {
@@ -1747,34 +1756,19 @@ func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParamete
 	defer func() {
 		tr.Finish()
 	}()
-	old := tp.PatternInfo
-	patternInfo := &search.CommitPatternInfo{
-		Pattern:                      old.Pattern,
-		IsRegExp:                     old.IsRegExp,
-		IsCaseSensitive:              old.IsCaseSensitive,
-		FileMatchLimit:               old.FileMatchLimit,
-		IncludePatterns:              old.IncludePatterns,
-		ExcludePattern:               old.ExcludePattern,
-		PathPatternsAreRegExps:       true,
-		PathPatternsAreCaseSensitive: old.PathPatternsAreCaseSensitive,
-	}
-	repos, err := getRepos(ctx, tp.RepoPromise)
+
+	args, err := resolveCommitParameters(ctx, tp)
 	if err != nil {
-		log15.Warn("doCommitSearch: error while getting repos from promise:", err.Error())
+		log15.Warn("doCommitSearch: error while resolving commit parameters", "error", err)
 		return
 	}
 
-	args := search.TextParametersForCommitParameters{
-		PatternInfo: patternInfo,
-		Repos:       repos,
-		Query:       tp.Query,
-	}
-	commitResults, commitCommon, err := searchCommitLogInRepos(ctx, &args)
+	commitResults, commitCommon, err := searchCommitLogInRepos(ctx, args)
 	a.report(ctx, commitResults, commitCommon, errors.Wrap(err, "commit search failed"))
 }
 
-// isGlobalSearch returns true if the query contains the filters repo or
-// repogroup. For structural queries and queries with version context
+// isGlobalSearch returns true if the query does not contain repo, repogroup, or
+// repohasfile filters. For structural queries and queries with version context
 // isGlobalSearch always return false.
 func (r *searchResolver) isGlobalSearch() bool {
 	if r.patternType == query.SearchTypeStructural {
@@ -1783,7 +1777,7 @@ func (r *searchResolver) isGlobalSearch() bool {
 	if r.versionContext != nil && *r.versionContext != "" {
 		return false
 	}
-	return len(r.query.Values(query.FieldRepo)) == 0 && len(r.query.Values(query.FieldRepoGroup)) == 0
+	return len(r.query.Values(query.FieldRepo)) == 0 && len(r.query.Values(query.FieldRepoGroup)) == 0 && len(r.query.Values(query.FieldRepoHasFile)) == 0
 }
 
 // doResults is one of the highest level search functions that handles finding results.
@@ -1867,8 +1861,9 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 
 	agg := aggregator{
-		common:      searchResultsCommon{maxResultsCount: r.maxResults()},
-		fileMatches: make(map[string]*FileMatchResolver),
+		resultChannel: r.resultChannel,
+		common:        searchResultsCommon{maxResultsCount: r.maxResults()},
+		fileMatches:   make(map[string]*FileMatchResolver),
 	}
 
 	isFileOrPath := func() bool {
@@ -1914,9 +1909,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 	args.RepoPromise.Resolve(resolved.repoRevs)
 
-	agg.mu.Lock()
-	agg.common.excluded = resolved.excludedRepos
-	agg.mu.Unlock()
+	agg.report(ctx, nil, &searchResultsCommon{excluded: resolved.excludedRepos}, nil)
 
 	// Apply search limits and generate warnings before firing off workers.
 	// This currently limits diff and commit search to a set number of
@@ -1988,21 +1981,23 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 
 	timer.Stop()
 
-	tr.LazyPrintf("results=%d limitHit=%v cloning=%d missing=%d excludedFork=%d excludedArchived=%d timedout=%d",
-		len(agg.results),
-		agg.common.limitHit,
-		len(agg.common.cloning),
-		len(agg.common.missing),
-		agg.common.excluded.forks,
-		agg.common.excluded.archived,
-		len(agg.common.timedout))
+	results, common, multiErr := agg.get()
 
-	multiErr, newAlert := alertForStructuralSearch(agg.multiErr)
+	tr.LazyPrintf("results=%d limitHit=%v cloning=%d missing=%d excludedFork=%d excludedArchived=%d timedout=%d",
+		len(results),
+		common.limitHit,
+		len(common.cloning),
+		len(common.missing),
+		common.excluded.forks,
+		common.excluded.archived,
+		len(common.timedout))
+
+	multiErr, newAlert := alertForStructuralSearch(multiErr)
 	if newAlert != nil {
 		alert = newAlert // takes higher precedence
 	}
 
-	if len(agg.results) == 0 && r.patternType != query.SearchTypeStructural && matchHoleRegexp.MatchString(r.originalQuery) {
+	if len(results) == 0 && r.patternType != query.SearchTypeStructural && matchHoleRegexp.MatchString(r.originalQuery) {
 		alert = alertForStructuralSearchNotSet(r.originalQuery)
 	}
 
@@ -2010,23 +2005,23 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		alert = alertForMissingRepoRevs(r.patternType, resolved.missingRepoRevs)
 	}
 
-	if len(agg.results) == 0 && strings.Contains(r.originalQuery, `"`) && r.patternType == query.SearchTypeLiteral {
+	if len(results) == 0 && strings.Contains(r.originalQuery, `"`) && r.patternType == query.SearchTypeLiteral {
 		alert = alertForQuotesInQueryInLiteralMode(r.query.ParseTree())
 	}
 
 	// If we have some results, only log the error instead of returning it,
 	// because otherwise the client would not receive the partial results
-	if len(agg.results) > 0 && multiErr != nil {
+	if len(results) > 0 && multiErr != nil {
 		log15.Error("Errors during search", "error", multiErr)
 		multiErr = nil
 	}
 
-	r.sortResults(ctx, agg.results)
+	r.sortResults(ctx, results)
 
 	resultsResolver := SearchResultsResolver{
 		start:               start,
-		searchResultsCommon: agg.common,
-		SearchResults:       agg.results,
+		searchResultsCommon: common,
+		SearchResults:       results,
 		alert:               alert,
 	}
 

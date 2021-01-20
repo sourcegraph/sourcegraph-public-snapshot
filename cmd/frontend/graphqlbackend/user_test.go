@@ -9,11 +9,12 @@ import (
 
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/gqltesting"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -240,6 +241,53 @@ func TestUpdateUser(t *testing.T) {
 		if result != nil {
 			t.Fatalf("result: want nil but got %v", result)
 		}
+	})
+
+	t.Run("non site admin can change non-username fields", func(t *testing.T) {
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				AuthEnableUsernameChanges: false,
+			},
+		})
+		db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+			return &types.User{ID: 1, Username: "alice", DisplayName: "alice-updated", AvatarURL: "http://www.example.com/alice-updated", SiteAdmin: false}, nil
+		}
+		db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+			return &types.User{ID: 1, Username: "alice", DisplayName: "alice-updated", AvatarURL: "http://www.example.com/alice-updated", SiteAdmin: false}, nil
+		}
+		db.Mocks.Users.Update = func(userID int32, update db.UserUpdate) error {
+			return nil
+		}
+		t.Cleanup(func() {
+			db.Mocks.Users = db.MockUsers{}
+		})
+
+		gqltesting.RunTests(t, []*gqltesting.Test{
+			{
+				Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
+				Schema:  mustParseGraphQLSchema(t),
+				Query: `
+			mutation {
+				updateUser(
+					user: "VXNlcjox",
+					displayName: "alice-updated"
+					avatarURL: "http://www.example.com/alice-updated"
+				) {
+					displayName,
+					avatarURL
+				}
+			}
+		`,
+				ExpectedResult: `
+			{
+				"updateUser": {
+					"displayName": "alice-updated",
+					"avatarURL": "http://www.example.com/alice-updated"
+				}
+			}
+		`,
+			},
+		})
 	})
 
 	t.Run("success", func(t *testing.T) {

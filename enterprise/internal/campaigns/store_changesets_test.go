@@ -12,15 +12,15 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-
-	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
 )
 
 func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore repos.Store, clock clock) {
@@ -42,10 +42,11 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		HeadRefName:  "campaigns/test",
 	}
 
-	repo := testRepo(t, reposStore, extsvc.KindGitHub)
-	otherRepo := testRepo(t, reposStore, extsvc.KindGitHub)
+	repo := ct.TestRepo(t, reposStore, extsvc.KindGitHub)
+	otherRepo := ct.TestRepo(t, reposStore, extsvc.KindGitHub)
+	gitlabRepo := ct.TestRepo(t, reposStore, extsvc.KindGitLab)
 
-	if err := reposStore.InsertRepos(ctx, repo, otherRepo); err != nil {
+	if err := reposStore.InsertRepos(ctx, repo, otherRepo, gitlabRepo); err != nil {
 		t.Fatal(err)
 	}
 	deletedRepo := otherRepo.With(repos.Opt.RepoDeletedAt(clock.now()))
@@ -79,7 +80,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				CampaignIDs:         []int64{int64(i) + 1},
 				ExternalID:          fmt.Sprintf("foobar-%d", i),
 				ExternalServiceType: extsvc.TypeGitHub,
-				ExternalBranch:      fmt.Sprintf("campaigns/test/%d", i),
+				ExternalBranch:      fmt.Sprintf("refs/heads/campaigns/test/%d", i),
 				ExternalUpdatedAt:   clock.now(),
 				ExternalState:       cmpgn.ChangesetExternalStateOpen,
 				ExternalReviewState: cmpgn.ChangesetReviewStateApproved,
@@ -144,6 +145,52 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			if diff := cmp.Diff(have, want); diff != "" {
 				t.Fatal(diff)
 			}
+		}
+	})
+
+	t.Run("Upsert", func(t *testing.T) {
+		changeset := &cmpgn.Changeset{
+			RepoID:              repo.ID,
+			CreatedAt:           clock.now(),
+			UpdatedAt:           clock.now(),
+			Metadata:            githubPR,
+			CampaignIDs:         []int64{1},
+			ExternalID:          "foobar-123",
+			ExternalServiceType: extsvc.TypeGitHub,
+			ExternalBranch:      "refs/heads/campaigns/test",
+			ExternalUpdatedAt:   clock.now(),
+			ExternalState:       cmpgn.ChangesetExternalStateOpen,
+			ExternalReviewState: cmpgn.ChangesetReviewStateApproved,
+			ExternalCheckState:  cmpgn.ChangesetCheckStatePassed,
+			PreviousSpecID:      1,
+			OwnedByCampaignID:   1,
+			PublicationState:    cmpgn.ChangesetPublicationStatePublished,
+			ReconcilerState:     cmpgn.ReconcilerStateCompleted,
+			StartedAt:           clock.now(),
+			FinishedAt:          clock.now(),
+			ProcessAfter:        clock.now(),
+		}
+
+		if err := s.UpsertChangeset(ctx, changeset); err != nil {
+			t.Fatal(err)
+		}
+
+		if changeset.ID == 0 {
+			t.Fatal("id should not be zero")
+		}
+
+		prev := changeset.Clone()
+
+		if err := s.UpsertChangeset(ctx, changeset); err != nil {
+			t.Fatal(err)
+		}
+
+		if diff := cmp.Diff(changeset, prev); diff != "" {
+			t.Fatal(diff)
+		}
+
+		if err := s.DeleteChangeset(ctx, changeset.ID); err != nil {
+			t.Fatal(err)
 		}
 	})
 
@@ -434,6 +481,39 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			}
 		}
 
+		{
+			gitlabMR := &gitlab.MergeRequest{
+				ID:        gitlab.ID(1),
+				Title:     "Fix a bunch of bugs",
+				CreatedAt: gitlab.Time{Time: clock.now()},
+				UpdatedAt: gitlab.Time{Time: clock.now()},
+			}
+			gitlabChangeset := &cmpgn.Changeset{
+				Metadata:            gitlabMR,
+				RepoID:              gitlabRepo.ID,
+				ExternalServiceType: extsvc.TypeGitLab,
+			}
+			if err := s.CreateChangeset(ctx, gitlabChangeset); err != nil {
+				t.Fatal(err)
+			}
+			have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{ExternalServiceID: "https://gitlab.com/"})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			want := 1
+			if len(have) != want {
+				t.Fatalf("have %d changesets; want %d", len(have), want)
+			}
+
+			if have[0].ID != gitlabChangeset.ID {
+				t.Fatalf("unexpected changeset: have %+v; want %+v", have[0], gitlabChangeset)
+			}
+			if err := s.DeleteChangeset(ctx, gitlabChangeset.ID); err != nil {
+				t.Fatal(err)
+			}
+		}
+
 		// No Limit should return all Changesets
 		{
 			have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{})
@@ -569,7 +649,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			CampaignIDs:         []int64{1},
 			ExternalID:          fmt.Sprintf("foobar-%d", 42),
 			ExternalServiceType: extsvc.TypeGitHub,
-			ExternalBranch:      "campaigns/test",
+			ExternalBranch:      "refs/heads/campaigns/test",
 			ExternalUpdatedAt:   clock.now(),
 			ExternalState:       "",
 			ExternalReviewState: "",
@@ -809,22 +889,22 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			repo:            repo.ID,
 			campaign:        campaignID,
 			ownedByCampaign: campaignID,
-			reconcilerState: cmpgn.ReconcilerStateQueued,
+			reconcilerState: campaigns.ReconcilerStateQueued,
 		})
 
 		c2 := createChangeset(t, ctx, s, testChangesetOpts{
 			repo:            repo.ID,
 			campaign:        campaignID,
 			ownedByCampaign: campaignID,
-			reconcilerState: cmpgn.ReconcilerStateErrored,
-			numFailures:     reconcilerMaxNumRetries - 1,
+			reconcilerState: campaigns.ReconcilerStateErrored,
+			numFailures:     1,
 		})
 
 		c3 := createChangeset(t, ctx, s, testChangesetOpts{
 			repo:            repo.ID,
 			campaign:        campaignID,
 			ownedByCampaign: campaignID,
-			reconcilerState: cmpgn.ReconcilerStateCompleted,
+			reconcilerState: campaigns.ReconcilerStateCompleted,
 		})
 
 		c4 := createChangeset(t, ctx, s, testChangesetOpts{
@@ -832,14 +912,14 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			campaign:        campaignID,
 			ownedByCampaign: 0,
 			unsynced:        true,
-			reconcilerState: cmpgn.ReconcilerStateQueued,
+			reconcilerState: campaigns.ReconcilerStateQueued,
 		})
 
 		c5 := createChangeset(t, ctx, s, testChangesetOpts{
 			repo:            repo.ID,
 			campaign:        campaignID,
 			ownedByCampaign: campaignID,
-			reconcilerState: cmpgn.ReconcilerStateProcessing,
+			reconcilerState: campaigns.ReconcilerStateProcessing,
 		})
 
 		if err := s.CancelQueuedCampaignChangesets(ctx, campaignID); err != nil {
@@ -848,38 +928,36 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 
 		reloadAndAssertChangeset(t, ctx, s, c1, changesetAssertions{
 			repo:            repo.ID,
-			reconcilerState: cmpgn.ReconcilerStateErrored,
+			reconcilerState: campaigns.ReconcilerStateFailed,
 			ownedByCampaign: campaignID,
 			failureMessage:  &canceledChangesetFailureMessage,
-			numFailures:     reconcilerMaxNumRetries,
 		})
 
 		reloadAndAssertChangeset(t, ctx, s, c2, changesetAssertions{
 			repo:            repo.ID,
-			reconcilerState: cmpgn.ReconcilerStateErrored,
+			reconcilerState: campaigns.ReconcilerStateFailed,
 			ownedByCampaign: campaignID,
 			failureMessage:  &canceledChangesetFailureMessage,
-			numFailures:     reconcilerMaxNumRetries,
+			numFailures:     1,
 		})
 
 		reloadAndAssertChangeset(t, ctx, s, c3, changesetAssertions{
 			repo:            repo.ID,
-			reconcilerState: cmpgn.ReconcilerStateCompleted,
+			reconcilerState: campaigns.ReconcilerStateCompleted,
 			ownedByCampaign: campaignID,
 		})
 
 		reloadAndAssertChangeset(t, ctx, s, c4, changesetAssertions{
 			repo:            repo.ID,
-			reconcilerState: cmpgn.ReconcilerStateQueued,
+			reconcilerState: campaigns.ReconcilerStateQueued,
 			unsynced:        true,
 		})
 
 		reloadAndAssertChangeset(t, ctx, s, c5, changesetAssertions{
 			repo:            repo.ID,
-			reconcilerState: cmpgn.ReconcilerStateErrored,
+			reconcilerState: campaigns.ReconcilerStateFailed,
 			failureMessage:  &canceledChangesetFailureMessage,
 			ownedByCampaign: campaignID,
-			numFailures:     reconcilerMaxNumRetries,
 		})
 	})
 
@@ -900,25 +978,25 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			want changesetAssertions
 		}{
 			{
-				have: testChangesetOpts{reconcilerState: cmpgn.ReconcilerStateQueued},
+				have: testChangesetOpts{reconcilerState: campaigns.ReconcilerStateQueued},
 				want: wantEnqueued,
 			},
 			{
-				have: testChangesetOpts{reconcilerState: cmpgn.ReconcilerStateProcessing},
+				have: testChangesetOpts{reconcilerState: campaigns.ReconcilerStateProcessing},
 				want: wantEnqueued,
 			},
 			{
 				have: testChangesetOpts{
-					reconcilerState: cmpgn.ReconcilerStateErrored,
+					reconcilerState: campaigns.ReconcilerStateErrored,
 					failureMessage:  "failed",
-					numFailures:     reconcilerMaxNumRetries - 1,
+					numFailures:     1,
 				},
 				want: wantEnqueued,
 			},
 			{
 				have: testChangesetOpts{
 					externalState:   campaigns.ChangesetExternalStateOpen,
-					reconcilerState: cmpgn.ReconcilerStateCompleted,
+					reconcilerState: campaigns.ReconcilerStateCompleted,
 				},
 				want: changesetAssertions{
 					reconcilerState: campaigns.ReconcilerStateQueued,
@@ -929,7 +1007,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			{
 				have: testChangesetOpts{
 					externalState:   campaigns.ChangesetExternalStateClosed,
-					reconcilerState: cmpgn.ReconcilerStateCompleted,
+					reconcilerState: campaigns.ReconcilerStateCompleted,
 				},
 				want: changesetAssertions{
 					reconcilerState: campaigns.ReconcilerStateCompleted,
@@ -960,42 +1038,85 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		}
 	})
 
-	t.Run("ListChangesetsAttachedOrOwnedByCampaign", func(t *testing.T) {
+	t.Run("GetChangesetsStats", func(t *testing.T) {
+		currentStats, err := s.GetChangesetsStats(ctx, GetChangesetsStatsOpts{})
+		if err != nil {
+			t.Fatal(err)
+		}
 		var campaignID int64 = 191918
+		currentCampaignStats, err := s.GetChangesetsStats(ctx, GetChangesetsStatsOpts{CampaignID: campaignID})
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		baseOpts := testChangesetOpts{repo: repo.ID}
 
 		opts1 := baseOpts
 		opts1.campaign = campaignID
-		opts1.ownedByCampaign = campaignID
-		c1 := createChangeset(t, ctx, s, opts1)
+		opts1.externalState = campaigns.ChangesetExternalStateClosed
+		opts1.publicationState = campaigns.ChangesetPublicationStatePublished
+		createChangeset(t, ctx, s, opts1)
 
 		opts2 := baseOpts
 		opts2.campaign = campaignID
-		opts2.ownedByCampaign = 0
-		c2 := createChangeset(t, ctx, s, opts2)
+		opts2.externalState = campaigns.ChangesetExternalStateDeleted
+		opts2.publicationState = campaigns.ChangesetPublicationStatePublished
+		createChangeset(t, ctx, s, opts2)
 
 		opts3 := baseOpts
-		opts3.campaign = campaignID + 999
-		opts3.ownedByCampaign = campaignID + 999
+		opts3.campaign = campaignID
+		opts3.ownedByCampaign = campaignID
+		opts3.externalState = campaigns.ChangesetExternalStateOpen
+		opts3.publicationState = campaigns.ChangesetPublicationStatePublished
 		createChangeset(t, ctx, s, opts3)
 
 		opts4 := baseOpts
+		// In a deleted repository.
 		opts4.repo = deletedRepo.ID
 		opts4.campaign = campaignID
-		opts4.ownedByCampaign = 0
+		opts4.externalState = campaigns.ChangesetExternalStateOpen
+		opts4.publicationState = campaigns.ChangesetPublicationStatePublished
 		createChangeset(t, ctx, s, opts4)
 
-		cs, err := s.ListChangesetsAttachedOrOwnedByCampaign(ctx, campaignID)
-		if err != nil {
-			t.Fatal(err)
-		}
+		opts5 := baseOpts
+		// In a different campaign.
+		opts5.campaign = campaignID + 999
+		opts5.externalState = campaigns.ChangesetExternalStateOpen
+		opts5.publicationState = campaigns.ChangesetPublicationStatePublished
+		createChangeset(t, ctx, s, opts5)
 
-		wantIDs := []int64{c1.ID, c2.ID}
-		haveIDs := cs.IDs()
-		if diff := cmp.Diff(wantIDs, haveIDs); diff != "" {
-			t.Fatalf("wrong changesets returned. diff=%s", diff)
-		}
+		t.Run("global", func(t *testing.T) {
+			haveStats, err := s.GetChangesetsStats(ctx, GetChangesetsStatsOpts{})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			wantStats := currentStats
+			wantStats.Open += 2
+			wantStats.Closed += 1
+			wantStats.Deleted += 1
+			wantStats.Total += 4
+
+			if diff := cmp.Diff(wantStats, haveStats); diff != "" {
+				t.Fatalf("wrong stats returned. diff=%s", diff)
+			}
+		})
+		t.Run("single campaign", func(t *testing.T) {
+			haveStats, err := s.GetChangesetsStats(ctx, GetChangesetsStatsOpts{CampaignID: campaignID})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			wantStats := currentCampaignStats
+			wantStats.Open += 1
+			wantStats.Closed += 1
+			wantStats.Deleted += 1
+			wantStats.Total += 3
+
+			if diff := cmp.Diff(wantStats, haveStats); diff != "" {
+				t.Fatalf("wrong stats returned. diff=%s", diff)
+			}
+		})
 	})
 }
 
@@ -1017,6 +1138,12 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 		UpdatedAt:    clock.now(),
 		HeadRefName:  "campaigns/test",
 	}
+	gitlabMR := &gitlab.MergeRequest{
+		ID:        gitlab.ID(1),
+		Title:     "Fix a bunch of bugs",
+		CreatedAt: gitlab.Time{Time: clock.now()},
+		UpdatedAt: gitlab.Time{Time: clock.now()},
+	}
 	issueComment := &github.IssueComment{
 		DatabaseID: 443827703,
 		Author: github.Actor{
@@ -1033,30 +1160,37 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 		IncludesCreatedEdit: false,
 	}
 
-	repo := testRepo(t, reposStore, extsvc.KindGitHub)
-	if err := reposStore.InsertRepos(ctx, repo); err != nil {
+	githubRepo := ct.TestRepo(t, reposStore, extsvc.KindGitHub)
+	gitlabRepo := ct.TestRepo(t, reposStore, extsvc.KindGitLab)
+	if err := reposStore.InsertRepos(ctx, githubRepo, gitlabRepo); err != nil {
 		t.Fatal(err)
 	}
 
-	changesets := make(cmpgn.Changesets, 0, 3)
-	events := make([]*cmpgn.ChangesetEvent, 0)
+	changesets := make(campaigns.Changesets, 0, 3)
+	events := make([]*campaigns.ChangesetEvent, 0)
 
 	for i := 0; i < cap(changesets); i++ {
-		ch := &cmpgn.Changeset{
-			RepoID:              repo.ID,
+		ch := &campaigns.Changeset{
+			RepoID:              githubRepo.ID,
 			CreatedAt:           clock.now(),
 			UpdatedAt:           clock.now(),
 			Metadata:            githubPR,
 			CampaignIDs:         []int64{int64(i) + 1},
 			ExternalID:          fmt.Sprintf("foobar-%d", i),
 			ExternalServiceType: extsvc.TypeGitHub,
-			ExternalBranch:      "campaigns/test",
+			ExternalBranch:      "refs/heads/campaigns/test",
 			ExternalUpdatedAt:   clock.now(),
-			ExternalState:       cmpgn.ChangesetExternalStateOpen,
-			ExternalReviewState: cmpgn.ChangesetReviewStateApproved,
-			ExternalCheckState:  cmpgn.ChangesetCheckStatePassed,
-			PublicationState:    cmpgn.ChangesetPublicationStatePublished,
-			ReconcilerState:     cmpgn.ReconcilerStateCompleted,
+			ExternalState:       campaigns.ChangesetExternalStateOpen,
+			ExternalReviewState: campaigns.ChangesetReviewStateApproved,
+			ExternalCheckState:  campaigns.ChangesetCheckStatePassed,
+			PublicationState:    campaigns.ChangesetPublicationStatePublished,
+			ReconcilerState:     campaigns.ReconcilerStateCompleted,
+		}
+
+		if i == cap(changesets)-1 {
+			ch.Metadata = gitlabMR
+			ch.ExternalServiceType = extsvc.TypeGitLab
+			ch.RepoID = gitlabRepo.ID
 		}
 
 		if err := s.CreateChangeset(ctx, ch); err != nil {
@@ -1068,9 +1202,8 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 
 	// We need campaigns attached to each changeset
 	for _, cs := range changesets {
-		c := &cmpgn.Campaign{
+		c := &campaigns.Campaign{
 			Name:           "ListChangesetSyncData test",
-			ChangesetIDs:   []int64{cs.ID},
 			NamespaceOrgID: 23,
 			LastApplierID:  1,
 			LastAppliedAt:  time.Now(),
@@ -1089,9 +1222,9 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 
 	// The changesets, except one, get changeset events
 	for _, cs := range changesets[:len(changesets)-1] {
-		e := &cmpgn.ChangesetEvent{
+		e := &campaigns.ChangesetEvent{
 			ChangesetID: cs.ID,
-			Kind:        cmpgn.ChangesetEventKindGitHubCommented,
+			Kind:        campaigns.ChangesetEventKindGitHubCommented,
 			Key:         issueComment.Key(),
 			CreatedAt:   clock.now(),
 			Metadata:    issueComment,
@@ -1103,7 +1236,7 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 		t.Fatal(err)
 	}
 
-	checkChangesetIDs := func(t *testing.T, hs []cmpgn.ChangesetSyncData, want []int64) {
+	checkChangesetIDs := func(t *testing.T, hs []*campaigns.ChangesetSyncData, want []int64) {
 		t.Helper()
 
 		haveIDs := []int64{}
@@ -1120,27 +1253,45 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 		if err != nil {
 			t.Fatal(err)
 		}
-		want := []cmpgn.ChangesetSyncData{
+		want := []*campaigns.ChangesetSyncData{
 			{
 				ChangesetID:           changesets[0].ID,
 				UpdatedAt:             clock.now(),
 				LatestEvent:           clock.now(),
 				ExternalUpdatedAt:     clock.now(),
-				RepoExternalServiceID: "https://example.com/",
+				RepoExternalServiceID: "https://github.com/",
 			},
 			{
 				ChangesetID:           changesets[1].ID,
 				UpdatedAt:             clock.now(),
 				LatestEvent:           clock.now(),
 				ExternalUpdatedAt:     clock.now(),
-				RepoExternalServiceID: "https://example.com/",
+				RepoExternalServiceID: "https://github.com/",
 			},
 			{
 				// No events
 				ChangesetID:           changesets[2].ID,
 				UpdatedAt:             clock.now(),
 				ExternalUpdatedAt:     clock.now(),
-				RepoExternalServiceID: "https://example.com/",
+				RepoExternalServiceID: "https://gitlab.com/",
+			},
+		}
+		if diff := cmp.Diff(want, hs); diff != "" {
+			t.Fatal(diff)
+		}
+	})
+
+	t.Run("only for specific external service", func(t *testing.T) {
+		hs, err := s.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{ExternalServiceID: "https://gitlab.com/"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := []*campaigns.ChangesetSyncData{
+			{
+				ChangesetID:           changesets[2].ID,
+				UpdatedAt:             clock.now(),
+				ExternalUpdatedAt:     clock.now(),
+				RepoExternalServiceID: "https://gitlab.com/",
 			},
 		}
 		if diff := cmp.Diff(want, hs); diff != "" {
@@ -1175,16 +1326,6 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 			t.Fatal(err)
 		}
 
-		c1, err := s.GetCampaign(ctx, GetCampaignOpts{ID: openCampaignID})
-		if err != nil {
-			t.Fatal(err)
-		}
-		c1.ChangesetIDs = []int64{changesets[0].ID, changesets[1].ID}
-		err = s.UpdateCampaign(ctx, c1)
-		if err != nil {
-			t.Fatal(err)
-		}
-
 		hs, err = s.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{})
 		if err != nil {
 			t.Fatal(err)
@@ -1194,8 +1335,8 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 
 	t.Run("ignore processing changesets", func(t *testing.T) {
 		ch := changesets[0]
-		ch.PublicationState = cmpgn.ChangesetPublicationStatePublished
-		ch.ReconcilerState = cmpgn.ReconcilerStateProcessing
+		ch.PublicationState = campaigns.ChangesetPublicationStatePublished
+		ch.ReconcilerState = campaigns.ReconcilerStateProcessing
 		if err := s.UpdateChangeset(ctx, ch); err != nil {
 			t.Fatal(err)
 		}
@@ -1209,8 +1350,8 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 
 	t.Run("ignore unpublished changesets", func(t *testing.T) {
 		ch := changesets[0]
-		ch.PublicationState = cmpgn.ChangesetPublicationStateUnpublished
-		ch.ReconcilerState = cmpgn.ReconcilerStateCompleted
+		ch.PublicationState = campaigns.ChangesetPublicationStateUnpublished
+		ch.ReconcilerState = campaigns.ReconcilerStateCompleted
 		if err := s.UpdateChangeset(ctx, ch); err != nil {
 			t.Fatal(err)
 		}

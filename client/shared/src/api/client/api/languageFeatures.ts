@@ -10,12 +10,6 @@ import { registerRemoteProvider } from './common'
 
 /** @internal */
 export interface ClientLanguageFeaturesAPI extends ProxyMarked {
-    $registerDefinitionProvider(
-        selector: DocumentSelector,
-        providerFunction: Remote<
-            ((parameters: TextDocumentPositionParameters) => ProxySubscribable<Location[]>) & ProxyMarked
-        >
-    ): Unsubscribable & ProxyMarked
     $registerReferenceProvider(
         selector: DocumentSelector,
         providerFunction: Remote<((parameters: ReferenceParameters) => ProxySubscribable<Location[]>) & ProxyMarked>
@@ -47,7 +41,6 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI, ProxyM
     public readonly [proxyMarker] = true
 
     constructor(
-        private definitionRegistry: TextDocumentLocationProviderRegistry,
         private referencesRegistry: TextDocumentLocationProviderRegistry<ReferenceParameters>,
         private locationRegistry: TextDocumentLocationProviderIDRegistry,
         private completionItemsRegistry: FeatureProviderRegistry<
@@ -55,15 +48,6 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI, ProxyM
             ProvideCompletionItemSignature
         >
     ) {}
-
-    public $registerDefinitionProvider(
-        documentSelector: DocumentSelector,
-        providerFunction: Remote<
-            ((parameters: TextDocumentPositionParameters) => ProxySubscribable<Location[]>) & ProxyMarked
-        >
-    ): Unsubscribable & ProxyMarked {
-        return registerRemoteProvider(this.definitionRegistry, { documentSelector }, providerFunction)
-    }
 
     public $registerReferenceProvider(
         documentSelector: DocumentSelector,

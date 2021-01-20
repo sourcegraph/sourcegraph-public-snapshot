@@ -310,6 +310,7 @@ exports[`CampaignChangesets renders 1`] = `
       nodeComponent={[Function]}
       nodeComponentProps={
         Object {
+          "expandByDefault": undefined,
           "extensionInfo": Object {
             "extensionsController": undefined,
             "hoverifier": Object {
@@ -374,6 +375,7 @@ exports[`CampaignChangesets renders 1`] = `
           nodeComponent={[Function]}
           nodeComponentProps={
             Object {
+              "expandByDefault": undefined,
               "extensionInfo": Object {
                 "extensionsController": undefined,
                 "hoverifier": Object {

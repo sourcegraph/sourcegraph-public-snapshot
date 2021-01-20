@@ -3,7 +3,6 @@ package resolvers
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -15,17 +14,19 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -98,17 +99,6 @@ var testDiffGraphQL = apitest.FileDiffs{
 	},
 }
 
-func marshalJSON(t testing.TB, v interface{}) string {
-	t.Helper()
-
-	bs, err := json.Marshal(v)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return string(bs)
-}
-
 func marshalDateTime(t testing.TB, ts time.Time) string {
 	t.Helper()
 
@@ -147,13 +137,13 @@ func insertTestUser(t *testing.T, db *sql.DB, name string, isAdmin bool) (userID
 	return userID
 }
 
-func newGitHubExternalService(t *testing.T, store repos.Store) *repos.ExternalService {
+func newGitHubExternalService(t *testing.T, store repos.Store) *types.ExternalService {
 	t.Helper()
 
-	clock := repos.NewFakeClock(time.Now(), 0)
+	clock := dbtesting.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
-	svc := repos.ExternalService{
+	svc := types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "Github - Test",
 		Config:      `{"url": "https://github.com"}`,
@@ -169,9 +159,10 @@ func newGitHubExternalService(t *testing.T, store repos.Store) *repos.ExternalSe
 	return &svc
 }
 
-func newGitHubTestRepo(name string, externalService *repos.ExternalService) *repos.Repo {
+func newGitHubTestRepo(name string, externalService *types.ExternalService) *repos.Repo {
 	return &repos.Repo{
-		Name: name,
+		Name:    name,
+		Private: true,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          fmt.Sprintf("external-id-%d", externalService.ID),
 			ServiceType: "github",
@@ -216,11 +207,11 @@ func mockRepoComparison(t *testing.T, baseRev, headRev, diff string) {
 
 	spec := fmt.Sprintf("%s...%s", baseRev, headRev)
 
-	git.Mocks.GetCommit = func(id api.CommitID) (*git.Commit, error) {
-		if string(id) != baseRev && string(id) != headRev {
-			t.Fatalf("git.Mocks.GetCommit received unknown commit id: %s", id)
+	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+		if spec != baseRev && spec != headRev {
+			t.Fatalf("git.Mocks.ResolveRevision received unknown spec: %s", spec)
 		}
-		return &git.Commit{ID: id}, nil
+		return api.CommitID(spec), nil
 	}
 	t.Cleanup(func() { git.Mocks.GetCommit = nil })
 
@@ -245,11 +236,11 @@ func mockRepoComparison(t *testing.T, baseRev, headRev, diff string) {
 	t.Cleanup(func() { git.Mocks.MergeBase = nil })
 }
 
-func addChangeset(t *testing.T, ctx context.Context, s *ee.Store, c *campaigns.Campaign, changeset int64) {
+func addChangeset(t *testing.T, ctx context.Context, s *ee.Store, c *campaigns.Changeset, campaign int64) {
 	t.Helper()
 
-	c.ChangesetIDs = append(c.ChangesetIDs, changeset)
-	if err := s.UpdateCampaign(ctx, c); err != nil {
+	c.CampaignIDs = append(c.CampaignIDs, campaign)
+	if err := s.UpdateChangeset(ctx, c); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -298,7 +289,7 @@ func createChangeset(
 
 		ExternalServiceType: opts.externalServiceType,
 		ExternalID:          opts.externalID,
-		ExternalBranch:      opts.externalBranch,
+		ExternalBranch:      git.EnsureRefPrefix(opts.externalBranch),
 		ExternalReviewState: opts.externalReviewState,
 		ExternalCheckState:  opts.externalCheckState,
 
@@ -408,4 +399,17 @@ func createChangesetSpec(
 	}
 
 	return spec
+}
+
+func pruneUserCredentials(t *testing.T) {
+	t.Helper()
+	creds, _, err := db.UserCredentials.List(context.Background(), db.UserCredentialsListOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range creds {
+		if err := db.UserCredentials.Delete(context.Background(), c.ID); err != nil {
+			t.Fatal(err)
+		}
+	}
 }

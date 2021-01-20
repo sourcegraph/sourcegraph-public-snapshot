@@ -8,7 +8,7 @@ exports[`SyntaxHighlightedSearchQuery should syntax highlight filter 1`] = `
     className="text-monospace search-query-link"
   >
     <span
-      className="search-keyword"
+      className="search-filter-keyword"
     >
       repo
       :
@@ -16,7 +16,7 @@ exports[`SyntaxHighlightedSearchQuery should syntax highlight filter 1`] = `
     sourcegraph
      
     <span
-      className="search-keyword"
+      className="search-filter-keyword"
     >
       lang
       :
@@ -34,7 +34,7 @@ exports[`SyntaxHighlightedSearchQuery should syntax highlight filter and operato
     className="text-monospace search-query-link"
   >
     <span
-      className="search-keyword"
+      className="search-filter-keyword"
     >
       repo
       :
@@ -44,7 +44,7 @@ exports[`SyntaxHighlightedSearchQuery should syntax highlight filter and operato
     test
      
     <span
-      className="search-operator"
+      className="search-keyword"
       key="22"
     >
       and
@@ -63,7 +63,7 @@ exports[`SyntaxHighlightedSearchQuery should syntax highlight negated filter 1`]
     className="text-monospace search-query-link"
   >
     <span
-      className="search-keyword"
+      className="search-filter-keyword"
     >
       -lang
       :
@@ -85,7 +85,7 @@ exports[`SyntaxHighlightedSearchQuery should syntax highlight operator 1`] = `
     test
      
     <span
-      className="search-operator"
+      className="search-keyword"
       key="5"
     >
       or

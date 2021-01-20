@@ -55,7 +55,7 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
     const [hasDismissedInfo, setHasDismissedInfo] = useLocalStorage(HAS_DISMISSED_INFO_KEY, false)
 
     const submitOnToggle = useCallback(
-        (versionContext: string): void => {
+        (versionContext?: string): void => {
             const searchQueryNotEmpty = navbarSearchQuery !== '' || (filtersInQuery && !isEmpty(filtersInQuery))
             const activation = undefined
             const source = 'filter'
@@ -78,7 +78,7 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
     )
 
     const updateValue = useCallback(
-        (newValue: string): void => {
+        (newValue?: string): void => {
             setVersionContext(newValue)
             submitOnToggle(newValue)
         },
@@ -86,8 +86,8 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
     )
 
     const disableValue = useCallback((): void => {
-        setVersionContext(undefined)
-    }, [setVersionContext])
+        updateValue(undefined)
+    }, [updateValue])
 
     if (!availableVersionContexts || availableVersionContexts.length === 0) {
         return null

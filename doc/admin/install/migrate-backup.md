@@ -64,7 +64,7 @@ Short-lived data, including session data and some usage statistics, are stored i
 
 ### External data
 
-Certain categories of data can be stored outside of the Sourcegraph deployment. For example, [configuration JSON files can be loaded from disk](../config/advanced_config_file.md), and Sourcegraph can connect to [an external SQL database and Redis server](../external_database.md) instead of using Postgres and Redis internally. 
+Certain categories of data can be stored outside of the Sourcegraph deployment. For example, [configuration JSON files can be loaded from disk](../config/advanced_config_file.md), and Sourcegraph can connect to [external services (PostgreSQL, Redis, S3/GCS)](../external_services/index.md) instead of using PostgreSQL, Redis, and MinIO internally. 
 
 In these cases, no migration should be necessary—simply re-use the existing external data sources on the new Sourcegraph instance.
 

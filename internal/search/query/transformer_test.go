@@ -1,12 +1,78 @@
 package query
 
 import (
+	"encoding/json"
 	"regexp"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 )
+
+func toJSON(node Node) interface{} {
+	switch n := node.(type) {
+	case Operator:
+		var jsons []interface{}
+		for _, o := range n.Operands {
+			jsons = append(jsons, toJSON(o))
+		}
+
+		switch n.Kind {
+		case And:
+			return struct {
+				And []interface{} `json:"and"`
+			}{
+				And: jsons,
+			}
+		case Or:
+			return struct {
+				Or []interface{} `json:"or"`
+			}{
+				Or: jsons,
+			}
+		case Concat:
+			return struct {
+				Concat []interface{} `json:"concat"`
+			}{
+				Concat: jsons,
+			}
+		}
+	case Parameter:
+		return struct {
+			Field   string `json:"field"`
+			Value   string `json:"value"`
+			Negated bool   `json:"negated"`
+		}{
+			Field:   n.Field,
+			Value:   n.Value,
+			Negated: n.Negated,
+		}
+	case Pattern:
+		return struct {
+			Value   string   `json:"value"`
+			Negated bool     `json:"negated"`
+			Labels  []string `json:"labels"`
+		}{
+			Value:   n.Value,
+			Negated: n.Negated,
+			Labels:  n.Annotation.Labels.String(),
+		}
+	}
+	// unreachable.
+	return struct{}{}
+}
+
+func nodesToJSON(nodes []Node) string {
+	var jsons []interface{}
+	for _, node := range nodes {
+		jsons = append(jsons, toJSON(node))
+	}
+	json, err := json.Marshal(jsons)
+	if err != nil {
+		return ""
+	}
+	return string(json)
+}
 
 func prettyPrint(nodes []Node) string {
 	var resultStr []string
@@ -17,12 +83,35 @@ func prettyPrint(nodes []Node) string {
 }
 
 func TestSubstituteAliases(t *testing.T) {
-	input := "r:repo g:repogroup f:file"
-	want := `(and "repo:repo" "repogroup:repogroup" "file:file")`
-	query, _ := ParseAndOr(input, SearchTypeRegex)
-	got := prettyPrint(SubstituteAliases(query))
-	if diff := cmp.Diff(got, want); diff != "" {
-		t.Fatal(diff)
+	cases := []struct {
+		input      string
+		searchType SearchType
+		want       string
+	}{
+		{
+			input:      "r:repo g:repogroup f:file",
+			searchType: SearchTypeRegex,
+			want:       `[{"and":[{"field":"repo","value":"repo","negated":false},{"field":"repogroup","value":"repogroup","negated":false},{"field":"file","value":"file","negated":false}]}]`,
+		},
+		{
+			input:      "r:repo content:^a-regexp:tbf$",
+			searchType: SearchTypeRegex,
+			want:       `[{"and":[{"field":"repo","value":"repo","negated":false},{"value":"^a-regexp:tbf$","negated":false,"labels":["Regexp"]}]}]`,
+		},
+		{
+			input:      "r:repo content:^not-actually-a-regexp:tbf$",
+			searchType: SearchTypeLiteral,
+			want:       `[{"and":[{"field":"repo","value":"repo","negated":false},{"value":"^not-actually-a-regexp:tbf$","negated":false,"labels":["Literal"]}]}]`,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run("substitute alises", func(t *testing.T) {
+			query, _ := ProcessAndOr(c.input, ParserOptions{SearchType: c.searchType})
+			if diff := cmp.Diff(nodesToJSON(query.(*AndOrQuery).Query), c.want); diff != "" {
+				t.Fatal(diff)
+			}
+		})
 	}
 }
 
@@ -177,7 +266,7 @@ func TestSearchUppercase(t *testing.T) {
 	for _, c := range cases {
 		t.Run("searchUppercase", func(t *testing.T) {
 			query, _ := ParseAndOr(c.input, SearchTypeRegex)
-			got := prettyPrint(SearchUppercase(SubstituteAliases(query)))
+			got := prettyPrint(SearchUppercase(SubstituteAliases(SearchTypeRegex)(query)))
 			if diff := cmp.Diff(c.want, got); diff != "" {
 				t.Fatal(diff)
 			}
@@ -270,6 +359,11 @@ func TestSubstituteConcat(t *testing.T) {
 			input:  "a b (c and d) e f (g or h) (i j k)",
 			concat: fuzzyRegexp,
 			want:   `"(a).*?(b)" (and "c" "d") "(e).*?(f)" (or "g" "h") "(i j k)"`,
+		},
+		{
+			input:  "(a not b not c d)",
+			concat: space,
+			want:   `"a" (not "b") (not "c") "d"`,
 		},
 	}
 	for _, c := range cases {
@@ -428,7 +522,7 @@ func TestMap(t *testing.T) {
 		},
 		{
 			input: "RePo:foo r:bar",
-			fns:   []func(_ []Node) []Node{LowercaseFieldNames, SubstituteAliases},
+			fns:   []func(_ []Node) []Node{LowercaseFieldNames, SubstituteAliases(SearchTypeRegex)},
 			want:  `(and "repo:foo" "repo:bar")`,
 		},
 	}

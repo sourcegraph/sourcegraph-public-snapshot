@@ -5,10 +5,11 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -100,6 +101,11 @@ func TestReposourceCloneURLToRepoName(t *testing.T) {
 			name:         "fallback for github.com",
 			cloneURL:     "https://github.com/user/repo",
 			wantRepoName: api.RepoName("github.com/user/repo"),
+		},
+		{
+			name:         "relatively-pathed submodule",
+			cloneURL:     "../../a/b/c.git",
+			wantRepoName: api.RepoName("github.example.com/a/b/c"),
 		},
 	}
 	for _, test := range tests {

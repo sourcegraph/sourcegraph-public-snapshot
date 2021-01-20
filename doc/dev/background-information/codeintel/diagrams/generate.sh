@@ -4,18 +4,19 @@ set -ex
 
 declare mermaid_diagrams=(
   definitions
+  executor
+  extension-definitions
+  extension-hover
+  extension-references
+  hover
   references
   resolve-page
-  hover
   upload
-  extension-definitions
-  extension-references
-  extension-hover
 )
 
 # Install mermaid util
 yarn
-mermaid="../../../../node_modules/.bin/mmdc"
+mermaid="../../../../../node_modules/.bin/mmdc"
 
 # Generate mermaid diagrams
 for diagram in "${mermaid_diagrams[@]}"; do

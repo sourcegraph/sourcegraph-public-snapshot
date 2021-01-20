@@ -2,20 +2,23 @@ package campaigns
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // NewService returns a Service.
@@ -46,12 +49,12 @@ func (s *Service) WithStore(store *Store) *Service {
 }
 
 type CreateCampaignSpecOpts struct {
-	RawSpec string
+	RawSpec string `json:"raw_spec"`
 
-	NamespaceUserID int32
-	NamespaceOrgID  int32
+	NamespaceUserID int32 `json:"namespace_user_id"`
+	NamespaceOrgID  int32 `json:"namespace_org_id"`
 
-	ChangesetSpecRandIDs []string
+	ChangesetSpecRandIDs []string `json:"changeset_spec_rand_ids"`
 }
 
 // CreateCampaignSpec creates the CampaignSpec.
@@ -179,14 +182,14 @@ func (e *changesetSpecNotFoundErr) NotFound() bool { return true }
 // applies to, if that Campaign already exists.
 // If it doesn't exist yet, both return values are nil.
 // It accepts a *Store so that it can be used inside a transaction.
-func (s *Service) GetCampaignMatchingCampaignSpec(ctx context.Context, tx *Store, spec *campaigns.CampaignSpec) (*campaigns.Campaign, error) {
+func (s *Service) GetCampaignMatchingCampaignSpec(ctx context.Context, spec *campaigns.CampaignSpec) (*campaigns.Campaign, error) {
 	opts := GetCampaignOpts{
 		Name:            spec.Spec.Name,
 		NamespaceUserID: spec.NamespaceUserID,
 		NamespaceOrgID:  spec.NamespaceOrgID,
 	}
 
-	campaign, err := tx.GetCampaign(ctx, opts)
+	campaign, err := s.store.GetCampaign(ctx, opts)
 	if err != nil {
 		if err != ErrNoResults {
 			return nil, err
@@ -427,3 +430,69 @@ func checkRepoSupported(repo *types.Repo) error {
 		repo.Name,
 	)
 }
+
+// FetchUsernameForBitbucketServerToken fetches the username associated with a
+// Bitbucket server token.
+//
+// We need the username in order to use the token as the password in a HTTP
+// BasicAuth username/password pair used by gitserver to push commits.
+//
+// In order to not require from users to type in their BitbucketServer username
+// we only ask for a token and then use that token to talk to the
+// BitbucketServer API and get their username.
+//
+// Since Bitbucket sends the username as a header in REST responses, we can
+// take it from there and complete the UserCredential.
+func (s *Service) FetchUsernameForBitbucketServerToken(ctx context.Context, externalServiceID, externalServiceType, token string) (string, error) {
+	extSvcID, err := s.store.GetExternalServiceID(ctx, GetExternalServiceIDOpts{
+		ExternalServiceID:   externalServiceID,
+		ExternalServiceType: externalServiceType,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	rstore := repos.NewDBStore(s.store.DB(), sql.TxOptions{})
+	es, err := rstore.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{IDs: []int64{extSvcID}})
+	if err != nil {
+		return "", err
+	}
+	if len(es) == 0 {
+		return "", errors.New("no external service found for repo")
+	}
+	externalService := es[0]
+
+	sources, err := s.sourcer(externalService)
+	if err != nil {
+		return "", err
+	}
+
+	userSource, ok := sources[0].(repos.UserSource)
+	if !ok {
+		return "", errors.New("external service source cannot use other authenticator")
+	}
+
+	source, err := userSource.WithAuthenticator(&auth.OAuthBearerToken{Token: token})
+	if err != nil {
+		return "", err
+	}
+
+	usernameSource, ok := source.(usernameSource)
+	if !ok {
+		return "", errors.New("external service source doesn't implement AuthenticatedUsername")
+	}
+
+	return usernameSource.AuthenticatedUsername(ctx)
+}
+
+// A usernameSource can fetch the username associated with the credentials used
+// by the Source.
+// It's only used by FetchUsernameForBitbucketServerToken.
+type usernameSource interface {
+	// AuthenticatedUsername makes a request to the code host to fetch the
+	// username associated with the credentials.
+	// If no username could be determined an error is returned.
+	AuthenticatedUsername(ctx context.Context) (string, error)
+}
+
+var _ usernameSource = &repos.BitbucketServerSource{}

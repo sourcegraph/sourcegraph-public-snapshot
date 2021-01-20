@@ -1,15 +1,14 @@
-import assert from 'assert'
 import expect from 'expect'
 import { commonWebGraphQlResults } from './graphQlResults'
-import { ILanguage, IRepository } from '../../../shared/src/graphql/schema'
 import { RepoGroupsResult, SearchResult, SearchSuggestionsResult, WebGraphQlOperations } from '../graphql-operations'
 import { Driver, createDriverForTest } from '../../../shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { test } from 'mocha'
 import { siteGQLID, siteID } from './jscontext'
-import { createTreeEntriesResult } from './graphQlResponseHelpers'
-import { SharedGraphQlOperations } from '../../../shared/src/graphql-operations'
+import { SharedGraphQlOperations, SymbolKind } from '../../../shared/src/graphql-operations'
+import { SearchEvent } from '../search/stream'
+import { Key } from 'ts-key-enum'
 
 const searchResults = (): SearchResult => ({
     search: {
@@ -98,294 +97,132 @@ describe('Search', () => {
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
 
-    describe('Interactive search mode', () => {
-        const viewerSettingsWithSplitSearchModes: Partial<WebGraphQlOperations> = {
-            ViewerSettings: () => ({
-                viewerSettings: {
-                    subjects: [
-                        {
-                            __typename: 'DefaultSettings',
-                            settingsURL: null,
-                            viewerCanAdminister: false,
-                            latestSettings: {
-                                id: 0,
-                                contents: JSON.stringify({ experimentalFeatures: { splitSearchModes: true } }),
-                            },
-                        },
-                        {
-                            __typename: 'Site',
-                            id: siteGQLID,
-                            siteID,
-                            latestSettings: {
-                                id: 470,
-                                contents: JSON.stringify({ experimentalFeatures: { splitSearchModes: true } }),
-                            },
-                            settingsURL: '/site-admin/global-settings',
-                            viewerCanAdminister: true,
-                        },
-                    ],
-                    final: JSON.stringify({}),
-                },
-            }),
-        }
+    const waitAndFocusInput = async () => {
+        await driver.page.waitForSelector('.monaco-editor .view-lines')
+        await driver.page.click('.monaco-editor .view-lines')
+    }
 
-        test('Search mode component appears', async () => {
-            testContext.overrideGraphQL({ ...commonSearchGraphQLResults, ...viewerSettingsWithSplitSearchModes })
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-            await driver.page.waitForSelector('.test-search-mode-toggle')
-            expect(await driver.page.evaluate(() => document.querySelectorAll('.test-search-mode-toggle').length)).toBe(
-                1
-            )
-        })
+    const getSearchFieldValue = (driver: Driver): Promise<string | undefined> =>
+        driver.page.evaluate(() => document.querySelector<HTMLTextAreaElement>('#monaco-query-input textarea')?.value)
 
-        test('Filter buttons', async () => {
+    describe('Search filters', () => {
+        test('Search filters are shown on search result pages and clicking them triggers a new search', async () => {
             testContext.overrideGraphQL({
                 ...commonSearchGraphQLResults,
-                ...viewerSettingsWithSplitSearchModes,
+            })
+            const dynamicFilters = ['archived:yes', 'repo:^github\\.com/Algorilla/manta-ray$']
+            const origQuery = 'foo'
+            for (const filter of dynamicFilters) {
+                await driver.page.goto(
+                    `${driver.sourcegraphBaseUrl}/search?q=${encodeURIComponent(origQuery)}&patternType=literal`
+                )
+                await driver.page.waitForSelector(`[data-testid="filter-chip"][value=${JSON.stringify(filter)}]`)
+                await driver.page.click(`[data-testid="filter-chip"][value=${JSON.stringify(filter)}]`)
+                await driver.page.waitForFunction(
+                    expectedQuery => {
+                        const url = new URL(document.location.href)
+                        const query = url.searchParams.get('q')
+                        return query && query.trim() === expectedQuery
+                    },
+                    { timeout: 5000 },
+                    `${origQuery} ${filter}`
+                )
+            }
+        })
+    })
+
+    describe('Suggestions', () => {
+        test('Typing in the search field shows relevant suggestions', async () => {
+            testContext.overrideGraphQL({
+                ...commonSearchGraphQLResults,
                 SearchSuggestions: () => ({
                     search: {
                         suggestions: [
-                            // TODO the type generation is not correct for this query which causes the need for these casts
-                            { __typename: 'Language' } as ILanguage,
-                            { __typename: 'Repository', name: 'github.com/gorilla/mux' } as IRepository,
-                            { __typename: 'Repository', name: 'github.com/gorilla/css' } as IRepository,
-                            { __typename: 'Repository', name: 'github.com/gorilla/rpc' } as IRepository,
+                            { __typename: 'Repository', name: 'github.com/auth0/go-jwt-middleware' },
+                            {
+                                __typename: 'Symbol',
+                                name: 'OnError',
+                                containerName: 'jwtmiddleware',
+                                url: '/github.com/auth0/go-jwt-middleware/-/blob/jwtmiddleware.go#L56:1-56:14',
+                                kind: SymbolKind.STRUCT,
+                                location: {
+                                    resource: {
+                                        path: 'jwtmiddleware.go',
+                                        repository: { name: 'github.com/auth0/go-jwt-middleware' },
+                                    },
+                                },
+                            },
+                            {
+                                __typename: 'File',
+                                path: 'jwtmiddleware.go',
+                                name: 'jwtmiddleware.go',
+                                isDirectory: false,
+                                url: '/github.com/auth0/go-jwt-middleware/-/blob/jwtmiddleware.go',
+                                repository: { name: 'github.com/auth0/go-jwt-middleware' },
+                            },
                         ],
                     },
                 }),
-                RepoGroups: () => ({
-                    repoGroups: [
-                        { __typename: 'RepoGroup', name: 'go2generics' },
-                        { __typename: 'RepoGroup', name: 'city-of-amsterdam' },
-                    ],
-                }),
             })
+            // Repo autocomplete from homepage
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-            await driver.page.waitForSelector('.test-search-mode-toggle', { visible: true })
-            await driver.page.click('.test-search-mode-toggle')
-            await driver.page.click('.test-search-mode-toggle__interactive-mode')
+            // Using id selector rather than `test-` classes as Monaco doesn't allow customizing classes
+            await driver.page.waitForSelector('#monaco-query-input')
+            await driver.replaceText({
+                selector: '#monaco-query-input',
+                newText: 'go-jwt-middlew',
+                enterTextMethod: 'type',
+            })
+            await driver.page.waitForSelector('.monaco-query-input-container .suggest-widget.visible')
+            await driver.findElementWithText('github.com/auth0/go-jwt-middleware', {
+                action: 'click',
+                wait: { timeout: 5000 },
+                selector: '.monaco-query-input-container .suggest-widget.visible span',
+            })
+            expect(await getSearchFieldValue(driver)).toStrictEqual('repo:^github\\.com/auth0/go-jwt-middleware$ ')
 
-            // Wait for the input component to appear
-            await driver.page.waitForSelector('.test-interactive-mode-input', { visible: true })
-            // Wait for the add filter row to appear.
-            await driver.page.waitForSelector('.test-add-filter-row', { visible: true })
-            // Wait for the default add filter buttons appear
-            await driver.page.waitForSelector('.test-add-filter-button-repo', { visible: true })
-            await driver.page.waitForSelector('.test-add-filter-button-file', { visible: true })
+            // Submit search
+            await driver.page.keyboard.press(Key.Enter)
 
-            // Add a repo filter
-            await driver.page.waitForSelector('.test-add-filter-button-repo')
-            await driver.page.click('.test-add-filter-button-repo')
-
-            // FilterInput is autofocused
-            await driver.page.waitForSelector('.filter-input')
-            // Search for repo:gorilla in the repo filter chip input
-            await driver.page.keyboard.type('gorilla')
-            await driver.page.keyboard.press('Enter')
-            await driver.assertWindowLocation('/search?q=repo:%22gorilla%22&patternType=literal')
-
-            // Edit the filter
-            await driver.page.waitForSelector('.filter-input')
-            await driver.page.click('.filter-input')
-            await driver.page.waitForSelector('.filter-input__input-field')
-            await driver.page.keyboard.type('/mux')
-            // Press enter to lock in filter
-            await driver.page.keyboard.press('Enter')
-            // The main query input should be autofocused, so hit enter again to submit
-            await driver.assertWindowLocation('/search?q=repo:%22gorilla/mux%22&patternType=literal')
-
-            // Add a file filter from search results page
-            await driver.page.waitForSelector('.test-add-filter-button-file', { visible: true })
-            await driver.page.click('.test-add-filter-button-file')
-            await driver.page.waitForSelector('.filter-input__input-field', { visible: true })
-            await driver.page.keyboard.type('README')
-            await driver.page.keyboard.press('Enter')
-            await driver.page.keyboard.press('Enter')
-            await driver.assertWindowLocation('/search?q=repo:%22gorilla/mux%22+file:%22README%22&patternType=literal')
-
-            // Delete filter
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=repo:gorilla/mux&patternType=literal')
-            await driver.page.waitForSelector('.test-filter-input__delete-button', { visible: true })
-            await driver.page.click('.test-filter-input__delete-button')
-            await driver.assertWindowLocation('/search?q=&patternType=literal')
-
-            // Test suggestions
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-            await driver.page.waitForSelector('.test-add-filter-button-repo', { visible: true })
-            await driver.page.click('.test-add-filter-button-repo')
-            await driver.page.waitForSelector('.filter-input', { visible: true })
-            await driver.page.waitForSelector('.filter-input__input-field')
-            await driver.page.keyboard.type('gorilla')
-            await driver.page.waitForSelector('.test-filter-input__suggestions')
-            await driver.page.waitForSelector('.test-suggestion-item')
-            await driver.page.keyboard.press('ArrowDown')
-            await driver.page.keyboard.press('Enter')
-            await driver.page.keyboard.press('Enter')
-            await driver.assertWindowLocation(
-                '/search?q=repo:%22%5Egithub%5C%5C.com/gorilla/mux%24%22&patternType=literal'
+            // File autocomplete from repo search bar
+            await driver.page.waitForSelector('#monaco-query-input')
+            await driver.page.focus('#monaco-query-input')
+            await driver.page.keyboard.type('jwtmi')
+            await driver.page.waitForSelector('.monaco-query-input-container .suggest-widget.visible')
+            await driver.findElementWithText('jwtmiddleware.go', {
+                selector: '.monaco-query-input-container .suggest-widget.visible span',
+                wait: { timeout: 5000 },
+            })
+            await driver.page.keyboard.press(Key.Tab)
+            expect(await getSearchFieldValue(driver)).toStrictEqual(
+                'repo:^github\\.com/auth0/go-jwt-middleware$ file:^jwtmiddleware\\.go$ '
             )
 
-            // Test cancelling editing an input with escape key
-            await driver.page.click('.filter-input__button-text')
-            await driver.page.waitForSelector('.filter-input__input-field')
-            await driver.page.keyboard.type('/mux')
-            await driver.page.keyboard.press('Escape')
-            await driver.page.click('.test-search-button')
-            await driver.assertWindowLocation(
-                '/search?q=repo:%22%5Egithub%5C%5C.com/gorilla/mux%24%22&patternType=literal'
-            )
-
-            // Test cancelling editing an input by clicking outside close button
-            await driver.page.click('.filter-input__button-text')
-            await driver.page.waitForSelector('.filter-input__input-field')
-            await driver.page.keyboard.type('/mux')
-            await driver.page.click('.test-search-button')
-            await driver.assertWindowLocation(
-                '/search?q=repo:%22%5Egithub%5C%5C.com/gorilla/mux%24%22&patternType=literal'
-            )
+            // Symbol autocomplete in top search bar
+            await driver.page.keyboard.type('On')
+            await driver.page.waitForSelector('.monaco-query-input-container .suggest-widget.visible')
+            await driver.findElementWithText('OnError', {
+                selector: '.monaco-query-input-container .suggest-widget.visible span',
+                wait: { timeout: 5000 },
+            })
         })
+    })
 
-        test('Updates query when searching from directory page', async () => {
+    describe('Search field value', () => {
+        test('Is set from the URL query parameter when loading a search-related page', async () => {
             testContext.overrideGraphQL({
                 ...commonSearchGraphQLResults,
-                ...viewerSettingsWithSplitSearchModes,
-                RepositoryRedirect: () => ({
-                    repositoryRedirect: {
-                        __typename: 'Repository',
-                        id: 'SourcegraphJsonRpc2RepositoryID',
-                        name: 'github.com/sourcegraph/jsonrpc2',
-                        url: '/github.com/sourcegraph/jsonrpc2',
-                        externalURLs: [{ url: 'https://github.com/sourcegraph/jsonrpc2', serviceType: 'github' }],
-                        description:
-                            'Package jsonrpc2 provides a client and server implementation of JSON-RPC 2.0 (http://www.jsonrpc.org/specification)',
-                        viewerCanAdminister: true,
-                        defaultBranch: { displayName: 'master' },
-                    },
-                }),
-                ResolveRev: () => ({
-                    repositoryRedirect: {
-                        __typename: 'Repository',
-                        mirrorInfo: { cloneInProgress: false, cloneProgress: '', cloned: true },
-                        commit: {
-                            oid: '15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
-                            tree: { url: '/github.com/sourcegraph/jsonrpc2' },
-                        },
-                        defaultBranch: { abbrevName: 'master' },
-                    },
-                }),
-                TreeEntries: () =>
-                    createTreeEntriesResult('github.com/sourcegraph/jsonrpc2', [
-                        '.travis.yml',
-                        'LICENSE',
-                        'README.md',
-                        'async.go',
-                        'call_opt.go',
-                        'codec_test.go',
-                        'conn_opt.go',
-                        'go.mod',
-                        'go.sum',
-                        'handler_with_error.go',
-                        'jsonrpc2.go',
-                        'jsonrpc2_test.go',
-                        'object_test.go',
-                        'stream.go',
-                    ]),
             })
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/github.com/sourcegraph/jsonrpc2')
-            await driver.page.waitForSelector('.filter-input')
-            const filterInputValue = () =>
-                driver.page.evaluate(() => {
-                    const filterInput = document.querySelector<HTMLButtonElement>('.filter-input__button-text')
-                    return filterInput ? filterInput.textContent : null
-                })
-            assert.strictEqual(await filterInputValue(), 'repo:^github\\.com/sourcegraph/jsonrpc2$')
-        })
-
-        test('Filter dropdown and finite-option filter inputs', async () => {
-            testContext.overrideGraphQL({
-                ...commonSearchGraphQLResults,
-                ...viewerSettingsWithSplitSearchModes,
-            })
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-            await driver.page.waitForSelector('.test-query-input', { visible: true })
-            await driver.page.waitForSelector('.test-filter-dropdown')
-            await driver.page.type('.test-query-input', 'test')
-            await driver.page.click('.test-filter-dropdown')
-            await driver.page.select('.test-filter-dropdown', 'fork')
-            await driver.page.waitForSelector('.test-filter-input-finite-form')
-            await driver.page.waitForSelector('.test-filter-input-radio-button-no')
-            await driver.page.click('.test-filter-input-radio-button-no')
-            await driver.page.click('.test-confirm-filter-button')
-            await driver.assertWindowLocation('/search?q=fork:%22no%22+test&patternType=literal')
-            // Edit filter
-            await driver.page.waitForSelector('.filter-input')
-            await driver.page.waitForSelector('.test-filter-input__button-text-fork')
-            await driver.page.click('.test-filter-input__button-text-fork')
-            await driver.page.waitForSelector('.test-filter-input-radio-button-only')
-            await driver.page.click('.test-filter-input-radio-button-only')
-            await driver.page.click('.test-confirm-filter-button')
-            await driver.assertWindowLocation('/search?q=fork:%22only%22+test&patternType=literal')
-            // Edit filter by clicking dropdown menu
-            await driver.page.waitForSelector('.test-filter-dropdown')
-            await driver.page.click('.test-filter-dropdown')
-            await driver.page.select('.test-filter-dropdown', 'fork')
-            await driver.page.waitForSelector('.test-filter-input-finite-form')
-            await driver.page.waitForSelector('.test-filter-input-radio-button-no')
-            await driver.page.click('.test-filter-input-radio-button-no')
-            await driver.page.click('.test-confirm-filter-button')
-            await driver.assertWindowLocation('/search?q=fork:%22no%22+test&patternType=literal')
-        })
-
-        test('Clicking on alert proposed query navigates to the right filter', async () => {
-            const searchResultsWithAlert = searchResults()
-            if (searchResultsWithAlert.search) {
-                searchResultsWithAlert.search.results.results = []
-                searchResultsWithAlert.search.results.alert = {
-                    title: 'Test title',
-                    description: 'Test description',
-                    proposedQueries: [
-                        {
-                            description: 'test',
-                            query: 'repo:test1|test2',
-                        },
-                    ],
-                }
-            }
-
-            testContext.overrideGraphQL({
-                ...commonSearchGraphQLResults,
-                ...viewerSettingsWithSplitSearchModes,
-                Search: () => searchResultsWithAlert,
-            })
-
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-            await driver.page.waitForSelector('.test-search-mode-toggle', { visible: true })
-            await driver.page.click('.test-search-mode-toggle')
-            await driver.page.click('.test-search-mode-toggle__interactive-mode')
-
-            // Wait for the input component to appear
-            await driver.page.waitForSelector('.test-interactive-mode-input', { visible: true })
-            // Wait for the add filter row to appear.
-            await driver.page.waitForSelector('.test-add-filter-row', { visible: true })
-            // Wait for the default add filter buttons appear
-            await driver.page.waitForSelector('.test-add-filter-button-repo', { visible: true })
-            await driver.page.waitForSelector('.test-add-filter-button-file', { visible: true })
-
-            // Add a repo filter
-            await driver.page.waitForSelector('.test-add-filter-button-repo')
-            await driver.page.click('.test-add-filter-button-repo')
-
-            // FilterInput is autofocused
-            await driver.page.waitForSelector('.filter-input')
-            // Search for repo:gorilla in the repo filter chip input
-            await driver.page.keyboard.type('gorilla')
-            await driver.page.keyboard.press('Enter')
-            await driver.assertWindowLocation('/search?q=repo:%22gorilla%22&patternType=literal')
-
-            // Click on proposed query from GraphQL and verify existing filters aren't added
-            await driver.page.waitForSelector('[data-testid="proposed-query-link"]')
-            await driver.page.click('[data-testid="proposed-query-link"]')
-            await driver.assertWindowLocation('/search?q=repo:test1%7Ctest2&patternType=literal')
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=foo')
+            await driver.page.waitForSelector('#monaco-query-input')
+            expect(await getSearchFieldValue(driver)).toStrictEqual('foo')
+            // Field value is cleared when navigating to a non search-related page
+            await driver.page.waitForSelector('[data-testid="extensions"]')
+            await driver.page.click('[data-testid="extensions"]')
+            expect(await getSearchFieldValue(driver)).toStrictEqual('')
+            // Field value is restored when the back button is pressed
+            await driver.page.goBack()
+            expect(await getSearchFieldValue(driver)).toStrictEqual('foo')
         })
     })
 
@@ -397,6 +234,7 @@ describe('Search', () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
             await driver.page.waitForSelector('.test-query-input', { visible: true })
             await driver.page.waitForSelector('.test-case-sensitivity-toggle')
+            await waitAndFocusInput()
             await driver.page.type('.test-query-input', 'test')
             await driver.page.click('.test-case-sensitivity-toggle')
             await driver.assertWindowLocation('/search?q=test&patternType=literal&case=yes')
@@ -422,6 +260,7 @@ describe('Search', () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
             await driver.page.waitForSelector('.test-query-input', { visible: true })
             await driver.page.waitForSelector('.test-structural-search-toggle')
+            await waitAndFocusInput()
             await driver.page.type('.test-query-input', 'test')
             await driver.page.click('.test-structural-search-toggle')
             await driver.assertWindowLocation('/search?q=test&patternType=structural')
@@ -432,6 +271,7 @@ describe('Search', () => {
                 ...commonSearchGraphQLResults,
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
+            await waitAndFocusInput()
             await driver.page.waitForSelector('.test-query-input', { visible: true })
             await driver.page.waitForSelector('.test-structural-search-toggle')
             await driver.page.click('.test-structural-search-toggle')
@@ -461,6 +301,59 @@ describe('Search', () => {
             await driver.page.keyboard.type(' hello')
             await driver.page.click('.test-search-button')
             await driver.assertWindowLocation('/search?q=test+hello&patternType=regexp')
+        })
+    })
+
+    describe('Streaming search', () => {
+        const viewerSettingsWithStreamingSearch: Partial<WebGraphQlOperations> = {
+            ViewerSettings: () => ({
+                viewerSettings: {
+                    subjects: [
+                        {
+                            __typename: 'DefaultSettings',
+                            settingsURL: null,
+                            viewerCanAdminister: false,
+                            latestSettings: {
+                                id: 0,
+                                contents: JSON.stringify({ experimentalFeatures: { searchStreaming: true } }),
+                            },
+                        },
+                        {
+                            __typename: 'Site',
+                            id: siteGQLID,
+                            siteID,
+                            latestSettings: {
+                                id: 470,
+                                contents: JSON.stringify({ experimentalFeatures: { searchStreaming: true } }),
+                            },
+                            settingsURL: '/site-admin/global-settings',
+                            viewerCanAdminister: true,
+                        },
+                    ],
+                    final: JSON.stringify({}),
+                },
+            }),
+        }
+
+        // Skip streaming search tests until streaming search UI is properly implemented
+        test.skip('Streaming search with single repo result', async () => {
+            const searchStreamEvents: SearchEvent[] = [
+                { type: 'matches', data: [{ type: 'repo', repository: 'github.com/sourcegraph/sourcegraph' }] },
+                { type: 'done', data: {} },
+            ]
+
+            testContext.overrideGraphQL({ ...commonSearchGraphQLResults, ...viewerSettingsWithStreamingSearch })
+            testContext.overrideSearchStreamEvents(searchStreamEvents)
+
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
+            await driver.page.waitForSelector('.test-search-result', { visible: true })
+
+            const results = await driver.page.evaluate(() =>
+                [...document.querySelectorAll('.test-search-result-label')].map(label =>
+                    (label.textContent || '').trim()
+                )
+            )
+            expect(results).toEqual(['github.com/sourcegraph/sourcegraph'])
         })
     })
 })

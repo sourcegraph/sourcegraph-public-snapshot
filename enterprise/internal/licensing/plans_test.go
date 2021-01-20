@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 )
 
@@ -47,6 +49,36 @@ func TestInfo_Plan(t *testing.T) {
 			got := (&Info{Info: license.Info{Tags: test.tags}}).Plan()
 			if got != test.want {
 				t.Errorf("got %q, want %q", got, test.want)
+			}
+		})
+	}
+}
+
+func TestInfo_hasUnknownPlan(t *testing.T) {
+	tests := []struct {
+		tags    []string
+		wantErr string
+	}{
+		{tags: []string{""}},
+		{tags: []string{"foo"}},
+		{tags: []string{"foo", oldEnterpriseStarter.tag()}},
+		{tags: []string{"foo", oldEnterprise.tag()}},
+		{tags: []string{"foo", team.tag()}},
+		{tags: []string{"foo", enterprise.tag()}},
+		{tags: []string{"starter"}},
+
+		{tags: []string{"foo", "plan:xyz"}, wantErr: `The license has an unrecognizable plan in tag "plan:xyz", please contact Sourcegraph support.`},
+	}
+	for _, test := range tests {
+		t.Run(fmt.Sprintf("tags: %v", test.tags), func(t *testing.T) {
+			var gotErr string
+			err := (&Info{Info: license.Info{Tags: test.tags}}).hasUnknownPlan()
+			if err != nil {
+				gotErr = err.Error()
+			}
+
+			if diff := cmp.Diff(test.wantErr, gotErr); diff != "" {
+				t.Fatalf("Mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}

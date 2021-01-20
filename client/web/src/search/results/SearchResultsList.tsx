@@ -26,12 +26,15 @@ import { SearchResult } from '../../components/SearchResult'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { eventLogger } from '../../tracking/eventLogger'
-import { shouldDisplayPerformanceWarning } from '../backend'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 import { ErrorAlert } from '../../components/alerts'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 import { DeployType } from '../../jscontext'
 import { AuthenticatedUser } from '../../auth'
+import { SearchResultTypeTabs } from './SearchResultTypeTabs'
+import { QueryState } from '../helpers'
+import { PerformanceWarningAlert } from '../../site/PerformanceWarningAlert'
+import { SearchResultsStats } from './SearchResultsStats'
 
 const isSearchResults = (value: unknown): value is GQL.ISearchResults =>
     typeof value === 'object' &&
@@ -58,6 +61,7 @@ export interface SearchResultsListProps
     // Result list
     resultsOrError?: GQL.ISearchResults | ErrorLike
     onShowMoreResultsClick?: () => void
+    navbarSearchQueryState: QueryState
 
     // Expand all feature
     allExpanded: boolean
@@ -74,6 +78,7 @@ export interface SearchResultsListProps
     interactiveSearchMode: boolean
 
     fetchHighlightedFileLines: (parameters: FetchFileParameters, force?: boolean) => Observable<string[]>
+    shouldDisplayPerformanceWarning: (deployType: DeployType) => Observable<boolean>
 }
 
 interface State {
@@ -294,9 +299,9 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
         this.componentUpdates.next(this.props)
 
         this.subscriptions.add(
-            shouldDisplayPerformanceWarning(this.props.deployType).subscribe(displayPerformanceWarning =>
-                this.setState({ displayPerformanceWarning })
-            )
+            this.props
+                .shouldDisplayPerformanceWarning(this.props.deployType)
+                .subscribe(displayPerformanceWarning => this.setState({ displayPerformanceWarning }))
         )
     }
 
@@ -355,14 +360,31 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
 
                             return (
                                 <>
-                                    {/* Info Bar */}
-                                    <SearchResultsInfoBar
-                                        {...this.props}
-                                        query={parsedQuery}
-                                        results={results}
-                                        showDotComMarketing={this.props.isSourcegraphDotCom}
-                                        displayPerformanceWarning={this.state.displayPerformanceWarning}
-                                    />
+                                    <div className="d-lg-flex mb-2 align-items-end flex-wrap">
+                                        <SearchResultTypeTabs
+                                            {...this.props}
+                                            query={this.props.navbarSearchQueryState.query}
+                                            filtersInQuery={this.props.filtersInQuery}
+                                            className="search-results-list__tabs"
+                                        />
+
+                                        <SearchResultsInfoBar
+                                            {...this.props}
+                                            query={parsedQuery}
+                                            resultsFound={results.results.length > 0}
+                                            className="border-bottom flex-grow-1"
+                                            stats={
+                                                <SearchResultsStats
+                                                    results={results}
+                                                    onShowMoreResultsClick={this.props.onShowMoreResultsClick}
+                                                />
+                                            }
+                                        />
+                                    </div>
+
+                                    {!results.alert && this.state.displayPerformanceWarning && (
+                                        <PerformanceWarningAlert />
+                                    )}
 
                                     {/* Server-provided help message */}
                                     {results.alert && (

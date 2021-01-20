@@ -11,14 +11,15 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type changesetResolver struct {
@@ -334,13 +335,7 @@ func (r *changesetResolver) CurrentSpec(ctx context.Context) (graphqlbackend.Vis
 		return nil, err
 	}
 
-	return &changesetSpecResolver{
-		store:                r.store,
-		httpFactory:          r.httpFactory,
-		changesetSpec:        spec,
-		preloadedRepo:        r.repo,
-		attemptedPreloadRepo: true,
-	}, nil
+	return NewChangesetSpecResolverWithRepo(r.store, r.httpFactory, r.repo, spec), nil
 }
 
 func (r *changesetResolver) Labels(ctx context.Context) ([]graphqlbackend.ChangesetLabelResolver, error) {

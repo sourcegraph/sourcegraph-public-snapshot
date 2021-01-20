@@ -75,7 +75,7 @@ import {
     ViewStateSpec,
 } from '../../../../../shared/src/util/url'
 import { observeStorageKey } from '../../../browser-extension/web-extension-api/storage'
-import { isInPage } from '../../context'
+import { isExtension, isInPage } from '../../context'
 import { SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
 import { toTextDocumentIdentifier, toTextDocumentPositionParameters } from '../../backend/extension-api-conversion'
 import { CodeViewToolbar, CodeViewToolbarClassProps } from '../../components/CodeViewToolbar'
@@ -590,13 +590,15 @@ export function handleCodeHost({
     const subscriptions = new Subscription()
     const { requestGraphQL } = platformContext
 
-    // Notify the background page that we are on a private repository
-    // This information will be used to alert the user when using Sourcegraph Cloud
-    // while on a private repository.
-    const isPrivateRepo = !codeHost.getContext || codeHost.getContext().privateRepository
-    background.notifyPrivateRepository(isPrivateRepo).catch(error => {
-        console.error('Error notifying background page of private repository:', error)
-    })
+    if (isExtension) {
+        // Notify the background page that we are on a private repository
+        // This information will be used to alert the user when using Sourcegraph Cloud
+        // while on a private repository.
+        const isPrivateRepo = !codeHost.getContext || codeHost.getContext().privateRepository
+        background.notifyPrivateRepository(isPrivateRepo).catch(error => {
+            console.error('Error notifying background page of private repository:', error)
+        })
+    }
 
     const addedElements = mutations.pipe(
         concatAll(),
@@ -706,7 +708,13 @@ export function handleCodeHost({
         )
         const onConfigureSourcegraphClick: React.MouseEventHandler<HTMLAnchorElement> = async event => {
             event.preventDefault()
-            await background.openOptionsPage()
+            // If we're here, then `isInPage` should have been checked already,
+            // but we double check to be sure and to indicate the intent, for
+            // when we might refactor this, that it must only be called in the
+            // extension.
+            if (isExtension) {
+                await background.openOptionsPage()
+            }
         }
 
         subscriptions.add(

@@ -30,7 +30,7 @@ export async function readLine(prompt: string, cacheFile?: string): Promise<stri
     }
 
     try {
-        return await readFile(cacheFile, { encoding: 'utf8' })
+        return (await readFile(cacheFile, { encoding: 'utf8' })).trimEnd()
     } catch {
         const userInput = await readLineNoCache(prompt)
         await mkdir(path.dirname(cacheFile), { recursive: true })
@@ -47,4 +47,10 @@ async function readLineNoCache(prompt: string): Promise<string> {
     const userInput = await new Promise<string>(resolve => readlineInterface.question(prompt, resolve))
     readlineInterface.close()
     return userInput
+}
+
+export function getWeekNumber(date: Date): number {
+    const firstJan = new Date(date.getFullYear(), 0, 1)
+    const day = 86400000
+    return Math.ceil(((date.valueOf() - firstJan.valueOf()) / day + firstJan.getDay() + 1) / 7)
 }

@@ -14,13 +14,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -162,12 +162,7 @@ func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitA
 }
 
 func (r *RepositoryResolver) CommitFromID(ctx context.Context, args *RepositoryCommitArgs, commitID api.CommitID) (*GitCommitResolver, error) {
-	commit, err := backend.Repos.GetCommit(ctx, r.repo, commitID)
-	if commit == nil || err != nil {
-		return nil, err
-	}
-
-	resolver := toGitCommitResolver(r, commit)
+	resolver := toGitCommitResolver(r, commitID, nil)
 	if args.InputRevspec != nil {
 		resolver.inputRev = args.InputRevspec
 	} else {
@@ -243,10 +238,11 @@ func (r *RepositoryResolver) UpdatedAt() *DateTime {
 }
 
 func (r *RepositoryResolver) URL() string {
+	url := "/" + escapePathForURL(string(r.repo.Name))
 	if r.rev != "" {
-		return "/" + string(r.repo.Name) + "@" + r.rev
+		url += "@" + escapePathForURL(r.rev)
 	}
-	return "/" + string(r.repo.Name)
+	return url
 }
 
 func (r *RepositoryResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {

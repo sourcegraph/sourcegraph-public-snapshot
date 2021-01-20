@@ -2,7 +2,12 @@ package bitbucketserver
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/base64"
 	"encoding/json"
+	"encoding/pem"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -16,6 +21,9 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
 	"github.com/sergi/go-diff/diffmatchpatch"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/schema"
+	"golang.org/x/time/rate"
 )
 
 var update = flag.Bool("update", false, "update testdata")
@@ -754,6 +762,196 @@ func checkGolden(t *testing.T, name string, got interface{}) {
 		dmp := diffmatchpatch.New()
 		diffs := dmp.DiffMain(have, want, false)
 		t.Error(dmp.DiffPrettyText(diffs))
+	}
+}
+
+func TestAuth(t *testing.T) {
+	t.Run("auth from config", func(t *testing.T) {
+		// Ensure that the different configuration types create the right
+		// implicit Authenticator.
+		t.Run("bearer token", func(t *testing.T) {
+			client, err := NewClient(&schema.BitbucketServerConnection{
+				Url:   "http://example.com/",
+				Token: "foo",
+			}, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			want := &auth.OAuthBearerToken{Token: "foo"}
+			if have, ok := client.Auth.(*auth.OAuthBearerToken); !ok {
+				t.Errorf("unexpected Authenticator: have=%T want=%T", client.Auth, want)
+			} else if diff := cmp.Diff(have, want); diff != "" {
+				t.Errorf("unexpected token:\n%s", diff)
+			}
+		})
+
+		t.Run("basic auth", func(t *testing.T) {
+			client, err := NewClient(&schema.BitbucketServerConnection{
+				Url:      "http://example.com/",
+				Username: "foo",
+				Password: "bar",
+			}, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			want := &auth.BasicAuth{Username: "foo", Password: "bar"}
+			if have, ok := client.Auth.(*auth.BasicAuth); !ok {
+				t.Errorf("unexpected Authenticator: have=%T want=%T", client.Auth, want)
+			} else if diff := cmp.Diff(have, want); diff != "" {
+				t.Errorf("unexpected token:\n%s", diff)
+			}
+		})
+
+		t.Run("OAuth 1 error", func(t *testing.T) {
+			if _, err := NewClient(&schema.BitbucketServerConnection{
+				Url: "http://example.com/",
+				Authorization: &schema.BitbucketServerAuthorization{
+					Oauth: schema.BitbucketServerOAuth{
+						ConsumerKey: "foo",
+						SigningKey:  "this is an invalid key",
+					},
+				},
+			}, nil); err == nil {
+				t.Error("unexpected nil error")
+			}
+
+		})
+
+		t.Run("OAuth 1", func(t *testing.T) {
+			// Generate a plausible enough key with as little entropy as
+			// possible just to get through the SetOAuth validation.
+			key, err := rsa.GenerateKey(rand.Reader, 64)
+			if err != nil {
+				t.Fatal(err)
+			}
+			block := x509.MarshalPKCS1PrivateKey(key)
+			pemKey := pem.EncodeToMemory(&pem.Block{Bytes: block})
+			signingKey := base64.StdEncoding.EncodeToString(pemKey)
+
+			client, err := NewClient(&schema.BitbucketServerConnection{
+				Url: "http://example.com/",
+				Authorization: &schema.BitbucketServerAuthorization{
+					Oauth: schema.BitbucketServerOAuth{
+						ConsumerKey: "foo",
+						SigningKey:  signingKey,
+					},
+				},
+			}, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, ok := client.Auth.(*SudoableOAuthClient); !ok {
+				t.Errorf("unexpected Authenticator: have=%T want=%T", client.Auth, &SudoableOAuthClient{})
+			} else if have.Client.Client.Credentials.Token != "foo" {
+				t.Errorf("unexpected token: have=%q want=%q", have.Client.Client.Credentials.Token, "foo")
+			} else if diff := cmp.Diff(have.Client.Client.PrivateKey, key, cmp.Comparer(func(a, b *rsa.PrivateKey) bool {
+				// This is adapted from the useful PrivateKey.Equal() function
+				// in Go 1.15, which we can't rely on at present due to being
+				// much too new.
+				if a.PublicKey.E != b.PublicKey.E {
+					return false
+				}
+				if a.PublicKey.N.Cmp(b.PublicKey.N) != 0 {
+					return false
+				}
+				if a.D.Cmp(b.D) != 0 {
+					return false
+				}
+				if len(a.Primes) != len(b.Primes) {
+					return false
+				}
+				for i := range a.Primes {
+					if a.Primes[i].Cmp(b.Primes[i]) != 0 {
+						return false
+					}
+				}
+
+				return true
+			})); diff != "" {
+				t.Errorf("unexpected key:\n%s", diff)
+			}
+		})
+	})
+
+	t.Run("Username", func(t *testing.T) {
+		t.Run("success", func(t *testing.T) {
+			for name, tc := range map[string]struct {
+				a    auth.Authenticator
+				want string
+			}{
+				"OAuth 1 without Sudo": {
+					a:    &SudoableOAuthClient{},
+					want: "",
+				},
+				"OAuth 1 with Sudo": {
+					a:    &SudoableOAuthClient{Username: "foo"},
+					want: "foo",
+				},
+				"BasicAuth": {
+					a:    &auth.BasicAuth{Username: "foo"},
+					want: "foo",
+				},
+			} {
+				t.Run(name, func(t *testing.T) {
+					client := &Client{Auth: tc.a}
+					have, err := client.Username()
+					if err != nil {
+						t.Errorf("unexpected non-nil error: %v", err)
+					}
+					if have != tc.want {
+						t.Errorf("unexpected username: have=%q want=%q", have, tc.want)
+					}
+				})
+			}
+		})
+
+		t.Run("errors", func(t *testing.T) {
+			for name, a := range map[string]auth.Authenticator{
+				"OAuth 2 token": &auth.OAuthBearerToken{Token: "abcdef"},
+				"nil":           nil,
+			} {
+				t.Run(name, func(t *testing.T) {
+					client := &Client{Auth: a}
+					if _, err := client.Username(); err == nil {
+						t.Errorf("unexpected nil error: %v", err)
+					}
+				})
+			}
+		})
+	})
+}
+
+func TestClient_WithAuthenticator(t *testing.T) {
+	uri, err := url.Parse("https://bbs.example.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	old := &Client{
+		URL:       uri,
+		RateLimit: rate.NewLimiter(defaultRateLimit, defaultRateLimitBurst),
+		Auth:      &auth.BasicAuth{Username: "johnsson", Password: "mothersmaidenname"},
+	}
+
+	newToken := &auth.OAuthBearerToken{Token: "new_token"}
+	newClient := old.WithAuthenticator(newToken)
+	if old == newClient {
+		t.Fatal("both clients have the same address")
+	}
+
+	if newClient.Auth != newToken {
+		t.Fatalf("auth: want %q but got %q", newToken, newClient.Auth)
+	}
+
+	if newClient.URL != old.URL {
+		t.Fatalf("url: want %q but got %q", old.URL, newClient.URL)
+	}
+
+	if newClient.RateLimit != old.RateLimit {
+		t.Fatalf("RateLimit: want %#v but got %#v", old.RateLimit, newClient.RateLimit)
 	}
 }
 

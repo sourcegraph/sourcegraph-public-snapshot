@@ -1,7 +1,7 @@
 import { SettingsCascade } from '../../settings/settings'
 import { Remote, proxy } from 'comlink'
 import * as sourcegraph from 'sourcegraph'
-import { BehaviorSubject, Subject, of, Observable, from, concat } from 'rxjs'
+import { BehaviorSubject, Subject, of, Observable, from, concat, EMPTY } from 'rxjs'
 import { FlatExtensionHostAPI, MainThreadAPI } from '../contract'
 import { syncSubscription } from '../util'
 import { switchMap, mergeMap, map, defaultIfEmpty, catchError, distinctUntilChanged } from 'rxjs/operators'
@@ -10,14 +10,14 @@ import { TextDocumentIdentifier, match } from '../client/types/textDocument'
 import { getModeFromPath } from '../../languages'
 import { parseRepoURI } from '../../util/url'
 import { ExtensionDocuments } from './api/documents'
-import { toPosition } from './api/types'
+import { fromLocation, toPosition } from './api/types'
 import { TextDocumentPositionParameters } from '../protocol'
 import { LOADING, MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { combineLatestOrDefault } from '../../util/rxjs/combineLatestOrDefault'
-import { Hover } from '@sourcegraph/extension-api-types'
-import { isEqual } from 'lodash'
-import { fromHoverMerged, HoverMerged } from '../client/types/hover'
-import { isNot, isExactly } from '../../util/types'
+import { castArray, groupBy, identity, isEqual } from 'lodash'
+import { fromHoverMerged } from '../client/types/hover'
+import { isNot, isExactly, isDefined } from '../../util/types'
+import { validateFileDecoration } from './api/decorations'
 
 /**
  * Holds the entire state exposed to the extension host
@@ -36,6 +36,10 @@ export interface ExtensionHostState {
     // Lang
     hoverProviders: BehaviorSubject<RegisteredProvider<sourcegraph.HoverProvider>[]>
     documentHighlightProviders: BehaviorSubject<RegisteredProvider<sourcegraph.DocumentHighlightProvider>[]>
+    definitionProviders: BehaviorSubject<RegisteredProvider<sourcegraph.DefinitionProvider>[]>
+
+    // Decorations
+    fileDecorationProviders: BehaviorSubject<sourcegraph.FileDecorationProvider[]>
 }
 
 export interface RegisteredProvider<T> {
@@ -43,7 +47,7 @@ export interface RegisteredProvider<T> {
     provider: T
 }
 
-export interface InitResult {
+export interface InitResult extends Pick<typeof sourcegraph['app'], 'registerFileDecorationProvider'> {
     configuration: sourcegraph.ConfigurationService
     workspace: PartialWorkspaceNamespace
     exposedToMain: FlatExtensionHostAPI
@@ -51,7 +55,11 @@ export interface InitResult {
     state: Readonly<ExtensionHostState>
     commands: typeof sourcegraph['commands']
     search: typeof sourcegraph['search']
-    languages: Pick<typeof sourcegraph['languages'], 'registerHoverProvider' | 'registerDocumentHighlightProvider'>
+    languages: Pick<
+        typeof sourcegraph['languages'],
+        'registerHoverProvider' | 'registerDocumentHighlightProvider' | 'registerDefinitionProvider'
+    >
+    graphQL: typeof sourcegraph['graphQL']
 }
 
 /**
@@ -61,6 +69,10 @@ export type PartialWorkspaceNamespace = Omit<
     typeof sourcegraph['workspace'],
     'textDocuments' | 'onDidOpenTextDocument' | 'openedTextDocuments' | 'roots' | 'versionContext'
 >
+
+/** Object of array of file decorations keyed by path relative to repo root uri */
+export type FileDecorationsByPath = Record<string, sourcegraph.FileDecoration[] | undefined>
+
 /**
  * Holds internally ExtState and manages communication with the Client
  * Returns the initialized public extension API pieces ready for consumption and the internal extension host API ready to be exposed to the main thread
@@ -82,6 +94,8 @@ export const initNewExtensionAPI = (
         documentHighlightProviders: new BehaviorSubject<RegisteredProvider<sourcegraph.DocumentHighlightProvider>[]>(
             []
         ),
+        definitionProviders: new BehaviorSubject<RegisteredProvider<sourcegraph.DefinitionProvider>[]>([]),
+        fileDecorationProviders: new BehaviorSubject<sourcegraph.FileDecorationProvider[]>([]),
     }
 
     const configChanges = new BehaviorSubject<void>(undefined)
@@ -141,9 +155,9 @@ export const initNewExtensionAPI = (
             return proxySubscribable(
                 callProviders(
                     state.hoverProviders,
-                    document,
-                    provider => provider.provideHover(document, position),
-                    mergeHoverResults
+                    providers => providersForDocument(document, providers, ({ selector }) => selector),
+                    ({ provider }) => provider.provideHover(document, position),
+                    results => fromHoverMerged(mergeProviderResults(results))
                 )
             )
         },
@@ -154,12 +168,48 @@ export const initNewExtensionAPI = (
             return proxySubscribable(
                 callProviders(
                     state.documentHighlightProviders,
-                    document,
-                    provider => provider.provideDocumentHighlights(document, position),
-                    mergeDocumentHighlightResults
+                    providers => providersForDocument(document, providers, ({ selector }) => selector),
+                    ({ provider }) => provider.provideDocumentHighlights(document, position),
+                    mergeProviderResults
                 ).pipe(map(result => (result.isLoading ? [] : result.result)))
             )
         },
+        getDefinition: (textParameters: TextDocumentPositionParameters) => {
+            const document = textDocuments.get(textParameters.textDocument.uri)
+            const position = toPosition(textParameters.position)
+
+            return proxySubscribable(
+                callProviders(
+                    state.definitionProviders,
+                    providers => providersForDocument(document, providers, ({ selector }) => selector),
+                    ({ provider }) => provider.provideDefinition(document, position),
+                    results => mergeProviderResults(results).map(fromLocation)
+                )
+            )
+        },
+
+        // Decorations
+        getFileDecorations: (parameters: sourcegraph.FileDecorationContext) =>
+            proxySubscribable(
+                parameters.files.length === 0
+                    ? EMPTY // Don't call providers when there are no files in the directory
+                    : callProviders(
+                          state.fileDecorationProviders,
+                          identity,
+                          // No need to filter
+                          provider => provider.provideFileDecorations(parameters),
+                          mergeProviderResults
+                      ).pipe(
+                          map(({ result }) =>
+                              groupBy(
+                                  result.filter(validateFileDecoration),
+                                  // Get path from uri to key by path.
+                                  // Path should always exist, but fall back to uri just in case
+                                  ({ uri }) => parseRepoURI(uri).filePath || uri
+                              )
+                          )
+                      )
+            ),
     }
 
     // Configuration
@@ -202,6 +252,20 @@ export const initNewExtensionAPI = (
         selector: sourcegraph.DocumentSelector,
         provider: sourcegraph.DocumentHighlightProvider
     ): sourcegraph.Unsubscribable => addWithRollback(state.documentHighlightProviders, { selector, provider })
+    // definition
+    const registerDefinitionProvider = (
+        selector: sourcegraph.DocumentSelector,
+        provider: sourcegraph.DefinitionProvider
+    ): sourcegraph.Unsubscribable => addWithRollback(state.definitionProviders, { selector, provider })
+
+    // File decorations
+    const registerFileDecorationProvider = (provider: sourcegraph.FileDecorationProvider): sourcegraph.Unsubscribable =>
+        addWithRollback(state.fileDecorationProviders, provider)
+
+    // GraphQL
+    const graphQL: typeof sourcegraph['graphQL'] = {
+        execute: (query, variables) => mainAPI.requestGraphQL(query, variables),
+    }
 
     return {
         configuration: Object.assign(configChanges.asObservable(), {
@@ -215,7 +279,10 @@ export const initNewExtensionAPI = (
         languages: {
             registerHoverProvider,
             registerDocumentHighlightProvider,
+            registerDefinitionProvider,
         },
+        registerFileDecorationProvider,
+        graphQL,
     }
 }
 
@@ -228,7 +295,7 @@ export const initNewExtensionAPI = (
  * @param selector a way to get a selector from a Provider
  * @returns a filtered array of providers
  */
-function providersForDocument<P>(
+export function providersForDocument<P>(
     document: TextDocumentIdentifier,
     entries: P[],
     selector: (p: P) => sourcegraph.DocumentSelector
@@ -258,35 +325,36 @@ function addWithRollback<T>(behaviorSubject: BehaviorSubject<T[]>, value: T): so
 /**
  * Helper function to abstract common logic of invoking language providers.
  *
- * 1. filters providers based on document
+ * 1. filters providers
  * 2. invokes filtered providers via invokeProvider function
  * 3. adds [LOADING] state for each provider result stream
  * 4. omits errors from provider results with potential logging
  * 5. aggregates latests results from providers based on mergeResult function
  *
  * @param providersObservable observable of provider collection (expected to emit if a provider was added or removed)
- * @param document used for filtering providers
+ * @param filterProviders specifies which providers should be invoked
  * @param invokeProvider specifies how to get results from a provider (usually a closure over provider arguments)
  * @param mergeResult specifies how providers results should be aggregated
  * @param logErrors if console.error should be used for reporting errors from providers
- * @returns observable of aggregated results from all providers based on mergeResults function
+ * @returns observable of aggregated results from all providers based on mergeProviderResults function
  */
-export function callProviders<TProvider, TProviderResult, TMergedResult>(
-    providersObservable: Observable<RegisteredProvider<TProvider>[]>,
-    document: TextDocumentIdentifier,
-    invokeProvider: (provider: TProvider) => sourcegraph.ProviderResult<TProviderResult>,
+export function callProviders<TRegisteredProvider, TProviderResult, TMergedResult>(
+    providersObservable: Observable<TRegisteredProvider[]>,
+    filterProviders: (providers: TRegisteredProvider[]) => TRegisteredProvider[],
+    invokeProvider: (provider: TRegisteredProvider) => sourcegraph.ProviderResult<TProviderResult>,
     mergeResult: (providerResults: (TProviderResult | 'loading' | null | undefined)[]) => TMergedResult,
     logErrors: boolean = true
 ): Observable<MaybeLoadingResult<TMergedResult>> {
     return providersObservable
         .pipe(
-            map(providers => providersForDocument(document, providers, ({ selector }) => selector)),
+            map(providers => filterProviders(providers)),
+
             switchMap(providers =>
                 combineLatestOrDefault(
                     providers.map(provider =>
                         concat(
                             [LOADING],
-                            providerResultToObservable(invokeProvider(provider.provider)).pipe(
+                            providerResultToObservable(invokeProvider(provider)).pipe(
                                 defaultIfEmpty<typeof LOADING | TProviderResult | null | undefined>(null),
                                 catchError(error => {
                                     if (logErrors) {
@@ -311,23 +379,16 @@ export function callProviders<TProvider, TProviderResult, TMergedResult>(
 }
 
 /**
- * merges latests results from hover providers into a form that is convenient to show
+ * Merges provider results
  *
- * @param results latests results from hover providers
- * @returns a {@link HoverMerged} results if there are any actual Hover results or null in case of no results or loading
+ * @param results latest results from providers
+ * @template TProviderResultElement Type of an element of the provider result array
  */
-export function mergeHoverResults(results: (typeof LOADING | Hover | null | undefined)[]): HoverMerged | null {
-    return fromHoverMerged(results.filter(isNot(isExactly(LOADING))))
-}
-
-/**
- * merges latests results from document highlight providers into a form that is convenient to show
- *
- * @param results latests results from document highlight providers
- * @returns a {@link DocumentHighlight} results if there are any actual document highlights or null in case of no results or loading
- */
-export function mergeDocumentHighlightResults(
-    results: (typeof LOADING | sourcegraph.DocumentHighlight[] | null | undefined)[]
-): sourcegraph.DocumentHighlight[] {
-    return results.filter(isNot(isExactly(LOADING))).flatMap(highlights => highlights || [])
+export function mergeProviderResults<TProviderResultElement>(
+    results: (typeof LOADING | TProviderResultElement | TProviderResultElement[] | null | undefined)[]
+): TProviderResultElement[] {
+    return results
+        .filter(isNot(isExactly(LOADING)))
+        .flatMap(castArray)
+        .filter(isDefined)
 }

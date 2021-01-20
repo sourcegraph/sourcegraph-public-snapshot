@@ -1,6 +1,10 @@
 package licensing
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/pkg/errors"
+)
 
 // A Plan is a pricing plan, with an associated set of features that it offers.
 type Plan string
@@ -30,6 +34,17 @@ func (p Plan) isKnown() bool {
 	return false
 }
 
+// MaxExternalServiceCount returns the number of external services that the
+// plan supports. We treat 0 as "unlimited".
+func (p Plan) MaxExternalServiceCount() int {
+	switch p {
+	case team:
+		return 1
+	default:
+		return 0
+	}
+}
+
 // Plan is the pricing plan of the license.
 func (info *Info) Plan() Plan {
 	for _, tag := range info.Tags {
@@ -49,4 +64,21 @@ func (info *Info) Plan() Plan {
 
 	// Backcompat: no tags means it is the old "Enterprise" plan.
 	return oldEnterprise
+}
+
+// hasUnknownPlan returns an error if the plan is presented in the license tags
+// but unrecognizable. It returns nil if there is no tags found for plans.
+func (info *Info) hasUnknownPlan() error {
+	for _, tag := range info.Tags {
+		// A tag that begins with "plan:" indicates the license's plan.
+		if !strings.HasPrefix(tag, planTagPrefix) {
+			continue
+		}
+
+		plan := Plan(tag[len(planTagPrefix):])
+		if !plan.isKnown() {
+			return errors.Errorf("The license has an unrecognizable plan in tag %q, please contact Sourcegraph support.", tag)
+		}
+	}
+	return nil
 }

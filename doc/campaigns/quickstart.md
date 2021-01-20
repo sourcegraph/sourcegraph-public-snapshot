@@ -1,18 +1,5 @@
 # Quickstart for Campaigns
 
-<style>
-
-img.screenshot {
-    max-width: 600px;
-    margin: 1em;
-    margin-bottom: 0.5em;
-    border: 1px solid lightgrey;
-    border-radius: 10px;
-}
-
-</style>
-
-
 Get started and create your first [Sourcegraph campaign](index.md) in 10 minutes or less.
 
 ## Introduction
@@ -23,21 +10,9 @@ The only requirement is a Sourcegraph instance with a some repositories in it. S
 
 For more information about campaigns see the ["Campaigns"](index.md) documentation and watch the [campaigns demo video](https://www.youtube.com/watch?v=EfKwKFzOs3E).
 
-## Configure code host connections
-
-Campaigns need write permissions for the repositories in which you want to make changes.
-
-Configure your code host connections to have the right permissions for campaigns:
-
-- [GitHub](../../admin/external_service/github.md#github-api-token-and-access)
-- [GitLab](../../admin/external_service/gitlab.md#access-token-scopes)
-- [Bitbucket Server](../../admin/external_service/gitlab.md#access-token-permissions)
-
-See ["Code host interactions in campaigns"](explanations/permissions_in_campaigns.md#code-host-interactions-in-campaigns) for details on what the permissions are used for.
-
 ## Install the Sourcegraph CLI
 
-In order to create campaigns we need to [install the Sourcegraph CLI](https://github.com/sourcegraph/src-cli) (`src`).
+In order to create campaigns we need to [install the Sourcegraph CLI](../cli/index.md) (`src`).
 
 1. Install the version of `src` that's compatible with your Sourcegraph instance:
 
@@ -51,7 +26,7 @@ In order to create campaigns we need to [install the Sourcegraph CLI](https://gi
     curl -L https://YOUR-SOURCEGRAPH-INSTANCE/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src
     chmod +x /usr/local/bin/src
     ```
-    **Windows**: see ["Sourcegraph CLI for Windows"](https://github.com/sourcegraph/src-cli/blob/main/WINDOWS.md)
+    **Windows**: see ["Sourcegraph CLI for Windows"](../cli/explanations/windows.md)
 2. Authenticate `src` with your Sourcegraph instance by running **`src login`** and following the instructions:
 
     ```
@@ -66,7 +41,7 @@ Once `src login` reports that you're authenticated, we're ready for the next ste
 
 A **campaign spec** is a YAML file that defines a campaign. It specifies which changes should be made in which repositories and how those should be published on the code host.
 
-See the ["Campaign spec YAML reference"](campaign_spec_yaml_reference.md) for details.
+See the ["Campaign spec YAML reference"](references/campaign_spec_yaml_reference.md) for details.
 
 Save the following campaign spec as `hello-world.campaign.yaml`:
 
@@ -99,9 +74,7 @@ Let's see the changes that will be made. Don't worry---no commits, branches, or 
 
 1. In your terminal, run this command:
 
-    <pre>src campaign preview -f hello-world.campaign.yaml -namespace <em>USERNAME_OR_ORG</em></pre>
-
-    > The `namespace` is either your Sourcegraph username or the name of a Sourcegraph organisation under which you want to create the campaign. If you're not sure what to choose, use your username.
+    <pre>src campaign preview -f hello-world.campaign.yaml</pre>
 1. Wait for it to run and compute the changes for each repository.
     <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/src_campaign_preview_waiting.png" class="screenshot">
 1. When it's done, click the displayed link to see all of the changes that will be made.
@@ -124,12 +97,31 @@ Publishing causes commits, branches, and pull requests/merge requests to be crea
 
 _You probably don't want to publish these toy "Hello World" changesets to actively developed repositories, because that might confuse people ("Why did you add this line to our READMEs?")._
 
-On a real campaign, you would do the following:
+### Configure code host credentials
+
+Since campaigns need write permissions to open changesets, you'll need to add a personal access token for each code host you'll be publishing changesets on. This is a one time operation that you don't need to do for each campaign.
+
+See "[Configuring user credentials](how-tos/configuring_user_credentials.md)" for more detail on adding and removing user tokens beyond the quickstart below, or ["Code host interactions in campaigns"](explanations/permissions_in_campaigns.md#code-host-interactions-in-campaigns) for details on what the permissions are used for.
+
+To add a personal access token:
+
+1. From any Sourcegraph page, click on your avatar at the top right of the page.
+1. Select **Settings** from the dropdown menu.
+1. Click **Campaigns** on the sidebar menu.
+1. Click **Add token** next to the code host you want to configure.
+1. Go to the code host and create a personal access token with the exact scopes or permissions required, which are noted below the token text field. For more provider-specific detail, please refer to "[GitHub](how-tos/configuring_user_credentials.md#github)", "[GitLab](how-tos/configuring_user_credentials.md#gitlab)", or "[Bitbucket Server](how-tos/configuring_user_credentials.md#bitbucket-server)".
+1. Click **Add token** to save the token.
+
+The red circle next to the code host will now change to a green tick. Sourcegraph has everything it needs to publish changesets to that code host!
+
+### Publishing changesets
+
+Now that you have credentials set up, you can publish the changesets in the campaign. On a real campaign, you would do the following:
 
 1. Change the `published: false` in `hello-world.campaign.yaml` to `published: true`.
     <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/campaign_publish_true.png" class="screenshot">
 
-    > NOTE: Change [`published` to an array](campaign_spec_yaml_reference.md#publishing-only-specific-changesets) to publish only some of the changesets, or set [`'draft'` to create changesets as drafts on code hosts that support drafts](campaign_spec_yaml_reference.md#changesettemplate-published).
+    > NOTE: Change [`published` to an array](references/campaign_spec_yaml_reference.md#publishing-only-specific-changesets) to publish only some of the changesets, or set [`'draft'` to create changesets as drafts on code hosts that support drafts](references/campaign_spec_yaml_reference.md#changesettemplate-published).
 1. Run the `src campaign preview` command again and open the URL.
     <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/src_rerun_preview.png" class="screenshot">
 1. On the preview page you can confirm that changesets will be published when the spec is applied.

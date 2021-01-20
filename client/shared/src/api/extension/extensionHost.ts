@@ -147,7 +147,9 @@ function createExtensionAPI(
         state,
         commands,
         search,
-        languages: { registerHoverProvider, registerDocumentHighlightProvider },
+        languages: { registerHoverProvider, registerDocumentHighlightProvider, registerDefinitionProvider },
+        registerFileDecorationProvider,
+        graphQL,
     } = initNewExtensionAPI(proxy, initData.initialSettings, documents)
 
     // Expose the extension host API to the client (main thread)
@@ -193,6 +195,7 @@ function createExtensionAPI(
             createPanelView: (id: string) => views.createPanelView(id),
             createDecorationType,
             registerViewProvider: (id, provider) => views.registerViewProvider(id, provider),
+            registerFileDecorationProvider,
         },
 
         workspace: {
@@ -218,11 +221,7 @@ function createExtensionAPI(
         languages: {
             registerHoverProvider,
             registerDocumentHighlightProvider,
-
-            registerDefinitionProvider: (
-                selector: sourcegraph.DocumentSelector,
-                provider: sourcegraph.DefinitionProvider
-            ) => languageFeatures.registerDefinitionProvider(selector, provider),
+            registerDefinitionProvider,
 
             // These were removed, but keep them here so that calls from old extensions do not throw
             // an exception and completely break.
@@ -258,6 +257,7 @@ function createExtensionAPI(
 
         search,
         commands,
+        graphQL,
         content: {
             registerLinkPreviewProvider: (urlMatchPattern: string, provider: sourcegraph.LinkPreviewProvider) =>
                 content.registerLinkPreviewProvider(urlMatchPattern, provider),

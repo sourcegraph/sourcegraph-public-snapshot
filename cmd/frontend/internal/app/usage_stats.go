@@ -6,7 +6,7 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestats"
+	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 )
 
 func usageStatsArchiveHandler(w http.ResponseWriter, r *http.Request) {

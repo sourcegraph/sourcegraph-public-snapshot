@@ -13,7 +13,7 @@ window.context = {} as SourcegraphContext & SuiteFunction
 
 const { add } = storiesOf('web/Codeintel administration/CodeIntelIndexes', module).addDecorator(story => (
     <>
-        <div className="theme-light container">{story()}</div>
+        <div className="container">{story()}</div>
         <style>{webStyles}</style>
     </>
 ))
@@ -31,6 +31,15 @@ const commonProps = {
     },
     now: () => new Date('2020-06-15T15:25:00+00:00'),
     telemetryService: NOOP_TELEMETRY_SERVICE,
+}
+
+const executionLog = {
+    key: 'log',
+    command: ['lsif-go', '-v'],
+    startTime: '2020-06-15T15:25:00+00:00',
+    exitCode: 0,
+    out: 'foo\nbar\baz\n',
+    durationMilliseconds: 123456,
 }
 
 const index: Omit<
@@ -52,6 +61,22 @@ const index: Omit<
         },
     },
     inputCommit: '9ea5e9f0e0344f8197622df6b36faf48ccd02570',
+    inputRoot: 'web/',
+    inputIndexer: 'lsif-tsc',
+    steps: {
+        setup: [executionLog],
+        preIndex: [
+            { root: '/', image: 'node:alpine', commands: ['yarn'], logEntry: executionLog },
+            { root: '/web', image: 'node:alpine', commands: ['yarn'], logEntry: executionLog },
+        ],
+        index: {
+            indexerArgs: ['-p', '.'],
+            outfile: 'index.lsif',
+            logEntry: executionLog,
+        },
+        upload: executionLog,
+        teardown: [executionLog],
+    },
 }
 
 add('List', () => (

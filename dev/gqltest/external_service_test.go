@@ -30,10 +30,10 @@ func TestExternalService(t *testing.T) {
 				Repos                 []string `json:"repos"`
 				RepositoryPathPattern string   `json:"repositoryPathPattern"`
 			}{
-				URL:                   "http://github.com",
+				URL:                   "https://ghe.sgdev.org/",
 				Token:                 *githubToken,
 				Repos:                 []string{repo},
-				RepositoryPathPattern: "foobar/{host}/{nameWithOwner}",
+				RepositoryPathPattern: "github.com/{nameWithOwner}",
 			}),
 		})
 		// The repo-updater might not be up yet but it will eventually catch up for the external
@@ -48,7 +48,7 @@ func TestExternalService(t *testing.T) {
 			}
 		}()
 
-		err = client.WaitForReposToBeCloned("foobar/" + slug)
+		err = client.WaitForReposToBeCloned(slug)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -61,7 +61,7 @@ func TestExternalService(t *testing.T) {
 		}
 		defer func() { _ = resp.Body.Close() }()
 
-		wantURL := *baseURL + "/foobar/" + slug // <baseURL>/foobar/github.com/sgtest/go-diff
+		wantURL := *baseURL + "/" + slug // <baseURL>/github.com/sgtest/go-diff
 		if diff := cmp.Diff(wantURL, resp.Request.URL.String()); diff != "" {
 			t.Fatalf("URL mismatch (-want +got):\n%s", diff)
 		}

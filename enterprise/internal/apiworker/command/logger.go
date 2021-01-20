@@ -1,77 +1,50 @@
 package command
 
 import (
-	"bufio"
-	"bytes"
-	"fmt"
-	"io"
 	"strings"
-	"sync"
+
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
 // Logger tracks command invocations and stores the command's output and
 // error stream values.
 type Logger struct {
-	m              sync.Mutex
-	redactedValues []string
-	logs           []*log
+	replacer *strings.Replacer
+	entries  []workerutil.ExecutionLogEntry
 }
 
-type log struct {
-	command []string
-	out     *bytes.Buffer
-}
+// NewLogger creates a new logger instance with the given replacement map.
+// When the log messages are serialized, any occurrence of sensitive values
+// are replace with a non-sensitive value.
+func NewLogger(replacements map[string]string) *Logger {
+	oldnew := make([]string, 0, len(replacements)*2)
+	for k, v := range replacements {
+		oldnew = append(oldnew, k, v)
+	}
 
-// NewLogger creates a new logger instance with the given redacted values.
-// When the log messages are serialized, any occurrence of the values are
-// replaced with a canned string.
-func NewLogger(redactedValues ...string) *Logger {
 	return &Logger{
-		redactedValues: redactedValues,
+		replacer: strings.NewReplacer(oldnew...),
 	}
 }
 
-// RecordCommand pushes a new command invocation into the logger. The given
-// output and error stream readers are read concurrently until completion.
-// This method blocks.
-func (l *Logger) RecordCommand(command []string, stdout, stderr io.Reader) {
-	out := &bytes.Buffer{}
-
-	l.m.Lock()
-	l.logs = append(l.logs, &log{command: command, out: out})
-	l.m.Unlock()
-
-	var m sync.Mutex
-	var wg sync.WaitGroup
-
-	readIntoBuf := func(prefix string, r io.Reader) {
-		defer wg.Done()
-
-		scanner := bufio.NewScanner(r)
-		for scanner.Scan() {
-			m.Lock()
-			fmt.Fprintf(out, "%s: %s\n", prefix, scanner.Text())
-			m.Unlock()
-		}
-	}
-
-	wg.Add(2)
-	go readIntoBuf("stdout", stdout)
-	go readIntoBuf("stderr", stderr)
-	wg.Wait()
+// Log redacts secrets from the given log entry and stores it.
+func (l *Logger) Log(entry workerutil.ExecutionLogEntry) {
+	l.entries = append(l.entries, redact(entry, l.replacer))
 }
 
-func (l *Logger) String() string {
-	buf := &bytes.Buffer{}
-	for _, log := range l.logs {
-		payload := fmt.Sprintf("%s\n%s\n", strings.Join(log.command, " "), log.out)
-
-		for _, v := range l.redactedValues {
-			payload = strings.Replace(payload, v, "******", -1)
-		}
-
-		buf.WriteString(payload)
+// Entries returns a copy of the stored log entries.
+func (l *Logger) Entries() (entries []workerutil.ExecutionLogEntry) {
+	for _, entry := range l.entries {
+		entries = append(entries, entry)
 	}
 
-	return buf.String()
+	return entries
+}
+
+func redact(entry workerutil.ExecutionLogEntry, replacer *strings.Replacer) workerutil.ExecutionLogEntry {
+	for i, arg := range entry.Command {
+		entry.Command[i] = replacer.Replace(arg)
+	}
+	entry.Out = replacer.Replace(entry.Out)
+	return entry
 }

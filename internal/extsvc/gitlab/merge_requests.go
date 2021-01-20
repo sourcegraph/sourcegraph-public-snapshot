@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 )
@@ -51,18 +52,21 @@ type MergeRequest struct {
 	Pipelines []*Pipeline
 }
 
+// SetWIP ensures a "WIP:" prefix on the given title. If a "Draft:" prefix is found, that one is retained instead.
 func SetWIP(title string) string {
-	if !strings.HasPrefix(title, "WIP:") {
-		return "WIP: " + title
+	if strings.HasPrefix(title, "Draft:") {
+		return title
 	}
-	return title
+	if strings.HasPrefix(title, "WIP:") {
+		return title
+	}
+	return "WIP: " + title
 }
 
+// UnsetWIP removes "WIP:" and "Draft:" prefixes from the given title.
+// Depending on the GitLab version, either of them are used so we need to strip them both.
 func UnsetWIP(title string) string {
-	if strings.HasPrefix(title, "WIP: ") {
-		return strings.TrimPrefix(title, "WIP: ")
-	}
-	return title
+	return strings.TrimPrefix(strings.TrimPrefix(title, "WIP: "), "Draft: ")
 }
 
 type DiffRefs struct {
@@ -96,6 +100,8 @@ func (c *Client) CreateMergeRequest(ctx context.Context, project *Project, opts 
 		return nil, errors.Wrap(err, "marshalling options")
 	}
 
+	time.Sleep(c.rateLimitMonitor.RecommendedWaitForBackgroundOp(1))
+
 	req, err := http.NewRequest("POST", fmt.Sprintf("projects/%d/merge_requests", project.ID), bytes.NewBuffer(data))
 	if err != nil {
 		return nil, errors.Wrap(err, "creating request to create a merge request")
@@ -117,6 +123,8 @@ func (c *Client) GetMergeRequest(ctx context.Context, project *Project, iid ID) 
 	if MockGetMergeRequest != nil {
 		return MockGetMergeRequest(c, ctx, project, iid)
 	}
+
+	time.Sleep(c.rateLimitMonitor.RecommendedWaitForBackgroundOp(1))
 
 	req, err := http.NewRequest("GET", fmt.Sprintf("projects/%d/merge_requests/%d", project.ID, iid), nil)
 	if err != nil {
@@ -153,6 +161,8 @@ func (c *Client) GetOpenMergeRequestByRefs(ctx context.Context, project *Project
 	u := &url.URL{
 		Path: fmt.Sprintf("projects/%d/merge_requests", project.ID), RawQuery: values.Encode(),
 	}
+
+	time.Sleep(c.rateLimitMonitor.RecommendedWaitForBackgroundOp(1))
 
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
@@ -204,6 +214,8 @@ func (c *Client) UpdateMergeRequest(ctx context.Context, project *Project, mr *M
 	if err != nil {
 		return nil, errors.Wrap(err, "marshalling options")
 	}
+
+	time.Sleep(c.rateLimitMonitor.RecommendedWaitForBackgroundOp(1))
 
 	req, err := http.NewRequest("PUT", fmt.Sprintf("projects/%d/merge_requests/%d", project.ID, mr.IID), bytes.NewBuffer(data))
 	if err != nil {

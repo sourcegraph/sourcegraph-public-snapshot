@@ -4,47 +4,63 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 0 1`] = `
 <Fragment>
   <PageHeader
     actions={
-      <AnchorLink
-        className="btn btn-primary"
-        to="//create"
-      >
-        <Memo(PlusIcon)
-          className="icon-inline"
-        />
-         New campaign
-      </AnchorLink>
+      <NewCampaignButton
+        location="[Location path=/]"
+      />
     }
     className="justify-content-end test-campaign-list-page"
     icon={[Function]}
     title="Campaigns"
   />
+  <p
+    className="text-muted"
+  >
+    Run custom code over hundreds of repositories and manage the resulting changesets
+  </p>
+  <CampaignListIntro />
+  <CampaignListTabHeader
+    selectedTab="campaigns"
+    setSelectedTab={[Function]}
+  />
   <FilteredConnection
     className="mb-3"
     cursorPaging={true}
     defaultFirst={15}
+    emptyElement={
+      <CampaignListEmptyElement
+        location="[Location path=/]"
+      />
+    }
     filters={
       Array [
         Object {
-          "args": Object {
-            "state": "OPEN",
-          },
-          "id": "open",
-          "label": "Open",
-          "tooltip": "Show only campaigns that are open",
-        },
-        Object {
-          "args": Object {
-            "state": "CLOSED",
-          },
-          "id": "closed",
-          "label": "Closed",
-          "tooltip": "Show only campaigns that are closed",
-        },
-        Object {
-          "args": Object {},
-          "id": "all",
-          "label": "All",
-          "tooltip": "Show all campaigns",
+          "id": "status",
+          "label": "Status",
+          "type": "radio",
+          "values": Array [
+            Object {
+              "args": Object {
+                "state": "OPEN",
+              },
+              "label": "Open",
+              "tooltip": "Show only campaigns that are open",
+              "value": "open",
+            },
+            Object {
+              "args": Object {
+                "state": "CLOSED",
+              },
+              "label": "Closed",
+              "tooltip": "Show only campaigns that are closed",
+              "value": "closed",
+            },
+            Object {
+              "args": Object {},
+              "label": "All",
+              "tooltip": "Show all campaigns",
+              "value": "all",
+            },
+          ],
         },
       ]
     }
@@ -64,14 +80,12 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 0 1`] = `
     noun="campaign"
     pluralNoun="campaigns"
     queryConnection={[Function]}
-    setBreadcrumb={[Function]}
     telemetryService={
       Object {
         "log": [Function],
         "logViewEvent": [Function],
       }
     }
-    useBreadcrumb={[Function]}
     useURLQuery={true}
   />
 </Fragment>
@@ -81,47 +95,63 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 1 1`] = `
 <Fragment>
   <PageHeader
     actions={
-      <AnchorLink
-        className="btn btn-primary"
-        to="//create"
-      >
-        <Memo(PlusIcon)
-          className="icon-inline"
-        />
-         New campaign
-      </AnchorLink>
+      <NewCampaignButton
+        location="[Location path=/]"
+      />
     }
     className="justify-content-end test-campaign-list-page"
     icon={[Function]}
     title="Campaigns"
   />
+  <p
+    className="text-muted"
+  >
+    Run custom code over hundreds of repositories and manage the resulting changesets
+  </p>
+  <CampaignListIntro />
+  <CampaignListTabHeader
+    selectedTab="campaigns"
+    setSelectedTab={[Function]}
+  />
   <FilteredConnection
     className="mb-3"
     cursorPaging={true}
     defaultFirst={15}
+    emptyElement={
+      <CampaignListEmptyElement
+        location="[Location path=/]"
+      />
+    }
     filters={
       Array [
         Object {
-          "args": Object {
-            "state": "OPEN",
-          },
-          "id": "open",
-          "label": "Open",
-          "tooltip": "Show only campaigns that are open",
-        },
-        Object {
-          "args": Object {
-            "state": "CLOSED",
-          },
-          "id": "closed",
-          "label": "Closed",
-          "tooltip": "Show only campaigns that are closed",
-        },
-        Object {
-          "args": Object {},
-          "id": "all",
-          "label": "All",
-          "tooltip": "Show all campaigns",
+          "id": "status",
+          "label": "Status",
+          "type": "radio",
+          "values": Array [
+            Object {
+              "args": Object {
+                "state": "OPEN",
+              },
+              "label": "Open",
+              "tooltip": "Show only campaigns that are open",
+              "value": "open",
+            },
+            Object {
+              "args": Object {
+                "state": "CLOSED",
+              },
+              "label": "Closed",
+              "tooltip": "Show only campaigns that are closed",
+              "value": "closed",
+            },
+            Object {
+              "args": Object {},
+              "label": "All",
+              "tooltip": "Show all campaigns",
+              "value": "all",
+            },
+          ],
         },
       ]
     }
@@ -141,14 +171,12 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 1 1`] = `
     noun="campaign"
     pluralNoun="campaigns"
     queryConnection={[Function]}
-    setBreadcrumb={[Function]}
     telemetryService={
       Object {
         "log": [Function],
         "logViewEvent": [Function],
       }
     }
-    useBreadcrumb={[Function]}
     useURLQuery={true}
   />
 </Fragment>
@@ -158,47 +186,63 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 0 1`] = `
 <Fragment>
   <PageHeader
     actions={
-      <AnchorLink
-        className="btn btn-primary"
-        to="//create"
-      >
-        <Memo(PlusIcon)
-          className="icon-inline"
-        />
-         New campaign
-      </AnchorLink>
+      <NewCampaignButton
+        location="[Location path=/]"
+      />
     }
     className="justify-content-end test-campaign-list-page"
     icon={[Function]}
     title="Campaigns"
   />
+  <p
+    className="text-muted"
+  >
+    Run custom code over hundreds of repositories and manage the resulting changesets
+  </p>
+  <CampaignListIntro />
+  <CampaignListTabHeader
+    selectedTab="campaigns"
+    setSelectedTab={[Function]}
+  />
   <FilteredConnection
     className="mb-3"
     cursorPaging={true}
     defaultFirst={15}
+    emptyElement={
+      <CampaignListEmptyElement
+        location="[Location path=/]"
+      />
+    }
     filters={
       Array [
         Object {
-          "args": Object {
-            "state": "OPEN",
-          },
-          "id": "open",
-          "label": "Open",
-          "tooltip": "Show only campaigns that are open",
-        },
-        Object {
-          "args": Object {
-            "state": "CLOSED",
-          },
-          "id": "closed",
-          "label": "Closed",
-          "tooltip": "Show only campaigns that are closed",
-        },
-        Object {
-          "args": Object {},
-          "id": "all",
-          "label": "All",
-          "tooltip": "Show all campaigns",
+          "id": "status",
+          "label": "Status",
+          "type": "radio",
+          "values": Array [
+            Object {
+              "args": Object {
+                "state": "OPEN",
+              },
+              "label": "Open",
+              "tooltip": "Show only campaigns that are open",
+              "value": "open",
+            },
+            Object {
+              "args": Object {
+                "state": "CLOSED",
+              },
+              "label": "Closed",
+              "tooltip": "Show only campaigns that are closed",
+              "value": "closed",
+            },
+            Object {
+              "args": Object {},
+              "label": "All",
+              "tooltip": "Show all campaigns",
+              "value": "all",
+            },
+          ],
         },
       ]
     }
@@ -218,14 +262,12 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 0 1`] = `
     noun="campaign"
     pluralNoun="campaigns"
     queryConnection={[Function]}
-    setBreadcrumb={[Function]}
     telemetryService={
       Object {
         "log": [Function],
         "logViewEvent": [Function],
       }
     }
-    useBreadcrumb={[Function]}
     useURLQuery={true}
   />
 </Fragment>
@@ -235,47 +277,63 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 1 1`] = `
 <Fragment>
   <PageHeader
     actions={
-      <AnchorLink
-        className="btn btn-primary"
-        to="//create"
-      >
-        <Memo(PlusIcon)
-          className="icon-inline"
-        />
-         New campaign
-      </AnchorLink>
+      <NewCampaignButton
+        location="[Location path=/]"
+      />
     }
     className="justify-content-end test-campaign-list-page"
     icon={[Function]}
     title="Campaigns"
   />
+  <p
+    className="text-muted"
+  >
+    Run custom code over hundreds of repositories and manage the resulting changesets
+  </p>
+  <CampaignListIntro />
+  <CampaignListTabHeader
+    selectedTab="campaigns"
+    setSelectedTab={[Function]}
+  />
   <FilteredConnection
     className="mb-3"
     cursorPaging={true}
     defaultFirst={15}
+    emptyElement={
+      <CampaignListEmptyElement
+        location="[Location path=/]"
+      />
+    }
     filters={
       Array [
         Object {
-          "args": Object {
-            "state": "OPEN",
-          },
-          "id": "open",
-          "label": "Open",
-          "tooltip": "Show only campaigns that are open",
-        },
-        Object {
-          "args": Object {
-            "state": "CLOSED",
-          },
-          "id": "closed",
-          "label": "Closed",
-          "tooltip": "Show only campaigns that are closed",
-        },
-        Object {
-          "args": Object {},
-          "id": "all",
-          "label": "All",
-          "tooltip": "Show all campaigns",
+          "id": "status",
+          "label": "Status",
+          "type": "radio",
+          "values": Array [
+            Object {
+              "args": Object {
+                "state": "OPEN",
+              },
+              "label": "Open",
+              "tooltip": "Show only campaigns that are open",
+              "value": "open",
+            },
+            Object {
+              "args": Object {
+                "state": "CLOSED",
+              },
+              "label": "Closed",
+              "tooltip": "Show only campaigns that are closed",
+              "value": "closed",
+            },
+            Object {
+              "args": Object {},
+              "label": "All",
+              "tooltip": "Show all campaigns",
+              "value": "all",
+            },
+          ],
         },
       ]
     }
@@ -295,14 +353,12 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 1 1`] = `
     noun="campaign"
     pluralNoun="campaigns"
     queryConnection={[Function]}
-    setBreadcrumb={[Function]}
     telemetryService={
       Object {
         "log": [Function],
         "logViewEvent": [Function],
       }
     }
-    useBreadcrumb={[Function]}
     useURLQuery={true}
   />
 </Fragment>

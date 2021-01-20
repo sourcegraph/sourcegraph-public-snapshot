@@ -1,9 +1,9 @@
-import { radios } from '@storybook/addon-knobs'
 import React from 'react'
 import { MemoryRouter, MemoryRouterProps } from 'react-router'
 import { ThemeProps } from '../../../shared/src/theme'
 import brandedStyles from '../global-styles/index.scss'
 import { Tooltip } from './tooltip/Tooltip'
+import { useDarkMode } from 'storybook-dark-mode'
 
 export interface WebStoryProps extends MemoryRouterProps {
     children: React.FunctionComponent<ThemeProps>
@@ -18,14 +18,12 @@ export const BrandedStory: React.FunctionComponent<
         styles?: string
     }
 > = ({ children, styles = brandedStyles, ...memoryRouterProps }) => {
-    const theme = radios('Theme', { Light: 'light', Dark: 'dark' }, 'light')
-    document.body.classList.toggle('theme-light', theme === 'light')
-    document.body.classList.toggle('theme-dark', theme === 'dark')
+    const isLightTheme = !useDarkMode()
     const Children = children
     return (
         <MemoryRouter {...memoryRouterProps}>
             <Tooltip />
-            <Children isLightTheme={theme === 'light'} />
+            <Children isLightTheme={isLightTheme} />
             <style title="Webapp CSS">{styles}</style>
         </MemoryRouter>
     )

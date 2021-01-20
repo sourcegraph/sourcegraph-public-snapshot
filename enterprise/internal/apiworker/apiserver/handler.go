@@ -129,15 +129,15 @@ func (m *handler) dequeue(ctx context.Context, queueName, executorName string) (
 	return job, true, nil
 }
 
-// setLogContents calls SetLogContents for the given job. If the job identifier is not
-// known, a false-valued flag is returned.
-func (m *handler) setLogContents(ctx context.Context, queueName, executorName string, jobID int, contents string) error {
+// addExecutionLogEntry calls AddExecutionLogEntry for the given job. If the job identifier
+// is not known, a false-valued flag is returned.
+func (m *handler) addExecutionLogEntry(ctx context.Context, queueName, executorName string, jobID int, entry workerutil.ExecutionLogEntry) error {
 	job, err := m.findMeta(queueName, executorName, jobID, false)
 	if err != nil {
 		return err
 	}
 
-	if err := job.tx.SetLogContents(ctx, jobID, contents); err != nil {
+	if err := job.tx.AddExecutionLogEntry(ctx, jobID, entry); err != nil {
 		return err
 	}
 
@@ -174,6 +174,25 @@ func (m *handler) markErrored(ctx context.Context, queueName, executorName strin
 	defer func() { m.dequeueSemaphore <- struct{}{} }()
 
 	_, err = job.tx.MarkErrored(ctx, job.record.RecordID(), errorMessage)
+
+	if doneErr := job.tx.Done(err); doneErr != err {
+		return doneErr
+	}
+
+	return nil
+}
+
+// markFailed calls MarkFailed for the given job, then commits the job's transaction.
+// The job is removed from the executor's job list on success.
+func (m *handler) markFailed(ctx context.Context, queueName, executorName string, jobID int, errorMessage string) error {
+	job, err := m.findMeta(queueName, executorName, jobID, true)
+	if err != nil {
+		return err
+	}
+
+	defer func() { m.dequeueSemaphore <- struct{}{} }()
+
+	_, err = job.tx.MarkFailed(ctx, job.record.RecordID(), errorMessage)
 
 	if doneErr := job.tx.Done(err); doneErr != err {
 		return doneErr

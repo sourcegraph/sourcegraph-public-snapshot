@@ -29,7 +29,7 @@ Install the indexer for the required programming language of your repository by 
   1. [Go](https://github.com/sourcegraph/lsif-go)
   1. [Haskell](https://github.com/mpickering/hie-lsif)
   1. [Java](https://github.com/sourcegraph/lsif-java)
-  1. [Javascript/Typescript](https://github.com/sourcegraph/lsif-node)
+  1. [JavaScript/TypeScript](https://github.com/sourcegraph/lsif-node)
   1. [Jsonnet](https://github.com/sourcegraph/lsif-jsonnet)
   1. [Python](https://github.com/sourcegraph/lsif-py)
   1. [OCaml](https://github.com/rvantonder/lsif-ocaml)
@@ -81,7 +81,7 @@ Now that you have successfully enabled code intelligence for your repository, yo
 
 Once LSIF data has uploaded, open the Sourcegraph UI or your code host (i.e. GitHub) and navigate to any code file that was part of the repository that was analyzed by the LSIF indexer. Hover over a symbol, variable or function name in the file, you should now see rich LSIF metadata as the source for hover-tooltips, definitions, and references.
 
-If precise code intelligence has been correctly enabled hover text should not be decorated with a ![tooltip](img/basic-code-intel-tooltip.svg) icon. This icon indicates the results are from search-based [basic code intelligence](explanations/basic_code_intelligence.md). This tooltip icon will be absent when results are precise!
+If precise code intelligence has been correctly enabled hover text should not be decorated with a ![tooltip](img/basic-code-intel-tooltip.svg) icon. This icon indicates the results are from search-based [search-based code intelligence](explanations/search_based_code_intelligence.md). This tooltip icon will be absent when results are precise!
 
 ### Error Logs
 

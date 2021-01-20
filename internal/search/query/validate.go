@@ -66,14 +66,6 @@ func containsField(nodes []Node, field string) bool {
 	})
 }
 
-// ContainsAndOrKeyword returns true if this query contains or- or and-
-// keywords. It is a temporary signal to determine whether we can fallback to
-// the older existing search functionality.
-func ContainsAndOrKeyword(input string) bool {
-	lower := strings.ToLower(input)
-	return strings.Contains(lower, " and ") || strings.Contains(lower, " or ")
-}
-
 // ContainsRegexpMetasyntax returns true if a string is a valid regular
 // expression and contains regex metasyntax (i.e., it is not a literal).
 func ContainsRegexpMetasyntax(input string) bool {
@@ -330,6 +322,25 @@ func validateCommitParameters(nodes []Node) error {
 	return nil
 }
 
+// validateRepoHasFile validates that the repohasfile parameter can be executed.
+// A query like `repohasfile:foo type:symbol patter-to-match-symbols` is
+// currently not supported.
+func validateRepoHasFile(nodes []Node) error {
+	var seenRepoHasFile, seenTypeSymbol bool
+	VisitParameter(nodes, func(field, value string, _ bool, _ Annotation) {
+		if field == FieldRepoHasFile {
+			seenRepoHasFile = true
+		}
+		if field == FieldType && strings.ToLower(value) == "symbol" {
+			seenTypeSymbol = true
+		}
+	})
+	if seenRepoHasFile && seenTypeSymbol {
+		return errors.New("repohasfile is not compatible for type:symbol. Subscribe to https://github.com/sourcegraph/sourcegraph/issues/4610 for updates")
+	}
+	return nil
+}
+
 // validatePureLiteralPattern checks that no pattern expression contains and/or
 // operators nested inside concat. It may happen that we interpret a query this
 // way due to ambiguity. If this happens, return an error message.
@@ -353,7 +364,7 @@ func validatePureLiteralPattern(nodes []Node, balanced bool) error {
 	return nil
 }
 
-func validate(nodes []Node) error {
+func validateParameters(nodes []Node) error {
 	var err error
 	seen := map[string]struct{}{}
 	VisitParameter(nodes, func(field, value string, negated bool, _ Annotation) {
@@ -363,6 +374,11 @@ func validate(nodes []Node) error {
 		err = validateField(field, value, negated, seen)
 		seen[field] = struct{}{}
 	})
+	return err
+}
+
+func validatePattern(nodes []Node) error {
+	var err error
 	VisitPattern(nodes, func(value string, negated bool, annotation Annotation) {
 		if annotation.Labels.isSet(Regexp) {
 			if err != nil {
@@ -377,13 +393,24 @@ func validate(nodes []Node) error {
 			err = errors.New("the query contains a negated search pattern. Structural search does not support negated search patterns at the moment")
 		}
 	})
-	if err != nil {
-		return err
-	}
-	err = validateRepoRevPair(nodes)
-	if err != nil {
-		return err
-	}
-	err = validateCommitParameters(nodes)
 	return err
+}
+
+func validate(nodes []Node) error {
+	succeeds := func(fns ...func([]Node) error) error {
+		for _, fn := range fns {
+			if err := fn(nodes); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	return succeeds(
+		validateParameters,
+		validatePattern,
+		validateRepoRevPair,
+		validateRepoHasFile,
+		validateCommitParameters,
+	)
 }

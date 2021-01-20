@@ -10,7 +10,7 @@ import { ErrorLike } from '../../../shared/src/util/errors'
 import { addSourcegraphSearchCodeIntelligence } from './input/MonacoQueryInput'
 import { BehaviorSubject, concat, NEVER, of } from 'rxjs'
 import { useObservable } from '../../../shared/src/util/useObservable'
-import { search } from './backend'
+import { search, shouldDisplayPerformanceWarning } from './backend'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { Omit } from 'utility-types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
@@ -28,6 +28,7 @@ interface SearchConsolePageProps
             | 'onSavedQueryModalClose'
             | 'onDidCreateSavedQuery'
             | 'onSaveQueryClick'
+            | 'shouldDisplayPerformanceWarning'
         >,
         ExtensionsControllerProps<'executeCommand' | 'services' | 'extHostAPI'> {
     globbing: boolean
@@ -96,6 +97,7 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
         const subscription = addSourcegraphSearchCodeIntelligence(monacoInstance, searchQuery, {
             patternType,
             globbing,
+            enableSmartQuery: true,
             interpretComments: true,
         })
         return () => subscription.unsubscribe()
@@ -141,7 +143,8 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
                     <div className="mb-1 d-flex align-items-center justify-content-between">
                         <div />
                         <button className="btn btn-lg btn-primary" type="button" onClick={triggerSearch}>
-                            Search
+                            Search &nbsp; {window.navigator.platform.includes('Mac') ? <kbd>⌘</kbd> : <kbd>Ctrl</kbd>}+
+                            <kbd>⏎</kbd>
                         </button>
                     </div>
                     <MonacoEditor
@@ -168,6 +171,7 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
                                 onDidCreateSavedQuery={voidCallback}
                                 onSavedQueryModalClose={voidCallback}
                                 onSaveQueryClick={voidCallback}
+                                shouldDisplayPerformanceWarning={shouldDisplayPerformanceWarning}
                             />
                         ))}
                 </div>

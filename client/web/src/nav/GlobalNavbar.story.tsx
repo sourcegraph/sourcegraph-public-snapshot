@@ -38,6 +38,7 @@ const defaultProps = (
     setVersionContext: () => undefined,
     availableVersionContexts: [],
     globbing: false,
+    enableSmartQuery: false,
     patternType: SearchPatternType.literal,
     setPatternType: () => undefined,
     caseSensitive: false,

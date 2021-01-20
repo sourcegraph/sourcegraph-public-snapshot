@@ -59,18 +59,15 @@ Referenced by:
  namespace_org_id   | integer                  | 
  created_at         | timestamp with time zone | not null default now()
  updated_at         | timestamp with time zone | not null default now()
- changeset_ids      | jsonb                    | not null default '{}'::jsonb
  closed_at          | timestamp with time zone | 
  campaign_spec_id   | bigint                   | not null
  last_applier_id    | bigint                   | 
  last_applied_at    | timestamp with time zone | not null
 Indexes:
     "campaigns_pkey" PRIMARY KEY, btree (id)
-    "campaigns_changeset_ids_gin_idx" gin (changeset_ids)
     "campaigns_namespace_org_id" btree (namespace_org_id)
     "campaigns_namespace_user_id" btree (namespace_user_id)
 Check constraints:
-    "campaigns_changeset_ids_check" CHECK (jsonb_typeof(changeset_ids) = 'object'::text)
     "campaigns_has_1_namespace" CHECK ((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))
     "campaigns_name_not_blank" CHECK (name <> ''::text)
 Foreign-key constraints:
@@ -195,6 +192,7 @@ Referenced by:
  closing               | boolean                  | not null default false
  num_failures          | integer                  | not null default 0
  log_contents          | text                     | 
+ execution_logs        | json[]                   | 
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
@@ -203,6 +201,7 @@ Check constraints:
     "changesets_external_id_check" CHECK (external_id <> ''::text)
     "changesets_external_service_type_not_blank" CHECK (external_service_type <> ''::text)
     "changesets_metadata_check" CHECK (jsonb_typeof(metadata) = 'object'::text)
+    "external_branch_ref_prefix" CHECK (external_branch ~~ 'refs/heads/%'::text)
 Foreign-key constraints:
     "changesets_changeset_spec_id_fkey" FOREIGN KEY (current_spec_id) REFERENCES changeset_specs(id) DEFERRABLE
     "changesets_owned_by_campaign_id_fkey" FOREIGN KEY (owned_by_campaign_id) REFERENCES campaigns(id) ON DELETE SET NULL DEFERRABLE
@@ -210,8 +209,6 @@ Foreign-key constraints:
     "changesets_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
 Referenced by:
     TABLE "changeset_events" CONSTRAINT "changeset_events_changeset_id_fkey" FOREIGN KEY (changeset_id) REFERENCES changesets(id) ON DELETE CASCADE DEFERRABLE
-Triggers:
-    trig_delete_changeset_reference_on_campaigns AFTER DELETE ON changesets FOR EACH ROW EXECUTE PROCEDURE delete_changeset_reference_on_campaigns()
 
 ```
 
@@ -249,6 +246,142 @@ Triggers:
  finished_at           | timestamp with time zone | 
  process_after         | timestamp with time zone | 
  num_resets            | integer                  | 
+
+```
+
+# Table "public.cm_action_jobs"
+```
+     Column      |           Type           |                          Modifiers                          
+-----------------+--------------------------+-------------------------------------------------------------
+ id              | integer                  | not null default nextval('cm_action_jobs_id_seq'::regclass)
+ email           | bigint                   | not null
+ state           | text                     | default 'queued'::text
+ failure_message | text                     | 
+ started_at      | timestamp with time zone | 
+ finished_at     | timestamp with time zone | 
+ process_after   | timestamp with time zone | 
+ num_resets      | integer                  | not null default 0
+ num_failures    | integer                  | not null default 0
+ log_contents    | text                     | 
+Indexes:
+    "cm_action_jobs_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "cm_action_jobs_email_fk" FOREIGN KEY (email) REFERENCES cm_emails(id) ON DELETE CASCADE
+
+```
+
+# Table "public.cm_emails"
+```
+   Column   |           Type           |                       Modifiers                        
+------------+--------------------------+--------------------------------------------------------
+ id         | bigint                   | not null default nextval('cm_emails_id_seq'::regclass)
+ monitor    | bigint                   | not null
+ enabled    | boolean                  | not null
+ priority   | cm_email_priority        | not null
+ header     | text                     | not null
+ created_by | integer                  | not null
+ created_at | timestamp with time zone | not null default now()
+ changed_by | integer                  | not null
+ changed_at | timestamp with time zone | not null default now()
+Indexes:
+    "cm_emails_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "cm_emails_changed_by_fk" FOREIGN KEY (changed_by) REFERENCES users(id) ON DELETE CASCADE
+    "cm_emails_created_by_fk" FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
+    "cm_emails_monitor" FOREIGN KEY (monitor) REFERENCES cm_monitors(id) ON DELETE CASCADE
+Referenced by:
+    TABLE "cm_action_jobs" CONSTRAINT "cm_action_jobs_email_fk" FOREIGN KEY (email) REFERENCES cm_emails(id) ON DELETE CASCADE
+    TABLE "cm_recipients" CONSTRAINT "cm_recipients_emails" FOREIGN KEY (email) REFERENCES cm_emails(id) ON DELETE CASCADE
+
+```
+
+# Table "public.cm_monitors"
+```
+      Column       |           Type           |                        Modifiers                         
+-------------------+--------------------------+----------------------------------------------------------
+ id                | bigint                   | not null default nextval('cm_monitors_id_seq'::regclass)
+ created_by        | integer                  | not null
+ created_at        | timestamp with time zone | not null default now()
+ description       | text                     | not null
+ changed_at        | timestamp with time zone | not null default now()
+ changed_by        | integer                  | not null
+ enabled           | boolean                  | not null default true
+ namespace_user_id | integer                  | 
+ namespace_org_id  | integer                  | 
+Indexes:
+    "cm_monitors_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "cm_monitors_changed_by_fk" FOREIGN KEY (changed_by) REFERENCES users(id) ON DELETE CASCADE
+    "cm_monitors_created_by_fk" FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
+    "cm_monitors_org_id_fk" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
+    "cm_monitors_user_id_fk" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE
+Referenced by:
+    TABLE "cm_emails" CONSTRAINT "cm_emails_monitor" FOREIGN KEY (monitor) REFERENCES cm_monitors(id) ON DELETE CASCADE
+    TABLE "cm_queries" CONSTRAINT "cm_triggers_monitor" FOREIGN KEY (monitor) REFERENCES cm_monitors(id) ON DELETE CASCADE
+
+```
+
+# Table "public.cm_queries"
+```
+    Column     |           Type           |                        Modifiers                        
+---------------+--------------------------+---------------------------------------------------------
+ id            | bigint                   | not null default nextval('cm_queries_id_seq'::regclass)
+ monitor       | bigint                   | not null
+ query         | text                     | not null
+ created_by    | integer                  | not null
+ created_at    | timestamp with time zone | not null default now()
+ changed_by    | integer                  | not null
+ changed_at    | timestamp with time zone | not null default now()
+ next_run      | timestamp with time zone | default now()
+ latest_result | timestamp with time zone | 
+Indexes:
+    "cm_queries_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "cm_triggers_changed_by_fk" FOREIGN KEY (changed_by) REFERENCES users(id) ON DELETE CASCADE
+    "cm_triggers_created_by_fk" FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
+    "cm_triggers_monitor" FOREIGN KEY (monitor) REFERENCES cm_monitors(id) ON DELETE CASCADE
+Referenced by:
+    TABLE "cm_trigger_jobs" CONSTRAINT "cm_trigger_jobs_query_fk" FOREIGN KEY (query) REFERENCES cm_queries(id) ON DELETE CASCADE
+
+```
+
+# Table "public.cm_recipients"
+```
+      Column       |  Type   |                         Modifiers                          
+-------------------+---------+------------------------------------------------------------
+ id                | bigint  | not null default nextval('cm_recipients_id_seq'::regclass)
+ email             | bigint  | not null
+ namespace_user_id | integer | 
+ namespace_org_id  | integer | 
+Indexes:
+    "cm_recipients_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "cm_recipients_emails" FOREIGN KEY (email) REFERENCES cm_emails(id) ON DELETE CASCADE
+    "cm_recipients_org_id_fk" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
+    "cm_recipients_user_id_fk" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE
+
+```
+
+# Table "public.cm_trigger_jobs"
+```
+     Column      |           Type           |                          Modifiers                           
+-----------------+--------------------------+--------------------------------------------------------------
+ id              | integer                  | not null default nextval('cm_trigger_jobs_id_seq'::regclass)
+ query           | bigint                   | not null
+ state           | text                     | default 'queued'::text
+ failure_message | text                     | 
+ started_at      | timestamp with time zone | 
+ finished_at     | timestamp with time zone | 
+ process_after   | timestamp with time zone | 
+ num_resets      | integer                  | not null default 0
+ num_failures    | integer                  | not null default 0
+ log_contents    | text                     | 
+ query_string    | text                     | 
+ results         | boolean                  | 
+Indexes:
+    "cm_trigger_jobs_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "cm_trigger_jobs_query_fk" FOREIGN KEY (query) REFERENCES cm_queries(id) ON DELETE CASCADE
 
 ```
 
@@ -420,13 +553,13 @@ Check constraints:
  repo_id             | integer | not null
  clone_url           | text    | not null
 Indexes:
+    "external_service_repos_repo_id_external_service_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_service_id)
     "external_service_repos_external_service_id" btree (external_service_id)
-    "external_service_repos_repo_id" btree (repo_id)
 Foreign-key constraints:
     "external_service_repos_external_service_id_fkey" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE DEFERRABLE
     "external_service_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
 Triggers:
-    trig_soft_delete_orphan_repo_by_external_service_repo AFTER DELETE ON external_service_repos FOR EACH ROW EXECUTE PROCEDURE soft_delete_orphan_repo_by_external_service_repos()
+    trig_soft_delete_orphan_repo_by_external_service_repo AFTER DELETE ON external_service_repos FOR EACH STATEMENT EXECUTE PROCEDURE soft_delete_orphan_repo_by_external_service_repos()
 
 ```
 
@@ -444,6 +577,7 @@ Triggers:
  external_service_id | bigint                   | 
  num_failures        | integer                  | not null default 0
  log_contents        | text                     | 
+ execution_logs      | json[]                   | 
 Indexes:
     "external_service_sync_jobs_state_idx" btree (state)
 Foreign-key constraints:
@@ -465,6 +599,7 @@ Foreign-key constraints:
  last_sync_at      | timestamp with time zone | 
  next_sync_at      | timestamp with time zone | 
  namespace_user_id | integer                  | 
+ unrestricted      | boolean                  | not null default false
 Indexes:
     "external_services_pkey" PRIMARY KEY, btree (id)
     "external_services_namespace_user_id_idx" btree (namespace_user_id)
@@ -619,6 +754,7 @@ Indexes:
  indexer_args    | text[]                   | not null
  outfile         | text                     | not null
  log_contents    | text                     | 
+ execution_logs  | json[]                   | 
 Indexes:
     "lsif_indexes_pkey" PRIMARY KEY, btree (id)
 Check constraints:
@@ -631,13 +767,13 @@ Check constraints:
       Column      |  Type   | Modifiers 
 ------------------+---------+-----------
  repository_id    | integer | not null
- commit           | text    | not null
  upload_id        | integer | not null
  distance         | integer | not null
  ancestor_visible | boolean | not null
  overwritten      | boolean | not null
+ commit_bytea     | bytea   | not null
 Indexes:
-    "lsif_nearest_uploads_repository_id_commit" btree (repository_id, commit)
+    "lsif_nearest_uploads_repository_id_commit_bytea" btree (repository_id, commit_bytea)
 
 ```
 
@@ -817,6 +953,8 @@ Check constraints:
     "orgs_name_valid_chars" CHECK (name ~ '^[a-zA-Z0-9](?:[a-zA-Z0-9]|[-.](?=[a-zA-Z0-9]))*-?$'::citext)
 Referenced by:
     TABLE "campaigns" CONSTRAINT "campaigns_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "cm_monitors" CONSTRAINT "cm_monitors_org_id_fk" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
+    TABLE "cm_recipients" CONSTRAINT "cm_recipients_org_id_fk" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
     TABLE "names" CONSTRAINT "names_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id) ON UPDATE CASCADE ON DELETE CASCADE
     TABLE "org_invitations" CONSTRAINT "org_invitations_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id)
     TABLE "org_members" CONSTRAINT "org_members_references_orgs" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
@@ -1120,6 +1258,26 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.user_credentials"
+```
+        Column         |           Type           |                           Modifiers                           
+-----------------------+--------------------------+---------------------------------------------------------------
+ id                    | bigint                   | not null default nextval('user_credentials_id_seq'::regclass)
+ domain                | text                     | not null
+ user_id               | integer                  | not null
+ external_service_type | text                     | not null
+ external_service_id   | text                     | not null
+ credential            | text                     | not null
+ created_at            | timestamp with time zone | not null default now()
+ updated_at            | timestamp with time zone | not null default now()
+Indexes:
+    "user_credentials_pkey" PRIMARY KEY, btree (id)
+    "user_credentials_domain_user_id_external_service_type_exter_key" UNIQUE CONSTRAINT, btree (domain, user_id, external_service_type, external_service_id)
+Foreign-key constraints:
+    "user_credentials_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
+
+```
+
 # Table "public.user_emails"
 ```
           Column           |           Type           |       Modifiers        
@@ -1130,8 +1288,10 @@ Foreign-key constraints:
  verification_code         | text                     | 
  verified_at               | timestamp with time zone | 
  last_verification_sent_at | timestamp with time zone | 
+ is_primary                | boolean                  | not null default false
 Indexes:
     "user_emails_no_duplicates_per_user" UNIQUE CONSTRAINT, btree (user_id, email)
+    "user_emails_user_id_is_primary_idx" UNIQUE, btree (user_id, is_primary) WHERE is_primary = true
     "user_emails_unique_verified_email" EXCLUDE USING btree (email WITH =) WHERE (verified_at IS NOT NULL)
 Foreign-key constraints:
     "user_emails_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
@@ -1140,19 +1300,21 @@ Foreign-key constraints:
 
 # Table "public.user_external_accounts"
 ```
-    Column    |           Type           |                              Modifiers                              
---------------+--------------------------+---------------------------------------------------------------------
- id           | integer                  | not null default nextval('user_external_accounts_id_seq'::regclass)
- user_id      | integer                  | not null
- service_type | text                     | not null
- service_id   | text                     | not null
- account_id   | text                     | not null
- auth_data    | text                     | 
- account_data | text                     | 
- created_at   | timestamp with time zone | not null default now()
- updated_at   | timestamp with time zone | not null default now()
- deleted_at   | timestamp with time zone | 
- client_id    | text                     | not null
+    Column     |           Type           |                              Modifiers                              
+---------------+--------------------------+---------------------------------------------------------------------
+ id            | integer                  | not null default nextval('user_external_accounts_id_seq'::regclass)
+ user_id       | integer                  | not null
+ service_type  | text                     | not null
+ service_id    | text                     | not null
+ account_id    | text                     | not null
+ auth_data     | text                     | 
+ account_data  | text                     | 
+ created_at    | timestamp with time zone | not null default now()
+ updated_at    | timestamp with time zone | not null default now()
+ deleted_at    | timestamp with time zone | 
+ client_id     | text                     | not null
+ expired_at    | timestamp with time zone | 
+ last_valid_at | timestamp with time zone | 
 Indexes:
     "user_external_accounts_pkey" PRIMARY KEY, btree (id)
     "user_external_accounts_account" UNIQUE, btree (service_type, service_id, client_id, account_id) WHERE deleted_at IS NULL
@@ -1221,6 +1383,7 @@ Indexes:
     "users_pkey" PRIMARY KEY, btree (id)
     "users_billing_customer_id" UNIQUE, btree (billing_customer_id) WHERE deleted_at IS NULL
     "users_username" UNIQUE, btree (username) WHERE deleted_at IS NULL
+    "users_created_at_idx" btree (created_at)
 Check constraints:
     "users_display_name_max_length" CHECK (char_length(display_name) <= 255)
     "users_username_max_length" CHECK (char_length(username::text) <= 255)
@@ -1233,6 +1396,14 @@ Referenced by:
     TABLE "campaigns" CONSTRAINT "campaigns_last_applier_id_fkey" FOREIGN KEY (last_applier_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "campaigns" CONSTRAINT "campaigns_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "changeset_specs" CONSTRAINT "changeset_specs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
+    TABLE "cm_emails" CONSTRAINT "cm_emails_changed_by_fk" FOREIGN KEY (changed_by) REFERENCES users(id) ON DELETE CASCADE
+    TABLE "cm_emails" CONSTRAINT "cm_emails_created_by_fk" FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
+    TABLE "cm_monitors" CONSTRAINT "cm_monitors_changed_by_fk" FOREIGN KEY (changed_by) REFERENCES users(id) ON DELETE CASCADE
+    TABLE "cm_monitors" CONSTRAINT "cm_monitors_created_by_fk" FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
+    TABLE "cm_monitors" CONSTRAINT "cm_monitors_user_id_fk" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE
+    TABLE "cm_recipients" CONSTRAINT "cm_recipients_user_id_fk" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE
+    TABLE "cm_queries" CONSTRAINT "cm_triggers_changed_by_fk" FOREIGN KEY (changed_by) REFERENCES users(id) ON DELETE CASCADE
+    TABLE "cm_queries" CONSTRAINT "cm_triggers_created_by_fk" FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
     TABLE "discussion_comments" CONSTRAINT "discussion_comments_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "discussion_mail_reply_tokens" CONSTRAINT "discussion_mail_reply_tokens_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "discussion_threads" CONSTRAINT "discussion_threads_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
@@ -1248,6 +1419,7 @@ Referenced by:
     TABLE "settings" CONSTRAINT "settings_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "settings" CONSTRAINT "settings_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "survey_responses" CONSTRAINT "survey_responses_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
+    TABLE "user_credentials" CONSTRAINT "user_credentials_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "user_emails" CONSTRAINT "user_emails_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "user_external_accounts" CONSTRAINT "user_external_accounts_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
 Triggers:

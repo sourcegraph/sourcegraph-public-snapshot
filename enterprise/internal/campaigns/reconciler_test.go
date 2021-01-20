@@ -2,12 +2,14 @@ package campaigns
 
 import (
 	"context"
+	"fmt"
 	"strings"
+	"testing"
 	"time"
 
-	"testing"
-
+	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
@@ -16,9 +18,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -26,10 +33,8 @@ func TestReconcilerProcess(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
-	now := time.Now().UTC().Truncate(time.Microsecond)
-	clock := func() time.Time {
-		return now.UTC().Truncate(time.Microsecond)
-	}
+	now := timeutil.Now()
+	clock := func() time.Time { return now }
 	store := NewStoreWithClock(dbconn.Global, clock)
 
 	admin := createTestUser(ctx, t)
@@ -37,7 +42,7 @@ func TestReconcilerProcess(t *testing.T) {
 		t.Fatalf("admin is not site admin")
 	}
 
-	rs, extSvc := createTestRepos(t, ctx, dbconn.Global, 1)
+	rs, extSvc := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
 
 	state := ct.MockChangesetSyncState(&protocol.RepoInfo{
 		Name: api.RepoName(rs[0].Name),
@@ -49,6 +54,7 @@ func TestReconcilerProcess(t *testing.T) {
 	defer func() { internalClient = api.InternalClient }()
 
 	githubPR := buildGithubPR(clock(), campaigns.ChangesetExternalStateOpen)
+	githubHeadRef := git.EnsureRefPrefix(githubPR.HeadRefName)
 	draftGithubPR := buildGithubPR(clock(), campaigns.ChangesetExternalStateDraft)
 	closedGitHubPR := buildGithubPR(clock(), campaigns.ChangesetExternalStateClosed)
 
@@ -57,7 +63,6 @@ func TestReconcilerProcess(t *testing.T) {
 			Changeset: &campaigns.Changeset{ExternalID: "100000"},
 		},
 	}
-	notFoundErrMsg := notFoundErr.Error()
 
 	campaignSpec := createCampaignSpec(t, ctx, store, "reconciler-test-campaign", admin.ID)
 	campaign := createCampaign(t, ctx, store, "reconciler-test-campaign", admin.ID, campaignSpec.ID)
@@ -82,7 +87,8 @@ func TestReconcilerProcess(t *testing.T) {
 
 		wantGitserverCommit bool
 
-		wantChangeset changesetAssertions
+		wantChangeset       changesetAssertions
+		wantNonRetryableErr bool
 	}
 
 	tests := map[string]testCase{
@@ -99,7 +105,7 @@ func TestReconcilerProcess(t *testing.T) {
 			wantChangeset: changesetAssertions{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   githubHeadRef,
 				externalState:    campaigns.ChangesetExternalStateOpen,
 				unsynced:         false,
 				title:            githubPR.Title,
@@ -141,7 +147,7 @@ func TestReconcilerProcess(t *testing.T) {
 			wantChangeset: changesetAssertions{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   githubHeadRef,
 				externalState:    campaigns.ChangesetExternalStateOpen,
 				title:            githubPR.Title,
 				body:             githubPR.Body,
@@ -173,7 +179,7 @@ func TestReconcilerProcess(t *testing.T) {
 			wantChangeset: changesetAssertions{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   githubHeadRef,
 				externalState:    campaigns.ChangesetExternalStateOpen,
 				title:            githubPR.Title,
 				body:             githubPR.Body,
@@ -199,7 +205,7 @@ func TestReconcilerProcess(t *testing.T) {
 			changeset: testChangesetOpts{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       "12345",
-				externalBranch:   "head-ref-on-github",
+				externalBranch:   git.EnsureRefPrefix("head-ref-on-github"),
 				ownedByCampaign:  campaign.ID,
 			},
 			sourcerMetadata: githubPR,
@@ -210,7 +216,7 @@ func TestReconcilerProcess(t *testing.T) {
 			wantChangeset: changesetAssertions{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   githubHeadRef,
 				externalState:    campaigns.ChangesetExternalStateOpen,
 				diffStat:         state.DiffStat,
 				ownedByCampaign:  campaign.ID,
@@ -237,7 +243,7 @@ func TestReconcilerProcess(t *testing.T) {
 			changeset: testChangesetOpts{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   githubHeadRef,
 				externalState:    campaigns.ChangesetExternalStateOpen,
 				ownedByCampaign:  campaign.ID,
 				// Previous update failed:
@@ -250,7 +256,7 @@ func TestReconcilerProcess(t *testing.T) {
 			wantChangeset: changesetAssertions{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   githubHeadRef,
 				externalState:    campaigns.ChangesetExternalStateOpen,
 				title:            githubPR.Title,
 				body:             githubPR.Body,
@@ -278,7 +284,7 @@ func TestReconcilerProcess(t *testing.T) {
 			changeset: testChangesetOpts{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       "12345",
-				externalBranch:   "head-ref-on-github",
+				externalBranch:   git.EnsureRefPrefix("head-ref-on-github"),
 				externalState:    campaigns.ChangesetExternalStateOpen,
 				ownedByCampaign:  campaign.ID,
 			},
@@ -293,7 +299,7 @@ func TestReconcilerProcess(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalState:    campaigns.ChangesetExternalStateOpen,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   githubHeadRef,
 				diffStat:         state.DiffStat,
 				ownedByCampaign:  campaign.ID,
 			},
@@ -315,7 +321,7 @@ func TestReconcilerProcess(t *testing.T) {
 			changeset: testChangesetOpts{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       "12345",
-				externalBranch:   "head-ref-on-github",
+				externalBranch:   git.EnsureRefPrefix("head-ref-on-github"),
 				externalState:    campaigns.ChangesetExternalStateOpen,
 				ownedByCampaign:  campaign.ID,
 
@@ -331,7 +337,7 @@ func TestReconcilerProcess(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalState:    campaigns.ChangesetExternalStateOpen,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   githubHeadRef,
 				diffStat:         state.DiffStat,
 				ownedByCampaign:  campaign.ID,
 				// failureMessage should be nil
@@ -357,7 +363,7 @@ func TestReconcilerProcess(t *testing.T) {
 			changeset: testChangesetOpts{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       "12345",
-				externalBranch:   "head-ref-on-github",
+				externalBranch:   git.EnsureRefPrefix("head-ref-on-github"),
 				externalState:    campaigns.ChangesetExternalStateOpen,
 				ownedByCampaign:  campaign.ID,
 			},
@@ -372,7 +378,7 @@ func TestReconcilerProcess(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalState:    campaigns.ChangesetExternalStateOpen,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   githubHeadRef,
 				diffStat:         state.DiffStat,
 				ownedByCampaign:  campaign.ID,
 			},
@@ -390,7 +396,7 @@ func TestReconcilerProcess(t *testing.T) {
 			changeset: testChangesetOpts{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   githubHeadRef,
 				externalState:    campaigns.ChangesetExternalStateOpen,
 			},
 			sourcerMetadata: githubPR,
@@ -398,7 +404,7 @@ func TestReconcilerProcess(t *testing.T) {
 			wantChangeset: changesetAssertions{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   githubHeadRef,
 				externalState:    campaigns.ChangesetExternalStateOpen,
 			},
 		},
@@ -413,7 +419,7 @@ func TestReconcilerProcess(t *testing.T) {
 			changeset: testChangesetOpts{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   githubHeadRef,
 				externalState:    campaigns.ChangesetExternalStateOpen,
 				closing:          true,
 				ownedByCampaign:  campaign.ID,
@@ -428,7 +434,7 @@ func TestReconcilerProcess(t *testing.T) {
 				closing:          false,
 
 				externalID:     closedGitHubPR.ID,
-				externalBranch: closedGitHubPR.HeadRefName,
+				externalBranch: git.EnsureRefPrefix(closedGitHubPR.HeadRefName),
 				externalState:  campaigns.ChangesetExternalStateClosed,
 
 				title:    closedGitHubPR.Title,
@@ -449,7 +455,7 @@ func TestReconcilerProcess(t *testing.T) {
 			changeset: testChangesetOpts{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   githubHeadRef,
 				externalState:    campaigns.ChangesetExternalStateClosed,
 				closing:          true,
 				ownedByCampaign:  campaign.ID,
@@ -466,7 +472,7 @@ func TestReconcilerProcess(t *testing.T) {
 				closing:          false,
 
 				externalID:     closedGitHubPR.ID,
-				externalBranch: closedGitHubPR.HeadRefName,
+				externalBranch: git.EnsureRefPrefix(closedGitHubPR.HeadRefName),
 				externalState:  campaigns.ChangesetExternalStateClosed,
 			},
 		},
@@ -488,7 +494,7 @@ func TestReconcilerProcess(t *testing.T) {
 			changeset: testChangesetOpts{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   githubHeadRef,
 				externalState:    campaigns.ChangesetExternalStateClosed,
 				ownedByCampaign:  campaign.ID,
 				closing:          false,
@@ -502,7 +508,7 @@ func TestReconcilerProcess(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 
 				externalID:     githubPR.ID,
-				externalBranch: githubPR.HeadRefName,
+				externalBranch: githubHeadRef,
 				externalState:  campaigns.ChangesetExternalStateOpen,
 
 				title:    githubPR.Title,
@@ -532,7 +538,7 @@ func TestReconcilerProcess(t *testing.T) {
 			changeset: testChangesetOpts{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   githubHeadRef,
 				externalState:    campaigns.ChangesetExternalStateClosed,
 				ownedByCampaign:  campaign.ID,
 				closing:          false,
@@ -552,7 +558,7 @@ func TestReconcilerProcess(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 
 				externalID:     githubPR.ID,
-				externalBranch: githubPR.HeadRefName,
+				externalBranch: githubHeadRef,
 				externalState:  campaigns.ChangesetExternalStateOpen,
 
 				title:    githubPR.Title,
@@ -582,7 +588,7 @@ func TestReconcilerProcess(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 
 				externalID:     draftGithubPR.ID,
-				externalBranch: draftGithubPR.HeadRefName,
+				externalBranch: git.EnsureRefPrefix(draftGithubPR.HeadRefName),
 				externalState:  campaigns.ChangesetExternalStateDraft,
 
 				title:    draftGithubPR.Title,
@@ -614,7 +620,7 @@ func TestReconcilerProcess(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 
 				externalID:     draftGithubPR.ID,
-				externalBranch: draftGithubPR.HeadRefName,
+				externalBranch: git.EnsureRefPrefix(draftGithubPR.HeadRefName),
 				externalState:  campaigns.ChangesetExternalStateDraft,
 
 				title:    draftGithubPR.Title,
@@ -644,7 +650,7 @@ func TestReconcilerProcess(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 
 				externalID:     githubPR.ID,
-				externalBranch: githubPR.HeadRefName,
+				externalBranch: githubHeadRef,
 				externalState:  campaigns.ChangesetExternalStateOpen,
 
 				title:    githubPR.Title,
@@ -662,14 +668,7 @@ func TestReconcilerProcess(t *testing.T) {
 
 			wantLoadFromCodeHost: true,
 
-			wantChangeset: changesetAssertions{
-				publicationState: campaigns.ChangesetPublicationStatePublished,
-				failureMessage:   &notFoundErrMsg,
-				externalID:       "100000",
-				reconcilerState:  campaigns.ReconcilerStateErrored,
-				numFailures:      reconcilerMaxNumRetries + 999,
-				unsynced:         true,
-			},
+			wantNonRetryableErr: true,
 		},
 	}
 
@@ -737,14 +736,19 @@ func TestReconcilerProcess(t *testing.T) {
 			sourcer := repos.NewFakeSourcer(nil, fakeSource)
 
 			// Run the reconciler
-			rec := reconciler{
+			rec := Reconciler{
 				noSleepBeforeSync: true,
-				gitserverClient:   gitClient,
-				sourcer:           sourcer,
-				store:             store,
+				GitserverClient:   gitClient,
+				Sourcer:           sourcer,
+				Store:             store,
 			}
-			if err := rec.process(ctx, store, changeset); err != nil {
-				t.Fatalf("reconciler process failed: %s", err)
+			err := rec.process(ctx, store, changeset)
+			if err != nil {
+				if tc.wantNonRetryableErr && errcode.IsNonRetryable(err) {
+					// all good
+				} else {
+					t.Fatalf("reconciler process failed: %s", err)
+				}
 			}
 
 			// Assert that all the calls happened
@@ -780,6 +784,10 @@ func TestReconcilerProcess(t *testing.T) {
 				t.Fatalf("wrong CloseChangeset call. wantCalled=%t, wasCalled=%t", want, have)
 			}
 
+			if tc.wantNonRetryableErr {
+				return
+			}
+
 			// Assert that the changeset in the database looks like we want
 			assertions := tc.wantChangeset
 			assertions.repo = rs[0].ID
@@ -812,16 +820,16 @@ func TestReconcilerProcess(t *testing.T) {
 	}
 }
 
-func TestDeterminePlan(t *testing.T) {
+func TestDetermineReconcilerPlan(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
 	store := NewStore(dbconn.Global)
 
-	rs, _ := createTestRepos(t, ctx, dbconn.Global, 1)
+	rs, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
 	githubRepo := rs[0]
 
-	rs, _ = createBbsTestRepos(t, ctx, dbconn.Global, 1)
+	rs, _ = ct.CreateBbsTestRepos(t, ctx, dbconn.Global, 1)
 	bbsRepo := rs[0]
 
 	admin := createTestUser(ctx, t)
@@ -830,14 +838,14 @@ func TestDeterminePlan(t *testing.T) {
 	}
 
 	campaignSpec := createCampaignSpec(t, ctx, store, "test-plan", admin.ID)
-	createCampaign(t, ctx, store, "test-plan", admin.ID, campaignSpec.ID)
+	campaign := createCampaign(t, ctx, store, "test-plan", admin.ID, campaignSpec.ID)
 
 	tcs := []struct {
 		name           string
 		previousSpec   testSpecOpts
 		currentSpec    testSpecOpts
 		changeset      testChangesetOpts
-		wantOperations operations
+		wantOperations ReconcilerOperations
 	}{
 		{
 			name: "GitHub publish",
@@ -849,7 +857,7 @@ func TestDeterminePlan(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
 				repo:             githubRepo.ID,
 			},
-			wantOperations: operations{operationPush, operationPublish},
+			wantOperations: ReconcilerOperations{campaigns.ReconcilerOperationPush, campaigns.ReconcilerOperationPublish},
 		},
 		{
 			name: "GitHub publish as draft",
@@ -861,7 +869,7 @@ func TestDeterminePlan(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
 				repo:             githubRepo.ID,
 			},
-			wantOperations: operations{operationPush, operationPublishDraft},
+			wantOperations: ReconcilerOperations{campaigns.ReconcilerOperationPush, campaigns.ReconcilerOperationPublishDraft},
 		},
 		{
 			name: "GitHub publish false",
@@ -873,7 +881,7 @@ func TestDeterminePlan(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
 				repo:             githubRepo.ID,
 			},
-			wantOperations: operations{},
+			wantOperations: ReconcilerOperations{},
 		},
 		{
 			name: "set to draft but unsupported",
@@ -886,7 +894,7 @@ func TestDeterminePlan(t *testing.T) {
 				publicationState:    campaigns.ChangesetPublicationStateUnpublished,
 				repo:                bbsRepo.ID,
 			},
-			wantOperations: operations{},
+			wantOperations: ReconcilerOperations{},
 		},
 		{
 			name: "set from draft to publish true",
@@ -902,7 +910,7 @@ func TestDeterminePlan(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				repo:             githubRepo.ID,
 			},
-			wantOperations: operations{operationUndraft},
+			wantOperations: ReconcilerOperations{campaigns.ReconcilerOperationUndraft},
 		},
 		{
 			name: "set from draft to publish true on unpublished",
@@ -918,7 +926,7 @@ func TestDeterminePlan(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
 				repo:             githubRepo.ID,
 			},
-			wantOperations: operations{operationPush, operationPublish},
+			wantOperations: ReconcilerOperations{campaigns.ReconcilerOperationPush, campaigns.ReconcilerOperationPublish},
 		},
 		{
 			name: "changeset spec changed attribute, needs update",
@@ -936,7 +944,7 @@ func TestDeterminePlan(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				repo:             githubRepo.ID,
 			},
-			wantOperations: operations{operationUpdate},
+			wantOperations: ReconcilerOperations{campaigns.ReconcilerOperationUpdate},
 		},
 		{
 			name: "changeset spec changed, needs new commit but no update",
@@ -954,7 +962,45 @@ func TestDeterminePlan(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				repo:             githubRepo.ID,
 			},
-			wantOperations: operations{operationPush, operationSleep, operationSync},
+			wantOperations: ReconcilerOperations{campaigns.ReconcilerOperationPush, campaigns.ReconcilerOperationSleep, campaigns.ReconcilerOperationSync},
+		},
+		{
+			name: "changeset merged and spec changed is noop",
+			previousSpec: testSpecOpts{
+				published:  true,
+				repo:       githubRepo.ID,
+				commitDiff: "testDiff",
+			},
+			currentSpec: testSpecOpts{
+				published:  true,
+				repo:       githubRepo.ID,
+				commitDiff: "newTestDiff",
+			},
+			changeset: testChangesetOpts{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				externalState:    campaigns.ChangesetExternalStateMerged,
+				repo:             githubRepo.ID,
+			},
+			wantOperations: ReconcilerOperations{},
+		},
+		{
+			name: "changeset closed-and-detached will reopen",
+			previousSpec: testSpecOpts{
+				published: true,
+				repo:      githubRepo.ID,
+			},
+			currentSpec: testSpecOpts{
+				published: true,
+				repo:      githubRepo.ID,
+			},
+			changeset: testChangesetOpts{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				externalState:    campaigns.ChangesetExternalStateClosed,
+				repo:             githubRepo.ID,
+				ownedByCampaign:  campaign.ID,
+				campaignIDs:      []int64{campaign.ID},
+			},
+			wantOperations: ReconcilerOperations{campaigns.ReconcilerOperationReopen},
 		},
 	}
 
@@ -974,11 +1020,11 @@ func TestDeterminePlan(t *testing.T) {
 			currentSpec := createChangesetSpec(t, ctx, tx, tc.currentSpec)
 			tc.changeset.currentSpec = currentSpec.ID
 			cs := createChangeset(t, ctx, tx, tc.changeset)
-			plan, err := determinePlan(previousSpec, currentSpec, cs)
+			plan, err := DetermineReconcilerPlan(previousSpec, currentSpec, cs)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if have, want := plan.ops, tc.wantOperations; !have.Equal(want) {
+			if have, want := plan.Ops, tc.wantOperations; !have.Equal(want) {
 				t.Fatalf("incorrect plan determined, want=%v have=%v", want, have)
 			}
 		})
@@ -996,7 +1042,7 @@ func TestReconcilerProcess_PublishedChangesetDuplicateBranch(t *testing.T) {
 		t.Fatalf("admin is not site admin")
 	}
 
-	rs, _ := createTestRepos(t, ctx, dbconn.Global, 1)
+	rs, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
 
 	state := ct.MockChangesetSyncState(&protocol.RepoInfo{
 		Name: api.RepoName(rs[0].Name),
@@ -1021,7 +1067,7 @@ func TestReconcilerProcess_PublishedChangesetDuplicateBranch(t *testing.T) {
 		campaign:         campaign.ID,
 		ownedByCampaign:  campaign.ID,
 		currentSpec:      changesetSpec.ID,
-		externalBranch:   git.AbbreviateRef(commonHeadRef),
+		externalBranch:   commonHeadRef,
 		externalID:       "123",
 	})
 
@@ -1044,14 +1090,20 @@ func TestReconcilerProcess_PublishedChangesetDuplicateBranch(t *testing.T) {
 	})
 
 	// Run the reconciler
-	rec := reconciler{
+	rec := Reconciler{
 		noSleepBeforeSync: true,
-		sourcer:           repos.NewFakeSourcer(nil, &ct.FakeChangesetSource{}),
-		store:             store,
+		Sourcer:           repos.NewFakeSourcer(nil, &ct.FakeChangesetSource{}),
+		Store:             store,
 	}
-	haveErr := rec.process(ctx, store, otherChangeset)
-	if !errors.Is(haveErr, ErrPublishSameBranch) {
-		t.Fatalf("reconciler process failed with wrong error: %s", haveErr)
+
+	err := rec.process(ctx, store, otherChangeset)
+	if err == nil {
+		t.Fatal("reconciler did not return error")
+	}
+
+	// We expect a non-retryable error to be returned.
+	if !errcode.IsNonRetryable(err) {
+		t.Fatalf("error is not non-retryabe. have=%s", err)
 	}
 }
 
@@ -1101,6 +1153,7 @@ type testChangesetOpts struct {
 	campaign     int64
 	currentSpec  int64
 	previousSpec int64
+	campaignIDs  []int64
 
 	externalServiceType string
 	externalID          string
@@ -1135,6 +1188,7 @@ func createChangeset(
 		RepoID:         opts.repo,
 		CurrentSpecID:  opts.currentSpec,
 		PreviousSpecID: opts.previousSpec,
+		CampaignIDs:    opts.campaignIDs,
 
 		ExternalServiceType: opts.externalServiceType,
 		ExternalID:          opts.externalID,
@@ -1171,10 +1225,8 @@ func TestDecorateChangesetBody(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
-	now := time.Now().UTC().Truncate(time.Microsecond)
-	clock := func() time.Time {
-		return now.UTC().Truncate(time.Microsecond)
-	}
+	now := timeutil.Now()
+	clock := func() time.Time { return now }
 	store := NewStoreWithClock(dbconn.Global, clock)
 
 	admin := createTestUser(ctx, t)
@@ -1182,7 +1234,7 @@ func TestDecorateChangesetBody(t *testing.T) {
 		t.Fatal("admin is not site admin")
 	}
 
-	rs, _ := createTestRepos(t, ctx, dbconn.Global, 1)
+	rs, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
 
 	state := ct.MockChangesetSyncState(&protocol.RepoInfo{
 		Name: api.RepoName(rs[0].Name),
@@ -1269,6 +1321,303 @@ func TestNamespaceURL(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			if have := namespaceURL(tc.ns); have != tc.want {
 				t.Errorf("unexpected URL: have=%q want=%q", have, tc.want)
+			}
+		})
+	}
+}
+
+func TestExecutor_LoadAuthenticator(t *testing.T) {
+	ctx := backend.WithAuthzBypass(context.Background())
+	dbtesting.SetupGlobalTestDB(t)
+
+	store := NewStore(dbconn.Global)
+
+	admin := createTestUser(ctx, t)
+	if !admin.SiteAdmin {
+		t.Fatal("admin is not site admin")
+	}
+
+	user := createTestUser(ctx, t)
+	if user.SiteAdmin {
+		t.Fatal("user cannot be a site admin")
+	}
+
+	rs, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
+	repo := rs[0]
+
+	campaignSpec := createCampaignSpec(t, ctx, store, "reconciler-test-campaign", admin.ID)
+	adminCampaign := createCampaign(t, ctx, store, "reconciler-test-campaign", admin.ID, campaignSpec.ID)
+	userCampaign := createCampaign(t, ctx, store, "reconciler-test-campaign", user.ID, campaignSpec.ID)
+
+	t.Run("imported changeset uses global token", func(t *testing.T) {
+		a, err := (&executor{
+			ch: &campaigns.Changeset{
+				OwnedByCampaignID: 0,
+			},
+		}).loadAuthenticator(ctx)
+		if err != nil {
+			t.Errorf("unexpected non-nil error: %v", err)
+		}
+		if a != nil {
+			t.Errorf("unexpected non-nil authenticator: %v", a)
+		}
+	})
+
+	t.Run("owned by missing campaign", func(t *testing.T) {
+		_, err := (&executor{
+			ch: &campaigns.Changeset{
+				OwnedByCampaignID: 1234,
+			},
+			tx: store,
+		}).loadAuthenticator(ctx)
+		if err == nil {
+			t.Error("unexpected nil error")
+		}
+	})
+
+	t.Run("owned by admin user without credential", func(t *testing.T) {
+		a, err := (&executor{
+			ch: &campaigns.Changeset{
+				OwnedByCampaignID: adminCampaign.ID,
+			},
+			repo: repo,
+			tx:   store,
+		}).loadAuthenticator(ctx)
+		if err != nil {
+			t.Errorf("unexpected non-nil error: %v", err)
+		}
+		if a != nil {
+			t.Errorf("unexpected non-nil authenticator: %v", a)
+		}
+	})
+
+	t.Run("owned by normal user without credential", func(t *testing.T) {
+		_, err := (&executor{
+			ch: &campaigns.Changeset{
+				OwnedByCampaignID: userCampaign.ID,
+			},
+			repo: repo,
+			tx:   store,
+		}).loadAuthenticator(ctx)
+		if err == nil {
+			t.Error("unexpected nil error")
+		}
+	})
+
+	t.Run("owned by admin user with credential", func(t *testing.T) {
+		token := &auth.OAuthBearerToken{Token: "abcdef"}
+		if _, err := db.UserCredentials.Create(ctx, db.UserCredentialScope{
+			Domain:              db.UserCredentialDomainCampaigns,
+			UserID:              admin.ID,
+			ExternalServiceType: repo.ExternalRepo.ServiceType,
+			ExternalServiceID:   repo.ExternalRepo.ServiceID,
+		}, token); err != nil {
+			t.Fatal(err)
+		}
+
+		a, err := (&executor{
+			ch: &campaigns.Changeset{
+				OwnedByCampaignID: adminCampaign.ID,
+			},
+			repo: repo,
+			tx:   store,
+		}).loadAuthenticator(ctx)
+		if err != nil {
+			t.Errorf("unexpected non-nil error: %v", err)
+		}
+		if diff := cmp.Diff(token, a); diff != "" {
+			t.Errorf("unexpected authenticator:\n%s", diff)
+		}
+	})
+
+	t.Run("owned by normal user with credential", func(t *testing.T) {
+		token := &auth.OAuthBearerToken{Token: "abcdef"}
+		if _, err := db.UserCredentials.Create(ctx, db.UserCredentialScope{
+			Domain:              db.UserCredentialDomainCampaigns,
+			UserID:              user.ID,
+			ExternalServiceType: repo.ExternalRepo.ServiceType,
+			ExternalServiceID:   repo.ExternalRepo.ServiceID,
+		}, token); err != nil {
+			t.Fatal(err)
+		}
+
+		a, err := (&executor{
+			ch: &campaigns.Changeset{
+				OwnedByCampaignID: userCampaign.ID,
+			},
+			repo: repo,
+			tx:   store,
+		}).loadAuthenticator(ctx)
+		if err != nil {
+			t.Errorf("unexpected non-nil error: %v", err)
+		}
+		if diff := cmp.Diff(token, a); diff != "" {
+			t.Errorf("unexpected authenticator:\n%s", diff)
+		}
+	})
+}
+
+func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
+	ctx := backend.WithAuthzBypass(context.Background())
+	dbtesting.SetupGlobalTestDB(t)
+
+	store := NewStore(dbconn.Global)
+
+	admin := createTestUser(ctx, t)
+	if !admin.SiteAdmin {
+		t.Fatal("admin is not site admin")
+	}
+
+	user := createTestUser(ctx, t)
+	if user.SiteAdmin {
+		t.Fatal("user is site admin")
+	}
+
+	rs, extSvc := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
+	gitHubRepo := rs[0]
+	gitHubRepoCloneURL := gitHubRepo.Sources[extSvc.URN()].CloneURL
+
+	gitLabRepos, gitLabExtSvc := ct.CreateGitlabTestRepos(t, ctx, dbconn.Global, 1)
+	gitLabRepo := gitLabRepos[0]
+	gitLabRepoCloneURL := gitLabRepo.Sources[gitLabExtSvc.URN()].CloneURL
+
+	bbsRepos, bbsExtSvc := ct.CreateBbsTestRepos(t, ctx, dbconn.Global, 1)
+	bbsRepo := bbsRepos[0]
+	bbsRepoCloneURL := bbsRepo.Sources[bbsExtSvc.URN()].CloneURL
+
+	gitClient := &ct.FakeGitserverClient{ResponseErr: nil}
+	fakeSource := &ct.FakeChangesetSource{Svc: extSvc}
+	sourcer := repos.NewFakeSourcer(nil, fakeSource)
+
+	plan := &ReconcilerPlan{}
+	plan.AddOp(campaigns.ReconcilerOperationPush)
+
+	tests := []struct {
+		name           string
+		user           *types.User
+		repo           *repos.Repo
+		credentials    auth.Authenticator
+		wantErr        bool
+		wantPushConfig *gitprotocol.PushConfig
+	}{
+		{
+			name:        "github OAuthBearerToken",
+			user:        user,
+			repo:        gitHubRepo,
+			credentials: &auth.OAuthBearerToken{Token: "my-secret-github-token"},
+			wantPushConfig: &gitprotocol.PushConfig{
+				RemoteURL: "https://my-secret-github-token@github.com/" + gitHubRepo.Name,
+			},
+		},
+		{
+			name:    "github no credentials",
+			user:    user,
+			repo:    gitHubRepo,
+			wantErr: true,
+		},
+		{
+			name: "github site-admin and no credentials",
+			repo: gitHubRepo,
+			user: admin,
+			wantPushConfig: &gitprotocol.PushConfig{
+				RemoteURL: gitHubRepoCloneURL,
+			},
+		},
+		{
+			name:        "gitlab OAuthBearerToken",
+			user:        user,
+			repo:        gitLabRepo,
+			credentials: &auth.OAuthBearerToken{Token: "my-secret-gitlab-token"},
+			wantPushConfig: &gitprotocol.PushConfig{
+				RemoteURL: "https://git:my-secret-gitlab-token@gitlab.com/" + gitLabRepo.Name,
+			},
+		},
+		{
+			name:    "gitlab no credentials",
+			user:    user,
+			repo:    gitLabRepo,
+			wantErr: true,
+		},
+		{
+			name: "gitlab site-admin and no credentials",
+			user: admin,
+			repo: gitLabRepo,
+			wantPushConfig: &gitprotocol.PushConfig{
+				RemoteURL: gitLabRepoCloneURL,
+			},
+		},
+		{
+			name:        "bitbucketServer BasicAuth",
+			user:        user,
+			repo:        bbsRepo,
+			credentials: &auth.BasicAuth{Username: "fredwoard johnssen", Password: "my-secret-bbs-token"},
+			wantPushConfig: &gitprotocol.PushConfig{
+				RemoteURL: "https://fredwoard%20johnssen:my-secret-bbs-token@bitbucket.sourcegraph.com/scm/" + bbsRepo.Name,
+			},
+		},
+		{
+			name:    "bitbucketServer no credentials",
+			user:    user,
+			repo:    bbsRepo,
+			wantErr: true,
+		},
+		{
+			name: "bitbucketServer site-admin and no credentials",
+			user: admin,
+			repo: bbsRepo,
+			wantPushConfig: &gitprotocol.PushConfig{
+				RemoteURL: bbsRepoCloneURL,
+			},
+		},
+	}
+
+	for i, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.credentials != nil {
+				cred, err := db.UserCredentials.Create(ctx, db.UserCredentialScope{
+					Domain:              db.UserCredentialDomainCampaigns,
+					UserID:              tt.user.ID,
+					ExternalServiceType: tt.repo.ExternalRepo.ServiceType,
+					ExternalServiceID:   tt.repo.ExternalRepo.ServiceID,
+				}, tt.credentials)
+				if err != nil {
+					t.Fatal(err)
+				}
+				defer func() { db.UserCredentials.Delete(ctx, cred.ID) }()
+			}
+
+			campaignSpec := createCampaignSpec(t, ctx, store, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID)
+			campaign := createCampaign(t, ctx, store, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID, campaignSpec.ID)
+
+			ex := &executor{
+				ch: &campaigns.Changeset{
+					OwnedByCampaignID: campaign.ID,
+					RepoID:            tt.repo.ID,
+				},
+				spec: buildChangesetSpec(t, testSpecOpts{
+					headRef:    "refs/heads/my-branch",
+					published:  true,
+					commitDiff: "testdiff",
+				}),
+				sourcer:         sourcer,
+				gitserverClient: gitClient,
+				tx:              store,
+			}
+
+			err := ex.ExecutePlan(context.Background(), plan)
+			if !tt.wantErr && err != nil {
+				t.Fatalf("executing plan failed: %s", err)
+			}
+			if tt.wantErr {
+				if err == nil {
+					t.Fatalf("expected error but got none")
+				} else {
+					return
+				}
+			}
+
+			if diff := cmp.Diff(tt.wantPushConfig, gitClient.CreateCommitFromPatchReq.Push); diff != "" {
+				t.Errorf("unexpected push options:\n%s", diff)
 			}
 		})
 	}

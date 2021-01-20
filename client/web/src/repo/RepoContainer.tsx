@@ -1,6 +1,6 @@
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useMemo, useState, useEffect, useCallback } from 'react'
+import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react'
 import { escapeRegExp, uniqueId } from 'lodash'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Observable, NEVER, ObservableInput, of } from 'rxjs'
@@ -17,7 +17,7 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { ErrorLike, isErrorLike, asError } from '../../../shared/src/util/errors'
-import { makeRepoURI } from '../../../shared/src/util/url'
+import { encodeURIComponentExceptSlashes, makeRepoURI } from '../../../shared/src/util/url'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
 import {
@@ -212,17 +212,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         RepoHeaderContributionsLifecycleProps
     >()
 
-    const repositoryBreadcrumbSetters = props.useBreadcrumb(
-        useMemo(
-            () => ({
-                key: 'repositories',
-                element: <>Repositories</>,
-            }),
-            []
-        )
-    )
-
-    const childBreadcrumbSetters = repositoryBreadcrumbSetters.useBreadcrumb(
+    const childBreadcrumbSetters = props.useBreadcrumb(
         useMemo(() => {
             if (isErrorLike(repoOrError) || !repoOrError) {
                 return
@@ -362,14 +352,18 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
 
     // Increment hovers that the user has seen. Enable browser extension discoverability
     // features after hover count threshold is reached (e.g. alerts, popovers)
+    // Store hover count in ref to avoid circular dependency
+    // hoverCount -> onHoverShown -> WebHoverOverlay (onHoverShown in useEffect deps) -> onHoverShown()
+    const hoverCountReference = useRef(hoverCount)
+    hoverCountReference.current = hoverCount
     const onHoverShown = useCallback(() => {
-        const count = hoverCount + 1
+        const count = hoverCountReference.current + 1
         if (count > HOVER_THRESHOLD) {
             // No need to keep updating localStorage
             return
         }
         setHoverCount(count)
-    }, [hoverCount, setHoverCount])
+    }, [setHoverCount])
 
     const onPopoverDismissed = useCallback(() => {
         setHasDismissedPopover(true)
@@ -401,7 +395,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         )
     }
 
-    const repoMatchURL = '/' + repoName.split('/').map(encodeURIComponent).join('/')
+    const repoMatchURL = '/' + encodeURIComponentExceptSlashes(repoName)
 
     const context: RepoContainerContext = {
         ...props,

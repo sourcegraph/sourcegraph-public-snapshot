@@ -2,6 +2,7 @@
 package main // import "github.com/sourcegraph/sourcegraph/cmd/gitserver"
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net"
@@ -17,6 +18,11 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
@@ -50,10 +56,26 @@ func main() {
 	if err != nil {
 		log.Fatalf("parsing $SRC_REPOS_DESIRED_PERCENT_FREE: %v", err)
 	}
+
+	repoStore, err := getRepoStore()
+	if err != nil {
+		log.Fatalf("failed to initialize db repo store: %v", err)
+	}
+
 	gitserver := server.Server{
 		ReposDir:                reposDir,
 		DeleteStaleRepositories: runRepoCleanup,
 		DesiredPercentFree:      wantPctFree2,
+		GetRemoteURLFunc: func(ctx context.Context, repo api.RepoName) (string, error) {
+			r, err := repoStore.GetByName(ctx, repo)
+			if err != nil {
+				return "", err
+			}
+			for _, info := range r.Sources {
+				return info.CloneURL, nil
+			}
+			return "", fmt.Errorf("no sources for %q", repo)
+		},
 	}
 	gitserver.RegisterMetrics()
 
@@ -127,4 +149,37 @@ func parsePercent(s string) (int, error) {
 		return 0, fmt.Errorf("excessively high value given for percentage: %d", p)
 	}
 	return p, nil
+}
+
+// getRepoStore initializes a connection to the database and returns a
+// RepoStore.
+func getRepoStore() (*db.RepoStore, error) {
+	//
+	// START FLAILING
+
+	// Gitserver is an internal actor. We rely on the frontend to do authz
+	// checks for user requests.
+	authz.SetProviders(true, []authz.Provider{})
+
+	// END FLAILING
+	//
+
+	dsn := conf.Get().ServiceConnections.PostgresDSN
+	conf.Watch(func() {
+		newDSN := conf.Get().ServiceConnections.PostgresDSN
+		if dsn != newDSN {
+			// The DSN was changed (e.g. by someone modifying the env vars on
+			// the frontend). We need to respect the new DSN. Easiest way to do
+			// that is to restart our service (kubernetes/docker/goreman will
+			// handle starting us back up).
+			log.Fatalf("Detected repository DSN change, restarting to take effect: %q", newDSN)
+		}
+	})
+
+	h, err := dbutil.NewDB(dsn, "gitserver")
+	if err != nil {
+		return nil, err
+	}
+
+	return db.NewRepoStoreWithDB(h), nil
 }

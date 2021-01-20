@@ -46,6 +46,8 @@ func main() {
 		}
 	}
 
+	go debugserver.NewServerRoutine().Start()
+
 	db := connectToDatabase()
 
 	queueOptions := map[string]apiserver.QueueOptions{
@@ -68,10 +70,8 @@ func main() {
 		}))
 	}
 
-	goroutine.MonitorBackgroundRoutines(
-		goroutine.NoopStop(debugserver.NewServerRoutine()),
-		apiserver.NewServer(serviceConfig.ServerOptions(queueOptions)),
-	)
+	server := apiserver.NewServer(serviceConfig.ServerOptions(queueOptions))
+	goroutine.MonitorBackgroundRoutines(context.Background(), server)
 }
 
 func connectToDatabase() *sql.DB {

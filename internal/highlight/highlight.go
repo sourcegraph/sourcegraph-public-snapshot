@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"path"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -164,6 +165,8 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 		// CPU for 30s.
 		stabilizeTimeout = 30 * time.Second
 	}
+
+	p.Filepath = normalizeFilepath(p.Filepath)
 
 	resp, err := client.Highlight(ctx, &gosyntect.Query{
 		Code:             code,
@@ -509,4 +512,24 @@ func splitHighlightedLines(input template.HTML) ([]template.HTML, error) {
 	}
 
 	return lines, nil
+}
+
+// normalizeFilepath ensures that the filepath p has a lowercase extension, i.e. it applies the
+// following transformations:
+//
+// 	a/b/c/FOO.TXT → a/b/c/FOO.txt
+// 	FOO.Sh → FOO.sh
+//
+// The following are left unmodified, as they already have lowercase extensions:
+//
+// 	a/b/c/FOO.txt
+// 	a/b/c/Makefile
+// 	Makefile.am
+// 	FOO.txt
+//
+// It expects the filepath uses forward slashes always.
+func normalizeFilepath(p string) string {
+	ext := path.Ext(p)
+	ext = strings.ToLower(ext)
+	return p[:len(p)-len(ext)] + ext
 }

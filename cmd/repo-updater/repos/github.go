@@ -14,10 +14,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -25,25 +27,31 @@ import (
 // A GithubSource yields repositories from a single Github connection configured
 // in Sourcegraph via the external services configuration.
 type GithubSource struct {
-	svc             *ExternalService
+	svc             *types.ExternalService
 	config          *schema.GitHubConnection
 	exclude         excludeFunc
 	excludeArchived bool
 	excludeForks    bool
 	githubDotCom    bool
 	baseURL         *url.URL
-	client          *github.Client
+	v3Client        *github.V3Client
+	v4Client        *github.V4Client
 	// searchClient is for using the GitHub search API, which has an independent
 	// rate limit much lower than non-search API requests.
-	searchClient *github.Client
+	searchClient *github.V3Client
 
 	// originalHostname is the hostname of config.Url (differs from client APIURL, whose host is api.github.com
 	// for an originalHostname of github.com).
 	originalHostname string
 }
 
+var _ Source = &GithubSource{}
+var _ UserSource = &GithubSource{}
+var _ DraftChangesetSource = &GithubSource{}
+var _ ChangesetSource = &GithubSource{}
+
 // NewGithubSource returns a new GithubSource from the given external service.
-func NewGithubSource(svc *ExternalService, cf *httpcli.Factory) (*GithubSource, error) {
+func NewGithubSource(svc *types.ExternalService, cf *httpcli.Factory) (*GithubSource, error) {
 	var c schema.GitHubConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -51,7 +59,7 @@ func NewGithubSource(svc *ExternalService, cf *httpcli.Factory) (*GithubSource, 
 	return newGithubSource(svc, &c, cf)
 }
 
-func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpcli.Factory) (*GithubSource, error) {
+func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf *httpcli.Factory) (*GithubSource, error) {
 	baseURL, err := url.Parse(c.Url)
 	if err != nil {
 		return nil, err
@@ -105,6 +113,8 @@ func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpc
 		return nil, err
 	}
 
+	token := &auth.OAuthBearerToken{Token: c.Token}
+
 	return &GithubSource{
 		svc:              svc,
 		config:           c,
@@ -113,10 +123,28 @@ func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpc
 		excludeForks:     excludeForks,
 		baseURL:          baseURL,
 		githubDotCom:     githubDotCom,
-		client:           github.NewClient(apiURL, c.Token, cli),
-		searchClient:     github.NewClient(apiURL, c.Token, cli),
+		v3Client:         github.NewV3Client(apiURL, token, cli),
+		v4Client:         github.NewV4Client(apiURL, token, cli),
+		searchClient:     github.NewV3Client(apiURL, token, cli).WithSeparateRateLimitMonitor(),
 		originalHostname: originalHostname,
 	}, nil
+}
+
+func (s GithubSource) WithAuthenticator(a auth.Authenticator) (Source, error) {
+	switch a.(type) {
+	case *auth.OAuthBearerToken:
+		break
+
+	default:
+		return nil, newUnsupportedAuthenticatorError("GithubSource", a)
+	}
+
+	sc := s
+	sc.v3Client = sc.v3Client.WithAuthenticator(a)
+	sc.v4Client = sc.v4Client.WithAuthenticator(a)
+	sc.searchClient = sc.searchClient.WithAuthenticator(a)
+
+	return &sc, nil
 }
 
 type githubResult struct {
@@ -147,13 +175,9 @@ func (s GithubSource) ListRepos(ctx context.Context, results chan SourceResult) 
 }
 
 // ExternalServices returns a singleton slice containing the external service.
-func (s GithubSource) ExternalServices() ExternalServices {
-	return ExternalServices{s.svc}
+func (s GithubSource) ExternalServices() types.ExternalServices {
+	return types.ExternalServices{s.svc}
 }
-
-// Type guards.
-var _ ChangesetSource = GithubSource{}
-var _ DraftChangesetSource = GithubSource{}
 
 // CreateChangeset creates the given changeset on the code host.
 func (s GithubSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, error) {
@@ -180,7 +204,7 @@ func buildCreatePullRequestInput(c *Changeset) *github.CreatePullRequestInput {
 
 func (s GithubSource) createChangeset(ctx context.Context, c *Changeset, prInput *github.CreatePullRequestInput) (bool, error) {
 	var exists bool
-	pr, err := s.client.CreatePullRequest(ctx, prInput)
+	pr, err := s.v4Client.CreatePullRequest(ctx, prInput)
 	if err != nil {
 		if err != github.ErrPullRequestAlreadyExists {
 			return exists, err
@@ -190,7 +214,7 @@ func (s GithubSource) createChangeset(ctx context.Context, c *Changeset, prInput
 		if err != nil {
 			return exists, errors.Wrap(err, "getting repo owner and name")
 		}
-		pr, err = s.client.GetOpenPullRequestByRefs(ctx, owner, name, c.BaseRef, c.HeadRef)
+		pr, err = s.v4Client.GetOpenPullRequestByRefs(ctx, owner, name, c.BaseRef, c.HeadRef)
 		if err != nil {
 			return exists, errors.Wrap(err, "fetching existing PR")
 		}
@@ -212,7 +236,7 @@ func (s GithubSource) CloseChangeset(ctx context.Context, c *Changeset) error {
 		return errors.New("Changeset is not a GitHub pull request")
 	}
 
-	err := s.client.ClosePullRequest(ctx, pr)
+	err := s.v4Client.ClosePullRequest(ctx, pr)
 	if err != nil {
 		return err
 	}
@@ -227,7 +251,7 @@ func (s GithubSource) UndraftChangeset(ctx context.Context, c *Changeset) error 
 		return errors.New("Changeset is not a GitHub pull request")
 	}
 
-	err := s.client.MarkPullRequestReadyForReview(ctx, pr)
+	err := s.v4Client.MarkPullRequestReadyForReview(ctx, pr)
 	if err != nil {
 		return err
 	}
@@ -248,7 +272,7 @@ func (s GithubSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
 		Number:        number,
 	}
 
-	if err := s.client.LoadPullRequest(ctx, pr); err != nil {
+	if err := s.v4Client.LoadPullRequest(ctx, pr); err != nil {
 		if github.IsNotFound(err) {
 			return ChangesetNotFoundError{Changeset: cs}
 		}
@@ -269,7 +293,7 @@ func (s GithubSource) UpdateChangeset(ctx context.Context, c *Changeset) error {
 		return errors.New("Changeset is not a GitHub pull request")
 	}
 
-	updated, err := s.client.UpdatePullRequest(ctx, &github.UpdatePullRequestInput{
+	updated, err := s.v4Client.UpdatePullRequest(ctx, &github.UpdatePullRequestInput{
 		PullRequestID: pr.ID,
 		Title:         c.Title,
 		Body:          c.Body,
@@ -290,7 +314,7 @@ func (s GithubSource) ReopenChangeset(ctx context.Context, c *Changeset) error {
 		return errors.New("Changeset is not a GitHub pull request")
 	}
 
-	err := s.client.ReopenPullRequest(ctx, pr)
+	err := s.v4Client.ReopenPullRequest(ctx, pr)
 	if err != nil {
 		return err
 	}
@@ -321,7 +345,7 @@ func (s GithubSource) makeRepo(r *github.Repository) *Repo {
 			s.originalHostname,
 			r.NameWithOwner,
 		)),
-		ExternalRepo: github.ExternalRepoSpec(r, *s.baseURL),
+		ExternalRepo: github.ExternalRepoSpec(r, s.baseURL),
 		Description:  r.Description,
 		Fork:         r.IsFork,
 		Archived:     r.IsArchived,
@@ -404,7 +428,7 @@ func (s *GithubSource) paginate(ctx context.Context, results chan *githubResult,
 		}
 
 		if hasNext && cost > 0 {
-			time.Sleep(s.client.RateLimitMonitor().RecommendedWaitForBackgroundOp(cost))
+			time.Sleep(s.v3Client.RateLimitMonitor().RecommendedWaitForBackgroundOp(cost))
 		}
 	}
 }
@@ -426,7 +450,7 @@ func (s *GithubSource) listOrg(ctx context.Context, org string, results chan *gi
 				}
 			}
 
-			remaining, reset, retry, _ := s.client.RateLimitMonitor().Get()
+			remaining, reset, retry, _ := s.v3Client.RateLimitMonitor().Get()
 			log15.Debug(
 				"github sync: ListOrgRepositories",
 				"repos", len(repos),
@@ -436,7 +460,7 @@ func (s *GithubSource) listOrg(ctx context.Context, org string, results chan *gi
 				"retryAfter", retry,
 			)
 		}()
-		return s.client.ListOrgRepositories(ctx, org, page)
+		return s.v3Client.ListOrgRepositories(ctx, org, page)
 	})
 
 	// Handle 404 from org repos endpoint by trying user repos endpoint
@@ -458,7 +482,7 @@ func (s *GithubSource) listUser(ctx context.Context, user string, results chan *
 				fail, err = err, nil
 			}
 
-			remaining, reset, retry, _ := s.client.RateLimitMonitor().Get()
+			remaining, reset, retry, _ := s.v3Client.RateLimitMonitor().Get()
 			log15.Debug(
 				"github sync: ListUserRepositories",
 				"repos", len(repos),
@@ -468,7 +492,7 @@ func (s *GithubSource) listUser(ctx context.Context, user string, results chan *
 				"retryAfter", retry,
 			)
 		}()
-		return s.client.ListUserRepositories(ctx, user, page)
+		return s.v3Client.ListUserRepositories(ctx, user, page)
 	})
 	return
 }
@@ -504,7 +528,7 @@ func (s *GithubSource) listRepos(ctx context.Context, repos []string, results ch
 			return
 		}
 		var repo *github.Repository
-		repo, err = s.client.GetRepository(ctx, owner, name)
+		repo, err = s.v3Client.GetRepository(ctx, owner, name)
 		if err != nil {
 			// TODO(tsenart): When implementing dry-run, reconsider alternatives to return
 			// 404 errors on external service config validation.
@@ -520,7 +544,7 @@ func (s *GithubSource) listRepos(ctx context.Context, repos []string, results ch
 
 		results <- &githubResult{repo: repo}
 
-		time.Sleep(s.client.RateLimitMonitor().RecommendedWaitForBackgroundOp(1)) // 0-duration sleep unless nearing rate limit exhaustion
+		time.Sleep(s.v3Client.RateLimitMonitor().RecommendedWaitForBackgroundOp(1)) // 0-duration sleep unless nearing rate limit exhaustion
 	}
 }
 
@@ -538,7 +562,7 @@ func (s *GithubSource) listPublic(ctx context.Context, results chan *githubResul
 			return
 		}
 
-		repos, err := s.client.ListPublicRepositories(ctx, sinceRepoID)
+		repos, err := s.v3Client.ListPublicRepositories(ctx, sinceRepoID)
 		if err != nil {
 			results <- &githubResult{err: errors.Wrapf(err, "failed to list public repositories: sinceRepoID=%d", sinceRepoID)}
 			return
@@ -565,7 +589,7 @@ func (s *GithubSource) listPublic(ctx context.Context, results chan *githubResul
 func (s *GithubSource) listAffiliated(ctx context.Context, results chan *githubResult) {
 	s.paginate(ctx, results, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
 		defer func() {
-			remaining, reset, retry, _ := s.client.RateLimitMonitor().Get()
+			remaining, reset, retry, _ := s.v3Client.RateLimitMonitor().Get()
 			log15.Debug(
 				"github sync: ListAffiliated",
 				"repos", len(repos),
@@ -575,7 +599,7 @@ func (s *GithubSource) listAffiliated(ctx context.Context, results chan *githubR
 				"retryAfter", retry,
 			)
 		}()
-		return s.client.ListAffiliatedRepositories(ctx, github.VisibilityAll, page)
+		return s.v3Client.ListAffiliatedRepositories(ctx, github.VisibilityAll, page)
 	})
 }
 
@@ -700,7 +724,7 @@ func (s *GithubSource) getRepository(ctx context.Context, nameWithOwner string) 
 		return nil, errors.Wrapf(err, "Invalid GitHub repository: nameWithOwner="+nameWithOwner)
 	}
 
-	repo, err := s.client.GetRepository(ctx, owner, name)
+	repo, err := s.v3Client.GetRepository(ctx, owner, name)
 	if err != nil {
 		return nil, err
 	}
@@ -726,7 +750,7 @@ func (s *GithubSource) fetchAllRepositoriesInBatches(ctx context.Context, result
 		}
 		batch := s.config.Repos[start:end]
 
-		repos, err := s.client.GetReposByNameWithOwner(ctx, batch...)
+		repos, err := s.v4Client.GetReposByNameWithOwner(ctx, batch...)
 		if err != nil {
 			return err
 		}
@@ -735,8 +759,6 @@ func (s *GithubSource) fetchAllRepositoriesInBatches(ctx context.Context, result
 		for _, r := range repos {
 			results <- &githubResult{repo: r}
 		}
-
-		time.Sleep(s.client.RateLimitMonitor().RecommendedWaitForBackgroundOp(1)) // 0-duration sleep unless nearing rate limit exhaustion
 	}
 
 	return nil

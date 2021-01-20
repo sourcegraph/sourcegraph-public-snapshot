@@ -25,11 +25,12 @@ func TestSearch(t *testing.T) {
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "gqltest-github-search",
 		Config: mustMarshalJSONString(struct {
-			URL   string   `json:"url"`
-			Token string   `json:"token"`
-			Repos []string `json:"repos"`
+			URL                   string   `json:"url"`
+			Token                 string   `json:"token"`
+			Repos                 []string `json:"repos"`
+			RepositoryPathPattern string   `json:"repositoryPathPattern"`
 		}{
-			URL:   "http://github.com",
+			URL:   "https://ghe.sgdev.org/",
 			Token: *githubToken,
 			Repos: []string{
 				"sgtest/java-langserver",
@@ -41,6 +42,7 @@ func TestSearch(t *testing.T) {
 				"sgtest/mux",      // Fork
 				"sgtest/archived", // Archived
 			},
+			RepositoryPathPattern: "github.com/{nameWithOwner}",
 		}),
 	})
 	if err != nil {
@@ -116,6 +118,37 @@ func TestSearch(t *testing.T) {
 		for _, r := range results.Results {
 			if !strings.HasSuffix(r.File.Name, ".go") {
 				t.Fatalf("Found file name does not end with .go: %s", r.File.Name)
+			}
+		}
+	})
+
+	t.Run("lang: filter", func(t *testing.T) {
+		// On our test repositories, `function` has results for go, ts, python, html
+		results, err := client.SearchFiles("function lang:go")
+		if err != nil {
+			t.Fatal(err)
+		}
+		// Make sure we only got .go files
+		for _, r := range results.Results {
+			if !strings.Contains(r.File.Name, ".go") {
+				t.Fatalf("Found file name does not end with .go: %s", r.File.Name)
+			}
+		}
+	})
+
+	t.Run("excluding repositories", func(t *testing.T) {
+		results, err := client.SearchFiles("fmt.Sprintf -repo:jsonrpc2")
+		if err != nil {
+			t.Fatal(err)
+		}
+		// Make sure we got some results
+		if len(results.Results) == 0 {
+			t.Fatal("Want non-zero results but got 0")
+		}
+		// Make sure we got no results from the excluded repository
+		for _, r := range results.Results {
+			if strings.Contains(r.Repository.Name, "jsonrpc2") {
+				t.Fatal("Got results for excluded repository")
 			}
 		}
 	})
@@ -255,6 +288,10 @@ func TestSearch(t *testing.T) {
 					"github.com/sgtest/mux",
 				},
 			},
+			{
+				name:  `Structural search returns repo results if patterntype set but pattern is empty`,
+				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ patterntype:structural`,
+			},
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
@@ -304,6 +341,10 @@ func TestSearch(t *testing.T) {
 				name:          "something with more than 1000 results and use count:1000",
 				query:         ". count:1000",
 				minMatchCount: 1001,
+			},
+			{
+				name:  "repohasfile returns results for global search",
+				query: "repohasfile:README",
 			},
 			{
 				name:  "regular expression without indexed search",
@@ -597,6 +638,18 @@ func TestSearch(t *testing.T) {
 				query: `repo:^github\.com/sgtest/go-diff file:^diff/print\.go Bytes() and Time() patterntype:literal`,
 			},
 			{
+				name:  `Literals, simple not keyword inside group`,
+				query: `repo:^github\.com/sgtest/go-diff$ (not .svg) patterntype:literal`,
+			},
+			{
+				name:  `Literals, not keyword and implicit and inside group`,
+				query: `repo:^github\.com/sgtest/go-diff$ (a/foo not .svg) patterntype:literal`,
+			},
+			{
+				name:  `Literals, not and and keyword inside group`,
+				query: `repo:^github\.com/sgtest/go-diff$ (a/foo and not .svg) patterntype:literal`,
+			},
+			{
 				name:  `Dangling right parens, supported via content: filter`,
 				query: `repo:^github\.com/sgtest/go-diff$ content:"diffPath)" and main patterntype:literal`,
 			},
@@ -742,6 +795,10 @@ func TestSearch(t *testing.T) {
 			{
 				name:  `Or distributive property on repo`,
 				query: `(repo:^github\.com/sgtest/go-diff$@garo/lsif-indexing-campaign:test-already-exist-pr or repo:^github\.com/sgtest/sourcegraph-typescript$) file:README.md #`,
+			},
+			{
+				name:  `Or distributive property on repo where only one repo contains match (tests repo cache is invalidated)`,
+				query: `(repo:^github\.com/sgtest/sourcegraph-typescript$ or repo:^github\.com/sgtest/go-diff$) package diff provides`,
 			},
 		}
 		for _, test := range tests {

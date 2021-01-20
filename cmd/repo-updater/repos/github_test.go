@@ -19,10 +19,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -93,7 +95,7 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			svc := &ExternalService{
+			svc := &types.ExternalService{
 				Kind: extsvc.KindGitHub,
 				Config: marshalJSON(t, &schema.GitHubConnection{
 					Url:   "https://github.com",
@@ -168,7 +170,7 @@ func TestGithubSource_CloseChangeset(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			svc := &ExternalService{
+			svc := &types.ExternalService{
 				Kind: extsvc.KindGitHub,
 				Config: marshalJSON(t, &schema.GitHubConnection{
 					Url:   "https://github.com",
@@ -236,7 +238,7 @@ func TestGithubSource_ReopenChangeset(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			svc := &ExternalService{
+			svc := &types.ExternalService{
 				Kind: extsvc.KindGitHub,
 				Config: marshalJSON(t, &schema.GitHubConnection{
 					Url:   "https://github.com",
@@ -306,7 +308,7 @@ func TestGithubSource_UpdateChangeset(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			svc := &ExternalService{
+			svc := &types.ExternalService{
 				Kind: extsvc.KindGitHub,
 				Config: marshalJSON(t, &schema.GitHubConnection{
 					Url:   "https://github.com",
@@ -378,7 +380,7 @@ func TestGithubSource_LoadChangeset(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			svc := &ExternalService{
+			svc := &types.ExternalService{
 				Kind: extsvc.KindGitHub,
 				Config: marshalJSON(t, &schema.GitHubConnection{
 					Url:   "https://github.com",
@@ -482,7 +484,7 @@ func TestGithubSource_GetRepo(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			svc := &ExternalService{
+			svc := &types.ExternalService{
 				Kind: extsvc.KindGitHub,
 				Config: marshalJSON(t, &schema.GitHubConnection{
 					Url: "https://github.com",
@@ -516,7 +518,7 @@ func TestGithubSource_makeRepo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	svc := ExternalService{ID: 1, Kind: extsvc.KindGitHub}
+	svc := types.ExternalService{ID: 1, Kind: extsvc.KindGitHub}
 
 	tests := []struct {
 		name   string
@@ -742,7 +744,7 @@ func TestGithubSource_ListRepos(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			svc := &ExternalService{
+			svc := &types.ExternalService{
 				Kind:   extsvc.KindGitHub,
 				Config: marshalJSON(t, tc.conf),
 			}
@@ -770,5 +772,53 @@ func githubGraphQLFailureMiddleware(cli httpcli.Doer) httpcli.Doer {
 			return nil, errors.New("graphql request failed")
 		}
 		return cli.Do(req)
+	})
+}
+
+func TestGithubSource_WithAuthenticator(t *testing.T) {
+	svc := &types.ExternalService{
+		Kind: extsvc.KindGitHub,
+		Config: marshalJSON(t, &schema.GitHubConnection{
+			Url:   "https://github.com",
+			Token: os.Getenv("GITHUB_TOKEN"),
+		}),
+	}
+
+	githubSrc, err := NewGithubSource(svc, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("supported", func(t *testing.T) {
+		src, err := githubSrc.WithAuthenticator(&auth.OAuthBearerToken{})
+		if err != nil {
+			t.Errorf("unexpected non-nil error: %v", err)
+		}
+
+		if gs, ok := src.(*GithubSource); !ok {
+			t.Error("cannot coerce Source into GithubSource")
+		} else if gs == nil {
+			t.Error("unexpected nil Source")
+		}
+	})
+
+	t.Run("unsupported", func(t *testing.T) {
+		for name, tc := range map[string]auth.Authenticator{
+			"nil":         nil,
+			"BasicAuth":   &auth.BasicAuth{},
+			"OAuthClient": &auth.OAuthClient{},
+		} {
+			t.Run(name, func(t *testing.T) {
+				src, err := githubSrc.WithAuthenticator(tc)
+				if err == nil {
+					t.Error("unexpected nil error")
+				} else if _, ok := err.(UnsupportedAuthenticatorError); !ok {
+					t.Errorf("unexpected error of type %T: %v", err, err)
+				}
+				if src != nil {
+					t.Errorf("expected non-nil Source: %v", src)
+				}
+			})
+		}
 	})
 }

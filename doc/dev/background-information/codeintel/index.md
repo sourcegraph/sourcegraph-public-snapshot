@@ -6,3 +6,4 @@ This guide documents our approach to developing code intelligence-related featur
 - [How LSIF indexes are processed](uploads.md)
 - [How precise code intelligence queries are resolved](queries.md)
 - [How code intelligence extensions resolve hovers](extensions.md)
+- [How Sourcegraph auto-indexes source code](auto-indexing.md)

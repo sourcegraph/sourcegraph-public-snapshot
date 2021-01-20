@@ -13,8 +13,10 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -52,7 +54,7 @@ func TestBitbucketServerSource_MakeRepo(t *testing.T) {
 		},
 	}
 
-	svc := ExternalService{ID: 1, Kind: extsvc.KindBitbucketServer}
+	svc := types.ExternalService{ID: 1, Kind: extsvc.KindBitbucketServer}
 
 	for name, config := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -125,7 +127,7 @@ func TestBitbucketServerSource_Exclude(t *testing.T) {
 		},
 	}
 
-	svc := ExternalService{ID: 1, Kind: extsvc.KindBitbucketServer}
+	svc := types.ExternalService{ID: 1, Kind: extsvc.KindBitbucketServer}
 
 	for name, config := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -204,7 +206,7 @@ func TestBitbucketServerSource_LoadChangeset(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			svc := &ExternalService{
+			svc := &types.ExternalService{
 				Kind: extsvc.KindBitbucketServer,
 				Config: marshalJSON(t, &schema.BitbucketServerConnection{
 					Url:   instanceURL,
@@ -314,7 +316,7 @@ func TestBitbucketServerSource_CreateChangeset(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			svc := &ExternalService{
+			svc := &types.ExternalService{
 				Kind: extsvc.KindBitbucketServer,
 				Config: marshalJSON(t, &schema.BitbucketServerConnection{
 					Url:   instanceURL,
@@ -387,7 +389,7 @@ func TestBitbucketServerSource_CloseChangeset(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			svc := &ExternalService{
+			svc := &types.ExternalService{
 				Kind: extsvc.KindBitbucketServer,
 				Config: marshalJSON(t, &schema.BitbucketServerConnection{
 					Url:   instanceURL,
@@ -456,7 +458,7 @@ func TestBitbucketServerSource_ReopenChangeset(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			svc := &ExternalService{
+			svc := &types.ExternalService{
 				Kind: extsvc.KindBitbucketServer,
 				Config: marshalJSON(t, &schema.BitbucketServerConnection{
 					Url:   instanceURL,
@@ -530,7 +532,7 @@ func TestBitbucketServerSource_UpdateChangeset(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			svc := &ExternalService{
+			svc := &types.ExternalService{
 				Kind: extsvc.KindBitbucketServer,
 				Config: marshalJSON(t, &schema.BitbucketServerConnection{
 					Url:   instanceURL,
@@ -563,4 +565,59 @@ func TestBitbucketServerSource_UpdateChangeset(t *testing.T) {
 			testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), pr)
 		})
 	}
+}
+
+func TestBitbucketServerSource_WithAuthenticator(t *testing.T) {
+	svc := &types.ExternalService{
+		Kind: extsvc.KindBitbucketServer,
+		Config: marshalJSON(t, &schema.BitbucketServerConnection{
+			Url:   "https://bitbucket.sgdev.org",
+			Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
+		}),
+	}
+
+	bbsSrc, err := NewBitbucketServerSource(svc, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("supported", func(t *testing.T) {
+		for name, tc := range map[string]auth.Authenticator{
+			"BasicAuth":           &auth.BasicAuth{},
+			"OAuthBearerToken":    &auth.OAuthBearerToken{},
+			"SudoableOAuthClient": &bitbucketserver.SudoableOAuthClient{},
+		} {
+			t.Run(name, func(t *testing.T) {
+				src, err := bbsSrc.WithAuthenticator(tc)
+				if err != nil {
+					t.Errorf("unexpected non-nil error: %v", err)
+				}
+
+				if gs, ok := src.(*BitbucketServerSource); !ok {
+					t.Error("cannot coerce Source into bbsSource")
+				} else if gs == nil {
+					t.Error("unexpected nil Source")
+				}
+			})
+		}
+	})
+
+	t.Run("unsupported", func(t *testing.T) {
+		for name, tc := range map[string]auth.Authenticator{
+			"nil":         nil,
+			"OAuthClient": &auth.OAuthClient{},
+		} {
+			t.Run(name, func(t *testing.T) {
+				src, err := bbsSrc.WithAuthenticator(tc)
+				if err == nil {
+					t.Error("unexpected nil error")
+				} else if _, ok := err.(UnsupportedAuthenticatorError); !ok {
+					t.Errorf("unexpected error of type %T: %v", err, err)
+				}
+				if src != nil {
+					t.Errorf("expected non-nil Source: %v", src)
+				}
+			})
+		}
+	})
 }

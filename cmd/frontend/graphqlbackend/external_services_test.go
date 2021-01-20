@@ -10,10 +10,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -30,6 +30,13 @@ func TestAddExternalService(t *testing.T) {
 		}()
 
 		t.Run("user mode not enabled and no namespace", func(t *testing.T) {
+			db.Mocks.Users.HasTag = func(ctx context.Context, userID int32, tag string) (bool, error) {
+				return false, nil
+			}
+			defer func() {
+				db.Mocks.Users.HasTag = nil
+			}()
+
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 			result, err := (&schemaResolver{}).AddExternalService(ctx, &addExternalServiceArgs{})
 			if want := backend.ErrMustBeSiteAdmin; err != want {
@@ -41,6 +48,12 @@ func TestAddExternalService(t *testing.T) {
 		})
 
 		t.Run("user mode not enabled and has namespace", func(t *testing.T) {
+			db.Mocks.Users.HasTag = func(ctx context.Context, userID int32, tag string) (bool, error) {
+				return false, nil
+			}
+			defer func() {
+				db.Mocks.Users.HasTag = nil
+			}()
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 			userID := MarshalUserID(1)
 			result, err := (&schemaResolver{}).AddExternalService(ctx, &addExternalServiceArgs{
@@ -66,6 +79,13 @@ func TestAddExternalService(t *testing.T) {
 				},
 			})
 			defer conf.Mock(nil)
+
+			db.Mocks.Users.HasTag = func(ctx context.Context, userID int32, tag string) (bool, error) {
+				return false, nil
+			}
+			defer func() {
+				db.Mocks.Users.HasTag = nil
+			}()
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 			userID := MarshalUserID(2)
@@ -93,6 +113,12 @@ func TestAddExternalService(t *testing.T) {
 			})
 			defer conf.Mock(nil)
 
+			db.Mocks.Users.HasTag = func(ctx context.Context, userID int32, tag string) (bool, error) {
+				return false, nil
+			}
+			defer func() {
+				db.Mocks.Users.HasTag = nil
+			}()
 			db.Mocks.ExternalServices.Create = func(ctx context.Context, confGet func() *conf.Unified, externalService *types.ExternalService) error {
 				return nil
 			}
@@ -113,10 +139,10 @@ func TestAddExternalService(t *testing.T) {
 			}
 
 			// We want to check the namespace field is populated
-			if result.externalService.NamespaceUserID == nil {
+			if result.externalService.NamespaceUserID == 0 {
 				t.Fatal("NamespaceUserID: want non-nil but got nil")
-			} else if *result.externalService.NamespaceUserID != userID {
-				t.Fatalf("NamespaceUserID: want %d but got %d", userID, *result.externalService.NamespaceUserID)
+			} else if result.externalService.NamespaceUserID != userID {
+				t.Fatalf("NamespaceUserID: want %d but got %d", userID, result.externalService.NamespaceUserID)
 			}
 		})
 
@@ -128,6 +154,12 @@ func TestAddExternalService(t *testing.T) {
 			})
 			defer conf.Mock(nil)
 
+			db.Mocks.Users.HasTag = func(ctx context.Context, userID int32, tag string) (bool, error) {
+				return true, nil
+			}
+			defer func() {
+				db.Mocks.Users.HasTag = nil
+			}()
 			db.Mocks.ExternalServices.Create = func(ctx context.Context, confGet func() *conf.Unified, externalService *types.ExternalService) error {
 				return nil
 			}
@@ -139,7 +171,7 @@ func TestAddExternalService(t *testing.T) {
 				return &types.User{
 					ID: 1,
 					Tags: []string{
-						backend.TagAllowUserExternalServicePublic,
+						db.TagAllowUserExternalServicePublic,
 					},
 				}, nil
 			}
@@ -161,10 +193,10 @@ func TestAddExternalService(t *testing.T) {
 			}
 
 			// We want to check the namespace field is populated
-			if result.externalService.NamespaceUserID == nil {
+			if result.externalService.NamespaceUserID == 0 {
 				t.Fatal("NamespaceUserID: want non-nil but got nil")
-			} else if *result.externalService.NamespaceUserID != userID {
-				t.Fatalf("NamespaceUserID: want %d but got %d", userID, *result.externalService.NamespaceUserID)
+			} else if result.externalService.NamespaceUserID != userID {
+				t.Fatalf("NamespaceUserID: want %d but got %d", userID, result.externalService.NamespaceUserID)
 			}
 		})
 	})
@@ -249,7 +281,7 @@ func TestUpdateExternalService(t *testing.T) {
 			db.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
 				return &types.ExternalService{
 					ID:              id,
-					NamespaceUserID: &userID,
+					NamespaceUserID: userID,
 				}, nil
 			}
 			defer func() {
@@ -278,7 +310,7 @@ func TestUpdateExternalService(t *testing.T) {
 			db.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
 				return &types.ExternalService{
 					ID:              id,
-					NamespaceUserID: &userID,
+					NamespaceUserID: userID,
 				}, nil
 			}
 			calledUpdate := false
@@ -349,14 +381,14 @@ func TestUpdateExternalService(t *testing.T) {
 		if cachedUpdate == nil {
 			return &types.ExternalService{
 				ID:              id,
-				NamespaceUserID: &userID,
+				NamespaceUserID: userID,
 			}, nil
 		}
 		return &types.ExternalService{
 			ID:              id,
 			DisplayName:     *cachedUpdate.DisplayName,
 			Config:          *cachedUpdate.Config,
-			NamespaceUserID: &userID,
+			NamespaceUserID: userID,
 		}, nil
 	}
 	t.Cleanup(func() {
@@ -427,7 +459,7 @@ func TestDeleteExternalService(t *testing.T) {
 			db.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
 				return &types.ExternalService{
 					ID:              id,
-					NamespaceUserID: &userID,
+					NamespaceUserID: userID,
 				}, nil
 			}
 			defer func() {
@@ -454,7 +486,7 @@ func TestDeleteExternalService(t *testing.T) {
 			db.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
 				return &types.ExternalService{
 					ID:              id,
-					NamespaceUserID: &userID,
+					NamespaceUserID: userID,
 				}, nil
 			}
 			calledDelete := false
@@ -489,7 +521,7 @@ func TestDeleteExternalService(t *testing.T) {
 		userID := int32(1)
 		return &types.ExternalService{
 			ID:              id,
-			NamespaceUserID: &userID,
+			NamespaceUserID: userID,
 		}, nil
 	}
 	t.Cleanup(func() {

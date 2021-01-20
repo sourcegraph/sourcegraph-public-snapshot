@@ -38,8 +38,8 @@ export function defaultPatternTypeFromSettings(settingsCascade: SettingsCascadeO
         const defaultPatternType =
             settingsCascade.final &&
             !isErrorLike(settingsCascade.final) &&
-            settingsCascade.final['search.defaultPatternType']
-        return defaultPatternType || 'literal'
+            (settingsCascade.final['search.defaultPatternType'] as SearchPatternType.literal)
+        return defaultPatternType || SearchPatternType.literal
     }
     return
 }
@@ -49,12 +49,12 @@ export function experimentalFeaturesFromSettings(
 ): {
     splitSearchModes: boolean
     copyQueryButton: boolean
-    searchStreaming: boolean
     showRepogroupHomepage: boolean
     showOnboardingTour: boolean
     showEnterpriseHomePanels: boolean
     showMultilineSearchConsole: boolean
     showQueryBuilder: boolean
+    enableSmartQuery: boolean
 } {
     const experimentalFeatures: SettingsExperimentalFeatures =
         (settingsCascade.final && !isErrorLike(settingsCascade.final) && settingsCascade.final.experimentalFeatures) ||
@@ -63,22 +63,22 @@ export function experimentalFeaturesFromSettings(
     const {
         splitSearchModes = false,
         copyQueryButton = false,
-        searchStreaming = false,
         showRepogroupHomepage = false,
-        showOnboardingTour = false,
+        showOnboardingTour = true, // Default to true if not set
         showEnterpriseHomePanels = true, // Default to true if not set
         showMultilineSearchConsole = false,
         showQueryBuilder = false,
+        enableSmartQuery = false,
     } = experimentalFeatures
 
     return {
         splitSearchModes,
         copyQueryButton,
-        searchStreaming,
         showRepogroupHomepage,
         showOnboardingTour,
         showEnterpriseHomePanels,
         showMultilineSearchConsole,
         showQueryBuilder,
+        enableSmartQuery,
     }
 }

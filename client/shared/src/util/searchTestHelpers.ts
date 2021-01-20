@@ -1,18 +1,19 @@
 import { of } from 'rxjs'
 import sinon from 'sinon'
+import { FlatExtensionHostAPI } from '../api/contract'
+import { pretendRemote } from '../api/util'
 import { Controller } from '../extensions/controller'
 import {
-    ISearchResults,
     IFileMatch,
-    ILineMatch,
     IGitBlob,
     IGitCommit,
+    ILineMatch,
     IRepository,
+    ISearchResultMatch,
+    ISearchResults,
     ISymbol,
     SearchResult,
 } from '../graphql/schema'
-import { pretendRemote } from '../api/util'
-import { FlatExtensionHostAPI } from '../api/contract'
 
 export const RESULT = {
     __typename: 'FileMatch' as const,
@@ -33,6 +34,14 @@ export const RESULT = {
         } as ILineMatch,
     ],
 } as IFileMatch
+
+export const REPO_MATCH_RESULT = {
+    __typename: 'Repository',
+    name: 'github.com/golang/oauth2',
+    url: '/github.com/golang/oauth2',
+    matches: [] as ISearchResultMatch[],
+    label: { __typename: 'Markdown', text: '[github.com/golang/oauth2](github.com/golang/oauth2)' },
+} as IRepository
 
 export const MULTIPLE_MATCH_RESULT = {
     __typename: 'FileMatch',
@@ -119,7 +128,7 @@ export const MULTIPLE_MATCH_RESULT = {
 export const SEARCH_RESULT = {
     __typename: 'SearchResults' as const,
     limitHit: false,
-    resultCount: 1,
+    matchCount: 1,
     approximateResultCount: '1',
     missing: [] as IRepository[],
     cloning: [] as IRepository[],
@@ -144,7 +153,7 @@ export const SEARCH_RESULT = {
 export const MULTIPLE_SEARCH_RESULT = {
     ...SEARCH_RESULT,
     limitHit: false,
-    resultCount: 136,
+    matchCount: 136,
     approximateResultCount: '136',
     results: [
         RESULT,

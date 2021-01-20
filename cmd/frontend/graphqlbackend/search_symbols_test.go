@@ -7,9 +7,9 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/gituri"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -22,11 +22,12 @@ func TestMakeFileMatchURIFromSymbol(t *testing.T) {
 	}
 	baseURI, _ := gituri.Parse("https://github.com/foo/bar")
 	gitSignatureWithDate := git.Signature{Date: time.Now().UTC().AddDate(0, 0, -1)}
-	commit := &GitCommitResolver{
-		repoResolver: &RepositoryResolver{repo: &types.Repo{ID: 1, Name: "repo"}},
-		oid:          "c1",
-		author:       *toSignatureResolver(&gitSignatureWithDate, false),
-	}
+
+	commit := toGitCommitResolver(
+		&RepositoryResolver{repo: &types.Repo{ID: 1, Name: "repo"}},
+		"c1",
+		&git.Commit{ID: "c1", Author: gitSignatureWithDate},
+	)
 	sr := &searchSymbolResult{symbol, baseURI, "go", commit}
 
 	tests := []struct {

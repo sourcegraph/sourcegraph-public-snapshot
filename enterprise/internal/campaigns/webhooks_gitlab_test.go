@@ -11,11 +11,12 @@ import (
 	"strconv"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
@@ -24,6 +25,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -213,7 +216,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 				es := createGitLabExternalService(t, ctx, rstore)
 
 				u := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, "https://example.com/")
-				body := marshalJSON(t, &webhooks.EventCommon{
+				body := ct.MarshalJSON(t, &webhooks.EventCommon{
 					ObjectKind: "unknown",
 				})
 				req, err := http.NewRequest("POST", u, bytes.NewBufferString(body))
@@ -246,7 +249,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 				}
 				conn := cfg.(*schema.GitLabConnection)
 				conn.Url = ""
-				es.Config = marshalJSON(t, conn)
+				es.Config = ct.MarshalJSON(t, conn)
 				if err := rstore.UpsertExternalServices(ctx, es); err != nil {
 					t.Fatal(err)
 				}
@@ -430,7 +433,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			})
 
 			t.Run("valid ID", func(t *testing.T) {
-				for id, want := range map[int64]*repos.ExternalService{
+				for id, want := range map[int64]*types.ExternalService{
 					a.ID: a,
 					b.ID: b,
 				} {
@@ -720,7 +723,7 @@ func TestValidateGitLabSecret(t *testing.T) {
 	})
 
 	t.Run("invalid configuration", func(t *testing.T) {
-		es := &repos.ExternalService{}
+		es := &types.ExternalService{}
 		ok, err := validateGitLabSecret(es, "secret")
 		if ok {
 			t.Errorf("unexpected ok: %v", ok)
@@ -731,7 +734,7 @@ func TestValidateGitLabSecret(t *testing.T) {
 	})
 
 	t.Run("not a GitLab connection", func(t *testing.T) {
-		es := &repos.ExternalService{Kind: extsvc.KindGitHub}
+		es := &types.ExternalService{Kind: extsvc.KindGitHub}
 		ok, err := validateGitLabSecret(es, "secret")
 		if ok {
 			t.Errorf("unexpected ok: %v", ok)
@@ -742,9 +745,9 @@ func TestValidateGitLabSecret(t *testing.T) {
 	})
 
 	t.Run("no webhooks", func(t *testing.T) {
-		es := &repos.ExternalService{
+		es := &types.ExternalService{
 			Kind: extsvc.KindGitLab,
-			Config: marshalJSON(t, &schema.GitLabConnection{
+			Config: ct.MarshalJSON(t, &schema.GitLabConnection{
 				Webhooks: []*schema.GitLabWebhook{},
 			}),
 		}
@@ -765,9 +768,9 @@ func TestValidateGitLabSecret(t *testing.T) {
 			"super":      true,
 		} {
 			t.Run(secret, func(t *testing.T) {
-				es := &repos.ExternalService{
+				es := &types.ExternalService{
 					Kind: extsvc.KindGitLab,
-					Config: marshalJSON(t, &schema.GitLabConnection{
+					Config: ct.MarshalJSON(t, &schema.GitLabConnection{
 						Webhooks: []*schema.GitLabWebhook{
 							{Secret: "super"},
 							{Secret: "secret"},
@@ -841,7 +844,7 @@ func (nntx *noNestingTx) BeginTx(ctx context.Context, opts *sql.TxOptions) error
 // Any changes made to the stores will be rolled back after the test is
 // complete.
 func gitLabTestSetup(t *testing.T, db *sql.DB) (*Store, repos.Store, clock) {
-	c := &testClock{t: time.Now().UTC().Truncate(time.Microsecond)}
+	c := &testClock{t: timeutil.Now()}
 	tx := dbtest.NewTx(t, db)
 
 	// Note that tx is wrapped in nestedTx to effectively neuter further use of
@@ -890,12 +893,13 @@ func assertChangesetEventForChangeset(t *testing.T, ctx context.Context, store *
 
 // createGitLabExternalService creates a mock GitLab service with a valid
 // configuration, including the secrets "super" and "secret".
-func createGitLabExternalService(t *testing.T, ctx context.Context, rstore repos.Store) *repos.ExternalService {
-	es := &repos.ExternalService{
+func createGitLabExternalService(t *testing.T, ctx context.Context, rstore repos.Store) *types.ExternalService {
+	es := &types.ExternalService{
 		Kind:        extsvc.KindGitLab,
 		DisplayName: "gitlab",
-		Config: marshalJSON(t, &schema.GitLabConnection{
-			Url: "https://gitlab.com/",
+		Config: ct.MarshalJSON(t, &schema.GitLabConnection{
+			Url:   "https://gitlab.com/",
+			Token: "secret-gitlab-token",
 			Webhooks: []*schema.GitLabWebhook{
 				{Secret: "super"},
 				{Secret: "secret"},
@@ -911,7 +915,7 @@ func createGitLabExternalService(t *testing.T, ctx context.Context, rstore repos
 
 // createGitLabRepo creates a mock GitLab repo attached to the given external
 // service.
-func createGitLabRepo(t *testing.T, ctx context.Context, rstore repos.Store, es *repos.ExternalService) *repos.Repo {
+func createGitLabRepo(t *testing.T, ctx context.Context, rstore repos.Store, es *types.ExternalService) *repos.Repo {
 	repo := (&repos.Repo{
 		Name: "gitlab.com/sourcegraph/test",
 		URI:  "gitlab.com/sourcegraph/test",
@@ -958,7 +962,7 @@ func createMergeRequestPayload(t *testing.T, repo *repos.Repo, changeset *campai
 	// We use an untyped set of maps here because the webhooks package doesn't
 	// export its internal mergeRequestEvent type that is used for
 	// unmarshalling. (Which is fine; it's an implementation detail.)
-	return marshalJSON(t, map[string]interface{}{
+	return ct.MarshalJSON(t, map[string]interface{}{
 		"object_kind": "merge_request",
 		"project": map[string]interface{}{
 			"id": pid,
@@ -999,5 +1003,5 @@ func createPipelinePayload(t *testing.T, repo *repos.Repo, changeset *campaigns.
 		}
 	}
 
-	return marshalJSON(t, payload)
+	return ct.MarshalJSON(t, payload)
 }

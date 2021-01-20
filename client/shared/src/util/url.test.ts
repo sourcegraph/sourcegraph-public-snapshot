@@ -31,12 +31,26 @@ describe('parseRepoURI', () => {
             repoName: 'github.com/gorilla/mux',
         })
     })
+    test('should parse repo with spaces', () => {
+        const parsed = parseRepoURI('git://sourcegraph.visualstudio.com/Test%20Repo')
+        assertDeepStrictEqual(parsed, {
+            repoName: 'sourcegraph.visualstudio.com/Test Repo',
+        })
+    })
 
     test('should parse repo with revision', () => {
         const parsed = parseRepoURI('git://github.com/gorilla/mux?branch')
         assertDeepStrictEqual(parsed, {
             repoName: 'github.com/gorilla/mux',
             revision: 'branch',
+        })
+    })
+
+    test('should parse repo with revision with special characters', () => {
+        const parsed = parseRepoURI('git://github.com/gorilla/mux?my%2Fbranch')
+        assertDeepStrictEqual(parsed, {
+            repoName: 'github.com/gorilla/mux',
+            revision: 'my/branch',
         })
     })
 
@@ -55,6 +69,15 @@ describe('parseRepoURI', () => {
             repoName: 'github.com/gorilla/mux',
             revision: 'branch',
             filePath: 'mux.go',
+        })
+    })
+
+    test('should parse repo with revision and file with spaces', () => {
+        const parsed = parseRepoURI('git://github.com/gorilla/mux?branch#my%20file.go')
+        assertDeepStrictEqual(parsed, {
+            repoName: 'github.com/gorilla/mux',
+            revision: 'branch',
+            filePath: 'my file.go',
         })
     })
 

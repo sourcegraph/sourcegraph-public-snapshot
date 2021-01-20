@@ -15,8 +15,46 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
-- GraphQL syntax highlighting is now back (special thanks to @rvantonder) [#13935](https://github.com/sourcegraph/sourcegraph/issues/13935)
+- Password reset link expiration can be customized via `auth.passwordResetLinkExpiry` in the site config. [#13999](https://github.com/sourcegraph/sourcegraph/issues/13999)
+- Campaign steps may now include environment variables from outside of the campaign spec using [array syntax](http://docs.sourcegraph.com/campaigns/references/campaign_spec_yaml_reference#environment-array). [#15822](https://github.com/sourcegraph/sourcegraph/issues/15822)
+- The total size of all Git repositories and the lines of code for indexed branches are displayed in the site admin overview. [#15125](https://github.com/sourcegraph/sourcegraph/issues/15125)
+- Extensions can now add decorations to files on the sidebar tree view and tree page through the experimental `FileDecoration` API. [#15833](https://github.com/sourcegraph/sourcegraph/pull/15833)
+- Extensions can now easily query the Sourcegraph GraphQL API through a dedicated API method. [#15566](https://github.com/sourcegraph/sourcegraph/pull/15566)
+- Individual changesets can now be downloaded as a diff. [#16098](https://github.com/sourcegraph/sourcegraph/issues/16098)
+- The campaigns preview page is much more detailed now, especially when updating existing campaigns. [#16240](https://github.com/sourcegraph/sourcegraph/pull/16240)
+
+### Changed
+
+- Search indexer tuned to wait longer before assuming a deadlock has occurred. Previously if the indexserver had many cores (40+) and indexed a monorepo it could give up. [#16110](https://github.com/sourcegraph/sourcegraph/pull/16110)
+- The total size of all Git repositories and the lines of code for indexed branches will be sent back in pings as part of critical telemetry. [#16188](https://github.com/sourcegraph/sourcegraph/pull/16188)
+- The `gitserver` container now has a dependency on Postgres. This does not require any additional configuration unless access to Postgres requires a sidecar proxy / firewall rules. [#16121](https://github.com/sourcegraph/sourcegraph/pull/16121)
+
+### Fixed
+
+- Syntax highlighting on files with mixed extension case (e.g. `.CPP` vs `.cpp`) now works as expected. [#11327](https://github.com/sourcegraph/sourcegraph/issues/11327)
+- After applying a campaign, some GitLab MRs might have had outdated state shown in the UI until the next sync with the code host. [#16100](https://github.com/sourcegraph/sourcegraph/pull/16100)
+- The web app no longer sends stale text document content to extensions. [#14965](https://github.com/sourcegraph/sourcegraph/issues/14965)
+- The blob viewer now supports multiple decorations per line as intended. [#15063](https://github.com/sourcegraph/sourcegraph/issues/15063)
+
+### Removed
+
+-
+
+## 3.22.0
+
+### Added
+
+- GraphQL and TOML syntax highlighting is now back (special thanks to @rvantonder) [#13935](https://github.com/sourcegraph/sourcegraph/issues/13935)
+- Zig and DreamMaker syntax highlighting.
 - Campaigns now support publishing GitHub draft PRs and GitLab WIP MRs. [#7998](https://github.com/sourcegraph/sourcegraph/issues/7998)
+- `indexed-searcher`'s watchdog can be configured and has additional instrumentation. This is useful when diagnosing [zoekt-webserver is restarting due to watchdog](https://docs.sourcegraph.com/admin/observability/troubleshooting#scenario-zoekt-webserver-is-restarting-due-to-watchdog). [#15148](https://github.com/sourcegraph/sourcegraph/pull/15148)
+- Pings now contain Redis & Postgres server versions. [14405](https://github.com/sourcegraph/sourcegraph/14405)
+- Aggregated usage data of the search onboarding tour is now included in pings. The data tracked are: total number of views of the onboarding tour, total number of views of each step in the onboarding tour, total number of tours closed. [#15113](https://github.com/sourcegraph/sourcegraph/pull/15113)
+- Users can now specify credentials for code hosts to enable campaigns for non site-admin users. [#15506](https://github.com/sourcegraph/sourcegraph/pull/15506)
+- A `campaigns.restrictToAdmins` site configuration option has been added to prevent non site-admin users from using campaigns. [#15785](https://github.com/sourcegraph/sourcegraph/pull/15785)
+- Number of page views on campaign apply page, page views on campaign details page after create/update, closed campaigns, created campaign specs and changesets specs and the sum of changeset diff stats will be sent back in pings. [#15279](https://github.com/sourcegraph/sourcegraph/pull/15279)
+- Users can now explicitly set their primary email address. [#15683](https://github.com/sourcegraph/sourcegraph/pull/15683)
+- "[Why code search is still needed for monorepos](https://docs.sourcegraph.com/adopt/code_search_in_monorepos)" doc page
 
 ### Changed
 
@@ -24,6 +62,8 @@ All notable changes to Sourcegraph are documented in this file.
 - Campaigns are no longer in beta. [#14900](https://github.com/sourcegraph/sourcegraph/pull/14900)
 - Campaigns now have a fancy new icon. [#14740](https://github.com/sourcegraph/sourcegraph/pull/14740)
 - Search queries with an unbalanced closing paren `)` are now invalid, since this likely indicates an error. Previously, patterns with dangling `)` were valid in some cases. Note that patterns with dangling `)` can still be searched, but should be quoted via `content:"foo)"`. [#15042](https://github.com/sourcegraph/sourcegraph/pull/15042)
+- Extension providers can now return AsyncIterables, enabling dynamic provider results without dependencies. [#15042](https://github.com/sourcegraph/sourcegraph/issues/15061)
+- Deprecated the `"email.smtp": { "disableTLS" }` site config option, this field has been replaced by `"email.smtp": { "noVerifyTLS" }`. [#15682](https://github.com/sourcegraph/sourcegraph/pull/15682)
 
 ### Fixed
 
@@ -31,6 +71,17 @@ All notable changes to Sourcegraph are documented in this file.
 - OAuth login now respects site configuration `experimentalFeatures: { "tls.external": {...} }` for custom certificates and skipping TLS verify. [#14144](https://github.com/sourcegraph/sourcegraph/issues/14144)
 - If the `HEAD` file in a cloned repo is absent or truncated, background cleanup activities will use a best-effort default to remedy the situation. [#14962](https://github.com/sourcegraph/sourcegraph/pull/14962)
 - Search input will always show suggestions. Previously we only showed suggestions for letters and some special characters. [#14982](https://github.com/sourcegraph/sourcegraph/pull/14982)
+- Fixed an issue where `not` keywords were not recognized inside expression groups, and treated incorrectly as patterns. [#15139](https://github.com/sourcegraph/sourcegraph/pull/15139)
+- Fixed an issue where hover pop-ups would not show on the first character of a valid hover range in search queries. [#15410](https://github.com/sourcegraph/sourcegraph/pull/15410)
+- Fixed an issue where submodules configured with a relative URL resulted in non-functional hyperlinks in the file tree UI. [#15286](https://github.com/sourcegraph/sourcegraph/issues/15286)
+- Pushing commits to public GitLab repositories with campaigns now works, since we use the configured token even if the repository is public. [#15536](https://github.com/sourcegraph/sourcegraph/pull/15536)
+- `.kts` is now highlighted properly as Kotlin code, fixed various other issues in Kotlin syntax highlighting.
+- Fixed an issue where the value of `content:` was treated literally when the regular expression toggle is active. [#15639](https://github.com/sourcegraph/sourcegraph/pull/15639)
+- Fixed an issue where non-site admins were prohibited from updating some of their other personal metadata when `auth.enableUsernameChanges` was `false`. [#15663](https://github.com/sourcegraph/sourcegraph/issues/15663)
+- Fixed the `url` fields of repositories and trees in GraphQL returning URLs that were not %-encoded (e.g. when the repository name contained spaces). [#15667](https://github.com/sourcegraph/sourcegraph/issues/15667)
+- Fixed "Find references" showing errors in the references panel in place of the syntax-highlighted code for repositories with spaces in their name. [#15618](https://github.com/sourcegraph/sourcegraph/issues/15618)
+- Fixed an issue where specifying the `repohasfile` filter did not return results as expected unless `repo` was specified. [#15894](https://github.com/sourcegraph/sourcegraph/pull/15894)
+- Fixed an issue causing user input in the search query field to be erased in some cases. [#15921](https://github.com/sourcegraph/sourcegraph/issues/15921).
 
 ### Removed
 
@@ -73,6 +124,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Homepage panel engagement metrics will be sent back in pings. [#14589](https://github.com/sourcegraph/sourcegraph/pull/14589)
 - Homepage now has a footer with links to different extensibility features. [#14638](https://github.com/sourcegraph/sourcegraph/issues/14638)
 - Added an onboarding tour of Sourcegraph for new users. It can be enabled in user settings with `experimentalFeatures.showOnboardingTour` [#14636](https://github.com/sourcegraph/sourcegraph/pull/14636)
+- Added an onboarding tour of Sourcegraph for new users. [#14636](https://github.com/sourcegraph/sourcegraph/pull/14636)
 - Repository GraphQL queries now support an `after` parameter that permits cursor-based pagination. [#13715](https://github.com/sourcegraph/sourcegraph/issues/13715)
 - Searches in the Recent Searches panel and other places are now syntax highlighted. [#14443](https://github.com/sourcegraph/sourcegraph/issues/14443)
 
@@ -1653,7 +1705,7 @@ See the changelog entries for 3.0.0 beta releases and our [3.0](doc/admin/migrat
 
 ### Removed
 
-- The deprecated environment variables `SRC_SESSION_STORE_REDIS` and `REDIS_MASTER_ENDPOINT` are no longer used to configure alternative redis endpoints. For more information, see "[Using external databases with Sourcegraph](https://docs.sourcegraph.com/admin/external_database)".
+- The deprecated environment variables `SRC_SESSION_STORE_REDIS` and `REDIS_MASTER_ENDPOINT` are no longer used to configure alternative redis endpoints. For more information, see "[using external services with Sourcegraph](https://docs.sourcegraph.com/admin/external_services)".
 
 ## 2.11.1
 

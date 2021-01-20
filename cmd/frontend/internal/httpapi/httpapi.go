@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
 	"reflect"
@@ -18,8 +19,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	apirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/webhookhandlers"
 	frontendsearch "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -32,7 +37,7 @@ import (
 //
 // 🚨 SECURITY: The caller MUST wrap the returned handler in middleware that checks authentication
 // and sets the actor in the request context.
-func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook, gitlabWebhook, bitbucketServerWebhook http.Handler, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler) http.Handler {
+func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook webhooks.Registerer, gitlabWebhook, bitbucketServerWebhook http.Handler, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler) http.Handler {
 	if m == nil {
 		m = apirouter.New(nil)
 	}
@@ -50,7 +55,17 @@ func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook, gitlabWebh
 
 	m.Get(apirouter.RepoRefresh).Handler(trace.TraceRoute(handler(serveRepoRefresh)))
 
-	m.Get(apirouter.GitHubWebhooks).Handler(trace.TraceRoute(githubWebhook))
+	gh := webhooks.GitHubWebhook{
+		Repos: repos.NewDBStore(dbconn.Global, sql.TxOptions{}),
+	}
+
+	webhookhandlers.Init(&gh)
+
+	m.Get(apirouter.GitHubWebhooks).Handler(trace.TraceRoute(&gh))
+
+	githubWebhook.Register(&gh)
+
+	m.Get(apirouter.GitHubWebhooks).Handler(trace.TraceRoute(&gh))
 	m.Get(apirouter.GitLabWebhooks).Handler(trace.TraceRoute(gitlabWebhook))
 	m.Get(apirouter.BitbucketServerWebhooks).Handler(trace.TraceRoute(bitbucketServerWebhook))
 	m.Get(apirouter.LSIFUpload).Handler(trace.TraceRoute(newCodeIntelUploadHandler(false)))

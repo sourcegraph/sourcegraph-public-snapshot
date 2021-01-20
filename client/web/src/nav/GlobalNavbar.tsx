@@ -62,6 +62,9 @@ interface Props
     // Whether globbing is enabled for filters.
     globbing: boolean
 
+    // Whether to additionally highlight or provide hovers for tokens, e.g., regexp character sets.
+    enableSmartQuery: boolean
+
     /**
      * Which variation of the global navbar to render.
      *
@@ -135,7 +138,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
         } else {
             onNavbarQueryChange({ query, cursorPosition: query.length })
         }
-    }, [interactiveSearchMode, isSearchRelatedPage, location, onFiltersInQueryChange, onNavbarQueryChange, query])
+    }, [interactiveSearchMode, isSearchRelatedPage, onFiltersInQueryChange, onNavbarQueryChange, query])
 
     const logo = (
         <LinkOrSpan to={authRequired ? undefined : '/search'} className="global-navbar__logo-link">

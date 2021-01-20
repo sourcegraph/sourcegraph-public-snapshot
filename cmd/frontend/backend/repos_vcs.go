@@ -9,7 +9,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -17,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -66,6 +66,11 @@ func quickGitserverRepo(ctx context.Context, repo api.RepoName, serviceType stri
 	//
 	// This fails for private repositories, which require authentication in the URL userinfo.
 
+	r := &gitserver.Repo{Name: repo, URL: "https://" + string(repo) + ".git"}
+	if envvar.SourcegraphDotComMode() {
+		return r, nil
+	}
+
 	lowerRepo := strings.ToLower(string(repo))
 	var hasToken func(context.Context) (bool, error)
 	switch {
@@ -75,11 +80,6 @@ func quickGitserverRepo(ctx context.Context, repo api.RepoName, serviceType stri
 		hasToken = hasGitLabDotComToken
 	default:
 		return nil, nil
-	}
-
-	r := &gitserver.Repo{Name: repo, URL: "https://" + string(repo) + ".git"}
-	if envvar.SourcegraphDotComMode() {
-		return r, nil
 	}
 
 	ok, err := hasToken(ctx)
@@ -102,6 +102,7 @@ func hasGitHubDotComToken(ctx context.Context) (hasToken bool, _ error) {
 		LimitOffset: &db.LimitOffset{
 			Limit: 500, // The number is randomly chosen
 		},
+		NoNamespace: true, // Only include site owned external services
 	}
 	for {
 		svcs, err := db.ExternalServices.List(ctx, opt)
@@ -153,6 +154,7 @@ func hasGitLabDotComToken(ctx context.Context) (bool, error) {
 		LimitOffset: &db.LimitOffset{
 			Limit: 500, // The number is randomly chosen
 		},
+		NoNamespace: true, // Only include site owned external services
 	}
 	for {
 		svcs, err := db.ExternalServices.List(ctx, opt)

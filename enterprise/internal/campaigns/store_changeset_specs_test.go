@@ -8,13 +8,14 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs repos.Store, clock clock) {
-	repo := testRepo(t, rs, extsvc.KindGitHub)
-	deletedRepo := testRepo(t, rs, extsvc.KindGitHub).With(repos.Opt.RepoDeletedAt(clock.now()))
+	repo := ct.TestRepo(t, rs, extsvc.KindGitHub)
+	deletedRepo := ct.TestRepo(t, rs, extsvc.KindGitHub).With(repos.Opt.RepoDeletedAt(clock.now()))
 
 	if err := rs.InsertRepos(ctx, repo); err != nil {
 		t.Fatal(err)
@@ -231,6 +232,37 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 			opts := ListChangesetSpecsOpts{}
 			for _, c := range changesetSpecs {
 				opts.RandIDs = append(opts.RandIDs, c.RandID)
+			}
+
+			have, _, err := s.ListChangesetSpecs(ctx, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			// ListChangesetSpecs should not return ChangesetSpecs whose
+			// repository was (soft-)deleted.
+			if diff := cmp.Diff(have, changesetSpecs); diff != "" {
+				t.Fatalf("opts: %+v, diff: %s", opts, diff)
+			}
+		})
+
+		t.Run("WithIDs", func(t *testing.T) {
+			for _, c := range changesetSpecs {
+				opts := ListChangesetSpecsOpts{IDs: []int64{c.ID}}
+				have, _, err := s.ListChangesetSpecs(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				want := cmpgn.ChangesetSpecs{c}
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatalf("opts: %+v, diff: %s", opts, diff)
+				}
+			}
+
+			opts := ListChangesetSpecsOpts{}
+			for _, c := range changesetSpecs {
+				opts.IDs = append(opts.IDs, c.ID)
 			}
 
 			have, _, err := s.ListChangesetSpecs(ctx, opts)

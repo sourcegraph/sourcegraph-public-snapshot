@@ -672,6 +672,18 @@ func TestParse(t *testing.T) {
 			WantGrammar:   Spec(`""`),
 			WantHeuristic: Diff(`(or "()" "()")`),
 		},
+		{
+			Name:          "NOT expression inside parentheses",
+			Input:         "r:foo (a/foo not .svg)",
+			WantGrammar:   `(and "r:foo" (concat "a/foo" (not ".svg")))`,
+			WantHeuristic: Same,
+		},
+		{
+			Name:          "NOT expression inside parentheses",
+			Input:         "r:foo (not .svg)",
+			WantGrammar:   `(and "r:foo" (not ".svg"))`,
+			WantHeuristic: Same,
+		},
 		// Escaping.
 		{
 			Input:         `\(\)`,
@@ -1006,6 +1018,11 @@ func TestMatchUnaryKeyword(t *testing.T) {
 			pos:  0,
 			want: false,
 		},
+		{
+			in:   "(not bar)",
+			pos:  1,
+			want: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.in, func(t *testing.T) {
@@ -1227,7 +1244,7 @@ func TestParseAndOrLiteral(t *testing.T) {
 		},
 		{
 			Input:      `not literal.*pattern`,
-			Want:       `"NOT literal.*pattern"`,
+			Want:       `(not "literal.*pattern")`,
 			WantLabels: "Literal",
 		},
 		// Whitespace is removed. content: exists for preserving whitespace.
@@ -1394,6 +1411,59 @@ func TestParseAndOrLiteral(t *testing.T) {
 			}
 			gotLabels := heuristicLabels(result)
 			if diff := cmp.Diff(tt.WantLabels, gotLabels); diff != "" {
+				t.Error(diff)
+			}
+		})
+	}
+}
+
+func TestScanBalancedPattern(t *testing.T) {
+	cases := []struct {
+		Input       string
+		Want        string
+		WantFailure bool
+	}{
+		{
+			Input: "foo OR bar",
+			Want:  "foo",
+		},
+		{
+			Input: "(hello there)",
+			Want:  "(hello there)",
+		},
+		{
+			Input: "( general:kenobi )",
+			Want:  "( general:kenobi )",
+		},
+		{
+			Input:       "(foo not bar)",
+			WantFailure: true,
+		},
+		{
+			Input:       "(foo OR bar)",
+			WantFailure: true,
+		},
+		{
+			Input:       "(foo not bar)",
+			WantFailure: true,
+		},
+		{
+			Input:       "repo:foo AND bar",
+			WantFailure: true,
+		},
+		{
+			Input:       "repo:foo bar",
+			WantFailure: true,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run("scan balanced pattern", func(t *testing.T) {
+			want, _, ok := ScanBalancedPattern([]byte(c.Input))
+			if ok && c.WantFailure {
+				t.Errorf("Expected pattern to be rejected")
+			}
+			if diff := cmp.Diff(want, c.Want); diff != "" {
 				t.Error(diff)
 			}
 		})

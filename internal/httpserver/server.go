@@ -5,49 +5,42 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"strconv"
 	"sync"
 
-	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 type server struct {
-	server *http.Server
-	once   sync.Once
+	server       *http.Server
+	makeListener func() (net.Listener, error)
+	once         sync.Once
 }
 
-// New returns a BackgroundRoutine that maintains an HTTP server listening on the given
-// port with a router configured with the given function. All servers will respond 200
-// to requests to /healthz.
-func New(port int, setupRoutes func(router *mux.Router)) goroutine.BackgroundRoutine {
-	host := ""
-	if env.InsecureDev {
-		host = "127.0.0.1"
-	}
-
-	router := mux.NewRouter()
-	router.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	})
-
-	if setupRoutes != nil {
-		setupRoutes(router)
-	}
-
+// New returns a BackgroundRoutine that serves the given server on the given listener.
+func New(listener net.Listener, httpServer *http.Server) goroutine.BackgroundRoutine {
 	return &server{
-		server: &http.Server{
-			Addr:    net.JoinHostPort(host, strconv.FormatInt(int64(port), 10)),
-			Handler: ot.Middleware(router),
-		},
+		server:       httpServer,
+		makeListener: func() (net.Listener, error) { return listener, nil },
+	}
+}
+
+// New returns a BackgroundRoutine that serves the given handler on the given address.
+func NewFromAddr(addr string, httpServer *http.Server) goroutine.BackgroundRoutine {
+	return &server{
+		server:       httpServer,
+		makeListener: func() (net.Listener, error) { return NewListener(addr) },
 	}
 }
 
 func (s *server) Start() {
-	if err := s.server.ListenAndServe(); err != http.ErrServerClosed {
+	listener, err := s.makeListener()
+	if err != nil {
+		log15.Error("Failed to create listener", "error", err)
+		os.Exit(1)
+	}
+
+	if err := s.server.Serve(listener); err != http.ErrServerClosed {
 		log15.Error("Failed to start server", "error", err)
 		os.Exit(1)
 	}

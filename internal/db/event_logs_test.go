@@ -11,8 +11,9 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
@@ -276,14 +277,248 @@ func TestEventLogs_SiteUsage(t *testing.T) {
 	}
 }
 
-func TestEventLogs_AggregatedEvents(t *testing.T) {
+func TestEventLogs_CodeIntelligenceCombinedWAU(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := context.Background()
 
-	names := []string{"codeintel.searchHover", "search.latencies.literal", "unknown event"}
+	names := []string{"codeintel.lsifHover", "codeintel.searchReferences.xrepo", "unknown event"}
+	users1 := []uint32{10, 20, 30, 40, 50, 60, 70, 80}
+	users2 := []uint32{15, 25, 35, 45, 55, 65, 75, 85}
+
+	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
+	// time that falls too near the edge of a week.
+	now := time.Unix(1589581800, 0).UTC()
+
+	for _, name := range names {
+		for _, user := range users1 {
+			e := &Event{
+				UserID: user,
+				Name:   name,
+				URL:    "test",
+				Source: "test",
+				// This week; jitter current time +/- 30 minutes
+				Timestamp: now.Add(-time.Hour * 24 * 3).Add(time.Minute * time.Duration(rand.Intn(60)-30)),
+			}
+
+			if err := EventLogs.Insert(ctx, e); err != nil {
+				t.Fatal(err)
+			}
+		}
+		for _, user := range users2 {
+			e := &Event{
+				UserID: user,
+				Name:   name,
+				URL:    "test",
+				Source: "test",
+				// This month: jitter current time +/- 30 minutes
+				Timestamp: now.Add(-time.Hour * 24 * 12).Add(time.Minute * time.Duration(rand.Intn(60)-30)),
+			}
+
+			if err := EventLogs.Insert(ctx, e); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+
+	count, err := EventLogs.codeIntelligenceCombinedWAU(ctx, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if count != len(users1) {
+		t.Errorf("unexpected count. want=%d have=%d", len(users1), count)
+	}
+}
+
+func TestEventLogs_AggregatedCodeIntelEvents(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	names := []string{"codeintel.lsifHover", "codeintel.searchReferences.xrepo", "unknown event"}
+	users := []uint32{1, 2}
+
+	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
+	// be a consistent value so that the tests don't fail when someone runs it at some particular
+	// time that falls too near the edge of a week.
+	now := time.Unix(1589581800, 0).UTC()
+
+	days := []time.Time{
+		now,                           // Today
+		now.Add(-time.Hour * 24 * 3),  // This week
+		now.Add(-time.Hour * 24 * 4),  // This week
+		now.Add(-time.Hour * 24 * 6),  // This month
+		now.Add(-time.Hour * 24 * 12), // This month
+		now.Add(-time.Hour * 24 * 40), // Previous month
+	}
+
+	for _, user := range users {
+		for _, name := range names {
+			for _, day := range days {
+				for i := 0; i < 25; i++ {
+					e := &Event{
+						UserID:   user,
+						Name:     name,
+						URL:      "test",
+						Source:   "test",
+						Argument: json.RawMessage(fmt.Sprintf(`{"languageId": "lang-%02d"}`, (i%3)+1)),
+						// Jitter current time +/- 30 minutes
+						Timestamp: day.Add(time.Minute * time.Duration(rand.Intn(60)-30)),
+					}
+
+					if err := EventLogs.Insert(ctx, e); err != nil {
+						t.Fatal(err)
+					}
+				}
+			}
+		}
+	}
+
+	events, err := EventLogs.aggregatedCodeIntelEvents(ctx, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	lang1 := "lang-01"
+	lang2 := "lang-02"
+	lang3 := "lang-03"
+
+	// the previous Sunday
+	week := now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5)
+
+	expectedEvents := []types.CodeIntelAggregatedEvent{
+		{Name: "codeintel.lsifHover", LanguageID: &lang1, Week: week, TotalWeek: 54, UniquesWeek: 2},
+		{Name: "codeintel.lsifHover", LanguageID: &lang2, Week: week, TotalWeek: 48, UniquesWeek: 2},
+		{Name: "codeintel.lsifHover", LanguageID: &lang3, Week: week, TotalWeek: 48, UniquesWeek: 2},
+		{Name: "codeintel.searchReferences.xrepo", LanguageID: &lang1, Week: week, TotalWeek: 54, UniquesWeek: 2},
+		{Name: "codeintel.searchReferences.xrepo", LanguageID: &lang2, Week: week, TotalWeek: 48, UniquesWeek: 2},
+		{Name: "codeintel.searchReferences.xrepo", LanguageID: &lang3, Week: week, TotalWeek: 48, UniquesWeek: 2},
+	}
+	if diff := cmp.Diff(expectedEvents, events); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
+func TestEventLogs_AggregatedSparseCodeIntelEvents(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
+	// be a consistent value so that the tests don't fail when someone runs it at some particular
+	// time that falls too near the edge of a week.
+	now := time.Unix(1589581800, 0).UTC()
+
+	for i := 0; i < 5; i++ {
+		e := &Event{
+			UserID:    1,
+			Name:      "codeintel.searchReferences.xrepo",
+			URL:       "test",
+			Source:    "test",
+			Argument:  json.RawMessage(fmt.Sprintf(`{"languageId": "lang-%02d"}`, (i%3)+1)),
+			Timestamp: now.Add(-time.Hour * 24 * 3), // This week
+		}
+
+		if err := EventLogs.Insert(ctx, e); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	events, err := EventLogs.aggregatedCodeIntelEvents(ctx, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	lang1 := "lang-01"
+	lang2 := "lang-02"
+	lang3 := "lang-03"
+
+	// the previous Sunday
+	week := now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5)
+
+	expectedEvents := []types.CodeIntelAggregatedEvent{
+		{Name: "codeintel.searchReferences.xrepo", LanguageID: &lang1, Week: week, TotalWeek: 2, UniquesWeek: 1},
+		{Name: "codeintel.searchReferences.xrepo", LanguageID: &lang2, Week: week, TotalWeek: 2, UniquesWeek: 1},
+		{Name: "codeintel.searchReferences.xrepo", LanguageID: &lang3, Week: week, TotalWeek: 1, UniquesWeek: 1},
+	}
+	if diff := cmp.Diff(expectedEvents, events); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
+func TestEventLogs_AggregatedSparseSearchEvents(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
+	// be a consistent value so that the tests don't fail when someone runs it at some particular
+	// time that falls too near the edge of a week.
+	now := time.Unix(1589581800, 0).UTC()
+
+	for i := 0; i < 5; i++ {
+		e := &Event{
+			UserID: 1,
+			Name:   "search.latencies.structural",
+			URL:    "test",
+			Source: "test",
+			// Make durations non-uniform to test percent_cont. The values
+			// in this test were hand-checked before being added to the assertion.
+			// Adding additional events or changing parameters will require these
+			// values to be checked again.
+			Argument:  json.RawMessage(fmt.Sprintf(`{"durationMs": %d}`, 50)),
+			Timestamp: now.Add(-time.Hour * 24 * 6), // This month
+		}
+
+		if err := EventLogs.Insert(ctx, e); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	events, err := EventLogs.aggregatedSearchEvents(ctx, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expectedEvents := []types.AggregatedEvent{
+		{
+			Name:           "search.latencies.structural",
+			Month:          time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+			Week:           now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
+			Day:            now.Truncate(time.Hour * 24),
+			TotalMonth:     5,
+			TotalWeek:      0,
+			TotalDay:       0,
+			UniquesMonth:   1,
+			UniquesWeek:    0,
+			UniquesDay:     0,
+			LatenciesMonth: []float64{50, 50, 50},
+			LatenciesWeek:  nil,
+			LatenciesDay:   nil,
+		},
+	}
+	if diff := cmp.Diff(expectedEvents, events); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
+func TestEventLogs_AggregatedSearchEvents(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	names := []string{"search.latencies.literal", "search.latencies.structural", "unknown event"}
 	users := []uint32{1, 2}
 	durations := []int{40, 65, 72}
 
@@ -332,14 +567,14 @@ func TestEventLogs_AggregatedEvents(t *testing.T) {
 		}
 	}
 
-	events, err := EventLogs.aggregatedEvents(ctx, now)
+	events, err := EventLogs.aggregatedSearchEvents(ctx, now)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	expectedEvents := []types.AggregatedEvent{
 		{
-			Name:           "codeintel.searchHover",
+			Name:           "search.latencies.literal",
 			Month:          time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
 			Week:           now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
 			Day:            now.Truncate(time.Hour * 24),
@@ -354,7 +589,7 @@ func TestEventLogs_AggregatedEvents(t *testing.T) {
 			LatenciesDay:   []float64{894, 1732.1, 1745.51},
 		},
 		{
-			Name:           "search.latencies.literal",
+			Name:           "search.latencies.structural",
 			Month:          time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
 			Week:           now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
 			Day:            now.Truncate(time.Hour * 24),
@@ -367,64 +602,6 @@ func TestEventLogs_AggregatedEvents(t *testing.T) {
 			LatenciesMonth: []float64{1394, 2222.1, 2289.51},
 			LatenciesWeek:  []float64{1369, 2202.1, 2242.51},
 			LatenciesDay:   []float64{1344, 2182.1, 2195.51},
-		},
-	}
-	if diff := cmp.Diff(expectedEvents, events); diff != "" {
-		t.Fatal(diff)
-	}
-}
-
-func TestEventLogs_AggregatedEventsSparseEvents(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	ctx := context.Background()
-
-	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
-	// be a consistent value so that the tests don't fail when someone runs it at some particular
-	// time that falls too near the edge of a week.
-	now := time.Unix(1589581800, 0).UTC()
-
-	for i := 0; i < 5; i++ {
-		e := &Event{
-			UserID: 1,
-			Name:   "codeintel.searchHover",
-			URL:    "test",
-			Source: "test",
-			// Make durations non-uniform to test percent_cont. The values
-			// in this test were hand-checked before being added to the assertion.
-			// Adding additional events or changing parameters will require these
-			// values to be checked again.
-			Argument:  json.RawMessage(fmt.Sprintf(`{"durationMs": %d}`, 50)),
-			Timestamp: now.Add(-time.Hour * 24 * 6), // This month
-		}
-
-		if err := EventLogs.Insert(ctx, e); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	events, err := EventLogs.aggregatedEvents(ctx, now)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	expectedEvents := []types.AggregatedEvent{
-		{
-			Name:           "codeintel.searchHover",
-			Month:          time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
-			Week:           now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
-			Day:            now.Truncate(time.Hour * 24),
-			TotalMonth:     5,
-			TotalWeek:      0,
-			TotalDay:       0,
-			UniquesMonth:   1,
-			UniquesWeek:    0,
-			UniquesDay:     0,
-			LatenciesMonth: []float64{50, 50, 50},
-			LatenciesWeek:  nil,
-			LatenciesDay:   nil,
 		},
 	}
 	if diff := cmp.Diff(expectedEvents, events); diff != "" {
@@ -511,7 +688,7 @@ func TestEventLogs_LatestPing(t *testing.T) {
 
 	t.Run("with existing pings in database", func(t *testing.T) {
 		userID := int32(0)
-		timestamp := time.Now().UTC().Truncate(time.Microsecond)
+		timestamp := timeutil.Now()
 
 		ctx := context.Background()
 		events := []*Event{

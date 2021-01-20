@@ -12,6 +12,8 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codemonitors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
@@ -30,11 +32,12 @@ func main() {
 }
 
 var initFunctions = map[string]func(ctx context.Context, enterpriseServices *enterprise.Services) error{
-	"authz":     authz.Init,
-	"licensing": licensing.Init,
-	"executor":  executor.Init,
-	"codeintel": codeintel.Init,
-	"campaigns": campaigns.Init,
+	"authz":        authz.Init,
+	"licensing":    licensing.Init,
+	"executor":     executor.Init,
+	"codeintel":    codeintel.Init,
+	"campaigns":    campaigns.Init,
+	"codemonitors": codemonitors.Init,
 }
 
 func enterpriseSetupHook() enterprise.Services {

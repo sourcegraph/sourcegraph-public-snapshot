@@ -29,6 +29,12 @@ const SettingsSchemaJSON = `{
           "default": false,
           "!go": { "pointer": true }
         },
+        "codeMonitoring": {
+          "description": "Enables code monitoring on directory pages.",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": true }
+        },
         "searchStats": {
           "description": "Enables a new page that shows language statistics about the results for a search query.",
           "type": "boolean",
@@ -62,7 +68,7 @@ const SettingsSchemaJSON = `{
         "showOnboardingTour": {
           "description": "Enables the onboarding tour.",
           "type": "boolean",
-          "default": false,
+          "default": true,
           "!go": { "pointer": true }
         },
         "showEnterpriseHomePanels": {
@@ -79,6 +85,12 @@ const SettingsSchemaJSON = `{
         },
         "showQueryBuilder": {
           "description": "Enables the search query builder page at search/query-builder",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": true }
+        },
+        "enableSmartQuery": {
+          "description": "Enables contextual syntax highlighting and hovers for search queries in the web app",
           "type": "boolean",
           "default": false,
           "!go": { "pointer": true }

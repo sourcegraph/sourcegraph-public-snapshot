@@ -221,7 +221,7 @@ export const RepoHeader: React.FunctionComponent<Props> = ({
                     </ButtonLink>
                 </div>
             )}
-            <ul className="navbar-nav">
+            <ul className="navbar-nav test-action-items" data-menu={ContributableMenu.EditorTitle}>
                 <WebActionsNavItems
                     {...props}
                     listItemClass="repo-header__action-list-item"
@@ -248,7 +248,7 @@ export const RepoHeader: React.FunctionComponent<Props> = ({
                 ))}
                 {repo.viewerCanAdminister && (
                     <li className="nav-item repo-header__action-list-item">
-                        <ButtonLink to={`/${repo.name}/-/settings`} data-tooltip="Repository settings">
+                        <ButtonLink to={`${repo.url}/-/settings`} data-tooltip="Repository settings">
                             <SettingsIcon className="icon-inline" />{' '}
                             <span className="d-none d-lg-inline">Settings</span>
                         </ButtonLink>

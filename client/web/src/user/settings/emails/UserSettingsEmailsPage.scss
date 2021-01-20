@@ -1,0 +1,6 @@
+.user-settings-emails-page {
+    .form-inline input:not(.is-invalid),
+    .form-inline input:not(.is-valid) {
+        padding-right: 2rem;
+    }
+}

@@ -26,27 +26,29 @@ type handler struct {
 
 var _ workerutil.Handler = &handler{}
 
-// Handle clones the target code into a temporary directory, invokes the target indexer in a fresh
-// docker container, and uploads the results to the external frontend API.
+// Handle clones the target code into a temporary directory, invokes the target indexer in a
+// fresh docker container, and uploads the results to the external frontend API.
 func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workerutil.Record) error {
+	job := record.(apiclient.Job)
+
+	h.idSet.Add(job.ID)
+	defer h.idSet.Remove(job.ID)
+
 	// 🚨 SECURITY: The job logger must be supplied with all sensitive values that may appear
 	// in a command constructed and run in the following function. Note that the command and
 	// its output may both contain sensitive values, but only values which we directly
 	// interpolate into the command. No command that we run on the host leaks environment
 	// variables, and the user-specified commands (which could leak their environment) are
 	// run in a clean VM.
-	logger := command.NewLogger(h.options.RedactedValues...)
+	logger := command.NewLogger(union(h.options.RedactedValues, job.RedactedValues))
 
 	defer func() {
-		if err := s.SetLogContents(ctx, record.RecordID(), logger.String()); err != nil {
-			log15.Warn("Failed to upload log for job", "id", record.RecordID(), "err", err)
+		for _, entry := range logger.Entries() {
+			if err := s.AddExecutionLogEntry(ctx, record.RecordID(), entry); err != nil {
+				log15.Warn("Failed to upload executor log entry for job", "id", record.RecordID(), "err", err)
+			}
 		}
 	}()
-
-	job := record.(apiclient.Job)
-
-	h.idSet.Add(job.ID)
-	defer h.idSet.Remove(job.ID)
 
 	// Create a working directory for this job which will be removed once the job completes.
 	// If a repository is supplied as part of the job configuration, it will be cloned into
@@ -110,8 +112,9 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 	}()
 
 	// Invoke each docker step sequentially
-	for _, dockerStep := range job.DockerSteps {
+	for i, dockerStep := range job.DockerSteps {
 		dockerStepCommand := command.CommandSpec{
+			Key:      fmt.Sprintf("step.docker.%d", i),
 			Image:    dockerStep.Image,
 			Commands: dockerStep.Commands,
 			Dir:      dockerStep.Dir,
@@ -124,8 +127,9 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 	}
 
 	// Invoke each src-cli step sequentially
-	for _, cliStep := range job.CliSteps {
+	for i, cliStep := range job.CliSteps {
 		cliStepCommand := command.CommandSpec{
+			Key:      fmt.Sprintf("step.src.%d", i),
 			Commands: append([]string{"src"}, cliStep.Commands...),
 			Dir:      cliStep.Dir,
 			Env:      cliStep.Env,
@@ -137,4 +141,17 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 	}
 
 	return nil
+}
+
+func union(a, b map[string]string) map[string]string {
+	c := make(map[string]string, len(a)+len(b))
+
+	for k, v := range a {
+		c[k] = v
+	}
+	for k, v := range b {
+		c[k] = v
+	}
+
+	return c
 }

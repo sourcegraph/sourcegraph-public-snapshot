@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/time/rate"
 )
@@ -25,12 +26,12 @@ func TestExternalService_Exclude(t *testing.T) {
 
 	type testCase struct {
 		name   string
-		svcs   ExternalServices
+		svcs   types.ExternalServices
 		repos  Repos
 		assert ExternalServicesAssertion
 	}
 
-	githubService := ExternalService{
+	githubService := types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "Github",
 		Config: `{
@@ -43,7 +44,7 @@ func TestExternalService_Exclude(t *testing.T) {
 		UpdatedAt: now,
 	}
 
-	gitlabService := ExternalService{
+	gitlabService := types.ExternalService{
 		Kind:        extsvc.KindGitLab,
 		DisplayName: "GitLab",
 		Config: `{
@@ -56,7 +57,7 @@ func TestExternalService_Exclude(t *testing.T) {
 		UpdatedAt: now,
 	}
 
-	bitbucketServerService := ExternalService{
+	bitbucketServerService := types.ExternalService{
 		Kind:        extsvc.KindBitbucketServer,
 		DisplayName: "Bitbucket Server",
 		Config: `{
@@ -70,7 +71,7 @@ func TestExternalService_Exclude(t *testing.T) {
 		UpdatedAt: now,
 	}
 
-	awsCodeCommitService := ExternalService{
+	awsCodeCommitService := types.ExternalService{
 		ID:          9,
 		Kind:        extsvc.KindAWSCodeCommit,
 		DisplayName: "AWS CodeCommit",
@@ -84,7 +85,7 @@ func TestExternalService_Exclude(t *testing.T) {
 		UpdatedAt: now,
 	}
 
-	gitoliteService := ExternalService{
+	gitoliteService := types.ExternalService{
 		Kind:        extsvc.KindGitolite,
 		DisplayName: "Gitolite",
 		Config: `{
@@ -96,7 +97,7 @@ func TestExternalService_Exclude(t *testing.T) {
 		UpdatedAt: now,
 	}
 
-	otherService := ExternalService{
+	otherService := types.ExternalService{
 		Kind:        extsvc.KindOther,
 		DisplayName: "Other code hosts",
 		Config: formatJSON(t, `{
@@ -185,8 +186,8 @@ func TestExternalService_Exclude(t *testing.T) {
 
 	var testCases []testCase
 	{
-		svcs := ExternalServices{
-			githubService.With(func(e *ExternalService) {
+		svcs := types.ExternalServices{
+			githubService.With(func(e *types.ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					// Some comment
@@ -199,7 +200,7 @@ func TestExternalService_Exclude(t *testing.T) {
 					]
 				}`)
 			}),
-			gitlabService.With(func(e *ExternalService) {
+			gitlabService.With(func(e *types.ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					// Some comment
@@ -212,7 +213,7 @@ func TestExternalService_Exclude(t *testing.T) {
 					]
 				}`)
 			}),
-			bitbucketServerService.With(func(e *ExternalService) {
+			bitbucketServerService.With(func(e *types.ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					// Some comment
@@ -226,7 +227,7 @@ func TestExternalService_Exclude(t *testing.T) {
 					]
 				}`)
 			}),
-			awsCodeCommitService.With(func(e *ExternalService) {
+			awsCodeCommitService.With(func(e *types.ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					// Some comment
@@ -240,7 +241,7 @@ func TestExternalService_Exclude(t *testing.T) {
 					]
 				}`)
 			}),
-			gitoliteService.With(func(e *ExternalService) {
+			gitoliteService.With(func(e *types.ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					// Some comment
@@ -262,8 +263,8 @@ func TestExternalService_Exclude(t *testing.T) {
 		})
 	}
 	{
-		svcs := ExternalServices{
-			githubService.With(func(e *ExternalService) {
+		svcs := types.ExternalServices{
+			githubService.With(func(e *types.ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					// Some comment
@@ -275,7 +276,7 @@ func TestExternalService_Exclude(t *testing.T) {
 					]
 				}`)
 			}),
-			gitlabService.With(func(e *ExternalService) {
+			gitlabService.With(func(e *types.ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					// Some comment
@@ -287,7 +288,7 @@ func TestExternalService_Exclude(t *testing.T) {
 					]
 				}`)
 			}),
-			bitbucketServerService.With(func(e *ExternalService) {
+			bitbucketServerService.With(func(e *types.ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					// Some comment
@@ -300,7 +301,7 @@ func TestExternalService_Exclude(t *testing.T) {
 					]
 				}`)
 			}),
-			awsCodeCommitService.With(func(e *ExternalService) {
+			awsCodeCommitService.With(func(e *types.ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					// Some comment
@@ -313,7 +314,7 @@ func TestExternalService_Exclude(t *testing.T) {
 					]
 				}`)
 			}),
-			gitoliteService.With(func(e *ExternalService) {
+			gitoliteService.With(func(e *types.ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					// Some comment
@@ -324,7 +325,7 @@ func TestExternalService_Exclude(t *testing.T) {
 					]
 				}`)
 			}),
-			otherService.With(func(e *ExternalService) {
+			otherService.With(func(e *types.ExternalService) {
 				e.Config = formatJSON(t, `
 				{
 					"url": "https://git-host.mycorp.com",
@@ -342,7 +343,7 @@ func TestExternalService_Exclude(t *testing.T) {
 			svcs:  svcs,
 			repos: repos,
 			assert: Assert.ExternalServicesEqual(
-				githubService.With(func(e *ExternalService) {
+				githubService.With(func(e *types.ExternalService) {
 					e.Config = formatJSON(t, `
 					{
 						// Some comment
@@ -356,7 +357,7 @@ func TestExternalService_Exclude(t *testing.T) {
 						]
 					}`)
 				}),
-				gitlabService.With(func(e *ExternalService) {
+				gitlabService.With(func(e *types.ExternalService) {
 					e.Config = formatJSON(t, `
 					{
 						// Some comment
@@ -370,7 +371,7 @@ func TestExternalService_Exclude(t *testing.T) {
 						]
 					}`)
 				}),
-				bitbucketServerService.With(func(e *ExternalService) {
+				bitbucketServerService.With(func(e *types.ExternalService) {
 					e.Config = formatJSON(t, `
 					{
 						// Some comment
@@ -385,7 +386,7 @@ func TestExternalService_Exclude(t *testing.T) {
 						]
 					}`)
 				}),
-				awsCodeCommitService.With(func(e *ExternalService) {
+				awsCodeCommitService.With(func(e *types.ExternalService) {
 					e.Config = formatJSON(t, `
 					{
 						// Some comment
@@ -400,7 +401,7 @@ func TestExternalService_Exclude(t *testing.T) {
 						]
 					}`)
 				}),
-				gitoliteService.With(func(e *ExternalService) {
+				gitoliteService.With(func(e *types.ExternalService) {
 					e.Config = formatJSON(t, `
 					{
 						// Some comment
@@ -412,7 +413,7 @@ func TestExternalService_Exclude(t *testing.T) {
 						]
 					}`)
 				}),
-				otherService.With(func(e *ExternalService) {
+				otherService.With(func(e *types.ExternalService) {
 					e.Config = formatJSON(t, `
 					{
 						"url": "https://git-host.mycorp.com",
@@ -430,9 +431,29 @@ func TestExternalService_Exclude(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			svcs, repos := tc.svcs.Clone(), tc.repos.Clone()
 
+			tmp := make([]*types.Repo, len(repos))
+			for i, r := range repos {
+				tmp[i] = &types.Repo{
+					ID:           r.ID,
+					ExternalRepo: r.ExternalRepo,
+					Name:         api.RepoName(r.Name),
+					Private:      r.Private,
+					RepoFields: &types.RepoFields{
+						URI:         r.URI,
+						Description: r.Description,
+						Fork:        r.Fork,
+						Archived:    r.Archived,
+						Cloned:      r.Cloned,
+						CreatedAt:   r.CreatedAt,
+						UpdatedAt:   r.UpdatedAt,
+						DeletedAt:   r.DeletedAt,
+						Metadata:    r.Metadata,
+					},
+				}
+			}
 			var err error
 			for _, svc := range svcs {
-				if err = svc.Exclude(repos...); err != nil {
+				if err = svc.Exclude(tmp...); err != nil {
 					t.Fatal(err)
 				}
 			}
@@ -522,9 +543,9 @@ func TestSyncRateLimiters(t *testing.T) {
 	}
 
 	makeLister := func(options ...limitOptions) *MockExternalServicesLister {
-		services := make([]*ExternalService, 0, len(options))
+		services := make([]*types.ExternalService, 0, len(options))
 		for i, o := range options {
-			svc := &ExternalService{
+			svc := &types.ExternalService{
 				ID:          int64(i) + 1,
 				Kind:        "GitLab",
 				DisplayName: "GitLab",
@@ -549,7 +570,7 @@ func TestSyncRateLimiters(t *testing.T) {
 			services = append(services, svc)
 		}
 		return &MockExternalServicesLister{
-			listExternalServices: func(ctx context.Context, args StoreListExternalServicesArgs) ([]*ExternalService, error) {
+			listExternalServices: func(ctx context.Context, args StoreListExternalServicesArgs) ([]*types.ExternalService, error) {
 				return services, nil
 			},
 		}
@@ -693,9 +714,9 @@ func TestSyncRateLimiters(t *testing.T) {
 }
 
 type MockExternalServicesLister struct {
-	listExternalServices func(context.Context, StoreListExternalServicesArgs) ([]*ExternalService, error)
+	listExternalServices func(context.Context, StoreListExternalServicesArgs) ([]*types.ExternalService, error)
 }
 
-func (m MockExternalServicesLister) ListExternalServices(ctx context.Context, args StoreListExternalServicesArgs) ([]*ExternalService, error) {
+func (m MockExternalServicesLister) ListExternalServices(ctx context.Context, args StoreListExternalServicesArgs) ([]*types.ExternalService, error) {
 	return m.listExternalServices(ctx, args)
 }

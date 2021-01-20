@@ -2,16 +2,15 @@ package campaigns
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -24,7 +23,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func init() {
@@ -57,7 +57,7 @@ func TestServicePermissionLevels(t *testing.T) {
 		t.Fatalf("user cannot be site admin")
 	}
 
-	rs, _ := createTestRepos(t, ctx, dbconn.Global, 1)
+	rs, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
 
 	createTestData := func(t *testing.T, s *Store, svc *Service, author int32) (*campaigns.Campaign, *campaigns.Changeset, *campaigns.CampaignSpec) {
 		spec := testCampaignSpec(author)
@@ -72,11 +72,6 @@ func TestServicePermissionLevels(t *testing.T) {
 
 		changeset := testChangeset(rs[0].ID, campaign.ID, campaigns.ChangesetExternalStateOpen)
 		if err := s.CreateChangeset(ctx, changeset); err != nil {
-			t.Fatal(err)
-		}
-
-		campaign.ChangesetIDs = append(campaign.ChangesetIDs, changeset.ID)
-		if err := s.UpdateCampaign(ctx, campaign); err != nil {
 			t.Fatal(err)
 		}
 
@@ -197,11 +192,11 @@ func TestService(t *testing.T) {
 		t.Fatal("user is admin, want non-admin")
 	}
 
-	now := time.Now().UTC().Truncate(time.Microsecond)
+	now := timeutil.Now()
 	clock := func() time.Time { return now }
 
 	store := NewStoreWithClock(dbconn.Global, clock)
-	rs, _ := createTestRepos(t, ctx, dbconn.Global, 4)
+	rs, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 4)
 
 	fakeSource := &ct.FakeChangesetSource{}
 	sourcer := repos.NewFakeSourcer(nil, fakeSource)
@@ -319,11 +314,6 @@ func TestService(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		campaign.ChangesetIDs = []int64{changeset.ID}
-		if err := store.UpdateCampaign(ctx, campaign); err != nil {
-			t.Fatal(err)
-		}
-
 		called := false
 		repoupdater.MockEnqueueChangesetSync = func(ctx context.Context, ids []int64) error {
 			if len(ids) != 1 && ids[0] != changeset.ID {
@@ -342,12 +332,12 @@ func TestService(t *testing.T) {
 			t.Fatal("MockEnqueueChangesetSync not called")
 		}
 
-		// Repo filtered out by authzFilter
-		ct.AuthzFilterRepos(t, rs[0].ID)
+		// rs[0] is filtered out
+		ct.MockRepoPermissions(t, user.ID, rs[1].ID, rs[2].ID, rs[3].ID)
 
 		// should result in a not found error
 		if err := svc.EnqueueChangesetSync(ctx, changeset.ID); !errcode.IsNotFound(err) {
-			t.Fatalf("expected not-found error but got %s", err)
+			t.Fatalf("expected not-found error but got %v", err)
 		}
 	})
 
@@ -364,6 +354,7 @@ func TestService(t *testing.T) {
 		}
 
 		adminCtx := actor.WithActor(context.Background(), actor.FromUser(admin.ID))
+		userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
 
 		t.Run("success", func(t *testing.T) {
 			opts := CreateCampaignSpecOpts{
@@ -432,16 +423,15 @@ func TestService(t *testing.T) {
 		})
 
 		t.Run("missing repository permissions", func(t *testing.T) {
-			// Single repository filtered out by authzFilter
-			ct.AuthzFilterRepos(t, changesetSpecs[0].RepoID)
+			ct.MockRepoPermissions(t, user.ID)
 
 			opts := CreateCampaignSpecOpts{
-				NamespaceUserID:      admin.ID,
+				NamespaceUserID:      user.ID,
 				RawSpec:              ct.TestRawCampaignSpec,
 				ChangesetSpecRandIDs: changesetSpecRandIDs,
 			}
 
-			if _, err := svc.CreateCampaignSpec(adminCtx, opts); !errcode.IsNotFound(err) {
+			if _, err := svc.CreateCampaignSpec(userCtx, opts); !errcode.IsNotFound(err) {
 				t.Fatalf("expected not-found error but got %s", err)
 			}
 		})
@@ -583,12 +573,11 @@ func TestService(t *testing.T) {
 		})
 
 		t.Run("missing repository permissions", func(t *testing.T) {
-			// Single repository filtered out by authzFilter
-			ct.AuthzFilterRepos(t, repo.ID)
+			ct.MockRepoPermissions(t, user.ID, rs[1].ID, rs[2].ID, rs[3].ID)
 
 			_, err := svc.CreateChangesetSpec(ctx, rawSpec, admin.ID)
 			if !errcode.IsNotFound(err) {
-				t.Fatalf("expected not-found error but got %s", err)
+				t.Fatalf("expected not-found error but got %v", err)
 			}
 		})
 	})
@@ -720,7 +709,7 @@ func TestService(t *testing.T) {
 	t.Run("GetCampaignMatchingCampaignSpec", func(t *testing.T) {
 		campaignSpec := createCampaignSpec(t, ctx, store, "matching-campaign-spec", admin.ID)
 
-		haveCampaign, err := svc.GetCampaignMatchingCampaignSpec(ctx, store, campaignSpec)
+		haveCampaign, err := svc.GetCampaignMatchingCampaignSpec(ctx, campaignSpec)
 		if err != nil {
 			t.Fatalf("unexpected error: %s\n", err)
 		}
@@ -742,7 +731,7 @@ func TestService(t *testing.T) {
 			t.Fatalf("failed to create campaign: %s\n", err)
 		}
 
-		haveCampaign, err = svc.GetCampaignMatchingCampaignSpec(ctx, store, campaignSpec)
+		haveCampaign, err = svc.GetCampaignMatchingCampaignSpec(ctx, campaignSpec)
 		if err != nil {
 			t.Fatalf("unexpected error: %s\n", err)
 		}
@@ -752,6 +741,35 @@ func TestService(t *testing.T) {
 
 		if diff := cmp.Diff(matchingCampaign, haveCampaign); diff != "" {
 			t.Fatalf("wrong campaign was matched (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("FetchUsernameForBitbucketServerToken", func(t *testing.T) {
+		fakeSource := &ct.FakeChangesetSource{Username: "my-bbs-username"}
+		sourcer := repos.NewFakeSourcer(nil, fakeSource)
+
+		// Create a fresh service for this test as to not mess with state
+		// possibly used by other tests.
+		testSvc := NewService(store, nil)
+		testSvc.sourcer = sourcer
+
+		rs, _ := ct.CreateBbsTestRepos(t, ctx, dbconn.Global, 1)
+		repo := rs[0]
+
+		url := repo.ExternalRepo.ServiceID
+		extType := repo.ExternalRepo.ServiceType
+
+		username, err := testSvc.FetchUsernameForBitbucketServerToken(ctx, url, extType, "my-token")
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		if !fakeSource.AuthenticatedUsernameCalled {
+			t.Errorf("service didn't call AuthenticatedUsername")
+		}
+
+		if have, want := username, fakeSource.Username; have != want {
+			t.Errorf("wrong username returned. want=%q, have=%q", want, have)
 		}
 	})
 }
@@ -818,70 +836,4 @@ func testChangeset(repoID api.RepoID, campaign int64, extState campaigns.Changes
 	}
 
 	return changeset
-}
-
-func createTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) ([]*repos.Repo, *repos.ExternalService) {
-	t.Helper()
-
-	rstore := repos.NewDBStore(db, sql.TxOptions{})
-
-	ext := &repos.ExternalService{
-		Kind:        extsvc.KindGitHub,
-		DisplayName: "GitHub",
-		Config: marshalJSON(t, &schema.GitHubConnection{
-			Url:   "https://github.com",
-			Token: "SECRETTOKEN",
-		}),
-	}
-	if err := rstore.UpsertExternalServices(ctx, ext); err != nil {
-		t.Fatal(err)
-	}
-
-	var rs []*repos.Repo
-	for i := 0; i < count; i++ {
-		r := testRepo(t, rstore, extsvc.KindGitHub)
-		r.Sources = map[string]*repos.SourceInfo{ext.URN(): {ID: ext.URN()}}
-
-		rs = append(rs, r)
-	}
-
-	err := rstore.InsertRepos(ctx, rs...)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return rs, ext
-}
-
-func createBbsTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) ([]*repos.Repo, *repos.ExternalService) {
-	t.Helper()
-
-	rstore := repos.NewDBStore(db, sql.TxOptions{})
-
-	ext := &repos.ExternalService{
-		Kind:        extsvc.KindBitbucketServer,
-		DisplayName: "Bitbucket Server",
-		Config: marshalJSON(t, &schema.BitbucketServerConnection{
-			Url:   "https://bitbucket.sourcegraph.com",
-			Token: "SECRETTOKEN",
-		}),
-	}
-	if err := rstore.UpsertExternalServices(ctx, ext); err != nil {
-		t.Fatal(err)
-	}
-
-	var rs []*repos.Repo
-	for i := 0; i < count; i++ {
-		r := testRepo(t, rstore, extsvc.KindBitbucketServer)
-		r.Sources = map[string]*repos.SourceInfo{ext.URN(): {ID: ext.URN()}}
-
-		rs = append(rs, r)
-	}
-
-	err := rstore.InsertRepos(ctx, rs...)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return rs, ext
 }

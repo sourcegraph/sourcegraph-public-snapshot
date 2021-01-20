@@ -3,22 +3,29 @@ package authz
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestPermsSyncer_ScheduleUsers(t *testing.T) {
+	authz.SetProviders(true, []authz.Provider{&mockProvider{}})
+	defer authz.SetProviders(true, nil)
+
 	s := NewPermsSyncer(nil, nil, nil, nil)
 	s.ScheduleUsers(context.Background(), 1)
 
@@ -35,6 +42,9 @@ func TestPermsSyncer_ScheduleUsers(t *testing.T) {
 }
 
 func TestPermsSyncer_ScheduleRepos(t *testing.T) {
+	authz.SetProviders(true, []authz.Provider{&mockProvider{}})
+	defer authz.SetProviders(true, nil)
+
 	s := NewPermsSyncer(nil, nil, nil, nil)
 	s.ScheduleRepos(context.Background(), 1)
 
@@ -78,54 +88,11 @@ func (p *mockProvider) FetchRepoPerms(ctx context.Context, repo *extsvc.Reposito
 
 type mockReposStore struct {
 	listRepos func(context.Context, repos.StoreListReposArgs) ([]*repos.Repo, error)
-}
-
-func (s *mockReposStore) ListExternalServices(context.Context, repos.StoreListExternalServicesArgs) ([]*repos.ExternalService, error) {
-	return nil, nil
-}
-
-func (s *mockReposStore) UpsertExternalServices(context.Context, ...*repos.ExternalService) error {
-	return nil
+	repos.Store
 }
 
 func (s *mockReposStore) ListRepos(ctx context.Context, args repos.StoreListReposArgs) ([]*repos.Repo, error) {
 	return s.listRepos(ctx, args)
-}
-
-func (s *mockReposStore) ListExternalRepoSpecs(ctx context.Context) (map[api.ExternalRepoSpec]struct{}, error) {
-	return nil, nil
-}
-
-func (s *mockReposStore) InsertRepos(context.Context, ...*repos.Repo) error {
-	return nil
-}
-
-func (s *mockReposStore) DeleteRepos(context.Context, ...api.RepoID) error {
-	return nil
-}
-
-func (s *mockReposStore) UpsertRepos(context.Context, ...*repos.Repo) error {
-	return nil
-}
-
-func (s *mockReposStore) UpsertSources(ctx context.Context, added, modified, deleted map[api.RepoID][]repos.SourceInfo) error {
-	return nil
-}
-
-func (s *mockReposStore) SetClonedRepos(ctx context.Context, repoNames ...string) error {
-	return nil
-}
-
-func (s *mockReposStore) CountNotClonedRepos(ctx context.Context) (uint64, error) {
-	return 0, nil
-}
-
-func (s *mockReposStore) CountUserAddedRepos(ctx context.Context) (uint64, error) {
-	return 0, nil
-}
-
-func (s *mockReposStore) EnqueueSyncJobs(ctx context.Context, ignoreSiteAdmin bool) error {
-	return nil
 }
 
 func TestPermsSyncer_syncUserPerms(t *testing.T) {
@@ -143,6 +110,12 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 		},
 	}
 
+	db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+		return &types.User{ID: id}, nil
+	}
+	db.Mocks.ExternalAccounts.TouchLastValid = func(ctx context.Context, id int32) error {
+		return nil
+	}
 	edb.Mocks.Perms.ListExternalAccounts = func(context.Context, int32) ([]*extsvc.Account, error) {
 		return []*extsvc.Account{&extAccount}, nil
 	}
@@ -158,6 +131,8 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 		return nil
 	}
 	defer func() {
+		db.Mocks.Users = db.MockUsers{}
+		db.Mocks.ExternalAccounts = db.MockExternalAccounts{}
 		edb.Mocks.Perms = edb.MockPerms{}
 	}()
 
@@ -169,11 +144,8 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 			return []*repos.Repo{{ID: 1}}, nil
 		},
 	}
-	clock := func() time.Time {
-		return time.Now().UTC().Truncate(time.Microsecond)
-	}
-	permsStore := edb.NewPermsStore(nil, clock)
-	s := NewPermsSyncer(reposStore, permsStore, clock, nil)
+	permsStore := edb.NewPermsStore(nil, timeutil.Now)
+	s := NewPermsSyncer(reposStore, permsStore, timeutil.Now, nil)
 
 	tests := []struct {
 		name     string
@@ -204,18 +176,76 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	}
 }
 
-func TestPermsSyncer_syncRepoPerms(t *testing.T) {
-	clock := func() time.Time {
-		return time.Now().UTC().Truncate(time.Microsecond)
+func TestPermsSyncer_syncUserPerms_invalidToken(t *testing.T) {
+	p := &mockProvider{
+		serviceType: extsvc.TypeGitLab,
+		serviceID:   "https://gitlab.com/",
 	}
-	newPermsSyncer := func(reposStore repos.Store) *PermsSyncer {
-		return NewPermsSyncer(reposStore, edb.NewPermsStore(nil, clock), clock, nil)
+	authz.SetProviders(false, []authz.Provider{p})
+	defer authz.SetProviders(true, nil)
+
+	extAccount := extsvc.Account{
+		AccountSpec: extsvc.AccountSpec{
+			ServiceType: p.ServiceType(),
+			ServiceID:   p.ServiceID(),
+		},
 	}
 
-	t.Run("SetRepoPermissions is called when no authz provider", func(t *testing.T) {
-		calledSetRepoPermissions := false
-		edb.Mocks.Perms.SetRepoPermissions = func(_ context.Context, p *authz.RepoPermissions) error {
-			calledSetRepoPermissions = true
+	db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+		return &types.User{ID: id}, nil
+	}
+	edb.Mocks.Perms.ListExternalAccounts = func(context.Context, int32) ([]*extsvc.Account, error) {
+		return []*extsvc.Account{&extAccount}, nil
+	}
+	edb.Mocks.Perms.SetUserPermissions = func(_ context.Context, p *authz.UserPermissions) error {
+		return nil
+	}
+	defer func() {
+		db.Mocks.Users = db.MockUsers{}
+		db.Mocks.ExternalAccounts = db.MockExternalAccounts{}
+		edb.Mocks.Perms = edb.MockPerms{}
+	}()
+
+	reposStore := &mockReposStore{
+		listRepos: func(_ context.Context, args repos.StoreListReposArgs) ([]*repos.Repo, error) {
+			if !args.PrivateOnly {
+				return nil, errors.New("PrivateOnly want true but got false")
+			}
+			return []*repos.Repo{{ID: 1}}, nil
+		},
+	}
+	permsStore := edb.NewPermsStore(nil, timeutil.Now)
+	s := NewPermsSyncer(reposStore, permsStore, timeutil.Now, nil)
+
+	calledTouchExpired := false
+	db.Mocks.ExternalAccounts.TouchExpired = func(ctx context.Context, id int32) error {
+		calledTouchExpired = true
+		return nil
+	}
+
+	p.fetchUserPerms = func(ctx context.Context, account *extsvc.Account) ([]extsvc.RepoID, error) {
+		return nil, &github.APIError{Code: http.StatusUnauthorized}
+	}
+
+	err := s.syncUserPerms(context.Background(), 1, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !calledTouchExpired {
+		t.Fatal("!calledTouchExpired")
+	}
+}
+
+func TestPermsSyncer_syncRepoPerms(t *testing.T) {
+	newPermsSyncer := func(reposStore repos.Store) *PermsSyncer {
+		return NewPermsSyncer(reposStore, edb.NewPermsStore(nil, timeutil.Now), timeutil.Now, nil)
+	}
+
+	t.Run("TouchRepoPermissions is called when no authz provider", func(t *testing.T) {
+		calledTouchRepoPermissions := false
+		edb.Mocks.Perms.TouchRepoPermissions = func(ctx context.Context, repoID int32) error {
+			calledTouchRepoPermissions = true
 			return nil
 		}
 		defer func() {
@@ -245,8 +275,8 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if !calledSetRepoPermissions {
-			t.Fatal("!calledSetRepoPermissions")
+		if !calledTouchRepoPermissions {
+			t.Fatal("!calledTouchRepoPermissions")
 		}
 	})
 

@@ -132,11 +132,13 @@ export class Driver {
     public visitedPages: Readonly<URL>[] = []
 
     public sourcegraphBaseUrl: string
+    public browserType: 'chrome' | 'firefox'
     private keepBrowser: boolean
     private subscriptions = new Subscription()
 
     constructor(public browser: puppeteer.Browser, public page: puppeteer.Page, options: DriverOptions) {
         this.sourcegraphBaseUrl = options.sourcegraphBaseUrl
+        this.browserType = options.browser ?? 'chrome'
         this.keepBrowser = !!options.keepBrowser
 
         // Record visited pages
@@ -174,7 +176,9 @@ export class Driver {
                                         message.location().url !== 'chrome-extension://invalid/'
                                 ),
                                 // Immediately format remote handles to strings, but maintain order.
-                                map(message => formatPuppeteerConsoleMessage(page, message)),
+                                map(message =>
+                                    formatPuppeteerConsoleMessage(page, message, this.browserType === 'firefox')
+                                ),
                                 concatAll(),
                                 takeUntil(fromEvent(page, 'close'))
                             )
@@ -743,6 +747,7 @@ export async function createDriverForTest(options?: DriverOptions): Promise<Driv
         ...options,
         args,
         defaultViewport: null,
+        timeout: 30000,
     }
     let browser: puppeteer.Browser
     if (options.browser === 'firefox') {

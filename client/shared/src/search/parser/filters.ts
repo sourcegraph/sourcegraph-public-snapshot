@@ -1,4 +1,4 @@
-import { Filter } from './parser'
+import { Filter } from './scanner'
 import { SearchSuggestion } from '../suggestions'
 import {
     FilterType,
@@ -244,23 +244,23 @@ const isValidDiscreteValue = (definition: NegatableFilterDefinition | BaseFilter
 }
 
 /**
- * Validates a filter given its type and value.
+ * Validates a filter given its field and value.
  */
 export const validateFilter = (
-    filterType: string,
-    filterValue: Filter['filterValue']
+    field: string,
+    value: Filter['value']
 ): { valid: true } | { valid: false; reason: string } => {
-    const typeAndDefinition = resolveFilter(filterType)
+    const typeAndDefinition = resolveFilter(field)
     if (!typeAndDefinition) {
         return { valid: false, reason: 'Invalid filter type.' }
     }
     const { definition } = typeAndDefinition
     if (
         definition.discreteValues &&
-        (!filterValue ||
-            (filterValue.token.type !== 'literal' && filterValue.token.type !== 'quoted') ||
-            (filterValue.token.type === 'literal' && !isValidDiscreteValue(definition, filterValue.token.value)) ||
-            (filterValue.token.type === 'quoted' && !isValidDiscreteValue(definition, filterValue.token.quotedValue)))
+        (!value ||
+            (value.type !== 'literal' && value.type !== 'quoted') ||
+            (value.type === 'literal' && !isValidDiscreteValue(definition, value.value)) ||
+            (value.type === 'quoted' && !isValidDiscreteValue(definition, value.quotedValue)))
     ) {
         return {
             valid: false,

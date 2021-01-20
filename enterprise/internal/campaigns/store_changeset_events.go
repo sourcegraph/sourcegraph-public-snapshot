@@ -78,6 +78,7 @@ func getChangesetEventQuery(opts *GetChangesetEventOpts) *sqlf.Query {
 type ListChangesetEventsOpts struct {
 	LimitOpts
 	ChangesetIDs []int64
+	Kinds        []campaigns.ChangesetEventKind
 	Cursor       int64
 }
 
@@ -132,6 +133,14 @@ func listChangesetEventsQuery(opts *ListChangesetEventsOpts) *sqlf.Query {
 		}
 		preds = append(preds,
 			sqlf.Sprintf("changeset_id IN (%s)", sqlf.Join(ids, ",")))
+	}
+
+	if len(opts.Kinds) > 0 {
+		kinds := make([]*sqlf.Query, 0, len(opts.Kinds))
+		for _, kind := range opts.Kinds {
+			kinds = append(kinds, sqlf.Sprintf("%s", kind))
+		}
+		preds = append(preds, sqlf.Sprintf("kind IN (%s)", sqlf.Join(kinds, ",")))
 	}
 
 	return sqlf.Sprintf(

@@ -157,6 +157,17 @@ func IsTimeout(err error) bool {
 	})
 }
 
+// IsNonRetryable will check if err or one of its causes is a error that cannot be retried.
+func IsNonRetryable(err error) bool {
+	type nonRetryabler interface {
+		NonRetryable() bool
+	}
+	return isErrorPredicate(err, func(err error) bool {
+		e, ok := err.(nonRetryabler)
+		return ok && e.NonRetryable()
+	})
+}
+
 // isErrorPredicate returns true if err or one of its causes returns true when
 // passed to p.
 func isErrorPredicate(err error, p func(err error) bool) bool {

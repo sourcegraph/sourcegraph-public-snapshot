@@ -13,9 +13,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -23,15 +25,19 @@ import (
 // A BitbucketServerSource yields repositories from a single BitbucketServer connection configured
 // in Sourcegraph via the external services configuration.
 type BitbucketServerSource struct {
-	svc     *ExternalService
+	svc     *types.ExternalService
 	config  *schema.BitbucketServerConnection
 	exclude excludeFunc
 	client  *bitbucketserver.Client
 }
 
+var _ Source = &BitbucketServerSource{}
+var _ UserSource = &BitbucketServerSource{}
+var _ ChangesetSource = &BitbucketServerSource{}
+
 // NewBitbucketServerSource returns a new BitbucketServerSource from the given external service.
 // rl is optional
-func NewBitbucketServerSource(svc *ExternalService, cf *httpcli.Factory) (*BitbucketServerSource, error) {
+func NewBitbucketServerSource(svc *types.ExternalService, cf *httpcli.Factory) (*BitbucketServerSource, error) {
 	var c schema.BitbucketServerConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -39,7 +45,7 @@ func NewBitbucketServerSource(svc *ExternalService, cf *httpcli.Factory) (*Bitbu
 	return newBitbucketServerSource(svc, &c, cf)
 }
 
-func newBitbucketServerSource(svc *ExternalService, c *schema.BitbucketServerConnection, cf *httpcli.Factory) (*BitbucketServerSource, error) {
+func newBitbucketServerSource(svc *types.ExternalService, c *schema.BitbucketServerConnection, cf *httpcli.Factory) (*BitbucketServerSource, error) {
 	if cf == nil {
 		cf = httpcli.NewExternalHTTPClientFactory()
 	}
@@ -84,7 +90,20 @@ func (s BitbucketServerSource) ListRepos(ctx context.Context, results chan Sourc
 	s.listAllRepos(ctx, results)
 }
 
-var _ ChangesetSource = BitbucketServerSource{}
+func (s BitbucketServerSource) WithAuthenticator(a auth.Authenticator) (Source, error) {
+	switch a.(type) {
+	case *auth.OAuthBearerToken, *auth.BasicAuth, *bitbucketserver.SudoableOAuthClient:
+		break
+
+	default:
+		return nil, newUnsupportedAuthenticatorError("BitbucketServerSource", a)
+	}
+
+	sc := s
+	sc.client = sc.client.WithAuthenticator(a)
+
+	return &sc, nil
+}
 
 // CreateChangeset creates the given *Changeset in the code host.
 func (s BitbucketServerSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, error) {
@@ -230,8 +249,8 @@ func (s BitbucketServerSource) ReopenChangeset(ctx context.Context, c *Changeset
 }
 
 // ExternalServices returns a singleton slice containing the external service.
-func (s BitbucketServerSource) ExternalServices() ExternalServices {
-	return ExternalServices{s.svc}
+func (s BitbucketServerSource) ExternalServices() types.ExternalServices {
+	return types.ExternalServices{s.svc}
 }
 
 func (s BitbucketServerSource) makeRepo(repo *bitbucketserver.Repo, isArchived bool) *Repo {
@@ -439,4 +458,11 @@ func (s *BitbucketServerSource) listAllLabeledRepos(ctx context.Context, label s
 		next = page
 	}
 	return ids, nil
+}
+
+// AuthenticatedUsername uses the underlying bitbucketserver.Client to get the
+// username belonging to the credentials associated with the
+// BitbucketServerSource.
+func (s *BitbucketServerSource) AuthenticatedUsername(ctx context.Context) (string, error) {
+	return s.client.AuthenticatedUsername(ctx)
 }

@@ -10,7 +10,7 @@ import { Link } from '../../../shared/src/components/Link'
 import GearIcon from 'mdi-react/GearIcon'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { PageHeader } from '../components/PageHeader'
-import { BreadcrumbsProps, BreadcrumbSetters, Breadcrumbs } from '../components/Breadcrumbs'
+import { BreadcrumbsProps, BreadcrumbSetters } from '../components/Breadcrumbs'
 
 interface InsightsPageProps
     extends ExtensionsControllerProps,
@@ -40,7 +40,6 @@ export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props =>
     )
     return (
         <div className="w-100">
-            <Breadcrumbs breadcrumbs={props.breadcrumbs} location={props.location} />
             <div className="container mt-3 web-content">
                 <PageHeader
                     icon={InsightsIcon}

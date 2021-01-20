@@ -5,9 +5,10 @@ import (
 	"errors"
 
 	"github.com/graph-gophers/graphql-go"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type CodeIntelResolver interface {
@@ -129,13 +130,46 @@ type LSIFRepositoryIndexesQueryArgs struct {
 type LSIFIndexResolver interface {
 	ID() graphql.ID
 	InputCommit() string
+	InputRoot() string
+	InputIndexer() string
 	QueuedAt() DateTime
 	State() string
 	Failure() *string
 	StartedAt() *DateTime
 	FinishedAt() *DateTime
+	Steps() IndexStepsResolver
 	PlaceInQueue() *int32
 	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
+}
+
+type IndexStepsResolver interface {
+	Setup() []ExecutionLogEntryResolver
+	PreIndex() []PreIndexStepResolver
+	Index() IndexStepResolver
+	Upload() ExecutionLogEntryResolver
+	Teardown() []ExecutionLogEntryResolver
+}
+
+type PreIndexStepResolver interface {
+	Root() string
+	Image() string
+	Commands() []string
+	LogEntry() ExecutionLogEntryResolver
+}
+
+type IndexStepResolver interface {
+	IndexerArgs() []string
+	Outfile() *string
+	LogEntry() ExecutionLogEntryResolver
+}
+
+type ExecutionLogEntryResolver interface {
+	Key() string
+	Command() []string
+	StartTime() DateTime
+	ExitCode() int32
+	Out(ctx context.Context) (string, error)
+	DurationMilliseconds() int32
 }
 
 type LSIFIndexConnectionResolver interface {

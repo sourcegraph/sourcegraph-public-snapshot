@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -33,6 +34,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 var dsn = flag.String("dsn", "", "Database connection string to use in integration tests")
@@ -184,7 +186,7 @@ func TestServer_handleRepoLookup(t *testing.T) {
 
 func testServerSetRepoEnabled(t *testing.T, store repos.Store) func(t *testing.T) {
 	return func(t *testing.T) {
-		githubService := &repos.ExternalService{
+		githubService := &types.ExternalService{
 			ID:          1,
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "github.com - test",
@@ -211,7 +213,7 @@ func testServerSetRepoEnabled(t *testing.T, store repos.Store) func(t *testing.T
 			},
 		}).With(repos.Opt.RepoSources(githubService.URN()))
 
-		gitlabService := &repos.ExternalService{
+		gitlabService := &types.ExternalService{
 			ID:          1,
 			Kind:        extsvc.KindGitLab,
 			DisplayName: "gitlab.com - test",
@@ -240,7 +242,7 @@ func testServerSetRepoEnabled(t *testing.T, store repos.Store) func(t *testing.T
 			},
 		}).With(repos.Opt.RepoSources(gitlabService.URN()))
 
-		bitbucketServerService := &repos.ExternalService{
+		bitbucketServerService := &types.ExternalService{
 			ID:          1,
 			Kind:        extsvc.KindBitbucketServer,
 			DisplayName: "Bitbucket Server - Test",
@@ -273,7 +275,7 @@ func testServerSetRepoEnabled(t *testing.T, store repos.Store) func(t *testing.T
 
 		type testCase struct {
 			name  string
-			svcs  repos.ExternalServices // stored services
+			svcs  types.ExternalServices // stored services
 			repos repos.Repos            // stored repos
 			kind  string
 			res   *protocol.ExcludeRepoResponse
@@ -283,16 +285,16 @@ func testServerSetRepoEnabled(t *testing.T, store repos.Store) func(t *testing.T
 		var testCases []testCase
 
 		for _, k := range []struct {
-			svc  *repos.ExternalService
+			svc  *types.ExternalService
 			repo *repos.Repo
 		}{
 			{githubService, githubRepo},
 			{bitbucketServerService, bitbucketServerRepo},
 			{gitlabService, gitlabRepo},
 		} {
-			svcs := repos.ExternalServices{
+			svcs := types.ExternalServices{
 				k.svc,
-				k.svc.With(func(e *repos.ExternalService) {
+				k.svc.With(func(e *types.ExternalService) {
 					e.ID++
 					e.DisplayName += " - Duplicate"
 				}),
@@ -304,8 +306,26 @@ func testServerSetRepoEnabled(t *testing.T, store repos.Store) func(t *testing.T
 				repos: repos.Repos{k.repo}.With(repos.Opt.RepoSources()),
 				kind:  k.svc.Kind,
 				res: &protocol.ExcludeRepoResponse{
-					ExternalServices: apiExternalServices(svcs.With(func(e *repos.ExternalService) {
-						if err := e.Exclude(k.repo); err != nil {
+					ExternalServices: apiExternalServices(svcs.With(func(e *types.ExternalService) {
+						tmp := &types.Repo{
+							ID:           k.repo.ID,
+							ExternalRepo: k.repo.ExternalRepo,
+							Name:         api.RepoName(k.repo.Name),
+							Private:      k.repo.Private,
+							RepoFields: &types.RepoFields{
+								URI:         k.repo.URI,
+								Description: k.repo.Description,
+								Fork:        k.repo.Fork,
+								Archived:    k.repo.Archived,
+								Cloned:      k.repo.Cloned,
+								CreatedAt:   k.repo.CreatedAt,
+								UpdatedAt:   k.repo.UpdatedAt,
+								DeletedAt:   k.repo.DeletedAt,
+								Metadata:    k.repo.Metadata,
+							},
+						}
+
+						if err := e.Exclude(tmp); err != nil {
 							panic(err)
 						}
 					})...),
@@ -386,7 +406,7 @@ func testServerEnqueueRepoUpdate(t *testing.T, store repos.Store) func(t *testin
 	return func(t *testing.T) {
 		ctx := context.Background()
 
-		svc := repos.ExternalService{
+		svc := types.ExternalService{
 			Kind: extsvc.KindGitHub,
 			Config: `{
 "URL": "https://github.com",
@@ -532,7 +552,7 @@ func testServerEnqueueRepoUpdate(t *testing.T, store repos.Store) func(t *testin
 func testServerRepoExternalServices(t *testing.T, store repos.Store) func(t *testing.T) {
 	return func(t *testing.T) {
 
-		service1 := &repos.ExternalService{
+		service1 := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "github.com - test",
 			Config: formatJSON(`
@@ -543,7 +563,7 @@ func testServerRepoExternalServices(t *testing.T, store repos.Store) func(t *tes
 		}`),
 		}
 
-		service2 := &repos.ExternalService{
+		service2 := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "github.com - test2",
 			Config: formatJSON(`
@@ -632,7 +652,7 @@ func testServerStatusMessages(t *testing.T, store repos.Store) func(t *testing.T
 	return func(t *testing.T) {
 		ctx := context.Background()
 
-		githubService := &repos.ExternalService{
+		githubService := &types.ExternalService{
 			ID:          1,
 			Config:      `{}`,
 			Kind:        extsvc.KindGitHub,
@@ -797,7 +817,7 @@ func testServerStatusMessages(t *testing.T, store repos.Store) func(t *testing.T
 					t.Fatal(err)
 				}
 
-				clock := repos.NewFakeClock(time.Now(), 0)
+				clock := dbtesting.NewFakeClock(time.Now(), 0)
 				syncer := &repos.Syncer{
 					Now: clock.Now,
 				}
@@ -840,7 +860,7 @@ func testServerStatusMessages(t *testing.T, store repos.Store) func(t *testing.T
 	}
 }
 
-func apiExternalServices(es ...*repos.ExternalService) []api.ExternalService {
+func apiExternalServices(es ...*types.ExternalService) []api.ExternalService {
 	if len(es) == 0 {
 		return nil
 	}
@@ -857,7 +877,7 @@ func apiExternalServices(es ...*repos.ExternalService) []api.ExternalService {
 		}
 
 		if e.IsDeleted() {
-			svc.DeletedAt = &e.DeletedAt
+			svc.DeletedAt = e.DeletedAt
 		}
 
 		svcs = append(svcs, svc)
@@ -870,18 +890,18 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore repos.Store) func(t
 	return func(t *testing.T, store repos.Store) func(t *testing.T) {
 		return func(t *testing.T) {
 			ctx := context.Background()
-			clock := repos.NewFakeClock(time.Now(), 0)
+			clock := dbtesting.NewFakeClock(time.Now(), 0)
 			now := clock.Now()
 
-			githubSource := repos.ExternalService{
+			githubSource := types.ExternalService{
 				Kind:   extsvc.KindGitHub,
 				Config: `{}`,
 			}
-			awsSource := repos.ExternalService{
+			awsSource := types.ExternalService{
 				Kind:   extsvc.KindAWSCodeCommit,
 				Config: `{}`,
 			}
-			gitlabSource := repos.ExternalService{
+			gitlabSource := types.ExternalService{
 				Kind:   extsvc.KindGitLab,
 				Config: `{}`,
 			}

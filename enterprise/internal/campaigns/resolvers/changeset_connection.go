@@ -8,12 +8,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type changesetsConnectionResolver struct {
@@ -73,14 +73,6 @@ func (r *changesetsConnectionResolver) TotalCount(ctx context.Context) (int32, e
 		return 0, err
 	}
 	return int32(len(cs)), nil
-}
-
-func (r *changesetsConnectionResolver) Stats(ctx context.Context) (graphqlbackend.ChangesetsConnectionStatsResolver, error) {
-	cs, _, _, err := r.compute(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return newChangesetConnectionStats(cs), nil
 }
 
 // compute loads all changesets matched by r.opts, but without a
@@ -154,58 +146,4 @@ func (r *changesetsConnectionResolver) PageInfo(ctx context.Context) (*graphqlut
 	}
 
 	return graphqlutil.HasNextPage(false), nil
-}
-
-func newChangesetConnectionStats(cs []*campaigns.Changeset) *changesetsConnectionStatsResolver {
-	stats := &changesetsConnectionStatsResolver{
-		total: int32(len(cs)),
-	}
-
-	for _, c := range cs {
-		if c.PublicationState.Unpublished() {
-			stats.unpublished++
-			continue
-		}
-
-		switch c.ExternalState {
-		case campaigns.ChangesetExternalStateClosed:
-			stats.closed++
-		case campaigns.ChangesetExternalStateDraft:
-			stats.draft++
-		case campaigns.ChangesetExternalStateMerged:
-			stats.merged++
-		case campaigns.ChangesetExternalStateOpen:
-			stats.open++
-		case campaigns.ChangesetExternalStateDeleted:
-			stats.deleted++
-		}
-	}
-
-	return stats
-}
-
-type changesetsConnectionStatsResolver struct {
-	unpublished, draft, open, merged, closed, deleted, total int32
-}
-
-func (r *changesetsConnectionStatsResolver) Unpublished() int32 {
-	return r.unpublished
-}
-func (r *changesetsConnectionStatsResolver) Draft() int32 {
-	return r.draft
-}
-func (r *changesetsConnectionStatsResolver) Open() int32 {
-	return r.open
-}
-func (r *changesetsConnectionStatsResolver) Merged() int32 {
-	return r.merged
-}
-func (r *changesetsConnectionStatsResolver) Closed() int32 {
-	return r.closed
-}
-func (r *changesetsConnectionStatsResolver) Deleted() int32 {
-	return r.deleted
-}
-func (r *changesetsConnectionStatsResolver) Total() int32 {
-	return r.total
 }

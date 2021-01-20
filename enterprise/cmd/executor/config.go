@@ -57,6 +57,11 @@ func (c *Config) APIWorkerOptions(transport http.RoundTripper) apiworker.Options
 		ResourceOptions:    c.ResourceOptions(),
 		GitServicePath:     "/.executors/git",
 		ClientOptions:      c.ClientOptions(transport),
+		RedactedValues: map[string]string{
+			// 🚨 SECURITY: Catch uses of the shared frontend token used to clone
+			// git repositories that make it into commands or stdout/stderr streams.
+			c.FrontendPassword: "PASSWORD_REMOVED",
+		},
 	}
 }
 

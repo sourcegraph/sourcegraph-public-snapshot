@@ -2,11 +2,13 @@
 
 We use Renovate to automatically create pull requests to update dependendies.
 Renovate is [configured](https://github.com/sourcegraph/renovate-config/blob/master/renovate.json#L5) to create these in the first week of each month.
+
 It will ask teams to review these dependency updates, depending on code ownership.
 
 ## How to review an update pull request
 
 As a reviewer of a Renovate pull request, you need to make an assessment of:
+
 - The **usefulness** of the update: Updates are considered useful by default, but e.g. a change to the README does not need to be merged.
 - The _amount_ and _areas_ of **testing** needed, which is determined by:
   - The **risk** of updating this dependency, which is determined by:
@@ -24,6 +26,7 @@ As a reviewer of a Renovate pull request, you need to make an assessment of:
   These are not intended to be merged, but if the build fails for them because of a bug, it is beneficial for us to file an issue on the package maintainers.
 
 Once you assessed these aspects, you can make an informed decision to:
+
 - Merge the pull request as-is
 - Close it
 - Make the needed commits on the branch to migrate, then merge
@@ -35,6 +38,7 @@ When in doubt, you can ping your team on the pull request to get more eyes on it
 ## Configuration
 
 We heavily customize Renovate to save more time. Possible configurations include:
+
 - Setting different reviewers for certain dependencies
 - Grouping certain dependencies
 - Automerging certain low-risk dependencies

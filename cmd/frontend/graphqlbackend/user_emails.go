@@ -117,6 +117,33 @@ func (r *schemaResolver) RemoveUserEmail(ctx context.Context, args *struct {
 	return &EmptyResponse{}, nil
 }
 
+func (r *schemaResolver) SetUserEmailPrimary(ctx context.Context, args *struct {
+	User  graphql.ID
+	Email string
+}) (*EmptyResponse, error) {
+	userID, err := UnmarshalUserID(args.User)
+	if err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: Only the user and site admins can set the primary email address from a user.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
+		return nil, err
+	}
+
+	if err := db.UserEmails.SetPrimaryEmail(ctx, userID, args.Email); err != nil {
+		return nil, err
+	}
+
+	if conf.CanSendEmail() {
+		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, userID, "changed primary email"); err != nil {
+			log15.Warn("Failed to send email to inform user of primary address change", "error", err)
+		}
+	}
+
+	return &EmptyResponse{}, nil
+}
+
 func (r *schemaResolver) SetUserEmailVerified(ctx context.Context, args *struct {
 	User     graphql.ID
 	Email    string

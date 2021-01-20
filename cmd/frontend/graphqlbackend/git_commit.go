@@ -42,55 +42,35 @@ type GitCommitResolver struct {
 	// oid MUST be specified and a 40-character Git SHA.
 	oid GitObjectID
 
-	author    signatureResolver
-	committer *signatureResolver
-	message   string
-	parents   []api.CommitID
+	gitRepo gitserver.Repo
 
-	// once ensures that fetching git commit information occurs once
-	once sync.Once
-	err  error
+	commitOnce sync.Once
+	commit     *git.Commit
+	commitErr  error
 }
 
-func toGitCommitResolver(repo *RepositoryResolver, commit *git.Commit) *GitCommitResolver {
-	res := &GitCommitResolver{
+// When set to nil, commit will be loaded lazily as needed by the resolver. Pass in a commit when you have batch loaded
+// a bunch of them and already have them at hand.
+func toGitCommitResolver(repo *RepositoryResolver, id api.CommitID, commit *git.Commit) *GitCommitResolver {
+	return &GitCommitResolver{
 		repoResolver:    repo,
 		includeUserInfo: true,
-		oid:             GitObjectID(commit.ID),
+		gitRepo:         gitserver.Repo{Name: repo.repo.Name},
+		oid:             GitObjectID(id),
+		commit:          commit,
 	}
-	res.once.Do(func() {
-		res.consumeCommit(commit)
-	})
-	return res
 }
 
-func (r *GitCommitResolver) resolveCommit(ctx context.Context) {
-	if r.err != nil {
-		return
-	}
-
-	r.once.Do(func() {
-		var cachedRepo *gitserver.Repo
-		cachedRepo, r.err = backend.CachedGitRepo(ctx, r.repoResolver.repo)
-		if r.err != nil {
+func (r *GitCommitResolver) resolveCommit(ctx context.Context) (*git.Commit, error) {
+	r.commitOnce.Do(func() {
+		if r.commit != nil {
 			return
 		}
 
-		var commit *git.Commit
-		commit, r.err = git.GetCommit(ctx, *cachedRepo, nil, api.CommitID(r.oid), git.ResolveRevisionOptions{})
-		if r.err != nil {
-			return
-		}
-
-		r.consumeCommit(commit)
+		opts := git.ResolveRevisionOptions{}
+		r.commit, r.commitErr = git.GetCommit(ctx, r.gitRepo, nil, api.CommitID(r.oid), opts)
 	})
-}
-
-func (r *GitCommitResolver) consumeCommit(commit *git.Commit) {
-	r.author = *toSignatureResolver(&commit.Author, r.includeUserInfo)
-	r.committer = toSignatureResolver(commit.Committer, r.includeUserInfo)
-	r.message = commit.Message
-	r.parents = commit.Parents
+	return r.commit, r.commitErr
 }
 
 // gitCommitGQLID is a type used for marshaling and unmarshaling a Git commit's
@@ -121,46 +101,63 @@ func (r *GitCommitResolver) OID() GitObjectID { return r.oid }
 func (r *GitCommitResolver) AbbreviatedOID() string {
 	return string(r.oid)[:7]
 }
+
 func (r *GitCommitResolver) Author(ctx context.Context) (*signatureResolver, error) {
-	r.resolveCommit(ctx)
-	if r.err != nil {
-		return nil, r.err
+	commit, err := r.resolveCommit(ctx)
+	if err != nil {
+		return nil, err
 	}
-	return &r.author, nil
+	return toSignatureResolver(&commit.Author, r.includeUserInfo), nil
 }
+
 func (r *GitCommitResolver) Committer(ctx context.Context) (*signatureResolver, error) {
-	r.resolveCommit(ctx)
-	return r.committer, r.err
+	commit, err := r.resolveCommit(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return toSignatureResolver(commit.Committer, r.includeUserInfo), nil
 }
+
 func (r *GitCommitResolver) Message(ctx context.Context) (string, error) {
-	r.resolveCommit(ctx)
-	return r.message, r.err
+	commit, err := r.resolveCommit(ctx)
+	if err != nil {
+		return "", err
+	}
+	return commit.Message, err
 }
+
 func (r *GitCommitResolver) Subject(ctx context.Context) (string, error) {
-	r.resolveCommit(ctx)
-	return GitCommitSubject(r.message), r.err
+	commit, err := r.resolveCommit(ctx)
+	if err != nil {
+		return "", err
+	}
+	return GitCommitSubject(commit.Message), err
 }
+
 func (r *GitCommitResolver) Body(ctx context.Context) (*string, error) {
-	r.resolveCommit(ctx)
-	if r.err != nil {
-		return nil, r.err
+	commit, err := r.resolveCommit(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	body := GitCommitBody(r.message)
+	body := GitCommitBody(commit.Message)
 	if body == "" {
 		return nil, nil
 	}
+
 	return &body, nil
 }
 
 func (r *GitCommitResolver) Parents(ctx context.Context) ([]*GitCommitResolver, error) {
-	r.resolveCommit(ctx)
-	if r.err != nil {
-		return nil, r.err
+	commit, err := r.resolveCommit(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	resolvers := make([]*GitCommitResolver, len(r.parents))
-	for i, parent := range r.parents {
+	resolvers := make([]*GitCommitResolver, len(commit.Parents))
+	// TODO(tsenart): We can get the parent commits in batch from gitserver instead of doing
+	// N roundtrips. We already have a git.Commits method. Maybe we can use that.
+	for i, parent := range commit.Parents {
 		var err error
 		resolvers[i], err = r.repoResolver.Commit(ctx, &RepositoryCommitArgs{Rev: string(parent)})
 		if err != nil {
@@ -186,11 +183,7 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 	Path      string
 	Recursive bool
 }) (*GitTreeEntryResolver, error) {
-	cachedRepo, err := backend.CachedGitRepo(ctx, r.repoResolver.repo)
-	if err != nil {
-		return nil, err
-	}
-	stat, err := git.Stat(ctx, *cachedRepo, api.CommitID(r.oid), args.Path)
+	stat, err := git.Stat(ctx, r.gitRepo, api.CommitID(r.oid), args.Path)
 	if err != nil {
 		return nil, err
 	}
@@ -207,11 +200,7 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 func (r *GitCommitResolver) Blob(ctx context.Context, args *struct {
 	Path string
 }) (*GitTreeEntryResolver, error) {
-	cachedRepo, err := backend.CachedGitRepo(ctx, r.repoResolver.repo)
-	if err != nil {
-		return nil, err
-	}
-	stat, err := git.Stat(ctx, *cachedRepo, api.CommitID(r.oid), args.Path)
+	stat, err := git.Stat(ctx, r.gitRepo, api.CommitID(r.oid), args.Path)
 	if err != nil {
 		return nil, err
 	}
@@ -276,14 +265,11 @@ func (r *GitCommitResolver) Ancestors(ctx context.Context, args *struct {
 func (r *GitCommitResolver) BehindAhead(ctx context.Context, args *struct {
 	Revspec string
 }) (*behindAheadCountsResolver, error) {
-	cachedRepo, err := backend.CachedGitRepo(ctx, r.repoResolver.repo)
+	counts, err := git.GetBehindAhead(ctx, r.gitRepo, args.Revspec, string(r.oid))
 	if err != nil {
 		return nil, err
 	}
-	counts, err := git.GetBehindAhead(ctx, *cachedRepo, args.Revspec, string(r.oid))
-	if err != nil {
-		return nil, err
-	}
+
 	return &behindAheadCountsResolver{
 		behind: int32(counts.Behind),
 		ahead:  int32(counts.Ahead),
@@ -299,7 +285,7 @@ func (r *behindAheadCountsResolver) Ahead() int32  { return r.ahead }
 // canonical OID for the revision.
 func (r *GitCommitResolver) inputRevOrImmutableRev() string {
 	if r.inputRev != nil && *r.inputRev != "" {
-		return escapeRevspecForURL(*r.inputRev)
+		return escapePathForURL(*r.inputRev)
 	}
 	return string(r.oid)
 }
@@ -318,7 +304,7 @@ func (r *GitCommitResolver) repoRevURL() (string, error) {
 		rev = string(r.oid)
 	}
 	if rev != "" {
-		return url + "@" + escapeRevspecForURL(rev), nil
+		return url + "@" + escapePathForURL(rev), nil
 	}
 	return url, nil
 }

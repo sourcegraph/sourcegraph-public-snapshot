@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -77,10 +78,10 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	userID := insertTestUser(t, dbconn.Global, "changeset-counts-over-time", false)
 
 	repoStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
-	githubExtSvc := &repos.ExternalService{
+	githubExtSvc := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub",
-		Config: marshalJSON(t, &schema.GitHubConnection{
+		Config: ct.MarshalJSON(t, &schema.GitHubConnection{
 			Url:   "https://github.com",
 			Token: os.Getenv("GITHUB_TOKEN"),
 			Repos: []string{"sourcegraph/sourcegraph"},
@@ -112,8 +113,6 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		VCS:  protocol.VCSInfo{URL: githubRepo.URI},
 	})
 	defer mockState.Unmock()
-
-	sourcer := repos.NewSourcer(cf)
 
 	store := ee.NewStore(dbconn.Global)
 
@@ -162,19 +161,12 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		campaign.ChangesetIDs = append(campaign.ChangesetIDs, c.ID)
-
-		if err := ee.SyncChangeset(ctx, repoStore, store, sourcer, c); err != nil {
+		if err := ee.SyncChangeset(ctx, repoStore, store, githubSrc, githubRepo, c); err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	err = store.UpdateCampaign(ctx, campaign)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	s, err := graphqlbackend.NewSchema(&Resolver{store: store}, nil, nil)
+	s, err := graphqlbackend.NewSchema(&Resolver{store: store}, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

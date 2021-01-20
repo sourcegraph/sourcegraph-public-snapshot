@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
@@ -18,11 +19,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestPermissionLevels(t *testing.T) {
@@ -34,7 +39,7 @@ func TestPermissionLevels(t *testing.T) {
 
 	store := ee.NewStore(dbconn.Global)
 	sr := &Resolver{store: store}
-	s, err := graphqlbackend.NewSchema(sr, nil, nil)
+	s, err := graphqlbackend.NewSchema(sr, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -76,10 +81,14 @@ func TestPermissionLevels(t *testing.T) {
 			LastApplierID:    userID,
 			LastAppliedAt:    time.Now(),
 			CampaignSpecID:   campaignSpecID,
-			// We attach the changeset to the campaign so we can test syncChangeset
-			ChangesetIDs: []int64{changeset.ID},
 		}
 		if err := s.CreateCampaign(ctx, c); err != nil {
+			t.Fatal(err)
+		}
+
+		// We attach the changeset to the campaign so we can test syncChangeset
+		changeset.CampaignIDs = append(changeset.CampaignIDs, c.ID)
+		if err := s.UpdateChangeset(ctx, changeset); err != nil {
 			t.Fatal(err)
 		}
 
@@ -246,6 +255,200 @@ func TestPermissionLevels(t *testing.T) {
 			}
 		})
 
+		t.Run("CampaignsCodeHosts", func(t *testing.T) {
+			tests := []struct {
+				name        string
+				currentUser int32
+				user        int32
+				wantErr     bool
+			}{
+				{
+					name:        "site-admin viewing other user",
+					currentUser: adminID,
+					user:        userID,
+					wantErr:     false,
+				},
+				{
+					name:        "non-site-admin viewing other's hosts",
+					currentUser: userID,
+					user:        adminID,
+					wantErr:     true,
+				},
+				{
+					name:        "non-site-admin viewing own hosts",
+					currentUser: userID,
+					user:        userID,
+					wantErr:     false,
+				},
+			}
+
+			for _, tc := range tests {
+				t.Run(tc.name, func(t *testing.T) {
+					pruneUserCredentials(t)
+
+					graphqlID := string(graphqlbackend.MarshalUserID(tc.user))
+
+					var res struct{ Node apitest.User }
+
+					input := map[string]interface{}{"user": graphqlID}
+					queryCodeHosts := `
+				  query($user: ID!) {
+				    node(id: $user) { ... on User { campaignsCodeHosts { totalCount } } }
+				  }
+                `
+
+					actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
+					errors := apitest.Exec(actorCtx, t, s, input, &res, queryCodeHosts)
+					if !tc.wantErr && len(errors) != 0 {
+						t.Fatal("got error but didn't expect one")
+					} else if tc.wantErr && len(errors) == 0 {
+						t.Fatal("expected error but got none")
+					}
+				})
+			}
+		})
+
+		t.Run("CampaignsCredentialByID", func(t *testing.T) {
+			tests := []struct {
+				name        string
+				currentUser int32
+				user        int32
+				wantErr     bool
+			}{
+				{
+					name:        "site-admin viewing other user",
+					currentUser: adminID,
+					user:        userID,
+					wantErr:     false,
+				},
+				{
+					name:        "non-site-admin viewing other's credential",
+					currentUser: userID,
+					user:        adminID,
+					wantErr:     true,
+				},
+				{
+					name:        "non-site-admin viewing own credential",
+					currentUser: userID,
+					user:        userID,
+					wantErr:     false,
+				},
+			}
+
+			for _, tc := range tests {
+				t.Run(tc.name, func(t *testing.T) {
+					pruneUserCredentials(t)
+
+					cred, err := db.UserCredentials.Create(ctx, db.UserCredentialScope{
+						Domain:              db.UserCredentialDomainCampaigns,
+						ExternalServiceID:   "https://github.com/",
+						ExternalServiceType: extsvc.TypeGitHub,
+						UserID:              tc.user,
+					}, &auth.OAuthBearerToken{Token: "SOSECRET"})
+					if err != nil {
+						t.Fatal(err)
+					}
+					graphqlID := string(marshalCampaignsCredentialID(cred.ID))
+
+					var res struct{ Node apitest.CampaignsCredential }
+
+					input := map[string]interface{}{"id": graphqlID}
+					queryCodeHosts := `
+				  query($id: ID!) {
+				    node(id: $id) { ... on CampaignsCredential { id } }
+				  }
+                `
+
+					actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
+					errors := apitest.Exec(actorCtx, t, s, input, &res, queryCodeHosts)
+					if !tc.wantErr && len(errors) != 0 {
+						t.Fatal("got error but didn't expect one")
+					} else if tc.wantErr && len(errors) == 0 {
+						t.Fatal("expected error but got none")
+					}
+					if !tc.wantErr {
+						if have, want := res.Node.ID, graphqlID; have != want {
+							t.Fatalf("invalid node returned, wanted ID=%q, have=%q", want, have)
+						}
+					}
+				})
+			}
+		})
+
+		t.Run("DeleteCampaignsCredential", func(t *testing.T) {
+			tests := []struct {
+				name        string
+				currentUser int32
+				user        int32
+				wantAuthErr bool
+			}{
+				{
+					name:        "site-admin for other user",
+					currentUser: adminID,
+					user:        userID,
+					wantAuthErr: false,
+				},
+				{
+					name:        "non-site-admin for other user",
+					currentUser: userID,
+					user:        adminID,
+					wantAuthErr: true,
+				},
+				{
+					name:        "non-site-admin for self",
+					currentUser: userID,
+					user:        userID,
+					wantAuthErr: false,
+				},
+			}
+
+			for _, tc := range tests {
+				t.Run(tc.name, func(t *testing.T) {
+					pruneUserCredentials(t)
+
+					cred, err := db.UserCredentials.Create(ctx, db.UserCredentialScope{
+						Domain:              db.UserCredentialDomainCampaigns,
+						ExternalServiceID:   "https://github.com/",
+						ExternalServiceType: extsvc.TypeGitHub,
+						UserID:              tc.user,
+					}, &auth.OAuthBearerToken{Token: "SOSECRET"})
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					var res struct{ Node apitest.CampaignsCredential }
+
+					input := map[string]interface{}{
+						"campaignsCredential": marshalCampaignsCredentialID(cred.ID),
+					}
+					mutationDeleteCampaignsCredential := `
+					mutation($campaignsCredential: ID!) {
+						deleteCampaignsCredential(campaignsCredential: $campaignsCredential) { alwaysNil }
+					}
+                `
+
+					actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
+					errors := apitest.Exec(actorCtx, t, s, input, &res, mutationDeleteCampaignsCredential)
+					if tc.wantAuthErr {
+						if len(errors) != 1 {
+							t.Fatalf("expected 1 error, but got %d: %s", len(errors), errors)
+						}
+						if !strings.Contains(errors[0].Error(), "must be authenticated") {
+							t.Fatalf("wrong error: %s %T", errors[0], errors[0])
+						}
+					} else {
+						// We don't care about other errors, we only want to
+						// check that we didn't get an auth error.
+						for _, e := range errors {
+							if strings.Contains(e.Error(), "must be authenticated") {
+								t.Fatalf("auth error wrongly returned: %s %T", errors[0], errors[0])
+							}
+						}
+					}
+				})
+			}
+		})
+
 		t.Run("Campaigns", func(t *testing.T) {
 			tests := []struct {
 				name                string
@@ -320,11 +523,17 @@ func TestPermissionLevels(t *testing.T) {
 		})
 	})
 
-	t.Run("mutations", func(t *testing.T) {
+	t.Run("campaign mutations", func(t *testing.T) {
 		mutations := []struct {
 			name         string
 			mutationFunc func(campaignID, changesetID, campaignSpecID string) string
 		}{
+			{
+				name: "createCampaign",
+				mutationFunc: func(campaignID, changesetID, campaignSpecID string) string {
+					return fmt.Sprintf(`mutation { createCampaign(campaignSpec: %q) { id } }`, campaignSpecID)
+				},
+			},
 			{
 				name: "closeCampaign",
 				mutationFunc: func(campaignID, changesetID, campaignSpecID string) string {
@@ -364,78 +573,105 @@ func TestPermissionLevels(t *testing.T) {
 					currentUser    int32
 					campaignAuthor int32
 					wantAuthErr    bool
+
+					// If campaigns.restrictToAdmins is enabled, should an error
+					// be generated?
+					wantDisabledErr bool
 				}{
 					{
-						name:           "unauthorized",
-						currentUser:    userID,
-						campaignAuthor: adminID,
-						wantAuthErr:    true,
+						name:            "unauthorized",
+						currentUser:     userID,
+						campaignAuthor:  adminID,
+						wantAuthErr:     true,
+						wantDisabledErr: true,
 					},
 					{
-						name:           "authorized campaign owner",
-						currentUser:    userID,
-						campaignAuthor: userID,
-						wantAuthErr:    false,
+						name:            "authorized campaign owner",
+						currentUser:     userID,
+						campaignAuthor:  userID,
+						wantAuthErr:     false,
+						wantDisabledErr: true,
 					},
 					{
-						name:           "authorized site-admin",
-						currentUser:    adminID,
-						campaignAuthor: userID,
-						wantAuthErr:    false,
+						name:            "authorized site-admin",
+						currentUser:     adminID,
+						campaignAuthor:  userID,
+						wantAuthErr:     false,
+						wantDisabledErr: false,
 					},
 				}
 
 				for _, tc := range tests {
-					t.Run(tc.name, func(t *testing.T) {
-						cleanUpCampaigns(t, store)
+					for _, restrict := range []bool{true, false} {
+						t.Run(fmt.Sprintf("%s restrict: %v", tc.name, restrict), func(t *testing.T) {
+							cleanUpCampaigns(t, store)
 
-						campaignSpecRandID, campaignSpecID := createCampaignSpec(t, store, tc.campaignAuthor)
-						campaignID := createCampaign(t, store, "test-campaign", tc.campaignAuthor, campaignSpecID)
+							campaignSpecRandID, campaignSpecID := createCampaignSpec(t, store, tc.campaignAuthor)
+							campaignID := createCampaign(t, store, "test-campaign", tc.campaignAuthor, campaignSpecID)
 
-						// We add the changeset to the campaign. It doesn't matter
-						// for the addChangesetsToCampaign mutation, since that is
-						// idempotent and we want to solely check for auth errors.
-						changeset.CampaignIDs = []int64{campaignID}
-						if err := store.UpdateChangeset(ctx, changeset); err != nil {
-							t.Fatal(err)
-						}
-
-						mutation := m.mutationFunc(
-							string(marshalCampaignID(campaignID)),
-							string(marshalChangesetID(changeset.ID)),
-							string(marshalCampaignSpecRandID(campaignSpecRandID)),
-						)
-
-						actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
-
-						var response struct{}
-						errs := apitest.Exec(actorCtx, t, s, nil, &response, mutation)
-
-						if tc.wantAuthErr {
-							if len(errs) != 1 {
-								t.Fatalf("expected 1 error, but got %d: %s", len(errs), errs)
+							// We add the changeset to the campaign. It doesn't
+							// matter for the addChangesetsToCampaign mutation,
+							// since that is idempotent and we want to solely
+							// check for auth errors.
+							changeset.CampaignIDs = []int64{campaignID}
+							if err := store.UpdateChangeset(ctx, changeset); err != nil {
+								t.Fatal(err)
 							}
-							if !strings.Contains(errs[0].Error(), "must be authenticated") {
-								t.Fatalf("wrong error: %s %T", errs[0], errs[0])
-							}
-						} else {
+
+							mutation := m.mutationFunc(
+								string(marshalCampaignID(campaignID)),
+								string(marshalChangesetID(changeset.ID)),
+								string(marshalCampaignSpecRandID(campaignSpecRandID)),
+							)
+
+							actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
+
+							conf.Mock(&conf.Unified{
+								SiteConfiguration: schema.SiteConfiguration{
+									CampaignsRestrictToAdmins: restrict,
+								},
+							})
+							defer conf.Mock(nil)
+
+							var response struct{}
+							errs := apitest.Exec(actorCtx, t, s, nil, &response, mutation)
+
 							// We don't care about other errors, we only want to
 							// check that we didn't get an auth error.
-							for _, e := range errs {
-								if strings.Contains(e.Error(), "must be authenticated") {
-									t.Fatalf("auth error wrongly returned: %s %T", errs[0], errs[0])
+							if restrict && tc.wantDisabledErr {
+								if len(errs) != 1 {
+									t.Fatalf("expected 1 error, but got %d: %s", len(errs), errs)
+								}
+								if !strings.Contains(errs[0].Error(), "campaigns are disabled for non-site-admin users") {
+									t.Fatalf("wrong error: %s %T", errs[0], errs[0])
+								}
+							} else if tc.wantAuthErr {
+								if len(errs) != 1 {
+									t.Fatalf("expected 1 error, but got %d: %s", len(errs), errs)
+								}
+								if !strings.Contains(errs[0].Error(), "must be authenticated") {
+									t.Fatalf("wrong error: %s %T", errs[0], errs[0])
+								}
+							} else {
+								// We don't care about other errors, we only
+								// want to check that we didn't get an auth
+								// or site admin error.
+								for _, e := range errs {
+									if strings.Contains(e.Error(), "must be authenticated") {
+										t.Fatalf("auth error wrongly returned: %s %T", errs[0], errs[0])
+									} else if strings.Contains(e.Error(), "campaigns are disabled for non-site-admin users") {
+										t.Fatalf("site admin error wrongly returned: %s %T", errs[0], errs[0])
+									}
 								}
 							}
-						}
-					})
+						})
+					}
 				}
 			})
 		}
 	})
 
-	t.Run("admin-only create mutations", func(t *testing.T) {
-		// These can be removed once we enable creation of
-		// changesetSpecs/campaignSpecs/applyCampaign for non-site-admin users.
+	t.Run("spec mutations", func(t *testing.T) {
 		mutations := []struct {
 			name         string
 			mutationFunc func(userID string) string
@@ -466,23 +702,23 @@ func TestPermissionLevels(t *testing.T) {
 					currentUser int32
 					wantAuthErr bool
 				}{
-					{
-						name:        "authorized user",
-						currentUser: userID,
-						wantAuthErr: true,
-					},
-					{
-						name:        "authorized site-admin",
-						currentUser: adminID,
-						wantAuthErr: false,
-					},
+					{name: "no user", currentUser: 0, wantAuthErr: true},
+					{name: "user", currentUser: userID, wantAuthErr: false},
+					{name: "site-admin", currentUser: adminID, wantAuthErr: false},
 				}
 
 				for _, tc := range tests {
 					t.Run(tc.name, func(t *testing.T) {
 						cleanUpCampaigns(t, store)
 
-						mutation := m.mutationFunc(string(graphqlbackend.MarshalUserID(tc.currentUser)))
+						namespaceID := string(graphqlbackend.MarshalUserID(tc.currentUser))
+						if tc.currentUser == 0 {
+							// If we don't have a currentUser we try to create
+							// a campaign in another namespace, solely for the
+							// purposes of this test.
+							namespaceID = string(graphqlbackend.MarshalUserID(userID))
+						}
+						mutation := m.mutationFunc(namespaceID)
 
 						actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
 
@@ -493,7 +729,7 @@ func TestPermissionLevels(t *testing.T) {
 							if len(errs) != 1 {
 								t.Fatalf("expected 1 error, but got %d: %s", len(errs), errs)
 							}
-							if !strings.Contains(errs[0].Error(), "must be site admin") {
+							if !strings.Contains(errs[0].Error(), "not authenticated") {
 								t.Fatalf("wrong error: %s %T", errs[0], errs[0])
 							}
 						} else {
@@ -521,7 +757,7 @@ func TestRepositoryPermissions(t *testing.T) {
 
 	store := ee.NewStore(dbconn.Global)
 	sr := &Resolver{store: store}
-	s, err := graphqlbackend.NewSchema(sr, nil, nil)
+	s, err := graphqlbackend.NewSchema(sr, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -594,12 +830,11 @@ func TestRepositoryPermissions(t *testing.T) {
 			LastApplierID:    userID,
 			LastAppliedAt:    time.Now(),
 			CampaignSpecID:   spec.ID,
-			// We attach the two changesets to the campaign
-			ChangesetIDs: changesetIDs,
 		}
 		if err := store.CreateCampaign(ctx, campaign); err != nil {
 			t.Fatal(err)
 		}
+		// We attach the two changesets to the campaign
 		for _, c := range changesets {
 			c.CampaignIDs = []int64{campaign.ID}
 			if err := store.UpdateChangeset(ctx, c); err != nil {
@@ -616,7 +851,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		testCampaignResponse(t, s, userCtx, input, wantCampaignResponse{
 			changesetTypes:  map[string]int{"ExternalChangeset": 2},
 			changesetsCount: 2,
-			changesetStats:  apitest.ChangesetConnectionStats{Open: 2, Total: 2},
+			changesetStats:  apitest.ChangesetsStats{Open: 2, Total: 2},
 			campaignDiffStat: apitest.DiffStat{
 				Added:   2 * changesetDiffStat.Added,
 				Changed: 2 * changesetDiffStat.Changed,
@@ -629,9 +864,10 @@ func TestRepositoryPermissions(t *testing.T) {
 			testChangesetResponse(t, s, userCtx, c.ID, "ExternalChangeset")
 		}
 
-		// Now we add the authzFilter and filter out the repository of one changeset
+		// Now we set permissions and filter out the repository of one changeset
 		filteredRepo := changesets[0].RepoID
-		ct.AuthzFilterRepos(t, filteredRepo)
+		accessibleRepo := changesets[1].RepoID
+		ct.MockRepoPermissions(t, userID, accessibleRepo)
 
 		// Send query again and check that for each filtered repository we get a
 		// HiddenChangeset
@@ -641,7 +877,7 @@ func TestRepositoryPermissions(t *testing.T) {
 				"HiddenExternalChangeset": 1,
 			},
 			changesetsCount: 2,
-			changesetStats:  apitest.ChangesetConnectionStats{Open: 2, Total: 2},
+			changesetStats:  apitest.ChangesetsStats{Open: 2, Total: 2},
 			campaignDiffStat: apitest.DiffStat{
 				Added:   1 * changesetDiffStat.Added,
 				Changed: 1 * changesetDiffStat.Changed,
@@ -668,7 +904,6 @@ func TestRepositoryPermissions(t *testing.T) {
 		}
 		wantCheckStateResponse := want
 		wantCheckStateResponse.changesetsCount = 1
-		wantCheckStateResponse.changesetStats = apitest.ChangesetConnectionStats{Open: 1, Total: 1}
 		wantCheckStateResponse.changesetTypes = map[string]int{
 			"ExternalChangeset": 1,
 			// No HiddenExternalChangeset
@@ -725,9 +960,10 @@ func TestRepositoryPermissions(t *testing.T) {
 			testChangesetSpecResponse(t, s, userCtx, c.RandID, "VisibleChangesetSpec")
 		}
 
-		// Now we add the authzFilter and filter out the repository of one changeset
+		// Now we set permissions and filter out the repository of one changeset
 		filteredRepo := changesetSpecs[0].RepoID
-		ct.AuthzFilterRepos(t, filteredRepo)
+		accessibleRepo := changesetSpecs[1].RepoID
+		ct.MockRepoPermissions(t, userID, accessibleRepo)
 
 		// Send query again and check that for each filtered repository we get a
 		// HiddenChangesetSpec.
@@ -757,7 +993,7 @@ func TestRepositoryPermissions(t *testing.T) {
 type wantCampaignResponse struct {
 	changesetTypes   map[string]int
 	changesetsCount  int
-	changesetStats   apitest.ChangesetConnectionStats
+	changesetStats   apitest.ChangesetsStats
 	campaignDiffStat apitest.DiffStat
 }
 
@@ -775,7 +1011,7 @@ func testCampaignResponse(t *testing.T, s *graphql.Schema, ctx context.Context, 
 		t.Fatalf("unexpected changesets total count (-want +got):\n%s", diff)
 	}
 
-	if diff := cmp.Diff(w.changesetStats, response.Node.Changesets.Stats); diff != "" {
+	if diff := cmp.Diff(w.changesetStats, response.Node.ChangesetsStats); diff != "" {
 		t.Fatalf("unexpected changesets stats (-want +got):\n%s", diff)
 	}
 
@@ -796,11 +1032,12 @@ const queryCampaignPermLevels = `
 query($campaign: ID!, $reviewState: ChangesetReviewState, $checkState: ChangesetCheckState) {
   node(id: $campaign) {
     ... on Campaign {
-      id
+	  id
+
+	  changesetsStats { unpublished, open, merged, closed, total }
 
       changesets(first: 100, reviewState: $reviewState, checkState: $checkState) {
         totalCount
-		stats { unpublished, open, merged, closed, total }
         nodes {
           __typename
           ... on HiddenExternalChangeset {
@@ -950,7 +1187,18 @@ query($campaignSpec: ID!) {
         nodes {
           __typename
           type
-
+          operations
+          changeset { id }
+          delta {
+              titleChanged
+              bodyChanged
+              undraft
+              baseRefChanged
+              diffChanged
+              commitMessageChanged
+              authorNameChanged
+              authorEmailChanged
+          }
           ... on HiddenChangesetSpec {
             id
           }

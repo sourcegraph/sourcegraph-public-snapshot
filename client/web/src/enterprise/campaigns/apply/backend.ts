@@ -19,6 +19,16 @@ import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { requestGraphQL } from '../../../backend/graphql'
 
+export const viewerCampaignsCodeHostsFragment = gql`
+    fragment ViewerCampaignsCodeHostsFields on CampaignsCodeHostConnection {
+        totalCount
+        nodes {
+            externalServiceURL
+            externalServiceKind
+        }
+    }
+`
+
 export const campaignSpecFragment = gql`
     fragment CampaignSpecFields on CampaignSpec {
         id
@@ -45,7 +55,12 @@ export const campaignSpecFragment = gql`
         diffStat {
             ...DiffStatFields
         }
+        viewerCampaignsCodeHosts(onlyWithoutCredential: true) {
+            ...ViewerCampaignsCodeHostsFields
+        }
     }
+
+    ${viewerCampaignsCodeHostsFragment}
 
     ${diffStatFields}
 `
@@ -88,18 +103,32 @@ export const changesetSpecFieldsFragment = gql`
         }
     }
 
+    fragment CommonChangesetSpecFields on ChangesetSpec {
+        expiresAt
+        type
+        operations
+        delta {
+            titleChanged
+        }
+        changeset {
+            __typename
+            id
+            ... on ExternalChangeset {
+                title
+            }
+        }
+    }
+
     fragment HiddenChangesetSpecFields on HiddenChangesetSpec {
         __typename
         id
-        expiresAt
-        type
+        ...CommonChangesetSpecFields
     }
 
     fragment VisibleChangesetSpecFields on VisibleChangesetSpec {
         __typename
         id
-        expiresAt
-        type
+        ...CommonChangesetSpecFields
         description {
             __typename
             ...ExistingChangesetReferenceFields

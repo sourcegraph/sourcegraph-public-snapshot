@@ -7,11 +7,18 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
 )
 
+var client *gqltestutil.Client
+
 var (
-	endpoint = env.Get("ENDPOINT", "http://127.0.0.1:3080", "Sourcegraph frontend endpoint")
-	token    = env.Get("ACCESS_TOKEN", "", "Access token")
+	endpoint    = env.Get("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:3080", "Sourcegraph frontend endpoint")
+	token       = env.Get("SOURCEGRAPH_SUDO_TOKEN", "", "Access token")
+	githubToken = env.Get("GITHUB_TOKEN", "", "The GitHub personal access token that will be used to authenticate a GitHub external service")
+	email       = "test@sourcegraph.com"
+	username    = "admin"
+	password    = "supersecurepassword"
 
 	// Flags
 	indexDir                    string
@@ -22,8 +29,9 @@ var (
 
 	// Entrypoints
 	commands = map[string]func() error{
-		"upload": uploadCommand,
-		"query":  queryCommand,
+		"upload":   uploadCommand,
+		"query":    queryCommand,
+		"addrepos": addReposCommand,
 	}
 )
 
@@ -54,6 +62,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "error: %s\n", err)
 		os.Exit(1)
 	}
+
 }
 
 // commandNameList returns a comma-separated list of valid command names.

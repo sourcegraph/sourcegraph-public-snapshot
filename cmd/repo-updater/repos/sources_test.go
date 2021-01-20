@@ -26,13 +26,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestNewSourcer(t *testing.T) {
 	now := time.Now()
 
-	github := ExternalService{
+	github := types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "Github - Test",
 		Config:      `{"url": "https://github.com"}`,
@@ -40,7 +41,7 @@ func TestNewSourcer(t *testing.T) {
 		UpdatedAt:   now,
 	}
 
-	gitlab := ExternalService{
+	gitlab := types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "Github - Test",
 		Config:      `{"url": "https://github.com"}`,
@@ -49,7 +50,7 @@ func TestNewSourcer(t *testing.T) {
 		DeletedAt:   now,
 	}
 
-	sources := func(es ...*ExternalService) (srcs []Source) {
+	sources := func(es ...*types.ExternalService) (srcs []Source) {
 		t.Helper()
 
 		for _, e := range es {
@@ -65,13 +66,13 @@ func TestNewSourcer(t *testing.T) {
 
 	for _, tc := range []struct {
 		name string
-		svcs ExternalServices
+		svcs types.ExternalServices
 		srcs Sources
 		err  string
 	}{
 		{
 			name: "deleted external services are excluded",
-			svcs: ExternalServices{&github, &gitlab},
+			svcs: types.ExternalServices{&github, &gitlab},
 			srcs: sources(&github),
 			err:  "<nil>",
 		},
@@ -105,15 +106,15 @@ func TestSources_ListRepos(t *testing.T) {
 	type testCase struct {
 		name   string
 		ctx    context.Context
-		svcs   ExternalServices
-		assert func(*ExternalService) ReposAssertion
+		svcs   types.ExternalServices
+		assert func(*types.ExternalService) ReposAssertion
 		err    string
 	}
 
 	var testCases []testCase
 
 	{
-		svcs := ExternalServices{
+		svcs := types.ExternalServices{
 			{
 				Kind: extsvc.KindGitHub,
 				Config: marshalJSON(t, &schema.GitHubConnection{
@@ -202,7 +203,7 @@ func TestSources_ListRepos(t *testing.T) {
 		testCases = append(testCases, testCase{
 			name: "excluded repos are never yielded",
 			svcs: svcs,
-			assert: func(s *ExternalService) ReposAssertion {
+			assert: func(s *types.ExternalService) ReposAssertion {
 				return func(t testing.TB, rs Repos) {
 					t.Helper()
 
@@ -284,7 +285,7 @@ func TestSources_ListRepos(t *testing.T) {
 	}
 
 	{
-		svcs := ExternalServices{
+		svcs := types.ExternalServices{
 			{
 				Kind: extsvc.KindGitHub,
 				Config: marshalJSON(t, &schema.GitHubConnection{
@@ -348,7 +349,7 @@ func TestSources_ListRepos(t *testing.T) {
 		testCases = append(testCases, testCase{
 			name: "included repos that exist are yielded",
 			svcs: svcs,
-			assert: func(s *ExternalService) ReposAssertion {
+			assert: func(s *types.ExternalService) ReposAssertion {
 				return func(t testing.TB, rs Repos) {
 					t.Helper()
 
@@ -396,7 +397,7 @@ func TestSources_ListRepos(t *testing.T) {
 	}
 
 	{
-		svcs := ExternalServices{
+		svcs := types.ExternalServices{
 			{
 				Kind: extsvc.KindGitHub,
 				Config: marshalJSON(t, &schema.GitHubConnection{
@@ -455,7 +456,7 @@ func TestSources_ListRepos(t *testing.T) {
 		testCases = append(testCases, testCase{
 			name: "repositoryPathPattern determines the repo name",
 			svcs: svcs,
-			assert: func(s *ExternalService) ReposAssertion {
+			assert: func(s *types.ExternalService) ReposAssertion {
 				return func(t testing.TB, rs Repos) {
 					t.Helper()
 
@@ -527,7 +528,7 @@ func TestSources_ListRepos(t *testing.T) {
 	}
 
 	{
-		svcs := ExternalServices{
+		svcs := types.ExternalServices{
 			{
 				Kind: extsvc.KindGitLab,
 				Config: marshalJSON(t, &schema.GitLabConnection{
@@ -556,7 +557,7 @@ func TestSources_ListRepos(t *testing.T) {
 		testCases = append(testCases, testCase{
 			name: "nameTransformations updates the repo name",
 			svcs: svcs,
-			assert: func(s *ExternalService) ReposAssertion {
+			assert: func(s *types.ExternalService) ReposAssertion {
 				return func(t testing.TB, rs Repos) {
 					t.Helper()
 
@@ -582,7 +583,7 @@ func TestSources_ListRepos(t *testing.T) {
 	}
 
 	{
-		svcs := ExternalServices{
+		svcs := types.ExternalServices{
 			{
 				Kind: extsvc.KindAWSCodeCommit,
 				Config: marshalJSON(t, &schema.AWSCodeCommitConnection{
@@ -600,7 +601,7 @@ func TestSources_ListRepos(t *testing.T) {
 		testCases = append(testCases, testCase{
 			name: "yielded repos have authenticated CloneURLs",
 			svcs: svcs,
-			assert: func(s *ExternalService) ReposAssertion {
+			assert: func(s *types.ExternalService) ReposAssertion {
 				return func(t testing.TB, rs Repos) {
 					t.Helper()
 
@@ -630,7 +631,7 @@ func TestSources_ListRepos(t *testing.T) {
 	}
 
 	{
-		svcs := ExternalServices{
+		svcs := types.ExternalServices{
 			{
 				Kind: extsvc.KindPhabricator,
 				Config: marshalJSON(t, &schema.PhabricatorConnection{
@@ -643,7 +644,7 @@ func TestSources_ListRepos(t *testing.T) {
 		testCases = append(testCases, testCase{
 			name: "phabricator",
 			svcs: svcs,
-			assert: func(*ExternalService) ReposAssertion {
+			assert: func(*types.ExternalService) ReposAssertion {
 				return func(t testing.TB, rs Repos) {
 					t.Helper()
 
@@ -682,7 +683,7 @@ func TestSources_ListRepos(t *testing.T) {
 	}
 
 	{
-		svcs := ExternalServices{
+		svcs := types.ExternalServices{
 			{
 				Kind: extsvc.KindBitbucketServer,
 				Config: marshalJSON(t, &schema.BitbucketServerConnection{
@@ -698,7 +699,7 @@ func TestSources_ListRepos(t *testing.T) {
 		testCases = append(testCases, testCase{
 			name: "bitbucketserver archived",
 			svcs: svcs,
-			assert: func(s *ExternalService) ReposAssertion {
+			assert: func(s *types.ExternalService) ReposAssertion {
 				return func(t testing.TB, rs Repos) {
 					t.Helper()
 

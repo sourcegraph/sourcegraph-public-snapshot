@@ -2,6 +2,7 @@ package enterprise
 
 import (
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"net/http"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -10,7 +11,7 @@ import (
 // Services is a bag of HTTP handlers and factory functions that are registered by the
 // enterprise frontend setup hook.
 type Services struct {
-	GitHubWebhook             http.Handler
+	GitHubWebhook             webhooks.Registerer
 	GitLabWebhook             http.Handler
 	BitbucketServerWebhook    http.Handler
 	NewCodeIntelUploadHandler NewCodeIntelUploadHandler
@@ -18,6 +19,7 @@ type Services struct {
 	AuthzResolver             graphqlbackend.AuthzResolver
 	CampaignsResolver         graphqlbackend.CampaignsResolver
 	CodeIntelResolver         graphqlbackend.CodeIntelResolver
+	CodeMonitorsResolver      graphqlbackend.CodeMonitorsResolver
 }
 
 // NewCodeIntelUploadHandler creates a new handler for the LSIF upload endpoint. The
@@ -32,13 +34,14 @@ type NewExecutorProxyHandler func() http.Handler
 // DefaultServices creates a new Services value that has default implementations for all services.
 func DefaultServices() Services {
 	return Services{
-		GitHubWebhook:             makeNotFoundHandler("github webhook"),
+		GitHubWebhook:             registerFunc(func(webhook *webhooks.GitHubWebhook) {}),
 		GitLabWebhook:             makeNotFoundHandler("gitlab webhook"),
 		BitbucketServerWebhook:    makeNotFoundHandler("bitbucket server webhook"),
 		NewCodeIntelUploadHandler: func(_ bool) http.Handler { return makeNotFoundHandler("code intel upload") },
 		NewExecutorProxyHandler:   func() http.Handler { return makeNotFoundHandler("executor proxy") },
 		AuthzResolver:             graphqlbackend.DefaultAuthzResolver,
 		CampaignsResolver:         graphqlbackend.DefaultCampaignsResolver,
+		CodeMonitorsResolver:      graphqlbackend.DefaultCodeMonitorsResolver,
 	}
 }
 
@@ -48,4 +51,10 @@ func makeNotFoundHandler(handlerName string) http.Handler {
 		w.WriteHeader(http.StatusNotFound)
 		_, _ = w.Write([]byte(fmt.Sprintf("%s is only available in enterprise", handlerName)))
 	})
+}
+
+type registerFunc func(webhook *webhooks.GitHubWebhook)
+
+func (fn registerFunc) Register(w *webhooks.GitHubWebhook) {
+	fn(w)
 }

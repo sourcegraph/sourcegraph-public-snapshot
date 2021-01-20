@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"log"
+	"net/http"
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
@@ -18,7 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
-const port = 3192
+const addr = ":3192"
 
 func main() {
 	config := &Config{}
@@ -34,15 +36,16 @@ func main() {
 		log.Fatalf("failed to read config: %s", err)
 	}
 
+	go debugserver.NewServerRoutine().Start()
+
 	routines := []goroutine.BackgroundRoutine{
-		goroutine.NoopStop(debugserver.NewServerRoutine()),
 		apiworker.NewWorker(config.APIWorkerOptions(nil)),
 	}
 	if !config.DisableHealthServer {
-		routines = append(routines, httpserver.New(port, nil))
+		routines = append(routines, httpserver.NewFromAddr(addr, &http.Server{Handler: httpserver.NewHandler(nil)}))
 	}
 
-	goroutine.MonitorBackgroundRoutines(routines...)
+	goroutine.MonitorBackgroundRoutines(context.Background(), routines...)
 }
 
 func makeWorkerMetrics() workerutil.WorkerMetrics {
@@ -54,7 +57,7 @@ func makeWorkerMetrics() workerutil.WorkerMetrics {
 
 	metrics := metrics.NewOperationMetrics(
 		observationContext.Registerer,
-		"index_queue_processor",
+		"executor_queue_processor",
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of records processed"),
 	)

@@ -3,7 +3,6 @@ package db
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"time"
 	"unicode/utf8"
@@ -12,7 +11,8 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
@@ -20,15 +20,23 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // users provides access to the `users` table.
 //
 // For a detailed overview of the schema, see schema.md.
 type users struct {
-	// PreCreateUser (if set) is a hook called before creating a new user in the DB by any means
+	// BeforeCreateUser (if set) is a hook called before creating a new user in the DB by any means
 	// (e.g., both directly via Users.Create or via ExternalAccounts.CreateUserAndSave).
-	PreCreateUser func(context.Context) error
+	BeforeCreateUser func(context.Context) error
+	// AfterCreateUser (if set) is a hook called after creating a new user in the DB by any means
+	// (e.g., both directly via Users.Create or via ExternalAccounts.CreateUserAndSave).
+	// Whatever this hook mutates in database should be reflected on the `user` argument as well.
+	AfterCreateUser func(ctx context.Context, tx dbutil.DB, user *types.User) error
+	// BeforeSetUserIsSiteAdmin (if set) is a hook called before promoting/revoking a user to be a
+	// site admin.
+	BeforeSetUserIsSiteAdmin func(isSiteAdmin bool) error
 }
 
 // userNotFoundErr is the error that is returned when a user is not found.
@@ -218,10 +226,10 @@ func (u *users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *
 		return nil, errCannotCreateUser{"site_already_initialized"}
 	}
 
-	// Run PreCreateUser hook.
-	if u.PreCreateUser != nil {
-		if err := u.PreCreateUser(ctx); err != nil {
-			return nil, err
+	// Run BeforeCreateUser hook.
+	if u.BeforeCreateUser != nil {
+		if err := u.BeforeCreateUser(ctx); err != nil {
+			return nil, errors.Wrap(err, "pre create user hook")
 		}
 	}
 
@@ -252,11 +260,12 @@ func (u *users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *
 	}
 
 	if info.Email != "" {
+		// The first email address added should be their primary
 		var err error
 		if info.EmailIsVerified {
-			_, err = tx.ExecContext(ctx, "INSERT INTO user_emails(user_id, email, verified_at) VALUES ($1, $2, now())", id, info.Email)
+			_, err = tx.ExecContext(ctx, "INSERT INTO user_emails(user_id, email, verified_at, is_primary) VALUES ($1, $2, now(), true)", id, info.Email)
 		} else {
-			_, err = tx.ExecContext(ctx, "INSERT INTO user_emails(user_id, email, verification_code) VALUES ($1, $2, $3)", id, info.Email, info.EmailVerificationCode)
+			_, err = tx.ExecContext(ctx, "INSERT INTO user_emails(user_id, email, verification_code, is_primary) VALUES ($1, $2, $3, true)", id, info.Email, info.EmailVerificationCode)
 		}
 		if err != nil {
 			if pqErr, ok := err.(*pq.Error); ok {
@@ -269,6 +278,17 @@ func (u *users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *
 		}
 	}
 
+	user := &types.User{
+		ID:                    id,
+		Username:              info.Username,
+		DisplayName:           info.DisplayName,
+		AvatarURL:             info.AvatarURL,
+		CreatedAt:             createdAt,
+		UpdatedAt:             updatedAt,
+		SiteAdmin:             siteAdmin,
+		BuiltinAuth:           info.Password != "",
+		InvalidatedSessionsAt: invalidatedSessionsAt,
+	}
 	{
 		// Run hooks.
 		//
@@ -283,19 +303,16 @@ func (u *users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *
 		if err := OrgMembers.CreateMembershipInOrgsForAllUsers(ctx, tx, orgs); err != nil {
 			return nil, err
 		}
+
+		// Run AfterCreateUser hook
+		if u.AfterCreateUser != nil {
+			if err := u.AfterCreateUser(ctx, tx, user); err != nil {
+				return nil, errors.Wrap(err, "after create user hook")
+			}
+		}
 	}
 
-	return &types.User{
-		ID:                    id,
-		Username:              info.Username,
-		DisplayName:           info.DisplayName,
-		AvatarURL:             info.AvatarURL,
-		CreatedAt:             createdAt,
-		UpdatedAt:             updatedAt,
-		SiteAdmin:             siteAdmin,
-		BuiltinAuth:           info.Password != "",
-		InvalidatedSessionsAt: invalidatedSessionsAt,
-	}, nil
+	return user, nil
 }
 
 // orgsForAllUsersToJoin returns the list of org names that all users should be joined to. The second return value
@@ -519,10 +536,18 @@ func (u *users) HardDelete(ctx context.Context, id int32) error {
 	return nil
 }
 
+// SetIsSiteAdmin sets the the user with given ID to be or not to be the site admin.
 func (u *users) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bool) error {
 	if Mocks.Users.SetIsSiteAdmin != nil {
 		return Mocks.Users.SetIsSiteAdmin(id, isSiteAdmin)
 	}
+
+	if u.BeforeSetUserIsSiteAdmin != nil {
+		if err := u.BeforeSetUserIsSiteAdmin(isSiteAdmin); err != nil {
+			return err
+		}
+	}
+
 	_, err := dbconn.Global.ExecContext(ctx, "UPDATE users SET site_admin=$1 WHERE id=$2", isSiteAdmin, id)
 	return err
 }
@@ -801,4 +826,36 @@ func (*users) getBySQL(ctx context.Context, query string, args ...interface{}) (
 	}
 
 	return users, nil
+}
+
+const (
+	// If the owner of an external service has this tag, the service is allowed to sync private code
+	TagAllowUserExternalServicePrivate = "AllowUserExternalServicePrivate"
+	// If the owner of an external service has this tag, the service is allowed to sync public code only
+	TagAllowUserExternalServicePublic = "AllowUserExternalServicePublic"
+)
+
+// HasTag reports whether the context actor has the given tag.
+// If not, it returns false and a nil error.
+func (u *users) HasTag(ctx context.Context, userID int32, tag string) (bool, error) {
+	if Mocks.Users.HasTag != nil {
+		return Mocks.Users.HasTag(ctx, userID, tag)
+	}
+
+	var tags []string
+	err := dbconn.Global.QueryRowContext(ctx, "SELECT tags FROM users WHERE id = $1", userID).Scan(pq.Array(&tags))
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, userNotFoundErr{[]interface{}{userID}}
+		}
+
+		return false, err
+	}
+
+	for _, t := range tags {
+		if t == tag {
+			return true, nil
+		}
+	}
+	return false, nil
 }

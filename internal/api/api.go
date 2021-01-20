@@ -122,10 +122,11 @@ type ExternalService struct {
 	Config          string
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
-	DeletedAt       *time.Time
-	LastSyncAt      *time.Time
-	NextSyncAt      *time.Time
-	NamespaceUserID *int32
+	DeletedAt       time.Time
+	LastSyncAt      time.Time
+	NextSyncAt      time.Time
+	NamespaceUserID int32
+	Unrestricted    bool
 }
 
 func cmp(a, b string) int {

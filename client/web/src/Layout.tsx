@@ -38,6 +38,7 @@ import {
     RepogroupHomepageProps,
     OnboardingTourProps,
     HomePanelsProps,
+    SearchStreamingProps,
 } from './search'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
@@ -64,6 +65,7 @@ import { SearchPatternType } from './graphql-operations'
 import { TelemetryProps } from '../../shared/src/telemetry/telemetryService'
 import { useObservable } from '../../shared/src/util/useObservable'
 import { useExtensionAlertAnimation } from './nav/UserNavItem'
+import { CodeMonitoringProps } from './enterprise/code-monitoring'
 
 export interface LayoutProps
     extends RouteComponentProps<{}>,
@@ -82,7 +84,9 @@ export interface LayoutProps
         VersionContextProps,
         RepogroupHomepageProps,
         OnboardingTourProps,
-        HomePanelsProps {
+        HomePanelsProps,
+        SearchStreamingProps,
+        CodeMonitoringProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
     extensionsAreaRoutes: readonly ExtensionsAreaRoute[]
@@ -128,6 +132,7 @@ export interface LayoutProps
     globbing: boolean
     showMultilineSearchConsole: boolean
     showQueryBuilder: boolean
+    enableSmartQuery: boolean
     isSourcegraphDotCom: boolean
     showCampaigns: boolean
     fetchSavedSearches: () => Observable<GQL.ISavedSearch[]>

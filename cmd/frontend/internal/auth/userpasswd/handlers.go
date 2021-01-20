@@ -9,18 +9,19 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/suspiciousnames"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/hubspot/hubspotutil"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type credentials struct {
@@ -170,7 +171,7 @@ func handleSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInit
 	}
 
 	if conf.EmailVerificationRequired() && !newUserData.EmailIsVerified {
-		if err := backend.SendUserEmailVerificationEmail(r.Context(), creds.Email, newUserData.EmailVerificationCode); err != nil {
+		if err := backend.SendUserEmailVerificationEmail(r.Context(), usr.Username, creds.Email, newUserData.EmailVerificationCode); err != nil {
 			log15.Error("failed to send email verification (continuing, user's email will be unverified)", "email", creds.Email, "err", err)
 		} else if err = db.UserEmails.SetLastVerificationSentAt(r.Context(), usr.ID, creds.Email); err != nil {
 			log15.Error("failed to set email last verification sent at (user's email is verified)", "email", creds.Email, "err", err)

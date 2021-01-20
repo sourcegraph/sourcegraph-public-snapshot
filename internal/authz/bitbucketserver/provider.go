@@ -11,11 +11,11 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // Provider is an implementation of AuthzProvider that provides repository permissions as
@@ -54,8 +54,12 @@ func (p *Provider) Validate() []string {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	_, err := p.client.UserPermissions(ctx, p.client.Username)
+	username, err := p.client.Username()
 	if err != nil {
+		return []string{err.Error()}
+	}
+
+	if _, err := p.client.UserPermissions(ctx, username); err != nil {
 		return []string{err.Error()}
 	}
 

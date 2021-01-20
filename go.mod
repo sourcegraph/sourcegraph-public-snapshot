@@ -121,8 +121,6 @@ require (
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f // indirect
 	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f
 	github.com/neelance/parallel v0.0.0-20160708114440-4de9ce63d14c
-	github.com/onsi/ginkgo v1.12.1 // indirect
-	github.com/onsi/gomega v1.10.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opentracing-contrib/go-stdlib v1.0.0
 	github.com/opentracing/opentracing-go v1.2.0
@@ -130,6 +128,7 @@ require (
 	github.com/peterhellberg/link v1.1.0
 	github.com/pkg/errors v0.9.1
 	github.com/pquerna/cachecontrol v0.0.0-20200819021114-67c6ae64274f // indirect
+	github.com/princjef/gomarkdoc v0.1.3
 	github.com/prometheus/alertmanager v0.21.0
 	github.com/prometheus/client_golang v1.6.0
 	github.com/prometheus/common v0.10.0
@@ -151,16 +150,17 @@ require (
 	github.com/shurcooL/vfsgen v0.0.0-20200824052919-0d455de96546
 	github.com/sirupsen/logrus v1.6.0 // indirect
 	github.com/sourcegraph/annotate v0.0.0-20160123013949-f4cad6c6324d // indirect
-	github.com/sourcegraph/campaignutils v0.0.0-20201016010611-63eb2bca27ad
+	github.com/sourcegraph/campaignutils v0.0.0-20201124155628-5d86cf20398d
 	github.com/sourcegraph/codeintelutils v0.0.0-20200824140252-1db3aed5cf58
 	github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81
-	github.com/sourcegraph/go-ctags v0.0.0-20200922223002-071e508aa451
+	github.com/sourcegraph/go-ctags v0.0.0-20201109224903-0e02e034fdb1
 	github.com/sourcegraph/go-diff v0.6.1
 	github.com/sourcegraph/go-jsonschema v0.0.0-20200907102109-d14e9f2f3a28
 	github.com/sourcegraph/go-langserver v2.0.1-0.20181108233942-4a51fa2e1238+incompatible
 	github.com/sourcegraph/go-lsp v0.0.0-20200429204803-219e11d77f5d
 	github.com/sourcegraph/gosyntect v0.0.0-20200429204402-842ed26129d0
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
+	github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images v0.0.0-00010101000000-000000000000
 	github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/src-d/enry/v2 v2.1.0
@@ -184,10 +184,10 @@ require (
 	go.uber.org/atomic v1.7.0
 	go.uber.org/automaxprocs v1.3.0
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
-	golang.org/x/net v0.0.0-20200930145003-4acb6c075d10
+	golang.org/x/net v0.0.0-20201006153459-a7d1128ccaa0
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	golang.org/x/sync v0.0.0-20200625203802-6e8e738ad208
-	golang.org/x/sys v0.0.0-20200915084602-288bc346aa39
+	golang.org/x/sys v0.0.0-20200930185726-fdedc70b468f
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e
 	golang.org/x/tools v0.0.0-20200915031644-64986481280e
 	google.golang.org/api v0.29.0
@@ -219,7 +219,7 @@ replace (
 )
 
 // We maintain our own fork of Zoekt. Update with ./dev/zoekt/update
-replace github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20201016122840-58ac958bfd1d
+replace github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20201124084228-b6ed3e04a806
 
 replace github.com/russross/blackfriday => github.com/russross/blackfriday v1.5.2
 
@@ -231,3 +231,5 @@ replace github.com/golang/lint => golang.org/x/lint v0.0.0-20191125180803-fdd1cd
 
 // See: https://github.com/ghodss/yaml/pull/65
 replace github.com/ghodss/yaml => github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152
+
+replace github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images => ./enterprise/dev/ci/images

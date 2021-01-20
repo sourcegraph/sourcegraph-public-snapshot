@@ -6,7 +6,6 @@ import { Driver } from '../../../shared/src/testing/driver'
 import { getConfig } from '../../../shared/src/testing/config'
 import { getTestTools } from './util/init'
 import { ensureLoggedInOrCreateTestUser, getGlobalSettings } from './util/helpers'
-import { setUserEmailVerified } from './util/api'
 import { ScreenshotVerifier } from './util/ScreenshotVerifier'
 import { gql, dataOrThrowErrors } from '../../../shared/src/graphql/graphql'
 import { map } from 'rxjs/operators'
@@ -146,55 +145,6 @@ describe('Core functionality regression test suite', () => {
                 )}`
             )
         }
-    })
-
-    test('2.2.2 User profile page', async () => {
-        const aviURL =
-            'https://media2.giphy.com/media/26tPplGWjN0xLybiU/giphy.gif?cid=790b761127d52fa005ed23fdcb09d11a074671ac90146787&rid=giphy.gif'
-        const displayName = 'Test Display Name'
-
-        await driver.page.goto(driver.sourcegraphBaseUrl + `/users/${testUsername}/settings/profile`)
-        await driver.replaceText({
-            selector: '.test-UserProfileFormFields__displayName',
-            newText: displayName,
-        })
-        await driver.replaceText({
-            selector: '.test-UserProfileFormFields__avatarURL',
-            newText: aviURL,
-            enterTextMethod: 'paste',
-        })
-        await driver.findElementWithText('Update profile', { action: 'click' })
-        await driver.page.reload()
-        await driver.page.waitForFunction(
-            displayName => {
-                const element = document.querySelector('.test-user-area-header__display-name')
-                return element?.textContent && element.textContent.trim() === displayName
-            },
-            undefined,
-            displayName
-        )
-
-        await screenshots.verifySelector(
-            'navbar-toggle-is-bart-simpson.png',
-            'Navbar toggle avatar is Bart Simpson',
-            '.test-user-nav-item-toggle'
-        )
-    })
-
-    test('2.2.3. User emails page', async () => {
-        const testEmail = 'sg-test-account@protonmail.com'
-        await driver.page.goto(driver.sourcegraphBaseUrl + `/users/${testUsername}/settings/emails`)
-        await driver.replaceText({ selector: '.test-user-email-add-input', newText: 'sg-test-account@protonmail.com' })
-        await driver.findElementWithText('Add', { action: 'click' })
-        await driver.findElementWithText(testEmail, { wait: true })
-        try {
-            await driver.findElementWithText('Verification pending')
-        } catch {
-            await driver.findElementWithText('Not verified')
-        }
-        await setUserEmailVerified(gqlClient, testUsername, testEmail, true)
-        await driver.page.reload()
-        await driver.findElementWithText('Verified', { wait: true })
     })
 
     test('2.2.4 Access tokens work and invalid access tokens return "401 Unauthorized"', async () => {

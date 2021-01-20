@@ -51,7 +51,8 @@ type User struct {
 	DatabaseID int32
 	SiteAdmin  bool
 
-	Campaigns CampaignConnection
+	Campaigns          CampaignConnection
+	CampaignsCodeHosts CampaignsCodeHostsConnection
 }
 
 type Org struct {
@@ -82,6 +83,7 @@ type Campaign struct {
 	UpdatedAt               string
 	ClosedAt                string
 	URL                     string
+	ChangesetsStats         ChangesetsStats
 	Changesets              ChangesetConnection
 	ChangesetCountsOverTime []ChangesetCounts
 	DiffStat                DiffStat
@@ -157,10 +159,9 @@ type ChangesetConnection struct {
 	Nodes      []Changeset
 	TotalCount int
 	PageInfo   PageInfo
-	Stats      ChangesetConnectionStats
 }
 
-type ChangesetConnectionStats struct {
+type ChangesetsStats struct {
 	Unpublished int
 	Draft       int
 	Open        int
@@ -202,13 +203,37 @@ type CampaignSpec struct {
 
 	AppliesToCampaign Campaign
 
+	ViewerCampaignsCodeHosts CampaignsCodeHostsConnection
+	// Alias for the above.
+	AllCodeHosts CampaignsCodeHostsConnection
+	// Alias for the above.
+	OnlyWithoutCredential CampaignsCodeHostsConnection
+
 	CreatedAt graphqlbackend.DateTime
 	ExpiresAt *graphqlbackend.DateTime
+}
+
+// ChangesetSpecDelta is the delta between two ChangesetSpecs describing the same Changeset.
+type ChangesetSpecDelta struct {
+	TitleChanged         bool
+	BodyChanged          bool
+	Undraft              bool
+	BaseRefChanged       bool
+	DiffChanged          bool
+	CommitMessageChanged bool
+	AuthorNameChanged    bool
+	AuthorEmailChanged   bool
 }
 
 type ChangesetSpec struct {
 	Typename string `json:"__typename"`
 	ID       string
+
+	Operations []campaigns.ReconcilerOperation
+	Delta      ChangesetSpecDelta
+	Changeset  struct {
+		ID string
+	}
 
 	Description ChangesetSpecDescription
 
@@ -261,4 +286,27 @@ type Person struct {
 	Name  string
 	Email string
 	User  *User
+}
+
+type CampaignsCredential struct {
+	ID                  string
+	ExternalServiceKind string
+	ExternalServiceURL  string
+	CreatedAt           string
+}
+
+type EmptyResponse struct {
+	AlwaysNil string
+}
+
+type CampaignsCodeHostsConnection struct {
+	PageInfo   PageInfo
+	Nodes      []CampaignsCodeHost
+	TotalCount int
+}
+
+type CampaignsCodeHost struct {
+	ExternalServiceKind string
+	ExternalServiceURL  string
+	Credential          CampaignsCredential
 }

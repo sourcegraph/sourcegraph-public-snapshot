@@ -15,7 +15,7 @@ import {
     SEARCH_REQUEST,
 } from '../../../../shared/src/util/searchTestHelpers'
 import { SearchResultsList, SearchResultsListProps } from './SearchResultsList'
-import { NEVER } from 'rxjs'
+import { NEVER, of } from 'rxjs'
 import { FiltersToTypeAndValue, FilterType } from '../../../../shared/src/search/interactive/util'
 import { SearchPatternType } from '../../../../shared/src/graphql-operations'
 
@@ -125,6 +125,10 @@ describe('SearchResultsList', () => {
         onFiltersInQueryChange: sinon.fake(),
         splitSearchModes: false,
         versionContext: undefined,
+
+        navbarSearchQueryState: { query: '', cursorPosition: 0 },
+
+        shouldDisplayPerformanceWarning: () => of(false),
     }
 
     it('displays loading text when results is undefined', () => {

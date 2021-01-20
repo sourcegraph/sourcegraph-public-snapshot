@@ -8,7 +8,7 @@ import { Link } from '../../../../shared/src/components/Link'
 import { LoadingPanelView } from './LoadingPanelView'
 import { Observable } from 'rxjs'
 import { PanelContainer } from './PanelContainer'
-import { parseSearchQuery } from '../../../../shared/src/search/parser/parser'
+import { scanSearchQuery } from '../../../../shared/src/search/parser/scanner'
 import { parseSearchURLQuery } from '..'
 import { ShowMoreButton } from './ShowMoreButton'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
@@ -127,25 +127,18 @@ function processRepositories(eventLogResult: EventLogResult): string[] | null {
     for (const node of eventLogResult.nodes) {
         const url = new URL(node.url)
         const queryFromURL = parseSearchURLQuery(url.search)
-        const parsedQuery = parseSearchQuery(queryFromURL || '')
-        if (parsedQuery.type === 'success') {
-            for (const member of parsedQuery.token.members) {
+        const scannedQuery = scanSearchQuery(queryFromURL || '')
+        if (scannedQuery.type === 'success') {
+            for (const token of scannedQuery.term) {
                 if (
-                    member.token.type === 'filter' &&
-                    (member.token.filterType.token.value === FilterType.repo ||
-                        member.token.filterType.token.value === FILTERS[FilterType.repo].alias)
+                    token.type === 'filter' &&
+                    (token.field.value === FilterType.repo || token.field.value === FILTERS[FilterType.repo].alias)
                 ) {
-                    if (
-                        member.token.filterValue?.token.type === 'literal' &&
-                        !recentlySearchedRepos.includes(member.token.filterValue.token.value)
-                    ) {
-                        recentlySearchedRepos.push(member.token.filterValue.token.value)
+                    if (token.value?.type === 'literal' && !recentlySearchedRepos.includes(token.value.value)) {
+                        recentlySearchedRepos.push(token.value.value)
                     }
-                    if (
-                        member.token.filterValue?.token.type === 'quoted' &&
-                        !recentlySearchedRepos.includes(member.token.filterValue.token.quotedValue)
-                    ) {
-                        recentlySearchedRepos.push(member.token.filterValue.token.quotedValue)
+                    if (token.value?.type === 'quoted' && !recentlySearchedRepos.includes(token.value.quotedValue)) {
+                        recentlySearchedRepos.push(token.value.quotedValue)
                     }
                 }
             }

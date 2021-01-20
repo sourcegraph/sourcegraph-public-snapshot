@@ -18,10 +18,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 )
 
-// changesetColumns are used by by the changeset related Store methods and by
+// ChangesetColumns are used by by the changeset related Store methods and by
 // workerutil.Worker to load changesets from the database for processing by
 // the reconciler.
-var changesetColumns = []*sqlf.Query{
+var ChangesetColumns = []*sqlf.Query{
 	sqlf.Sprintf("changesets.id"),
 	sqlf.Sprintf("changesets.repo_id"),
 	sqlf.Sprintf("changesets.created_at"),
@@ -147,9 +147,17 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *campaigns.Chang
 		vars = append(vars, c.ID)
 	}
 
-	vars = append(vars, sqlf.Join(changesetColumns, ", "))
+	vars = append(vars, sqlf.Join(ChangesetColumns, ", "))
 
 	return sqlf.Sprintf(q, vars...), nil
+}
+
+// UpsertChangeset creates or updates the given Changeset.
+func (s *Store) UpsertChangeset(ctx context.Context, c *campaigns.Changeset) error {
+	if c.ID == 0 {
+		return s.CreateChangeset(ctx, c)
+	}
+	return s.UpdateChangeset(ctx, c)
 }
 
 // CreateChangeset creates the given Changeset.
@@ -299,7 +307,7 @@ func getChangesetQuery(opts *GetChangesetOpts) *sqlf.Query {
 
 	return sqlf.Sprintf(
 		getChangesetsQueryFmtstr,
-		sqlf.Join(changesetColumns, ", "),
+		sqlf.Join(ChangesetColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
@@ -307,19 +315,21 @@ func getChangesetQuery(opts *GetChangesetOpts) *sqlf.Query {
 type ListChangesetSyncDataOpts struct {
 	// Return only the supplied changesets. If empty, all changesets are returned
 	ChangesetIDs []int64
+
+	ExternalServiceID string
 }
 
 // ListChangesetSyncData returns sync data on all non-externally-deleted changesets
 // that are part of at least one open campaign.
-func (s *Store) ListChangesetSyncData(ctx context.Context, opts ListChangesetSyncDataOpts) ([]campaigns.ChangesetSyncData, error) {
-	q := listChangesetSyncData(opts)
-	results := make([]campaigns.ChangesetSyncData, 0)
+func (s *Store) ListChangesetSyncData(ctx context.Context, opts ListChangesetSyncDataOpts) ([]*campaigns.ChangesetSyncData, error) {
+	q := listChangesetSyncDataQuery(opts)
+	results := make([]*campaigns.ChangesetSyncData, 0)
 	err := s.query(ctx, q, func(sc scanner) (err error) {
 		var h campaigns.ChangesetSyncData
 		if err = scanChangesetSyncData(&h, sc); err != nil {
 			return err
 		}
-		results = append(results, h)
+		results = append(results, &h)
 		return err
 	})
 	if err != nil {
@@ -338,22 +348,23 @@ func scanChangesetSyncData(h *campaigns.ChangesetSyncData, s scanner) error {
 	)
 }
 
-func listChangesetSyncData(opts ListChangesetSyncDataOpts) *sqlf.Query {
-	fmtString := `
- SELECT changesets.id,
-        changesets.updated_at,
-        max(ce.updated_at) AS latest_event,
-        changesets.external_updated_at,
-        r.external_service_id
- FROM changesets
- LEFT JOIN changeset_events ce ON changesets.id = ce.changeset_id
- JOIN campaigns ON campaigns.changeset_ids ? changesets.id::TEXT
- JOIN repo r ON changesets.repo_id = r.id
- WHERE %s
- GROUP BY changesets.id, r.id
- ORDER BY changesets.id ASC
+const listChangesetSyncDataQueryFmtstr = `
+-- source: enterprise/internal/campaigns/store_changesets.go:ListChangesetSyncData
+SELECT changesets.id,
+	changesets.updated_at,
+	max(ce.updated_at) AS latest_event,
+	changesets.external_updated_at,
+	r.external_service_id
+FROM changesets
+LEFT JOIN changeset_events ce ON changesets.id = ce.changeset_id
+JOIN campaigns ON changesets.campaign_ids ? campaigns.id::TEXT
+JOIN repo r ON changesets.repo_id = r.id
+WHERE %s
+GROUP BY changesets.id, r.id
+ORDER BY changesets.id ASC
 `
 
+func listChangesetSyncDataQuery(opts ListChangesetSyncDataOpts) *sqlf.Query {
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("campaigns.closed_at IS NULL"),
 		sqlf.Sprintf("r.deleted_at IS NULL"),
@@ -370,7 +381,11 @@ func listChangesetSyncData(opts ListChangesetSyncDataOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("changesets.id IN (%s)", sqlf.Join(ids, ",")))
 	}
 
-	return sqlf.Sprintf(fmtString, sqlf.Join(preds, "\n AND"))
+	if opts.ExternalServiceID != "" {
+		preds = append(preds, sqlf.Sprintf("r.external_service_id = %s", opts.ExternalServiceID))
+	}
+
+	return sqlf.Sprintf(listChangesetSyncDataQueryFmtstr, sqlf.Join(preds, "\n AND"))
 }
 
 // ListChangesetsOpts captures the query options needed for
@@ -389,6 +404,7 @@ type ListChangesetsOpts struct {
 	OwnedByCampaignID    int64
 	OnlyWithoutDiffStats bool
 	OnlySynced           bool
+	ExternalServiceID    string
 }
 
 // ListChangesets lists Changesets with the given filters.
@@ -476,42 +492,15 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("changesets.unsynced IS FALSE"))
 	}
 
+	if opts.ExternalServiceID != "" {
+		preds = append(preds, sqlf.Sprintf("repo.external_service_id = %s", opts.ExternalServiceID))
+	}
+
 	return sqlf.Sprintf(
 		listChangesetsQueryFmtstr+opts.LimitOpts.ToDB(),
-		sqlf.Join(changesetColumns, ", "),
+		sqlf.Join(ChangesetColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
-}
-
-// ListChangesetsAttachedOrOwnedByCampaign lists Changesets that are either
-// attached to the given Campaign or their OwnedByCampaignID points to the
-// campaign.
-func (s *Store) ListChangesetsAttachedOrOwnedByCampaign(ctx context.Context, campaign int64) (cs campaigns.Changesets, err error) {
-	q := sqlf.Sprintf(`
--- source: enterprise/internal/campaigns/store.go:ListChangesetsAttachedOrOwnedByCampaign
-SELECT %s FROM changesets
-INNER JOIN repo ON repo.id = changesets.repo_id
-WHERE
-  ((changesets.campaign_ids ? %s) OR changesets.owned_by_campaign_id = %s)
-AND
-  repo.deleted_at IS NULL
-ORDER BY id ASC
-`,
-		sqlf.Join(changesetColumns, ", "),
-		campaign,
-		campaign,
-	)
-
-	err = s.query(ctx, q, func(sc scanner) (err error) {
-		var c campaigns.Changeset
-		if err = scanChangeset(&c, sc); err != nil {
-			return err
-		}
-		cs = append(cs, &c)
-		return nil
-	})
-
-	return cs, err
 }
 
 // UpdateChangeset updates the given Changeset.
@@ -579,9 +568,7 @@ func (s *Store) CancelQueuedCampaignChangesets(ctx context.Context, campaignID i
 	q := sqlf.Sprintf(
 		cancelQueuedCampaignChangesetsFmtstr,
 		campaignID,
-		reconcilerMaxNumRetries,
 		canceledChangesetFailureMessage,
-		reconcilerMaxNumRetries,
 	)
 	return s.Store.Exec(ctx, q)
 }
@@ -593,17 +580,14 @@ WITH changeset_ids AS (
   WHERE
     owned_by_campaign_id = %s
   AND
-    (reconciler_state = 'queued' OR
-	 reconciler_state = 'processing' OR
-	 (reconciler_state = 'errored' AND num_failures < %d))
+    reconciler_state IN ('queued', 'processing', 'errored')
   FOR UPDATE
 )
 UPDATE
   changesets
 SET
-  reconciler_state = 'errored',
-  failure_message = %s,
-  num_failures = %d
+  reconciler_state = 'failed',
+  failure_message = %s
 WHERE id IN (SELECT id FROM changeset_ids);
 `
 
@@ -645,7 +629,7 @@ AND
 ;
 `
 
-func scanFirstChangeset(rows *sql.Rows, err error) (*campaigns.Changeset, bool, error) {
+func ScanFirstChangeset(rows *sql.Rows, err error) (*campaigns.Changeset, bool, error) {
 	changesets, err := scanChangesets(rows, err)
 	if err != nil || len(changesets) == 0 {
 		return &campaigns.Changeset{}, false, err
@@ -745,4 +729,60 @@ func scanChangeset(t *campaigns.Changeset, s scanner) error {
 	}
 
 	return nil
+}
+
+// GetChangesetsStatsOpts captures the query options needed for
+// retrieving changesets stats.
+type GetChangesetsStatsOpts struct {
+	CampaignID int64
+}
+
+// GetChangesetsStats returns statistics on all the changesets associated to the given campaign,
+// or all changesets across the instance.
+func (s *Store) GetChangesetsStats(ctx context.Context, opts GetChangesetsStatsOpts) (stats campaigns.ChangesetsStats, err error) {
+	q := getChangesetsStatsQuery(opts)
+	err = s.query(ctx, q, func(sc scanner) error {
+		if err := sc.Scan(
+			&stats.Total,
+			&stats.Unpublished,
+			&stats.Closed,
+			&stats.Draft,
+			&stats.Merged,
+			&stats.Open,
+			&stats.Deleted,
+		); err != nil {
+			return err
+		}
+		return err
+	})
+	if err != nil {
+		return stats, err
+	}
+	return stats, nil
+}
+
+const getChangesetStatsFmtstr = `
+-- source: enterprise/internal/campaigns/store_changesets.go:GetChangesetsStats
+SELECT
+	COUNT(*) AS total,
+	COUNT(*) FILTER (WHERE changesets.publication_state = 'UNPUBLISHED') AS unpublished,
+	COUNT(*) FILTER (WHERE changesets.publication_state = 'PUBLISHED' AND changesets.external_state = 'CLOSED') AS closed,
+	COUNT(*) FILTER (WHERE changesets.publication_state = 'PUBLISHED' AND changesets.external_state = 'DRAFT') AS draft,
+	COUNT(*) FILTER (WHERE changesets.publication_state = 'PUBLISHED' AND changesets.external_state = 'MERGED') AS merged,
+	COUNT(*) FILTER (WHERE changesets.publication_state = 'PUBLISHED' AND changesets.external_state = 'OPEN') AS open,
+	COUNT(*) FILTER (WHERE changesets.publication_state = 'PUBLISHED' AND changesets.external_state = 'DELETED') AS deleted
+FROM changesets
+INNER JOIN repo on repo.id = changesets.repo_id
+WHERE
+	%s
+`
+
+func getChangesetsStatsQuery(opts GetChangesetsStatsOpts) *sqlf.Query {
+	preds := []*sqlf.Query{
+		sqlf.Sprintf("repo.deleted_at IS NULL"),
+	}
+	if opts.CampaignID != 0 {
+		preds = append(preds, sqlf.Sprintf("changesets.campaign_ids ? %s", opts.CampaignID))
+	}
+	return sqlf.Sprintf(getChangesetStatsFmtstr, sqlf.Join(preds, " AND "))
 }

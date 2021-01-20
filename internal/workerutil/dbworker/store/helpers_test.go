@@ -20,7 +20,7 @@ func (r TestWorkRecord) RecordID() int {
 	return r.ID
 }
 
-func testStore(options StoreOptions) *store {
+func testStore(options Options) *store {
 	return newStore(basestore.NewHandleWithDB(dbconn.Global, sql.TxOptions{}), options)
 }
 
@@ -124,7 +124,7 @@ func setupStoreTest(t *testing.T) {
 			num_resets      integer NOT NULL default 0,
 			num_failures    integer NOT NULL default 0,
 			uploaded_at     timestamp with time zone NOT NULL default NOW(),
-			log_contents    text
+			execution_logs  json[]
 		)
 	`); err != nil {
 		t.Fatalf("unexpected error creating test table: %s", err)
@@ -139,7 +139,7 @@ func setupStoreTest(t *testing.T) {
 	}
 }
 
-var defaultTestStoreOptions = StoreOptions{
+var defaultTestStoreOptions = Options{
 	TableName:         "workerutil_test w",
 	Scan:              testScanFirstRecord,
 	OrderByExpression: sqlf.Sprintf("w.uploaded_at"),
