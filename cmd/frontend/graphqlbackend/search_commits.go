@@ -523,7 +523,7 @@ type searchCommitsInReposParameters struct {
 	// with the RepoRevs field set.
 	CommitParams search.CommitParameters
 
-	ResultChannel chan<- []SearchResultResolver
+	ResultChannel SearchStream
 }
 
 func searchCommitsInRepos(ctx context.Context, args *search.TextParametersForCommitParameters, params searchCommitsInReposParameters) ([]SearchResultResolver, *streaming.Stats, error) {
@@ -540,8 +540,23 @@ func searchCommitsInRepos(ctx context.Context, args *search.TextParametersForCom
 
 		// We use the stream so we can optionally send down resultChannel.
 		for event := range searchCommitsInRepoStream(ctx, commitParams) {
-			if len(event.Results) > 0 && params.ResultChannel != nil {
-				params.ResultChannel <- commitSearchResultsToSearchResults(event.Results)
+			if params.ResultChannel != nil {
+				var stats streaming.Stats
+				var status search.RepoStatus
+				if event.LimitHit {
+					stats.IsLimitHit = true
+					status = status & search.RepoStatusLimitHit
+				}
+				if event.TimedOut {
+					status = status & search.RepoStatusTimedout
+				}
+				// Only write if we have something to report back
+				if len(results) > 0 || status != 0 {
+					params.ResultChannel <- SearchEvent{
+						Results: commitSearchResultsToSearchResults(event.Results),
+						Stats:   stats,
+					}
+				}
 			}
 
 			results = append(results, event.Results...)
@@ -607,7 +622,7 @@ func searchCommitsInRepos(ctx context.Context, args *search.TextParametersForCom
 }
 
 // searchCommitDiffsInRepos searches a set of repos for matching commit diffs.
-func searchCommitDiffsInRepos(ctx context.Context, args *search.TextParametersForCommitParameters, resultChannel chan<- []SearchResultResolver) ([]SearchResultResolver, *streaming.Stats, error) {
+func searchCommitDiffsInRepos(ctx context.Context, args *search.TextParametersForCommitParameters, resultChannel SearchStream) ([]SearchResultResolver, *streaming.Stats, error) {
 	return searchCommitsInRepos(ctx, args, searchCommitsInReposParameters{
 		TraceName:     "searchCommitDiffsInRepos",
 		ErrorName:     "diffs",
@@ -621,7 +636,7 @@ func searchCommitDiffsInRepos(ctx context.Context, args *search.TextParametersFo
 }
 
 // searchCommitLogInRepos searches a set of repos for matching commits.
-func searchCommitLogInRepos(ctx context.Context, args *search.TextParametersForCommitParameters, resultChannel chan<- []SearchResultResolver) ([]SearchResultResolver, *streaming.Stats, error) {
+func searchCommitLogInRepos(ctx context.Context, args *search.TextParametersForCommitParameters, resultChannel SearchStream) ([]SearchResultResolver, *streaming.Stats, error) {
 	var terms []string
 	if args.PatternInfo.Pattern != "" {
 		terms = append(terms, args.PatternInfo.Pattern)
@@ -641,6 +656,10 @@ func searchCommitLogInRepos(ctx context.Context, args *search.TextParametersForC
 }
 
 func commitSearchResultsToSearchResults(results []*CommitSearchResultResolver) []SearchResultResolver {
+	if len(results) == 0 {
+		return nil
+	}
+
 	// Show most recent commits first.
 	sort.Slice(results, func(i, j int) bool {
 		return results[i].commit.commit.Author.Date.After(results[j].commit.commit.Author.Date)

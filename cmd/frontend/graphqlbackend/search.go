@@ -248,7 +248,7 @@ type searchResolver struct {
 
 	// resultChannel if non-nil will send all results we receive down it. See
 	// searchResolver.SetResultChannel
-	resultChannel chan<- []SearchResultResolver
+	resultChannel SearchStream
 
 	// Cached resolveRepositories results. We use a pointer to the mutex so that we
 	// can copy the resolver, while sharing the mutex. If we didn't use a pointer,
@@ -269,6 +269,38 @@ type SearchEvent struct {
 	Error   error
 }
 
+// SearchStream is a send only channel of SearchEvent. All streaming search
+// backends write to a SearchStream which is then streamed out by the HTTP
+// layer.
+type SearchStream chan<- SearchEvent
+
+// resultStream is temporary adapter which return a result stream to use
+// instead of a search event stream. Additionally it has a cleanup function
+// which needs to be called.
+func resultStream(stream SearchStream) (chan<- []SearchResultResolver, func(*streaming.Stats)) {
+	if stream == nil {
+		return nil, func(*streaming.Stats) {}
+	}
+
+	c := make(chan []SearchResultResolver, cap(stream))
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for results := range c {
+			stream <- SearchEvent{Results: results}
+		}
+	}()
+	return c, func(s *streaming.Stats) {
+		if s != nil {
+			stream <- SearchEvent{
+				Stats: *s,
+			}
+		}
+		close(c)
+		<-done
+	}
+}
+
 // SetResultChannel will send all results down c.
 //
 // This is how our streaming and our batch interface co-exist. When this is
@@ -278,7 +310,7 @@ type SearchEvent struct {
 // us to stream out things like dynamic filters or take into account
 // AND/OR. However, streaming is behind a feature flag for now, so this is to
 // make it visible in the browser.
-func (r *searchResolver) SetResultChannel(c chan<- []SearchResultResolver) {
+func (r *searchResolver) SetResultChannel(c SearchStream) {
 	r.resultChannel = c
 }
 

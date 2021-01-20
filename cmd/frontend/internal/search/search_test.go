@@ -53,7 +53,7 @@ func TestDefaultNewSearchResolver(t *testing.T) {
 
 type mockSearchResolver struct {
 	done chan struct{}
-	c    chan<- []graphqlbackend.SearchResultResolver
+	c    graphqlbackend.SearchStream
 }
 
 func (h *mockSearchResolver) Results(ctx context.Context) (*graphqlbackend.SearchResultsResolver, error) {
@@ -66,12 +66,12 @@ func (h *mockSearchResolver) Results(ctx context.Context) (*graphqlbackend.Searc
 		}, nil
 	}
 }
-func (h *mockSearchResolver) SetResultChannel(c chan<- []graphqlbackend.SearchResultResolver) {
+func (h *mockSearchResolver) SetResultChannel(c graphqlbackend.SearchStream) {
 	h.c = c
 }
 
 func (h *mockSearchResolver) Send(r []graphqlbackend.SearchResultResolver) {
-	h.c <- r
+	h.c <- graphqlbackend.SearchEvent{Results: r}
 }
 
 func (h *mockSearchResolver) Close() {

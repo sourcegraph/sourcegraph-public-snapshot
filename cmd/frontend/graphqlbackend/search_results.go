@@ -859,7 +859,7 @@ func (r *searchResolver) evaluateAndStream(ctx context.Context, scopeParameters 
 	// For streaming search we want to run the evaluation of AND expressions in batch
 	// mode. We copy r to r2 and replace the result channel with a sink.
 	r2 := *r
-	sink := make(chan []SearchResultResolver)
+	sink := make(chan SearchEvent)
 	defer close(sink)
 	go func() {
 		for range sink {
@@ -869,7 +869,12 @@ func (r *searchResolver) evaluateAndStream(ctx context.Context, scopeParameters 
 
 	result, err := r2.evaluateAnd(ctx, scopeParameters, operands)
 	if err == nil && result.SearchResults != nil {
-		r.resultChannel <- result.SearchResults
+		r.resultChannel <- SearchEvent{
+			Results: result.SearchResults,
+			Stats:   result.Stats,
+		}
+		// TODO(keegan,stefan) Stream error? Or does the return err below
+		// handle that?
 	}
 	return result, err
 }
@@ -1656,7 +1661,7 @@ func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameter
 type aggregator struct {
 	// resultChannel if non-nil will send all results we receive down it. See
 	// searchResolver.SetResultChannel
-	resultChannel chan<- []SearchResultResolver
+	resultChannel SearchStream
 
 	mu       sync.Mutex
 	results  []SearchResultResolver
@@ -1673,12 +1678,24 @@ func (a *aggregator) get() ([]SearchResultResolver, streaming.Stats, *multierror
 	return a.results, a.common, a.multiErr
 }
 
+func statsDeref(s *streaming.Stats) streaming.Stats {
+	if s == nil {
+		return streaming.Stats{}
+	}
+	return *s
+}
+
 // report sends results down resultChannel and collects the results.
 func (a *aggregator) report(ctx context.Context, results []SearchResultResolver, common *streaming.Stats, err error) {
 	if a.resultChannel != nil {
-		a.resultChannel <- results
+		a.resultChannel <- SearchEvent{
+			Results: results,
+			Stats:   statsDeref(common),
+		}
 	}
 
+	// TODO(keegan,stefan) we need to work out how to handle streamed stats vs
+	// collected stats once we want to stream progress.
 	a.collect(ctx, results, common, err)
 }
 
