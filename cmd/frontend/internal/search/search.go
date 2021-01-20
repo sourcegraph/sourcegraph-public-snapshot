@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -80,6 +81,8 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	flushTicker := time.NewTicker(100 * time.Millisecond)
 	defer flushTicker.Stop()
 
+	first := true
+
 	for {
 		var results []graphqlbackend.SearchResultResolver
 		var ok bool
@@ -126,6 +129,12 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if len(matchesBuf) == cap(matchesBuf) {
 				flushMatchesBuf()
 			}
+		}
+
+		// Instantly send results if we have not sent any yet.
+		if first && len(matchesBuf) > 0 {
+			first = false
+			flushMatchesBuf()
 		}
 	}
 
@@ -175,12 +184,31 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	pr := resultsResolver.Progress()
+	pr := api.BuildProgressEvent(api.ProgressStats{
+		MatchCount:          int(resultsResolver.MatchCount()),
+		ElapsedMilliseconds: int(resultsResolver.ElapsedMilliseconds()),
+		RepositoriesCount:   int(resultsResolver.RepositoriesCount()),
+		ExcludedArchived:    resultsResolver.ExcludedArchived,
+		ExcludedForks:       resultsResolver.ExcludedForks,
+		Timedout:            toNamer(resultsResolver.Timedout),
+		Missing:             toNamer(resultsResolver.Missing),
+		Cloning:             toNamer(resultsResolver.Cloning),
+		LimitHit:            resultsResolver.IsLimitHit,
+	})
 	pr.Done = true
 	_ = eventWriter.Event("progress", pr)
 
 	// TODO done event includes progress
 	_ = eventWriter.Event("done", map[string]interface{}{})
+}
+
+func toNamer(f func() []*graphqlbackend.RepositoryResolver) []api.Namer {
+	rs := f()
+	n := make([]api.Namer, 0, len(rs))
+	for _, r := range rs {
+		n = append(n, r)
+	}
+	return n
 }
 
 type searchResolver interface {

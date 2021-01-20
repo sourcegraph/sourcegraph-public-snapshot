@@ -28,7 +28,7 @@ func QueryRunner() *monitoring.Container {
 						shared.ContainerCPUUsage("query-runner", monitoring.ObservableOwnerSearch).Observable(),
 					},
 					{
-						shared.ContainerRestarts("query-runner", monitoring.ObservableOwnerSearch).Observable(),
+						shared.ContainerMissing("query-runner", monitoring.ObservableOwnerSearch).Observable(),
 					},
 				},
 			},

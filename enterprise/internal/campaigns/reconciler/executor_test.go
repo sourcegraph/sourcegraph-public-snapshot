@@ -730,6 +730,9 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 	bbsRepo := bbsRepos[0]
 	bbsRepoCloneURL := bbsRepo.Sources[bbsExtSvc.URN()].CloneURL
 
+	bbsSSHRepos, _ := ct.CreateBbsSSHTestRepos(t, ctx, dbconn.Global, 1)
+	bbsSSHRepo := bbsSSHRepos[0]
+
 	gitClient := &ct.FakeGitserverClient{ResponseErr: nil}
 	fakeSource := &ct.FakeChangesetSource{Svc: extSvc}
 	sourcer := repos.NewFakeSourcer(nil, fakeSource)
@@ -813,6 +816,12 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			wantPushConfig: &gitprotocol.PushConfig{
 				RemoteURL: bbsRepoCloneURL,
 			},
+		},
+		{
+			name:    "ssh clone URL",
+			user:    admin,
+			repo:    bbsSSHRepo,
+			wantErr: true,
 		},
 	}
 

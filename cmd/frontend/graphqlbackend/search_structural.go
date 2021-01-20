@@ -128,10 +128,15 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 		return nil, false, nil, nil
 	}
 
-	limitHit, files, partial := zoektutil.LimitMatches(limitHit, int(args.PatternInfo.FileMatchLimit), resp.Files, func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool) {
+	matchLimiter := zoektutil.MatchLimiter{Limit: int(args.PatternInfo.FileMatchLimit)}
+	repoRevFunc := func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool) {
 		repo, inputRevs := repos.GetRepoInputRev(file)
 		return repo, inputRevs, true
-	})
+	}
+
+	var files []zoekt.FileMatch
+	partial, files = matchLimiter.Slice(resp.Files, repoRevFunc)
+	limitHit = limitHit || len(partial) > 0
 	resp.Files = files
 
 	maxLineMatches := 25 + k

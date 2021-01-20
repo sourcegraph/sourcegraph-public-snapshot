@@ -9,7 +9,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
 
-	searchzoekt "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -340,7 +339,7 @@ func TestDefaultRepositories(t *testing.T) {
 				indexed = append(indexed, &zoekt.RepoListEntry{Repository: zoekt.Repository{Name: name}})
 			}
 			z := &searchbackend.Zoekt{
-				Client:       &searchzoekt.FakeSearcher{Repos: indexed},
+				Client:       &searchbackend.FakeSearcher{Repos: indexed},
 				DisableCache: true,
 			}
 

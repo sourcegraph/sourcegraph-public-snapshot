@@ -15,7 +15,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 
-	searchzoekt "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -69,7 +68,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 	}
 	defer func() { mockSearchFilesInRepo = nil }()
 
-	zoekt := &searchbackend.Zoekt{Client: &searchzoekt.FakeSearcher{}}
+	zoekt := &searchbackend.Zoekt{Client: &searchbackend.FakeSearcher{}}
 
 	q, err := query.ParseAndCheck("foo")
 	if err != nil {
@@ -155,7 +154,7 @@ func TestSearchFilesInReposStream(t *testing.T) {
 	}
 	defer func() { mockSearchFilesInRepo = nil }()
 
-	zoekt := &searchbackend.Zoekt{Client: &searchzoekt.FakeSearcher{}}
+	zoekt := &searchbackend.Zoekt{Client: &searchbackend.FakeSearcher{}}
 
 	q, err := query.ParseAndCheck("foo")
 	if err != nil {
@@ -262,7 +261,7 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 	}})
 	defer conf.Mock(nil)
 
-	zoekt := &searchbackend.Zoekt{Client: &searchzoekt.FakeSearcher{}}
+	zoekt := &searchbackend.Zoekt{Client: &searchbackend.FakeSearcher{}}
 
 	q, err := query.ParseAndCheck("foo")
 	if err != nil {

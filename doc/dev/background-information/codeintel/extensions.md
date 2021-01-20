@@ -4,7 +4,7 @@ Definition, reference, and hover providers are invoked from the extension host w
 
 These providers receive the current text document (denoting a repository, commit, and path) and the position the user is hovering (a line and column offset within the file). The providers return results as an asynchronous iterator, which allows additional results to be streamed into the UI as they are received from the backend.
 
-Code intelligence queries are resolved favoring [precise](http://localhost:5080/code_intelligence/explanations/precise_code_intelligence) code intelligence, if available, then falling back to [search-based](http://localhost:5080/code_intelligence/explanations/basic_code_intelligence).
+Code intelligence queries are resolved favoring [precise](http://localhost:5080/code_intelligence/explanations/precise_code_intelligence) code intelligence, if available, then falling back to [search-based](http://localhost:5080/code_intelligence/explanations/search_based_code_intelligence).
 
 ## Definitions
 

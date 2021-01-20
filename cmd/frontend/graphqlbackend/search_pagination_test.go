@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -82,7 +83,7 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 		result(repoName("org/repo5"), "d.go"),
 		result(repoName("org/repo5"), "e.go"),
 	}
-	sharedCommon := &SearchResultsCommon{
+	sharedCommon := &streaming.Stats{
 		// Note: this is an intentionally unordered list to ensure we do not
 		// rely on the order of lists in common (which is not guaranteed by
 		// tests).
@@ -91,19 +92,19 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 	tests := []struct {
 		name          string
 		results       []SearchResultResolver
-		common        *SearchResultsCommon
+		common        *streaming.Stats
 		offset, limit int
 		want          slicedSearchResults
 	}{
 		{
 			name:    "empty result set",
 			results: []SearchResultResolver{},
-			common:  &SearchResultsCommon{},
+			common:  &streaming.Stats{},
 			offset:  0,
 			limit:   3,
 			want: slicedSearchResults{
 				results: []SearchResultResolver{},
-				common: &SearchResultsCommon{
+				common: &streaming.Stats{
 					Repos: nil,
 				},
 				resultOffset: 0,
@@ -122,7 +123,7 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 					result(repoName("org/repo1"), "b.go"),
 					result(repoName("org/repo1"), "c.go"),
 				},
-				common: &SearchResultsCommon{
+				common: &streaming.Stats{
 					Repos: reposMap(repoName("org/repo1")),
 				},
 				resultOffset: 0,
@@ -140,7 +141,7 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 					result(repoName("org/repo1"), "a.go"),
 					result(repoName("org/repo1"), "b.go"),
 				},
-				common: &SearchResultsCommon{
+				common: &streaming.Stats{
 					Repos: reposMap(repoName("org/repo1")),
 				},
 				resultOffset: 2,
@@ -159,7 +160,7 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 					result(repoName("org/repo2"), "b.go"),
 					result(repoName("org/repo3"), "a.go"),
 				},
-				common: &SearchResultsCommon{
+				common: &streaming.Stats{
 					Repos: reposMap(repoName("org/repo2"), repoName("org/repo3")),
 				},
 				resultOffset: 0,
@@ -178,7 +179,7 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 					result(repoName("org/repo2"), "a.go"),
 					result(repoName("org/repo2"), "b.go"),
 				},
-				common: &SearchResultsCommon{
+				common: &streaming.Stats{
 					Repos: reposMap(repoName("org/repo1"), repoName("org/repo2")),
 				},
 				resultOffset: 0,
@@ -195,7 +196,7 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 				result(repoName("org/repo2"), "b.go"),
 				result(repoName("org/repo2"), "c.go"),
 			},
-			common: &SearchResultsCommon{
+			common: &streaming.Stats{
 				Repos: reposMap(repoName("org/repo1"), repoName("org/repo2")),
 			},
 			offset: 3,
@@ -206,7 +207,7 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 					result(repoName("org/repo2"), "b.go"),
 					result(repoName("org/repo2"), "c.go"),
 				},
-				common: &SearchResultsCommon{
+				common: &streaming.Stats{
 					Repos: reposMap(repoName("org/repo2")),
 				},
 				resultOffset: 0,
@@ -223,7 +224,7 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 				results: []SearchResultResolver{
 					result(repoName("org/repo1"), "b.go"),
 				},
-				common: &SearchResultsCommon{
+				common: &streaming.Stats{
 					Repos: reposMap(repoName("org/repo1")),
 				},
 				resultOffset: 2,
@@ -272,9 +273,9 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 		repoRevs("5", "master"),
 	}
 	var searchedBatches [][]*search.RepositoryRevisions
-	resultsExecutor := func(batch []*search.RepositoryRevisions) (results []SearchResultResolver, common *SearchResultsCommon, err error) {
+	resultsExecutor := func(batch []*search.RepositoryRevisions) (results []SearchResultResolver, common *streaming.Stats, err error) {
 		searchedBatches = append(searchedBatches, batch)
-		common = &SearchResultsCommon{Repos: reposMap()}
+		common = &streaming.Stats{Repos: reposMap()}
 		for _, repoRev := range batch {
 			for _, rev := range repoRev.Revs {
 				rev := rev.RevSpec
@@ -286,8 +287,8 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 		}
 		return
 	}
-	noResultsExecutor := func(batch []*search.RepositoryRevisions) (results []SearchResultResolver, common *SearchResultsCommon, err error) {
-		return nil, &SearchResultsCommon{}, nil
+	noResultsExecutor := func(batch []*search.RepositoryRevisions) (results []SearchResultResolver, common *streaming.Stats, err error) {
+		return nil, &streaming.Stats{}, nil
 	}
 	ctx := context.Background()
 
@@ -298,7 +299,7 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 		wantSearchedBatches [][]*search.RepositoryRevisions
 		wantCursor          *searchCursor
 		wantResults         []SearchResultResolver
-		wantCommon          *SearchResultsCommon
+		wantCommon          *streaming.Stats
 		wantErr             error
 	}{
 		{
@@ -328,7 +329,7 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 				result(repoName("3"), "some/file2.go", "master"),
 				result(repoName("3"), "some/file0.go", "feature"),
 			},
-			wantCommon: &SearchResultsCommon{
+			wantCommon: &streaming.Stats{
 				Repos: reposMap(repoName("1"), repoName("2"), repoName("3")),
 			},
 		},
@@ -356,7 +357,7 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 				result(repoName("5"), "some/file1.go", "master"),
 				result(repoName("5"), "some/file2.go", "master"),
 			},
-			wantCommon: &SearchResultsCommon{
+			wantCommon: &streaming.Stats{
 				Repos: reposMap(repoName("3"), repoName("4"), repoName("5")),
 			},
 		},
@@ -378,7 +379,7 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 			wantResults: []SearchResultResolver{
 				result(repoName("1"), "some/file0.go", "master"),
 			},
-			wantCommon: &SearchResultsCommon{
+			wantCommon: &streaming.Stats{
 				Repos: reposMap(repoName("1")),
 			},
 		},
@@ -400,7 +401,7 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 			wantResults: []SearchResultResolver{
 				result(repoName("1"), "some/file1.go", "master"),
 			},
-			wantCommon: &SearchResultsCommon{
+			wantCommon: &streaming.Stats{
 				Repos: reposMap(repoName("1")),
 			},
 		},
@@ -412,7 +413,7 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 				limit:  1,
 			},
 			wantCursor: &searchCursor{RepositoryOffset: 1, ResultOffset: 0, Finished: true},
-			wantCommon: &SearchResultsCommon{
+			wantCommon: &streaming.Stats{
 				Repos: reposMap(),
 			},
 		},
@@ -488,8 +489,8 @@ func TestSearchPagination_issue_6287(t *testing.T) {
 		repoRevs("1", "master"),
 		repoRevs("2", "master"),
 	}
-	executor := func(batch []*search.RepositoryRevisions) (results []SearchResultResolver, common *SearchResultsCommon, err error) {
-		common = &SearchResultsCommon{Repos: reposMap()}
+	executor := func(batch []*search.RepositoryRevisions) (results []SearchResultResolver, common *streaming.Stats, err error) {
+		common = &streaming.Stats{Repos: reposMap()}
 		for _, repoRev := range batch {
 			results = append(results, repoResults[string(repoRev.Repo.Name)]...)
 			common.Repos[repoRev.Repo.ID] = repoRev.Repo
@@ -620,8 +621,8 @@ func TestSearchPagination_cloning_missing(t *testing.T) {
 		repoRevs("e", "master"),
 		repoRevs("f", "master"),
 	}
-	executor := func(batch []*search.RepositoryRevisions) (results []SearchResultResolver, common *SearchResultsCommon, err error) {
-		common = &SearchResultsCommon{Repos: reposMap()}
+	executor := func(batch []*search.RepositoryRevisions) (results []SearchResultResolver, common *streaming.Stats, err error) {
+		common = &streaming.Stats{Repos: reposMap()}
 		for _, repoRev := range batch {
 			if res, ok := repoResults[string(repoRev.Repo.Name)]; ok {
 				results = append(results, res...)
@@ -640,7 +641,7 @@ func TestSearchPagination_cloning_missing(t *testing.T) {
 		searchRepos []*search.RepositoryRevisions
 		wantCursor  *searchCursor
 		wantResults []SearchResultResolver
-		wantCommon  *SearchResultsCommon
+		wantCommon  *streaming.Stats
 		wantErr     error
 	}{
 		{
@@ -653,7 +654,7 @@ func TestSearchPagination_cloning_missing(t *testing.T) {
 			wantResults: []SearchResultResolver{
 				result(repoName("a"), "a.go"),
 			},
-			wantCommon: &SearchResultsCommon{
+			wantCommon: &streaming.Stats{
 				Repos: reposMap(repoName("a")),
 			},
 		},
@@ -667,7 +668,7 @@ func TestSearchPagination_cloning_missing(t *testing.T) {
 			wantResults: []SearchResultResolver{
 				result(repoName("c"), "a.go"),
 			},
-			wantCommon: &SearchResultsCommon{
+			wantCommon: &streaming.Stats{
 
 				Repos: reposMap(repoName("b"), repoName("c")),
 				Status: reposStatus(map[string]search.RepoStatus{
@@ -686,7 +687,7 @@ func TestSearchPagination_cloning_missing(t *testing.T) {
 				result(repoName("a"), "a.go"),
 				result(repoName("c"), "a.go"),
 			},
-			wantCommon: &SearchResultsCommon{
+			wantCommon: &streaming.Stats{
 				Repos: reposMap(repoName("a"), repoName("b"), repoName("c")),
 				Status: reposStatus(map[string]search.RepoStatus{
 					"b": search.RepoStatusMissing,
@@ -705,7 +706,7 @@ func TestSearchPagination_cloning_missing(t *testing.T) {
 				result(repoName("c"), "a.go"),
 				result(repoName("f"), "a.go"),
 			},
-			wantCommon: &SearchResultsCommon{
+			wantCommon: &streaming.Stats{
 				Repos: reposMap(repoName("a"), repoName("b"), repoName("c"), repoName("d"), repoName("e"), repoName("f")),
 				Status: reposStatus(map[string]search.RepoStatus{
 					"b": search.RepoStatusMissing,

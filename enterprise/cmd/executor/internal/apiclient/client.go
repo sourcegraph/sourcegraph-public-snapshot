@@ -147,6 +147,17 @@ func (c *Client) MarkFailed(ctx context.Context, queueName string, jobID int, er
 	return c.client.DoAndDrop(ctx, req)
 }
 
+func (c *Client) Ping(ctx context.Context, jobIDs []int) (err error) {
+	req, err := c.makeRequest("POST", "heartbeat", executor.HeartbeatRequest{
+		ExecutorName: c.options.ExecutorName,
+	})
+	if err != nil {
+		return err
+	}
+
+	return c.client.DoAndDrop(ctx, req)
+}
+
 func (c *Client) Heartbeat(ctx context.Context, jobIDs []int) (err error) {
 	strJobIDs := make([]string, len(jobIDs))
 	for _, jobID := range jobIDs {

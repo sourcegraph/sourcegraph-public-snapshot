@@ -202,7 +202,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
             useURLQuery={true}
           >
             <div
-              className="filtered-connection test-filtered-connection filtered-connection--noncompact "
+              className="filtered-connection test-filtered-connection filtered-connection--noncompact"
             >
               <ConnectionNodes
                 connection={
@@ -499,7 +499,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                 query=""
               >
                 <ul
-                  className="filtered-connection__nodes "
+                  className="filtered-connection__nodes"
                 >
                   <CodeMonitorNode
                     authentictedUser={
@@ -1525,7 +1525,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
             useURLQuery={true}
           >
             <div
-              className="filtered-connection test-filtered-connection filtered-connection--noncompact "
+              className="filtered-connection test-filtered-connection filtered-connection--noncompact"
             >
               <ConnectionNodes
                 connection={
@@ -1640,7 +1640,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                 query=""
               >
                 <ul
-                  className="filtered-connection__nodes "
+                  className="filtered-connection__nodes"
                 >
                   <CodeMonitorNode
                     authentictedUser={
@@ -2106,7 +2106,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
             useURLQuery={true}
           >
             <div
-              className="filtered-connection test-filtered-connection filtered-connection--noncompact "
+              className="filtered-connection test-filtered-connection filtered-connection--noncompact"
             >
               <ConnectionNodes
                 connection={
@@ -2455,7 +2455,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                 query=""
               >
                 <ul
-                  className="filtered-connection__nodes "
+                  className="filtered-connection__nodes"
                 >
                   <CodeMonitorNode
                     authentictedUser={
@@ -3433,7 +3433,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                   </small>
                 </p>
                 <button
-                  className="btn btn-secondary btn-sm filtered-connection__show-more "
+                  className="btn btn-secondary btn-sm filtered-connection__show-more"
                   onClick={[Function]}
                   type="button"
                 >
