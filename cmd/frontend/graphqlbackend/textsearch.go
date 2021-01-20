@@ -603,7 +603,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 
 	sort.Slice(aggMatches, func(i, j int) bool {
 		a, b := aggMatches[i].uri, aggMatches[j].uri
-		return a > b
+		return a < b
 	})
 	if limit := int(args.PatternInfo.FileMatchLimit); limit < len(aggMatches) {
 		aggMatches = aggMatches[:limit]

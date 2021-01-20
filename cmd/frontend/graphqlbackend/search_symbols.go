@@ -181,7 +181,7 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 	err = run.Wait()
 	sort.Slice(aggMatches, func(i, j int) bool {
 		a, b := aggMatches[i].uri, aggMatches[j].uri
-		return a > b
+		return a < b
 	})
 	if limit := int(args.PatternInfo.FileMatchLimit); limit < len(aggMatches) {
 		aggMatches = aggMatches[:limit]
