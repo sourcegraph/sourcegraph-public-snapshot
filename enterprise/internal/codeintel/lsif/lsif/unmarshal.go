@@ -124,7 +124,7 @@ var vertexUnmarshalers = map[string]func(interner *Interner, line []byte) (inter
 	"hoverResult":          unmarshalHover,
 	"moniker":              unmarshalMoniker,
 	"packageInformation":   unmarshalPackageInformation,
-	"symbol":               reader.UnmarshalSymbol,
+	"symbol":               unmarshalSymbol,
 	"diagnosticResult":     unmarshalDiagnosticResult,
 	"documentSymbolResult": reader.UnmarshalDocumentSymbolResult,
 }
@@ -277,6 +277,65 @@ func unmarshalPackageInformation(interner *Interner, line []byte) (interface{}, 
 		Version: payload.Version,
 		Manager: payload.Manager,
 	}, nil
+}
+
+func unmarshalSymbol(interner *Interner, line []byte) (interface{}, error) {
+	type _position struct {
+		Line      int `json:"line"`
+		Character int `json:"character"`
+	}
+	type _range struct {
+		Start _position `json:"start"`
+		End   _position `json:"end"`
+	}
+	type _location struct {
+		URI       string  `json:"uri"`
+		Range     *_range `json:"range"`
+		FullRange _range  `json:"fullRange"`
+	}
+	var payload struct {
+		Text      string               `json:"text"`
+		Detail    string               `json:"detail"`
+		Kind      protocol.SymbolKind  `json:"kind"`
+		Tags      []protocol.SymbolTag `json:"tags"`
+		Locations []_location          `json:"locations"`
+	}
+	toRangeData := func(r *_range) protocol.RangeData {
+		return protocol.RangeData{
+			Start: protocol.Pos{
+				Line:      r.Start.Line,
+				Character: r.Start.Character,
+			},
+			End: protocol.Pos{
+				Line:      r.End.Line,
+				Character: r.End.Character,
+			},
+		}
+	}
+
+	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
+		return nil, err
+	}
+
+	symbol := Symbol{
+		Text:      payload.Text,
+		Detail:    payload.Detail,
+		Kind:      payload.Kind,
+		Tags:      payload.Tags,
+		Locations: make([]SymbolLocation, len(payload.Locations)),
+	}
+	for i, loc := range payload.Locations {
+		symbol.Locations[i] = SymbolLocation{
+			URI:       loc.URI,
+			FullRange: toRangeData(&loc.FullRange),
+		}
+		if loc.Range != nil {
+			locRange := toRangeData(loc.Range)
+			symbol.Locations[i].Range = &locRange
+		}
+	}
+
+	return symbol, nil
 }
 
 func unmarshalDiagnosticResult(interner *Interner, line []byte) (interface{}, error) {

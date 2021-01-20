@@ -346,9 +346,14 @@ func gatherSymbols(ctx context.Context, state *State, dumpID int) chan lsifstore
 			uri := state.DocumentData[docID]
 
 			byID[id] = &lsifstore.SymbolData{
-				ID:         uint64(id),
-				SymbolData: rng.Tag.SymbolData,
-				Locations: []protocol.SymbolLocation{
+				ID: uint64(id),
+
+				Text:   rng.Tag.SymbolData.Text,
+				Detail: rng.Tag.SymbolData.Detail,
+				Kind:   rng.Tag.SymbolData.Kind,
+				Tags:   rng.Tag.SymbolData.Tags,
+
+				Locations: []lsifstore.SymbolLocation{
 					{
 						URI: uri,
 						Range: &protocol.RangeData{
@@ -367,10 +372,26 @@ func gatherSymbols(ctx context.Context, state *State, dumpID int) chan lsifstore
 
 	// Gather symbols defined by symbol vertices.
 	for id, symbol := range state.SymbolData {
+		tags := make([]protocol.SymbolTag, len(symbol.Tags))
+		for i, tag := range symbol.Tags {
+			tags[i] = protocol.SymbolTag(tag)
+		}
+
+		locations := make([]lsifstore.SymbolLocation, len(symbol.Locations))
+		for i, loc := range symbol.Locations {
+			locations[i] = lsifstore.SymbolLocation{
+				URI:       loc.URI,
+				Range:     loc.Range,
+				FullRange: loc.FullRange,
+			}
+		}
 		byID[id] = &lsifstore.SymbolData{
-			ID:         uint64(id),
-			SymbolData: symbol.SymbolData,
-			Locations:  symbol.Locations,
+			ID:        uint64(id),
+			Text:      symbol.Text,
+			Detail:    symbol.Detail,
+			Kind:      protocol.SymbolKind(symbol.Kind),
+			Tags:      tags,
+			Locations: locations,
 		}
 	}
 

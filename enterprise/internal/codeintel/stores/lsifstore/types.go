@@ -73,8 +73,13 @@ type DiagnosticData struct {
 // explicit and less likely to be accidentally changed.
 type SymbolData struct {
 	ID uint64 // ID (unique within a bundle)
-	protocol.SymbolData
-	Locations []protocol.SymbolLocation
+
+	Text   string               `json:"text"`
+	Detail string               `json:"detail,omitempty"`
+	Kind   protocol.SymbolKind  `json:"kind"`
+	Tags   []protocol.SymbolTag `json:"tags,omitempty"`
+
+	Locations []SymbolLocation
 	Monikers  []MonikerData // the monikers that refer to this symbol
 	Children  []uint64      // ID of children
 }
@@ -151,8 +156,13 @@ type PackageReference struct {
 // Symbol TODO(sqs) move this
 type Symbol struct {
 	DumpID int
-	protocol.SymbolData
-	Locations []protocol.SymbolLocation
+
+	Text   string               `json:"text"`
+	Detail string               `json:"detail,omitempty"`
+	Kind   protocol.SymbolKind  `json:"kind"`
+	Tags   []protocol.SymbolTag `json:"tags,omitempty"`
+
+	Locations []SymbolLocation
 	Children  []Symbol
 	Monikers  []MonikerData // the monikers that refer to this symbol
 }
@@ -162,6 +172,12 @@ type Location struct {
 	DumpID int
 	Path   string
 	Range  Range
+}
+
+type SymbolLocation struct {
+	URI       string
+	Range     *protocol.RangeData
+	FullRange protocol.RangeData
 }
 
 // Range is an inclusive bounds within a file.

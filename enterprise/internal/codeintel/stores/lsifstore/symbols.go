@@ -13,10 +13,15 @@ func buildSymbolTree(datas []SymbolData, dumpID int) (roots []Symbol) {
 	var newSymbol func(data SymbolData) Symbol
 	newSymbol = func(data SymbolData) Symbol {
 		symbol := Symbol{
-			DumpID:     dumpID,
-			SymbolData: data.SymbolData,
-			Locations:  data.Locations,
-			Monikers:   data.Monikers,
+			DumpID: dumpID,
+
+			Text:   data.Text,
+			Detail: data.Detail,
+			Kind:   data.Kind,
+			Tags:   data.Tags,
+
+			Locations: data.Locations,
+			Monikers:  data.Monikers,
 		}
 		for _, child := range data.Children {
 			symbol.Children = append(symbol.Children, newSymbol(byID[child]))

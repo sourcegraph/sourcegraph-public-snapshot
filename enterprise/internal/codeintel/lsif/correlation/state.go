@@ -18,7 +18,7 @@ type State struct {
 	HoverData              map[int]string
 	MonikerData            map[int]lsif.Moniker
 	PackageInformationData map[int]lsif.PackageInformation
-	SymbolData             map[int]protocol.Symbol // TODO(sqs): use type w/o embedded Vertex
+	SymbolData             map[int]lsif.Symbol
 	DiagnosticResults      map[int][]lsif.Diagnostic
 	DocumentSymbolResults  map[int][]protocol.RangeBasedDocumentSymbol
 	NextData               map[int]int                     // maps range/result sets related via next edges
@@ -45,7 +45,7 @@ func newState() *State {
 		HoverData:              map[int]string{},
 		MonikerData:            map[int]lsif.Moniker{},
 		PackageInformationData: map[int]lsif.PackageInformation{},
-		SymbolData:             map[int]protocol.Symbol{},
+		SymbolData:             map[int]lsif.Symbol{},
 		DiagnosticResults:      map[int][]lsif.Diagnostic{},
 		DocumentSymbolResults:  map[int][]protocol.RangeBasedDocumentSymbol{},
 		NextData:               map[int]int{},

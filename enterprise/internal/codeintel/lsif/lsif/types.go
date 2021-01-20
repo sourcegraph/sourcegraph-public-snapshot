@@ -134,3 +134,17 @@ type Diagnostic struct {
 	EndLine        int
 	EndCharacter   int
 }
+
+type Symbol struct {
+	Text      string
+	Detail    string
+	Kind      protocol.SymbolKind
+	Tags      []protocol.SymbolTag
+	Locations []SymbolLocation
+}
+
+type SymbolLocation struct {
+	URI       string
+	Range     *protocol.RangeData
+	FullRange protocol.RangeData
+}

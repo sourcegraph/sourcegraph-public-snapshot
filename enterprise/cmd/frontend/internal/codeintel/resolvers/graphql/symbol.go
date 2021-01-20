@@ -63,7 +63,7 @@ func (r *SymbolResolver) Monikers() []gql.MonikerResolver {
 }
 
 func (r *SymbolResolver) Definitions(ctx context.Context) (gql.LocationConnectionResolver, error) {
-	return r.definitions(ctx, func(loc protocol.SymbolLocation) protocol.RangeData {
+	return r.definitions(ctx, func(loc lsifstore.SymbolLocation) protocol.RangeData {
 		if loc.Range != nil {
 			return *loc.Range
 		}
@@ -72,12 +72,12 @@ func (r *SymbolResolver) Definitions(ctx context.Context) (gql.LocationConnectio
 }
 
 func (r *SymbolResolver) DefinitionsFullRanges(ctx context.Context) (gql.LocationConnectionResolver, error) {
-	return r.definitions(ctx, func(loc protocol.SymbolLocation) protocol.RangeData {
+	return r.definitions(ctx, func(loc lsifstore.SymbolLocation) protocol.RangeData {
 		return loc.FullRange
 	})
 }
 
-func (r *SymbolResolver) definitions(ctx context.Context, rangeFn func(protocol.SymbolLocation) protocol.RangeData) (gql.LocationConnectionResolver, error) {
+func (r *SymbolResolver) definitions(ctx context.Context, rangeFn func(lsifstore.SymbolLocation) protocol.RangeData) (gql.LocationConnectionResolver, error) {
 	// TODO(sqs): workspace symbols have locations, but document symbols dont (currently based on
 	// how this is all implemented).
 	var adjustedLocations []resolvers.AdjustedLocation

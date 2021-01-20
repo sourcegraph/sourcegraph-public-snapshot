@@ -61,7 +61,7 @@ func correlateFromReader(ctx context.Context, r io.Reader, root string) (*State,
 		i++
 
 		if pair.Err != nil {
-			return nil, fmt.Errorf("dump malformed on element %d: %s", i, pair.Err)
+			return nil, fmt.Errorf("dump malformed on elem %d: %s", i, pair.Err)
 		}
 
 		if err := correlateElement(wrappedState, pair.Element); err != nil {
@@ -268,7 +268,7 @@ func correlatePackageInformation(state *wrappedState, element lsif.Element) erro
 }
 
 func correlateSymbol(state *wrappedState, element lsif.Element) error {
-	payload, ok := element.Payload.(protocol.Symbol)
+	payload, ok := element.Payload.(lsif.Symbol)
 	if !ok {
 		return ErrUnexpectedPayload
 	}
