@@ -14,7 +14,7 @@ var (
 	Settings         = &settings{}
 	Users            = &UserStore{}
 	UserCredentials  = &userCredentials{}
-	UserEmails       = &userEmails{}
+	UserEmails       = &UserEmailsStore{}
 	EventLogs        = &eventLogs{}
 
 	SurveyResponses = &surveyResponses{}
