@@ -15,6 +15,7 @@ var (
 	Users            = &UserStore{}
 	UserCredentials  = &userCredentials{}
 	UserEmails       = &UserEmailsStore{}
+	UserPublicRepos  = &UserPublicRepoStore{}
 	EventLogs        = &eventLogs{}
 
 	SurveyResponses = &surveyResponses{}
