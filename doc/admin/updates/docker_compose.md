@@ -11,6 +11,10 @@ Upgrades should happen across consecutive minor versions of Sourcegraph. For exa
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
+## 3.23 -> 3.24
+
+Please upgrade to the [`v3.24.0` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.24.0/docker-compose) by following the [standard upgrade procedure](#standard-upgrade-procedure).
+
 ## 3.22 -> 3.23
 
 No manual migration required.
