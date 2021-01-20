@@ -165,7 +165,7 @@ func (d *documentation) renderDashboardPanelEntry(c *Container, o Observable) er
 	}
 	// add link to alert solutions IF there is an alert attached
 	if !o.NoAlert {
-		fmt.Fprintf(&d.dashboards, "> NOTE: Alerts related to this panel are available in the [alert solutions reference](./%s#%s).\n\n",
+		fmt.Fprintf(&d.dashboards, "> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./%s#%s).\n\n",
 			alertSolutionsFile, observableDocAnchor(c, o))
 	}
 	// add owner
