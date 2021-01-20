@@ -11,3 +11,4 @@ The following is a list of how-tos that show how to use [Sourcegraph campaigns](
 - [Site admin configuration for campaigns](site_admin_configuration.md)
 - [Configuring user credentials for campaigns](configuring_user_credentials.md)
 - <span class="badge badge-experimental">Experimental</span> [Creating multiple changesets in large repositories](creating_multiple_changesets_in_large_repositories.md)
+- [Handling errored changesets](handling_errored_changesets.md)
