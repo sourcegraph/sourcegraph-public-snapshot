@@ -9,12 +9,12 @@ import (
 // return an error if not running in enterprise mode. The actual resolvers can be found in
 // enterprise/internal/insights/resolvers
 
-type InsightDataPointResolver interface {
+type InsightsDataPointResolver interface {
 	DateTime() DateTime
 	Value() float64
 }
 
-type PointsArgs struct {
+type InsightsPointsArgs struct {
 	From *DateTime
 	To   *DateTime
 }
@@ -24,7 +24,7 @@ type InsightsResolver interface {
 	Insights(ctx context.Context) (InsightsResolver, error)
 
 	// Insights type resolvers.
-	Points(ctx context.Context, args *PointsArgs) ([]InsightDataPointResolver, error)
+	Points(ctx context.Context, args *InsightsPointsArgs) ([]InsightsDataPointResolver, error)
 }
 
 var insightsOnlyInEnterprise = errors.New("insights are only available in enterprise")
@@ -35,7 +35,7 @@ func (defaultInsightsResolver) Insights(ctx context.Context) (InsightsResolver, 
 	return nil, insightsOnlyInEnterprise
 }
 
-func (defaultInsightsResolver) Points(ctx context.Context, args *PointsArgs) ([]InsightDataPointResolver, error) {
+func (defaultInsightsResolver) Points(ctx context.Context, args *InsightsPointsArgs) ([]InsightsDataPointResolver, error) {
 	return nil, insightsOnlyInEnterprise
 }
 
