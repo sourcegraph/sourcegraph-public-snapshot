@@ -868,13 +868,10 @@ func (r *searchResolver) evaluateAndStream(ctx context.Context, scopeParameters 
 	r2.resultChannel = sink
 
 	result, err := r2.evaluateAnd(ctx, scopeParameters, operands)
-	if err == nil && result.SearchResults != nil {
-		r.resultChannel <- SearchEvent{
-			Results: result.SearchResults,
-			Stats:   result.Stats,
-		}
-		// TODO(keegan,stefan) Stream error? Or does the return err below
-		// handle that?
+	r.resultChannel <- SearchEvent{
+		Results: result.SearchResults,
+		Stats:   result.Stats,
+		Error:   err,
 	}
 	return result, err
 }
