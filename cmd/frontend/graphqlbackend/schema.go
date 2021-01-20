@@ -2739,7 +2739,7 @@ type Query {
     """
     Queries code insights
     """
-    insights(): Insights
+    insights: Insights
 
     """
     Looks up a repository by either name or cloneURL.
