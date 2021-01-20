@@ -131,8 +131,6 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		// TODO handle event.Stats
-
 		// Instantly send results if we have not sent any yet.
 		if first && len(matchesBuf) > 0 {
 			first = false

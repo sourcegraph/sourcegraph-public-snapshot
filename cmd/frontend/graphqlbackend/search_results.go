@@ -1688,11 +1688,10 @@ func (a *aggregator) report(ctx context.Context, results []SearchResultResolver,
 		a.resultChannel <- SearchEvent{
 			Results: results,
 			Stats:   statsDeref(common),
+			Error:   err,
 		}
 	}
 
-	// TODO(keegan,stefan) we need to work out how to handle streamed stats vs
-	// collected stats once we want to stream progress.
 	a.collect(ctx, results, common, err)
 }
 
