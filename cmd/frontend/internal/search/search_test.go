@@ -66,7 +66,7 @@ func (h *mockSearchResolver) Results(ctx context.Context) (*graphqlbackend.Searc
 		}, nil
 	}
 }
-func (h *mockSearchResolver) SetResultChannel(c graphqlbackend.SearchStream) {
+func (h *mockSearchResolver) SetStream(c graphqlbackend.SearchStream) {
 	h.c = c
 }
 

@@ -215,7 +215,7 @@ func toNamer(f func() []*graphqlbackend.RepositoryResolver) []api.Namer {
 
 type searchResolver interface {
 	Results(context.Context) (*graphqlbackend.SearchResultsResolver, error)
-	SetResultChannel(c graphqlbackend.SearchStream)
+	SetStream(c graphqlbackend.SearchStream)
 }
 
 func defaultNewSearchResolver(ctx context.Context, args *graphqlbackend.SearchArgs) (searchResolver, error) {
@@ -293,7 +293,7 @@ func newResultsStream(ctx context.Context, search searchResolver) (results <-cha
 		defer close(finalC)
 		defer close(resultsC)
 
-		search.SetResultChannel(resultsC)
+		search.SetStream(resultsC)
 
 		r, err := search.Results(ctx)
 		finalC <- finalResult{resultsResolver: r, err: err}

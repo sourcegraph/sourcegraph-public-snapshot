@@ -301,7 +301,7 @@ func resultStream(stream SearchStream) (chan<- []SearchResultResolver, func(*str
 	}
 }
 
-// SetResultChannel will send all results down c.
+// SetStream will send all results down c.
 //
 // This is how our streaming and our batch interface co-exist. When this is
 // set, it exposes a way to stream out results as we collect them.
@@ -310,7 +310,7 @@ func resultStream(stream SearchStream) (chan<- []SearchResultResolver, func(*str
 // us to stream out things like dynamic filters or take into account
 // AND/OR. However, streaming is behind a feature flag for now, so this is to
 // make it visible in the browser.
-func (r *searchResolver) SetResultChannel(c SearchStream) {
+func (r *searchResolver) SetStream(c SearchStream) {
 	r.resultChannel = c
 }
 
