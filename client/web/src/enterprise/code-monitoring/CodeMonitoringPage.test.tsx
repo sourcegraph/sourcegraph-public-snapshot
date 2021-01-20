@@ -59,4 +59,13 @@ describe('CodeMonitoringListPage', () => {
             mount(<CodeMonitoringPage {...additionalProps} fetchUserCodeMonitors={generateMockFetchMonitors(12)} />)
         ).toMatchSnapshot()
     })
+
+    test('Clicking enabled toggle calls toggleCodeMonitorEnabled', () => {
+        const component = mount(
+            <CodeMonitoringPage {...additionalProps} fetchUserCodeMonitors={generateMockFetchMonitors(1)} />
+        )
+        const toggle = component.find('.test-toggle-monitor-enabled')
+        toggle.simulate('click')
+        expect(additionalProps.toggleCodeMonitorEnabled.calledOnce)
+    })
 })

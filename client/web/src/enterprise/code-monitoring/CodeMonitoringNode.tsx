@@ -1,16 +1,18 @@
-import React, { useCallback, useMemo } from 'react'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import React, { useState, useCallback, useMemo } from 'react'
 import * as H from 'history'
+import { Observable, concat, of } from 'rxjs'
+import { switchMap, catchError, startWith, takeUntil, tap, delay, mergeMap } from 'rxjs/operators'
+import { Toggle } from '../../../../branded/src/components/Toggle'
 import { Link } from '../../../../shared/src/components/Link'
-import { Observable } from 'rxjs'
-import { catchError, startWith, mergeMap, tap } from 'rxjs/operators'
-import { asError } from '../../../../shared/src/util/errors'
+import { ErrorLike, isErrorLike, asError } from '../../../../shared/src/util/errors'
 import { useEventObservable } from '../../../../shared/src/util/useObservable'
-import { CodeMonitorFields } from '../../graphql-operations'
-
+import { CodeMonitorFields, ToggleCodeMonitorEnabledResult } from '../../graphql-operations'
 import { sendTestEmail } from './backend'
 import { AuthenticatedUser } from '../../auth'
+import { CodeMonitoringProps } from '.'
 
-export interface CodeMonitorNodeProps {
+export interface CodeMonitorNodeProps extends Pick<CodeMonitoringProps, 'toggleCodeMonitorEnabled'> {
     node: CodeMonitorFields
     location: H.Location
     authentictedUser: AuthenticatedUser
@@ -20,11 +22,45 @@ export interface CodeMonitorNodeProps {
 const LOADING = 'LOADING' as const
 
 export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
+    toggleCodeMonitorEnabled,
     location,
     node,
     authentictedUser,
     showCodeMonitoringTestEmailButton,
 }: CodeMonitorNodeProps) => {
+    const [enabled, setEnabled] = useState<boolean>(node.enabled)
+
+    const [toggleMonitor, toggleMonitorOrError] = useEventObservable(
+        useCallback(
+            (click: Observable<React.MouseEvent>) =>
+                click.pipe(
+                    tap(click => click.preventDefault()),
+                    switchMap(() => {
+                        const toggleMonitor = toggleCodeMonitorEnabled(node.id, !enabled).pipe(
+                            tap(
+                                (
+                                    idAndEnabled:
+                                        | typeof LOADING
+                                        | ErrorLike
+                                        | ToggleCodeMonitorEnabledResult['toggleCodeMonitor']
+                                ) => {
+                                    if (idAndEnabled !== LOADING && !isErrorLike(idAndEnabled)) {
+                                        setEnabled(idAndEnabled.enabled)
+                                    }
+                                }
+                            ),
+                            catchError(error => [asError(error)])
+                        )
+                        return concat(
+                            of(LOADING).pipe(startWith(enabled), delay(300), takeUntil(toggleMonitor)),
+                            toggleMonitor
+                        )
+                    })
+                ),
+            [node, enabled, setEnabled, toggleCodeMonitorEnabled]
+        )
+    )
+
     const [sendEmailRequest] = useEventObservable(
         useCallback(
             (click: Observable<React.MouseEvent<HTMLButtonElement>>) =>
@@ -67,12 +103,24 @@ export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
                         </div>
                     )}
                 </div>
-                <div className="d-flex flex-column">
-                    <button className="btn btn-link" type="button">
+                <div className="d-flex">
+                    {toggleMonitorOrError === LOADING && <LoadingSpinner className="icon-inline mr-2" />}
+                    <div className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled">
+                        <Toggle
+                            onClick={toggleMonitor}
+                            value={enabled}
+                            className="mr-3"
+                            disabled={toggleMonitorOrError === LOADING}
+                        />
+                    </div>
+                    <button type="button" className="btn btn-link code-monitoring-node__edit-button">
                         Edit
                     </button>
                 </div>
             </div>
+            {isErrorLike(toggleMonitorOrError) && (
+                <div className="alert alert-danger">Failed to toggle monitor: {toggleMonitorOrError.message}</div>
+            )}
         </Link>
     )
 }

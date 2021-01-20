@@ -3,6 +3,15 @@
     margin: -1px -1px calc(0.5rem - 1px) -1px;
     color: initial;
 
+    &__toggle-wrapper {
+        // stylelint-disable-next-line declaration-property-unit-whitelist
+        margin-top: 1px; // For visual alignment with the edit button
+    }
+
+    &__edit-button {
+        padding: 0;
+    }
+
     &:hover {
         text-decoration: initial;
         border: 2px solid #329af0;
