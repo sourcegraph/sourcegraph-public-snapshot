@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"fmt"
 	"regexp/syntax"
 	"time"
 
@@ -118,11 +117,6 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 		resp, err = args.Zoekt.Client.Search(ctx, q, &searchOpts)
 		if err != nil {
 			c <- SearchEvent{Error: err}
-		}
-		// TODO (stefan): do we trust Zoekt.Client to always return resp != nil for err = nil?
-		if resp == nil {
-			c <- SearchEvent{Error: fmt.Errorf("zoekt returned with nil error and nil response")}
-			return
 		}
 		if since(t0) >= searchOpts.MaxWallTime {
 			c <- SearchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusTimedout | search.RepoStatusIndexed)}}
