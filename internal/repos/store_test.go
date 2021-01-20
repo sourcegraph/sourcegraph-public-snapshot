@@ -884,11 +884,11 @@ func testStoreEnqueueSyncJobs(db *sql.DB, store *repos.Store) func(t *testing.T,
 		services := generateExternalServices(10, mkExternalServices(now)...)
 
 		type testCase struct {
-			name            string
-			stored          types.ExternalServices
-			queued          func(types.ExternalServices) []int64
-			ignoreSiteAdmin bool
-			err             error
+			name                    string
+			stored                  types.ExternalServices
+			queued                  func(types.ExternalServices) []int64
+			excludeExternalServices []int64
+			err                     error
 		}
 
 		var testCases []testCase
@@ -909,13 +909,17 @@ func testStoreEnqueueSyncJobs(db *sql.DB, store *repos.Store) func(t *testing.T,
 			queued: func(svcs types.ExternalServices) []int64 { return []int64{} },
 		})
 
+		var toExclude []int64
+		for i := range services {
+			toExclude = append(toExclude, services[i].ID)
+		}
 		testCases = append(testCases, testCase{
-			name: "ignore siteadmin repos",
+			name: "ignore excluded external services",
 			stored: services.With(func(s *types.ExternalService) {
 				s.NextSyncAt = now.Add(10 * time.Second)
 			}),
-			ignoreSiteAdmin: true,
-			queued:          func(svcs types.ExternalServices) []int64 { return []int64{} },
+			excludeExternalServices: toExclude,
+			queued:                  func(svcs types.ExternalServices) []int64 { return []int64{} },
 		})
 
 		{
@@ -960,7 +964,7 @@ func testStoreEnqueueSyncJobs(db *sql.DB, store *repos.Store) func(t *testing.T,
 						t.Fatalf("failed to setup store: %v", err)
 					}
 
-					err := store.EnqueueSyncJobs(ctx, tc.ignoreSiteAdmin)
+					err := store.EnqueueSyncJobs(ctx, tc.excludeExternalServices)
 					if have, want := fmt.Sprint(err), fmt.Sprint(tc.err); have != want {
 						t.Errorf("error:\nhave: %v\nwant: %v", have, want)
 					}

@@ -138,6 +138,8 @@ func Main(enterpriseInit EnterpriseInit) {
 		debugDumpers = enterpriseInit(db, store, cf, server)
 	}
 
+	var excludeFromSyncing []int64
+
 	if envvar.SourcegraphDotComMode() {
 		server.SourcegraphDotComMode = true
 
@@ -162,10 +164,12 @@ func Main(enterpriseInit EnterpriseInit) {
 			case *schema.GitHubConnection:
 				if strings.HasPrefix(c.Url, "https://github.com") && c.Token != "" && c.CloudGlobal {
 					server.GithubDotComSource, err = repos.NewGithubSource(e, cf)
+					excludeFromSyncing = append(excludeFromSyncing, e.ID)
 				}
 			case *schema.GitLabConnection:
 				if strings.HasPrefix(c.Url, "https://gitlab.com") && c.Token != "" && c.CloudGlobal {
 					server.GitLabDotComSource, err = repos.NewGitLabSource(e, cf)
+					excludeFromSyncing = append(excludeFromSyncing, e.ID)
 				}
 			}
 
@@ -202,10 +206,11 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	go watchSyncer(ctx, syncer, scheduler, gps)
 	go func() {
-		log.Fatal(syncer.Run(ctx, db, store, repos.RunOptions{
-			EnqueueInterval: repos.ConfRepoListUpdateInterval,
-			IsCloud:         envvar.SourcegraphDotComMode(),
-			MinSyncInterval: repos.ConfRepoListUpdateInterval,
+		log.Fatal(syncer.Run(ctx, db, store, repos.SyncRunOptions{
+			EnqueueInterval:            repos.ConfRepoListUpdateInterval,
+			MinSyncInterval:            repos.ConfRepoListUpdateInterval,
+			IsCloud:                    envvar.SourcegraphDotComMode(),
+			ExcludedExternalServiceIDs: excludeFromSyncing,
 		}))
 	}()
 	server.Syncer = syncer

@@ -64,16 +64,17 @@ type Syncer struct {
 	enqueueSignal signal
 }
 
-// RunOptions contains options customizing Run behaviour.
-type RunOptions struct {
-	EnqueueInterval func() time.Duration // Defaults to 1 minute
-	IsCloud         bool                 // Defaults to false
-	MinSyncInterval func() time.Duration // Defaults to 1 minute
-	DequeueInterval time.Duration        // Default to 10 seconds
+// SyncRunOptions contains options customizing sync Run behaviour.
+type SyncRunOptions struct {
+	EnqueueInterval            func() time.Duration // Defaults to 1 minute
+	IsCloud                    bool                 // Defaults to false
+	MinSyncInterval            func() time.Duration // Defaults to 1 minute
+	DequeueInterval            time.Duration        // Default to 10 seconds
+	ExcludedExternalServiceIDs []int64              // Opt out of background syncing for specific external services
 }
 
 // Run runs the Sync at the specified interval.
-func (s *Syncer) Run(pctx context.Context, db *sql.DB, store *Store, opts RunOptions) error {
+func (s *Syncer) Run(pctx context.Context, db *sql.DB, store *Store, opts SyncRunOptions) error {
 	if opts.EnqueueInterval == nil {
 		opts.EnqueueInterval = func() time.Duration { return time.Minute }
 	}
@@ -109,7 +110,7 @@ func (s *Syncer) Run(pctx context.Context, db *sql.DB, store *Store, opts RunOpt
 	for pctx.Err() == nil {
 		ctx, cancel := contextWithSignalCancel(pctx, s.enqueueSignal.Watch())
 
-		if err := store.EnqueueSyncJobs(ctx, opts.IsCloud); err != nil && s.Logger != nil {
+		if err := store.EnqueueSyncJobs(ctx, opts.ExcludedExternalServiceIDs); err != nil && s.Logger != nil {
 			s.Logger.Error("Enqueuing sync jobs", "error", err)
 		}
 

@@ -597,7 +597,7 @@ func (s *Store) UpsertRepos(ctx context.Context, repos ...*types.Repo) (err erro
 	return nil
 }
 
-func (s *Store) EnqueueSyncJobs(ctx context.Context, ignoreSiteAdmin bool) (err error) {
+func (s *Store) EnqueueSyncJobs(ctx context.Context, excludeExternalServices []int64) (err error) {
 	tr, ctx := s.trace(ctx, "Store.EnqueueSyncJobs")
 
 	defer func(began time.Time) {
@@ -607,11 +607,15 @@ func (s *Store) EnqueueSyncJobs(ctx context.Context, ignoreSiteAdmin bool) (err 
 		tr.Finish()
 	}(time.Now())
 
-	filter := "TRUE"
-	if ignoreSiteAdmin {
-		filter = "namespace_user_id IS NOT NULL"
+	filter := sqlf.Sprintf("TRUE")
+	if len(excludeExternalServices) > 0 {
+		ids := make([]*sqlf.Query, 0, len(excludeExternalServices))
+		for _, id := range excludeExternalServices {
+			ids = append(ids, sqlf.Sprintf("%d", id))
+		}
+		filter = sqlf.Sprintf("NOT id IN (%s)", sqlf.Join(ids, ","))
 	}
-	q := sqlf.Sprintf(enqueueSyncJobsQueryFmtstr, sqlf.Sprintf(filter))
+	q := sqlf.Sprintf(enqueueSyncJobsQueryFmtstr, filter)
 	return s.Exec(ctx, q)
 }
 

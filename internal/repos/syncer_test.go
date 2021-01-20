@@ -1111,7 +1111,7 @@ func testSyncRun(db *sql.DB) func(t *testing.T, store *repos.Store) func(t *test
 
 			done := make(chan error)
 			go func() {
-				done <- syncer.Run(ctx, db, store, repos.RunOptions{
+				done <- syncer.Run(ctx, db, store, repos.SyncRunOptions{
 					EnqueueInterval: func() time.Duration { return time.Second },
 					IsCloud:         false,
 					MinSyncInterval: func() time.Duration { return 1 * time.Millisecond },
@@ -1252,7 +1252,7 @@ func testSyncer(db *sql.DB) func(t *testing.T, store *repos.Store) func(t *testi
 
 			done := make(chan error)
 			go func() {
-				done <- syncer.Run(ctx, db, store, repos.RunOptions{
+				done <- syncer.Run(ctx, db, store, repos.SyncRunOptions{
 					EnqueueInterval: func() time.Duration { return time.Second },
 					IsCloud:         false,
 					MinSyncInterval: func() time.Duration { return 1 * time.Minute },
