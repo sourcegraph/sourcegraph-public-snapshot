@@ -29,7 +29,6 @@ describe('PlainQueryInput', () => {
                         versionContext={undefined}
                         globbing={false}
                         enableSmartQuery={false}
-                        showOnboardingTour={false}
                     />
                 )
                 .toJSON()
@@ -57,7 +56,6 @@ describe('PlainQueryInput', () => {
                         versionContext={undefined}
                         globbing={false}
                         enableSmartQuery={false}
-                        showOnboardingTour={false}
                     />
                 )
                 .toJSON()
