@@ -1655,61 +1655,68 @@ func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameter
 	return nil
 }
 
-type aggregator struct {
-	// resultChannel if non-nil will send all results we receive down it. See
-	// searchResolver.SetResultChannel
-	resultChannel SearchStream
+func newAggregator(ctx context.Context, stream SearchStream) *aggregator {
+	if stream == nil {
+		sink := make(chan SearchEvent)
+		stream = sink
+		// TODO when do we close sink?
+		go func() {
+			for range sink {
+			}
+		}()
+	}
 
-	mu       sync.Mutex
+	childStream := make(chan SearchEvent, cap(stream))
+	agg := &aggregator{
+		stream: childStream,
+		done:   make(chan struct{}),
+	}
+
+	go func() {
+		defer close(agg.done)
+		for event := range childStream {
+			// Timeouts are reported through Stats so don't report an error for them
+			if event.Error != nil && !isContextError(ctx, event.Error) {
+				event.Error = nil
+			}
+			if event.Error != nil {
+				agg.multiErr = multierror.Append(agg.multiErr, event.Error)
+			}
+			agg.results = append(agg.results, event.Results...)
+			agg.common.Update(&event.Stats)
+			stream <- event
+		}
+	}()
+
+	return agg
+}
+
+type aggregator struct {
+	stream SearchStream
+
+	done chan struct{}
+
 	results  []SearchResultResolver
 	common   streaming.Stats
 	multiErr *multierror.Error
 }
 
 func (a *aggregator) get() ([]SearchResultResolver, streaming.Stats, *multierror.Error) {
-	a.mu.Lock()
-	defer a.mu.Unlock()
+	close(a.stream)
+	<-a.done
+
 	return a.results, a.common, a.multiErr
-}
-
-func statsDeref(s *streaming.Stats) streaming.Stats {
-	if s == nil {
-		return streaming.Stats{}
-	}
-	return *s
-}
-
-// report sends results down resultChannel and collects the results.
-func (a *aggregator) report(ctx context.Context, results []SearchResultResolver, common *streaming.Stats, err error) {
-	if a.resultChannel != nil {
-		a.resultChannel <- SearchEvent{
-			Results: results,
-			Stats:   statsDeref(common),
-			Error:   err,
-		}
-	}
-
-	a.collect(ctx, results, common, err)
-}
-
-// collect the results. This doesn't send down resultChannel. Should only be
-// used by streaming supported backends.
-func (a *aggregator) collect(ctx context.Context, results []SearchResultResolver, common *streaming.Stats, err error) {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	// Timeouts are reported through Stats so don't report an error for them
-	if err != nil && !isContextError(ctx, err) {
-		a.multiErr = multierror.Append(a.multiErr, errors.Wrap(err, "repository search failed"))
-	}
-	a.results = append(a.results, results...)
-	a.common.Update(common)
 }
 
 func (a *aggregator) doRepoSearch(ctx context.Context, args *search.TextParameters, limit int32) {
 	tr, ctx := trace.New(ctx, "doRepoSearch", "")
 	defer tr.Finish()
-	repoResults, repoCommon, err := searchRepositories(ctx, args, limit)
-	a.report(ctx, repoResults, repoCommon, errors.Wrap(err, "repository search failed"))
+	results, stats, err := searchRepositories(ctx, args, limit)
+	a.stream <- SearchEvent{
+		Results: results,
+		Stats:   statsDeref(stats),
+		Error:   errors.Wrap(err, "repository search failed"),
+	}
 }
 
 func (a *aggregator) doSymbolSearch(ctx context.Context, args *search.TextParameters, limit int) {
@@ -1717,14 +1724,18 @@ func (a *aggregator) doSymbolSearch(ctx context.Context, args *search.TextParame
 	defer func() {
 		tr.Finish()
 	}()
-	symbolFileMatches, symbolsCommon, err := searchSymbols(ctx, args, limit)
+	symbolFileMatches, stats, err := searchSymbols(ctx, args, limit)
 
 	results := make([]SearchResultResolver, len(symbolFileMatches))
 	for i := range symbolFileMatches {
 		results[i] = symbolFileMatches[i]
 	}
 
-	a.report(ctx, results, symbolsCommon, errors.Wrap(err, "symbol search failed"))
+	a.stream <- SearchEvent{
+		Results: results,
+		Stats:   statsDeref(stats),
+		Error:   errors.Wrap(err, "symbol search failed"),
+	}
 }
 
 func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextParameters) {
@@ -1732,32 +1743,26 @@ func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextPara
 	defer func() {
 		tr.Finish()
 	}()
-	fileResults, fileCommon, err := searchFilesInRepos(ctx, args, a.resultChannel)
+	fileResults, stats, err := searchFilesInRepos(ctx, args, a.stream)
 	if args.PatternInfo.IsStructuralPat && args.PatternInfo.FileMatchLimit == defaultMaxSearchResults && len(fileResults) == 0 && err == nil {
 		// No results for structural search? Automatically search again and force Zoekt
 		// to resolve more potential file matches by setting a higher FileMatchLimit.
 		args.PatternInfo.FileMatchLimit = 1000
-		fileResults, fileCommon, err = searchFilesInRepos(ctx, args, a.resultChannel)
+		fileResults, stats, err = searchFilesInRepos(ctx, args, a.stream)
 		if len(fileResults) == 0 {
 			// Still no results? Give up.
 			log15.Warn("Structural search gives up after more exhaustive attempt. Results may have been missed.")
-			if fileCommon != nil {
-				fileCommon.IsLimitHit = false // Ensure we don't display "Show more".
+			if stats != nil {
+				stats.IsLimitHit = false // Ensure we don't display "Show more".
 			}
 		}
 	}
-
-	results := make([]SearchResultResolver, len(fileResults))
-	for i := range fileResults {
-		results[i] = fileResults[i]
-	}
-	a.collect(ctx, results, fileCommon, errors.Wrap(err, "text search failed"))
 }
 
 func (a *aggregator) doDiffSearch(ctx context.Context, tp *search.TextParameters) {
 	err := checkDiffCommitSearchLimits(ctx, tp, "diff")
 	if err != nil {
-		a.collect(ctx, nil, nil, err)
+		a.stream <- SearchEvent{Error: err}
 		return
 	}
 	tr, ctx := trace.New(ctx, "doDiffSearch", "")
@@ -1772,14 +1777,13 @@ func (a *aggregator) doDiffSearch(ctx context.Context, tp *search.TextParameters
 	}
 
 	// searchCommitDiffsInRepos supports streamings, so we use a.collect.
-	diffResults, diffCommon, err := searchCommitDiffsInRepos(ctx, args, a.resultChannel)
-	a.collect(ctx, diffResults, diffCommon, errors.Wrap(err, "diff search failed"))
+	_, _, _ = searchCommitDiffsInRepos(ctx, args, a.stream)
 }
 
 func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParameters) {
 	err := checkDiffCommitSearchLimits(ctx, tp, "commit")
 	if err != nil {
-		a.collect(ctx, nil, nil, err)
+		a.stream <- SearchEvent{Error: err}
 		return
 	}
 	tr, ctx := trace.New(ctx, "doCommitSearch", "")
@@ -1793,8 +1797,14 @@ func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParamete
 		return
 	}
 
-	commitResults, commitCommon, err := searchCommitLogInRepos(ctx, args, a.resultChannel)
-	a.collect(ctx, commitResults, commitCommon, errors.Wrap(err, "commit search failed"))
+	_, _, _ = searchCommitLogInRepos(ctx, args, a.stream)
+}
+
+func statsDeref(s *streaming.Stats) streaming.Stats {
+	if s == nil {
+		return streaming.Stats{}
+	}
+	return *s
 }
 
 // isGlobalSearch returns true if the query does not contain repo, repogroup, or
@@ -1883,9 +1893,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		return &optionalWg
 	}
 
-	agg := aggregator{
-		resultChannel: r.resultChannel,
-	}
+	agg := newAggregator(ctx, r.resultChannel)
 
 	isFileOrPath := func() bool {
 		for _, rt := range resultTypes {
@@ -1923,9 +1931,11 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 
 	resolved, alertResult, err := r.determineRepos(ctx, tr, start)
 	if err != nil {
+		_, _, _ = agg.get()
 		return nil, err
 	}
 	if alertResult != nil {
+		_, _, _ = agg.get()
 		return alertResult, nil
 	}
 

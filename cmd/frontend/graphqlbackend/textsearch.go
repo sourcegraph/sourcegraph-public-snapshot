@@ -313,7 +313,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 
 	c, cleanup := resultStream(stream)
 	defer func() {
-		cleanup(common)
+		cleanup(common, finalErr)
 	}()
 
 	tr, ctx := trace.New(ctx, "searchFilesInRepos", fmt.Sprintf("query: %s", args.PatternInfo.Pattern))
