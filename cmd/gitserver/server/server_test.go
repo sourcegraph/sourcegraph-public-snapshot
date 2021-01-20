@@ -115,14 +115,14 @@ func TestRequest(t *testing.T) {
 		return dir == s.dir("github.com/gorilla/mux") || dir == s.dir("my-mux")
 	}
 
-	testRepoExists = func(ctx context.Context, url string) error {
+	testGitRepoExists = func(ctx context.Context, url string) error {
 		if url == "https://github.com/nicksnyder/go-i18n.git" {
 			return nil
 		}
 		return errors.New("not cloneable")
 	}
 	defer func() {
-		testRepoExists = nil
+		testGitRepoExists = nil
 	}()
 
 	runCommandMock = func(ctx context.Context, cmd *exec.Cmd) (int, error) {
