@@ -9,18 +9,18 @@ import {
     FilteredConnectionQueryArguments,
     FilterValue,
 } from '../../../components/FilteredConnection'
-import { Observable } from 'rxjs'
+import { EMPTY, Observable } from 'rxjs'
 import { listUserRepositories } from '../../../site-admin/backend'
 import { queryExternalServices } from '../../../components/externalServices/backend'
 import { RouteComponentProps } from 'react-router'
 import { Link } from '../../../../../shared/src/components/Link'
 import { RepositoryNode } from './RepositoryNode'
 import AddIcon from 'mdi-react/AddIcon'
-import { ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
+import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { repeatUntil } from '../../../../../shared/src/util/rxjs/repeatUntil'
 import { ErrorAlert } from '../../../components/alerts'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
-import { map } from 'rxjs/operators'
+import { catchError, map } from 'rxjs/operators'
 
 interface Props extends RouteComponentProps, TelemetryProps {
     userID: string
@@ -125,6 +125,10 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                                     values: services,
                                 },
                             ]
+                        }),
+                        catchError(error => {
+                            setPendingOrError(asError(error))
+                            return EMPTY
                         })
                     ),
                 [userID]
