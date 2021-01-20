@@ -92,11 +92,6 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 	if err != nil {
 		c <- SearchEvent{Error: err}
 	}
-	// TODO (stefan): do we trust Zoekt.Client to always return resp != nil for err = nil?
-	if resp == nil {
-		c <- SearchEvent{Error: fmt.Errorf("zoekt returned with nil error and nil response")}
-		return
-	}
 
 	mkStatusMap := func(mask search.RepoStatus) search.RepoStatusMap {
 		var statusMap search.RepoStatusMap
