@@ -218,7 +218,13 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 				PatternMatchesPath:           p.PatternMatchesPath,
 				Languages:                    p.Languages,
 			},
-			Zoekt: search.Indexed(),
+			Zoekt: nil,
+		}
+
+		if args.Zoekt == nil {
+			// TODO(@camdencheek): remove this once the zoekt endpoints are sent with the request:
+			// https://github.com/sourcegraph/sourcegraph/pull/17387#pullrequestreview-571951086
+			return nil, false, false, fmt.Errorf("cannot do indexed search because Zoekt client is unset")
 		}
 
 		zoektMatches, limitHit, _, err := zoektSearch(ctx, args, repoBranches, time.Since, nil)
