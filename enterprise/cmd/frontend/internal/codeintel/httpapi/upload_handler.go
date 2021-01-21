@@ -99,10 +99,11 @@ func (h *UploadHandler) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 // UploadArgs are common arguments required to enqueue an upload for both
 // single-payload and multipart uploads.
 type UploadArgs struct {
-	Commit       string
-	Root         string
-	RepositoryID int
-	Indexer      string
+	Commit            string
+	Root              string
+	RepositoryID      int
+	Indexer           string
+	AssociatedIndexID int
 }
 
 type enqueuePayload struct {
@@ -132,10 +133,11 @@ func (h *UploadHandler) handleEnqueueErr(w http.ResponseWriter, r *http.Request,
 	ctx := r.Context()
 
 	uploadArgs := UploadArgs{
-		Commit:       getQuery(r, "commit"),
-		Root:         sanitizeRoot(getQuery(r, "root")),
-		RepositoryID: repositoryID,
-		Indexer:      getQuery(r, "indexerName"),
+		Commit:            getQuery(r, "commit"),
+		Root:              sanitizeRoot(getQuery(r, "root")),
+		RepositoryID:      repositoryID,
+		Indexer:           getQuery(r, "indexerName"),
+		AssociatedIndexID: getQueryInt(r, "associatedIndexId"),
 	}
 
 	if !hasQuery(r, "multiPart") && !hasQuery(r, "uploadId") {
@@ -219,13 +221,14 @@ func (h *UploadHandler) handleEnqueueSinglePayload(r *http.Request, uploadArgs U
 	}()
 
 	id, err := tx.InsertUpload(ctx, store.Upload{
-		Commit:        uploadArgs.Commit,
-		Root:          uploadArgs.Root,
-		RepositoryID:  uploadArgs.RepositoryID,
-		Indexer:       uploadArgs.Indexer,
-		State:         "uploading",
-		NumParts:      1,
-		UploadedParts: []int{0},
+		Commit:            uploadArgs.Commit,
+		Root:              uploadArgs.Root,
+		RepositoryID:      uploadArgs.RepositoryID,
+		Indexer:           uploadArgs.Indexer,
+		AssociatedIndexID: &uploadArgs.AssociatedIndexID,
+		State:             "uploading",
+		NumParts:          1,
+		UploadedParts:     []int{0},
 	})
 	if err != nil {
 		return nil, err
@@ -258,13 +261,14 @@ func (h *UploadHandler) handleEnqueueMultipartSetup(r *http.Request, uploadArgs 
 	ctx := r.Context()
 
 	id, err := h.dbStore.InsertUpload(ctx, store.Upload{
-		Commit:        uploadArgs.Commit,
-		Root:          uploadArgs.Root,
-		RepositoryID:  uploadArgs.RepositoryID,
-		Indexer:       uploadArgs.Indexer,
-		State:         "uploading",
-		NumParts:      numParts,
-		UploadedParts: nil,
+		Commit:            uploadArgs.Commit,
+		Root:              uploadArgs.Root,
+		RepositoryID:      uploadArgs.RepositoryID,
+		Indexer:           uploadArgs.Indexer,
+		AssociatedIndexID: &uploadArgs.AssociatedIndexID,
+		State:             "uploading",
+		NumParts:          numParts,
+		UploadedParts:     nil,
 	})
 	if err != nil {
 		return nil, err
