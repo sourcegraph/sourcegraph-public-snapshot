@@ -12,3 +12,7 @@ site_monitoring.go @bobheadxi
 # Campaigns
 campaigns.go @LawnGnome
 campaigns.go @eseliger
+
+# Insights
+insights.go @slimsag
+insights.go @felixfbecker
