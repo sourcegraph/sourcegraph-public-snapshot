@@ -854,7 +854,7 @@ func TestDeleteCampaignsCredential(t *testing.T) {
 
 	userID := ct.CreateTestUser(t, true).ID
 
-	cred, err := db.UserCredentials.Create(ctx, db.UserCredentialScope{
+	cred, err := db.GlobalUserCredentials.Create(ctx, db.UserCredentialScope{
 		Domain:              db.UserCredentialDomainCampaigns,
 		ExternalServiceType: extsvc.TypeGitHub,
 		ExternalServiceID:   "https://github.com/",

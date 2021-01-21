@@ -38,7 +38,7 @@ func ReposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoNam
 		},
 	}
 	for {
-		svcs, err := db.ExternalServices.List(ctx, opt)
+		svcs, err := db.GlobalExternalServices.List(ctx, opt)
 		if err != nil {
 			return "", errors.Wrap(err, "list")
 		}

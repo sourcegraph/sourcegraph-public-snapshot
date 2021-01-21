@@ -20,12 +20,12 @@ func CurrentUserAllowedExternalServices(ctx context.Context) conf.ExternalServic
 	}
 
 	// The user may have a tag that opts them in
-	ok, _ := db.Users.HasTag(ctx, a.UID, db.TagAllowUserExternalServicePrivate)
+	ok, _ := db.GlobalUsers.HasTag(ctx, a.UID, db.TagAllowUserExternalServicePrivate)
 	if ok {
 		return conf.ExternalServiceModeAll
 	}
 
-	ok, _ = db.Users.HasTag(ctx, a.UID, db.TagAllowUserExternalServicePublic)
+	ok, _ = db.GlobalUsers.HasTag(ctx, a.UID, db.TagAllowUserExternalServicePublic)
 	if ok {
 		return conf.ExternalServiceModePublic
 	}

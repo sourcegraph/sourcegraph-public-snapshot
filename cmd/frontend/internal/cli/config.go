@@ -99,7 +99,7 @@ func handleConfigOverrides() error {
 		if err != nil {
 			return errors.Wrap(err, "reading GLOBAL_SETTINGS_FILE")
 		}
-		currentSettings, err := db.Settings.GetLatest(ctx, api.SettingsSubject{Site: true})
+		currentSettings, err := db.GlobalSettings.GetLatest(ctx, api.SettingsSubject{Site: true})
 		if err != nil {
 			return errors.Wrap(err, "could not fetch current settings")
 		}
@@ -111,7 +111,7 @@ func handleConfigOverrides() error {
 			if currentSettings != nil {
 				lastID = &currentSettings.ID
 			}
-			_, err = db.Settings.CreateIfUpToDate(ctx, api.SettingsSubject{Site: true}, lastID, nil, globalSettings)
+			_, err = db.GlobalSettings.CreateIfUpToDate(ctx, api.SettingsSubject{Site: true}, lastID, nil, globalSettings)
 			if err != nil {
 				return errors.Wrap(err, "writing global setting override to database")
 			}
@@ -137,7 +137,7 @@ func handleConfigOverrides() error {
 			log.Warn("EXTSVC_CONFIG_FILE contains zero external service configurations")
 		}
 
-		existing, err := db.ExternalServices.List(ctx, db.ExternalServicesListOptions{
+		existing, err := db.GlobalExternalServices.List(ctx, db.ExternalServicesListOptions{
 			// NOTE: External services loaded from config file do not have namespace specified.
 			// Therefore, we only need to load those from database.
 			NoNamespace: true,
@@ -198,14 +198,14 @@ func handleConfigOverrides() error {
 		// Apply the delta update.
 		for extSvc := range toRemove {
 			log.Debug("Deleting external service", "id", extSvc.ID, "displayName", extSvc.DisplayName)
-			err := db.ExternalServices.Delete(ctx, extSvc.ID)
+			err := db.GlobalExternalServices.Delete(ctx, extSvc.ID)
 			if err != nil {
 				return errors.Wrap(err, "ExternalServices.Delete")
 			}
 		}
 		for extSvc := range toAdd {
 			log.Debug("Adding external service", "displayName", extSvc.DisplayName)
-			if err := db.ExternalServices.Create(ctx, confGet, extSvc); err != nil {
+			if err := db.GlobalExternalServices.Create(ctx, confGet, extSvc); err != nil {
 				return errors.Wrap(err, "ExternalServices.Create")
 			}
 		}
@@ -215,7 +215,7 @@ func handleConfigOverrides() error {
 			log.Debug("Updating external service", "id", id, "displayName", extSvc.DisplayName)
 
 			update := &db.ExternalServiceUpdate{DisplayName: &extSvc.DisplayName, Config: &extSvc.Config}
-			if err := db.ExternalServices.Update(ctx, ps, id, update); err != nil {
+			if err := db.GlobalExternalServices.Update(ctx, ps, id, update); err != nil {
 				return errors.Wrap(err, "ExternalServices.Update")
 			}
 		}

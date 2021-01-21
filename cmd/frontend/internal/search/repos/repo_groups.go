@@ -66,7 +66,7 @@ func ResolveRepoGroups(ctx context.Context, settings *schema.Settings) (groups m
 	}
 
 	a := actor.FromContext(ctx)
-	names, err := db.Repos.GetUserAddedRepoNames(ctx, a.UID)
+	names, err := db.GlobalRepos.GetUserAddedRepoNames(ctx, a.UID)
 	if err != nil {
 		log15.Warn("getting user added repos", "err", err)
 		return groups, nil

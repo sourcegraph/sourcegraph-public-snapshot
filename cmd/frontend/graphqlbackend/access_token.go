@@ -5,6 +5,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 )
@@ -27,7 +28,7 @@ func accessTokenByID(ctx context.Context, id graphql.ID) (*accessTokenResolver, 
 	if err != nil {
 		return nil, err
 	}
-	accessToken, err := db.AccessTokens.GetByID(ctx, accessTokenID)
+	accessToken, err := db.GlobalAccessTokens.GetByID(ctx, accessTokenID)
 	if err != nil {
 		return nil, err
 	}

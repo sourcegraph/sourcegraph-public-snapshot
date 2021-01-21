@@ -100,7 +100,7 @@ func checkLastSubscriptionLicense(ctx context.Context, s *dbSubscription, clock 
 		return
 	}
 
-	user, err := db.Users.GetByID(ctx, s.UserID)
+	user, err := db.GlobalUsers.GetByID(ctx, s.UserID)
 	if err != nil {
 		log15.Error("startCheckForUpcomingLicenseExpirations: error looking up user", "error", err)
 		return

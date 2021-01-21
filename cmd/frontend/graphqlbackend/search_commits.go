@@ -685,13 +685,13 @@ func expandUsernamesToEmails(ctx context.Context, values []string) (expandedValu
 			return nil, nil
 		}
 
-		user, err := db.Users.GetByUsername(ctx, strings.TrimPrefix(value, "@"))
+		user, err := db.GlobalUsers.GetByUsername(ctx, strings.TrimPrefix(value, "@"))
 		if errcode.IsNotFound(err) {
 			return nil, nil
 		} else if err != nil {
 			return nil, err
 		}
-		emails, err := db.UserEmails.ListByUser(ctx, db.UserEmailsListOptions{
+		emails, err := db.GlobalUserEmails.ListByUser(ctx, db.UserEmailsListOptions{
 			UserID: user.ID,
 		})
 		if err != nil {

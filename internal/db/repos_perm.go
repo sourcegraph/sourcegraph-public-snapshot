@@ -64,7 +64,7 @@ func authzQueryConds(ctx context.Context) (*sqlf.Query, error) {
 	// there is no authz provider configured and access to all repositories are allowed by default.
 	bypassAuthz := isInternalActor(ctx) || (authzAllowByDefault && len(authzProviders) == 0)
 	if !bypassAuthz && actor.FromContext(ctx).IsAuthenticated() {
-		currentUser, err := Users.GetByCurrentAuthUser(ctx)
+		currentUser, err := GlobalUsers.GetByCurrentAuthUser(ctx)
 		if err != nil {
 			return nil, err
 		}

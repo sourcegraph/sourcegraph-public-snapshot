@@ -54,7 +54,7 @@ func TestCampaignsUsageStatistics(t *testing.T) {
 	}
 
 	// Create a user.
-	user, err := db.Users.Create(ctx, db.NewUser{Username: "test"})
+	user, err := db.GlobalUsers.Create(ctx, db.NewUser{Username: "test"})
 	if err != nil {
 		t.Fatal(err)
 	}

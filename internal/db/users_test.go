@@ -78,7 +78,7 @@ func TestUsers_ValidUsernames(t *testing.T) {
 	for _, test := range usernamesForTests {
 		t.Run(test.name, func(t *testing.T) {
 			valid := true
-			if _, err := Users.Create(ctx, NewUser{Username: test.name}); err != nil {
+			if _, err := GlobalUsers.Create(ctx, NewUser{Username: test.name}); err != nil {
 				e, ok := err.(errCannotCreateUser)
 				if ok && (e.Code() == "users_username_max_length" || e.Code() == "users_username_valid_chars") {
 					valid = false
@@ -156,7 +156,7 @@ func TestUsers_Create_checkPasswordLength(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			_, err := Users.Create(ctx, NewUser{
+			_, err := GlobalUsers.Create(ctx, NewUser{
 				Username:              test.username,
 				Password:              test.password,
 				EnforcePasswordLength: test.enforce,
@@ -180,7 +180,7 @@ func TestUsers_Create_SiteAdmin(t *testing.T) {
 	}
 
 	// Create site admin.
-	user, err := Users.Create(ctx, NewUser{
+	user, err := GlobalUsers.Create(ctx, NewUser{
 		Email:                 "a@a.com",
 		Username:              "u",
 		Password:              "p",
@@ -194,7 +194,7 @@ func TestUsers_Create_SiteAdmin(t *testing.T) {
 	}
 
 	// Creating a non-site-admin now that the site has already been initialized.
-	u2, err := Users.Create(ctx, NewUser{
+	u2, err := GlobalUsers.Create(ctx, NewUser{
 		Email:                 "a2@a2.com",
 		Username:              "u2",
 		Password:              "p2",
@@ -207,7 +207,7 @@ func TestUsers_Create_SiteAdmin(t *testing.T) {
 		t.Fatal("want u2 not site admin because site is already initialized")
 	}
 	// Similar to the above, but expect an error because we pass FailIfNotInitialUser: true.
-	_, err = Users.Create(ctx, NewUser{
+	_, err = GlobalUsers.Create(ctx, NewUser{
 		Email:                 "a3@a3.com",
 		Username:              "u3",
 		Password:              "p3",
@@ -219,7 +219,7 @@ func TestUsers_Create_SiteAdmin(t *testing.T) {
 	}
 
 	// Delete the site admin.
-	if err := Users.Delete(ctx, user.ID); err != nil {
+	if err := GlobalUsers.Delete(ctx, user.ID); err != nil {
 		t.Fatal(err)
 	}
 
@@ -227,7 +227,7 @@ func TestUsers_Create_SiteAdmin(t *testing.T) {
 	if _, err := dbconn.Global.ExecContext(ctx, "UPDATE site_config SET initialized=false"); err != nil {
 		t.Fatal(err)
 	}
-	u4, err := Users.Create(ctx, NewUser{
+	u4, err := GlobalUsers.Create(ctx, NewUser{
 		Email:                 "a4@a4.com",
 		Username:              "u4",
 		Password:              "p4",
@@ -243,7 +243,7 @@ func TestUsers_Create_SiteAdmin(t *testing.T) {
 	if _, err := dbconn.Global.ExecContext(ctx, "UPDATE site_config SET initialized=false"); err != nil {
 		t.Fatal(err)
 	}
-	_, err = Users.Create(ctx, NewUser{
+	_, err = GlobalUsers.Create(ctx, NewUser{
 		Email:                 "a5@a5.com",
 		Username:              "u5",
 		Password:              "p5",
@@ -262,7 +262,7 @@ func TestUsers_CheckAndDecrementInviteQuota(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := context.Background()
 
-	user, err := Users.Create(ctx, NewUser{
+	user, err := GlobalUsers.Create(ctx, NewUser{
 		Email:                 "a@a.com",
 		Username:              "u",
 		Password:              "p",
@@ -287,19 +287,19 @@ func TestUsers_CheckAndDecrementInviteQuota(t *testing.T) {
 	// Decrementing should succeed while we have remaining quota. Keep going until we exhaust it.
 	// Since the quota is fairly low, this isn't too slow.
 	for inviteQuota > 0 {
-		if ok, err := Users.CheckAndDecrementInviteQuota(ctx, user.ID); !ok || err != nil {
+		if ok, err := GlobalUsers.CheckAndDecrementInviteQuota(ctx, user.ID); !ok || err != nil {
 			t.Fatal("initial CheckAndDecrementInviteQuota failed:", err)
 		}
 		inviteQuota--
 	}
 
 	// Now our quota is exhausted, and CheckAndDecrementInviteQuota should fail.
-	if ok, err := Users.CheckAndDecrementInviteQuota(ctx, user.ID); ok || err != nil {
+	if ok, err := GlobalUsers.CheckAndDecrementInviteQuota(ctx, user.ID); ok || err != nil {
 		t.Fatalf("over-limit CheckAndDecrementInviteQuota #1: got error %v", err)
 	}
 
 	// Check again that we're still over quota, just in case.
-	if ok, err := Users.CheckAndDecrementInviteQuota(ctx, user.ID); ok || err != nil {
+	if ok, err := GlobalUsers.CheckAndDecrementInviteQuota(ctx, user.ID); ok || err != nil {
 		t.Fatalf("over-limit CheckAndDecrementInviteQuota #2: got error %v", err)
 	}
 }
@@ -311,7 +311,7 @@ func TestUsers_ListCount(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := context.Background()
 
-	user, err := Users.Create(ctx, NewUser{
+	user, err := GlobalUsers.Create(ctx, NewUser{
 		Email:                 "a@a.com",
 		Username:              "u",
 		Password:              "p",
@@ -322,39 +322,39 @@ func TestUsers_ListCount(t *testing.T) {
 	}
 	user.Tags = []string{}
 
-	if count, err := Users.Count(ctx, &UsersListOptions{}); err != nil {
+	if count, err := GlobalUsers.Count(ctx, &UsersListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 1; count != want {
 		t.Errorf("got %d, want %d", count, want)
 	}
-	if users, err := Users.List(ctx, &UsersListOptions{}); err != nil {
+	if users, err := GlobalUsers.List(ctx, &UsersListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if users, want := normalizeUsers(users), normalizeUsers([]*types.User{user}); !reflect.DeepEqual(users, want) {
 		t.Errorf("got %+v, want %+v", users, want)
 	}
 
-	if count, err := Users.Count(ctx, &UsersListOptions{UserIDs: []int32{}}); err != nil {
+	if count, err := GlobalUsers.Count(ctx, &UsersListOptions{UserIDs: []int32{}}); err != nil {
 		t.Fatal(err)
 	} else if want := 0; count != want {
 		t.Errorf("got %d, want %d", count, want)
 	}
-	if users, err := Users.List(ctx, &UsersListOptions{UserIDs: []int32{}}); err != nil {
+	if users, err := GlobalUsers.List(ctx, &UsersListOptions{UserIDs: []int32{}}); err != nil {
 		t.Fatal(err)
 	} else if len(users) > 0 {
 		t.Errorf("got %d, want empty", len(users))
 	}
 
-	if users, err := Users.List(ctx, &UsersListOptions{}); err != nil {
+	if users, err := GlobalUsers.List(ctx, &UsersListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if users, want := normalizeUsers(users), normalizeUsers([]*types.User{user}); !reflect.DeepEqual(users, want) {
 		t.Errorf("got %+v, want %+v", users[0], user)
 	}
 
-	if err := Users.Delete(ctx, user.ID); err != nil {
+	if err := GlobalUsers.Delete(ctx, user.ID); err != nil {
 		t.Fatal(err)
 	}
 
-	if count, err := Users.Count(ctx, &UsersListOptions{}); err != nil {
+	if count, err := GlobalUsers.Count(ctx, &UsersListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 0; count != want {
 		t.Errorf("got %d, want %d", count, want)
@@ -368,7 +368,7 @@ func TestUsers_Update(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := context.Background()
 
-	user, err := Users.Create(ctx, NewUser{
+	user, err := GlobalUsers.Create(ctx, NewUser{
 		Email:                 "a@a.com",
 		Username:              "u",
 		Password:              "p",
@@ -378,14 +378,14 @@ func TestUsers_Update(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := Users.Update(ctx, user.ID, UserUpdate{
+	if err := GlobalUsers.Update(ctx, user.ID, UserUpdate{
 		Username:    "u1",
 		DisplayName: strptr("d1"),
 		AvatarURL:   strptr("a1"),
 	}); err != nil {
 		t.Fatal(err)
 	}
-	user, err = Users.GetByID(ctx, user.ID)
+	user, err = GlobalUsers.GetByID(ctx, user.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -399,12 +399,12 @@ func TestUsers_Update(t *testing.T) {
 		t.Errorf("got avatar URL %q, want %q", user.AvatarURL, want)
 	}
 
-	if err := Users.Update(ctx, user.ID, UserUpdate{
+	if err := GlobalUsers.Update(ctx, user.ID, UserUpdate{
 		DisplayName: strptr(""),
 	}); err != nil {
 		t.Fatal(err)
 	}
-	user, err = Users.GetByID(ctx, user.ID)
+	user, err = GlobalUsers.GetByID(ctx, user.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -419,7 +419,7 @@ func TestUsers_Update(t *testing.T) {
 	}
 
 	// Can't update to duplicate username.
-	user2, err := Users.Create(ctx, NewUser{
+	user2, err := GlobalUsers.Create(ctx, NewUser{
 		Email:                 "a2@a.com",
 		Username:              "u2",
 		Password:              "p2",
@@ -428,12 +428,12 @@ func TestUsers_Update(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := Users.Update(ctx, user2.ID, UserUpdate{Username: "u1"}); err == nil {
+	if err := GlobalUsers.Update(ctx, user2.ID, UserUpdate{Username: "u1"}); err == nil {
 		t.Fatal("want error when updating user to existing username")
 	}
 
 	// Can't update nonexistent user.
-	if err := Users.Update(ctx, 12345, UserUpdate{Username: "u12345"}); err == nil {
+	if err := GlobalUsers.Update(ctx, 12345, UserUpdate{Username: "u12345"}); err == nil {
 		t.Fatal("want error when updating nonexistent user")
 	}
 }
@@ -445,7 +445,7 @@ func TestUsers_GetByVerifiedEmail(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := context.Background()
 
-	user, err := Users.Create(ctx, NewUser{
+	user, err := GlobalUsers.Create(ctx, NewUser{
 		Email:                 "a@a.com",
 		Username:              "u",
 		Password:              "p",
@@ -455,15 +455,15 @@ func TestUsers_GetByVerifiedEmail(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := Users.GetByVerifiedEmail(ctx, "a@a.com"); !errcode.IsNotFound(err) {
+	if _, err := GlobalUsers.GetByVerifiedEmail(ctx, "a@a.com"); !errcode.IsNotFound(err) {
 		t.Errorf("for unverified email, got error %v, want IsNotFound", err)
 	}
 
-	if err := UserEmails.SetVerified(ctx, user.ID, "a@a.com", true); err != nil {
+	if err := GlobalUserEmails.SetVerified(ctx, user.ID, "a@a.com", true); err != nil {
 		t.Fatal(err)
 	}
 
-	gotUser, err := Users.GetByVerifiedEmail(ctx, "a@a.com")
+	gotUser, err := GlobalUsers.GetByVerifiedEmail(ctx, "a@a.com")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -493,13 +493,13 @@ func TestUsers_GetByUsernames(t *testing.T) {
 	}
 
 	for _, newUser := range newUsers {
-		_, err := Users.Create(ctx, newUser)
+		_, err := GlobalUsers.Create(ctx, newUser)
 		if err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	users, err := Users.GetByUsernames(ctx, "alice", "bob", "cindy")
+	users, err := GlobalUsers.GetByUsernames(ctx, "alice", "bob", "cindy")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -523,12 +523,12 @@ func TestUsers_Delete(t *testing.T) {
 			ctx := context.Background()
 			ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
-			otherUser, err := Users.Create(ctx, NewUser{Username: "other"})
+			otherUser, err := GlobalUsers.Create(ctx, NewUser{Username: "other"})
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			user, err := Users.Create(ctx, NewUser{
+			user, err := GlobalUsers.Create(ctx, NewUser{
 				Email:                 "a@a.com",
 				Username:              "u",
 				Password:              "p",
@@ -542,7 +542,7 @@ func TestUsers_Delete(t *testing.T) {
 			confGet := func() *conf.Unified {
 				return &conf.Unified{}
 			}
-			err = ExternalServices.Create(ctx, confGet, &types.ExternalService{
+			err = GlobalExternalServices.Create(ctx, confGet, &types.ExternalService{
 				Kind:            extsvc.KindGitHub,
 				DisplayName:     "GITHUB #1",
 				Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
@@ -553,20 +553,20 @@ func TestUsers_Delete(t *testing.T) {
 			}
 
 			// Create settings for the user, and for another user authored by this user.
-			if _, err := Settings.CreateIfUpToDate(ctx, api.SettingsSubject{User: &user.ID}, nil, &user.ID, "{}"); err != nil {
+			if _, err := GlobalSettings.CreateIfUpToDate(ctx, api.SettingsSubject{User: &user.ID}, nil, &user.ID, "{}"); err != nil {
 				t.Fatal(err)
 			}
-			if _, err := Settings.CreateIfUpToDate(ctx, api.SettingsSubject{User: &otherUser.ID}, nil, &user.ID, "{}"); err != nil {
+			if _, err := GlobalSettings.CreateIfUpToDate(ctx, api.SettingsSubject{User: &otherUser.ID}, nil, &user.ID, "{}"); err != nil {
 				t.Fatal(err)
 			}
 
 			// Create a repository to comply with the postgres repo constraint.
-			if err := Repos.Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
+			if err := GlobalRepos.Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
 				t.Fatal(err)
 			}
 
 			// Create a saved search owned by the user.
-			if _, err := SavedSearches.Create(ctx, &types.SavedSearch{
+			if _, err := GlobalSavedSearches.Create(ctx, &types.SavedSearch{
 				Description: "desc",
 				Query:       "foo",
 				UserID:      &user.ID,
@@ -576,22 +576,22 @@ func TestUsers_Delete(t *testing.T) {
 
 			if hard {
 				// Hard delete user.
-				if err := Users.HardDelete(ctx, user.ID); err != nil {
+				if err := GlobalUsers.HardDelete(ctx, user.ID); err != nil {
 					t.Fatal(err)
 				}
 			} else {
 				// Delete user.
-				if err := Users.Delete(ctx, user.ID); err != nil {
+				if err := GlobalUsers.Delete(ctx, user.ID); err != nil {
 					t.Fatal(err)
 				}
 			}
 
 			// User no longer exists.
-			_, err = Users.GetByID(ctx, user.ID)
+			_, err = GlobalUsers.GetByID(ctx, user.ID)
 			if !errcode.IsNotFound(err) {
 				t.Errorf("got error %v, want ErrUserNotFound", err)
 			}
-			users, err := Users.List(ctx, nil)
+			users, err := GlobalUsers.List(ctx, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -601,20 +601,20 @@ func TestUsers_Delete(t *testing.T) {
 			}
 
 			// User's settings no longer exist.
-			if settings, err := Settings.GetLatest(ctx, api.SettingsSubject{User: &user.ID}); err != nil {
+			if settings, err := GlobalSettings.GetLatest(ctx, api.SettingsSubject{User: &user.ID}); err != nil {
 				t.Error(err)
 			} else if settings != nil {
 				t.Errorf("got settings %+v, want nil", settings)
 			}
 			// Settings authored by user still exist but have nil author.
-			if settings, err := Settings.GetLatest(ctx, api.SettingsSubject{User: &otherUser.ID}); err != nil {
+			if settings, err := GlobalSettings.GetLatest(ctx, api.SettingsSubject{User: &otherUser.ID}); err != nil {
 				t.Fatal(err)
 			} else if settings.AuthorUserID != nil {
 				t.Errorf("got author %v, want nil", *settings.AuthorUserID)
 			}
 
 			// User's external services no longer exist
-			ess, err := ExternalServices.List(ctx, ExternalServicesListOptions{
+			ess, err := GlobalExternalServices.List(ctx, ExternalServicesListOptions{
 				NamespaceUserID: user.ID,
 			})
 			if err != nil {
@@ -625,7 +625,7 @@ func TestUsers_Delete(t *testing.T) {
 			}
 
 			// Can't delete already-deleted user.
-			err = Users.Delete(ctx, user.ID)
+			err = GlobalUsers.Delete(ctx, user.ID)
 			if !errcode.IsNotFound(err) {
 				t.Errorf("got error %v, want ErrUserNotFound", err)
 			}
@@ -646,7 +646,7 @@ func TestUsers_HasTag(t *testing.T) {
 	}
 
 	// lookup existing tag
-	ok, err := Users.HasTag(ctx, id, "foo")
+	ok, err := GlobalUsers.HasTag(ctx, id, "foo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -655,7 +655,7 @@ func TestUsers_HasTag(t *testing.T) {
 	}
 
 	// lookup non-existing tag
-	ok, err = Users.HasTag(ctx, id, "baz")
+	ok, err = GlobalUsers.HasTag(ctx, id, "baz")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -664,7 +664,7 @@ func TestUsers_HasTag(t *testing.T) {
 	}
 
 	// lookup non-existing user
-	ok, err = Users.HasTag(ctx, id+1, "bar")
+	ok, err = GlobalUsers.HasTag(ctx, id+1, "bar")
 	if err == nil || ok {
 		t.Fatal("expected user to be not found")
 	}
@@ -691,13 +691,13 @@ func TestUsers_InvalidateSessions(t *testing.T) {
 	}
 
 	for _, newUser := range newUsers {
-		_, err := Users.Create(ctx, newUser)
+		_, err := GlobalUsers.Create(ctx, newUser)
 		if err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	users, err := Users.GetByUsernames(ctx, "alice", "bob")
+	users, err := GlobalUsers.GetByUsernames(ctx, "alice", "bob")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -706,7 +706,7 @@ func TestUsers_InvalidateSessions(t *testing.T) {
 		t.Fatalf("got %d users, but want 2", len(users))
 	}
 	for i := range users {
-		if err := Users.InvalidateSessionsByID(ctx, users[i].ID); err != nil {
+		if err := GlobalUsers.InvalidateSessionsByID(ctx, users[i].ID); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -720,14 +720,14 @@ func TestUsers_SetTag(t *testing.T) {
 	ctx := context.Background()
 
 	// Create user.
-	u, err := Users.Create(ctx, NewUser{Username: "u"})
+	u, err := GlobalUsers.Create(ctx, NewUser{Username: "u"})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	checkTags := func(t *testing.T, userID int32, wantTags []string) {
 		t.Helper()
-		u, err := Users.GetByID(ctx, userID)
+		u, err := GlobalUsers.GetByID(ctx, userID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -739,7 +739,7 @@ func TestUsers_SetTag(t *testing.T) {
 	}
 	checkUsersWithTag := func(t *testing.T, tag string, wantUsers []int32) {
 		t.Helper()
-		users, err := Users.List(ctx, &UsersListOptions{Tag: tag})
+		users, err := GlobalUsers.List(ctx, &UsersListOptions{Tag: tag})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -753,10 +753,10 @@ func TestUsers_SetTag(t *testing.T) {
 	}
 
 	t.Run("fails on nonexistent user", func(t *testing.T) {
-		if err := Users.SetTag(ctx, 1234 /* doesn't exist */, "t", true); !errcode.IsNotFound(err) {
+		if err := GlobalUsers.SetTag(ctx, 1234 /* doesn't exist */, "t", true); !errcode.IsNotFound(err) {
 			t.Errorf("got err %v, want errcode.IsNotFound", err)
 		}
-		if err := Users.SetTag(ctx, 1234 /* doesn't exist */, "t", false); !errcode.IsNotFound(err) {
+		if err := GlobalUsers.SetTag(ctx, 1234 /* doesn't exist */, "t", false); !errcode.IsNotFound(err) {
 			t.Errorf("got err %v, want errcode.IsNotFound", err)
 		}
 	})
@@ -767,27 +767,27 @@ func TestUsers_SetTag(t *testing.T) {
 	})
 
 	t.Run("adds and removes tag", func(t *testing.T) {
-		if err := Users.SetTag(ctx, u.ID, "t1", true); err != nil {
+		if err := GlobalUsers.SetTag(ctx, u.ID, "t1", true); err != nil {
 			t.Fatal(err)
 		}
 		checkTags(t, u.ID, []string{"t1"})
 		checkUsersWithTag(t, "t1", []int32{u.ID})
 
 		t.Run("deduplicates", func(t *testing.T) {
-			if err := Users.SetTag(ctx, u.ID, "t1", true); err != nil {
+			if err := GlobalUsers.SetTag(ctx, u.ID, "t1", true); err != nil {
 				t.Fatal(err)
 			}
 			checkTags(t, u.ID, []string{"t1"})
 		})
 
-		if err := Users.SetTag(ctx, u.ID, "t2", true); err != nil {
+		if err := GlobalUsers.SetTag(ctx, u.ID, "t2", true); err != nil {
 			t.Fatal(err)
 		}
 		checkTags(t, u.ID, []string{"t1", "t2"})
 		checkUsersWithTag(t, "t1", []int32{u.ID})
 		checkUsersWithTag(t, "t2", []int32{u.ID})
 
-		if err := Users.SetTag(ctx, u.ID, "t1", false); err != nil {
+		if err := GlobalUsers.SetTag(ctx, u.ID, "t1", false); err != nil {
 			t.Fatal(err)
 		}
 		checkTags(t, u.ID, []string{"t2"})
@@ -795,13 +795,13 @@ func TestUsers_SetTag(t *testing.T) {
 		checkUsersWithTag(t, "t2", []int32{u.ID})
 
 		t.Run("removing nonexistent tag is noop", func(t *testing.T) {
-			if err := Users.SetTag(ctx, u.ID, "t1", false); err != nil {
+			if err := GlobalUsers.SetTag(ctx, u.ID, "t1", false); err != nil {
 				t.Fatal(err)
 			}
 			checkTags(t, u.ID, []string{"t2"})
 		})
 
-		if err := Users.SetTag(ctx, u.ID, "t2", false); err != nil {
+		if err := GlobalUsers.SetTag(ctx, u.ID, "t2", false); err != nil {
 			t.Fatal(err)
 		}
 		checkTags(t, u.ID, []string{})

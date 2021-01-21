@@ -44,7 +44,7 @@ func TestRegistryExtensions_validNames(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := context.Background()
 
-	user, err := db.Users.Create(ctx, db.NewUser{Username: "u"})
+	user, err := db.GlobalUsers.Create(ctx, db.NewUser{Username: "u"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -117,11 +117,11 @@ func TestRegistryExtensions(t *testing.T) {
 		}
 	}
 
-	user, err := db.Users.Create(ctx, db.NewUser{Username: "u"})
+	user, err := db.GlobalUsers.Create(ctx, db.NewUser{Username: "u"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	org, err := db.Orgs.Create(ctx, "o", nil)
+	org, err := db.GlobalOrgs.Create(ctx, "o", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -359,7 +359,7 @@ func TestRegistryExtensions_ListCount(t *testing.T) {
 		}
 	}
 
-	user, err := db.Users.Create(ctx, db.NewUser{Username: "u"})
+	user, err := db.GlobalUsers.Create(ctx, db.NewUser{Username: "u"})
 	if err != nil {
 		t.Fatal(err)
 	}

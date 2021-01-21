@@ -46,7 +46,7 @@ func TestUserCredentials_Create(t *testing.T) {
 				ExternalServiceID:   "https://github.com",
 			}
 
-			cred, err := UserCredentials.Create(ctx, scope, auth)
+			cred, err := GlobalUserCredentials.Create(ctx, scope, auth)
 			if err != nil {
 				t.Errorf("unexpected non-nil error: %v", err)
 			} else if cred == nil {
@@ -79,7 +79,7 @@ func TestUserCredentials_Create(t *testing.T) {
 			}
 
 			// Ensure that trying to insert again fails.
-			if cred, err := UserCredentials.Create(ctx, scope, auth); err == nil {
+			if cred, err := GlobalUserCredentials.Create(ctx, scope, auth); err == nil {
 				t.Error("unexpected nil error")
 			} else if cred != nil {
 				t.Errorf("unexpected non-nil credential: %v", cred)
@@ -92,7 +92,7 @@ func TestUserCredentials_Delete(t *testing.T) {
 	ctx, user := setUpUserCredentialTest(t)
 
 	t.Run("nonextant", func(t *testing.T) {
-		err := UserCredentials.Delete(ctx, 1)
+		err := GlobalUserCredentials.Delete(ctx, 1)
 		if err == nil {
 			t.Error("unexpected nil error")
 		}
@@ -115,16 +115,16 @@ func TestUserCredentials_Delete(t *testing.T) {
 		}
 		token := &auth.OAuthBearerToken{Token: "abcdef"}
 
-		cred, err := UserCredentials.Create(ctx, scope, token)
+		cred, err := GlobalUserCredentials.Create(ctx, scope, token)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		if err := UserCredentials.Delete(ctx, cred.ID); err != nil {
+		if err := GlobalUserCredentials.Delete(ctx, cred.ID); err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
 
-		_, err = UserCredentials.GetByID(ctx, cred.ID)
+		_, err = GlobalUserCredentials.GetByID(ctx, cred.ID)
 		if _, ok := err.(UserCredentialNotFoundErr); !ok {
 			t.Errorf("unexpected error retrieving credential after deletion: %v", err)
 		}
@@ -135,7 +135,7 @@ func TestUserCredentials_GetByID(t *testing.T) {
 	ctx, user := setUpUserCredentialTest(t)
 
 	t.Run("nonextant", func(t *testing.T) {
-		cred, err := UserCredentials.GetByID(ctx, 1)
+		cred, err := GlobalUserCredentials.GetByID(ctx, 1)
 		if cred != nil {
 			t.Errorf("unexpected non-nil credential: %v", cred)
 		}
@@ -161,12 +161,12 @@ func TestUserCredentials_GetByID(t *testing.T) {
 		}
 		token := &auth.OAuthBearerToken{Token: "abcdef"}
 
-		want, err := UserCredentials.Create(ctx, scope, token)
+		want, err := GlobalUserCredentials.Create(ctx, scope, token)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		have, err := UserCredentials.GetByID(ctx, want.ID)
+		have, err := GlobalUserCredentials.GetByID(ctx, want.ID)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
@@ -188,7 +188,7 @@ func TestUserCredentials_GetByScope(t *testing.T) {
 	token := &auth.OAuthBearerToken{Token: "abcdef"}
 
 	t.Run("nonextant", func(t *testing.T) {
-		cred, err := UserCredentials.GetByScope(ctx, scope)
+		cred, err := GlobalUserCredentials.GetByScope(ctx, scope)
 		if cred != nil {
 			t.Errorf("unexpected non-nil credential: %v", cred)
 		}
@@ -206,12 +206,12 @@ func TestUserCredentials_GetByScope(t *testing.T) {
 	})
 
 	t.Run("extant", func(t *testing.T) {
-		want, err := UserCredentials.Create(ctx, scope, token)
+		want, err := GlobalUserCredentials.Create(ctx, scope, token)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		have, err := UserCredentials.GetByScope(ctx, scope)
+		have, err := GlobalUserCredentials.GetByScope(ctx, scope)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
@@ -240,18 +240,18 @@ func TestUserCredentials_List(t *testing.T) {
 
 	// Unlike the other tests in this file, we'll set up a couple of credentials
 	// right now, and then list from there.
-	github, err := UserCredentials.Create(ctx, githubScope, token)
+	github, err := GlobalUserCredentials.Create(ctx, githubScope, token)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	gitlab, err := UserCredentials.Create(ctx, gitlabScope, token)
+	gitlab, err := GlobalUserCredentials.Create(ctx, gitlabScope, token)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	t.Run("not found", func(t *testing.T) {
-		creds, next, err := UserCredentials.List(ctx, UserCredentialsListOpts{
+		creds, next, err := GlobalUserCredentials.List(ctx, UserCredentialsListOpts{
 			Scope: UserCredentialScope{
 				Domain: "this is not a valid domain",
 			},
@@ -289,7 +289,7 @@ func TestUserCredentials_List(t *testing.T) {
 		},
 	} {
 		t.Run("single match on "+name, func(t *testing.T) {
-			creds, next, err := UserCredentials.List(ctx, UserCredentialsListOpts{
+			creds, next, err := GlobalUserCredentials.List(ctx, UserCredentialsListOpts{
 				Scope: tc.scope,
 			})
 			if err != nil {
@@ -314,7 +314,7 @@ func TestUserCredentials_List(t *testing.T) {
 		},
 	} {
 		t.Run("multiple matches on "+name, func(t *testing.T) {
-			creds, next, err := UserCredentials.List(ctx, UserCredentialsListOpts{
+			creds, next, err := GlobalUserCredentials.List(ctx, UserCredentialsListOpts{
 				Scope: scope,
 			})
 			if err != nil {
@@ -329,7 +329,7 @@ func TestUserCredentials_List(t *testing.T) {
 		})
 
 		t.Run("pagination for "+name, func(t *testing.T) {
-			creds, next, err := UserCredentials.List(ctx, UserCredentialsListOpts{
+			creds, next, err := GlobalUserCredentials.List(ctx, UserCredentialsListOpts{
 				LimitOffset: &LimitOffset{Limit: 1},
 				Scope:       scope,
 			})
@@ -343,7 +343,7 @@ func TestUserCredentials_List(t *testing.T) {
 				t.Errorf("unexpected credentials:\n%s", diff)
 			}
 
-			creds, next, err = UserCredentials.List(ctx, UserCredentialsListOpts{
+			creds, next, err = GlobalUserCredentials.List(ctx, UserCredentialsListOpts{
 				LimitOffset: &LimitOffset{Limit: 1, Offset: next},
 				Scope:       scope,
 			})
@@ -364,7 +364,7 @@ func TestUserCredentials_Invalid(t *testing.T) {
 	ctx, user := setUpUserCredentialTest(t)
 
 	t.Run("marshal", func(t *testing.T) {
-		if _, err := UserCredentials.Create(ctx, UserCredentialScope{}, &invalidAuth{}); err == nil {
+		if _, err := GlobalUserCredentials.Create(ctx, UserCredentialScope{}, &invalidAuth{}); err == nil {
 			t.Error("unexpected nil error")
 		}
 	})
@@ -400,7 +400,7 @@ func TestUserCredentials_Invalid(t *testing.T) {
 			"malformed JSON":          insertRawCredential(t, "malformed", "this is not valid JSON"),
 		} {
 			t.Run(name, func(t *testing.T) {
-				if _, err := UserCredentials.GetByID(ctx, id); err == nil {
+				if _, err := GlobalUserCredentials.GetByID(ctx, id); err == nil {
 					t.Error("unexpected nil error")
 				} else if _, ok := err.(UserCredentialNotFoundErr); ok {
 					t.Error("unexpected not found error")
@@ -466,7 +466,7 @@ func setUpUserCredentialTest(t *testing.T) (context.Context, *types.User) {
 	ctx := context.Background()
 
 	// Create a user that allows us to link the credential somewhere.
-	user, err := Users.Create(ctx, NewUser{
+	user, err := GlobalUsers.Create(ctx, NewUser{
 		Email:                 "a@example.com",
 		Username:              "u2",
 		Password:              "pw",

@@ -16,18 +16,18 @@ func TestNamespaces(t *testing.T) {
 	ctx := context.Background()
 
 	// Create user and organization to test lookups.
-	user, err := Users.Create(ctx, NewUser{Username: "alice"})
+	user, err := GlobalUsers.Create(ctx, NewUser{Username: "alice"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	org, err := Orgs.Create(ctx, "Acme", nil)
+	org, err := GlobalOrgs.Create(ctx, "Acme", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	t.Run("GetByID", func(t *testing.T) {
 		t.Run("no ID", func(t *testing.T) {
-			ns, err := Namespaces.GetByID(ctx, 0, 0)
+			ns, err := GlobalNamespaces.GetByID(ctx, 0, 0)
 			if ns != nil {
 				t.Errorf("unexpected non-nil namespace: %v", ns)
 			}
@@ -37,7 +37,7 @@ func TestNamespaces(t *testing.T) {
 		})
 
 		t.Run("multiple IDs", func(t *testing.T) {
-			ns, err := Namespaces.GetByID(ctx, 123, 456)
+			ns, err := GlobalNamespaces.GetByID(ctx, 123, 456)
 			if ns != nil {
 				t.Errorf("unexpected non-nil namespace: %v", ns)
 			}
@@ -47,7 +47,7 @@ func TestNamespaces(t *testing.T) {
 		})
 
 		t.Run("user not found", func(t *testing.T) {
-			ns, err := Namespaces.GetByID(ctx, user.ID+1, 0)
+			ns, err := GlobalNamespaces.GetByID(ctx, user.ID+1, 0)
 			if ns != nil {
 				t.Errorf("unexpected non-nil namespace: %v", ns)
 			}
@@ -57,7 +57,7 @@ func TestNamespaces(t *testing.T) {
 		})
 
 		t.Run("organization not found", func(t *testing.T) {
-			ns, err := Namespaces.GetByID(ctx, 0, org.ID+1)
+			ns, err := GlobalNamespaces.GetByID(ctx, 0, org.ID+1)
 			if ns != nil {
 				t.Errorf("unexpected non-nil namespace: %v", ns)
 			}
@@ -67,7 +67,7 @@ func TestNamespaces(t *testing.T) {
 		})
 
 		t.Run("user", func(t *testing.T) {
-			ns, err := Namespaces.GetByID(ctx, 0, user.ID)
+			ns, err := GlobalNamespaces.GetByID(ctx, 0, user.ID)
 			if err != nil {
 				t.Errorf("unexpected non-nil error: %v", err)
 			}
@@ -77,7 +77,7 @@ func TestNamespaces(t *testing.T) {
 		})
 
 		t.Run("organization", func(t *testing.T) {
-			ns, err := Namespaces.GetByID(ctx, org.ID, 0)
+			ns, err := GlobalNamespaces.GetByID(ctx, org.ID, 0)
 			if err != nil {
 				t.Errorf("unexpected non-nil error: %v", err)
 			}
@@ -89,7 +89,7 @@ func TestNamespaces(t *testing.T) {
 
 	t.Run("GetByName", func(t *testing.T) {
 		t.Run("user", func(t *testing.T) {
-			ns, err := Namespaces.GetByName(ctx, "Alice")
+			ns, err := GlobalNamespaces.GetByName(ctx, "Alice")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -98,7 +98,7 @@ func TestNamespaces(t *testing.T) {
 			}
 		})
 		t.Run("organization", func(t *testing.T) {
-			ns, err := Namespaces.GetByName(ctx, "acme")
+			ns, err := GlobalNamespaces.GetByName(ctx, "acme")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -107,7 +107,7 @@ func TestNamespaces(t *testing.T) {
 			}
 		})
 		t.Run("not found", func(t *testing.T) {
-			if _, err := Namespaces.GetByName(ctx, "doesntexist"); err != ErrNamespaceNotFound {
+			if _, err := GlobalNamespaces.GetByName(ctx, "doesntexist"); err != ErrNamespaceNotFound {
 				t.Fatal(err)
 			}
 		})

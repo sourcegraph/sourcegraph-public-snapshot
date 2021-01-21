@@ -33,7 +33,7 @@ func savedSearchByID(ctx context.Context, id graphql.ID) (*savedSearchResolver, 
 		return nil, err
 	}
 
-	ss, err := db.SavedSearches.GetByID(ctx, intID)
+	ss, err := db.GlobalSavedSearches.GetByID(ctx, intID)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +114,7 @@ func (r *schemaResolver) SavedSearches(ctx context.Context) ([]*savedSearchResol
 	if err != nil {
 		return nil, err
 	}
-	allSavedSearches, err := db.SavedSearches.ListSavedSearchesByUserID(ctx, currentUser.DatabaseID())
+	allSavedSearches, err := db.GlobalSavedSearches.ListSavedSearchesByUserID(ctx, currentUser.DatabaseID())
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +136,7 @@ func (r *schemaResolver) SendSavedSearchTestNotification(ctx context.Context, ar
 	if err != nil {
 		return nil, err
 	}
-	savedSearch, err := db.SavedSearches.GetByID(ctx, id)
+	savedSearch, err := db.GlobalSavedSearches.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -181,7 +181,7 @@ func (r *schemaResolver) CreateSavedSearch(ctx context.Context, args *struct {
 		return nil, errMissingPatternType
 	}
 
-	ss, err := db.SavedSearches.Create(ctx, &types.SavedSearch{
+	ss, err := db.GlobalSavedSearches.Create(ctx, &types.SavedSearch{
 		Description: args.Description,
 		Query:       args.Query,
 		Notify:      args.NotifyOwner,
@@ -238,7 +238,7 @@ func (r *schemaResolver) UpdateSavedSearch(ctx context.Context, args *struct {
 		return nil, errMissingPatternType
 	}
 
-	ss, err := db.SavedSearches.Update(ctx, &types.SavedSearch{
+	ss, err := db.GlobalSavedSearches.Update(ctx, &types.SavedSearch{
 		ID:          id,
 		Description: args.Description,
 		Query:       args.Query,
@@ -261,7 +261,7 @@ func (r *schemaResolver) DeleteSavedSearch(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, err
 	}
-	ss, err := db.SavedSearches.GetByID(ctx, id)
+	ss, err := db.GlobalSavedSearches.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -277,7 +277,7 @@ func (r *schemaResolver) DeleteSavedSearch(ctx context.Context, args *struct {
 	} else {
 		return nil, errors.New("failed to delete saved search: no Org ID or User ID associated with saved search")
 	}
-	err = db.SavedSearches.Delete(ctx, id)
+	err = db.GlobalSavedSearches.Delete(ctx, id)
 	if err != nil {
 		return nil, err
 	}

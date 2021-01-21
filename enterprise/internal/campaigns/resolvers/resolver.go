@@ -110,7 +110,7 @@ func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbac
 
 	// 🚨 SECURITY: db.Repos.Get uses the authzFilter under the hood and
 	// filters out repositories that the user doesn't have access to.
-	repo, err := db.Repos.Get(ctx, changeset.RepoID)
+	repo, err := db.GlobalRepos.Get(ctx, changeset.RepoID)
 	if err != nil && !errcode.IsNotFound(err) {
 		return nil, err
 	}
@@ -232,7 +232,7 @@ func (r *Resolver) CampaignsCredentialByID(ctx context.Context, id graphql.ID) (
 		return nil, nil
 	}
 
-	cred, err := db.UserCredentials.GetByID(ctx, dbID)
+	cred, err := db.GlobalUserCredentials.GetByID(ctx, dbID)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return nil, nil
@@ -818,7 +818,7 @@ func (r *Resolver) CreateCampaignsCredential(ctx context.Context, args *graphqlb
 	}
 
 	// Throw error documented in schema.graphql.
-	existing, err := db.UserCredentials.GetByScope(ctx, scope)
+	existing, err := db.GlobalUserCredentials.GetByScope(ctx, scope)
 	if err != nil && !errcode.IsNotFound(err) {
 		return nil, err
 	}
@@ -838,7 +838,7 @@ func (r *Resolver) CreateCampaignsCredential(ctx context.Context, args *graphqlb
 		a = &auth.OAuthBearerToken{Token: args.Credential}
 	}
 
-	cred, err := db.UserCredentials.Create(ctx, scope, a)
+	cred, err := db.GlobalUserCredentials.Create(ctx, scope, a)
 	if err != nil {
 		return nil, err
 	}
@@ -866,7 +866,7 @@ func (r *Resolver) DeleteCampaignsCredential(ctx context.Context, args *graphqlb
 	}
 
 	// Get existing credential.
-	cred, err := db.UserCredentials.GetByID(ctx, dbID)
+	cred, err := db.GlobalUserCredentials.GetByID(ctx, dbID)
 	if err != nil {
 		return nil, err
 	}
@@ -877,7 +877,7 @@ func (r *Resolver) DeleteCampaignsCredential(ctx context.Context, args *graphqlb
 	}
 
 	// This also fails if the credential was not found.
-	if err := db.UserCredentials.Delete(ctx, dbID); err != nil {
+	if err := db.GlobalUserCredentials.Delete(ctx, dbID); err != nil {
 		return nil, err
 	}
 

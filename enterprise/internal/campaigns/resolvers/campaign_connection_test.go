@@ -183,7 +183,7 @@ func TestCampaignsListing(t *testing.T) {
 	userID := ct.CreateTestUser(t, true).ID
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
 
-	org, err := db.Orgs.Create(ctx, "org", nil)
+	org, err := db.GlobalOrgs.Create(ctx, "org", nil)
 	if err != nil {
 		t.Fatal(err)
 	}

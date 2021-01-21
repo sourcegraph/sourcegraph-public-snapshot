@@ -26,12 +26,12 @@ func TestExternalAccounts_LookupUserAndSave(t *testing.T) {
 		ClientID:    "xc",
 		AccountID:   "xd",
 	}
-	userID, err := ExternalAccounts.CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, extsvc.AccountData{})
+	userID, err := GlobalExternalAccounts.CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, extsvc.AccountData{})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	lookedUpUserID, err := ExternalAccounts.LookupUserAndSave(ctx, spec, extsvc.AccountData{})
+	lookedUpUserID, err := GlobalExternalAccounts.LookupUserAndSave(ctx, spec, extsvc.AccountData{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -47,7 +47,7 @@ func TestExternalAccounts_AssociateUserAndSave(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := context.Background()
 
-	user, err := Users.Create(ctx, NewUser{Username: "u"})
+	user, err := GlobalUsers.Create(ctx, NewUser{Username: "u"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -65,11 +65,11 @@ func TestExternalAccounts_AssociateUserAndSave(t *testing.T) {
 		AuthData: &authData,
 		Data:     &data,
 	}
-	if err := ExternalAccounts.AssociateUserAndSave(ctx, user.ID, spec, accountData); err != nil {
+	if err := GlobalExternalAccounts.AssociateUserAndSave(ctx, user.ID, spec, accountData); err != nil {
 		t.Fatal(err)
 	}
 
-	accounts, err := ExternalAccounts.List(ctx, ExternalAccountsListOptions{})
+	accounts, err := GlobalExternalAccounts.List(ctx, ExternalAccountsListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -110,12 +110,12 @@ func TestExternalAccounts_CreateUserAndSave(t *testing.T) {
 		AuthData: &authData,
 		Data:     &data,
 	}
-	userID, err := ExternalAccounts.CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, accountData)
+	userID, err := GlobalExternalAccounts.CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, accountData)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	user, err := Users.GetByID(ctx, userID)
+	user, err := GlobalUsers.GetByID(ctx, userID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -123,7 +123,7 @@ func TestExternalAccounts_CreateUserAndSave(t *testing.T) {
 		t.Errorf("got %q, want %q", user.Username, want)
 	}
 
-	accounts, err := ExternalAccounts.List(ctx, ExternalAccountsListOptions{})
+	accounts, err := GlobalExternalAccounts.List(ctx, ExternalAccountsListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -158,12 +158,12 @@ func TestExternalAccounts_CreateUserAndSave_NilData(t *testing.T) {
 		AccountID:   "xd",
 	}
 
-	userID, err := ExternalAccounts.CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, extsvc.AccountData{})
+	userID, err := GlobalExternalAccounts.CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, extsvc.AccountData{})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	user, err := Users.GetByID(ctx, userID)
+	user, err := GlobalUsers.GetByID(ctx, userID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -171,7 +171,7 @@ func TestExternalAccounts_CreateUserAndSave_NilData(t *testing.T) {
 		t.Errorf("got %q, want %q", user.Username, want)
 	}
 
-	accounts, err := ExternalAccounts.List(ctx, ExternalAccountsListOptions{})
+	accounts, err := GlobalExternalAccounts.List(ctx, ExternalAccountsListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -221,7 +221,7 @@ func TestExternalAccounts_List(t *testing.T) {
 	userIDs := make([]int32, 0, len(specs))
 
 	for i, spec := range specs {
-		id, err := ExternalAccounts.CreateUserAndSave(ctx, NewUser{Username: fmt.Sprintf("u%d", i)}, spec, extsvc.AccountData{})
+		id, err := GlobalExternalAccounts.CreateUserAndSave(ctx, NewUser{Username: fmt.Sprintf("u%d", i)}, spec, extsvc.AccountData{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -278,7 +278,7 @@ func TestExternalAccounts_List(t *testing.T) {
 
 	for _, c := range tc {
 		t.Run(c.name, func(t *testing.T) {
-			accounts, err := ExternalAccounts.List(ctx, c.args)
+			accounts, err := GlobalExternalAccounts.List(ctx, c.args)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -319,12 +319,12 @@ func TestExternalAccounts_expiredAt(t *testing.T) {
 		ClientID:    "xc",
 		AccountID:   "xd",
 	}
-	userID, err := ExternalAccounts.CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, extsvc.AccountData{})
+	userID, err := GlobalExternalAccounts.CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, extsvc.AccountData{})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	accts, err := ExternalAccounts.List(ctx, ExternalAccountsListOptions{UserID: userID})
+	accts, err := GlobalExternalAccounts.List(ctx, ExternalAccountsListOptions{UserID: userID})
 	if err != nil {
 		t.Fatal(err)
 	} else if len(accts) != 1 {
@@ -333,12 +333,12 @@ func TestExternalAccounts_expiredAt(t *testing.T) {
 	acct := accts[0]
 
 	t.Run("Exclude expired", func(t *testing.T) {
-		err := ExternalAccounts.TouchExpired(ctx, acct.ID)
+		err := GlobalExternalAccounts.TouchExpired(ctx, acct.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		accts, err := ExternalAccounts.List(ctx, ExternalAccountsListOptions{
+		accts, err := GlobalExternalAccounts.List(ctx, ExternalAccountsListOptions{
 			UserID:         userID,
 			ExcludeExpired: true,
 		})
@@ -352,17 +352,17 @@ func TestExternalAccounts_expiredAt(t *testing.T) {
 	})
 
 	t.Run("LookupUserAndSave should set expired_at to NULL", func(t *testing.T) {
-		err := ExternalAccounts.TouchExpired(ctx, acct.ID)
+		err := GlobalExternalAccounts.TouchExpired(ctx, acct.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		_, err = ExternalAccounts.LookupUserAndSave(ctx, spec, extsvc.AccountData{})
+		_, err = GlobalExternalAccounts.LookupUserAndSave(ctx, spec, extsvc.AccountData{})
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		accts, err := ExternalAccounts.List(ctx, ExternalAccountsListOptions{
+		accts, err := GlobalExternalAccounts.List(ctx, ExternalAccountsListOptions{
 			UserID:         userID,
 			ExcludeExpired: true,
 		})
@@ -376,17 +376,17 @@ func TestExternalAccounts_expiredAt(t *testing.T) {
 	})
 
 	t.Run("AssociateUserAndSave should set expired_at to NULL", func(t *testing.T) {
-		err := ExternalAccounts.TouchExpired(ctx, acct.ID)
+		err := GlobalExternalAccounts.TouchExpired(ctx, acct.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		err = ExternalAccounts.AssociateUserAndSave(ctx, userID, spec, extsvc.AccountData{})
+		err = GlobalExternalAccounts.AssociateUserAndSave(ctx, userID, spec, extsvc.AccountData{})
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		accts, err := ExternalAccounts.List(ctx, ExternalAccountsListOptions{
+		accts, err := GlobalExternalAccounts.List(ctx, ExternalAccountsListOptions{
 			UserID:         userID,
 			ExcludeExpired: true,
 		})
@@ -400,17 +400,17 @@ func TestExternalAccounts_expiredAt(t *testing.T) {
 	})
 
 	t.Run("TouchLastValid should set expired_at to NULL", func(t *testing.T) {
-		err := ExternalAccounts.TouchExpired(ctx, acct.ID)
+		err := GlobalExternalAccounts.TouchExpired(ctx, acct.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		err = ExternalAccounts.TouchLastValid(ctx, acct.ID)
+		err = GlobalExternalAccounts.TouchLastValid(ctx, acct.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		accts, err := ExternalAccounts.List(ctx, ExternalAccountsListOptions{
+		accts, err := GlobalExternalAccounts.List(ctx, ExternalAccountsListOptions{
 			UserID:         userID,
 			ExcludeExpired: true,
 		})

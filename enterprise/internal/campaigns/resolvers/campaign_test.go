@@ -29,7 +29,7 @@ func TestCampaignResolver(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 
 	userID := ct.CreateTestUser(t, true).ID
-	org, err := db.Orgs.Create(ctx, "test-campaign-resolver-org", nil)
+	org, err := db.GlobalOrgs.Create(ctx, "test-campaign-resolver-org", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -105,7 +105,7 @@ func TestCampaignResolver(t *testing.T) {
 	}
 
 	// Now soft-delete the user and check we can still access the campaign in the org namespace.
-	err = db.Users.Delete(ctx, userID)
+	err = db.GlobalUsers.Delete(ctx, userID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -124,7 +124,7 @@ func TestCampaignResolver(t *testing.T) {
 	}
 
 	// Now hard-delete the user and check we can still access the campaign in the org namespace.
-	err = db.Users.HardDelete(ctx, userID)
+	err = db.GlobalUsers.HardDelete(ctx, userID)
 	if err != nil {
 		t.Fatal(err)
 	}

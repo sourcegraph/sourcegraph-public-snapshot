@@ -7,6 +7,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -44,7 +45,7 @@ func HandleResetPasswordInit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	usr, err := db.Users.GetByVerifiedEmail(ctx, formData.Email)
+	usr, err := db.GlobalUsers.GetByVerifiedEmail(ctx, formData.Email)
 	if err != nil {
 		// 🚨 SECURITY: We don't show an error message when the user is not found
 		// as to not leak the existence of a given e-mail address in the database.
@@ -102,12 +103,12 @@ To reset the password for {{.Username}} on Sourcegraph, follow this link:
 
 // HandleSetPasswordEmail sends the password reset email directly to the user for users created by site admins.
 func HandleSetPasswordEmail(ctx context.Context, id int32) (string, error) {
-	e, _, err := db.UserEmails.GetPrimaryEmail(ctx, id)
+	e, _, err := db.GlobalUserEmails.GetPrimaryEmail(ctx, id)
 	if err != nil {
 		return "", errors.Wrap(err, "get user primary email")
 	}
 
-	usr, err := db.Users.GetByID(ctx, id)
+	usr, err := db.GlobalUsers.GetByID(ctx, id)
 	if err != nil {
 		return "", errors.Wrap(err, "get user by ID")
 	}
@@ -181,7 +182,7 @@ func HandleResetPasswordCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	success, err := db.Users.SetPassword(ctx, params.UserID, params.Code, params.Password)
+	success, err := db.GlobalUsers.SetPassword(ctx, params.UserID, params.Code, params.Password)
 	if err != nil {
 		httpLogAndError(w, "Unexpected error", http.StatusInternalServerError, "err", err)
 		return

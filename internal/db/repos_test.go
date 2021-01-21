@@ -125,31 +125,31 @@ func TestRepos_Count(t *testing.T) {
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
-	if count, err := Repos.Count(ctx, ReposListOptions{}); err != nil {
+	if count, err := GlobalRepos.Count(ctx, ReposListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 0; count != want {
 		t.Errorf("got %d, want %d", count, want)
 	}
 
-	if err := Repos.Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
+	if err := GlobalRepos.Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
 		t.Fatal(err)
 	}
 
-	if count, err := Repos.Count(ctx, ReposListOptions{}); err != nil {
+	if count, err := GlobalRepos.Count(ctx, ReposListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 1; count != want {
 		t.Errorf("got %d, want %d", count, want)
 	}
 
-	repos, err := Repos.List(ctx, ReposListOptions{})
+	repos, err := GlobalRepos.List(ctx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := Repos.Delete(ctx, repos[0].ID); err != nil {
+	if err := GlobalRepos.Delete(ctx, repos[0].ID); err != nil {
 		t.Fatal(err)
 	}
 
-	if count, err := Repos.Count(ctx, ReposListOptions{}); err != nil {
+	if count, err := GlobalRepos.Count(ctx, ReposListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 0; count != want {
 		t.Errorf("got %d, want %d", count, want)
@@ -164,25 +164,25 @@ func TestRepos_Delete(t *testing.T) {
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
-	if err := Repos.Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
+	if err := GlobalRepos.Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
 		t.Fatal(err)
 	}
 
-	if count, err := Repos.Count(ctx, ReposListOptions{}); err != nil {
+	if count, err := GlobalRepos.Count(ctx, ReposListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 1; count != want {
 		t.Errorf("got %d, want %d", count, want)
 	}
 
-	repos, err := Repos.List(ctx, ReposListOptions{})
+	repos, err := GlobalRepos.List(ctx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := Repos.Delete(ctx, repos[0].ID); err != nil {
+	if err := GlobalRepos.Delete(ctx, repos[0].ID); err != nil {
 		t.Fatal(err)
 	}
 
-	if count, err := Repos.Count(ctx, ReposListOptions{}); err != nil {
+	if count, err := GlobalRepos.Count(ctx, ReposListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 0; count != want {
 		t.Errorf("got %d, want %d", count, want)
@@ -197,7 +197,7 @@ func TestRepos_Upsert(t *testing.T) {
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
-	if _, err := Repos.GetByName(ctx, "myrepo"); !errcode.IsNotFound(err) {
+	if _, err := GlobalRepos.GetByName(ctx, "myrepo"); !errcode.IsNotFound(err) {
 		if err == nil {
 			t.Fatal("myrepo already present")
 		} else {
@@ -205,11 +205,11 @@ func TestRepos_Upsert(t *testing.T) {
 		}
 	}
 
-	if err := Repos.Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
+	if err := GlobalRepos.Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
 		t.Fatal(err)
 	}
 
-	rp, err := Repos.GetByName(ctx, "myrepo")
+	rp, err := GlobalRepos.GetByName(ctx, "myrepo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -224,11 +224,11 @@ func TestRepos_Upsert(t *testing.T) {
 		ServiceID:   "ext:test",
 	}
 
-	if err := Repos.Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "asdfasdf", Fork: false, ExternalRepo: ext}); err != nil {
+	if err := GlobalRepos.Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "asdfasdf", Fork: false, ExternalRepo: ext}); err != nil {
 		t.Fatal(err)
 	}
 
-	rp, err = Repos.GetByName(ctx, "myrepo")
+	rp, err = GlobalRepos.GetByName(ctx, "myrepo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -244,11 +244,11 @@ func TestRepos_Upsert(t *testing.T) {
 	}
 
 	// Rename. Detected by external repo
-	if err := Repos.Upsert(ctx, InsertRepoOp{Name: "myrepo/renamed", Description: "asdfasdf", Fork: false, ExternalRepo: ext}); err != nil {
+	if err := GlobalRepos.Upsert(ctx, InsertRepoOp{Name: "myrepo/renamed", Description: "asdfasdf", Fork: false, ExternalRepo: ext}); err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err := Repos.GetByName(ctx, "myrepo"); !errcode.IsNotFound(err) {
+	if _, err := GlobalRepos.GetByName(ctx, "myrepo"); !errcode.IsNotFound(err) {
 		if err == nil {
 			t.Fatal("myrepo should be renamed, but still present as myrepo")
 		} else {
@@ -256,7 +256,7 @@ func TestRepos_Upsert(t *testing.T) {
 		}
 	}
 
-	rp, err = Repos.GetByName(ctx, "myrepo/renamed")
+	rp, err = GlobalRepos.GetByName(ctx, "myrepo/renamed")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -285,11 +285,11 @@ func TestRepos_UpsertForkAndArchivedFields(t *testing.T) {
 			i++
 			name := api.RepoName(fmt.Sprintf("myrepo-%d", i))
 
-			if err := Repos.Upsert(ctx, InsertRepoOp{Name: name, Fork: fork, Archived: archived}); err != nil {
+			if err := GlobalRepos.Upsert(ctx, InsertRepoOp{Name: name, Fork: fork, Archived: archived}); err != nil {
 				t.Fatal(err)
 			}
 
-			rp, err := Repos.GetByName(ctx, name)
+			rp, err := GlobalRepos.GetByName(ctx, name)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -317,7 +317,7 @@ func TestRepos_Create(t *testing.T) {
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
 	svcs := types.MakeExternalServices()
-	if err := ExternalServices.Upsert(ctx, svcs...); err != nil {
+	if err := GlobalExternalServices.Upsert(ctx, svcs...); err != nil {
 		t.Fatalf("Upsert error: %s", err)
 	}
 
@@ -327,7 +327,7 @@ func TestRepos_Create(t *testing.T) {
 	repo2 := types.MakeGitlabRepo(msvcs[extsvc.KindGitLab])
 
 	t.Run("no repos should not fail", func(t *testing.T) {
-		if err := Repos.Create(ctx); err != nil {
+		if err := GlobalRepos.Create(ctx); err != nil {
 			t.Fatalf("Create error: %s", err)
 		}
 	})
@@ -335,7 +335,7 @@ func TestRepos_Create(t *testing.T) {
 	t.Run("many repos", func(t *testing.T) {
 		want := types.GenerateRepos(7, repo1, repo2)
 
-		if err := Repos.Create(ctx, want...); err != nil {
+		if err := GlobalRepos.Create(ctx, want...); err != nil {
 			t.Fatalf("Create error: %s", err)
 		}
 
@@ -345,7 +345,7 @@ func TestRepos_Create(t *testing.T) {
 			t.Fatalf("Create didn't assign an ID to all repos: %v", noID.Names())
 		}
 
-		have, err := Repos.List(ctx, ReposListOptions{})
+		have, err := GlobalRepos.List(ctx, ReposListOptions{})
 		if err != nil {
 			t.Fatalf("List error: %s", err)
 		}

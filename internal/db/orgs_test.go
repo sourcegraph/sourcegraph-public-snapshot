@@ -18,7 +18,7 @@ func TestOrgs_ValidNames(t *testing.T) {
 	for _, test := range usernamesForTests {
 		t.Run(test.name, func(t *testing.T) {
 			valid := true
-			if _, err := Orgs.Create(ctx, test.name, nil); err != nil {
+			if _, err := GlobalOrgs.Create(ctx, test.name, nil); err != nil {
 				if strings.Contains(err.Error(), "org name invalid") {
 					valid = false
 				} else {
@@ -39,22 +39,22 @@ func TestOrgs_Count(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := context.Background()
 
-	org, err := Orgs.Create(ctx, "a", nil)
+	org, err := GlobalOrgs.Create(ctx, "a", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if count, err := Orgs.Count(ctx, OrgsListOptions{}); err != nil {
+	if count, err := GlobalOrgs.Count(ctx, OrgsListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 1; count != want {
 		t.Errorf("got %d, want %d", count, want)
 	}
 
-	if err := Orgs.Delete(ctx, org.ID); err != nil {
+	if err := GlobalOrgs.Delete(ctx, org.ID); err != nil {
 		t.Fatal(err)
 	}
 
-	if count, err := Orgs.Count(ctx, OrgsListOptions{}); err != nil {
+	if count, err := GlobalOrgs.Count(ctx, OrgsListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 0; count != want {
 		t.Errorf("got %d, want %d", count, want)
@@ -69,22 +69,22 @@ func TestOrgs_Delete(t *testing.T) {
 	ctx := context.Background()
 
 	displayName := "a"
-	org, err := Orgs.Create(ctx, "a", &displayName)
+	org, err := GlobalOrgs.Create(ctx, "a", &displayName)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Delete org.
-	if err := Orgs.Delete(ctx, org.ID); err != nil {
+	if err := GlobalOrgs.Delete(ctx, org.ID); err != nil {
 		t.Fatal(err)
 	}
 
 	// Org no longer exists.
-	_, err = Orgs.GetByID(ctx, org.ID)
+	_, err = GlobalOrgs.GetByID(ctx, org.ID)
 	if _, ok := err.(*OrgNotFoundError); !ok {
 		t.Errorf("got error %v, want *OrgNotFoundError", err)
 	}
-	orgs, err := Orgs.List(ctx, &OrgsListOptions{Query: "a"})
+	orgs, err := GlobalOrgs.List(ctx, &OrgsListOptions{Query: "a"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -93,7 +93,7 @@ func TestOrgs_Delete(t *testing.T) {
 	}
 
 	// Can't delete already-deleted org.
-	err = Orgs.Delete(ctx, org.ID)
+	err = GlobalOrgs.Delete(ctx, org.ID)
 	if _, ok := err.(*OrgNotFoundError); !ok {
 		t.Errorf("got error %v, want *OrgNotFoundError", err)
 	}
