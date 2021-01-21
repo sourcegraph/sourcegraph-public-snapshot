@@ -129,7 +129,7 @@ func (fm *FileMatchResolver) appendMatches(src *FileMatchResolver) {
 	fm.JLimitHit = fm.JLimitHit || src.JLimitHit
 }
 
-func (fm *FileMatchResolver) resultCount() int32 {
+func (fm *FileMatchResolver) ResultCount() int32 {
 	rc := len(fm.symbols) + fm.MatchCount
 	if rc > 0 {
 		return int32(rc)
