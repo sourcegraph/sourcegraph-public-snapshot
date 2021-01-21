@@ -39,13 +39,13 @@ type OrgStore struct {
 	once sync.Once
 }
 
-// NewOrgStoreWithDB instantiates and returns a new OrgStore with prepared statements.
-func NewOrgStoreWithDB(db dbutil.DB) *OrgStore {
+// Orgs instantiates and returns a new OrgStore with prepared statements.
+func Orgs(db dbutil.DB) *OrgStore {
 	return &OrgStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 // NewOrgStoreWithDB instantiates and returns a new OrgStore using the other store handle.
-func NewOrgStoreWith(other basestore.ShareableStore) *OrgStore {
+func OrgsWith(other basestore.ShareableStore) *OrgStore {
 	return &OrgStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 

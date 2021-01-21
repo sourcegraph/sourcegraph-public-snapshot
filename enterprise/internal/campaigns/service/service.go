@@ -459,7 +459,7 @@ func (s *Service) FetchUsernameForBitbucketServerToken(ctx context.Context, exte
 		return "", err
 	}
 
-	esStore := db.NewExternalServicesStoreWith(s.store)
+	esStore := db.ExternalServicesWith(s.store)
 	externalService, err := esStore.GetByID(ctx, extSvcID)
 	if err != nil {
 		if errcode.IsNotFound(err) {

@@ -63,14 +63,14 @@ func (e *executor) Run(ctx context.Context, plan *Plan) (err error) {
 		return nil
 	}
 
-	reposStore := db.NewRepoStoreWith(e.tx)
+	reposStore := db.ReposWith(e.tx)
 
 	e.repo, err = loadRepo(ctx, reposStore, e.ch.RepoID)
 	if err != nil {
 		return errors.Wrap(err, "failed to load repository")
 	}
 
-	esStore := db.NewExternalServicesStoreWith(e.tx)
+	esStore := db.ExternalServicesWith(e.tx)
 
 	e.extSvc, err = loadExternalService(ctx, esStore, e.repo)
 	if err != nil {

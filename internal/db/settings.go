@@ -24,13 +24,13 @@ type SettingStore struct {
 	once sync.Once
 }
 
-// NewSettingStoreWithDB instantiates and returns a new SettingStore with prepared statements.
-func NewSettingStoreWithDB(db dbutil.DB) *SettingStore {
+// Settings instantiates and returns a new SettingStore with prepared statements.
+func Settings(db dbutil.DB) *SettingStore {
 	return &SettingStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 // NewSettingStoreWithDB instantiates and returns a new SettingStore using the other store handle.
-func NewSettingStoreWith(other basestore.ShareableStore) *SettingStore {
+func SettingsWith(other basestore.ShareableStore) *SettingStore {
 	return &SettingStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 

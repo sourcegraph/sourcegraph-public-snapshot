@@ -46,13 +46,13 @@ type DefaultRepoStore struct {
 	mu sync.Mutex
 }
 
-// NewDefaultRepoStoreWithDB instantiates and returns a new DefaultRepoStore with prepared statements.
-func NewDefaultRepoStoreWithDB(db dbutil.DB) *DefaultRepoStore {
+// DefaultRepos instantiates and returns a new DefaultRepoStore with prepared statements.
+func DefaultRepos(db dbutil.DB) *DefaultRepoStore {
 	return &DefaultRepoStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 // NewDefaultRepoStoreWithDB instantiates and returns a new DefaultRepoStore using the other store handle.
-func NewDefaultRepoStoreWith(other basestore.ShareableStore) *DefaultRepoStore {
+func DefaultReposWith(other basestore.ShareableStore) *DefaultRepoStore {
 	return &DefaultRepoStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 

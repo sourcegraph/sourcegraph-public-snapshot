@@ -46,13 +46,13 @@ type ExternalServiceStore struct {
 	mu sync.Mutex
 }
 
-// NewExternalServicesStoreWithDB instantiates and returns a new ExternalServicesStore with prepared statements.
-func NewExternalServicesStoreWithDB(db dbutil.DB) *ExternalServiceStore {
+// ExternalServices instantiates and returns a new ExternalServicesStore with prepared statements.
+func ExternalServices(db dbutil.DB) *ExternalServiceStore {
 	return &ExternalServiceStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 // NewExternalServicesStoreWithDB instantiates and returns a new ExternalServicesStore with prepared statements.
-func NewExternalServicesStoreWith(other basestore.ShareableStore) *ExternalServiceStore {
+func ExternalServicesWith(other basestore.ShareableStore) *ExternalServiceStore {
 	return &ExternalServiceStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 

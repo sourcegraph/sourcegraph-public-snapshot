@@ -41,13 +41,13 @@ type AccessTokenStore struct {
 	once sync.Once
 }
 
-// NewAccessTokenStoreWithDB instantiates and returns a new AccessTokenStore with prepared statements.
-func NewAccessTokenStoreWithDB(db dbutil.DB) *AccessTokenStore {
+// AccessTokens instantiates and returns a new AccessTokenStore with prepared statements.
+func AccessTokens(db dbutil.DB) *AccessTokenStore {
 	return &AccessTokenStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 // NewAccessTokenStoreWithDB instantiates and returns a new AccessTokenStore using the other store handle.
-func NewAccessTokenStoreWith(other basestore.ShareableStore) *AccessTokenStore {
+func AccessTokensWith(other basestore.ShareableStore) *AccessTokenStore {
 	return &AccessTokenStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 

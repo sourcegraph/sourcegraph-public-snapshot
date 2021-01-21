@@ -15,7 +15,7 @@ func TestUserPublicRepos_Set(t *testing.T) {
 	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
-	user, err := NewUserStoreWithDB(db).Create(ctx, NewUser{
+	user, err := Users(db).Create(ctx, NewUser{
 		Username: "u",
 		Password: "p",
 	})
@@ -23,7 +23,7 @@ func TestUserPublicRepos_Set(t *testing.T) {
 		t.Errorf("Expected no error, got %s ", err)
 	}
 
-	repoStore := NewRepoStoreWithDB(db)
+	repoStore := Repos(db)
 
 	err = repoStore.Create(ctx, &types.Repo{
 		Name: "test",
@@ -37,7 +37,7 @@ func TestUserPublicRepos_Set(t *testing.T) {
 		t.Errorf("Expected no error, got %s", err)
 	}
 
-	upStore := NewUserPublicRepoStoreWithDB(db)
+	upStore := UserPublicRepos(db)
 	err = upStore.SetUserRepo(ctx, user.ID, repo.ID)
 	if err != nil {
 		t.Errorf("Expected no error, got %s", err)

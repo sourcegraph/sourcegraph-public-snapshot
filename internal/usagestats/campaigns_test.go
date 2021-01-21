@@ -21,8 +21,8 @@ func TestCampaignsUsageStatistics(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 
 	// Create stub repo.
-	repoStore := db.NewRepoStoreWithDB(dbconn.Global)
-	esStore := db.NewExternalServicesStoreWithDB(dbconn.Global)
+	repoStore := db.Repos(dbconn.Global)
+	esStore := db.ExternalServices(dbconn.Global)
 
 	now := time.Now()
 	svc := types.ExternalService{

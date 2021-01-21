@@ -26,13 +26,13 @@ type SurveyResponseStore struct {
 	once sync.Once
 }
 
-// NewSurveyResponseStoreWithDB instantiates and returns a new SurveyResponseStore with prepared statements.
-func NewSurveyResponseStoreWithDB(db dbutil.DB) *SurveyResponseStore {
+// SurveyResponses instantiates and returns a new SurveyResponseStore with prepared statements.
+func SurveyResponses(db dbutil.DB) *SurveyResponseStore {
 	return &SurveyResponseStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 // NewSurveyResponseStoreWithDB instantiates and returns a new SurveyResponseStore using the other store handle.
-func NewSurveyResponseStoreWith(other basestore.ShareableStore) *SurveyResponseStore {
+func SurveyResponsesWith(other basestore.ShareableStore) *SurveyResponseStore {
 	return &SurveyResponseStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 

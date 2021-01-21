@@ -19,8 +19,8 @@ import (
 )
 
 func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
-	repoStore := db.NewRepoStoreWith(s)
-	esStore := db.NewExternalServicesStoreWith(s)
+	repoStore := db.ReposWith(s)
+	esStore := db.ExternalServicesWith(s)
 
 	repo := ct.TestRepo(t, esStore, extsvc.KindGitHub)
 	deletedRepo := ct.TestRepo(t, esStore, extsvc.KindGitHub).With(types.Opt.RepoDeletedAt(clock.Now()))
@@ -678,8 +678,8 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 }
 
 func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
-	repoStore := db.NewRepoStoreWith(s)
-	esStore := db.NewExternalServicesStoreWith(s)
+	repoStore := db.ReposWith(s)
+	esStore := db.ExternalServicesWith(s)
 
 	// OK, let's set up an interesting scenario. We're going to set up a
 	// campaign that tracks two changesets in different repositories, and
