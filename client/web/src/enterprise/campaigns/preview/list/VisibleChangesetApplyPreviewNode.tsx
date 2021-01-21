@@ -15,12 +15,13 @@ import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import { FileDiffConnection } from '../../../../components/diff/FileDiffConnection'
 import { FileDiffNode } from '../../../../components/diff/FileDiffNode'
 import { FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
-import { GitBranchChangesetDescriptionInfo } from './GitBranchChangesetDescriptionInfo'
 import { ChangesetStatusCell } from '../../detail/changesets/ChangesetStatusCell'
 import { PreviewNodeIndicator } from './PreviewNodeIndicator'
 import classNames from 'classnames'
 import { PersonLink } from '../../../../person/PersonLink'
 import { PreviewPageAuthenticatedUser } from '../CampaignPreviewPage'
+import { Description } from '../../Description'
+import { GitBranchChangesetDescriptionInfo } from './GitBranchChangesetDescriptionInfo'
 
 export interface VisibleChangesetApplyPreviewNodeProps extends ThemeProps {
     node: VisibleChangesetApplyPreviewFields
@@ -185,7 +186,7 @@ const ExpandedSection: React.FunctionComponent<
                         >
                             Changed files
                             {node.delta.diffChanged && (
-                                <span className="text-success ml-2" data-tooltip="Changes in this tab">
+                                <span className="text-warning ml-2" data-tooltip="Changes in this tab">
                                     &#11044;
                                 </span>
                             )}
@@ -199,7 +200,7 @@ const ExpandedSection: React.FunctionComponent<
                         >
                             Description
                             {(node.delta.titleChanged || node.delta.bodyChanged) && (
-                                <span className="text-success ml-2" data-tooltip="Changes in this tab">
+                                <span className="text-warning ml-2" data-tooltip="Changes in this tab">
                                     &#11044;
                                 </span>
                             )}
@@ -212,14 +213,14 @@ const ExpandedSection: React.FunctionComponent<
                             className={classNames('nav-link', selectedTab === 'commits' && 'active')}
                         >
                             Commits
+                            {(node.delta.authorEmailChanged ||
+                                node.delta.authorNameChanged ||
+                                node.delta.commitMessageChanged) && (
+                                <span className="text-warning ml-2" data-tooltip="Changes in this tab">
+                                    &#11044;
+                                </span>
+                            )}
                         </a>
-                        {(node.delta.authorEmailChanged ||
-                            node.delta.authorNameChanged ||
-                            node.delta.commitMessageChanged) && (
-                            <span className="text-success ml-2" data-tooltip="Changes in this tab">
-                                &#11044;
-                            </span>
-                        )}
                     </li>
                 </ul>
             </div>
@@ -242,6 +243,22 @@ const ExpandedSection: React.FunctionComponent<
             )}
             {selectedTab === 'description' && (
                 <>
+                    {node.targets.__typename === 'VisibleApplyPreviewTargetsUpdate' &&
+                        node.delta.bodyChanged &&
+                        node.targets.changeset.currentSpec?.description.__typename ===
+                            'GitBranchChangesetDescription' && (
+                            <>
+                                <h3>
+                                    <del>{node.targets.changeset.currentSpec.description.title}</del>
+                                </h3>
+                                <del>
+                                    <Description
+                                        history={history}
+                                        description={node.targets.changeset.currentSpec.description.body}
+                                    />
+                                </del>
+                            </>
+                        )}
                     <h3>
                         {node.targets.changesetSpec.description.title}{' '}
                         <small>
@@ -260,14 +277,11 @@ const ExpandedSection: React.FunctionComponent<
                             />
                         </small>
                     </h3>
-                    <p>{node.targets.changesetSpec.description.body}</p>
+                    <Description history={history} description={node.targets.changesetSpec.description.body} />
                 </>
             )}
             {selectedTab === 'commits' && (
-                <GitBranchChangesetDescriptionInfo
-                    description={node.targets.changesetSpec.description}
-                    isExpandedInitially={expandChangesetDescriptions}
-                />
+                <GitBranchChangesetDescriptionInfo node={node} isExpandedInitially={expandChangesetDescriptions} />
             )}
         </>
     )
@@ -336,7 +350,7 @@ const ChangesetSpecTitle: React.FunctionComponent<{ spec: VisibleChangesetApplyP
     return (
         <h3>
             <del className="text-muted">{spec.targets.changeset.title}</del>{' '}
-            <strong>{spec.targets.changesetSpec.description.title}</strong>
+            {spec.targets.changesetSpec.description.title}
         </h3>
     )
 }

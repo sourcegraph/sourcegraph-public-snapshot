@@ -12,7 +12,7 @@ import { ThemeProps } from '../../../../../shared/src/theme'
 import { CreateUpdateCampaignAlert } from './CreateUpdateCampaignAlert'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { HeroPage } from '../../../components/HeroPage'
-import { CampaignDescription } from '../detail/CampaignDescription'
+import { Description } from '../Description'
 import { CampaignSpecInfoByline } from './CampaignSpecInfoByline'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 import { AuthenticatedUser } from '../../../auth'
@@ -99,7 +99,7 @@ export const CampaignPreviewPage: React.FunctionComponent<CampaignPreviewPagePro
                 viewerCanAdminister={spec.viewerCanAdminister}
                 telemetryService={telemetryService}
             />
-            <CampaignDescription history={history} description={spec.description.description} />
+            <Description history={history} description={spec.description.description} />
             <PreviewList
                 campaignSpecID={specID}
                 history={history}

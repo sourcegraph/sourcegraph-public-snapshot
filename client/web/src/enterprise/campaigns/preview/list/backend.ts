@@ -156,6 +156,22 @@ const campaignSpecApplyPreviewConnectionFieldsFragment = gql`
                             __typename
                             ... on GitBranchChangesetDescription {
                                 baseRef
+                                title
+                                body
+                                commits {
+                                    author {
+                                        avatarURL
+                                        email
+                                        displayName
+                                        user {
+                                            username
+                                            displayName
+                                            url
+                                        }
+                                    }
+                                    body
+                                    subject
+                                }
                             }
                         }
                     }
