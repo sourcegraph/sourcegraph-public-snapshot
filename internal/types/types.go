@@ -407,7 +407,7 @@ type ExternalService struct {
 	NextSyncAt      time.Time
 	NamespaceUserID int32
 	Unrestricted    bool // Whether access to repositories belong to this external service is unrestricted.
-	CloudGlobal     bool // Whether the external service is our public service on Cloud
+	CloudDefault    bool // Whether this external service is our default public service on Cloud
 }
 
 // URN returns a unique resource identifier of this external service,
