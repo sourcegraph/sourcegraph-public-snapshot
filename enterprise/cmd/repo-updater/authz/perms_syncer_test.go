@@ -144,7 +144,7 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 		db.Mocks.Repos = db.MockRepos{}
 	}()
 
-	permsStore := edb.NewPermsStore(nil, timeutil.Now)
+	permsStore := edb.Perms(nil, timeutil.Now)
 	s := NewPermsSyncer(repos.NewStore(dbconn.Global, sql.TxOptions{}), permsStore, timeutil.Now, nil)
 
 	tests := []struct {
@@ -213,7 +213,7 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 		db.Mocks.Repos = db.MockRepos{}
 	}()
 
-	permsStore := edb.NewPermsStore(nil, timeutil.Now)
+	permsStore := edb.Perms(nil, timeutil.Now)
 	s := NewPermsSyncer(repos.NewStore(dbconn.Global, sql.TxOptions{}), permsStore, timeutil.Now, nil)
 
 	t.Run("invalid token", func(t *testing.T) {
@@ -265,7 +265,7 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 
 func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 	newPermsSyncer := func(store *repos.Store) *PermsSyncer {
-		return NewPermsSyncer(store, edb.NewPermsStore(nil, timeutil.Now), timeutil.Now, nil)
+		return NewPermsSyncer(store, edb.Perms(nil, timeutil.Now), timeutil.Now, nil)
 	}
 
 	t.Run("TouchRepoPermissions is called when no authz provider", func(t *testing.T) {
