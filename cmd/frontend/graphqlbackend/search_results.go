@@ -1656,16 +1656,6 @@ func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameter
 }
 
 func newAggregator(ctx context.Context, stream SearchStream) *aggregator {
-	if stream == nil {
-		sink := make(chan SearchEvent)
-		stream = sink
-		// TODO when do we close sink?
-		go func() {
-			for range sink {
-			}
-		}()
-	}
-
 	childStream := make(chan SearchEvent, cap(stream))
 	agg := &aggregator{
 		stream: childStream,
@@ -1684,7 +1674,9 @@ func newAggregator(ctx context.Context, stream SearchStream) *aggregator {
 			}
 			agg.results = append(agg.results, event.Results...)
 			agg.common.Update(&event.Stats)
-			stream <- event
+			if stream != nil {
+				stream <- event
+			}
 		}
 	}()
 
