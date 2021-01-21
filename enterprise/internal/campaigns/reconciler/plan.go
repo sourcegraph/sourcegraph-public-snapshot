@@ -111,27 +111,45 @@ func DeterminePlan(previousSpec, currentSpec *campaigns.ChangesetSpec, ch *campa
 	}
 
 	wantDetach := false
+	isStillAttached := false
+	wantDetachFromOwnerCampaign := false
 	for _, assoc := range ch.Campaigns {
 		if assoc.Detach {
 			wantDetach = true
-			break
+			if assoc.CampaignID == ch.OwnedByCampaignID {
+				wantDetachFromOwnerCampaign = true
+			}
+		} else {
+			isStillAttached = true
 		}
 	}
 	if wantDetach {
-		pl.AddOp(campaigns.ReconcilerOperationDetach)
+		pl.SetOp(campaigns.ReconcilerOperationDetach)
+	}
+
+	if ch.Closing {
+		pl.AddOp(campaigns.ReconcilerOperationClose)
+		// Close is a final operation, nothing else should overwrite it.
+		return pl, nil
+	} else if wantDetachFromOwnerCampaign {
+		// If the owner campaign detaches the changeset, we don't need to
+		// do any additional writing operations, we can just return
+		// operation "detach".
+		// If some other campaign detached, but the owner campaign didn't,
+		// detach, update is a valid combination, since we'll detach from one
+		// campaign but still update the changeset because the owning campaign
+		// changed the spec.
+		return pl, nil
 	}
 
 	// If it doesn't have a spec, it's an imported changeset and we can't do
 	// anything.
 	if currentSpec == nil {
-		if ch.Unpublished() {
-			pl.SetOp(campaigns.ReconcilerOperationImport)
+		// If still more than one remains attached, we still want to import the changeset.
+		if ch.Unpublished() && isStillAttached {
+			pl.AddOp(campaigns.ReconcilerOperationImport)
 		}
 		return pl, nil
-	}
-
-	if ch.Closing {
-		pl.AddOp(campaigns.ReconcilerOperationClose)
 	}
 
 	delta, err := compareChangesetSpecs(previousSpec, currentSpec)
