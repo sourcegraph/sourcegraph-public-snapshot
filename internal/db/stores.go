@@ -20,7 +20,7 @@ var (
 
 	SurveyResponses = &SurveyResponseStore{}
 
-	ExternalAccounts = &userExternalAccounts{}
+	ExternalAccounts = &UserExternalAccountsStore{}
 
 	OrgInvitations = &OrgInvitationStore{}
 
