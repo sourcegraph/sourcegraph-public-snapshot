@@ -5,35 +5,27 @@
     &__separator {
         // stylelint-disable-next-line declaration-property-unit-whitelist
         width: 1px;
-        // stylelint-disable-next-line declaration-property-unit-whitelist
-        height: 20px;
-        // stylelint-disable-next-line declaration-property-unit-whitelist
-        margin: 0 8px 0 6px;
+        height: 1.25rem;
+        margin: 0 0.5rem 0 0.375rem;
         background-color: var(--border-color);
     }
 
     &__copy-query-button {
         color: var(--search-filter-keyword-color) !important;
-        // stylelint-disable-next-line declaration-property-unit-whitelist
-        padding: 2px;
+        padding: 0.125rem;
 
         .mdi-icon {
-            // stylelint-disable-next-line declaration-property-unit-whitelist
-            width: 16px;
-            // stylelint-disable-next-line declaration-property-unit-whitelist
-            height: 16px;
+            width: 1rem;
+            height: 1rem;
         }
     }
 
     &__regexp-button {
-        // stylelint-disable-next-line declaration-property-unit-whitelist
-        padding: 1px 0;
+        padding: 0.0625rem 0;
 
         .mdi-icon {
-            // stylelint-disable-next-line declaration-property-unit-whitelist
-            width: 20px;
-            // stylelint-disable-next-line declaration-property-unit-whitelist
-            height: 18px;
+            width: 1.25rem;
+            height: 1.125rem;
         }
     }
 
@@ -44,8 +36,7 @@
         border: 2px solid transparent;
 
         &:not(:last-child) {
-            // stylelint-disable-next-line declaration-property-unit-whitelist
-            margin-right: 2px;
+            margin-right: 0.125rem;
         }
 
         &:hover {
