@@ -10,13 +10,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 )
 
-// TODO
+// VCSSyncer describes whether and how to sync content from a VCS remote to
+// local disk.
 type VCSSyncer interface {
-	// IsCloneable checks to see if the VCS remote URL is cloneable.
+	// IsCloneable checks to see if the VCS remote URL is cloneable. Any non-nil
+	// error indicates there is a problem.
 	IsCloneable(ctx context.Context, url string) error
-	// TODO
+	// CloneCommand returns the command to be executed for cloning from remote.
 	CloneCommand(ctx context.Context, url, tmpPath string) (cmd *exec.Cmd, err error)
-	// TODO
+	// FetchCommand returns the command to be executed for fetching updates from remote.
 	FetchCommand(ctx context.Context, url string) (cmd *exec.Cmd, configRemoteOpts bool, err error)
 }
 
@@ -25,16 +27,16 @@ type GitRepoSyncer struct{}
 
 // IsCloneable checks to see if the Git remote URL is cloneable.
 func (s *GitRepoSyncer) IsCloneable(ctx context.Context, url string) error {
-	args := []string{"ls-remote", url, "HEAD"}
-	ctx, cancel := context.WithTimeout(ctx, shortGitCommandTimeout(args))
-	defer cancel()
-
 	if strings.ToLower(string(protocol.NormalizeRepo(api.RepoName(url)))) == "github.com/sourcegraphtest/alwayscloningtest" {
 		return nil
 	}
 	if testGitRepoExists != nil {
 		return testGitRepoExists(ctx, url)
 	}
+
+	args := []string{"ls-remote", url, "HEAD"}
+	ctx, cancel := context.WithTimeout(ctx, shortGitCommandTimeout(args))
+	defer cancel()
 
 	cmd := exec.CommandContext(ctx, "git", args...)
 	out, err := runWithRemoteOpts(ctx, cmd, nil)
@@ -50,7 +52,7 @@ func (s *GitRepoSyncer) IsCloneable(ctx context.Context, url string) error {
 	return nil
 }
 
-// TODO
+// CloneCommand returns the command to be executed for cloning a Git repository.
 func (s *GitRepoSyncer) CloneCommand(ctx context.Context, url, tmpPath string) (cmd *exec.Cmd, err error) {
 	if useRefspecOverrides() {
 		return refspecOverridesCloneCmd(ctx, url, tmpPath)
@@ -58,7 +60,7 @@ func (s *GitRepoSyncer) CloneCommand(ctx context.Context, url, tmpPath string) (
 	return exec.CommandContext(ctx, "git", "clone", "--mirror", "--progress", url, tmpPath), nil
 }
 
-// TODO
+// FetchCommand returns the command to be executed for fetching updates of a Git repository.
 func (s *GitRepoSyncer) FetchCommand(ctx context.Context, url string) (cmd *exec.Cmd, configRemoteOpts bool, err error) {
 	configRemoteOpts = true
 	if customCmd := customFetchCmd(ctx, url); customCmd != nil {
@@ -89,15 +91,15 @@ type PerforceDepotSyncer struct{}
 
 // TODO
 func (s *PerforceDepotSyncer) IsCloneable(ctx context.Context, url string) error {
-	panic("implement me")
+	panic("implement me") // p4 ping
 }
 
 // TODO
 func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, url, tmpPath string) (cmd *exec.Cmd, err error) {
-	panic("implement me")
+	panic("implement me") // git p4 clone
 }
 
 // TODO
 func (s *PerforceDepotSyncer) FetchCommand(ctx context.Context, url string) (cmd *exec.Cmd, configRemoteOpts bool, err error) {
-	panic("implement me")
+	panic("implement me") // git p4 sync
 }
