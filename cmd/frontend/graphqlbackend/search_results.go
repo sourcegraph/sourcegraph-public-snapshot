@@ -48,7 +48,7 @@ import (
 )
 
 func (c *SearchResultsResolver) LimitHit() bool {
-	return c.IsLimitHit
+	return c.IsLimitHit || (c.limit > 0 && len(c.SearchResults) > c.limit)
 }
 
 func (c *SearchResultsResolver) Repositories() []*RepositoryResolver {
@@ -136,8 +136,14 @@ func dedupSort(repos *types.RepoNames) {
 
 // SearchResultsResolver is a resolver for the GraphQL type `SearchResults`
 type SearchResultsResolver struct {
+	// SearchResults is the full list of results found. The method Results()
+	// will return the list respecting limits.
 	SearchResults []SearchResultResolver
 	streaming.Stats
+
+	// limit is the maximum number of SearchResults to send back to the user.
+	limit int
+
 	alert *searchAlert
 	start time.Time // when the results started being computed
 
@@ -150,7 +156,13 @@ type SearchResultsResolver struct {
 	UserSettings *schema.Settings
 }
 
+// Results are the results found by the search. It respects the limits set. To
+// access all results directly access the SearchResults field.
 func (sr *SearchResultsResolver) Results() []SearchResultResolver {
+	if sr.limit > 0 && sr.limit < len(sr.SearchResults) {
+		return sr.SearchResults[:sr.limit]
+	}
+
 	return sr.SearchResults
 }
 
@@ -2056,6 +2068,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		start:         start,
 		Stats:         common,
 		SearchResults: results,
+		limit:         int(r.maxResults()),
 		alert:         alert,
 	}
 
