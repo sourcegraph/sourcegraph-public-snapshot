@@ -335,8 +335,8 @@ const ChangesetSpecTitle: React.FunctionComponent<{ spec: VisibleChangesetApplyP
     }
     return (
         <h3>
-            <del className="text-danger">{spec.targets.changeset.title}</del>{' '}
-            <span className="text-success">{spec.targets.changesetSpec.description.title}</span>
+            <del className="text-muted">{spec.targets.changeset.title}</del>{' '}
+            <strong>{spec.targets.changesetSpec.description.title}</strong>
         </h3>
     )
 }
