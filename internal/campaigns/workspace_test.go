@@ -12,8 +12,12 @@ func TestBestWorkspaceCreator(t *testing.T) {
 	ctx := context.Background()
 	isOverridden := !(runtime.GOOS == "darwin" && runtime.GOARCH == "amd64")
 
+	type imageBehaviour struct {
+		image     string
+		behaviour expect.Behaviour
+	}
 	for name, tc := range map[string]struct {
-		behaviours map[string]expect.Behaviour
+		behaviours []imageBehaviour
 		want       workspaceCreatorType
 	}{
 		"nil steps": {
@@ -21,44 +25,44 @@ func TestBestWorkspaceCreator(t *testing.T) {
 			want:       workspaceCreatorVolume,
 		},
 		"no steps": {
-			behaviours: map[string]expect.Behaviour{},
+			behaviours: []imageBehaviour{},
 			want:       workspaceCreatorVolume,
 		},
 		"root": {
-			behaviours: map[string]expect.Behaviour{
-				"foo": {Stdout: []byte("0\n")},
-				"bar": {Stdout: []byte("0\n")},
+			behaviours: []imageBehaviour{
+				{image: "foo", behaviour: expect.Behaviour{Stdout: []byte("0\n")}},
+				{image: "bar", behaviour: expect.Behaviour{Stdout: []byte("0\n")}},
 			},
 			want: workspaceCreatorVolume,
 		},
 		"same user": {
-			behaviours: map[string]expect.Behaviour{
-				"foo": {Stdout: []byte("1000\n")},
+			behaviours: []imageBehaviour{
+				{image: "foo", behaviour: expect.Behaviour{Stdout: []byte("1000\n")}},
 			},
 			want: workspaceCreatorBind,
 		},
 		"different user": {
-			behaviours: map[string]expect.Behaviour{
-				"foo": {Stdout: []byte("0\n")},
-				"bar": {Stdout: []byte("1000\n")},
+			behaviours: []imageBehaviour{
+				{image: "foo", behaviour: expect.Behaviour{Stdout: []byte("0\n")}},
+				{image: "bar", behaviour: expect.Behaviour{Stdout: []byte("1000\n")}},
 			},
 			want: workspaceCreatorBind,
 		},
 		"invalid id output: string": {
-			behaviours: map[string]expect.Behaviour{
-				"foo": {Stdout: []byte("xxx\n")},
+			behaviours: []imageBehaviour{
+				{image: "foo", behaviour: expect.Behaviour{Stdout: []byte("xxx\n")}},
 			},
 			want: workspaceCreatorBind,
 		},
 		"invalid id output: empty": {
-			behaviours: map[string]expect.Behaviour{
-				"foo": {Stdout: []byte("")},
+			behaviours: []imageBehaviour{
+				{image: "foo", behaviour: expect.Behaviour{Stdout: []byte("")}},
 			},
 			want: workspaceCreatorBind,
 		},
 		"error invoking id": {
-			behaviours: map[string]expect.Behaviour{
-				"foo": {ExitCode: 1},
+			behaviours: []imageBehaviour{
+				{image: "foo", behaviour: expect.Behaviour{ExitCode: 1}},
 			},
 			want: workspaceCreatorBind,
 		},
@@ -71,13 +75,13 @@ func TestBestWorkspaceCreator(t *testing.T) {
 			if tc.behaviours != nil {
 				commands = []*expect.Expectation{}
 				steps = []Step{}
-				for image, behaviour := range tc.behaviours {
+				for _, imageBehaviour := range tc.behaviours {
 					commands = append(commands, expect.NewGlob(
-						behaviour,
+						imageBehaviour.behaviour,
 						"docker", "run", "--rm", "--entrypoint", "/bin/sh",
-						image, "-c", "id -u",
+						imageBehaviour.image, "-c", "id -u",
 					))
-					steps = append(steps, Step{image: image})
+					steps = append(steps, Step{image: imageBehaviour.image})
 				}
 			}
 
