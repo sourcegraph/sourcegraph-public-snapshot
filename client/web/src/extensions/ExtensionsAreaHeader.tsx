@@ -19,9 +19,7 @@ export interface ExtensionsAreaHeaderActionButton extends ActionButtonDescriptor
 /**
  * Header for the extensions area.
  */
-export const ExtensionsAreaHeader: React.FunctionComponent<ExtensionsAreaHeaderProps> = (
-    props: ExtensionsAreaHeaderProps
-) => (
+export const ExtensionsAreaHeader: React.FunctionComponent<ExtensionsAreaHeaderProps> = props => (
     <div className="container">
         {props.isPrimaryHeader && (
             <PageHeader
@@ -30,7 +28,7 @@ export const ExtensionsAreaHeader: React.FunctionComponent<ExtensionsAreaHeaderP
                 actions={props.actionButtons.map(
                     ({ condition = () => true, to, icon: Icon, label, tooltip }) =>
                         condition(props) && (
-                            <Link className="btn ml-2 btn-secondary" to={to(props)} data-tooltip={tooltip}>
+                            <Link className="btn ml-2 btn-secondary" to={to(props)} data-tooltip={tooltip} key={label}>
                                 {Icon && <Icon className="icon-inline" />} {label}
                             </Link>
                         )

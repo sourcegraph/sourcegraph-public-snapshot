@@ -21,8 +21,8 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { CampaignInfoByline } from '../detail/CampaignInfoByline'
 import { ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { CampaignsIconFlushLeft } from '../icons'
-import { Link } from '../../../../../shared/src/components/Link'
 import { PageHeader } from '../../../components/PageHeader'
+import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
 
 export interface CampaignClosePageProps
     extends ThemeProps,
@@ -104,13 +104,13 @@ export const CampaignClosePage: React.FunctionComponent<CampaignClosePageProps> 
             <PageTitle title="Preview close" />
             <PageHeader
                 title={
-                    <>
-                        <Link to={campaign.namespace.url + '/campaigns'}>
-                            <CampaignsIconFlushLeft className="icon-inline" />
-                            {campaign.namespace.namespaceName}
-                        </Link>{' '}
-                        / {campaign.name}
-                    </>
+                    <PageBreadcrumbs
+                        icon={CampaignsIconFlushLeft}
+                        path={[
+                            { to: `${campaign.namespace.url}/campaigns`, text: campaign.namespace.namespaceName },
+                            { text: campaign.name },
+                        ]}
+                    />
                 }
                 byline={
                     <CampaignInfoByline
@@ -118,7 +118,6 @@ export const CampaignClosePage: React.FunctionComponent<CampaignClosePageProps> 
                         initialApplier={campaign.initialApplier}
                         lastAppliedAt={campaign.lastAppliedAt}
                         lastApplier={campaign.lastApplier}
-                        className="mb-3"
                     />
                 }
             />

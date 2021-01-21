@@ -39,7 +39,11 @@ add('Complex header', () => (
                 path={[{ to: '/level-1', text: 'Level 1' }, { text: 'Level 2' }]}
             />
         }
-        byline="Created 3 months ago"
+        byline={
+            <>
+                Created by <Link to="/page">user</Link> 3 months ago
+            </>
+        }
         actions={
             <Link to="/page" className="btn btn-secondary mr-1">
                 <SearchIcon className="icon-inline" /> Button with icon

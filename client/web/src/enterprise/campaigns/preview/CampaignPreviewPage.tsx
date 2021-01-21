@@ -21,7 +21,7 @@ import { queryChangesetSpecFileDiffs, queryChangesetApplyPreview } from './list/
 import { CampaignPreviewStatsBar } from './CampaignPreviewStatsBar'
 import { PageHeader } from '../../../components/PageHeader'
 import { CampaignsIconFlushLeft } from '../icons'
-import { Link } from '../../../../../shared/src/components/Link'
+import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
 
 export interface CampaignPreviewPageProps extends ThemeProps, TelemetryProps {
     campaignSpecID: string
@@ -82,15 +82,15 @@ export const CampaignPreviewPage: React.FunctionComponent<CampaignPreviewPagePro
             <PageTitle title="Apply campaign spec" />
             <PageHeader
                 title={
-                    <>
-                        <Link to={spec.namespace.url + '/campaigns'}>
-                            <CampaignsIconFlushLeft className="icon-inline" />
-                            {spec.namespace.namespaceName}
-                        </Link>{' '}
-                        / {spec.description.name}
-                    </>
+                    <PageBreadcrumbs
+                        icon={CampaignsIconFlushLeft}
+                        path={[
+                            { to: `${spec.namespace.url}/campaigns`, text: spec.namespace.namespaceName },
+                            { text: spec.description.name },
+                        ]}
+                    />
                 }
-                byline={<CampaignSpecInfoByline createdAt={spec.createdAt} creator={spec.creator} className="mb-3" />}
+                byline={<CampaignSpecInfoByline createdAt={spec.createdAt} creator={spec.creator} />}
                 className="test-campaign-apply-page"
             />
             <MissingCredentialsAlert

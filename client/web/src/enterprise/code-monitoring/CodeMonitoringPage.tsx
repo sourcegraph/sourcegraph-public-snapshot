@@ -18,6 +18,7 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { Settings } from '../../schema/settings.schema'
 import { CodeMonitoringLogo } from './CodeMonitoringLogo'
+import { StatusAnnotation } from '../../components/StatusAnnotation'
 
 export interface CodeMonitoringPageProps
     extends BreadcrumbsProps,
@@ -76,8 +77,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
         <div className="code-monitoring-page container mt-5">
             <PageTitle title="Code Monitoring" />
             <PageHeader
-                // TODO: badge-warning or badge-info? Confirm with design
-                annotation={<span className="badge badge-warning text-uppercase">Prototype</span>}
+                annotation={<StatusAnnotation status="prototype" />}
                 icon={CodeMonitoringLogo}
                 title="Code monitoring"
                 actions={

@@ -26,9 +26,9 @@ import { CampaignDetailsActionSection } from './CampaignDetailsActionSection'
 import { CampaignInfoByline } from './CampaignInfoByline'
 import { UnpublishedNotice } from './UnpublishedNotice'
 import { SupersedingCampaignSpecAlert } from './SupersedingCampaignSpecAlert'
-import { Link } from '../../../../../shared/src/components/Link'
 import { CampaignsIconFlushLeft } from '../icons'
 import { PageHeader } from '../../../components/PageHeader'
+import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
 
 export interface CampaignDetailsPageProps
     extends ThemeProps,
@@ -109,13 +109,13 @@ export const CampaignDetailsPage: React.FunctionComponent<CampaignDetailsPagePro
             <PageTitle title={campaign.name} />
             <PageHeader
                 title={
-                    <>
-                        <Link to={campaign.namespace.url + '/campaigns'}>
-                            <CampaignsIconFlushLeft className="icon-inline" />
-                            {campaign.namespace.namespaceName}
-                        </Link>{' '}
-                        / {campaign.name}
-                    </>
+                    <PageBreadcrumbs
+                        icon={CampaignsIconFlushLeft}
+                        path={[
+                            { to: `${campaign.namespace.url}/campaigns`, text: campaign.namespace.namespaceName },
+                            { text: campaign.name },
+                        ]}
+                    />
                 }
                 byline={
                     <CampaignInfoByline
@@ -123,7 +123,6 @@ export const CampaignDetailsPage: React.FunctionComponent<CampaignDetailsPagePro
                         initialApplier={campaign.initialApplier}
                         lastAppliedAt={campaign.lastAppliedAt}
                         lastApplier={campaign.lastApplier}
-                        className="mb-3"
                     />
                 }
                 actions={

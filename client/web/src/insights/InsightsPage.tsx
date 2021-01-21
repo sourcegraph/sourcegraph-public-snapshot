@@ -11,6 +11,7 @@ import GearIcon from 'mdi-react/GearIcon'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { PageHeader } from '../components/PageHeader'
 import { BreadcrumbsProps, BreadcrumbSetters } from '../components/Breadcrumbs'
+import { StatusAnnotation } from '../components/StatusAnnotation'
 
 interface InsightsPageProps
     extends ExtensionsControllerProps,
@@ -42,14 +43,7 @@ export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props =>
         <div className="w-100">
             <div className="container mt-3 web-content">
                 <PageHeader
-                    annotation={
-                        <>
-                            <span className="badge badge-warning text-uppercase mr-2">Prototype</span>{' '}
-                            <a href="mailto:support@sourcegraph.com" target="_blank" rel="noopener noreferrer">
-                                Share feedback
-                            </a>
-                        </>
-                    }
+                    annotation={<StatusAnnotation status="prototype" />}
                     icon={InsightsIcon}
                     title="Insights"
                     actions={

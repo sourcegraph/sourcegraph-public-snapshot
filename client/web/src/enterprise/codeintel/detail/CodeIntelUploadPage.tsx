@@ -2,7 +2,7 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
-import React, { FunctionComponent, ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
+import React, { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { SchedulerLike, timer } from 'rxjs'
 import { catchError, concatMap, delay, repeatWhen, takeWhile } from 'rxjs/operators'
@@ -102,8 +102,25 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
                 <LoadingSpinner className="icon-inline" />
             ) : (
                 <>
-                    <CodeIntelUploadPageHeader
-                        upload={uploadOrError}
+                    <PageHeader
+                        title={
+                            <>
+                                <span className="text-muted">Upload for commit</span>
+                                <span className="ml-2">
+                                    {uploadOrError.projectRoot
+                                        ? uploadOrError.projectRoot.commit.abbreviatedOID
+                                        : uploadOrError.inputCommit.slice(0, 7)}
+                                </span>
+                                <span className="ml-2 text-muted">indexed by</span>
+                                <span className="ml-2">{uploadOrError.inputIndexer}</span>
+                                <span className="ml-2 text-muted">rooted at</span>
+                                <span className="ml-2">
+                                    {(uploadOrError.projectRoot
+                                        ? uploadOrError.projectRoot.path
+                                        : uploadOrError.inputRoot) || '/'}
+                                </span>
+                            </>
+                        }
                         actions={
                             <CodeIntelDeleteUpload deleteUpload={deleteUpload} deletionOrError={deletionOrError} />
                         }
@@ -140,30 +157,6 @@ const terminalStates = new Set([LSIFUploadState.COMPLETED, LSIFUploadState.ERROR
 function shouldReload(upload: LsifUploadFields | ErrorLike | null | undefined): boolean {
     return !isErrorLike(upload) && !(upload && terminalStates.has(upload.state))
 }
-
-interface CodeIntelUploadPageHeaderProps {
-    upload: LsifUploadFields
-    actions?: ReactNode
-    className?: string
-}
-
-const CodeIntelUploadPageHeader: FunctionComponent<CodeIntelUploadPageHeaderProps> = ({ upload, actions }) => (
-    <PageHeader
-        title={
-            <>
-                <span className="text-muted">Upload for commit</span>
-                <span className="ml-2">
-                    {upload.projectRoot ? upload.projectRoot.commit.abbreviatedOID : upload.inputCommit.slice(0, 7)}
-                </span>
-                <span className="ml-2 text-muted">indexed by</span>
-                <span className="ml-2">{upload.inputIndexer}</span>
-                <span className="ml-2 text-muted">rooted at</span>
-                <span className="ml-2">{(upload.projectRoot ? upload.projectRoot.path : upload.inputRoot) || '/'}</span>
-            </>
-        }
-        actions={actions}
-    />
-)
 
 interface CodeIntelDeleteUploadProps {
     deleteUpload: () => Promise<void>
