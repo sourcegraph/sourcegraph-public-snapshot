@@ -353,6 +353,9 @@ func (c *Changeset) AuthorName() (string, error) {
 	case *github.PullRequest:
 		return m.Author.Login, nil
 	case *bitbucketserver.PullRequest:
+		if m.Author.User == nil {
+			return "", nil
+		}
 		return m.Author.User.Name, nil
 	case *gitlab.MergeRequest:
 		return m.Author.Username, nil
@@ -373,6 +376,9 @@ func (c *Changeset) AuthorEmail() (string, error) {
 		// that scope as well, we should return it here.
 		return "", nil
 	case *bitbucketserver.PullRequest:
+		if m.Author.User == nil {
+			return "", nil
+		}
 		return m.Author.User.EmailAddress, nil
 	case *gitlab.MergeRequest:
 		return m.Author.Email, nil
