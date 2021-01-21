@@ -551,7 +551,7 @@ func searchCommitsInRepos(ctx context.Context, args *search.TextParametersForCom
 					status = status & search.RepoStatusTimedout
 				}
 				// Only write if we have something to report back
-				if len(results) > 0 || status != 0 {
+				if len(event.Results) > 0 || status != 0 {
 					stats.Status = search.RepoStatusSingleton(repoRev.Repo.ID, status)
 					params.ResultChannel <- SearchEvent{
 						Results: commitSearchResultsToSearchResults(event.Results),
