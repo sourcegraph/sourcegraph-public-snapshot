@@ -24,7 +24,7 @@ export const PageHeader: React.FunctionComponent<Props> = ({
 }) => (
     <div
         className={classNames(
-            'page-header d-flex flex-column flex-md-row flex-wrap justify-content-between align-items-lg-center mb-3',
+            'page-header d-flex flex-column flex-md-row flex-wrap justify-content-between align-items-lg-center',
             className
         )}
     >

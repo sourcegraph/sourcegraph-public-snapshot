@@ -120,6 +120,7 @@ export const CampaignClosePage: React.FunctionComponent<CampaignClosePageProps> 
                         lastApplier={campaign.lastApplier}
                     />
                 }
+                className="test-campaign-close-page"
             />
             {totalCount !== undefined && (
                 <CampaignCloseAlert
