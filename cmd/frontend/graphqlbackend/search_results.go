@@ -1708,18 +1708,17 @@ func (a *aggregator) doRepoSearch(ctx context.Context, args *search.TextParamete
 	tr, ctx := trace.New(ctx, "doRepoSearch", "")
 	defer tr.Finish()
 	results, stats, err := searchRepositories(ctx, args, limit)
-	a.stream <- SearchEvent{
+	a.send(SearchEvent{
 		Results: results,
 		Stats:   statsDeref(stats),
 		Error:   errors.Wrap(err, "repository search failed"),
-	}
+	})
 }
 
 func (a *aggregator) doSymbolSearch(ctx context.Context, args *search.TextParameters, limit int) {
 	tr, ctx := trace.New(ctx, "doSymbolSearch", "")
-	defer func() {
-		tr.Finish()
-	}()
+	defer tr.Finish()
+
 	symbolFileMatches, stats, err := searchSymbols(ctx, args, limit)
 
 	results := make([]SearchResultResolver, len(symbolFileMatches))
@@ -1727,19 +1726,22 @@ func (a *aggregator) doSymbolSearch(ctx context.Context, args *search.TextParame
 		results[i] = symbolFileMatches[i]
 	}
 
-	a.stream <- SearchEvent{
+	a.send(SearchEvent{
 		Results: results,
 		Stats:   statsDeref(stats),
 		Error:   errors.Wrap(err, "symbol search failed"),
-	}
+	})
 }
 
 func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextParameters) {
 	tr, ctx := trace.New(ctx, "doFilePathSearch", "")
-	defer func() {
-		tr.Finish()
-	}()
-	fileResults, stats, err := searchFilesInRepos(ctx, args, a.stream)
+
+	defer tr.Finish()
+
+	// searchFilesInRepos reports all return values to stream, so we don't
+	// need to send them.
+	fileResults, _, err := searchFilesInRepos(ctx, args, a.stream)
+
 	if args.PatternInfo.IsStructuralPat && args.PatternInfo.FileMatchLimit == defaultMaxSearchResults && len(fileResults) == 0 && err == nil {
 		// No results for structural search? Automatically search again and force Zoekt
 		// to resolve more potential file matches by setting a higher FileMatchLimit.
@@ -1758,13 +1760,12 @@ func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextPara
 func (a *aggregator) doDiffSearch(ctx context.Context, tp *search.TextParameters) {
 	err := checkDiffCommitSearchLimits(ctx, tp, "diff")
 	if err != nil {
-		a.stream <- SearchEvent{Error: err}
+		a.send(SearchEvent{Error: err})
 		return
 	}
+
 	tr, ctx := trace.New(ctx, "doDiffSearch", "")
-	defer func() {
-		tr.Finish()
-	}()
+	defer tr.Finish()
 
 	args, err := resolveCommitParameters(ctx, tp)
 	if err != nil {
@@ -1779,13 +1780,12 @@ func (a *aggregator) doDiffSearch(ctx context.Context, tp *search.TextParameters
 func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParameters) {
 	err := checkDiffCommitSearchLimits(ctx, tp, "commit")
 	if err != nil {
-		a.stream <- SearchEvent{Error: err}
+		a.send(SearchEvent{Error: err})
 		return
 	}
+
 	tr, ctx := trace.New(ctx, "doCommitSearch", "")
-	defer func() {
-		tr.Finish()
-	}()
+	defer tr.Finish()
 
 	args, err := resolveCommitParameters(ctx, tp)
 	if err != nil {
