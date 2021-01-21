@@ -102,12 +102,11 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
                 <LoadingSpinner className="icon-inline" />
             ) : (
                 <>
-                    <CodeIntelUploadPageTitle
+                    <CodeIntelUploadPageHeader
                         upload={uploadOrError}
                         actions={
                             <CodeIntelDeleteUpload deleteUpload={deleteUpload} deletionOrError={deletionOrError} />
                         }
-                        className="mb-2"
                     />
                     <CodeIntelStateBanner
                         state={uploadOrError.state}
@@ -142,13 +141,13 @@ function shouldReload(upload: LsifUploadFields | ErrorLike | null | undefined): 
     return !isErrorLike(upload) && !(upload && terminalStates.has(upload.state))
 }
 
-interface CodeIntelUploadPageTitleProps {
+interface CodeIntelUploadPageHeaderProps {
     upload: LsifUploadFields
     actions?: ReactNode
     className?: string
 }
 
-const CodeIntelUploadPageTitle: FunctionComponent<CodeIntelUploadPageTitleProps> = ({ upload, actions, className }) => (
+const CodeIntelUploadPageHeader: FunctionComponent<CodeIntelUploadPageHeaderProps> = ({ upload, actions }) => (
     <PageHeader
         title={
             <>
@@ -163,7 +162,6 @@ const CodeIntelUploadPageTitle: FunctionComponent<CodeIntelUploadPageTitleProps>
             </>
         }
         actions={actions}
-        className={className}
     />
 )
 

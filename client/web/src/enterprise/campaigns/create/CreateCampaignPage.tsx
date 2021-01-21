@@ -54,7 +54,7 @@ export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps
         <>
             <PageTitle title="Create campaign" />
             <PageHeader icon={CampaignsIconFlushLeft} title="Create campaign" />
-            <div className="pt-3">
+            <div>
                 <h2>1. Write a campaign spec YAML file</h2>
                 <p>
                     The campaign spec (

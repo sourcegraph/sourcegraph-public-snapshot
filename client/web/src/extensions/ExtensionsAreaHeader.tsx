@@ -24,22 +24,18 @@ export const ExtensionsAreaHeader: React.FunctionComponent<ExtensionsAreaHeaderP
 ) => (
     <div className="container">
         {props.isPrimaryHeader && (
-            <div className="navbar navbar-expand px-0 pt-4 pb-2">
-                <PageHeader title="Extensions" icon={PuzzleOutlineIcon} />
-                <div className="spacer" />
-                <ul className="navbar-nav nav">
-                    {props.actionButtons.map(
-                        ({ condition = () => true, to, icon: Icon, label, tooltip }) =>
-                            condition(props) && (
-                                <li className="nav-item" key={label}>
-                                    <Link className="btn ml-2 btn-secondary" to={to(props)} data-tooltip={tooltip}>
-                                        {Icon && <Icon className="icon-inline" />} {label}
-                                    </Link>
-                                </li>
-                            )
-                    )}
-                </ul>
-            </div>
+            <PageHeader
+                title="Extensions"
+                icon={PuzzleOutlineIcon}
+                actions={props.actionButtons.map(
+                    ({ condition = () => true, to, icon: Icon, label, tooltip }) =>
+                        condition(props) && (
+                            <Link className="btn ml-2 btn-secondary" to={to(props)} data-tooltip={tooltip}>
+                                {Icon && <Icon className="icon-inline" />} {label}
+                            </Link>
+                        )
+                )}
+            />
         )}
     </div>
 )

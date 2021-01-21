@@ -21,12 +21,14 @@ import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetrySer
 import { CampaignFields, Scalars } from '../../../graphql-operations'
 import { CampaignDescription } from './CampaignDescription'
 import { CampaignStatsCard } from './CampaignStatsCard'
-import { CampaignHeader } from './CampaignHeader'
 import { CampaignTabs } from './CampaignTabs'
 import { CampaignDetailsActionSection } from './CampaignDetailsActionSection'
 import { CampaignInfoByline } from './CampaignInfoByline'
 import { UnpublishedNotice } from './UnpublishedNotice'
 import { SupersedingCampaignSpecAlert } from './SupersedingCampaignSpecAlert'
+import { Link } from '../../../../../shared/src/components/Link'
+import { CampaignsIconFlushLeft } from '../icons'
+import { PageHeader } from '../../../components/PageHeader'
 
 export interface CampaignDetailsPageProps
     extends ThemeProps,
@@ -105,10 +107,26 @@ export const CampaignDetailsPage: React.FunctionComponent<CampaignDetailsPagePro
     return (
         <>
             <PageTitle title={campaign.name} />
-            <CampaignHeader
-                name={campaign.name}
-                namespace={campaign.namespace}
-                actionSection={
+            <PageHeader
+                title={
+                    <>
+                        <Link to={campaign.namespace.url + '/campaigns'}>
+                            <CampaignsIconFlushLeft className="icon-inline" />
+                            {campaign.namespace.namespaceName}
+                        </Link>{' '}
+                        / {campaign.name}
+                    </>
+                }
+                subtitle={
+                    <CampaignInfoByline
+                        createdAt={campaign.createdAt}
+                        initialApplier={campaign.initialApplier}
+                        lastAppliedAt={campaign.lastAppliedAt}
+                        lastApplier={campaign.lastApplier}
+                        className="mb-3"
+                    />
+                }
+                actions={
                     <CampaignDetailsActionSection
                         campaignID={campaign.id}
                         campaignClosed={!!campaign.closedAt}
@@ -118,13 +136,6 @@ export const CampaignDetailsPage: React.FunctionComponent<CampaignDetailsPagePro
                     />
                 }
                 className="test-campaign-details-page"
-            />
-            <CampaignInfoByline
-                createdAt={campaign.createdAt}
-                initialApplier={campaign.initialApplier}
-                lastAppliedAt={campaign.lastAppliedAt}
-                lastApplier={campaign.lastApplier}
-                className="mb-3"
             />
             <SupersedingCampaignSpecAlert spec={campaign.currentSpec.supersedingCampaignSpec} />
             <UnpublishedNotice

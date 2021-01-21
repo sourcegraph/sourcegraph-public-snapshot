@@ -119,12 +119,10 @@ export const CampaignListPage: React.FunctionComponent<CampaignListPageProps> = 
             <PageHeader
                 icon={CampaignsIconFlushLeft}
                 title="Campaigns"
-                className="justify-content-end test-campaign-list-page"
+                className="test-campaign-list-page"
                 actions={<NewCampaignButton location={location} />}
+                subtitle="Run custom code over hundreds of repositories and manage the resulting changesets"
             />
-            <p className="text-muted">
-                Run custom code over hundreds of repositories and manage the resulting changesets
-            </p>
             <CampaignListIntro licensed={licensed} />
             <CampaignListTabHeader selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
             {selectedTab === 'gettingStarted' && <CampaignsListEmpty />}

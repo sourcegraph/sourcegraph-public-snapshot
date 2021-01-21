@@ -76,15 +76,10 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
         <div className="code-monitoring-page container mt-5">
             <PageTitle title="Code Monitoring" />
             <PageHeader
-                title={
-                    <>
-                        Code monitoring{' '}
-                        <sup>
-                            <span className="badge badge-info text-uppercase">Prototype</span>
-                        </sup>
-                    </>
-                }
+                // TODO: badge-warning or badge-info? Confirm with design
+                annotation={<span className="badge badge-warning text-uppercase">Prototype</span>}
                 icon={CodeMonitoringLogo}
+                title="Code monitoring"
                 actions={
                     userHasCodeMonitors &&
                     userHasCodeMonitors !== 'loading' &&

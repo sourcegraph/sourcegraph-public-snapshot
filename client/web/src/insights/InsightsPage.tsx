@@ -42,15 +42,16 @@ export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props =>
         <div className="w-100">
             <div className="container mt-3 web-content">
                 <PageHeader
-                    icon={InsightsIcon}
-                    title={
+                    annotation={
                         <>
-                            Insights{' '}
-                            <sup>
-                                <span className="badge badge-info text-uppercase">Prototype</span>
-                            </sup>
+                            <span className="badge badge-warning text-uppercase mr-2">Prototype</span>{' '}
+                            <a href="mailto:support@sourcegraph.com" target="_blank" rel="noopener noreferrer">
+                                Share feedback
+                            </a>
                         </>
                     }
+                    icon={InsightsIcon}
+                    title="Insights"
                     actions={
                         <>
                             <Link to="/user/settings" className="btn btn-secondary mr-1">

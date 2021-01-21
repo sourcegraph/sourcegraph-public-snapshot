@@ -6,7 +6,6 @@ import { isEqual } from 'lodash'
 import { PageTitle } from '../../../components/PageTitle'
 import { fetchCampaignSpecById as _fetchCampaignSpecById } from './backend'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { CampaignHeader } from '../detail/CampaignHeader'
 import { PreviewList } from './list/PreviewList'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { CreateUpdateCampaignAlert } from './CreateUpdateCampaignAlert'
@@ -20,6 +19,9 @@ import { MissingCredentialsAlert } from './MissingCredentialsAlert'
 import { SupersedingCampaignSpecAlert } from '../detail/SupersedingCampaignSpecAlert'
 import { queryChangesetSpecFileDiffs, queryChangesetApplyPreview } from './list/backend'
 import { CampaignPreviewStatsBar } from './CampaignPreviewStatsBar'
+import { PageHeader } from '../../../components/PageHeader'
+import { CampaignsIconFlushLeft } from '../icons'
+import { Link } from '../../../../../shared/src/components/Link'
 
 export interface CampaignPreviewPageProps extends ThemeProps, TelemetryProps {
     campaignSpecID: string
@@ -78,12 +80,20 @@ export const CampaignPreviewPage: React.FunctionComponent<CampaignPreviewPagePro
     return (
         <>
             <PageTitle title="Apply campaign spec" />
-            <CampaignHeader
-                name={spec.description.name}
-                namespace={spec.namespace}
+            <PageHeader
+                title={
+                    <>
+                        {/* TODO: Fix TS type error */}
+                        <Link to={spec.namespace.url + '/campaigns'}>
+                            <CampaignsIconFlushLeft className="icon-inline" />
+                            {spec.namespace.namespaceName}
+                        </Link>{' '}
+                        / {spec.description.name}
+                    </>
+                }
+                subtitle={<CampaignSpecInfoByline createdAt={spec.createdAt} creator={spec.creator} className="mb-3" />}
                 className="test-campaign-apply-page"
             />
-            <CampaignSpecInfoByline createdAt={spec.createdAt} creator={spec.creator} className="mb-3" />
             <MissingCredentialsAlert
                 authenticatedUser={authenticatedUser}
                 viewerCampaignsCodeHosts={spec.viewerCampaignsCodeHosts}

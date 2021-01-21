@@ -37,7 +37,7 @@ export const CodeHostConnections: React.FunctionComponent<CodeHostConnectionsPro
     )
     return (
         <>
-            <PageHeader icon={CampaignsIconFlushLeft} title="Campaigns" className="justify-content-end" />
+            <PageHeader icon={CampaignsIconFlushLeft} title="Campaigns" />
             <h2>Code host tokens</h2>
             <p>Add authentication tokens to enable campaigns changeset creation on your code hosts.</p>
             <FilteredConnection<CampaignsCodeHostFields, Omit<CodeHostConnectionNodeProps, 'node'>>
