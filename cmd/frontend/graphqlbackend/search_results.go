@@ -1805,8 +1805,7 @@ func (a *aggregator) doDiffSearch(ctx context.Context, tp *search.TextParameters
 		return
 	}
 
-	// searchCommitDiffsInRepos supports streamings, so we use a.collect.
-	_, _, _ = searchCommitDiffsInRepos(ctx, args, a.stream)
+	searchCommitDiffsInRepos(ctx, args, a.stream)
 }
 
 func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParameters) {
@@ -1825,7 +1824,7 @@ func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParamete
 		return
 	}
 
-	_, _, _ = searchCommitLogInRepos(ctx, args, a.stream)
+	searchCommitLogInRepos(ctx, args, a.stream)
 }
 
 func statsDeref(s *streaming.Stats) streaming.Stats {
