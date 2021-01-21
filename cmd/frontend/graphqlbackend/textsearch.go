@@ -590,7 +590,7 @@ func doSearchFilesInRepos(ctx context.Context, args *search.TextParameters, stre
 			defer wg.Done()
 			for event := range indexed.Search(ctx) {
 				tr.LogFields(otlog.Int("matches.len", len(event.Results)), otlog.Error(event.Error))
-				send(ctx, str("indexed"), event)
+				send(ctx, stringerFunc("indexed"), event)
 			}
 		}()
 	}
@@ -602,7 +602,7 @@ func doSearchFilesInRepos(ctx context.Context, args *search.TextParameters, stre
 			defer wg.Done()
 			for event := range indexed.Search(ctx) {
 				tr.LogFields(otlog.Int("matches.len", len(event.Results)), otlog.Error(event.Error))
-				send(ctx, str("structural-indexed"), SearchEvent{
+				send(ctx, stringerFunc("structural-indexed"), SearchEvent{
 					Stats: event.Stats,
 				})
 
@@ -683,8 +683,8 @@ func limitSearcherRepos(unindexed []*search.RepositoryRevisions, limit int) (sea
 	return
 }
 
-type str string
+type stringerFunc string
 
-func (s str) String() string {
+func (s stringerFunc) String() string {
 	return string(s)
 }
