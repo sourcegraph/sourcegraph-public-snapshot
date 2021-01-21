@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -15,7 +15,7 @@ func TestOrgMembers_CreateMembershipInOrgsForAllUsers(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
 	// Create fixtures.

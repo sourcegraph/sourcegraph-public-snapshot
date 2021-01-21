@@ -83,6 +83,13 @@ func SetupGlobalTestDB(t testing.TB) {
 	emptyDBPreserveSchema(t, dbconn.Global)
 }
 
+// GetDB calls SetupGlobalTestDB and returns dbconn.Global.
+// It is meant to ease the migration away from dbconn.Global.
+func GetDB(t testing.TB) *sql.DB {
+	SetupGlobalTestDB(t)
+	return dbconn.Global
+}
+
 func emptyDBPreserveSchema(t testing.TB, d *sql.DB) {
 	_, err := d.Exec(`SELECT * FROM schema_migrations`)
 	if err != nil {

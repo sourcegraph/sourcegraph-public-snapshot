@@ -5,14 +5,14 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
 
 func TestNamespaces(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
 	// Create user and organization to test lookups.

@@ -5,13 +5,13 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
 
 // 🚨 SECURITY: This tests the routine that creates access tokens and returns the token secret value
 // to the user.
 func TestAccessTokens_Create(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
 	subject, err := Users(db).Create(ctx, NewUser{
@@ -86,7 +86,7 @@ func TestAccessTokens_List(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
 	subject1, err := Users(db).Create(ctx, NewUser{
@@ -164,7 +164,7 @@ func TestAccessTokens_Lookup(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
 	subject, err := Users(db).Create(ctx, NewUser{
@@ -232,7 +232,7 @@ func TestAccessTokens_Lookup_deletedUser(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
 	t.Run("subject", func(t *testing.T) {

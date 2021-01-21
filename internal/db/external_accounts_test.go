@@ -9,7 +9,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
@@ -17,7 +17,7 @@ func TestExternalAccounts_LookupUserAndSave(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
 	spec := extsvc.AccountSpec{
@@ -44,7 +44,7 @@ func TestExternalAccounts_AssociateUserAndSave(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
 	user, err := Users(db).Create(ctx, NewUser{Username: "u"})
@@ -94,7 +94,7 @@ func TestExternalAccounts_CreateUserAndSave(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
 	spec := extsvc.AccountSpec{
@@ -148,7 +148,7 @@ func TestExternalAccounts_CreateUserAndSave_NilData(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
 	spec := extsvc.AccountSpec{
@@ -195,7 +195,7 @@ func TestExternalAccounts_List(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
 	specs := []extsvc.AccountSpec{
@@ -310,7 +310,7 @@ func TestExternalAccounts_expiredAt(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
 	spec := extsvc.AccountSpec{

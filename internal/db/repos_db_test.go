@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/db/query"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -207,7 +207,7 @@ func TestRepos_Get(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
 	now := time.Now()
@@ -268,7 +268,7 @@ func TestRepos_GetByIDs(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
 	want := mustCreate(ctx, t, db, &types.Repo{
@@ -298,7 +298,7 @@ func TestRepos_List(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
 	now := time.Now()
@@ -359,7 +359,7 @@ func Test_GetUserAddedRepos(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
 	// Create a user
@@ -442,7 +442,7 @@ func TestRepos_List_fork(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
 	mine := mustCreate(ctx, t, db, &types.Repo{Name: "a/r", Fork: false})
@@ -483,7 +483,7 @@ func TestRepos_List_cloned(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
 	mine := mustCreate(ctx, t, db, &types.Repo{Name: "a/r", Cloned: false})
@@ -516,7 +516,7 @@ func TestRepos_List_ids(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
 	mine := types.Repos(mustCreate(ctx, t, db, types.MakeGithubRepo(), types.MakeGitlabRepo()))
@@ -549,7 +549,7 @@ func TestRepos_List_serviceTypes(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
 	mine := mustCreate(ctx, t, db, types.MakeGithubRepo())
@@ -585,7 +585,7 @@ func TestRepos_List_pagination(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
 	createdRepos := []*types.Repo{
@@ -632,7 +632,7 @@ func TestRepos_List_query1(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
 	createdRepos := []*types.Repo{
@@ -670,7 +670,7 @@ func TestRepos_List_correct_ranking(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
 	createdRepos := []*types.Repo{
@@ -711,7 +711,7 @@ func TestRepos_List_sort(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
 	createdRepos := []*types.Repo{
@@ -780,7 +780,7 @@ func TestRepos_List_patterns(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
 	createdRepos := []*types.Repo{
@@ -832,7 +832,7 @@ func TestRepos_List_patterns(t *testing.T) {
 // TestRepos_List_patterns tests the behavior of Repos.List when called with
 // a QueryPattern.
 func TestRepos_List_queryPattern(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
 	createdRepos := []*types.Repo{
@@ -962,7 +962,7 @@ func TestRepos_List_queryAndPatternsMutuallyExclusive(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 	wantErr := "Query and IncludePatterns/ExcludePattern options are mutually exclusive"
 
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 
 	t.Run("Query and IncludePatterns", func(t *testing.T) {
 		_, err := Repos(db).List(ctx, ReposListOptions{Query: "x", IncludePatterns: []string{"y"}})
@@ -984,7 +984,7 @@ func TestRepos_createRepo(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
 	// Add a repo.
@@ -1010,7 +1010,7 @@ func TestRepos_List_useOr(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
 	archived := types.Repos{types.MakeGitlabRepo()}.With(func(r *types.Repo) { r.Archived = true })
@@ -1050,7 +1050,7 @@ func TestRepos_List_externalServiceID(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
 	confGet := func() *conf.Unified {
@@ -1103,7 +1103,7 @@ func TestRepos_ListRepoNames(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
 	now := time.Now()
@@ -1145,7 +1145,7 @@ func TestRepos_ListRepoNames_fork(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
 	mine := repoNamesFromRepos(mustCreate(ctx, t, db, &types.Repo{Name: "a/r", Fork: false}))
@@ -1186,7 +1186,7 @@ func TestRepos_ListRepoNames_cloned(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
 	mine := repoNamesFromRepos(mustCreate(ctx, t, db, &types.Repo{Name: "a/r", Cloned: false}))
@@ -1219,7 +1219,7 @@ func TestRepos_ListRepoNames_ids(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
 	mine := types.Repos(mustCreate(ctx, t, db, types.MakeGithubRepo(), types.MakeGitlabRepo()))
@@ -1252,7 +1252,7 @@ func TestRepos_ListRepoNames_serviceTypes(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
 	mine := mustCreate(ctx, t, db, types.MakeGithubRepo())
@@ -1288,7 +1288,7 @@ func TestRepos_ListRepoNames_pagination(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
 	createdRepos := []*types.Repo{
@@ -1335,7 +1335,7 @@ func TestRepos_ListRepoNames_correctFiltering(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
 	createdRepos := []*types.Repo{
@@ -1373,7 +1373,7 @@ func TestRepos_ListRepoNames_query2(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
 	createdRepos := []*types.Repo{
@@ -1414,7 +1414,7 @@ func TestRepos_ListRepoNames_sort(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
 	createdRepos := []*types.Repo{
@@ -1483,7 +1483,7 @@ func TestRepos_ListRepoNames_patterns(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
 	createdRepos := []*types.Repo{
@@ -1535,7 +1535,7 @@ func TestRepos_ListRepoNames_patterns(t *testing.T) {
 // TestRepos_ListRepoNames_patterns tests the behavior of Repos.List when called with
 // a QueryPattern.
 func TestRepos_ListRepoNames_queryPattern(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
 	createdRepos := []*types.Repo{
@@ -1665,7 +1665,7 @@ func TestRepos_ListRepoNames_queryAndPatternsMutuallyExclusive(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 	wantErr := "Query and IncludePatterns/ExcludePattern options are mutually exclusive"
 
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	t.Run("Query and IncludePatterns", func(t *testing.T) {
 		_, err := Repos(db).ListRepoNames(ctx, ReposListOptions{Query: "x", IncludePatterns: []string{"y"}})
 		if err == nil || !strings.Contains(err.Error(), wantErr) {
@@ -1686,7 +1686,7 @@ func TestRepos_ListRepoNames_useOr(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
 	archived := types.Repos{types.MakeGitlabRepo()}.With(func(r *types.Repo) { r.Archived = true })
@@ -1726,7 +1726,7 @@ func TestRepos_ListRepoNames_externalServiceID(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
 	confGet := func() *conf.Unified {
@@ -1779,7 +1779,7 @@ func TestRepos_createRepo_dupe(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
 	// Add a repo.

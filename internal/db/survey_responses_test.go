@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
 
 // TestSurveyResponses_Create_Count tests creation and counting of db survey responses
@@ -12,7 +12,7 @@ func TestSurveyResponses_Create_Count(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
 	count, err := SurveyResponses(db).Count(ctx)

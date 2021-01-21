@@ -5,14 +5,14 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
 
 func TestSettings_ListAll(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
 	user1, err := Users(db).Create(ctx, NewUser{Username: "u1"})
@@ -57,7 +57,7 @@ func TestSettings_ListAll(t *testing.T) {
 }
 
 func TestCreateIfUpToDate(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 	u, err := Users(db).Create(ctx, NewUser{Username: "test"})
 	if err != nil {

@@ -14,7 +14,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -23,7 +23,7 @@ import (
 )
 
 func TestUserCredentials_Create(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx, user := setUpUserCredentialTest(t, db)
 
 	// Versions of Go before 1.14.x (where 3 < x < 11) cannot diff *big.Int
@@ -90,7 +90,7 @@ func TestUserCredentials_Create(t *testing.T) {
 }
 
 func TestUserCredentials_Delete(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx, user := setUpUserCredentialTest(t, db)
 
 	t.Run("nonextant", func(t *testing.T) {
@@ -134,7 +134,7 @@ func TestUserCredentials_Delete(t *testing.T) {
 }
 
 func TestUserCredentials_GetByID(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx, user := setUpUserCredentialTest(t, db)
 
 	t.Run("nonextant", func(t *testing.T) {
@@ -180,7 +180,7 @@ func TestUserCredentials_GetByID(t *testing.T) {
 }
 
 func TestUserCredentials_GetByScope(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx, user := setUpUserCredentialTest(t, db)
 
 	scope := UserCredentialScope{
@@ -226,7 +226,7 @@ func TestUserCredentials_GetByScope(t *testing.T) {
 }
 
 func TestUserCredentials_List(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx, user := setUpUserCredentialTest(t, db)
 
 	githubScope := UserCredentialScope{
@@ -366,7 +366,7 @@ func TestUserCredentials_List(t *testing.T) {
 }
 
 func TestUserCredentials_Invalid(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx, user := setUpUserCredentialTest(t, db)
 
 	t.Run("marshal", func(t *testing.T) {

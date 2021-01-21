@@ -9,7 +9,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
@@ -57,7 +57,7 @@ func TestUserEmails_Get(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
 	user, err := Users(db).Create(ctx, NewUser{
@@ -104,7 +104,7 @@ func TestUserEmails_GetPrimary(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
 	user, err := Users(db).Create(ctx, NewUser{
@@ -155,7 +155,7 @@ func TestUserEmails_SetPrimary(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
 	user, err := Users(db).Create(ctx, NewUser{
@@ -198,7 +198,7 @@ func TestUserEmails_ListByUser(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
 	user, err := Users(db).Create(ctx, NewUser{
@@ -267,7 +267,7 @@ func TestUserEmails_Add_Remove(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
 	const emailA = "a@example.com"
@@ -347,7 +347,7 @@ func TestUserEmails_SetVerified(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
 	const email = "a@example.com"
@@ -424,7 +424,7 @@ func TestUserEmails_SetLastVerificationSentAt(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
 	const addr = "alice@example.com"
@@ -471,7 +471,7 @@ func TestUserEmails_GetLatestVerificationSentEmail(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
 	const addr = "alice@example.com"
@@ -533,7 +533,7 @@ func TestUserEmails_GetVerifiedEmails(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
 	newUsers := []NewUser{

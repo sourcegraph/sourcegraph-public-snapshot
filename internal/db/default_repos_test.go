@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -51,7 +52,7 @@ func TestListDefaultRepos(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
-			db := dbtest.NewDB(t, "")
+			db := dbtesting.GetDB(t)
 			ctx := context.Background()
 			for _, r := range tc.repos {
 				if _, err := db.ExecContext(ctx, `INSERT INTO repo(id, name) VALUES ($1, $2)`, r.ID, r.Name); err != nil {
@@ -77,7 +78,7 @@ func TestListDefaultRepos(t *testing.T) {
 	}
 
 	t.Run("user-added repos", func(t *testing.T) {
-		db := dbtest.NewDB(t, "")
+		db := dbtesting.GetDB(t)
 		ctx := context.Background()
 		_, err := db.ExecContext(ctx, `
 			-- insert one user-added repo, i.e. a repo added by an external service owned by a user
@@ -141,7 +142,7 @@ func TestListDefaultReposInBatches(t *testing.T) {
 		},
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 	for _, r := range reposToAdd {
 		if _, err := db.ExecContext(ctx, `INSERT INTO repo(id, name) VALUES ($1, $2)`, r.ID, r.Name); err != nil {
@@ -184,7 +185,7 @@ func TestListDefaultReposUncloned(t *testing.T) {
 		},
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 	for _, r := range reposToAdd {
 		cloned := int(r.ID) > 1
