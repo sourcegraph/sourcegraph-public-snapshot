@@ -2,6 +2,7 @@ import React from 'react'
 import { Link } from '../../../shared/src/components/Link'
 
 interface Breadcrumb {
+    /** Use a valid path to render this Breadcrumb as a Link */
     to?: string
     text: string
 }
