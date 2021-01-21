@@ -1745,15 +1745,13 @@ func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextPara
 	if args.PatternInfo.IsStructuralPat && args.PatternInfo.FileMatchLimit == defaultMaxSearchResults && len(fileResults) == 0 && err == nil {
 		// No results for structural search? Automatically search again and force Zoekt
 		// to resolve more potential file matches by setting a higher FileMatchLimit.
-		args.PatternInfo.FileMatchLimit = 1000
-		fileResults, stats, err = searchFilesInRepos(ctx, args, a.stream)
-		if len(fileResults) == 0 {
-			// Still no results? Give up.
-			log15.Warn("Structural search gives up after more exhaustive attempt. Results may have been missed.")
-			if stats != nil {
-				stats.IsLimitHit = false // Ensure we don't display "Show more".
-			}
-		}
+		patternCopy := *(args.PatternInfo)
+		patternCopy.FileMatchLimit = 1000
+		argsCopy := *args
+		argsCopy.PatternInfo = &patternCopy
+		args = &argsCopy
+
+		_, _, _ = searchFilesInRepos(ctx, args, a.stream)
 	}
 }
 
