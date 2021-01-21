@@ -46,7 +46,7 @@ func TestGetDumpByID(t *testing.T) {
 		RepositoryID:      50,
 		RepositoryName:    "n-50",
 		Indexer:           "lsif-go",
-		AssociatedIndexID: &expexpectedAssociatedIndexID,
+		AssociatedIndexID: &expectedAssociatedIndexID,
 	}
 
 	insertUploads(t, dbconn.Global, Upload{
