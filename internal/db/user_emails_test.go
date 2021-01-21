@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"testing"
 	"time"
@@ -10,6 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
@@ -390,7 +390,7 @@ func TestUserEmails_SetVerified(t *testing.T) {
 	}
 }
 
-func isUserEmailVerified(ctx context.Context, db *sql.DB, userID int32, email string) (bool, error) {
+func isUserEmailVerified(ctx context.Context, db dbutil.DB, userID int32, email string) (bool, error) {
 	userEmails, err := UserEmails(db).ListByUser(ctx, UserEmailsListOptions{
 		UserID: userID,
 	})
@@ -405,7 +405,7 @@ func isUserEmailVerified(ctx context.Context, db *sql.DB, userID int32, email st
 	return false, fmt.Errorf("email not found: %s", email)
 }
 
-func isUserEmailPrimary(ctx context.Context, db *sql.DB, userID int32, email string) (bool, error) {
+func isUserEmailPrimary(ctx context.Context, db dbutil.DB, userID int32, email string) (bool, error) {
 	userEmails, err := UserEmails(db).ListByUser(ctx, UserEmailsListOptions{
 		UserID: userID,
 	})

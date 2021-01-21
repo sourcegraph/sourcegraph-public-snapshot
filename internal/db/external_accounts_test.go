@@ -414,6 +414,9 @@ func TestExternalAccounts_expiredAt(t *testing.T) {
 			UserID:         userID,
 			ExcludeExpired: true,
 		})
+		if err != nil {
+			t.Fatal(err)
+		}
 		if len(accts) != 1 {
 			t.Fatalf("Want 1 external accounts but got %d", len(accts))
 		}

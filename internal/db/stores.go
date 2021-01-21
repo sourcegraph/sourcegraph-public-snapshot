@@ -17,7 +17,6 @@ var (
 	GlobalUsers                       = &UserStore{}
 	GlobalUserCredentials             = &UserCredentialsStore{}
 	GlobalUserEmails                  = &UserEmailsStore{}
-	GlobalUserPublicRepos             = &UserPublicRepoStore{}
 	GlobalEventLogs                   = &EventLogStore{}
 	GlobalSurveyResponses             = &SurveyResponseStore{}
 	GlobalExternalAccounts            = &UserExternalAccountsStore{}

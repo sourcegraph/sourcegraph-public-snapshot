@@ -116,7 +116,7 @@ func (l *EventLogStore) getBySQL(ctx context.Context, querySuffix *sqlf.Query) (
 		}
 		events = append(events, &r)
 	}
-	if err = rows.Err(); err != nil {
+	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 	return events, nil
