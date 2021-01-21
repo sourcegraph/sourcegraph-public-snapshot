@@ -15,18 +15,6 @@ type Range struct {
 	HoverResultID      int
 }
 
-type ResultSet struct {
-	reader.ResultSet
-	DefinitionResultID int
-	ReferenceResultID  int
-	HoverResultID      int
-}
-
-type Moniker struct {
-	reader.Moniker
-	PackageInformationID int
-}
-
 func (r Range) SetDefinitionResultID(id int) Range {
 	return Range{
 		Range:              r.Range,
@@ -54,6 +42,13 @@ func (r Range) SetHoverResultID(id int) Range {
 	}
 }
 
+type ResultSet struct {
+	reader.ResultSet
+	DefinitionResultID int
+	ReferenceResultID  int
+	HoverResultID      int
+}
+
 func (rs ResultSet) SetDefinitionResultID(id int) ResultSet {
 	return ResultSet{
 		ResultSet:          rs.ResultSet,
@@ -79,6 +74,11 @@ func (rs ResultSet) SetHoverResultID(id int) ResultSet {
 		ReferenceResultID:  rs.ReferenceResultID,
 		HoverResultID:      id,
 	}
+}
+
+type Moniker struct {
+	reader.Moniker
+	PackageInformationID int
 }
 
 func (m Moniker) SetPackageInformationID(id int) Moniker {
