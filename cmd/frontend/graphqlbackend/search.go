@@ -274,28 +274,6 @@ type SearchEvent struct {
 // layer.
 type SearchStream chan<- SearchEvent
 
-// resultStream is temporary adapter which return a result stream to use
-// instead of a search event stream. Additionally it has a cleanup function
-// which needs to be called.
-func resultStream(stream SearchStream) (chan<- []SearchResultResolver, func(streaming.Stats, error)) {
-	c := make(chan []SearchResultResolver, cap(stream))
-	done := make(chan struct{})
-	go func() {
-		defer close(done)
-		for results := range c {
-			stream <- SearchEvent{Results: results}
-		}
-	}()
-	return c, func(s streaming.Stats, err error) {
-		stream <- SearchEvent{
-			Stats: s,
-			Error: err,
-		}
-		close(c)
-		<-done
-	}
-}
-
 // collectStream is a helper for batch interfaces calling stream based
 // functions. It returns a context, stream and cleanup/get function. The
 // cleanup/get function will return the aggregated event and must be called
