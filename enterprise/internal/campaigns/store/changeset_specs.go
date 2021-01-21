@@ -414,29 +414,36 @@ type RewirerMapping struct {
 type RewirerMappings []*RewirerMapping
 
 func (rm RewirerMappings) Hydrate(ctx context.Context, store *Store) error {
-	changesetSpecs, _, err := store.ListChangesetSpecs(ctx, ListChangesetSpecsOpts{
-		IDs: rm.ChangesetSpecIDs(),
-	})
-	if err != nil {
-		return err
-	}
-	changesets, _, err := store.ListChangesets(ctx, ListChangesetsOpts{IDs: rm.ChangesetIDs()})
-	if err != nil {
-		return err
-	}
-	accessibleReposByID, err := db.GlobalRepos.GetReposSetByIDs(ctx, rm.RepoIDs()...)
-	if err != nil {
-		return err
-	}
-
 	changesetsByID := map[int64]*campaigns.Changeset{}
 	changesetSpecsByID := map[int64]*campaigns.ChangesetSpec{}
 
-	for _, c := range changesets {
-		changesetsByID[c.ID] = c
+	changesetSpecIDs := rm.ChangesetSpecIDs()
+	if len(changesetSpecIDs) > 0 {
+		changesetSpecs, _, err := store.ListChangesetSpecs(ctx, ListChangesetSpecsOpts{
+			IDs: rm.ChangesetSpecIDs(),
+		})
+		if err != nil {
+			return err
+		}
+		for _, c := range changesetSpecs {
+			changesetSpecsByID[c.ID] = c
+		}
 	}
-	for _, c := range changesetSpecs {
-		changesetSpecsByID[c.ID] = c
+
+	changesetIDs := rm.ChangesetIDs()
+	if len(changesetIDs) > 0 {
+		changesets, _, err := store.ListChangesets(ctx, ListChangesetsOpts{IDs: rm.ChangesetIDs()})
+		if err != nil {
+			return err
+		}
+		for _, c := range changesets {
+			changesetsByID[c.ID] = c
+		}
+	}
+
+	accessibleReposByID, err := db.GlobalRepos.GetReposSetByIDs(ctx, rm.RepoIDs()...)
+	if err != nil {
+		return err
 	}
 
 	for _, m := range rm {
