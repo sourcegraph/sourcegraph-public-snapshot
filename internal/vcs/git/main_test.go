@@ -63,7 +63,7 @@ func init() {
 			GetRemoteURLFunc: func(ctx context.Context, name api.RepoName) (string, error) {
 				return filepath.Join(root, "remotes", string(name)), nil
 			},
-			GetVCSSyncer: func(ctx context.Context, name api.RepoName) (server.VCSCommander, error) {
+			GetVCSSyncer: func(ctx context.Context, name api.RepoName) (server.VCSSyncer, error) {
 				return &server.GitRepoSyncer{}, nil
 			},
 		}).Handler(),
