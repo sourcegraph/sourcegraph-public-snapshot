@@ -27,6 +27,10 @@ type TestChangesetOpts struct {
 	ExternalReviewState campaigns.ChangesetReviewState
 	ExternalCheckState  campaigns.ChangesetCheckState
 
+	DiffStatAdded   int32
+	DiffStatChanged int32
+	DiffStatDeleted int32
+
 	PublicationState campaigns.ChangesetPublicationState
 
 	ReconcilerState campaigns.ReconcilerState
@@ -100,6 +104,12 @@ func BuildChangeset(opts TestChangesetOpts) *campaigns.Changeset {
 
 	if opts.Campaign != 0 {
 		changeset.Campaigns = []campaigns.CampaignAssoc{{CampaignID: opts.Campaign}}
+	}
+
+	if opts.DiffStatAdded > 0 || opts.DiffStatChanged > 0 || opts.DiffStatDeleted > 0 {
+		changeset.DiffStatAdded = &opts.DiffStatAdded
+		changeset.DiffStatChanged = &opts.DiffStatChanged
+		changeset.DiffStatDeleted = &opts.DiffStatDeleted
 	}
 
 	return changeset
