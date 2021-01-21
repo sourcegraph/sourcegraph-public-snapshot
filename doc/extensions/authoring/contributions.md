@@ -2,7 +2,7 @@
 
 Sourcegraph extensions contribute actions and menu items to the user interface of Sourcegraph (and other applications, such as code hosts, using the [browser extension](../../integration/browser_extension.md)). An extension's contributions are defined in its [`package.json` extension manifest](./manifest.md).
 
-The [`extension.schema.json` JSON Schema](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/shared/src/schema/extension.schema.json) contains the full reference for all extension contribution points.
+The [`extension.schema.json` JSON Schema](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/shared/src/schema/extension.schema.json) contains the full reference for all extension contribution points.
 
 For an example extension that defines contributions, see the tutorial "[Sourcegraph extension buttons and custom commands](tutorials/button_custom_commands.md)".
 
@@ -12,7 +12,7 @@ An action consists of an identifier (action ID), a command to invoke, and inform
 
 To add a button or menu item, an extension must define an action in its `package.json` and specify in which [menu](contributions.md#menus) to display it.
 
-See the `actions` property in [`extension.schema.json`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/shared/src/schema/extension.schema.json) for a full reference on what fields can be set on an action.
+See the `actions` property in [`extension.schema.json`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/shared/src/schema/extension.schema.json) for a full reference on what fields can be set on an action.
 
 ## Menus
 
@@ -26,7 +26,7 @@ A menu is an existing part of the user interface (of Sourcegraph or any other in
 * `search/results/toolbar`: The toolbar on search results pages.
 * `help`: The help menu or page.
 
-The set of available menus is defined in the `menus` property in [`extension.schema.json`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/shared/src/schema/extension.schema.json).
+The set of available menus is defined in the `menus` property in [`extension.schema.json`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/shared/src/schema/extension.schema.json).
 
 To display an action in a menu, an extension's `package.json` must define the action *and* specify which menu it's displayed in. The menu entry can also specify a `when` condition to selectively show/hide the action depending on a condition.
 
@@ -87,4 +87,4 @@ The entire value of the `configuration` object is itself a JSON Schema. See the 
 
 Extensions will be able to contribute search filters, which are displayed on the Sourcegraph search results page and allow users to refine their query.
 
-See the `searchFilters` property in [`extension.schema.json`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/shared/src/schema/extension.schema.json).
+See the `searchFilters` property in [`extension.schema.json`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/shared/src/schema/extension.schema.json).
