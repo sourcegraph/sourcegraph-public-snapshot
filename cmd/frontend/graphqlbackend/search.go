@@ -277,11 +277,7 @@ type SearchStream chan<- SearchEvent
 // resultStream is temporary adapter which return a result stream to use
 // instead of a search event stream. Additionally it has a cleanup function
 // which needs to be called.
-func resultStream(stream SearchStream) (chan<- []SearchResultResolver, func(*streaming.Stats, error)) {
-	if stream == nil {
-		return nil, func(*streaming.Stats, error) {}
-	}
-
+func resultStream(stream SearchStream) (chan<- []SearchResultResolver, func(streaming.Stats, error)) {
 	c := make(chan []SearchResultResolver, cap(stream))
 	done := make(chan struct{})
 	go func() {
@@ -290,19 +286,48 @@ func resultStream(stream SearchStream) (chan<- []SearchResultResolver, func(*str
 			stream <- SearchEvent{Results: results}
 		}
 	}()
-	return c, func(s *streaming.Stats, err error) {
-		if s != nil {
-			stream <- SearchEvent{
-				Stats: *s,
-			}
-		}
-		if err != nil {
-			stream <- SearchEvent{
-				Error: err,
-			}
+	return c, func(s streaming.Stats, err error) {
+		stream <- SearchEvent{
+			Stats: s,
+			Error: err,
 		}
 		close(c)
 		<-done
+	}
+}
+
+// collectStream is a helper for batch interfaces calling stream based
+// functions. It returns a context, stream and cleanup/get function. The
+// cleanup/get function will return the aggregated event and must be called
+// once you have stopped sending to stream.
+//
+// For collecting errors we only collect the first error reported and
+// afterwards cancel the context.
+func collectStream(ctx context.Context) (context.Context, SearchStream, func() SearchEvent) {
+	var agg SearchEvent
+
+	ctx, cancel := context.WithCancel(ctx)
+
+	done := make(chan struct{})
+	stream := make(chan SearchEvent)
+	go func() {
+		defer close(done)
+		for event := range stream {
+			agg.Results = append(agg.Results, event.Results...)
+			agg.Stats.Update(&event.Stats)
+			// Only collect first error
+			if event.Error != nil && agg.Error == nil {
+				cancel()
+				agg.Error = event.Error
+			}
+		}
+	}()
+
+	return ctx, stream, func() SearchEvent {
+		cancel()
+		close(stream)
+		<-done
+		return agg
 	}
 }
 
@@ -503,7 +528,7 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*se
 		return nil, err
 	}
 
-	fileResults, _, err := searchFilesInRepos(ctx, &args, nil)
+	fileResults, _, err := searchFilesInReposBatch(ctx, &args)
 	if err != nil {
 		return nil, err
 	}

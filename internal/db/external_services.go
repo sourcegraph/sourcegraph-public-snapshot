@@ -568,8 +568,8 @@ func (e *ExternalServiceStore) Create(ctx context.Context, confGet func() *conf.
 
 	return e.Store.Handle().DB().QueryRowContext(
 		ctx,
-		"INSERT INTO external_services(kind, display_name, config, created_at, updated_at, namespace_user_id, unrestricted) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id",
-		es.Kind, es.DisplayName, es.Config, es.CreatedAt, es.UpdatedAt, nullInt32Column(es.NamespaceUserID), es.Unrestricted,
+		"INSERT INTO external_services(kind, display_name, config, created_at, updated_at, namespace_user_id, unrestricted, cloud_default) VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id",
+		es.Kind, es.DisplayName, es.Config, es.CreatedAt, es.UpdatedAt, nullInt32Column(es.NamespaceUserID), es.Unrestricted, es.CloudDefault,
 	).Scan(&es.ID)
 }
 
@@ -611,6 +611,7 @@ func (e *ExternalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			&dbutil.NullTime{Time: &svcs[i].NextSyncAt},
 			&dbutil.NullInt32{N: &svcs[i].NamespaceUserID},
 			&svcs[i].Unrestricted,
+			&svcs[i].CloudDefault,
 		)
 		if err != nil {
 			return err
@@ -638,6 +639,7 @@ func upsertExternalServicesQuery(svcs []*types.ExternalService) *sqlf.Query {
 			nullTimeColumn(s.NextSyncAt),
 			nullInt32Column(s.NamespaceUserID),
 			s.Unrestricted,
+			s.CloudDefault,
 		))
 	}
 
@@ -648,7 +650,7 @@ func upsertExternalServicesQuery(svcs []*types.ExternalService) *sqlf.Query {
 }
 
 const upsertExternalServicesQueryValueFmtstr = `
-  (COALESCE(NULLIF(%s, 0), (SELECT nextval('external_services_id_seq'))), UPPER(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s)
+  (COALESCE(NULLIF(%s, 0), (SELECT nextval('external_services_id_seq'))), UPPER(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 `
 
 const upsertExternalServicesQueryFmtstr = `
@@ -664,7 +666,8 @@ INSERT INTO external_services (
   last_sync_at,
   next_sync_at,
   namespace_user_id,
-  unrestricted
+  unrestricted,
+  cloud_default
 )
 VALUES %s
 ON CONFLICT(id) DO UPDATE
@@ -678,7 +681,8 @@ SET
   last_sync_at = excluded.last_sync_at,
   next_sync_at = excluded.next_sync_at,
   namespace_user_id = excluded.namespace_user_id,
-  unrestricted = excluded.unrestricted
+  unrestricted = excluded.unrestricted,
+  cloud_default = excluded.cloud_default
 RETURNING *
 `
 
@@ -878,7 +882,7 @@ func (e *ExternalServiceStore) list(ctx context.Context, opt ExternalServicesLis
 	}
 
 	q := sqlf.Sprintf(`
-		SELECT id, kind, display_name, config, created_at, updated_at, deleted_at, last_sync_at, next_sync_at, namespace_user_id, unrestricted
+		SELECT id, kind, display_name, config, created_at, updated_at, deleted_at, last_sync_at, next_sync_at, namespace_user_id, unrestricted, cloud_default
 		FROM external_services
 		WHERE (%s)
 		ORDER BY id `+opt.OrderByDirection+`
@@ -902,7 +906,7 @@ func (e *ExternalServiceStore) list(ctx context.Context, opt ExternalServicesLis
 			nextSyncAt      sql.NullTime
 			namespaceUserID sql.NullInt32
 		)
-		if err := rows.Scan(&h.ID, &h.Kind, &h.DisplayName, &h.Config, &h.CreatedAt, &h.UpdatedAt, &deletedAt, &lastSyncAt, &nextSyncAt, &namespaceUserID, &h.Unrestricted); err != nil {
+		if err := rows.Scan(&h.ID, &h.Kind, &h.DisplayName, &h.Config, &h.CreatedAt, &h.UpdatedAt, &deletedAt, &lastSyncAt, &nextSyncAt, &namespaceUserID, &h.Unrestricted, &h.CloudDefault); err != nil {
 			return nil, err
 		}
 

@@ -535,8 +535,10 @@ Foreign-key constraints:
  next_sync_at      | timestamp with time zone | 
  namespace_user_id | integer                  | 
  unrestricted      | boolean                  | not null default false
+ cloud_default     | boolean                  | default false
 Indexes:
     "external_services_pkey" PRIMARY KEY, btree (id)
+    "kind_cloud_default" UNIQUE, btree (kind, cloud_default) WHERE cloud_default = true
     "external_services_namespace_user_id_idx" btree (namespace_user_id)
 Check constraints:
     "check_non_empty_config" CHECK (btrim(config) <> ''::text)

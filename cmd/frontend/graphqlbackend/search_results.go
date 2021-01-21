@@ -105,33 +105,8 @@ func (c *SearchResultsResolver) IndexUnavailable() bool {
 	return c.IsIndexUnavailable
 }
 
-func RepositoryResolvers(repos types.RepoNames) []*RepositoryResolver {
-	dedupSort(&repos)
-	return toRepositoryResolvers(repos)
-}
-
 func (c *SearchResultsResolver) allReposTimedout() bool {
 	return c.Status.All(search.RepoStatusTimedout) && c.Status.Len() == len(c.Repos)
-}
-
-// dedupSort sorts (by ID in ascending order) and deduplicates
-// the given repos in-place.
-func dedupSort(repos *types.RepoNames) {
-	if len(*repos) == 0 {
-		return
-	}
-
-	sort.Sort(*repos)
-
-	j := 0
-	for i := 1; i < len(*repos); i++ {
-		if (*repos)[j].ID != (*repos)[i].ID {
-			j++
-			(*repos)[j] = (*repos)[i]
-		}
-	}
-
-	*repos = (*repos)[:j+1]
 }
 
 // SearchResultsResolver is a resolver for the GraphQL type `SearchResults`
@@ -1753,11 +1728,18 @@ func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextPara
 
 	defer tr.Finish()
 
-	// searchFilesInRepos reports all return values to stream, so we don't
-	// need to send them.
-	fileResults, _, err := searchFilesInRepos(ctx, args, a.stream)
+	isDefaultStructuralSearch := args.PatternInfo.IsStructuralPat && args.PatternInfo.FileMatchLimit == defaultMaxSearchResults
 
-	if args.PatternInfo.IsStructuralPat && args.PatternInfo.FileMatchLimit == defaultMaxSearchResults && len(fileResults) == 0 && err == nil {
+	if !isDefaultStructuralSearch {
+		searchFilesInRepos(ctx, args, a.stream)
+		return
+	}
+
+	// For structural search with default limits we retry if we get no results.
+
+	fileResults, stats, err := searchFilesInReposBatch(ctx, args)
+
+	if len(fileResults) == 0 && err == nil {
 		// No results for structural search? Automatically search again and force Zoekt
 		// to resolve more potential file matches by setting a higher FileMatchLimit.
 		patternCopy := *(args.PatternInfo)
@@ -1766,8 +1748,20 @@ func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextPara
 		argsCopy.PatternInfo = &patternCopy
 		args = &argsCopy
 
-		_, _, _ = searchFilesInRepos(ctx, args, a.stream)
+		fileResults, stats, err = searchFilesInReposBatch(ctx, args)
+
+		if len(fileResults) == 0 {
+			// Still no results? Give up.
+			log15.Warn("Structural search gives up after more exhaustive attempt. Results may have been missed.")
+			stats.IsLimitHit = false // Ensure we don't display "Show more".
+		}
 	}
+
+	a.send(SearchEvent{
+		Results: fileMatchResultsToSearchResults(fileResults),
+		Stats:   stats,
+		Error:   err,
+	})
 }
 
 func (a *aggregator) doDiffSearch(ctx context.Context, tp *search.TextParameters) {
@@ -1786,8 +1780,7 @@ func (a *aggregator) doDiffSearch(ctx context.Context, tp *search.TextParameters
 		return
 	}
 
-	// searchCommitDiffsInRepos supports streamings, so we use a.collect.
-	_, _, _ = searchCommitDiffsInRepos(ctx, args, a.stream)
+	searchCommitDiffsInRepos(ctx, args, a.stream)
 }
 
 func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParameters) {
@@ -1806,7 +1799,7 @@ func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParamete
 		return
 	}
 
-	_, _, _ = searchCommitLogInRepos(ctx, args, a.stream)
+	searchCommitLogInRepos(ctx, args, a.stream)
 }
 
 func statsDeref(s *streaming.Stats) streaming.Stats {
