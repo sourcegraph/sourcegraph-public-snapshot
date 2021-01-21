@@ -1700,6 +1700,10 @@ func (a *aggregator) get() ([]SearchResultResolver, streaming.Stats, *multierror
 	return a.results, a.common, a.multiErr
 }
 
+func (a *aggregator) send(event SearchEvent) {
+	a.stream <- event
+}
+
 func (a *aggregator) doRepoSearch(ctx context.Context, args *search.TextParameters, limit int32) {
 	tr, ctx := trace.New(ctx, "doRepoSearch", "")
 	defer tr.Finish()
@@ -1938,11 +1942,13 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			repos[repoRev.Repo.ID] = repoRev.Repo
 		}
 
-		agg.report(ctx, nil, &streaming.Stats{
-			Repos:            repos,
-			ExcludedForks:    resolved.ExcludedRepos.Forks,
-			ExcludedArchived: resolved.ExcludedRepos.Archived,
-		}, nil)
+		agg.send(SearchEvent{
+			Stats: streaming.Stats{
+				Repos:            repos,
+				ExcludedForks:    resolved.ExcludedRepos.Forks,
+				ExcludedArchived: resolved.ExcludedRepos.Archived,
+			},
+		})
 	}
 
 	// Resolve repo promise so searches waiting on it can proceed. We do this
