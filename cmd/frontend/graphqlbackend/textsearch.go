@@ -308,7 +308,15 @@ func fileMatchResultsToSearchResults(results []*FileMatchResolver) []SearchResul
 // For c != nil searchFilesInRepos will send results down c.
 func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream SearchStream) (res []*FileMatchResolver, common *streaming.Stats, finalErr error) {
 	if mockSearchFilesInRepos != nil {
-		return mockSearchFilesInRepos(args)
+		results, stats, err := mockSearchFilesInRepos(args)
+		if stream != nil {
+			stream <- SearchEvent{
+				Results: fileMatchResultsToSearchResults(results),
+				Stats:   statsDeref(stats),
+				Error:   err,
+			}
+		}
+		return results, stats, err
 	}
 
 	c, cleanup := resultStream(stream)
