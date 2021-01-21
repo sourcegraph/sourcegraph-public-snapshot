@@ -304,9 +304,39 @@ func fileMatchResultsToSearchResults(results []*FileMatchResolver) []SearchResul
 	return results2
 }
 
+func searchResultsToFileMatchResults(results []SearchResultResolver) ([]*FileMatchResolver, error) {
+	results2 := make([]*FileMatchResolver, len(results))
+	for i, result := range results {
+		fm, ok := result.ToFileMatch()
+		if !ok {
+			return nil, fmt.Errorf("expected only file match results")
+		}
+		results2[i] = fm
+	}
+	return results2, nil
+}
+
+// searchFilesInRepoBatch is a convenience function around searchFilesInRepos
+// which collects the results from the stream.
+func searchFilesInReposBatch(ctx context.Context, args *search.TextParameters) ([]*FileMatchResolver, streaming.Stats, error) {
+	ctx, stream, done := collectStream(ctx)
+	searchFilesInRepos(ctx, args, stream)
+	agg := done()
+	results, err := searchResultsToFileMatchResults(agg.Results)
+	if err != nil {
+		agg.Error = errors.Wrap(err, "searchFilesInReposBatch failed to convert results")
+	}
+	return results, agg.Stats, agg.Error
+}
+
 // searchFilesInRepos searches a set of repos for a pattern.
 // For c != nil searchFilesInRepos will send results down c.
-func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream SearchStream) (res []*FileMatchResolver, common *streaming.Stats, finalErr error) {
+func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream SearchStream) {
+	doSearchFilesInRepos(ctx, args, stream)
+}
+
+// doSearchFilesInRepos exists so we can capture the final error returned
+func doSearchFilesInRepos(ctx context.Context, args *search.TextParameters, stream SearchStream) (res []*FileMatchResolver, common *streaming.Stats, finalErr error) {
 	if mockSearchFilesInRepos != nil {
 		results, stats, err := mockSearchFilesInRepos(args)
 		if stream != nil {

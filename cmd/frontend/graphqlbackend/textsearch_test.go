@@ -8,7 +8,6 @@ import (
 	"reflect"
 	"sort"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
@@ -85,7 +84,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 		Zoekt:        zoekt,
 		SearcherURLs: endpoint.Static("test"),
 	}
-	results, common, err := searchFilesInRepos(context.Background(), args, nil)
+	results, common, err := searchFilesInReposBatch(context.Background(), args)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -120,7 +119,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 		SearcherURLs: endpoint.Static("test"),
 	}
 
-	_, _, err = searchFilesInRepos(context.Background(), args, nil)
+	_, _, err = searchFilesInReposBatch(context.Background(), args)
 	if !gitserver.IsRevisionNotFound(errors.Cause(err)) {
 		t.Fatalf("searching non-existent rev expected to fail with RevisionNotFoundError got: %v", err)
 	}
@@ -171,42 +170,13 @@ func TestSearchFilesInReposStream(t *testing.T) {
 		SearcherURLs: endpoint.Static("test"),
 	}
 
-	resultChannel := make(chan SearchEvent)
-	var resultsFromChannel []*FileMatchResolver
-	wg := sync.WaitGroup{}
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		for event := range resultChannel {
-			for _, result := range event.Results {
-				fm, _ := result.ToFileMatch()
-				resultsFromChannel = append(resultsFromChannel, fm)
-			}
-		}
-	}()
-
-	results, _, err := searchFilesInRepos(context.Background(), args, resultChannel)
+	results, _, err := searchFilesInReposBatch(context.Background(), args)
 	if err != nil {
 		t.Fatal(err)
 	}
-	close(resultChannel)
-	wg.Wait()
 
 	if len(results) != 3 {
 		t.Errorf("expected three results, got %d", len(results))
-	}
-
-	// For streaming we cannot guarantee the order. Hence we use a sets to compare
-	// the slices.
-	mapForSlice := func(fms []*FileMatchResolver) map[*FileMatchResolver]struct{} {
-		m := make(map[*FileMatchResolver]struct{})
-		for _, fm := range fms {
-			m[fm] = struct{}{}
-		}
-		return m
-	}
-	if diff := cmp.Diff(mapForSlice(resultsFromChannel), mapForSlice(results)); diff != "" {
-		t.Errorf(diff)
 	}
 }
 
@@ -275,7 +245,7 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 	repos[0].ListRefs = func(context.Context, api.RepoName) ([]git.Ref, error) {
 		return []git.Ref{{Name: "refs/heads/branch3"}, {Name: "refs/heads/branch4"}}, nil
 	}
-	results, _, err := searchFilesInRepos(context.Background(), args, nil)
+	results, _, err := searchFilesInReposBatch(context.Background(), args)
 	if err != nil {
 		t.Fatal(err)
 	}

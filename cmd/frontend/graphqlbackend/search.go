@@ -306,6 +306,41 @@ func resultStream(stream SearchStream) (chan<- []SearchResultResolver, func(*str
 	}
 }
 
+// collectStream is a helper for batch interfaces calling stream based
+// functions. It returns a context, stream and cleanup/get function. The
+// cleanup/get function will return the aggregated event and must be called
+// once you have stopped sending to stream.
+//
+// For collecting errors we only collect the first error reported and
+// afterwards cancel the context.
+func collectStream(ctx context.Context) (context.Context, SearchStream, func() SearchEvent) {
+	var agg SearchEvent
+
+	ctx, cancel := context.WithCancel(ctx)
+
+	done := make(chan struct{})
+	stream := make(chan SearchEvent)
+	go func() {
+		defer close(done)
+		for event := range stream {
+			agg.Results = append(agg.Results, event.Results...)
+			agg.Stats.Update(&event.Stats)
+			// Only collect first error
+			if event.Error != nil && agg.Error == nil {
+				cancel()
+				agg.Error = event.Error
+			}
+		}
+	}()
+
+	return ctx, stream, func() SearchEvent {
+		cancel()
+		close(stream)
+		<-done
+		return agg
+	}
+}
+
 // SetStream will send all results down c.
 //
 // This is how our streaming and our batch interface co-exist. When this is
@@ -503,7 +538,7 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*se
 		return nil, err
 	}
 
-	fileResults, _, err := searchFilesInRepos(ctx, &args, nil)
+	fileResults, _, err := searchFilesInReposBatch(ctx, &args)
 	if err != nil {
 		return nil, err
 	}

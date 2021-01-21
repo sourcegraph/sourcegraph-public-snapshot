@@ -256,15 +256,10 @@ func paginatedSearchFilesInRepos(ctx context.Context, args *search.TextParameter
 	return plan.execute(ctx, func(batch []*search.RepositoryRevisions) ([]SearchResultResolver, *streaming.Stats, error) {
 		batchArgs := *args
 		batchArgs.RepoPromise = (&search.Promise{}).Resolve(batch)
-		fileResults, fileCommon, err := searchFilesInRepos(ctx, &batchArgs, nil)
+		fileResults, fileCommon, err := searchFilesInReposBatch(ctx, &batchArgs)
 		// Timeouts are reported through Stats so don't report an error for them
 		if err != nil && !(err == context.DeadlineExceeded || err == context.Canceled) {
 			return nil, nil, err
-		}
-		if fileCommon == nil {
-			// searchFilesInRepos can return a nil structure, but the executor
-			// requires a non-nil one always (which is more sane).
-			fileCommon = &streaming.Stats{}
 		}
 		// fileResults is not sorted so we must sort it now. fileCommon may or
 		// may not be sorted, but we do not rely on its order.
@@ -275,7 +270,7 @@ func paginatedSearchFilesInRepos(ctx context.Context, args *search.TextParameter
 		for _, r := range fileResults {
 			results = append(results, r)
 		}
-		return results, fileCommon, nil
+		return results, &fileCommon, nil
 	})
 }
 
