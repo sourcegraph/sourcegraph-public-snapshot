@@ -160,6 +160,20 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
                     description: {
                         __typename: 'GitBranchChangesetDescription',
                         baseRef: 'main',
+                        body: 'body',
+                        commits: [
+                            {
+                                subject: 'Abc',
+                                body: null,
+                                author: {
+                                    avatarURL: null,
+                                    displayName: 'alice',
+                                    email: 'alice@sourcegraph.test',
+                                    user: null,
+                                },
+                            },
+                        ],
+                        title: 'Title',
                     },
                 },
                 author: {
@@ -197,6 +211,20 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
                     description: {
                         __typename: 'GitBranchChangesetDescription',
                         baseRef: 'main',
+                        body: 'body',
+                        commits: [
+                            {
+                                subject: 'Abc',
+                                body: null,
+                                author: {
+                                    avatarURL: null,
+                                    displayName: 'alice',
+                                    email: 'alice@sourcegraph.test',
+                                    user: null,
+                                },
+                            },
+                        ],
+                        title: 'Title',
                     },
                 },
                 author: {
@@ -234,6 +262,18 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
                     description: {
                         __typename: 'GitBranchChangesetDescription',
                         baseRef: 'main',
+                        body: 'body',
+                        commits: [{
+                            subject: 'Abc',
+                            body: null,
+                            author: {
+                                avatarURL: null,
+                                displayName: 'alice',
+                                email: 'alice@sourcegraph.test',
+                                user: null,
+                            }
+                        }],
+                        title: 'Title',
                     },
                 },
                 author: {
@@ -271,6 +311,18 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
                     description: {
                         __typename: 'GitBranchChangesetDescription',
                         baseRef: 'main',
+                        body: 'body',
+                        commits: [{
+                            subject: 'Abc',
+                            body: null,
+                            author: {
+                                avatarURL: null,
+                                displayName: 'alice',
+                                email: 'alice@sourcegraph.test',
+                                user: null,
+                            }
+                        }],
+                        title: 'Title',
                     },
                 },
                 author: {
@@ -362,6 +414,18 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
                     description: {
                         __typename: 'GitBranchChangesetDescription',
                         baseRef: 'main',
+                        body: 'body',
+                        commits: [{
+                            subject: 'Abc',
+                            body: null,
+                            author: {
+                                avatarURL: null,
+                                displayName: 'alice',
+                                email: 'alice@sourcegraph.test',
+                                user: null,
+                            }
+                        }],
+                        title: 'Title',
                     },
                 },
                 author: {
@@ -399,6 +463,18 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
                     description: {
                         __typename: 'GitBranchChangesetDescription',
                         baseRef: 'master',
+                        body: 'body',
+                        commits: [{
+                            subject: 'Abc',
+                            body: null,
+                            author: {
+                                avatarURL: null,
+                                displayName: 'alice',
+                                email: 'alice@sourcegraph.test',
+                                user: null,
+                            }
+                        }],
+                        title: 'Title',
                     },
                 },
                 author: {

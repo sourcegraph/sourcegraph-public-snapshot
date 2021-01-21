@@ -113,7 +113,6 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
                             location={location}
                             authenticatedUser={authenticatedUser}
                             queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
-                            expandChangesetDescriptions={expandChangesetDescriptions}
                         />
                     </div>
                 </>
@@ -133,18 +132,8 @@ const ExpandedSection: React.FunctionComponent<
 
         /** Used for testing. **/
         queryChangesetSpecFileDiffs?: typeof _queryChangesetSpecFileDiffs
-        /** Expand changeset descriptions, for testing only. **/
-        expandChangesetDescriptions?: boolean
     } & ThemeProps
-> = ({
-    node,
-    history,
-    isLightTheme,
-    location,
-    authenticatedUser,
-    queryChangesetSpecFileDiffs,
-    expandChangesetDescriptions,
-}) => {
+> = ({ node, history, isLightTheme, location, authenticatedUser, queryChangesetSpecFileDiffs }) => {
     const [selectedTab, setSelectedTab] = useState<SelectedTab>('diff')
     const onSelectDiff = useCallback<React.MouseEventHandler>(event => {
         event.preventDefault()
@@ -186,9 +175,9 @@ const ExpandedSection: React.FunctionComponent<
                         >
                             Changed files
                             {node.delta.diffChanged && (
-                                <span className="text-warning ml-2" data-tooltip="Changes in this tab">
+                                <small className="text-warning ml-2" data-tooltip="Changes in this tab">
                                     &#11044;
-                                </span>
+                                </small>
                             )}
                         </a>
                     </li>
@@ -200,9 +189,9 @@ const ExpandedSection: React.FunctionComponent<
                         >
                             Description
                             {(node.delta.titleChanged || node.delta.bodyChanged) && (
-                                <span className="text-warning ml-2" data-tooltip="Changes in this tab">
+                                <small className="text-warning ml-2" data-tooltip="Changes in this tab">
                                     &#11044;
-                                </span>
+                                </small>
                             )}
                         </a>
                     </li>
@@ -216,9 +205,9 @@ const ExpandedSection: React.FunctionComponent<
                             {(node.delta.authorEmailChanged ||
                                 node.delta.authorNameChanged ||
                                 node.delta.commitMessageChanged) && (
-                                <span className="text-warning ml-2" data-tooltip="Changes in this tab">
+                                <small className="text-warning ml-2" data-tooltip="Changes in this tab">
                                     &#11044;
-                                </span>
+                                </small>
                             )}
                         </a>
                     </li>
@@ -280,9 +269,7 @@ const ExpandedSection: React.FunctionComponent<
                     <Description history={history} description={node.targets.changesetSpec.description.body} />
                 </>
             )}
-            {selectedTab === 'commits' && (
-                <GitBranchChangesetDescriptionInfo node={node} isExpandedInitially={expandChangesetDescriptions} />
-            )}
+            {selectedTab === 'commits' && <GitBranchChangesetDescriptionInfo node={node} />}
         </>
     )
 }
