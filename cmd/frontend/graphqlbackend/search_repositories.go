@@ -168,7 +168,7 @@ func reposToAdd(ctx context.Context, args *search.TextParameters, repos []*searc
 			// len(repos) could mean we miss some repos since there could be for example len(repos) file matches in
 			// the first repo and some more in other repos.
 			p := search.TextPatternInfo{IsRegExp: true, FileMatchLimit: math.MaxInt32, IncludePatterns: []string{pattern}, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
-			q, err := query.ParseAndCheck("file:" + pattern)
+			q, err := query.ParseLiteral("file:" + pattern)
 			if err != nil {
 				return nil, err
 			}

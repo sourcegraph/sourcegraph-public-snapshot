@@ -41,6 +41,10 @@ type Request struct {
 	// The deadline for the search request.
 	// It is parsed with time.Time.UnmarshalText.
 	Deadline string
+
+	// Endpoint(s) for reaching Zoekt. See description in
+	// endpoint.go:Static(...)
+	IndexerEndpoints []string
 }
 
 // PatternInfo describes a search request on a repo. Most of the fields

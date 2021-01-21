@@ -13,7 +13,7 @@ import (
 
 var ErrNoMetadata = errors.New("no rows in meta table")
 
-func (s *Store) ReadMeta(ctx context.Context, bundleID int) (_ MetaData, err error) {
+func (s *Store) readMeta(ctx context.Context, bundleID int) (_ MetaData, err error) {
 	ctx, endObservation := s.operations.readMeta.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 	}})
@@ -31,11 +31,11 @@ func (s *Store) ReadMeta(ctx context.Context, bundleID int) (_ MetaData, err err
 }
 
 const readMetaQuery = `
--- source: enterprise/internal/codeintel/stores/lsifstore/data_read.go:ReadMeta
+-- source: enterprise/internal/codeintel/stores/lsifstore/data_read.go:readMeta
 SELECT num_result_chunks FROM lsif_data_metadata WHERE dump_id = %s
 `
 
-func (s *Store) PathsWithPrefix(ctx context.Context, bundleID int, prefix string) (_ []string, err error) {
+func (s *Store) pathsWithPrefix(ctx context.Context, bundleID int, prefix string) (_ []string, err error) {
 	ctx, endObservation := s.operations.pathsWithPrefix.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("prefix", prefix),
@@ -51,11 +51,11 @@ func (s *Store) PathsWithPrefix(ctx context.Context, bundleID int, prefix string
 }
 
 const pathsWithPrefixQuery = `
--- source: enterprise/internal/codeintel/stores/lsifstore/data_read.go:PathsWithPrefix
+-- source: enterprise/internal/codeintel/stores/lsifstore/data_read.go:pathsWithPrefix
 SELECT path FROM lsif_data_documents WHERE dump_id = %s AND path LIKE %s ORDER BY path
 `
 
-func (s *Store) ReadDocument(ctx context.Context, bundleID int, path string) (_ DocumentData, _ bool, err error) {
+func (s *Store) readDocument(ctx context.Context, bundleID int, path string) (_ DocumentData, _ bool, err error) {
 	ctx, endObservation := s.operations.readDocument.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("path", path),
@@ -76,11 +76,11 @@ func (s *Store) ReadDocument(ctx context.Context, bundleID int, path string) (_ 
 }
 
 const readDocumentQuery = `
--- source: enterprise/internal/codeintel/stores/lsifstore/data_read.go:ReadDocument
+-- source: enterprise/internal/codeintel/stores/lsifstore/data_read.go:readDocument
 SELECT data FROM lsif_data_documents WHERE dump_id = %s AND path = %s LIMIT 1
 `
 
-func (s *Store) ReadResultChunk(ctx context.Context, bundleID int, id int) (_ ResultChunkData, _ bool, err error) {
+func (s *Store) readResultChunk(ctx context.Context, bundleID int, id int) (_ ResultChunkData, _ bool, err error) {
 	ctx, endObservation := s.operations.readResultChunk.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.Int("id", id),
@@ -101,11 +101,11 @@ func (s *Store) ReadResultChunk(ctx context.Context, bundleID int, id int) (_ Re
 }
 
 const readResultChunkQuery = `
--- source: enterprise/internal/codeintel/stores/lsifstore/data_read.go:ReadResultChunk
+-- source: enterprise/internal/codeintel/stores/lsifstore/data_read.go:readResultChunk
 SELECT data FROM lsif_data_result_chunks WHERE dump_id = %s AND idx = %s LIMIT 1
 `
 
-func (s *Store) ReadDefinitions(ctx context.Context, bundleID int, scheme, identifier string, skip, take int) (_ []LocationData, _ int, err error) {
+func (s *Store) readDefinitions(ctx context.Context, bundleID int, scheme, identifier string, skip, take int) (_ []LocationData, _ int, err error) {
 	ctx, endObservation := s.operations.readDefinitions.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("scheme", scheme),
@@ -118,7 +118,7 @@ func (s *Store) ReadDefinitions(ctx context.Context, bundleID int, scheme, ident
 	return s.readDefinitionReferences(ctx, bundleID, "lsif_data_definitions", scheme, identifier, skip, take)
 }
 
-func (s *Store) ReadReferences(ctx context.Context, bundleID int, scheme, identifier string, skip, take int) (_ []LocationData, _ int, err error) {
+func (s *Store) readReferences(ctx context.Context, bundleID int, scheme, identifier string, skip, take int) (_ []LocationData, _ int, err error) {
 	ctx, endObservation := s.operations.readReferences.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("scheme", scheme),

@@ -10,7 +10,8 @@ import (
 	"time"
 
 	"github.com/lib/pq"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 )
 
 // NewTx opens a transaction off of the given db, returning that
@@ -64,12 +65,12 @@ func NewDB(t testing.TB, dsn string) *sql.DB {
 	config.Path = "/" + dbname
 	testDB := dbConn(t, config)
 
-	for _, databaseName := range dbutil.DatabaseNames {
-		m, err := dbutil.NewMigrate(testDB, databaseName)
+	for _, databaseName := range dbconn.DatabaseNames {
+		m, err := dbconn.NewMigrate(testDB, databaseName)
 		if err != nil {
 			t.Fatalf("failed to construct migrations: %s", err)
 		}
-		if err = dbutil.DoMigrate(m); err != nil {
+		if err = dbconn.DoMigrate(m); err != nil {
 			t.Fatalf("failed to apply migrations: %s", err)
 		}
 	}
@@ -93,7 +94,7 @@ func NewDB(t testing.TB, dsn string) *sql.DB {
 }
 
 func dbConn(t testing.TB, cfg *url.URL) *sql.DB {
-	db, err := dbutil.NewDB(cfg.String(), t.Name())
+	db, err := dbconn.NewRaw(cfg.String())
 	if err != nil {
 		t.Fatalf("failed to connect to database %q: %s", cfg, err)
 	}

@@ -859,7 +859,7 @@ func (r *searchResolver) evaluateAndStream(ctx context.Context, scopeParameters 
 	// For streaming search we want to run the evaluation of AND expressions in batch
 	// mode. We copy r to r2 and replace the result channel with a sink.
 	r2 := *r
-	sink := make(chan []SearchResultResolver)
+	sink := make(chan SearchEvent)
 	defer close(sink)
 	go func() {
 		for range sink {
@@ -868,8 +868,10 @@ func (r *searchResolver) evaluateAndStream(ctx context.Context, scopeParameters 
 	r2.resultChannel = sink
 
 	result, err := r2.evaluateAnd(ctx, scopeParameters, operands)
-	if err == nil && result.SearchResults != nil {
-		r.resultChannel <- result.SearchResults
+	r.resultChannel <- SearchEvent{
+		Results: result.SearchResults,
+		Stats:   result.Stats,
+		Error:   err,
 	}
 	return result, err
 }
@@ -1656,15 +1658,12 @@ func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameter
 type aggregator struct {
 	// resultChannel if non-nil will send all results we receive down it. See
 	// searchResolver.SetResultChannel
-	resultChannel chan<- []SearchResultResolver
+	resultChannel SearchStream
 
 	mu       sync.Mutex
 	results  []SearchResultResolver
 	common   streaming.Stats
 	multiErr *multierror.Error
-	// fileMatches is a map from git:// URI of the file to FileMatch resolver
-	// to merge multiple results of different types for the same file
-	fileMatches map[string]*FileMatchResolver
 }
 
 func (a *aggregator) get() ([]SearchResultResolver, streaming.Stats, *multierror.Error) {
@@ -1673,10 +1672,21 @@ func (a *aggregator) get() ([]SearchResultResolver, streaming.Stats, *multierror
 	return a.results, a.common, a.multiErr
 }
 
+func statsDeref(s *streaming.Stats) streaming.Stats {
+	if s == nil {
+		return streaming.Stats{}
+	}
+	return *s
+}
+
 // report sends results down resultChannel and collects the results.
 func (a *aggregator) report(ctx context.Context, results []SearchResultResolver, common *streaming.Stats, err error) {
 	if a.resultChannel != nil {
-		a.resultChannel <- results
+		a.resultChannel <- SearchEvent{
+			Results: results,
+			Stats:   statsDeref(common),
+			Error:   err,
+		}
 	}
 
 	a.collect(ctx, results, common, err)
@@ -1691,32 +1701,13 @@ func (a *aggregator) collect(ctx context.Context, results []SearchResultResolver
 	if err != nil && !isContextError(ctx, err) {
 		a.multiErr = multierror.Append(a.multiErr, errors.Wrap(err, "repository search failed"))
 	}
-	for _, r := range results {
-		fm, ok := r.ToFileMatch()
-		if !ok {
-			a.results = append(a.results, r)
-			continue
-		}
-
-		// Merge fileMatches from type symbol, path, file. For streaming search this
-		// code has no effect and the frontend should handle deduplication.
-		if m, ok := a.fileMatches[fm.uri]; ok {
-			m.appendMatches(fm)
-		} else {
-			a.fileMatches[fm.uri] = fm
-			a.results = append(a.results, r)
-		}
-	}
-	if common != nil {
-		a.common.Update(common)
-	}
+	a.results = append(a.results, results...)
+	a.common.Update(common)
 }
 
 func (a *aggregator) doRepoSearch(ctx context.Context, args *search.TextParameters, limit int32) {
 	tr, ctx := trace.New(ctx, "doRepoSearch", "")
-	defer func() {
-		tr.Finish()
-	}()
+	defer tr.Finish()
 	repoResults, repoCommon, err := searchRepositories(ctx, args, limit)
 	a.report(ctx, repoResults, repoCommon, errors.Wrap(err, "repository search failed"))
 }
@@ -1894,7 +1885,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 
 	agg := aggregator{
 		resultChannel: r.resultChannel,
-		fileMatches:   make(map[string]*FileMatchResolver),
 	}
 
 	isFileOrPath := func() bool {

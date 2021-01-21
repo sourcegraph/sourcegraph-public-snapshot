@@ -5,12 +5,15 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
 // An OrgInvitation is an invitation for a user to join an organization as a member.
@@ -32,7 +35,41 @@ func (oi *OrgInvitation) Pending() bool {
 	return oi.RespondedAt == nil && oi.RevokedAt == nil
 }
 
-type orgInvitations struct{}
+type OrgInvitationStore struct {
+	*basestore.Store
+
+	once sync.Once
+}
+
+// NewOrgInvitationStoreWithDB instantiates and returns a new OrgInvitationStore with prepared statements.
+func NewOrgInvitationStoreWithDB(db dbutil.DB) *OrgInvitationStore {
+	return &OrgInvitationStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+}
+
+// NewOrgInvitationStoreWithDB instantiates and returns a new OrgInvitationStore using the other store handle.
+func NewOrgInvitationStoreWith(other basestore.ShareableStore) *OrgInvitationStore {
+	return &OrgInvitationStore{Store: basestore.NewWithHandle(other.Handle())}
+}
+
+func (s *OrgInvitationStore) With(other basestore.ShareableStore) *OrgInvitationStore {
+	return &OrgInvitationStore{Store: s.Store.With(other)}
+}
+
+func (s *OrgInvitationStore) Transact(ctx context.Context) (*OrgInvitationStore, error) {
+	txBase, err := s.Store.Transact(ctx)
+	return &OrgInvitationStore{Store: txBase}, err
+}
+
+// ensureStore instantiates a basestore.Store if necessary, using the dbconn.Global handle.
+// This function ensures access to dbconn happens after the rest of the code or tests have
+// initialized it.
+func (s *OrgInvitationStore) ensureStore() {
+	s.once.Do(func() {
+		if s.Store == nil {
+			s.Store = basestore.NewWithDB(dbconn.Global, sql.TxOptions{})
+		}
+	})
+}
 
 // OrgInvitationNotFoundError occurs when an org invitation is not found.
 type OrgInvitationNotFoundError struct {
@@ -46,17 +83,18 @@ func (err OrgInvitationNotFoundError) Error() string {
 	return fmt.Sprintf("org invitation not found: %v", err.args)
 }
 
-func (*orgInvitations) Create(ctx context.Context, orgID, senderUserID, recipientUserID int32) (*OrgInvitation, error) {
+func (s *OrgInvitationStore) Create(ctx context.Context, orgID, senderUserID, recipientUserID int32) (*OrgInvitation, error) {
 	if Mocks.OrgInvitations.Create != nil {
 		return Mocks.OrgInvitations.Create(orgID, senderUserID, recipientUserID)
 	}
+	s.ensureStore()
 
 	t := &OrgInvitation{
 		OrgID:           orgID,
 		SenderUserID:    senderUserID,
 		RecipientUserID: recipientUserID,
 	}
-	if err := dbconn.Global.QueryRowContext(
+	if err := s.Handle().DB().QueryRowContext(
 		ctx,
 		"INSERT INTO org_invitations(org_id, sender_user_id, recipient_user_id) VALUES($1, $2, $3) RETURNING id, created_at",
 		orgID, senderUserID, recipientUserID,
@@ -75,7 +113,7 @@ func (*orgInvitations) Create(ctx context.Context, orgID, senderUserID, recipien
 // GetByID retrieves the org invitation (if any) given its ID.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is permitted to view this org invitation.
-func (s *orgInvitations) GetByID(ctx context.Context, id int64) (*OrgInvitation, error) {
+func (s *OrgInvitationStore) GetByID(ctx context.Context, id int64) (*OrgInvitation, error) {
 	if Mocks.OrgInvitations.GetByID != nil {
 		return Mocks.OrgInvitations.GetByID(id)
 	}
@@ -94,7 +132,7 @@ func (s *orgInvitations) GetByID(ctx context.Context, id int64) (*OrgInvitation,
 // one invitation may be pending for an (org,recipient).
 //
 // 🚨 SECURITY: The caller must ensure that the actor is permitted to view this org invitation.
-func (s *orgInvitations) GetPending(ctx context.Context, orgID, recipientUserID int32) (*OrgInvitation, error) {
+func (s *OrgInvitationStore) GetPending(ctx context.Context, orgID, recipientUserID int32) (*OrgInvitation, error) {
 	results, err := s.list(ctx, []*sqlf.Query{
 		sqlf.Sprintf("org_id=%d AND recipient_user_id=%d AND responded_at IS NULL AND revoked_at IS NULL", orgID, recipientUserID),
 	}, nil)
@@ -132,11 +170,13 @@ func (o OrgInvitationsListOptions) sqlConditions() []*sqlf.Query {
 //
 // 🚨 SECURITY: The caller must ensure that the actor is permitted to list with the specified
 // options.
-func (s *orgInvitations) List(ctx context.Context, opt OrgInvitationsListOptions) ([]*OrgInvitation, error) {
+func (s *OrgInvitationStore) List(ctx context.Context, opt OrgInvitationsListOptions) ([]*OrgInvitation, error) {
 	return s.list(ctx, opt.sqlConditions(), opt.LimitOffset)
 }
 
-func (s *orgInvitations) list(ctx context.Context, conds []*sqlf.Query, limitOffset *LimitOffset) ([]*OrgInvitation, error) {
+func (s *OrgInvitationStore) list(ctx context.Context, conds []*sqlf.Query, limitOffset *LimitOffset) ([]*OrgInvitation, error) {
+	s.ensureStore()
+
 	q := sqlf.Sprintf(`
 SELECT id, org_id, sender_user_id, recipient_user_id, created_at, notified_at, responded_at, response_type, revoked_at FROM org_invitations
 WHERE (%s) AND deleted_at IS NULL
@@ -146,7 +186,7 @@ ORDER BY id ASC
 		limitOffset.SQL(),
 	)
 
-	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	rows, err := s.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -166,10 +206,12 @@ ORDER BY id ASC
 // Count counts all org invitations that satisfy the options (ignoring limit and offset).
 //
 // 🚨 SECURITY: The caller must ensure that the actor is permitted to count the invitations.
-func (s *orgInvitations) Count(ctx context.Context, opt OrgInvitationsListOptions) (int, error) {
+func (s *OrgInvitationStore) Count(ctx context.Context, opt OrgInvitationsListOptions) (int, error) {
+	s.ensureStore()
+
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM org_invitations WHERE (%s) AND deleted_at IS NULL", sqlf.Join(opt.sqlConditions(), ") AND ("))
 	var count int
-	if err := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count); err != nil {
+	if err := s.QueryRow(ctx, q).Scan(&count); err != nil {
 		return 0, err
 	}
 	return count, nil
@@ -177,8 +219,10 @@ func (s *orgInvitations) Count(ctx context.Context, opt OrgInvitationsListOption
 
 // UpdateEmailSentTimestamp updates the email-sent timestam[ for the org invitation to the current
 // time.
-func (*orgInvitations) UpdateEmailSentTimestamp(ctx context.Context, id int64) error {
-	res, err := dbconn.Global.ExecContext(ctx, "UPDATE org_invitations SET notified_at=now() WHERE id=$1 AND revoked_at IS NULL AND deleted_at IS NULL", id)
+func (s *OrgInvitationStore) UpdateEmailSentTimestamp(ctx context.Context, id int64) error {
+	s.ensureStore()
+
+	res, err := s.Handle().DB().ExecContext(ctx, "UPDATE org_invitations SET notified_at=now() WHERE id=$1 AND revoked_at IS NULL AND deleted_at IS NULL", id)
 	if err != nil {
 		return err
 	}
@@ -195,8 +239,10 @@ func (*orgInvitations) UpdateEmailSentTimestamp(ctx context.Context, id int64) e
 // Respond sets the recipient's response to the org invitation and returns the organization's ID to
 // which the recipient was invited. If the recipient user ID given is incorrect, an
 // OrgInvitationNotFoundError error is returned.
-func (*orgInvitations) Respond(ctx context.Context, id int64, recipientUserID int32, accept bool) (orgID int32, err error) {
-	if err := dbconn.Global.QueryRowContext(ctx, "UPDATE org_invitations SET responded_at=now(), response_type=$3 WHERE id=$1 AND recipient_user_id=$2 AND responded_at IS NULL AND revoked_at IS NULL AND deleted_at IS NULL RETURNING org_id", id, recipientUserID, accept).Scan(&orgID); err == sql.ErrNoRows {
+func (s *OrgInvitationStore) Respond(ctx context.Context, id int64, recipientUserID int32, accept bool) (orgID int32, err error) {
+	s.ensureStore()
+
+	if err := s.Handle().DB().QueryRowContext(ctx, "UPDATE org_invitations SET responded_at=now(), response_type=$3 WHERE id=$1 AND recipient_user_id=$2 AND responded_at IS NULL AND revoked_at IS NULL AND deleted_at IS NULL RETURNING org_id", id, recipientUserID, accept).Scan(&orgID); err == sql.ErrNoRows {
 		return 0, OrgInvitationNotFoundError{[]interface{}{fmt.Sprintf("id %d recipient %d", id, recipientUserID)}}
 	} else if err != nil {
 		return 0, err
@@ -206,12 +252,13 @@ func (*orgInvitations) Respond(ctx context.Context, id int64, recipientUserID in
 
 // Revoke marks an org invitation as revoked. The recipient is forbidden from responding to it after
 // it has been revoked.
-func (*orgInvitations) Revoke(ctx context.Context, id int64) error {
+func (s *OrgInvitationStore) Revoke(ctx context.Context, id int64) error {
 	if Mocks.OrgInvitations.Revoke != nil {
 		return Mocks.OrgInvitations.Revoke(id)
 	}
+	s.ensureStore()
 
-	res, err := dbconn.Global.ExecContext(ctx, "UPDATE org_invitations SET revoked_at=now() WHERE id=$1 AND revoked_at IS NULL AND deleted_at IS NULL", id)
+	res, err := s.Handle().DB().ExecContext(ctx, "UPDATE org_invitations SET revoked_at=now() WHERE id=$1 AND revoked_at IS NULL AND deleted_at IS NULL", id)
 	if err != nil {
 		return err
 	}

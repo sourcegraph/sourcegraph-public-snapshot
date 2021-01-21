@@ -70,7 +70,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 
 	zoekt := &searchbackend.Zoekt{Client: &searchbackend.FakeSearcher{}}
 
-	q, err := query.ParseAndCheck("foo")
+	q, err := query.ParseLiteral("foo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -156,7 +156,7 @@ func TestSearchFilesInReposStream(t *testing.T) {
 
 	zoekt := &searchbackend.Zoekt{Client: &searchbackend.FakeSearcher{}}
 
-	q, err := query.ParseAndCheck("foo")
+	q, err := query.ParseLiteral("foo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -171,20 +171,14 @@ func TestSearchFilesInReposStream(t *testing.T) {
 		SearcherURLs: endpoint.Static("test"),
 	}
 
-	resultChannel := make(chan []SearchResultResolver)
+	resultChannel := make(chan SearchEvent)
 	var resultsFromChannel []*FileMatchResolver
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		var ok bool
-		var resultChunk []SearchResultResolver
-		for {
-			resultChunk, ok = <-resultChannel
-			if !ok {
-				break
-			}
-			for _, result := range resultChunk {
+		for event := range resultChannel {
+			for _, result := range event.Results {
 				fm, _ := result.ToFileMatch()
 				resultsFromChannel = append(resultsFromChannel, fm)
 			}
@@ -263,7 +257,7 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 
 	zoekt := &searchbackend.Zoekt{Client: &searchbackend.FakeSearcher{}}
 
-	q, err := query.ParseAndCheck("foo")
+	q, err := query.ParseLiteral("foo")
 	if err != nil {
 		t.Fatal(err)
 	}

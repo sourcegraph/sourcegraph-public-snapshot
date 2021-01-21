@@ -13,6 +13,8 @@ interface Props {
      */
     onToggle?: (value: boolean) => void
 
+    onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void
+
     /** The title attribute (tooltip). */
     title?: string
 
@@ -35,13 +37,17 @@ export const Toggle: React.FunctionComponent<Props> = ({
     value,
     tabIndex,
     onToggle,
+    onClick,
     dataTest,
     ariaLabel,
 }) => {
-    function onClick(event: React.MouseEvent<HTMLButtonElement>): void {
+    function onButtonClick(event: React.MouseEvent<HTMLButtonElement>): void {
         event.stopPropagation()
         if (!disabled && onToggle) {
             onToggle(!value)
+        }
+        if (!disabled && onClick) {
+            onClick(event)
         }
     }
 
@@ -52,7 +58,7 @@ export const Toggle: React.FunctionComponent<Props> = ({
             id={id}
             title={title}
             value={value ? 1 : 0}
-            onClick={onClick}
+            onClick={onButtonClick}
             tabIndex={tabIndex}
             disabled={disabled}
             role="switch"
