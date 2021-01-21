@@ -16,11 +16,11 @@ export const SearchHelpDropdownButton: React.FunctionComponent = () => {
             <DropdownToggle
                 tag="span"
                 caret={false}
-                className="px-2 btn btn-link d-flex align-items-center cursor-pointer"
+                className="btn btn-link d-flex align-items-center cursor-pointer"
                 aria-label="Quick help for search"
             >
                 <HelpCircleOutlineIcon
-                    className="test-search-help-dropdown-button-icon icon-inline small"
+                    className="test-search-help-dropdown-button-icon icon-inline"
                     aria-hidden="true"
                 />
             </DropdownToggle>

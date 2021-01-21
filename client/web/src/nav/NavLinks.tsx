@@ -12,6 +12,7 @@ import { WebActionsNavItems, WebCommandListPopoverButton } from '../components/s
 import { ThemeProps } from '../../../shared/src/theme'
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { ExtensionAlertAnimationProps, UserNavItem } from './UserNavItem'
+import { MenuNavItem } from './MenuNavItem'
 import { CampaignsNavItem } from '../enterprise/campaigns/global/nav/CampaignsNavItem'
 import { ThemePreferenceProps } from '../theme'
 import {
@@ -68,25 +69,20 @@ export class NavLinks extends React.PureComponent<Props> {
                         <ActivationDropdown activation={this.props.activation} history={this.props.history} />
                     </li>
                 )}
-                {!isErrorLike(this.props.settingsCascade.final) &&
-                    this.props.settingsCascade.final?.experimentalFeatures?.codeInsights &&
-                    !this.props.minimalNavLinks && (
-                        <li className="nav-item">
-                            <InsightsNavItem />
-                        </li>
-                    )}
-                {!isErrorLike(this.props.settingsCascade.final) &&
-                    this.props.settingsCascade.final?.experimentalFeatures?.codeMonitoring &&
-                    !this.props.minimalNavLinks && (
-                        <li className="nav-item">
-                            <CodeMonitoringNavItem />
-                        </li>
-                    )}
-                {!this.props.minimalNavLinks && this.props.showCampaigns && (
-                    <li className="nav-item">
-                        <CampaignsNavItem />
-                    </li>
-                )}
+                {/* New dropdown */}
+                <li>
+                    <MenuNavItem>
+                        {!isErrorLike(this.props.settingsCascade.final) &&
+                            this.props.settingsCascade.final?.experimentalFeatures?.codeInsights &&
+                            !this.props.minimalNavLinks && <InsightsNavItem />}
+
+                        {!isErrorLike(this.props.settingsCascade.final) &&
+                            this.props.settingsCascade.final?.experimentalFeatures?.codeMonitoring &&
+                            !this.props.minimalNavLinks && <CodeMonitoringNavItem />}
+
+                        {!this.props.minimalNavLinks && this.props.showCampaigns && <CampaignsNavItem />}
+                    </MenuNavItem>
+                </li>
                 {!this.props.authenticatedUser && (
                     <>
                         {this.props.location.pathname !== '/sign-in' && (
