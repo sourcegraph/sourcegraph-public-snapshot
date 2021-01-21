@@ -6,17 +6,12 @@ package search
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"net/url"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	api2 "github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // StreamHandler is an http handler which streams back search results.
@@ -70,28 +65,21 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	resultsStream, resultsStreamDone := newResultsStream(ctx, search)
 
+	progress := progressAggregator{
+		Start: time.Now(),
+	}
+
 	const matchesChunk = 1000
 	matchesBuf := make([]interface{}, 0, matchesChunk)
-	var matchCount int32
-	flushMatchesBuf := func(event graphqlbackend.SearchEvent) {
+	flushMatchesBuf := func() {
 		if len(matchesBuf) > 0 {
 			if err := eventWriter.Event("matches", matchesBuf); err != nil {
 				// EOF
 				return
 			}
 			matchesBuf = matchesBuf[:0]
-			pr := api.BuildProgressEvent(api.ProgressStats{
-				MatchCount: int(matchCount),
-				//ElapsedMilliseconds: int(resultsResolver.ElapsedMilliseconds()),
-				RepositoriesCount: repoCount(event),
-				ExcludedArchived:  event.Stats.ExcludedArchived,
-				ExcludedForks:     event.Stats.ExcludedForks,
-				Timedout:          timedout(event),
-				Missing:           missing(event),
-				Cloning:           cloning(event),
-				LimitHit:          event.Stats.IsLimitHit,
-			})
-			_ = eventWriter.Event("progress", pr)
+
+			_ = eventWriter.Event("progress", progress.Build())
 		}
 	}
 
@@ -105,18 +93,18 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		var ok bool
 		select {
 		case event, ok = <-resultsStream:
-			fmt.Println("Event! with num results:", len(event.Results))
 		case <-flushTicker.C:
 			ok = true
-			flushMatchesBuf(event)
+			flushMatchesBuf()
 		}
 
 		if !ok {
 			break
 		}
 
+		progress.Update(event)
+
 		for _, result := range event.Results {
-			matchCount += result.ResultCount(		
 			if fm, ok := result.ToFileMatch(); ok {
 				if syms := fm.Symbols(); len(syms) > 0 {
 					// Inlining to avoid exporting a bunch of stuff from
@@ -146,18 +134,18 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				matchesBuf = append(matchesBuf, fromCommit(commit))
 			}
 			if len(matchesBuf) == cap(matchesBuf) {
-				flushMatchesBuf(event)
+				flushMatchesBuf()
 			}
 		}
 
 		// Instantly send results if we have not sent any yet.
 		if first && len(matchesBuf) > 0 {
 			first = false
-			flushMatchesBuf(event)
+			flushMatchesBuf()
 		}
 	}
 
-	flushMatchesBuf(graphqlbackend.SearchEvent{})
+	flushMatchesBuf()
 
 	final := <-resultsStreamDone
 	resultsResolver, err := final.resultsResolver, final.err
@@ -203,64 +191,12 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	pr := api.BuildProgressEvent(api.ProgressStats{
-		MatchCount:          int(resultsResolver.MatchCount()),
-		ElapsedMilliseconds: int(resultsResolver.ElapsedMilliseconds()),
-		RepositoriesCount:   int(resultsResolver.RepositoriesCount()),
-		ExcludedArchived:    resultsResolver.ExcludedArchived,
-		ExcludedForks:       resultsResolver.ExcludedForks,
-		Timedout:            toNamer(resultsResolver.Timedout),
-		Missing:             toNamer(resultsResolver.Missing),
-		Cloning:             toNamer(resultsResolver.Cloning),
-		LimitHit:            resultsResolver.IsLimitHit,
-	})
+	pr := progress.Build()
 	pr.Done = true
 	_ = eventWriter.Event("progress", pr)
 
 	// TODO done event includes progress
 	_ = eventWriter.Event("done", map[string]interface{}{})
-}
-
-func toNamer(f func() []*graphqlbackend.RepositoryResolver) []api.Namer {
-	rs := f()
-	n := make([]api.Namer, 0, len(rs))
-	for _, r := range rs {
-		n = append(n, r)
-	}
-	return n
-}
-
-type NamerFunc struct {
-	types.RepoName
-}
-
-func (n NamerFunc) Name() string {
-	return string(n.RepoName.Name)
-}
-func repoCount(event graphqlbackend.SearchEvent) (c int) {
-	event.Stats.Status.Filter(search.RepoStatusSearched, func(ID api2.RepoID) {
-		c += 1
-	})
-	return
-}
-
-func missing(event graphqlbackend.SearchEvent) (repos []api.Namer) {
-	event.Stats.Status.Filter(search.RepoStatusMissing, func(ID api2.RepoID) {
-		repos = append(repos, NamerFunc{*event.Stats.Repos[ID]})
-	})
-	return
-}
-func cloning(event graphqlbackend.SearchEvent) (repos []api.Namer) {
-	event.Stats.Status.Filter(search.RepoStatusCloning, func(ID api2.RepoID) {
-		repos = append(repos, NamerFunc{*event.Stats.Repos[ID]})
-	})
-	return
-}
-func timedout(event graphqlbackend.SearchEvent) (repos []api.Namer) {
-	event.Stats.Status.Filter(search.RepoStatusTimedout, func(ID api2.RepoID) {
-		repos = append(repos, NamerFunc{*event.Stats.Repos[ID]})
-	})
-	return
 }
 
 type searchResolver interface {
