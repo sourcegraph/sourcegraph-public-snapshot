@@ -2737,7 +2737,7 @@ type Query {
     ): Campaign
 
     """
-    Queries code insights
+    EXPERIMENTAL: Queries code insights
     """
     insights: Insights
 
