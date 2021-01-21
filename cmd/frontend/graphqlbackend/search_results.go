@@ -105,33 +105,8 @@ func (c *SearchResultsResolver) IndexUnavailable() bool {
 	return c.IsIndexUnavailable
 }
 
-func RepositoryResolvers(repos types.RepoNames) []*RepositoryResolver {
-	dedupSort(&repos)
-	return toRepositoryResolvers(repos)
-}
-
 func (c *SearchResultsResolver) allReposTimedout() bool {
 	return c.Status.All(search.RepoStatusTimedout) && c.Status.Len() == len(c.Repos)
-}
-
-// dedupSort sorts (by ID in ascending order) and deduplicates
-// the given repos in-place.
-func dedupSort(repos *types.RepoNames) {
-	if len(*repos) == 0 {
-		return
-	}
-
-	sort.Sort(*repos)
-
-	j := 0
-	for i := 1; i < len(*repos); i++ {
-		if (*repos)[j].ID != (*repos)[i].ID {
-			j++
-			(*repos)[j] = (*repos)[i]
-		}
-	}
-
-	*repos = (*repos)[:j+1]
 }
 
 // SearchResultsResolver is a resolver for the GraphQL type `SearchResults`
