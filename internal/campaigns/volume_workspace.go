@@ -13,7 +13,9 @@ import (
 	"github.com/sourcegraph/src-cli/internal/version"
 )
 
-type dockerVolumeWorkspaceCreator struct{}
+type dockerVolumeWorkspaceCreator struct {
+	tempDir string
+}
 
 var _ WorkspaceCreator = &dockerVolumeWorkspaceCreator{}
 
@@ -23,7 +25,7 @@ func (wc *dockerVolumeWorkspaceCreator) Create(ctx context.Context, repo *graphq
 		return nil, errors.Wrap(err, "creating Docker volume")
 	}
 
-	w := &dockerVolumeWorkspace{volume: volume}
+	w := &dockerVolumeWorkspace{tempDir: wc.tempDir, volume: volume}
 	if err := wc.unzipRepoIntoVolume(ctx, w, zip); err != nil {
 		return nil, errors.Wrap(err, "unzipping repo into workspace")
 	}
@@ -87,7 +89,8 @@ func (*dockerVolumeWorkspaceCreator) unzipRepoIntoVolume(ctx context.Context, w 
 // advantages if bind mounts are slow, such as on Docker for Mac, but could make
 // debugging harder and is slower when it's time to actually retrieve the diff.
 type dockerVolumeWorkspace struct {
-	volume string
+	tempDir string
+	volume  string
 }
 
 var _ Workspace = &dockerVolumeWorkspace{}
@@ -165,7 +168,7 @@ func init() {
 // container started from the dockerWorkspaceImage, then run it and return the
 // output.
 func (w *dockerVolumeWorkspace) runScript(ctx context.Context, target, script string) ([]byte, error) {
-	f, err := ioutil.TempFile(os.TempDir(), "src-run-*")
+	f, err := ioutil.TempFile(w.tempDir, "src-run-*")
 	if err != nil {
 		return nil, errors.Wrap(err, "creating run script")
 	}

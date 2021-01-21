@@ -211,7 +211,7 @@ func (svc *Service) NewRepoFetcher(dir string, cleanArchives bool) RepoFetcher {
 	}
 }
 
-func (svc *Service) NewWorkspaceCreator(ctx context.Context, dir string, steps []Step) WorkspaceCreator {
+func (svc *Service) NewWorkspaceCreator(ctx context.Context, cacheDir, tempDir string, steps []Step) WorkspaceCreator {
 	var workspace workspaceCreatorType
 	if svc.workspace == "volume" {
 		workspace = workspaceCreatorVolume
@@ -222,9 +222,9 @@ func (svc *Service) NewWorkspaceCreator(ctx context.Context, dir string, steps [
 	}
 
 	if workspace == workspaceCreatorVolume {
-		return &dockerVolumeWorkspaceCreator{}
+		return &dockerVolumeWorkspaceCreator{tempDir: tempDir}
 	}
-	return &dockerBindWorkspaceCreator{dir: dir}
+	return &dockerBindWorkspaceCreator{dir: cacheDir}
 }
 
 // dockerImageSet represents a set of Docker images that need to be pulled. The

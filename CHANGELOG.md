@@ -17,6 +17,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
+- Executing campaigns on macOS 11 with Docker 3.1 could fail when using a volume workspace. This has been fixed. [#436](https://github.com/sourcegraph/src-cli/pull/436)
+
 ### Removed
 
 ## 3.24.1

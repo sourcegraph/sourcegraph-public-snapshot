@@ -224,7 +224,7 @@ func campaignsExecute(ctx context.Context, out *output.Output, svc *campaigns.Se
 	}
 
 	pending = campaignsCreatePending(out, "Preparing workspaces")
-	workspaceCreator := svc.NewWorkspaceCreator(ctx, flags.cacheDir, campaignSpec.Steps)
+	workspaceCreator := svc.NewWorkspaceCreator(ctx, flags.cacheDir, flags.tempDir, campaignSpec.Steps)
 	pending.VerboseLine(output.Linef("🚧", output.StyleSuccess, "Workspace creator: %T", workspaceCreator))
 	campaignsCompletePending(pending, "Prepared workspaces")
 
