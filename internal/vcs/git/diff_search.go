@@ -468,7 +468,7 @@ func rawShowSearch(ctx context.Context, repo api.RepoName, opt RawLogDiffSearchO
 
 func logDiffCommonArgs(opt RawLogDiffSearchOptions) []string {
 	var args []string
-	if opt.Query.Pattern != "" {
+	if opt.Query.Pattern != "" && opt.Diff {
 		var queryArg string
 		if opt.MatchChangedOccurrenceCount {
 			queryArg = "-S"
