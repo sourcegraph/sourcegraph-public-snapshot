@@ -344,7 +344,7 @@ func NewSchema(campaigns CampaignsResolver, codeIntel CodeIntelResolver, insight
 		CampaignsResolver: defaultCampaignsResolver{},
 		AuthzResolver:     defaultAuthzResolver{},
 		CodeIntelResolver: defaultCodeIntelResolver{},
-		Insights:          defaultInsightsResolver{},
+		InsightsResolver:  defaultInsightsResolver{},
 		LicenseResolver:   defaultLicenseResolver{},
 	}
 	if campaigns != nil {
@@ -563,6 +563,7 @@ type schemaResolver struct {
 	CampaignsResolver
 	AuthzResolver
 	CodeIntelResolver
+	InsightsResolver
 	CodeMonitorsResolver
 	LicenseResolver
 }
@@ -571,7 +572,7 @@ type schemaResolver struct {
 // in enterprise mode. These resolver instances are nil when running as OSS.
 var EnterpriseResolvers = struct {
 	codeIntelResolver    CodeIntelResolver
-	insightsResolver     CodeInsightsResolver
+	insightsResolver     InsightsResolver
 	authzResolver        AuthzResolver
 	campaignsResolver    CampaignsResolver
 	codeMonitorsResolver CodeMonitorsResolver
