@@ -12,10 +12,10 @@ func TestSurveyResponses_Create_Count(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
-	count, err := GlobalSurveyResponses.Count(ctx)
+	count, err := SurveyResponses(db).Count(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -23,12 +23,12 @@ func TestSurveyResponses_Create_Count(t *testing.T) {
 		t.Fatal("Expected Count to be 0.")
 	}
 
-	_, err = GlobalSurveyResponses.Create(ctx, nil, nil, 10, nil, nil)
+	_, err = SurveyResponses(db).Create(ctx, nil, nil, 10, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	user, err := GlobalUsers.Create(ctx, NewUser{
+	user, err := Users(db).Create(ctx, NewUser{
 		Email:                 "a@a.com",
 		Username:              "u",
 		Password:              "p",
@@ -39,22 +39,22 @@ func TestSurveyResponses_Create_Count(t *testing.T) {
 	}
 
 	fakeResponse, fakeEmail := "lorem ipsum", "email@email.email"
-	_, err = GlobalSurveyResponses.Create(ctx, &user.ID, nil, 9, &fakeResponse, nil)
+	_, err = SurveyResponses(db).Create(ctx, &user.ID, nil, 9, &fakeResponse, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = GlobalSurveyResponses.Create(ctx, &user.ID, &fakeEmail, 8, nil, &fakeResponse)
+	_, err = SurveyResponses(db).Create(ctx, &user.ID, &fakeEmail, 8, nil, &fakeResponse)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = GlobalSurveyResponses.Create(ctx, nil, &fakeEmail, 8, nil, nil)
+	_, err = SurveyResponses(db).Create(ctx, nil, &fakeEmail, 8, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	count, err = GlobalSurveyResponses.Count(ctx)
+	count, err = SurveyResponses(db).Count(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}

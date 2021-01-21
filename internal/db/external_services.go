@@ -780,7 +780,7 @@ func (e *ExternalServiceStore) Delete(ctx context.Context, id int64) error {
 	}
 	e.ensureStore()
 
-	res, err := dbconn.Global.ExecContext(ctx, "UPDATE external_services SET deleted_at=now() WHERE id=$1 AND deleted_at IS NULL", id)
+	res, err := e.Handle().DB().ExecContext(ctx, "UPDATE external_services SET deleted_at=now() WHERE id=$1 AND deleted_at IS NULL", id)
 	if err != nil {
 		return err
 	}

@@ -94,11 +94,11 @@ func (m *OrgMemberStore) Remove(ctx context.Context, orgID, userID int32) error 
 
 // GetByOrgID returns a list of all members of a given organization.
 func (m *OrgMemberStore) GetByOrgID(ctx context.Context, orgID int32) ([]*types.OrgMembership, error) {
-	org, err := GlobalOrgs.With(m).GetByID(ctx, orgID)
+	org, err := OrgsWith(m).GetByID(ctx, orgID)
 	if err != nil {
 		return nil, err
 	}
-	return GlobalOrgMembers.getBySQL(ctx, "INNER JOIN users ON org_members.user_id = users.id WHERE org_id=$1 AND users.deleted_at IS NULL ORDER BY upper(users.display_name), users.id", org.ID)
+	return m.getBySQL(ctx, "INNER JOIN users ON org_members.user_id = users.id WHERE org_id=$1 AND users.deleted_at IS NULL ORDER BY upper(users.display_name), users.id", org.ID)
 }
 
 // ErrOrgMemberNotFound is the error that is returned when
@@ -127,7 +127,7 @@ func (m *OrgMemberStore) getOneBySQL(ctx context.Context, query string, args ...
 func (m *OrgMemberStore) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.OrgMembership, error) {
 	m.ensureStore()
 
-	rows, err := dbconn.Global.QueryContext(ctx, "SELECT org_members.id, org_members.org_id, org_members.user_id, org_members.created_at, org_members.updated_at FROM org_members "+query, args...)
+	rows, err := m.Handle().DB().QueryContext(ctx, "SELECT org_members.id, org_members.org_id, org_members.user_id, org_members.created_at, org_members.updated_at FROM org_members "+query, args...)
 	if err != nil {
 		return nil, err
 	}

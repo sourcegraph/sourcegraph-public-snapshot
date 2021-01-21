@@ -204,18 +204,18 @@ func (s *UserExternalAccountsStore) CreateUserAndSave(ctx context.Context, newUs
 		return Mocks.ExternalAccounts.CreateUserAndSave(newUser, spec, data)
 	}
 
-	usersTx, err := GlobalUsers.Transact(ctx)
+	tx, err := s.Transact(ctx)
 	if err != nil {
 		return 0, err
 	}
-	defer func() { err = usersTx.Done(err) }()
+	defer func() { err = tx.Done(err) }()
 
-	createdUser, err := usersTx.create(ctx, newUser)
+	createdUser, err := UsersWith(tx).create(ctx, newUser)
 	if err != nil {
 		return 0, err
 	}
 
-	err = s.With(usersTx).insert(ctx, createdUser.ID, spec, data)
+	err = tx.insert(ctx, createdUser.ID, spec, data)
 	return createdUser.ID, err
 }
 

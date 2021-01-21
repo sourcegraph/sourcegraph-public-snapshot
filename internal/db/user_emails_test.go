@@ -2,13 +2,13 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
@@ -57,10 +57,10 @@ func TestUserEmails_Get(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
-	user, err := GlobalUsers.Create(ctx, NewUser{
+	user, err := Users(db).Create(ctx, NewUser{
 		Email:                 "a@example.com",
 		Username:              "u2",
 		Password:              "pw",
@@ -69,11 +69,11 @@ func TestUserEmails_Get(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := GlobalUserEmails.Add(ctx, user.ID, "b@example.com", nil); err != nil {
+	if err := UserEmails(db).Add(ctx, user.ID, "b@example.com", nil); err != nil {
 		t.Fatal(err)
 	}
 
-	emailA, verifiedA, err := GlobalUserEmails.Get(ctx, user.ID, "A@EXAMPLE.com")
+	emailA, verifiedA, err := UserEmails(db).Get(ctx, user.ID, "A@EXAMPLE.com")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -84,7 +84,7 @@ func TestUserEmails_Get(t *testing.T) {
 		t.Error("want verified == false")
 	}
 
-	emailB, verifiedB, err := GlobalUserEmails.Get(ctx, user.ID, "B@EXAMPLE.com")
+	emailB, verifiedB, err := UserEmails(db).Get(ctx, user.ID, "B@EXAMPLE.com")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -95,7 +95,7 @@ func TestUserEmails_Get(t *testing.T) {
 		t.Error("want verified == false")
 	}
 
-	if _, _, err := GlobalUserEmails.Get(ctx, user.ID, "doesntexist@example.com"); !errcode.IsNotFound(err) {
+	if _, _, err := UserEmails(db).Get(ctx, user.ID, "doesntexist@example.com"); !errcode.IsNotFound(err) {
 		t.Errorf("got %v, want IsNotFound", err)
 	}
 }
@@ -104,10 +104,10 @@ func TestUserEmails_GetPrimary(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
-	user, err := GlobalUsers.Create(ctx, NewUser{
+	user, err := Users(db).Create(ctx, NewUser{
 		Email:                 "a@example.com",
 		Username:              "u2",
 		Password:              "pw",
@@ -119,7 +119,7 @@ func TestUserEmails_GetPrimary(t *testing.T) {
 
 	checkPrimaryEmail := func(t *testing.T, wantEmail string, wantVerified bool) {
 		t.Helper()
-		email, verified, err := GlobalUserEmails.GetPrimaryEmail(ctx, user.ID)
+		email, verified, err := UserEmails(db).GetPrimaryEmail(ctx, user.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -134,17 +134,17 @@ func TestUserEmails_GetPrimary(t *testing.T) {
 	// Initial address should be primary
 	checkPrimaryEmail(t, "a@example.com", false)
 	// Add a second address
-	if err := GlobalUserEmails.Add(ctx, user.ID, "b1@example.com", nil); err != nil {
+	if err := UserEmails(db).Add(ctx, user.ID, "b1@example.com", nil); err != nil {
 		t.Fatal(err)
 	}
 	// Primary should still be the first one
 	checkPrimaryEmail(t, "a@example.com", false)
 	// Verify second
-	if err := GlobalUserEmails.SetVerified(ctx, user.ID, "b1@example.com", true); err != nil {
+	if err := UserEmails(db).SetVerified(ctx, user.ID, "b1@example.com", true); err != nil {
 		t.Fatal(err)
 	}
 	// Set as primary
-	if err := GlobalUserEmails.SetPrimaryEmail(ctx, user.ID, "b1@example.com"); err != nil {
+	if err := UserEmails(db).SetPrimaryEmail(ctx, user.ID, "b1@example.com"); err != nil {
 		t.Fatal(err)
 	}
 	// Confirm it is now the primary
@@ -155,10 +155,10 @@ func TestUserEmails_SetPrimary(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
-	user, err := GlobalUsers.Create(ctx, NewUser{
+	user, err := Users(db).Create(ctx, NewUser{
 		Email:                 "a@example.com",
 		Username:              "u2",
 		Password:              "pw",
@@ -170,7 +170,7 @@ func TestUserEmails_SetPrimary(t *testing.T) {
 
 	checkPrimaryEmail := func(t *testing.T, wantEmail string, wantVerified bool) {
 		t.Helper()
-		email, verified, err := GlobalUserEmails.GetPrimaryEmail(ctx, user.ID)
+		email, verified, err := UserEmails(db).GetPrimaryEmail(ctx, user.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -185,11 +185,11 @@ func TestUserEmails_SetPrimary(t *testing.T) {
 	// Initial address should be primary
 	checkPrimaryEmail(t, "a@example.com", false)
 	// Add a another address
-	if err := GlobalUserEmails.Add(ctx, user.ID, "b1@example.com", nil); err != nil {
+	if err := UserEmails(db).Add(ctx, user.ID, "b1@example.com", nil); err != nil {
 		t.Fatal(err)
 	}
 	// Setting it as primary should fail since it is not verified
-	if err := GlobalUserEmails.SetPrimaryEmail(ctx, user.ID, "b1@example.com"); err == nil {
+	if err := UserEmails(db).SetPrimaryEmail(ctx, user.ID, "b1@example.com"); err == nil {
 		t.Fatal("Expected an error as address is not verified")
 	}
 }
@@ -198,10 +198,10 @@ func TestUserEmails_ListByUser(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
-	user, err := GlobalUsers.Create(ctx, NewUser{
+	user, err := Users(db).Create(ctx, NewUser{
 		Email:                 "a@example.com",
 		Username:              "u2",
 		Password:              "pw",
@@ -212,14 +212,14 @@ func TestUserEmails_ListByUser(t *testing.T) {
 	}
 
 	testTime := time.Now().Round(time.Second).UTC()
-	if _, err := dbconn.Global.ExecContext(ctx,
+	if _, err := db.ExecContext(ctx,
 		`INSERT INTO user_emails(user_id, email, verification_code, verified_at) VALUES($1, $2, $3, $4)`,
 		user.ID, "b@example.com", "c2", testTime); err != nil {
 		t.Fatal(err)
 	}
 
 	t.Run("list all emails", func(t *testing.T) {
-		userEmails, err := GlobalUserEmails.ListByUser(ctx, UserEmailsListOptions{
+		userEmails, err := UserEmails(db).ListByUser(ctx, UserEmailsListOptions{
 			UserID: user.ID,
 		})
 		if err != nil {
@@ -236,7 +236,7 @@ func TestUserEmails_ListByUser(t *testing.T) {
 	})
 
 	t.Run("list only verified emails", func(t *testing.T) {
-		userEmails, err := GlobalUserEmails.ListByUser(ctx, UserEmailsListOptions{
+		userEmails, err := UserEmails(db).ListByUser(ctx, UserEmailsListOptions{
 			UserID:       user.ID,
 			OnlyVerified: true,
 		})
@@ -267,12 +267,12 @@ func TestUserEmails_Add_Remove(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
 	const emailA = "a@example.com"
 	const emailB = "b@example.com"
-	user, err := GlobalUsers.Create(ctx, NewUser{
+	user, err := Users(db).Create(ctx, NewUser{
 		Email:                 emailA,
 		Username:              "u2",
 		Password:              "pw",
@@ -282,22 +282,22 @@ func TestUserEmails_Add_Remove(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if primary, err := isUserEmailPrimary(ctx, user.ID, emailA); err != nil {
+	if primary, err := isUserEmailPrimary(ctx, db, user.ID, emailA); err != nil {
 		t.Fatal(err)
 	} else if want := true; primary != want {
 		t.Fatalf("got primary %v, want %v", primary, want)
 	}
 
-	if err := GlobalUserEmails.Add(ctx, user.ID, emailB, nil); err != nil {
+	if err := UserEmails(db).Add(ctx, user.ID, emailB, nil); err != nil {
 		t.Fatal(err)
 	}
-	if verified, err := isUserEmailVerified(ctx, user.ID, emailB); err != nil {
+	if verified, err := isUserEmailVerified(ctx, db, user.ID, emailB); err != nil {
 		t.Fatal(err)
 	} else if want := false; verified != want {
 		t.Fatalf("got verified %v, want %v", verified, want)
 	}
 
-	if emails, err := GlobalUserEmails.ListByUser(ctx, UserEmailsListOptions{
+	if emails, err := UserEmails(db).ListByUser(ctx, UserEmailsListOptions{
 		UserID: user.ID,
 	}); err != nil {
 		t.Fatal(err)
@@ -305,13 +305,13 @@ func TestUserEmails_Add_Remove(t *testing.T) {
 		t.Errorf("got %d emails, want %d", len(emails), want)
 	}
 
-	if err := GlobalUserEmails.Add(ctx, user.ID, emailB, nil); err == nil {
+	if err := UserEmails(db).Add(ctx, user.ID, emailB, nil); err == nil {
 		t.Fatal("got err == nil for Add on existing email")
 	}
-	if err := GlobalUserEmails.Add(ctx, 12345 /* bad user ID */, "foo@example.com", nil); err == nil {
+	if err := UserEmails(db).Add(ctx, 12345 /* bad user ID */, "foo@example.com", nil); err == nil {
 		t.Fatal("got err == nil for Add on bad user ID")
 	}
-	if emails, err := GlobalUserEmails.ListByUser(ctx, UserEmailsListOptions{
+	if emails, err := UserEmails(db).ListByUser(ctx, UserEmailsListOptions{
 		UserID: user.ID,
 	}); err != nil {
 		t.Fatal(err)
@@ -320,14 +320,14 @@ func TestUserEmails_Add_Remove(t *testing.T) {
 	}
 
 	// Attempt to remove primary
-	if err := GlobalUserEmails.Remove(ctx, user.ID, emailA); err == nil {
+	if err := UserEmails(db).Remove(ctx, user.ID, emailA); err == nil {
 		t.Fatal("expected error, can't delete primary email")
 	}
 	// Remove non primary
-	if err := GlobalUserEmails.Remove(ctx, user.ID, emailB); err != nil {
+	if err := UserEmails(db).Remove(ctx, user.ID, emailB); err != nil {
 		t.Fatal(err)
 	}
-	if emails, err := GlobalUserEmails.ListByUser(ctx, UserEmailsListOptions{
+	if emails, err := UserEmails(db).ListByUser(ctx, UserEmailsListOptions{
 		UserID: user.ID,
 	}); err != nil {
 		t.Fatal(err)
@@ -335,10 +335,10 @@ func TestUserEmails_Add_Remove(t *testing.T) {
 		t.Errorf("got %d emails (after removing), want %d", len(emails), want)
 	}
 
-	if err := GlobalUserEmails.Remove(ctx, user.ID, "foo@example.com"); err == nil {
+	if err := UserEmails(db).Remove(ctx, user.ID, "foo@example.com"); err == nil {
 		t.Fatal("got err == nil for Remove on nonexistent email")
 	}
-	if err := GlobalUserEmails.Remove(ctx, 12345 /* bad user ID */, "foo@example.com"); err == nil {
+	if err := UserEmails(db).Remove(ctx, 12345 /* bad user ID */, "foo@example.com"); err == nil {
 		t.Fatal("got err == nil for Remove on bad user ID")
 	}
 }
@@ -347,11 +347,11 @@ func TestUserEmails_SetVerified(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
 	const email = "a@example.com"
-	user, err := GlobalUsers.Create(ctx, NewUser{
+	user, err := Users(db).Create(ctx, NewUser{
 		Email:                 email,
 		Username:              "u2",
 		Password:              "pw",
@@ -361,37 +361,37 @@ func TestUserEmails_SetVerified(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if verified, err := isUserEmailVerified(ctx, user.ID, email); err != nil {
+	if verified, err := isUserEmailVerified(ctx, db, user.ID, email); err != nil {
 		t.Fatal(err)
 	} else if want := false; verified != want {
 		t.Fatalf("before SetVerified, got verified %v, want %v", verified, want)
 	}
 
-	if err := GlobalUserEmails.SetVerified(ctx, user.ID, email, true); err != nil {
+	if err := UserEmails(db).SetVerified(ctx, user.ID, email, true); err != nil {
 		t.Fatal(err)
 	}
-	if verified, err := isUserEmailVerified(ctx, user.ID, email); err != nil {
+	if verified, err := isUserEmailVerified(ctx, db, user.ID, email); err != nil {
 		t.Fatal(err)
 	} else if want := true; verified != want {
 		t.Fatalf("after SetVerified true, got verified %v, want %v", verified, want)
 	}
 
-	if err := GlobalUserEmails.SetVerified(ctx, user.ID, email, false); err != nil {
+	if err := UserEmails(db).SetVerified(ctx, user.ID, email, false); err != nil {
 		t.Fatal(err)
 	}
-	if verified, err := isUserEmailVerified(ctx, user.ID, email); err != nil {
+	if verified, err := isUserEmailVerified(ctx, db, user.ID, email); err != nil {
 		t.Fatal(err)
 	} else if want := false; verified != want {
 		t.Fatalf("after SetVerified false, got verified %v, want %v", verified, want)
 	}
 
-	if err := GlobalUserEmails.SetVerified(ctx, user.ID, "otheremail@example.com", false); err == nil {
+	if err := UserEmails(db).SetVerified(ctx, user.ID, "otheremail@example.com", false); err == nil {
 		t.Fatal("got err == nil for SetVerified on bad email")
 	}
 }
 
-func isUserEmailVerified(ctx context.Context, userID int32, email string) (bool, error) {
-	userEmails, err := GlobalUserEmails.ListByUser(ctx, UserEmailsListOptions{
+func isUserEmailVerified(ctx context.Context, db *sql.DB, userID int32, email string) (bool, error) {
+	userEmails, err := UserEmails(db).ListByUser(ctx, UserEmailsListOptions{
 		UserID: userID,
 	})
 	if err != nil {
@@ -405,8 +405,8 @@ func isUserEmailVerified(ctx context.Context, userID int32, email string) (bool,
 	return false, fmt.Errorf("email not found: %s", email)
 }
 
-func isUserEmailPrimary(ctx context.Context, userID int32, email string) (bool, error) {
-	userEmails, err := GlobalUserEmails.ListByUser(ctx, UserEmailsListOptions{
+func isUserEmailPrimary(ctx context.Context, db *sql.DB, userID int32, email string) (bool, error) {
+	userEmails, err := UserEmails(db).ListByUser(ctx, UserEmailsListOptions{
 		UserID: userID,
 	})
 	if err != nil {
@@ -424,11 +424,11 @@ func TestUserEmails_SetLastVerificationSentAt(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
 	const addr = "alice@example.com"
-	user, err := GlobalUsers.Create(ctx, NewUser{
+	user, err := Users(db).Create(ctx, NewUser{
 		Email:                 addr,
 		Username:              "alice",
 		Password:              "pw",
@@ -439,7 +439,7 @@ func TestUserEmails_SetLastVerificationSentAt(t *testing.T) {
 	}
 
 	// Verify "last_verification_sent_at" column is NULL
-	emails, err := GlobalUserEmails.ListByUser(ctx, UserEmailsListOptions{
+	emails, err := UserEmails(db).ListByUser(ctx, UserEmailsListOptions{
 		UserID: user.ID,
 	})
 	if err != nil {
@@ -450,12 +450,12 @@ func TestUserEmails_SetLastVerificationSentAt(t *testing.T) {
 		t.Fatalf("lastVerificationSentAt: want nil but got %v", emails[0].LastVerificationSentAt)
 	}
 
-	if err = GlobalUserEmails.SetLastVerification(ctx, user.ID, addr, "c"); err != nil {
+	if err = UserEmails(db).SetLastVerification(ctx, user.ID, addr, "c"); err != nil {
 		t.Fatal(err)
 	}
 
 	// Verify "last_verification_sent_at" column is not NULL
-	emails, err = GlobalUserEmails.ListByUser(ctx, UserEmailsListOptions{
+	emails, err = UserEmails(db).ListByUser(ctx, UserEmailsListOptions{
 		UserID: user.ID,
 	})
 	if err != nil {
@@ -471,11 +471,11 @@ func TestUserEmails_GetLatestVerificationSentEmail(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
 	const addr = "alice@example.com"
-	user, err := GlobalUsers.Create(ctx, NewUser{
+	user, err := Users(db).Create(ctx, NewUser{
 		Email:                 addr,
 		Username:              "alice",
 		Password:              "pw",
@@ -486,15 +486,15 @@ func TestUserEmails_GetLatestVerificationSentEmail(t *testing.T) {
 	}
 
 	// Should return "not found" because "last_verification_sent_at" column is NULL
-	_, err = GlobalUserEmails.GetLatestVerificationSentEmail(ctx, addr)
+	_, err = UserEmails(db).GetLatestVerificationSentEmail(ctx, addr)
 	if err == nil || !errcode.IsNotFound(err) {
 		t.Fatalf("err: want a not found error but got %v", err)
-	} else if err = GlobalUserEmails.SetLastVerification(ctx, user.ID, addr, "c"); err != nil {
+	} else if err = UserEmails(db).SetLastVerification(ctx, user.ID, addr, "c"); err != nil {
 		t.Fatal(err)
 	}
 
 	// Should return an email because "last_verification_sent_at" column is not NULL
-	email, err := GlobalUserEmails.GetLatestVerificationSentEmail(ctx, addr)
+	email, err := UserEmails(db).GetLatestVerificationSentEmail(ctx, addr)
 	if err != nil {
 		t.Fatal(err)
 	} else if email.Email != addr {
@@ -502,7 +502,7 @@ func TestUserEmails_GetLatestVerificationSentEmail(t *testing.T) {
 	}
 
 	// Create another user with same email address and set "last_verification_sent_at" column
-	user2, err := GlobalUsers.Create(ctx, NewUser{
+	user2, err := Users(db).Create(ctx, NewUser{
 		Email:                 addr,
 		Username:              "bob",
 		Password:              "pw",
@@ -510,12 +510,12 @@ func TestUserEmails_GetLatestVerificationSentEmail(t *testing.T) {
 	})
 	if err != nil {
 		t.Fatal(err)
-	} else if err = GlobalUserEmails.SetLastVerification(ctx, user2.ID, addr, "c"); err != nil {
+	} else if err = UserEmails(db).SetLastVerification(ctx, user2.ID, addr, "c"); err != nil {
 		t.Fatal(err)
 	}
 
 	// Should return the email for the second user
-	email, err = GlobalUserEmails.GetLatestVerificationSentEmail(ctx, addr)
+	email, err = UserEmails(db).GetLatestVerificationSentEmail(ctx, addr)
 	if err != nil {
 		t.Fatal(err)
 	} else if email.Email != addr {
@@ -533,7 +533,7 @@ func TestUserEmails_GetVerifiedEmails(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
 	newUsers := []NewUser{
@@ -550,13 +550,13 @@ func TestUserEmails_GetVerifiedEmails(t *testing.T) {
 	}
 
 	for _, newUser := range newUsers {
-		_, err := GlobalUsers.Create(ctx, newUser)
+		_, err := Users(db).Create(ctx, newUser)
 		if err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	emails, err := GlobalUserEmails.GetVerifiedEmails(ctx, "alice@example.com", "bob@example.com")
+	emails, err := UserEmails(db).GetVerifiedEmails(ctx, "alice@example.com", "bob@example.com")
 	if err != nil {
 		t.Fatal(err)
 	}

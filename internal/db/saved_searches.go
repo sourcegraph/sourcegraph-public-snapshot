@@ -184,7 +184,7 @@ func (s *SavedSearchStore) ListSavedSearchesByUserID(ctx context.Context, userID
 	s.ensureStore()
 
 	var savedSearches []*types.SavedSearch
-	orgs, err := GlobalOrgs.With(s).GetByUserID(ctx, userID)
+	orgs, err := OrgsWith(s).GetByUserID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}

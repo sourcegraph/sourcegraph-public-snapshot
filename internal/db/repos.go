@@ -321,7 +321,7 @@ func (s *RepoStore) getReposBySQL(ctx context.Context, minimal bool, fromClause,
 		querySuffix = sqlf.Sprintf("")
 	}
 
-	authzConds, err := authzQueryConds(ctx)
+	authzConds, err := authzQueryConds(ctx, s.Handle().DB())
 	if err != nil {
 		return err
 	}
@@ -1208,7 +1208,7 @@ func (*RepoStore) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error)
 func (s *RepoStore) GetUserAddedRepoNames(ctx context.Context, userID int32) ([]api.RepoName, error) {
 	s.ensureStore()
 
-	authzConds, err := authzQueryConds(ctx)
+	authzConds, err := authzQueryConds(ctx, s.Handle().DB())
 	if err != nil {
 		return nil, err
 	}
