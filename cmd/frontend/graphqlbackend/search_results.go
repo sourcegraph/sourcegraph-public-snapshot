@@ -1705,6 +1705,9 @@ type aggregator struct {
 	multiErr *multierror.Error
 }
 
+// get finalises aggregation over the stream and returns the aggregated
+// result. It should only be called once each do* function is finished
+// running.
 func (a *aggregator) get() ([]SearchResultResolver, streaming.Stats, *multierror.Error) {
 	close(a.stream)
 	<-a.done
@@ -2031,6 +2034,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 
 	timer.Stop()
 
+	// We have to call get once all waitgroups are done since it relies on
+	// collecting from the streams.
 	results, common, multiErr := agg.get()
 
 	tr.LazyPrintf("results=%d %s", len(results), &common)
