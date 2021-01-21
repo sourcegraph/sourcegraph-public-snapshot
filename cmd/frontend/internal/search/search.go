@@ -6,13 +6,17 @@ package search
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	api2 "github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // StreamHandler is an http handler which streams back search results.
@@ -68,13 +72,26 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	const matchesChunk = 1000
 	matchesBuf := make([]interface{}, 0, matchesChunk)
-	flushMatchesBuf := func() {
+	var matchCount int32
+	flushMatchesBuf := func(event graphqlbackend.SearchEvent) {
 		if len(matchesBuf) > 0 {
 			if err := eventWriter.Event("matches", matchesBuf); err != nil {
 				// EOF
 				return
 			}
 			matchesBuf = matchesBuf[:0]
+			pr := api.BuildProgressEvent(api.ProgressStats{
+				MatchCount: int(matchCount),
+				//ElapsedMilliseconds: int(resultsResolver.ElapsedMilliseconds()),
+				RepositoriesCount: repoCount(event),
+				ExcludedArchived:  event.Stats.ExcludedArchived,
+				ExcludedForks:     event.Stats.ExcludedForks,
+				Timedout:          timedout(event),
+				Missing:           missing(event),
+				Cloning:           cloning(event),
+				LimitHit:          event.Stats.IsLimitHit,
+			})
+			_ = eventWriter.Event("progress", pr)
 		}
 	}
 
@@ -88,9 +105,10 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		var ok bool
 		select {
 		case event, ok = <-resultsStream:
+			fmt.Println("Event! with num results:", len(event.Results))
 		case <-flushTicker.C:
 			ok = true
-			flushMatchesBuf()
+			flushMatchesBuf(event)
 		}
 
 		if !ok {
@@ -98,6 +116,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		for _, result := range event.Results {
+			matchCount += result.ResultCount(		
 			if fm, ok := result.ToFileMatch(); ok {
 				if syms := fm.Symbols(); len(syms) > 0 {
 					// Inlining to avoid exporting a bunch of stuff from
@@ -127,18 +146,18 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				matchesBuf = append(matchesBuf, fromCommit(commit))
 			}
 			if len(matchesBuf) == cap(matchesBuf) {
-				flushMatchesBuf()
+				flushMatchesBuf(event)
 			}
 		}
 
 		// Instantly send results if we have not sent any yet.
 		if first && len(matchesBuf) > 0 {
 			first = false
-			flushMatchesBuf()
+			flushMatchesBuf(event)
 		}
 	}
 
-	flushMatchesBuf()
+	flushMatchesBuf(graphqlbackend.SearchEvent{})
 
 	final := <-resultsStreamDone
 	resultsResolver, err := final.resultsResolver, final.err
@@ -209,6 +228,39 @@ func toNamer(f func() []*graphqlbackend.RepositoryResolver) []api.Namer {
 		n = append(n, r)
 	}
 	return n
+}
+
+type NamerFunc struct {
+	types.RepoName
+}
+
+func (n NamerFunc) Name() string {
+	return string(n.RepoName.Name)
+}
+func repoCount(event graphqlbackend.SearchEvent) (c int) {
+	event.Stats.Status.Filter(search.RepoStatusSearched, func(ID api2.RepoID) {
+		c += 1
+	})
+	return
+}
+
+func missing(event graphqlbackend.SearchEvent) (repos []api.Namer) {
+	event.Stats.Status.Filter(search.RepoStatusMissing, func(ID api2.RepoID) {
+		repos = append(repos, NamerFunc{*event.Stats.Repos[ID]})
+	})
+	return
+}
+func cloning(event graphqlbackend.SearchEvent) (repos []api.Namer) {
+	event.Stats.Status.Filter(search.RepoStatusCloning, func(ID api2.RepoID) {
+		repos = append(repos, NamerFunc{*event.Stats.Repos[ID]})
+	})
+	return
+}
+func timedout(event graphqlbackend.SearchEvent) (repos []api.Namer) {
+	event.Stats.Status.Filter(search.RepoStatusTimedout, func(ID api2.RepoID) {
+		repos = append(repos, NamerFunc{*event.Stats.Repos[ID]})
+	})
+	return
 }
 
 type searchResolver interface {
