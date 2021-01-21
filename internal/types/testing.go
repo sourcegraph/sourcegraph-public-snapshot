@@ -1,7 +1,6 @@
 package types
 
 import (
-	"reflect"
 	"sort"
 	"strconv"
 	"testing"
@@ -311,8 +310,8 @@ var Assert = struct {
 			t.Helper()
 			// Exclude auto-generated IDs from equality tests
 			have = append(Repos{}, have...).With(Opt.RepoID(0))
-			if !reflect.DeepEqual(have, want) {
-				t.Errorf("repos (-want +got): %s", cmp.Diff(want, have))
+			if diff := cmp.Diff(want, have); diff != "" {
+				t.Errorf("repos (-want +got): %s", diff)
 			}
 		}
 	},
@@ -323,7 +322,7 @@ var Assert = struct {
 			sort.Slice(want, func(i, j int) bool {
 				return ord(want[i], want[j])
 			})
-			if !reflect.DeepEqual(have, want) {
+			if diff := cmp.Diff(want, have); diff != "" {
 				t.Errorf("repos (-want +got): %s", cmp.Diff(want, have))
 			}
 		}
@@ -334,7 +333,7 @@ var Assert = struct {
 			t.Helper()
 			// Exclude auto-generated IDs from equality tests
 			have = append(ExternalServices{}, have...).With(Opt.ExternalServiceID(0))
-			if !reflect.DeepEqual(have, want) {
+			if diff := cmp.Diff(want, have); diff != "" {
 				t.Errorf("external services (-want +got): %s", cmp.Diff(want, have))
 			}
 		}
@@ -346,7 +345,7 @@ var Assert = struct {
 			sort.Slice(want, func(i, j int) bool {
 				return ord(want[i], want[j])
 			})
-			if !reflect.DeepEqual(have, want) {
+			if diff := cmp.Diff(want, have); diff != "" {
 				t.Errorf("external services (-want +got): %s", cmp.Diff(want, have))
 			}
 		}

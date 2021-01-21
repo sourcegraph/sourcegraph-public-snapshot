@@ -46,7 +46,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	}
 	defer git.ResetMocks()
 
-	query, err := query.ParseAndCheck("p")
+	q, err := query.ParseLiteral("p")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -57,7 +57,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	results, limitHit, timedOut, err := searchCommitsInRepo(ctx, search.CommitParameters{
 		RepoRevs:    repoRevs,
 		PatternInfo: &search.CommitPatternInfo{Pattern: "p", FileMatchLimit: int32(defaultMaxSearchResults)},
-		Query:       query,
+		Query:       q,
 		Diff:        true,
 	})
 	if err != nil {

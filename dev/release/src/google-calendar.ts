@@ -4,6 +4,7 @@ import open from 'open'
 import { Credentials } from 'google-auth-library'
 import { readLine, cacheFolder } from './util'
 import { readFile, writeFile } from 'mz/fs'
+import { addMinutes } from 'date-fns'
 
 const SCOPES = ['https://www.googleapis.com/auth/calendar.events']
 const TOKEN_PATH = `${cacheFolder}/google-calendar-token.json`
@@ -98,4 +99,11 @@ async function listEvents(auth: OAuth2Client): Promise<calendar_v3.Schema$Event[
         orderBy: 'startTime',
     })
     return result.data.items
+}
+
+export function calendarTime(date: string): { startDateTime: string; endDateTime: string } {
+    return {
+        startDateTime: new Date(date).toISOString(),
+        endDateTime: addMinutes(new Date(date), 1).toISOString(),
+    }
 }

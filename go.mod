@@ -232,3 +232,6 @@ replace github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images => ./enterpr
 
 // Pending: https://github.com/grafana-tools/sdk/pull/121
 replace github.com/grafana-tools/sdk => github.com/sourcegraph/grafana-sdk v0.0.0-20210112115824-13757501ee8a
+
+// Pending: https://github.com/gchaincl/sqlhooks/pull/33
+replace github.com/gchaincl/sqlhooks => github.com/asdine/sqlhooks v1.3.1-0.20210120094401-480358310a5b

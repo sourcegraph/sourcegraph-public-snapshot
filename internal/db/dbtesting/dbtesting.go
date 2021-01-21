@@ -15,8 +15,8 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
 // MockHashPassword if non-nil is used instead of db.hashPassword. This is useful
@@ -90,7 +90,7 @@ func emptyDBPreserveSchema(t testing.TB, d *sql.DB) {
 	}
 
 	var conds []string
-	for _, migrationTable := range dbutil.MigrationTables {
+	for _, migrationTable := range dbconn.MigrationTables {
 		conds = append(conds, fmt.Sprintf("table_name != '%s'", migrationTable))
 	}
 
@@ -152,7 +152,7 @@ func initTest(nameSuffix string) error {
 		return err
 	}
 
-	for _, databaseName := range dbutil.DatabaseNames {
+	for _, databaseName := range dbconn.DatabaseNames {
 		if err := dbconn.MigrateDB(dbconn.Global, databaseName); err != nil {
 			return err
 		}

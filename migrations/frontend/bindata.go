@@ -82,6 +82,8 @@
 // 1528395772_codeintel_comments.up.sql (7.343kB)
 // 1528395773_add_search_fields_to_campaign_views.down.sql (1.551kB)
 // 1528395773_add_search_fields_to_campaign_views.up.sql (1.771kB)
+// 1528395774_add_user_public_repo.down.sql (57B)
+// 1528395774_add_user_public_repo.up.sql (358B)
 
 package migrations
 
@@ -1790,6 +1792,46 @@ func _1528395773_add_search_fields_to_campaign_viewsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395774_add_user_public_repoDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\x2d\x4e\x2d\x8a\x2f\x28\x4d\xca\xc9\x4c\x8e\x2f\x4a\x2d\xc8\x2f\xb6\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x7b\x56\x0c\x79\x39\x00\x00\x00")
+
+func _1528395774_add_user_public_repoDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395774_add_user_public_repoDownSql,
+		"1528395774_add_user_public_repo.down.sql",
+	)
+}
+
+func _1528395774_add_user_public_repoDownSql() (*asset, error) {
+	bytes, err := _1528395774_add_user_public_repoDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395774_add_user_public_repo.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x38, 0x14, 0x37, 0x23, 0x3, 0xc0, 0x9, 0x8, 0xd7, 0xe0, 0x9c, 0xb9, 0x24, 0x2c, 0xc2, 0x79, 0x21, 0xa1, 0xaa, 0x3c, 0x54, 0x7b, 0x45, 0x8d, 0x6a, 0xb, 0xd5, 0x59, 0x72, 0xb7, 0x30, 0x4d}}
+	return a, nil
+}
+
+var __1528395774_add_user_public_repoUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x84\x90\xc1\x4a\xc5\x30\x10\x45\xf7\xf9\x8a\x59\xb6\xf0\xfe\xe0\xad\xf2\xf2\x6e\x4b\xb0\x9d\x60\x32\x05\x5d\x15\xd4\x28\x45\xd1\xd2\xda\xff\x97\x34\xb6\x08\x55\xcc\xf2\x9e\x99\x9c\xcb\x5c\x50\x5b\x3e\x2b\x65\x3c\xb4\x80\x44\x5f\x1a\x90\xad\x88\x9d\x10\xee\x6c\x90\x40\xcb\x1c\xa7\x7e\x5c\x1e\xde\x86\xc7\x7e\x8a\xe3\xc7\x4c\x85\x22\xa2\x9c\x0f\x4f\x34\xbc\x7f\xc6\x97\x38\x9d\xd6\x30\x0d\x1c\xc2\x8e\xed\x6d\x07\x2a\xbe\x37\x4e\xdb\x54\x99\xb1\x71\x1c\xc4\x6b\xcb\x92\xff\x7c\x7e\x5d\xe3\xf4\x2a\xe7\x61\x6b\xa6\x1b\xdc\xef\xeb\xe5\x4e\x3d\x2a\x78\xb0\x41\x2e\x39\x53\xf1\x93\x3a\xa6\x2b\x1a\x08\xc8\xe8\x60\xf4\x15\x07\xdb\x5a\xe3\x2f\xdb\xd6\xf1\x37\x5b\x62\xff\xc8\x54\x99\xae\xea\xda\xd6\xca\x59\x7d\x05\x00\x00\xff\xff\xc9\xfb\x3e\xac\x66\x01\x00\x00")
+
+func _1528395774_add_user_public_repoUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395774_add_user_public_repoUpSql,
+		"1528395774_add_user_public_repo.up.sql",
+	)
+}
+
+func _1528395774_add_user_public_repoUpSql() (*asset, error) {
+	bytes, err := _1528395774_add_user_public_repoUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395774_add_user_public_repo.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x6c, 0x17, 0x75, 0xaa, 0x1f, 0x43, 0xa9, 0x8, 0xe6, 0xd2, 0x38, 0xc6, 0x54, 0x7d, 0xc2, 0x5b, 0xbc, 0xbd, 0xe1, 0x6e, 0xec, 0x17, 0xbb, 0x4b, 0xd1, 0x79, 0x7d, 0xfb, 0x2, 0xe2, 0x15, 0x52}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1963,6 +2005,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395772_codeintel_comments.up.sql":                                                   _1528395772_codeintel_commentsUpSql,
 	"1528395773_add_search_fields_to_campaign_views.down.sql":                                _1528395773_add_search_fields_to_campaign_viewsDownSql,
 	"1528395773_add_search_fields_to_campaign_views.up.sql":                                  _1528395773_add_search_fields_to_campaign_viewsUpSql,
+	"1528395774_add_user_public_repo.down.sql":                                               _1528395774_add_user_public_repoDownSql,
+	"1528395774_add_user_public_repo.up.sql":                                                 _1528395774_add_user_public_repoUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2091,6 +2135,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395772_codeintel_comments.up.sql":                                                   {_1528395772_codeintel_commentsUpSql, map[string]*bintree{}},
 	"1528395773_add_search_fields_to_campaign_views.down.sql":                                {_1528395773_add_search_fields_to_campaign_viewsDownSql, map[string]*bintree{}},
 	"1528395773_add_search_fields_to_campaign_views.up.sql":                                  {_1528395773_add_search_fields_to_campaign_viewsUpSql, map[string]*bintree{}},
+	"1528395774_add_user_public_repo.down.sql":                                               {_1528395774_add_user_public_repoDownSql, map[string]*bintree{}},
+	"1528395774_add_user_public_repo.up.sql":                                                 {_1528395774_add_user_public_repoUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

@@ -10,3 +10,7 @@ export async function postMessage(message: string, channel: string): Promise<voi
         body: JSON.stringify({ text: message, link_names: true }),
     })
 }
+
+export function slackURL(text: string, url: string): string {
+    return `<${url}|${text}>`
+}
