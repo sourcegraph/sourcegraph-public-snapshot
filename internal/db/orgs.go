@@ -133,7 +133,7 @@ func (o *OrgStore) Count(ctx context.Context, opt OrgsListOptions) (int, error) 
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM orgs WHERE %s", o.listSQL(opt))
 
 	var count int
-	if err := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count); err != nil {
+	if err := o.QueryRow(ctx, q).Scan(&count); err != nil {
 		return 0, err
 	}
 	return count, nil
@@ -249,12 +249,12 @@ func (o *OrgStore) Update(ctx context.Context, id int32, displayName *string) (*
 
 	if displayName != nil {
 		org.DisplayName = displayName
-		if _, err := dbconn.Global.ExecContext(ctx, "UPDATE orgs SET display_name=$1 WHERE id=$2 AND deleted_at IS NULL", org.DisplayName, id); err != nil {
+		if _, err := o.Handle().DB().ExecContext(ctx, "UPDATE orgs SET display_name=$1 WHERE id=$2 AND deleted_at IS NULL", org.DisplayName, id); err != nil {
 			return nil, err
 		}
 	}
 	org.UpdatedAt = time.Now()
-	if _, err := dbconn.Global.ExecContext(ctx, "UPDATE orgs SET updated_at=$1 WHERE id=$2 AND deleted_at IS NULL", org.UpdatedAt, id); err != nil {
+	if _, err := o.Handle().DB().ExecContext(ctx, "UPDATE orgs SET updated_at=$1 WHERE id=$2 AND deleted_at IS NULL", org.UpdatedAt, id); err != nil {
 		return nil, err
 	}
 

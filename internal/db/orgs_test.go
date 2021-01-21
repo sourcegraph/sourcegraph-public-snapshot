@@ -5,20 +5,20 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 )
 
 func TestOrgs_ValidNames(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	for _, test := range usernamesForTests {
 		t.Run(test.name, func(t *testing.T) {
 			valid := true
-			if _, err := GlobalOrgs.Create(ctx, test.name, nil); err != nil {
+			if _, err := Orgs(db).Create(ctx, test.name, nil); err != nil {
 				if strings.Contains(err.Error(), "org name invalid") {
 					valid = false
 				} else {
@@ -36,25 +36,25 @@ func TestOrgs_Count(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
-	org, err := GlobalOrgs.Create(ctx, "a", nil)
+	org, err := Orgs(db).Create(ctx, "a", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if count, err := GlobalOrgs.Count(ctx, OrgsListOptions{}); err != nil {
+	if count, err := Orgs(db).Count(ctx, OrgsListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 1; count != want {
 		t.Errorf("got %d, want %d", count, want)
 	}
 
-	if err := GlobalOrgs.Delete(ctx, org.ID); err != nil {
+	if err := Orgs(db).Delete(ctx, org.ID); err != nil {
 		t.Fatal(err)
 	}
 
-	if count, err := GlobalOrgs.Count(ctx, OrgsListOptions{}); err != nil {
+	if count, err := Orgs(db).Count(ctx, OrgsListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 0; count != want {
 		t.Errorf("got %d, want %d", count, want)
@@ -65,26 +65,26 @@ func TestOrgs_Delete(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	displayName := "a"
-	org, err := GlobalOrgs.Create(ctx, "a", &displayName)
+	org, err := Orgs(db).Create(ctx, "a", &displayName)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Delete org.
-	if err := GlobalOrgs.Delete(ctx, org.ID); err != nil {
+	if err := Orgs(db).Delete(ctx, org.ID); err != nil {
 		t.Fatal(err)
 	}
 
 	// Org no longer exists.
-	_, err = GlobalOrgs.GetByID(ctx, org.ID)
+	_, err = Orgs(db).GetByID(ctx, org.ID)
 	if _, ok := err.(*OrgNotFoundError); !ok {
 		t.Errorf("got error %v, want *OrgNotFoundError", err)
 	}
-	orgs, err := GlobalOrgs.List(ctx, &OrgsListOptions{Query: "a"})
+	orgs, err := Orgs(db).List(ctx, &OrgsListOptions{Query: "a"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -93,7 +93,7 @@ func TestOrgs_Delete(t *testing.T) {
 	}
 
 	// Can't delete already-deleted org.
-	err = GlobalOrgs.Delete(ctx, org.ID)
+	err = Orgs(db).Delete(ctx, org.ID)
 	if _, ok := err.(*OrgNotFoundError); !ok {
 		t.Errorf("got error %v, want *OrgNotFoundError", err)
 	}

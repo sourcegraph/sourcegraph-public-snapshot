@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
 
@@ -14,11 +15,11 @@ func TestMigrations(t *testing.T) {
 	}
 
 	// Setup a global test database
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtest.NewDB(t, "")
 
 	migrate := func() {
 		for _, databaseName := range dbconn.DatabaseNames {
-			if err := dbconn.MigrateDB(dbconn.Global, databaseName); err != nil {
+			if err := dbconn.MigrateDB(db, databaseName); err != nil {
 				t.Errorf("error running initial migrations: %s", err)
 			}
 		}
@@ -33,7 +34,7 @@ func TestMigrations(t *testing.T) {
 			// migrations, so we prep our tests by re-migrating up on each iteration.
 			migrate()
 
-			m, err := dbconn.NewMigrate(dbconn.Global, databaseName)
+			m, err := dbconn.NewMigrate(db, databaseName)
 			if err != nil {
 				t.Errorf("error constructing migrations: %s", err)
 			}

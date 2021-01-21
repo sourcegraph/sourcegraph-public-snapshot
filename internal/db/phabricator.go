@@ -162,7 +162,7 @@ func (p *PhabricatorStore) GetByName(ctx context.Context, name api.RepoName) (*t
 		},
 	}
 	for {
-		svcs, err := GlobalExternalServices.List(ctx, opt)
+		svcs, err := ExternalServicesWith(p).List(ctx, opt)
 		if err != nil {
 			return nil, errors.Wrap(err, "list")
 		}

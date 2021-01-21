@@ -13,7 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -121,35 +121,35 @@ func TestRepos_Count(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
-	if count, err := GlobalRepos.Count(ctx, ReposListOptions{}); err != nil {
+	if count, err := Repos(db).Count(ctx, ReposListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 0; count != want {
 		t.Errorf("got %d, want %d", count, want)
 	}
 
-	if err := GlobalRepos.Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
+	if err := Repos(db).Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
 		t.Fatal(err)
 	}
 
-	if count, err := GlobalRepos.Count(ctx, ReposListOptions{}); err != nil {
+	if count, err := Repos(db).Count(ctx, ReposListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 1; count != want {
 		t.Errorf("got %d, want %d", count, want)
 	}
 
-	repos, err := GlobalRepos.List(ctx, ReposListOptions{})
+	repos, err := Repos(db).List(ctx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := GlobalRepos.Delete(ctx, repos[0].ID); err != nil {
+	if err := Repos(db).Delete(ctx, repos[0].ID); err != nil {
 		t.Fatal(err)
 	}
 
-	if count, err := GlobalRepos.Count(ctx, ReposListOptions{}); err != nil {
+	if count, err := Repos(db).Count(ctx, ReposListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 0; count != want {
 		t.Errorf("got %d, want %d", count, want)
@@ -160,29 +160,29 @@ func TestRepos_Delete(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
-	if err := GlobalRepos.Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
+	if err := Repos(db).Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
 		t.Fatal(err)
 	}
 
-	if count, err := GlobalRepos.Count(ctx, ReposListOptions{}); err != nil {
+	if count, err := Repos(db).Count(ctx, ReposListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 1; count != want {
 		t.Errorf("got %d, want %d", count, want)
 	}
 
-	repos, err := GlobalRepos.List(ctx, ReposListOptions{})
+	repos, err := Repos(db).List(ctx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := GlobalRepos.Delete(ctx, repos[0].ID); err != nil {
+	if err := Repos(db).Delete(ctx, repos[0].ID); err != nil {
 		t.Fatal(err)
 	}
 
-	if count, err := GlobalRepos.Count(ctx, ReposListOptions{}); err != nil {
+	if count, err := Repos(db).Count(ctx, ReposListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 0; count != want {
 		t.Errorf("got %d, want %d", count, want)
@@ -193,11 +193,11 @@ func TestRepos_Upsert(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
-	if _, err := GlobalRepos.GetByName(ctx, "myrepo"); !errcode.IsNotFound(err) {
+	if _, err := Repos(db).GetByName(ctx, "myrepo"); !errcode.IsNotFound(err) {
 		if err == nil {
 			t.Fatal("myrepo already present")
 		} else {
@@ -205,11 +205,11 @@ func TestRepos_Upsert(t *testing.T) {
 		}
 	}
 
-	if err := GlobalRepos.Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
+	if err := Repos(db).Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
 		t.Fatal(err)
 	}
 
-	rp, err := GlobalRepos.GetByName(ctx, "myrepo")
+	rp, err := Repos(db).GetByName(ctx, "myrepo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -224,11 +224,11 @@ func TestRepos_Upsert(t *testing.T) {
 		ServiceID:   "ext:test",
 	}
 
-	if err := GlobalRepos.Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "asdfasdf", Fork: false, ExternalRepo: ext}); err != nil {
+	if err := Repos(db).Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "asdfasdf", Fork: false, ExternalRepo: ext}); err != nil {
 		t.Fatal(err)
 	}
 
-	rp, err = GlobalRepos.GetByName(ctx, "myrepo")
+	rp, err = Repos(db).GetByName(ctx, "myrepo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -244,11 +244,11 @@ func TestRepos_Upsert(t *testing.T) {
 	}
 
 	// Rename. Detected by external repo
-	if err := GlobalRepos.Upsert(ctx, InsertRepoOp{Name: "myrepo/renamed", Description: "asdfasdf", Fork: false, ExternalRepo: ext}); err != nil {
+	if err := Repos(db).Upsert(ctx, InsertRepoOp{Name: "myrepo/renamed", Description: "asdfasdf", Fork: false, ExternalRepo: ext}); err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err := GlobalRepos.GetByName(ctx, "myrepo"); !errcode.IsNotFound(err) {
+	if _, err := Repos(db).GetByName(ctx, "myrepo"); !errcode.IsNotFound(err) {
 		if err == nil {
 			t.Fatal("myrepo should be renamed, but still present as myrepo")
 		} else {
@@ -256,7 +256,7 @@ func TestRepos_Upsert(t *testing.T) {
 		}
 	}
 
-	rp, err = GlobalRepos.GetByName(ctx, "myrepo/renamed")
+	rp, err = Repos(db).GetByName(ctx, "myrepo/renamed")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -275,7 +275,7 @@ func TestRepos_UpsertForkAndArchivedFields(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
@@ -285,11 +285,11 @@ func TestRepos_UpsertForkAndArchivedFields(t *testing.T) {
 			i++
 			name := api.RepoName(fmt.Sprintf("myrepo-%d", i))
 
-			if err := GlobalRepos.Upsert(ctx, InsertRepoOp{Name: name, Fork: fork, Archived: archived}); err != nil {
+			if err := Repos(db).Upsert(ctx, InsertRepoOp{Name: name, Fork: fork, Archived: archived}); err != nil {
 				t.Fatal(err)
 			}
 
-			rp, err := GlobalRepos.GetByName(ctx, name)
+			rp, err := Repos(db).GetByName(ctx, name)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -312,12 +312,12 @@ func TestRepos_Create(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
 	svcs := types.MakeExternalServices()
-	if err := GlobalExternalServices.Upsert(ctx, svcs...); err != nil {
+	if err := ExternalServices(db).Upsert(ctx, svcs...); err != nil {
 		t.Fatalf("Upsert error: %s", err)
 	}
 
@@ -327,7 +327,7 @@ func TestRepos_Create(t *testing.T) {
 	repo2 := types.MakeGitlabRepo(msvcs[extsvc.KindGitLab])
 
 	t.Run("no repos should not fail", func(t *testing.T) {
-		if err := GlobalRepos.Create(ctx); err != nil {
+		if err := Repos(db).Create(ctx); err != nil {
 			t.Fatalf("Create error: %s", err)
 		}
 	})
@@ -335,7 +335,7 @@ func TestRepos_Create(t *testing.T) {
 	t.Run("many repos", func(t *testing.T) {
 		want := types.GenerateRepos(7, repo1, repo2)
 
-		if err := GlobalRepos.Create(ctx, want...); err != nil {
+		if err := Repos(db).Create(ctx, want...); err != nil {
 			t.Fatalf("Create error: %s", err)
 		}
 
@@ -345,7 +345,7 @@ func TestRepos_Create(t *testing.T) {
 			t.Fatalf("Create didn't assign an ID to all repos: %v", noID.Names())
 		}
 
-		have, err := GlobalRepos.List(ctx, ReposListOptions{})
+		have, err := Repos(db).List(ctx, ReposListOptions{})
 		if err != nil {
 			t.Fatalf("List error: %s", err)
 		}
