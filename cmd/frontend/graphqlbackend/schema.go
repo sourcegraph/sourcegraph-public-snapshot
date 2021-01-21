@@ -2398,6 +2398,31 @@ type ChangesetEventConnection {
 }
 
 """
+Insights about code.
+"""
+type Insights {
+    """
+    Data points over a time range (inclusive)
+    """
+    points(from: DateTime, to: DateTime): [InsightDataPoint!]!
+}
+
+"""
+A code insight data point.
+"""
+type InsightDataPoint {
+    """
+    The time of this data point.
+    """
+    dateTime: DateTime!
+
+    """
+    The value of the insight at this point in time.
+    """
+    value: Float!
+}
+
+"""
 A new external service.
 """
 input AddExternalServiceInput {
@@ -2710,6 +2735,11 @@ type Query {
         """
         name: String!
     ): Campaign
+
+    """
+    EXPERIMENTAL: Queries code insights
+    """
+    insights: Insights
 
     """
     Looks up a repository by either name or cloneURL.
@@ -4151,14 +4181,6 @@ type ExternalService implements Node {
     will contain any errors that occured during the most recent completed sync.
     """
     lastSyncError: String
-    """
-    LastSyncAt is the time the last sync job was run for this code host
-    """
-    lastSyncAt: DateTime!
-    """
-    The timestamp of the next sync job
-    """
-    nextSyncAt: DateTime!
 }
 
 """

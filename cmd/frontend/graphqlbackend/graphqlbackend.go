@@ -339,11 +339,12 @@ func prometheusGraphQLRequestName(requestName string) string {
 	return "other"
 }
 
-func NewSchema(campaigns CampaignsResolver, codeIntel CodeIntelResolver, authz AuthzResolver, codeMonitors CodeMonitorsResolver, license LicenseResolver) (*graphql.Schema, error) {
+func NewSchema(campaigns CampaignsResolver, codeIntel CodeIntelResolver, insights InsightsResolver, authz AuthzResolver, codeMonitors CodeMonitorsResolver, license LicenseResolver) (*graphql.Schema, error) {
 	resolver := &schemaResolver{
 		CampaignsResolver: defaultCampaignsResolver{},
 		AuthzResolver:     defaultAuthzResolver{},
 		CodeIntelResolver: defaultCodeIntelResolver{},
+		Insights:          defaultInsightsResolver{},
 		LicenseResolver:   defaultLicenseResolver{},
 	}
 	if campaigns != nil {
@@ -353,6 +354,10 @@ func NewSchema(campaigns CampaignsResolver, codeIntel CodeIntelResolver, authz A
 	if codeIntel != nil {
 		EnterpriseResolvers.codeIntelResolver = codeIntel
 		resolver.CodeIntelResolver = codeIntel
+	}
+	if insights != nil {
+		EnterpriseResolvers.insightsResolver = insights
+		resolver.InsightsResolver = insights
 	}
 	if authz != nil {
 		EnterpriseResolvers.authzResolver = authz
@@ -566,6 +571,7 @@ type schemaResolver struct {
 // in enterprise mode. These resolver instances are nil when running as OSS.
 var EnterpriseResolvers = struct {
 	codeIntelResolver    CodeIntelResolver
+	insightsResolver     CodeInsightsResolver
 	authzResolver        AuthzResolver
 	campaignsResolver    CampaignsResolver
 	codeMonitorsResolver CodeMonitorsResolver
