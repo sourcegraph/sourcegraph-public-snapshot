@@ -278,10 +278,6 @@ type SearchStream chan<- SearchEvent
 // instead of a search event stream. Additionally it has a cleanup function
 // which needs to be called.
 func resultStream(stream SearchStream) (chan<- []SearchResultResolver, func(streaming.Stats, error)) {
-	if stream == nil {
-		return nil, func(streaming.Stats, error) {}
-	}
-
 	c := make(chan []SearchResultResolver, cap(stream))
 	done := make(chan struct{})
 	go func() {
