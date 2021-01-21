@@ -277,9 +277,9 @@ type SearchStream chan<- SearchEvent
 // resultStream is temporary adapter which return a result stream to use
 // instead of a search event stream. Additionally it has a cleanup function
 // which needs to be called.
-func resultStream(stream SearchStream) (chan<- []SearchResultResolver, func(*streaming.Stats, error)) {
+func resultStream(stream SearchStream) (chan<- []SearchResultResolver, func(streaming.Stats, error)) {
 	if stream == nil {
-		return nil, func(*streaming.Stats, error) {}
+		return nil, func(streaming.Stats, error) {}
 	}
 
 	c := make(chan []SearchResultResolver, cap(stream))
@@ -290,16 +290,10 @@ func resultStream(stream SearchStream) (chan<- []SearchResultResolver, func(*str
 			stream <- SearchEvent{Results: results}
 		}
 	}()
-	return c, func(s *streaming.Stats, err error) {
-		if s != nil {
-			stream <- SearchEvent{
-				Stats: *s,
-			}
-		}
-		if err != nil {
-			stream <- SearchEvent{
-				Error: err,
-			}
+	return c, func(s streaming.Stats, err error) {
+		stream <- SearchEvent{
+			Stats: s,
+			Error: err,
 		}
 		close(c)
 		<-done
