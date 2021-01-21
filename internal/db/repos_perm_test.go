@@ -99,17 +99,13 @@ func TestAuthzQueryConds(t *testing.T) {
 		},
 
 		{
-			name: "no authz provider and not allow by default",
-			setup: func() context.Context {
-				return context.Background()
-			},
+			name:      "no authz provider and not allow by default",
+			setup:     context.Background,
 			wantQuery: sqlf.Sprintf(authzQueryCondsFmtstr, false, false, int32(0), authz.Read.String()),
 		},
 		{
-			name: "no authz provider but allow by default",
-			setup: func() context.Context {
-				return context.Background()
-			},
+			name:                "no authz provider but allow by default",
+			setup:               context.Background,
 			authzAllowByDefault: true,
 			wantQuery:           sqlf.Sprintf(authzQueryCondsFmtstr, true, false, int32(0), authz.Read.String()),
 		},

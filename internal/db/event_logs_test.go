@@ -653,7 +653,6 @@ func TestEventLogs_ListAll(t *testing.T) {
 		if err := EventLogs(db).Insert(ctx, event); err != nil {
 			t.Fatal(err)
 		}
-
 	}
 
 	searchResultQueriedEvent := "SearchResultsQueried"

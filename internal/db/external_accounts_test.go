@@ -410,7 +410,7 @@ func TestExternalAccounts_expiredAt(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		accts, err := ExternalAccounts(db).List(ctx, ExternalAccountsListOptions{
+		accts, _ := ExternalAccounts(db).List(ctx, ExternalAccountsListOptions{
 			UserID:         userID,
 			ExcludeExpired: true,
 		})

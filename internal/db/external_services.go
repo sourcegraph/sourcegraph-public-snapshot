@@ -158,8 +158,6 @@ type ValidateExternalServiceConfigOptions struct {
 	NamespaceUserID int32
 }
 
-var errAuthorizationRequired = errors.New("authorization required")
-
 // ValidateConfig validates the given external service configuration, and returns a normalized
 // version of the configuration (i.e. valid JSON without comments).
 // A positive opt.ID indicates we are updating an existing service, adding a new one otherwise.
