@@ -192,8 +192,8 @@ const CampaignListEmptyElement: React.FunctionComponent<CampaignListEmptyElement
 interface NewCampaignButtonProps extends Pick<RouteComponentProps, 'location'> {}
 
 const NewCampaignButton: React.FunctionComponent<NewCampaignButtonProps> = ({ location }) => (
-    <Link to={`${location.pathname}/create`} className="btn btn-primary">
-        <PlusIcon className="icon-inline" /> New campaign
+    <Link to={`${location.pathname}/create`} className="btn btn-secondary">
+        <PlusIcon className="icon-inline" /> Create campaign
     </Link>
 )
 
