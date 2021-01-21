@@ -440,11 +440,11 @@ func TestSearch(t *testing.T) {
 			},
 			{
 				name:  "commit search, non-zero result message",
-				query: `repo:^github\.com/sourcegraph/sourcegraph$ type:commit author:rijnard message:highlight after:'december 1 2020' before:'december 8 2020'`,
+				query: `repo:^ghe\.sgdev\.org/sourcegraph/gorilla-mux$ type:commit author:kushmansingh@icloud.com before:"december 10 2016" message:option`,
 			},
 			{
 				name:  "commit search, non-zero result pattern",
-				query: `repo:^github\.com/sourcegraph/sourcegraph$ type:commit author:rijnard highlight after:'december 1 2020' before:'december 8 2020'`,
+				query: `repo:^ghe\.sgdev\.org/sourcegraph/gorilla-mux$ type:commit author:kushmansingh@icloud.com before:"december 10 2016" option`,
 			},
 			// Diff search
 			{
