@@ -14,7 +14,9 @@ export type ViewWithSubscriptions<V extends View> = V & {
     subscriptions: Subscription
 }
 
-type CustomSelectorFunction = (target: HTMLElement) => ReturnType<ParentNode['querySelectorAll']> | null | undefined
+type CustomSelectorFunction = (
+    target: HTMLElement
+) => ReturnType<ParentNode['querySelectorAll']> | HTMLElement[] | null | undefined
 
 /**
  * Finds and resolves elements matched by a MutationObserver to views.
@@ -83,17 +85,17 @@ export function trackViews<V extends View>(
                         mergeMap(addedElement =>
                             from(viewResolvers).pipe(
                                 mergeMap(({ selector, resolveView }) =>
-                                    [...queryWithSelector(addedElement, selector)].map(
-                                        (element): ViewWithSubscriptions<V> | null => {
-                                            const view = resolveView(element)
-                                            return (
-                                                view && {
-                                                    ...view,
-                                                    subscriptions: new Subscription(),
-                                                }
-                                            )
-                                        }
-                                    )
+                                    [...queryWithSelector(addedElement, selector)].map((element): ViewWithSubscriptions<
+                                        V
+                                    > | null => {
+                                        const view = resolveView(element)
+                                        return (
+                                            view && {
+                                                ...view,
+                                                subscriptions: new Subscription(),
+                                            }
+                                        )
+                                    })
                                 ),
                                 filter(isDefined),
                                 filter(view => !viewStates.has(view.element)),

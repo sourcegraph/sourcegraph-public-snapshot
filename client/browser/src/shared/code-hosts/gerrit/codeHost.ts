@@ -62,25 +62,25 @@ const resolveFileListCodeView: ViewResolver<CodeView> = {
         // Get the file and revision context
         const gerritChange = parseGerritChange()
         const gerritChangeString = buildGerritChangeString(gerritChange)
-        const filePath = element.getAttribute('data-path');
-        const parentCommit = getParentCommit() || '';
+        const filePath = element.getAttribute('data-path')
+        const parentCommit = getParentCommit() || ''
 
         return {
             element: diffTableElement,
             dom: diffTableDomFunctions,
             resolveFileInfo() {
                 return {
-                base: {
-                    filePath: filePath || '',
-                    rawRepoName: gerritChange.repoName,
-                    commitID: parentCommit,
-                },
-                head: {
-                    filePath: filePath || '',
-                    rawRepoName: gerritChange.repoName,
-                    commitID: gerritChangeString,
+                    base: {
+                        filePath: filePath || '',
+                        rawRepoName: gerritChange.repoName,
+                        commitID: parentCommit,
+                    },
+                    head: {
+                        filePath: filePath || '',
+                        rawRepoName: gerritChange.repoName,
+                        commitID: gerritChangeString,
+                    },
                 }
-            }
             },
         }
     },
