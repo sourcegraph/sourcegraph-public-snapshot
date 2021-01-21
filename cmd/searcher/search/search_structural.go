@@ -3,14 +3,18 @@ package search
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 )
 
 // The Sourcegraph frontend and interface only allow LineMatches (matches on a
@@ -217,6 +221,53 @@ func structuralSearch(ctx context.Context, zipPath, pattern, rule string, langua
 		return nil, false, err
 	}
 	return matches, false, err
+}
+
+func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request) (matches []protocol.FileMatch, limitHit, deadlineHit bool, err error) {
+	// Since we are returning file content, limit the number of file matches
+	// until streaming from Zoekt is implemented
+	fileMatchLimit := p.FileMatchLimit
+	if fileMatchLimit > maxFileMatchLimit {
+		fileMatchLimit = maxFileMatchLimit
+	}
+
+	patternInfo :=
+		&search.TextPatternInfo{
+			Pattern:                      p.Pattern,
+			IsNegated:                    p.IsNegated,
+			IsRegExp:                     p.IsRegExp,
+			IsStructuralPat:              p.IsStructuralPat,
+			CombyRule:                    p.CombyRule,
+			IsWordMatch:                  p.IsWordMatch,
+			IsCaseSensitive:              p.IsCaseSensitive,
+			FileMatchLimit:               int32(fileMatchLimit),
+			ExcludePattern:               p.ExcludePattern,
+			PathPatternsAreCaseSensitive: p.PathPatternsAreCaseSensitive,
+			PatternMatchesContent:        p.PatternMatchesContent,
+			PatternMatchesPath:           p.PatternMatchesPath,
+			Languages:                    p.Languages,
+		}
+
+	repoBranches := map[string][]string{string(p.Repo): {"HEAD"}}
+	useFullDeadline := false
+	zoektMatches, limitHit, _, err := zoektSearch(ctx, patternInfo, repoBranches, time.Since, p.IndexerEndpoints, useFullDeadline, nil)
+	if err != nil {
+		return nil, false, false, err
+	}
+
+	zipFile, err := ioutil.TempFile("", "*.zip")
+	if err != nil {
+		return nil, false, false, err
+	}
+	defer zipFile.Close()
+	defer os.Remove(zipFile.Name())
+
+	if err = writeZip(zipFile, zoektMatches); err != nil {
+		return nil, false, false, err
+	}
+
+	matches, limitHit, err = structuralSearch(ctx, zipFile.Name(), p.Pattern, p.CombyRule, p.Languages, nil, p.Repo)
+	return matches, limitHit, false, err
 }
 
 var requestTotalStructuralSearch = prometheus.NewCounterVec(prometheus.CounterOpts{

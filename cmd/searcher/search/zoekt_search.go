@@ -90,8 +90,8 @@ func HandleFilePathPatterns(query *search.TextPatternInfo) (zoektquery.Q, error)
 	return zoektquery.NewAnd(and...), nil
 }
 
-func buildQuery(args *search.TextParameters, repoBranches map[string][]string, filePathPatterns zoektquery.Q, shortcircuit bool) (zoektquery.Q, error) {
-	regexString := comby.StructuralPatToRegexpQuery(args.PatternInfo.Pattern, shortcircuit)
+func buildQuery(args *search.TextPatternInfo, repoBranches map[string][]string, filePathPatterns zoektquery.Q, shortcircuit bool) (zoektquery.Q, error) {
+	regexString := comby.StructuralPatToRegexpQuery(args.Pattern, shortcircuit)
 	if len(regexString) == 0 {
 		return &zoektquery.Const{Value: true}, nil
 	}
@@ -117,11 +117,11 @@ type zoektSearchStreamEvent struct {
 	err      error
 }
 
-func zoektSearchStream(ctx context.Context, args *search.TextParameters, repoBranches map[string][]string, since func(t time.Time) time.Duration) <-chan zoektSearchStreamEvent {
+func zoektSearchStream(ctx context.Context, args *search.TextPatternInfo, repoBranches map[string][]string, since func(t time.Time) time.Duration, endpoints []string, useFullDeadline bool) <-chan zoektSearchStreamEvent {
 	c := make(chan zoektSearchStreamEvent)
 	go func() {
 		defer close(c)
-		_, _, _, _ = zoektSearch(ctx, args, repoBranches, since, c)
+		_, _, _, _ = zoektSearch(ctx, args, repoBranches, since, endpoints, useFullDeadline, c)
 	}()
 
 	return c
@@ -129,13 +129,13 @@ func zoektSearchStream(ctx context.Context, args *search.TextParameters, repoBra
 
 const defaultMaxSearchResults = 30
 
-// zoektSearch searches repositories using zoekt, returning only the file paths containing
-// content matching the given pattern.
+// zoektSearch searches repositories using zoekt, returning file contents for
+// files that match the given pattern.
 //
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func zoektSearch(ctx context.Context, args *search.TextParameters, repoBranches map[string][]string, since func(t time.Time) time.Duration, c chan<- zoektSearchStreamEvent) (fm []zoekt.FileMatch, limitHit bool, partial map[api.RepoID]struct{}, err error) {
+func zoektSearch(ctx context.Context, args *search.TextPatternInfo, repoBranches map[string][]string, since func(t time.Time) time.Duration, endpoints []string, useFullDeadline bool, c chan<- zoektSearchStreamEvent) (fm []zoekt.FileMatch, limitHit bool, partial map[api.RepoID]struct{}, err error) {
 	defer func() {
 		if c != nil {
 			c <- zoektSearchStreamEvent{
@@ -150,11 +150,15 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repoBranches 
 		return nil, false, nil, nil
 	}
 
-	k := zoektutil.ResultCountFactor(len(repoBranches), args.PatternInfo.FileMatchLimit, args.Mode == search.ZoektGlobalSearch)
-	searchOpts := zoektutil.SearchOpts(ctx, k, args.PatternInfo)
+	// TODO(@camdencheek) TODO(@rvantonder). repoBranches is currently
+	// hardcoded to HEAD. Choose sensible values for k when we generalize
+	// this.
+	k := zoektutil.ResultCountFactor(len(repoBranches), args.FileMatchLimit, false)
+	searchOpts := zoektutil.SearchOpts(ctx, k, args)
 	searchOpts.Whole = true
 
-	if args.UseFullDeadline {
+	// TODO(@camdencheek) TODO(@rvantonder) handle "timeout:..." values in this context.
+	if useFullDeadline {
 		// If the user manually specified a timeout, allow zoekt to use all of the remaining timeout.
 		deadline, _ := ctx.Deadline()
 		searchOpts.MaxWallTime = time.Until(deadline)
@@ -170,7 +174,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repoBranches 
 		defer cancel()
 	}
 
-	filePathPatterns, err := HandleFilePathPatterns(args.PatternInfo)
+	filePathPatterns, err := HandleFilePathPatterns(args)
 	if err != nil {
 		return nil, false, nil, err
 	}
@@ -180,7 +184,9 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repoBranches 
 	if err != nil {
 		return nil, false, nil, err
 	}
-	resp, err := args.Zoekt.Client.Search(ctx, q, &searchOpts)
+
+	client := getZoektClient(endpoints)
+	resp, err := client.Search(ctx, q, &searchOpts)
 	if err != nil {
 		return nil, false, nil, err
 	}
@@ -192,12 +198,12 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repoBranches 
 	limitHit = true
 	// If the previous indexed search did not return a substantial number of matching file candidates or count was
 	// manually specified, run a more complete and expensive search.
-	if resp.FileCount < 10 || args.PatternInfo.FileMatchLimit != defaultMaxSearchResults {
+	if resp.FileCount < 10 || args.FileMatchLimit != defaultMaxSearchResults {
 		q, err = buildQuery(args, repoBranches, filePathPatterns, false)
 		if err != nil {
 			return nil, false, nil, err
 		}
-		resp, err = args.Zoekt.Client.Search(ctx, q, &searchOpts)
+		resp, err = client.Search(ctx, q, &searchOpts)
 		if err != nil {
 			return nil, false, nil, err
 		}
@@ -212,7 +218,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repoBranches 
 		return nil, false, nil, nil
 	}
 
-	matchLimiter := zoektutil.MatchLimiter{Limit: int(args.PatternInfo.FileMatchLimit)}
+	matchLimiter := zoektutil.MatchLimiter{Limit: int(args.FileMatchLimit)}
 	repoRevFunc := func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool) {
 		return repo, revs, false
 	}
