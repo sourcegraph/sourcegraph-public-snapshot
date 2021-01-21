@@ -440,11 +440,11 @@ func TestSearch(t *testing.T) {
 			},
 			{
 				name:  "commit search, non-zero result message",
-				query: `repo:^ghe\.sgdev\.org/sourcegraph/gorilla-mux$ type:commit author:kushmansingh@icloud.com before:"december 10 2016" message:option`,
+				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ type:commit message:test`,
 			},
 			{
 				name:  "commit search, non-zero result pattern",
-				query: `repo:^ghe\.sgdev\.org/sourcegraph/gorilla-mux$ type:commit author:kushmansingh@icloud.com before:"december 10 2016" option`,
+        query: `repo:^github\.com/sgtest/sourcegraph-typescript$ type:commit test`,
 			},
 			// Diff search
 			{
