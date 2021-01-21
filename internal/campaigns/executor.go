@@ -192,10 +192,12 @@ func (x *executor) LogFiles() []string {
 }
 
 func (x *executor) Start(ctx context.Context) {
+	defer func() { close(x.doneEnqueuing) }()
+
 	for _, task := range x.tasks {
 		select {
 		case <-ctx.Done():
-			break
+			return
 		default:
 		}
 
@@ -215,8 +217,6 @@ func (x *executor) Start(ctx context.Context) {
 			}
 		}(task)
 	}
-
-	close(x.doneEnqueuing)
 }
 
 func (x *executor) Wait() ([]*ChangesetSpec, error) {
