@@ -84,6 +84,8 @@
 // 1528395773_add_search_fields_to_campaign_views.up.sql (1.771kB)
 // 1528395774_add_user_public_repo.down.sql (57B)
 // 1528395774_add_user_public_repo.up.sql (358B)
+// 1528395775_add_cloud_global_to_external_services.down.sql (123B)
+// 1528395775_add_cloud_global_to_external_services.up.sql (290B)
 
 package migrations
 
@@ -1832,6 +1834,46 @@ func _1528395774_add_user_public_repoUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395775_add_cloud_global_to_external_servicesDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\xad\x28\x49\x2d\xca\x4b\xcc\x89\x2f\x4e\x2d\x2a\xcb\x4c\x4e\x2d\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\xce\xc9\x2f\x4d\x89\x4f\xcf\xc9\x4f\x4a\xcc\xb1\xe6\x02\xab\xf1\xf4\x73\x71\x8d\x40\x52\x92\x9d\x99\x97\x12\x8f\xaa\x8e\xcb\xd9\xdf\xd7\xd7\x33\xc4\x9a\x0b\x10\x00\x00\xff\xff\x5b\x8d\x4e\xdd\x7b\x00\x00\x00")
+
+func _1528395775_add_cloud_global_to_external_servicesDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395775_add_cloud_global_to_external_servicesDownSql,
+		"1528395775_add_cloud_global_to_external_services.down.sql",
+	)
+}
+
+func _1528395775_add_cloud_global_to_external_servicesDownSql() (*asset, error) {
+	bytes, err := _1528395775_add_cloud_global_to_external_servicesDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395775_add_cloud_global_to_external_services.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x6e, 0xc2, 0xcc, 0x90, 0x1d, 0x6, 0xf8, 0xcc, 0x17, 0x8c, 0x3f, 0xa5, 0x9f, 0xe3, 0x8f, 0xc8, 0x99, 0x4, 0xf1, 0xe5, 0xea, 0x7d, 0x4e, 0x71, 0xa1, 0xde, 0x0, 0xc4, 0x9b, 0x25, 0x95, 0xfc}}
+	return a, nil
+}
+
+var __1528395775_add_cloud_global_to_external_servicesUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x64\x8f\xc1\x4a\xc4\x30\x10\x86\xef\xf3\x14\xff\x51\xc1\x7d\x82\xe2\x21\x6d\x67\x35\x90\x26\xd8\x4d\x71\x6f\x25\x76\x47\x5d\x0c\xad\x24\xdd\x45\xdf\x5e\x2a\x5e\x82\x97\x39\xcd\x7c\xdf\x37\x35\x3f\x68\x5b\x11\x29\xe3\xb9\x87\x57\xb5\x61\xc8\xd7\x2a\x69\x0e\x71\xcc\x92\xae\xe7\x49\x32\xa9\xb6\x45\xe3\xcc\xd0\x59\xe8\x3d\xac\xf3\xe0\xa3\x3e\xf8\x03\x01\xc0\x14\x97\xcb\x69\x7c\x8b\xcb\x4b\x88\xa8\x9d\x33\xac\x2c\x5a\xde\xab\xc1\x78\xbc\x86\x98\xa5\x22\xda\xed\xe0\xe6\xf8\x8d\x65\x1b\x7f\x5c\x7c\x4a\xc2\xc7\x79\x3e\x61\x0a\x33\xde\xc3\x55\x4a\x56\x96\x95\x9a\x9e\x95\x67\x0c\x56\x3f\x0d\x0c\x6d\x5b\x3e\x96\x09\xbf\x80\xb1\xb8\x73\xf6\xff\x0b\xb8\xd9\xf6\xee\x0a\xc1\x2d\x9e\x1f\xb9\xe7\x52\x7a\x8f\x35\x5d\xb6\xe2\xc6\x75\x9d\xf6\x15\xfd\x04\x00\x00\xff\xff\xc4\x58\x51\x17\x22\x01\x00\x00")
+
+func _1528395775_add_cloud_global_to_external_servicesUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395775_add_cloud_global_to_external_servicesUpSql,
+		"1528395775_add_cloud_global_to_external_services.up.sql",
+	)
+}
+
+func _1528395775_add_cloud_global_to_external_servicesUpSql() (*asset, error) {
+	bytes, err := _1528395775_add_cloud_global_to_external_servicesUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395775_add_cloud_global_to_external_services.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x6e, 0x7, 0xd2, 0xc8, 0x94, 0xff, 0xb6, 0x9a, 0xd8, 0x37, 0x7f, 0x5, 0x9, 0xb3, 0xa4, 0x58, 0x5, 0x27, 0x44, 0xa9, 0x89, 0x22, 0xc2, 0xa4, 0x40, 0x74, 0x62, 0x1b, 0xb3, 0x88, 0x67, 0xa1}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2007,6 +2049,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395773_add_search_fields_to_campaign_views.up.sql":                                  _1528395773_add_search_fields_to_campaign_viewsUpSql,
 	"1528395774_add_user_public_repo.down.sql":                                               _1528395774_add_user_public_repoDownSql,
 	"1528395774_add_user_public_repo.up.sql":                                                 _1528395774_add_user_public_repoUpSql,
+	"1528395775_add_cloud_global_to_external_services.down.sql":                              _1528395775_add_cloud_global_to_external_servicesDownSql,
+	"1528395775_add_cloud_global_to_external_services.up.sql":                                _1528395775_add_cloud_global_to_external_servicesUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2137,6 +2181,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395773_add_search_fields_to_campaign_views.up.sql":                                  {_1528395773_add_search_fields_to_campaign_viewsUpSql, map[string]*bintree{}},
 	"1528395774_add_user_public_repo.down.sql":                                               {_1528395774_add_user_public_repoDownSql, map[string]*bintree{}},
 	"1528395774_add_user_public_repo.up.sql":                                                 {_1528395774_add_user_public_repoUpSql, map[string]*bintree{}},
+	"1528395775_add_cloud_global_to_external_services.down.sql":                              {_1528395775_add_cloud_global_to_external_servicesDownSql, map[string]*bintree{}},
+	"1528395775_add_cloud_global_to_external_services.up.sql":                                {_1528395775_add_cloud_global_to_external_servicesUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
