@@ -24,7 +24,7 @@ export const PageHeader: React.FunctionComponent<Props> = ({
 }) => (
     <div
         className={classNames(
-            'page-header d-flex flex-column flex-md-row flex-wrap justify-content-between align-items-lg-center',
+            'page-header d-flex flex-column flex-md-row flex-wrap justify-content-between align-items-lg-center mb-3 mb-md-0',
             className
         )}
     >
@@ -33,7 +33,7 @@ export const PageHeader: React.FunctionComponent<Props> = ({
             <h1 className="flex-grow-1 d-block">
                 {Icon && <Icon className="icon-inline" />} {title}
             </h1>
-            {byline && <Muted className="mb-md-0">{byline}</Muted>}
+            {byline && <Muted>{byline}</Muted>}
         </div>
         {actions && <div>{actions}</div>}
     </div>
