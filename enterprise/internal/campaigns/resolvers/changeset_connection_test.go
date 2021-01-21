@@ -31,8 +31,8 @@ func TestChangesetConnectionResolver(t *testing.T) {
 	userID := ct.CreateTestUser(t, false).ID
 
 	cstore := store.New(dbconn.Global)
-	repoStore := db.NewRepoStoreWith(cstore)
-	esStore := db.NewExternalServicesStoreWith(cstore)
+	repoStore := db.ReposWith(cstore)
+	esStore := db.ExternalServicesWith(cstore)
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/changeset-connection-test", newGitHubExternalService(t, esStore))
 	inaccessibleRepo := newGitHubTestRepo("github.com/sourcegraph/private", newGitHubExternalService(t, esStore))

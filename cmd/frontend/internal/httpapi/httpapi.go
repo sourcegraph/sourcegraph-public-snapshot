@@ -56,7 +56,7 @@ func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook webhooks.Re
 	m.Get(apirouter.RepoRefresh).Handler(trace.TraceRoute(handler(serveRepoRefresh)))
 
 	gh := webhooks.GitHubWebhook{
-		ExternalServices: db.NewExternalServicesStoreWithDB(dbconn.Global),
+		ExternalServices: db.ExternalServices(dbconn.Global),
 	}
 
 	webhookhandlers.Init(&gh)

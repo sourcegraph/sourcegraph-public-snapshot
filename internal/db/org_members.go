@@ -22,13 +22,13 @@ type OrgMemberStore struct {
 	once sync.Once
 }
 
-// NewOrgMemberStoreWithDB instantiates and returns a new OrgMemberStore with prepared statements.
-func NewOrgMemberStoreWithDB(db dbutil.DB) *OrgMemberStore {
+// OrgMembers instantiates and returns a new OrgMemberStore with prepared statements.
+func OrgMembers(db dbutil.DB) *OrgMemberStore {
 	return &OrgMemberStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 // NewOrgMemberStoreWithDB instantiates and returns a new OrgMemberStore using the other store handle.
-func NewOrgMemberStoreWith(other basestore.ShareableStore) *OrgMemberStore {
+func OrgMembersWith(other basestore.ShareableStore) *OrgMemberStore {
 	return &OrgMemberStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 

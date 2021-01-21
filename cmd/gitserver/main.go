@@ -190,5 +190,5 @@ func getRepoStore() (*db.RepoStore, error) {
 		return nil, err
 	}
 
-	return db.NewRepoStoreWithDB(h), nil
+	return db.Repos(h), nil
 }

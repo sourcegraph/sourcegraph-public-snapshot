@@ -31,7 +31,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 	userID := ct.CreateTestUser(t, false).ID
 
 	cstore := store.New(dbconn.Global)
-	esStore := db.NewExternalServicesStoreWith(cstore)
+	esStore := db.ExternalServicesWith(cstore)
 
 	// Creating user with matching email to the changeset spec author.
 	user, err := db.GlobalUsers.Create(ctx, db.NewUser{
@@ -44,7 +44,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	repoStore := db.NewRepoStoreWith(cstore)
+	repoStore := db.ReposWith(cstore)
 	repo := newGitHubTestRepo("github.com/sourcegraph/changeset-spec-resolver-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)

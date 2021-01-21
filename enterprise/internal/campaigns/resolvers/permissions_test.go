@@ -55,8 +55,8 @@ func TestPermissionLevels(t *testing.T) {
 	adminID := ct.CreateTestUser(t, true).ID
 	userID := ct.CreateTestUser(t, false).ID
 
-	repoStore := db.NewRepoStoreWith(cstore)
-	esStore := db.NewExternalServicesStoreWith(cstore)
+	repoStore := db.ReposWith(cstore)
+	esStore := db.ExternalServicesWith(cstore)
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/permission-levels-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
@@ -771,8 +771,8 @@ func TestRepositoryPermissions(t *testing.T) {
 	// Global test data that we reuse in every test
 	userID := ct.CreateTestUser(t, false).ID
 
-	repoStore := db.NewRepoStoreWith(cstore)
-	esStore := db.NewExternalServicesStoreWith(cstore)
+	repoStore := db.ReposWith(cstore)
+	esStore := db.ExternalServicesWith(cstore)
 
 	// Create 2 repositories
 	repos := make([]*types.Repo, 0, 2)

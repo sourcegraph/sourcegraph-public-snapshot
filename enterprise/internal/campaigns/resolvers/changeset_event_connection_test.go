@@ -35,8 +35,8 @@ func TestChangesetEventConnectionResolver(t *testing.T) {
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
 	cstore := store.NewWithClock(dbconn.Global, clock)
-	repoStore := db.NewRepoStoreWith(cstore)
-	esStore := db.NewExternalServicesStoreWith(cstore)
+	repoStore := db.ReposWith(cstore)
+	esStore := db.ExternalServicesWith(cstore)
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/changeset-event-connection-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {

@@ -15,13 +15,13 @@ type UserPublicRepoStore struct {
 	*basestore.Store
 }
 
-// NewUserPublicRepoStoreWithDB instantiates and returns a new RepoStore with prepared statements.
-func NewUserPublicRepoStoreWithDB(db dbutil.DB) *UserPublicRepoStore {
+// UserPublicRepos instantiates and returns a new RepoStore with prepared statements.
+func UserPublicRepos(db dbutil.DB) *UserPublicRepoStore {
 	return &UserPublicRepoStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 // NewUserPublicRepoStoreWithDB instantiates and returns a new UserPublicRepoStore using the other store handle.
-func NewUserPublicRepoStoreWith(other basestore.ShareableStore) *UserPublicRepoStore {
+func UserPublicReposWith(other basestore.ShareableStore) *UserPublicRepoStore {
 	return &UserPublicRepoStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 

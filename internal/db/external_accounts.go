@@ -37,13 +37,13 @@ type UserExternalAccountsStore struct {
 	once sync.Once
 }
 
-// NewUserExternalAccountsStoreWithDB instantiates and returns a new UserExternalAccountsStore with prepared statements.
-func NewUserExternalAccountsStoreWithDB(db dbutil.DB) *UserExternalAccountsStore {
+// ExternalAccounts instantiates and returns a new UserExternalAccountsStore with prepared statements.
+func ExternalAccounts(db dbutil.DB) *UserExternalAccountsStore {
 	return &UserExternalAccountsStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
-// NewUserExternalAccountsStoreWith instantiates and returns a new UserExternalAccountsStore using the other store handle.
-func NewUserExternalAccountsStoreWith(other basestore.ShareableStore) *UserExternalAccountsStore {
+// ExternalAccountsWith instantiates and returns a new UserExternalAccountsStore using the other store handle.
+func ExternalAccountsWith(other basestore.ShareableStore) *UserExternalAccountsStore {
 	return &UserExternalAccountsStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 

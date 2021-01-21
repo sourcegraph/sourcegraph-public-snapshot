@@ -394,7 +394,7 @@ func watchSyncer(ctx context.Context, syncer *repos.Syncer, sched scheduler, gps
 // update the scheduler with the list. It also ensures that if any of our default
 // repos are missing from the cloned list they will be added for cloning ASAP.
 func syncScheduler(ctx context.Context, sched scheduler, gitserverClient *gitserver.Client, store *repos.Store) {
-	baseRepoStore := idb.NewRepoStoreWith(store)
+	baseRepoStore := idb.ReposWith(store)
 
 	doSync := func() {
 		cloned, err := gitserverClient.ListCloned(ctx)
