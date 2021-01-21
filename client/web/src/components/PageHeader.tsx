@@ -31,8 +31,7 @@ export const PageHeader: React.FunctionComponent<Props> = ({
         <div>
             {annotation && <Muted>{annotation}</Muted>}
             <h1 className="flex-grow-1 d-block">
-                {Icon && <Icon className="icon-inline" />}
-                {title}
+                {Icon && <Icon className="icon-inline" />} {title}
             </h1>
             {byline && <Muted className="mb-md-0">{byline}</Muted>}
         </div>

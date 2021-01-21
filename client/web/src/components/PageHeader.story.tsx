@@ -5,8 +5,9 @@ import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 
 import webStyles from '../SourcegraphWebApp.scss'
 import { PageHeader } from './PageHeader'
+import { PageBreadcrumbs } from './PageBreadcrumbs'
 import { Link } from '../../../shared/src/components/Link'
-import { WebStory } from './WebStory'
+import { StatusAnnotation } from './StatusAnnotation'
 
 const { add } = storiesOf('web/PageHeader', module).addDecorator(story => (
     <>
@@ -18,42 +19,31 @@ const { add } = storiesOf('web/PageHeader', module).addDecorator(story => (
 ))
 
 add('Basic header', () => (
-    <WebStory>
-        {() => (
-            <PageHeader
-                icon={PuzzleOutlineIcon}
-                title="Header"
-                actions={
-                    <Link to={`${location.pathname}/close`} className="btn btn-secondary mr-1">
-                        <SearchIcon className="icon-inline" /> Button with icon
-                    </Link>
-                }
-            />
-        )}
-    </WebStory>
+    <PageHeader
+        icon={PuzzleOutlineIcon}
+        title="Header"
+        actions={
+            <Link to={`${location.pathname}/close`} className="btn btn-secondary mr-1">
+                <SearchIcon className="icon-inline" /> Button with icon
+            </Link>
+        }
+    />
 ))
 
 add('Complex header', () => (
-    <WebStory>
-        {() => (
-            <PageHeader
-                annotation={<Link to="/page">Share feedback</Link>}
-                title={
-                    <>
-                        <Link to="/level-1">
-                            <PuzzleOutlineIcon className="icon-inline" />
-                            Level 1
-                        </Link>{' '}
-                        / <Link to="/level-2">Level 2</Link> / Page name
-                    </>
-                }
-                byline="Created 3 months ago"
-                actions={
-                    <Link to="/page" className="btn btn-secondary mr-1">
-                        <SearchIcon className="icon-inline" /> Button with icon
-                    </Link>
-                }
+    <PageHeader
+        annotation={<StatusAnnotation status="beta" />}
+        title={
+            <PageBreadcrumbs
+                icon={PuzzleOutlineIcon}
+                path={[{ to: '/level-1', text: 'Level 1' }, { text: 'Level 2' }]}
             />
-        )}
-    </WebStory>
+        }
+        byline="Created 3 months ago"
+        actions={
+            <Link to="/page" className="btn btn-secondary mr-1">
+                <SearchIcon className="icon-inline" /> Button with icon
+            </Link>
+        }
+    />
 ))
