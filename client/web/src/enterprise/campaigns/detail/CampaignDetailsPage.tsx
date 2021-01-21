@@ -117,7 +117,7 @@ export const CampaignDetailsPage: React.FunctionComponent<CampaignDetailsPagePro
                         / {campaign.name}
                     </>
                 }
-                subtitle={
+                byline={
                     <CampaignInfoByline
                         createdAt={campaign.createdAt}
                         initialApplier={campaign.initialApplier}

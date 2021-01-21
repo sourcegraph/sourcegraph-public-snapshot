@@ -56,7 +56,7 @@ export const CampaignPreviewPage: React.FunctionComponent<CampaignPreviewPagePro
             () =>
                 fetchCampaignSpecById(specID).pipe(
                     repeatWhen(notifier => notifier.pipe(delay(5000))),
-                    distinctUntilChanged(isEqual)
+                    distinctUntilChanged((a, b) => isEqual(a, b))
                 ),
             [specID, fetchCampaignSpecById]
         )
@@ -83,7 +83,6 @@ export const CampaignPreviewPage: React.FunctionComponent<CampaignPreviewPagePro
             <PageHeader
                 title={
                     <>
-                        {/* TODO: Fix TS type error */}
                         <Link to={spec.namespace.url + '/campaigns'}>
                             <CampaignsIconFlushLeft className="icon-inline" />
                             {spec.namespace.namespaceName}
@@ -91,7 +90,7 @@ export const CampaignPreviewPage: React.FunctionComponent<CampaignPreviewPagePro
                         / {spec.description.name}
                     </>
                 }
-                subtitle={<CampaignSpecInfoByline createdAt={spec.createdAt} creator={spec.creator} className="mb-3" />}
+                byline={<CampaignSpecInfoByline createdAt={spec.createdAt} creator={spec.creator} className="mb-3" />}
                 className="test-campaign-apply-page"
             />
             <MissingCredentialsAlert

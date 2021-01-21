@@ -121,7 +121,7 @@ export const CampaignListPage: React.FunctionComponent<CampaignListPageProps> = 
                 title="Campaigns"
                 className="test-campaign-list-page"
                 actions={<NewCampaignButton location={location} />}
-                subtitle="Run custom code over hundreds of repositories and manage the resulting changesets"
+                byline="Run custom code over hundreds of repositories and manage the resulting changesets"
             />
             <CampaignListIntro licensed={licensed} />
             <CampaignListTabHeader selectedTab={selectedTab} setSelectedTab={setSelectedTab} />

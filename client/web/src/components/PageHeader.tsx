@@ -4,7 +4,7 @@ import classNames from 'classnames'
 interface Props {
     annotation?: React.ReactNode
     title: React.ReactNode
-    subtitle?: React.ReactNode
+    byline?: React.ReactNode
     icon?: React.ComponentType<{ className?: string }>
     actions?: React.ReactNode
     className?: string
@@ -17,7 +17,7 @@ const Muted: React.FC<{ className?: string }> = ({ children, className }) => (
 export const PageHeader: React.FunctionComponent<Props> = ({
     annotation,
     title,
-    subtitle,
+    byline,
     icon: Icon,
     actions,
     className,
@@ -34,7 +34,7 @@ export const PageHeader: React.FunctionComponent<Props> = ({
                 {Icon && <Icon className="icon-inline" />}
                 {title}
             </h1>
-            {subtitle && <Muted className="mb-md-0">{subtitle}</Muted>}
+            {byline && <Muted className="mb-md-0">{byline}</Muted>}
         </div>
         {actions && <div>{actions}</div>}
     </div>

@@ -1,7 +1,7 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import DeleteIcon from 'mdi-react/DeleteIcon'
-import React, { FunctionComponent, ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
+import React, { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { SchedulerLike, timer } from 'rxjs'
 import { catchError, concatMap, delay, repeatWhen, takeWhile } from 'rxjs/operators'

@@ -77,7 +77,7 @@ export const CodeIntelUploadsPage: FunctionComponent<CodeIntelUploadsPageProps> 
             <PageTitle title="Precise code intelligence uploads" />
             <PageHeader
                 title="Precise code intelligence upload"
-                subtitle={
+                byline={
                     <>
                         <p>
                             Enable precise code intelligence by{' '}

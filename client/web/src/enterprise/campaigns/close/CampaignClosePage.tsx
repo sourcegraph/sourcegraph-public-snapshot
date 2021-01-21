@@ -112,7 +112,7 @@ export const CampaignClosePage: React.FunctionComponent<CampaignClosePageProps> 
                         / {campaign.name}
                     </>
                 }
-                subtitle={
+                byline={
                     <CampaignInfoByline
                         createdAt={campaign.createdAt}
                         initialApplier={campaign.initialApplier}

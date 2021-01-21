@@ -13,7 +13,7 @@ export const CampaignsDotComPage: React.FunctionComponent<CampaignsDotComPagePro
             <PageHeader
                 icon={CampaignsIconFlushLeft}
                 title="Campaigns"
-                subtitle="Make and track large-scale changes across all code"
+                byline="Make and track large-scale changes across all code"
             />
             <div className="text-center">
                 <iframe

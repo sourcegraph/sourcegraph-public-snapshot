@@ -71,7 +71,7 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
             <PageTitle title="Precise code intelligence auto-index records" />
             <PageHeader
                 title="Precise code intelligence auto-index records"
-                subtitle={
+                byline={
                     <p>
                         Popular repositories are indexed automatically on{' '}
                         <a href="https://sourcegraph.com" target="_blank" rel="noreferrer noopener">
