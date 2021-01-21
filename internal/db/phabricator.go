@@ -24,13 +24,13 @@ type PhabricatorStore struct {
 	once sync.Once
 }
 
-// NewPhabricatorStoreWithDB instantiates and returns a new PhabricatorStore with prepared statements.
-func NewPhabricatorStoreWithDB(db dbutil.DB) *PhabricatorStore {
+// Phabricator instantiates and returns a new PhabricatorStore with prepared statements.
+func Phabricator(db dbutil.DB) *PhabricatorStore {
 	return &PhabricatorStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 // NewPhabricatorStoreWithDB instantiates and returns a new PhabricatorStore using the other store handle.
-func NewPhabricatorStoreWith(other basestore.ShareableStore) *PhabricatorStore {
+func PhabricatorWith(other basestore.ShareableStore) *PhabricatorStore {
 	return &PhabricatorStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 
@@ -162,7 +162,7 @@ func (p *PhabricatorStore) GetByName(ctx context.Context, name api.RepoName) (*t
 		},
 	}
 	for {
-		svcs, err := ExternalServices.List(ctx, opt)
+		svcs, err := ExternalServicesWith(p).List(ctx, opt)
 		if err != nil {
 			return nil, errors.Wrap(err, "list")
 		}

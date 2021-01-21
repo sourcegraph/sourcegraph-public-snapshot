@@ -79,8 +79,8 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 
 	userID := ct.CreateTestUser(t, false).ID
 
-	repoStore := db.NewRepoStoreWithDB(dbconn.Global)
-	esStore := db.NewExternalServicesStoreWithDB(dbconn.Global)
+	repoStore := db.Repos(dbconn.Global)
+	esStore := db.ExternalServices(dbconn.Global)
 
 	githubExtSvc := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
@@ -170,7 +170,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		}
 	}
 
-	s, err := graphqlbackend.NewSchema(&Resolver{store: cstore}, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(&Resolver{store: cstore}, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

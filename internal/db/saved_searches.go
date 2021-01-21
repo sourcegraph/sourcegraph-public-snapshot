@@ -23,13 +23,13 @@ type SavedSearchStore struct {
 	once sync.Once
 }
 
-// NewSavedSearchStoreWithDB instantiates and returns a new SavedSearchStore with prepared statements.
-func NewSavedSearchStoreWithDB(db dbutil.DB) *SavedSearchStore {
+// SavedSearches instantiates and returns a new SavedSearchStore with prepared statements.
+func SavedSearches(db dbutil.DB) *SavedSearchStore {
 	return &SavedSearchStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 // NewSavedSearchStoreWithDB instantiates and returns a new SavedSearchStore using the other store handle.
-func NewSavedSearchStoreWith(other basestore.ShareableStore) *SavedSearchStore {
+func SavedSearchesWith(other basestore.ShareableStore) *SavedSearchStore {
 	return &SavedSearchStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 
@@ -184,7 +184,7 @@ func (s *SavedSearchStore) ListSavedSearchesByUserID(ctx context.Context, userID
 	s.ensureStore()
 
 	var savedSearches []*types.SavedSearch
-	orgs, err := Orgs.With(s).GetByUserID(ctx, userID)
+	orgs, err := OrgsWith(s).GetByUserID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}

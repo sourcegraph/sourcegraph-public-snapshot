@@ -63,14 +63,14 @@ func (e *executor) Run(ctx context.Context, plan *Plan) (err error) {
 		return nil
 	}
 
-	reposStore := db.NewRepoStoreWith(e.tx)
+	reposStore := db.ReposWith(e.tx)
 
 	e.repo, err = loadRepo(ctx, reposStore, e.ch.RepoID)
 	if err != nil {
 		return errors.Wrap(err, "failed to load repository")
 	}
 
-	esStore := db.NewExternalServicesStoreWith(e.tx)
+	esStore := db.ExternalServicesWith(e.tx)
 
 	e.extSvc, err = loadExternalService(ctx, esStore, e.repo)
 	if err != nil {
@@ -608,11 +608,11 @@ func loadCampaign(ctx context.Context, tx getCampaigner, id int64) (*campaigns.C
 }
 
 func loadUser(ctx context.Context, id int32) (*types.User, error) {
-	return db.Users.GetByID(ctx, id)
+	return db.GlobalUsers.GetByID(ctx, id)
 }
 
 func loadUserCredential(ctx context.Context, userID int32, repo *types.Repo) (*db.UserCredential, error) {
-	return db.UserCredentials.GetByScope(ctx, db.UserCredentialScope{
+	return db.GlobalUserCredentials.GetByScope(ctx, db.UserCredentialScope{
 		Domain:              db.UserCredentialDomainCampaigns,
 		UserID:              userID,
 		ExternalServiceType: repo.ExternalRepo.ServiceType,
@@ -628,7 +628,7 @@ func decorateChangesetBody(ctx context.Context, tx getCampaigner, cs *repos.Chan
 
 	// We need to get the namespace, since external campaign URLs are
 	// namespaced.
-	ns, err := db.Namespaces.GetByID(ctx, campaign.NamespaceOrgID, campaign.NamespaceUserID)
+	ns, err := db.GlobalNamespaces.GetByID(ctx, campaign.NamespaceOrgID, campaign.NamespaceUserID)
 	if err != nil {
 		return errors.Wrap(err, "retrieving namespace")
 	}

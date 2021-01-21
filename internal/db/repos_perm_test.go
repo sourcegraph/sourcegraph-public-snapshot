@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -50,6 +49,7 @@ func (p *fakeProvider) FetchRepoPerms(context.Context, *extsvc.Repository) ([]ex
 // 🚨 SECURITY: Tests are necessary to ensure security.
 func TestAuthzQueryConds(t *testing.T) {
 	cmpOpts := cmp.AllowUnexported(sqlf.Query{})
+	db := dbtesting.GetDB(t)
 
 	t.Run("Conflict with permissions user mapping", func(t *testing.T) {
 		before := globals.PermissionsUserMapping()
@@ -59,7 +59,7 @@ func TestAuthzQueryConds(t *testing.T) {
 		authz.SetProviders(false, []authz.Provider{&fakeProvider{}})
 		defer authz.SetProviders(true, nil)
 
-		_, err := authzQueryConds(context.Background())
+		_, err := authzQueryConds(context.Background(), db)
 		gotErr := fmt.Sprintf("%v", err)
 		if diff := cmp.Diff(errPermissionsUserMappingConflict.Error(), gotErr); diff != "" {
 			t.Fatalf("Mismatch (-want +got):\n%s", diff)
@@ -71,7 +71,7 @@ func TestAuthzQueryConds(t *testing.T) {
 		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
 		defer globals.SetPermissionsUserMapping(before)
 
-		got, err := authzQueryConds(context.Background())
+		got, err := authzQueryConds(context.Background(), db)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -99,17 +99,13 @@ func TestAuthzQueryConds(t *testing.T) {
 		},
 
 		{
-			name: "no authz provider and not allow by default",
-			setup: func() context.Context {
-				return context.Background()
-			},
+			name:      "no authz provider and not allow by default",
+			setup:     context.Background,
 			wantQuery: sqlf.Sprintf(authzQueryCondsFmtstr, false, false, int32(0), authz.Read.String()),
 		},
 		{
-			name: "no authz provider but allow by default",
-			setup: func() context.Context {
-				return context.Background()
-			},
+			name:                "no authz provider but allow by default",
+			setup:               context.Background,
 			authzAllowByDefault: true,
 			wantQuery:           sqlf.Sprintf(authzQueryCondsFmtstr, true, false, int32(0), authz.Read.String()),
 		},
@@ -140,7 +136,7 @@ func TestAuthzQueryConds(t *testing.T) {
 			authz.SetProviders(test.authzAllowByDefault, nil)
 			defer authz.SetProviders(true, nil)
 
-			q, err := authzQueryConds(test.setup())
+			q, err := authzQueryConds(test.setup(), db)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -158,11 +154,11 @@ func TestRepos_getReposBySQL_checkPermissions(t *testing.T) {
 		t.Skip()
 	}
 
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
 	// Set up three users: alice, bob and admin
-	alice, err := Users.Create(ctx, NewUser{
+	alice, err := Users(db).Create(ctx, NewUser{
 		Email:                 "alice@example.com",
 		Username:              "alice",
 		Password:              "alice",
@@ -171,7 +167,7 @@ func TestRepos_getReposBySQL_checkPermissions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	bob, err := Users.Create(ctx, NewUser{
+	bob, err := Users(db).Create(ctx, NewUser{
 		Email:                 "bob@example.com",
 		Username:              "bob",
 		Password:              "bob",
@@ -180,7 +176,7 @@ func TestRepos_getReposBySQL_checkPermissions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	admin, err := Users.Create(ctx, NewUser{
+	admin, err := Users(db).Create(ctx, NewUser{
 		Email:                 "admin@example.com",
 		Username:              "admin",
 		Password:              "admin",
@@ -192,18 +188,18 @@ func TestRepos_getReposBySQL_checkPermissions(t *testing.T) {
 
 	// Ensure only "admin" is the site admin, alice was prompted as site admin
 	// because it was the first user.
-	err = Users.SetIsSiteAdmin(ctx, admin.ID, true)
+	err = Users(db).SetIsSiteAdmin(ctx, admin.ID, true)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = Users.SetIsSiteAdmin(ctx, alice.ID, false)
+	err = Users(db).SetIsSiteAdmin(ctx, alice.ID, false)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Set up some repositories: public and private for both alice and bob
 	internalCtx := actor.WithInternalActor(ctx)
-	alicePublicRepo := mustCreate(internalCtx, t,
+	alicePublicRepo := mustCreate(internalCtx, t, db,
 		&types.Repo{
 			Name: "alice_public_repo",
 			ExternalRepo: api.ExternalRepoSpec{
@@ -213,7 +209,7 @@ func TestRepos_getReposBySQL_checkPermissions(t *testing.T) {
 			},
 		},
 	)[0]
-	alicePrivateRepo := mustCreate(internalCtx, t,
+	alicePrivateRepo := mustCreate(internalCtx, t, db,
 		&types.Repo{
 			Name:    "alice_private_repo",
 			Private: true,
@@ -224,7 +220,7 @@ func TestRepos_getReposBySQL_checkPermissions(t *testing.T) {
 			},
 		},
 	)[0]
-	bobPublicRepo := mustCreate(internalCtx, t,
+	bobPublicRepo := mustCreate(internalCtx, t, db,
 		&types.Repo{
 			Name: "bob_public_repo",
 			ExternalRepo: api.ExternalRepoSpec{
@@ -234,7 +230,7 @@ func TestRepos_getReposBySQL_checkPermissions(t *testing.T) {
 			},
 		},
 	)[0]
-	bobPrivateRepo := mustCreate(internalCtx, t,
+	bobPrivateRepo := mustCreate(internalCtx, t, db,
 		&types.Repo{
 			Name:    "bob_private_repo",
 			Private: true,
@@ -256,12 +252,12 @@ func TestRepos_getReposBySQL_checkPermissions(t *testing.T) {
 		Config:       `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 		Unrestricted: true,
 	}
-	err = ExternalServices.Create(ctx, confGet, cindyExternalService)
+	err = ExternalServices(db).Create(ctx, confGet, cindyExternalService)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	cindyPrivateRepo := mustCreate(internalCtx, t,
+	cindyPrivateRepo := mustCreate(internalCtx, t, db,
 		&types.Repo{
 			Name:    "cindy_private_repo",
 			Private: true,
@@ -280,7 +276,7 @@ func TestRepos_getReposBySQL_checkPermissions(t *testing.T) {
 INSERT INTO external_service_repos (external_service_id, repo_id, clone_url)
 VALUES (%s, %s, '')
 `, cindyExternalService.ID, cindyPrivateRepo.ID)
-	_, err = dbconn.Global.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	_, err = db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -295,7 +291,7 @@ VALUES
 		alice.ID, pq.Array([]int32{int32(alicePrivateRepo.ID)}),
 		bob.ID, pq.Array([]int32{int32(bobPrivateRepo.ID)}),
 	)
-	_, err = dbconn.Global.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	_, err = db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -305,7 +301,7 @@ VALUES
 
 	// Alice should see "alice_public_repo", "alice_private_repo", "bob_public_repo", "cindy_private_repo"
 	aliceCtx := actor.WithActor(ctx, &actor.Actor{UID: alice.ID})
-	repos, err := Repos.List(aliceCtx, ReposListOptions{})
+	repos, err := Repos(db).List(aliceCtx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -316,7 +312,7 @@ VALUES
 
 	// Bob should see "alice_public_repo", "bob_private_repo", "bob_public_repo", "cindy_private_repo"
 	bobCtx := actor.WithActor(ctx, &actor.Actor{UID: bob.ID})
-	repos, err = Repos.List(bobCtx, ReposListOptions{})
+	repos, err = Repos(db).List(bobCtx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -327,7 +323,7 @@ VALUES
 
 	// Admin should see all repositories
 	adminCtx := actor.WithActor(ctx, &actor.Actor{UID: admin.ID})
-	repos, err = Repos.List(adminCtx, ReposListOptions{})
+	repos, err = Repos(db).List(adminCtx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -337,7 +333,7 @@ VALUES
 	}
 
 	// A random user should only see "alice_public_repo", "bob_public_repo", "cindy_private_repo"
-	repos, err = Repos.List(ctx, ReposListOptions{})
+	repos, err = Repos(db).List(ctx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -353,11 +349,11 @@ func TestRepos_getReposBySQL_permissionsUserMapping(t *testing.T) {
 		t.Skip()
 	}
 
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
 	// Set up three users: alice, bob and admin
-	alice, err := Users.Create(ctx, NewUser{
+	alice, err := Users(db).Create(ctx, NewUser{
 		Email:                 "alice@example.com",
 		Username:              "alice",
 		Password:              "alice",
@@ -366,7 +362,7 @@ func TestRepos_getReposBySQL_permissionsUserMapping(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	bob, err := Users.Create(ctx, NewUser{
+	bob, err := Users(db).Create(ctx, NewUser{
 		Email:                 "bob@example.com",
 		Username:              "bob",
 		Password:              "bob",
@@ -375,7 +371,7 @@ func TestRepos_getReposBySQL_permissionsUserMapping(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	admin, err := Users.Create(ctx, NewUser{
+	admin, err := Users(db).Create(ctx, NewUser{
 		Email:                 "admin@example.com",
 		Username:              "admin",
 		Password:              "admin",
@@ -387,18 +383,18 @@ func TestRepos_getReposBySQL_permissionsUserMapping(t *testing.T) {
 
 	// Ensure only "admin" is the site admin, alice was prompted as site admin
 	// because it was the first user.
-	err = Users.SetIsSiteAdmin(ctx, admin.ID, true)
+	err = Users(db).SetIsSiteAdmin(ctx, admin.ID, true)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = Users.SetIsSiteAdmin(ctx, alice.ID, false)
+	err = Users(db).SetIsSiteAdmin(ctx, alice.ID, false)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Set up some repositories: public and private for both alice and bob
 	internalCtx := actor.WithInternalActor(ctx)
-	alicePublicRepo := mustCreate(internalCtx, t,
+	alicePublicRepo := mustCreate(internalCtx, t, db,
 		&types.Repo{
 			Name: "alice_public_repo",
 			ExternalRepo: api.ExternalRepoSpec{
@@ -408,7 +404,7 @@ func TestRepos_getReposBySQL_permissionsUserMapping(t *testing.T) {
 			},
 		},
 	)[0]
-	alicePrivateRepo := mustCreate(internalCtx, t,
+	alicePrivateRepo := mustCreate(internalCtx, t, db,
 		&types.Repo{
 			Name:    "alice_private_repo",
 			Private: true,
@@ -419,7 +415,7 @@ func TestRepos_getReposBySQL_permissionsUserMapping(t *testing.T) {
 			},
 		},
 	)[0]
-	bobPublicRepo := mustCreate(internalCtx, t,
+	bobPublicRepo := mustCreate(internalCtx, t, db,
 		&types.Repo{
 			Name: "bob_public_repo",
 			ExternalRepo: api.ExternalRepoSpec{
@@ -429,7 +425,7 @@ func TestRepos_getReposBySQL_permissionsUserMapping(t *testing.T) {
 			},
 		},
 	)[0]
-	bobPrivateRepo := mustCreate(internalCtx, t,
+	bobPrivateRepo := mustCreate(internalCtx, t, db,
 		&types.Repo{
 			Name:    "bob_private_repo",
 			Private: true,
@@ -451,7 +447,7 @@ VALUES
 		alice.ID, pq.Array([]int32{int32(alicePrivateRepo.ID)}),
 		bob.ID, pq.Array([]int32{int32(bobPrivateRepo.ID)}),
 	)
-	_, err = dbconn.Global.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	_, err = db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -462,7 +458,7 @@ VALUES
 
 	// Alice should see "alice_private_repo" but not "alice_public_repo", "bob_public_repo", "bob_private_repo"
 	aliceCtx := actor.WithActor(ctx, &actor.Actor{UID: alice.ID})
-	repos, err := Repos.List(aliceCtx, ReposListOptions{})
+	repos, err := Repos(db).List(aliceCtx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -473,7 +469,7 @@ VALUES
 
 	// Bob should see "bob_private_repo" but not "alice_public_repo" or "bob_public_repo"
 	bobCtx := actor.WithActor(ctx, &actor.Actor{UID: bob.ID})
-	repos, err = Repos.List(bobCtx, ReposListOptions{})
+	repos, err = Repos(db).List(bobCtx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -484,7 +480,7 @@ VALUES
 
 	// Admin should see all repositories
 	adminCtx := actor.WithActor(ctx, &actor.Actor{UID: admin.ID})
-	repos, err = Repos.List(adminCtx, ReposListOptions{})
+	repos, err = Repos(db).List(adminCtx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -494,7 +490,7 @@ VALUES
 	}
 
 	// A random user sees nothing
-	repos, err = Repos.List(ctx, ReposListOptions{})
+	repos, err = Repos(db).List(ctx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}

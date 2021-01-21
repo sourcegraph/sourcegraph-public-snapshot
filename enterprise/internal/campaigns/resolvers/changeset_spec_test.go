@@ -31,10 +31,10 @@ func TestChangesetSpecResolver(t *testing.T) {
 	userID := ct.CreateTestUser(t, false).ID
 
 	cstore := store.New(dbconn.Global)
-	esStore := db.NewExternalServicesStoreWith(cstore)
+	esStore := db.ExternalServicesWith(cstore)
 
 	// Creating user with matching email to the changeset spec author.
-	user, err := db.Users.Create(ctx, db.NewUser{
+	user, err := db.GlobalUsers.Create(ctx, db.NewUser{
 		Username:        "mary",
 		Email:           ct.ChangesetSpecAuthorEmail,
 		EmailIsVerified: true,
@@ -44,7 +44,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	repoStore := db.NewRepoStoreWith(cstore)
+	repoStore := db.ReposWith(cstore)
 	repo := newGitHubTestRepo("github.com/sourcegraph/changeset-spec-resolver-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
@@ -63,7 +63,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(&Resolver{store: cstore}, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(&Resolver{store: cstore}, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

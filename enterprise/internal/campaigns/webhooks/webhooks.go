@@ -64,7 +64,7 @@ func (h Webhook) getRepoForPR(
 	pr PR,
 	externalServiceID string,
 ) (*types.Repo, error) {
-	reposTx := db.NewRepoStoreWith(tx)
+	reposTx := db.ReposWith(tx)
 	rs, err := reposTx.List(ctx, db.ReposListOptions{
 		ExternalRepos: []api.ExternalRepoSpec{
 			{

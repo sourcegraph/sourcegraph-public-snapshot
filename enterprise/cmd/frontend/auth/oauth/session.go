@@ -59,7 +59,7 @@ func SessionIssuer(s SessionIssuerHelper, sessionKey string) http.Handler {
 			return
 		}
 
-		user, err := db.Users.GetByID(r.Context(), actr.UID)
+		user, err := db.GlobalUsers.GetByID(r.Context(), actr.UID)
 		if err != nil {
 			log15.Error("OAuth failed: error retrieving user from database.", "error", err)
 			http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not initiate session.", http.StatusInternalServerError)

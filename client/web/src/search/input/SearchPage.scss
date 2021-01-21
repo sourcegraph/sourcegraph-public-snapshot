@@ -31,12 +31,6 @@
         padding-left: 0.5rem;
         padding-right: 0.5rem;
 
-        &:hover {
-            .toggle-container__copy-query-button {
-                opacity: 1;
-            }
-        }
-
         &--with-content-below {
             flex-grow: 0;
             margin-bottom: 5rem;

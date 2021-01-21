@@ -55,12 +55,12 @@ type UserCredentialsStore struct {
 }
 
 // NewUserStoreWithDB instantiates and returns a new UserCredentialsStore with prepared statements.
-func NewUserCredentialsStoreWithDB(db dbutil.DB) *UserCredentialsStore {
+func UserCredentials(db dbutil.DB) *UserCredentialsStore {
 	return &UserCredentialsStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 // NewUserStoreWith instantiates and returns a new UserCredentialsStore using the other store handle.
-func NewUserCredentialsStoreWith(other basestore.ShareableStore) *UserCredentialsStore {
+func UserCredentialsWith(other basestore.ShareableStore) *UserCredentialsStore {
 	return &UserCredentialsStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 

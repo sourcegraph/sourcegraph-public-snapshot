@@ -41,13 +41,13 @@ type AccessTokenStore struct {
 	once sync.Once
 }
 
-// NewAccessTokenStoreWithDB instantiates and returns a new AccessTokenStore with prepared statements.
-func NewAccessTokenStoreWithDB(db dbutil.DB) *AccessTokenStore {
+// AccessTokens instantiates and returns a new AccessTokenStore with prepared statements.
+func AccessTokens(db dbutil.DB) *AccessTokenStore {
 	return &AccessTokenStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 // NewAccessTokenStoreWithDB instantiates and returns a new AccessTokenStore using the other store handle.
-func NewAccessTokenStoreWith(other basestore.ShareableStore) *AccessTokenStore {
+func AccessTokensWith(other basestore.ShareableStore) *AccessTokenStore {
 	return &AccessTokenStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 
@@ -134,7 +134,7 @@ INSERT INTO access_tokens(subject_user_id, scopes, value_sha256, note, creator_u
 //
 // 🚨 SECURITY: This returns a user ID if and only if the tokenHexEncoded corresponds to a valid,
 // non-deleted access token.
-func (s *AccessTokenStore) Lookup(ctx context.Context, tokenHexEncoded string, requiredScope string) (subjectUserID int32, err error) {
+func (s *AccessTokenStore) Lookup(ctx context.Context, tokenHexEncoded, requiredScope string) (subjectUserID int32, err error) {
 	if Mocks.AccessTokens.Lookup != nil {
 		return Mocks.AccessTokens.Lookup(tokenHexEncoded, requiredScope)
 	}
@@ -266,6 +266,10 @@ created_at DESC
 		}
 		results = append(results, &t)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
 	return results, nil
 }
 

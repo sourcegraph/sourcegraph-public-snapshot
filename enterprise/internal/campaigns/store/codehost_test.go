@@ -16,8 +16,8 @@ import (
 )
 
 func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
-	rs := db.NewRepoStoreWith(s.Store)
-	es := db.NewExternalServicesStoreWith(s.Store)
+	rs := db.ReposWith(s.Store)
+	es := db.ExternalServicesWith(s.Store)
 
 	repo := ct.TestRepo(t, es, extsvc.KindGitHub)
 	otherRepo := ct.TestRepo(t, es, extsvc.KindGitHub)

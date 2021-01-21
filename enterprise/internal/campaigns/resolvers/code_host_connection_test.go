@@ -42,7 +42,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 	bbsRepos, _ := ct.CreateBbsTestRepos(t, ctx, dbconn.Global, 1)
 	bbsRepo := bbsRepos[0]
 
-	cred, err := db.UserCredentials.Create(ctx, db.UserCredentialScope{
+	cred, err := db.GlobalUserCredentials.Create(ctx, db.UserCredentialScope{
 		Domain:              db.UserCredentialDomainCampaigns,
 		ExternalServiceID:   ghRepo.ExternalRepo.ServiceID,
 		ExternalServiceType: ghRepo.ExternalRepo.ServiceType,
@@ -52,7 +52,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(&Resolver{store: cstore}, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(&Resolver{store: cstore}, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

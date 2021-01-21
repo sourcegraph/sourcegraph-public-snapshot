@@ -21,8 +21,8 @@ func TestCampaignsUsageStatistics(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 
 	// Create stub repo.
-	repoStore := db.NewRepoStoreWithDB(dbconn.Global)
-	esStore := db.NewExternalServicesStoreWithDB(dbconn.Global)
+	repoStore := db.Repos(dbconn.Global)
+	esStore := db.ExternalServices(dbconn.Global)
 
 	now := time.Now()
 	svc := types.ExternalService{
@@ -54,7 +54,7 @@ func TestCampaignsUsageStatistics(t *testing.T) {
 	}
 
 	// Create a user.
-	user, err := db.Users.Create(ctx, db.NewUser{Username: "test"})
+	user, err := db.GlobalUsers.Create(ctx, db.NewUser{Username: "test"})
 	if err != nil {
 		t.Fatal(err)
 	}

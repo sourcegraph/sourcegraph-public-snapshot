@@ -811,7 +811,7 @@ func BenchmarkIntegrationSearchResults(b *testing.B) {
 	b.ReportAllocs()
 
 	for n := 0; n < b.N; n++ {
-		q, err := query.ParseAndCheck(`print index:only count:350`)
+		q, err := query.ParseLiteral(`print index:only count:350`)
 		if err != nil {
 			b.Fatal(err)
 		}

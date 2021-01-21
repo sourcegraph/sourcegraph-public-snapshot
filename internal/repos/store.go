@@ -49,8 +49,8 @@ func NewStore(db dbutil.DB, txOpts sql.TxOptions) *Store {
 	s := basestore.NewWithDB(db, txOpts)
 	return &Store{
 		Store:                s,
-		RepoStore:            idb.NewRepoStoreWith(s),
-		ExternalServiceStore: idb.NewExternalServicesStoreWith(s),
+		RepoStore:            idb.ReposWith(s),
+		ExternalServiceStore: idb.ExternalServicesWith(s),
 		Log:                  log15.Root(),
 		Tracer:               trace.Tracer{Tracer: opentracing.GlobalTracer()},
 	}

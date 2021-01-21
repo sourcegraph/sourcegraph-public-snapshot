@@ -230,7 +230,7 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		user, err := db.Users.GetByID(r.Context(), actr.UID)
+		user, err := db.GlobalUsers.GetByID(r.Context(), actr.UID)
 		if err != nil {
 			log15.Error("OpenID Connect auth failed: error retrieving user from database.", "error", err)
 			http.Error(w, "Failed to retrieve user: "+err.Error(), http.StatusInternalServerError)

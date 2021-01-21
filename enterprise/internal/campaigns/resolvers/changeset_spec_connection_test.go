@@ -39,8 +39,8 @@ func TestChangesetSpecConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	repoStore := db.NewRepoStoreWith(cstore)
-	esStore := db.NewExternalServicesStoreWith(cstore)
+	repoStore := db.ReposWith(cstore)
+	esStore := db.ExternalServicesWith(cstore)
 
 	rs := make([]*types.Repo, 0, 3)
 	for i := 0; i < cap(rs); i++ {
@@ -70,7 +70,7 @@ func TestChangesetSpecConnectionResolver(t *testing.T) {
 		changesetSpecs = append(changesetSpecs, s)
 	}
 
-	s, err := graphqlbackend.NewSchema(&Resolver{store: cstore}, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(&Resolver{store: cstore}, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

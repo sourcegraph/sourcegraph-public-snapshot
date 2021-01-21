@@ -37,10 +37,11 @@ While the latest version of Sourcegraph server is always recommended, version 3.
   * `src` is supported on Linux or Intel macOS; Windows and ARM (eg M1) macOS support is experimental
 * Docker
   * MacOS:
-    * If using Docker 3.x, ensure your version is at least 3.0.1
-    * In 3.x versions, the gRPC setting must be disabled
+      * If using Docker 3.x, ensure your version is at least 3.0.1
+      * In 3.x versions, the gRPC setting must be disabled
+  * You must be able to run `docker` commands as the same user `src` is running as. On Linux, this may require either `sudo` or adding your user to the `docker` group.
 * Disk space
   * The required disk space is equal to each campaign's largest repository plus any dependencies or requirements specified by the run steps, times the number of parallel jobs.
-    * The default number of parallel jobs defaults to the number of CPU cores on the system running src-cli. This setting can be configured with the [`-j` flag when running `src campaign apply` or `src campaign preview`](../../cli/references/campaigns/apply.md).
+      * The default number of parallel jobs defaults to the number of CPU cores on the system running src-cli. This setting can be configured with the [`-j` flag when running `src campaign apply` or `src campaign preview`](../../cli/references/campaigns/apply.md).
   * Disk space is also required for the generated patches. This requirement *is* cumulative across each repository altered.
 * Git

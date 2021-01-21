@@ -15,14 +15,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	nettrace "golang.org/x/net/trace"
@@ -130,6 +133,8 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(&resp)
 }
 
+const maxFileMatchLimit = 100
+
 func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []protocol.FileMatch, limitHit, deadlineHit bool, err error) {
 	tr := nettrace.New("search", fmt.Sprintf("%s@%s", p.Repo, p.Commit))
 	tr.LazyPrintf("%s", p.Pattern)
@@ -151,6 +156,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 	span.SetTag("patternMatchesContent", p.PatternMatchesContent)
 	span.SetTag("patternMatchesPath", p.PatternMatchesPath)
 	span.SetTag("deadline", p.Deadline)
+	span.SetTag("indexerEndpoints", p.IndexerEndpoints)
 	defer func(start time.Time) {
 		code := "200"
 		// We often have canceled and timed out requests. We do not want to
@@ -184,13 +190,61 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 		span.SetTag("deadlineHit", deadlineHit)
 		span.Finish()
 		if s.Log != nil {
-			s.Log.Debug("search request", "repo", p.Repo, "commit", p.Commit, "pattern", p.Pattern, "isRegExp", p.IsRegExp, "isStructuralPat", p.IsStructuralPat, "languages", p.Languages, "isWordMatch", p.IsWordMatch, "isCaseSensitive", p.IsCaseSensitive, "patternMatchesContent", p.PatternMatchesContent, "patternMatchesPath", p.PatternMatchesPath, "matches", len(matches), "code", code, "duration", time.Since(start), "err", err)
+			s.Log.Debug("search request", "repo", p.Repo, "commit", p.Commit, "pattern", p.Pattern, "isRegExp", p.IsRegExp, "isStructuralPat", p.IsStructuralPat, "languages", p.Languages, "isWordMatch", p.IsWordMatch, "isCaseSensitive", p.IsCaseSensitive, "patternMatchesContent", p.PatternMatchesContent, "patternMatchesPath", p.PatternMatchesPath, "matches", len(matches), "code", code, "duration", time.Since(start), "indexerEndpoints", p.IndexerEndpoints, "err", err)
 		}
 	}(time.Now())
 
 	if p.IsStructuralPat && p.CombyRule == `where "zoekt" == "zoekt"` {
-		// Reserved for calling the new structural search path that directly uses Zoekt.
-		return nil, false, false, badRequestError{"reserved rule, unsupported request"}
+		// Since we are returning file content, limit the number of file matches until streaming from Zoekt is implemented
+		fileMatchLimit := p.FileMatchLimit
+		if fileMatchLimit > maxFileMatchLimit {
+			fileMatchLimit = maxFileMatchLimit
+		}
+
+		repoBranches := map[string][]string{string(p.Repo): {"HEAD"}}
+		args := &search.TextParameters{
+			PatternInfo: &search.TextPatternInfo{
+				Pattern:                      p.Pattern,
+				IsNegated:                    p.IsNegated,
+				IsRegExp:                     p.IsRegExp,
+				IsStructuralPat:              p.IsStructuralPat,
+				CombyRule:                    p.CombyRule,
+				IsWordMatch:                  p.IsWordMatch,
+				IsCaseSensitive:              p.IsCaseSensitive,
+				FileMatchLimit:               int32(fileMatchLimit),
+				ExcludePattern:               p.ExcludePattern,
+				PathPatternsAreCaseSensitive: p.PathPatternsAreCaseSensitive,
+				PatternMatchesContent:        p.PatternMatchesContent,
+				PatternMatchesPath:           p.PatternMatchesPath,
+				Languages:                    p.Languages,
+			},
+			Zoekt: nil,
+		}
+
+		if args.Zoekt == nil {
+			// TODO(@camdencheek): remove this once the zoekt endpoints are sent with the request:
+			// https://github.com/sourcegraph/sourcegraph/pull/17387#pullrequestreview-571951086
+			return nil, false, false, fmt.Errorf("cannot do indexed search because Zoekt client is unset")
+		}
+
+		zoektMatches, limitHit, _, err := zoektSearch(ctx, args, repoBranches, time.Since, nil)
+		if err != nil {
+			return nil, false, false, err
+		}
+
+		zipFile, err := ioutil.TempFile("", "*.zip")
+		if err != nil {
+			return nil, false, false, err
+		}
+		defer zipFile.Close()
+		defer os.Remove(zipFile.Name())
+
+		if err = writeZip(zipFile, zoektMatches); err != nil {
+			return nil, false, false, err
+		}
+
+		matches, limitHit, err := structuralSearch(ctx, zipFile.Name(), p.Pattern, p.CombyRule, p.Languages, nil, p.Repo)
+		return matches, limitHit, false, err
 	}
 
 	// Compile pattern before fetching from store incase it is bad.

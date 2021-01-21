@@ -37,13 +37,13 @@ type NamespaceStore struct {
 	once sync.Once
 }
 
-// NewNamespaceStoreWithDB instantiates and returns a new NamespaceStore with prepared statements.
-func NewNamespaceStoreWithDB(db dbutil.DB) *NamespaceStore {
+// Namespaces instantiates and returns a new NamespaceStore with prepared statements.
+func Namespaces(db dbutil.DB) *NamespaceStore {
 	return &NamespaceStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 // NewNamespaceStoreWithDB instantiates and returns a new NamespaceStore using the other store handle.
-func NewNamespaceStoreWith(other basestore.ShareableStore) *NamespaceStore {
+func NamespacesWith(other basestore.ShareableStore) *NamespaceStore {
 	return &NamespaceStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 
