@@ -34,14 +34,13 @@ func TestBestWorkspaceCreator(t *testing.T) {
 		"same user": {
 			behaviours: map[string]expect.Behaviour{
 				"foo": {Stdout: []byte("1000\n")},
-				"bar": {Stdout: []byte("1000\n")},
 			},
-			want: workspaceCreatorVolume,
+			want: workspaceCreatorBind,
 		},
 		"different user": {
 			behaviours: map[string]expect.Behaviour{
-				"foo": {Stdout: []byte("1000\n")},
-				"bar": {Stdout: []byte("0\n")},
+				"foo": {Stdout: []byte("0\n")},
+				"bar": {Stdout: []byte("1000\n")},
 			},
 			want: workspaceCreatorBind,
 		},

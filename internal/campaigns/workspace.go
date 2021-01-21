@@ -128,7 +128,7 @@ func detectBestWorkspaceCreator(ctx context.Context, steps []Step) workspaceCrea
 		}
 
 		uids[uid] = struct{}{}
-		if len(uids) > 1 {
+		if len(uids) > 1 || uid != 0 {
 			return workspaceCreatorBind
 		}
 	}
