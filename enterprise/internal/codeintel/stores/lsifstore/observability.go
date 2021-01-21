@@ -16,14 +16,7 @@ type operations struct {
 	monikerResults     *observation.Operation
 	monikersByPosition *observation.Operation
 	packageInformation *observation.Operation
-	pathsWithPrefix    *observation.Operation
 	ranges             *observation.Operation
-	readDefinitions    *observation.Operation
-	readDocument       *observation.Operation
-	readMeta           *observation.Operation
-	readReferences     *observation.Operation
-	readResultChunk    *observation.Operation
-	reaResultChunk     *observation.Operation
 	references         *observation.Operation
 	writeDefinitions   *observation.Operation
 	writeDocuments     *observation.Operation
@@ -57,14 +50,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		monikerResults:     op("MonikerResults"),
 		monikersByPosition: op("MonikersByPosition"),
 		packageInformation: op("PackageInformation"),
-		pathsWithPrefix:    op("PathsWithPrefix"),
 		ranges:             op("Ranges"),
-		readDefinitions:    op("ReadDefinitions"),
-		readDocument:       op("ReadDocument"),
-		readMeta:           op("ReadMeta"),
-		readReferences:     op("ReadReferences"),
-		readResultChunk:    op("ReadResultChunk"),
-		reaResultChunk:     op("ReaResultChunk"),
 		references:         op("References"),
 		writeDefinitions:   op("WriteDefinitions"),
 		writeDocuments:     op("WriteDocuments"),
