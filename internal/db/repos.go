@@ -186,7 +186,6 @@ func (s *RepoStore) GetReposSetByIDs(ctx context.Context, ids ...api.RepoID) (ma
 	if err != nil {
 		return nil, err
 	}
-	s.ensureStore()
 
 	repoMap := make(map[api.RepoID]*types.Repo, len(repos))
 	for _, r := range repos {
