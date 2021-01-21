@@ -340,7 +340,7 @@ func TestPermissionLevels(t *testing.T) {
 				t.Run(tc.name, func(t *testing.T) {
 					pruneUserCredentials(t)
 
-					cred, err := db.UserCredentials.Create(ctx, db.UserCredentialScope{
+					cred, err := db.GlobalUserCredentials.Create(ctx, db.UserCredentialScope{
 						Domain:              db.UserCredentialDomainCampaigns,
 						ExternalServiceID:   "https://github.com/",
 						ExternalServiceType: extsvc.TypeGitHub,
@@ -407,7 +407,7 @@ func TestPermissionLevels(t *testing.T) {
 				t.Run(tc.name, func(t *testing.T) {
 					pruneUserCredentials(t)
 
-					cred, err := db.UserCredentials.Create(ctx, db.UserCredentialScope{
+					cred, err := db.GlobalUserCredentials.Create(ctx, db.UserCredentialScope{
 						Domain:              db.UserCredentialDomainCampaigns,
 						ExternalServiceID:   "https://github.com/",
 						ExternalServiceType: extsvc.TypeGitHub,

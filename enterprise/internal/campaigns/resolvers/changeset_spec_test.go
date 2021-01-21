@@ -34,7 +34,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 	esStore := db.NewExternalServicesStoreWith(cstore)
 
 	// Creating user with matching email to the changeset spec author.
-	user, err := db.Users.Create(ctx, db.NewUser{
+	user, err := db.GlobalUsers.Create(ctx, db.NewUser{
 		Username:        "mary",
 		Email:           ct.ChangesetSpecAuthorEmail,
 		EmailIsVerified: true,

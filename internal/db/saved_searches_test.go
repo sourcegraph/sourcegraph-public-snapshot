@@ -19,7 +19,7 @@ func TestSavedSearchesIsEmpty(t *testing.T) {
 
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := context.Background()
-	isEmpty, err := SavedSearches.IsEmpty(ctx)
+	isEmpty, err := GlobalSavedSearches.IsEmpty(ctx)
 	if err != nil {
 		t.Fatal()
 	}
@@ -28,7 +28,7 @@ func TestSavedSearchesIsEmpty(t *testing.T) {
 		t.Errorf("want %v, got %v", want, isEmpty)
 	}
 
-	_, err = Users.Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
+	_, err = GlobalUsers.Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
 	if err != nil {
 		t.Fatal("can't create user", err)
 	}
@@ -41,12 +41,12 @@ func TestSavedSearchesIsEmpty(t *testing.T) {
 		UserID:      &userID,
 		OrgID:       nil,
 	}
-	_, err = SavedSearches.Create(ctx, fake)
+	_, err = GlobalSavedSearches.Create(ctx, fake)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	isEmpty, err = SavedSearches.IsEmpty(ctx)
+	isEmpty, err = GlobalSavedSearches.IsEmpty(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -63,7 +63,7 @@ func TestSavedSearchesCreate(t *testing.T) {
 
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := context.Background()
-	_, err := Users.Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
+	_, err := GlobalUsers.Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
 	if err != nil {
 		t.Fatal("can't create user", err)
 	}
@@ -76,7 +76,7 @@ func TestSavedSearchesCreate(t *testing.T) {
 		UserID:      &userID,
 		OrgID:       nil,
 	}
-	ss, err := SavedSearches.Create(ctx, fake)
+	ss, err := GlobalSavedSearches.Create(ctx, fake)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -105,7 +105,7 @@ func TestSavedSearchesUpdate(t *testing.T) {
 
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := context.Background()
-	_, err := Users.Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
+	_, err := GlobalUsers.Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
 	if err != nil {
 		t.Fatal("can't create user", err)
 	}
@@ -118,7 +118,7 @@ func TestSavedSearchesUpdate(t *testing.T) {
 		UserID:      &userID,
 		OrgID:       nil,
 	}
-	_, err = SavedSearches.Create(ctx, fake)
+	_, err = GlobalSavedSearches.Create(ctx, fake)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -133,7 +133,7 @@ func TestSavedSearchesUpdate(t *testing.T) {
 		OrgID:       nil,
 	}
 
-	updatedSearch, err := SavedSearches.Update(ctx, updated)
+	updatedSearch, err := GlobalSavedSearches.Update(ctx, updated)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -150,7 +150,7 @@ func TestSavedSearchesDelete(t *testing.T) {
 
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := context.Background()
-	_, err := Users.Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
+	_, err := GlobalUsers.Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
 	if err != nil {
 		t.Fatal("can't create user", err)
 	}
@@ -163,17 +163,17 @@ func TestSavedSearchesDelete(t *testing.T) {
 		UserID:      &userID,
 		OrgID:       nil,
 	}
-	_, err = SavedSearches.Create(ctx, fake)
+	_, err = GlobalSavedSearches.Create(ctx, fake)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = SavedSearches.Delete(ctx, 1)
+	err = GlobalSavedSearches.Delete(ctx, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	allQueries, err := SavedSearches.ListAll(ctx)
+	allQueries, err := GlobalSavedSearches.ListAll(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -190,7 +190,7 @@ func TestSavedSearchesGetByUserID(t *testing.T) {
 
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := context.Background()
-	_, err := Users.Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
+	_, err := GlobalUsers.Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
 	if err != nil {
 		t.Fatal("can't create user", err)
 	}
@@ -203,7 +203,7 @@ func TestSavedSearchesGetByUserID(t *testing.T) {
 		UserID:      &userID,
 		OrgID:       nil,
 	}
-	ss, err := SavedSearches.Create(ctx, fake)
+	ss, err := GlobalSavedSearches.Create(ctx, fake)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -211,7 +211,7 @@ func TestSavedSearchesGetByUserID(t *testing.T) {
 	if ss == nil {
 		t.Fatalf("no saved search returned, create failed")
 	}
-	savedSearch, err := SavedSearches.ListSavedSearchesByUserID(ctx, 1)
+	savedSearch, err := GlobalSavedSearches.ListSavedSearchesByUserID(ctx, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -236,7 +236,7 @@ func TestSavedSearchesGetByID(t *testing.T) {
 
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := context.Background()
-	_, err := Users.Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
+	_, err := GlobalUsers.Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
 	if err != nil {
 		t.Fatal("can't create user", err)
 	}
@@ -249,7 +249,7 @@ func TestSavedSearchesGetByID(t *testing.T) {
 		UserID:      &userID,
 		OrgID:       nil,
 	}
-	ss, err := SavedSearches.Create(ctx, fake)
+	ss, err := GlobalSavedSearches.Create(ctx, fake)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -257,7 +257,7 @@ func TestSavedSearchesGetByID(t *testing.T) {
 	if ss == nil {
 		t.Fatalf("no saved search returned, create failed")
 	}
-	savedSearch, err := SavedSearches.GetByID(ctx, ss.ID)
+	savedSearch, err := GlobalSavedSearches.GetByID(ctx, ss.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -283,7 +283,7 @@ func TestListSavedSearchesByUserID(t *testing.T) {
 
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := context.Background()
-	_, err := Users.Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
+	_, err := GlobalUsers.Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
 	if err != nil {
 		t.Fatal("can't create user", err)
 	}
@@ -296,7 +296,7 @@ func TestListSavedSearchesByUserID(t *testing.T) {
 		UserID:      &userID,
 		OrgID:       nil,
 	}
-	ss, err := SavedSearches.Create(ctx, fake)
+	ss, err := GlobalSavedSearches.Create(ctx, fake)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -305,11 +305,11 @@ func TestListSavedSearchesByUserID(t *testing.T) {
 		t.Fatalf("no saved search returned, create failed")
 	}
 
-	org1, err := Orgs.Create(ctx, "org1", nil)
+	org1, err := GlobalOrgs.Create(ctx, "org1", nil)
 	if err != nil {
 		t.Fatal("can't create org1", err)
 	}
-	org2, err := Orgs.Create(ctx, "org2", nil)
+	org2, err := GlobalOrgs.Create(ctx, "org2", nil)
 	if err != nil {
 		t.Fatal("can't create org2", err)
 	}
@@ -322,7 +322,7 @@ func TestListSavedSearchesByUserID(t *testing.T) {
 		UserID:      nil,
 		OrgID:       &org1.ID,
 	}
-	orgSearch, err := SavedSearches.Create(ctx, orgFake)
+	orgSearch, err := GlobalSavedSearches.Create(ctx, orgFake)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -338,7 +338,7 @@ func TestListSavedSearchesByUserID(t *testing.T) {
 		UserID:      nil,
 		OrgID:       &org2.ID,
 	}
-	org2Search, err := SavedSearches.Create(ctx, org2Fake)
+	org2Search, err := GlobalSavedSearches.Create(ctx, org2Fake)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -346,16 +346,16 @@ func TestListSavedSearchesByUserID(t *testing.T) {
 		t.Fatalf("no saved search returned, org2 saved search create failed")
 	}
 
-	_, err = OrgMembers.Create(ctx, org1.ID, userID)
+	_, err = GlobalOrgMembers.Create(ctx, org1.ID, userID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = OrgMembers.Create(ctx, org2.ID, userID)
+	_, err = GlobalOrgMembers.Create(ctx, org2.ID, userID)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	savedSearches, err := SavedSearches.ListSavedSearchesByUserID(ctx, userID)
+	savedSearches, err := GlobalSavedSearches.ListSavedSearchesByUserID(ctx, userID)
 	if err != nil {
 		t.Fatal(err)
 	}

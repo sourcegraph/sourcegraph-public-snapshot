@@ -341,7 +341,7 @@ func (u *UserStore) create(ctx context.Context, info NewUser) (newUser *types.Us
 		for _, err := range errs {
 			log15.Warn(err.Error())
 		}
-		if err := OrgMembers.With(u).CreateMembershipInOrgsForAllUsers(ctx, orgs); err != nil {
+		if err := GlobalOrgMembers.With(u).CreateMembershipInOrgsForAllUsers(ctx, orgs); err != nil {
 			return nil, err
 		}
 

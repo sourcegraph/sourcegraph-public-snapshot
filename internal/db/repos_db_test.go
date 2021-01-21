@@ -52,7 +52,7 @@ func createRepo(ctx context.Context, t *testing.T, repo *types.Repo) {
 		Archived:     repo.Archived,
 	}
 
-	if err := Repos.Upsert(ctx, op); err != nil {
+	if err := GlobalRepos.Upsert(ctx, op); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -63,7 +63,7 @@ func mustCreate(ctx context.Context, t *testing.T, repos ...*types.Repo) []*type
 	var createdRepos []*types.Repo
 	for _, repo := range repos {
 		createRepo(ctx, t, repo)
-		repo, err := Repos.GetByName(ctx, repo.Name)
+		repo, err := GlobalRepos.GetByName(ctx, repo.Name)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -225,7 +225,7 @@ func TestRepos_Get(t *testing.T) {
 		return &conf.Unified{}
 	}
 
-	err := ExternalServices.Create(ctx, confGet, &service)
+	err := GlobalExternalServices.Create(ctx, confGet, &service)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -254,7 +254,7 @@ func TestRepos_Get(t *testing.T) {
 		},
 	})
 
-	repo, err := Repos.Get(ctx, want[0].ID)
+	repo, err := GlobalRepos.Get(ctx, want[0].ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -280,7 +280,7 @@ func TestRepos_GetByIDs(t *testing.T) {
 		},
 	})
 
-	repos, err := Repos.GetByIDs(ctx, want[0].ID, 404)
+	repos, err := GlobalRepos.GetByIDs(ctx, want[0].ID, 404)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -316,7 +316,7 @@ func TestRepos_List(t *testing.T) {
 		return &conf.Unified{}
 	}
 
-	err := ExternalServices.Create(ctx, confGet, &service)
+	err := GlobalExternalServices.Create(ctx, confGet, &service)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -345,7 +345,7 @@ func TestRepos_List(t *testing.T) {
 		},
 	})
 
-	repos, err := Repos.List(ctx, ReposListOptions{})
+	repos, err := GlobalRepos.List(ctx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -363,7 +363,7 @@ func Test_GetUserAddedRepos(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 
 	// Create a user
-	user, err := Users.Create(ctx, NewUser{
+	user, err := GlobalUsers.Create(ctx, NewUser{
 		Email:                 "a1@example.com",
 		Username:              "u1",
 		Password:              "p",
@@ -390,7 +390,7 @@ func Test_GetUserAddedRepos(t *testing.T) {
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
 	}
-	err = ExternalServices.Create(ctx, confGet, &service)
+	err = GlobalExternalServices.Create(ctx, confGet, &service)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -418,7 +418,7 @@ func Test_GetUserAddedRepos(t *testing.T) {
 			},
 		},
 	}
-	err = Repos.Create(ctx, repo)
+	err = GlobalRepos.Create(ctx, repo)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -427,7 +427,7 @@ func Test_GetUserAddedRepos(t *testing.T) {
 		repo.Name,
 	}
 
-	have, err := Repos.GetUserAddedRepoNames(ctx, user.ID)
+	have, err := GlobalRepos.GetUserAddedRepoNames(ctx, user.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -449,28 +449,28 @@ func TestRepos_List_fork(t *testing.T) {
 	yours := mustCreate(ctx, t, &types.Repo{Name: "b/r", Fork: true})
 
 	{
-		repos, err := Repos.List(ctx, ReposListOptions{OnlyForks: true})
+		repos, err := GlobalRepos.List(ctx, ReposListOptions{OnlyForks: true})
 		if err != nil {
 			t.Fatal(err)
 		}
 		assertJSONEqual(t, yours, repos)
 	}
 	{
-		repos, err := Repos.List(ctx, ReposListOptions{NoForks: true})
+		repos, err := GlobalRepos.List(ctx, ReposListOptions{NoForks: true})
 		if err != nil {
 			t.Fatal(err)
 		}
 		assertJSONEqual(t, mine, repos)
 	}
 	{
-		repos, err := Repos.List(ctx, ReposListOptions{NoForks: true, OnlyForks: true})
+		repos, err := GlobalRepos.List(ctx, ReposListOptions{NoForks: true, OnlyForks: true})
 		if err != nil {
 			t.Fatal(err)
 		}
 		assertJSONEqual(t, nil, repos)
 	}
 	{
-		repos, err := Repos.List(ctx, ReposListOptions{})
+		repos, err := GlobalRepos.List(ctx, ReposListOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -502,7 +502,7 @@ func TestRepos_List_cloned(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			repos, err := Repos.List(ctx, test.opt)
+			repos, err := GlobalRepos.List(ctx, test.opt)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -535,7 +535,7 @@ func TestRepos_List_ids(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			repos, err := Repos.List(ctx, test.opt)
+			repos, err := GlobalRepos.List(ctx, test.opt)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -571,7 +571,7 @@ func TestRepos_List_serviceTypes(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			repos, err := Repos.List(ctx, test.opt)
+			repos, err := GlobalRepos.List(ctx, test.opt)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -614,7 +614,7 @@ func TestRepos_List_pagination(t *testing.T) {
 		{limit: 4, offset: 4, exp: nil},
 	}
 	for _, test := range tests {
-		repos, err := Repos.List(ctx, ReposListOptions{LimitOffset: &LimitOffset{Limit: test.limit, Offset: test.offset}})
+		repos, err := GlobalRepos.List(ctx, ReposListOptions{LimitOffset: &LimitOffset{Limit: test.limit, Offset: test.offset}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -654,7 +654,7 @@ func TestRepos_List_query1(t *testing.T) {
 		{"mno/p", []api.RepoName{"jkl/mno/pqr"}},
 	}
 	for _, test := range tests {
-		repos, err := Repos.List(ctx, ReposListOptions{Query: test.query})
+		repos, err := GlobalRepos.List(ctx, ReposListOptions{Query: test.query})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -695,7 +695,7 @@ func TestRepos_List_correct_ranking(t *testing.T) {
 		{"def/m", []api.RepoName{"def/mno"}},
 	}
 	for _, test := range tests {
-		repos, err := Repos.List(ctx, ReposListOptions{Query: test.query})
+		repos, err := GlobalRepos.List(ctx, ReposListOptions{Query: test.query})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -763,7 +763,7 @@ func TestRepos_List_sort(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		repos, err := Repos.List(ctx, ReposListOptions{Query: test.query, OrderBy: test.orderBy})
+		repos, err := GlobalRepos.List(ctx, ReposListOptions{Query: test.query, OrderBy: test.orderBy})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -816,7 +816,7 @@ func TestRepos_List_patterns(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		repos, err := Repos.List(ctx, ReposListOptions{
+		repos, err := GlobalRepos.List(ctx, ReposListOptions{
 			IncludePatterns: test.includePatterns,
 			ExcludePattern:  test.excludePattern,
 		})
@@ -936,7 +936,7 @@ func TestRepos_List_queryPattern(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		repos, err := Repos.List(ctx, ReposListOptions{
+		repos, err := GlobalRepos.List(ctx, ReposListOptions{
 			PatternQuery: test.q,
 		})
 		if err != nil {
@@ -963,14 +963,14 @@ func TestRepos_List_queryAndPatternsMutuallyExclusive(t *testing.T) {
 	wantErr := "Query and IncludePatterns/ExcludePattern options are mutually exclusive"
 
 	t.Run("Query and IncludePatterns", func(t *testing.T) {
-		_, err := Repos.List(ctx, ReposListOptions{Query: "x", IncludePatterns: []string{"y"}})
+		_, err := GlobalRepos.List(ctx, ReposListOptions{Query: "x", IncludePatterns: []string{"y"}})
 		if err == nil || !strings.Contains(err.Error(), wantErr) {
 			t.Fatalf("got error %v, want it to contain %q", err, wantErr)
 		}
 	})
 
 	t.Run("Query and ExcludePattern", func(t *testing.T) {
-		_, err := Repos.List(ctx, ReposListOptions{Query: "x", ExcludePattern: "y"})
+		_, err := GlobalRepos.List(ctx, ReposListOptions{Query: "x", ExcludePattern: "y"})
 		if err == nil || !strings.Contains(err.Error(), wantErr) {
 			t.Fatalf("got error %v, want it to contain %q", err, wantErr)
 		}
@@ -990,7 +990,7 @@ func TestRepos_createRepo(t *testing.T) {
 		Name:        "a/b",
 		Description: "test"})
 
-	repo, err := Repos.GetByName(ctx, "a/b")
+	repo, err := GlobalRepos.GetByName(ctx, "a/b")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1034,7 +1034,7 @@ func TestRepos_List_useOr(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			repos, err := Repos.List(ctx, test.opt)
+			repos, err := GlobalRepos.List(ctx, test.opt)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1058,20 +1058,20 @@ func TestRepos_List_externalServiceID(t *testing.T) {
 	services := types.MakeExternalServices()
 	service1 := services[0]
 	service2 := services[1]
-	if err := ExternalServices.Create(ctx, confGet, service1); err != nil {
+	if err := GlobalExternalServices.Create(ctx, confGet, service1); err != nil {
 		t.Fatal(err)
 	}
-	if err := ExternalServices.Create(ctx, confGet, service2); err != nil {
+	if err := GlobalExternalServices.Create(ctx, confGet, service2); err != nil {
 		t.Fatal(err)
 	}
 
 	mine := types.Repos{types.MakeGithubRepo(service1)}
-	if err := Repos.Create(ctx, mine...); err != nil {
+	if err := GlobalRepos.Create(ctx, mine...); err != nil {
 		t.Fatal(err)
 	}
 
 	yours := types.Repos{types.MakeGitlabRepo(service2)}
-	if err := Repos.Create(ctx, yours...); err != nil {
+	if err := GlobalRepos.Create(ctx, yours...); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1087,7 +1087,7 @@ func TestRepos_List_externalServiceID(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			repos, err := Repos.List(ctx, test.opt)
+			repos, err := GlobalRepos.List(ctx, test.opt)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1119,7 +1119,7 @@ func TestRepos_ListRepoNames(t *testing.T) {
 		return &conf.Unified{}
 	}
 
-	err := ExternalServices.Create(ctx, confGet, &service)
+	err := GlobalExternalServices.Create(ctx, confGet, &service)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1129,7 +1129,7 @@ func TestRepos_ListRepoNames(t *testing.T) {
 	})
 	want := []*types.RepoName{{ID: repo[0].ID, Name: repo[0].Name}}
 
-	repos, err := Repos.ListRepoNames(ctx, ReposListOptions{})
+	repos, err := GlobalRepos.ListRepoNames(ctx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1150,28 +1150,28 @@ func TestRepos_ListRepoNames_fork(t *testing.T) {
 	yours := repoNamesFromRepos(mustCreate(ctx, t, &types.Repo{Name: "b/r", Fork: true}))
 
 	{
-		repos, err := Repos.ListRepoNames(ctx, ReposListOptions{OnlyForks: true})
+		repos, err := GlobalRepos.ListRepoNames(ctx, ReposListOptions{OnlyForks: true})
 		if err != nil {
 			t.Fatal(err)
 		}
 		assertJSONEqual(t, yours, repos)
 	}
 	{
-		repos, err := Repos.ListRepoNames(ctx, ReposListOptions{NoForks: true})
+		repos, err := GlobalRepos.ListRepoNames(ctx, ReposListOptions{NoForks: true})
 		if err != nil {
 			t.Fatal(err)
 		}
 		assertJSONEqual(t, mine, repos)
 	}
 	{
-		repos, err := Repos.ListRepoNames(ctx, ReposListOptions{NoForks: true, OnlyForks: true})
+		repos, err := GlobalRepos.ListRepoNames(ctx, ReposListOptions{NoForks: true, OnlyForks: true})
 		if err != nil {
 			t.Fatal(err)
 		}
 		assertJSONEqual(t, nil, repos)
 	}
 	{
-		repos, err := Repos.ListRepoNames(ctx, ReposListOptions{})
+		repos, err := GlobalRepos.ListRepoNames(ctx, ReposListOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1203,7 +1203,7 @@ func TestRepos_ListRepoNames_cloned(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			repos, err := Repos.ListRepoNames(ctx, test.opt)
+			repos, err := GlobalRepos.ListRepoNames(ctx, test.opt)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1236,7 +1236,7 @@ func TestRepos_ListRepoNames_ids(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			repos, err := Repos.ListRepoNames(ctx, test.opt)
+			repos, err := GlobalRepos.ListRepoNames(ctx, test.opt)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1272,7 +1272,7 @@ func TestRepos_ListRepoNames_serviceTypes(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			repos, err := Repos.ListRepoNames(ctx, test.opt)
+			repos, err := GlobalRepos.ListRepoNames(ctx, test.opt)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1315,7 +1315,7 @@ func TestRepos_ListRepoNames_pagination(t *testing.T) {
 		{limit: 4, offset: 4, exp: nil},
 	}
 	for _, test := range tests {
-		repos, err := Repos.ListRepoNames(ctx, ReposListOptions{LimitOffset: &LimitOffset{Limit: test.limit, Offset: test.offset}})
+		repos, err := GlobalRepos.ListRepoNames(ctx, ReposListOptions{LimitOffset: &LimitOffset{Limit: test.limit, Offset: test.offset}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1355,7 +1355,7 @@ func TestRepos_ListRepoNames_correctFiltering(t *testing.T) {
 		{"mno/p", []api.RepoName{"jkl/mno/pqr"}},
 	}
 	for _, test := range tests {
-		repos, err := Repos.ListRepoNames(ctx, ReposListOptions{Query: test.query})
+		repos, err := GlobalRepos.ListRepoNames(ctx, ReposListOptions{Query: test.query})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1396,7 +1396,7 @@ func TestRepos_ListRepoNames_query2(t *testing.T) {
 		{"def/m", []api.RepoName{"def/mno"}},
 	}
 	for _, test := range tests {
-		repos, err := Repos.ListRepoNames(ctx, ReposListOptions{Query: test.query})
+		repos, err := GlobalRepos.ListRepoNames(ctx, ReposListOptions{Query: test.query})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1464,7 +1464,7 @@ func TestRepos_ListRepoNames_sort(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		repos, err := Repos.ListRepoNames(ctx, ReposListOptions{Query: test.query, OrderBy: test.orderBy})
+		repos, err := GlobalRepos.ListRepoNames(ctx, ReposListOptions{Query: test.query, OrderBy: test.orderBy})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1517,7 +1517,7 @@ func TestRepos_ListRepoNames_patterns(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		repos, err := Repos.ListRepoNames(ctx, ReposListOptions{
+		repos, err := GlobalRepos.ListRepoNames(ctx, ReposListOptions{
 			IncludePatterns: test.includePatterns,
 			ExcludePattern:  test.excludePattern,
 		})
@@ -1637,7 +1637,7 @@ func TestRepos_ListRepoNames_queryPattern(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		repos, err := Repos.ListRepoNames(ctx, ReposListOptions{
+		repos, err := GlobalRepos.ListRepoNames(ctx, ReposListOptions{
 			PatternQuery: test.q,
 		})
 		if err != nil {
@@ -1664,14 +1664,14 @@ func TestRepos_ListRepoNames_queryAndPatternsMutuallyExclusive(t *testing.T) {
 	wantErr := "Query and IncludePatterns/ExcludePattern options are mutually exclusive"
 
 	t.Run("Query and IncludePatterns", func(t *testing.T) {
-		_, err := Repos.ListRepoNames(ctx, ReposListOptions{Query: "x", IncludePatterns: []string{"y"}})
+		_, err := GlobalRepos.ListRepoNames(ctx, ReposListOptions{Query: "x", IncludePatterns: []string{"y"}})
 		if err == nil || !strings.Contains(err.Error(), wantErr) {
 			t.Fatalf("got error %v, want it to contain %q", err, wantErr)
 		}
 	})
 
 	t.Run("Query and ExcludePattern", func(t *testing.T) {
-		_, err := Repos.ListRepoNames(ctx, ReposListOptions{Query: "x", ExcludePattern: "y"})
+		_, err := GlobalRepos.ListRepoNames(ctx, ReposListOptions{Query: "x", ExcludePattern: "y"})
 		if err == nil || !strings.Contains(err.Error(), wantErr) {
 			t.Fatalf("got error %v, want it to contain %q", err, wantErr)
 		}
@@ -1709,7 +1709,7 @@ func TestRepos_ListRepoNames_useOr(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			repos, err := Repos.ListRepoNames(ctx, test.opt)
+			repos, err := GlobalRepos.ListRepoNames(ctx, test.opt)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1733,20 +1733,20 @@ func TestRepos_ListRepoNames_externalServiceID(t *testing.T) {
 	services := types.MakeExternalServices()
 	service1 := services[0]
 	service2 := services[1]
-	if err := ExternalServices.Create(ctx, confGet, service1); err != nil {
+	if err := GlobalExternalServices.Create(ctx, confGet, service1); err != nil {
 		t.Fatal(err)
 	}
-	if err := ExternalServices.Create(ctx, confGet, service2); err != nil {
+	if err := GlobalExternalServices.Create(ctx, confGet, service2); err != nil {
 		t.Fatal(err)
 	}
 
 	mine := types.Repos{types.MakeGithubRepo(service1)}
-	if err := Repos.Create(ctx, mine...); err != nil {
+	if err := GlobalRepos.Create(ctx, mine...); err != nil {
 		t.Fatal(err)
 	}
 
 	yours := types.Repos{types.MakeGitlabRepo(service2)}
-	if err := Repos.Create(ctx, yours...); err != nil {
+	if err := GlobalRepos.Create(ctx, yours...); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1762,7 +1762,7 @@ func TestRepos_ListRepoNames_externalServiceID(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			repos, err := Repos.ListRepoNames(ctx, test.opt)
+			repos, err := GlobalRepos.ListRepoNames(ctx, test.opt)
 			if err != nil {
 				t.Fatal(err)
 			}

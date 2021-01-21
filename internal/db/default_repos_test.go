@@ -62,9 +62,9 @@ func TestListDefaultRepos(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			DefaultRepos.resetCache()
+			GlobalDefaultRepos.resetCache()
 
-			repos, err := DefaultRepos.List(ctx)
+			repos, err := GlobalDefaultRepos.List(ctx)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -98,9 +98,9 @@ func TestListDefaultRepos(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		DefaultRepos.resetCache()
+		GlobalDefaultRepos.resetCache()
 
-		repos, err := DefaultRepos.List(ctx)
+		repos, err := GlobalDefaultRepos.List(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -153,7 +153,7 @@ func TestListDefaultReposInBatches(t *testing.T) {
 		}
 	}
 
-	repos, err := Repos.listAllDefaultRepos(ctx, 2)
+	repos, err := GlobalRepos.listAllDefaultRepos(ctx, 2)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -197,7 +197,7 @@ func TestListDefaultReposUncloned(t *testing.T) {
 		}
 	}
 
-	repos, err := Repos.ListDefaultRepos(ctx, ListDefaultReposOptions{
+	repos, err := GlobalRepos.ListDefaultRepos(ctx, ListDefaultReposOptions{
 		Limit:        3,
 		AfterID:      0,
 		OnlyUncloned: true,
@@ -223,7 +223,7 @@ func BenchmarkDefaultRepos_List_Empty(b *testing.B) {
 	}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		_, err := DefaultRepos.List(ctx)
+		_, err := GlobalDefaultRepos.List(ctx)
 		if err != nil {
 			b.Fatal(err)
 		}

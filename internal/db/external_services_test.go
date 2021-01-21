@@ -224,7 +224,7 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 				test.setup(t)
 			}
 
-			_, err := ExternalServices.ValidateConfig(context.Background(), ValidateExternalServiceConfigOptions{
+			_, err := GlobalExternalServices.ValidateConfig(context.Background(), ValidateExternalServiceConfigOptions{
 				Kind:            test.kind,
 				Config:          test.config,
 				NamespaceUserID: test.namespaceUserID,
@@ -247,7 +247,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 	envvar.MockSourcegraphDotComMode(true)
 	defer envvar.MockSourcegraphDotComMode(false)
 
-	user, err := Users.Create(ctx,
+	user, err := GlobalUsers.Create(ctx,
 		NewUser{
 			Email:           "alice@example.com",
 			Username:        "alice",
@@ -326,13 +326,13 @@ func TestExternalServicesStore_Create(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := ExternalServices.Create(ctx, confGet, test.externalService)
+			err := GlobalExternalServices.Create(ctx, confGet, test.externalService)
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			// Should get back the same one
-			got, err := ExternalServices.GetByID(ctx, test.externalService.ID)
+			got, err := GlobalExternalServices.GetByID(ctx, test.externalService.ID)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -431,13 +431,13 @@ func TestExternalServicesStore_Update(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err = ExternalServices.Update(ctx, nil, es.ID, test.update)
+			err = GlobalExternalServices.Update(ctx, nil, es.ID, test.update)
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			// Get and verify update
-			got, err := ExternalServices.GetByID(ctx, es.ID)
+			got, err := GlobalExternalServices.GetByID(ctx, es.ID)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -473,7 +473,7 @@ func TestCountRepoCount(t *testing.T) {
 		DisplayName: "GITHUB #1",
 		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 	}
-	err := ExternalServices.Create(ctx, confGet, es1)
+	err := GlobalExternalServices.Create(ctx, confGet, es1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -496,7 +496,7 @@ VALUES (%d, 1, '')
 		t.Fatal(err)
 	}
 
-	count, err := ExternalServices.RepoCount(ctx, es1.ID)
+	count, err := GlobalExternalServices.RepoCount(ctx, es1.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -522,7 +522,7 @@ func TestExternalServicesStore_Delete(t *testing.T) {
 		DisplayName: "GITHUB #1",
 		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 	}
-	err := ExternalServices.Create(ctx, confGet, es1)
+	err := GlobalExternalServices.Create(ctx, confGet, es1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -532,7 +532,7 @@ func TestExternalServicesStore_Delete(t *testing.T) {
 		DisplayName: "GITHUB #2",
 		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`,
 	}
-	err = ExternalServices.Create(ctx, confGet, es2)
+	err = GlobalExternalServices.Create(ctx, confGet, es2)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -561,13 +561,13 @@ VALUES (%d, 1, ''), (%d, 2, '')
 	}
 
 	// Delete this external service
-	err = ExternalServices.Delete(ctx, es1.ID)
+	err = GlobalExternalServices.Delete(ctx, es1.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Delete again should get externalServiceNotFoundError
-	err = ExternalServices.Delete(ctx, es1.ID)
+	err = GlobalExternalServices.Delete(ctx, es1.ID)
 	gotErr := fmt.Sprintf("%v", err)
 	wantErr := fmt.Sprintf("external service not found: %v", es1.ID)
 	if gotErr != wantErr {
@@ -575,7 +575,7 @@ VALUES (%d, 1, ''), (%d, 2, '')
 	}
 
 	// Should only get back the repo with ID=2
-	repos, err := Repos.GetByIDs(ctx, 1, 2)
+	repos, err := GlobalRepos.GetByIDs(ctx, 1, 2)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -716,7 +716,7 @@ func TestExternalServicesStore_List(t *testing.T) {
 	ctx := context.Background()
 
 	// Create test user
-	user, err := Users.Create(ctx, NewUser{
+	user, err := GlobalUsers.Create(ctx, NewUser{
 		Email:           "alice@example.com",
 		Username:        "alice",
 		Password:        "password",
@@ -744,7 +744,7 @@ func TestExternalServicesStore_List(t *testing.T) {
 		},
 	}
 	for _, es := range ess {
-		err := ExternalServices.Create(ctx, confGet, es)
+		err := GlobalExternalServices.Create(ctx, confGet, es)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -854,7 +854,7 @@ func TestExternalServicesStore_DistinctKinds(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("no external service won't blow up", func(t *testing.T) {
-		kinds, err := ExternalServices.DistinctKinds(ctx)
+		kinds, err := GlobalExternalServices.DistinctKinds(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -890,19 +890,19 @@ func TestExternalServicesStore_DistinctKinds(t *testing.T) {
 		},
 	}
 	for _, es := range ess {
-		err := ExternalServices.Create(ctx, confGet, es)
+		err := GlobalExternalServices.Create(ctx, confGet, es)
 		if err != nil {
 			t.Fatal(err)
 		}
 	}
 
 	// Delete the last external service which should be excluded from the result
-	err := ExternalServices.Delete(ctx, ess[3].ID)
+	err := GlobalExternalServices.Delete(ctx, ess[3].ID)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	kinds, err := ExternalServices.DistinctKinds(ctx)
+	kinds, err := GlobalExternalServices.DistinctKinds(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -956,13 +956,13 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 	svcs := types.MakeExternalServices()
 
 	t.Run("no external services", func(t *testing.T) {
-		if err := ExternalServices.Upsert(ctx); err != nil {
+		if err := GlobalExternalServices.Upsert(ctx); err != nil {
 			t.Fatalf("Upsert error: %s", err)
 		}
 	})
 
 	t.Run("many external services", func(t *testing.T) {
-		tx, err := ExternalServices.Transact(ctx)
+		tx, err := GlobalExternalServices.Transact(ctx)
 		if err != nil {
 			t.Fatalf("Transact error: %s", err)
 		}
@@ -1072,30 +1072,30 @@ func TestExternalServicesStore_ValidateSingleGlobalConnection(t *testing.T) {
 
 	t.Run("non global", func(t *testing.T) {
 		gh := makeService(false)
-		if err := ExternalServices.Upsert(ctx, gh); err != nil {
+		if err := GlobalExternalServices.Upsert(ctx, gh); err != nil {
 			t.Fatalf("Upsert error: %s", err)
 		}
-		if err := ExternalServices.validateSingleGlobalConnection(ctx, gh.ID, extsvc.KindGitHub); err != nil {
+		if err := GlobalExternalServices.validateSingleGlobalConnection(ctx, gh.ID, extsvc.KindGitHub); err != nil {
 			t.Fatal(err)
 		}
 	})
 
 	t.Run("first global", func(t *testing.T) {
 		gh := makeService(true)
-		if err := ExternalServices.Upsert(ctx, gh); err != nil {
+		if err := GlobalExternalServices.Upsert(ctx, gh); err != nil {
 			t.Fatalf("Upsert error: %s", err)
 		}
-		if err := ExternalServices.validateSingleGlobalConnection(ctx, gh.ID, extsvc.KindGitHub); err != nil {
+		if err := GlobalExternalServices.validateSingleGlobalConnection(ctx, gh.ID, extsvc.KindGitHub); err != nil {
 			t.Fatal(err)
 		}
 	})
 
 	t.Run("second global", func(t *testing.T) {
 		gh := makeService(true)
-		if err := ExternalServices.Upsert(ctx, gh); err != nil {
+		if err := GlobalExternalServices.Upsert(ctx, gh); err != nil {
 			t.Fatalf("Upsert error: %s", err)
 		}
-		if err := ExternalServices.validateSingleGlobalConnection(ctx, gh.ID, extsvc.KindGitHub); err == nil {
+		if err := GlobalExternalServices.validateSingleGlobalConnection(ctx, gh.ID, extsvc.KindGitHub); err == nil {
 			t.Fatal("Expected validation error")
 		}
 	})

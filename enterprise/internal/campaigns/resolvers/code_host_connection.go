@@ -79,7 +79,7 @@ func (c *campaignsCodeHostConnectionResolver) compute(ctx context.Context) (all,
 		}
 
 		// Fetch all user credentials to avoid N+1 per credential resolver.
-		creds, _, err := db.UserCredentials.List(ctx, db.UserCredentialsListOpts{Scope: db.UserCredentialScope{Domain: db.UserCredentialDomainCampaigns, UserID: c.userID}})
+		creds, _, err := db.GlobalUserCredentials.List(ctx, db.UserCredentialsListOpts{Scope: db.UserCredentialScope{Domain: db.UserCredentialDomainCampaigns, UserID: c.userID}})
 		if err != nil {
 			c.chsErr = err
 			return

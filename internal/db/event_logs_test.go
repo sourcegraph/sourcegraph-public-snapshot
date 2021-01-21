@@ -53,7 +53,7 @@ func TestEventLogs_ValidInfo(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			err := EventLogs.Insert(ctx, tc.event)
+			err := GlobalEventLogs.Insert(ctx, tc.event)
 
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("have %+v, want %+v", have, want)
@@ -92,12 +92,12 @@ func TestEventLogs_CountUniqueUsersPerPeriod(t *testing.T) {
 	}
 
 	for _, e := range events {
-		if err := EventLogs.Insert(ctx, e); err != nil {
+		if err := GlobalEventLogs.Insert(ctx, e); err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	values, err := EventLogs.CountUniqueUsersPerPeriod(ctx, Daily, now, 3, nil)
+	values, err := GlobalEventLogs.CountUniqueUsersPerPeriod(ctx, Daily, now, 3, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -136,7 +136,7 @@ func TestEventLogs_UsersUsageCounts(t *testing.T) {
 						Timestamp: day.Add(time.Minute * time.Duration(rand.Intn(60*12))),
 					}
 
-					if err := EventLogs.Insert(ctx, e); err != nil {
+					if err := GlobalEventLogs.Insert(ctx, e); err != nil {
 						t.Fatal(err)
 					}
 				}
@@ -144,7 +144,7 @@ func TestEventLogs_UsersUsageCounts(t *testing.T) {
 		}
 	}
 
-	have, err := EventLogs.UsersUsageCounts(ctx)
+	have, err := GlobalEventLogs.UsersUsageCounts(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -236,7 +236,7 @@ func TestEventLogs_SiteUsage(t *testing.T) {
 							e.AnonymousUserID = "deadbeef"
 						}
 
-						if err := EventLogs.Insert(ctx, e); err != nil {
+						if err := GlobalEventLogs.Insert(ctx, e); err != nil {
 							t.Fatal(err)
 						}
 					}
@@ -245,7 +245,7 @@ func TestEventLogs_SiteUsage(t *testing.T) {
 		}
 	}
 
-	summary, err := EventLogs.siteUsage(ctx, now)
+	summary, err := GlobalEventLogs.siteUsage(ctx, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -303,7 +303,7 @@ func TestEventLogs_CodeIntelligenceCombinedWAU(t *testing.T) {
 				Timestamp: now.Add(-time.Hour * 24 * 3).Add(time.Minute * time.Duration(rand.Intn(60)-30)),
 			}
 
-			if err := EventLogs.Insert(ctx, e); err != nil {
+			if err := GlobalEventLogs.Insert(ctx, e); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -317,13 +317,13 @@ func TestEventLogs_CodeIntelligenceCombinedWAU(t *testing.T) {
 				Timestamp: now.Add(-time.Hour * 24 * 12).Add(time.Minute * time.Duration(rand.Intn(60)-30)),
 			}
 
-			if err := EventLogs.Insert(ctx, e); err != nil {
+			if err := GlobalEventLogs.Insert(ctx, e); err != nil {
 				t.Fatal(err)
 			}
 		}
 	}
 
-	count, err := EventLogs.codeIntelligenceCombinedWAU(ctx, now)
+	count, err := GlobalEventLogs.codeIntelligenceCombinedWAU(ctx, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -371,7 +371,7 @@ func TestEventLogs_AggregatedCodeIntelEvents(t *testing.T) {
 						Timestamp: day.Add(time.Minute * time.Duration(rand.Intn(60)-30)),
 					}
 
-					if err := EventLogs.Insert(ctx, e); err != nil {
+					if err := GlobalEventLogs.Insert(ctx, e); err != nil {
 						t.Fatal(err)
 					}
 				}
@@ -379,7 +379,7 @@ func TestEventLogs_AggregatedCodeIntelEvents(t *testing.T) {
 		}
 	}
 
-	events, err := EventLogs.aggregatedCodeIntelEvents(ctx, now)
+	events, err := GlobalEventLogs.aggregatedCodeIntelEvents(ctx, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -426,12 +426,12 @@ func TestEventLogs_AggregatedSparseCodeIntelEvents(t *testing.T) {
 			Timestamp: now.Add(-time.Hour * 24 * 3), // This week
 		}
 
-		if err := EventLogs.Insert(ctx, e); err != nil {
+		if err := GlobalEventLogs.Insert(ctx, e); err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	events, err := EventLogs.aggregatedCodeIntelEvents(ctx, now)
+	events, err := GlobalEventLogs.aggregatedCodeIntelEvents(ctx, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -479,12 +479,12 @@ func TestEventLogs_AggregatedSparseSearchEvents(t *testing.T) {
 			Timestamp: now.Add(-time.Hour * 24 * 6), // This month
 		}
 
-		if err := EventLogs.Insert(ctx, e); err != nil {
+		if err := GlobalEventLogs.Insert(ctx, e); err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	events, err := EventLogs.aggregatedSearchEvents(ctx, now)
+	events, err := GlobalEventLogs.aggregatedSearchEvents(ctx, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -558,7 +558,7 @@ func TestEventLogs_AggregatedSearchEvents(t *testing.T) {
 							Timestamp: day.Add(time.Minute * time.Duration(rand.Intn(60)-30)),
 						}
 
-						if err := EventLogs.Insert(ctx, e); err != nil {
+						if err := GlobalEventLogs.Insert(ctx, e); err != nil {
 							t.Fatal(err)
 						}
 					}
@@ -567,7 +567,7 @@ func TestEventLogs_AggregatedSearchEvents(t *testing.T) {
 		}
 	}
 
-	events, err := EventLogs.aggregatedSearchEvents(ctx, now)
+	events, err := GlobalEventLogs.aggregatedSearchEvents(ctx, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -650,14 +650,14 @@ func TestEventLogs_ListAll(t *testing.T) {
 		}}
 
 	for _, event := range events {
-		if err := EventLogs.Insert(ctx, event); err != nil {
+		if err := GlobalEventLogs.Insert(ctx, event); err != nil {
 			t.Fatal(err)
 		}
 
 	}
 
 	searchResultQueriedEvent := "SearchResultsQueried"
-	have, err := EventLogs.ListAll(ctx, EventLogsListOptions{EventName: &searchResultQueriedEvent})
+	have, err := GlobalEventLogs.ListAll(ctx, EventLogsListOptions{EventName: &searchResultQueriedEvent})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -677,7 +677,7 @@ func TestEventLogs_LatestPing(t *testing.T) {
 
 	t.Run("with no pings in database", func(t *testing.T) {
 		ctx := context.Background()
-		ping, err := EventLogs.LatestPing(ctx)
+		ping, err := GlobalEventLogs.LatestPing(ctx)
 		if ping != nil {
 			t.Fatalf("have ping %+v, expected nil", ping)
 		}
@@ -711,12 +711,12 @@ func TestEventLogs_LatestPing(t *testing.T) {
 			},
 		}
 		for _, event := range events {
-			if err := EventLogs.Insert(ctx, event); err != nil {
+			if err := GlobalEventLogs.Insert(ctx, event); err != nil {
 				t.Fatal(err)
 			}
 		}
 
-		gotPing, err := EventLogs.LatestPing(ctx)
+		gotPing, err := GlobalEventLogs.LatestPing(ctx)
 		if err != nil || gotPing == nil {
 			t.Fatal(err)
 		}

@@ -47,7 +47,7 @@ func (r *settingsCascade) Subjects(ctx context.Context) ([]*settingsSubject, err
 		subjects = append(subjects, r.subject)
 
 	case r.subject.user != nil:
-		orgs, err := db.Orgs.GetByUserID(ctx, r.subject.user.user.ID)
+		orgs, err := db.GlobalOrgs.GetByUserID(ctx, r.subject.user.user.ID)
 		if err != nil {
 			return nil, err
 		}

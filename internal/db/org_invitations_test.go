@@ -19,7 +19,7 @@ func TestOrgInvitations(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := context.Background()
 
-	sender, err := Users.Create(ctx, NewUser{
+	sender, err := GlobalUsers.Create(ctx, NewUser{
 		Email:                 "a1@example.com",
 		Username:              "u1",
 		Password:              "p1",
@@ -29,7 +29,7 @@ func TestOrgInvitations(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	recipient, err := Users.Create(ctx, NewUser{
+	recipient, err := GlobalUsers.Create(ctx, NewUser{
 		Email:                 "a2@example.com",
 		Username:              "u2",
 		Password:              "p2",
@@ -39,27 +39,27 @@ func TestOrgInvitations(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	org1, err := Orgs.Create(ctx, "o1", nil)
+	org1, err := GlobalOrgs.Create(ctx, "o1", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	org2, err := Orgs.Create(ctx, "o2", nil)
+	org2, err := GlobalOrgs.Create(ctx, "o2", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	oi1, err := OrgInvitations.Create(ctx, org1.ID, sender.ID, recipient.ID)
+	oi1, err := GlobalOrgInvitations.Create(ctx, org1.ID, sender.ID, recipient.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	oi2, err := OrgInvitations.Create(ctx, org2.ID, sender.ID, recipient.ID)
+	oi2, err := GlobalOrgInvitations.Create(ctx, org2.ID, sender.ID, recipient.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	testGetByID := func(t *testing.T, id int64, want *OrgInvitation) {
 		t.Helper()
-		if oi, err := OrgInvitations.GetByID(ctx, id); err != nil {
+		if oi, err := GlobalOrgInvitations.GetByID(ctx, id); err != nil {
 			t.Fatal(err)
 		} else if !reflect.DeepEqual(oi, want) {
 			t.Errorf("got %+v, want %+v", oi, want)
@@ -68,19 +68,19 @@ func TestOrgInvitations(t *testing.T) {
 	t.Run("GetByID", func(t *testing.T) {
 		testGetByID(t, oi1.ID, oi1)
 		testGetByID(t, oi2.ID, oi2)
-		if _, err := OrgInvitations.GetByID(ctx, 12345 /* doesn't exist */); !errcode.IsNotFound(err) {
+		if _, err := GlobalOrgInvitations.GetByID(ctx, 12345 /* doesn't exist */); !errcode.IsNotFound(err) {
 			t.Errorf("got err %v, want errcode.IsNotFound", err)
 		}
 	})
 
 	testListCount := func(t *testing.T, opt OrgInvitationsListOptions, want []*OrgInvitation) {
 		t.Helper()
-		if ois, err := OrgInvitations.List(ctx, opt); err != nil {
+		if ois, err := GlobalOrgInvitations.List(ctx, opt); err != nil {
 			t.Fatal(err)
 		} else if !reflect.DeepEqual(ois, want) {
 			t.Errorf("got %+v, want %+v", ois, want)
 		}
-		if n, err := OrgInvitations.Count(ctx, opt); err != nil {
+		if n, err := GlobalOrgInvitations.Count(ctx, opt); err != nil {
 			t.Fatal(err)
 		} else if want := len(want); n != want {
 			t.Errorf("got %d, want %d", n, want)
@@ -100,10 +100,10 @@ func TestOrgInvitations(t *testing.T) {
 		if oi1.NotifiedAt != nil {
 			t.Fatalf("failed precondition: oi.NotifiedAt == %q, want nil", *oi1.NotifiedAt)
 		}
-		if err := OrgInvitations.UpdateEmailSentTimestamp(ctx, oi1.ID); err != nil {
+		if err := GlobalOrgInvitations.UpdateEmailSentTimestamp(ctx, oi1.ID); err != nil {
 			t.Fatal(err)
 		}
-		oi, err := OrgInvitations.GetByID(ctx, oi1.ID)
+		oi, err := GlobalOrgInvitations.GetByID(ctx, oi1.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -113,10 +113,10 @@ func TestOrgInvitations(t *testing.T) {
 
 		// Update it again.
 		prevNotifiedAt := *oi.NotifiedAt
-		if err := OrgInvitations.UpdateEmailSentTimestamp(ctx, oi1.ID); err != nil {
+		if err := GlobalOrgInvitations.UpdateEmailSentTimestamp(ctx, oi1.ID); err != nil {
 			t.Fatal(err)
 		}
-		oi, err = OrgInvitations.GetByID(ctx, oi1.ID)
+		oi, err = GlobalOrgInvitations.GetByID(ctx, oi1.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -129,23 +129,23 @@ func TestOrgInvitations(t *testing.T) {
 		if oi.RespondedAt != nil {
 			t.Fatalf("failed precondition: oi.RespondedAt == %q, want nil", *oi.RespondedAt)
 		}
-		if got, err := OrgInvitations.GetPending(ctx, oi.OrgID, oi.RecipientUserID); err != nil {
+		if got, err := GlobalOrgInvitations.GetPending(ctx, oi.OrgID, oi.RecipientUserID); err != nil {
 			t.Fatal(err)
 		} else if got.ID != oi.ID {
 			t.Errorf("got %d, want %d", got.ID, oi.ID)
 		}
 
 		// Try responding with the wrong recipient user ID, which should fail.
-		if _, err := OrgInvitations.Respond(ctx, oi.ID, 12345 /* invalid user */, accepted); !errcode.IsNotFound(err) {
+		if _, err := GlobalOrgInvitations.Respond(ctx, oi.ID, 12345 /* invalid user */, accepted); !errcode.IsNotFound(err) {
 			t.Errorf("got err %v, want errcode.IsNotFound", err)
 		}
 
-		if orgID, err := OrgInvitations.Respond(ctx, oi.ID, oi.RecipientUserID, accepted); err != nil {
+		if orgID, err := GlobalOrgInvitations.Respond(ctx, oi.ID, oi.RecipientUserID, accepted); err != nil {
 			t.Fatal(err)
 		} else if want := oi.OrgID; orgID != want {
 			t.Errorf("got %v, want %v", orgID, want)
 		}
-		oi, err := OrgInvitations.GetByID(ctx, oi.ID)
+		oi, err := GlobalOrgInvitations.GetByID(ctx, oi.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -157,10 +157,10 @@ func TestOrgInvitations(t *testing.T) {
 		}
 
 		// After responding, these should fail.
-		if _, err := OrgInvitations.GetPending(ctx, oi.OrgID, oi.RecipientUserID); !errcode.IsNotFound(err) {
+		if _, err := GlobalOrgInvitations.GetPending(ctx, oi.OrgID, oi.RecipientUserID); !errcode.IsNotFound(err) {
 			t.Errorf("got err %v, want errcode.IsNotFound", err)
 		}
-		if _, err := OrgInvitations.Respond(ctx, oi.ID, oi.RecipientUserID, accepted); !errcode.IsNotFound(err) {
+		if _, err := GlobalOrgInvitations.Respond(ctx, oi.ID, oi.RecipientUserID, accepted); !errcode.IsNotFound(err) {
 			t.Errorf("got err %v, want errcode.IsNotFound", err)
 		}
 	}
@@ -172,24 +172,24 @@ func TestOrgInvitations(t *testing.T) {
 	})
 
 	t.Run("Revoke", func(t *testing.T) {
-		org3, err := Orgs.Create(ctx, "o3", nil)
+		org3, err := GlobalOrgs.Create(ctx, "o3", nil)
 		if err != nil {
 			t.Fatal(err)
 		}
-		oi3, err := OrgInvitations.Create(ctx, org3.ID, sender.ID, recipient.ID)
+		oi3, err := GlobalOrgInvitations.Create(ctx, org3.ID, sender.ID, recipient.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		if err := OrgInvitations.Revoke(ctx, oi3.ID); err != nil {
+		if err := GlobalOrgInvitations.Revoke(ctx, oi3.ID); err != nil {
 			t.Fatal(err)
 		}
 
 		// After revoking, these should fail.
-		if _, err := OrgInvitations.GetPending(ctx, oi3.OrgID, oi3.RecipientUserID); !errcode.IsNotFound(err) {
+		if _, err := GlobalOrgInvitations.GetPending(ctx, oi3.OrgID, oi3.RecipientUserID); !errcode.IsNotFound(err) {
 			t.Errorf("got err %v, want errcode.IsNotFound", err)
 		}
-		if _, err := OrgInvitations.Respond(ctx, oi3.ID, recipient.ID, true); !errcode.IsNotFound(err) {
+		if _, err := GlobalOrgInvitations.Respond(ctx, oi3.ID, recipient.ID, true); !errcode.IsNotFound(err) {
 			t.Errorf("got err %v, want errcode.IsNotFound", err)
 		}
 	})

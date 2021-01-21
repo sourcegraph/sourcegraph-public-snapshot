@@ -204,7 +204,7 @@ func (s *UserExternalAccountsStore) CreateUserAndSave(ctx context.Context, newUs
 		return Mocks.ExternalAccounts.CreateUserAndSave(newUser, spec, data)
 	}
 
-	usersTx, err := Users.Transact(ctx)
+	usersTx, err := GlobalUsers.Transact(ctx)
 	if err != nil {
 		return 0, err
 	}

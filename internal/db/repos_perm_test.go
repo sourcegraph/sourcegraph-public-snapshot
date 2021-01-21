@@ -162,7 +162,7 @@ func TestRepos_getReposBySQL_checkPermissions(t *testing.T) {
 	ctx := context.Background()
 
 	// Set up three users: alice, bob and admin
-	alice, err := Users.Create(ctx, NewUser{
+	alice, err := GlobalUsers.Create(ctx, NewUser{
 		Email:                 "alice@example.com",
 		Username:              "alice",
 		Password:              "alice",
@@ -171,7 +171,7 @@ func TestRepos_getReposBySQL_checkPermissions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	bob, err := Users.Create(ctx, NewUser{
+	bob, err := GlobalUsers.Create(ctx, NewUser{
 		Email:                 "bob@example.com",
 		Username:              "bob",
 		Password:              "bob",
@@ -180,7 +180,7 @@ func TestRepos_getReposBySQL_checkPermissions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	admin, err := Users.Create(ctx, NewUser{
+	admin, err := GlobalUsers.Create(ctx, NewUser{
 		Email:                 "admin@example.com",
 		Username:              "admin",
 		Password:              "admin",
@@ -192,11 +192,11 @@ func TestRepos_getReposBySQL_checkPermissions(t *testing.T) {
 
 	// Ensure only "admin" is the site admin, alice was prompted as site admin
 	// because it was the first user.
-	err = Users.SetIsSiteAdmin(ctx, admin.ID, true)
+	err = GlobalUsers.SetIsSiteAdmin(ctx, admin.ID, true)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = Users.SetIsSiteAdmin(ctx, alice.ID, false)
+	err = GlobalUsers.SetIsSiteAdmin(ctx, alice.ID, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -256,7 +256,7 @@ func TestRepos_getReposBySQL_checkPermissions(t *testing.T) {
 		Config:       `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 		Unrestricted: true,
 	}
-	err = ExternalServices.Create(ctx, confGet, cindyExternalService)
+	err = GlobalExternalServices.Create(ctx, confGet, cindyExternalService)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -305,7 +305,7 @@ VALUES
 
 	// Alice should see "alice_public_repo", "alice_private_repo", "bob_public_repo", "cindy_private_repo"
 	aliceCtx := actor.WithActor(ctx, &actor.Actor{UID: alice.ID})
-	repos, err := Repos.List(aliceCtx, ReposListOptions{})
+	repos, err := GlobalRepos.List(aliceCtx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -316,7 +316,7 @@ VALUES
 
 	// Bob should see "alice_public_repo", "bob_private_repo", "bob_public_repo", "cindy_private_repo"
 	bobCtx := actor.WithActor(ctx, &actor.Actor{UID: bob.ID})
-	repos, err = Repos.List(bobCtx, ReposListOptions{})
+	repos, err = GlobalRepos.List(bobCtx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -327,7 +327,7 @@ VALUES
 
 	// Admin should see all repositories
 	adminCtx := actor.WithActor(ctx, &actor.Actor{UID: admin.ID})
-	repos, err = Repos.List(adminCtx, ReposListOptions{})
+	repos, err = GlobalRepos.List(adminCtx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -337,7 +337,7 @@ VALUES
 	}
 
 	// A random user should only see "alice_public_repo", "bob_public_repo", "cindy_private_repo"
-	repos, err = Repos.List(ctx, ReposListOptions{})
+	repos, err = GlobalRepos.List(ctx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -357,7 +357,7 @@ func TestRepos_getReposBySQL_permissionsUserMapping(t *testing.T) {
 	ctx := context.Background()
 
 	// Set up three users: alice, bob and admin
-	alice, err := Users.Create(ctx, NewUser{
+	alice, err := GlobalUsers.Create(ctx, NewUser{
 		Email:                 "alice@example.com",
 		Username:              "alice",
 		Password:              "alice",
@@ -366,7 +366,7 @@ func TestRepos_getReposBySQL_permissionsUserMapping(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	bob, err := Users.Create(ctx, NewUser{
+	bob, err := GlobalUsers.Create(ctx, NewUser{
 		Email:                 "bob@example.com",
 		Username:              "bob",
 		Password:              "bob",
@@ -375,7 +375,7 @@ func TestRepos_getReposBySQL_permissionsUserMapping(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	admin, err := Users.Create(ctx, NewUser{
+	admin, err := GlobalUsers.Create(ctx, NewUser{
 		Email:                 "admin@example.com",
 		Username:              "admin",
 		Password:              "admin",
@@ -387,11 +387,11 @@ func TestRepos_getReposBySQL_permissionsUserMapping(t *testing.T) {
 
 	// Ensure only "admin" is the site admin, alice was prompted as site admin
 	// because it was the first user.
-	err = Users.SetIsSiteAdmin(ctx, admin.ID, true)
+	err = GlobalUsers.SetIsSiteAdmin(ctx, admin.ID, true)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = Users.SetIsSiteAdmin(ctx, alice.ID, false)
+	err = GlobalUsers.SetIsSiteAdmin(ctx, alice.ID, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -462,7 +462,7 @@ VALUES
 
 	// Alice should see "alice_private_repo" but not "alice_public_repo", "bob_public_repo", "bob_private_repo"
 	aliceCtx := actor.WithActor(ctx, &actor.Actor{UID: alice.ID})
-	repos, err := Repos.List(aliceCtx, ReposListOptions{})
+	repos, err := GlobalRepos.List(aliceCtx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -473,7 +473,7 @@ VALUES
 
 	// Bob should see "bob_private_repo" but not "alice_public_repo" or "bob_public_repo"
 	bobCtx := actor.WithActor(ctx, &actor.Actor{UID: bob.ID})
-	repos, err = Repos.List(bobCtx, ReposListOptions{})
+	repos, err = GlobalRepos.List(bobCtx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -484,7 +484,7 @@ VALUES
 
 	// Admin should see all repositories
 	adminCtx := actor.WithActor(ctx, &actor.Actor{UID: admin.ID})
-	repos, err = Repos.List(adminCtx, ReposListOptions{})
+	repos, err = GlobalRepos.List(adminCtx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -494,7 +494,7 @@ VALUES
 	}
 
 	// A random user sees nothing
-	repos, err = Repos.List(ctx, ReposListOptions{})
+	repos, err = GlobalRepos.List(ctx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
