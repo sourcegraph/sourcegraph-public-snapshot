@@ -86,6 +86,8 @@
 // 1528395774_add_user_public_repo.up.sql (358B)
 // 1528395775_add_cloud_default_to_external_services.down.sql (125B)
 // 1528395775_add_cloud_default_to_external_services.up.sql (295B)
+// 1528395776_cloud_default_not_null.down.sql (99B)
+// 1528395776_cloud_default_not_null.up.sql (98B)
 
 package migrations
 
@@ -1874,6 +1876,46 @@ func _1528395775_add_cloud_default_to_external_servicesUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395776_cloud_default_not_nullDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\xad\x28\x49\x2d\xca\x4b\xcc\x89\x2f\x4e\x2d\x2a\xcb\x4c\x4e\x2d\x56\x80\xa8\x73\xf6\xf7\x09\xf5\xf5\x53\x48\xce\xc9\x2f\x4d\x89\x4f\x49\x4d\x4b\x2c\xcd\x29\x51\x70\x09\xf2\x0f\x50\xf0\xf3\x0f\x51\xf0\x0b\xf5\xf1\xb1\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xd8\xfb\x38\xc8\x63\x00\x00\x00")
+
+func _1528395776_cloud_default_not_nullDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395776_cloud_default_not_nullDownSql,
+		"1528395776_cloud_default_not_null.down.sql",
+	)
+}
+
+func _1528395776_cloud_default_not_nullDownSql() (*asset, error) {
+	bytes, err := _1528395776_cloud_default_not_nullDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395776_cloud_default_not_null.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xa2, 0x6f, 0x5c, 0xb5, 0x1a, 0x59, 0x48, 0xca, 0x9b, 0xb4, 0xce, 0xc7, 0xe8, 0xae, 0xb8, 0xb5, 0xc9, 0x30, 0x51, 0xc8, 0xe0, 0x94, 0x6d, 0xb0, 0xa3, 0xc2, 0x7, 0x62, 0xb7, 0x54, 0x6d, 0x4b}}
+	return a, nil
+}
+
+var __1528395776_cloud_default_not_nullUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x24\xca\x4b\x0a\xc2\x40\x0c\x06\xe0\x7d\x4e\xf1\xdf\x63\x56\x6d\x89\x12\xc8\x64\xc0\x49\xc1\x5d\x29\x6d\x04\x61\x50\xe8\x43\x3c\xbe\x0b\xf7\x5f\xcf\x57\xb1\x44\xd4\xa9\xf3\x0d\xde\xf5\xca\x90\x0b\xf8\x2e\xd5\x2b\xe2\x7b\xc4\xf6\x9a\xdb\xb4\xc7\xf6\x79\x2e\xb1\xe3\xef\x86\xa2\x63\x36\x2c\xed\x7d\xae\xd3\x1a\x8f\xf9\x6c\x07\x2a\x3b\xac\x38\x6c\x54\x4d\x44\x43\xc9\x59\x3c\xd1\x2f\x00\x00\xff\xff\xc2\x52\x20\x49\x62\x00\x00\x00")
+
+func _1528395776_cloud_default_not_nullUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395776_cloud_default_not_nullUpSql,
+		"1528395776_cloud_default_not_null.up.sql",
+	)
+}
+
+func _1528395776_cloud_default_not_nullUpSql() (*asset, error) {
+	bytes, err := _1528395776_cloud_default_not_nullUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395776_cloud_default_not_null.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x37, 0x54, 0x58, 0x1b, 0x9e, 0xb7, 0xa2, 0xa9, 0x17, 0x1c, 0xd8, 0x6d, 0x49, 0x58, 0x6, 0x9c, 0xfa, 0x42, 0xf0, 0x98, 0xd4, 0x11, 0xdc, 0xed, 0x4f, 0xca, 0x65, 0x32, 0x90, 0xc0, 0x51, 0xd}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2051,6 +2093,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395774_add_user_public_repo.up.sql":                                                 _1528395774_add_user_public_repoUpSql,
 	"1528395775_add_cloud_default_to_external_services.down.sql":                             _1528395775_add_cloud_default_to_external_servicesDownSql,
 	"1528395775_add_cloud_default_to_external_services.up.sql":                               _1528395775_add_cloud_default_to_external_servicesUpSql,
+	"1528395776_cloud_default_not_null.down.sql":                                             _1528395776_cloud_default_not_nullDownSql,
+	"1528395776_cloud_default_not_null.up.sql":                                               _1528395776_cloud_default_not_nullUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2183,6 +2227,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395774_add_user_public_repo.up.sql":                                                 {_1528395774_add_user_public_repoUpSql, map[string]*bintree{}},
 	"1528395775_add_cloud_default_to_external_services.down.sql":                             {_1528395775_add_cloud_default_to_external_servicesDownSql, map[string]*bintree{}},
 	"1528395775_add_cloud_default_to_external_services.up.sql":                               {_1528395775_add_cloud_default_to_external_servicesUpSql, map[string]*bintree{}},
+	"1528395776_cloud_default_not_null.down.sql":                                             {_1528395776_cloud_default_not_nullDownSql, map[string]*bintree{}},
+	"1528395776_cloud_default_not_null.up.sql":                                               {_1528395776_cloud_default_not_nullUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
