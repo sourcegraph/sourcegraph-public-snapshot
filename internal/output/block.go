@@ -40,9 +40,9 @@ func (b *Block) Close() {
 	// This is a little tricky: output from Writer methods includes a trailing
 	// newline, so we need to trim that so we don't output extra blank lines.
 	for _, line := range bytes.Split(bytes.TrimRight(b.writer.buffer.Bytes(), "\n"), []byte("\n")) {
-		b.unwrapped.w.Write(b.indent)
-		b.unwrapped.w.Write(line)
-		b.unwrapped.w.Write([]byte("\n"))
+		_, _ = b.unwrapped.w.Write(b.indent)
+		_, _ = b.unwrapped.w.Write(line)
+		_, _ = b.unwrapped.w.Write([]byte("\n"))
 	}
 }
 

@@ -165,8 +165,8 @@ func (r *request) do(ctx context.Context, result interface{}) (bool, error) {
 		if err != nil {
 			return false, err
 		}
-		r.client.opts.Out.Write([]byte(curl + "\n"))
-		return false, nil
+		_, err = r.client.opts.Out.Write([]byte(curl + "\n"))
+		return false, err
 	}
 
 	if *r.client.opts.Flags.dump {
@@ -217,7 +217,10 @@ func (r *request) do(ctx context.Context, result interface{}) (bool, error) {
 
 	// Check trace header before we potentially early exit
 	if *r.client.opts.Flags.trace {
-		r.client.opts.Out.Write([]byte(fmt.Sprintf("x-trace: %s\n", resp.Header.Get("x-trace"))))
+		_, err := r.client.opts.Out.Write([]byte(fmt.Sprintf("x-trace: %s\n", resp.Header.Get("x-trace"))))
+		if err != nil {
+			return false, err
+		}
 	}
 
 	// Our request may have failed before reaching the GraphQL endpoint, so
@@ -242,7 +245,7 @@ func (r *request) do(ctx context.Context, result interface{}) (bool, error) {
 		body = ioaux.TeeReadCloser(resp.Body, &buf)
 		defer func() {
 			var out bytes.Buffer
-			json.Indent(&out, buf.Bytes(), "    ", "    ")
+			_ = json.Indent(&out, buf.Bytes(), "    ", "    ")
 			fmt.Fprintf(r.client.opts.Out, "--> %s\n\n", out.String())
 		}()
 	}

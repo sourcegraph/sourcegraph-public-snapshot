@@ -22,8 +22,6 @@ func Bg256Color(code int) Style { return &style{fmt.Sprintf("\033[48;5;%dm", cod
 
 type style struct{ code string }
 
-func newStyle(code string) Style { return &style{code} }
-
 func (s *style) String() string { return s.code }
 
 var (

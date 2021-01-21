@@ -17,7 +17,7 @@ var creator CmdCreator = goexec.CommandContext
 
 // Command wraps os/exec.Command, and implements the same behaviour.
 func Command(name string, arg ...string) *goexec.Cmd {
-	return CommandContext(nil, name, arg...)
+	return CommandContext(context.TODO(), name, arg...)
 }
 
 // CommandContext wraps os/exec.CommandContext, and implements the same

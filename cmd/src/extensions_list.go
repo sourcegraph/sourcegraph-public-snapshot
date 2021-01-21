@@ -40,7 +40,9 @@ Examples:
 	)
 
 	handler := func(args []string) error {
-		flagSet.Parse(args)
+		if err := flagSet.Parse(args); err != nil {
+			return err
+		}
 
 		tmpl, err := parseTemplate(*formatFlag)
 		if err != nil {

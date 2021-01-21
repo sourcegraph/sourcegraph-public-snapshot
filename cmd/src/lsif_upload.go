@@ -75,7 +75,9 @@ Examples:
 	flags.associatedIndexID = flagSet.Int("associated-index-id", -1, "ID of the associated index record for this upload. For internal use only.")
 
 	parseAndValidateFlags := func(args []string) error {
-		flagSet.Parse(args)
+		if err := flagSet.Parse(args); err != nil {
+			return err
+		}
 
 		type inferError struct {
 			argument string
@@ -203,11 +205,11 @@ Examples:
 				return
 			}
 
-			pentimento.PrintProgress(func(p *pentimento.Printer) error {
+			_ = pentimento.PrintProgress(func(p *pentimento.Printer) error {
 				for event := range opts.UploadProgressEvents {
 					content := pentimento.NewContent()
 					content.AddLine(formatProgressBar(event.TotalProgress, fmt.Sprintf("%d/%d", event.Part, event.NumParts)))
-					p.WriteContent(content)
+					_ = p.WriteContent(content)
 				}
 
 				_ = p.Reset()
@@ -321,14 +323,6 @@ func formatProgressBar(progress float64, suffix string) string {
 		strings.Repeat(" ", maxWidth-width-len(arrow)),
 		suffix,
 	)
-}
-
-// digits returns the number of digits of n.
-func digits(n int) int {
-	if n >= 10 {
-		return 1 + digits(n/10)
-	}
-	return 1
 }
 
 type errorWithHint struct {

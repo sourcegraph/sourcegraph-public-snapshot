@@ -90,7 +90,9 @@ func Commands(t *testing.T, exp ...*Expectation) {
 		if err != nil {
 			t.Fatalf("error marshalling behaviour data: %v", err)
 		}
-		f.Write(data)
+		if _, err := f.Write(data); err != nil {
+			t.Fatalf("writing data failed: %s", err)
+		}
 
 		// Set the relevant environment variable.
 		cmd.Env = append(cmd.Env, envBehaviourFile+"="+file)

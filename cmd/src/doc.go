@@ -34,7 +34,9 @@ Examples:
 	`
 
 	handler := func(args []string) error {
-		flagSet.Parse(args)
+		if err := flagSet.Parse(args); err != nil {
+			return err
+		}
 
 		out := output.NewOutput(flagSet.Output(), output.OutputOpts{Verbose: *verbose})
 		if *outputFlag == "" {
@@ -97,7 +99,9 @@ Examples:
 					}
 					defer file.Close()
 
-					file.WriteString(content)
+					if _, err := file.WriteString(content); err != nil {
+						return err
+					}
 					count++
 					subcommands[name] = name + ".md"
 				} else {
@@ -116,7 +120,9 @@ Examples:
 			}
 			defer file.Close()
 
-			file.WriteString(content)
+			if _, err := file.WriteString(content); err != nil {
+				return err
+			}
 			count++
 		}
 

@@ -57,7 +57,9 @@ Other tips:
 	)
 
 	handler := func(args []string) error {
-		flagSet.Parse(args)
+		if err := flagSet.Parse(args); err != nil {
+			return err
+		}
 
 		if *explainJSONFlag {
 			fmt.Println(searchJSONExplanation)

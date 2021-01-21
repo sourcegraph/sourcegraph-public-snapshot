@@ -92,11 +92,6 @@ type TaskStatus struct {
 	fileDiffsOnce sync.Once
 }
 
-func (ts *TaskStatus) Clone() *TaskStatus {
-	clone := *ts
-	return &clone
-}
-
 func (ts *TaskStatus) IsRunning() bool {
 	return !ts.StartedAt.IsZero() && ts.FinishedAt.IsZero()
 }

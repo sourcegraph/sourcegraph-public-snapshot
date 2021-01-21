@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"os"
 	"strings"
 	"text/template"
@@ -116,18 +115,4 @@ func execTemplate(tmpl *template.Template, data interface{}) error {
 // json.MarshalIndent, but with defaults.
 func marshalIndent(v interface{}) ([]byte, error) {
 	return json.MarshalIndent(v, "", "  ")
-}
-
-func resolveURL(endpoint, u string) (string, error) {
-	parsed, err := url.Parse(u)
-	if err != nil {
-		return "", err
-	}
-
-	base, err := url.Parse(endpoint)
-	if err != nil {
-		return "", err
-	}
-
-	return base.ResolveReference(parsed).String(), nil
 }

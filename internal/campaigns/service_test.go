@@ -115,7 +115,7 @@ func mockGraphQLClient(response string) (client api.Client, done func()) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/.api/graphql", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(response))
+		_, _ = w.Write([]byte(response))
 	})
 
 	ts := httptest.NewServer(mux)

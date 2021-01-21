@@ -229,7 +229,10 @@ func runSteps(ctx context.Context, rf RepoFetcher, wc WorkspaceCreator, repo *gr
 		stepContext.Step = result
 		results[i] = result
 
-		setOutputs(step.Outputs, execResult.Outputs, &stepContext)
+		if err := setOutputs(step.Outputs, execResult.Outputs, &stepContext); err != nil {
+			return execResult, errors.Wrap(err, "setting step outputs")
+		}
+
 	}
 
 	reportProgress("Calculating diff")

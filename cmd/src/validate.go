@@ -73,7 +73,9 @@ Please visit https://docs.sourcegraph.com/admin/validation for documentation of 
 	)
 
 	handler := func(args []string) error {
-		flagSet.Parse(args)
+		if err := flagSet.Parse(args); err != nil {
+			return err
+		}
 
 		client := cfg.apiClient(apiFlags, flagSet.Output())
 
@@ -98,6 +100,9 @@ Please visit https://docs.sourcegraph.com/admin/validation for documentation of 
 		if !isatty.IsTerminal(os.Stdin.Fd()) {
 			// stdin is a pipe not a terminal
 			script, err = ioutil.ReadAll(os.Stdin)
+			if err != nil {
+				return err
+			}
 			isYaml = true
 		}
 

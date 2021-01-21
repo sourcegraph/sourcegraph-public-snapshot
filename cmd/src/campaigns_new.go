@@ -62,11 +62,11 @@ Examples:
 		// Try to get better default values from git, ignore any errors.
 		if err := checkExecutable("git", "version"); err == nil {
 			var gitAuthorName, gitAuthorEmail string
+			var err1, err2 error
+			gitAuthorName, err1 = getGitConfig("user.name")
+			gitAuthorEmail, err2 = getGitConfig("user.email")
 
-			gitAuthorName, err = getGitConfig("user.name")
-			gitAuthorEmail, err = getGitConfig("user.email")
-
-			if err == nil && gitAuthorName != "" && gitAuthorEmail != "" {
+			if err1 == nil && err2 == nil && gitAuthorName != "" && gitAuthorEmail != "" {
 				author.Name = gitAuthorName
 				author.Email = gitAuthorEmail
 			}
