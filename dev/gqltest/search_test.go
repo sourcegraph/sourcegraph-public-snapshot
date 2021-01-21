@@ -444,7 +444,7 @@ func TestSearch(t *testing.T) {
 			},
 			{
 				name:  "commit search, non-zero result pattern",
-        query: `repo:^github\.com/sgtest/sourcegraph-typescript$ type:commit test`,
+				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ type:commit test`,
 			},
 			// Diff search
 			{
