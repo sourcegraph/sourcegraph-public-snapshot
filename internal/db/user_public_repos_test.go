@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -12,10 +12,10 @@ func TestUserPublicRepos_Set(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
-	user, err := Users.Create(ctx, NewUser{
+	user, err := NewUserStoreWithDB(db).Create(ctx, NewUser{
 		Username: "u",
 		Password: "p",
 	})
@@ -23,24 +23,27 @@ func TestUserPublicRepos_Set(t *testing.T) {
 		t.Errorf("Expected no error, got %s ", err)
 	}
 
-	err = Repos.Create(ctx, &types.Repo{
+	repoStore := NewRepoStoreWithDB(db)
+
+	err = repoStore.Create(ctx, &types.Repo{
 		Name: "test",
 	})
 	if err != nil {
 		t.Errorf("Expected no error, got %s", err)
 	}
 
-	repo, err := Repos.GetByName(ctx, "test")
+	repo, err := repoStore.GetByName(ctx, "test")
 	if err != nil {
 		t.Errorf("Expected no error, got %s", err)
 	}
 
-	err = UserPublicRepos.SetUserRepo(ctx, user.ID, repo.ID)
+	upStore := NewUserPublicRepoStoreWithDB(db)
+	err = upStore.SetUserRepo(ctx, user.ID, repo.ID)
 	if err != nil {
 		t.Errorf("Expected no error, got %s", err)
 	}
 
-	repoIDs, err := UserPublicRepos.ListByUser(ctx, user.ID)
+	repoIDs, err := upStore.ListByUser(ctx, user.ID)
 	if err != nil {
 		t.Fatalf("Expected no error, got %s", err)
 	}
