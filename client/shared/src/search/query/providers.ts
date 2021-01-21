@@ -30,7 +30,7 @@ const latin1Alpha = 'ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜ�
  * hovers, completions and diagnostics for the Sourcegraph search syntax.
  */
 export function getProviders(
-    queryRef: {
+    queryReference: {
         current:
             | undefined
             | {
@@ -67,22 +67,22 @@ export function getProviders(
         },
         hover: {
             provideHover: (textModel, position, token) => {
-                if (!queryRef.current || queryRef.current.scanned.type === 'error') {
+                if (!queryReference.current || queryReference.current.scanned.type === 'error') {
                     return null
                 }
-                return getHoverResult(queryRef.current.scanned.term, position, options.enableSmartQuery)
+                return getHoverResult(queryReference.current.scanned.term, position, options.enableSmartQuery)
             },
         },
         completion: {
             // An explicit list of trigger characters is needed for the Monaco editor to show completions.
             triggerCharacters: [...printable, ...latin1Alpha],
             provideCompletionItems: (textModel, position) => {
-                if (!queryRef.current || queryRef.current.scanned.type === 'error') {
+                if (!queryReference.current || queryReference.current.scanned.type === 'error') {
                     return null
                 }
-                fetchSuggestionsRequests.next(queryRef.current.rawQuery)
+                fetchSuggestionsRequests.next(queryReference.current.rawQuery)
                 return getCompletionItems(
-                    queryRef.current.scanned.term,
+                    queryReference.current.scanned.term,
                     position,
                     debouncedDynamicSuggestions,
                     options.globbing
