@@ -127,7 +127,10 @@ type Server struct {
 	// GetRemoteURLFunc being nil.
 	GetRemoteURLFunc func(context.Context, api.RepoName) (string, error)
 
-	// TODO
+	// GetVCSSyncer is a function which returns the VCS syncer for a repository.
+	// This is used when cloning or fetching a repository. In production this will
+	// speak to the database to determine the code host type. In tests this is
+	// usually set to return a GitRepoSyncer.
 	GetVCSSyncer func(context.Context, api.RepoName) (VCSSyncer, error)
 
 	// skipCloneForTests is set by tests to avoid clones.

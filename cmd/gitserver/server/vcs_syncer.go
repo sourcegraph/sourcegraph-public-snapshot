@@ -6,6 +6,8 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 )
@@ -89,17 +91,17 @@ func (s *GitRepoSyncer) FetchCommand(ctx context.Context, url string) (cmd *exec
 // PerforceDepotSyncer is a syncer for Perforce depots.
 type PerforceDepotSyncer struct{}
 
-// TODO
+// TODO(jchen)
 func (s *PerforceDepotSyncer) IsCloneable(ctx context.Context, url string) error {
-	panic("implement me") // p4 ping
+	return errors.New("not yet implemented") // p4 ping
 }
 
-// TODO
+// TODO(jchen)
 func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, url, tmpPath string) (cmd *exec.Cmd, err error) {
-	panic("implement me") // git p4 clone
+	return nil, errors.New("not yet implemented") // git p4 clone
 }
 
-// TODO
+// TODO(jchen)
 func (s *PerforceDepotSyncer) FetchCommand(ctx context.Context, url string) (cmd *exec.Cmd, configRemoteOpts bool, err error) {
-	panic("implement me") // git p4 sync
+	return nil, false, errors.New("not yet implemented") // git p4 sync
 }
