@@ -339,12 +339,11 @@ func prometheusGraphQLRequestName(requestName string) string {
 	return "other"
 }
 
-func NewSchema(campaigns CampaignsResolver, codeIntel CodeIntelResolver, insights InsightsResolver, authz AuthzResolver, codeMonitors CodeMonitorsResolver, license LicenseResolver) (*graphql.Schema, error) {
+func NewSchema(campaigns CampaignsResolver, codeIntel CodeIntelResolver, authz AuthzResolver, codeMonitors CodeMonitorsResolver, license LicenseResolver) (*graphql.Schema, error) {
 	resolver := &schemaResolver{
 		CampaignsResolver: defaultCampaignsResolver{},
 		AuthzResolver:     defaultAuthzResolver{},
 		CodeIntelResolver: defaultCodeIntelResolver{},
-		InsightsResolver:  defaultInsightsResolver{},
 		LicenseResolver:   defaultLicenseResolver{},
 	}
 	if campaigns != nil {
@@ -354,10 +353,6 @@ func NewSchema(campaigns CampaignsResolver, codeIntel CodeIntelResolver, insight
 	if codeIntel != nil {
 		EnterpriseResolvers.codeIntelResolver = codeIntel
 		resolver.CodeIntelResolver = codeIntel
-	}
-	if insights != nil {
-		EnterpriseResolvers.insightsResolver = insights
-		resolver.InsightsResolver = insights
 	}
 	if authz != nil {
 		EnterpriseResolvers.authzResolver = authz
@@ -563,7 +558,6 @@ type schemaResolver struct {
 	CampaignsResolver
 	AuthzResolver
 	CodeIntelResolver
-	InsightsResolver
 	CodeMonitorsResolver
 	LicenseResolver
 }
@@ -572,14 +566,12 @@ type schemaResolver struct {
 // in enterprise mode. These resolver instances are nil when running as OSS.
 var EnterpriseResolvers = struct {
 	codeIntelResolver    CodeIntelResolver
-	insightsResolver     InsightsResolver
 	authzResolver        AuthzResolver
 	campaignsResolver    CampaignsResolver
 	codeMonitorsResolver CodeMonitorsResolver
 	licenseResolver      LicenseResolver
 }{
 	codeIntelResolver:    defaultCodeIntelResolver{},
-	insightsResolver:     defaultInsightsResolver{},
 	authzResolver:        defaultAuthzResolver{},
 	campaignsResolver:    defaultCampaignsResolver{},
 	codeMonitorsResolver: defaultCodeMonitorsResolver{},
@@ -861,6 +853,14 @@ func (r *codeHostRepositoryConnectionResolver) Nodes(ctx context.Context) ([]*co
 			// signal the collector to finish
 			close(results)
 		}()
+
+		// are we allowed to show the user private repos?
+		allowPrivate, err := allowPrivate(ctx, r.userID)
+		if err != nil {
+			r.err = err
+			return
+		}
+
 		// collect all results
 		r.nodes = []*codeHostRepositoryResolver{}
 		for repos := range results {
@@ -869,15 +869,14 @@ func (r *codeHostRepositoryConnectionResolver) Nodes(ctx context.Context) ([]*co
 				if r.query != "" && !strings.Contains(strings.ToLower(repo.Name), r.query) {
 					continue
 				}
+				if !allowPrivate && repo.Private {
+					continue
+				}
 				r.nodes = append(r.nodes, &codeHostRepositoryResolver{
 					codeHost: svcsByID[repo.CodeHostID],
 					repo:     &repo,
 				})
 			}
-		}
-		if err != nil {
-			r.err = err
-			return
 		}
 		sort.Slice(r.nodes, func(i, j int) bool {
 			return r.nodes[i].repo.Name < r.nodes[j].repo.Name
@@ -903,4 +902,11 @@ func (r *codeHostRepositoryResolver) CodeHost(ctx context.Context) *externalServ
 	return &externalServiceResolver{
 		externalService: r.codeHost,
 	}
+}
+
+func allowPrivate(ctx context.Context, userID int32) (bool, error) {
+	if conf.ExternalServiceUserMode() == conf.ExternalServiceModeAll {
+		return true, nil
+	}
+	return db.Users.HasTag(ctx, userID, db.TagAllowUserExternalServicePrivate)
 }
