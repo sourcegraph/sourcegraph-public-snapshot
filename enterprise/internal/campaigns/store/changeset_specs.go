@@ -420,7 +420,7 @@ func (rm RewirerMappings) Hydrate(ctx context.Context, store *Store) error {
 	changesetSpecIDs := rm.ChangesetSpecIDs()
 	if len(changesetSpecIDs) > 0 {
 		changesetSpecs, _, err := store.ListChangesetSpecs(ctx, ListChangesetSpecsOpts{
-			IDs: rm.ChangesetSpecIDs(),
+			IDs: changesetSpecIDs,
 		})
 		if err != nil {
 			return err
@@ -432,7 +432,7 @@ func (rm RewirerMappings) Hydrate(ctx context.Context, store *Store) error {
 
 	changesetIDs := rm.ChangesetIDs()
 	if len(changesetIDs) > 0 {
-		changesets, _, err := store.ListChangesets(ctx, ListChangesetsOpts{IDs: rm.ChangesetIDs()})
+		changesets, _, err := store.ListChangesets(ctx, ListChangesetsOpts{IDs: changesetIDs})
 		if err != nil {
 			return err
 		}
