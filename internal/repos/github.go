@@ -133,7 +133,7 @@ func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf 
 		searchClient = github.NewV3SearchClient(apiURL, token, cli)
 	)
 
-	if !envvar.SourcegraphDotComMode() || c.CloudGlobal {
+	if !envvar.SourcegraphDotComMode() || svc.CloudDefault {
 		for resource, monitor := range map[string]*ratelimit.Monitor{
 			"rest":    v3Client.RateLimitMonitor(),
 			"graphql": v4Client.RateLimitMonitor(),

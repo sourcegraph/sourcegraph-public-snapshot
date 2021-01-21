@@ -142,9 +142,11 @@ func Main(enterpriseInit EnterpriseInit) {
 		server.SourcegraphDotComMode = true
 
 		es, err := store.ExternalServiceStore.List(ctx, idb.ExternalServicesListOptions{
-			// On Cloud we want to fetch only site level external services here
-			NamespaceUserID: -1,
-			Kinds:           []string{extsvc.KindGitHub, extsvc.KindGitLab},
+			// On Cloud we only want to fetch site level external services here where the
+			// cloud_default flag has been set.
+			NamespaceUserID:  -1,
+			OnlyCloudDefault: true,
+			Kinds:            []string{extsvc.KindGitHub, extsvc.KindGitLab},
 		})
 
 		if err != nil {
@@ -160,11 +162,11 @@ func Main(enterpriseInit EnterpriseInit) {
 			// We only allow one external service per kind to be flagged as CloudGlobal, so pick those.
 			switch c := cfg.(type) {
 			case *schema.GitHubConnection:
-				if strings.HasPrefix(c.Url, "https://github.com") && c.Token != "" && c.CloudGlobal {
+				if strings.HasPrefix(c.Url, "https://github.com") && c.Token != "" {
 					server.GithubDotComSource, err = repos.NewGithubSource(e, cf)
 				}
 			case *schema.GitLabConnection:
-				if strings.HasPrefix(c.Url, "https://gitlab.com") && c.Token != "" && c.CloudGlobal {
+				if strings.HasPrefix(c.Url, "https://gitlab.com") && c.Token != "" {
 					server.GitLabDotComSource, err = repos.NewGitLabSource(e, cf)
 				}
 			}
