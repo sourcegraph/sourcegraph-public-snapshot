@@ -12,10 +12,8 @@ import { updatePassword } from '../backend'
 import { ErrorAlert } from '../../../components/alerts'
 import * as H from 'history'
 import { AuthenticatedUser } from '../../../auth'
-import { UserAreaUserFields } from '../../../graphql-operations'
-
-import GitHubIcon from 'mdi-react/GithubIcon'
-import GitLabIcon from 'mdi-react/GitlabIcon'
+import { UserAreaUserFields, ExternalServiceKind } from '../../../graphql-operations'
+import { CodeHostsSignIn } from './CodeHostsSignIn'
 import { Link } from '../../../../../shared/src/components/Link'
 import { SourcegraphContext } from '../../../jscontext'
 
@@ -94,7 +92,6 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        debugger
         return (
             <div className="user-settings-password-page">
                 <PageTitle title="Account security" />
@@ -107,46 +104,14 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
                     Connect your account on Sourcegraph with a third-party login service to make signing in easier. This
                     will be used to sign in to Sourcegraph in the future.
                 </span>
-                <ul className="list-group w-50 mt-3">
-                    <li key="GitHub" className="list-group-item">
-                        <div className="p-2 d-flex align-items-start ">
-                            <div className="align-self-center">
-                                <GitHubIcon className="mb-0 mr-2" />
-                            </div>
-                            <div className="flex-1 flex-column">
-                                <h3 className="m-0">GitHub</h3>
-                                <div className="text-muted">Not connected</div>
-                            </div>
-                            <div className="align-self-center">
-                                <button type="button" className="btn btn-secondary" onClick={() => {}}>
-                                    Add
-                                </button>
-                            </div>
-                        </div>
-                    </li>
-                    <li key="GitLab" className="list-group-item">
-                        <div className="p-2 d-flex align-items-start ">
-                            <div className="align-self-center">
-                                <GitLabIcon className="mb-0 mr-2" />
-                            </div>
-                            <div className="flex-1 flex-column">
-                                <h3 className="m-0">GitLab</h3>
-                                <div className="text-muted">
-                                    Artem Ruts (
-                                    <Link to="https://gitlab.com/artem.ruts" target="_blank" rel="noopener noreferrer">
-                                        @artem.ruts
-                                    </Link>
-                                    )
-                                </div>
-                            </div>
-                            <div className="align-self-center">
-                                <button type="button" className="btn btn-link text-danger px-0" onClick={() => {}}>
-                                    Remove
-                                </button>
-                            </div>
-                        </div>
-                    </li>
-                </ul>
+
+                <CodeHostsSignIn
+                    userID={this.props.user.id}
+                    kinds={[ExternalServiceKind.GITHUB, ExternalServiceKind.GITLAB]}
+                    authProviders={this.props.context.authProviders}
+                    onDidError={console.log}
+                />
+
                 <hr className="my-4" />
                 {this.props.authenticatedUser.id !== this.props.user.id ? (
                     <div className="alert alert-danger">
