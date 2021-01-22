@@ -87,6 +87,7 @@ func (lsifTscJobRecognizer) Patterns() []*regexp.Regexp {
 	return []*regexp.Regexp{
 		suffixPattern("tsconfig.json"),
 		suffixPattern("package.json"),
+		suffixPattern("lerna.json"),
 	}
 }
 
