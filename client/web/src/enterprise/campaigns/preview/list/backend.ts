@@ -11,6 +11,7 @@ import {
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { requestGraphQL } from '../../../../backend/graphql'
+import { personLinkFieldsFragment } from '../../../../person/PersonLink'
 
 const changesetSpecFieldsFragment = gql`
     fragment CommonChangesetSpecFields on ChangesetSpec {
@@ -128,7 +129,12 @@ const campaignSpecApplyPreviewConnectionFieldsFragment = gql`
         operations
         delta {
             titleChanged
+            bodyChanged
             baseRefChanged
+            diffChanged
+            authorEmailChanged
+            authorNameChanged
+            commitMessageChanged
         }
         targets {
             __typename
@@ -150,8 +156,27 @@ const campaignSpecApplyPreviewConnectionFieldsFragment = gql`
                             __typename
                             ... on GitBranchChangesetDescription {
                                 baseRef
+                                title
+                                body
+                                commits {
+                                    author {
+                                        avatarURL
+                                        email
+                                        displayName
+                                        user {
+                                            username
+                                            displayName
+                                            url
+                                        }
+                                    }
+                                    body
+                                    subject
+                                }
                             }
                         }
+                    }
+                    author {
+                        ...PersonLinkFields
                     }
                 }
             }
@@ -175,6 +200,8 @@ const campaignSpecApplyPreviewConnectionFieldsFragment = gql`
     }
 
     ${changesetSpecFieldsFragment}
+
+    ${personLinkFieldsFragment}
 `
 
 export const queryChangesetApplyPreview = ({

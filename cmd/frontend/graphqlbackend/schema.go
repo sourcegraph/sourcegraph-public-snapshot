@@ -2234,6 +2234,12 @@ type ExternalChangeset implements Node & Changeset {
     body: String
 
     """
+    The author of the changeset, or null if the data hasn't been synced from the code host yet,
+    or the changeset has not yet been published.
+    """
+    author: Person
+
+    """
     The publication state of the changeset.
     """
     publicationState: ChangesetPublicationState!
