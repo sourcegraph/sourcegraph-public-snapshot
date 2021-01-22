@@ -124,6 +124,7 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
                         actions={
                             <CodeIntelDeleteUpload deleteUpload={deleteUpload} deletionOrError={deletionOrError} />
                         }
+                        className="mb-2"
                     />
                     <CodeIntelStateBanner
                         state={uploadOrError.state}

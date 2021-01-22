@@ -22,7 +22,7 @@ export const PageHeader: React.FunctionComponent<Props> = ({
     actions,
     className,
 }) => (
-    <div
+    <header
         className={classNames(
             'page-header d-flex flex-column flex-md-row flex-wrap justify-content-between align-items-lg-center',
             className
@@ -36,5 +36,5 @@ export const PageHeader: React.FunctionComponent<Props> = ({
             {byline && <Muted>{byline}</Muted>}
         </div>
         {actions && <div className="mb-3 mb-md-0">{actions}</div>}
-    </div>
+    </header>
 )

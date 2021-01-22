@@ -107,6 +107,7 @@ export const CodeIntelIndexPage: FunctionComponent<CodeIntelIndexPageProps> = ({
                             </>
                         }
                         actions={<CodeIntelDeleteIndex deleteIndex={deleteIndex} deletionOrError={deletionOrError} />}
+                        className="mb-2"
                     />
                     <CodeIntelStateBanner
                         state={indexOrError.state}
