@@ -69,7 +69,7 @@ export class NavLinks extends React.PureComponent<Props> {
                         <ActivationDropdown activation={this.props.activation} history={this.props.history} />
                     </li>
                 )}
-                <li>
+                <li className="nav-item">
                     <MenuNavItem>
                         {!isErrorLike(this.props.settingsCascade.final) &&
                             this.props.settingsCascade.final?.experimentalFeatures?.codeInsights &&
