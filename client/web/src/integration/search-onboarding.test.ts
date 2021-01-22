@@ -149,7 +149,6 @@ describe('Search onboarding', () => {
             await driver.page.keyboard.type('test')
             await driver.page.waitForSelector('.test-tour-step-4')
             await driver.page.click('.test-search-button')
-            await driver.assertWindowLocation('/search?q=repo:sourcegraph+test&patternType=literal&onboardingTour=true')
             await driver.page.waitForSelector('.test-tour-step-5')
             await driver.page.click('.test-search-help-dropdown-button-icon')
         })
