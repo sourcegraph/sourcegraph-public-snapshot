@@ -47,7 +47,7 @@ func newWorkerStore(db dbutil.DB, observationContext *observation.Context) dbwor
 		ViewName:          "lsif_indexes_with_repository_name u",
 		ColumnExpressions: store.IndexColumnsWithNullRank,
 		Scan:              store.ScanFirstIndexRecord,
-		OrderByExpression: sqlf.Sprintf("u.queued_at"),
+		OrderByExpression: sqlf.Sprintf("u.queued_at, u.id"),
 		StalledMaxAge:     StalledJobMaximumAge,
 		MaxNumResets:      MaximumNumResets,
 	}
