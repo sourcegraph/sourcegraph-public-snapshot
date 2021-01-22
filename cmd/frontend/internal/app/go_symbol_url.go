@@ -19,15 +19,17 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/ctxvfs"
+	"golang.org/x/tools/go/buildutil"
+
 	"github.com/sourcegraph/sourcegraph/internal/gituri"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/vfsutil"
-	"golang.org/x/tools/go/buildutil"
 
 	"github.com/sourcegraph/go-lsp"
 
 	"github.com/hashicorp/go-multierror"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -75,6 +77,11 @@ func serveGoSymbolURL(w http.ResponseWriter, r *http.Request) error {
 		return fmt.Errorf("invalid def %s (must have 1 or 2 path components)", def)
 	}
 
+	var rev string
+	if idx := strings.Index(importPath, "@"); idx >= 0 {
+		importPath, rev = importPath[:idx], importPath[idx+1:]
+	}
+
 	dir, err := gosrc.ResolveImportPath(httpcli.ExternalDoer(), importPath)
 	if err != nil {
 		return err
@@ -91,7 +98,7 @@ func serveGoSymbolURL(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	commitID, err := backend.Repos.ResolveRev(ctx, repo, "")
+	commitID, err := backend.Repos.ResolveRev(ctx, repo, rev)
 	if err != nil {
 		return err
 	}
@@ -118,8 +125,16 @@ func serveGoSymbolURL(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	filePath := uri.Fragment
+
+	var pathDest string
+	if rev == "" {
+		pathDest = "/" + path.Join(string(repo.Name), "-/blob", filePath)
+	} else {
+		pathDest = "/" + path.Join(string(repo.Name)+"@"+rev, "-/blob", filePath)
+	}
+
 	dest := &url.URL{
-		Path:     "/" + path.Join(string(repo.Name), "-/blob", filePath),
+		Path:     pathDest,
 		Fragment: fmt.Sprintf("L%d:%d$references", location.Range.Start.Line+1, location.Range.Start.Character+1),
 	}
 	http.Redirect(w, r, dest.String(), http.StatusFound)
