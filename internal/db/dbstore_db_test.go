@@ -17,14 +17,14 @@ func TestMigrations(t *testing.T) {
 	db := dbtesting.GetDB(t)
 
 	migrate := func() {
-		for _, databaseName := range dbconn.DatabaseNames {
+		for _, databaseName := range dbconn.PostgresDatabaseNames {
 			if err := dbconn.MigrateDB(db, databaseName); err != nil {
 				t.Errorf("error running initial migrations: %s", err)
 			}
 		}
 	}
 
-	for _, databaseName := range dbconn.DatabaseNames {
+	for _, databaseName := range dbconn.PostgresDatabaseNames {
 		t.Run(databaseName, func(t *testing.T) {
 			// Dropping a squash schema _all_ the way down just drops the entire public
 			// schema. Because we have a "combined" database that runs migrations for
