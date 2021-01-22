@@ -67,18 +67,18 @@ import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
  */
 export interface RepoContainerContext
     extends RepoHeaderContributionsLifecycleProps,
-    SettingsCascadeProps,
-    ExtensionsControllerProps,
-    PlatformContextProps,
-    ThemeProps,
-    HoverThresholdProps,
-    TelemetryProps,
-    ActivationProps,
-    PatternTypeProps,
-    CaseSensitivityProps,
-    CopyQueryButtonProps,
-    VersionContextProps,
-    BreadcrumbSetters {
+        SettingsCascadeProps,
+        ExtensionsControllerProps,
+        PlatformContextProps,
+        ThemeProps,
+        HoverThresholdProps,
+        TelemetryProps,
+        ActivationProps,
+        PatternTypeProps,
+        CaseSensitivityProps,
+        CopyQueryButtonProps,
+        VersionContextProps,
+        BreadcrumbSetters {
     repo: RepositoryFields
     authenticatedUser: AuthenticatedUser | null
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
@@ -93,7 +93,7 @@ export interface RepoContainerContext
 }
 
 /** A sub-route of {@link RepoContainer}. */
-export interface RepoContainerRoute extends RouteDescriptor<RepoContainerContext> { }
+export interface RepoContainerRoute extends RouteDescriptor<RepoContainerContext> {}
 
 const RepoPageNotFound: React.FunctionComponent = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="The repository page was not found." />
@@ -101,20 +101,20 @@ const RepoPageNotFound: React.FunctionComponent = () => (
 
 interface RepoContainerProps
     extends RouteComponentProps<{ repoRevAndRest: string }>,
-    SettingsCascadeProps<Settings>,
-    PlatformContextProps,
-    TelemetryProps,
-    ExtensionsControllerProps,
-    ActivationProps,
-    ThemeProps,
-    ExtensionAlertProps,
-    PatternTypeProps,
-    CaseSensitivityProps,
-    InteractiveSearchProps,
-    CopyQueryButtonProps,
-    VersionContextProps,
-    BreadcrumbSetters,
-    BreadcrumbsProps {
+        SettingsCascadeProps<Settings>,
+        PlatformContextProps,
+        TelemetryProps,
+        ExtensionsControllerProps,
+        ActivationProps,
+        ThemeProps,
+        ExtensionAlertProps,
+        PatternTypeProps,
+        CaseSensitivityProps,
+        InteractiveSearchProps,
+        CopyQueryButtonProps,
+        VersionContextProps,
+        BreadcrumbSetters,
+        BreadcrumbsProps {
     repoContainerRoutes: readonly RepoContainerRoute[]
     repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
@@ -249,14 +249,14 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         props.extensionsController.services.workspace.roots.next(
             resolvedRevisionOrError && !isErrorLike(resolvedRevisionOrError)
                 ? [
-                    {
-                        uri: makeRepoURI({
-                            repoName,
-                            revision: resolvedRevisionOrError.commitID,
-                        }),
-                        inputRevision: revision || '',
-                    },
-                ]
+                      {
+                          uri: makeRepoURI({
+                              repoName,
+                              revision: resolvedRevisionOrError.commitID,
+                          }),
+                          inputRevision: revision || '',
+                      },
+                  ]
                 : []
         )
         // Clear the Sourcegraph extensions model's roots when navigating away.
@@ -389,7 +389,9 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         onDidUpdateExternalLinks: setExternalLinks,
     }
 
-    const hideCodeHostAction = rawRevision ? hasPathPrefix(props.location.pathname, `${repoMatchURL}@${rawRevision}/-/symbols`) : hasPathPrefix(props.location.pathname, `${repoMatchURL}/-/symbols`)
+    const hideCodeHostAction = rawRevision
+        ? hasPathPrefix(props.location.pathname, `${repoMatchURL}@${rawRevision}/-/symbols`)
+        : hasPathPrefix(props.location.pathname, `${repoMatchURL}/-/symbols`)
 
     return (
         <div className="repo-container test-repo-container w-100 d-flex flex-column">
@@ -410,7 +412,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                 onLifecyclePropsChange={setRepoHeaderContributionsLifecycleProps}
                 isAlertDisplayed={showExtensionAlert}
             />
-            {!hideCodeHostAction &&
+            {!hideCodeHostAction && (
                 <RepoHeaderContributionPortal
                     position="right"
                     priority={2}
@@ -432,7 +434,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                         />
                     }
                 />
-            }
+            )}
             <ErrorBoundary location={props.location}>
                 <Switch>
                     {/* eslint-disable react/jsx-no-bind */}
