@@ -42,8 +42,7 @@ func (r lsifTscJobRecognizer) InferIndexJobs(paths []string, gitserver Gitserver
 			// for the sake of simplicity, we dont take command-specific npmClient into account
 			// https://github.com/lerna/lerna#lernajson
 			if exists := contains(paths, filepath.Join(dir, "lerna.json")); exists && !isYarn {
-				b, err := gitserver.RawContents(context.TODO(), "lerna.json")
-				if err == nil {
+				if b, err := gitserver.RawContents(context.TODO(), "lerna.json"); err == nil {
 					var c lernaConfig
 					if err := json.Unmarshal(b, &c); err == nil {
 						isYarn = c.NPMClient == "yarn"
