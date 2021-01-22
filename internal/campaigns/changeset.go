@@ -705,7 +705,7 @@ func WithExternalID(id string) func(*Changeset) bool {
 
 // ChangesetsStats holds stats information on a list of changesets.
 type ChangesetsStats struct {
-	Unpublished, Draft, Open, Merged, Closed, Deleted, Total int32
+	Retrying, Failed, Processing, Unpublished, Draft, Open, Merged, Closed, Deleted, Total int32
 }
 
 // ChangesetEventKindFor returns the ChangesetEventKind for the given

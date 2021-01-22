@@ -2332,6 +2332,18 @@ type ChangesetsStats {
     """
     deleted: Int!
     """
+    The count of changesets in retrying state.
+    """
+    retrying: Int!
+    """
+    The count of changesets in failed state.
+    """
+    failed: Int!
+    """
+    The count of changesets that are currently processing or enqueued to be.
+    """
+    processing: Int!
+    """
     The count of all changesets.
     """
     total: Int!

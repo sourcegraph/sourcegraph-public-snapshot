@@ -377,6 +377,9 @@ type CampaignsConnectionResolver interface {
 }
 
 type ChangesetsStatsResolver interface {
+	Retrying() int32
+	Failed() int32
+	Processing() int32
 	Unpublished() int32
 	Draft() int32
 	Open() int32
