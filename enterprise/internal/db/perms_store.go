@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
@@ -15,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -29,16 +29,36 @@ var (
 // It is concurrency-safe and maintains data consistency over the 'user_permissions',
 // 'repo_permissions', 'user_pending_permissions', and 'repo_pending_permissions' tables.
 type PermsStore struct {
-	db    dbutil.DB
+	*basestore.Store
+
 	clock func() time.Time
 }
 
 // NewPermsStore returns a new PermsStore with given parameters.
-func NewPermsStore(db dbutil.DB, clock func() time.Time) *PermsStore {
-	return &PermsStore{
-		db:    db,
-		clock: clock,
+func Perms(db dbutil.DB, clock func() time.Time) *PermsStore {
+	return &PermsStore{Store: basestore.NewWithDB(db, sql.TxOptions{}), clock: clock}
+}
+
+func (s *PermsStore) With(other basestore.ShareableStore) *PermsStore {
+	return &PermsStore{Store: s.Store.With(other), clock: s.clock}
+}
+
+// Transact begins a new transaction and make a new PermsStore over it.
+func (s *PermsStore) Transact(ctx context.Context) (*PermsStore, error) {
+	if Mocks.Perms.Transact != nil {
+		return Mocks.Perms.Transact(ctx)
 	}
+
+	txBase, err := s.Store.Transact(ctx)
+	return &PermsStore{Store: txBase, clock: s.clock}, err
+}
+
+func (s *PermsStore) Done(err error) error {
+	if Mocks.Perms.Transact != nil {
+		return err
+	}
+
+	return s.Store.Done(err)
 }
 
 // LoadUserPermissions loads stored user permissions into p. An ErrPermsNotFound is returned
@@ -151,7 +171,7 @@ func (s *PermsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermis
 	if err != nil {
 		return err
 	}
-	defer txs.Done(&err)
+	defer func() { err = txs.Done(err) }()
 
 	// Retrieve currently stored object IDs of this user.
 	var oldIDs *roaring.Bitmap
@@ -266,14 +286,14 @@ func (s *PermsStore) SetRepoPermissions(ctx context.Context, p *authz.RepoPermis
 	defer func() { save(&err, p.TracingFields()...) }()
 
 	var txs *PermsStore
-	if s.inTx() {
+	if s.InTransaction() {
 		txs = s
 	} else {
 		txs, err = s.Transact(ctx)
 		if err != nil {
 			return err
 		}
-		defer txs.Done(&err)
+		defer func() { err = txs.Done(err) }()
 	}
 
 	// Retrieve currently stored user IDs of this repository.
@@ -527,14 +547,14 @@ func (s *PermsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ex
 	defer func() { save(&err, append(p.TracingFields(), accounts.TracingFields()...)...) }()
 
 	var txs *PermsStore
-	if s.inTx() {
+	if s.InTransaction() {
 		txs = s
 	} else {
 		txs, err = s.Transact(ctx)
 		if err != nil {
 			return err
 		}
-		defer txs.Done(&err)
+		defer func() { err = txs.Done(err) }()
 	}
 
 	var q *sqlf.Query
@@ -605,7 +625,7 @@ func (s *PermsStore) loadUserPendingPermissionsIDs(ctx context.Context, q *sqlf.
 		)
 	}()
 
-	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	rows, err := s.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -773,14 +793,14 @@ func (s *PermsStore) GrantPendingPermissions(ctx context.Context, userID int32, 
 	defer func() { save(&err, append(p.TracingFields(), otlog.Int32("userID", userID))...) }()
 
 	var txs *PermsStore
-	if s.inTx() {
+	if s.InTransaction() {
 		txs = s
 	} else {
 		txs, err = s.Transact(ctx)
 		if err != nil {
 			return err
 		}
-		defer txs.Done(&err)
+		defer func() { err = txs.Done(err) }()
 	}
 
 	vals, err := txs.load(ctx, loadUserPendingPermissionsQuery(p, "FOR UPDATE"))
@@ -920,7 +940,7 @@ AND service_id = %s
 `, serviceType, serviceID)
 
 	var rows *sql.Rows
-	rows, err = s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	rows, err = s.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -997,7 +1017,7 @@ func (s *PermsStore) execute(ctx context.Context, q *sqlf.Query, vs ...interface
 	defer func() { save(&err, otlog.Object("q", q)) }()
 
 	var rows *sql.Rows
-	rows, err = s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	rows, err = s.Query(ctx, q)
 	if err != nil {
 		return err
 	}
@@ -1042,7 +1062,7 @@ func (s *PermsStore) load(ctx context.Context, q *sqlf.Query) (*permsLoadValues,
 	}()
 
 	var rows *sql.Rows
-	rows, err = s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	rows, err = s.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -1103,7 +1123,7 @@ AND deleted_at IS NULL
 AND expired_at IS NULL
 ORDER BY id ASC
 `, userID)
-	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	rows, err := s.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -1163,7 +1183,7 @@ WHERE service_type = %s
 AND service_id = %s
 AND account_id IN (%s)
 `, accounts.ServiceType, accounts.ServiceID, sqlf.Join(items, ","))
-	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	rows, err := s.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -1277,7 +1297,7 @@ LIMIT %s
 
 // loadIDsWithTime runs the query and returns a list of ID and nullable time pairs.
 func (s *PermsStore) loadIDsWithTime(ctx context.Context, q *sqlf.Query) (map[int32]time.Time, error) {
-	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	rows, err := s.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -1379,55 +1399,6 @@ WHERE perms.repo_id IN
 	m.ReposPermsGapSeconds = seconds.Float64
 
 	return m, nil
-}
-
-// tx begins a new transaction.
-func (s *PermsStore) tx(ctx context.Context) (*sql.Tx, error) {
-	switch t := s.db.(type) {
-	case *sql.Tx:
-		return t, nil
-	case *sql.DB:
-		tx, err := t.BeginTx(ctx, nil)
-		if err != nil {
-			return nil, err
-		}
-		return tx, nil
-	default:
-		panic(fmt.Sprintf("can't open transaction with unknown implementation of dbutil.DB: %T", t))
-	}
-}
-
-// Transact begins a new transaction and make a new PermsStore over it.
-func (s *PermsStore) Transact(ctx context.Context) (*PermsStore, error) {
-	if Mocks.Perms.Transact != nil {
-		return Mocks.Perms.Transact(ctx)
-	}
-
-	tx, err := s.tx(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return NewPermsStore(tx, s.clock), nil
-}
-
-// inTx returns true if the current PermsStore wraps an underlying transaction.
-func (s *PermsStore) inTx() bool {
-	_, ok := s.db.(*sql.Tx)
-	return ok
-}
-
-// Done commits the transaction if error is nil. Otherwise, rolls back the transaction.
-func (s *PermsStore) Done(err *error) {
-	if !s.inTx() {
-		return
-	}
-
-	tx := s.db.(*sql.Tx)
-	if err == nil || *err == nil {
-		_ = tx.Commit()
-	} else {
-		_ = tx.Rollback()
-	}
 }
 
 func (s *PermsStore) observe(ctx context.Context, family, title string) (context.Context, func(*error, ...otlog.Field)) {

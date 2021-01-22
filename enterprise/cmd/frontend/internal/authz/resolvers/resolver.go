@@ -55,12 +55,12 @@ func (r *Resolver) checkLicense() error {
 
 func NewResolver(db dbutil.DB, clock func() time.Time) graphqlbackend.AuthzResolver {
 	return &Resolver{
-		store:             edb.NewPermsStore(db, clock),
+		store:             edb.Perms(db, clock),
 		repoupdaterClient: repoupdater.DefaultClient,
 	}
 }
 
-func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *graphqlbackend.RepoPermsArgs) (*graphqlbackend.EmptyResponse, error) {
+func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *graphqlbackend.RepoPermsArgs) (resp *graphqlbackend.EmptyResponse, err error) {
 	if err := r.checkLicense(); err != nil {
 		return nil, err
 	}
@@ -136,7 +136,7 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 	if err != nil {
 		return nil, errors.Wrap(err, "start transaction")
 	}
-	defer txs.Done(&err)
+	defer func() { err = txs.Done(err) }()
 
 	accounts := &extsvc.Accounts{
 		ServiceType: authz.SourcegraphServiceType,

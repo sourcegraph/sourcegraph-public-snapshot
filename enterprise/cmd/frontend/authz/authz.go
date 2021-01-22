@@ -24,7 +24,7 @@ import (
 
 func Init(d dbutil.DB, clock func() time.Time) {
 	// TODO(efritz) - de-globalize assignments in this function
-	db.GlobalExternalServices = edb.NewExternalServicesStore()
+	db.GlobalExternalServices = edb.NewExternalServicesStore(d)
 	db.GlobalAuthz = edb.NewAuthzStore(d, clock)
 
 	// Warn about usage of auth providers that are not enabled by the license.
