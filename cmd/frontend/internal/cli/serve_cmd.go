@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"log"
@@ -83,11 +84,11 @@ func defaultExternalURL(nginxAddr, httpAddr string) *url.URL {
 	return &url.URL{Scheme: "http", Host: hostPort}
 }
 
-// InitDB initializes the global database connection and sets the
+// InitDB initializes and returns the global database connection and sets the
 // version of the frontend in our versions table.
-func InitDB() error {
+func InitDB() (*sql.DB, error) {
 	if err := dbconn.SetupGlobalConnection(""); err != nil {
-		return fmt.Errorf("failed to connect to frontend database: %s", err)
+		return nil, fmt.Errorf("failed to connect to frontend database: %s", err)
 	}
 
 	ctx := context.Background()
@@ -100,15 +101,15 @@ func InitDB() error {
 
 		err := backend.UpdateServiceVersion(ctx, "frontend", version.Version())
 		if err != nil && !dbutil.IsPostgresError(err, "42P01") {
-			return err
+			return nil, err
 		}
 
 		if !migrate {
-			return nil
+			return dbconn.Global, nil
 		}
 
 		if err := dbconn.MigrateDB(dbconn.Global, "frontend"); err != nil {
-			return err
+			return nil, err
 		}
 
 		migrate = false
@@ -124,7 +125,8 @@ func Main(enterpriseSetupHook func() enterprise.Services) error {
 		log.Fatalf("failed to initialize profiling: %v", err)
 	}
 
-	if err := InitDB(); err != nil {
+	db, err := InitDB()
+	if err != nil {
 		log.Fatalf("ERROR: %v", err)
 	}
 
@@ -209,7 +211,7 @@ func Main(enterpriseSetupHook func() enterprise.Services) error {
 		return errors.New("dbconn.Global is nil when trying to parse GraphQL schema")
 	}
 
-	schema, err := graphqlbackend.NewSchema(enterprise.CampaignsResolver, enterprise.CodeIntelResolver, enterprise.InsightsResolver, enterprise.AuthzResolver, enterprise.CodeMonitorsResolver, enterprise.LicenseResolver)
+	schema, err := graphqlbackend.NewSchema(db, enterprise.CampaignsResolver, enterprise.CodeIntelResolver, enterprise.InsightsResolver, enterprise.AuthzResolver, enterprise.CodeMonitorsResolver, enterprise.LicenseResolver)
 	if err != nil {
 		return err
 	}
