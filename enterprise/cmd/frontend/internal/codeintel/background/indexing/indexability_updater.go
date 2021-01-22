@@ -141,9 +141,11 @@ func (u *IndexabilityUpdater) queueRepository(ctx context.Context, repoUsageStat
 	}
 	traceLog(log.Int("numPaths", len(paths)))
 
+	gitserverClient := inference.NewGitserverClientShim(repoUsageStatistics.RepositoryID, commit, u.gitserverClient)
+
 	matched := false
 	for name, handler := range inference.Recognizers {
-		matched = handler.CanIndex(paths)
+		matched = handler.CanIndex(paths, gitserverClient)
 		traceLog(log.Bool(fmt.Sprintf("%s.CanIndex", name), matched))
 
 		if matched {

@@ -25,7 +25,7 @@ func TestLSIFGoJobRecognizerCanIndex(t *testing.T) {
 		name := strings.Join(testCase.paths, ", ")
 
 		t.Run(name, func(t *testing.T) {
-			if value := recognizer.CanIndex(testCase.paths); value != testCase.expected {
+			if value := recognizer.CanIndex(testCase.paths, NewMockGitserverClientWrapper()); value != testCase.expected {
 				t.Errorf("unexpected result from CanIndex. want=%v have=%v", testCase.expected, value)
 			}
 		})
@@ -53,7 +53,7 @@ func TestLsifGoJobRecognizerInferIndexJobsGoModRoot(t *testing.T) {
 			Outfile:     "",
 		},
 	}
-	if diff := cmp.Diff(expectedIndexJobs, recognizer.InferIndexJobs(paths)); diff != "" {
+	if diff := cmp.Diff(expectedIndexJobs, recognizer.InferIndexJobs(paths, NewMockGitserverClientWrapper())); diff != "" {
 		t.Errorf("unexpected index jobs (-want +got):\n%s", diff)
 	}
 }
@@ -107,7 +107,7 @@ func TestLsifGoJobRecognizerInferIndexJobsGoModSubdirs(t *testing.T) {
 			Outfile:     "",
 		},
 	}
-	if diff := cmp.Diff(expectedIndexJobs, recognizer.InferIndexJobs(paths)); diff != "" {
+	if diff := cmp.Diff(expectedIndexJobs, recognizer.InferIndexJobs(paths, NewMockGitserverClientWrapper())); diff != "" {
 		t.Errorf("unexpected index jobs (-want +got):\n%s", diff)
 	}
 }

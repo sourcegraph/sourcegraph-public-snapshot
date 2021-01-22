@@ -1,11 +1,16 @@
 package inference
 
-func contains(haystack []string, needle string) bool {
-	for _, value := range haystack {
+func containsIndex(haystack []string, needle string) (bool, int) {
+	for i, value := range haystack {
 		if value == needle {
-			return true
+			return true, i
 		}
 	}
 
-	return false
+	return false, -1
+}
+
+func contains(haystack []string, needle string) bool {
+	ok, _ := containsIndex(haystack, needle)
+	return ok
 }

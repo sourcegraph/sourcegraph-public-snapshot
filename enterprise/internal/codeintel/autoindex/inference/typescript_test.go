@@ -25,7 +25,7 @@ func TestLSIFTscJobRecognizerCanIndex(t *testing.T) {
 		name := strings.Join(testCase.paths, ", ")
 
 		t.Run(name, func(t *testing.T) {
-			if value := recognizer.CanIndex(testCase.paths); value != testCase.expected {
+			if value := recognizer.CanIndex(testCase.paths, NewMockGitserverClientWrapper()); value != testCase.expected {
 				t.Errorf("unexpected result from CanIndex. want=%v have=%v", testCase.expected, value)
 			}
 		})
@@ -47,7 +47,7 @@ func TestLsifTscJobRecognizerInferIndexJobsTsConfigRoot(t *testing.T) {
 			Outfile:     "",
 		},
 	}
-	if diff := cmp.Diff(expectedIndexJobs, recognizer.InferIndexJobs(paths)); diff != "" {
+	if diff := cmp.Diff(expectedIndexJobs, recognizer.InferIndexJobs(paths, NewMockGitserverClientWrapper())); diff != "" {
 		t.Errorf("unexpected index jobs (-want +got):\n%s", diff)
 	}
 }
@@ -83,7 +83,7 @@ func TestLsifTscJobRecognizerInferIndexJobsTsConfigSubdirs(t *testing.T) {
 			Outfile:     "",
 		},
 	}
-	if diff := cmp.Diff(expectedIndexJobs, recognizer.InferIndexJobs(paths)); diff != "" {
+	if diff := cmp.Diff(expectedIndexJobs, recognizer.InferIndexJobs(paths, NewMockGitserverClientWrapper())); diff != "" {
 		t.Errorf("unexpected index jobs (-want +got):\n%s", diff)
 	}
 }
@@ -170,7 +170,7 @@ func TestLsifTscJobRecognizerInferIndexJobsInstallSteps(t *testing.T) {
 			Outfile:     "",
 		},
 	}
-	if diff := cmp.Diff(expectedIndexJobs, recognizer.InferIndexJobs(paths)); diff != "" {
+	if diff := cmp.Diff(expectedIndexJobs, recognizer.InferIndexJobs(paths, NewMockGitserverClientWrapper())); diff != "" {
 		t.Errorf("unexpected index jobs (-want +got):\n%s", diff)
 	}
 }
@@ -193,6 +193,88 @@ func TestLSIFTscJobRecognizerPatterns(t *testing.T) {
 
 		if !match {
 			t.Error(fmt.Sprintf("failed to match %s", path))
+		}
+	}
+}
+
+func TestLSIFTscLernaConfig(t *testing.T) {
+	mockGit := NewMockGitserverClientWrapper()
+	mockGit.RawContentsFunc.PushReturn([]byte(`{"npmClient": "yarn"}`), nil)
+	mockGit.RawContentsFunc.PushReturn([]byte(`{"npmClient": "npm"}`), nil)
+
+	recognizer := lsifTscJobRecognizer{}
+
+	paths := [][]string{
+		{
+			"package.json",
+			"lerna.json",
+			"tsconfig.json",
+		},
+		{
+			"package.json",
+			"lerna.json",
+			"tsconfig.json",
+		},
+		{
+			"package.json",
+			"tsconfig.json",
+		},
+	}
+
+	expectedJobs := [][]IndexJob{
+		{
+			{
+				DockerSteps: []DockerStep{
+					{
+						Root:     "",
+						Image:    "node:alpine3.12",
+						Commands: []string{"yarn --ignore-engines"},
+					},
+				},
+				LocalSteps:  nil,
+				Root:        "",
+				Indexer:     lsifTscImage,
+				IndexerArgs: []string{"lsif-tsc", "-p", "."},
+				Outfile:     "",
+			},
+		},
+		{
+			{
+				DockerSteps: []DockerStep{
+					{
+						Root:     "",
+						Image:    "node:alpine3.12",
+						Commands: []string{"npm install"},
+					},
+				},
+				LocalSteps:  nil,
+				Root:        "",
+				Indexer:     lsifTscImage,
+				IndexerArgs: []string{"lsif-tsc", "-p", "."},
+				Outfile:     "",
+			},
+		},
+		{
+			{
+				DockerSteps: []DockerStep{
+					{
+						Root:     "",
+						Image:    "node:alpine3.12",
+						Commands: []string{"npm install"},
+					},
+				},
+				LocalSteps:  nil,
+				Root:        "",
+				Indexer:     lsifTscImage,
+				IndexerArgs: []string{"lsif-tsc", "-p", "."},
+				Outfile:     "",
+			},
+		},
+	}
+
+	for i, paths := range paths {
+		if diff := cmp.Diff(expectedJobs[i], recognizer.InferIndexJobs(paths, mockGit)); diff != "" {
+			t.Errorf("unexpected index jobs (-want +got):\n%s", diff)
 		}
 	}
 }
