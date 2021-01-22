@@ -18,7 +18,9 @@ interface Props
     RouteComponentProps<{}>,
     RepoHeaderContributionsLifecycleProps,
     SettingsCascadeProps,
-    BreadcrumbSetters { }
+    BreadcrumbSetters {
+    isLightTheme: boolean
+}
 
 export interface SymbolsSidebarOptionsSetterProps {
     setSidebarOptions: (options: SymbolsSidebarOptions | null) => void

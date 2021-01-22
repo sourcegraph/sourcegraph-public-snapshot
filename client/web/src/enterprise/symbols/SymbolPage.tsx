@@ -124,12 +124,14 @@ export interface SymbolRouteProps {
 
 interface Props
     extends Pick<RepoRevisionContainerContext, 'repo' | 'resolvedRev' | 'revision'>,
-        RouteComponentProps<SymbolRouteProps>,
-        RepoHeaderContributionsLifecycleProps,
-        BreadcrumbSetters,
-        SettingsCascadeProps,
-        SymbolsSidebarOptionsSetterProps,
-        SymbolsViewOptionsProps {}
+    RouteComponentProps<SymbolRouteProps>,
+    RepoHeaderContributionsLifecycleProps,
+    BreadcrumbSetters,
+    SettingsCascadeProps,
+    SymbolsSidebarOptionsSetterProps,
+    SymbolsViewOptionsProps {
+    isLightTheme: boolean
+}
 
 export const SymbolPage: React.FunctionComponent<Props> = ({
     repo,
@@ -144,6 +146,7 @@ export const SymbolPage: React.FunctionComponent<Props> = ({
     history,
     location,
     settingsCascade,
+    isLightTheme,
     ...props
 }) => {
     useEffect(() => {
@@ -162,12 +165,6 @@ export const SymbolPage: React.FunctionComponent<Props> = ({
             [identifier, repo.id, revision, scheme, viewOptions]
         )
     )
-    useEffect(() => {
-        if (symbol) {
-            // TODO(sqs): debugging
-            console.log(symbol)
-        }
-    }, [symbol])
 
     // Cache the rootAncestor since it doesn't change across navigations. TODO(sqs): it sometimes
     // can, eg if there is a direct link, so figure out a way to make this correct.
@@ -183,9 +180,9 @@ export const SymbolPage: React.FunctionComponent<Props> = ({
             () =>
                 cachedRootAncestor
                     ? {
-                          key: 'symbol/container',
-                          element: <Link to={cachedRootAncestor.url}>{cachedRootAncestor.text}</Link>,
-                      }
+                        key: 'symbol/container',
+                        element: <Link to={cachedRootAncestor.url}>{cachedRootAncestor.text}</Link>,
+                    }
                     : null,
             [cachedRootAncestor]
         )
@@ -196,13 +193,13 @@ export const SymbolPage: React.FunctionComponent<Props> = ({
                 symbol === null
                     ? null
                     : {
-                          key: 'symbol/current',
-                          element: symbol ? (
-                              <Link to={symbol.url}>{symbol.text}</Link>
-                          ) : (
-                              <LoadingSpinner className="icon-inline" />
-                          ),
-                      },
+                        key: 'symbol/current',
+                        element: symbol ? (
+                            <Link to={symbol.url}>{symbol.text}</Link>
+                        ) : (
+                                <LoadingSpinner className="icon-inline" />
+                            ),
+                    },
             [symbol]
         )
     )
@@ -218,65 +215,65 @@ export const SymbolPage: React.FunctionComponent<Props> = ({
     ) : symbol === undefined ? (
         <LoadingSpinner className="m-3" />
     ) : (
-        <>
-            <SymbolHover
-                {...props}
-                symbol={symbol}
-                afterSignature={
-                    <div className="d-flex align-items-center mx-3">
-                        <SymbolActions symbol={symbol} />
-                        <SymbolStatsSummary symbol={symbol} className="text-muted ml-3 small" />
-                    </div>
-                }
-                className="mx-3 mt-3"
-                history={history}
-                location={location}
-            />
-            {symbol.references.nodes.length > 1 && (
-                <section id="refs" className="mt-2">
-                    <h2 className="mt-0 mx-3 mb-0 h4">Examples</h2>
-                    <style>
-                        {
-                            'td.line { display: none; } .code-excerpt .code { padding-left: 0.25rem !important; } .result-container__header { display: none; } .result-container { border: solid 1px var(--border-color) !important; border-width: 1px !important; margin: 1rem; }'
+                <>
+                    <SymbolHover
+                        {...props}
+                        symbol={symbol}
+                        afterSignature={
+                            <div className="d-flex align-items-center mx-3">
+                                <SymbolActions symbol={symbol} />
+                                <SymbolStatsSummary symbol={symbol} className="text-muted ml-3 small" />
+                            </div>
                         }
-                    </style>
-                    <FileLocations
+                        className="mx-3 mt-3"
+                        history={history}
                         location={location}
-                        locations={of(
-                            symbol.references.nodes
-                                .slice(0, -1)
-                                .slice(0, 3)
-                                .map<Location>(reference => ({
-                                    uri: makeRepoURI({
-                                        repoName: reference.resource.repository.name,
-                                        commitID: reference.resource.commit.oid,
-                                        filePath: reference.resource.path,
-                                    }),
-                                    range: reference.range!,
-                                }))
-                        )}
-                        icon={SourceRepositoryIcon}
-                        isLightTheme={false /* TODO(sqs) */}
-                        fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                        settingsCascade={settingsCascade}
-                        versionContext={undefined /* TODO(sqs) */}
                     />
-                </section>
-            )}
-            {symbol.editCommits && symbol.editCommits.nodes.length > 0 && (
-                <section id="refs" className="my-4">
-                    <h2 className="mt-0 mx-3 mb-0 h4">Changes</h2>
-                    {symbol.editCommits.nodes.map(commit => (
-                        <GitCommitNode key={commit.oid} node={commit} className="px-3" compact={true} />
-                    ))}
-                </section>
-            )}
-            {symbol.children.nodes.length > 0 && (
-                <ContainerSymbolsList
-                    symbols={symbol.children.nodes.sort((a, b) => (a.kind < b.kind ? -1 : 1))}
-                    history={history}
-                />
-            )}
-        </>
-    )
+                    {symbol.references.nodes.length > 1 && (
+                        <section id="refs" className="mt-2">
+                            <h2 className="mt-0 mx-3 mb-0 h4">Examples</h2>
+                            <style>
+                                {
+                                    'td.line { display: none; } .code-excerpt .code { padding-left: 0.25rem !important; } .result-container__header { display: none; } .result-container { border: solid 1px var(--border-color) !important; border-width: 1px !important; margin: 1rem; }'
+                                }
+                            </style>
+                            <FileLocations
+                                location={location}
+                                locations={of(
+                                    symbol.references.nodes
+                                        .slice(0, -1)
+                                        .slice(0, 3)
+                                        .map<Location>(reference => ({
+                                            uri: makeRepoURI({
+                                                repoName: reference.resource.repository.name,
+                                                commitID: reference.resource.commit.oid,
+                                                filePath: reference.resource.path,
+                                            }),
+                                            range: reference.range!,
+                                        }))
+                                )}
+                                icon={SourceRepositoryIcon}
+                                isLightTheme={isLightTheme}
+                                fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                                settingsCascade={settingsCascade}
+                                versionContext={undefined /* TODO(sqs) */}
+                            />
+                        </section>
+                    )}
+                    {symbol.editCommits && symbol.editCommits.nodes.length > 0 && (
+                        <section id="refs" className="my-4">
+                            <h2 className="mt-0 mx-3 mb-0 h4">Changes</h2>
+                            {symbol.editCommits.nodes.map(commit => (
+                                <GitCommitNode key={commit.oid} node={commit} className="px-3" compact={true} />
+                            ))}
+                        </section>
+                    )}
+                    {symbol.children.nodes.length > 0 && (
+                        <ContainerSymbolsList
+                            symbols={symbol.children.nodes.sort((a, b) => (a.kind < b.kind ? -1 : 1))}
+                            history={history}
+                        />
+                    )}
+                </>
+            )
 }
