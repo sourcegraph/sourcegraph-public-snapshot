@@ -1,12 +1,13 @@
 import * as Monaco from 'monaco-editor'
 import { Observable, ReplaySubject } from 'rxjs'
-import { scanSearchQuery } from './scanner'
+import { ScanResult } from './scanner'
 import { getMonacoTokens } from './decoratedToken'
 import { getCompletionItems } from './completion'
 import { getHoverResult } from './hover'
 import { SearchSuggestion } from '../suggestions'
 import { SearchPatternType } from '../../graphql-operations'
 import { debounceTime, share, switchMap } from 'rxjs/operators'
+import { Token } from './token'
 
 interface SearchFieldProviders {
     tokens: Monaco.languages.TokensProvider
@@ -35,7 +36,7 @@ export function getProviders(
             | undefined
             | {
                   rawQuery: string
-                  scanned: ReturnType<typeof scanSearchQuery>
+                  scanned: ScanResult<Token[]>
               }
     },
     fetchSuggestions: (input: string) => Observable<SearchSuggestion[]>,
