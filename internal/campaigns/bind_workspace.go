@@ -21,7 +21,7 @@ type dockerBindWorkspaceCreator struct {
 
 var _ WorkspaceCreator = &dockerBindWorkspaceCreator{}
 
-func (wc *dockerBindWorkspaceCreator) Create(ctx context.Context, repo *graphql.Repository, zip string) (Workspace, error) {
+func (wc *dockerBindWorkspaceCreator) Create(ctx context.Context, repo *graphql.Repository, steps []Step, zip string) (Workspace, error) {
 	w, err := wc.unzipToWorkspace(ctx, repo, zip)
 	if err != nil {
 		return nil, errors.Wrap(err, "unzipping the repository")

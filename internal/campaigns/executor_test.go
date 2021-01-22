@@ -314,6 +314,12 @@ repository_name=github.com/sourcegraph/src-cli`,
 					template = tc.template
 				}
 
+				for i := range tc.steps {
+					tc.steps[i].image = &mockImage{
+						digest: tc.steps[i].Container,
+					}
+				}
+
 				for _, r := range tc.repos {
 					executor.AddTask(r, tc.steps, tc.transform, template)
 				}

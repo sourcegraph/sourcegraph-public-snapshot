@@ -3,29 +3,44 @@ package campaigns
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
+	"encoding/hex"
+	"fmt"
 	"io/ioutil"
 	"os"
 
 	"github.com/pkg/errors"
 
+	"github.com/sourcegraph/src-cli/internal/campaigns/docker"
 	"github.com/sourcegraph/src-cli/internal/campaigns/graphql"
 	"github.com/sourcegraph/src-cli/internal/exec"
 	"github.com/sourcegraph/src-cli/internal/version"
 )
 
-type dockerVolumeWorkspaceCreator struct {
-	tempDir string
-}
+type dockerVolumeWorkspaceCreator struct{ tempDir string }
 
 var _ WorkspaceCreator = &dockerVolumeWorkspaceCreator{}
 
-func (wc *dockerVolumeWorkspaceCreator) Create(ctx context.Context, repo *graphql.Repository, zip string) (Workspace, error) {
+func (wc *dockerVolumeWorkspaceCreator) Create(ctx context.Context, repo *graphql.Repository, steps []Step, zip string) (Workspace, error) {
 	volume, err := wc.createVolume(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating Docker volume")
 	}
 
-	w := &dockerVolumeWorkspace{tempDir: wc.tempDir, volume: volume}
+	// Figure out the user that containers will be run as.
+	ug := docker.UIDGID{}
+	if len(steps) > 0 {
+		var err error
+		if ug, err = steps[0].image.UIDGID(ctx); err != nil {
+			return nil, errors.Wrap(err, "getting container UID and GID")
+		}
+	}
+
+	w := &dockerVolumeWorkspace{
+		tempDir: wc.tempDir,
+		volume:  volume,
+		uidGid:  ug,
+	}
 	if err := wc.unzipRepoIntoVolume(ctx, w, zip); err != nil {
 		return nil, errors.Wrap(err, "unzipping repo into workspace")
 	}
@@ -60,22 +75,62 @@ git commit --quiet --all --allow-empty -m src-action-exec
 	return nil
 }
 
-func (*dockerVolumeWorkspaceCreator) unzipRepoIntoVolume(ctx context.Context, w *dockerVolumeWorkspace, zip string) error {
+func (wc *dockerVolumeWorkspaceCreator) unzipRepoIntoVolume(ctx context.Context, w *dockerVolumeWorkspace, zip string) error {
 	// We want to mount that temporary file into a Docker container that has the
 	// workspace volume attached, and unzip it into the volume.
-	common, err := w.DockerRunOpts(ctx, "/work")
-	if err != nil {
-		return errors.Wrap(err, "generating run options")
-	}
 
+	// We need to keep a temporary file in the volume before unzipping for the
+	// permissions to persist because... reasons. Rather than reading the
+	// potentially large ZIP file, we'll cheat a bit and just assume that if we
+	// create a file with an appropriately namespaced and random name, it's
+	// _probably_ OK. If you manage to reliably trigger an archive that has this
+	// file in it, we'll send you a hoodie or something.
+	randToken := make([]byte, 16)
+	if _, err := rand.Read(randToken); err != nil {
+		return errors.Wrap(err, "generating randomness")
+	}
+	dummy := fmt.Sprintf(".campaign-workspace-placeholder-%s", hex.EncodeToString(randToken))
+
+	// So, let's use that to set up the volume.
+	//
+	// Theoretically, we could combine this `docker run` and the following one
+	// into one invocation. Doing so, however, is tricky: we'd have to su within
+	// the script being run, and Alpine requires a real user account and group;
+	// just having numeric IDs is insufficient. The logic to make this work is
+	// complicated enough that it feels brittle, and beyond what should be
+	// encoded in this function. Running `docker run` twice isn't ideal, but
+	// should be quick enough in general that it's not a huge concern.
 	opts := append([]string{
 		"run",
 		"--rm",
 		"--init",
 		"--workdir", "/work",
+	}, w.dockerRunOptsWithUser(docker.Root, "/work")...)
+	opts = append(
+		opts,
+		dockerVolumeWorkspaceImage,
+		"sh", "-c",
+		fmt.Sprintf("touch /work/%s; chown -R %s /work", dummy, w.uidGid.String()),
+	)
+
+	if out, err := exec.CommandContext(ctx, "docker", opts...).CombinedOutput(); err != nil {
+		return errors.Wrapf(err, "chown output:\n\n%s\n\n", string(out))
+	}
+
+	// Now we can unzip the archive as the user and clean up the temporary file.
+	opts = append([]string{
+		"run",
+		"--rm",
+		"--init",
+		"--workdir", "/work",
 		"--mount", "type=bind,source=" + zip + ",target=/tmp/zip,ro",
-	}, common...)
-	opts = append(opts, dockerVolumeWorkspaceImage, "unzip", "/tmp/zip")
+	}, w.dockerRunOptsWithUser(w.uidGid, "/work")...)
+	opts = append(
+		opts,
+		dockerVolumeWorkspaceImage,
+		"sh", "-c",
+		fmt.Sprintf("unzip /tmp/zip; rm /work/%s", dummy),
+	)
 
 	if out, err := exec.CommandContext(ctx, "docker", opts...).CombinedOutput(); err != nil {
 		return errors.Wrapf(err, "unzip output:\n\n%s\n\n", string(out))
@@ -91,6 +146,7 @@ func (*dockerVolumeWorkspaceCreator) unzipRepoIntoVolume(ctx context.Context, w 
 type dockerVolumeWorkspace struct {
 	tempDir string
 	volume  string
+	uidGid  docker.UIDGID
 }
 
 var _ Workspace = &dockerVolumeWorkspace{}
@@ -101,9 +157,7 @@ func (w *dockerVolumeWorkspace) Close(ctx context.Context) error {
 }
 
 func (w *dockerVolumeWorkspace) DockerRunOpts(ctx context.Context, target string) ([]string, error) {
-	return []string{
-		"--mount", "type=volume,source=" + w.volume + ",target=" + target,
-	}, nil
+	return w.dockerRunOptsWithUser(w.uidGid, target), nil
 }
 
 func (w *dockerVolumeWorkspace) WorkDir() *string { return nil }
@@ -200,4 +254,11 @@ func (w *dockerVolumeWorkspace) runScript(ctx context.Context, target, script st
 	}
 
 	return out, nil
+}
+
+func (w *dockerVolumeWorkspace) dockerRunOptsWithUser(ug docker.UIDGID, target string) []string {
+	return []string{
+		"--user", ug.String(),
+		"--mount", "type=volume,source=" + w.volume + ",target=" + target,
+	}
 }

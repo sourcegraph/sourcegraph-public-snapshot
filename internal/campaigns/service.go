@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/src-cli/internal/api"
+	"github.com/sourcegraph/src-cli/internal/campaigns/docker"
 	"github.com/sourcegraph/src-cli/internal/campaigns/graphql"
 )
 
@@ -22,6 +23,7 @@ type Service struct {
 	allowUnsupported bool
 	client           api.Client
 	features         featureFlags
+	imageCache       *docker.ImageCache
 	workspace        string
 }
 
@@ -39,6 +41,7 @@ func NewService(opts *ServiceOpts) *Service {
 	return &Service{
 		allowUnsupported: opts.AllowUnsupported,
 		client:           opts.Client,
+		imageCache:       docker.NewImageCache(),
 		workspace:        opts.Workspace,
 	}
 }
@@ -213,6 +216,7 @@ func (svc *Service) NewRepoFetcher(dir string, cleanArchives bool) RepoFetcher {
 
 func (svc *Service) NewWorkspaceCreator(ctx context.Context, cacheDir, tempDir string, steps []Step) WorkspaceCreator {
 	var workspace workspaceCreatorType
+
 	if svc.workspace == "volume" {
 		workspace = workspaceCreatorVolume
 	} else if svc.workspace == "bind" {
@@ -227,29 +231,6 @@ func (svc *Service) NewWorkspaceCreator(ctx context.Context, cacheDir, tempDir s
 	return &dockerBindWorkspaceCreator{dir: cacheDir}
 }
 
-// dockerImageSet represents a set of Docker images that need to be pulled. The
-// keys are the Docker image names; the values are a slice of pointers to
-// strings that should be set to the content digest of the image.
-type dockerImageSet map[string][]*string
-
-func (dis dockerImageSet) add(image string, digestPtr *string) {
-	if digestPtr == nil {
-		// Since we don't have a digest pointer here, we just need to ensure
-		// that the image exists at all in the map.
-		if _, ok := dis[image]; !ok {
-			dis[image] = []*string{}
-		}
-	} else {
-		// Either append the digest pointer to an existing map entry, or add a
-		// new entry if required.
-		if digests, ok := dis[image]; ok {
-			dis[image] = append(digests, digestPtr)
-		} else {
-			dis[image] = []*string{digestPtr}
-		}
-	}
-}
-
 // SetDockerImages updates the steps within the campaign spec to include the
 // exact content digest to be used when running each step, and ensures that all
 // Docker images are available, including any required by the service itself.
@@ -257,30 +238,25 @@ func (dis dockerImageSet) add(image string, digestPtr *string) {
 // Progress information is reported back to the given progress function: perc
 // will be a value between 0.0 and 1.0, inclusive.
 func (svc *Service) SetDockerImages(ctx context.Context, spec *CampaignSpec, progress func(perc float64)) error {
-	images := dockerImageSet{}
-	for i, step := range spec.Steps {
-		images.add(step.Container, &spec.Steps[i].image)
+	total := len(spec.Steps) + 1
+	progress(0)
+
+	// TODO: this _really_ should be parallelised, since the image cache takes
+	// care to only pull the same image once.
+	for i := range spec.Steps {
+		spec.Steps[i].image = svc.imageCache.Get(spec.Steps[i].Container)
+		if err := spec.Steps[i].image.Ensure(ctx); err != nil {
+			return errors.Wrapf(err, "pulling image %q", spec.Steps[i].Container)
+		}
+		progress(float64(i) / float64(total))
 	}
 
 	// We also need to ensure we have our own utility images available.
-	images.add(dockerVolumeWorkspaceImage, nil)
-
-	progress(0)
-	i := 0
-	for image, digests := range images {
-		digest, err := getDockerImageContentDigest(ctx, image)
-		if err != nil {
-			return errors.Wrapf(err, "getting content digest for image %q", image)
-		}
-		for _, digestPtr := range digests {
-			*digestPtr = digest
-		}
-
-		progress(float64(i) / float64(len(images)))
-		i++
+	if err := svc.imageCache.Get(dockerVolumeWorkspaceImage).Ensure(ctx); err != nil {
+		return errors.Wrapf(err, "pulling image %q", dockerVolumeWorkspaceImage)
 	}
-	progress(1)
 
+	progress(1)
 	return nil
 }
 

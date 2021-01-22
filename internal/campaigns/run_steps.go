@@ -39,7 +39,7 @@ func runSteps(ctx context.Context, rf RepoFetcher, wc WorkspaceCreator, repo *gr
 	defer zip.Close()
 
 	reportProgress("Initializing workspace")
-	workspace, err := wc.Create(ctx, repo, zip.Path())
+	workspace, err := wc.Create(ctx, repo, steps, zip.Path())
 	if err != nil {
 		return ExecutionResult{}, errors.Wrap(err, "creating workspace")
 	}
@@ -86,8 +86,14 @@ func runSteps(ctx context.Context, rf RepoFetcher, wc WorkspaceCreator, repo *gr
 			}
 		}()
 
+		// We need to grab the digest for the exact image we're using.
+		digest, err := step.image.Digest(ctx)
+		if err != nil {
+			return execResult, errors.Wrapf(err, "getting digest for %v", step.image)
+		}
+
 		// For now, we only support shell scripts provided via the Run field.
-		shell, containerTemp, err := probeImageForShell(ctx, step.image)
+		shell, containerTemp, err := probeImageForShell(ctx, digest)
 		if err != nil {
 			return execResult, errors.Wrapf(err, "probing image %q for shell", step.image)
 		}
@@ -189,7 +195,7 @@ func runSteps(ctx context.Context, rf RepoFetcher, wc WorkspaceCreator, repo *gr
 		args = append(args, "--entrypoint", shell)
 
 		cmd := exec.CommandContext(ctx, "docker", args...)
-		cmd.Args = append(cmd.Args, "--", step.image, containerTemp)
+		cmd.Args = append(cmd.Args, "--", digest, containerTemp)
 		if dir := workspace.WorkDir(); dir != nil {
 			cmd.Dir = *dir
 		}

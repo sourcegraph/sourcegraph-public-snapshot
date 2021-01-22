@@ -62,7 +62,7 @@ func TestDockerBindWorkspaceCreator_Create(t *testing.T) {
 		testTempDir := workspaceTmpDir(t)
 
 		creator := &dockerBindWorkspaceCreator{dir: testTempDir}
-		workspace, err := creator.Create(context.Background(), repo, archivePath)
+		workspace, err := creator.Create(context.Background(), repo, nil, archivePath)
 		if err != nil {
 			t.Fatalf("unexpected error: %s", err)
 		}
@@ -90,7 +90,7 @@ func TestDockerBindWorkspaceCreator_Create(t *testing.T) {
 		badZip.Close()
 
 		creator := &dockerBindWorkspaceCreator{dir: testTempDir}
-		if _, err := creator.Create(context.Background(), repo, badZipFile); err == nil {
+		if _, err := creator.Create(context.Background(), repo, nil, badZipFile); err == nil {
 			t.Error("unexpected nil error")
 		}
 	})

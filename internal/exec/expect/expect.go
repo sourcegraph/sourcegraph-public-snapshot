@@ -47,6 +47,10 @@ type Behaviour struct {
 	ExitCode int
 }
 
+// Success defines a command behaviour that returns a 0 exit code and no other
+// output.
+var Success = Behaviour{}
+
 // Commands defines a set of expected commands for the given test. Commands may
 // be called from any number of nested subtests, but must only be called once
 // from a single test function, as it uses (*testing.T).Cleanup to manage

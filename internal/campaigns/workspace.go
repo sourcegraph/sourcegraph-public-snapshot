@@ -1,14 +1,10 @@
 package campaigns
 
 import (
-	"bytes"
 	"context"
 	"runtime"
-	"strconv"
-	"strings"
 
 	"github.com/sourcegraph/src-cli/internal/campaigns/graphql"
-	"github.com/sourcegraph/src-cli/internal/exec"
 )
 
 // WorkspaceCreator implementations are used to create workspaces, which manage
@@ -16,7 +12,7 @@ import (
 // responsible for ultimately generating a diff.
 type WorkspaceCreator interface {
 	// Create creates a new workspace for the given repository and ZIP file.
-	Create(ctx context.Context, repo *graphql.Repository, zip string) (Workspace, error)
+	Create(ctx context.Context, repo *graphql.Repository, steps []Step, zip string) (Workspace, error)
 }
 
 // Workspace implementations manage per-changeset storage when executing
@@ -90,45 +86,20 @@ func detectBestWorkspaceCreator(ctx context.Context, steps []Step) workspaceCrea
 	// In theory, we could make this more sensitive and complicated: a non-root
 	// container that's followed by only root containers would actually be OK,
 	// but let's keep it simple for now.
-	uids := make(map[int]struct{})
+	var uid *int
 
 	for _, step := range steps {
-		stdout := new(bytes.Buffer)
-
-		args := []string{
-			"run",
-			"--rm",
-			"--entrypoint", "/bin/sh",
-			step.image,
-			"-c", "id -u",
-		}
-		cmd := exec.CommandContext(ctx, "docker", args...)
-		cmd.Stdout = stdout
-
-		if err := cmd.Run(); err != nil {
+		ug, err := step.image.UIDGID(ctx)
+		if err != nil {
 			// An error here likely indicates that `id` isn't available on the
 			// path. That's OK: let's not make any assumptions at this point
 			// about the image, and we'll default to the always safe option.
 			return workspaceCreatorBind
 		}
 
-		// POSIX specifies the output of `id -u` as the effective UID,
-		// terminated by a newline.
-		raw := strings.TrimSpace(stdout.String())
-		uid, err := strconv.Atoi(raw)
-		if err != nil {
-			// This is a bit worse than the previous error case: there's an `id`
-			// command on the path, but it's not returning POSIX compliant
-			// output. That's weird, but we really don't need it to be terminal;
-			// let's fall back to bind mode.
-			//
-			// TODO: when logging is available at this level, we should log an
-			// error at verbose level to make this easier to debug.
-			return workspaceCreatorBind
-		}
-
-		uids[uid] = struct{}{}
-		if len(uids) > 1 || uid != 0 {
+		if uid == nil {
+			uid = &ug.UID
+		} else if *uid != ug.UID {
 			return workspaceCreatorBind
 		}
 	}

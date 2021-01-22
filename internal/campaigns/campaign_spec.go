@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/campaignutils/env"
 	"github.com/sourcegraph/campaignutils/overridable"
 	"github.com/sourcegraph/campaignutils/yaml"
+	"github.com/sourcegraph/src-cli/internal/campaigns/docker"
 	"github.com/sourcegraph/src-cli/schema"
 )
 
@@ -73,7 +74,7 @@ type Step struct {
 	Files     map[string]string `json:"files,omitempty" yaml:"files,omitempty"`
 	Outputs   Outputs           `json:"outputs,omitempty" yaml:"outputs,omitempty"`
 
-	image string
+	image docker.Image
 }
 
 type Outputs map[string]Output

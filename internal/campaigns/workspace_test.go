@@ -5,6 +5,8 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/pkg/errors"
+	"github.com/sourcegraph/src-cli/internal/campaigns/docker"
 	"github.com/sourcegraph/src-cli/internal/exec/expect"
 )
 
@@ -12,86 +14,60 @@ func TestBestWorkspaceCreator(t *testing.T) {
 	ctx := context.Background()
 	isOverridden := !(runtime.GOOS == "darwin" && runtime.GOARCH == "amd64")
 
+	uidGid := func(uid, gid int) docker.UIDGID {
+		return docker.UIDGID{UID: uid, GID: gid}
+	}
+
 	type imageBehaviour struct {
 		image     string
 		behaviour expect.Behaviour
 	}
 	for name, tc := range map[string]struct {
-		behaviours []imageBehaviour
-		want       workspaceCreatorType
+		images []docker.Image
+		want   workspaceCreatorType
 	}{
 		"nil steps": {
-			behaviours: nil,
-			want:       workspaceCreatorVolume,
+			images: nil,
+			want:   workspaceCreatorVolume,
 		},
 		"no steps": {
-			behaviours: []imageBehaviour{},
-			want:       workspaceCreatorVolume,
+			images: []docker.Image{},
+			want:   workspaceCreatorVolume,
 		},
 		"root": {
-			behaviours: []imageBehaviour{
-				{image: "foo", behaviour: expect.Behaviour{Stdout: []byte("0\n")}},
-				{image: "bar", behaviour: expect.Behaviour{Stdout: []byte("0\n")}},
+			images: []docker.Image{
+				&mockImage{uidGid: uidGid(0, 0)},
 			},
 			want: workspaceCreatorVolume,
 		},
 		"same user": {
-			behaviours: []imageBehaviour{
-				{image: "foo", behaviour: expect.Behaviour{Stdout: []byte("1000\n")}},
+			images: []docker.Image{
+				&mockImage{uidGid: uidGid(1000, 1000)},
+				&mockImage{uidGid: uidGid(1000, 1000)},
 			},
-			want: workspaceCreatorBind,
+			want: workspaceCreatorVolume,
 		},
 		"different user": {
-			behaviours: []imageBehaviour{
-				{image: "foo", behaviour: expect.Behaviour{Stdout: []byte("0\n")}},
-				{image: "bar", behaviour: expect.Behaviour{Stdout: []byte("1000\n")}},
+			images: []docker.Image{
+				&mockImage{uidGid: uidGid(1000, 1000)},
+				&mockImage{uidGid: uidGid(0, 0)},
 			},
 			want: workspaceCreatorBind,
 		},
-		"invalid id output: string": {
-			behaviours: []imageBehaviour{
-				{image: "foo", behaviour: expect.Behaviour{Stdout: []byte("xxx\n")}},
-			},
-			want: workspaceCreatorBind,
-		},
-		"invalid id output: empty": {
-			behaviours: []imageBehaviour{
-				{image: "foo", behaviour: expect.Behaviour{Stdout: []byte("")}},
-			},
-			want: workspaceCreatorBind,
-		},
-		"error invoking id": {
-			behaviours: []imageBehaviour{
-				{image: "foo", behaviour: expect.Behaviour{ExitCode: 1}},
+		"id error": {
+			images: []docker.Image{
+				&mockImage{uidGidErr: errors.New("foo")},
 			},
 			want: workspaceCreatorBind,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			var (
-				commands []*expect.Expectation = nil
-				steps    []Step                = nil
-			)
-			if tc.behaviours != nil {
-				commands = []*expect.Expectation{}
-				steps = []Step{}
-				for _, imageBehaviour := range tc.behaviours {
-					commands = append(commands, expect.NewGlob(
-						imageBehaviour.behaviour,
-						"docker", "run", "--rm", "--entrypoint", "/bin/sh",
-						imageBehaviour.image, "-c", "id -u",
-					))
-					steps = append(steps, Step{image: imageBehaviour.image})
+			var steps []Step
+			if tc.images != nil {
+				steps = make([]Step, len(tc.images))
+				for i, image := range tc.images {
+					steps[i].image = image
 				}
-			}
-
-			if !isOverridden {
-				// If bestWorkspaceCreator() won't short circuit on this
-				// platform, we're going to run the Docker commands twice by
-				// definition.
-				expect.Commands(t, append(commands, commands...)...)
-			} else {
-				expect.Commands(t, commands...)
 			}
 
 			if isOverridden {

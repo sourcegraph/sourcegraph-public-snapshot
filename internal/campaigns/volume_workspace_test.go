@@ -11,6 +11,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 
+	"github.com/sourcegraph/src-cli/internal/campaigns/docker"
 	"github.com/sourcegraph/src-cli/internal/campaigns/graphql"
 	"github.com/sourcegraph/src-cli/internal/exec/expect"
 )
@@ -39,103 +40,241 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 		DefaultBranch: &graphql.Branch{Name: "main"},
 	}
 
-	t.Run("success", func(t *testing.T) {
-		expect.Commands(
-			t,
-			expect.NewGlob(
-				expect.Behaviour{Stdout: []byte(volumeID)},
-				"docker", "volume", "create",
-			),
-			expect.NewGlob(
-				expect.Behaviour{},
-				"docker", "run", "--rm", "--init", "--workdir", "/work",
-				"--mount", "type=bind,source=*,target=/tmp/zip,ro",
-				"--mount", "type=volume,source="+volumeID+",target=/work",
-				dockerVolumeWorkspaceImage,
-				"unzip", "/tmp/zip",
-			),
-			expect.NewGlob(
-				expect.Behaviour{},
-				"docker", "run", "--rm", "--init", "--workdir", "/work",
-				"--mount", "type=bind,source=*,target=/run.sh,ro",
-				"--mount", "type=volume,source="+volumeID+",target=/work",
-				dockerVolumeWorkspaceImage,
-				"sh", "/run.sh",
-			),
-		)
-
-		if w, err := wc.Create(ctx, repo, zip); err != nil {
-			t.Errorf("unexpected error: %v", err)
-		} else if have := w.(*dockerVolumeWorkspace).volume; have != volumeID {
-			t.Errorf("unexpected volume: have=%q want=%q", have, volumeID)
-		}
-	})
-
-	t.Run("docker volume create failure", func(t *testing.T) {
-		expect.Commands(
-			t,
-			expect.NewGlob(
-				expect.Behaviour{ExitCode: 1},
-				"docker", "volume", "create",
-			),
-		)
-
-		if _, err := wc.Create(ctx, repo, zip); err == nil {
-			t.Error("unexpected nil error")
-		}
-	})
-
-	t.Run("unzip failure", func(t *testing.T) {
-		expect.Commands(
-			t,
-			expect.NewGlob(
-				expect.Behaviour{Stdout: []byte(volumeID)},
-				"docker", "volume", "create",
-			),
-			expect.NewGlob(
-				expect.Behaviour{ExitCode: 1},
-				"docker", "run", "--rm", "--init", "--workdir", "/work",
-				"--mount", "type=bind,source=*,target=/tmp/zip,ro",
-				"--mount", "type=volume,source="+volumeID+",target=/work",
-				dockerVolumeWorkspaceImage,
-				"unzip", "/tmp/zip",
-			),
-		)
-
-		if _, err := wc.Create(ctx, repo, zip); err == nil {
-			t.Error("unexpected nil error")
-		}
-	})
-
-	t.Run("git init failure", func(t *testing.T) {
-		expect.Commands(
-			t,
-			expect.NewGlob(
-				expect.Behaviour{Stdout: []byte(volumeID)},
-				"docker", "volume", "create",
-			),
-			expect.NewGlob(
-				expect.Behaviour{},
-				"docker", "run", "--rm", "--init", "--workdir", "/work",
-				"--mount", "type=bind,source=*,target=/tmp/zip,ro",
-				"--mount", "type=volume,source="+volumeID+",target=/work",
-				dockerVolumeWorkspaceImage,
-				"unzip", "/tmp/zip",
-			),
-			expect.NewGlob(
-				expect.Behaviour{ExitCode: 1},
-				"docker", "run", "--rm", "--init", "--workdir", "/work",
-				"--mount", "type=bind,source=*,target=/run.sh,ro",
-				"--mount", "type=volume,source="+volumeID+",target=/work",
-				dockerVolumeWorkspaceImage,
-				"sh", "/run.sh",
-			),
-		)
-
-		if _, err := wc.Create(ctx, repo, zip); err == nil {
-			t.Error("unexpected nil error")
-		}
-	})
+	for name, tc := range map[string]struct {
+		expectations []*expect.Expectation
+		steps        []Step
+		wantErr      bool
+	}{
+		"no steps": {
+			expectations: []*expect.Expectation{
+				expect.NewGlob(
+					expect.Behaviour{Stdout: []byte(volumeID)},
+					"docker", "volume", "create",
+				),
+				expect.NewGlob(
+					expect.Success,
+					"docker", "run", "--rm", "--init", "--workdir", "/work",
+					"--user", "0:0",
+					"--mount", "type=volume,source="+volumeID+",target=/work",
+					dockerVolumeWorkspaceImage,
+					"sh", "-c", "touch /work/*; chown -R 0:0 /work",
+				),
+				expect.NewGlob(
+					expect.Success,
+					"docker", "run", "--rm", "--init",
+					"--workdir", "/work",
+					"--mount", "type=bind,source=*,target=/tmp/zip,ro",
+					"--user", "0:0",
+					"--mount", "type=volume,source="+volumeID+",target=/work",
+					dockerVolumeWorkspaceImage,
+					"sh", "-c", "unzip /tmp/zip; rm /work/*",
+				),
+				expect.NewGlob(
+					expect.Success,
+					"docker", "run", "--rm", "--init", "--workdir", "/work",
+					"--mount", "type=bind,source=*,target=/run.sh,ro",
+					"--user", "0:0",
+					"--mount", "type=volume,source="+volumeID+",target=/work",
+					dockerVolumeWorkspaceImage,
+					"sh", "/run.sh",
+				),
+			},
+			steps: []Step{},
+		},
+		"one root:root step": {
+			expectations: []*expect.Expectation{
+				expect.NewGlob(
+					expect.Behaviour{Stdout: []byte(volumeID)},
+					"docker", "volume", "create",
+				),
+				expect.NewGlob(
+					expect.Success,
+					"docker", "run", "--rm", "--init", "--workdir", "/work",
+					"--user", "0:0",
+					"--mount", "type=volume,source="+volumeID+",target=/work",
+					dockerVolumeWorkspaceImage,
+					"sh", "-c", "touch /work/*; chown -R 0:0 /work",
+				),
+				expect.NewGlob(
+					expect.Success,
+					"docker", "run", "--rm", "--init",
+					"--workdir", "/work",
+					"--mount", "type=bind,source=*,target=/tmp/zip,ro",
+					"--user", "0:0",
+					"--mount", "type=volume,source="+volumeID+",target=/work",
+					dockerVolumeWorkspaceImage,
+					"sh", "-c", "unzip /tmp/zip; rm /work/*",
+				),
+				expect.NewGlob(
+					expect.Success,
+					"docker", "run", "--rm", "--init", "--workdir", "/work",
+					"--mount", "type=bind,source=*,target=/run.sh,ro",
+					"--user", "0:0",
+					"--mount", "type=volume,source="+volumeID+",target=/work",
+					dockerVolumeWorkspaceImage,
+					"sh", "/run.sh",
+				),
+			},
+			steps: []Step{
+				{image: &mockImage{uidGid: docker.Root}},
+			},
+		},
+		"one user:user step": {
+			expectations: []*expect.Expectation{
+				expect.NewGlob(
+					expect.Behaviour{Stdout: []byte(volumeID)},
+					"docker", "volume", "create",
+				),
+				expect.NewGlob(
+					expect.Success,
+					"docker", "run", "--rm", "--init", "--workdir", "/work",
+					"--user", "0:0",
+					"--mount", "type=volume,source="+volumeID+",target=/work",
+					dockerVolumeWorkspaceImage,
+					"sh", "-c", "touch /work/*; chown -R 1:2 /work",
+				),
+				expect.NewGlob(
+					expect.Success,
+					"docker", "run", "--rm", "--init",
+					"--workdir", "/work",
+					"--mount", "type=bind,source=*,target=/tmp/zip,ro",
+					"--user", "1:2",
+					"--mount", "type=volume,source="+volumeID+",target=/work",
+					dockerVolumeWorkspaceImage,
+					"sh", "-c", "unzip /tmp/zip; rm /work/*",
+				),
+				expect.NewGlob(
+					expect.Success,
+					"docker", "run", "--rm", "--init", "--workdir", "/work",
+					"--mount", "type=bind,source=*,target=/run.sh,ro",
+					"--user", "1:2",
+					"--mount", "type=volume,source="+volumeID+",target=/work",
+					dockerVolumeWorkspaceImage,
+					"sh", "/run.sh",
+				),
+			},
+			steps: []Step{
+				{image: &mockImage{uidGid: docker.UIDGID{UID: 1, GID: 2}}},
+			},
+		},
+		"docker volume create failure": {
+			expectations: []*expect.Expectation{
+				expect.NewGlob(
+					expect.Behaviour{ExitCode: 1},
+					"docker", "volume", "create",
+				),
+			},
+			steps: []Step{
+				{image: &mockImage{uidGid: docker.Root}},
+			},
+			wantErr: true,
+		},
+		"chown failure": {
+			expectations: []*expect.Expectation{
+				expect.NewGlob(
+					expect.Behaviour{Stdout: []byte(volumeID)},
+					"docker", "volume", "create",
+				),
+				expect.NewGlob(
+					expect.Behaviour{ExitCode: 1},
+					"docker", "run", "--rm", "--init", "--workdir", "/work",
+					"--user", "0:0",
+					"--mount", "type=volume,source="+volumeID+",target=/work",
+					dockerVolumeWorkspaceImage,
+					"sh", "-c", "touch /work/*; chown -R 0:0 /work",
+				),
+			},
+			steps: []Step{
+				{image: &mockImage{uidGid: docker.Root}},
+			},
+			wantErr: true,
+		},
+		"git init failure": {
+			expectations: []*expect.Expectation{
+				expect.NewGlob(
+					expect.Behaviour{Stdout: []byte(volumeID)},
+					"docker", "volume", "create",
+				),
+				expect.NewGlob(
+					expect.Success,
+					"docker", "run", "--rm", "--init", "--workdir", "/work",
+					"--user", "0:0",
+					"--mount", "type=volume,source="+volumeID+",target=/work",
+					dockerVolumeWorkspaceImage,
+					"sh", "-c", "touch /work/*; chown -R 0:0 /work",
+				),
+				expect.NewGlob(
+					expect.Success,
+					"docker", "run", "--rm", "--init",
+					"--workdir", "/work",
+					"--mount", "type=bind,source=*,target=/tmp/zip,ro",
+					"--user", "0:0",
+					"--mount", "type=volume,source="+volumeID+",target=/work",
+					dockerVolumeWorkspaceImage,
+					"sh", "-c", "unzip /tmp/zip; rm /work/*",
+				),
+				expect.NewGlob(
+					expect.Behaviour{ExitCode: 1},
+					"docker", "run", "--rm", "--init", "--workdir", "/work",
+					"--mount", "type=bind,source=*,target=/run.sh,ro",
+					"--user", "0:0",
+					"--mount", "type=volume,source="+volumeID+",target=/work",
+					dockerVolumeWorkspaceImage,
+					"sh", "/run.sh",
+				),
+			},
+			steps: []Step{
+				{image: &mockImage{uidGid: docker.Root}},
+			},
+			wantErr: true,
+		},
+		"unzip failure": {
+			expectations: []*expect.Expectation{
+				expect.NewGlob(
+					expect.Behaviour{Stdout: []byte(volumeID)},
+					"docker", "volume", "create",
+				),
+				expect.NewGlob(
+					expect.Success,
+					"docker", "run", "--rm", "--init", "--workdir", "/work",
+					"--user", "0:0",
+					"--mount", "type=volume,source="+volumeID+",target=/work",
+					dockerVolumeWorkspaceImage,
+					"sh", "-c", "touch /work/*; chown -R 0:0 /work",
+				),
+				expect.NewGlob(
+					expect.Behaviour{ExitCode: 1},
+					"docker", "run", "--rm", "--init",
+					"--workdir", "/work",
+					"--mount", "type=bind,source=*,target=/tmp/zip,ro",
+					"--user", "0:0",
+					"--mount", "type=volume,source="+volumeID+",target=/work",
+					dockerVolumeWorkspaceImage,
+					"sh", "-c", "unzip /tmp/zip; rm /work/*",
+				),
+			},
+			steps: []Step{
+				{image: &mockImage{uidGid: docker.Root}},
+			},
+			wantErr: true,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			expect.Commands(t, tc.expectations...)
+			w, err := wc.Create(ctx, repo, tc.steps, zip)
+			if tc.wantErr {
+				if err == nil {
+					t.Error("unexpected nil error")
+				}
+			} else {
+				if err != nil {
+					t.Errorf("unexpected error: %v", err)
+				} else if have := w.(*dockerVolumeWorkspace).volume; have != volumeID {
+					t.Errorf("unexpected volume: have=%q want=%q", have, volumeID)
+				}
+			}
+		})
+	}
 }
 
 func TestVolumeWorkspace_Close(t *testing.T) {
@@ -146,7 +285,7 @@ func TestVolumeWorkspace_Close(t *testing.T) {
 		expect.Commands(
 			t,
 			expect.NewGlob(
-				expect.Behaviour{},
+				expect.Success,
 				"docker", "volume", "rm", volumeID,
 			),
 		)
@@ -173,9 +312,13 @@ func TestVolumeWorkspace_Close(t *testing.T) {
 
 func TestVolumeWorkspace_DockerRunOpts(t *testing.T) {
 	ctx := context.Background()
-	w := &dockerVolumeWorkspace{volume: "VOLUME"}
+	w := &dockerVolumeWorkspace{
+		volume: "VOLUME",
+		uidGid: docker.UIDGID{UID: 1, GID: 2},
+	}
 
 	want := []string{
+		"--user", "1:2",
 		"--mount", "type=volume,source=VOLUME,target=TARGET",
 	}
 	have, err := w.DockerRunOpts(ctx, "TARGET")
@@ -231,6 +374,7 @@ M  internal/campaigns/volume_workspace_test.go
 						expect.Behaviour{Stdout: bytes.TrimSpace([]byte(tc.stdout))},
 						"docker", "run", "--rm", "--init", "--workdir", "/work",
 						"--mount", "type=bind,source=*,target=/run.sh,ro",
+						"--user", "0:0",
 						"--mount", "type=volume,source="+volumeID+",target=/work",
 						dockerVolumeWorkspaceImage,
 						"sh", "/run.sh",
@@ -262,6 +406,7 @@ M  internal/campaigns/volume_workspace_test.go
 						behaviour,
 						"docker", "run", "--rm", "--init", "--workdir", "/work",
 						"--mount", "type=bind,source=*,target=/run.sh,ro",
+						"--user", "0:0",
 						"--mount", "type=volume,source="+volumeID+",target=/work",
 						dockerVolumeWorkspaceImage,
 						"sh", "/run.sh",
@@ -307,6 +452,7 @@ index 06471f4..5f9d3fa 100644
 						expect.Behaviour{Stdout: []byte(want)},
 						"docker", "run", "--rm", "--init", "--workdir", "/work",
 						"--mount", "type=bind,source=*,target=/run.sh,ro",
+						"--user", "0:0",
 						"--mount", "type=volume,source="+volumeID+",target=/work",
 						dockerVolumeWorkspaceImage,
 						"sh", "/run.sh",
@@ -333,6 +479,7 @@ index 06471f4..5f9d3fa 100644
 				expect.Behaviour{ExitCode: 1},
 				"docker", "run", "--rm", "--init", "--workdir", "/work",
 				"--mount", "type=bind,source=*,target=/run.sh,ro",
+				"--user", "0:0",
 				"--mount", "type=volume,source="+volumeID+",target=/work",
 				dockerVolumeWorkspaceImage,
 				"sh", "/run.sh",
@@ -361,6 +508,7 @@ func TestVolumeWorkspace_runScript(t *testing.T) {
 				glob := expect.NewGlobValidator(
 					"docker", "run", "--rm", "--init", "--workdir", "/work",
 					"--mount", "type=bind,source=*,target=/run.sh,ro",
+					"--user", "0:0",
 					"--mount", "type=volume,source="+volumeID+",target=/work",
 					dockerVolumeWorkspaceImage,
 					"sh", "/run.sh",
@@ -390,4 +538,26 @@ func TestVolumeWorkspace_runScript(t *testing.T) {
 	if _, err := w.runScript(ctx, "/work", script); err != nil {
 		t.Fatal(err)
 	}
+}
+
+type mockImage struct {
+	digest    string
+	digestErr error
+	ensureErr error
+	uidGid    docker.UIDGID
+	uidGidErr error
+}
+
+var _ docker.Image = &mockImage{}
+
+func (image *mockImage) Digest(ctx context.Context) (string, error) {
+	return image.digest, image.digestErr
+}
+
+func (image *mockImage) Ensure(ctx context.Context) error {
+	return image.ensureErr
+}
+
+func (image *mockImage) UIDGID(ctx context.Context) (docker.UIDGID, error) {
+	return image.uidGid, image.uidGidErr
 }
