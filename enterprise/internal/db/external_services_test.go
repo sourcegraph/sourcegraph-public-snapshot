@@ -1164,8 +1164,8 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			}
 `,
 			assert: includes(
-				`depots.0: Does not match pattern '^\/[\/\w]+/$'`,
-				`depots.1: Does not match pattern '^\/[\/\w]+/$'`,
+				`depots.0: Does not match pattern '^\/[\/\S]+\/$'`,
+				`depots.1: Does not match pattern '^\/[\/\S]+\/$'`,
 			),
 		},
 		{
