@@ -144,7 +144,7 @@ func (sr *SearchResultsResolver) Results() []SearchResultResolver {
 func (sr *SearchResultsResolver) MatchCount() int32 {
 	var totalResults int32
 	for _, result := range sr.SearchResults {
-		totalResults += result.resultCount()
+		totalResults += result.ResultCount()
 	}
 	return totalResults
 }
@@ -298,7 +298,7 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 			if fm.InputRev != nil {
 				rev = *fm.InputRev
 			}
-			lines := fm.resultCount()
+			lines := fm.ResultCount()
 			addRepoFilter(fm.Repo, rev, lines)
 			addLangFilter(fm.path(), lines, fm.LimitHit())
 			addFileFilter(fm.path(), lines, fm.LimitHit())
@@ -2102,7 +2102,7 @@ type SearchResultResolver interface {
 	ToFileMatch() (*FileMatchResolver, bool)
 	ToCommitSearchResult() (*CommitSearchResultResolver, bool)
 
-	resultCount() int32
+	ResultCount() int32
 }
 
 // compareFileLengths sorts file paths such that they appear earlier if they

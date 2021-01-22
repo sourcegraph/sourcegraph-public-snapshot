@@ -287,7 +287,7 @@ func (r *RepositoryResolver) ToCommitSearchResult() (*CommitSearchResultResolver
 	return nil, false
 }
 
-func (r *RepositoryResolver) resultCount() int32 {
+func (r *RepositoryResolver) ResultCount() int32 {
 	return 1
 }
 

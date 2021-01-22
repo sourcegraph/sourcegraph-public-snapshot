@@ -70,7 +70,7 @@ func (r *CommitSearchResultResolver) ToCommitSearchResult() (*CommitSearchResult
 	return r, true
 }
 
-func (r *CommitSearchResultResolver) resultCount() int32 {
+func (r *CommitSearchResultResolver) ResultCount() int32 {
 	return 1
 }
 
