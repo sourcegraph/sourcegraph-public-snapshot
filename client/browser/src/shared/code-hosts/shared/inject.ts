@@ -1,8 +1,10 @@
 import { Observable, Subscription } from 'rxjs'
 import { startWith } from 'rxjs/operators'
-import { MutationRecordLike, observeMutations } from '../../util/dom'
-import { determineCodeHost, injectCodeIntelligenceToCodeHost } from './codeHost'
+import { MutationRecordLike } from '../../util/dom'
+
+import { determineCodeHost, injectCodeIntelligenceToCodeHost, ObserveMutations } from './codeHost'
 import { SourcegraphIntegrationURLs } from '../../platform/context'
+import { observeMutations as defaultObserveMutations } from '../gerrit/codeHost'
 
 /**
  * Checks if the current page is a known code host. If it is,
@@ -14,7 +16,8 @@ export function injectCodeIntelligence(urls: SourcegraphIntegrationURLs, isExten
     const subscriptions = new Subscription()
     const codeHost = determineCodeHost()
     if (codeHost) {
-        console.log('Detected code host:', codeHost.type)
+        console.log('Sourcegraph: Detected code host:', codeHost.type)
+        const observeMutations: ObserveMutations = codeHost.observeMutations || defaultObserveMutations
         const mutations: Observable<MutationRecordLike[]> = observeMutations(document.body, {
             childList: true,
             subtree: true,

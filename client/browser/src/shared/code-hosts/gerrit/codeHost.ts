@@ -1,6 +1,10 @@
+import { compact } from 'lodash'
+import { interval, Observable, Subject } from 'rxjs'
+import { filter, map } from 'rxjs/operators'
+import { MutationRecordLike } from '../../util/dom'
 import { CodeHost } from '../shared/codeHost'
 import { CodeView, DOMFunctions } from '../shared/codeViews'
-import { ViewResolver } from '../shared/views'
+import { queryWithSelector, ViewResolver } from '../shared/views'
 
 function checkIsGerrit(): boolean {
     const isGerrit = !!document.querySelector('gr-app#app')
@@ -34,7 +38,12 @@ function parseGerritChange(): GerritChangeAndPatchSet {
 }
 
 const resolveFileListCodeView: ViewResolver<CodeView> = {
-    selector() {
+    selector(existingElement: HTMLElement) {
+        if (existingElement.matches('#diffTable')) {
+            console.log('Sourcegraph: resolveFileListCodeView.selector: matched existing element', existingElement)
+            return [existingElement]
+        }
+        console.log('Sourcegraph: resolveFileListCodeView.selector')
         const fileListElement = querySelectorAcrossShadowRoots(document, [
             '#app',
             '#app-element',
@@ -42,10 +51,22 @@ const resolveFileListCodeView: ViewResolver<CodeView> = {
             '#fileList',
         ])
         const fileRows = fileListElement?.shadowRoot?.querySelectorAll('.file-row.expanded')
-        return fileRows
+        const fileRowElements = [...(fileRows || [])]
+        console.log('Sourcegraph: resolveFileListCodeView.selector: fileRowElements', fileRowElements)
+        const diffTables = fileRowElements.map(fileRow => {
+            const stickyArea = fileRow.parentElement
+            if (!stickyArea) {
+                return
+            }
+            return querySelectorAcrossShadowRoots(stickyArea, ['gr-diff-host', 'gr-diff', 'table']) as HTMLElement
+        })
+        console.log('Sourcegraph: RresolveFileListCodeView.selectoresv: fileRowElements', diffTables)
+        return compact(diffTables)
     },
     resolveView(element: HTMLElement): CodeView | null {
         const stickyArea = element.parentElement
+        console.log('Sourcegraph: resolveView stickyArea', stickyArea)
+
         if (!stickyArea) {
             return null
         }
@@ -130,7 +151,8 @@ const diffTableDomFunctions: DOMFunctions = {
 }
 
 const resolveFilePageCodeView: ViewResolver<CodeView> = {
-    selector() {
+    selector(target: HTMLElement) {
+        console.log('Sourcegraph: resolveFilePageCodeView.selector called with', target)
         // TODO: rewrite query using querySelectorAcrossShadowRoots
         const diffTableElement = document.body
             .querySelector('#app')
@@ -141,11 +163,13 @@ const resolveFilePageCodeView: ViewResolver<CodeView> = {
             ?.shadowRoot?.querySelector('#diffTable')
 
         if (diffTableElement) {
+            console.log('Sourcegraph: resolveFilePageCodeView.selector returning', diffTableElement)
             return [diffTableElement as HTMLElement]
         }
         return []
     },
     resolveView(element: HTMLElement): CodeView | null {
+        console.log('Sourcegraph: resolveFilePageCodeView.resolveView: called with', element)
         const gerritChange = parseGerritChange()
         const gerritChangeString = buildGerritChangeString(gerritChange)
         let parent = getParentCommit() || gerritChangeString + '^'
@@ -186,14 +210,49 @@ const resolveFilePageCodeView: ViewResolver<CodeView> = {
     },
 }
 
+const POLLING_INTERVAL = 4000
+export const observeMutations = (
+    target: Node,
+    options?: MutationObserverInit,
+    paused?: Subject<boolean>
+): Observable<MutationRecordLike[]> => {
+    const knownElements = new Set<HTMLElement>()
+    return interval(POLLING_INTERVAL).pipe(
+        map(() => {
+            const elements = codeViewResolvers
+                .map(resolver => [...queryWithSelector(document.body, resolver.selector)])
+                .flat()
+            const addedNodes = elements.filter(element => !knownElements.has(element))
+            const removedNodes = [...knownElements].filter(element => !elements.includes(element))
+            for (const addedNode of addedNodes) {
+                knownElements.add(addedNode)
+            }
+            for (const removedNode of removedNodes) {
+                knownElements.delete(removedNode)
+            }
+            if (knownElements.size > 0) {
+                console.log('Sourcegraph: knownElements:', knownElements)
+            }
+            return { addedNodes, removedNodes }
+        }),
+        // Filter to emit only non-empty records.
+        filter(({ addedNodes, removedNodes }) => !!addedNodes.length || !!removedNodes.length),
+        // Wrap in an array, because that's how mutation observers emit events.
+        map(mutationRecord => [mutationRecord])
+    )
+}
+
+const codeViewResolvers = [resolveFilePageCodeView, resolveFileListCodeView]
 export const gerritCodeHost: CodeHost = {
     type: 'gerrit',
     name: 'Gerrit',
-    codeViewResolvers: [resolveFilePageCodeView, resolveFileListCodeView],
+    codeViewResolvers,
     contentViewResolvers: [],
     textFieldResolvers: [],
     nativeTooltipResolvers: [],
     codeViewsRequireTokenization: true,
+    // This overrides the default observeMutations because we need to handle shadow DOMS.
+    observeMutations,
     getContext() {
         const gerritChange = parseGerritChange()
         const gerritChangeString = buildGerritChangeString(gerritChange)

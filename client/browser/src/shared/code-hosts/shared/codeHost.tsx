@@ -81,7 +81,7 @@ import { toTextDocumentIdentifier, toTextDocumentPositionParameters } from '../.
 import { CodeViewToolbar, CodeViewToolbarClassProps } from '../../components/CodeViewToolbar'
 import { resolveRevision, retryWhenCloneInProgressError } from '../../repo/backend'
 import { EventLogger, ConditionalTelemetryService } from '../../tracking/eventLogger'
-import { MutationRecordLike, querySelectorOrSelf } from '../../util/dom'
+import { MutationRecordLike, observeMutations, querySelectorOrSelf } from '../../util/dom'
 import { featureFlags } from '../../util/featureFlags'
 import { bitbucketServerCodeHost } from '../bitbucket/codeHost'
 import { githubCodeHost } from '../github/codeHost'
@@ -124,6 +124,12 @@ export interface OverlayPosition {
     top: number
     left: number
 }
+
+export type ObserveMutations = (
+    target: Node,
+    options?: MutationObserverInit,
+    paused?: Subject<boolean>
+) => Observable<MutationRecordLike[]>
 
 /**
  * A function that gets the mount location for elements being mounted to the DOM.
@@ -205,6 +211,11 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
      * Resolves {@link NativeTooltip}s from the DOM.
      */
     nativeTooltipResolvers?: ViewResolver<NativeTooltip>[]
+
+    /**
+     * Override of `observeMutations`, used where a MutationObserve is not viable, such as in the shadow DOMs in Gerrit.
+     */
+    observeMutations?: ObserveMutations
 
     /**
      * Adjust the position of the hover overlay. Useful for fixed headers or other
@@ -750,7 +761,9 @@ export function handleCodeHost({
     }
 
     /** A stream of added or removed code views with the resolved file info */
+    console.log('Sourcegraph: attaching to mutations')
     const codeViews = mutations.pipe(
+        tap(mutation => console.log('Sourcegraph: mutation piped into trackCodeViews', mutation)),
         trackCodeViews(codeHost),
         tap(codeViewEvent => {
             codeViewCount.next(codeViewCount.value + 1)

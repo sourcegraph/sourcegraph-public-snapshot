@@ -104,6 +104,4 @@ async function main(): Promise<void> {
     subscriptions.unsubscribe()
 }
 
-setTimeout(() => {
-    main().catch(console.error.bind(console))
-}, 5000)
+main().catch(console.error.bind(console))
