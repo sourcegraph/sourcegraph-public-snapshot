@@ -129,7 +129,7 @@ func (fm *FileMatchResolver) appendMatches(src *FileMatchResolver) {
 	fm.JLimitHit = fm.JLimitHit || src.JLimitHit
 }
 
-func (fm *FileMatchResolver) resultCount() int32 {
+func (fm *FileMatchResolver) ResultCount() int32 {
 	rc := len(fm.symbols) + fm.MatchCount
 	if rc > 0 {
 		return int32(rc)
@@ -329,13 +329,15 @@ func searchFilesInReposBatch(ctx context.Context, args *search.TextParameters) (
 }
 
 // searchFilesInRepos searches a set of repos for a pattern.
-// For c != nil searchFilesInRepos will send results down c.
 func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream SearchStream) {
-	doSearchFilesInRepos(ctx, args, stream)
-}
+	var (
+		wg sync.WaitGroup
 
-// doSearchFilesInRepos exists so we can capture the final error returned
-func doSearchFilesInRepos(ctx context.Context, args *search.TextParameters, stream SearchStream) (finalErr error) {
+		mu                sync.Mutex
+		searchErr         error
+		resultCount       int
+		overLimitCanceled bool // canceled because we were over the limit
+	)
 	if mockSearchFilesInRepos != nil {
 		results, mockStats, err := mockSearchFilesInRepos(args)
 		stream <- SearchEvent{
@@ -348,13 +350,15 @@ func doSearchFilesInRepos(ctx context.Context, args *search.TextParameters, stre
 
 	tr, ctx := trace.New(ctx, "searchFilesInRepos", fmt.Sprintf("query: %s", args.PatternInfo.Pattern))
 	defer func() {
-		if finalErr != nil {
+		mu.Lock()
+		if searchErr != nil {
 			stream <- SearchEvent{
-				Error: finalErr,
+				Error: searchErr,
 			}
 		}
-		tr.SetError(finalErr)
+		tr.SetError(searchErr)
 		tr.Finish()
+		mu.Unlock()
 	}()
 	fields := querytypes.Fields(args.Query.Fields())
 	tr.LogFields(
@@ -385,19 +389,25 @@ func doSearchFilesInRepos(ctx context.Context, args *search.TextParameters, stre
 		var err error
 		indexed, err = newIndexedSearchRequest(ctx, args, indexedTyp)
 		if err != nil {
-			return err
+			mu.Lock()
+			searchErr = err
+			mu.Unlock()
+			return
 		}
 	}
 
 	// if there are no indexed repos and this is a structural search
 	// query, there will be no results. Raise a friendly alert.
 	if args.PatternInfo.IsStructuralPat && len(indexed.Repos()) == 0 {
-		return errors.New("no indexed repositories for structural search")
+		mu.Lock()
+		searchErr = errors.New("no indexed repositories for structural search")
+		mu.Unlock()
+		return
 	}
 
 	if args.PatternInfo.IsEmpty() {
 		// Empty query isn't an error, but it has no results.
-		return nil
+		return
 	}
 
 	tr.LazyPrintf("%d indexed repos, %d unindexed repos", len(indexed.Repos()), len(indexed.Unindexed))
@@ -433,14 +443,6 @@ func doSearchFilesInRepos(ctx context.Context, args *search.TextParameters, stre
 			}
 		}
 	}
-
-	var (
-		wg                sync.WaitGroup
-		mu                sync.Mutex
-		searchErr         error
-		resultCount       int
-		overLimitCanceled bool // canceled because we were over the limit
-	)
 
 	// send assumes the caller does not hold mu.
 	send := func(ctx context.Context, source fmt.Stringer, event SearchEvent) {
@@ -595,7 +597,24 @@ func doSearchFilesInRepos(ctx context.Context, args *search.TextParameters, stre
 		}()
 	}
 
-	if isStructuralSearch {
+	if isStructuralSearch && args.PatternInfo.CombyRule == `where "zoekt" == "zoekt"` {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			repos := make([]*search.RepositoryRevisions, 0, len(indexed.Repos()))
+			for _, repo := range indexed.Repos() {
+				repos = append(repos, repo)
+			}
+
+			err := callSearcherOverRepos(repos, nil)
+			if err != nil {
+				mu.Lock()
+				searchErr = err
+				mu.Unlock()
+			}
+		}()
+	} else if isStructuralSearch {
 		wg.Add(1)
 		go func() {
 			// TODO limitHit, handleRepoSearchResult
@@ -657,8 +676,6 @@ func doSearchFilesInRepos(ctx context.Context, args *search.TextParameters, stre
 	}
 
 	wg.Wait()
-
-	return searchErr
 }
 
 // limitSearcherRepos limits the number of repo@revs searched by the unindexed searcher codepath.

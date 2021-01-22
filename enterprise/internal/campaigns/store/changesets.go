@@ -818,6 +818,9 @@ func (s *Store) GetChangesetsStats(ctx context.Context, opts GetChangesetsStatsO
 	err = s.query(ctx, q, func(sc scanner) error {
 		if err := sc.Scan(
 			&stats.Total,
+			&stats.Retrying,
+			&stats.Failed,
+			&stats.Processing,
 			&stats.Unpublished,
 			&stats.Closed,
 			&stats.Draft,
@@ -839,13 +842,15 @@ const getChangesetStatsFmtstr = `
 -- source: enterprise/internal/campaigns/store_changesets.go:GetChangesetsStats
 SELECT
 	COUNT(*) AS total,
-	-- Include all changesets that aren't published yet and are not imported.
-	COUNT(*) FILTER (WHERE changesets.publication_state = 'UNPUBLISHED' AND current_spec_id IS NOT NULL) AS unpublished,
-	COUNT(*) FILTER (WHERE changesets.publication_state = 'PUBLISHED' AND changesets.external_state = 'CLOSED') AS closed,
-	COUNT(*) FILTER (WHERE changesets.publication_state = 'PUBLISHED' AND changesets.external_state = 'DRAFT') AS draft,
-	COUNT(*) FILTER (WHERE changesets.publication_state = 'PUBLISHED' AND changesets.external_state = 'MERGED') AS merged,
-	COUNT(*) FILTER (WHERE changesets.publication_state = 'PUBLISHED' AND changesets.external_state = 'OPEN') AS open,
-	COUNT(*) FILTER (WHERE changesets.publication_state = 'PUBLISHED' AND changesets.external_state = 'DELETED') AS deleted
+	COUNT(*) FILTER (WHERE changesets.reconciler_state = 'errored') AS retrying,
+	COUNT(*) FILTER (WHERE changesets.reconciler_state = 'failed') AS failed,
+	COUNT(*) FILTER (WHERE changesets.reconciler_state NOT IN ('failed', 'errored', 'completed')) AS processing,
+	COUNT(*) FILTER (WHERE changesets.publication_state = 'UNPUBLISHED' AND changesets.reconciler_state = 'completed') AS unpublished,
+	COUNT(*) FILTER (WHERE changesets.publication_state = 'PUBLISHED' AND changesets.reconciler_state = 'completed' AND changesets.external_state = 'CLOSED') AS closed,
+	COUNT(*) FILTER (WHERE changesets.publication_state = 'PUBLISHED' AND changesets.reconciler_state = 'completed' AND changesets.external_state = 'DRAFT') AS draft,
+	COUNT(*) FILTER (WHERE changesets.publication_state = 'PUBLISHED' AND changesets.reconciler_state = 'completed' AND changesets.external_state = 'MERGED') AS merged,
+	COUNT(*) FILTER (WHERE changesets.publication_state = 'PUBLISHED' AND changesets.reconciler_state = 'completed' AND changesets.external_state = 'OPEN') AS open,
+	COUNT(*) FILTER (WHERE changesets.publication_state = 'PUBLISHED' AND changesets.reconciler_state = 'completed' AND changesets.external_state = 'DELETED') AS deleted
 FROM changesets
 INNER JOIN repo on repo.id = changesets.repo_id
 WHERE

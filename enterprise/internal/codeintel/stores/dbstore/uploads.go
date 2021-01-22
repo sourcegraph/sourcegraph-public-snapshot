@@ -137,6 +137,14 @@ func (s *Store) GetUploadByID(ctx context.Context, id int) (_ Upload, _ bool, er
 	return scanFirstUpload(s.Store.Query(ctx, sqlf.Sprintf(getUploadByIDQuery, id)))
 }
 
+const uploadRankQueryFragment = `
+SELECT
+	r.id,
+	ROW_NUMBER() OVER (ORDER BY COALESCE(r.process_after, r.uploaded_at), r.id) as rank
+FROM lsif_uploads_with_repository_name r
+WHERE r.state = 'queued'
+`
+
 const getUploadByIDQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:GetUploadByID
 SELECT
@@ -161,11 +169,7 @@ SELECT
 	u.associated_index_id,
 	s.rank
 FROM lsif_uploads_with_repository_name u
-LEFT JOIN (
-	SELECT r.id, RANK() OVER (ORDER BY COALESCE(r.process_after, r.uploaded_at)) as rank
-	FROM lsif_uploads_with_repository_name r
-	WHERE r.state = 'queued'
-) s
+LEFT JOIN (` + uploadRankQueryFragment + `) s
 ON u.id = s.id
 WHERE u.state != 'deleted' AND u.id = %s
 `
@@ -293,11 +297,7 @@ SELECT
 	u.associated_index_id,
 	s.rank
 FROM lsif_uploads_with_repository_name u
-LEFT JOIN (
-	SELECT r.id, RANK() OVER (ORDER BY COALESCE(r.process_after, r.uploaded_at)) as rank
-	FROM lsif_uploads_with_repository_name r
-	WHERE r.state = 'queued'
-) s
+LEFT JOIN (` + uploadRankQueryFragment + `) s
 ON u.id = s.id
 WHERE %s ORDER BY %s LIMIT %d OFFSET %d
 `

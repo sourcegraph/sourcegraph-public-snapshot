@@ -2234,6 +2234,12 @@ type ExternalChangeset implements Node & Changeset {
     body: String
 
     """
+    The author of the changeset, or null if the data hasn't been synced from the code host yet,
+    or the changeset has not yet been published.
+    """
+    author: Person
+
+    """
     The publication state of the changeset.
     """
     publicationState: ChangesetPublicationState!
@@ -2331,6 +2337,18 @@ type ChangesetsStats {
     The count of externalState: DELETED changesets.
     """
     deleted: Int!
+    """
+    The count of changesets in retrying state.
+    """
+    retrying: Int!
+    """
+    The count of changesets in failed state.
+    """
+    failed: Int!
+    """
+    The count of changesets that are currently processing or enqueued to be.
+    """
+    processing: Int!
     """
     The count of all changesets.
     """

@@ -19,6 +19,8 @@ type DBStore interface {
 type GitserverClient interface {
 	Head(ctx context.Context, repositoryID int) (string, error)
 	ListFiles(ctx context.Context, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error)
+	FileExists(ctx context.Context, repositoryID int, commit, file string) (bool, error)
+	RawContents(ctx context.Context, repositoryID int, commit, file string) ([]byte, error)
 }
 
 type IndexEnqueuer interface {

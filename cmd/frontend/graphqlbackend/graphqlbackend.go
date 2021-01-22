@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -339,8 +340,9 @@ func prometheusGraphQLRequestName(requestName string) string {
 	return "other"
 }
 
-func NewSchema(campaigns CampaignsResolver, codeIntel CodeIntelResolver, insights InsightsResolver, authz AuthzResolver, codeMonitors CodeMonitorsResolver, license LicenseResolver) (*graphql.Schema, error) {
+func NewSchema(db dbutil.DB, campaigns CampaignsResolver, codeIntel CodeIntelResolver, insights InsightsResolver, authz AuthzResolver, codeMonitors CodeMonitorsResolver, license LicenseResolver) (*graphql.Schema, error) {
 	resolver := &schemaResolver{
+		db:                db,
 		CampaignsResolver: defaultCampaignsResolver{},
 		AuthzResolver:     defaultAuthzResolver{},
 		CodeIntelResolver: defaultCodeIntelResolver{},
@@ -566,6 +568,8 @@ type schemaResolver struct {
 	InsightsResolver
 	CodeMonitorsResolver
 	LicenseResolver
+
+	db dbutil.DB
 }
 
 // EnterpriseResolvers holds the instances of resolvers which are enabled only

@@ -377,6 +377,9 @@ type CampaignsConnectionResolver interface {
 }
 
 type ChangesetsStatsResolver interface {
+	Retrying() int32
+	Failed() int32
+	Processing() int32
 	Unpublished() int32
 	Draft() int32
 	Open() int32
@@ -434,6 +437,7 @@ type ExternalChangesetResolver interface {
 	ExternalID() *string
 	Title(context.Context) (*string, error)
 	Body(context.Context) (*string, error)
+	Author() (*PersonResolver, error)
 	ExternalURL() (*externallink.Resolver, error)
 	ReviewState(context.Context) *campaigns.ChangesetReviewState
 	CheckState() *campaigns.ChangesetCheckState

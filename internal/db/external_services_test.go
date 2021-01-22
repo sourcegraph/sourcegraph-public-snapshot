@@ -24,13 +24,14 @@ import (
 
 func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 	tests := []struct {
-		name            string
-		noNamespace     bool
-		namespaceUserID int32
-		kinds           []string
-		afterID         int64
-		wantQuery       string
-		wantArgs        []interface{}
+		name             string
+		noNamespace      bool
+		namespaceUserID  int32
+		kinds            []string
+		afterID          int64
+		wantQuery        string
+		onlyCloudDefault bool
+		wantArgs         []interface{}
 	}{
 		{
 			name:      "no condition",
@@ -66,14 +67,20 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 			wantQuery: "deleted_at IS NULL AND id < $1",
 			wantArgs:  []interface{}{int64(10)},
 		},
+		{
+			name:             "has OnlyCloudDefault",
+			onlyCloudDefault: true,
+			wantQuery:        "deleted_at IS NULL AND cloud_default = true",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			opts := ExternalServicesListOptions{
-				NoNamespace:     test.noNamespace,
-				NamespaceUserID: test.namespaceUserID,
-				Kinds:           test.kinds,
-				AfterID:         test.afterID,
+				NoNamespace:      test.noNamespace,
+				NamespaceUserID:  test.namespaceUserID,
+				Kinds:            test.kinds,
+				AfterID:          test.afterID,
+				OnlyCloudDefault: test.onlyCloudDefault,
 			}
 			q := sqlf.Join(opts.sqlConditions(), "AND")
 			if diff := cmp.Diff(test.wantQuery, q.Query(sqlf.PostgresBindVar)); diff != "" {
@@ -1046,7 +1053,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 	})
 }
 
-func TestExternalServicesStore_ValidateSingleGlobalConnection(t *testing.T) {
+func TestExternalServicesStore_OneCloudDefaultPerKind(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -1055,48 +1062,37 @@ func TestExternalServicesStore_ValidateSingleGlobalConnection(t *testing.T) {
 
 	now := time.Now()
 
-	makeService := func(global bool) *types.ExternalService {
+	makeService := func(cloudDefault bool) *types.ExternalService {
 		cfg := `{"url": "https://github.com", "token": "abc", "repositoryQuery": ["none"]}`
-		if global {
-			cfg = `{"url": "https://github.com", "token": "abc", "repositoryQuery": ["none"], "cloudGlobal": true}`
-		}
 		svc := &types.ExternalService{
-			Kind:        extsvc.KindGitHub,
-			DisplayName: "Github - Test",
-			Config:      cfg,
-			CreatedAt:   now,
-			UpdatedAt:   now,
+			Kind:         extsvc.KindGitHub,
+			DisplayName:  "Github - Test",
+			Config:       cfg,
+			CreatedAt:    now,
+			UpdatedAt:    now,
+			CloudDefault: cloudDefault,
 		}
 		return svc
 	}
 
-	t.Run("non global", func(t *testing.T) {
+	t.Run("non default", func(t *testing.T) {
 		gh := makeService(false)
 		if err := ExternalServices(db).Upsert(ctx, gh); err != nil {
 			t.Fatalf("Upsert error: %s", err)
 		}
-		if err := ExternalServices(db).validateSingleGlobalConnection(ctx, gh.ID, extsvc.KindGitHub); err != nil {
-			t.Fatal(err)
-		}
 	})
 
-	t.Run("first global", func(t *testing.T) {
+	t.Run("first default", func(t *testing.T) {
 		gh := makeService(true)
 		if err := ExternalServices(db).Upsert(ctx, gh); err != nil {
 			t.Fatalf("Upsert error: %s", err)
 		}
-		if err := ExternalServices(db).validateSingleGlobalConnection(ctx, gh.ID, extsvc.KindGitHub); err != nil {
-			t.Fatal(err)
-		}
 	})
 
-	t.Run("second global", func(t *testing.T) {
+	t.Run("second default", func(t *testing.T) {
 		gh := makeService(true)
-		if err := ExternalServices(db).Upsert(ctx, gh); err != nil {
-			t.Fatalf("Upsert error: %s", err)
-		}
-		if err := ExternalServices(db).validateSingleGlobalConnection(ctx, gh.ID, extsvc.KindGitHub); err == nil {
-			t.Fatal("Expected validation error")
+		if err := ExternalServices(db).Upsert(ctx, gh); err == nil {
+			t.Fatal("Expected an error")
 		}
 	})
 }

@@ -26,7 +26,7 @@ func TestRepo(t *testing.T, store *idb.ExternalServiceStore, serviceKind string)
 	svc := types.ExternalService{
 		Kind:        serviceKind,
 		DisplayName: serviceKind + " - Test",
-		Config:      `{"url": "https://github.com"}`,
+		Config:      `{"url": "https://github.com", "authorization": {}}`,
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}

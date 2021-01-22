@@ -241,6 +241,7 @@ func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request) (matche
 			IsWordMatch:                  p.IsWordMatch,
 			IsCaseSensitive:              p.IsCaseSensitive,
 			FileMatchLimit:               int32(fileMatchLimit),
+			IncludePatterns:              p.IncludePatterns,
 			ExcludePattern:               p.ExcludePattern,
 			PathPatternsAreCaseSensitive: p.PathPatternsAreCaseSensitive,
 			PatternMatchesContent:        p.PatternMatchesContent,
@@ -266,7 +267,12 @@ func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request) (matche
 		return nil, false, false, err
 	}
 
-	matches, limitHit, err = structuralSearch(ctx, zipFile.Name(), p.Pattern, p.CombyRule, p.Languages, nil, p.Repo)
+	includePatterns := make([]string, len(zoektMatches))
+	for i, match := range zoektMatches {
+		includePatterns[i] = match.FileName
+	}
+
+	matches, limitHit, err = structuralSearch(ctx, zipFile.Name(), p.Pattern, p.CombyRule, p.Languages, includePatterns, p.Repo)
 	return matches, limitHit, false, err
 }
 

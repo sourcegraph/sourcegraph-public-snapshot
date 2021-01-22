@@ -86,10 +86,20 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                 {node.reviewState && <ChangesetReviewStatusCell reviewState={node.reviewState} className="mr-3" />}
                 {node.diffStat && <DiffStat {...node.diffStat} expandedCounts={true} separateLines={true} />}
             </div>
-            <span className={classNames('align-self-stretch d-none d-md-flex', node.checkState && 'p-2')}>
+            <span
+                className={classNames(
+                    'align-self-stretch d-none d-md-flex justify-content-center',
+                    node.checkState && 'p-2'
+                )}
+            >
                 {node.checkState && <ChangesetCheckStatusCell checkState={node.checkState} />}
             </span>
-            <span className={classNames('align-self-stretch d-none d-md-flex', node.reviewState && 'p-2')}>
+            <span
+                className={classNames(
+                    'align-self-stretch d-none d-md-flex justify-content-center',
+                    node.reviewState && 'p-2'
+                )}
+            >
                 {node.reviewState && <ChangesetReviewStatusCell reviewState={node.reviewState} />}
             </span>
             <div

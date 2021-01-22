@@ -38,6 +38,12 @@ add('List view', () => (
             <PreviewList
                 {...props}
                 campaignSpecID="123123"
+                authenticatedUser={{
+                    url: '/users/alice',
+                    displayName: 'Alice',
+                    username: 'alice',
+                    email: 'alice@email.test',
+                }}
                 queryChangesetApplyPreview={queryChangesetApplyPreview}
                 queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
             />

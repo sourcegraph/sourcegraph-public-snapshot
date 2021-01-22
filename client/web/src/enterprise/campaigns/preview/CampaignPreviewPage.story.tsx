@@ -142,7 +142,12 @@ add('Create', () => (
                 fetchCampaignSpecById={fetchCampaignSpecCreate}
                 queryChangesetApplyPreview={queryChangesetApplyPreview}
                 queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
-                authenticatedUser={{ url: '/users/alice' }}
+                authenticatedUser={{
+                    url: '/users/alice',
+                    displayName: 'Alice',
+                    username: 'alice',
+                    email: 'alice@email.test',
+                }}
             />
         )}
     </EnterpriseWebStory>
@@ -158,7 +163,12 @@ add('Update', () => (
                 fetchCampaignSpecById={fetchCampaignSpecUpdate}
                 queryChangesetApplyPreview={queryChangesetApplyPreview}
                 queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
-                authenticatedUser={{ url: '/users/alice' }}
+                authenticatedUser={{
+                    url: '/users/alice',
+                    displayName: 'Alice',
+                    username: 'alice',
+                    email: 'alice@email.test',
+                }}
             />
         )}
     </EnterpriseWebStory>
@@ -174,7 +184,12 @@ add('Missing credentials', () => (
                 fetchCampaignSpecById={fetchCampaignSpecMissingCredentials}
                 queryChangesetApplyPreview={queryChangesetApplyPreview}
                 queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
-                authenticatedUser={{ url: '/users/alice' }}
+                authenticatedUser={{
+                    url: '/users/alice',
+                    displayName: 'Alice',
+                    username: 'alice',
+                    email: 'alice@email.test',
+                }}
             />
         )}
     </EnterpriseWebStory>
@@ -190,7 +205,12 @@ add('No changesets', () => (
                 fetchCampaignSpecById={fetchCampaignSpecCreate}
                 queryChangesetApplyPreview={queryEmptyChangesetApplyPreview}
                 queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
-                authenticatedUser={{ url: '/users/alice' }}
+                authenticatedUser={{
+                    url: '/users/alice',
+                    displayName: 'Alice',
+                    username: 'alice',
+                    email: 'alice@email.test',
+                }}
             />
         )}
     </EnterpriseWebStory>

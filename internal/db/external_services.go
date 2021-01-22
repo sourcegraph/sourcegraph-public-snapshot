@@ -103,8 +103,8 @@ type ExternalServiceKind struct {
 type ExternalServicesListOptions struct {
 	// When specified, only include external services with the given IDs.
 	IDs []int64
-	// When true, only include external services not under any namespace (i.e. owned by all site admins),
-	// and value of NamespaceUserID is ignored.
+	// When true, only include external services not under any namespace (i.e. owned
+	// by all site admins), and value of NamespaceUserID is ignored.
 	NoNamespace bool
 	// When specified, only include external services under given user namespace.
 	NamespaceUserID int32
@@ -115,6 +115,10 @@ type ExternalServicesListOptions struct {
 	AfterID int64
 	// Possible values are ASC or DESC. Defaults to DESC.
 	OrderByDirection string
+	// When true, will only return services that have the cloud_default flag set to
+	// true.
+	OnlyCloudDefault bool
+
 	*LimitOffset
 }
 
@@ -141,6 +145,9 @@ func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 	}
 	if o.AfterID > 0 {
 		conds = append(conds, sqlf.Sprintf(`id < %d`, o.AfterID))
+	}
+	if o.OnlyCloudDefault {
+		conds = append(conds, sqlf.Sprintf("cloud_default = true"))
 	}
 	return conds
 }
@@ -306,11 +313,6 @@ func (e *ExternalServiceStore) validateGitHubConnection(ctx context.Context, id 
 
 	err = multierror.Append(err, e.validateDuplicateRateLimits(ctx, id, extsvc.KindGitHub, c))
 
-	if envvar.SourcegraphDotComMode() && c.CloudGlobal {
-		// We're setting this one to global, make sure it's the only one
-		err = multierror.Append(err, e.validateSingleGlobalConnection(ctx, id, extsvc.KindGitHub))
-	}
-
 	return err.ErrorOrNil()
 }
 
@@ -321,11 +323,6 @@ func (e *ExternalServiceStore) validateGitLabConnection(ctx context.Context, id 
 	}
 
 	err = multierror.Append(err, e.validateDuplicateRateLimits(ctx, id, extsvc.KindGitLab, c))
-
-	if envvar.SourcegraphDotComMode() && c.CloudGlobal {
-		// We're setting this one to global, make sure it's the only one
-		err = multierror.Append(err, e.validateSingleGlobalConnection(ctx, id, extsvc.KindGitLab))
-	}
 
 	return err.ErrorOrNil()
 }
@@ -347,52 +344,6 @@ func (e *ExternalServiceStore) validateBitbucketServerConnection(ctx context.Con
 
 func (e *ExternalServiceStore) validateBitbucketCloudConnection(ctx context.Context, id int64, c *schema.BitbucketCloudConnection) error {
 	return e.validateDuplicateRateLimits(ctx, id, extsvc.KindBitbucketCloud, c)
-}
-
-// validateSingleGlobalConnection returns an error if more than one external service for the given kind has its
-// CloudGlobal flag set.
-func (e *ExternalServiceStore) validateSingleGlobalConnection(ctx context.Context, id int64, kind string) error {
-	opt := ExternalServicesListOptions{
-		Kinds: []string{kind},
-		// We only care about site admin external services
-		NoNamespace: true,
-		LimitOffset: &LimitOffset{
-			Limit: 500, // The number is randomly chosen
-		},
-	}
-	for {
-		svcs, err := e.List(ctx, opt)
-		if err != nil {
-			return errors.Wrap(err, "list")
-		}
-		if len(svcs) == 0 {
-			// No more results, exiting
-			return nil
-		}
-		opt.AfterID = svcs[len(svcs)-1].ID // Advance the cursor
-
-		for _, svc := range svcs {
-			c, err := extsvc.ParseConfig(svc.Kind, svc.Config)
-			if err != nil {
-				return errors.Wrap(err, "parsing config")
-			}
-			var storedIsGlobal bool
-			switch x := c.(type) {
-			case *schema.GitHubConnection:
-				storedIsGlobal = x.CloudGlobal
-			case *schema.GitLabConnection:
-				storedIsGlobal = x.CloudGlobal
-			}
-			if svc.ID != id && storedIsGlobal {
-				return fmt.Errorf("existing external service, %q, already set as global", svc.DisplayName)
-			}
-		}
-
-		if len(svcs) < opt.Limit {
-			break // Less results than limit means we've reached end
-		}
-	}
-	return nil
 }
 
 // validateDuplicateRateLimits returns an error if given config has duplicated non-default rate limit

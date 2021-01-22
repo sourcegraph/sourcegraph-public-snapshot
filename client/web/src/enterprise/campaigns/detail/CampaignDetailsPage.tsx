@@ -19,7 +19,7 @@ import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 import { CampaignFields, Scalars } from '../../../graphql-operations'
-import { CampaignDescription } from './CampaignDescription'
+import { Description } from '../Description'
 import { CampaignStatsCard } from './CampaignStatsCard'
 import { CampaignHeader } from './CampaignHeader'
 import { CampaignTabs } from './CampaignTabs'
@@ -133,7 +133,7 @@ export const CampaignDetailsPage: React.FunctionComponent<CampaignDetailsPagePro
                 className="mb-3"
             />
             <CampaignStatsCard closedAt={campaign.closedAt} stats={campaign.changesetsStats} className="mb-3" />
-            <CampaignDescription history={history} description={campaign.description} />
+            <Description history={history} description={campaign.description} />
             <CampaignTabs
                 campaign={campaign}
                 extensionsController={extensionsController}
