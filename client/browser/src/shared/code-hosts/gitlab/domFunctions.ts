@@ -19,7 +19,7 @@ export const singleFileDOMFunctions: DOMFunctions = {
 const getDiffCodePart: DOMFunctions['getDiffCodePart'] = codeElement => {
     let selector = 'old'
 
-    const row = codeElement.closest('td')!
+    const row = codeElement.closest('.diff-td,td')!
 
     // Split diff
     if (row.classList.contains('parallel')) {
@@ -37,7 +37,7 @@ const getDiffCodeElementFromLineNumber = (codeView: HTMLElement, line: number, p
         return null
     }
 
-    const row = lineNumberElement.closest('tr')
+    const row = lineNumberElement.closest('.diff-tr,tr')
     if (!row) {
         return null
     }
@@ -57,7 +57,7 @@ export const diffDOMFunctions: DOMFunctions = {
     getLineNumberFromCodeElement: codeElement => {
         const part = getDiffCodePart(codeElement)
 
-        let cell: HTMLElement | null = codeElement.closest('td')
+        let cell: HTMLElement | null = codeElement.closest('.diff-td,td')
         while (
             cell &&
             !cell.matches(`.diff-line-num.${part === 'base' ? 'old_line' : 'new_line'}`) &&
