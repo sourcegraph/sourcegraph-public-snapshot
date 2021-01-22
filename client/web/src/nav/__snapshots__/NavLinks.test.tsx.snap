@@ -18,7 +18,7 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
     class="nav-item"
   >
     <div
-      class="btn-group"
+      class="menu-nav-items btn-group"
     >
       <a
         aria-expanded="false"
@@ -436,7 +436,7 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
     class="nav-item"
   >
     <div
-      class="btn-group"
+      class="menu-nav-items btn-group"
     >
       <a
         aria-expanded="false"
@@ -864,7 +864,7 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
     class="nav-item"
   >
     <div
-      class="btn-group"
+      class="menu-nav-items btn-group"
     >
       <a
         aria-expanded="false"
@@ -1263,7 +1263,7 @@ exports[`NavLinks authed self-hosted /search 1`] = `
     class="nav-item"
   >
     <div
-      class="btn-group"
+      class="menu-nav-items btn-group"
     >
       <a
         aria-expanded="false"
@@ -1672,7 +1672,7 @@ exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
     class="nav-item"
   >
     <div
-      class="btn-group"
+      class="menu-nav-items btn-group"
     >
       <a
         aria-expanded="false"
@@ -1834,7 +1834,7 @@ exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
     class="nav-item"
   >
     <div
-      class="btn-group"
+      class="menu-nav-items btn-group"
     >
       <a
         aria-expanded="false"
@@ -2006,7 +2006,7 @@ exports[`NavLinks unauthed self-hosted /foo 1`] = `
     class="nav-item"
   >
     <div
-      class="btn-group"
+      class="menu-nav-items btn-group"
     >
       <a
         aria-expanded="false"
@@ -2156,7 +2156,7 @@ exports[`NavLinks unauthed self-hosted /search 1`] = `
     class="nav-item"
   >
     <div
-      class="btn-group"
+      class="menu-nav-items btn-group"
     >
       <a
         aria-expanded="false"
