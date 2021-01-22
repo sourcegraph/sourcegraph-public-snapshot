@@ -12,7 +12,7 @@ fi
 
 IMAGE=sourcegraph/codeinsights-db:dev
 CONTAINER=codeinsights-db
-PORT=3370
+PORT=5435
 
 docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
 
@@ -55,6 +55,6 @@ docker run --rm \
   --cpus=1 \
   --memory=1g \
   -e POSTGRES_PASSWORD=password \
-  -p 0.0.0.0:5435:5435 \
+  -p 0.0.0.0:${PORT}:5432 \
   -v "${DISK}":/var/lib/postgresql/data \
   ${IMAGE} >"${LOG_FILE}" 2>&1 || finish
