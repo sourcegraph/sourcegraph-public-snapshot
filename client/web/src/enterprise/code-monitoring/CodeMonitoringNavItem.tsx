@@ -1,11 +1,11 @@
 import React from 'react'
-import { LinkWithIconOnlyTooltip } from '../../components/LinkWithIconOnlyTooltip'
+import { LinkWithIcon } from '../../components/LinkWithIcon'
 import { CodeMonitoringLogo } from './CodeMonitoringLogo'
 
 export const CodeMonitoringNavItem: React.FunctionComponent = () => (
-    <LinkWithIconOnlyTooltip
+    <LinkWithIcon
         to="/code-monitoring"
-        text="Monitoring Code to see the future"
+        text="Monitoring"
         icon={CodeMonitoringLogo}
         className="nav-link btn btn-link px-1 text-decoration-none"
         activeClassName="active"

@@ -19,7 +19,7 @@ export const MenuNavItem: React.FunctionComponent<MenuNavItemProps> = props => {
                 <MenuIcon className="icon-inline" />
                 {isOpen ? <MenuUpIcon className="icon-inline" /> : <MenuDownIcon className="icon-inline" />}
             </DropdownToggle>
-            <DropdownMenu>
+            <DropdownMenu className="menu-nav-items__dropdown-menu">
                 {React.Children.map(children, child => child && <DropdownItem>{child}</DropdownItem>)}
             </DropdownMenu>
         </ButtonDropdown>

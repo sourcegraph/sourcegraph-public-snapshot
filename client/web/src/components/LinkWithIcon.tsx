@@ -6,7 +6,7 @@ import { kebabCase } from 'lodash'
  * A link that shows a icon with a given text.
  *
  */
-export const LinkWithIconOnlyTooltip: React.FunctionComponent<{
+export const LinkWithIcon: React.FunctionComponent<{
     to: string
     text: string
     icon: React.ComponentType<{ className?: string }>

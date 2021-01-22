@@ -69,7 +69,6 @@ export class NavLinks extends React.PureComponent<Props> {
                         <ActivationDropdown activation={this.props.activation} history={this.props.history} />
                     </li>
                 )}
-                {/* New dropdown */}
                 <li>
                     <MenuNavItem>
                         {!isErrorLike(this.props.settingsCascade.final) &&

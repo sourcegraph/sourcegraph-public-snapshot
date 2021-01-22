@@ -1,0 +1,9 @@
+.menu-nav-items {
+    &__dropdown-menu {
+        min-width: 8rem;
+        transform: translate3d(-70px, 36px, 0px) !important;
+        @media (max-width: $media-sm) {
+            transform: translate3d(-10px, 36px, 0px) !important;
+        }
+    }
+}
