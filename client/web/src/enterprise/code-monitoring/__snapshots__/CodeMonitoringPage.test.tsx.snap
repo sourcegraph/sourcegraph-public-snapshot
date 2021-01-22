@@ -71,7 +71,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                   className="d-flex align-items-center"
                 >
                   <span
-                    className="badge badge-warning text-white text-uppercase mr-2"
+                    className="badge badge-warning text-uppercase mr-2"
                   >
                     prototype
                   </span>
@@ -1723,7 +1723,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                   className="d-flex align-items-center"
                 >
                   <span
-                    className="badge badge-warning text-white text-uppercase mr-2"
+                    className="badge badge-warning text-uppercase mr-2"
                   >
                     prototype
                   </span>
@@ -2416,7 +2416,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                   className="d-flex align-items-center"
                 >
                   <span
-                    className="badge badge-warning text-white text-uppercase mr-2"
+                    className="badge badge-warning text-uppercase mr-2"
                   >
                     prototype
                   </span>

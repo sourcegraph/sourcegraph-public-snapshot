@@ -3,7 +3,7 @@ import React from 'react'
 type Status = 'beta' | 'prototype'
 
 const statusStyleMapping: Record<Status, string> = {
-    prototype: 'badge-warning text-white',
+    prototype: 'badge-warning',
     beta: 'badge-info',
 }
 
