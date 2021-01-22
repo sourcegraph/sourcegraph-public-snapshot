@@ -203,7 +203,8 @@ const GitLabSchemaJSON = `{
       "title": "CloudGlobal",
       "description": "When set to true, this external service will be chosen as our 'Global' GitLab service. Only valid on Sourcegraph.com. Only one service can have this flag set.",
       "type": "boolean",
-      "default": false
+      "default": false,
+      "deprecationMessage": "DEPRECATED: The cloud_default flag should be set in the database instead"
     }
   },
   "definitions": {
