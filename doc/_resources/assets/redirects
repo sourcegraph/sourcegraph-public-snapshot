@@ -140,6 +140,7 @@
 /user/search/saved_searches /code_search/how-to/saved_searches 308
 /user/search/scopes /code_search/how-to/scopes 308
 
+/user/code_intelligence/lsif_quickstart /user/code_intelligence/how-to/index_other_languages 308
 /user/code_intelligence/basic_code_intelligence /user/code_intelligence/explanations/search_based_code_intelligence 308
 /user/code_intelligence/features    /user/code_intelligence/explanations/features 308
 /user/code_intelligence/lsif   /user/code_intelligence/explanations/precise_code_intelligence 308
