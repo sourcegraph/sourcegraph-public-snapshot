@@ -12,6 +12,9 @@ import { DiffStat } from '../../../../components/diff/DiffStat'
 import { PreviewActions } from './PreviewActions'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
+import CardTextOutlineIcon from 'mdi-react/CardTextOutlineIcon'
+import FileDocumentEditOutlineIcon from 'mdi-react/FileDocumentEditOutlineIcon'
+import AccountEditIcon from 'mdi-react/AccountEditIcon'
 import { FileDiffConnection } from '../../../../components/diff/FileDiffConnection'
 import { FileDiffNode } from '../../../../components/diff/FileDiffNode'
 import { FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
@@ -85,7 +88,27 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
                     </div>
                 </div>
             </div>
-            <div className="visible-changeset-apply-preview-node__list-cell d-flex justify-content-center align-content-center align-self-stretch">
+            <div className="d-flex justify-content-center align-content-center align-self-stretch">
+                {node.delta.commitMessageChanged && (
+                    <div className="d-flex justify-content-center align-items-center flex-column mx-1 visible-changeset-apply-preview-node__commit-change-entry">
+                        <CardTextOutlineIcon data-tooltip="The commit message changed" className="icon-inline" />
+                        <span className="text-nowrap">Commit msg</span>
+                    </div>
+                )}
+                {node.delta.diffChanged && (
+                    <div className="d-flex justify-content-center align-items-center flex-column mx-1 visible-changeset-apply-preview-node__commit-change-entry">
+                        <FileDocumentEditOutlineIcon data-tooltip="The diff changed" className="icon-inline" />
+                        <span className="text-nowrap">Diff</span>
+                    </div>
+                )}
+                {(node.delta.authorNameChanged || node.delta.authorEmailChanged) && (
+                    <div className="d-flex justify-content-center align-items-center flex-column mx-1 visible-changeset-apply-preview-node__commit-change-entry">
+                        <AccountEditIcon data-tooltip="The commit author details changed" className="icon-inline" />
+                        <span className="text-nowrap">Author</span>
+                    </div>
+                )}
+            </div>
+            <div className="visible-changeset-apply-preview-node__list-cell d-flex justify-content-center align-items-center align-self-stretch">
                 <ApplyDiffStat spec={node} />
             </div>
             {/* The button for expanding the information used on xs devices. */}

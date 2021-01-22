@@ -49,9 +49,7 @@ export const GitBranchChangesetDescriptionInfo: React.FunctionComponent<Props> =
                                 </DeletedEntry>
                                 {previousCommit.body && (
                                     <DeletedEntry deleted={node.delta.commitMessageChanged}>
-                                        <p>
-                                            <pre className="text-wrap mb-0">{previousCommit.body}</pre>
-                                        </p>
+                                        <pre className="text-wrap">{previousCommit.body}</pre>
                                     </DeletedEntry>
                                 )}
                             </div>
@@ -70,11 +68,7 @@ export const GitBranchChangesetDescriptionInfo: React.FunctionComponent<Props> =
                 </div>
                 <div>
                     <h3>{commit.subject}</h3>
-                    {commit.body && (
-                        <p>
-                            <pre className="text-wrap mb-0">{commit.body}</pre>
-                        </p>
-                    )}
+                    {commit.body && <pre className="text-wrap">{commit.body}</pre>}
                 </div>
             </div>
         </>
