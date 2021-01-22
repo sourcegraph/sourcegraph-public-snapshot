@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -81,6 +82,18 @@ func main() {
 				return info.CloneURL, nil
 			}
 			return "", fmt.Errorf("no sources for %q", repo)
+		},
+		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (server.VCSSyncer, error) {
+			r, err := repoStore.GetByName(ctx, repo)
+			if err != nil {
+				return nil, errors.Wrap(err, "get repository")
+			}
+
+			switch r.ExternalRepo.ServiceType {
+			case extsvc.TypePerforce:
+				return &server.PerforceDepotSyncer{}, nil
+			}
+			return &server.GitRepoSyncer{}, nil
 		},
 	}
 	gitserver.RegisterMetrics()

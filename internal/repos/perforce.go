@@ -50,6 +50,10 @@ func (s PerforceSource) makeRepo(depot string) *types.Repo {
 	}
 	name := strings.Trim(depot, "/")
 	urn := s.svc.URN()
+
+	// e.g. perforce://admin:password@ssl:111.222.333.444:1666//Sourcegraph/
+	cloneURL := fmt.Sprintf("perforce://%s:%s@%s%s", s.config.P4User, s.config.P4Passwd, s.config.P4Port, depot)
+
 	return &types.Repo{
 		Name: api.RepoName(name),
 		URI:  name,
@@ -62,7 +66,7 @@ func (s PerforceSource) makeRepo(depot string) *types.Repo {
 		Sources: map[string]*types.SourceInfo{
 			urn: {
 				ID:       urn,
-				CloneURL: "perforce:" + depot, // e.g. perforce://Sourcegraph/
+				CloneURL: cloneURL,
 			},
 		},
 		Metadata: map[string]interface{}{
