@@ -88,14 +88,6 @@ func (p *mockProvider) FetchRepoPerms(ctx context.Context, repo *extsvc.Reposito
 	return p.fetchRepoPerms(ctx, repo)
 }
 
-type mockReposLister struct {
-	list func(context.Context, db.ReposListOptions) ([]*types.Repo, error)
-}
-
-func (s *mockReposLister) List(ctx context.Context, args db.ReposListOptions) ([]*types.Repo, error) {
-	return s.list(ctx, args)
-}
-
 func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	p := &mockProvider{
 		serviceType: extsvc.TypeGitLab,
