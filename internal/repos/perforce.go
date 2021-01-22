@@ -6,8 +6,6 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/pkg/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
@@ -58,22 +56,6 @@ func composePerforceCloneURL(username, password, host, depot string) string {
 		Path:   depot,
 	}
 	return cloneURL.String()
-}
-
-// DecomposePerforceCloneURL decomposes information back from a clone URL for a
-// Perforce depot.
-func DecomposePerforceCloneURL(cloneURL string) (username, password, host, depot string, err error) {
-	url, err := url.Parse(cloneURL)
-	if err != nil {
-		return "", "", "", "", err
-	}
-
-	if url.Scheme != "perforce" {
-		return "", "", "", "", errors.New(`scheme is not "perforce"`)
-	}
-
-	password, _ = url.User.Password()
-	return url.User.Username(), password, url.Host, url.Path, nil
 }
 
 func (s PerforceSource) makeRepo(depot string) *types.Repo {

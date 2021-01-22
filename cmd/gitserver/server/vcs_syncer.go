@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"os"
 	"os/exec"
 	"strings"
@@ -12,7 +13,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 )
 
 // VCSSyncer describes whether and how to sync content from a VCS remote to
@@ -101,9 +101,25 @@ func (s *GitRepoSyncer) RemoteShowCommand(ctx context.Context, url string) (cmd 
 // PerforceDepotSyncer is a syncer for Perforce depots.
 type PerforceDepotSyncer struct{}
 
+// decomposePerforceCloneURL decomposes information back from a clone URL for a
+// Perforce depot.
+func decomposePerforceCloneURL(cloneURL string) (username, password, host, depot string, err error) {
+	url, err := url.Parse(cloneURL)
+	if err != nil {
+		return "", "", "", "", err
+	}
+
+	if url.Scheme != "perforce" {
+		return "", "", "", "", errors.New(`scheme is not "perforce"`)
+	}
+
+	password, _ = url.User.Password()
+	return url.User.Username(), password, url.Host, url.Path, nil
+}
+
 // IsCloneable checks to see if the Perforce remote URL is cloneable.
 func (s *PerforceDepotSyncer) IsCloneable(ctx context.Context, url string) error {
-	username, password, host, _, err := repos.DecomposePerforceCloneURL(url)
+	username, password, host, _, err := decomposePerforceCloneURL(url)
 	if err != nil {
 		return errors.Wrap(err, "decompose")
 	}
@@ -134,7 +150,7 @@ func (s *PerforceDepotSyncer) IsCloneable(ctx context.Context, url string) error
 
 // CloneCommand returns the command to be executed for cloning a Perforce depot as a Git repository.
 func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, url, tmpPath string) (*exec.Cmd, error) {
-	username, password, host, depot, err := repos.DecomposePerforceCloneURL(url)
+	username, password, host, depot, err := decomposePerforceCloneURL(url)
 	if err != nil {
 		return nil, errors.Wrap(err, "decompose")
 	}
@@ -151,7 +167,7 @@ func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, url, tmpPath str
 
 // FetchCommand returns the command to be executed for fetching updates of a Perforce depot as a Git repository.
 func (s *PerforceDepotSyncer) FetchCommand(ctx context.Context, url string) (cmd *exec.Cmd, configRemoteOpts bool, err error) {
-	username, password, host, _, err := repos.DecomposePerforceCloneURL(url)
+	username, password, host, _, err := decomposePerforceCloneURL(url)
 	if err != nil {
 		return nil, false, errors.Wrap(err, "decompose")
 	}
