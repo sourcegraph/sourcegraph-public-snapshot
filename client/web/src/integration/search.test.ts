@@ -217,6 +217,8 @@ describe('Search', () => {
             await driver.page.waitForSelector('#monaco-query-input')
             expect(await getSearchFieldValue(driver)).toStrictEqual('foo')
             // Field value is cleared when navigating to a non search-related page
+            await driver.page.waitForSelector('.menu-nav-items')
+            await driver.page.click('.menu-nav-items')
             await driver.page.waitForSelector('[data-testid="campaigns"]')
             await driver.page.click('[data-testid="campaigns"]')
             expect(await getSearchFieldValue(driver)).toStrictEqual('')
