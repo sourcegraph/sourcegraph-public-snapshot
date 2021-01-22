@@ -66,7 +66,19 @@ func Commands(t *testing.T, exp ...*Expectation) {
 
 		// Create the command using the next level of middleware. (Which is
 		// probably eventually os/exec.CommandContext().)
-		cmd := previous(ctx, name, arg...)
+		//
+		// The prepending of ./ to the command name looks completely insane, but
+		// there's a reason for it: if the name is a bare string like `docker`,
+		// then Go will attempt to resolve it using $PATH. If the command
+		// doesn't exist (because, say, we're running it in CI), then an error
+		// is embedded within the *Cmd that will be returned when it is run,
+		// even if we've subsequently rewritten the Path and Args fields to be
+		// valid.
+		//
+		// Prepending ./ means that Go doesn't need to look the command up in
+		// the $PATH and no error can be generated that way. Since we're going
+		// to overwrite the Path momentarily anyway, that's fine.
+		cmd := previous(ctx, "./"+name, arg...)
 		if cmd == nil {
 			t.Fatalf("unexpected nil *Cmd for %q with arguments %v", name, arg)
 		}
