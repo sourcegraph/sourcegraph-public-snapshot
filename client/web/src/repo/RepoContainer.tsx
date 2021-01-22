@@ -142,6 +142,8 @@ export interface ExtensionAlertProps {
     onExtensionAlertDismissed: () => void
 }
 
+const hasPathPrefix = (path: string, prefix: string): boolean => path.startsWith(`${prefix}/`) || path === prefix
+
 /**
  * Renders a horizontal bar and content for a repository page.
  */
@@ -387,6 +389,8 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         onDidUpdateExternalLinks: setExternalLinks,
     }
 
+    const hideCodeHostAction = rawRevision ? hasPathPrefix(props.location.pathname, `${repoMatchURL}@${rawRevision}/-/symbols`) : hasPathPrefix(props.location.pathname, `${repoMatchURL}/-/symbols`)
+
     return (
         <div className="repo-container test-repo-container w-100 d-flex flex-column">
             {showExtensionAlert && (
@@ -406,27 +410,29 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                 onLifecyclePropsChange={setRepoHeaderContributionsLifecycleProps}
                 isAlertDisplayed={showExtensionAlert}
             />
-            <RepoHeaderContributionPortal
-                position="right"
-                priority={2}
-                {...repoHeaderContributionsLifecycleProps}
-                element={
-                    <GoToCodeHostAction
-                        key="go-to-code-host"
-                        repo={repoOrError}
-                        // We need a revision to generate code host URLs, if revision isn't available, we use the default branch or HEAD.
-                        revision={rawRevision || repoOrError.defaultBranch?.displayName || 'HEAD'}
-                        filePath={filePath}
-                        commitRange={commitRange}
-                        position={position}
-                        range={range}
-                        externalLinks={externalLinks}
-                        fetchFileExternalLinks={fetchFileExternalLinks}
-                        canShowPopover={canShowPopover}
-                        onPopoverDismissed={onPopoverDismissed}
-                    />
-                }
-            />
+            {!hideCodeHostAction &&
+                <RepoHeaderContributionPortal
+                    position="right"
+                    priority={2}
+                    {...repoHeaderContributionsLifecycleProps}
+                    element={
+                        <GoToCodeHostAction
+                            key="go-to-code-host"
+                            repo={repoOrError}
+                            // We need a revision to generate code host URLs, if revision isn't available, we use the default branch or HEAD.
+                            revision={rawRevision || repoOrError.defaultBranch?.displayName || 'HEAD'}
+                            filePath={filePath}
+                            commitRange={commitRange}
+                            position={position}
+                            range={range}
+                            externalLinks={externalLinks}
+                            fetchFileExternalLinks={fetchFileExternalLinks}
+                            canShowPopover={canShowPopover}
+                            onPopoverDismissed={onPopoverDismissed}
+                        />
+                    }
+                />
+            }
             <ErrorBoundary location={props.location}>
                 <Switch>
                     {/* eslint-disable react/jsx-no-bind */}
