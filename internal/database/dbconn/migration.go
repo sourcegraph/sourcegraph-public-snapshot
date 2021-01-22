@@ -22,6 +22,7 @@ import (
 // the raw migration assets to run to migrate the target schema to a new version.
 var databases = map[string]struct {
 	MigrationsTable string
+	TimescaleDB     bool
 	Resource        *bindata.AssetSource
 }{
 	"frontend": {
@@ -33,18 +34,21 @@ var databases = map[string]struct {
 		Resource:        bindata.Resource(codeintelMigrations.AssetNames(), codeintelMigrations.Asset),
 	},
 	"codeinsights": {
+		TimescaleDB:     true,
 		MigrationsTable: "codeinsights_schema_migrations",
 		Resource:        bindata.Resource(codeinsightsMigrations.AssetNames(), codeinsightsMigrations.Asset),
 	},
 }
 
-// DatabaseNames returns the list of database names (configured via `dbutil.databases`)..
-var DatabaseNames = func() []string {
+// PostgresDatabaseNames is the list of database names (configured via `dbutil.databases`) that are
+// vanilla Postgres (not TimescaleDB).
+var PostgresDatabaseNames = func() []string {
 	var names []string
-	for databaseName := range databases {
-		names = append(names, databaseName)
+	for databaseName, info := range databases {
+		if !info.TimescaleDB {
+			names = append(names, databaseName)
+		}
 	}
-
 	return names
 }()
 

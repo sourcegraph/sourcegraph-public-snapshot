@@ -159,7 +159,7 @@ func initTest(nameSuffix string) error {
 		return err
 	}
 
-	for _, databaseName := range dbconn.DatabaseNames {
+	for _, databaseName := range dbconn.PostgresDatabaseNames {
 		if err := dbconn.MigrateDB(dbconn.Global, databaseName); err != nil {
 			return err
 		}
