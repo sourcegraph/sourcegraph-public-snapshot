@@ -32,6 +32,7 @@ import { FileLocations } from '../../../../branded/src/components/panel/views/Fi
 import { SymbolsSidebarContainerSymbolGQLFragment } from './SymbolsSidebar'
 import { SymbolActions, SymbolActionsGQLFragment } from './SymbolActions'
 import { SymbolStatsSummary } from './SymbolStatsSummary'
+import { VersionContextProps } from '../../../../shared/src/search/util'
 
 const SymbolPageSymbolGQLFragment = gql`
     fragment SymbolPageSymbolFields on ExpSymbol {
@@ -129,7 +130,8 @@ interface Props
     BreadcrumbSetters,
     SettingsCascadeProps,
     SymbolsSidebarOptionsSetterProps,
-    SymbolsViewOptionsProps {
+    SymbolsViewOptionsProps,
+    VersionContextProps {
     isLightTheme: boolean
 }
 
@@ -256,7 +258,7 @@ export const SymbolPage: React.FunctionComponent<Props> = ({
                                 isLightTheme={isLightTheme}
                                 fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                                 settingsCascade={settingsCascade}
-                                versionContext={undefined /* TODO(sqs) */}
+                                versionContext={props.versionContext}
                             />
                         </section>
                     )}

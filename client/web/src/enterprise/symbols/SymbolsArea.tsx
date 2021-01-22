@@ -2,6 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Resizable } from '../../../../shared/src/components/Resizable'
+import { VersionContextProps } from '../../../../shared/src/search/util'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { RepoHeaderContributionsLifecycleProps } from '../../repo/RepoHeader'
@@ -18,7 +19,8 @@ interface Props
     RouteComponentProps<{}>,
     RepoHeaderContributionsLifecycleProps,
     SettingsCascadeProps,
-    BreadcrumbSetters {
+    BreadcrumbSetters,
+    VersionContextProps {
     isLightTheme: boolean
 }
 
