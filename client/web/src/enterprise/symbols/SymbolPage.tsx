@@ -31,7 +31,6 @@ import { GitCommitNode } from '../../repo/commits/GitCommitNode'
 import { FileLocations } from '../../../../branded/src/components/panel/views/FileLocations'
 import { SymbolsSidebarContainerSymbolGQLFragment } from './SymbolsSidebar'
 import { SymbolActions, SymbolActionsGQLFragment } from './SymbolActions'
-import { SymbolStatsSummary } from './SymbolStatsSummary'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 
 const SymbolPageSymbolGQLFragment = gql`
@@ -224,7 +223,6 @@ export const SymbolPage: React.FunctionComponent<Props> = ({
                         afterSignature={
                             <div className="d-flex align-items-center mx-3">
                                 <SymbolActions symbol={symbol} />
-                                <SymbolStatsSummary symbol={symbol} className="text-muted ml-3 small" />
                             </div>
                         }
                         className="mx-3 mt-3"
