@@ -597,7 +597,24 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 		}()
 	}
 
-	if isStructuralSearch {
+	if isStructuralSearch && args.PatternInfo.CombyRule == `where "zoekt" == "zoekt"` {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			repos := make([]*search.RepositoryRevisions, 0, len(indexed.Repos()))
+			for _, repo := range indexed.Repos() {
+				repos = append(repos, repo)
+			}
+
+			err := callSearcherOverRepos(repos, nil)
+			if err != nil {
+				mu.Lock()
+				searchErr = err
+				mu.Unlock()
+			}
+		}()
+	} else if isStructuralSearch {
 		wg.Add(1)
 		go func() {
 			// TODO limitHit, handleRepoSearchResult
