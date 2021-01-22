@@ -702,7 +702,7 @@ func (s *RepoStore) ListDefaultRepos(ctx context.Context, opts ListDefaultReposO
 	}
 
 	q := sqlf.Sprintf(`
--- source: internal/db/default_repos.go:defaultRepos.List
+-- source: internal/db/repos.go:RepoStore.ListDefaultRepos
 SELECT
     id,
     name
@@ -716,7 +716,7 @@ WHERE
             external_service_repos sr
             INNER JOIN external_services s ON s.id = sr.external_service_id
         WHERE
-			s.namespace_user_id IS NOT NULL
+			s.cloud_default = false
 			AND s.deleted_at IS NULL
 			AND r.id = sr.repo_id
             AND r.deleted_at IS NULL

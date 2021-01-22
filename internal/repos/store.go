@@ -597,7 +597,7 @@ func (s *Store) UpsertRepos(ctx context.Context, repos ...*types.Repo) (err erro
 	return nil
 }
 
-func (s *Store) EnqueueSyncJobs(ctx context.Context, ignoreSiteAdmin bool) (err error) {
+func (s *Store) EnqueueSyncJobs(ctx context.Context, isCloud bool) (err error) {
 	tr, ctx := s.trace(ctx, "Store.EnqueueSyncJobs")
 
 	defer func(began time.Time) {
@@ -608,8 +608,10 @@ func (s *Store) EnqueueSyncJobs(ctx context.Context, ignoreSiteAdmin bool) (err 
 	}(time.Now())
 
 	filter := "TRUE"
-	if ignoreSiteAdmin {
-		filter = "namespace_user_id IS NOT NULL"
+	// On Cloud we don't sync our default sources in the background, they are synced
+	// on demand instead.
+	if isCloud {
+		filter = "cloud_default = false"
 	}
 	q := sqlf.Sprintf(enqueueSyncJobsQueryFmtstr, sqlf.Sprintf(filter))
 	return s.Exec(ctx, q)
