@@ -1925,11 +1925,51 @@ This panel indicates remaining calls to GitHub search API before hitting the rat
 
 <br />
 
+#### repo-updater: github_graphql_rate_limit_wait_duration
+
+This panel indicates time spent waiting for the GitHub graphql API rate limiter.
+
+Indicates how long we`re waiting on the rate limit once it has been exceeded`
+
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+
+<br />
+
+#### repo-updater: github_rest_rate_limit_wait_duration
+
+This panel indicates time spent waiting for the GitHub rest API rate limiter.
+
+Indicates how long we`re waiting on the rate limit once it has been exceeded`
+
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+
+<br />
+
+#### repo-updater: github_search_rate_limit_wait_duration
+
+This panel indicates time spent waiting for the GitHub search API rate limiter.
+
+Indicates how long we`re waiting on the rate limit once it has been exceeded`
+
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+
+<br />
+
 #### repo-updater: gitlab_rest_rate_limit_remaining
 
 This panel indicates remaining calls to GitLab rest API before hitting the rate limit.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-gitlab-rest-rate-limit-remaining).
+
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+
+<br />
+
+#### repo-updater: gitlab_rest_rate_limit_wait_duration
+
+This panel indicates time spent waiting for the GitLab rest API rate limiter.
+
+Indicates how long we`re waiting on the rate limit once it has been exceeded`
 
 <sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 

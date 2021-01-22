@@ -71,6 +71,20 @@ var githubRemainingGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
 	Help: "Number of calls to GitHub's API remaining before hitting the rate limit.",
 }, []string{"resource", "name"})
 
+var githubRatelimitWaitCounter = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "src_github_rate_limit_wait_duration_seconds",
+	Help: "The amount of time spent waiting on the rate limit",
+}, []string{"resource", "name"})
+
+func init() {
+	go func() {
+		for {
+			githubRatelimitWaitCounter.WithLabelValues("rest", "TESTNAME").Add((time.Millisecond * 100).Seconds())
+			time.Sleep(1 * time.Second)
+		}
+	}()
+}
+
 func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf *httpcli.Factory) (*GithubSource, error) {
 	baseURL, err := url.Parse(c.Url)
 	if err != nil {
@@ -143,11 +157,15 @@ func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf 
 			// the map
 			resource := resource
 			monitor.SetCollector(&ratelimit.MetricsCollector{
-				Remaining: func(remaining float64) {
-					githubRemainingGauge.WithLabelValues(resource, svc.DisplayName).Set(remaining)
+				Remaining: func(n float64) {
+					githubRemainingGauge.WithLabelValues(resource, svc.DisplayName).Set(n)
+				},
+				WaitDuration: func(n time.Duration) {
+					githubRatelimitWaitCounter.WithLabelValues(resource, svc.DisplayName).Add(n.Seconds())
 				},
 			})
 		}
+
 	}
 
 	return &GithubSource{

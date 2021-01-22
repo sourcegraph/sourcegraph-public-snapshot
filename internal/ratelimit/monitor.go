@@ -53,7 +53,8 @@ func (r *MonitorRegistry) Count() int {
 // MetricsCollector is used so that we can inject metric collection functions for
 // difference monitor configurations.
 type MetricsCollector struct {
-	Remaining func(n float64)
+	Remaining    func(n float64)
+	WaitDuration func(n time.Duration)
 }
 
 // Monitor monitors an external service's rate limit based on the X-RateLimit-Remaining or RateLimit-Remaining
@@ -107,9 +108,15 @@ func (c *Monitor) Get() (remaining int, reset, retry time.Duration, known bool) 
 // out-of-synchronization.
 //
 // See https://developer.github.com/v4/guides/resource-limitations/#rate-limit.
-func (c *Monitor) RecommendedWaitForBackgroundOp(cost int) time.Duration {
+func (c *Monitor) RecommendedWaitForBackgroundOp(cost int) (timeRemaining time.Duration) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+
+	if c.collector != nil && c.collector.WaitDuration != nil {
+		defer func() {
+			c.collector.WaitDuration(timeRemaining)
+		}()
+	}
 
 	now := c.now()
 	if !c.retry.IsZero() {
@@ -133,7 +140,7 @@ func (c *Monitor) RecommendedWaitForBackgroundOp(cost int) time.Duration {
 
 	// Be conservative.
 	limitRemaining *= 0.8
-	timeRemaining := resetAt.Sub(now) + 3*time.Minute
+	timeRemaining = resetAt.Sub(now) + 3*time.Minute
 
 	n := limitRemaining / float64(cost) // number of times this op can run before exhausting rate limit
 	if n < 1 {
@@ -188,7 +195,7 @@ func (c *Monitor) Update(h http.Header) {
 	c.remaining = remaining
 	c.reset = time.Unix(resetAtSeconds, 0)
 
-	if c.known && c.collector != nil {
+	if c.known && c.collector != nil && c.collector.Remaining != nil {
 		c.collector.Remaining(float64(c.remaining))
 	}
 }

@@ -60,6 +60,11 @@ var gitlabRemainingGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
 	Help: "Number of calls to GitLab's API remaining before hitting the rate limit.",
 }, []string{"resource", "name"})
 
+var gitlabRatelimitWaitCounter = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "src_gitlab_rate_limit_wait_duration_seconds",
+	Help: "The amount of time spent waiting on the rate limit",
+}, []string{"resource", "name"})
+
 func newGitLabSource(svc *types.ExternalService, c *schema.GitLabConnection, cf *httpcli.Factory) (*GitLabSource, error) {
 	baseURL, err := url.Parse(c.Url)
 	if err != nil {
@@ -103,8 +108,11 @@ func newGitLabSource(svc *types.ExternalService, c *schema.GitLabConnection, cf 
 
 	if !envvar.SourcegraphDotComMode() || svc.CloudDefault {
 		client.RateLimitMonitor().SetCollector(&ratelimit.MetricsCollector{
-			Remaining: func(remaining float64) {
-				gitlabRemainingGauge.WithLabelValues("rest", svc.DisplayName).Set(remaining)
+			Remaining: func(n float64) {
+				gitlabRemainingGauge.WithLabelValues("rest", svc.DisplayName).Set(n)
+			},
+			WaitDuration: func(n time.Duration) {
+				gitlabRatelimitWaitCounter.WithLabelValues("rest", svc.DisplayName).Add(n.Seconds())
 			},
 		})
 	}
