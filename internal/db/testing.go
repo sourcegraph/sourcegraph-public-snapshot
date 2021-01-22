@@ -6,10 +6,10 @@ import (
 )
 
 func assertJSONEqual(t *testing.T, want, got interface{}) {
-	want_j := asJSON(t, want)
-	got_j := asJSON(t, got)
-	if want_j != got_j {
-		t.Errorf("Wanted %s, but got %s", want_j, got_j)
+	wantJ := asJSON(t, want)
+	gotJ := asJSON(t, got)
+	if wantJ != gotJ {
+		t.Errorf("Wanted %s, but got %s", wantJ, gotJ)
 	}
 }
 

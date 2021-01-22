@@ -22,7 +22,7 @@ func (r *schemaResolver) SetExternalServiceRepos(ctx context.Context, args struc
 		return nil, err
 	}
 
-	es, err := db.ExternalServices.GetByID(ctx, id)
+	es, err := db.GlobalExternalServices.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +60,7 @@ func (r *schemaResolver) SetExternalServiceRepos(ctx context.Context, args struc
 	// set to time.Zero to sync ASAP
 	es.NextSyncAt = time.Time{}
 
-	err = db.ExternalServices.Upsert(ctx, es)
+	err = db.GlobalExternalServices.Upsert(ctx, es)
 	if err != nil {
 		return nil, err
 	}

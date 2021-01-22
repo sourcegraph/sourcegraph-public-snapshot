@@ -31,8 +31,8 @@ func TestCampaignConnectionResolver(t *testing.T) {
 	userID := ct.CreateTestUser(t, true).ID
 
 	cstore := store.New(dbconn.Global)
-	repoStore := db.NewRepoStoreWith(cstore)
-	esStore := db.NewExternalServicesStoreWith(cstore)
+	repoStore := db.ReposWith(cstore)
+	esStore := db.ExternalServicesWith(cstore)
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/campaign-connection-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
@@ -183,7 +183,7 @@ func TestCampaignsListing(t *testing.T) {
 	userID := ct.CreateTestUser(t, true).ID
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
 
-	org, err := db.Orgs.Create(ctx, "org", nil)
+	org, err := db.GlobalOrgs.Create(ctx, "org", nil)
 	if err != nil {
 		t.Fatal(err)
 	}

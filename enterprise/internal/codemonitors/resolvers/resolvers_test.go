@@ -188,7 +188,7 @@ func TestIsAllowedToEdit(t *testing.T) {
 	siteAdmin := insertTestUser(t, dbconn.Global, "cm-user3", true)
 
 	admContext := actor.WithActor(context.Background(), actor.FromUser(siteAdmin))
-	org, err := db.Orgs.Create(admContext, "cm-test-org", nil)
+	org, err := db.GlobalOrgs.Create(admContext, "cm-test-org", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -243,7 +243,7 @@ func TestIsAllowedToCreate(t *testing.T) {
 	siteAdmin := insertTestUser(t, dbconn.Global, "cm-user3", true)
 
 	admContext := actor.WithActor(context.Background(), actor.FromUser(siteAdmin))
-	org, err := db.Orgs.Create(admContext, "cm-test-org", nil)
+	org, err := db.GlobalOrgs.Create(admContext, "cm-test-org", nil)
 	if err != nil {
 		t.Fatal(err)
 	}

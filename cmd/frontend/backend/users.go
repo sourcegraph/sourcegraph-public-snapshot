@@ -19,7 +19,7 @@ func MakePasswordResetURL(ctx context.Context, userID int32) (*url.URL, error) {
 	if MockMakePasswordResetURL != nil {
 		return MockMakePasswordResetURL(ctx, userID)
 	}
-	resetCode, err := db.Users.RenewPasswordResetCode(ctx, userID)
+	resetCode, err := db.GlobalUsers.RenewPasswordResetCode(ctx, userID)
 	if err != nil {
 		return nil, err
 	}

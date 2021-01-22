@@ -747,7 +747,7 @@ func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct {
 		args.URI = args.Name
 	}
 
-	repo, err := db.Phabricator.GetByName(ctx, api.RepoName(*args.URI))
+	repo, err := db.GlobalPhabricator.GetByName(ctx, api.RepoName(*args.URI))
 	if err != nil {
 		return nil, err
 	}
@@ -808,13 +808,13 @@ func (r *codeHostRepositoryConnectionResolver) Nodes(ctx context.Context) ([]*co
 		)
 		// get all external services for user, or for the specified external service
 		if r.codeHost == 0 {
-			svcs, err = db.ExternalServices.List(ctx, db.ExternalServicesListOptions{NamespaceUserID: r.userID})
+			svcs, err = db.GlobalExternalServices.List(ctx, db.ExternalServicesListOptions{NamespaceUserID: r.userID})
 			if err != nil {
 				r.err = err
 				return
 			}
 		} else {
-			svc, err := db.ExternalServices.GetByID(ctx, r.codeHost)
+			svc, err := db.GlobalExternalServices.GetByID(ctx, r.codeHost)
 			if err != nil {
 				r.err = err
 				return
@@ -915,5 +915,5 @@ func allowPrivate(ctx context.Context, userID int32) (bool, error) {
 	if conf.ExternalServiceUserMode() == conf.ExternalServiceModeAll {
 		return true, nil
 	}
-	return db.Users.HasTag(ctx, userID, db.TagAllowUserExternalServicePrivate)
+	return db.GlobalUsers.HasTag(ctx, userID, db.TagAllowUserExternalServicePrivate)
 }

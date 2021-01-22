@@ -39,8 +39,8 @@ func TestChangesetApplyPreviewConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	esStore := db.NewExternalServicesStoreWith(cstore)
-	repoStore := db.NewRepoStoreWith(cstore)
+	esStore := db.ExternalServicesWith(cstore)
+	repoStore := db.ReposWith(cstore)
 
 	rs := make([]*types.Repo, 0, 3)
 	for i := 0; i < cap(rs); i++ {

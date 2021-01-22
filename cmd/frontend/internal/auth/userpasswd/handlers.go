@@ -53,7 +53,7 @@ func HandleSiteInit(w http.ResponseWriter, r *http.Request) {
 // checkEmailAbuse performs abuse prevention checks to prevent email abuse, i.e. users using emails
 // of other people whom they want to annoy.
 func checkEmailAbuse(ctx context.Context, addr string) (abused bool, reason string, err error) {
-	email, err := db.UserEmails.GetLatestVerificationSentEmail(ctx, addr)
+	email, err := db.GlobalUserEmails.GetLatestVerificationSentEmail(ctx, addr)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return false, "", nil
@@ -135,7 +135,7 @@ func handleSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInit
 		}
 	}
 
-	usr, err := db.Users.Create(r.Context(), newUserData)
+	usr, err := db.GlobalUsers.Create(r.Context(), newUserData)
 	if err != nil {
 		var (
 			message    string
@@ -162,7 +162,7 @@ func handleSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInit
 		return
 	}
 
-	if err = db.Authz.GrantPendingPermissions(r.Context(), &db.GrantPendingPermissionsArgs{
+	if err = db.GlobalAuthz.GrantPendingPermissions(r.Context(), &db.GrantPendingPermissionsArgs{
 		UserID: usr.ID,
 		Perm:   authz.Read,
 		Type:   authz.PermRepos,
@@ -173,7 +173,7 @@ func handleSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInit
 	if conf.EmailVerificationRequired() && !newUserData.EmailIsVerified {
 		if err := backend.SendUserEmailVerificationEmail(r.Context(), usr.Username, creds.Email, newUserData.EmailVerificationCode); err != nil {
 			log15.Error("failed to send email verification (continuing, user's email will be unverified)", "email", creds.Email, "err", err)
-		} else if err = db.UserEmails.SetLastVerification(r.Context(), usr.ID, creds.Email, newUserData.EmailVerificationCode); err != nil {
+		} else if err = db.GlobalUserEmails.SetLastVerification(r.Context(), usr.ID, creds.Email, newUserData.EmailVerificationCode); err != nil {
 			log15.Error("failed to set email last verification sent at (user's email is verified)", "email", creds.Email, "err", err)
 		}
 	}
@@ -192,9 +192,9 @@ func handleSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInit
 
 func getByEmailOrUsername(ctx context.Context, emailOrUsername string) (*types.User, error) {
 	if strings.Contains(emailOrUsername, "@") {
-		return db.Users.GetByVerifiedEmail(ctx, emailOrUsername)
+		return db.GlobalUsers.GetByVerifiedEmail(ctx, emailOrUsername)
 	}
-	return db.Users.GetByUsername(ctx, emailOrUsername)
+	return db.GlobalUsers.GetByUsername(ctx, emailOrUsername)
 }
 
 // HandleSignIn accepts a POST containing username-password credentials and authenticates the
@@ -223,7 +223,7 @@ func HandleSignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// 🚨 SECURITY: check password
-	correct, err := db.Users.IsPassword(ctx, usr.ID, creds.Password)
+	correct, err := db.GlobalUsers.IsPassword(ctx, usr.ID, creds.Password)
 	if err != nil {
 		httpLogAndError(w, "Error checking password", http.StatusInternalServerError, "err", err)
 		return
@@ -251,7 +251,7 @@ func HandleCheckUsernameTaken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = db.Namespaces.GetByName(r.Context(), username)
+	_, err = db.GlobalNamespaces.GetByName(r.Context(), username)
 	if err == db.ErrNamespaceNotFound {
 		w.WriteHeader(http.StatusNotFound)
 		return

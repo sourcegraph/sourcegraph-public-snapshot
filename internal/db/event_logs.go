@@ -31,13 +31,13 @@ type EventLogStore struct {
 	once sync.Once
 }
 
-// NewEventLogStoreWithDB instantiates and returns a new EventLogStore with prepared statements.
-func NewEventLogStoreWithDB(db dbutil.DB) *EventLogStore {
+// EventLogs instantiates and returns a new EventLogStore with prepared statements.
+func EventLogs(db dbutil.DB) *EventLogStore {
 	return &EventLogStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 // NewEventLogStoreWithDB instantiates and returns a new EventLogStore using the other store handle.
-func NewEventLogStoreWith(other basestore.ShareableStore) *EventLogStore {
+func EventLogsWith(other basestore.ShareableStore) *EventLogStore {
 	return &EventLogStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 
@@ -116,7 +116,7 @@ func (l *EventLogStore) getBySQL(ctx context.Context, querySuffix *sqlf.Query) (
 		}
 		events = append(events, &r)
 	}
-	if err = rows.Err(); err != nil {
+	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 	return events, nil

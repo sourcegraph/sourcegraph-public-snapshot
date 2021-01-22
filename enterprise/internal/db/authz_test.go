@@ -22,7 +22,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 	ctx := context.Background()
 
 	// Create user with initially verified email
-	user, err := db.Users.Create(ctx, db.NewUser{
+	user, err := db.GlobalUsers.Create(ctx, db.NewUser{
 		Email:           "alice@example.com",
 		Username:        "alice",
 		EmailIsVerified: true,
@@ -34,23 +34,23 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 	code := "verify-code"
 
 	// Add and verify the second email
-	err = db.UserEmails.Add(ctx, user.ID, "alice2@example.com", &code)
+	err = db.GlobalUserEmails.Add(ctx, user.ID, "alice2@example.com", &code)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = db.UserEmails.SetVerified(ctx, user.ID, "alice2@example.com", true)
+	err = db.GlobalUserEmails.SetVerified(ctx, user.ID, "alice2@example.com", true)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Add third email and leave as unverified
-	err = db.UserEmails.Add(ctx, user.ID, "alice3@example.com", &code)
+	err = db.GlobalUserEmails.Add(ctx, user.ID, "alice3@example.com", &code)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Add two external accounts
-	err = db.ExternalAccounts.AssociateUserAndSave(ctx, user.ID,
+	err = db.GlobalExternalAccounts.AssociateUserAndSave(ctx, user.ID,
 		extsvc.AccountSpec{
 			ServiceType: "gitlab",
 			ServiceID:   "https://gitlab.com/",
@@ -61,7 +61,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = db.ExternalAccounts.AssociateUserAndSave(ctx, user.ID,
+	err = db.GlobalExternalAccounts.AssociateUserAndSave(ctx, user.ID,
 		extsvc.AccountSpec{
 			ServiceType: "github",
 			ServiceID:   "https://github.com/",

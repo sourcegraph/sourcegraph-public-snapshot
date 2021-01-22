@@ -237,7 +237,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 
 			t.Run("error from handleEvent", func(t *testing.T) {
 				store, esStore, clock := gitLabTestSetup(t, db)
-				repoStore := idb.NewRepoStoreWith(store)
+				repoStore := idb.ReposWith(store)
 				h := NewGitLabWebhook(store, esStore, clock.Now)
 				es := createGitLabExternalService(t, ctx, esStore)
 				repo := createGitLabRepo(t, ctx, repoStore, es)
@@ -284,7 +284,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 				for _, action := range []string{"approved", "unapproved"} {
 					t.Run(action, func(t *testing.T) {
 						store, esStore, clock := gitLabTestSetup(t, db)
-						repoStore := idb.NewRepoStoreWith(store)
+						repoStore := idb.ReposWith(store)
 						h := NewGitLabWebhook(store, esStore, clock.Now)
 						es := createGitLabExternalService(t, ctx, esStore)
 						repo := createGitLabRepo(t, ctx, repoStore, es)
@@ -330,7 +330,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 				} {
 					t.Run(action, func(t *testing.T) {
 						store, esStore, clock := gitLabTestSetup(t, db)
-						repoStore := idb.NewRepoStoreWith(store)
+						repoStore := idb.ReposWith(store)
 						h := NewGitLabWebhook(store, esStore, clock.Now)
 						es := createGitLabExternalService(t, ctx, esStore)
 						repo := createGitLabRepo(t, ctx, repoStore, es)
@@ -360,7 +360,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 
 			t.Run("valid pipeline events", func(t *testing.T) {
 				store, esStore, clock := gitLabTestSetup(t, db)
-				repoStore := idb.NewRepoStoreWith(store)
+				repoStore := idb.ReposWith(store)
 				h := NewGitLabWebhook(store, esStore, clock.Now)
 				es := createGitLabExternalService(t, ctx, esStore)
 				repo := createGitLabRepo(t, ctx, repoStore, es)
@@ -461,7 +461,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			// function above because it needs to set up a bad database
 			// connection on the repo store.
 			store, _, clock := gitLabTestSetup(t, db)
-			esStore := idb.NewExternalServicesStoreWithDB(&brokenDB{errors.New("foo")})
+			esStore := idb.ExternalServices(&brokenDB{errors.New("foo")})
 			h := NewGitLabWebhook(store, esStore, clock.Now)
 
 			_, err := h.getExternalServiceFromRawID(ctx, "12345")
@@ -569,7 +569,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			// Since these tests don't write to the database, we can just share
 			// the same database setup.
 			store, esStore, clock := gitLabTestSetup(t, db)
-			repoStore := idb.NewRepoStoreWith(store)
+			repoStore := idb.ReposWith(store)
 			h := NewGitLabWebhook(store, esStore, clock.Now)
 			es := createGitLabExternalService(t, ctx, esStore)
 			repo := createGitLabRepo(t, ctx, repoStore, es)
@@ -828,7 +828,7 @@ func gitLabTestSetup(t *testing.T, db *sql.DB) (*store.Store, *idb.ExternalServi
 
 	// Note that tx is wrapped in nestedTx to effectively neuter further use of
 	// transactions within the test.
-	return store.NewWithClock(&nestedTx{tx}, c.Now), idb.NewExternalServicesStoreWithDB(tx), c
+	return store.NewWithClock(&nestedTx{tx}, c.Now), idb.ExternalServices(tx), c
 }
 
 // assertBodyIncludes checks for a specific substring within the given response

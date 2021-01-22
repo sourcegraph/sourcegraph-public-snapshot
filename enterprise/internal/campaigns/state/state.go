@@ -612,7 +612,7 @@ func computeRev(ctx context.Context, repo api.RepoName, getOid, getRef func() (s
 // changesetRepoName looks up a api.RepoName based on the RepoID within a changeset.
 func changesetRepoName(ctx context.Context, c *campaigns.Changeset) (api.RepoName, error) {
 	// We need to use an internal actor here as the repo-updater otherwise has no access to the repo.
-	repo, err := db.Repos.Get(actor.WithActor(ctx, &actor.Actor{Internal: true}), c.RepoID)
+	repo, err := db.GlobalRepos.Get(actor.WithActor(ctx, &actor.Actor{Internal: true}), c.RepoID)
 	if err != nil {
 		return "", err
 	}

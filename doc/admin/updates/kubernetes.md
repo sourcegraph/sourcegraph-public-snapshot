@@ -23,6 +23,10 @@ No manual migration is required, follow the [standard upgrade method](../install
 
 No manual migration is required, follow the [standard upgrade method](../install/kubernetes/update.md) to upgrade your deployment.
 
+This upgrade removes the `code intel bundle manager`. This service has been deprecated and all references to it have been removed.
+
+This upgrade also adds a MinIO container that doesn't require any custom configuration. You can find more detailed documentation in https://docs.sourcegraph.com/admin/external_services/object_storage.
+
 ## 3.20 -> 3.21
 
 Follow the [standard upgrade method](../install/kubernetes/update.md) to upgrade your deployment.

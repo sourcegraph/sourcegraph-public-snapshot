@@ -24,8 +24,8 @@ import (
 
 func Init(d dbutil.DB, clock func() time.Time) {
 	// TODO(efritz) - de-globalize assignments in this function
-	db.ExternalServices = edb.NewExternalServicesStore()
-	db.Authz = edb.NewAuthzStore(d, clock)
+	db.GlobalExternalServices = edb.NewExternalServicesStore()
+	db.GlobalAuthz = edb.NewAuthzStore(d, clock)
 
 	// Warn about usage of auth providers that are not enabled by the license.
 	graphqlbackend.AlertFuncs = append(graphqlbackend.AlertFuncs, func(args graphqlbackend.AlertFuncArgs) []*graphqlbackend.Alert {
@@ -39,7 +39,7 @@ func Init(d dbutil.DB, clock func() time.Time) {
 		}
 
 		// We can ignore problems returned here because they would have been surfaced in other places.
-		_, providers, _, _ := eauthz.ProvidersFromConfig(context.Background(), conf.Get(), db.ExternalServices)
+		_, providers, _, _ := eauthz.ProvidersFromConfig(context.Background(), conf.Get(), db.GlobalExternalServices)
 		if len(providers) == 0 {
 			return nil
 		}
@@ -131,7 +131,7 @@ func init() {
 	// Report any authz provider problems in external configs.
 	conf.ContributeWarning(func(cfg conf.Unified) (problems conf.Problems) {
 		_, _, seriousProblems, warnings :=
-			eauthz.ProvidersFromConfig(context.Background(), &cfg, db.ExternalServices)
+			eauthz.ProvidersFromConfig(context.Background(), &cfg, db.GlobalExternalServices)
 		problems = append(problems, conf.NewExternalServiceProblems(seriousProblems...)...)
 		problems = append(problems, conf.NewExternalServiceProblems(warnings...)...)
 		return problems

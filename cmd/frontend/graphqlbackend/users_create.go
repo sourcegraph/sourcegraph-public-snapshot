@@ -29,7 +29,7 @@ func (*schemaResolver) CreateUser(ctx context.Context, args *struct {
 	}
 
 	// The new user will be created with a verified email address.
-	user, err := db.Users.Create(ctx, db.NewUser{
+	user, err := db.GlobalUsers.Create(ctx, db.NewUser{
 		Username:        args.Username,
 		Email:           email,
 		EmailIsVerified: true,
@@ -39,7 +39,7 @@ func (*schemaResolver) CreateUser(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	if err = db.Authz.GrantPendingPermissions(ctx, &db.GrantPendingPermissionsArgs{
+	if err = db.GlobalAuthz.GrantPendingPermissions(ctx, &db.GrantPendingPermissionsArgs{
 		UserID: user.ID,
 		Perm:   authz.Read,
 		Type:   authz.PermRepos,

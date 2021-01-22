@@ -1,128 +1,89 @@
 package lsif
 
-type Element struct {
-	ID      int
-	Type    string
-	Label   string
-	Payload interface{}
-}
+import "github.com/sourcegraph/lsif-protocol/reader"
 
-type Edge struct {
-	OutV     int
-	InV      int
-	InVs     []int
-	Document int
-}
-
-type MetaData struct {
-	Version     string
-	ProjectRoot string
-}
+type Element reader.Element
+type Edge reader.Edge
+type MetaData reader.MetaData
+type PackageInformation reader.PackageInformation
+type Diagnostic reader.Diagnostic
 
 type Range struct {
-	StartLine          int
-	StartCharacter     int
-	EndLine            int
-	EndCharacter       int
+	reader.Range
 	DefinitionResultID int
 	ReferenceResultID  int
 	HoverResultID      int
 }
 
-func (d Range) SetDefinitionResultID(id int) Range {
+func (r Range) SetDefinitionResultID(id int) Range {
 	return Range{
-		StartLine:          d.StartLine,
-		StartCharacter:     d.StartCharacter,
-		EndLine:            d.EndLine,
-		EndCharacter:       d.EndCharacter,
+		Range:              r.Range,
 		DefinitionResultID: id,
-		ReferenceResultID:  d.ReferenceResultID,
-		HoverResultID:      d.HoverResultID,
+		ReferenceResultID:  r.ReferenceResultID,
+		HoverResultID:      r.HoverResultID,
 	}
 }
 
-func (d Range) SetReferenceResultID(id int) Range {
+func (r Range) SetReferenceResultID(id int) Range {
 	return Range{
-		StartLine:          d.StartLine,
-		StartCharacter:     d.StartCharacter,
-		EndLine:            d.EndLine,
-		EndCharacter:       d.EndCharacter,
-		DefinitionResultID: d.DefinitionResultID,
+		Range:              r.Range,
+		DefinitionResultID: r.DefinitionResultID,
 		ReferenceResultID:  id,
-		HoverResultID:      d.HoverResultID,
+		HoverResultID:      r.HoverResultID,
 	}
 }
 
-func (d Range) SetHoverResultID(id int) Range {
+func (r Range) SetHoverResultID(id int) Range {
 	return Range{
-		StartLine:          d.StartLine,
-		StartCharacter:     d.StartCharacter,
-		EndLine:            d.EndLine,
-		EndCharacter:       d.EndCharacter,
-		DefinitionResultID: d.DefinitionResultID,
-		ReferenceResultID:  d.ReferenceResultID,
+		Range:              r.Range,
+		DefinitionResultID: r.DefinitionResultID,
+		ReferenceResultID:  r.ReferenceResultID,
 		HoverResultID:      id,
 	}
 }
 
 type ResultSet struct {
+	reader.ResultSet
 	DefinitionResultID int
 	ReferenceResultID  int
 	HoverResultID      int
 }
 
-func (d ResultSet) SetDefinitionResultID(id int) ResultSet {
+func (rs ResultSet) SetDefinitionResultID(id int) ResultSet {
 	return ResultSet{
+		ResultSet:          rs.ResultSet,
 		DefinitionResultID: id,
-		ReferenceResultID:  d.ReferenceResultID,
-		HoverResultID:      d.HoverResultID,
+		ReferenceResultID:  rs.ReferenceResultID,
+		HoverResultID:      rs.HoverResultID,
 	}
 }
 
-func (d ResultSet) SetReferenceResultID(id int) ResultSet {
+func (rs ResultSet) SetReferenceResultID(id int) ResultSet {
 	return ResultSet{
-		DefinitionResultID: d.DefinitionResultID,
+		ResultSet:          rs.ResultSet,
+		DefinitionResultID: rs.DefinitionResultID,
 		ReferenceResultID:  id,
-		HoverResultID:      d.HoverResultID,
+		HoverResultID:      rs.HoverResultID,
 	}
 }
 
-func (d ResultSet) SetHoverResultID(id int) ResultSet {
+func (rs ResultSet) SetHoverResultID(id int) ResultSet {
 	return ResultSet{
-		DefinitionResultID: d.DefinitionResultID,
-		ReferenceResultID:  d.ReferenceResultID,
+		ResultSet:          rs.ResultSet,
+		DefinitionResultID: rs.DefinitionResultID,
+		ReferenceResultID:  rs.ReferenceResultID,
 		HoverResultID:      id,
 	}
 }
 
 type Moniker struct {
-	Kind                 string
-	Scheme               string
-	Identifier           string
+	reader.Moniker
 	PackageInformationID int
 }
 
-func (d Moniker) SetPackageInformationID(id int) Moniker {
+func (m Moniker) SetPackageInformationID(id int) Moniker {
 	return Moniker{
-		Kind:                 d.Kind,
-		Scheme:               d.Scheme,
-		Identifier:           d.Identifier,
+		Moniker:              m.Moniker,
 		PackageInformationID: id,
 	}
-}
-
-type PackageInformation struct {
-	Name    string
-	Version string
-}
-
-type Diagnostic struct {
-	Severity       int
-	Code           string
-	Message        string
-	Source         string
-	StartLine      int
-	StartCharacter int
-	EndLine        int
-	EndCharacter   int
 }

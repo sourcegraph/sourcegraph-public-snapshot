@@ -6,6 +6,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/sourcegraph/internal/db"
 )
 
@@ -57,7 +58,7 @@ func UnmarshalNamespaceID(id graphql.ID, userID *int32, orgID *int32) (err error
 }
 
 func (r *schemaResolver) NamespaceByName(ctx context.Context, args *struct{ Name string }) (*NamespaceResolver, error) {
-	namespace, err := db.Namespaces.GetByName(ctx, args.Name)
+	namespace, err := db.GlobalNamespaces.GetByName(ctx, args.Name)
 	if err == db.ErrNamespaceNotFound {
 		return nil, nil
 	}

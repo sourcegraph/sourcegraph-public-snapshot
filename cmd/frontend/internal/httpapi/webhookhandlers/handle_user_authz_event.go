@@ -57,7 +57,7 @@ func scheduleUserUpdate(ctx context.Context, extSvc *types.ExternalService, gith
 	if githubUser == nil {
 		return nil
 	}
-	accs, err := db.ExternalAccounts.List(ctx, db.ExternalAccountsListOptions{
+	accs, err := db.GlobalExternalAccounts.List(ctx, db.ExternalAccountsListOptions{
 		ServiceID:   fmt.Sprint(extSvc.ID),
 		ServiceType: "github",
 		AccountID:   githubUser.GetID(),

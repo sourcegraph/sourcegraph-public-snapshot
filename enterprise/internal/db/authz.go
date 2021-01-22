@@ -61,7 +61,7 @@ func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *db.Grant
 	switch cfg.BindID {
 	case "email":
 		// 🚨 SECURITY: It is critical to ensure only grant emails that are verified.
-		emails, err := db.UserEmails.ListByUser(ctx, db.UserEmailsListOptions{
+		emails, err := db.GlobalUserEmails.ListByUser(ctx, db.UserEmailsListOptions{
 			UserID:       args.UserID,
 			OnlyVerified: true,
 		})
@@ -79,7 +79,7 @@ func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *db.Grant
 		}
 
 	case "username":
-		user, err := db.Users.GetByID(ctx, args.UserID)
+		user, err := db.GlobalUsers.GetByID(ctx, args.UserID)
 		if err != nil {
 			return errors.Wrap(err, "get user")
 		}

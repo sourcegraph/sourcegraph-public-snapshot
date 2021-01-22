@@ -56,8 +56,8 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		defer save()
 
 		secret := "secret"
-		repoStore := idb.NewRepoStoreWithDB(db)
-		esStore := idb.NewExternalServicesStoreWithDB(db)
+		repoStore := idb.Repos(db)
+		esStore := idb.ExternalServices(db)
 		extSvc := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "GitHub",
@@ -229,8 +229,8 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		defer save()
 
 		secret := "secret"
-		repoStore := idb.NewRepoStoreWithDB(db)
-		esStore := idb.NewExternalServicesStoreWithDB(db)
+		repoStore := idb.Repos(db)
+		esStore := idb.ExternalServices(db)
 		extSvc := &types.ExternalService{
 			Kind:        extsvc.KindBitbucketServer,
 			DisplayName: "Bitbucket",

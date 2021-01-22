@@ -274,30 +274,38 @@ type SearchEvent struct {
 // layer.
 type SearchStream chan<- SearchEvent
 
-// resultStream is temporary adapter which return a result stream to use
-// instead of a search event stream. Additionally it has a cleanup function
-// which needs to be called.
-func resultStream(stream SearchStream) (chan<- []SearchResultResolver, func(*streaming.Stats)) {
-	if stream == nil {
-		return nil, func(*streaming.Stats) {}
-	}
+// collectStream is a helper for batch interfaces calling stream based
+// functions. It returns a context, stream and cleanup/get function. The
+// cleanup/get function will return the aggregated event and must be called
+// once you have stopped sending to stream.
+//
+// For collecting errors we only collect the first error reported and
+// afterwards cancel the context.
+func collectStream(ctx context.Context) (context.Context, SearchStream, func() SearchEvent) {
+	var agg SearchEvent
 
-	c := make(chan []SearchResultResolver, cap(stream))
+	ctx, cancel := context.WithCancel(ctx)
+
 	done := make(chan struct{})
+	stream := make(chan SearchEvent)
 	go func() {
 		defer close(done)
-		for results := range c {
-			stream <- SearchEvent{Results: results}
-		}
-	}()
-	return c, func(s *streaming.Stats) {
-		if s != nil {
-			stream <- SearchEvent{
-				Stats: *s,
+		for event := range stream {
+			agg.Results = append(agg.Results, event.Results...)
+			agg.Stats.Update(&event.Stats)
+			// Only collect first error
+			if event.Error != nil && agg.Error == nil {
+				cancel()
+				agg.Error = event.Error
 			}
 		}
-		close(c)
+	}()
+
+	return ctx, stream, func() SearchEvent {
+		cancel()
+		close(stream)
 		<-done
+		return agg
 	}
 }
 
@@ -498,7 +506,7 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*se
 		return nil, err
 	}
 
-	fileResults, _, err := searchFilesInRepos(ctx, &args, nil)
+	fileResults, _, err := searchFilesInReposBatch(ctx, &args)
 	if err != nil {
 		return nil, err
 	}

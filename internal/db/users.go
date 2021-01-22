@@ -51,13 +51,13 @@ type UserStore struct {
 	once sync.Once
 }
 
-// NewUserStoreWithDB instantiates and returns a new RepoStore with prepared statements.
-func NewUserStoreWithDB(db dbutil.DB) *UserStore {
+// Users instantiates and returns a new RepoStore with prepared statements.
+func Users(db dbutil.DB) *UserStore {
 	return &UserStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
-// NewUserStoreWith instantiates and returns a new RepoStore using the other store handle.
-func NewUserStoreWith(other basestore.ShareableStore) *UserStore {
+// UsersWith instantiates and returns a new RepoStore using the other store handle.
+func UsersWith(other basestore.ShareableStore) *UserStore {
 	return &UserStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 
@@ -341,7 +341,7 @@ func (u *UserStore) create(ctx context.Context, info NewUser) (newUser *types.Us
 		for _, err := range errs {
 			log15.Warn(err.Error())
 		}
-		if err := OrgMembers.With(u).CreateMembershipInOrgsForAllUsers(ctx, orgs); err != nil {
+		if err := OrgMembersWith(u).CreateMembershipInOrgsForAllUsers(ctx, orgs); err != nil {
 			return nil, err
 		}
 
