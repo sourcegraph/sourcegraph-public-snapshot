@@ -20,7 +20,8 @@ exports[`StreamingProgressCount should render correctly for 0 items in progress 
     0
      
     results
-     in 
+     in
+     
     0.00
     s
   </div>
@@ -48,7 +49,8 @@ exports[`StreamingProgressCount should render correctly for 1 item complete 1`] 
     1
      
     result
-     in 
+     in
+     
     1.25
     s
      
@@ -81,12 +83,47 @@ exports[`StreamingProgressCount should render correctly for 123 items complete 1
     123
      
     results
-     in 
+     in
+     
     1.25
     s
      
     from 
     500
+     
+    repositories
+  </div>
+</StreamingProgressCount>
+`;
+
+exports[`StreamingProgressCount should render correctly for big numbers complete 1`] = `
+<StreamingProgressCount
+  progress={
+    Object {
+      "durationMs": 52500,
+      "matchCount": 1234567,
+      "repositoriesCount": 8901,
+      "skipped": Array [],
+    }
+  }
+  state="complete"
+>
+  <div
+    className="streaming-progress__count d-flex align-items-center"
+  >
+    <Memo(CalculatorIcon)
+      className="mr-2 icon-inline"
+    />
+    1.2m+
+     
+    results
+     in
+     
+    52.50
+    s
+     
+    from 
+    8.9k+
      
     repositories
   </div>
