@@ -1897,6 +1897,19 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 
 	agg := newAggregator(ctx, r.resultChannel)
 
+	// This ensures we properly cleanup in the case of an early return. In
+	// particular we want to cancel global searches before returning early.
+	hasStartedAllBackends := false
+	defer func() {
+		if hasStartedAllBackends {
+			return
+		}
+		cancel()
+		requiredWg.Wait()
+		optionalWg.Wait()
+		_, _, _ = agg.get()
+	}()
+
 	isFileOrPath := func() bool {
 		for _, rt := range resultTypes {
 			if rt == "file" || rt == "path" {
@@ -1909,10 +1922,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	// performance optimization: call zoekt early, resolve repos concurrently, filter
 	// search results with resolved repos.
 	if r.isGlobalSearch() && isFileOrPath() {
-		// to protect us from regression, we explicitly create a child context which is
-		// canceled if we return from doResults
-		ctx, cancel := context.WithCancel(ctx)
-		defer cancel()
 		argsIndexed := args
 		argsIndexed.Mode = search.ZoektGlobalSearch
 		wg := waitGroup(true)
@@ -1933,11 +1942,9 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 
 	resolved, alertResult, err := r.determineRepos(ctx, tr, start)
 	if err != nil {
-		_, _, _ = agg.get()
 		return nil, err
 	}
 	if alertResult != nil {
-		_, _, _ = agg.get()
 		return alertResult, nil
 	}
 
@@ -2012,6 +2019,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			})
 		}
 	}
+
+	hasStartedAllBackends = true
 
 	// Wait for required searches.
 	requiredWg.Wait()
