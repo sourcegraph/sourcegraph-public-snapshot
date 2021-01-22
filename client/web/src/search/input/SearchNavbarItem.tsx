@@ -29,6 +29,7 @@ interface Props
     onChange: (newValue: QueryState) => void
     globbing: boolean
     enableSmartQuery: boolean
+    autoFocus: boolean
 }
 
 const HAS_COMPLETED_TOUR_KEY = 'has-completed-onboarding-tour'
@@ -128,7 +129,7 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
                 hasGlobalQueryBehavior={true}
                 queryState={props.navbarSearchState}
                 onSubmit={onSubmit}
-                autoFocus={false /* TODO(sqs): dont autofocus on symbol page */}
+                autoFocus={props.autoFocus}
             />
             <SearchButton />
         </Form>

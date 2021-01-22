@@ -82,6 +82,7 @@ interface Props
     availableVersionContexts: VersionContext[] | undefined
 
     minimalNavLinks?: boolean
+    autoFocusSearch: boolean
     branding?: typeof window.context.branding
 
     /** For testing only. Used because reactstrap's Popover is incompatible with react-test-renderer. */
@@ -108,6 +109,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     location,
     history,
     minimalNavLinks,
+    autoFocusSearch,
     ...props
 }) => {
     // Workaround: can't put this in optional parameter value because of https://github.com/babel/babel/issues/11166
@@ -230,6 +232,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                                 isLightTheme={isLightTheme}
                                 patternType={patternType}
                                 caseSensitive={caseSensitive}
+                                autoFocus={autoFocusSearch}
                             />
                         </div>
                     )}

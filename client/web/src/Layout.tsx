@@ -144,6 +144,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const isSearchRelatedPage = (routeMatch === '/:repoRevAndRest+' || routeMatch?.startsWith('/search')) ?? false
     const minimalNavLinks = routeMatch === '/cncf' || props.location.pathname.includes('/-/symbols')
     const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
+    const autoFocusSearch = !props.location.pathname.includes('/-/symbols')
 
     // Hack! Hardcode these routes into cmd/frontend/internal/app/ui/router.go
     const repogroupPages = [
@@ -222,6 +223,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                     }
                     hideNavLinks={false}
                     minimalNavLinks={minimalNavLinks}
+                    autoFocusSearch={autoFocusSearch}
                     isExtensionAlertAnimating={isExtensionAlertAnimating}
                 />
             )}
