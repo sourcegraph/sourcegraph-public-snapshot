@@ -159,7 +159,6 @@ func Main(enterpriseInit EnterpriseInit) {
 				log.Fatalf("bad external service config: %v", err)
 			}
 
-			// We only allow one external service per kind to be flagged as CloudGlobal, so pick those.
 			switch c := cfg.(type) {
 			case *schema.GitHubConnection:
 				if strings.HasPrefix(c.Url, "https://github.com") && c.Token != "" {
