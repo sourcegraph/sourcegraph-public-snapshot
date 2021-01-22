@@ -22,6 +22,8 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 	return nil
 }
 
+// initializeCodeInsightsDB connects to and initializes the Code Insights Timescale DB, running
+// database migrations before returning.
 func initializeCodeInsightsDB() (*sql.DB, error) {
 	timescaleDSN := conf.Get().ServiceConnections.CodeInsightsTimescaleDSN
 	conf.Watch(func() {
