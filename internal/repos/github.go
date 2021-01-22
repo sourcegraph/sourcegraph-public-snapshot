@@ -142,8 +142,10 @@ func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf 
 			// Need to copy the resource or func will use the last one seen while iterating
 			// the map
 			resource := resource
-			monitor.SetCollector(func(remaining float64) {
-				githubRemainingGauge.WithLabelValues(resource, svc.DisplayName).Set(remaining)
+			monitor.SetCollector(&ratelimit.MetricsCollector{
+				Remaining: func(remaining float64) {
+					githubRemainingGauge.WithLabelValues(resource, svc.DisplayName).Set(remaining)
+				},
 			})
 		}
 	}

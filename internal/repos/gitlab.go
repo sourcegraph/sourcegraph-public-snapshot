@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -101,8 +102,10 @@ func newGitLabSource(svc *types.ExternalService, c *schema.GitLabConnection, cf 
 	client := provider.GetPATClient(c.Token, "")
 
 	if !envvar.SourcegraphDotComMode() || svc.CloudDefault {
-		client.RateLimitMonitor().SetCollector(func(remaining float64) {
-			gitlabRemainingGauge.WithLabelValues("rest", svc.DisplayName).Set(remaining)
+		client.RateLimitMonitor().SetCollector(&ratelimit.MetricsCollector{
+			Remaining: func(remaining float64) {
+				gitlabRemainingGauge.WithLabelValues("rest", svc.DisplayName).Set(remaining)
+			},
 		})
 	}
 

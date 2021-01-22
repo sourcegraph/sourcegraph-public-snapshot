@@ -50,6 +50,12 @@ func (r *MonitorRegistry) Count() int {
 	return len(r.monitors)
 }
 
+// MetricsCollector is used so that we can inject metric collection functions for
+// difference monitor configurations.
+type MetricsCollector struct {
+	Remaining func(n float64)
+}
+
 // Monitor monitors an external service's rate limit based on the X-RateLimit-Remaining or RateLimit-Remaining
 // headers. It supports both GitHub's and GitLab's APIs.
 //
@@ -59,11 +65,11 @@ type Monitor struct {
 
 	mu        sync.Mutex
 	known     bool
-	limit     int                     // last RateLimit-Limit HTTP response header value
-	remaining int                     // last RateLimit-Remaining HTTP response header value
-	reset     time.Time               // last RateLimit-Remaining HTTP response header value
-	retry     time.Time               // deadline based on Retry-After HTTP response header value
-	collector func(remaining float64) // metrics collector for remaining tokens
+	limit     int               // last RateLimit-Limit HTTP response header value
+	remaining int               // last RateLimit-Remaining HTTP response header value
+	reset     time.Time         // last RateLimit-Remaining HTTP response header value
+	retry     time.Time         // deadline based on Retry-After HTTP response header value
+	collector *MetricsCollector // metrics collector
 
 	clock func() time.Time
 }
@@ -183,12 +189,12 @@ func (c *Monitor) Update(h http.Header) {
 	c.reset = time.Unix(resetAtSeconds, 0)
 
 	if c.known && c.collector != nil {
-		c.collector(float64(c.remaining))
+		c.collector.Remaining(float64(c.remaining))
 	}
 }
 
 // SetCollector sets the metric collector.
-func (c *Monitor) SetCollector(collector func(remaining float64)) {
+func (c *Monitor) SetCollector(collector *MetricsCollector) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.collector = collector
