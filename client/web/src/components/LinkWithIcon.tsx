@@ -3,7 +3,7 @@ import { Link, NavLink } from 'react-router-dom'
 import { kebabCase } from 'lodash'
 
 /**
- * A link that shows a icon with a given text.
+ * A link displaying an icon along with text.
  *
  */
 export const LinkWithIcon: React.FunctionComponent<{
