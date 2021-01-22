@@ -3,7 +3,10 @@ package repos
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"strings"
+
+	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -44,6 +47,35 @@ func (s PerforceSource) ListRepos(ctx context.Context, results chan SourceResult
 	}
 }
 
+// composePerforceCloneURL composes a clone URL for a Perforce depot based on
+// given information. e.g.
+// perforce://admin:password@ssl:111.222.333.444:1666//Sourcegraph/
+func composePerforceCloneURL(username, password, host, depot string) string {
+	cloneURL := url.URL{
+		Scheme: "perforce",
+		User:   url.UserPassword(username, password),
+		Host:   host,
+		Path:   depot,
+	}
+	return cloneURL.String()
+}
+
+// DecomposePerforceCloneURL decomposes information back from a clone URL for a
+// Perforce depot.
+func DecomposePerforceCloneURL(cloneURL string) (username, password, host, depot string, err error) {
+	url, err := url.Parse(cloneURL)
+	if err != nil {
+		return "", "", "", "", err
+	}
+
+	if url.Scheme != "perforce" {
+		return "", "", "", "", errors.New(`scheme is not "perforce"`)
+	}
+
+	password, _ = url.User.Password()
+	return url.User.Username(), password, url.Host, url.Path, nil
+}
+
 func (s PerforceSource) makeRepo(depot string) *types.Repo {
 	if !strings.HasSuffix(depot, "/") {
 		depot += "/"
@@ -51,8 +83,7 @@ func (s PerforceSource) makeRepo(depot string) *types.Repo {
 	name := strings.Trim(depot, "/")
 	urn := s.svc.URN()
 
-	// e.g. perforce://admin:password@ssl:111.222.333.444:1666//Sourcegraph/
-	cloneURL := fmt.Sprintf("perforce://%s:%s@%s%s", s.config.P4User, s.config.P4Passwd, s.config.P4Port, depot)
+	cloneURL := composePerforceCloneURL(s.config.P4User, s.config.P4Passwd, s.config.P4Port, depot)
 
 	return &types.Repo{
 		Name: api.RepoName(name),

@@ -3,13 +3,16 @@ package server
 import (
 	"context"
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 )
 
 // VCSSyncer describes whether and how to sync content from a VCS remote to
@@ -22,6 +25,8 @@ type VCSSyncer interface {
 	CloneCommand(ctx context.Context, url, tmpPath string) (cmd *exec.Cmd, err error)
 	// FetchCommand returns the command to be executed for fetching updates from remote.
 	FetchCommand(ctx context.Context, url string) (cmd *exec.Cmd, configRemoteOpts bool, err error)
+	// RemoteShowCommand returns the command to be executed for showing remote.
+	RemoteShowCommand(ctx context.Context, url string) (cmd *exec.Cmd, err error)
 }
 
 // GitRepoSyncer is a syncer for Git repositories.
@@ -88,20 +93,81 @@ func (s *GitRepoSyncer) FetchCommand(ctx context.Context, url string) (cmd *exec
 	return cmd, configRemoteOpts, nil
 }
 
+// RemoteShowCommand returns the command to be executed for showing remote of a Git repository.
+func (s *GitRepoSyncer) RemoteShowCommand(ctx context.Context, url string) (cmd *exec.Cmd, err error) {
+	return exec.CommandContext(ctx, "git", "remote", "show", url), nil
+}
+
 // PerforceDepotSyncer is a syncer for Perforce depots.
 type PerforceDepotSyncer struct{}
 
-// TODO(jchen)
+// IsCloneable checks to see if the Perforce remote URL is cloneable.
 func (s *PerforceDepotSyncer) IsCloneable(ctx context.Context, url string) error {
-	return errors.New("not yet implemented") // p4 ping
+	username, password, host, _, err := repos.DecomposePerforceCloneURL(url)
+	if err != nil {
+		return errors.Wrap(err, "decompose")
+	}
+	_ = password // TODO
+
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	// FIXME: Need to find a way to determine if depot exists instead of a general ping to the Perforce server.
+	cmd := exec.CommandContext(ctx, "p4", "ping", "-c", "1")
+	cmd.Env = append(os.Environ(),
+		"P4PORT="+host,
+		"P4USER="+username,
+	)
+	out, err := runWith(ctx, cmd, false, nil)
+	fmt.Println("out:", string(out)) // TODO: Delete me
+	if err != nil {
+		if ctxerr := ctx.Err(); ctxerr != nil {
+			err = ctxerr
+		}
+		if len(out) > 0 {
+			err = fmt.Errorf("%s (output follows)\n\n%s", err, out)
+		}
+		return err
+	}
+	return nil
 }
 
-// TODO(jchen)
-func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, url, tmpPath string) (cmd *exec.Cmd, err error) {
-	return nil, errors.New("not yet implemented") // git p4 clone
+// CloneCommand returns the command to be executed for cloning a Perforce depot as a Git repository.
+func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, url, tmpPath string) (*exec.Cmd, error) {
+	username, password, host, depot, err := repos.DecomposePerforceCloneURL(url)
+	if err != nil {
+		return nil, errors.Wrap(err, "decompose")
+	}
+	_ = password // TODO
+
+	cmd := exec.CommandContext(ctx, "git", "p4", "clone", "--bare", depot+"@all", tmpPath)
+	cmd.Env = append(os.Environ(),
+		"P4PORT="+host,
+		"P4USER="+username,
+	)
+
+	return cmd, nil
 }
 
-// TODO(jchen)
+// FetchCommand returns the command to be executed for fetching updates of a Perforce depot as a Git repository.
 func (s *PerforceDepotSyncer) FetchCommand(ctx context.Context, url string) (cmd *exec.Cmd, configRemoteOpts bool, err error) {
-	return nil, false, errors.New("not yet implemented") // git p4 sync
+	username, password, host, _, err := repos.DecomposePerforceCloneURL(url)
+	if err != nil {
+		return nil, false, errors.Wrap(err, "decompose")
+	}
+	_ = password // TODO
+
+	cmd = exec.CommandContext(ctx, "git", "p4", "sync")
+	cmd.Env = append(os.Environ(),
+		"P4PORT="+host,
+		"P4USER="+username,
+	)
+
+	return cmd, false, nil
+}
+
+// RemoteShowCommand returns the command to be executed for showing Git remote of a Perforce depot.
+func (s *PerforceDepotSyncer) RemoteShowCommand(ctx context.Context, url string) (cmd *exec.Cmd, err error) {
+	// Remote info is encoded as in the current repository
+	return exec.CommandContext(ctx, "git", "remote", "show", "./"), nil
 }
