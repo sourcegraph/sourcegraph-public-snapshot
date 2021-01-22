@@ -22,11 +22,16 @@ interface UserExternalAccountsResult {
     }
 }
 
-interface Props {
-    userID: Scalars['ID']
-    kinds: ExternalServiceKind[]
-    authProviders: AuthProvider[]
-    onDidError: (error: ErrorLike) => void
+interface GitHubExternalData {
+    name: string
+    login: string
+    html_url: string
+}
+
+interface GitLabExternalData {
+    name: string
+    username: string
+    web_url: string
 }
 
 type ServiceType = AuthProvider['serviceType']
@@ -36,12 +41,6 @@ type Status = undefined | 'loading' | ErrorLike | ExternalAccountsByType
 
 const isExternalAccountsByType = (status: Status): status is ExternalAccountsByType =>
     typeof status === 'object' && !isErrorLike(status)
-
-interface GithubExternalData {
-    name: string
-    login: string
-    html_url: string
-}
 
 export interface NormalizedMinAccount {
     name: string
@@ -53,6 +52,14 @@ export interface NormalizedMinAccount {
         userLogin: string
         userUrl: string
     }
+}
+
+interface Props {
+    userID: Scalars['ID']
+    kinds: ExternalServiceKind[]
+    authProviders: AuthProvider[]
+    onNoAccountsFetched: (show: boolean) => void
+    onDidError: (error: ErrorLike) => void
 }
 
 const getNormalizedAccount = (accounts: ExternalAccountsByType, kind: ExternalServiceKind): NormalizedMinAccount => {
@@ -74,12 +81,12 @@ const getNormalizedAccount = (accounts: ExternalAccountsByType, kind: ExternalSe
         switch (type) {
             case 'github':
                 {
-                    const githubExternalData = accountExternalData as GithubExternalData
+                    const githubExternalData = accountExternalData as GitHubExternalData
                     normalizedAccount = {
                         ...normalizedAccount,
-                        // map github fields
                         external: {
                             id: account.id,
+                            // map github fields
                             userName: githubExternalData.name,
                             userLogin: githubExternalData.login,
                             userUrl: githubExternalData.html_url,
@@ -88,8 +95,20 @@ const getNormalizedAccount = (accounts: ExternalAccountsByType, kind: ExternalSe
                 }
                 break
             case 'gitlab':
-            // TODO: add this
-            default:
+                {
+                    const gitlabExternalData = accountExternalData as GitLabExternalData
+                    normalizedAccount = {
+                        ...normalizedAccount,
+                        external: {
+                            id: account.id,
+                            // map gitlab fields
+                            userName: gitlabExternalData.name,
+                            userLogin: gitlabExternalData.username,
+                            userUrl: gitlabExternalData.web_url,
+                        },
+                    }
+                }
+                break
         }
     }
 
@@ -101,6 +120,7 @@ export const ExternalAccountsSignIn: React.FunctionComponent<Props> = ({
     kinds,
     authProviders,
     onDidError,
+    onNoAccountsFetched,
 }) => {
     const [statusOrError, setStatusOrError] = useState<Status>()
 
@@ -141,13 +161,25 @@ export const ExternalAccountsSignIn: React.FunctionComponent<Props> = ({
         }, {})
 
         setStatusOrError(externalAccountsByType)
-    }, [userID])
+
+        // let parent component know to render passwords form
+        // if (nodes.length === 0) {
+        //     onNoAccountsFetched(true)
+        // }
+    }, [userID, onNoAccountsFetched])
+
+    const handleError = useCallback(
+        (errorLike: ErrorLike): void => {
+            const error = asError(errorLike)
+            setStatusOrError(error)
+            onDidError(error)
+        },
+        [onDidError]
+    )
 
     useEffect(() => {
-        fetchUserExternalAccounts().catch(error => {
-            setStatusOrError(asError(error))
-        })
-    }, [fetchUserExternalAccounts])
+        fetchUserExternalAccounts().catch(handleError)
+    }, [fetchUserExternalAccounts, handleError])
 
     return (
         <>
@@ -163,8 +195,8 @@ export const ExternalAccountsSignIn: React.FunctionComponent<Props> = ({
             {isExternalAccountsByType(statusOrError) && (
                 <ul className="list-group w-50 mt-3">
                     {kinds.map(kind => {
-                        // because of the type guard it's knows statusOrError
-                        // is external accounts object, "renaming"
+                        // because of the type guard it's known statusOrError
+                        // is external accounts object
                         const externalAccountsByType = statusOrError
 
                         // TODO: do something about this kind/type conversion
@@ -182,7 +214,7 @@ export const ExternalAccountsSignIn: React.FunctionComponent<Props> = ({
                                         account={account}
                                         authProvider={authProvider}
                                         onDidRemove={fetchUserExternalAccounts}
-                                        onDidError={console.error}
+                                        onDidError={handleError}
                                     />
                                 </li>
                             )

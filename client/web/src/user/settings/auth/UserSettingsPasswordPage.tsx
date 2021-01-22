@@ -28,6 +28,7 @@ interface State {
     error?: Error
     loading?: boolean
     saved?: boolean
+    showPasswordsForm: boolean
     oldPassword: string
     newPassword: string
     newPasswordConfirmation: string
@@ -35,6 +36,7 @@ interface State {
 
 export class UserSettingsPasswordPage extends React.Component<Props, State> {
     public state: State = {
+        showPasswordsForm: false,
         oldPassword: '',
         newPassword: '',
         newPasswordConfirmation: '',
@@ -110,10 +112,10 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
                     kinds={[ExternalServiceKind.GITHUB, ExternalServiceKind.GITLAB]}
                     authProviders={this.props.context.authProviders}
                     onDidError={console.log}
+                    onNoAccountsFetched={this.onNoAccountsFetched()}
                 />
 
-                <hr className="my-4" />
-                {this.props.authenticatedUser.id !== this.props.user.id ? (
+                {this.props.authenticatedUser.id !== this.props.user.id && (
                     <div className="alert alert-danger">
                         Only the user may change their password. Site admins may{' '}
                         <Link to={`/site-admin/users?query=${encodeURIComponent(this.props.user.username)}`}>
@@ -121,8 +123,11 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
                         </Link>
                         .
                     </div>
-                ) : (
+                )}
+
+                {this.state.showPasswordsForm && (
                     <>
+                        <hr className="my-4" />
                         {this.state.error && (
                             <ErrorAlert className="mb-3" error={this.state.error} history={this.props.history} />
                         )}
@@ -197,6 +202,8 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
     private onNewPasswordFieldChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
         this.setState({ newPassword: event.target.value }, () => this.validateForm())
     }
+
+    private onNoAccountsFetched = () => (show: boolean): void => {this.setState({ showPasswordsForm: show })}
 
     private onNewPasswordConfirmationFieldChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
         this.setState({ newPasswordConfirmation: event.target.value }, () => this.validateForm())
