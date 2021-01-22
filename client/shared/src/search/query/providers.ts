@@ -1,6 +1,6 @@
 import * as Monaco from 'monaco-editor'
 import { Observable, ReplaySubject } from 'rxjs'
-import { ScanResult } from './scanner'
+import { ScanResult, scanSearchQuery } from './scanner'
 import { getMonacoTokens } from './decoratedToken'
 import { getCompletionItems } from './completion'
 import { getHoverResult } from './hover'
