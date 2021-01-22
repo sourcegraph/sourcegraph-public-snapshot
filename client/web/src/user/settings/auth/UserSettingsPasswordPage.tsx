@@ -13,7 +13,7 @@ import { ErrorAlert } from '../../../components/alerts'
 import * as H from 'history'
 import { AuthenticatedUser } from '../../../auth'
 import { UserAreaUserFields, ExternalServiceKind } from '../../../graphql-operations'
-import { CodeHostsSignIn } from './CodeHostsSignIn'
+import { ExternalAccountsSignIn } from './ExternalAccountsSignIn'
 import { Link } from '../../../../../shared/src/components/Link'
 import { SourcegraphContext } from '../../../jscontext'
 
@@ -105,7 +105,7 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
                     will be used to sign in to Sourcegraph in the future.
                 </span>
 
-                <CodeHostsSignIn
+                <ExternalAccountsSignIn
                     userID={this.props.user.id}
                     kinds={[ExternalServiceKind.GITHUB, ExternalServiceKind.GITLAB]}
                     authProviders={this.props.context.authProviders}
