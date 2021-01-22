@@ -44,7 +44,7 @@ func (r lsifTscJobRecognizer) InferIndexJobs(paths []string, gitserver Gitserver
 			if exists := contains(paths, filepath.Join(dir, "lerna.json")); exists && !isYarn {
 				b, err := gitserver.RawContents(context.TODO(), "lerna.json")
 				if err == nil {
-					c := lernaConfig{}
+					var c lernaConfig
 					if err := json.Unmarshal(b, &c); err == nil {
 						isYarn = c.NPMClient == "yarn"
 					}
