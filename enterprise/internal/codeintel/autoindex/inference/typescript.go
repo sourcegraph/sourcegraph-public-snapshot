@@ -39,8 +39,6 @@ func (r lsifTscJobRecognizer) InferIndexJobs(paths []string, gitserver Gitserver
 		var isYarn bool
 		var dockerSteps []DockerStep
 		for _, dir := range ancestorDirs(path) {
-			// for the sake of simplicity, we dont take command-specific npmClient into account
-			// https://github.com/lerna/lerna#lernajson
 			if exists := contains(paths, filepath.Join(dir, "lerna.json")); exists && !isYarn {
 				if b, err := gitserver.RawContents(context.TODO(), "lerna.json"); err == nil {
 					var c lernaConfig
