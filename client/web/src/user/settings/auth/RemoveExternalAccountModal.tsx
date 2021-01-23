@@ -27,7 +27,7 @@ export const RemoveExternalAccountModal: React.FunctionComponent<{
     id: Scalars['ID']
     name: string
 
-    onDidRemove: () => void
+    onDidRemove: (id: string, name: string) => void
     onDidCancel: () => void
     onDidError: (error: ErrorLike) => void
 }> = ({ id, name, onDidRemove, onDidCancel, onDidError }) => {
@@ -40,14 +40,14 @@ export const RemoveExternalAccountModal: React.FunctionComponent<{
 
             try {
                 await deleteUserExternalAccount(id)
-                onDidRemove()
+                onDidRemove(id, name)
             } catch (error) {
                 setIsLoading(false)
                 onDidError(asError(error))
                 onDidCancel()
             }
         },
-        [id, onDidRemove, onDidError, onDidCancel]
+        [id, name, onDidRemove, onDidError, onDidCancel]
     )
 
     return (

@@ -1,18 +1,15 @@
 import React, { useState, useCallback } from 'react'
 import { Link } from '../../../../../shared/src/components/Link'
-// import { ErrorLike } from '../../../../../shared/src/util/errors'
-import { SourcegraphContext } from '../../../jscontext'
-import { RemoveExternalAccountModal } from './RemoveExternalAccountModal'
 
-import type { NormalizedMinAccount } from './ExternalAccountsSignIn'
 import { ErrorLike } from '../../../../../shared/src/util/errors'
-
-type AuthProvider = SourcegraphContext['authProviders'][0]
+import { RemoveExternalAccountModal } from './RemoveExternalAccountModal'
+import type { NormalizedMinAccount } from './ExternalAccountsSignIn'
+import type { AuthProvider } from './UserSettingsSecurityPage'
 
 interface Props {
     account: NormalizedMinAccount
     authProvider: AuthProvider
-    onDidRemove: () => void
+    onDidRemove: (id: string, name: string) => void
     onDidError: (error: ErrorLike) => void
 }
 
@@ -45,7 +42,7 @@ export const ExternalAccount: React.FunctionComponent<Props> = ({ account, authP
                         <>
                             {account.external.userName} (
                             <Link to={account.external.userUrl} target="_blank" rel="noopener noreferrer">
-                                @{account.external.userLogin}
+                                <span className="text-primary">@{account.external.userLogin}</span>
                             </Link>
                             )
                         </>
