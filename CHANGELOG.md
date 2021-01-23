@@ -19,6 +19,12 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Removed
 
+## 3.24.3
+
+### Fixed
+
+- 3.24.2 disabled the faster volume workspace on macOS when one or more non-root Docker images was used by a campaign to work around [the bug in issue #432](https://github.com/sourcegraph/src-cli/issues/432). This functionality has now been restored. [#434](https://github.com/sourcegraph/src-cli/pull/434)
+
 ## 3.24.2
 
 ### Fixed
