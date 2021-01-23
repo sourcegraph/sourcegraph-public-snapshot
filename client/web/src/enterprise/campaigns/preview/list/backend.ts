@@ -209,14 +209,21 @@ export const queryChangesetApplyPreview = ({
     first,
     after,
     search,
+    currentState,
 }: CampaignSpecApplyPreviewVariables): Observable<CampaignSpecApplyPreviewConnectionFields> =>
     requestGraphQL<CampaignSpecApplyPreviewResult, CampaignSpecApplyPreviewVariables>(
         gql`
-            query CampaignSpecApplyPreview($campaignSpec: ID!, $first: Int, $after: String, $search: String) {
+            query CampaignSpecApplyPreview(
+                $campaignSpec: ID!
+                $first: Int
+                $after: String
+                $search: String
+                $currentState: ChangesetState
+            ) {
                 node(id: $campaignSpec) {
                     __typename
                     ... on CampaignSpec {
-                        applyPreview(first: $first, after: $after, search: $search) {
+                        applyPreview(first: $first, after: $after, search: $search, currentState: $currentState) {
                             ...CampaignSpecApplyPreviewConnectionFields
                         }
                     }
@@ -225,7 +232,7 @@ export const queryChangesetApplyPreview = ({
 
             ${campaignSpecApplyPreviewConnectionFieldsFragment}
         `,
-        { campaignSpec, first, after, search }
+        { campaignSpec, first, after, search, currentState }
     ).pipe(
         map(dataOrThrowErrors),
         map(({ node }) => {
