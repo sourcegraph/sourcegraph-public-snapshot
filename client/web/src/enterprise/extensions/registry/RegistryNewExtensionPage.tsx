@@ -128,7 +128,7 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
             )
 
             this.subscriptions.add(
-                this.props.setBreadcrumb({ key: 'create-new-extension', element: <>Create new extension</> })
+                this.props.setBreadcrumb({ key: 'create-new-extension', element: <>Create extension</> })
             )
 
             this.componentUpdates.next(this.props)
@@ -217,8 +217,8 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                                 {this.state.creationOrError === 'loading' ? (
                                     <LoadingSpinner className="icon-inline" />
                                 ) : (
-                                    <AddIcon className="icon-inline" />
-                                )}{' '}
+                                        <AddIcon className="icon-inline" />
+                                    )}{' '}
                                 Create extension
                             </button>
                         </Form>
