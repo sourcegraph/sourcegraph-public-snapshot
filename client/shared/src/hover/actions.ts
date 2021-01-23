@@ -337,46 +337,42 @@ export function registerHoverContributions({
             //
             // TODO(sqs): Pin hover after an action has been clicked and before it has completed.
             const contribs = {
-                contributions: {
-                    actions: [
-                        {
-                            id: 'goToDefinition',
-                            title: 'Go to definition',
-                            command: 'goToDefinition',
-                            commandArguments: [
-                                /* eslint-disable no-template-curly-in-string */
-                                '${json(hoverPosition)}',
-                                /* eslint-enable no-template-curly-in-string */
-                            ],
-                        },
-                        {
-                            // This action is used when preloading the definition succeeded and at least 1
-                            // definition was found.
-                            id: 'goToDefinition.preloaded',
-                            title: 'Go to definition',
-                            command: 'open',
-                            // eslint-disable-next-line no-template-curly-in-string
-                            commandArguments: ['${goToDefinition.url}'],
-                        },
-                    ],
-                    menus: {
-                        hover: [
-                            // Do not show any actions if no definition provider is registered. (In that case,
-                            // goToDefinition.{error, loading, url} will all be falsey.)
-                            {
-                                action: 'goToDefinition',
-                                when: 'goToDefinition.error || goToDefinition.showLoading',
-                            },
-                            {
-                                action: 'goToDefinition.preloaded',
-                                when: 'goToDefinition.url',
-                            },
+                actions: [
+                    {
+                        id: 'goToDefinition',
+                        title: 'Go to definition',
+                        command: 'goToDefinition',
+                        commandArguments: [
+                            /* eslint-disable no-template-curly-in-string */
+                            '${json(hoverPosition)}',
+                            /* eslint-enable no-template-curly-in-string */
                         ],
                     },
+                    {
+                        // This action is used when preloading the definition succeeded and at least 1
+                        // definition was found.
+                        id: 'goToDefinition.preloaded',
+                        title: 'Go to definition',
+                        command: 'open',
+                        // eslint-disable-next-line no-template-curly-in-string
+                        commandArguments: ['${goToDefinition.url}'],
+                    },
+                ],
+                menus: {
+                    hover: [
+                        // Do not show any actions if no definition provider is registered. (In that case,
+                        // goToDefinition.{error, loading, url} will all be falsey.)
+                        {
+                            action: 'goToDefinition',
+                            when: 'goToDefinition.error || goToDefinition.showLoading',
+                        },
+                        {
+                            action: 'goToDefinition.preloaded',
+                            when: 'goToDefinition.url',
+                        },
+                    ],
                 },
             }
-            const rezzz = contribs.contributions.menus.hover[0].when.exec({})
-            console.log('contribs on client', { contribs, rezzz })
 
             subscriptions.add(syncSubscription(extensionHostAPI.registerContributions(contribs)))
 
@@ -433,30 +429,28 @@ export function registerHoverContributions({
             subscriptions.add(
                 syncSubscription(
                     extensionHostAPI.registerContributions({
-                        contributions: {
-                            actions: [
+                        actions: [
+                            {
+                                id: 'findReferences',
+                                // title: parseTemplate('Find references'),
+                                title: 'Find references',
+                                command: 'open',
+                                // eslint-disable-next-line no-template-curly-in-string
+                                commandArguments: ['${findReferences.url}'],
+                            },
+                        ],
+                        menus: {
+                            hover: [
+                                // To reduce UI jitter, even though "Find references" can be shown immediately (because
+                                // the URL can be statically constructed), don't show it until either (1) "Go to
+                                // definition" is showing or (2) the LOADER_DELAY has elapsed. The part (2) of this
+                                // logic is implemented in the observable pipe that sets findReferences.url above.
                                 {
-                                    id: 'findReferences',
-                                    // title: parseTemplate('Find references'),
-                                    title: 'Find references',
-                                    command: 'open',
-                                    // eslint-disable-next-line no-template-curly-in-string
-                                    commandArguments: ['${findReferences.url}'],
+                                    action: 'findReferences',
+                                    when:
+                                        'findReferences.url && (goToDefinition.showLoading || goToDefinition.url || goToDefinition.error)',
                                 },
                             ],
-                            menus: {
-                                hover: [
-                                    // To reduce UI jitter, even though "Find references" can be shown immediately (because
-                                    // the URL can be statically constructed), don't show it until either (1) "Go to
-                                    // definition" is showing or (2) the LOADER_DELAY has elapsed. The part (2) of this
-                                    // logic is implemented in the observable pipe that sets findReferences.url above.
-                                    {
-                                        action: 'findReferences',
-                                        when:
-                                            'findReferences.url && (goToDefinition.showLoading || goToDefinition.url || goToDefinition.error)',
-                                    },
-                                ],
-                            },
                         },
                     })
                 )

@@ -117,7 +117,7 @@ export interface FlatExtensionHostAPI {
      * Register contributions and return an unsubscribable that deregisters the contributions.
      * Any expressions in the contributions will be parsed in the extension host.
      */
-    registerContributions: (entryToRegister: Raw<Contributions>) => sourcegraph.Unsubscribable & ProxyMarked
+    registerContributions: (rawContributions: Raw<Contributions>) => sourcegraph.Unsubscribable & ProxyMarked
 
     /**
      * Returns an observable that emits all contributions (merged) evaluated in the current model

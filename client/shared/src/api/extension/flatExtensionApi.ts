@@ -456,18 +456,12 @@ export const initNewExtensionAPI = (
 
         // Context data + Contributions
         updateContext,
-        registerContributions: contributions => {
-            console.log('extHostContributions', contributions)
+        registerContributions: rawContributions => {
+            const parsedContributions = parseContributionExpressions(rawContributions)
 
-            // contributions registered from `registerContributions` no longer have to be observables!
-            // the only usecase for observable contributions is extension contributions.
-            // that's currently inefficient since all contribs are parsed each time the set
-            // of active extensions changes. we can directly addWithRollback extension contributions
-            // in the host once refactor is done!
-            // TODO(tj): parse templates
-            const parsedEntry = parseContributionExpressions(contributions)
+            console.log('extHostContributions', { rawContributions, parsedContributions })
 
-            return proxy(addWithRollback(state.contributions, parsedEntry))
+            return proxy(addWithRollback(state.contributions, parsedContributions))
         },
         getContributions: (scope, extraContext) =>
             // TODO(tj): memoize access from mainthread
@@ -518,7 +512,7 @@ export const initNewExtensionAPI = (
                         })
                     }),
                     map(mergeContributions),
-                    distinctUntilChanged((a, b) => isEqual(a, b))
+                    distinctUntilChanged(isEqual)
                 )
             ),
 
