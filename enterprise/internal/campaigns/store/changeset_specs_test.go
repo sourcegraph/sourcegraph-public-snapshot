@@ -677,6 +677,10 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 	})
 }
 
+func testStoreChangesetSpecsCurrentState(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
+	// TODO: set up test scenarios and, well, test them.
+}
+
 func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
 	repoStore := database.ReposWith(s)
 	esStore := database.ExternalServicesWith(s)

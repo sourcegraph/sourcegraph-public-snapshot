@@ -550,8 +550,10 @@ type GetRewirerMappingsOpts struct {
 	CampaignSpecID int64
 	CampaignID     int64
 
-	LimitOffset *database.LimitOffset
-	TextSearch  []search.TextSearchTerm
+	LimitOffset  *database.LimitOffset
+	TextSearch   []search.TextSearchTerm
+	CurrentState *campaigns.ChangesetState
+	Action       *campaigns.ReconcilerOperation
 }
 
 // GetRewirerMappings returns RewirerMappings between changeset specs and changesets.
@@ -605,7 +607,10 @@ type GetRewirerMappingsOpts struct {
 // Spec 4 should be attached to Changeset 4, since it tracks PR #333 in Repo C. (ChangesetSpec = 4, Changeset = 4)
 // Changeset 3 doesn't have a matching spec and should be detached from the campaign (and closed) (ChangesetSpec == 0, Changeset = 3).
 func (s *Store) GetRewirerMappings(ctx context.Context, opts GetRewirerMappingsOpts) (mappings RewirerMappings, err error) {
-	q := getRewirerMappingsQuery(opts)
+	q, err := getRewirerMappingsQuery(opts)
+	if err != nil {
+		return nil, err
+	}
 
 	err = s.query(ctx, q, func(sc scanner) error {
 		var c RewirerMapping
@@ -618,10 +623,74 @@ func (s *Store) GetRewirerMappings(ctx context.Context, opts GetRewirerMappingsO
 	return mappings, err
 }
 
-func getRewirerMappingsQuery(opts GetRewirerMappingsOpts) *sqlf.Query {
+func getRewirerMappingsQuery(opts GetRewirerMappingsOpts) (*sqlf.Query, error) {
 	// If there's a text search, we want to add the appropriate WHERE clauses to
-	// the query.
-	//
+	// the query. Note that we need to use different WHERE clauses depending on
+	// which part of the big UNION below we're in; more detail on that is
+	// documented in getRewirerMappingsTextSearch().
+	detachTextSearch, viewTextSearch := getRewirerMappingTextSearch(opts.TextSearch)
+
+	// Happily, current state is simpler. Less happily, it can error.
+	currentState, err := getRewirerMappingCurrentState(opts.CurrentState)
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing current state option")
+	}
+
+	// TODO: support action filtering.
+
+	return sqlf.Sprintf(
+		getRewirerMappingsQueryFmtstr,
+		opts.CampaignSpecID,
+		viewTextSearch,
+		currentState,
+		opts.CampaignID,
+		opts.CampaignSpecID,
+		viewTextSearch,
+		currentState,
+		opts.CampaignSpecID,
+		opts.CampaignID,
+		opts.CampaignSpecID,
+		strconv.Itoa(int(opts.CampaignID)),
+		detachTextSearch,
+		currentState,
+		opts.LimitOffset.SQL(),
+	), nil
+}
+
+func getRewirerMappingCurrentState(state *campaigns.ChangesetState) (*sqlf.Query, error) {
+	if state == nil {
+		return sqlf.Sprintf(""), nil
+	}
+
+	// This is essentially the reverse mapping of changesetResolver.State.
+	var q *sqlf.Query
+	switch *state {
+	case campaigns.ChangesetStateRetrying:
+		q = sqlf.Sprintf("reconciler_state = %s", campaigns.ReconcilerStateErrored)
+	case campaigns.ChangesetStateFailed:
+		q = sqlf.Sprintf("reconciler_state = %s", campaigns.ReconcilerStateFailed)
+	case campaigns.ChangesetStateProcessing:
+		q = sqlf.Sprintf("reconciler_state = %s", campaigns.ReconcilerStateCompleted)
+	case campaigns.ChangesetStateUnpublished:
+		q = sqlf.Sprintf("publication_state = %s", campaigns.ChangesetPublicationStateUnpublished)
+	case campaigns.ChangesetStateDraft:
+		q = sqlf.Sprintf("external_state = %s", campaigns.ChangesetExternalStateDraft)
+	case campaigns.ChangesetStateOpen:
+		q = sqlf.Sprintf("external_state = %s", campaigns.ChangesetExternalStateOpen)
+	case campaigns.ChangesetStateClosed:
+		q = sqlf.Sprintf("external_state = %s", campaigns.ChangesetExternalStateClosed)
+	case campaigns.ChangesetStateMerged:
+		q = sqlf.Sprintf("external_state = %s", campaigns.ChangesetExternalStateMerged)
+	case campaigns.ChangesetStateDeleted:
+		q = sqlf.Sprintf("external_state = %s", campaigns.ChangesetExternalStateDeleted)
+	default:
+		return nil, errors.Errorf("unknown changeset state: %q", *state)
+	}
+
+	return sqlf.Sprintf("AND %s", q), nil
+}
+
+func getRewirerMappingTextSearch(terms []search.TextSearchTerm) (detachTextSearch, viewTextSearch *sqlf.Query) {
 	// This gets a little tricky: we want to search both the changeset name and
 	// the repository name. These are exposed somewhat differently depending on
 	// which subquery we're adding the clause to in the big UNION query that's
@@ -629,13 +698,11 @@ func getRewirerMappingsQuery(opts GetRewirerMappingsOpts) *sqlf.Query {
 	// fields, whereas the detached changeset subquery has to query the fields
 	// directly, since it's just a simple JOIN. As a result, we need two sets of
 	// everything.
-	var detachTextSearch *sqlf.Query
-	var viewTextSearch *sqlf.Query
-	if len(opts.TextSearch) > 0 {
-		detachSearches := make([]*sqlf.Query, len(opts.TextSearch))
-		viewSearches := make([]*sqlf.Query, len(opts.TextSearch))
+	if len(terms) > 0 {
+		detachSearches := make([]*sqlf.Query, len(terms))
+		viewSearches := make([]*sqlf.Query, len(terms))
 
-		for i, term := range opts.TextSearch {
+		for i, term := range terms {
 			detachSearches[i] = textSearchTermToClause(
 				term,
 				sqlf.Sprintf("COALESCE(changesets.metadata->>'Title', changesets.metadata->>'title')"),
@@ -656,20 +723,7 @@ func getRewirerMappingsQuery(opts GetRewirerMappingsOpts) *sqlf.Query {
 		viewTextSearch = sqlf.Sprintf("")
 	}
 
-	return sqlf.Sprintf(
-		getRewirerMappingsQueryFmtstr,
-		opts.CampaignSpecID,
-		viewTextSearch,
-		opts.CampaignID,
-		opts.CampaignSpecID,
-		viewTextSearch,
-		opts.CampaignSpecID,
-		opts.CampaignID,
-		opts.CampaignSpecID,
-		strconv.Itoa(int(opts.CampaignID)),
-		detachTextSearch,
-		opts.LimitOffset.SQL(),
-	)
+	return detachTextSearch, viewTextSearch
 }
 
 var getRewirerMappingsQueryFmtstr = `
@@ -685,6 +739,7 @@ SELECT mappings.changeset_spec_id, mappings.changeset_id, mappings.repo_id FROM 
 	WHERE
 		campaign_spec_id = %s
 		%s -- text search query, if provided
+		%s -- current state, if provided
 
 	UNION ALL
 
@@ -697,6 +752,7 @@ SELECT mappings.changeset_spec_id, mappings.changeset_id, mappings.repo_id FROM 
 	WHERE
 		campaign_spec_id = %s
 		%s -- text search query, if provided
+		%s -- current state, if provided
 	GROUP BY changeset_spec_id, repo_id
 
 	UNION ALL
@@ -725,6 +781,7 @@ SELECT mappings.changeset_spec_id, mappings.changeset_id, mappings.repo_id FROM 
 		) AND
 		changesets.campaign_ids ? %s
 		%s -- text search query, if provided
+		%s -- current state, if provided
 ) AS mappings
 ORDER BY mappings.changeset_spec_id ASC, mappings.changeset_id ASC
 -- LIMIT, OFFSET
