@@ -1,13 +1,14 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import * as H from 'history'
-import { ChangesetState } from '../../../../graphql-operations'
-import { isValidChangesetState } from '../../utils'
+import { ChangesetSpecOperation, ChangesetState } from '../../../../graphql-operations'
+import { isValidChangesetSpecOperation, isValidChangesetState } from '../../utils'
 import { ChangesetFilter } from '../../ChangesetFilter'
 import { Form } from 'reactstrap'
 
 export interface PreviewFilters {
     search: string | null
     currentState: ChangesetState | null
+    action: ChangesetSpecOperation | null
 }
 
 export interface PreviewFilterRowProps {
@@ -25,6 +26,10 @@ export const PreviewFilterRow: React.FunctionComponent<PreviewFilterRowProps> = 
 
     const searchElement = useRef<HTMLInputElement | null>(null)
 
+    const [action, setAction] = useState<ChangesetSpecOperation | undefined>(() => {
+        const value = urlParameters.get('action')
+        return value && isValidChangesetSpecOperation(value) ? value : undefined
+    })
     const [currentState, setCurrentState] = useState<ChangesetState | undefined>(() => {
         const value = urlParameters.get('current_state')
         return value && isValidChangesetState(value) ? value : undefined
@@ -40,6 +45,12 @@ export const PreviewFilterRow: React.FunctionComponent<PreviewFilterRowProps> = 
             urlParameters.delete('search')
         }
 
+        if (action) {
+            urlParameters.set('action', action)
+        } else {
+            urlParameters.delete('action')
+        }
+
         if (currentState) {
             urlParameters.set('current_state', currentState)
         } else {
@@ -51,11 +62,11 @@ export const PreviewFilterRow: React.FunctionComponent<PreviewFilterRowProps> = 
         }
 
         // Update the filters in the parent component.
-        onFiltersChange({ search: search || null, currentState: currentState || null })
+        onFiltersChange({ search: search || null, action: action || null, currentState: currentState || null })
 
         // We cannot depend on the history, since it's modified by this hook and that would cause an infinite render loop.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [search, currentState])
+    }, [search, action, currentState])
 
     const onSubmit = useCallback(
         (event: React.FormEvent<HTMLFormElement>): void => {
@@ -87,6 +98,15 @@ export const PreviewFilterRow: React.FunctionComponent<PreviewFilterRowProps> = 
                             label="Current state"
                             selected={currentState}
                             onChange={setCurrentState}
+                            className="w-100"
+                        />
+                    </div>
+                    <div className="col my-2 ml-0 ml-md-2">
+                        <ChangesetFilter<ChangesetSpecOperation>
+                            values={Object.values(ChangesetSpecOperation)}
+                            label="Actions"
+                            selected={action}
+                            onChange={setAction}
                             className="w-100"
                         />
                     </div>

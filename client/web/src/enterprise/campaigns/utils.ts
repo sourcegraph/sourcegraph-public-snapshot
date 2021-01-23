@@ -1,4 +1,9 @@
-import { ChangesetCheckState, ChangesetReviewState, ChangesetState } from '../../graphql-operations'
+import {
+    ChangesetCheckState,
+    ChangesetReviewState,
+    ChangesetSpecOperation,
+    ChangesetState,
+} from '../../graphql-operations'
 import { HoveredToken } from '@sourcegraph/codeintellify'
 import {
     RepoSpec,
@@ -29,6 +34,10 @@ export function getLSPTextDocumentPositionParameters(
         position: hoveredToken,
         mode: getModeFromPath(hoveredToken.filePath || ''),
     }
+}
+
+export function isValidChangesetSpecOperation(input: string): input is ChangesetSpecOperation {
+    return Object.values<string>(ChangesetSpecOperation).includes(input)
 }
 
 export function isValidChangesetState(input: string): input is ChangesetState {
