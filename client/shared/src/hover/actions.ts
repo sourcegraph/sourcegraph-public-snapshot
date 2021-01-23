@@ -316,7 +316,7 @@ export function registerHoverContributions({
     const subscriptions = new Subscription()
 
     extensionsController.extHostAPI
-        .then(extHostAPI => {
+        .then(extensionHostAPI => {
             // Registers the "Go to definition" action shown in the hover tooltip. When clicked, the action finds the
             // definition of the token using the registered definition providers and navigates the user there.
             //
@@ -341,11 +341,11 @@ export function registerHoverContributions({
                     actions: [
                         {
                             id: 'goToDefinition',
-                            title: parseTemplate('Go to definition'),
+                            title: 'Go to definition',
                             command: 'goToDefinition',
                             commandArguments: [
                                 /* eslint-disable no-template-curly-in-string */
-                                parseTemplate('${json(hoverPosition)}'),
+                                '${json(hoverPosition)}',
                                 /* eslint-enable no-template-curly-in-string */
                             ],
                         },
@@ -353,10 +353,10 @@ export function registerHoverContributions({
                             // This action is used when preloading the definition succeeded and at least 1
                             // definition was found.
                             id: 'goToDefinition.preloaded',
-                            title: parseTemplate('Go to definition'),
+                            title: 'Go to definition',
                             command: 'open',
                             // eslint-disable-next-line no-template-curly-in-string
-                            commandArguments: [parseTemplate('${goToDefinition.url}')],
+                            commandArguments: ['${goToDefinition.url}'],
                         },
                     ],
                     menus: {
@@ -365,11 +365,11 @@ export function registerHoverContributions({
                             // goToDefinition.{error, loading, url} will all be falsey.)
                             {
                                 action: 'goToDefinition',
-                                when: parse('goToDefinition.error || goToDefinition.showLoading'),
+                                when: 'goToDefinition.error || goToDefinition.showLoading',
                             },
                             {
                                 action: 'goToDefinition.preloaded',
-                                when: parse('goToDefinition.url'),
+                                when: 'goToDefinition.url',
                             },
                         ],
                     },
@@ -378,7 +378,7 @@ export function registerHoverContributions({
             const rezzz = contribs.contributions.menus.hover[0].when.exec({})
             console.log('contribs on client', { contribs, rezzz })
 
-            subscriptions.add(syncSubscription(extHostAPI.registerContributions(contribs)))
+            subscriptions.add(syncSubscription(extensionHostAPI.registerContributions(contribs)))
 
             subscriptions.add(
                 extensionsController.registerCommand({
@@ -388,7 +388,7 @@ export function registerHoverContributions({
                             parametersString
                         )
 
-                        const { result } = await wrapRemoteObservable(extHostAPI.getDefinition(parameters))
+                        const { result } = await wrapRemoteObservable(extensionHostAPI.getDefinition(parameters))
                             .pipe(
                                 getDefinitionURL(
                                     { urlToFile, requestGraphQL },
@@ -432,15 +432,16 @@ export function registerHoverContributions({
             // query any providers).
             subscriptions.add(
                 syncSubscription(
-                    extHostAPI.registerContributions({
+                    extensionHostAPI.registerContributions({
                         contributions: {
                             actions: [
                                 {
                                     id: 'findReferences',
-                                    title: parseTemplate('Find references'),
+                                    // title: parseTemplate('Find references'),
+                                    title: 'Find references',
                                     command: 'open',
                                     // eslint-disable-next-line no-template-curly-in-string
-                                    commandArguments: [parseTemplate('${findReferences.url}')],
+                                    commandArguments: ['${findReferences.url}'],
                                 },
                             ],
                             menus: {
@@ -451,9 +452,8 @@ export function registerHoverContributions({
                                     // logic is implemented in the observable pipe that sets findReferences.url above.
                                     {
                                         action: 'findReferences',
-                                        when: parse(
-                                            'findReferences.url && (goToDefinition.showLoading || goToDefinition.url || goToDefinition.error)'
-                                        ),
+                                        when:
+                                            'findReferences.url && (goToDefinition.showLoading || goToDefinition.url || goToDefinition.error)',
                                     },
                                 ],
                             },

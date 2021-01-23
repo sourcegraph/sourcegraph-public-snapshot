@@ -4,13 +4,12 @@ import * as clientType from '@sourcegraph/extension-api-types'
 import { Remote, ProxyMarked } from 'comlink'
 import * as sourcegraph from 'sourcegraph'
 import { ProxySubscribable } from './extension/api/common'
-import { Contributions, Evaluated, TextDocumentPositionParameters } from './protocol'
+import { Contributions, Evaluated, Raw, TextDocumentPositionParameters } from './protocol'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { HoverMerged } from './client/types/hover'
 import { GraphQLResult } from '../graphql/graphql'
 import { Context, FileDecorationsByPath } from './extension/flatExtensionApi'
 import { ViewerData, ViewerId } from './client/services/viewerService'
-import { ContributionsEntry, ContributionUnsubscribable } from './client/services/contribution'
 import { ContributionScope } from './client/context/context'
 
 // TODO: Move types to extension-api-types
@@ -116,11 +115,9 @@ export interface FlatExtensionHostAPI {
 
     /**
      * Register contributions and return an unsubscribable that deregisters the contributions.
-     * Any expressions in the contributions need to be already parsed for fast re-evaluation.
-     *
-     * TODO(tj): client apps should register RAW contributions! parse on ext host and update description
+     * Any expressions in the contributions will be parsed in the extension host.
      */
-    registerContributions: (entryToRegister: ContributionsEntry) => sourcegraph.Unsubscribable & ProxyMarked
+    registerContributions: (entryToRegister: Raw<Contributions>) => sourcegraph.Unsubscribable & ProxyMarked
 
     /**
      * Returns an observable that emits all contributions (merged) evaluated in the current model

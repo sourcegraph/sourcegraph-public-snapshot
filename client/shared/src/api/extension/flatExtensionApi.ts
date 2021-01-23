@@ -46,7 +46,12 @@ import { ExtensionWorkspaceRoot } from './api/workspaceRoot'
 import { asError } from '../../util/errors'
 import { ViewerWithPartialModel } from '../client/services/viewerService'
 import { computeContext } from '../client/context/context'
-import { filterContributions, evaluateContributions, mergeContributions } from '../client/services/contribution'
+import {
+    filterContributions,
+    evaluateContributions,
+    mergeContributions,
+    parseContributionExpressions,
+} from '../client/services/contribution'
 
 /**
  * Holds the entire state exposed to the extension host
@@ -72,8 +77,8 @@ export interface ExtensionHostState {
 
     // Context + Contributions
     context: BehaviorSubject<Context>
-    /** All contribution entries, including entries that are not enabled in the current context. */
-    contributionEntries: BehaviorSubject<readonly ContributionsEntry[]>
+    /** All contributions, including those that are not enabled in the current context. */
+    contributions: BehaviorSubject<readonly Contributions[]>
 
     // Viewer + Text documents
     lastViewerId: number
@@ -200,7 +205,7 @@ export const initNewExtensionAPI = (
             // extensions needing this).
             'clientApplication.extensionAPIVersion.major': 3,
         }),
-        contributionEntries: new BehaviorSubject<readonly ContributionsEntry[]>([]),
+        contributions: new BehaviorSubject<readonly Contributions[]>([]),
 
         lastViewerId: 0,
         textDocuments: new Map<string, ExtensionDocument>(),
@@ -451,22 +456,24 @@ export const initNewExtensionAPI = (
 
         // Context data + Contributions
         updateContext,
-        registerContributions: entryToRegister => proxy(addWithRollback(state.contributionEntries, entryToRegister)),
+        registerContributions: contributions => {
+            console.log('extHostContributions', contributions)
+
+            // contributions registered from `registerContributions` no longer have to be observables!
+            // the only usecase for observable contributions is extension contributions.
+            // that's currently inefficient since all contribs are parsed each time the set
+            // of active extensions changes. we can directly addWithRollback extension contributions
+            // in the host once refactor is done!
+            // TODO(tj): parse templates
+            const parsedEntry = parseContributionExpressions(contributions)
+
+            return proxy(addWithRollback(state.contributions, parsedEntry))
+        },
         getContributions: (scope, extraContext) =>
             // TODO(tj): memoize access from mainthread
             proxySubscribable(
                 combineLatest([
-                    state.contributionEntries.pipe(
-                        switchMap(entries =>
-                            combineLatestOrDefault(
-                                entries.map(entry =>
-                                    isObservable<Contributions | Contributions[]>(entry.contributions)
-                                        ? entry.contributions
-                                        : of(entry.contributions)
-                                )
-                            )
-                        )
-                    ),
+                    state.contributions,
                     state.activeViewComponentChanges.pipe(
                         map((activeEditor): ViewerWithPartialModel | undefined => {
                             if (!activeEditor) {
@@ -495,7 +502,7 @@ export const initNewExtensionAPI = (
                         // TODO(sqs): Observe context so that we update immediately upon changes.
                         const computedContext = computeContext(activeEditor, settings, context, scope)
 
-                        return multiContributions.flat().map(contributions => {
+                        return multiContributions.map(contributions => {
                             try {
                                 console.log({ computedContext, contributions })
                                 return filterContributions(evaluateContributions(computedContext, contributions))
@@ -520,7 +527,7 @@ export const initNewExtensionAPI = (
         getProgressNotifications: () => proxySubscribable(state.progressNotifications.asObservable()),
     }
 
-    state.contributionEntries.subscribe(entries => console.log('exthostcontentries', entries))
+    state.contributions.subscribe(entries => console.log('exthostcontributions', entries))
 
     // Configuration
     const getConfiguration = <C extends object>(): sourcegraph.Configuration<C> => {
