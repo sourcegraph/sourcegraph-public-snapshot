@@ -1,6 +1,6 @@
 import { compact } from 'lodash'
 import { interval, Observable, Subject } from 'rxjs'
-import { filter, map } from 'rxjs/operators'
+import { filter, map, refCount, publishReplay } from 'rxjs/operators'
 import { MutationRecordLike } from '../../util/dom'
 import { CodeHost } from '../shared/codeHost'
 import { CodeView, DOMFunctions } from '../shared/codeViews'
@@ -39,20 +39,28 @@ function parseGerritChange(): GerritChangeAndPatchSet {
 
 const resolveFileListCodeView: ViewResolver<CodeView> = {
     selector(existingElement: HTMLElement) {
+        // The Gerrit mutation observer uses this selector to emit added nodes.
+        // But `trackViews` calls this selector also, to check if an added node
+        // contains a code view, even though in Gerrit this is redundant. When
+        // the selector is called with an existing matching element, then it
+        // must return that element (and only that one element) rather than all
+        // matching elements on the page.
         if (existingElement.matches('#diffTable')) {
             console.log('Sourcegraph: resolveFileListCodeView.selector: matched existing element', existingElement)
             return [existingElement]
         }
-        console.log('Sourcegraph: resolveFileListCodeView.selector')
+
         const fileListElement = querySelectorAcrossShadowRoots(document, [
             '#app',
             '#app-element',
             'gr-change-view',
             '#fileList',
         ])
+        // Usually each `.file-row` which is `.expanded` will have a
+        // corresponding `diffTable` under a sibling, with the common parent
+        // being `.stickArea`.
         const fileRows = fileListElement?.shadowRoot?.querySelectorAll('.file-row.expanded')
         const fileRowElements = [...(fileRows || [])]
-        console.log('Sourcegraph: resolveFileListCodeView.selector: fileRowElements', fileRowElements)
         const diffTables = fileRowElements.map(fileRow => {
             const stickyArea = fileRow.parentElement
             if (!stickyArea) {
@@ -60,30 +68,26 @@ const resolveFileListCodeView: ViewResolver<CodeView> = {
             }
             return querySelectorAcrossShadowRoots(stickyArea, ['gr-diff-host', 'gr-diff', 'table']) as HTMLElement
         })
-        console.log('Sourcegraph: RresolveFileListCodeView.selectoresv: fileRowElements', diffTables)
         return compact(diffTables)
     },
-    resolveView(element: HTMLElement): CodeView | null {
-        const stickyArea = element.parentElement
-        console.log('Sourcegraph: resolveView stickyArea', stickyArea)
+    resolveView(diffTableElement: HTMLElement): CodeView | null {
+        // Although we already obtained code view's element, `diffTable`, from
+        // the `fileRow` in the selector function above, we have to revisit the
+        // `fileRow` to get the file path.
+        const stickyArea = closestParentAcrossShadowRoots(diffTableElement, '.stickyArea')
 
         if (!stickyArea) {
             return null
         }
-        // From .file-row to diff-table
-        const diffTableElement = querySelectorAcrossShadowRoots(stickyArea, [
-            'gr-diff-host',
-            'gr-diff',
-            'table',
-        ]) as HTMLElement
-        if (!diffTableElement) {
+
+        const fileRow = stickyArea.querySelector('.file-row')
+        const filePath = fileRow?.getAttribute('data-path')
+        if (!filePath) {
             return null
         }
 
-        // Get the file and revision context
         const gerritChange = parseGerritChange()
         const gerritChangeString = buildGerritChangeString(gerritChange)
-        const filePath = element.getAttribute('data-path')
         const parentCommit = getParentCommit() || ''
 
         return {
@@ -127,13 +131,13 @@ const diffTableDomFunctions: DOMFunctions = {
     getLineNumberFromCodeElement: (codeElement: HTMLElement): number => {
         const side = getSideFromCodeElement(codeElement)
         if (!side) {
-            throw new TypeError('Could not find line number')
+            throw new TypeError('Could not find line number (no side)')
         }
         const cell = codeElement.closest('td')
         const lineNumberCell = cell?.parentElement?.querySelector(`.lineNum.${side}`)
         const lineNumber = lineNumberCell?.getAttribute('data-value')
         if (!lineNumber) {
-            throw new TypeError('Could not find line number')
+            throw new TypeError(`Could not find line number (${side})`)
         }
         return parseInt(lineNumber, 10)
     },
@@ -230,15 +234,14 @@ export const observeMutations = (
             for (const removedNode of removedNodes) {
                 knownElements.delete(removedNode)
             }
-            if (knownElements.size > 0) {
-                console.log('Sourcegraph: knownElements:', knownElements)
-            }
             return { addedNodes, removedNodes }
         }),
         // Filter to emit only non-empty records.
         filter(({ addedNodes, removedNodes }) => !!addedNodes.length || !!removedNodes.length),
         // Wrap in an array, because that's how mutation observers emit events.
-        map(mutationRecord => [mutationRecord])
+        map(mutationRecord => [mutationRecord]),
+        publishReplay(),
+        refCount()
     )
 }
 
@@ -288,6 +291,7 @@ function getParentCommit(): string | null | undefined {
 }
 
 function getSideFromCodeElement(codeElement: HTMLElement): string | undefined {
+    console.log('Sourcegraph: getSideFromCodeElement', codeElement)
     return codeElement.querySelector('.contentText')?.getAttribute('data-side') || undefined
 }
 

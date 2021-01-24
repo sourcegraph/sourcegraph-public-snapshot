@@ -93,7 +93,6 @@ export function trackViews<V extends View>(
                             }
                         }),
                         filter(isInstanceOf(HTMLElement)),
-                        filter((node): node is HTMLElement => true),
                         mergeMap(addedElement => {
                             console.log('Sourcegraph: trackViews: first mergemap', addedElement)
                             return $D(from(viewResolvers), { id: 'viewResolvers' }).pipe(
