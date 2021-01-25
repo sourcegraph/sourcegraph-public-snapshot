@@ -1190,38 +1190,24 @@ func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*Sea
 		suggestTime := longer(2, usedTime)
 		return alertForTimeout(usedTime, suggestTime, r).wrap(), nil
 	}
-
 	if rr == nil && err != nil {
 		return rr, err
 	}
-
-	var alert *searchAlert
-
-	newAlert := alertForDiffCommitSearch(err)
-	if newAlert != nil {
-		alert = newAlert
+	if alert := alertForError(err); alert != nil {
+		if rr.alert == nil { // TODO (stefan) remove this guard once determineRepos returns a proper error instead of a searchAlert.
+			rr.alert = alert
+		}
 	}
-	newAlert = alertForStructuralSearch(err)
-	if newAlert != nil {
-		alert = newAlert
-	}
-	newAlert = alertForStructuralSearchNotSet(err)
-	if newAlert != nil {
-		alert = newAlert
-	}
-	newAlert = alertForMissingRepoRevs(err)
-	if newAlert != nil {
-		alert = newAlert
+	if err2, ok := containsUnhandledError(err); ok {
+		err = err2
+	} else {
+		err = nil
 	}
 	// If we have some results, only log the error instead of returning it.
 	// Otherwise the client would not receive the partial results or see the alert.
 	if len(rr.SearchResults) > 0 && err != nil {
 		log15.Error("Errors during search", "error", err)
 		err = nil
-	}
-	// TODO (stefan): remove this once determineRepos returns and error instead of an alert.
-	if rr.alert == nil {
-		rr.alert = alert
 	}
 	return rr, err
 }
@@ -1640,14 +1626,14 @@ type DiffCommitError struct {
 	Max        int
 }
 
-type RepoLimitErr DiffCommitError
-type TimeLimitErr DiffCommitError
+type errRepoLimit DiffCommitError
+type errTimeLimit DiffCommitError
 
-func (RepoLimitErr) Error() string {
+func (errRepoLimit) Error() string {
 	return "repo limit error"
 }
 
-func (TimeLimitErr) Error() string {
+func (errTimeLimit) Error() string {
 	return "time limit error"
 }
 
@@ -1667,10 +1653,10 @@ func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameter
 
 	limits := searchrepos.SearchLimits()
 	if max := limits.CommitDiffMaxRepos; !hasTimeFilter && len(repos) > max {
-		return RepoLimitErr{ResultType: resultType, Max: max}
+		return errRepoLimit{ResultType: resultType, Max: max}
 	}
 	if max := limits.CommitDiffWithTimeFilterMaxRepos; hasTimeFilter && len(repos) > max {
-		return TimeLimitErr{ResultType: resultType, Max: max}
+		return errTimeLimit{ResultType: resultType, Max: max}
 	}
 	return nil
 }
@@ -1686,7 +1672,7 @@ func newAggregator(ctx context.Context, stream SearchStream) *aggregator {
 		defer close(agg.done)
 		for event := range childStream {
 			// Timeouts are reported through Stats so don't report an error for them
-			if event.Error != nil && !isContextError(ctx, event.Error) {
+			if event.Error != nil && isContextError(ctx, event.Error) {
 				event.Error = nil
 			}
 			if event.Error != nil {
