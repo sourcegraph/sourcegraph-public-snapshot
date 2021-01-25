@@ -86,7 +86,7 @@ var suspiciousNames = map[string]struct{}{
 	"css":            {},
 	"dashboard":      {},
 	"data":           {},
-	"database":             {},
+	"database":       {},
 	"delete":         {},
 	"demo":           {},
 	"design":         {},

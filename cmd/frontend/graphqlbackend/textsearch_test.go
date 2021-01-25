@@ -96,14 +96,14 @@ func TestSearchFilesInRepos(t *testing.T) {
 		repoNames[rr.Repo.ID] = string(rr.Repo.Name)
 	}
 	assertReposStatus(t, repoNames, common.Status, map[string]search.RepoStatus{
-		"foo/cloning":    search.RepoStatusCloning,
-		"foo/empty":      search.RepoStatusSearched,
-		"foo/missing":    search.RepoStatusMissing,
+		"foo/cloning":          search.RepoStatusCloning,
+		"foo/empty":            search.RepoStatusSearched,
+		"foo/missing":          search.RepoStatusMissing,
 		"foo/missing-database": search.RepoStatusMissing,
-		"foo/no-rev":     0,
-		"foo/one":        search.RepoStatusSearched,
-		"foo/timedout":   search.RepoStatusTimedout,
-		"foo/two":        search.RepoStatusSearched,
+		"foo/no-rev":           0,
+		"foo/one":              search.RepoStatusSearched,
+		"foo/timedout":         search.RepoStatusTimedout,
+		"foo/two":              search.RepoStatusSearched,
 	})
 
 	// If we specify a rev and it isn't found, we fail the whole search since
