@@ -320,7 +320,7 @@ func (c *Container) renderRules() (*promRulesFile, error) {
 
 					// Set values to build a query with
 					if a.greaterThan != nil {
-						aggregator = "min" // alert if the largest value is exceeds upper bound
+						aggregator = "max" // alert if the largest value is exceeds upper bound
 						comparator = ">="
 						if a.strictCompare {
 							comparator = ">"
