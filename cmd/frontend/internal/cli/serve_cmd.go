@@ -121,7 +121,7 @@ func Main(enterpriseSetupHook func() enterprise.Services) error {
 	log.SetPrefix("")
 
 	if err := profiler.Init(); err != nil {
-		log.Printf("failed to initialize profiling: %v", err)
+		log.Fatalf("failed to initialize profiling: %v", err)
 	}
 
 	if err := InitDB(); err != nil {

@@ -44,7 +44,7 @@ func main() {
 	env.HandleHelpFlag()
 
 	if err := profiler.Init(); err != nil {
-		log.Printf("failed to start profiler: %v", err)
+		log.Fatalf("failed to start profiler: %v", err)
 	}
 
 	logging.Init()
