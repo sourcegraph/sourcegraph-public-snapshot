@@ -474,12 +474,15 @@ type Observable struct {
 	Name string
 
 	// Description is a human-readable description of exactly what is being observed.
+	// If a query groups by a label (such as with a `sum by(...)`), ensure that this is
+	// reflected in the description by noting that this observable is grouped "by ...".
 	//
 	// Good examples:
 	//
 	// 	"remaining GitHub API rate limit quota"
 	// 	"number of search errors every 5m"
 	//  "90th percentile search request duration over 5m"
+	//  "internal API error responses every 5m by route"
 	//
 	// Bad examples:
 	//

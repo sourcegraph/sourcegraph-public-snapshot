@@ -22,7 +22,7 @@ func Prometheus() *monitoring.Container {
 					{
 						{
 							Name:        "prometheus_rule_eval_duration",
-							Description: "average prometheus rule group evaluation duration over 10m",
+							Description: "average prometheus rule group evaluation duration over 10m by rule group",
 							Query:       `sum by(rule_group) (avg_over_time(prometheus_rule_group_last_duration_seconds[10m]))`,
 							Warning:     monitoring.Alert().GreaterOrEqual(30), // standard prometheus_rule_group_interval_seconds
 							Panel:       monitoring.Panel().Unit(monitoring.Seconds).MinAuto().LegendFormat("{{rule_group}}"),
@@ -41,7 +41,7 @@ func Prometheus() *monitoring.Container {
 						},
 						{
 							Name:           "prometheus_rule_eval_failures",
-							Description:    "failed prometheus rule evaluations over 5m",
+							Description:    "failed prometheus rule evaluations over 5m by rule group",
 							Query:          `sum by(rule_group) (rate(prometheus_rule_evaluation_failures_total[5m]))`,
 							Warning:        monitoring.Alert().Greater(0),
 							Panel:          monitoring.Panel().LegendFormat("{{rule_group}}"),
@@ -62,7 +62,7 @@ func Prometheus() *monitoring.Container {
 					{
 						{
 							Name:        "alertmanager_notification_latency",
-							Description: "alertmanager notification latency over 1m",
+							Description: "alertmanager notification latency over 1m by integration",
 							Query:       `sum by(integration) (rate(alertmanager_notification_latency_seconds_sum[1m]))`,
 							Warning:     monitoring.Alert().GreaterOrEqual(1),
 							Panel:       monitoring.Panel().Unit(monitoring.Seconds).LegendFormat("{{integration}}"),
@@ -75,7 +75,7 @@ func Prometheus() *monitoring.Container {
 						},
 						{
 							Name:        "alertmanager_notification_failures",
-							Description: "failed alertmanager notifications over 1m",
+							Description: "failed alertmanager notifications over 1m by integration",
 							Query:       `sum by(integration) (rate(alertmanager_notifications_failed_total[1m]))`,
 							Warning:     monitoring.Alert().Greater(0),
 							Panel:       monitoring.Panel().LegendFormat("{{integration}}"),
@@ -120,7 +120,7 @@ func Prometheus() *monitoring.Container {
 					{
 						{
 							Name:              "prometheus_tsdb_op_failure",
-							Description:       "prometheus tsdb failures by operation over 1m",
+							Description:       "prometheus tsdb failures by operation over 1m by operation",
 							Query:             `increase(label_replace({__name__=~"prometheus_tsdb_(.*)_failed_total"}, "operation", "$1", "__name__", "(.+)s_failed_total")[5m:1m])`,
 							Warning:           monitoring.Alert().Greater(0),
 							Panel:             monitoring.Panel().LegendFormat("{{operation}}"),

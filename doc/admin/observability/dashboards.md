@@ -2721,7 +2721,7 @@ This panel indicates container memory usage (5m maximum) by instance.
 
 #### prometheus: prometheus_rule_eval_duration
 
-This panel indicates average prometheus rule group evaluation duration over 10m.
+This panel indicates average prometheus rule group evaluation duration over 10m by rule group.
 
 A high value here indicates Prometheus rule evaluation is taking longer than expected.
 It might indicate that certain rule groups are taking too long to evaluate, or Prometheus is underprovisioned.
@@ -2736,7 +2736,7 @@ Rules that Sourcegraph ships with are grouped under `/sg_config_prometheus`. [Cu
 
 #### prometheus: prometheus_rule_eval_failures
 
-This panel indicates failed prometheus rule evaluations over 5m.
+This panel indicates failed prometheus rule evaluations over 5m by rule group.
 
 Rules that Sourcegraph ships with are grouped under `/sg_config_prometheus`. [Custom rules are grouped under `/sg_prometheus_addons`](https://docs.sourcegraph.com/admin/observability/metrics#prometheus-configuration).
 
@@ -2750,7 +2750,7 @@ Rules that Sourcegraph ships with are grouped under `/sg_config_prometheus`. [Cu
 
 #### prometheus: alertmanager_notification_latency
 
-This panel indicates alertmanager notification latency over 1m.
+This panel indicates alertmanager notification latency over 1m by integration.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#prometheus-alertmanager-notification-latency).
 
@@ -2760,7 +2760,7 @@ This panel indicates alertmanager notification latency over 1m.
 
 #### prometheus: alertmanager_notification_failures
 
-This panel indicates failed alertmanager notifications over 1m.
+This panel indicates failed alertmanager notifications over 1m by integration.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#prometheus-alertmanager-notification-failures).
 
@@ -2796,7 +2796,7 @@ A `1` indicates Alertmanager reloaded its configuration successfully.
 
 #### prometheus: prometheus_tsdb_op_failure
 
-This panel indicates prometheus tsdb failures by operation over 1m.
+This panel indicates prometheus tsdb failures by operation over 1m by operation.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#prometheus-prometheus-tsdb-op-failure).
 

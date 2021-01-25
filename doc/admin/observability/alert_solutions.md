@@ -5013,11 +5013,11 @@ with your code hosts connections or networking issues affecting communication wi
 
 ## prometheus: prometheus_rule_eval_duration
 
-<p class="subtitle">average prometheus rule group evaluation duration over 10m</p>
+<p class="subtitle">average prometheus rule group evaluation duration over 10m by rule group</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> prometheus: 30s+ average prometheus rule group evaluation duration over 10m
+- <span class="badge badge-warning">warning</span> prometheus: 30s+ average prometheus rule group evaluation duration over 10m by rule group
 
 **Possible solutions**
 
@@ -5040,11 +5040,11 @@ with your code hosts connections or networking issues affecting communication wi
 
 ## prometheus: prometheus_rule_eval_failures
 
-<p class="subtitle">failed prometheus rule evaluations over 5m</p>
+<p class="subtitle">failed prometheus rule evaluations over 5m by rule group</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> prometheus: 0+ failed prometheus rule evaluations over 5m
+- <span class="badge badge-warning">warning</span> prometheus: 0+ failed prometheus rule evaluations over 5m by rule group
 
 **Possible solutions**
 
@@ -5067,11 +5067,11 @@ with your code hosts connections or networking issues affecting communication wi
 
 ## prometheus: alertmanager_notification_latency
 
-<p class="subtitle">alertmanager notification latency over 1m</p>
+<p class="subtitle">alertmanager notification latency over 1m by integration</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> prometheus: 1s+ alertmanager notification latency over 1m
+- <span class="badge badge-warning">warning</span> prometheus: 1s+ alertmanager notification latency over 1m by integration
 
 **Possible solutions**
 
@@ -5092,11 +5092,11 @@ with your code hosts connections or networking issues affecting communication wi
 
 ## prometheus: alertmanager_notification_failures
 
-<p class="subtitle">failed alertmanager notifications over 1m</p>
+<p class="subtitle">failed alertmanager notifications over 1m by integration</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> prometheus: 0+ failed alertmanager notifications over 1m
+- <span class="badge badge-warning">warning</span> prometheus: 0+ failed alertmanager notifications over 1m by integration
 
 **Possible solutions**
 
@@ -5167,11 +5167,11 @@ with your code hosts connections or networking issues affecting communication wi
 
 ## prometheus: prometheus_tsdb_op_failure
 
-<p class="subtitle">prometheus tsdb failures by operation over 1m</p>
+<p class="subtitle">prometheus tsdb failures by operation over 1m by operation</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> prometheus: 0+ prometheus tsdb failures by operation over 1m
+- <span class="badge badge-warning">warning</span> prometheus: 0+ prometheus tsdb failures by operation over 1m by operation
 
 **Possible solutions**
 
