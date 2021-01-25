@@ -304,27 +304,49 @@ func (c *Container) renderRules() (*promRulesFile, error) {
 						continue
 					}
 
-					// The alertQuery must contribute a query that returns true when it should be firing.
-					var alertQuery string
+					var (
+						// Wrap the query in `max()` or `min()` so that if there are multiple series (e.g. per-container)
+						// they get "flattened" into a single metric. The `aggregator` variable sets the required operator.
+						//
+						// We only support per-service alerts, not per-container/replica, and not doing so can cause issues.
+						// See https://github.com/sourcegraph/sourcegraph/issues/11571#issuecomment-654571953,
+						// https://github.com/sourcegraph/sourcegraph/issues/17599, and related pull requests.
+						aggregator string
+						// Comparator sets how a metric should be compared against a threshold
+						comparator string
+						// Threshold sets the value to be compared against
+						threshold float64
+					)
+
+					// Set values to build a query with
 					if a.greaterThan != nil {
-						comparator := ">="
+						aggregator = "max"
+						comparator = ">="
 						if a.strictCompare {
 							comparator = ">"
 						}
-						alertQuery = fmt.Sprintf("(%s) %s %v", o.Query, comparator, *a.greaterThan)
+						threshold = *a.greaterThan
 					} else if a.lessThan != nil {
-						comparator := "<="
+						aggregator = "min"
+						comparator = "<="
 						if a.strictCompare {
 							comparator = "<"
 						}
-						alertQuery = fmt.Sprintf("(%s) %s %v", o.Query, comparator, *a.lessThan)
+						threshold = *a.lessThan
+					} else {
+						continue
 					}
+
+					// The alertQuery must contribute a query that returns true when it should be firing.
+					alertQuery := fmt.Sprintf("%s((%s) %s %v)",
+						aggregator, o.Query, comparator, threshold)
 
 					// If the data must exist, we alert if the query returns no value as well
 					if o.DataMustExist {
 						alertQuery = fmt.Sprintf("(%s) OR (absent(%s) == 1)", alertQuery, o.Query)
 					}
 
+					// Build the rule with appropriate labels. Labels are leveraged in various integrations, such as with prom-wrapper.
 					description, err := c.alertDescription(o, a)
 					if err != nil {
 						return nil, fmt.Errorf("%s.%s.%s: unable to generate labels: %+v",
