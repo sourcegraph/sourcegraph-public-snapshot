@@ -93,6 +93,11 @@ func TestListDefaultRepos(t *testing.T) {
 
 			-- insert one repo not referenced in the default repo table;
 			INSERT INTO repo(id, name) VALUES (12, 'github.com/foo/bar12');
+
+			-- insert a repo only references by a cloud_default external service
+			INSERT INTO repo(id, name) VALUES (13, 'github.com/foo/bar13');
+			INSERT INTO external_services(id, kind, display_name, config, cloud_default) VALUES (101, 'github', 'github', '{}', true);
+			INSERT INTO external_service_repos VALUES (101, 13, 'https://github.com/foo/bar13');
 		`)
 		if err != nil {
 			t.Fatal(err)
