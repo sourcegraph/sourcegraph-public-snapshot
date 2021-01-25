@@ -23,7 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-// SyncRegistry manages a ChangesetSyncer per code host
+// SyncRegistry manages a changesetSyncer per code host
 type SyncRegistry struct {
 	Ctx                  context.Context
 	SyncStore            SyncStore
@@ -426,7 +426,7 @@ func (s *changesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 		return err
 	}
 
-	repo, err := loadRepo(ctx, s.reposStore, cs.RepoID)
+	repo, err := s.reposStore.Get(ctx, cs.RepoID)
 	if err != nil {
 		return err
 	}
@@ -469,7 +469,8 @@ func SyncChangeset(ctx context.Context, syncStore SyncStore, source repos.Change
 	}
 	defer func() { err = tx.Done(err) }()
 
-	if err := tx.UpdateChangeset(ctx, c); err != nil {
+	err = tx.UpdateChangeset(ctx, c)
+	if err != nil {
 		return err
 	}
 
@@ -484,6 +485,9 @@ func buildChangesetSource(
 	sources, err := sourcer(extSvc)
 	if err != nil {
 		return nil, err
+	}
+	if len(sources) != 1 {
+		return nil, fmt.Errorf("got no Source for external service %q", extSvc.Kind)
 	}
 
 	source, ok := sources[0].(repos.ChangesetSource)
