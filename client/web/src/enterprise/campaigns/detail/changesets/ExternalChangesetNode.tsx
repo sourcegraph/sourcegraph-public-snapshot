@@ -132,6 +132,7 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                             <DownloadDiffButton changesetID={node.id} />
                         )}
                         {node.error && <ErrorAlert error={node.error} history={history} />}
+                        {node.syncerError && <ErrorAlert error={node.syncerError} history={history} />}
                         <ChangesetFileDiff
                             changesetID={node.id}
                             isLightTheme={isLightTheme}

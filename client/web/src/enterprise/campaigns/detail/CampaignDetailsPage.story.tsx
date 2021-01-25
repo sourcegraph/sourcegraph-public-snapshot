@@ -144,6 +144,7 @@ const queryChangesets: typeof _queryChangesets = () =>
                 nextSyncAt: null,
                 id: 'somev1',
                 error: null,
+                syncerError: null,
                 currentSpec: {
                     id: 'spec-rand-id-1',
                     type: ChangesetSpecType.BRANCH,
@@ -178,6 +179,7 @@ const queryChangesets: typeof _queryChangesets = () =>
                 nextSyncAt: null,
                 id: 'somev2',
                 error: 'Cannot create PR, insufficient token scope.',
+                syncerError: null,
                 currentSpec: {
                     id: 'spec-rand-id-2',
                     type: ChangesetSpecType.BRANCH,
