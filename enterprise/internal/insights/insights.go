@@ -14,11 +14,11 @@ import (
 
 // Init initializes the given enterpriseServices to include the required resolvers for insights.
 func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
-	_, err := initializeCodeInsightsDB()
+	db, err := initializeCodeInsightsDB()
 	if err != nil {
 		return err
 	}
-	enterpriseServices.InsightsResolver = resolvers.New()
+	enterpriseServices.InsightsResolver = resolvers.New(db)
 	return nil
 }
 
