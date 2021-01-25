@@ -26,7 +26,7 @@ If you’re deprecating an API or an endpoint, you may find it useful to set up 
 ## Get notified when a file changes
 
 ```
-repo:^github\.com/sourcegraph/sourcegraph$ file:SourcegraphWebApp\.tsx$ type:diff
+patterntype:regexp repo:^github\.com/sourcegraph/sourcegraph$ file:SourcegraphWebApp\.tsx$ type:diff
 ```
 
 You may want to get notified when a given file is changed, regardless of the diff contents of the change: the above query will return all changes to the `SourcegraphWebApp.tsx` file on the `github.com/sourcegraph/sourcegraph` repo.
