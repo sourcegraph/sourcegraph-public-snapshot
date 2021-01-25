@@ -6,21 +6,21 @@ import (
 
 	"github.com/graph-gophers/graphql-go/gqltesting"
 
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestCreateUser(t *testing.T) {
 	resetMocks()
-	db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+	database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
 		return &types.User{SiteAdmin: true}, nil
 	}
-	db.Mocks.Users.Create = func(context.Context, db.NewUser) (*types.User, error) {
+	database.Mocks.Users.Create = func(context.Context, database.NewUser) (*types.User, error) {
 		return &types.User{ID: 1, Username: "alice"}, nil
 	}
 
 	calledGrantPendingPermissions := false
-	db.Mocks.Authz.GrantPendingPermissions = func(context.Context, *db.GrantPendingPermissionsArgs) error {
+	database.Mocks.Authz.GrantPendingPermissions = func(context.Context, *database.GrantPendingPermissionsArgs) error {
 		calledGrantPendingPermissions = true
 		return nil
 	}

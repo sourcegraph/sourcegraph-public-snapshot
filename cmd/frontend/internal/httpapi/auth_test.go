@@ -11,7 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -69,11 +69,11 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/", nil)
 		req.Header.Set("Authorization", "token badbad")
 		var calledAccessTokensLookup bool
-		db.Mocks.AccessTokens.Lookup = func(tokenHexEncoded, requiredScope string) (subjectUserID int32, err error) {
+		database.Mocks.AccessTokens.Lookup = func(tokenHexEncoded, requiredScope string) (subjectUserID int32, err error) {
 			calledAccessTokensLookup = true
 			return 0, errors.New("x")
 		}
-		defer func() { db.Mocks = db.MockStores{} }()
+		defer func() { database.Mocks = database.MockStores{} }()
 		checkHTTPResponse(t, req, http.StatusUnauthorized, "Invalid access token.\n")
 		if !calledAccessTokensLookup {
 			t.Error("!calledAccessTokensLookup")
@@ -85,7 +85,7 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 			req, _ := http.NewRequest("GET", "/", nil)
 			req.Header.Set("Authorization", headerValue)
 			var calledAccessTokensLookup bool
-			db.Mocks.AccessTokens.Lookup = func(tokenHexEncoded, requiredScope string) (subjectUserID int32, err error) {
+			database.Mocks.AccessTokens.Lookup = func(tokenHexEncoded, requiredScope string) (subjectUserID int32, err error) {
 				calledAccessTokensLookup = true
 				if want := "abcdef"; tokenHexEncoded != want {
 					t.Errorf("got %q, want %q", tokenHexEncoded, want)
@@ -95,7 +95,7 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 				}
 				return 123, nil
 			}
-			defer func() { db.Mocks = db.MockStores{} }()
+			defer func() { database.Mocks = database.MockStores{} }()
 			checkHTTPResponse(t, req, http.StatusOK, "user 123")
 			if !calledAccessTokensLookup {
 				t.Error("!calledAccessTokensLookup")
@@ -109,7 +109,7 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 		req.Header.Set("Authorization", "token abcdef")
 		req = req.WithContext(actor.WithActor(context.Background(), &actor.Actor{UID: 456}))
 		var calledAccessTokensLookup bool
-		db.Mocks.AccessTokens.Lookup = func(tokenHexEncoded, requiredScope string) (subjectUserID int32, err error) {
+		database.Mocks.AccessTokens.Lookup = func(tokenHexEncoded, requiredScope string) (subjectUserID int32, err error) {
 			calledAccessTokensLookup = true
 			if want := "abcdef"; tokenHexEncoded != want {
 				t.Errorf("got %q, want %q", tokenHexEncoded, want)
@@ -119,7 +119,7 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 			}
 			return 123, nil
 		}
-		defer func() { db.Mocks = db.MockStores{} }()
+		defer func() { database.Mocks = database.MockStores{} }()
 		checkHTTPResponse(t, req, http.StatusOK, "user 123")
 		if !calledAccessTokensLookup {
 			t.Error("!calledAccessTokensLookup")
@@ -143,7 +143,7 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 			}
 			req = req.WithContext(actor.WithActor(context.Background(), &actor.Actor{UID: 456}))
 			var calledAccessTokensLookup bool
-			db.Mocks.AccessTokens.Lookup = func(tokenHexEncoded, requiredScope string) (subjectUserID int32, err error) {
+			database.Mocks.AccessTokens.Lookup = func(tokenHexEncoded, requiredScope string) (subjectUserID int32, err error) {
 				calledAccessTokensLookup = true
 				if want := "abcdef"; tokenHexEncoded != want {
 					t.Errorf("got %q, want %q", tokenHexEncoded, want)
@@ -153,7 +153,7 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 				}
 				return 123, nil
 			}
-			defer func() { db.Mocks = db.MockStores{} }()
+			defer func() { database.Mocks = database.MockStores{} }()
 			checkHTTPResponse(t, req, http.StatusOK, "user 123")
 			if !calledAccessTokensLookup {
 				t.Error("!calledAccessTokensLookup")
@@ -165,7 +165,7 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/", nil)
 		req.Header.Set("Authorization", `token-sudo token="abcdef",user="alice"`)
 		var calledAccessTokensLookup bool
-		db.Mocks.AccessTokens.Lookup = func(tokenHexEncoded, requiredScope string) (subjectUserID int32, err error) {
+		database.Mocks.AccessTokens.Lookup = func(tokenHexEncoded, requiredScope string) (subjectUserID int32, err error) {
 			calledAccessTokensLookup = true
 			if want := "abcdef"; tokenHexEncoded != want {
 				t.Errorf("got %q, want %q", tokenHexEncoded, want)
@@ -176,7 +176,7 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 			return 123, nil
 		}
 		var calledUsersGetByID bool
-		db.Mocks.Users.GetByID = func(ctx context.Context, userID int32) (*types.User, error) {
+		database.Mocks.Users.GetByID = func(ctx context.Context, userID int32) (*types.User, error) {
 			calledUsersGetByID = true
 			if want := int32(123); userID != want {
 				t.Errorf("got %d, want %d", userID, want)
@@ -184,14 +184,14 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 			return &types.User{ID: userID, SiteAdmin: true}, nil
 		}
 		var calledUsersGetByUsername bool
-		db.Mocks.Users.GetByUsername = func(ctx context.Context, username string) (*types.User, error) {
+		database.Mocks.Users.GetByUsername = func(ctx context.Context, username string) (*types.User, error) {
 			calledUsersGetByUsername = true
 			if want := "alice"; username != want {
 				t.Errorf("got %q, want %q", username, want)
 			}
 			return &types.User{ID: 456, SiteAdmin: true}, nil
 		}
-		defer func() { db.Mocks = db.MockStores{} }()
+		defer func() { database.Mocks = database.MockStores{} }()
 		checkHTTPResponse(t, req, http.StatusOK, "user 456")
 		if !calledAccessTokensLookup {
 			t.Error("!calledAccessTokensLookup")
@@ -210,7 +210,7 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/", nil)
 		req.Header.Set("Authorization", `token-sudo token="abcdef",user="alice"`)
 		var calledAccessTokensLookup bool
-		db.Mocks.AccessTokens.Lookup = func(tokenHexEncoded, requiredScope string) (subjectUserID int32, err error) {
+		database.Mocks.AccessTokens.Lookup = func(tokenHexEncoded, requiredScope string) (subjectUserID int32, err error) {
 			calledAccessTokensLookup = true
 			if want := "abcdef"; tokenHexEncoded != want {
 				t.Errorf("got %q, want %q", tokenHexEncoded, want)
@@ -221,14 +221,14 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 			return 123, nil
 		}
 		var calledUsersGetByID bool
-		db.Mocks.Users.GetByID = func(ctx context.Context, userID int32) (*types.User, error) {
+		database.Mocks.Users.GetByID = func(ctx context.Context, userID int32) (*types.User, error) {
 			calledUsersGetByID = true
 			if want := int32(123); userID != want {
 				t.Errorf("got %d, want %d", userID, want)
 			}
 			return &types.User{ID: userID, SiteAdmin: false}, nil
 		}
-		defer func() { db.Mocks = db.MockStores{} }()
+		defer func() { database.Mocks = database.MockStores{} }()
 		checkHTTPResponse(t, req, http.StatusForbidden, "The subject user of a sudo access token must be a site admin.\n")
 		if !calledAccessTokensLookup {
 			t.Error("!calledAccessTokensLookup")
@@ -242,7 +242,7 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/", nil)
 		req.Header.Set("Authorization", `token-sudo token="abcdef",user="doesntexist"`)
 		var calledAccessTokensLookup bool
-		db.Mocks.AccessTokens.Lookup = func(tokenHexEncoded, requiredScope string) (subjectUserID int32, err error) {
+		database.Mocks.AccessTokens.Lookup = func(tokenHexEncoded, requiredScope string) (subjectUserID int32, err error) {
 			calledAccessTokensLookup = true
 			if want := "abcdef"; tokenHexEncoded != want {
 				t.Errorf("got %q, want %q", tokenHexEncoded, want)
@@ -253,7 +253,7 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 			return 123, nil
 		}
 		var calledUsersGetByID bool
-		db.Mocks.Users.GetByID = func(ctx context.Context, userID int32) (*types.User, error) {
+		database.Mocks.Users.GetByID = func(ctx context.Context, userID int32) (*types.User, error) {
 			calledUsersGetByID = true
 			if want := int32(123); userID != want {
 				t.Errorf("got %d, want %d", userID, want)
@@ -261,14 +261,14 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 			return &types.User{ID: userID, SiteAdmin: true}, nil
 		}
 		var calledUsersGetByUsername bool
-		db.Mocks.Users.GetByUsername = func(ctx context.Context, username string) (*types.User, error) {
+		database.Mocks.Users.GetByUsername = func(ctx context.Context, username string) (*types.User, error) {
 			calledUsersGetByUsername = true
 			if want := "doesntexist"; username != want {
 				t.Errorf("got %q, want %q", username, want)
 			}
 			return nil, &errcode.Mock{IsNotFound: true}
 		}
-		defer func() { db.Mocks = db.MockStores{} }()
+		defer func() { database.Mocks = database.MockStores{} }()
 		checkHTTPResponse(t, req, http.StatusForbidden, "Unable to sudo to nonexistent user.\n")
 		if !calledAccessTokensLookup {
 			t.Error("!calledAccessTokensLookup")

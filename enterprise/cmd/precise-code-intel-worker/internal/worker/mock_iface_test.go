@@ -5,7 +5,7 @@ package worker
 import (
 	"context"
 	lsifstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
-	basestore "github.com/sourcegraph/sourcegraph/internal/db/basestore"
+	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"sync"
 )
 

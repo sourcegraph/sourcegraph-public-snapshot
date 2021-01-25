@@ -69,7 +69,7 @@ the foreign keys in columns `email` and `webhook`.
 | 2  | null  | 1       | queued |
 
 For more details, see
-[schema.md](https://github.com/sourcegraph/sourcegraph/blob/main/internal/db/schema.md).
+[schema.md](https://github.com/sourcegraph/sourcegraph/blob/main/internal/database/schema.md).
 
 ## Life of a code monitor
 

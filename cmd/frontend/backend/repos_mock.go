@@ -7,7 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -17,7 +17,7 @@ import (
 type MockRepos struct {
 	Get          func(v0 context.Context, id api.RepoID) (*types.Repo, error)
 	GetByName    func(v0 context.Context, name api.RepoName) (*types.Repo, error)
-	List         func(v0 context.Context, v1 db.ReposListOptions) ([]*types.Repo, error)
+	List         func(v0 context.Context, v1 database.ReposListOptions) ([]*types.Repo, error)
 	GetCommit    func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*git.Commit, error)
 	ResolveRev   func(v0 context.Context, repo *types.Repo, rev string) (api.CommitID, error)
 	GetInventory func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*inventory.Inventory, error)
@@ -69,7 +69,7 @@ func (s *MockRepos) MockGet_Return(t *testing.T, returns *types.Repo) (called *b
 
 func (s *MockRepos) MockList(t *testing.T, wantRepos ...api.RepoName) (called *bool) {
 	called = new(bool)
-	s.List = func(ctx context.Context, opt db.ReposListOptions) ([]*types.Repo, error) {
+	s.List = func(ctx context.Context, opt database.ReposListOptions) ([]*types.Repo, error) {
 		*called = true
 		repos := make([]*types.Repo, len(wantRepos))
 		for i, repo := range wantRepos {

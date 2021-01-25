@@ -13,8 +13,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/search"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -441,7 +441,7 @@ func (rm RewirerMappings) Hydrate(ctx context.Context, store *Store) error {
 		}
 	}
 
-	accessibleReposByID, err := db.GlobalRepos.GetReposSetByIDs(ctx, rm.RepoIDs()...)
+	accessibleReposByID, err := database.GlobalRepos.GetReposSetByIDs(ctx, rm.RepoIDs()...)
 	if err != nil {
 		return err
 	}
@@ -511,7 +511,7 @@ type GetRewirerMappingsOpts struct {
 	CampaignSpecID int64
 	CampaignID     int64
 
-	LimitOffset *db.LimitOffset
+	LimitOffset *database.LimitOffset
 	TextSearch  []search.TextSearchTerm
 }
 

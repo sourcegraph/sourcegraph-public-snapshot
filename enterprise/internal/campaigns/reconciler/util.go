@@ -6,7 +6,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -19,7 +19,7 @@ type RepoStore interface {
 
 // TODO: copy-pasted
 type ExternalServiceStore interface {
-	List(context.Context, db.ExternalServicesListOptions) ([]*types.ExternalService, error)
+	List(context.Context, database.ExternalServicesListOptions) ([]*types.ExternalService, error)
 }
 
 // TODO: copy-pasted
@@ -38,7 +38,7 @@ func loadRepo(ctx context.Context, tx RepoStore, id api.RepoID) (*types.Repo, er
 // TODO: copy-pasted
 func loadExternalService(ctx context.Context, esStore ExternalServiceStore, repo *types.Repo) (*types.ExternalService, error) {
 	var externalService *types.ExternalService
-	args := db.ExternalServicesListOptions{IDs: repo.ExternalServiceIDs()}
+	args := database.ExternalServicesListOptions{IDs: repo.ExternalServiceIDs()}
 
 	es, err := esStore.List(ctx, args)
 	if err != nil {

@@ -10,7 +10,7 @@ import (
 	"github.com/google/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
@@ -43,10 +43,10 @@ func TestRevisionValidation(t *testing.T) {
 	}
 	defer func() { git.Mocks.ResolveRevision = nil }()
 
-	db.Mocks.Repos.ListRepoNames = func(ctx context.Context, opts db.ReposListOptions) ([]*types.RepoName, error) {
+	database.Mocks.Repos.ListRepoNames = func(ctx context.Context, opts database.ReposListOptions) ([]*types.RepoName, error) {
 		return []*types.RepoName{{Name: "repoFoo"}}, nil
 	}
-	defer func() { db.Mocks.Repos.List = nil }()
+	defer func() { database.Mocks.Repos.List = nil }()
 
 	tests := []struct {
 		repoFilters              []string
@@ -286,13 +286,13 @@ func TestDefaultRepositories(t *testing.T) {
 		excludePatterns  []string
 	}{
 		{
-			name:             "none in db => none returned",
+			name:             "none in database => none returned",
 			defaultsInDb:     nil,
 			indexedRepoNames: nil,
 			want:             nil,
 		},
 		{
-			name:             "two in db, one indexed => indexed repo returned",
+			name:             "two in database, one indexed => indexed repo returned",
 			defaultsInDb:     []string{"unindexedrepo", "indexedrepo"},
 			indexedRepoNames: map[string]bool{"indexedrepo": true},
 			want:             []string{"indexedrepo"},

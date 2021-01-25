@@ -19,7 +19,7 @@ import (
 	"github.com/graph-gophers/graphql-go/gqltesting"
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -47,7 +47,7 @@ func BenchmarkPrometheusFieldName(b *testing.B) {
 
 func TestRepository(t *testing.T) {
 	resetMocks()
-	db.Mocks.Repos.MockGetByName(t, "github.com/gorilla/mux", 2)
+	database.Mocks.Repos.MockGetByName(t, "github.com/gorilla/mux", 2)
 	gqltesting.RunTests(t, []*gqltesting.Test{
 		{
 			Schema: mustParseGraphQLSchema(t),
@@ -108,8 +108,8 @@ func TestMain(m *testing.M) {
 
 func TestAffiliatedRepositories(t *testing.T) {
 	resetMocks()
-	db.Mocks.Users.HasTag = func(ctx context.Context, userID int32, tag string) (bool, error) { return true, nil }
-	db.Mocks.ExternalServices.List = func(opt db.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+	database.Mocks.Users.HasTag = func(ctx context.Context, userID int32, tag string) (bool, error) { return true, nil }
+	database.Mocks.ExternalServices.List = func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 		return []*types.ExternalService{
 			{
 				ID:          1,
@@ -127,7 +127,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 			},
 		}, nil
 	}
-	db.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
+	database.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
 		switch id {
 		case 1:
 			return &types.ExternalService{
@@ -144,13 +144,13 @@ func TestAffiliatedRepositories(t *testing.T) {
 		}
 		return nil, nil
 	}
-	db.Mocks.Users.GetByID = func(ctx context.Context, userID int32) (*types.User, error) {
+	database.Mocks.Users.GetByID = func(ctx context.Context, userID int32) (*types.User, error) {
 		return &types.User{
 			ID:        userID,
 			SiteAdmin: userID == 1,
 		}, nil
 	}
-	db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
+	database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
 		return &types.User{ID: 1, SiteAdmin: true}, nil
 	}
 	cf = httpcli.NewFactory(

@@ -28,7 +28,7 @@ type changesetApplyPreviewResolver struct {
 var _ graphqlbackend.ChangesetApplyPreviewResolver = &changesetApplyPreviewResolver{}
 
 func (r *changesetApplyPreviewResolver) repoAccessible() bool {
-	// The repo is accessible when it was returned by the db when the mapping was hydrated.
+	// The repo is accessible when it was returned by the database when the mapping was hydrated.
 	return r.mapping.Repo != nil
 }
 

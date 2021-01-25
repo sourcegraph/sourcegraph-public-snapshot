@@ -17,7 +17,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	idb "github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
@@ -61,13 +61,13 @@ func testSyncerSyncWithErrors(t *testing.T, store *repos.Store) func(t *testing.
 				name:    "store list error aborts sync",
 				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(&githubService, nil)),
 				store: func() *repos.Store {
-					idb.Mocks.Repos.List = func(v0 context.Context, v1 idb.ReposListOptions) ([]*types.Repo, error) {
+					database.Mocks.Repos.List = func(v0 context.Context, v1 database.ReposListOptions) ([]*types.Repo, error) {
 						return nil, errors.New("boom")
 					}
 					return store
 				}(),
 				teardown: func() {
-					idb.Mocks.Repos = idb.MockRepos{}
+					database.Mocks.Repos = database.MockRepos{}
 				},
 				err: "syncer.sync.store.list-repos: boom",
 			},
@@ -118,12 +118,12 @@ func testSyncerSyncWithErrors(t *testing.T, store *repos.Store) func(t *testing.
 }
 
 type repoListerWithErrors struct {
-	*idb.RepoStore
+	*database.RepoStore
 
 	ListReposErr error
 }
 
-func (s *repoListerWithErrors) List(ctx context.Context, args idb.ReposListOptions) ([]*types.Repo, error) {
+func (s *repoListerWithErrors) List(ctx context.Context, args database.ReposListOptions) ([]*types.Repo, error) {
 	if s.ListReposErr != nil {
 		return nil, s.ListReposErr
 	}
@@ -661,7 +661,7 @@ func testSyncerSync(t *testing.T, s *repos.Store) func(*testing.T) {
 				if st != nil {
 					var want, have types.Repos
 					want.Concat(tc.diff.Added, tc.diff.Modified, tc.diff.Unmodified)
-					have, _ = st.RepoStore.List(ctx, idb.ReposListOptions{})
+					have, _ = st.RepoStore.List(ctx, database.ReposListOptions{})
 
 					want = want.With(types.Opt.RepoID(0))
 					have = have.With(types.Opt.RepoID(0))
@@ -787,7 +787,7 @@ func testSyncRepo(t *testing.T, s *repos.Store) func(*testing.T) {
 					t.Fatal(err)
 				}
 
-				have, err := st.RepoStore.List(ctx, idb.ReposListOptions{})
+				have, err := st.RepoStore.List(ctx, database.ReposListOptions{})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -1401,7 +1401,7 @@ func testOrphanedRepo(db *sql.DB) func(t *testing.T, store *repos.Store) func(t 
 			}
 
 			// Confirm that the repository hasn't been deleted
-			rs, err := store.RepoStore.List(ctx, idb.ReposListOptions{})
+			rs, err := store.RepoStore.List(ctx, database.ReposListOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1502,7 +1502,7 @@ func testConflictingSyncers(db *sql.DB) func(t *testing.T, store *repos.Store) f
 			// Confirm that there are two relationships
 			assertSourceCount(ctx, t, db, 2)
 
-			fromDB, err := store.RepoStore.List(ctx, idb.ReposListOptions{})
+			fromDB, err := store.RepoStore.List(ctx, database.ReposListOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1575,7 +1575,7 @@ func testConflictingSyncers(db *sql.DB) func(t *testing.T, store *repos.Store) f
 			}
 			tx2.Done(nil)
 
-			fromDB, err = store.RepoStore.List(ctx, idb.ReposListOptions{})
+			fromDB, err = store.RepoStore.List(ctx, database.ReposListOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1811,7 +1811,7 @@ func testUserAddedRepos(db *sql.DB, userID int32) func(t *testing.T, store *repo
 			conf.Mock(nil)
 
 			// If the user has the AllowUserExternalServicePrivate tag, user service can also sync private code
-			_, err := db.ExecContext(ctx, "UPDATE users SET tags = $1 WHERE id = $2", pq.Array([]string{idb.TagAllowUserExternalServicePrivate}), userID)
+			_, err := db.ExecContext(ctx, "UPDATE users SET tags = $1 WHERE id = $2", pq.Array([]string{database.TagAllowUserExternalServicePrivate}), userID)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1946,7 +1946,7 @@ func testNameOnConflictDiscardOld(db *sql.DB) func(t *testing.T, store *repos.St
 			}
 
 			// We expect repo2 to be synced since it sorts before repo1 because the ID is alphabetically first
-			fromDB, err := store.RepoStore.List(ctx, idb.ReposListOptions{
+			fromDB, err := store.RepoStore.List(ctx, database.ReposListOptions{
 				Names: []string{"github.com/org/foo"},
 			})
 			if err != nil {
@@ -2046,7 +2046,7 @@ func testNameOnConflictDiscardNew(db *sql.DB) func(t *testing.T, store *repos.St
 			}
 
 			// We expect repo1 to be synced since it sorts before repo2 because the ID is alphabetically first
-			fromDB, err := store.RepoStore.List(ctx, idb.ReposListOptions{
+			fromDB, err := store.RepoStore.List(ctx, database.ReposListOptions{
 				Names: []string{"github.com/org/foo"},
 			})
 			if err != nil {
@@ -2164,7 +2164,7 @@ func testNameOnConflictOnRename(db *sql.DB) func(t *testing.T, store *repos.Stor
 			}
 
 			// We expect repo1 to be synced since it sorts before repo2 because the ID is alphabetically first
-			fromDB, err := store.RepoStore.List(ctx, idb.ReposListOptions{})
+			fromDB, err := store.RepoStore.List(ctx, database.ReposListOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}

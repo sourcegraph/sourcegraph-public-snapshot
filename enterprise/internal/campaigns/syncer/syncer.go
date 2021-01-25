@@ -16,7 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -44,7 +44,7 @@ type RepoStore interface {
 }
 
 type ExternalServiceStore interface {
-	List(context.Context, db.ExternalServicesListOptions) ([]*types.ExternalService, error)
+	List(context.Context, database.ExternalServicesListOptions) ([]*types.ExternalService, error)
 }
 
 // NewSyncRegistry creates a new sync registry which starts a syncer for each code host and will update them
@@ -60,7 +60,7 @@ func NewSyncRegistry(ctx context.Context, store SyncStore, repoStore RepoStore, 
 		syncers:              make(map[string]*changesetSyncer),
 	}
 
-	services, err := esStore.List(ctx, db.ExternalServicesListOptions{})
+	services, err := esStore.List(ctx, database.ExternalServicesListOptions{})
 	if err != nil {
 		log15.Error("Fetching initial external services", "err", err)
 	}
@@ -115,7 +115,7 @@ func (s *SyncRegistry) Add(extSvc *types.ExternalService) {
 	go syncer.Run(ctx)
 }
 
-// handlePriorityItems fetches changesets in the priority queue from the db and passes them
+// handlePriorityItems fetches changesets in the priority queue from the database and passes them
 // to the appropriate syncer.
 func (s *SyncRegistry) handlePriorityItems() {
 	fetchSyncData := func(ids []int64) ([]*campaigns.ChangesetSyncData, error) {

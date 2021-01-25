@@ -21,8 +21,8 @@ import (
 	"github.com/opentracing/opentracing-go"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	idb "github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -380,7 +380,7 @@ func testServerSetRepoEnabled(t *testing.T, store *repos.Store) func(t *testing.
 					ids = append(ids, s.ID)
 				}
 
-				svcs, err := store.ExternalServiceStore.List(ctx, idb.ExternalServicesListOptions{
+				svcs, err := store.ExternalServiceStore.List(ctx, database.ExternalServicesListOptions{
 					IDs:              ids,
 					OrderByDirection: "ASC",
 				})
@@ -439,7 +439,7 @@ func testServerEnqueueRepoUpdate(t *testing.T, store *repos.Store) func(t *testi
 		var testCases []testCase
 		testCases = append(testCases,
 			func() testCase {
-				idb.Mocks.Repos.List = func(v0 context.Context, v1 idb.ReposListOptions) ([]*types.Repo, error) {
+				database.Mocks.Repos.List = func(v0 context.Context, v1 database.ReposListOptions) ([]*types.Repo, error) {
 					return nil, errors.New("boom")
 				}
 				return testCase{
@@ -447,7 +447,7 @@ func testServerEnqueueRepoUpdate(t *testing.T, store *repos.Store) func(t *testi
 					store: store,
 					err:   `store.list-repos: boom`,
 					teardown: func() {
-						idb.Mocks.Repos = idb.MockRepos{}
+						database.Mocks.Repos = database.MockRepos{}
 					},
 				}
 			}(),
@@ -778,11 +778,11 @@ func testServerStatusMessages(t *testing.T, store *repos.Store) func(t *testing.
 				}
 
 				if tc.sourcerErr != nil || tc.listRepoErr != nil {
-					idb.Mocks.Repos.List = func(v0 context.Context, v1 idb.ReposListOptions) ([]*types.Repo, error) {
+					database.Mocks.Repos.List = func(v0 context.Context, v1 database.ReposListOptions) ([]*types.Repo, error) {
 						return nil, tc.listRepoErr
 					}
 					defer func() {
-						idb.Mocks.Repos.List = nil
+						database.Mocks.Repos.List = nil
 					}()
 					sourcer := repos.NewFakeSourcer(tc.sourcerErr, repos.NewFakeSource(githubService, nil))
 					// Run Sync so that possibly `LastSyncErrors` is set
@@ -1284,7 +1284,7 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore *repos.Store) func(
 						if tc.assertDelay != 0 {
 							time.Sleep(tc.assertDelay)
 						}
-						rs, err := store.RepoStore.List(ctx, idb.ReposListOptions{})
+						rs, err := store.RepoStore.List(ctx, database.ReposListOptions{})
 						if err != nil {
 							t.Fatal(err)
 						}

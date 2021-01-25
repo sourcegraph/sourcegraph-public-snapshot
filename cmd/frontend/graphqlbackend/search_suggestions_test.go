@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -22,7 +22,7 @@ import (
 )
 
 func TestSearchSuggestions(t *testing.T) {
-	limitOffset := &db.LimitOffset{Limit: searchrepos.SearchLimits().MaxRepos + 1}
+	limitOffset := &database.LimitOffset{Limit: searchrepos.SearchLimits().MaxRepos + 1}
 
 	getSuggestions := func(t *testing.T, query, version string) []string {
 		t.Helper()
@@ -76,7 +76,7 @@ func TestSearchSuggestions(t *testing.T) {
 		defer func() { mockDecodedViewerFinalSettings = nil }()
 
 		var calledReposListNamesAll, calledReposListFoo bool
-		db.Mocks.Repos.ListRepoNames = func(_ context.Context, op db.ReposListOptions) ([]*types.RepoName, error) {
+		database.Mocks.Repos.ListRepoNames = func(_ context.Context, op database.ReposListOptions) ([]*types.RepoName, error) {
 
 			// Validate that the following options are invariant
 			// when calling the DB through Repos.List, no matter how
@@ -93,11 +93,11 @@ func TestSearchSuggestions(t *testing.T) {
 				return []*types.RepoName{{Name: "bar-repo"}}, nil
 			}
 		}
-		db.Mocks.Repos.Count = mockCount
-		db.Mocks.Repos.MockGetByName(t, "repo", 1)
+		database.Mocks.Repos.Count = mockCount
+		database.Mocks.Repos.MockGetByName(t, "repo", 1)
 		backend.Mocks.Repos.MockResolveRev_NoCheck(t, api.CommitID("deadbeef"))
 
-		defer func() { db.Mocks = db.MockStores{} }()
+		defer func() { database.Mocks = database.MockStores{} }()
 		git.Mocks.ResolveRevision = func(rev string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
 			return api.CommitID("deadbeef"), nil
 		}
@@ -137,11 +137,11 @@ func TestSearchSuggestions(t *testing.T) {
 		defer func() { mockDecodedViewerFinalSettings = nil }()
 
 		var calledReposListRepoNamesInGroup, calledReposListFooRepo3 bool
-		db.Mocks.Repos.ListRepoNames = func(_ context.Context, op db.ReposListOptions) ([]*types.RepoName, error) {
+		database.Mocks.Repos.ListRepoNames = func(_ context.Context, op database.ReposListOptions) ([]*types.RepoName, error) {
 			mu.Lock()
 			defer mu.Unlock()
-			wantReposInGroup := db.ReposListOptions{IncludePatterns: []string{`^foo-repo1$|^repo3$`}, LimitOffset: limitOffset}    // when treating term as repo: field
-			wantFooRepo3 := db.ReposListOptions{IncludePatterns: []string{"foo", `^foo-repo1$|^repo3$`}, LimitOffset: limitOffset} // when treating term as repo: field
+			wantReposInGroup := database.ReposListOptions{IncludePatterns: []string{`^foo-repo1$|^repo3$`}, LimitOffset: limitOffset}    // when treating term as repo: field
+			wantFooRepo3 := database.ReposListOptions{IncludePatterns: []string{"foo", `^foo-repo1$|^repo3$`}, LimitOffset: limitOffset} // when treating term as repo: field
 			if reflect.DeepEqual(op, wantReposInGroup) {
 				calledReposListRepoNamesInGroup = true
 				return []*types.RepoName{
@@ -155,9 +155,9 @@ func TestSearchSuggestions(t *testing.T) {
 			t.Errorf("got %+v, want %+v or %+v", op, wantReposInGroup, wantFooRepo3)
 			return nil, nil
 		}
-		db.Mocks.Repos.Count = mockCount
-		defer func() { db.Mocks = db.MockStores{} }()
-		db.Mocks.Repos.MockGetByName(t, "repo", 1)
+		database.Mocks.Repos.Count = mockCount
+		defer func() { database.Mocks = database.MockStores{} }()
+		database.Mocks.Repos.MockGetByName(t, "repo", 1)
 		backend.Mocks.Repos.MockResolveRev_NoCheck(t, api.CommitID("deadbeef"))
 
 		calledSearchFilesInRepos := atomic.NewBool(false)
@@ -220,7 +220,7 @@ func TestSearchSuggestions(t *testing.T) {
 		defer func() { mockDecodedViewerFinalSettings = nil }()
 
 		calledReposListRepoNames := false
-		db.Mocks.Repos.ListRepoNames = func(_ context.Context, op db.ReposListOptions) ([]*types.RepoName, error) {
+		database.Mocks.Repos.ListRepoNames = func(_ context.Context, op database.ReposListOptions) ([]*types.RepoName, error) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledReposListRepoNames = true
@@ -233,8 +233,8 @@ func TestSearchSuggestions(t *testing.T) {
 
 			return []*types.RepoName{{Name: "foo-repo"}}, nil
 		}
-		db.Mocks.Repos.Count = mockCount
-		defer func() { db.Mocks.Repos.ListRepoNames = nil }()
+		database.Mocks.Repos.Count = mockCount
+		defer func() { database.Mocks.Repos.ListRepoNames = nil }()
 
 		// Mock to bypass language suggestions.
 		mockShowLangSuggestions = func() ([]*searchSuggestionResolver, error) { return nil, nil }
@@ -273,10 +273,10 @@ func TestSearchSuggestions(t *testing.T) {
 		mockDecodedViewerFinalSettings = &schema.Settings{}
 		defer func() { mockDecodedViewerFinalSettings = nil }()
 
-		db.Mocks.Repos.List = func(_ context.Context, have db.ReposListOptions) ([]*types.Repo, error) {
-			want := db.ReposListOptions{
+		database.Mocks.Repos.List = func(_ context.Context, have database.ReposListOptions) ([]*types.Repo, error) {
+			want := database.ReposListOptions{
 				IncludePatterns: []string{"foo"},
-				LimitOffset: &db.LimitOffset{
+				LimitOffset: &database.LimitOffset{
 					Limit: 1,
 				},
 			}
@@ -285,10 +285,10 @@ func TestSearchSuggestions(t *testing.T) {
 			}
 			return []*types.Repo{{Name: "foo-repo"}}, nil
 		}
-		db.Mocks.Repos.ListRepoNames = func(_ context.Context, have db.ReposListOptions) ([]*types.RepoName, error) {
-			want := db.ReposListOptions{
+		database.Mocks.Repos.ListRepoNames = func(_ context.Context, have database.ReposListOptions) ([]*types.RepoName, error) {
+			want := database.ReposListOptions{
 				IncludePatterns: []string{"foo"},
-				LimitOffset: &db.LimitOffset{
+				LimitOffset: &database.LimitOffset{
 					Limit: 1,
 				},
 			}
@@ -297,9 +297,9 @@ func TestSearchSuggestions(t *testing.T) {
 			}
 			return []*types.RepoName{{Name: "foo-repo"}}, nil
 		}
-		db.Mocks.Repos.Count = mockCount
-		defer func() { db.Mocks.Repos.List = nil }()
-		defer func() { db.Mocks.Repos.ListRepoNames = nil }()
+		database.Mocks.Repos.Count = mockCount
+		defer func() { database.Mocks.Repos.List = nil }()
+		defer func() { database.Mocks.Repos.ListRepoNames = nil }()
 		git.Mocks.ResolveRevision = func(rev string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
 			return api.CommitID("deadbeef"), nil
 		}
@@ -341,7 +341,7 @@ func TestSearchSuggestions(t *testing.T) {
 		defer func() { mockDecodedViewerFinalSettings = nil }()
 
 		calledReposListRepoNames := false
-		db.Mocks.Repos.ListRepoNames = func(_ context.Context, op db.ReposListOptions) ([]*types.RepoName, error) {
+		database.Mocks.Repos.ListRepoNames = func(_ context.Context, op database.ReposListOptions) ([]*types.RepoName, error) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledReposListRepoNames = true
@@ -354,8 +354,8 @@ func TestSearchSuggestions(t *testing.T) {
 
 			return []*types.RepoName{{Name: "foo-repo"}}, nil
 		}
-		db.Mocks.Repos.Count = mockCount
-		defer func() { db.Mocks.Repos.ListRepoNames = nil }()
+		database.Mocks.Repos.Count = mockCount
+		defer func() { database.Mocks.Repos.ListRepoNames = nil }()
 
 		// Mock to bypass language suggestions.
 		mockShowLangSuggestions = func() ([]*searchSuggestionResolver, error) { return nil, nil }

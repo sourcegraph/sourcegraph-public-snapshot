@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/graph-gophers/graphql-go/gqltesting"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -18,7 +18,7 @@ import (
 )
 
 func TestSetExternalServiceRepos(t *testing.T) {
-	db.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
+	database.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
 		return &types.ExternalService{
 			DisplayName:     "test",
 			NamespaceUserID: 1,
@@ -32,17 +32,17 @@ func TestSetExternalServiceRepos(t *testing.T) {
 			}`,
 		}, nil
 	}
-	db.Mocks.Users.GetByID = func(ctx context.Context, userID int32) (*types.User, error) {
+	database.Mocks.Users.GetByID = func(ctx context.Context, userID int32) (*types.User, error) {
 		return &types.User{
 			ID:        userID,
 			SiteAdmin: userID == 1,
 		}, nil
 	}
-	db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
+	database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
 		return &types.User{ID: 1, SiteAdmin: true}, nil
 	}
 	var called bool
-	db.Mocks.ExternalServices.Upsert = func(ctx context.Context, services ...*types.ExternalService) error {
+	database.Mocks.ExternalServices.Upsert = func(ctx context.Context, services ...*types.ExternalService) error {
 		called = true
 		if len(services) != 1 {
 			return fmt.Errorf("Expected 1, got %v", len(services))

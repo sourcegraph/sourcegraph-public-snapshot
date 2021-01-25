@@ -14,7 +14,7 @@ import (
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
@@ -456,8 +456,8 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, clock ct.Cl
 	t.Run("GetCampaignDiffStat", func(t *testing.T) {
 		userID := ct.CreateTestUser(t, false).ID
 		userCtx := actor.WithActor(ctx, actor.FromUser(userID))
-		repoStore := db.ReposWith(s)
-		esStore := db.ExternalServicesWith(s)
+		repoStore := database.ReposWith(s)
+		esStore := database.ExternalServicesWith(s)
 		repo := ct.TestRepo(t, esStore, extsvc.KindGitHub)
 		repo.Private = true
 		if err := repoStore.Create(ctx, repo); err != nil {

@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 
 	apirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -160,7 +160,7 @@ func (r *mockRepos) ListDefault(context.Context) ([]*types.RepoName, error) {
 	return repos, nil
 }
 
-func (r *mockRepos) List(ctx context.Context, opt db.ReposListOptions) ([]*types.Repo, error) {
+func (r *mockRepos) List(ctx context.Context, opt database.ReposListOptions) ([]*types.Repo, error) {
 	if opt.Index == nil || !*opt.Index {
 		return nil, errors.New("reposList test expects Index=true options")
 	}

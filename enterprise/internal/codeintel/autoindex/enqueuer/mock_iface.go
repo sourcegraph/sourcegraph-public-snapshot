@@ -5,7 +5,7 @@ package enqueuer
 import (
 	"context"
 	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
-	basestore "github.com/sourcegraph/sourcegraph/internal/db/basestore"
+	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"regexp"
 	"sync"
 	"time"

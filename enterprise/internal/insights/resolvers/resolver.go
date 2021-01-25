@@ -10,7 +10,7 @@ import (
 // Resolver is the GraphQL resolver of all things related to Insights.
 type Resolver struct{}
 
-// New returns a new Resolver whose store uses the given db
+// New returns a new Resolver whose store uses the given database
 func New() graphqlbackend.InsightsResolver {
 	return &Resolver{}
 }
