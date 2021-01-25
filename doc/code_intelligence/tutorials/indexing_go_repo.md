@@ -1,4 +1,4 @@
-# Index a popular Go repository
+# Manually index a popular Go repository
 
 <style>
 .markdown-body pre.chroma {
