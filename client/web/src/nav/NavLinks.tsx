@@ -69,7 +69,26 @@ export class NavLinks extends React.PureComponent<Props> {
                         <ActivationDropdown activation={this.props.activation} history={this.props.history} />
                     </li>
                 )}
-                <li className="nav-item">
+                {!isErrorLike(this.props.settingsCascade.final) &&
+                    this.props.settingsCascade.final?.experimentalFeatures?.codeInsights &&
+                    !this.props.minimalNavLinks && (
+                        <li className="nav-item d-none d-lg-block">
+                            <InsightsNavItem />
+                        </li>
+                    )}
+                {!isErrorLike(this.props.settingsCascade.final) &&
+                    this.props.settingsCascade.final?.experimentalFeatures?.codeMonitoring &&
+                    !this.props.minimalNavLinks && (
+                        <li className="nav-item d-none d-lg-block">
+                            <CodeMonitoringNavItem />
+                        </li>
+                    )}
+                {!this.props.minimalNavLinks && this.props.showCampaigns && (
+                    <li className="nav-item d-none d-lg-block">
+                        <CampaignsNavItem />
+                    </li>
+                )}
+                <li className="nav-item d-lg-none">
                     <MenuNavItem>
                         {!isErrorLike(this.props.settingsCascade.final) &&
                             this.props.settingsCascade.final?.experimentalFeatures?.codeInsights &&
