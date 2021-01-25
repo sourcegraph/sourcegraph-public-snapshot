@@ -439,7 +439,11 @@ const messageHandlers: {
                 // The EventSource API can return a DOM event that is not an Error object
                 // (e.g. doesn't have the message property), so we need to construct our own here.
                 // See https://developer.mozilla.org/en-US/docs/Web/API/EventSource/error_event
-                observer.error(new Error('The connection was closed before your search was completed. This may be due to a problem with a firewall, VPN or proxy, or a failure with the Sourcegraph server.'))
+                observer.error(
+                    new Error(
+                        'The connection was closed before your search was completed. This may be due to a problem with a firewall, VPN or proxy, or a failure with the Sourcegraph server.'
+                    )
+                )
             }
             eventSource.close()
         }),
