@@ -13,8 +13,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/email"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/storetest"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
 func init() {
@@ -79,7 +79,7 @@ func TestActionRunner(t *testing.T) {
 	)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			//Empty db, preserve schema.
+			//Empty database, preserve schema.
 			dbtesting.SetupGlobalTestDB(t)
 
 			_, _, _, userCtx := storetest.NewTestUser(ctx, t)

@@ -9,8 +9,8 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 // campaignColumns are used by the campaign related Store methods to insert,
@@ -279,7 +279,7 @@ type GetCampaignDiffStatOpts struct {
 }
 
 func (s *Store) GetCampaignDiffStat(ctx context.Context, opts GetCampaignDiffStatOpts) (*diff.Stat, error) {
-	authzConds, err := db.AuthzQueryConds(ctx, s.Handle().DB())
+	authzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB())
 	if err != nil {
 		return nil, errors.Wrap(err, "GetCampaignDiffStat generating authz query conds")
 	}

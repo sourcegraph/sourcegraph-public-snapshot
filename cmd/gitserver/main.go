@@ -21,8 +21,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -66,7 +66,7 @@ func main() {
 
 	repoStore, err := getRepoStore()
 	if err != nil {
-		log.Fatalf("failed to initialize db repo store: %v", err)
+		log.Fatalf("failed to initialize database repo store: %v", err)
 	}
 
 	gitserver := server.Server{
@@ -175,7 +175,7 @@ func parsePercent(s string) (int, error) {
 
 // getRepoStore initializes a connection to the database and returns a
 // RepoStore.
-func getRepoStore() (*db.RepoStore, error) {
+func getRepoStore() (*database.RepoStore, error) {
 	//
 	// START FLAILING
 
@@ -203,5 +203,5 @@ func getRepoStore() (*db.RepoStore, error) {
 		return nil, err
 	}
 
-	return db.Repos(h), nil
+	return database.Repos(h), nil
 }

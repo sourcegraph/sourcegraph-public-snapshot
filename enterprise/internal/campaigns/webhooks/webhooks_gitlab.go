@@ -13,7 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
@@ -24,7 +24,7 @@ import (
 
 type GitLabWebhook struct{ *Webhook }
 
-func NewGitLabWebhook(store *store.Store, externalServices *db.ExternalServiceStore, now func() time.Time) *GitLabWebhook {
+func NewGitLabWebhook(store *store.Store, externalServices *database.ExternalServiceStore, now func() time.Time) *GitLabWebhook {
 	return &GitLabWebhook{&Webhook{store, externalServices, now, extsvc.TypeGitLab}}
 }
 
@@ -107,7 +107,7 @@ func (h *GitLabWebhook) getExternalServiceFromRawID(ctx context.Context, raw str
 		return nil, errors.Wrap(err, "parsing the raw external service ID")
 	}
 
-	es, err := h.ExternalServices.List(ctx, db.ExternalServicesListOptions{
+	es, err := h.ExternalServices.List(ctx, database.ExternalServicesListOptions{
 		IDs:   []int64{id},
 		Kinds: []string{extsvc.KindGitLab},
 	})

@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 var timeNow = time.Now
@@ -22,7 +22,7 @@ func (r *UserResolver) Emails(ctx context.Context) ([]*userEmailResolver, error)
 		return nil, err
 	}
 
-	userEmails, err := db.GlobalUserEmails.ListByUser(ctx, db.UserEmailsListOptions{
+	userEmails, err := database.GlobalUserEmails.ListByUser(ctx, database.UserEmailsListOptions{
 		UserID: r.user.ID,
 	})
 	if err != nil {
@@ -40,14 +40,14 @@ func (r *UserResolver) Emails(ctx context.Context) ([]*userEmailResolver, error)
 }
 
 type userEmailResolver struct {
-	userEmail db.UserEmail
+	userEmail database.UserEmail
 	user      *UserResolver
 }
 
 func (r *userEmailResolver) Email() string { return r.userEmail.Email }
 
 func (r *userEmailResolver) IsPrimary(ctx context.Context) (bool, error) {
-	email, _, err := db.GlobalUserEmails.GetPrimaryEmail(ctx, r.user.user.ID)
+	email, _, err := database.GlobalUserEmails.GetPrimaryEmail(ctx, r.user.user.ID)
 	if err != nil {
 		return false, err
 	}
@@ -104,12 +104,12 @@ func (r *schemaResolver) RemoveUserEmail(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	if err := db.GlobalUserEmails.Remove(ctx, userID, args.Email); err != nil {
+	if err := database.GlobalUserEmails.Remove(ctx, userID, args.Email); err != nil {
 		return nil, err
 	}
 
 	// 🚨 SECURITY: If an email is removed, invalidate any existing password reset tokens that may have been sent to that email.
-	if err := db.GlobalUsers.DeletePasswordResetCode(ctx, userID); err != nil {
+	if err := database.GlobalUsers.DeletePasswordResetCode(ctx, userID); err != nil {
 		return nil, err
 	}
 
@@ -136,7 +136,7 @@ func (r *schemaResolver) SetUserEmailPrimary(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	if err := db.GlobalUserEmails.SetPrimaryEmail(ctx, userID, args.Email); err != nil {
+	if err := database.GlobalUserEmails.SetPrimaryEmail(ctx, userID, args.Email); err != nil {
 		return nil, err
 	}
 
@@ -164,13 +164,13 @@ func (r *schemaResolver) SetUserEmailVerified(ctx context.Context, args *struct 
 	if err != nil {
 		return nil, err
 	}
-	if err := db.GlobalUserEmails.SetVerified(ctx, userID, args.Email, args.Verified); err != nil {
+	if err := database.GlobalUserEmails.SetVerified(ctx, userID, args.Email, args.Verified); err != nil {
 		return nil, err
 	}
 
 	// Avoid unnecessary calls if the email is set to unverified.
 	if args.Verified {
-		if err = db.GlobalAuthz.GrantPendingPermissions(ctx, &db.GrantPendingPermissionsArgs{
+		if err = database.GlobalAuthz.GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
 			UserID: userID,
 			Perm:   authz.Read,
 			Type:   authz.PermRepos,
@@ -195,12 +195,12 @@ func (r *schemaResolver) ResendVerificationEmail(ctx context.Context, args *stru
 		return nil, err
 	}
 
-	user, err := db.GlobalUsers.GetByID(ctx, userID)
+	user, err := database.GlobalUsers.GetByID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	lastSent, err := db.GlobalUserEmails.GetLatestVerificationSentEmail(ctx, args.Email)
+	lastSent, err := database.GlobalUserEmails.GetLatestVerificationSentEmail(ctx, args.Email)
 	if err != nil {
 		return nil, err
 	}
@@ -210,7 +210,7 @@ func (r *schemaResolver) ResendVerificationEmail(ctx context.Context, args *stru
 		return nil, errors.New("Last verification email sent too recently")
 	}
 
-	email, verified, err := db.GlobalUserEmails.Get(ctx, userID, args.Email)
+	email, verified, err := database.GlobalUserEmails.Get(ctx, userID, args.Email)
 	if err != nil {
 		return nil, err
 	}
@@ -223,7 +223,7 @@ func (r *schemaResolver) ResendVerificationEmail(ctx context.Context, args *stru
 		return nil, err
 	}
 
-	err = db.GlobalUserEmails.SetLastVerification(ctx, userID, email, code)
+	err = database.GlobalUserEmails.SetLastVerification(ctx, userID, email, code)
 	if err != nil {
 		return nil, err
 	}

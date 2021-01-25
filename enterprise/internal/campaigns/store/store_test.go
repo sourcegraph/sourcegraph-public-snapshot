@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
