@@ -5,9 +5,11 @@ import (
 	"database/sql"
 	"os"
 	"os/user"
+	"strings"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
@@ -26,7 +28,7 @@ func TestIntegration(t *testing.T) {
 			username = user.Username
 		}
 		timescaleDSN := dbutil.PostgresDSN("codeinsights", username, os.Getenv)
-		db, err := dbconn.New(timescaleDSN, "insights-test-"+t.Name())
+		db, err := dbconn.New(timescaleDSN, "insights-test-"+strings.Replace(t.Name(), "/", "_", -1))
 		if err != nil {
 			t.Fatalf("Failed to connect to codeinsights database: %s", err)
 		}
@@ -35,11 +37,12 @@ func TestIntegration(t *testing.T) {
 		}
 		return db
 	}
+	getPostgresDB := dbtesting.GetDB
 
 	t.Run("Integration", func(t *testing.T) {
 		ctx := context.Background()
 		clock := timeutil.Now
-		store := NewWithClock(getTimescaleDB(t), clock)
+		store := NewWithClock(getTimescaleDB(t), getPostgresDB(), clock)
 		t.Run("Insights", func(t *testing.T) { testInsights(t, ctx, store, clock) })
 	})
 }
