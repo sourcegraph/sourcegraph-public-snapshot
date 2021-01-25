@@ -671,26 +671,79 @@ func alertForError(err error) *searchAlert {
 	return alert
 }
 
-// containsUnhandledError replaces err with the first unhandled error we find.
-func containsUnhandledError(err error) (error, bool) {
-	var (
-		nextErr     = err
-		isUnhandled bool
-	)
+// unhandledError returns the first unhandled error we find.
+func unhandledError(e error) (u error) {
+	var iter errIter
+	switch e.(type) {
+	case *multierror.Error:
+		iter = newMultiErrIter(e.(*multierror.Error))
+	default:
+		iter = newWrappedIter(e)
+	}
 LOOP:
-	for nextErr != nil {
-		switch nextErr.(type) {
-		case *multierror.Error:
+	for iter.next() {
+		switch iter.item().(type) {
 		case errStructuralSearchNoIndexedRepos:
 		case errMissingRepoRevs:
 		case errRepoLimit:
 		case errStructuralSearchNotSet:
 		case errTimeLimit:
 		default:
-			isUnhandled = true
+			u = iter.item()
 			break LOOP
 		}
-		nextErr = errors.Unwrap(nextErr)
 	}
-	return nextErr, isUnhandled
+	return u
+}
+
+type errIter interface {
+	next() bool
+	item() error
+}
+
+func newMultiErrIter(err *multierror.Error) *multiErrIter {
+	return &multiErrIter{err.Errors, true}
+}
+
+type multiErrIter struct {
+	errors []error
+	first  bool
+}
+
+func (i *multiErrIter) next() bool {
+	if i.first {
+		i.first = false
+		return len(i.errors) > 0
+	}
+	if len(i.errors) > 1 {
+		i.errors = i.errors[1:]
+		return true
+	}
+	return false
+}
+
+func (i *multiErrIter) item() error {
+	return i.errors[0]
+}
+
+func newWrappedIter(err error) *wrappedErrIter {
+	return &wrappedErrIter{err, true}
+}
+
+type wrappedErrIter struct {
+	err   error
+	first bool
+}
+
+func (i *wrappedErrIter) next() bool {
+	if i.first {
+		i.first = false
+	} else {
+		i.err = errors.Unwrap(i.err)
+	}
+	return i.err != nil
+}
+
+func (i *wrappedErrIter) item() error {
+	return i.err
 }

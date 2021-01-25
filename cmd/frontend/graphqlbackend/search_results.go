@@ -1198,11 +1198,7 @@ func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*Sea
 			rr.alert = alert
 		}
 	}
-	if err2, ok := containsUnhandledError(err); ok {
-		err = err2
-	} else {
-		err = nil
-	}
+	err = unhandledError(err)
 	// If we have some results, only log the error instead of returning it.
 	// Otherwise the client would not receive the partial results or see the alert.
 	if len(rr.SearchResults) > 0 && err != nil {
