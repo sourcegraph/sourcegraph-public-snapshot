@@ -380,3 +380,93 @@ func TestCapFirst(t *testing.T) {
 		})
 	}
 }
+
+func TestAlertForError(t *testing.T) {
+	tests := []struct {
+		name      string
+		multiErr  error
+		wantAlert *searchAlert
+	}{
+		{
+			name:      "1 unknown error",
+			multiErr:  fmt.Errorf("unknown error"),
+			wantAlert: nil,
+		},
+		{
+			name:      "multi-error with 1 unknown error",
+			multiErr:  multierror.Append(&multierror.Error{}, fmt.Errorf("unknown error")),
+			wantAlert: nil,
+		},
+		{
+			name:      "multi-error with 1 known error",
+			multiErr:  multierror.Append(&multierror.Error{}, errRepoLimit{ResultType: "diff", Max: 50}),
+			wantAlert: alertForRepoLimitErr(errRepoLimit{ResultType: "diff", Max: 50}),
+		},
+		{
+			name:      "multi-error with other errors",
+			multiErr:  multierror.Append(&multierror.Error{}, fmt.Errorf("other error"), errRepoLimit{ResultType: "diff", Max: 50}, fmt.Errorf("other error")),
+			wantAlert: alertForRepoLimitErr(errRepoLimit{ResultType: "diff", Max: 50}),
+		},
+		{
+			name:      "prioritize errStructuralSearchNotSet 1",
+			multiErr:  multierror.Append(&multierror.Error{}, errRepoLimit{ResultType: "diff", Max: 50}, errStructuralSearchNotSet{"foo"}),
+			wantAlert: alertForStructuralSearchNotSet(errStructuralSearchNotSet{"foo"}),
+		},
+		{
+			name:      "prioritize errStructuralSearchNotSet 2",
+			multiErr:  multierror.Append(&multierror.Error{}, errStructuralSearchNotSet{"foo"}, errRepoLimit{ResultType: "diff", Max: 50}),
+			wantAlert: alertForStructuralSearchNotSet(errStructuralSearchNotSet{"foo"}),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			gotAlert := alertForError(tt.multiErr)
+			if !reflect.DeepEqual(gotAlert, tt.wantAlert) {
+				t.Fatalf("have alert %+v, want: %+v", gotAlert, tt.wantAlert)
+			}
+		})
+	}
+}
+
+func TestContainsUnhandledError(t *testing.T) {
+	tests := []struct {
+		name    string
+		err     error
+		wantErr error
+	}{
+		{
+			name:    "1 unknown multi-error",
+			err:     multierror.Append(&multierror.Error{}, fmt.Errorf("unknown error"), errTimeLimit{}),
+			wantErr: fmt.Errorf("unknown error"),
+		},
+		{
+			name:    "multi-error only known errors",
+			err:     multierror.Append(&multierror.Error{}, errRepoLimit{ResultType: "diff", Max: 50}, errStructuralSearchNotSet{"foo"}, errTimeLimit{}),
+			wantErr: nil,
+		},
+		{
+			name:    "1 unknown error",
+			err:     fmt.Errorf("unknown error"),
+			wantErr: fmt.Errorf("unknown error"),
+		},
+		{
+			name:    "nil error",
+			err:     nil,
+			wantErr: nil,
+		},
+		{
+			name:    "unknown error wraps known error",
+			err:     fmt.Errorf("unknown %w", errTimeLimit{}),
+			wantErr: fmt.Errorf("unknown %w", errTimeLimit{}),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotError := unhandledError(tt.err)
+			if !reflect.DeepEqual(gotError, tt.wantErr) {
+				t.Fatalf("have error %+v, want: %+v", gotError, tt.wantErr)
+			}
+		})
+	}
+}
