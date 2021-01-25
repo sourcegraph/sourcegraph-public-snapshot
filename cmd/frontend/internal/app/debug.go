@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -12,19 +11,23 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/debugproxies"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/prometheusutil"
+	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
 )
 
 var grafanaURLFromEnv = env.Get("GRAFANA_SERVER_URL", "", "URL at which Grafana can be reached")
 var jaegerURLFromEnv = env.Get("JAEGER_SERVER_URL", "", "URL at which Jaeger UI can be reached")
 
 func init() {
-	conf.ContributeWarning(newPrometheusValidator(prometheusutil.PrometheusURL))
+	promURL, err := srcprometheus.PrometheusURL()
+	if err == nil {
+		conf.ContributeWarning(newPrometheusValidator(promURL))
+	}
 }
 
 func addNoK8sClientHandler(r *mux.Router) {
@@ -173,13 +176,7 @@ func newPrometheusValidator(prometheusURL string) conf.Validator {
 			return
 		}
 
-		// set up request to fetch status from grafana-wrapper
-		promURL, err := url.Parse(prometheusURL)
-		if err != nil {
-			return // don't report problem, since activeAlertsAlert will report this
-		}
-		promURL.Path = "/prom-wrapper/config-subscriber"
-		req, err := http.NewRequest("GET", promURL.String(), nil)
+		prom, err := srcprometheus.NewClient(prometheusURL)
 		if err != nil {
 			return // don't report problem, since activeAlertsAlert will report this
 		}
@@ -187,25 +184,12 @@ func newPrometheusValidator(prometheusURL string) conf.Validator {
 		// use a short timeout to avoid having this block problems from loading
 		ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 		defer cancel()
-		resp, err := http.DefaultClient.Do(req.WithContext(ctx))
+		status, err := prom.GetConfigStatus(ctx)
 		if err != nil {
 			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("`observability.alerts`: Unable to fetch configuration status: %v", err)))
 			return
 		}
-		if resp.StatusCode != 200 {
-			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("`observability.alerts`: Unable to fetch configuration status: status code %d", resp.StatusCode)))
-			return
-		}
 
-		var promConfigStatus struct {
-			Problems conf.Problems `json:"problems"`
-		}
-		defer resp.Body.Close()
-		if err := json.NewDecoder(resp.Body).Decode(&promConfigStatus); err != nil {
-			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("`observability.alerts`: unable to read Prometheus status: %v", err)))
-			return
-		}
-
-		return promConfigStatus.Problems
+		return status.Problems
 	}
 }

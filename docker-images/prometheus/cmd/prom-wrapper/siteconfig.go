@@ -14,8 +14,10 @@ import (
 	amclient "github.com/prometheus/alertmanager/api/v2/client"
 	"github.com/prometheus/alertmanager/api/v2/client/general"
 	amconfig "github.com/prometheus/alertmanager/config"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -120,7 +122,7 @@ func NewSiteConfigSubscriber(logger log15.Logger, alertmanager *amclient.Alertma
 
 func (c *SiteConfigSubscriber) Handler() http.Handler {
 	handler := http.NewServeMux()
-	handler.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+	handler.HandleFunc(srcprometheus.PathPrefixConfigSubscriber, func(w http.ResponseWriter, req *http.Request) {
 		c.mux.RLock()
 		defer c.mux.RUnlock()
 
