@@ -325,6 +325,8 @@ type CampaignSpec struct {
 	Steps []*Step `json:"steps,omitempty"`
 	// TransformChanges description: Optional transformations to apply to the changes produced in each repository.
 	TransformChanges *TransformChanges `json:"transformChanges,omitempty"`
+	// Workspaces description: Different workspace configurations
+	Workspaces []*WorkspaceConfiguration `json:"workspaces,omitempty"`
 }
 
 // ChangesetTemplate description: A template describing how to create (and update) changesets with the file changes produced by the command steps.
@@ -1357,4 +1359,12 @@ type VersionContextRevision struct {
 type Webhooks struct {
 	// Secret description: Secret for authenticating incoming webhook payloads
 	Secret string `json:"secret,omitempty"`
+}
+
+// WorkspaceConfiguration description: Configuration for how to setup workspaces in repositories
+type WorkspaceConfiguration struct {
+	// In description: The repositories in which to apply the workspace configuration
+	In string `json:"in,omitempty"`
+	// RootAtLocationOf description: The name of the file that sits at the root of the desired workspace
+	RootAtLocationOf string `json:"rootAtLocationOf"`
 }
