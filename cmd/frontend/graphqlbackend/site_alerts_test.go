@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -166,7 +167,7 @@ func TestObservabilityActiveAlertsAlert(t *testing.T) {
 			},
 			want: []*Alert{{
 				TypeValue:    AlertTypeWarning,
-				MessageValue: "Unable to fetch alerts status",
+				MessageValue: "unable to fetch alerts status",
 			}},
 		},
 		{
