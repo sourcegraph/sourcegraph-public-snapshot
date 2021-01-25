@@ -285,7 +285,7 @@ func TestPermissionLevels(t *testing.T) {
 
 			for _, tc := range tests {
 				t.Run(tc.name, func(t *testing.T) {
-					pruneUserCredentials(t)
+					pruneUserCredentials(t, cstore)
 
 					graphqlID := string(graphqlbackend.MarshalUserID(tc.user))
 
@@ -338,9 +338,9 @@ func TestPermissionLevels(t *testing.T) {
 
 			for _, tc := range tests {
 				t.Run(tc.name, func(t *testing.T) {
-					pruneUserCredentials(t)
+					pruneUserCredentials(t, cstore)
 
-					cred, err := db.GlobalUserCredentials.Create(ctx, db.UserCredentialScope{
+					cred, err := cstore.UserCredentialsStore().Create(ctx, db.UserCredentialScope{
 						Domain:              db.UserCredentialDomainCampaigns,
 						ExternalServiceID:   "https://github.com/",
 						ExternalServiceType: extsvc.TypeGitHub,
@@ -405,9 +405,9 @@ func TestPermissionLevels(t *testing.T) {
 
 			for _, tc := range tests {
 				t.Run(tc.name, func(t *testing.T) {
-					pruneUserCredentials(t)
+					pruneUserCredentials(t, cstore)
 
-					cred, err := db.GlobalUserCredentials.Create(ctx, db.UserCredentialScope{
+					cred, err := cstore.UserCredentialsStore().Create(ctx, db.UserCredentialScope{
 						Domain:              db.UserCredentialDomainCampaigns,
 						ExternalServiceID:   "https://github.com/",
 						ExternalServiceType: extsvc.TypeGitHub,

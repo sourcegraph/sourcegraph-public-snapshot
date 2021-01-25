@@ -441,7 +441,7 @@ func (rm RewirerMappings) Hydrate(ctx context.Context, store *Store) error {
 		}
 	}
 
-	accessibleReposByID, err := db.GlobalRepos.GetReposSetByIDs(ctx, rm.RepoIDs()...)
+	accessibleReposByID, err := store.ReposStore().GetReposSetByIDs(ctx, rm.RepoIDs()...)
 	if err != nil {
 		return err
 	}

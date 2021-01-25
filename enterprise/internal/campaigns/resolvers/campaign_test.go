@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -28,15 +27,15 @@ func TestCampaignResolver(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
-	userID := ct.CreateTestUser(t, true).ID
-	org, err := db.GlobalOrgs.Create(ctx, "test-campaign-resolver-org", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
 	cstore := store.NewWithClock(dbconn.Global, clock)
+
+	userID := ct.CreateTestUser(t, true).ID
+	org, err := cstore.OrgsStore().Create(ctx, "test-campaign-resolver-org", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	campaignSpec := &campaigns.CampaignSpec{
 		RawSpec:        ct.TestRawCampaignSpec,
@@ -105,7 +104,7 @@ func TestCampaignResolver(t *testing.T) {
 	}
 
 	// Now soft-delete the user and check we can still access the campaign in the org namespace.
-	err = db.GlobalUsers.Delete(ctx, userID)
+	err = cstore.UsersStore().Delete(ctx, userID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -124,7 +123,7 @@ func TestCampaignResolver(t *testing.T) {
 	}
 
 	// Now hard-delete the user and check we can still access the campaign in the org namespace.
-	err = db.GlobalUsers.HardDelete(ctx, userID)
+	err = cstore.UsersStore().HardDelete(ctx, userID)
 	if err != nil {
 		t.Fatal(err)
 	}

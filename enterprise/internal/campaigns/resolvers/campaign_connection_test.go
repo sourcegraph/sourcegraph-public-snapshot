@@ -183,12 +183,12 @@ func TestCampaignsListing(t *testing.T) {
 	userID := ct.CreateTestUser(t, true).ID
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
 
-	org, err := db.GlobalOrgs.Create(ctx, "org", nil)
+	store := store.New(dbconn.Global)
+
+	org, err := store.OrgsStore().Create(ctx, "org", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	store := store.New(dbconn.Global)
 
 	r := &Resolver{store: store}
 	s, err := graphqlbackend.NewSchema(dbconn.Global, r, nil, nil, nil, nil, nil)

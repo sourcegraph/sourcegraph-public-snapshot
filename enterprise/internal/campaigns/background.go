@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/syncer"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	ossDB "github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -27,9 +26,6 @@ func InitBackgroundJobs(
 ) {
 	cstore := store.NewWithClock(db, timeutil.Now)
 
-	repoStore := ossDB.ReposWith(cstore)
-	esStore := ossDB.ExternalServicesWith(cstore)
-
 	// We use an internal actor so that we can freely load dependencies from
 	// the database without repository permissions being enforced.
 	// We do check for repository permissions conciously in the Rewirer when
@@ -37,10 +33,12 @@ func InitBackgroundJobs(
 	// host, we manually check for CampaignsCredentials.
 	ctx = actor.WithInternalActor(ctx)
 
-	syncRegistry := syncer.NewSyncRegistry(ctx, cstore, repoStore, esStore, cf)
+	syncRegistry := syncer.NewSyncRegistry(ctx, cstore, cf)
 	if server != nil {
 		server.ChangesetSyncRegistry = syncRegistry
 	}
 
+	// TODO: These routines should be returned instead of being run as a go-routine.
+	// Repo-updater should handle all go routines then.
 	go goroutine.MonitorBackgroundRoutines(ctx, background.Routines(ctx, db, cstore, cf)...)
 }

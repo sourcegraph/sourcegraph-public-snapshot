@@ -49,7 +49,10 @@ type ExternalServiceStore interface {
 
 // NewSyncRegistry creates a new sync registry which starts a syncer for each code host and will update them
 // when external services are changed, added or removed.
-func NewSyncRegistry(ctx context.Context, store SyncStore, repoStore RepoStore, esStore ExternalServiceStore, cf *httpcli.Factory) *SyncRegistry {
+func NewSyncRegistry(ctx context.Context, store SyncStore, cf *httpcli.Factory) *SyncRegistry {
+	repoStore := store.ReposStore()
+	esStore := store.ExternalServicesStore()
+
 	r := &SyncRegistry{
 		Ctx:                  ctx,
 		SyncStore:            store,
@@ -274,6 +277,8 @@ type SyncStore interface {
 	GetChangeset(context.Context, store.GetChangesetOpts) (*campaigns.Changeset, error)
 	UpdateChangeset(ctx context.Context, cs *campaigns.Changeset) error
 	UpsertChangesetEvents(ctx context.Context, cs ...*campaigns.ChangesetEvent) error
+	ReposStore() RepoStore
+	ExternalServicesStore() ExternalServiceStore
 	Transact(context.Context) (*store.Store, error)
 }
 

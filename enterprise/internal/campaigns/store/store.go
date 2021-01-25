@@ -11,6 +11,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -61,6 +62,26 @@ func (s *Store) Handle() *basestore.TransactableHandle { return s.Store.Handle()
 // Needed to implement the basestore.Store interface
 func (s *Store) With(other basestore.ShareableStore) *Store {
 	return &Store{Store: s.Store.With(other), now: s.now}
+}
+
+func (s *Store) ReposStore() *db.RepoStore {
+	return db.ReposWith(s)
+}
+
+func (s *Store) ExternalServicesStore() *db.ExternalServiceStore {
+	return db.ExternalServicesWith(s)
+}
+
+func (s *Store) UserCredentialsStore() *db.UserCredentialsStore {
+	return db.UserCredentialsWith(s)
+}
+
+func (s *Store) UsersStore() *db.UserStore {
+	return db.UsersWith(s)
+}
+
+func (s *Store) OrgsStore() *db.OrgStore {
+	return db.OrgsWith(s)
 }
 
 // Transact creates a new transaction.

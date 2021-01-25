@@ -351,9 +351,11 @@ func TestSyncRegistry(t *testing.T) {
 				},
 			}, nil
 		},
+		mockRepoStore:            repoStore,
+		mockExternalServiceStore: esStore,
 	}
 
-	r := NewSyncRegistry(ctx, syncStore, repoStore, esStore, nil)
+	r := NewSyncRegistry(ctx, syncStore, nil)
 
 	assertSyncerCount := func(want int) {
 		r.mu.Lock()
@@ -423,11 +425,13 @@ func TestSyncRegistry(t *testing.T) {
 }
 
 type MockSyncStore struct {
-	listChangesetSyncData func(context.Context, store.ListChangesetSyncDataOpts) ([]*campaigns.ChangesetSyncData, error)
-	getChangeset          func(context.Context, store.GetChangesetOpts) (*campaigns.Changeset, error)
-	updateChangeset       func(context.Context, *campaigns.Changeset) error
-	upsertChangesetEvents func(context.Context, ...*campaigns.ChangesetEvent) error
-	transact              func(context.Context) (*store.Store, error)
+	mockRepoStore            MockRepoStore
+	mockExternalServiceStore MockExternalServiceStore
+	listChangesetSyncData    func(context.Context, store.ListChangesetSyncDataOpts) ([]*campaigns.ChangesetSyncData, error)
+	getChangeset             func(context.Context, store.GetChangesetOpts) (*campaigns.Changeset, error)
+	updateChangeset          func(context.Context, *campaigns.Changeset) error
+	upsertChangesetEvents    func(context.Context, ...*campaigns.ChangesetEvent) error
+	transact                 func(context.Context) (*store.Store, error)
 }
 
 func (m MockSyncStore) ListChangesetSyncData(ctx context.Context, opts store.ListChangesetSyncDataOpts) ([]*campaigns.ChangesetSyncData, error) {
@@ -448,6 +452,14 @@ func (m MockSyncStore) UpsertChangesetEvents(ctx context.Context, cs ...*campaig
 
 func (m MockSyncStore) Transact(ctx context.Context) (*store.Store, error) {
 	return m.transact(ctx)
+}
+
+func (m MockSyncStore) ReposStore() RepoStore {
+	return m.mockRepoStore
+}
+
+func (m MockSyncStore) ExternalServicesStore() ExternalServiceStore {
+	return m.mockExternalServiceStore
 }
 
 type MockRepoStore struct {

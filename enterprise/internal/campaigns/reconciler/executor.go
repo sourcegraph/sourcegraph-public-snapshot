@@ -63,14 +63,12 @@ func (e *executor) Run(ctx context.Context, plan *Plan) (err error) {
 		return nil
 	}
 
-	reposStore := db.ReposWith(e.tx)
-
-	e.repo, err = reposStore.Get(ctx, e.ch.RepoID)
+	e.repo, err = e.tx.ReposStore().Get(ctx, e.ch.RepoID)
 	if err != nil {
 		return errors.Wrap(err, "failed to load repository")
 	}
 
-	esStore := db.ExternalServicesWith(e.tx)
+	esStore := e.tx.ExternalServicesStore()
 
 	e.extSvc, err = loadExternalService(ctx, esStore, e.repo)
 	if err != nil {
@@ -196,14 +194,14 @@ func (e *executor) loadAuthenticator(ctx context.Context) (auth.Authenticator, e
 		return nil, errors.Wrap(err, "failed to load owning campaign")
 	}
 
-	cred, err := loadUserCredential(ctx, campaign.LastApplierID, e.repo)
+	cred, err := loadUserCredential(ctx, e.tx.UserCredentialsStore(), campaign.LastApplierID, e.repo)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			// We need to check if the user is an admin: if they are, then
 			// we can use the nil return from loadUserCredential() to fall
 			// back to the global credentials used for the code host. If
 			// not, then we need to error out.
-			user, err := loadUser(ctx, campaign.LastApplierID)
+			user, err := loadUser(ctx, e.tx.UsersStore(), campaign.LastApplierID)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to load user applying the campaign")
 			}
@@ -607,12 +605,20 @@ func loadCampaign(ctx context.Context, tx getCampaigner, id int64) (*campaigns.C
 	return campaign, nil
 }
 
-func loadUser(ctx context.Context, id int32) (*types.User, error) {
-	return db.GlobalUsers.GetByID(ctx, id)
+type userStorer interface {
+	GetByID(context.Context, int32) (*types.User, error)
 }
 
-func loadUserCredential(ctx context.Context, userID int32, repo *types.Repo) (*db.UserCredential, error) {
-	return db.GlobalUserCredentials.GetByScope(ctx, db.UserCredentialScope{
+func loadUser(ctx context.Context, tx userStorer, id int32) (*types.User, error) {
+	return tx.GetByID(ctx, id)
+}
+
+type userCredentialsStorer interface {
+	GetByScope(context.Context, db.UserCredentialScope) (*db.UserCredential, error)
+}
+
+func loadUserCredential(ctx context.Context, tx userCredentialsStorer, userID int32, repo *types.Repo) (*db.UserCredential, error) {
+	return tx.GetByScope(ctx, db.UserCredentialScope{
 		Domain:              db.UserCredentialDomainCampaigns,
 		UserID:              userID,
 		ExternalServiceType: repo.ExternalRepo.ServiceType,

@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -44,7 +43,7 @@ func NewChangesetSpecResolver(ctx context.Context, store *store.Store, changeset
 	// filters out repositories that the user doesn't have access to.
 	// In case we don't find a repository, it might be because it's deleted
 	// or because the user doesn't have access.
-	rs, err := db.GlobalRepos.GetByIDs(ctx, changesetSpec.RepoID)
+	rs, err := store.ReposStore().GetByIDs(ctx, changesetSpec.RepoID)
 	if err != nil {
 		return nil, err
 	}

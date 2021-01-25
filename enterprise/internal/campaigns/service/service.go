@@ -92,7 +92,7 @@ func (s *Service) CreateCampaignSpec(ctx context.Context, opts CreateCampaignSpe
 
 	// 🚨 SECURITY: db.Repos.GetRepoIDsSet uses the authzFilter under the hood and
 	// filters out repositories that the user doesn't have access to.
-	accessibleReposByID, err := db.GlobalRepos.GetReposSetByIDs(ctx, cs.RepoIDs()...)
+	accessibleReposByID, err := s.store.ReposStore().GetReposSetByIDs(ctx, cs.RepoIDs()...)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +155,7 @@ func (s *Service) CreateChangesetSpec(ctx context.Context, rawSpec string, userI
 
 	// 🚨 SECURITY: We use db.Repos.Get to check whether the user has access to
 	// the repository or not.
-	if _, err = db.GlobalRepos.Get(ctx, spec.RepoID); err != nil {
+	if _, err = s.store.ReposStore().Get(ctx, spec.RepoID); err != nil {
 		return nil, err
 	}
 
@@ -381,7 +381,7 @@ func (s *Service) EnqueueChangesetSync(ctx context.Context, id int64) (err error
 
 	// 🚨 SECURITY: We use db.Repos.Get to check whether the user has access to
 	// the repository or not.
-	if _, err = db.GlobalRepos.Get(ctx, changeset.RepoID); err != nil {
+	if _, err = s.store.ReposStore().Get(ctx, changeset.RepoID); err != nil {
 		return err
 	}
 
@@ -459,7 +459,7 @@ func (s *Service) FetchUsernameForBitbucketServerToken(ctx context.Context, exte
 		return "", err
 	}
 
-	esStore := db.ExternalServicesWith(s.store)
+	esStore := s.store.ExternalServicesStore()
 	externalService, err := esStore.GetByID(ctx, extSvcID)
 	if err != nil {
 		if errcode.IsNotFound(err) {

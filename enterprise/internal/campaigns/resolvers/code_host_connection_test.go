@@ -29,11 +29,11 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
-	pruneUserCredentials(t)
+	cstore := store.New(dbconn.Global)
+
+	pruneUserCredentials(t, cstore)
 
 	userID := ct.CreateTestUser(t, false).ID
-
-	cstore := store.New(dbconn.Global)
 
 	ghRepos, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
 	ghRepo := ghRepos[0]
@@ -42,7 +42,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 	bbsRepos, _ := ct.CreateBbsTestRepos(t, ctx, dbconn.Global, 1)
 	bbsRepo := bbsRepos[0]
 
-	cred, err := db.GlobalUserCredentials.Create(ctx, db.UserCredentialScope{
+	cred, err := cstore.UserCredentialsStore().Create(ctx, db.UserCredentialScope{
 		Domain:              db.UserCredentialDomainCampaigns,
 		ExternalServiceID:   ghRepo.ExternalRepo.ServiceID,
 		ExternalServiceType: ghRepo.ExternalRepo.ServiceType,

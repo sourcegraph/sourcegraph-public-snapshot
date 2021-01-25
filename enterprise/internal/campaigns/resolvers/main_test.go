@@ -229,14 +229,14 @@ func addChangeset(t *testing.T, ctx context.Context, s *store.Store, c *campaign
 	}
 }
 
-func pruneUserCredentials(t *testing.T) {
+func pruneUserCredentials(t *testing.T, s *store.Store) {
 	t.Helper()
-	creds, _, err := db.GlobalUserCredentials.List(context.Background(), db.UserCredentialsListOpts{})
+	creds, _, err := s.UserCredentialsStore().List(context.Background(), db.UserCredentialsListOpts{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, c := range creds {
-		if err := db.GlobalUserCredentials.Delete(context.Background(), c.ID); err != nil {
+		if err := s.UserCredentialsStore().Delete(context.Background(), c.ID); err != nil {
 			t.Fatal(err)
 		}
 	}

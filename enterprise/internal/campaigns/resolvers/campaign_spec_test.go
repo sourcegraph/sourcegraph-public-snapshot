@@ -43,7 +43,7 @@ func TestCampaignSpecResolver(t *testing.T) {
 	orgname := "test-org"
 	userID := ct.CreateTestUser(t, false).ID
 	adminID := ct.CreateTestUser(t, true).ID
-	org, err := db.GlobalOrgs.Create(ctx, orgname, nil)
+	org, err := cstore.OrgsStore().Create(ctx, orgname, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -212,7 +212,7 @@ func TestCampaignSpecResolver(t *testing.T) {
 	}
 
 	// Now soft-delete the creator and check that the campaign spec is still retrievable.
-	err = db.GlobalUsers.Delete(ctx, userID)
+	err = cstore.UsersStore().Delete(ctx, userID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -236,7 +236,7 @@ func TestCampaignSpecResolver(t *testing.T) {
 	}
 
 	// Now hard-delete the creator and check that the campaign spec is still retrievable.
-	err = db.GlobalUsers.HardDelete(ctx, userID)
+	err = cstore.UsersStore().HardDelete(ctx, userID)
 	if err != nil {
 		t.Fatal(err)
 	}

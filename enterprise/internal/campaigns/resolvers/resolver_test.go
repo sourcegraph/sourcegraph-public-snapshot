@@ -796,11 +796,11 @@ func TestCreateCampaignsCredential(t *testing.T) {
 	ctx := context.Background()
 	dbtesting.SetupGlobalTestDB(t)
 
-	pruneUserCredentials(t)
+	cstore := store.New(dbconn.Global)
+
+	pruneUserCredentials(t, cstore)
 
 	userID := ct.CreateTestUser(t, false).ID
-
-	cstore := store.New(dbconn.Global)
 
 	r := &Resolver{store: cstore}
 	s, err := graphqlbackend.NewSchema(dbconn.Global, r, nil, nil, nil, nil, nil)
@@ -850,11 +850,13 @@ func TestDeleteCampaignsCredential(t *testing.T) {
 	ctx := context.Background()
 	dbtesting.SetupGlobalTestDB(t)
 
-	pruneUserCredentials(t)
+	cstore := store.New(dbconn.Global)
+
+	pruneUserCredentials(t, cstore)
 
 	userID := ct.CreateTestUser(t, true).ID
 
-	cred, err := db.GlobalUserCredentials.Create(ctx, db.UserCredentialScope{
+	cred, err := cstore.UserCredentialsStore().Create(ctx, db.UserCredentialScope{
 		Domain:              db.UserCredentialDomainCampaigns,
 		ExternalServiceType: extsvc.TypeGitHub,
 		ExternalServiceID:   "https://github.com/",
@@ -863,8 +865,6 @@ func TestDeleteCampaignsCredential(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	cstore := store.New(dbconn.Global)
 
 	r := &Resolver{store: cstore}
 	s, err := graphqlbackend.NewSchema(dbconn.Global, r, nil, nil, nil, nil, nil)

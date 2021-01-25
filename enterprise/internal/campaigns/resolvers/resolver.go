@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -34,8 +33,8 @@ type Resolver struct {
 }
 
 // New returns a new Resolver whose store uses the given db
-func New(db *sql.DB) graphqlbackend.CampaignsResolver {
-	return &Resolver{store: store.New(db)}
+func New(store *store.Store) graphqlbackend.CampaignsResolver {
+	return &Resolver{store: store}
 }
 
 func campaignsEnabled(ctx context.Context) error {
@@ -108,9 +107,9 @@ func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbac
 		return nil, err
 	}
 
-	// 🚨 SECURITY: db.Repos.Get uses the authzFilter under the hood and
+	// 🚨 SECURITY: Repos.Get uses the authzFilter under the hood and
 	// filters out repositories that the user doesn't have access to.
-	repo, err := db.GlobalRepos.Get(ctx, changeset.RepoID)
+	repo, err := r.store.ReposStore().Get(ctx, changeset.RepoID)
 	if err != nil && !errcode.IsNotFound(err) {
 		return nil, err
 	}
@@ -232,7 +231,7 @@ func (r *Resolver) CampaignsCredentialByID(ctx context.Context, id graphql.ID) (
 		return nil, nil
 	}
 
-	cred, err := db.GlobalUserCredentials.GetByID(ctx, dbID)
+	cred, err := r.store.UserCredentialsStore().GetByID(ctx, dbID)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return nil, nil
@@ -818,7 +817,7 @@ func (r *Resolver) CreateCampaignsCredential(ctx context.Context, args *graphqlb
 	}
 
 	// Throw error documented in schema.graphql.
-	existing, err := db.GlobalUserCredentials.GetByScope(ctx, scope)
+	existing, err := r.store.UserCredentialsStore().GetByScope(ctx, scope)
 	if err != nil && !errcode.IsNotFound(err) {
 		return nil, err
 	}
@@ -838,7 +837,7 @@ func (r *Resolver) CreateCampaignsCredential(ctx context.Context, args *graphqlb
 		a = &auth.OAuthBearerToken{Token: args.Credential}
 	}
 
-	cred, err := db.GlobalUserCredentials.Create(ctx, scope, a)
+	cred, err := r.store.UserCredentialsStore().Create(ctx, scope, a)
 	if err != nil {
 		return nil, err
 	}
@@ -866,7 +865,7 @@ func (r *Resolver) DeleteCampaignsCredential(ctx context.Context, args *graphqlb
 	}
 
 	// Get existing credential.
-	cred, err := db.GlobalUserCredentials.GetByID(ctx, dbID)
+	cred, err := r.store.UserCredentialsStore().GetByID(ctx, dbID)
 	if err != nil {
 		return nil, err
 	}
@@ -877,7 +876,7 @@ func (r *Resolver) DeleteCampaignsCredential(ctx context.Context, args *graphqlb
 	}
 
 	// This also fails if the credential was not found.
-	if err := db.GlobalUserCredentials.Delete(ctx, dbID); err != nil {
+	if err := r.store.UserCredentialsStore().Delete(ctx, dbID); err != nil {
 		return nil, err
 	}
 
