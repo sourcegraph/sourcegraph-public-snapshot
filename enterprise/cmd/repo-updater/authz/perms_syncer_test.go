@@ -88,14 +88,6 @@ func (p *mockProvider) FetchRepoPerms(ctx context.Context, repo *extsvc.Reposito
 	return p.fetchRepoPerms(ctx, repo)
 }
 
-type mockReposLister struct {
-	list func(context.Context, db.ReposListOptions) ([]*types.Repo, error)
-}
-
-func (s *mockReposLister) List(ctx context.Context, args db.ReposListOptions) ([]*types.Repo, error) {
-	return s.list(ctx, args)
-}
-
 func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	p := &mockProvider{
 		serviceType: extsvc.TypeGitLab,
@@ -144,7 +136,7 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 		db.Mocks.Repos = db.MockRepos{}
 	}()
 
-	permsStore := edb.NewPermsStore(nil, timeutil.Now)
+	permsStore := edb.Perms(nil, timeutil.Now)
 	s := NewPermsSyncer(repos.NewStore(dbconn.Global, sql.TxOptions{}), permsStore, timeutil.Now, nil)
 
 	tests := []struct {
@@ -213,7 +205,7 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 		db.Mocks.Repos = db.MockRepos{}
 	}()
 
-	permsStore := edb.NewPermsStore(nil, timeutil.Now)
+	permsStore := edb.Perms(nil, timeutil.Now)
 	s := NewPermsSyncer(repos.NewStore(dbconn.Global, sql.TxOptions{}), permsStore, timeutil.Now, nil)
 
 	t.Run("invalid token", func(t *testing.T) {
@@ -265,7 +257,7 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 
 func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 	newPermsSyncer := func(store *repos.Store) *PermsSyncer {
-		return NewPermsSyncer(store, edb.NewPermsStore(nil, timeutil.Now), timeutil.Now, nil)
+		return NewPermsSyncer(store, edb.Perms(nil, timeutil.Now), timeutil.Now, nil)
 	}
 
 	t.Run("TouchRepoPermissions is called when no authz provider", func(t *testing.T) {

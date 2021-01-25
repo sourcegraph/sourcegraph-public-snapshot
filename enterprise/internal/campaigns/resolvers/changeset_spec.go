@@ -44,7 +44,7 @@ func NewChangesetSpecResolver(ctx context.Context, store *store.Store, changeset
 	// filters out repositories that the user doesn't have access to.
 	// In case we don't find a repository, it might be because it's deleted
 	// or because the user doesn't have access.
-	rs, err := db.Repos.GetByIDs(ctx, changesetSpec.RepoID)
+	rs, err := db.GlobalRepos.GetByIDs(ctx, changesetSpec.RepoID)
 	if err != nil {
 		return nil, err
 	}

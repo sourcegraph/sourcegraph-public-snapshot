@@ -95,6 +95,9 @@ func TestClient_Archive(t *testing.T) {
 			}
 			return "", fmt.Errorf("no remote for %s", name)
 		},
+		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (server.VCSSyncer, error) {
+			return &server.GitRepoSyncer{}, nil
+		},
 	}).Handler())
 	defer srv.Close()
 

@@ -56,13 +56,13 @@ type RepoStore struct {
 	once sync.Once
 }
 
-// NewRepoStoreWithDB instantiates and returns a new RepoStore with prepared statements.
-func NewRepoStoreWithDB(db dbutil.DB) *RepoStore {
+// Repos instantiates and returns a new RepoStore with prepared statements.
+func Repos(db dbutil.DB) *RepoStore {
 	return &RepoStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 // NewRepoStoreWithDB instantiates and returns a new RepoStore using the other store handle.
-func NewRepoStoreWith(other basestore.ShareableStore) *RepoStore {
+func ReposWith(other basestore.ShareableStore) *RepoStore {
 	return &RepoStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 
@@ -186,7 +186,6 @@ func (s *RepoStore) GetReposSetByIDs(ctx context.Context, ids ...api.RepoID) (ma
 	if err != nil {
 		return nil, err
 	}
-	s.ensureStore()
 
 	repoMap := make(map[api.RepoID]*types.Repo, len(repos))
 	for _, r := range repos {
@@ -321,7 +320,7 @@ func (s *RepoStore) getReposBySQL(ctx context.Context, minimal bool, fromClause,
 		querySuffix = sqlf.Sprintf("")
 	}
 
-	authzConds, err := authzQueryConds(ctx)
+	authzConds, err := AuthzQueryConds(ctx, s.Handle().DB())
 	if err != nil {
 		return err
 	}
@@ -703,7 +702,7 @@ func (s *RepoStore) ListDefaultRepos(ctx context.Context, opts ListDefaultReposO
 	}
 
 	q := sqlf.Sprintf(`
--- source: internal/db/default_repos.go:defaultRepos.List
+-- source: internal/db/repos.go:RepoStore.ListDefaultRepos
 SELECT
     id,
     name
@@ -717,7 +716,7 @@ WHERE
             external_service_repos sr
             INNER JOIN external_services s ON s.id = sr.external_service_id
         WHERE
-			s.namespace_user_id IS NOT NULL
+			s.cloud_default = false
 			AND s.deleted_at IS NULL
 			AND r.id = sr.repo_id
             AND r.deleted_at IS NULL
@@ -1208,7 +1207,7 @@ func (*RepoStore) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error)
 func (s *RepoStore) GetUserAddedRepoNames(ctx context.Context, userID int32) ([]api.RepoName, error) {
 	s.ensureStore()
 
-	authzConds, err := authzQueryConds(ctx)
+	authzConds, err := AuthzQueryConds(ctx, s.Handle().DB())
 	if err != nil {
 		return nil, err
 	}

@@ -55,13 +55,13 @@ type UserEmailsStore struct {
 	once sync.Once
 }
 
-// NewUserEmailsStoreWithDB instantiates and returns a new UserEmailsStore with prepared statements.
-func NewUserEmailsStoreWithDB(db dbutil.DB) *UserEmailsStore {
+// UserEmails instantiates and returns a new UserEmailsStore with prepared statements.
+func UserEmails(db dbutil.DB) *UserEmailsStore {
 	return &UserEmailsStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
-// NewUserEmailsStoreWith instantiates and returns a new OrgStore using the other store handle.
-func NewUserEmailsStoreWith(other basestore.ShareableStore) *UserEmailsStore {
+// UserEmailsWith instantiates and returns a new UserEmailsStore using the other store handle.
+func UserEmailsWith(other basestore.ShareableStore) *UserEmailsStore {
 	return &UserEmailsStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 

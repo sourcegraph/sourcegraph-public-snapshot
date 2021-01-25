@@ -19,13 +19,13 @@ type QueryRunnerStateStore struct {
 	once sync.Once
 }
 
-// NewQueryRunnerStateStoreWithDB instantiates and returns a new QueryRunnerStateStore with prepared statements.
-func NewQueryRunnerStateStoreWithDB(db dbutil.DB) *QueryRunnerStateStore {
+// QueryRunnerState instantiates and returns a new QueryRunnerStateStore with prepared statements.
+func QueryRunnerState(db dbutil.DB) *QueryRunnerStateStore {
 	return &QueryRunnerStateStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 // NewQueryRunnerStateStoreWithDB instantiates and returns a new QueryRunnerStateStore using the other store handle.
-func NewQueryRunnerStateStoreWith(other basestore.ShareableStore) *QueryRunnerStateStore {
+func QueryRunnerStateWith(other basestore.ShareableStore) *QueryRunnerStateStore {
 	return &QueryRunnerStateStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 

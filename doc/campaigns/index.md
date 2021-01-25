@@ -36,7 +36,7 @@ body.theme-dark .markdown-body ul li:before {
 <p class="subtitle">Make large-scale code changes across many repositories and code hosts</p>
 
 <p class="lead">
-Create a campaign by specifying a search query to get a list of repositories and a script to run in each. The campaign then lets you create pull requests on all affected repositories and tracks their progress until they're all merged. You can preview the changes and update them at any time.
+Create a campaign by specifying a search query to get a list of repositories and a script to run in each. The campaign then lets you create changesets (a generic term for pull requests or merge requests) on all affected repositories and track their progress until they're all merged. You can preview the changes and update them at any time. A campaign can also be used to track and manage manually created changesets.
 </p>
 
 <div class="cta-group">
@@ -75,6 +75,7 @@ Create a campaign by specifying a search query to get a list of repositories and
 - [Permissions in campaigns](explanations/permissions_in_campaigns.md)
 - [Campaigns design](explanations/campaigns_design.md)
 - [How `src` executes a campaign spec](explanations/how_src_executes_a_campaign_spec.md)
+- [Re-executing campaign specs multiple times](explanations/reexecuting_campaign_specs_multiple_times.md)
 
 ## How-tos
 
@@ -87,6 +88,7 @@ Create a campaign by specifying a search query to get a list of repositories and
 - [Site admin configuration for campaigns](how-tos/site_admin_configuration.md)
 - [Configuring user credentials for campaigns](how-tos/configuring_user_credentials.md)
 - <span class="badge badge-experimental">Experimental</span> [Creating multiple changesets in large repositories](how-tos/creating_multiple_changesets_in_large_repositories.md)
+- [Handling errored changesets](how-tos/handling_errored_changesets.md)
 
 ## Tutorials
 

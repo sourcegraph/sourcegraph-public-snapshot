@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/lsif-protocol/reader"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/datastructures"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/lsif"
 )
@@ -31,46 +33,58 @@ func TestCorrelate(t *testing.T) {
 		},
 		RangeData: map[int]lsif.Range{
 			4: {
-				StartLine:          1,
-				StartCharacter:     2,
-				EndLine:            3,
-				EndCharacter:       4,
+				Range: reader.Range{
+					StartLine:      1,
+					StartCharacter: 2,
+					EndLine:        3,
+					EndCharacter:   4,
+				},
 				DefinitionResultID: 13,
 			},
 			5: {
-				StartLine:         2,
-				StartCharacter:    3,
-				EndLine:           4,
-				EndCharacter:      5,
+				Range: reader.Range{
+					StartLine:      2,
+					StartCharacter: 3,
+					EndLine:        4,
+					EndCharacter:   5,
+				},
 				ReferenceResultID: 15,
 			},
 			6: {
-				StartLine:          3,
-				StartCharacter:     4,
-				EndLine:            5,
-				EndCharacter:       6,
+				Range: reader.Range{
+					StartLine:      3,
+					StartCharacter: 4,
+					EndLine:        5,
+					EndCharacter:   6,
+				},
 				DefinitionResultID: 13,
 				HoverResultID:      17,
 			},
 			7: {
-				StartLine:         4,
-				StartCharacter:    5,
-				EndLine:           6,
-				EndCharacter:      7,
+				Range: reader.Range{
+					StartLine:      4,
+					StartCharacter: 5,
+					EndLine:        6,
+					EndCharacter:   7,
+				},
 				ReferenceResultID: 15,
 			},
 			8: {
-				StartLine:      5,
-				StartCharacter: 6,
-				EndLine:        7,
-				EndCharacter:   8,
-				HoverResultID:  17,
+				Range: reader.Range{
+					StartLine:      5,
+					StartCharacter: 6,
+					EndLine:        7,
+					EndCharacter:   8,
+				},
+				HoverResultID: 17,
 			},
 			9: {
-				StartLine:      6,
-				StartCharacter: 7,
-				EndLine:        8,
-				EndCharacter:   9,
+				Range: reader.Range{
+					StartLine:      6,
+					StartCharacter: 7,
+					EndLine:        8,
+					EndCharacter:   9,
+				},
 			},
 		},
 		ResultSetData: map[int]lsif.ResultSet{
@@ -96,27 +110,35 @@ func TestCorrelate(t *testing.T) {
 		},
 		MonikerData: map[int]lsif.Moniker{
 			18: {
-				Kind:                 "import",
-				Scheme:               "scheme A",
-				Identifier:           "ident A",
+				Moniker: reader.Moniker{
+					Kind:       "import",
+					Scheme:     "scheme A",
+					Identifier: "ident A",
+				},
 				PackageInformationID: 22,
 			},
 			19: {
-				Kind:                 "export",
-				Scheme:               "scheme B",
-				Identifier:           "ident B",
+				Moniker: reader.Moniker{
+					Kind:       "export",
+					Scheme:     "scheme B",
+					Identifier: "ident B",
+				},
 				PackageInformationID: 23,
 			},
 			20: {
-				Kind:                 "import",
-				Scheme:               "scheme C",
-				Identifier:           "ident C",
+				Moniker: reader.Moniker{
+					Kind:       "import",
+					Scheme:     "scheme C",
+					Identifier: "ident C",
+				},
 				PackageInformationID: 0,
 			},
 			21: {
-				Kind:                 "export",
-				Scheme:               "scheme D",
-				Identifier:           "ident D",
+				Moniker: reader.Moniker{
+					Kind:       "export",
+					Scheme:     "scheme D",
+					Identifier: "ident D",
+				},
 				PackageInformationID: 0,
 			},
 		},

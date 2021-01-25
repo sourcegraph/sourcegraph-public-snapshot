@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react'
 
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import CircleDashedIcon from '../../../components/CircleDashedIcon'
+import { CircleDashedIcon } from '../../../components/CircleDashedIcon'
 
 import { AddCodeHostConnectionModal } from './AddCodeHostConnectionModal'
 import { RemoveCodeHostConnectionModal } from './RemoveCodeHostConnectionModal'

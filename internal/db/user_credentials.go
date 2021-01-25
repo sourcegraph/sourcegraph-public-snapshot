@@ -5,12 +5,15 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 
+	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -45,8 +48,43 @@ func (UserCredentialNotFoundErr) NotFound() bool {
 	return true
 }
 
-// userCredentials provides access to the `user_credentials` table.
-type userCredentials struct{}
+// UserCredentialsStore provides access to the `user_credentials` table.
+type UserCredentialsStore struct {
+	*basestore.Store
+	once sync.Once
+}
+
+// NewUserStoreWithDB instantiates and returns a new UserCredentialsStore with prepared statements.
+func UserCredentials(db dbutil.DB) *UserCredentialsStore {
+	return &UserCredentialsStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+}
+
+// NewUserStoreWith instantiates and returns a new UserCredentialsStore using the other store handle.
+func UserCredentialsWith(other basestore.ShareableStore) *UserCredentialsStore {
+	return &UserCredentialsStore{Store: basestore.NewWithHandle(other.Handle())}
+}
+
+func (s *UserCredentialsStore) With(other basestore.ShareableStore) *UserCredentialsStore {
+	return &UserCredentialsStore{Store: s.Store.With(other)}
+}
+
+func (s *UserCredentialsStore) Transact(ctx context.Context) (*UserCredentialsStore, error) {
+	s.ensureStore()
+
+	txBase, err := s.Store.Transact(ctx)
+	return &UserCredentialsStore{Store: txBase}, err
+}
+
+// ensureStore instantiates a basestore.Store if necessary, using the dbconn.Global handle.
+// This function ensures access to dbconn happens after the rest of the code or tests have
+// initialized it.
+func (s *UserCredentialsStore) ensureStore() {
+	s.once.Do(func() {
+		if s.Store == nil {
+			s.Store = basestore.NewWithDB(dbconn.Global, sql.TxOptions{})
+		}
+	})
+}
 
 // UserCredentialScope represents the unique scope for a credential. Only one
 // credential may exist within a scope.
@@ -60,10 +98,11 @@ type UserCredentialScope struct {
 // Create creates a new user credential based on the given scope and
 // authenticator. If the scope already has a credential, an error will be
 // returned.
-func (*userCredentials) Create(ctx context.Context, scope UserCredentialScope, credential auth.Authenticator) (*UserCredential, error) {
+func (s *UserCredentialsStore) Create(ctx context.Context, scope UserCredentialScope, credential auth.Authenticator) (*UserCredential, error) {
 	if Mocks.UserCredentials.Create != nil {
 		return Mocks.UserCredentials.Create(ctx, scope, credential)
 	}
+	s.ensureStore()
 
 	raw, err := marshalCredential(credential)
 	if err != nil {
@@ -81,7 +120,7 @@ func (*userCredentials) Create(ctx context.Context, scope UserCredentialScope, c
 	)
 
 	cred := UserCredential{}
-	row := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	row := s.QueryRow(ctx, q)
 	if err := scanUserCredential(&cred, row); err != nil {
 		return nil, err
 	}
@@ -92,13 +131,14 @@ func (*userCredentials) Create(ctx context.Context, scope UserCredentialScope, c
 // Delete deletes the given user credential. Note that there is no concept of a
 // soft delete with user credentials: once deleted, the relevant records are
 // _gone_, so that we don't hold any sensitive data unexpectedly. 💀
-func (*userCredentials) Delete(ctx context.Context, id int64) error {
+func (s *UserCredentialsStore) Delete(ctx context.Context, id int64) error {
 	if Mocks.UserCredentials.Delete != nil {
 		return Mocks.UserCredentials.Delete(ctx, id)
 	}
+	s.ensureStore()
 
 	q := sqlf.Sprintf("DELETE FROM user_credentials WHERE id = %s", id)
-	res, err := dbconn.Global.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	res, err := s.ExecResult(ctx, q)
 	if err != nil {
 		return err
 	}
@@ -114,10 +154,11 @@ func (*userCredentials) Delete(ctx context.Context, id int64) error {
 
 // GetByID returns the user credential matching the given ID, or
 // UserCredentialNotFoundErr if no such credential exists.
-func (*userCredentials) GetByID(ctx context.Context, id int64) (*UserCredential, error) {
+func (s *UserCredentialsStore) GetByID(ctx context.Context, id int64) (*UserCredential, error) {
 	if Mocks.UserCredentials.GetByID != nil {
 		return Mocks.UserCredentials.GetByID(ctx, id)
 	}
+	s.ensureStore()
 
 	q := sqlf.Sprintf(
 		"SELECT %s FROM user_credentials WHERE id = %s",
@@ -126,7 +167,7 @@ func (*userCredentials) GetByID(ctx context.Context, id int64) (*UserCredential,
 	)
 
 	cred := UserCredential{}
-	row := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	row := s.QueryRow(ctx, q)
 	if err := scanUserCredential(&cred, row); err == sql.ErrNoRows {
 		return nil, UserCredentialNotFoundErr{args: []interface{}{id}}
 	} else if err != nil {
@@ -138,10 +179,11 @@ func (*userCredentials) GetByID(ctx context.Context, id int64) (*UserCredential,
 
 // GetByScope returns the user credential matching the given scope, or
 // UserCredentialNotFoundErr if no such credential exists.
-func (*userCredentials) GetByScope(ctx context.Context, scope UserCredentialScope) (*UserCredential, error) {
+func (s *UserCredentialsStore) GetByScope(ctx context.Context, scope UserCredentialScope) (*UserCredential, error) {
 	if Mocks.UserCredentials.GetByScope != nil {
 		return Mocks.UserCredentials.GetByScope(ctx, scope)
 	}
+	s.ensureStore()
 
 	q := sqlf.Sprintf(
 		userCredentialsGetByScopeQueryFmtstr,
@@ -153,7 +195,7 @@ func (*userCredentials) GetByScope(ctx context.Context, scope UserCredentialScop
 	)
 
 	cred := UserCredential{}
-	row := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	row := s.QueryRow(ctx, q)
 	if err := scanUserCredential(&cred, row); err == sql.ErrNoRows {
 		return nil, UserCredentialNotFoundErr{args: []interface{}{scope}}
 	} else if err != nil {
@@ -181,10 +223,11 @@ func (opts *UserCredentialsListOpts) sql() *sqlf.Query {
 }
 
 // List returns all user credentials matching the given options.
-func (*userCredentials) List(ctx context.Context, opts UserCredentialsListOpts) ([]*UserCredential, int, error) {
+func (s *UserCredentialsStore) List(ctx context.Context, opts UserCredentialsListOpts) ([]*UserCredential, int, error) {
 	if Mocks.UserCredentials.List != nil {
 		return Mocks.UserCredentials.List(ctx, opts)
 	}
+	s.ensureStore()
 
 	preds := []*sqlf.Query{}
 	if opts.Scope.Domain != "" {
@@ -211,7 +254,7 @@ func (*userCredentials) List(ctx context.Context, opts UserCredentialsListOpts) 
 		opts.sql(),
 	)
 
-	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	rows, err := s.Query(ctx, q)
 	if err != nil {
 		return nil, 0, err
 	}

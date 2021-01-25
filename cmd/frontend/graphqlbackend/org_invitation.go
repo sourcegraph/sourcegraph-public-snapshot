@@ -5,6 +5,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/sourcegraph/internal/db"
 )
 
@@ -22,7 +23,7 @@ func orgInvitationByID(ctx context.Context, id graphql.ID) (*organizationInvitat
 }
 
 func orgInvitationByIDInt64(ctx context.Context, id int64) (*organizationInvitationResolver, error) {
-	orgInvitation, err := db.OrgInvitations.GetByID(ctx, id)
+	orgInvitation, err := db.GlobalOrgInvitations.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +73,7 @@ func (r *organizationInvitationResolver) ResponseType() *string {
 
 func (r *organizationInvitationResolver) RespondURL(ctx context.Context) (*string, error) {
 	if r.v.Pending() {
-		org, err := db.Orgs.GetByID(ctx, r.v.OrgID)
+		org, err := db.GlobalOrgs.GetByID(ctx, r.v.OrgID)
 		if err != nil {
 			return nil, err
 		}

@@ -14,7 +14,11 @@ import (
 // HorizontalSearcher is a StreamSearcher which aggregates searches over
 // Map. It manages the connections to Map as the endpoints come and go.
 type HorizontalSearcher struct {
-	Map  EndpointMap
+	// Map is a subset of EndpointMap only using the Endpoints function. We
+	// use this to find the endpoints to dial over time.
+	Map interface {
+		Endpoints() (map[string]struct{}, error)
+	}
 	Dial func(endpoint string) StreamSearcher
 
 	mu      sync.RWMutex

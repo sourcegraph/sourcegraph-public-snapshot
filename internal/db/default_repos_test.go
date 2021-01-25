@@ -9,7 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -52,19 +52,19 @@ func TestListDefaultRepos(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
-			dbtesting.SetupGlobalTestDB(t)
+			db := dbtesting.GetDB(t)
 			ctx := context.Background()
 			for _, r := range tc.repos {
-				if _, err := dbconn.Global.ExecContext(ctx, `INSERT INTO repo(id, name) VALUES ($1, $2)`, r.ID, r.Name); err != nil {
+				if _, err := db.ExecContext(ctx, `INSERT INTO repo(id, name) VALUES ($1, $2)`, r.ID, r.Name); err != nil {
 					t.Fatal(err)
 				}
-				if _, err := dbconn.Global.ExecContext(ctx, `INSERT INTO default_repos(repo_id) VALUES ($1)`, r.ID); err != nil {
+				if _, err := db.ExecContext(ctx, `INSERT INTO default_repos(repo_id) VALUES ($1)`, r.ID); err != nil {
 					t.Fatal(err)
 				}
 			}
-			DefaultRepos.resetCache()
+			DefaultRepos(db).resetCache()
 
-			repos, err := DefaultRepos.List(ctx)
+			repos, err := DefaultRepos(db).List(ctx)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -78,9 +78,9 @@ func TestListDefaultRepos(t *testing.T) {
 	}
 
 	t.Run("user-added repos", func(t *testing.T) {
-		dbtesting.SetupGlobalTestDB(t)
+		db := dbtesting.GetDB(t)
 		ctx := context.Background()
-		_, err := dbconn.Global.ExecContext(ctx, `
+		_, err := db.ExecContext(ctx, `
 			-- insert one user-added repo, i.e. a repo added by an external service owned by a user
 			INSERT INTO users(id, username) VALUES (1, 'foo');
 			INSERT INTO repo(id, name) VALUES (10, 'github.com/foo/bar10');
@@ -93,14 +93,19 @@ func TestListDefaultRepos(t *testing.T) {
 
 			-- insert one repo not referenced in the default repo table;
 			INSERT INTO repo(id, name) VALUES (12, 'github.com/foo/bar12');
+
+			-- insert a repo only references by a cloud_default external service
+			INSERT INTO repo(id, name) VALUES (13, 'github.com/foo/bar13');
+			INSERT INTO external_services(id, kind, display_name, config, cloud_default) VALUES (101, 'github', 'github', '{}', true);
+			INSERT INTO external_service_repos VALUES (101, 13, 'https://github.com/foo/bar13');
 		`)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		DefaultRepos.resetCache()
+		DefaultRepos(db).resetCache()
 
-		repos, err := DefaultRepos.List(ctx)
+		repos, err := DefaultRepos(db).List(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -142,18 +147,18 @@ func TestListDefaultReposInBatches(t *testing.T) {
 		},
 	}
 
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 	for _, r := range reposToAdd {
-		if _, err := dbconn.Global.ExecContext(ctx, `INSERT INTO repo(id, name) VALUES ($1, $2)`, r.ID, r.Name); err != nil {
+		if _, err := db.ExecContext(ctx, `INSERT INTO repo(id, name) VALUES ($1, $2)`, r.ID, r.Name); err != nil {
 			t.Fatal(err)
 		}
-		if _, err := dbconn.Global.ExecContext(ctx, `INSERT INTO default_repos(repo_id) VALUES ($1)`, r.ID); err != nil {
+		if _, err := db.ExecContext(ctx, `INSERT INTO default_repos(repo_id) VALUES ($1)`, r.ID); err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	repos, err := Repos.listAllDefaultRepos(ctx, 2)
+	repos, err := Repos(db).listAllDefaultRepos(ctx, 2)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -185,19 +190,19 @@ func TestListDefaultReposUncloned(t *testing.T) {
 		},
 	}
 
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 	for _, r := range reposToAdd {
 		cloned := int(r.ID) > 1
-		if _, err := dbconn.Global.ExecContext(ctx, `INSERT INTO repo(id, name, cloned) VALUES ($1, $2, $3)`, r.ID, r.Name, cloned); err != nil {
+		if _, err := db.ExecContext(ctx, `INSERT INTO repo(id, name, cloned) VALUES ($1, $2, $3)`, r.ID, r.Name, cloned); err != nil {
 			t.Fatal(err)
 		}
-		if _, err := dbconn.Global.ExecContext(ctx, `INSERT INTO default_repos(repo_id) VALUES ($1)`, r.ID); err != nil {
+		if _, err := db.ExecContext(ctx, `INSERT INTO default_repos(repo_id) VALUES ($1)`, r.ID); err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	repos, err := Repos.ListDefaultRepos(ctx, ListDefaultReposOptions{
+	repos, err := Repos(db).ListDefaultRepos(ctx, ListDefaultReposOptions{
 		Limit:        3,
 		AfterID:      0,
 		OnlyUncloned: true,
@@ -214,7 +219,8 @@ func TestListDefaultReposUncloned(t *testing.T) {
 }
 
 func BenchmarkDefaultRepos_List_Empty(b *testing.B) {
-	dbtesting.SetupGlobalTestDB(b)
+	db := dbtest.NewDB(b, "")
+
 	ctx := context.Background()
 	select {
 	case <-ctx.Done():
@@ -223,7 +229,7 @@ func BenchmarkDefaultRepos_List_Empty(b *testing.B) {
 	}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		_, err := DefaultRepos.List(ctx)
+		_, err := DefaultRepos(db).List(ctx)
 		if err != nil {
 			b.Fatal(err)
 		}

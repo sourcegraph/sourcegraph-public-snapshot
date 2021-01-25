@@ -159,6 +159,7 @@ require (
 	github.com/sourcegraph/go-lsp v0.0.0-20200429204803-219e11d77f5d
 	github.com/sourcegraph/gosyntect v0.0.0-20200429204402-842ed26129d0
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
+	github.com/sourcegraph/lsif-protocol v1.0.0
 	github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images v0.0.0-00010101000000-000000000000
 	github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
@@ -232,3 +233,6 @@ replace github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images => ./enterpr
 
 // Pending: https://github.com/grafana-tools/sdk/pull/121
 replace github.com/grafana-tools/sdk => github.com/sourcegraph/grafana-sdk v0.0.0-20210112115824-13757501ee8a
+
+// Pending: https://github.com/gchaincl/sqlhooks/pull/33
+replace github.com/gchaincl/sqlhooks => github.com/asdine/sqlhooks v1.3.1-0.20210120094401-480358310a5b

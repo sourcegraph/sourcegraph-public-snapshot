@@ -188,7 +188,7 @@ func TestIsAllowedToEdit(t *testing.T) {
 	siteAdmin := insertTestUser(t, dbconn.Global, "cm-user3", true)
 
 	admContext := actor.WithActor(context.Background(), actor.FromUser(siteAdmin))
-	org, err := db.Orgs.Create(admContext, "cm-test-org", nil)
+	org, err := db.GlobalOrgs.Create(admContext, "cm-test-org", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -243,7 +243,7 @@ func TestIsAllowedToCreate(t *testing.T) {
 	siteAdmin := insertTestUser(t, dbconn.Global, "cm-user3", true)
 
 	admContext := actor.WithActor(context.Background(), actor.FromUser(siteAdmin))
-	org, err := db.Orgs.Create(admContext, "cm-test-org", nil)
+	org, err := db.GlobalOrgs.Create(admContext, "cm-test-org", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -387,7 +387,7 @@ func TestQueryMonitor(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	schema, err := graphqlbackend.NewSchema(nil, nil, nil, r, nil)
+	schema, err := graphqlbackend.NewSchema(dbconn.Global, nil, nil, nil, nil, r, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -623,7 +623,7 @@ func TestEditCodeMonitor(t *testing.T) {
 
 	// Update the code monitor.
 	// We update all fields, delete one action, and add a new action.
-	schema, err := graphqlbackend.NewSchema(nil, nil, nil, r, nil)
+	schema, err := graphqlbackend.NewSchema(dbconn.Global, nil, nil, nil, nil, r, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

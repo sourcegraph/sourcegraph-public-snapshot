@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -36,35 +37,22 @@ func buildQuery(args *search.TextParameters, repos *indexedRepoRevs, filePathPat
 	), nil
 }
 
-func zoektSearchHEADOnlyFilesStream(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, _ indexedRequestType, since func(t time.Time) time.Duration) <-chan zoektSearchStreamEvent {
-	c := make(chan zoektSearchStreamEvent)
-	go func() {
-		defer close(c)
-		_, _, _, _ = zoektSearchHEADOnlyFiles(ctx, args, repos, since, c)
-	}()
-
-	return c
-}
-
 // zoektSearchHEADOnlyFiles searches repositories using zoekt, returning only the file paths containing
 // content matching the given pattern.
 //
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, since func(t time.Time) time.Duration, c chan<- zoektSearchStreamEvent) (fm []*FileMatchResolver, limitHit bool, partial map[api.RepoID]struct{}, err error) {
-	defer func() {
-		if c != nil {
-			c <- zoektSearchStreamEvent{
-				fm:       fm,
-				limitHit: limitHit,
-				partial:  partial,
-				err:      err,
-			}
-		}
-	}()
+func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, _ indexedRequestType, since func(t time.Time) time.Duration, c SearchStream) {
+	var (
+		err       error
+		limitHit  bool
+		partial   map[api.RepoID]struct{}
+		statusMap search.RepoStatusMap
+	)
+
 	if len(repos.repoRevs) == 0 {
-		return nil, false, nil, nil
+		return
 	}
 
 	k := zoektutil.ResultCountFactor(len(repos.repoBranches), args.PatternInfo.FileMatchLimit, args.Mode == search.ZoektGlobalSearch)
@@ -88,20 +76,33 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 
 	filePathPatterns, err := searcherzoekt.HandleFilePathPatterns(args.PatternInfo)
 	if err != nil {
-		return nil, false, nil, err
+		c <- SearchEvent{Error: err}
+		return
 	}
 
 	t0 := time.Now()
 	q, err := buildQuery(args, repos, filePathPatterns, true)
 	if err != nil {
-		return nil, false, nil, err
+		c <- SearchEvent{Error: err}
+		return
+
 	}
 	resp, err := args.Zoekt.Client.Search(ctx, q, &searchOpts)
 	if err != nil {
-		return nil, false, nil, err
+		c <- SearchEvent{Error: err}
 	}
+
+	mkStatusMap := func(mask search.RepoStatus) search.RepoStatusMap {
+		var statusMap search.RepoStatusMap
+		for _, r := range repos.repoRevs {
+			statusMap.Update(r.Repo.ID, mask)
+		}
+		return statusMap
+	}
+
+	// Set all repos to "timed out"
 	if since(t0) >= searchOpts.MaxWallTime {
-		return nil, false, nil, errNoResultsInTimeout
+		c <- SearchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusTimedout | search.RepoStatusIndexed)}}
 	}
 
 	// We always return approximate results (limitHit true) unless we run the branch to perform a more complete search.
@@ -111,21 +112,21 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 	if resp.FileCount < 10 || args.PatternInfo.FileMatchLimit != defaultMaxSearchResults {
 		q, err = buildQuery(args, repos, filePathPatterns, false)
 		if err != nil {
-			return nil, false, nil, err
+			c <- SearchEvent{Error: err}
 		}
 		resp, err = args.Zoekt.Client.Search(ctx, q, &searchOpts)
 		if err != nil {
-			return nil, false, nil, err
+			c <- SearchEvent{Error: err}
 		}
 		if since(t0) >= searchOpts.MaxWallTime {
-			return nil, false, nil, errNoResultsInTimeout
+			c <- SearchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusTimedout | search.RepoStatusIndexed)}}
 		}
 		// This is the only place limitHit can be set false, meaning we covered everything.
 		limitHit = resp.FilesSkipped+resp.ShardsSkipped > 0
 	}
 
 	if len(resp.Files) == 0 {
-		return nil, false, nil, nil
+		return
 	}
 
 	matchLimiter := zoektutil.MatchLimiter{Limit: int(args.PatternInfo.FileMatchLimit)}
@@ -136,11 +137,17 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 
 	var files []zoekt.FileMatch
 	partial, files = matchLimiter.Slice(resp.Files, repoRevFunc)
+	// Partial is populated with repositories we may have not fully
+	// searched due to limits.
+	for r := range partial {
+		statusMap.Update(r, search.RepoStatusLimitHit)
+	}
+
 	limitHit = limitHit || len(partial) > 0
 	resp.Files = files
 
 	maxLineMatches := 25 + k
-	matches := make([]*FileMatchResolver, len(resp.Files))
+	matches := make([]SearchResultResolver, len(resp.Files))
 	repoResolvers := make(RepositoryResolverCache)
 	for i, file := range resp.Files {
 		fileLimitHit := false
@@ -162,5 +169,11 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 		}
 	}
 
-	return matches, limitHit, partial, nil
+	c <- SearchEvent{
+		Results: matches,
+		Stats: streaming.Stats{
+			Status:     statusMap,
+			IsLimitHit: limitHit,
+		},
+	}
 }

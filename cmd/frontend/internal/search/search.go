@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -66,6 +65,10 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	resultsStream, resultsStreamDone := newResultsStream(ctx, search)
 
+	progress := progressAggregator{
+		Start: time.Now(),
+	}
+
 	const matchesChunk = 1000
 	matchesBuf := make([]interface{}, 0, matchesChunk)
 	flushMatchesBuf := func() {
@@ -75,6 +78,8 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			matchesBuf = matchesBuf[:0]
+
+			_ = eventWriter.Event("progress", progress.Build())
 		}
 	}
 
@@ -96,6 +101,8 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if !ok {
 			break
 		}
+
+		progress.Update(event)
 
 		for _, result := range event.Results {
 			if fm, ok := result.ToFileMatch(); ok {
@@ -184,31 +191,12 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	pr := api.BuildProgressEvent(api.ProgressStats{
-		MatchCount:          int(resultsResolver.MatchCount()),
-		ElapsedMilliseconds: int(resultsResolver.ElapsedMilliseconds()),
-		RepositoriesCount:   int(resultsResolver.RepositoriesCount()),
-		ExcludedArchived:    resultsResolver.ExcludedArchived,
-		ExcludedForks:       resultsResolver.ExcludedForks,
-		Timedout:            toNamer(resultsResolver.Timedout),
-		Missing:             toNamer(resultsResolver.Missing),
-		Cloning:             toNamer(resultsResolver.Cloning),
-		LimitHit:            resultsResolver.IsLimitHit,
-	})
+	pr := progress.Build()
 	pr.Done = true
 	_ = eventWriter.Event("progress", pr)
 
 	// TODO done event includes progress
 	_ = eventWriter.Event("done", map[string]interface{}{})
-}
-
-func toNamer(f func() []*graphqlbackend.RepositoryResolver) []api.Namer {
-	rs := f()
-	n := make([]api.Namer, 0, len(rs))
-	for _, r := range rs {
-		n = append(n, r)
-	}
-	return n
 }
 
 type searchResolver interface {

@@ -98,7 +98,7 @@ func (r *changesetsConnectionResolver) compute(ctx context.Context) (allChangese
 
 		// 🚨 SECURITY: db.Repos.GetRepoIDsSet uses the authzFilter under the hood and
 		// filters out repositories that the user doesn't have access to.
-		r.reposByID, err = db.Repos.GetReposSetByIDs(ctx, cs.RepoIDs()...)
+		r.reposByID, err = db.GlobalRepos.GetReposSetByIDs(ctx, cs.RepoIDs()...)
 		if err != nil {
 			r.err = err
 			return

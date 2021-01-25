@@ -99,12 +99,12 @@ func hasFindRefsOccurred(ctx context.Context) (_ bool, err error) {
 
 func getTotalUsersCount(ctx context.Context) (_ int, err error) {
 	defer recordOperation("getTotalUsersCount")(&err)
-	return db.Users.Count(ctx, &db.UsersListOptions{})
+	return db.GlobalUsers.Count(ctx, &db.UsersListOptions{})
 }
 
 func getTotalReposCount(ctx context.Context) (_ int, err error) {
 	defer recordOperation("getTotalReposCount")(&err)
-	return db.Repos.Count(ctx, db.ReposListOptions{})
+	return db.GlobalRepos.Count(ctx, db.ReposListOptions{})
 }
 
 func getUsersActiveTodayCount(ctx context.Context) (_ int, err error) {
@@ -114,7 +114,7 @@ func getUsersActiveTodayCount(ctx context.Context) (_ int, err error) {
 
 func getInitialSiteAdminEmail(ctx context.Context) (_ string, err error) {
 	defer recordOperation("getInitialSiteAdminEmail")(&err)
-	return db.UserEmails.GetInitialSiteAdminEmail(ctx)
+	return db.GlobalUserEmails.GetInitialSiteAdminEmail(ctx)
 }
 
 func getAndMarshalCampaignsUsageJSON(ctx context.Context) (_ json.RawMessage, err error) {
@@ -428,7 +428,7 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		return nil, err
 	}
 
-	err = db.EventLogs.Insert(ctx, &db.Event{
+	err = db.GlobalEventLogs.Insert(ctx, &db.Event{
 		UserID:          0,
 		Name:            "ping",
 		URL:             "",
@@ -452,7 +452,7 @@ func authProviderTypes() []string {
 
 func externalServiceKinds(ctx context.Context) (kinds []string, err error) {
 	defer recordOperation("externalServiceKinds")(&err)
-	kinds, err = db.ExternalServices.DistinctKinds(ctx)
+	kinds, err = db.GlobalExternalServices.DistinctKinds(ctx)
 	return kinds, err
 }
 

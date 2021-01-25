@@ -108,12 +108,6 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
 
     return (
         <div className={classNames('toggle-container', className)}>
-            {copyQueryButton && (
-                <CopyQueryButton
-                    fullQuery={fullQuery}
-                    className="toggle-container__toggle toggle-container__copy-query-button"
-                />
-            )}
             <QueryInputToggle
                 {...props}
                 title="Case sensitivity"
@@ -144,7 +138,7 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
                 isActive={patternType === SearchPatternType.regexp}
                 onToggle={toggleRegexp}
                 icon={RegexIcon}
-                className="test-regexp-toggle"
+                className="toggle-container__regexp-button test-regexp-toggle"
                 activeClassName="test-regexp-toggle--active"
                 disableOn={[
                     {
@@ -170,6 +164,15 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
                         },
                     ]}
                 />
+            )}
+            {copyQueryButton && (
+                <>
+                    <div className="toggle-container__separator" />
+                    <CopyQueryButton
+                        fullQuery={fullQuery}
+                        className="toggle-container__toggle toggle-container__copy-query-button"
+                    />
+                </>
             )}
         </div>
     )

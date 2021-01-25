@@ -111,5 +111,5 @@ func logLocalEvent(ctx context.Context, name, url string, userID int32, userCook
 		Argument:        argument,
 		Timestamp:       timeNow().UTC(),
 	}
-	return db.EventLogs.Insert(ctx, info)
+	return db.GlobalEventLogs.Insert(ctx, info)
 }

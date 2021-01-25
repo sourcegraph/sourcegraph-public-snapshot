@@ -2234,6 +2234,12 @@ type ExternalChangeset implements Node & Changeset {
     body: String
 
     """
+    The author of the changeset, or null if the data hasn't been synced from the code host yet,
+    or the changeset has not yet been published.
+    """
+    author: Person
+
+    """
     The publication state of the changeset.
     """
     publicationState: ChangesetPublicationState!
@@ -2332,6 +2338,18 @@ type ChangesetsStats {
     """
     deleted: Int!
     """
+    The count of changesets in retrying state.
+    """
+    retrying: Int!
+    """
+    The count of changesets in failed state.
+    """
+    failed: Int!
+    """
+    The count of changesets that are currently processing or enqueued to be.
+    """
+    processing: Int!
+    """
     The count of all changesets.
     """
     total: Int!
@@ -2395,6 +2413,31 @@ type ChangesetEventConnection {
     Pagination information.
     """
     pageInfo: PageInfo!
+}
+
+"""
+Insights about code.
+"""
+type Insights {
+    """
+    Data points over a time range (inclusive)
+    """
+    points(from: DateTime, to: DateTime): [InsightDataPoint!]!
+}
+
+"""
+A code insight data point.
+"""
+type InsightDataPoint {
+    """
+    The time of this data point.
+    """
+    dateTime: DateTime!
+
+    """
+    The value of the insight at this point in time.
+    """
+    value: Float!
 }
 
 """
@@ -2710,6 +2753,11 @@ type Query {
         """
         name: String!
     ): Campaign
+
+    """
+    EXPERIMENTAL: Queries code insights
+    """
+    insights: Insights
 
     """
     Looks up a repository by either name or cloneURL.
@@ -4151,6 +4199,14 @@ type ExternalService implements Node {
     will contain any errors that occured during the most recent completed sync.
     """
     lastSyncError: String
+    """
+    LastSyncAt is the time the last sync job was run for this code host
+    """
+    lastSyncAt: DateTime!
+    """
+    The timestamp of the next sync job
+    """
+    nextSyncAt: DateTime!
 }
 
 """

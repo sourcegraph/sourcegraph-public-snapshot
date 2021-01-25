@@ -22,7 +22,7 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 		t := time.NewTicker(5 * time.Second)
 		for range t.C {
 			allowAccessByDefault, authzProviders, _, _ :=
-				eiauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices)
+				eiauthz.ProvidersFromConfig(ctx, conf.Get(), db.GlobalExternalServices)
 			authz.SetProviders(allowAccessByDefault, authzProviders)
 		}
 	}()

@@ -18,7 +18,7 @@ import (
 func MockRepoPermissions(t *testing.T, userID int32, repoIDs ...api.RepoID) {
 	t.Helper()
 
-	permsStore := db.NewPermsStore(dbconn.Global, time.Now)
+	permsStore := db.Perms(dbconn.Global, time.Now)
 
 	userIDs := roaring.New()
 	userIDs.Add(uint32(userID))

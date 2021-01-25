@@ -1,18 +1,26 @@
 package inference
 
 import (
+	"context"
+	"encoding/json"
 	"path/filepath"
 	"regexp"
 )
 
-const lsifTscImage = "sourcegraph/lsif-node:latest"
-const nodeInstallImage = "node:alpine3.12"
+const (
+	lsifTscImage     = "sourcegraph/lsif-node:latest"
+	nodeInstallImage = "node:alpine3.12"
+)
 
 type lsifTscJobRecognizer struct{}
 
 var _ IndexJobRecognizer = lsifTscJobRecognizer{}
 
-func (r lsifTscJobRecognizer) CanIndex(paths []string) bool {
+type lernaConfig struct {
+	NPMClient string `json:"npmClient"`
+}
+
+func (r lsifTscJobRecognizer) CanIndex(paths []string, gitserver GitserverClientWrapper) bool {
 	for _, path := range paths {
 		if r.canIndexPath(path) {
 			return true
@@ -22,20 +30,30 @@ func (r lsifTscJobRecognizer) CanIndex(paths []string) bool {
 	return false
 }
 
-func (r lsifTscJobRecognizer) InferIndexJobs(paths []string) (indexes []IndexJob) {
+func (r lsifTscJobRecognizer) InferIndexJobs(paths []string, gitserver GitserverClientWrapper) (indexes []IndexJob) {
 	for _, path := range paths {
 		if !r.canIndexPath(path) {
 			continue
 		}
 
+		var isYarn bool
 		var dockerSteps []DockerStep
 		for _, dir := range ancestorDirs(path) {
+			if exists := contains(paths, filepath.Join(dir, "lerna.json")); exists && !isYarn {
+				if b, err := gitserver.RawContents(context.TODO(), "lerna.json"); err == nil {
+					var c lernaConfig
+					if err := json.Unmarshal(b, &c); err == nil {
+						isYarn = c.NPMClient == "yarn"
+					}
+				}
+			}
+
 			if !contains(paths, filepath.Join(dir, "package.json")) {
 				continue
 			}
 
 			var commands []string
-			if contains(paths, filepath.Join(dir, "yarn.lock")) {
+			if isYarn || contains(paths, filepath.Join(dir, "yarn.lock")) {
 				commands = append(commands, "yarn --ignore-engines")
 			} else {
 				commands = append(commands, "npm install")
@@ -69,6 +87,7 @@ func (lsifTscJobRecognizer) Patterns() []*regexp.Regexp {
 	return []*regexp.Regexp{
 		suffixPattern("tsconfig.json"),
 		suffixPattern("package.json"),
+		suffixPattern("lerna.json"),
 	}
 }
 

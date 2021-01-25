@@ -103,7 +103,7 @@ func ResolveRepositories(ctx context.Context, op Options) (Resolved, error) {
 
 	if envvar.SourcegraphDotComMode() && len(includePatterns) == 0 && !hasTypeRepo(op.Query) {
 		start := time.Now()
-		defaultRepos, err = defaultRepositories(ctx, db.DefaultRepos.List, search.Indexed(), excludePatterns)
+		defaultRepos, err = defaultRepositories(ctx, db.GlobalDefaultRepos.List, search.Indexed(), excludePatterns)
 		if err != nil {
 			return Resolved{}, errors.Wrap(err, "getting list of default repos")
 		}
@@ -145,7 +145,7 @@ func ResolveRepositories(ctx context.Context, op Options) (Resolved, error) {
 			excludedC <- computeExcludedRepositories(ctx, op.Query, options)
 		}()
 
-		repos, err = db.Repos.ListRepoNames(ctx, options)
+		repos, err = db.GlobalRepos.ListRepoNames(ctx, options)
 		tr.LazyPrintf("Repos.List - done")
 
 		excluded = <-excludedC
@@ -433,7 +433,7 @@ func computeExcludedRepositories(ctx context.Context, q query.QueryInfo, op db.R
 			selectForks.OnlyForks = true
 			selectForks.NoForks = false
 			var err error
-			numExcludedForks, err = db.Repos.Count(ctx, selectForks)
+			numExcludedForks, err = db.GlobalRepos.Count(ctx, selectForks)
 			if err != nil {
 				log15.Warn("repo count for excluded fork", "err", err)
 			}
@@ -452,7 +452,7 @@ func computeExcludedRepositories(ctx context.Context, q query.QueryInfo, op db.R
 			selectArchived.OnlyArchived = true
 			selectArchived.NoArchived = false
 			var err error
-			numExcludedArchived, err = db.Repos.Count(ctx, selectArchived)
+			numExcludedArchived, err = db.GlobalRepos.Count(ctx, selectArchived)
 			if err != nil {
 				log15.Warn("repo count for excluded archive", "err", err)
 			}

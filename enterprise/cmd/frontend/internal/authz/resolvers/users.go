@@ -55,7 +55,7 @@ func (r *userConnectionResolver) compute(ctx context.Context) ([]*types.User, *g
 			}
 		}
 
-		r.users, r.err = db.Users.List(ctx, &db.UsersListOptions{
+		r.users, r.err = db.GlobalUsers.List(ctx, &db.UsersListOptions{
 			UserIDs: userIDs,
 		})
 		if r.err != nil {

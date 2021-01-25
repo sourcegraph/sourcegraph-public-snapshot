@@ -12,7 +12,7 @@ import { ThemeProps } from '../../../../../shared/src/theme'
 import { CreateUpdateCampaignAlert } from './CreateUpdateCampaignAlert'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { HeroPage } from '../../../components/HeroPage'
-import { CampaignDescription } from '../detail/CampaignDescription'
+import { Description } from '../Description'
 import { CampaignSpecInfoByline } from './CampaignSpecInfoByline'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 import { AuthenticatedUser } from '../../../auth'
@@ -21,11 +21,13 @@ import { SupersedingCampaignSpecAlert } from '../detail/SupersedingCampaignSpecA
 import { queryChangesetSpecFileDiffs, queryChangesetApplyPreview } from './list/backend'
 import { CampaignPreviewStatsBar } from './CampaignPreviewStatsBar'
 
+export type PreviewPageAuthenticatedUser = Pick<AuthenticatedUser, 'url' | 'displayName' | 'username' | 'email'>
+
 export interface CampaignPreviewPageProps extends ThemeProps, TelemetryProps {
     campaignSpecID: string
     history: H.History
     location: H.Location
-    authenticatedUser: Pick<AuthenticatedUser, 'url'>
+    authenticatedUser: PreviewPageAuthenticatedUser
 
     /** Used for testing. */
     fetchCampaignSpecById?: typeof _fetchCampaignSpecById
@@ -97,11 +99,12 @@ export const CampaignPreviewPage: React.FunctionComponent<CampaignPreviewPagePro
                 viewerCanAdminister={spec.viewerCanAdminister}
                 telemetryService={telemetryService}
             />
-            <CampaignDescription history={history} description={spec.description.description} />
+            <Description history={history} description={spec.description.description} />
             <PreviewList
                 campaignSpecID={specID}
                 history={history}
                 location={location}
+                authenticatedUser={authenticatedUser}
                 isLightTheme={isLightTheme}
                 queryChangesetApplyPreview={queryChangesetApplyPreview}
                 queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}

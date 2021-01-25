@@ -256,7 +256,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 	// Unless explicitly specified with the "all" setting or the owner of the service has the "AllowUserExternalServicePrivate" tag,
 	// user added external services should only sync public code.
 	if isUserOwned && conf.ExternalServiceUserMode() != conf.ExternalServiceModeAll {
-		ok, err := db.Users.HasTag(ctx, svc.NamespaceUserID, db.TagAllowUserExternalServicePrivate)
+		ok, err := db.GlobalUsers.HasTag(ctx, svc.NamespaceUserID, db.TagAllowUserExternalServicePrivate)
 		if err != nil {
 			return errors.Wrap(err, "checking user tag")
 		}

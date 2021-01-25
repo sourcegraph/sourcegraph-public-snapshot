@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -67,7 +68,7 @@ func AccessTokenAuthMiddleware(next http.Handler) http.Handler {
 			} else {
 				requiredScope = authz.ScopeSiteAdminSudo
 			}
-			subjectUserID, err := db.AccessTokens.Lookup(r.Context(), token, requiredScope)
+			subjectUserID, err := db.GlobalAccessTokens.Lookup(r.Context(), token, requiredScope)
 			if err != nil {
 				log15.Error("Invalid access token.", "token", token, "err", err)
 				http.Error(w, "Invalid access token.", http.StatusUnauthorized)
@@ -89,7 +90,7 @@ func AccessTokenAuthMiddleware(next http.Handler) http.Handler {
 
 				// Sudo to the other user if this is a sudo token. We already checked that the token has
 				// the necessary scope in the Lookup call above.
-				user, err := db.Users.GetByUsername(r.Context(), sudoUser)
+				user, err := db.GlobalUsers.GetByUsername(r.Context(), sudoUser)
 				if err != nil {
 					log15.Error("Invalid username used with sudo access token.", "sudoUser", sudoUser, "err", err)
 					var message string

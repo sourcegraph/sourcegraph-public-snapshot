@@ -20,6 +20,7 @@ type Services struct {
 	AuthzResolver             graphqlbackend.AuthzResolver
 	CampaignsResolver         graphqlbackend.CampaignsResolver
 	CodeIntelResolver         graphqlbackend.CodeIntelResolver
+	InsightsResolver          graphqlbackend.InsightsResolver
 	CodeMonitorsResolver      graphqlbackend.CodeMonitorsResolver
 	LicenseResolver           graphqlbackend.LicenseResolver
 }
@@ -43,6 +44,7 @@ func DefaultServices() Services {
 		NewExecutorProxyHandler:   func() http.Handler { return makeNotFoundHandler("executor proxy") },
 		AuthzResolver:             graphqlbackend.DefaultAuthzResolver,
 		CampaignsResolver:         graphqlbackend.DefaultCampaignsResolver,
+		InsightsResolver:          graphqlbackend.DefaultInsightsResolver,
 		CodeMonitorsResolver:      graphqlbackend.DefaultCodeMonitorsResolver,
 		LicenseResolver:           graphqlbackend.DefaultLicenseResolver,
 	}

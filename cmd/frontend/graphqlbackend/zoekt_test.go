@@ -320,12 +320,16 @@ func TestIndexedSearch(t *testing.T) {
 				gotFm     []*FileMatchResolver
 			)
 			for event := range indexed.Search(tt.args.ctx) {
-				if (event.err != nil) != tt.wantErr {
+				if (event.Error != nil) != tt.wantErr {
 					t.Errorf("zoektSearchHEAD() error = %v, wantErr = %v", err, tt.wantErr)
 					return
 				}
-				gotCommon.Update(&event.common)
-				gotFm = append(gotFm, event.results...)
+				gotCommon.Update(&event.Stats)
+				fms := make([]*FileMatchResolver, 0, len(event.Results))
+				for _, r := range event.Results {
+					fms = append(fms, r.(*FileMatchResolver))
+				}
+				gotFm = append(gotFm, fms...)
 			}
 
 			if diff := cmp.Diff(&tt.wantCommon, &gotCommon, cmpopts.EquateEmpty()); diff != "" {
@@ -807,7 +811,7 @@ func BenchmarkIntegrationSearchResults(b *testing.B) {
 	b.ReportAllocs()
 
 	for n := 0; n < b.N; n++ {
-		q, err := query.ParseAndCheck(`print index:only count:350`)
+		q, err := query.ParseLiteral(`print index:only count:350`)
 		if err != nil {
 			b.Fatal(err)
 		}

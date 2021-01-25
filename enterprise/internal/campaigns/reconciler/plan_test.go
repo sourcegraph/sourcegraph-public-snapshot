@@ -194,16 +194,69 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 				// Expect no operations.
 			},
 		},
+		{
+			name:        "detaching a failed publish changeset",
+			currentSpec: ct.TestSpecOpts{Published: true},
+			changeset: ct.TestChangesetOpts{
+				PublicationState: campaigns.ChangesetPublicationStateUnpublished,
+				ReconcilerState:  campaigns.ReconcilerStateFailed,
+				OwnedByCampaign:  1234,
+				Campaigns:        []campaigns.CampaignAssoc{{CampaignID: 1234, Detach: true}},
+			},
+			wantOperations: Operations{
+				campaigns.ReconcilerOperationDetach,
+			},
+		},
+		{
+			name: "detaching a failed importing changeset",
+			changeset: ct.TestChangesetOpts{
+				ExternalID:       "123",
+				PublicationState: campaigns.ChangesetPublicationStateUnpublished,
+				ReconcilerState:  campaigns.ReconcilerStateFailed,
+				Campaigns:        []campaigns.CampaignAssoc{{CampaignID: 1234, Detach: true}},
+			},
+			wantOperations: Operations{
+				campaigns.ReconcilerOperationDetach,
+			},
+		},
+		{
+			name: "import changeset",
+			changeset: ct.TestChangesetOpts{
+				ExternalID:       "123",
+				PublicationState: campaigns.ChangesetPublicationStateUnpublished,
+				ReconcilerState:  campaigns.ReconcilerStateQueued,
+				Campaigns:        []campaigns.CampaignAssoc{{CampaignID: 1234}},
+			},
+			wantOperations: Operations{
+				campaigns.ReconcilerOperationImport,
+			},
+		},
+		{
+			name: "detaching an importing changeset but remains imported by another",
+			changeset: ct.TestChangesetOpts{
+				ExternalID:       "123",
+				PublicationState: campaigns.ChangesetPublicationStateUnpublished,
+				ReconcilerState:  campaigns.ReconcilerStateQueued,
+				Campaigns:        []campaigns.CampaignAssoc{{CampaignID: 1234, Detach: true}, {CampaignID: 2345}},
+			},
+			wantOperations: Operations{
+				campaigns.ReconcilerOperationDetach,
+				campaigns.ReconcilerOperationImport,
+			},
+		},
 	}
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
-			var previousSpec *campaigns.ChangesetSpec
+			var previousSpec, currentSpec *campaigns.ChangesetSpec
 			if tc.previousSpec != (ct.TestSpecOpts{}) {
 				previousSpec = ct.BuildChangesetSpec(t, tc.previousSpec)
 			}
 
-			currentSpec := ct.BuildChangesetSpec(t, tc.currentSpec)
+			if tc.currentSpec != (ct.TestSpecOpts{}) {
+				currentSpec = ct.BuildChangesetSpec(t, tc.currentSpec)
+			}
+
 			cs := ct.BuildChangeset(tc.changeset)
 
 			plan, err := DeterminePlan(previousSpec, currentSpec, cs)

@@ -137,6 +137,8 @@ github.com/asaskevich/govalidator v0.0.0-20200108200545-475eaeb16496/go.mod h1:o
 github.com/asaskevich/govalidator v0.0.0-20200428143746-21a406dcc535/go.mod h1:oGkLhpf+kjZl6xBf758TQhh5XrAeiJv/7FRz/2spLIg=
 github.com/asaskevich/govalidator v0.0.0-20200907205600-7a23bdc65eef h1:46PFijGLmAjMPwCCCo7Jf0W6f9slllCkkv7vyc1yOSg=
 github.com/asaskevich/govalidator v0.0.0-20200907205600-7a23bdc65eef/go.mod h1:WaHUgvxTVq04UNunO+XhnAqY/wQc+bxr74GqbsZ/Jqw=
+github.com/asdine/sqlhooks v1.3.1-0.20210120094401-480358310a5b h1:5xZ8tQvlScp2+A3xUja+t26pBFA1y42dRc9yqwoDYng=
+github.com/asdine/sqlhooks v1.3.1-0.20210120094401-480358310a5b/go.mod h1:9BypXnereMT0+Ys8WGWHqzgkkOfHIhyeUCqXC24ra34=
 github.com/avelino/slugify v0.0.0-20180501145920-855f152bd774 h1:HrMVYtly2IVqg9EBooHsakQ256ueojP7QuG32K71X/U=
 github.com/avelino/slugify v0.0.0-20180501145920-855f152bd774/go.mod h1:5wi5YYOpfuAKwL5XLFYopbgIl/v7NZxaJpa/4X6yFKE=
 github.com/aws/aws-lambda-go v1.13.3/go.mod h1:4UKl9IzQMoD+QF79YdCuzCwp8VbmG4VAQwij/eHl5CU=
@@ -1385,6 +1387,8 @@ github.com/sourcegraph/graphql-go v0.0.0-20201007040903-ec61a5417d66 h1:BJFJIKML
 github.com/sourcegraph/graphql-go v0.0.0-20201007040903-ec61a5417d66/go.mod h1:9CQHMSxwO4MprSdzoIEobiHpoLtHm77vfxsvsIN5Vuc=
 github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf h1:oAdWFqhStsWiiMP/vkkHiMXqFXzl1XfUNOdxKJbd6bI=
 github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf/go.mod h1:ppFaPm6kpcHnZGqQTFhUIAQRIEhdQDWP1PCv4/ON354=
+github.com/sourcegraph/lsif-protocol v1.0.0 h1:NLxbnHuN2o4fibjRUrXTwuojD4+kDFPXra9PA1V6tQM=
+github.com/sourcegraph/lsif-protocol v1.0.0/go.mod h1:VEuG8FZ3ISQOAHbzdj+qwS9nUfFlMsP4rVRBnDLztkQ=
 github.com/sourcegraph/oauth2 v0.0.0-20201011192344-605770292164 h1:rv2hMQh0TjywisSWYyj1JrdnA8iVnkmYv9oEgKh5Thc=
 github.com/sourcegraph/oauth2 v0.0.0-20201011192344-605770292164/go.mod h1:gOpvHmFTYa4IltrdGE7lF6nIHvwfUNPOp7c8zoXwtLw=
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e h1:qpG93cPwA5f7s/ZPBJnGOYQNK/vKsaDaseuKT5Asee8=

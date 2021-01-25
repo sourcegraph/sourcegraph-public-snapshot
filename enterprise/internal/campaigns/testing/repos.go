@@ -26,7 +26,7 @@ func TestRepo(t *testing.T, store *idb.ExternalServiceStore, serviceKind string)
 	svc := types.ExternalService{
 		Kind:        serviceKind,
 		DisplayName: serviceKind + " - Test",
-		Config:      `{"url": "https://github.com"}`,
+		Config:      `{"url": "https://github.com", "authorization": {}}`,
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
@@ -56,8 +56,8 @@ func TestRepo(t *testing.T, store *idb.ExternalServiceStore, serviceKind string)
 func CreateTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) ([]*types.Repo, *types.ExternalService) {
 	t.Helper()
 
-	repoStore := idb.NewRepoStoreWithDB(db)
-	esStore := idb.NewExternalServicesStoreWithDB(db)
+	repoStore := idb.Repos(db)
+	esStore := idb.ExternalServices(db)
 
 	ext := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
@@ -101,8 +101,8 @@ func CreateTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) (
 func CreateGitlabTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) ([]*types.Repo, *types.ExternalService) {
 	t.Helper()
 
-	repoStore := idb.NewRepoStoreWithDB(db)
-	esStore := idb.NewExternalServicesStoreWithDB(db)
+	repoStore := idb.Repos(db)
+	esStore := idb.ExternalServices(db)
 
 	ext := &types.ExternalService{
 		Kind:        extsvc.KindGitLab,
@@ -170,8 +170,8 @@ func createBbsRepos(t *testing.T, ctx context.Context, db *sql.DB, ext *types.Ex
 
 	t.Helper()
 
-	repoStore := idb.NewRepoStoreWithDB(db)
-	esStore := idb.NewExternalServicesStoreWithDB(db)
+	repoStore := idb.Repos(db)
+	esStore := idb.ExternalServices(db)
 
 	if err := esStore.Upsert(ctx, ext); err != nil {
 		t.Fatal(err)

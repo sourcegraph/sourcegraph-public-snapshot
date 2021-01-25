@@ -27,7 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	idb "github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -92,7 +92,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		}
 	})
 
-	db, err := dbutil.NewDB(dsn, "repo-updater")
+	db, err := dbconn.New(dsn, "repo-updater")
 	if err != nil {
 		log.Fatalf("failed to initialize db store: %v", err)
 	}
@@ -142,9 +142,11 @@ func Main(enterpriseInit EnterpriseInit) {
 		server.SourcegraphDotComMode = true
 
 		es, err := store.ExternalServiceStore.List(ctx, idb.ExternalServicesListOptions{
-			// On Cloud we want to fetch only site level external services here
-			NamespaceUserID: -1,
-			Kinds:           []string{extsvc.KindGitHub, extsvc.KindGitLab},
+			// On Cloud we only want to fetch site level external services here where the
+			// cloud_default flag has been set.
+			NamespaceUserID:  -1,
+			OnlyCloudDefault: true,
+			Kinds:            []string{extsvc.KindGitHub, extsvc.KindGitLab},
 		})
 
 		if err != nil {
@@ -157,14 +159,13 @@ func Main(enterpriseInit EnterpriseInit) {
 				log.Fatalf("bad external service config: %v", err)
 			}
 
-			// We only allow one external service per kind to be flagged as CloudGlobal, so pick those.
 			switch c := cfg.(type) {
 			case *schema.GitHubConnection:
-				if strings.HasPrefix(c.Url, "https://github.com") && c.Token != "" && c.CloudGlobal {
+				if strings.HasPrefix(c.Url, "https://github.com") && c.Token != "" {
 					server.GithubDotComSource, err = repos.NewGithubSource(e, cf)
 				}
 			case *schema.GitLabConnection:
-				if strings.HasPrefix(c.Url, "https://gitlab.com") && c.Token != "" && c.CloudGlobal {
+				if strings.HasPrefix(c.Url, "https://gitlab.com") && c.Token != "" {
 					server.GitLabDotComSource, err = repos.NewGitLabSource(e, cf)
 				}
 			}
@@ -394,7 +395,7 @@ func watchSyncer(ctx context.Context, syncer *repos.Syncer, sched scheduler, gps
 // update the scheduler with the list. It also ensures that if any of our default
 // repos are missing from the cloned list they will be added for cloning ASAP.
 func syncScheduler(ctx context.Context, sched scheduler, gitserverClient *gitserver.Client, store *repos.Store) {
-	baseRepoStore := idb.NewRepoStoreWith(store)
+	baseRepoStore := idb.ReposWith(store)
 
 	doSync := func() {
 		cloned, err := gitserverClient.ListCloned(ctx)

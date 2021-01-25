@@ -46,13 +46,13 @@ type ExternalServiceStore struct {
 	mu sync.Mutex
 }
 
-// NewExternalServicesStoreWithDB instantiates and returns a new ExternalServicesStore with prepared statements.
-func NewExternalServicesStoreWithDB(db dbutil.DB) *ExternalServiceStore {
+// ExternalServices instantiates and returns a new ExternalServicesStore with prepared statements.
+func ExternalServices(db dbutil.DB) *ExternalServiceStore {
 	return &ExternalServiceStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 // NewExternalServicesStoreWithDB instantiates and returns a new ExternalServicesStore with prepared statements.
-func NewExternalServicesStoreWith(other basestore.ShareableStore) *ExternalServiceStore {
+func ExternalServicesWith(other basestore.ShareableStore) *ExternalServiceStore {
 	return &ExternalServiceStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 
@@ -103,8 +103,8 @@ type ExternalServiceKind struct {
 type ExternalServicesListOptions struct {
 	// When specified, only include external services with the given IDs.
 	IDs []int64
-	// When true, only include external services not under any namespace (i.e. owned by all site admins),
-	// and value of NamespaceUserID is ignored.
+	// When true, only include external services not under any namespace (i.e. owned
+	// by all site admins), and value of NamespaceUserID is ignored.
 	NoNamespace bool
 	// When specified, only include external services under given user namespace.
 	NamespaceUserID int32
@@ -115,6 +115,10 @@ type ExternalServicesListOptions struct {
 	AfterID int64
 	// Possible values are ASC or DESC. Defaults to DESC.
 	OrderByDirection string
+	// When true, will only return services that have the cloud_default flag set to
+	// true.
+	OnlyCloudDefault bool
+
 	*LimitOffset
 }
 
@@ -142,6 +146,9 @@ func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 	if o.AfterID > 0 {
 		conds = append(conds, sqlf.Sprintf(`id < %d`, o.AfterID))
 	}
+	if o.OnlyCloudDefault {
+		conds = append(conds, sqlf.Sprintf("cloud_default = true"))
+	}
 	return conds
 }
 
@@ -157,8 +164,6 @@ type ValidateExternalServiceConfigOptions struct {
 	// If non zero, indicates the user that owns the external service.
 	NamespaceUserID int32
 }
-
-var errAuthorizationRequired = errors.New("authorization required")
 
 // ValidateConfig validates the given external service configuration, and returns a normalized
 // version of the configuration (i.e. valid JSON without comments).
@@ -308,11 +313,6 @@ func (e *ExternalServiceStore) validateGitHubConnection(ctx context.Context, id 
 
 	err = multierror.Append(err, e.validateDuplicateRateLimits(ctx, id, extsvc.KindGitHub, c))
 
-	if envvar.SourcegraphDotComMode() && c.CloudGlobal {
-		// We're setting this one to global, make sure it's the only one
-		err = multierror.Append(err, e.validateSingleGlobalConnection(ctx, id, extsvc.KindGitHub))
-	}
-
 	return err.ErrorOrNil()
 }
 
@@ -323,11 +323,6 @@ func (e *ExternalServiceStore) validateGitLabConnection(ctx context.Context, id 
 	}
 
 	err = multierror.Append(err, e.validateDuplicateRateLimits(ctx, id, extsvc.KindGitLab, c))
-
-	if envvar.SourcegraphDotComMode() && c.CloudGlobal {
-		// We're setting this one to global, make sure it's the only one
-		err = multierror.Append(err, e.validateSingleGlobalConnection(ctx, id, extsvc.KindGitLab))
-	}
 
 	return err.ErrorOrNil()
 }
@@ -349,52 +344,6 @@ func (e *ExternalServiceStore) validateBitbucketServerConnection(ctx context.Con
 
 func (e *ExternalServiceStore) validateBitbucketCloudConnection(ctx context.Context, id int64, c *schema.BitbucketCloudConnection) error {
 	return e.validateDuplicateRateLimits(ctx, id, extsvc.KindBitbucketCloud, c)
-}
-
-// validateSingleGlobalConnection returns an error if more than one external service for the given kind has its
-// CloudGlobal flag set.
-func (e *ExternalServiceStore) validateSingleGlobalConnection(ctx context.Context, id int64, kind string) error {
-	opt := ExternalServicesListOptions{
-		Kinds: []string{kind},
-		// We only care about site admin external services
-		NoNamespace: true,
-		LimitOffset: &LimitOffset{
-			Limit: 500, // The number is randomly chosen
-		},
-	}
-	for {
-		svcs, err := e.List(ctx, opt)
-		if err != nil {
-			return errors.Wrap(err, "list")
-		}
-		if len(svcs) == 0 {
-			// No more results, exiting
-			return nil
-		}
-		opt.AfterID = svcs[len(svcs)-1].ID // Advance the cursor
-
-		for _, svc := range svcs {
-			c, err := extsvc.ParseConfig(svc.Kind, svc.Config)
-			if err != nil {
-				return errors.Wrap(err, "parsing config")
-			}
-			var storedIsGlobal bool
-			switch x := c.(type) {
-			case *schema.GitHubConnection:
-				storedIsGlobal = x.CloudGlobal
-			case *schema.GitLabConnection:
-				storedIsGlobal = x.CloudGlobal
-			}
-			if svc.ID != id && storedIsGlobal {
-				return fmt.Errorf("existing external service, %q, already set as global", svc.DisplayName)
-			}
-		}
-
-		if len(svcs) < opt.Limit {
-			break // Less results than limit means we've reached end
-		}
-	}
-	return nil
 }
 
 // validateDuplicateRateLimits returns an error if given config has duplicated non-default rate limit
@@ -568,8 +517,8 @@ func (e *ExternalServiceStore) Create(ctx context.Context, confGet func() *conf.
 
 	return e.Store.Handle().DB().QueryRowContext(
 		ctx,
-		"INSERT INTO external_services(kind, display_name, config, created_at, updated_at, namespace_user_id, unrestricted) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id",
-		es.Kind, es.DisplayName, es.Config, es.CreatedAt, es.UpdatedAt, nullInt32Column(es.NamespaceUserID), es.Unrestricted,
+		"INSERT INTO external_services(kind, display_name, config, created_at, updated_at, namespace_user_id, unrestricted, cloud_default) VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id",
+		es.Kind, es.DisplayName, es.Config, es.CreatedAt, es.UpdatedAt, nullInt32Column(es.NamespaceUserID), es.Unrestricted, es.CloudDefault,
 	).Scan(&es.ID)
 }
 
@@ -611,6 +560,7 @@ func (e *ExternalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			&dbutil.NullTime{Time: &svcs[i].NextSyncAt},
 			&dbutil.NullInt32{N: &svcs[i].NamespaceUserID},
 			&svcs[i].Unrestricted,
+			&svcs[i].CloudDefault,
 		)
 		if err != nil {
 			return err
@@ -638,6 +588,7 @@ func upsertExternalServicesQuery(svcs []*types.ExternalService) *sqlf.Query {
 			nullTimeColumn(s.NextSyncAt),
 			nullInt32Column(s.NamespaceUserID),
 			s.Unrestricted,
+			s.CloudDefault,
 		))
 	}
 
@@ -648,7 +599,7 @@ func upsertExternalServicesQuery(svcs []*types.ExternalService) *sqlf.Query {
 }
 
 const upsertExternalServicesQueryValueFmtstr = `
-  (COALESCE(NULLIF(%s, 0), (SELECT nextval('external_services_id_seq'))), UPPER(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s)
+  (COALESCE(NULLIF(%s, 0), (SELECT nextval('external_services_id_seq'))), UPPER(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 `
 
 const upsertExternalServicesQueryFmtstr = `
@@ -664,7 +615,8 @@ INSERT INTO external_services (
   last_sync_at,
   next_sync_at,
   namespace_user_id,
-  unrestricted
+  unrestricted,
+  cloud_default
 )
 VALUES %s
 ON CONFLICT(id) DO UPDATE
@@ -678,7 +630,8 @@ SET
   last_sync_at = excluded.last_sync_at,
   next_sync_at = excluded.next_sync_at,
   namespace_user_id = excluded.namespace_user_id,
-  unrestricted = excluded.unrestricted
+  unrestricted = excluded.unrestricted,
+  cloud_default = excluded.cloud_default
 RETURNING *
 `
 
@@ -776,7 +729,7 @@ func (e *ExternalServiceStore) Delete(ctx context.Context, id int64) error {
 	}
 	e.ensureStore()
 
-	res, err := dbconn.Global.ExecContext(ctx, "UPDATE external_services SET deleted_at=now() WHERE id=$1 AND deleted_at IS NULL", id)
+	res, err := e.Handle().DB().ExecContext(ctx, "UPDATE external_services SET deleted_at=now() WHERE id=$1 AND deleted_at IS NULL", id)
 	if err != nil {
 		return err
 	}
@@ -878,7 +831,7 @@ func (e *ExternalServiceStore) list(ctx context.Context, opt ExternalServicesLis
 	}
 
 	q := sqlf.Sprintf(`
-		SELECT id, kind, display_name, config, created_at, updated_at, deleted_at, last_sync_at, next_sync_at, namespace_user_id, unrestricted
+		SELECT id, kind, display_name, config, created_at, updated_at, deleted_at, last_sync_at, next_sync_at, namespace_user_id, unrestricted, cloud_default
 		FROM external_services
 		WHERE (%s)
 		ORDER BY id `+opt.OrderByDirection+`
@@ -902,7 +855,7 @@ func (e *ExternalServiceStore) list(ctx context.Context, opt ExternalServicesLis
 			nextSyncAt      sql.NullTime
 			namespaceUserID sql.NullInt32
 		)
-		if err := rows.Scan(&h.ID, &h.Kind, &h.DisplayName, &h.Config, &h.CreatedAt, &h.UpdatedAt, &deletedAt, &lastSyncAt, &nextSyncAt, &namespaceUserID, &h.Unrestricted); err != nil {
+		if err := rows.Scan(&h.ID, &h.Kind, &h.DisplayName, &h.Config, &h.CreatedAt, &h.UpdatedAt, &deletedAt, &lastSyncAt, &nextSyncAt, &namespaceUserID, &h.Unrestricted, &h.CloudDefault); err != nil {
 			return nil, err
 		}
 

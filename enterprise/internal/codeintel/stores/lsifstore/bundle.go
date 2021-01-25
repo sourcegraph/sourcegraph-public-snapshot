@@ -321,11 +321,11 @@ func (s *Store) MonikerResults(ctx context.Context, bundleID int, tableName, sch
 	var rows []LocationData
 	var totalCount int
 	if tableName == "definitions" {
-		if rows, totalCount, err = s.ReadDefinitions(ctx, bundleID, scheme, identifier, skip, take); err != nil {
+		if rows, totalCount, err = s.readDefinitions(ctx, bundleID, scheme, identifier, skip, take); err != nil {
 			err = pkgerrors.Wrap(err, "store.ReadDefinitions")
 		}
 	} else if tableName == "references" {
-		if rows, totalCount, err = s.ReadReferences(ctx, bundleID, scheme, identifier, skip, take); err != nil {
+		if rows, totalCount, err = s.readReferences(ctx, bundleID, scheme, identifier, skip, take); err != nil {
 			err = pkgerrors.Wrap(err, "store.ReadReferences")
 		}
 	}
@@ -390,12 +390,12 @@ func (s *Store) hover(ctx context.Context, bundleID int, path string, documentDa
 }
 
 func (s *Store) getPathsWithPrefix(ctx context.Context, bundleID int, prefix string) (_ []string, err error) {
-	return s.PathsWithPrefix(ctx, bundleID, prefix)
+	return s.pathsWithPrefix(ctx, bundleID, prefix)
 }
 
 // getDocumentData fetches and unmarshals the document data or the given path.
 func (s *Store) getDocumentData(ctx context.Context, bundleID int, path string) (_ DocumentData, _ bool, err error) {
-	documentData, ok, err := s.ReadDocument(ctx, bundleID, path)
+	documentData, ok, err := s.readDocument(ctx, bundleID, path)
 	if err != nil {
 		return DocumentData{}, false, pkgerrors.Wrap(err, "store.ReadDocument")
 	}
@@ -495,7 +495,7 @@ func (s *Store) getResultsByIDs(ctx context.Context, bundleID int, ids []ID) (ma
 
 // getResultChunkByID fetches and unmarshals the result chunk data with the given identifier.
 func (s *Store) getResultChunkByID(ctx context.Context, bundleID int, id int) (_ ResultChunkData, _ bool, err error) {
-	resultChunkData, ok, err := s.ReadResultChunk(ctx, bundleID, id)
+	resultChunkData, ok, err := s.readResultChunk(ctx, bundleID, id)
 	if err != nil {
 		return ResultChunkData{}, false, pkgerrors.Wrap(err, "store.ReadResultChunk")
 	}
@@ -505,7 +505,7 @@ func (s *Store) getResultChunkByID(ctx context.Context, bundleID int, id int) (_
 // resultChunkID returns the identifier of the result chunk that contains the given identifier.
 func (s *Store) resultChunkID(ctx context.Context, bundleID int, id ID) (int, error) {
 	// TODO(efritz) - keep a cache
-	meta, err := s.ReadMeta(ctx, bundleID)
+	meta, err := s.readMeta(ctx, bundleID)
 	if err != nil {
 		return 0, pkgerrors.Wrap(err, "store.ReadMeta")
 	}

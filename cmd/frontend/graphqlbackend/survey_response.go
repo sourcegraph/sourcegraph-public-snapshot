@@ -90,7 +90,7 @@ func (r *schemaResolver) SubmitSurvey(ctx context.Context, args *struct {
 	actor := actor.FromContext(ctx)
 	if actor.IsAuthenticated() {
 		uid = &actor.UID
-		e, _, err := db.UserEmails.GetPrimaryEmail(ctx, actor.UID)
+		e, _, err := db.GlobalUserEmails.GetPrimaryEmail(ctx, actor.UID)
 		if err != nil && !errcode.IsNotFound(err) {
 			return nil, err
 		}
@@ -99,7 +99,7 @@ func (r *schemaResolver) SubmitSurvey(ctx context.Context, args *struct {
 		}
 	}
 
-	_, err := db.SurveyResponses.Create(ctx, uid, email, int(input.Score), input.Reason, input.Better)
+	_, err := db.GlobalSurveyResponses.Create(ctx, uid, email, int(input.Score), input.Reason, input.Better)
 	if err != nil {
 		return nil, err
 	}

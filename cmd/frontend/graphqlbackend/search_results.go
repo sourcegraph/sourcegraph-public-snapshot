@@ -48,7 +48,7 @@ import (
 )
 
 func (c *SearchResultsResolver) LimitHit() bool {
-	return c.IsLimitHit
+	return c.IsLimitHit || (c.limit > 0 && len(c.SearchResults) > c.limit)
 }
 
 func (c *SearchResultsResolver) Repositories() []*RepositoryResolver {
@@ -105,39 +105,20 @@ func (c *SearchResultsResolver) IndexUnavailable() bool {
 	return c.IsIndexUnavailable
 }
 
-func RepositoryResolvers(repos types.RepoNames) []*RepositoryResolver {
-	dedupSort(&repos)
-	return toRepositoryResolvers(repos)
-}
-
 func (c *SearchResultsResolver) allReposTimedout() bool {
 	return c.Status.All(search.RepoStatusTimedout) && c.Status.Len() == len(c.Repos)
 }
 
-// dedupSort sorts (by ID in ascending order) and deduplicates
-// the given repos in-place.
-func dedupSort(repos *types.RepoNames) {
-	if len(*repos) == 0 {
-		return
-	}
-
-	sort.Sort(*repos)
-
-	j := 0
-	for i := 1; i < len(*repos); i++ {
-		if (*repos)[j].ID != (*repos)[i].ID {
-			j++
-			(*repos)[j] = (*repos)[i]
-		}
-	}
-
-	*repos = (*repos)[:j+1]
-}
-
 // SearchResultsResolver is a resolver for the GraphQL type `SearchResults`
 type SearchResultsResolver struct {
+	// SearchResults is the full list of results found. The method Results()
+	// will return the list respecting limits.
 	SearchResults []SearchResultResolver
 	streaming.Stats
+
+	// limit is the maximum number of SearchResults to send back to the user.
+	limit int
+
 	alert *searchAlert
 	start time.Time // when the results started being computed
 
@@ -150,14 +131,20 @@ type SearchResultsResolver struct {
 	UserSettings *schema.Settings
 }
 
+// Results are the results found by the search. It respects the limits set. To
+// access all results directly access the SearchResults field.
 func (sr *SearchResultsResolver) Results() []SearchResultResolver {
+	if sr.limit > 0 && sr.limit < len(sr.SearchResults) {
+		return sr.SearchResults[:sr.limit]
+	}
+
 	return sr.SearchResults
 }
 
 func (sr *SearchResultsResolver) MatchCount() int32 {
 	var totalResults int32
 	for _, result := range sr.SearchResults {
-		totalResults += result.resultCount()
+		totalResults += result.ResultCount()
 	}
 	return totalResults
 }
@@ -311,7 +298,7 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 			if fm.InputRev != nil {
 				rev = *fm.InputRev
 			}
-			lines := fm.resultCount()
+			lines := fm.ResultCount()
 			addRepoFilter(fm.Repo, rev, lines)
 			addLangFilter(fm.path(), lines, fm.LimitHit())
 			addFileFilter(fm.path(), lines, fm.LimitHit())
@@ -1655,115 +1642,137 @@ func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameter
 	return nil
 }
 
-type aggregator struct {
-	// resultChannel if non-nil will send all results we receive down it. See
-	// searchResolver.SetResultChannel
-	resultChannel SearchStream
+func newAggregator(ctx context.Context, stream SearchStream) *aggregator {
+	childStream := make(chan SearchEvent, cap(stream))
+	agg := &aggregator{
+		stream: childStream,
+		done:   make(chan struct{}),
+	}
 
-	mu       sync.Mutex
+	go func() {
+		defer close(agg.done)
+		for event := range childStream {
+			// Timeouts are reported through Stats so don't report an error for them
+			if event.Error != nil && !isContextError(ctx, event.Error) {
+				event.Error = nil
+			}
+			if event.Error != nil {
+				agg.multiErr = multierror.Append(agg.multiErr, event.Error)
+			}
+			agg.results = append(agg.results, event.Results...)
+			agg.common.Update(&event.Stats)
+			if stream != nil {
+				stream <- event
+			}
+		}
+	}()
+
+	return agg
+}
+
+type aggregator struct {
+	stream SearchStream
+
+	done chan struct{}
+
 	results  []SearchResultResolver
 	common   streaming.Stats
 	multiErr *multierror.Error
 }
 
+// get finalises aggregation over the stream and returns the aggregated
+// result. It should only be called once each do* function is finished
+// running.
 func (a *aggregator) get() ([]SearchResultResolver, streaming.Stats, *multierror.Error) {
-	a.mu.Lock()
-	defer a.mu.Unlock()
+	close(a.stream)
+	<-a.done
+
 	return a.results, a.common, a.multiErr
 }
 
-func statsDeref(s *streaming.Stats) streaming.Stats {
-	if s == nil {
-		return streaming.Stats{}
-	}
-	return *s
-}
-
-// report sends results down resultChannel and collects the results.
-func (a *aggregator) report(ctx context.Context, results []SearchResultResolver, common *streaming.Stats, err error) {
-	if a.resultChannel != nil {
-		a.resultChannel <- SearchEvent{
-			Results: results,
-			Stats:   statsDeref(common),
-			Error:   err,
-		}
-	}
-
-	a.collect(ctx, results, common, err)
-}
-
-// collect the results. This doesn't send down resultChannel. Should only be
-// used by streaming supported backends.
-func (a *aggregator) collect(ctx context.Context, results []SearchResultResolver, common *streaming.Stats, err error) {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	// Timeouts are reported through Stats so don't report an error for them
-	if err != nil && !isContextError(ctx, err) {
-		a.multiErr = multierror.Append(a.multiErr, errors.Wrap(err, "repository search failed"))
-	}
-	a.results = append(a.results, results...)
-	a.common.Update(common)
+func (a *aggregator) send(event SearchEvent) {
+	a.stream <- event
 }
 
 func (a *aggregator) doRepoSearch(ctx context.Context, args *search.TextParameters, limit int32) {
 	tr, ctx := trace.New(ctx, "doRepoSearch", "")
 	defer tr.Finish()
-	repoResults, repoCommon, err := searchRepositories(ctx, args, limit)
-	a.report(ctx, repoResults, repoCommon, errors.Wrap(err, "repository search failed"))
+	results, stats, err := searchRepositories(ctx, args, limit)
+	a.send(SearchEvent{
+		Results: results,
+		Stats:   statsDeref(stats),
+		Error:   errors.Wrap(err, "repository search failed"),
+	})
 }
 
 func (a *aggregator) doSymbolSearch(ctx context.Context, args *search.TextParameters, limit int) {
 	tr, ctx := trace.New(ctx, "doSymbolSearch", "")
-	defer func() {
-		tr.Finish()
-	}()
-	symbolFileMatches, symbolsCommon, err := searchSymbols(ctx, args, limit)
+	defer tr.Finish()
+
+	symbolFileMatches, stats, err := searchSymbols(ctx, args, limit)
 
 	results := make([]SearchResultResolver, len(symbolFileMatches))
 	for i := range symbolFileMatches {
 		results[i] = symbolFileMatches[i]
 	}
 
-	a.report(ctx, results, symbolsCommon, errors.Wrap(err, "symbol search failed"))
+	a.send(SearchEvent{
+		Results: results,
+		Stats:   statsDeref(stats),
+		Error:   errors.Wrap(err, "symbol search failed"),
+	})
 }
 
 func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextParameters) {
 	tr, ctx := trace.New(ctx, "doFilePathSearch", "")
-	defer func() {
-		tr.Finish()
-	}()
-	fileResults, fileCommon, err := searchFilesInRepos(ctx, args, a.resultChannel)
-	if args.PatternInfo.IsStructuralPat && args.PatternInfo.FileMatchLimit == defaultMaxSearchResults && len(fileResults) == 0 && err == nil {
+
+	defer tr.Finish()
+
+	isDefaultStructuralSearch := args.PatternInfo.IsStructuralPat && args.PatternInfo.FileMatchLimit == defaultMaxSearchResults
+
+	if !isDefaultStructuralSearch {
+		searchFilesInRepos(ctx, args, a.stream)
+		return
+	}
+
+	// For structural search with default limits we retry if we get no results.
+
+	fileResults, stats, err := searchFilesInReposBatch(ctx, args)
+
+	if len(fileResults) == 0 && err == nil {
 		// No results for structural search? Automatically search again and force Zoekt
 		// to resolve more potential file matches by setting a higher FileMatchLimit.
-		args.PatternInfo.FileMatchLimit = 1000
-		fileResults, fileCommon, err = searchFilesInRepos(ctx, args, a.resultChannel)
+		patternCopy := *(args.PatternInfo)
+		patternCopy.FileMatchLimit = 1000
+		argsCopy := *args
+		argsCopy.PatternInfo = &patternCopy
+		args = &argsCopy
+
+		fileResults, stats, err = searchFilesInReposBatch(ctx, args)
+
 		if len(fileResults) == 0 {
 			// Still no results? Give up.
 			log15.Warn("Structural search gives up after more exhaustive attempt. Results may have been missed.")
-			if fileCommon != nil {
-				fileCommon.IsLimitHit = false // Ensure we don't display "Show more".
-			}
+			stats.IsLimitHit = false // Ensure we don't display "Show more".
 		}
 	}
 
-	results := make([]SearchResultResolver, len(fileResults))
-	for i := range fileResults {
-		results[i] = fileResults[i]
-	}
-	a.collect(ctx, results, fileCommon, errors.Wrap(err, "text search failed"))
+	a.send(SearchEvent{
+		Results: fileMatchResultsToSearchResults(fileResults),
+		Stats:   stats,
+		Error:   err,
+	})
 }
 
 func (a *aggregator) doDiffSearch(ctx context.Context, tp *search.TextParameters) {
 	err := checkDiffCommitSearchLimits(ctx, tp, "diff")
 	if err != nil {
-		a.collect(ctx, nil, nil, err)
+		a.send(SearchEvent{Error: err})
 		return
 	}
+
 	tr, ctx := trace.New(ctx, "doDiffSearch", "")
-	defer func() {
-		tr.Finish()
-	}()
+	defer tr.Finish()
 
 	args, err := resolveCommitParameters(ctx, tp)
 	if err != nil {
@@ -1771,21 +1780,18 @@ func (a *aggregator) doDiffSearch(ctx context.Context, tp *search.TextParameters
 		return
 	}
 
-	// searchCommitDiffsInRepos supports streamings, so we use a.collect.
-	diffResults, diffCommon, err := searchCommitDiffsInRepos(ctx, args, a.resultChannel)
-	a.collect(ctx, diffResults, diffCommon, errors.Wrap(err, "diff search failed"))
+	searchCommitDiffsInRepos(ctx, args, a.stream)
 }
 
 func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParameters) {
 	err := checkDiffCommitSearchLimits(ctx, tp, "commit")
 	if err != nil {
-		a.collect(ctx, nil, nil, err)
+		a.send(SearchEvent{Error: err})
 		return
 	}
+
 	tr, ctx := trace.New(ctx, "doCommitSearch", "")
-	defer func() {
-		tr.Finish()
-	}()
+	defer tr.Finish()
 
 	args, err := resolveCommitParameters(ctx, tp)
 	if err != nil {
@@ -1793,8 +1799,14 @@ func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParamete
 		return
 	}
 
-	commitResults, commitCommon, err := searchCommitLogInRepos(ctx, args, a.resultChannel)
-	a.collect(ctx, commitResults, commitCommon, errors.Wrap(err, "commit search failed"))
+	searchCommitLogInRepos(ctx, args, a.stream)
+}
+
+func statsDeref(s *streaming.Stats) streaming.Stats {
+	if s == nil {
+		return streaming.Stats{}
+	}
+	return *s
 }
 
 // isGlobalSearch returns true if the query does not contain repo, repogroup, or
@@ -1883,9 +1895,20 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		return &optionalWg
 	}
 
-	agg := aggregator{
-		resultChannel: r.resultChannel,
-	}
+	agg := newAggregator(ctx, r.resultChannel)
+
+	// This ensures we properly cleanup in the case of an early return. In
+	// particular we want to cancel global searches before returning early.
+	hasStartedAllBackends := false
+	defer func() {
+		if hasStartedAllBackends {
+			return
+		}
+		cancel()
+		requiredWg.Wait()
+		optionalWg.Wait()
+		_, _, _ = agg.get()
+	}()
 
 	isFileOrPath := func() bool {
 		for _, rt := range resultTypes {
@@ -1899,10 +1922,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	// performance optimization: call zoekt early, resolve repos concurrently, filter
 	// search results with resolved repos.
 	if r.isGlobalSearch() && isFileOrPath() {
-		// to protect us from regression, we explicitly create a child context which is
-		// canceled if we return from doResults
-		ctx, cancel := context.WithCancel(ctx)
-		defer cancel()
 		argsIndexed := args
 		argsIndexed.Mode = search.ZoektGlobalSearch
 		wg := waitGroup(true)
@@ -1936,11 +1955,13 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			repos[repoRev.Repo.ID] = repoRev.Repo
 		}
 
-		agg.report(ctx, nil, &streaming.Stats{
-			Repos:            repos,
-			ExcludedForks:    resolved.ExcludedRepos.Forks,
-			ExcludedArchived: resolved.ExcludedRepos.Archived,
-		}, nil)
+		agg.send(SearchEvent{
+			Stats: streaming.Stats{
+				Repos:            repos,
+				ExcludedForks:    resolved.ExcludedRepos.Forks,
+				ExcludedArchived: resolved.ExcludedRepos.Archived,
+			},
+		})
 	}
 
 	// Resolve repo promise so searches waiting on it can proceed. We do this
@@ -1999,6 +2020,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		}
 	}
 
+	hasStartedAllBackends = true
+
 	// Wait for required searches.
 	requiredWg.Wait()
 
@@ -2013,6 +2036,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 
 	timer.Stop()
 
+	// We have to call get once all waitgroups are done since it relies on
+	// collecting from the streams.
 	results, common, multiErr := agg.get()
 
 	tr.LazyPrintf("results=%d %s", len(results), &common)
@@ -2050,6 +2075,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		start:         start,
 		Stats:         common,
 		SearchResults: results,
+		limit:         int(r.maxResults()),
 		alert:         alert,
 	}
 
@@ -2076,7 +2102,7 @@ type SearchResultResolver interface {
 	ToFileMatch() (*FileMatchResolver, bool)
 	ToCommitSearchResult() (*CommitSearchResultResolver, bool)
 
-	resultCount() int32
+	ResultCount() int32
 }
 
 // compareFileLengths sorts file paths such that they appear earlier if they

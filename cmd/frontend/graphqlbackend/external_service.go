@@ -35,7 +35,7 @@ func externalServiceByID(ctx context.Context, gqlID graphql.ID) (*externalServic
 		return nil, err
 	}
 
-	es, err := db.ExternalServices.GetByID(ctx, id)
+	es, err := db.GlobalExternalServices.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +138,7 @@ func (r *externalServiceResolver) Warning() *string {
 }
 
 func (r *externalServiceResolver) LastSyncError(ctx context.Context) (*string, error) {
-	latestError, err := db.ExternalServices.GetLastSyncError(ctx, r.externalService.ID)
+	latestError, err := db.GlobalExternalServices.GetLastSyncError(ctx, r.externalService.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -149,5 +149,13 @@ func (r *externalServiceResolver) LastSyncError(ctx context.Context) (*string, e
 }
 
 func (r *externalServiceResolver) RepoCount(ctx context.Context) (int32, error) {
-	return db.ExternalServices.RepoCount(ctx, r.externalService.ID)
+	return db.GlobalExternalServices.RepoCount(ctx, r.externalService.ID)
+}
+
+func (r *externalServiceResolver) LastSyncAt() DateTime {
+	return DateTime{Time: r.externalService.LastSyncAt}
+}
+
+func (r *externalServiceResolver) NextSyncAt() DateTime {
+	return DateTime{Time: r.externalService.NextSyncAt}
 }

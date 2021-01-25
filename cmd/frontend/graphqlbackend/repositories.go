@@ -241,7 +241,7 @@ func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *Tot
 		}()
 	}
 
-	count, err := db.Repos.Count(ctx, r.opt)
+	count, err := db.GlobalRepos.Count(ctx, r.opt)
 	return i32ptr(int32(count)), err
 }
 

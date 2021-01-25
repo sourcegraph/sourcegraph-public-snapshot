@@ -45,7 +45,7 @@ func (o *settingsResolver) Author(ctx context.Context) (*UserResolver, error) {
 	}
 	if o.user == nil {
 		var err error
-		o.user, err = db.Users.GetByID(ctx, *o.settings.AuthorUserID)
+		o.user, err = db.GlobalUsers.GetByID(ctx, *o.settings.AuthorUserID)
 		if err != nil {
 			return nil, err
 		}
@@ -69,7 +69,7 @@ func settingsCreateIfUpToDate(ctx context.Context, subject *settingsSubject, las
 	}
 
 	// Update settings.
-	latestSettings, err := db.Settings.CreateIfUpToDate(ctx, subject.toSubject(), lastID, &authorUserID, contents)
+	latestSettings, err := db.GlobalSettings.CreateIfUpToDate(ctx, subject.toSubject(), lastID, &authorUserID, contents)
 	if err != nil {
 		return nil, err
 	}

@@ -33,7 +33,7 @@ func needsRepositoryConfiguration(ctx context.Context) (bool, error) {
 		}
 	}
 
-	count, err := db.ExternalServices.Count(ctx, db.ExternalServicesListOptions{
+	count, err := db.GlobalExternalServices.Count(ctx, db.ExternalServicesListOptions{
 		Kinds: kinds,
 	})
 	if err != nil {
@@ -62,7 +62,7 @@ func (r *siteResolver) FreeUsersExceeded(ctx context.Context) (bool, error) {
 		return false, nil
 	}
 
-	userCount, err := db.Users.Count(ctx, nil)
+	userCount, err := db.GlobalUsers.Count(ctx, nil)
 	if err != nil {
 		return false, err
 	}

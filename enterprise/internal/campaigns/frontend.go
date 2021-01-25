@@ -22,7 +22,7 @@ func InitFrontend(ctx context.Context, enterpriseServices *enterprise.Services) 
 	}
 
 	cstore := store.NewWithClock(dbconn.Global, timeutil.Now)
-	esStore := db.NewExternalServicesStoreWithDB(dbconn.Global)
+	esStore := db.ExternalServices(dbconn.Global)
 
 	enterpriseServices.CampaignsResolver = resolvers.New(dbconn.Global)
 	enterpriseServices.GitHubWebhook = webhooks.NewGitHubWebhook(cstore, esStore, timeutil.Now)

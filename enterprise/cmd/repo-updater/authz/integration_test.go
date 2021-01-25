@@ -118,12 +118,12 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 		ServiceID:   "https://github.com/",
 		AccountID:   "66464926",
 	}
-	userID, err := db.ExternalAccounts.CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{})
+	userID, err := db.GlobalExternalAccounts.CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	permsStore := edb.NewPermsStore(testDB, timeutil.Now)
+	permsStore := edb.Perms(testDB, timeutil.Now)
 	syncer := NewPermsSyncer(reposStore, permsStore, timeutil.Now, nil)
 
 	err = syncer.syncRepoPerms(ctx, repo.ID, false)

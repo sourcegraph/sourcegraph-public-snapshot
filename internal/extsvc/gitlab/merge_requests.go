@@ -41,6 +41,7 @@ type MergeRequest struct {
 	TargetBranch   string            `json:"target_branch"`
 	WebURL         string            `json:"web_url"`
 	WorkInProgress bool              `json:"work_in_progress"`
+	Author         User              `json:"author"`
 
 	DiffRefs DiffRefs `json:"diff_refs"`
 
