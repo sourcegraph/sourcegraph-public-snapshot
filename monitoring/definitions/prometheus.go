@@ -21,7 +21,7 @@ func Prometheus() *monitoring.Container {
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:        "prometheus_rule_group_evaluation",
+							Name:        "prometheus_rule_eval_duration",
 							Description: "average prometheus rule group evaluation duration over 10m",
 							Query:       `sum by(rule_group) (avg_over_time(prometheus_rule_group_last_duration_seconds[10m]))`,
 							Warning:     monitoring.Alert().GreaterOrEqual(30), // standard prometheus_rule_group_interval_seconds
@@ -35,10 +35,23 @@ func Prometheus() *monitoring.Container {
 							`, ruleGroupInterpretation),
 							PossibleSolutions: fmt.Sprintf(`
 								- Check the %s panels and try increasing resources for Prometheus if necessary.
-								- If the rule group taking a long time to evaluate belongs to ['/sg_prometheus_addons'](https://docs.sourcegraph.com/admin/observability/metrics#prometheus-configuration),
-								  try reducing the complexity of the rules.
+								- If the rule group taking a long time to evaluate belongs to '/sg_prometheus_addons', try reducing the complexity of any custom Prometheus rules provided.
 								- If the rule group taking a long time to evaluate belongs to '/sg_config_prometheus', please [open an issue](https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=&template=bug_report.md&title=).
 							`, shared.TitleContainerMonitoring),
+						},
+						{
+							Name:           "prometheus_rule_eval_failures",
+							Description:    "failed prometheus rule evaluations over 5m",
+							Query:          `sum by(rule_group) (rate(prometheus_rule_evaluation_failures_total[5m]))`,
+							Warning:        monitoring.Alert().Greater(0),
+							Panel:          monitoring.Panel().LegendFormat("{{rule_group}}"),
+							Owner:          monitoring.ObservableOwnerDistribution,
+							Interpretation: ruleGroupInterpretation,
+							PossibleSolutions: `
+								- Check Prometheus logs for messages related to rule group evaluation (generally with log field 'component="rule manager"').
+								- If the rule group failing to evaluate belongs to '/sg_prometheus_addons', ensure any custom Prometheus configuration provided is valid.
+								- If the rule group taking a long time to evaluate belongs to '/sg_config_prometheus', please [open an issue](https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=&template=bug_report.md&title=).
+							`,
 						},
 					},
 				},
@@ -48,29 +61,35 @@ func Prometheus() *monitoring.Container {
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:              "alertmanager_notifications_failed_total",
-							Description:       "failed alertmanager notifications over 1m",
-							Query:             `sum by(integration) (rate(alertmanager_notifications_failed_total[1m]))`,
-							Warning:           monitoring.Alert().Greater(0),
-							Panel:             monitoring.Panel().LegendFormat("{{integration}}"),
-							Owner:             monitoring.ObservableOwnerDistribution,
-							PossibleSolutions: "Ensure that your [`observability.alerts` configuration](https://docs.sourcegraph.com/admin/observability/alerting#setting-up-alerting) (in site configuration) is valid.",
+							Name:        "alertmanager_notification_latency",
+							Description: "alertmanager notification latency over 1m",
+							Query:       `sum by(integration) (rate(alertmanager_notification_latency_seconds_sum[1m]))`,
+							Warning:     monitoring.Alert().GreaterOrEqual(1),
+							Panel:       monitoring.Panel().Unit(monitoring.Seconds).LegendFormat("{{integration}}"),
+							Owner:       monitoring.ObservableOwnerDistribution,
+							PossibleSolutions: fmt.Sprintf(`
+								- Check the %s panels and try increasing resources for Prometheus if necessary.
+								- Ensure that your ['observability.alerts' configuration](https://docs.sourcegraph.com/admin/observability/alerting#setting-up-alerting) (in site configuration) is valid.
+								- Check if the relevant alert integration service is experiencing downtime or issues.
+							`, shared.TitleContainerMonitoring),
 						},
 						{
-							Name:              "alertmanager_config_status",
-							Description:       "alertmanager configuration reload status",
-							Query:             `alertmanager_config_last_reload_successful`,
-							Warning:           monitoring.Alert().Less(1),
-							Panel:             monitoring.Panel().LegendFormat("reload success").Max(1),
-							Owner:             monitoring.ObservableOwnerDistribution,
-							Interpretation:    "A '1' indicates Alertmanager reloaded its configuration successfully.",
-							PossibleSolutions: "Ensure that your [`observability.alerts` configuration](https://docs.sourcegraph.com/admin/observability/alerting#setting-up-alerting) (in site configuration) is valid.",
+							Name:        "alertmanager_notification_failures",
+							Description: "failed alertmanager notifications over 1m",
+							Query:       `sum by(integration) (rate(alertmanager_notifications_failed_total[1m]))`,
+							Warning:     monitoring.Alert().Greater(0),
+							Panel:       monitoring.Panel().LegendFormat("{{integration}}"),
+							Owner:       monitoring.ObservableOwnerDistribution,
+							PossibleSolutions: `
+								- Ensure that your ['observability.alerts' configuration](https://docs.sourcegraph.com/admin/observability/alerting#setting-up-alerting) (in site configuration) is valid.
+								- Check if the relevant alert integration service is experiencing downtime or issues.
+							`,
 						},
 					},
 				},
 			},
 			{
-				Title:  "Prometheus internals",
+				Title:  "Internals",
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -84,23 +103,18 @@ func Prometheus() *monitoring.Container {
 							Interpretation: "A '1' indicates Prometheus reloaded its configuration successfully.",
 							PossibleSolutions: `
 								- Check Prometheus logs for messages related to configuration loading.
-								- Ensure any custom configuration you have provided Prometheus is valid.
+								- Ensure any [custom configuration you have provided Prometheus](https://docs.sourcegraph.com/admin/observability/metrics#prometheus-configuration) is valid.
 							`,
 						},
 						{
-							Name:           "prometheus_rule_eval",
-							Description:    "prometheus rule evaluation failures over 1m",
-							Query:          `sum by(rule_group) (rate(prometheus_rule_evaluation_failures_total[5m]))`,
-							Warning:        monitoring.Alert().Greater(0),
-							Panel:          monitoring.Panel().LegendFormat("{{rule_group}}"),
-							Owner:          monitoring.ObservableOwnerDistribution,
-							Interpretation: ruleGroupInterpretation,
-							PossibleSolutions: `
-								- Check Prometheus logs for messages related to rule group evaluation, under 'component="rule manager"'.
-								- If the rule group failing to evaluate belongs to ['/sg_prometheus_addons'](https://docs.sourcegraph.com/admin/observability/metrics#prometheus-configuration),
-								  ensure the configuration is valid.
-								- If the rule group taking a long time to evaluate belongs to '/sg_config_prometheus', please [open an issue](https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=&template=bug_report.md&title=).
-							`,
+							Name:              "alertmanager_config_status",
+							Description:       "alertmanager configuration reload status",
+							Query:             `alertmanager_config_last_reload_successful`,
+							Warning:           monitoring.Alert().Less(1),
+							Panel:             monitoring.Panel().LegendFormat("reload success").Max(1),
+							Owner:             monitoring.ObservableOwnerDistribution,
+							Interpretation:    "A '1' indicates Alertmanager reloaded its configuration successfully.",
+							PossibleSolutions: "Ensure that your [`observability.alerts` configuration](https://docs.sourcegraph.com/admin/observability/alerting#setting-up-alerting) (in site configuration) is valid.",
 						},
 					},
 					{
