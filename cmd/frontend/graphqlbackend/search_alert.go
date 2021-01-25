@@ -12,12 +12,9 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/hashicorp/go-multierror"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
-	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	querytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
 )
@@ -513,99 +510,93 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 	return buildAlert(proposedQueries, description)
 }
 
-func alertForDiffCommitSearch(multiErr *multierror.Error) (newMultiErr *multierror.Error, alert *searchAlert) {
-	if multiErr == nil {
-		return newMultiErr, alert
+func alertForDiffCommitSearch(err error) *searchAlert {
+	if err == nil {
+		return nil
 	}
-	rErr := &RepoLimitErr{}
-	tErr := &TimeLimitErr{}
-	for _, err := range multiErr.Errors {
-		if ok := errors.As(err, rErr); ok {
-			alert = &searchAlert{
-				prometheusType: "exceeded_diff_commit_search_limit",
-				title:          fmt.Sprintf("Too many matching repositories for %s search to handle", rErr.ResultType),
-				description:    fmt.Sprintf(`%s search can currently only handle searching over %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`, strings.Title(rErr.ResultType), rErr.Max),
-			}
-			continue
+	var rErr RepoLimitErr
+	if errors.As(err, &rErr) {
+		return &searchAlert{
+			prometheusType: "exceeded_diff_commit_search_limit",
+			title:          fmt.Sprintf("Too many matching repositories for %s search to handle", rErr.ResultType),
+			description:    fmt.Sprintf(`%s search can currently only handle searching over %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`, strings.Title(rErr.ResultType), rErr.Max),
 		}
-		if ok := errors.As(err, tErr); ok {
-			alert = &searchAlert{
-				prometheusType: "exceeded_diff_commit_with_time_search_limit",
-				title:          fmt.Sprintf("Too many matching repositories for %s search to handle", tErr.ResultType),
-				description:    fmt.Sprintf(`%s search can currently only handle searching over %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`, strings.Title(tErr.ResultType), tErr.Max),
-			}
-			continue
-		}
-		newMultiErr = multierror.Append(newMultiErr, err)
 	}
-	return newMultiErr, alert
+	var tErr TimeLimitErr
+	if errors.As(err, &tErr) {
+		return &searchAlert{
+			prometheusType: "exceeded_diff_commit_with_time_search_limit",
+			title:          fmt.Sprintf("Too many matching repositories for %s search to handle", tErr.ResultType),
+			description:    fmt.Sprintf(`%s search can currently only handle searching over %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`, strings.Title(tErr.ResultType), tErr.Max),
+		}
+	}
+	return nil
 }
 
-// alertForStructuralSearch filters certain errors from multiErr and converts
-// them to an alert. We surface one alert at a time, so for multiple errors only
-// the last converted error will be surfaced in the alert.
-func alertForStructuralSearch(multiErr *multierror.Error) (newMultiErr *multierror.Error, alert *searchAlert) {
-	if multiErr != nil {
-		for _, err := range multiErr.Errors {
-			if strings.Contains(err.Error(), "Worker_oomed") || strings.Contains(err.Error(), "Worker_exited_abnormally") {
-				alert = &searchAlert{
-					prometheusType: "structural_search_needs_more_memory",
-					title:          "Structural search needs more memory",
-					description:    "Running your structural search may require more memory. If you are running the query on many repositories, try reducing the number of repositories with the `repo:` filter.",
-				}
-			} else if strings.Contains(err.Error(), "Out of memory") {
-				alert = &searchAlert{
-					prometheusType: "structural_search_needs_more_memory__give_searcher_more_memory",
-					title:          "Structural search needs more memory",
-					description:    `Running your structural search requires more memory. You could try reducing the number of repositories with the "repo:" filter. If you are an administrator, try double the memory allocated for the "searcher" service. If you're unsure, reach out to us at support@sourcegraph.com.`,
-				}
-			} else if strings.Contains(err.Error(), "no indexed repositories for structural search") {
-				var msg string
-				if envvar.SourcegraphDotComMode() {
-					msg = "The good news is you can index any repository you like in a self-install. It takes less than 5 minutes to set up: https://docs.sourcegraph.com/#quickstart"
-				} else {
-					msg = "Learn more about managing indexed repositories in our documentation: https://docs.sourcegraph.com/admin/search#indexed-search."
-				}
-				alert = &searchAlert{
-					prometheusType: "structural_search_on_zero_indexed_repos",
-					title:          "Unindexed repositories or repository revisions with structural search",
-					description:    fmt.Sprintf("Structural search currently only works on indexed repositories or revisions. Some of the repositories or revisions to search are not indexed, so we can't return results for them. %s", msg),
-				}
-			} else {
-				newMultiErr = multierror.Append(newMultiErr, err)
-			}
+// alertForStructuralSearch returns an alert if multiErr contains certain errors
+// related to structural search. We surface one alert at a time, so for multiple
+// errors only the first error will be surfaced as alert.
+func alertForStructuralSearch(err error) *searchAlert {
+	if errors.Is(err, errStructuralSearchMem) {
+		return &searchAlert{
+			prometheusType: "structural_search_needs_more_memory",
+			title:          "Structural search needs more memory",
+			description:    "Running your structural search may require more memory. If you are running the query on many repositories, try reducing the number of repositories with the `repo:` filter.",
 		}
 	}
-	return newMultiErr, alert
+	if errors.Is(err, errStructuralSearchSearcher) {
+		return &searchAlert{
+			prometheusType: "structural_search_needs_more_memory__give_searcher_more_memory",
+			title:          "Structural search needs more memory",
+			description:    `Running your structural search requires more memory. You could try reducing the number of repositories with the "repo:" filter. If you are an administrator, try double the memory allocated for the "searcher" service. If you're unsure, reach out to us at support@sourcegraph.com.`,
+		}
+	}
+	var indexErr errStructuralSearchNoIndexedRepos
+	if errors.As(err, &indexErr) {
+		return &searchAlert{
+			prometheusType: "structural_search_on_zero_indexed_repos",
+			title:          "Unindexed repositories or repository revisions with structural search",
+			description:    fmt.Sprintf("Structural search currently only works on indexed repositories or revisions. Some of the repositories or revisions to search are not indexed, so we can't return results for them. %s", indexErr.msg),
+		}
+	}
+	return nil
 }
 
-func alertForStructuralSearchNotSet(queryString string) *searchAlert {
+func alertForStructuralSearchNotSet(err error) *searchAlert {
+	e := errStructuralSearchNotSet{}
+	if !errors.As(err, &e) {
+		return nil
+	}
 	return &searchAlert{
 		prometheusType: "structural_search_not_set",
 		title:          "No results",
 		description:    "It looks like you may have meant to run a structural search, but it is not toggled.",
 		proposedQueries: []*searchQueryDescription{{
 			description: "Activate structural search",
-			query:       queryString,
+			query:       e.originalQuery,
 			patternType: query.SearchTypeStructural,
 		}},
 	}
 }
 
-func alertForMissingRepoRevs(patternType query.SearchType, missingRepoRevs []*search.RepositoryRevisions) *searchAlert {
+func alertForMissingRepoRevs(err error) *searchAlert {
+	e := errMissingRepoRevs{}
+	if !errors.As(err, &e) {
+		return nil
+	}
 	var description string
-	if len(missingRepoRevs) == 1 {
-		if len(missingRepoRevs[0].RevSpecs()) == 1 {
-			description = fmt.Sprintf("The repository %s matched by your repo: filter could not be searched because it does not contain the revision %q.", missingRepoRevs[0].Repo.Name, missingRepoRevs[0].RevSpecs()[0])
+	if len(e.missingRepoRevs) == 1 {
+		if len(e.missingRepoRevs[0].RevSpecs()) == 1 {
+			description = fmt.Sprintf("The repository %s matched by your repo: filter could not be searched because it does not contain the revision %q.", e.missingRepoRevs[0].Repo.Name, e.missingRepoRevs[0].RevSpecs()[0])
 		} else {
-			description = fmt.Sprintf("The repository %s matched by your repo: filter could not be searched because it has multiple specified revisions: @%s.", missingRepoRevs[0].Repo.Name, strings.Join(missingRepoRevs[0].RevSpecs(), ","))
+			description = fmt.Sprintf("The repository %s matched by your repo: filter could not be searched because it has multiple specified revisions: @%s.", e.missingRepoRevs[0].Repo.Name, strings.Join(e.missingRepoRevs[0].RevSpecs(), ","))
 		}
 	} else {
-		repoRevs := make([]string, 0, len(missingRepoRevs))
-		for _, r := range missingRepoRevs {
+		repoRevs := make([]string, 0, len(e.missingRepoRevs))
+		for _, r := range e.missingRepoRevs {
 			repoRevs = append(repoRevs, string(r.Repo.Name)+"@"+strings.Join(r.RevSpecs(), ","))
 		}
-		description = fmt.Sprintf("%d repositories matched by your repo: filter could not be searched because the following revisions do not exist, or differ but were specified for the same repository: %s.", len(missingRepoRevs), strings.Join(repoRevs, ", "))
+		description = fmt.Sprintf("%d repositories matched by your repo: filter could not be searched because the following revisions do not exist, or differ but were specified for the same repository: %s.", len(e.missingRepoRevs), strings.Join(repoRevs, ", "))
 	}
 	return &searchAlert{
 		prometheusType: "missing_repo_revs",

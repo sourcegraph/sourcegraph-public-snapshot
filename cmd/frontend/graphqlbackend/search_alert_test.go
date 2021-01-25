@@ -180,10 +180,7 @@ func TestAlertForDiffCommitSearchLimits(t *testing.T) {
 	}
 
 	for _, test := range cases {
-		haveMultiErr, alert := alertForDiffCommitSearch(test.multiErr)
-		if haveMultiErr != nil {
-			t.Fatalf("the alert should have been filtered from the multierror")
-		}
+		alert := alertForDiffCommitSearch(test.multiErr)
 		haveAlertDescription := alert.description
 		if diff := cmp.Diff(test.wantAlertDescription, haveAlertDescription); diff != "" {
 			t.Fatalf("test %s, mismatched alert (-want, +got):\n%s", test.name, diff)
@@ -223,12 +220,7 @@ func TestErrorToAlertStructuralSearch(t *testing.T) {
 			Errors:      test.errors,
 			ErrorFormat: multierror.ListFormatFunc,
 		}
-		haveMultiErr, haveAlert := alertForStructuralSearch(multiErr)
-
-		if !reflect.DeepEqual(haveMultiErr.Errors, test.wantErrors) {
-			t.Fatalf("test %s, have errors: %q, want: %q", test.name, haveMultiErr.Errors, test.wantErrors)
-		}
-
+		haveAlert := alertForStructuralSearch(multiErr)
 		if haveAlert != nil && haveAlert.title != test.wantAlertTitle {
 			t.Fatalf("test %s, have alert: %q, want: %q", test.name, haveAlert.title, test.wantAlertTitle)
 		}
