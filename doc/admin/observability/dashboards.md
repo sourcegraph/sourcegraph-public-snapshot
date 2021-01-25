@@ -2726,6 +2726,8 @@ This panel indicates average prometheus rule group evaluation duration over 10m.
 A high value here indicates Prometheus rule evaluation is taking longer than expected.
 It might indicate that certain rule groups are taking too long to evaluate, or Prometheus is underprovisioned.
 
+Rules that Sourcegraph ships with are grouped under `/sg_config_prometheus`. [Custom rules are grouped under `/sg_prometheus_addons`](https://docs.sourcegraph.com/admin/observability/metrics#prometheus-configuration).
+
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#prometheus-prometheus-rule-group-evaluation).
 
 <sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
@@ -2758,16 +2760,6 @@ A `1` indicates Alertmanager reloaded its configuration successfully.
 
 ### Prometheus: Prometheus internals
 
-#### prometheus: prometheus_tsdb_op_failure
-
-This panel indicates prometheus tsdb failures by operation over 1m.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#prometheus-prometheus-tsdb-op-failure).
-
-<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
-
-<br />
-
 #### prometheus: prometheus_config_status
 
 This panel indicates prometheus configuration reload status.
@@ -2775,6 +2767,28 @@ This panel indicates prometheus configuration reload status.
 A `1` indicates Prometheus reloaded its configuration successfully.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#prometheus-prometheus-config-status).
+
+<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
+
+<br />
+
+#### prometheus: prometheus_rule_eval
+
+This panel indicates prometheus rule evaluation failures over 1m.
+
+Rules that Sourcegraph ships with are grouped under `/sg_config_prometheus`. [Custom rules are grouped under `/sg_prometheus_addons`](https://docs.sourcegraph.com/admin/observability/metrics#prometheus-configuration).
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#prometheus-prometheus-rule-eval).
+
+<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
+
+<br />
+
+#### prometheus: prometheus_tsdb_op_failure
+
+This panel indicates prometheus tsdb failures by operation over 1m.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#prometheus-prometheus-tsdb-op-failure).
 
 <sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
 

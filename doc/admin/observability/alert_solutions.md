@@ -5021,7 +5021,10 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions**
 
-- Try increasing resources for Prometheus.
+- Check the Container monitoring (not available on server) panels and try increasing resources for Prometheus if necessary.
+- If the rule group taking a long time to evaluate belongs to [`/sg_prometheus_addons`](https://docs.sourcegraph.com/admin/observability/metrics#prometheus-configuration),
+  try reducing the complexity of the rules.
+- If the rule group taking a long time to evaluate belongs to `/sg_config_prometheus`, please [open an issue](https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=&template=bug_report.md&title=).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -5084,29 +5087,6 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
-## prometheus: prometheus_tsdb_op_failure
-
-<p class="subtitle">prometheus tsdb failures by operation over 1m</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> prometheus: 0+ prometheus tsdb failures by operation over 1m
-
-**Possible solutions**
-
-- Check Prometheus logs for messages related to the failing operation.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_prometheus_prometheus_tsdb_op_failure"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
-
-<br />
-
 ## prometheus: prometheus_config_status
 
 <p class="subtitle">prometheus configuration reload status</p>
@@ -5128,6 +5108,57 @@ with your code hosts connections or networking issues affecting communication wi
 ```
 
 > NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#prometheus-prometheus-config-status).
+
+<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
+
+<br />
+
+## prometheus: prometheus_rule_eval
+
+<p class="subtitle">prometheus rule evaluation failures over 1m</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> prometheus: 0+ prometheus rule evaluation failures over 1m
+
+**Possible solutions**
+
+- Check Prometheus logs for messages related to rule group evaluation, under `component="rule manager"`.
+- If the rule group failing to evaluate belongs to [`/sg_prometheus_addons`](https://docs.sourcegraph.com/admin/observability/metrics#prometheus-configuration),
+  ensure the configuration is valid.
+- If the rule group taking a long time to evaluate belongs to `/sg_config_prometheus`, please [open an issue](https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=&template=bug_report.md&title=).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_prometheus_prometheus_rule_eval"
+]
+```
+
+> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#prometheus-prometheus-rule-eval).
+
+<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
+
+<br />
+
+## prometheus: prometheus_tsdb_op_failure
+
+<p class="subtitle">prometheus tsdb failures by operation over 1m</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> prometheus: 0+ prometheus tsdb failures by operation over 1m
+
+**Possible solutions**
+
+- Check Prometheus logs for messages related to the failing operation.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_prometheus_prometheus_tsdb_op_failure"
+]
+```
 
 <sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
 
