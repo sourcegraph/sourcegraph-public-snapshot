@@ -13,6 +13,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/pkg/errors"
 
@@ -135,6 +136,7 @@ func emptyDBPreserveSchema(t testing.TB, d *sql.DB) {
 func initTest(nameSuffix string) error {
 	dbname := "sourcegraph-test-" + nameSuffix
 
+	dropDBStart := time.Now()
 	if os.Getenv("TEST_SKIP_DROP_DB_BEFORE_TESTS") == "" {
 		// When running the db-backcompat.sh tests, we need to *keep* the DB around because it has
 		// the new schema produced by the new version. If we dropped the DB here, then we'd recreate
@@ -145,7 +147,9 @@ func initTest(nameSuffix string) error {
 			return errors.Errorf("dropdb --if-exists failed: %v\n%s", err, string(out))
 		}
 	}
+	fmt.Printf("dropdb took: %s\n", time.Since(dropDBStart))
 
+	createdbStart := time.Now()
 	out, err := exec.Command("createdb", dbname).CombinedOutput()
 	if err != nil {
 		if strings.Contains(string(out), "already exists") {
@@ -154,16 +158,19 @@ func initTest(nameSuffix string) error {
 			return errors.Errorf("createdb failed: %v\n%s", err, string(out))
 		}
 	}
+	fmt.Printf("createdb took: %s\n", time.Since(createdbStart))
 
 	if err := dbconn.SetupGlobalConnection("dbname=" + dbname); err != nil {
 		return err
 	}
 
+	migrateStart := time.Now()
 	for _, databaseName := range dbconn.DatabaseNames {
 		if err := dbconn.MigrateDB(dbconn.Global, databaseName); err != nil {
 			return err
 		}
 	}
+	fmt.Printf("migrate took: %s\n", time.Since(migrateStart))
 
 	return nil
 }
