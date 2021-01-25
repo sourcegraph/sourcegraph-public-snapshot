@@ -358,6 +358,7 @@ func TestDatabasePackageInformation(t *testing.T) {
 	}
 }
 
+// NEXT
 func TestDatabaseSymbols(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
