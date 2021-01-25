@@ -66,6 +66,7 @@ const campaignDefaults: CampaignFields = {
         originalInput: 'name: awesome-campaign\ndescription: somestring',
         supersedingCampaignSpec: null,
     },
+    diffStat: { added: 1000, changed: 2000, deleted: 1000 },
 }
 
 const queryChangesets: typeof _queryChangesets = () =>

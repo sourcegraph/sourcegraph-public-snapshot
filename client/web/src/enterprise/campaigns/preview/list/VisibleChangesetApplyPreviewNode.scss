@@ -35,6 +35,9 @@
             grid-column: 1 / -1;
         }
     }
+    &__commit-change-entry {
+        color: $gray-10;
+    }
 }
 
 .theme-dark {

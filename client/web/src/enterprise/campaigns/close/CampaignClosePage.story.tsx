@@ -51,6 +51,7 @@ const campaignDefaults: CampaignFields = {
         namespaceName: 'alice',
         url: '/users/alice',
     },
+    diffStat: { added: 1000, changed: 2000, deleted: 1000 },
     viewerCanAdminister: true,
     closedAt: null,
     description: '## What this campaign does\n\nTruly awesome things for example.',

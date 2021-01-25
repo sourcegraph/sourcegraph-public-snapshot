@@ -1,8 +1,7 @@
-# LSIF quickstart guide
 
-> NOTE: We are working on creating guides by language, so first check out [language documentation](how-to/index.md#language-specific-guides)! This general guide can be used when a language specific guide is not available.
 
-We'll walk you through installing and generating LSIF data locally on your machine, and then manually uploading the LSIF data to your Sourcegraph instance for your repository. This will let you experiment with the process locally, and test your generated LSIF data on your repository before you update your CI process. The steps for enabling precise code intelligence are as follows:
+This guide is meant to provide instructions for how to enable precise code intelligence for any programming language.
+The general steps for enabling precise code intelligence are as follows:
 
 1. Install Sourcegraph CLI
 2. Install LSIF Indexer
@@ -71,17 +70,17 @@ View processing status at <link to your Sourcegraph instance LSIF status>.
 
 ## Automate code indexing
 
-Now that you have successfully enabled code intelligence for your repository, you can automate source code indexing to ensure precise code intelligence stays up to date with the most recent code changes in the repository. See our [continuous integration guide](how-to/adding_lsif_to_workflows.md) to setup automation.
+Now that you have successfully enabled code intelligence for your repository, you can automate source code indexing to ensure precise code intelligence stays up to date with the most recent code changes in the repository. See our [continuous integration guide](adding_lsif_to_workflows.md) to setup automation.
 
 ## Troubleshooting
 
 ### Testing
 
-> NOTE: Make sure you have configured your Sourcegraph instance and [enabled precise code intelligence](explanations/precise_code_intelligence.md#enabling-lsif-on-your-sourcegraph-instance).
+> NOTE: Make sure you have configured your Sourcegraph instance and [enabled precise code intelligence](../explanations/precise_code_intelligence.md#enabling-lsif-on-your-sourcegraph-instance).
 
 Once LSIF data has uploaded, open the Sourcegraph UI or your code host (i.e. GitHub) and navigate to any code file that was part of the repository that was analyzed by the LSIF indexer. Hover over a symbol, variable or function name in the file, you should now see rich LSIF metadata as the source for hover-tooltips, definitions, and references.
 
-If precise code intelligence has been correctly enabled hover text should not be decorated with a ![tooltip](img/basic-code-intel-tooltip.svg) icon. This icon indicates the results are from search-based [search-based code intelligence](explanations/search_based_code_intelligence.md). This tooltip icon will be absent when results are precise!
+If precise code intelligence has been correctly enabled hover text should not be decorated with a ![tooltip](../img/basic-code-intel-tooltip.svg) icon. This icon indicates the results are from search-based [search-based code intelligence](../explanations/search_based_code_intelligence.md). This tooltip icon will be absent when results are precise!
 
 ### Error Logs
 

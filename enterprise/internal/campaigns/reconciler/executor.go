@@ -65,7 +65,7 @@ func (e *executor) Run(ctx context.Context, plan *Plan) (err error) {
 
 	reposStore := database.ReposWith(e.tx)
 
-	e.repo, err = loadRepo(ctx, reposStore, e.ch.RepoID)
+	e.repo, err = reposStore.Get(ctx, e.ch.RepoID)
 	if err != nil {
 		return errors.Wrap(err, "failed to load repository")
 	}
