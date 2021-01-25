@@ -138,6 +138,7 @@ export const externalChangesetFieldsFragment = gql`
         reviewState
         checkState
         error
+        syncerError
         labels {
             ...ChangesetLabelFields
         }

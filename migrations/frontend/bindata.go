@@ -90,6 +90,8 @@
 // 1528395776_cloud_default_not_null.up.sql (98B)
 // 1528395777_lsif_uploads_associated_index.down.sql (806B)
 // 1528395777_lsif_uploads_associated_index.up.sql (791B)
+// 1528395778_add_syncer_error.down.sql (76B)
+// 1528395778_add_syncer_error.up.sql (84B)
 
 package migrations
 
@@ -1958,6 +1960,46 @@ func _1528395777_lsif_uploads_associated_indexUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395778_add_syncer_errorDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\xce\x48\xcc\x4b\x4f\x2d\x4e\x2d\x29\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\xae\xcc\x4b\x4e\x2d\x8a\x4f\x2d\x2a\xca\x2f\xb2\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x05\x95\x43\xf5\x4c\x00\x00\x00")
+
+func _1528395778_add_syncer_errorDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395778_add_syncer_errorDownSql,
+		"1528395778_add_syncer_error.down.sql",
+	)
+}
+
+func _1528395778_add_syncer_errorDownSql() (*asset, error) {
+	bytes, err := _1528395778_add_syncer_errorDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395778_add_syncer_error.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x97, 0xbb, 0xb3, 0x11, 0x20, 0x97, 0xa0, 0xe7, 0x82, 0xad, 0xeb, 0xcc, 0x18, 0xdb, 0xa, 0x56, 0x73, 0x53, 0xfe, 0x56, 0x7e, 0x6f, 0xe, 0xd8, 0x5d, 0xa, 0x37, 0x6c, 0xcf, 0xf8, 0xc2, 0xde}}
+	return a, nil
+}
+
+var __1528395778_add_syncer_errorUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x04\xc0\x3d\x0a\x42\x31\x0c\x07\xf0\x3d\xa7\xf8\xdf\xa3\x53\xdf\x6b\x94\x40\x3f\xc0\x46\xe8\x26\x52\x82\x4e\x15\x52\x17\x6f\xef\xef\xe0\xab\xd4\x40\x14\xb3\xf2\x0d\x1a\x8f\xcc\x98\xef\xe7\x7a\xd9\xb6\xef\x46\x4c\x09\x67\xcb\xf7\x52\x21\x17\xd4\xa6\xe0\x21\x5d\x3b\xf6\x6f\x4d\xf3\x87\xb9\x7f\x1c\xca\x43\x03\xd1\xd9\x4a\x11\x0d\xf4\x0f\x00\x00\xff\xff\xb5\x42\xc1\x15\x54\x00\x00\x00")
+
+func _1528395778_add_syncer_errorUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395778_add_syncer_errorUpSql,
+		"1528395778_add_syncer_error.up.sql",
+	)
+}
+
+func _1528395778_add_syncer_errorUpSql() (*asset, error) {
+	bytes, err := _1528395778_add_syncer_errorUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395778_add_syncer_error.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xe5, 0x68, 0x68, 0x92, 0xe6, 0xa4, 0x3a, 0x91, 0x14, 0xdc, 0xe5, 0x2f, 0x1b, 0xb7, 0xe4, 0xea, 0xb7, 0x2, 0x44, 0x90, 0x6d, 0x43, 0xdd, 0x32, 0x70, 0x57, 0x13, 0xdc, 0x94, 0xbc, 0x76, 0xb3}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2139,6 +2181,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395776_cloud_default_not_null.up.sql":                                               _1528395776_cloud_default_not_nullUpSql,
 	"1528395777_lsif_uploads_associated_index.down.sql":                                      _1528395777_lsif_uploads_associated_indexDownSql,
 	"1528395777_lsif_uploads_associated_index.up.sql":                                        _1528395777_lsif_uploads_associated_indexUpSql,
+	"1528395778_add_syncer_error.down.sql":                                                   _1528395778_add_syncer_errorDownSql,
+	"1528395778_add_syncer_error.up.sql":                                                     _1528395778_add_syncer_errorUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2275,6 +2319,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395776_cloud_default_not_null.up.sql":                                               {_1528395776_cloud_default_not_nullUpSql, map[string]*bintree{}},
 	"1528395777_lsif_uploads_associated_index.down.sql":                                      {_1528395777_lsif_uploads_associated_indexDownSql, map[string]*bintree{}},
 	"1528395777_lsif_uploads_associated_index.up.sql":                                        {_1528395777_lsif_uploads_associated_indexUpSql, map[string]*bintree{}},
+	"1528395778_add_syncer_error.down.sql":                                                   {_1528395778_add_syncer_errorDownSql, map[string]*bintree{}},
+	"1528395778_add_syncer_error.up.sql":                                                     {_1528395778_add_syncer_errorUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
