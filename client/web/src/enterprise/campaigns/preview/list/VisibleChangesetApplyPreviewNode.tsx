@@ -92,7 +92,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
                 {node.delta.commitMessageChanged && (
                     <div className="d-flex justify-content-center align-items-center flex-column mx-1 visible-changeset-apply-preview-node__commit-change-entry">
                         <CardTextOutlineIcon data-tooltip="The commit message changed" className="icon-inline" />
-                        <span className="text-nowrap">Commit msg</span>
+                        <span className="text-nowrap">Message</span>
                     </div>
                 )}
                 {node.delta.diffChanged && (
