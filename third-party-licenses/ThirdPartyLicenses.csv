@@ -156,6 +156,7 @@ Go,github.com/PuerkitoBio/purell,v1.1.1,New BSD,"",Approved
 Go,github.com/PuerkitoBio/urlesc,v0.0.0-20170810143723-de5bf2ad4578,New BSD,"",Approved
 Go,github.com/RoaringBitmap/roaring,v0.5.1,Apache 2.0,"",Approved
 Go,github.com/asaskevich/govalidator,v0.0.0-20200907205600-7a23bdc65eef,MIT,"",Approved
+Go,github.com/asdine/sqlhooks,v1.3.1-0.20210120094401-480358310a5b,MIT,"",Approved
 Go,github.com/avelino/slugify,v0.0.0-20180501145920-855f152bd774,MIT,"",Approved
 Go,github.com/aws/aws-sdk-go,v1.29.15,"Apache 2.0,New BSD","",Approved
 Go,github.com/aws/aws-sdk-go-v2,v0.20.0,"Apache 2.0,New BSD","",Approved
@@ -189,7 +190,6 @@ Go,github.com/fatih/color,v1.9.0,MIT,"",Approved
 Go,github.com/felixge/fgprof,v0.9.1,MIT,"",Approved
 Go,github.com/felixge/httpsnoop,v1.0.1,MIT,"",Approved
 Go,github.com/fsnotify/fsnotify,v1.4.9,New BSD,"",Approved
-Go,github.com/gchaincl/sqlhooks,v1.3.0,MIT,"",Approved
 Go,github.com/getsentry/raven-go,v0.2.0,New BSD,"",Approved
 Go,github.com/glycerine/go-unsnap-stream,v0.0.0-20190901134440-81cf024a9e0a,MIT,"",Approved
 Go,github.com/go-enry/go-enry/v2,v2.6.0,Apache 2.0,"",Approved
@@ -240,6 +240,14 @@ Go,github.com/hashicorp/errwrap,v1.0.0,Mozilla Public License 2.0,"",Approved
 Go,github.com/hashicorp/go-multierror,v1.1.0,Mozilla Public License 2.0,"",Approved
 Go,github.com/honeycombio/libhoney-go,v1.14.0,Apache 2.0,"",Approved
 Go,github.com/inconshreveable/log15,v0.0.0-20200109203555-b30bc20e4fd1,MIT,"",Approved
+Go,github.com/jackc/chunkreader/v2,v2.0.1,MIT,"",Approved
+Go,github.com/jackc/pgconn,v1.8.0,MIT,"",Approved
+Go,github.com/jackc/pgio,v1.0.0,MIT,"",Approved
+Go,github.com/jackc/pgpassfile,v1.0.0,MIT,"",Approved
+Go,github.com/jackc/pgproto3/v2,v2.0.6,MIT,"",Approved
+Go,github.com/jackc/pgservicefile,v0.0.0-20200714003250-2b9c44734f2b,MIT,"",Approved
+Go,github.com/jackc/pgtype,v1.6.2,MIT,"",Approved
+Go,github.com/jackc/pgx/v4,v4.10.0,MIT,"",Approved
 Go,github.com/jbenet/go-context,v0.0.0-20150711004518-d14ea06fba99,MIT,"",Approved
 Go,github.com/jmespath/go-jmespath,v0.3.0,Apache 2.0,"",Approved
 Go,github.com/jmoiron/sqlx,v1.2.1-0.20190826204134-d7d95172beb5,MIT,"",Approved
@@ -321,6 +329,7 @@ Go,github.com/sourcegraph/gosyntect,v0.0.0-20200429204402-842ed26129d0,MIT,"",Ap
 Go,github.com/sourcegraph/grafana-sdk,v0.0.0-20210112115824-13757501ee8a,Apache 2.0,"",Approved
 Go,github.com/sourcegraph/graphql-go,v0.0.0-20201007040903-ec61a5417d66,Simplified BSD,"",Approved
 Go,github.com/sourcegraph/jsonx,v0.0.0-20200629203448-1a936bd500cf,MIT,"",Approved
+Go,github.com/sourcegraph/lsif-protocol,v1.0.0,MIT,"",Approved
 Go,github.com/sourcegraph/oauth2,v0.0.0-20201011192344-605770292164,New BSD,"",Approved
 Go,github.com/sourcegraph/syntaxhighlight,v0.0.0-20170531221838-bd320f5d308e,New BSD,"",Approved
 Go,github.com/sourcegraph/yaml,v1.0.1-0.20200714132230-56936252f152,MIT,"",Approved
