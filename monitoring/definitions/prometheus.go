@@ -1,11 +1,16 @@
 package definitions
 
 import (
+	"fmt"
+
 	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
 func Prometheus() *monitoring.Container {
+	// ruleGroupInterpretation provides interpretation documentation for observables that are per prometheus rule_group.
+	const ruleGroupInterpretation = `Rules that Sourcegraph ships with are grouped under '/sg_config_prometheus'. [Custom rules are grouped under '/sg_prometheus_addons'](https://docs.sourcegraph.com/admin/observability/metrics#prometheus-configuration).`
+
 	return &monitoring.Container{
 		Name:        "prometheus",
 		Title:       "Prometheus",
@@ -22,13 +27,18 @@ func Prometheus() *monitoring.Container {
 							Warning:     monitoring.Alert().GreaterOrEqual(30), // standard prometheus_rule_group_interval_seconds
 							Panel:       monitoring.Panel().Unit(monitoring.Seconds).MinAuto().LegendFormat("{{rule_group}}"),
 							Owner:       monitoring.ObservableOwnerDistribution,
-							Interpretation: `
+							Interpretation: fmt.Sprintf(`
 								A high value here indicates Prometheus rule evaluation is taking longer than expected.
 								It might indicate that certain rule groups are taking too long to evaluate, or Prometheus is underprovisioned.
-							`,
-							PossibleSolutions: `
-								- Try increasing resources for Prometheus.
-							`,
+
+								%s
+							`, ruleGroupInterpretation),
+							PossibleSolutions: fmt.Sprintf(`
+								- Check the %s panels and try increasing resources for Prometheus if necessary.
+								- If the rule group taking a long time to evaluate belongs to ['/sg_prometheus_addons'](https://docs.sourcegraph.com/admin/observability/metrics#prometheus-configuration),
+								  try reducing the complexity of the rules.
+								- If the rule group taking a long time to evaluate belongs to '/sg_config_prometheus', please [open an issue](https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=&template=bug_report.md&title=).
+							`, shared.TitleContainerMonitoring),
 						},
 					},
 				},
@@ -65,15 +75,6 @@ func Prometheus() *monitoring.Container {
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:              "prometheus_tsdb_op_failure",
-							Description:       "prometheus tsdb failures by operation over 1m",
-							Query:             `increase(label_replace({__name__=~"prometheus_tsdb_(.*)_failed_total"}, "operation", "$1", "__name__", "(.+)s_failed_total")[5m:1m])`,
-							Warning:           monitoring.Alert().Greater(0),
-							Panel:             monitoring.Panel().LegendFormat("{{operation}}"),
-							Owner:             monitoring.ObservableOwnerDistribution,
-							PossibleSolutions: "Check Prometheus logs for messages related to the failing operation.",
-						},
-						{
 							Name:           "prometheus_config_status",
 							Description:    "prometheus configuration reload status",
 							Query:          `prometheus_config_last_reload_successful`,
@@ -86,8 +87,32 @@ func Prometheus() *monitoring.Container {
 								- Ensure any custom configuration you have provided Prometheus is valid.
 							`,
 						},
+						{
+							Name:           "prometheus_rule_eval",
+							Description:    "prometheus rule evaluation failures over 1m",
+							Query:          `sum by(rule_group) (rate(prometheus_rule_evaluation_failures_total[5m]))`,
+							Warning:        monitoring.Alert().Greater(0),
+							Panel:          monitoring.Panel().LegendFormat("{{rule_group}}"),
+							Owner:          monitoring.ObservableOwnerDistribution,
+							Interpretation: ruleGroupInterpretation,
+							PossibleSolutions: `
+								- Check Prometheus logs for messages related to rule group evaluation, under 'component="rule manager"'.
+								- If the rule group failing to evaluate belongs to ['/sg_prometheus_addons'](https://docs.sourcegraph.com/admin/observability/metrics#prometheus-configuration),
+								  ensure the configuration is valid.
+								- If the rule group taking a long time to evaluate belongs to '/sg_config_prometheus', please [open an issue](https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=&template=bug_report.md&title=).
+							`,
+						},
 					},
 					{
+						{
+							Name:              "prometheus_tsdb_op_failure",
+							Description:       "prometheus tsdb failures by operation over 1m",
+							Query:             `increase(label_replace({__name__=~"prometheus_tsdb_(.*)_failed_total"}, "operation", "$1", "__name__", "(.+)s_failed_total")[5m:1m])`,
+							Warning:           monitoring.Alert().Greater(0),
+							Panel:             monitoring.Panel().LegendFormat("{{operation}}"),
+							Owner:             monitoring.ObservableOwnerDistribution,
+							PossibleSolutions: "Check Prometheus logs for messages related to the failing operation.",
+						},
 						{
 							Name:              "prometheus_target_sample_exceeded",
 							Description:       "prometheus scrapes that exceed the sample limit over 10m",
