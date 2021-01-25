@@ -2097,14 +2097,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	return &resultsResolver, multiErr.ErrorOrNil()
 }
 
-type errStructuralSearchNotSet struct {
-	originalQuery string
-}
-
-func (errStructuralSearchNotSet) Error() string {
-	return "structural search not set"
-}
-
 type errMissingRepoRevs struct {
 	patternType     query.SearchType
 	missingRepoRevs []*search.RepositoryRevisions
@@ -2112,43 +2104,6 @@ type errMissingRepoRevs struct {
 
 func (errMissingRepoRevs) Error() string {
 	return "missing repository revisions"
-}
-
-var errStructuralSearchMem = fmt.Errorf("structural search needs more memory")
-var errStructuralSearchSearcher = fmt.Errorf("searcher needs more memory")
-
-type errStructuralSearchNoIndexedRepos struct {
-	msg string
-}
-
-func (errStructuralSearchNoIndexedRepos) Error() string {
-	return "no indexed repositories for structural search"
-}
-
-// convertErrorsForStructuralSearch converts certain text-based errors to
-// sentinel errors and returns a new multierr. len(multierr) is an invariant.
-func convertErrorsForStructuralSearch(multiErr *multierror.Error) (newMultiErr *multierror.Error) {
-	if multiErr == nil {
-		return newMultiErr
-	}
-	for _, err := range multiErr.Errors {
-		if strings.Contains(err.Error(), "Worker_oomed") || strings.Contains(err.Error(), "Worker_exited_abnormally") {
-			newMultiErr = multierror.Append(newMultiErr, errStructuralSearchMem)
-		} else if strings.Contains(err.Error(), "Out of memory") {
-			newMultiErr = multierror.Append(newMultiErr, errStructuralSearchSearcher)
-		} else if strings.Contains(err.Error(), "no indexed repositories for structural search") {
-			var msg string
-			if envvar.SourcegraphDotComMode() {
-				msg = "The good news is you can index any repository you like in a self-install. It takes less than 5 minutes to set up: https://docs.sourcegraph.com/#quickstart"
-			} else {
-				msg = "Learn more about managing indexed repositories in our documentation: https://docs.sourcegraph.com/admin/search#indexed-search."
-			}
-			newMultiErr = multierror.Append(newMultiErr, errStructuralSearchNoIndexedRepos{msg: msg})
-		} else {
-			newMultiErr = multierror.Append(newMultiErr, err)
-		}
-	}
-	return newMultiErr
 }
 
 // isContextError returns true if ctx.Err() is not nil or if err
