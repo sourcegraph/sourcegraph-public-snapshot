@@ -288,7 +288,7 @@ func (svc *Service) ExecuteCampaignSpec(ctx context.Context, repos []*graphql.Re
 	var errs *multierror.Error
 
 	x.Start(ctx)
-	specs, err := x.Wait()
+	specs, err := x.Wait(ctx)
 	if progress != nil {
 		x.LockedTaskStatuses(progress)
 		done <- struct{}{}

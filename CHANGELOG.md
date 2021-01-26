@@ -17,6 +17,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
+- When `docker` becomes unresponsive `src campaign [apply|preview]` would get stuck and ignore Ctrl-C signals. That is now fixed.
+
 ### Removed
 
 ## 3.24.3

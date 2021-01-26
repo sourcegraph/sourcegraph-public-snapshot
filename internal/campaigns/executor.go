@@ -45,7 +45,7 @@ type Executor interface {
 	AddTask(repo *graphql.Repository, steps []Step, transform *TransformChanges, template *ChangesetTemplate)
 	LogFiles() []string
 	Start(ctx context.Context)
-	Wait() ([]*ChangesetSpec, error)
+	Wait(ctx context.Context) ([]*ChangesetSpec, error)
 
 	// LockedTaskStatuses calls the given function with the current state of
 	// the task statuses. Before calling the function, the statuses are locked
@@ -219,11 +219,23 @@ func (x *executor) Start(ctx context.Context) {
 	}
 }
 
-func (x *executor) Wait() ([]*ChangesetSpec, error) {
+func (x *executor) Wait(ctx context.Context) ([]*ChangesetSpec, error) {
 	<-x.doneEnqueuing
-	if err := x.par.Wait(); err != nil {
-		return nil, err
+
+	result := make(chan error)
+	defer func() { close(result) }()
+
+	go func(ch chan error) { ch <- x.par.Wait() }(result)
+
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case err := <-result:
+		if err != nil {
+			return nil, err
+		}
 	}
+
 	return x.specs, nil
 }
 

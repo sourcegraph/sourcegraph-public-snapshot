@@ -357,7 +357,11 @@ func printExecutionError(out *output.Output, err error) {
 			if taskErr, ok := e.(campaigns.TaskExecutionErr); ok {
 				block.Write(formatTaskExecutionErr(taskErr))
 			} else {
-				block.Writef("%s%s", output.StyleBold, e.Error())
+				if err == context.Canceled {
+					block.Writef("%sAborting", output.StyleBold)
+				} else {
+					block.Writef("%s%s=%+v)", output.StyleBold, e.Error())
+				}
 			}
 		}
 

@@ -325,7 +325,7 @@ repository_name=github.com/sourcegraph/src-cli`,
 				}
 
 				executor.Start(context.Background())
-				specs, err := executor.Wait()
+				specs, err := executor.Wait(context.Background())
 				if tc.wantErrInclude == "" && err != nil {
 					t.Fatalf("execution failed: %s", err)
 				}
