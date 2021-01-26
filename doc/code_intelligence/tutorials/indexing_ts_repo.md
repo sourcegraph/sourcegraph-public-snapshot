@@ -1,4 +1,4 @@
-# Index a popular Typescript repository
+# Manually index a popular Typescript repository
 
 <style>
 .markdown-body pre.chroma {

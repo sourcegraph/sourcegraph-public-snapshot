@@ -15,7 +15,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -92,7 +92,7 @@ func (s *Server) handleRepoExternalServices(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	rs, err := s.Store.RepoStore.List(r.Context(), db.ReposListOptions{
+	rs, err := s.Store.RepoStore.List(r.Context(), database.ReposListOptions{
 		IDs: []api.RepoID{req.ID},
 	})
 	if err != nil {
@@ -113,7 +113,7 @@ func (s *Server) handleRepoExternalServices(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	args := db.ExternalServicesListOptions{
+	args := database.ExternalServicesListOptions{
 		IDs:              svcIDs,
 		OrderByDirection: "ASC",
 	}
@@ -136,7 +136,7 @@ func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rs, err := s.Store.RepoStore.List(r.Context(), db.ReposListOptions{
+	rs, err := s.Store.RepoStore.List(r.Context(), database.ReposListOptions{
 		IDs: []api.RepoID{req.ID},
 	})
 	if err != nil {
@@ -151,7 +151,7 @@ func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	args := db.ExternalServicesListOptions{
+	args := database.ExternalServicesListOptions{
 		Kinds:            types.Repos(rs).Kinds(),
 		OrderByDirection: "ASC",
 	}
@@ -315,7 +315,7 @@ func (s *Server) enqueueRepoUpdate(ctx context.Context, req *protocol.RepoUpdate
 		tr.Finish()
 	}()
 
-	rs, err := s.Store.RepoStore.List(ctx, db.ReposListOptions{Names: []string{string(req.Repo)}})
+	rs, err := s.Store.RepoStore.List(ctx, database.ReposListOptions{Names: []string{string(req.Repo)}})
 	if err != nil {
 		return nil, http.StatusInternalServerError, errors.Wrap(err, "store.list-repos")
 	}
@@ -448,7 +448,7 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		return mockRepoLookup(args)
 	}
 
-	list, err := s.Store.RepoStore.List(ctx, db.ReposListOptions{
+	list, err := s.Store.RepoStore.List(ctx, database.ReposListOptions{
 		Names: []string{string(args.Repo)},
 	})
 	if err != nil {

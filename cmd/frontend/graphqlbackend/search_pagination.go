@@ -14,7 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -605,7 +605,7 @@ func (n *numTotalReposCache) get(ctx context.Context) int {
 	n.RUnlock()
 
 	n.Lock()
-	newCount, err := db.GlobalRepos.Count(ctx, db.ReposListOptions{})
+	newCount, err := database.GlobalRepos.Count(ctx, database.ReposListOptions{})
 	if err != nil {
 		defer n.Unlock()
 		log15.Error("failed to determine numTotalRepos", "error", err)

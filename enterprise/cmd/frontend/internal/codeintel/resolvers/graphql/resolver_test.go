@@ -14,7 +14,7 @@ import (
 	resolvermocks "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/mocks"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -24,9 +24,9 @@ func init() {
 
 func TestDeleteLSIFUpload(t *testing.T) {
 	t.Cleanup(func() {
-		db.Mocks.Users.GetByCurrentAuthUser = nil
+		database.Mocks.Users.GetByCurrentAuthUser = nil
 	})
-	db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
+	database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
 		return &types.User{SiteAdmin: true}, nil
 	}
 
@@ -56,9 +56,9 @@ func TestDeleteLSIFUploadUnauthenticated(t *testing.T) {
 
 func TestDeleteLSIFIndex(t *testing.T) {
 	t.Cleanup(func() {
-		db.Mocks.Users.GetByCurrentAuthUser = nil
+		database.Mocks.Users.GetByCurrentAuthUser = nil
 	})
-	db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
+	database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
 		return &types.User{SiteAdmin: true}, nil
 	}
 
@@ -88,9 +88,9 @@ func TestDeleteLSIFIndexUnauthenticated(t *testing.T) {
 
 func TestMakeGetUploadsOptions(t *testing.T) {
 	t.Cleanup(func() {
-		db.Mocks.Repos.Get = nil
+		database.Mocks.Repos.Get = nil
 	})
-	db.Mocks.Repos.Get = func(v0 context.Context, id api.RepoID) (*types.Repo, error) {
+	database.Mocks.Repos.Get = func(v0 context.Context, id api.RepoID) (*types.Repo, error) {
 		if id != 50 {
 			t.Errorf("unexpected repository name. want=%d have=%d", 50, id)
 		}
@@ -149,9 +149,9 @@ func TestMakeGetUploadsOptionsDefaults(t *testing.T) {
 
 func TestMakeGetIndexesOptions(t *testing.T) {
 	t.Cleanup(func() {
-		db.Mocks.Repos.Get = nil
+		database.Mocks.Repos.Get = nil
 	})
-	db.Mocks.Repos.Get = func(v0 context.Context, id api.RepoID) (*types.Repo, error) {
+	database.Mocks.Repos.Get = func(v0 context.Context, id api.RepoID) (*types.Repo, error) {
 		if id != 50 {
 			t.Errorf("unexpected repository name. want=%d have=%d", 50, id)
 		}

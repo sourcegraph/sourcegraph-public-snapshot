@@ -201,6 +201,7 @@ func TestLSIFTscLernaConfig(t *testing.T) {
 	mockGit := NewMockGitserverClientWrapper()
 	mockGit.RawContentsFunc.PushReturn([]byte(`{"npmClient": "yarn"}`), nil)
 	mockGit.RawContentsFunc.PushReturn([]byte(`{"npmClient": "npm"}`), nil)
+	mockGit.RawContentsFunc.PushReturn([]byte(`{"npmClient": "yarn"}`), nil)
 
 	recognizer := lsifTscJobRecognizer{}
 
@@ -218,6 +219,13 @@ func TestLSIFTscLernaConfig(t *testing.T) {
 		{
 			"package.json",
 			"tsconfig.json",
+		},
+		{
+			"foo/package.json",
+			"yarn.lock",
+			"lerna.json",
+			"package.json",
+			"foo/bar/tsconfig.json",
 		},
 	}
 
@@ -265,6 +273,27 @@ func TestLSIFTscLernaConfig(t *testing.T) {
 				},
 				LocalSteps:  nil,
 				Root:        "",
+				Indexer:     lsifTscImage,
+				IndexerArgs: []string{"lsif-tsc", "-p", "."},
+				Outfile:     "",
+			},
+		},
+		{
+			{
+				DockerSteps: []DockerStep{
+					{
+						Root:     "",
+						Image:    "node:alpine3.12",
+						Commands: []string{"yarn --ignore-engines"},
+					},
+					{
+						Root:     "foo",
+						Image:    "node:alpine3.12",
+						Commands: []string{"yarn --ignore-engines"},
+					},
+				},
+				LocalSteps:  nil,
+				Root:        "foo/bar",
 				Indexer:     lsifTscImage,
 				IndexerArgs: []string{"lsif-tsc", "-p", "."},
 				Outfile:     "",

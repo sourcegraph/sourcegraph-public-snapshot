@@ -9,13 +9,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-// NewAuthzStore returns an OSS db.AuthzStore set with enterprise implementation.
-func NewAuthzStore(db dbutil.DB, clock func() time.Time) db.AuthzStore {
+// NewAuthzStore returns an OSS database.AuthzStore set with enterprise implementation.
+func NewAuthzStore(db dbutil.DB, clock func() time.Time) database.AuthzStore {
 	return &authzStore{
 		store: Perms(db, clock),
 	}
@@ -25,14 +25,14 @@ type authzStore struct {
 	store *PermsStore
 }
 
-// GrantPendingPermissions grants pending permissions for a user, which implements the db.AuthzStore interface.
+// GrantPendingPermissions grants pending permissions for a user, which implements the database.AuthzStore interface.
 // It uses provided arguments to retrieve information directly from the database to offload security concerns
 // from the caller.
 //
 // It's possible that there are more than one verified emails and external accounts associated to the user
 // and all of them have pending permissions, we can safely grant all of them whenever possible because permissions
 // are unioned.
-func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *db.GrantPendingPermissionsArgs) (err error) {
+func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *database.GrantPendingPermissionsArgs) (err error) {
 	if args.UserID <= 0 {
 		return nil
 	}
@@ -61,7 +61,7 @@ func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *db.Grant
 	switch cfg.BindID {
 	case "email":
 		// 🚨 SECURITY: It is critical to ensure only grant emails that are verified.
-		emails, err := db.GlobalUserEmails.ListByUser(ctx, db.UserEmailsListOptions{
+		emails, err := database.GlobalUserEmails.ListByUser(ctx, database.UserEmailsListOptions{
 			UserID:       args.UserID,
 			OnlyVerified: true,
 		})
@@ -79,7 +79,7 @@ func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *db.Grant
 		}
 
 	case "username":
-		user, err := db.GlobalUsers.GetByID(ctx, args.UserID)
+		user, err := database.GlobalUsers.GetByID(ctx, args.UserID)
 		if err != nil {
 			return errors.Wrap(err, "get user")
 		}
@@ -112,8 +112,8 @@ func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *db.Grant
 }
 
 // AuthorizedRepos checks if a user is authorized to access repositories in the candidate list,
-// which implements the db.AuthzStore interface.
-func (s *authzStore) AuthorizedRepos(ctx context.Context, args *db.AuthorizedReposArgs) ([]*types.Repo, error) {
+// which implements the database.AuthzStore interface.
+func (s *authzStore) AuthorizedRepos(ctx context.Context, args *database.AuthorizedReposArgs) ([]*types.Repo, error) {
 	if len(args.Repos) == 0 {
 		return args.Repos, nil
 	}
@@ -139,9 +139,9 @@ func (s *authzStore) AuthorizedRepos(ctx context.Context, args *db.AuthorizedRep
 }
 
 // RevokeUserPermissions deletes both effective and pending permissions that could be related to a user,
-// which implements the db.AuthzStore interface. It proactively clean up left-over pending permissions to
+// which implements the database.AuthzStore interface. It proactively clean up left-over pending permissions to
 // prevent accidental reuse (i.e. another user with same username or email address(es) but not the same person).
-func (s *authzStore) RevokeUserPermissions(ctx context.Context, args *db.RevokeUserPermissionsArgs) (err error) {
+func (s *authzStore) RevokeUserPermissions(ctx context.Context, args *database.RevokeUserPermissionsArgs) (err error) {
 	txs, err := s.store.Transact(ctx)
 	if err != nil {
 		return errors.Wrap(err, "start transaction")

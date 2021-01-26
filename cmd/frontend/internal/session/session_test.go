@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -22,10 +22,10 @@ func TestSetActorDeleteSession(t *testing.T) {
 
 	userCreatedAt := time.Now()
 
-	db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
 		return &types.User{ID: id, CreatedAt: userCreatedAt}, nil
 	}
-	defer func() { db.Mocks = db.MockStores{} }()
+	defer func() { database.Mocks = database.MockStores{} }()
 
 	// Start new session
 	w := httptest.NewRecorder()
@@ -138,10 +138,10 @@ func TestSessionExpiry(t *testing.T) {
 
 	userCreatedAt := time.Now()
 
-	db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
 		return &types.User{ID: id, CreatedAt: userCreatedAt}, nil
 	}
-	defer func() { db.Mocks = db.MockStores{} }()
+	defer func() { database.Mocks = database.MockStores{} }()
 
 	// Start new session
 	w := httptest.NewRecorder()
@@ -179,11 +179,11 @@ func TestManualSessionExpiry(t *testing.T) {
 	defer cleanup()
 
 	user := &types.User{ID: 123, InvalidatedSessionsAt: time.Now()}
-	db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
 		user.ID = id
 		return user, nil
 	}
-	defer func() { db.Mocks = db.MockStores{} }()
+	defer func() { database.Mocks = database.MockStores{} }()
 
 	// Start new session
 	w := httptest.NewRecorder()
@@ -220,7 +220,7 @@ func TestCookieMiddleware(t *testing.T) {
 	actors := []*actor.Actor{{UID: 123, FromSessionCookie: true}, {UID: 456}, {UID: 789}}
 	userCreatedAt := time.Now()
 
-	db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
 		if id == actors[0].UID {
 			return &types.User{ID: id, CreatedAt: userCreatedAt}, nil
 		}
@@ -229,7 +229,7 @@ func TestCookieMiddleware(t *testing.T) {
 		}
 		return nil, errors.New("x") // other error
 	}
-	defer func() { db.Mocks = db.MockStores{} }()
+	defer func() { database.Mocks = database.MockStores{} }()
 
 	// Start new sessions for all actors
 	authedReqs := make([]*http.Request, len(actors))
@@ -343,10 +343,10 @@ func TestMismatchedUserCreationFails(t *testing.T) {
 	// request. Later we'll change the value in the database, and the
 	// mismatch will be noticed, terminating the session.
 	user := &types.User{ID: 1, CreatedAt: time.Now()}
-	db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
 		return user, nil
 	}
-	defer func() { db.Mocks = db.MockStores{} }()
+	defer func() { database.Mocks = database.MockStores{} }()
 
 	// Start a new session for the user with ID 1. Their creation time
 	// will be recorded into the session store.
@@ -379,10 +379,10 @@ func TestMismatchedUserCreationFails(t *testing.T) {
 	// won't match what we have in the database, so we indicate that something has gone
 	// wrong / someone may be impersonated etc.
 	user = &types.User{ID: 1, CreatedAt: time.Now().Add(time.Minute)}
-	db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
 		return user, nil
 	}
-	defer func() { db.Mocks = db.MockStores{} }()
+	defer func() { database.Mocks = database.MockStores{} }()
 
 	// Perform the authenticated request again and verify that the
 	// session was terminated due to the mismatch.
@@ -403,10 +403,10 @@ func TestOldUserSessionSucceeds(t *testing.T) {
 	// This user's session will _not_ have the UserCreatedAt value in the session
 	// store. When that situation occurs, we want to allow the session to continue
 	// as this is a logged-in user with a session that was created before the change.
-	db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
 		return &types.User{ID: 1, CreatedAt: time.Now()}, nil
 	}
-	defer func() { db.Mocks = db.MockStores{} }()
+	defer func() { database.Mocks = database.MockStores{} }()
 
 	// Start a new session for the user with ID 1. Their creation time will not be
 	// be recorded into the session store.

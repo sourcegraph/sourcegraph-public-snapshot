@@ -9,7 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
@@ -17,10 +17,10 @@ import (
 
 func TestGitTree(t *testing.T) {
 	resetMocks()
-	db.Mocks.ExternalServices.List = func(opt db.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+	database.Mocks.ExternalServices.List = func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 		return nil, nil
 	}
-	db.Mocks.Repos.MockGetByName(t, "github.com/gorilla/mux", 2)
+	database.Mocks.Repos.MockGetByName(t, "github.com/gorilla/mux", 2)
 	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
 		if repo.ID != 2 || rev != exampleCommitSHA1 {
 			t.Error("wrong arguments to Repos.ResolveRev")

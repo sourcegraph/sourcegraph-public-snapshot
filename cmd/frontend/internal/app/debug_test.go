@@ -12,7 +12,7 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -114,10 +114,10 @@ func TestGrafanaLicensing(t *testing.T) {
 	}
 
 	t.Run("licensed requests succeed", func(t *testing.T) {
-		db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
+		database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
 			return &types.User{ID: 1, SiteAdmin: true}, nil
 		}
-		defer func() { db.Mocks.Users.GetByCurrentAuthUser = nil }()
+		defer func() { database.Mocks.Users.GetByCurrentAuthUser = nil }()
 
 		PreMountGrafanaHook = func() error { return nil }
 		defer func() { PreMountGrafanaHook = nil }()
@@ -133,10 +133,10 @@ func TestGrafanaLicensing(t *testing.T) {
 	})
 
 	t.Run("non-licensed requests fail", func(t *testing.T) {
-		db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
+		database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
 			return &types.User{ID: 1, SiteAdmin: true}, nil
 		}
-		defer func() { db.Mocks.Users.GetByCurrentAuthUser = nil }()
+		defer func() { database.Mocks.Users.GetByCurrentAuthUser = nil }()
 
 		PreMountGrafanaHook = func() error { return errors.New("test fail") }
 		defer func() { PreMountGrafanaHook = nil }()

@@ -5,7 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -58,7 +58,7 @@ func (r *ChangesetRewirer) Rewire() (changesets []*campaigns.Changeset, err erro
 		// would require a new spec.
 		repo := m.Repo
 		if repo == nil {
-			return nil, &db.RepoNotFoundErr{ID: m.RepoID}
+			return nil, &database.RepoNotFoundErr{ID: m.RepoID}
 		}
 
 		if err := checkRepoSupported(repo); err != nil {

@@ -11,6 +11,9 @@ import (
 // Init starts the Google Cloud Profiler when in sourcegraph.com mode.
 // https://cloud.google.com/profiler/docs/profiling-go
 func Init() error {
+	if envvar.DisableProfiler() {
+		return nil
+	}
 	if !envvar.SourcegraphDotComMode() {
 		return nil
 	}

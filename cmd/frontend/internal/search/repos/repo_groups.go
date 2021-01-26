@@ -9,7 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -66,7 +66,7 @@ func ResolveRepoGroups(ctx context.Context, settings *schema.Settings) (groups m
 	}
 
 	a := actor.FromContext(ctx)
-	names, err := db.GlobalRepos.GetUserAddedRepoNames(ctx, a.UID)
+	names, err := database.GlobalRepos.GetUserAddedRepoNames(ctx, a.UID)
 	if err != nil {
 		log15.Warn("getting user added repos", "err", err)
 		return groups, nil

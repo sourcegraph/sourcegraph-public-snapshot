@@ -49,6 +49,7 @@ export const HiddenChangesetApplyPreviewNode: React.FunctionComponent<HiddenChan
             </span>
         </div>
         <span />
+        <span />
     </>
 )
 

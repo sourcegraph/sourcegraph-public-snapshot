@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/go-lsp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -162,9 +162,9 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		}
 
 		// Only care about the first found repository.
-		repos, err := backend.Repos.List(ctx, db.ReposListOptions{
+		repos, err := backend.Repos.List(ctx, database.ReposListOptions{
 			IncludePatterns: validValues,
-			LimitOffset: &db.LimitOffset{
+			LimitOffset: &database.LimitOffset{
 				Limit: 1,
 			},
 		})

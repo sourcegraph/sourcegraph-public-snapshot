@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -31,7 +31,7 @@ func TestRepository(t *testing.T) {
 				},
 			}, nil
 		}
-		db.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
+		database.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
 			return nil, errors.New("x")
 		}
 		links, err := Repository(context.Background(), &types.Repo{Name: api.RepoName(repoName)})
@@ -54,7 +54,7 @@ func TestRepository(t *testing.T) {
 		repoupdater.MockRepoLookup = func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
 			return &protocol.RepoLookupResult{}, nil
 		}
-		db.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
+		database.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
 			if want := api.RepoName("myrepo"); repo != want {
 				t.Errorf("got %q, want %q", repo, want)
 			}
@@ -80,7 +80,7 @@ func TestRepository(t *testing.T) {
 		repoupdater.MockRepoLookup = func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
 			return nil, errors.New("x")
 		}
-		db.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
+		database.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
 			return nil, errors.New("x")
 		}
 		links, err := Repository(context.Background(), &types.Repo{Name: "myrepo"})
@@ -130,7 +130,7 @@ func TestFileOrDir(t *testing.T) {
 						},
 					}, nil
 				}
-				db.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
+				database.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
 					return nil, errors.New("x")
 				}
 				links, err := FileOrDir(context.Background(), &types.Repo{Name: api.RepoName(repoName)}, rev, path, isDir)
@@ -154,7 +154,7 @@ func TestFileOrDir(t *testing.T) {
 		repoupdater.MockRepoLookup = func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
 			return &protocol.RepoLookupResult{}, nil
 		}
-		db.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
+		database.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
 			if want := api.RepoName("myrepo"); repo != want {
 				t.Errorf("got %q, want %q", repo, want)
 			}
@@ -184,7 +184,7 @@ func TestFileOrDir(t *testing.T) {
 		repoupdater.MockRepoLookup = func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
 			return nil, errors.New("x")
 		}
-		db.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
+		database.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
 			return nil, errors.New("x")
 		}
 		links, err := FileOrDir(context.Background(), &types.Repo{Name: "myrepo"}, rev, path, true)
@@ -215,7 +215,7 @@ func TestCommit(t *testing.T) {
 				},
 			}, nil
 		}
-		db.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
+		database.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
 			return nil, errors.New("x")
 		}
 		links, err := Commit(context.Background(), &types.Repo{Name: api.RepoName(repoName)}, commit)
@@ -238,7 +238,7 @@ func TestCommit(t *testing.T) {
 		repoupdater.MockRepoLookup = func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
 			return &protocol.RepoLookupResult{}, nil
 		}
-		db.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
+		database.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
 			if want := api.RepoName("myrepo"); repo != want {
 				t.Errorf("got %q, want %q", repo, want)
 			}
@@ -264,7 +264,7 @@ func TestCommit(t *testing.T) {
 		repoupdater.MockRepoLookup = func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
 			return nil, errors.New("x")
 		}
-		db.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
+		database.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
 			return nil, errors.New("x")
 		}
 		links, err := Commit(context.Background(), &types.Repo{Name: "myrepo"}, commit)

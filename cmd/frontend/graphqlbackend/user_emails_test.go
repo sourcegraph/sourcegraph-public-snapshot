@@ -9,17 +9,17 @@ import (
 	"github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/gqltesting"
 
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestSetUserEmailVerified(t *testing.T) {
 	resetMocks()
-	db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+	database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
 		return &types.User{SiteAdmin: true}, nil
 	}
-	db.Mocks.UserEmails.SetVerified = func(context.Context, int32, string, bool) error {
+	database.Mocks.UserEmails.SetVerified = func(context.Context, int32, string, bool) error {
 		return nil
 	}
 
@@ -78,7 +78,7 @@ func TestSetUserEmailVerified(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			calledGrantPendingPermissions := false
-			db.Mocks.Authz.GrantPendingPermissions = func(context.Context, *db.GrantPendingPermissionsArgs) error {
+			database.Mocks.Authz.GrantPendingPermissions = func(context.Context, *database.GrantPendingPermissionsArgs) error {
 				calledGrantPendingPermissions = true
 				return nil
 			}
@@ -94,13 +94,13 @@ func TestSetUserEmailVerified(t *testing.T) {
 
 func TestResendUserEmailVerification(t *testing.T) {
 	resetMocks()
-	db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
 		return &types.User{ID: id, SiteAdmin: true}, nil
 	}
-	db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+	database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
 		return &types.User{ID: 1, SiteAdmin: true}, nil
 	}
-	db.Mocks.UserEmails.SetLastVerification = func(context.Context, int32, string, string) error {
+	database.Mocks.UserEmails.SetLastVerification = func(context.Context, int32, string, string) error {
 		return nil
 	}
 
@@ -112,7 +112,7 @@ func TestResendUserEmailVerification(t *testing.T) {
 	tests := []struct {
 		name            string
 		gqlTests        []*gqltesting.Test
-		email           *db.UserEmail
+		email           *database.UserEmail
 		expectEmailSent bool
 	}{
 		{
@@ -136,7 +136,7 @@ func TestResendUserEmailVerification(t *testing.T) {
 			`,
 				},
 			},
-			email: &db.UserEmail{
+			email: &database.UserEmail{
 				Email:  "alice@example.com",
 				UserID: 1,
 			},
@@ -163,7 +163,7 @@ func TestResendUserEmailVerification(t *testing.T) {
 			`,
 				},
 			},
-			email: &db.UserEmail{
+			email: &database.UserEmail{
 				Email:      "alice@example.com",
 				UserID:     1,
 				VerifiedAt: &knownTime,
@@ -192,7 +192,7 @@ func TestResendUserEmailVerification(t *testing.T) {
 					},
 				},
 			},
-			email: &db.UserEmail{
+			email: &database.UserEmail{
 				Email:      "alice@example.com",
 				UserID:     1,
 				VerifiedAt: &knownTime,
@@ -221,7 +221,7 @@ func TestResendUserEmailVerification(t *testing.T) {
 					},
 				},
 			},
-			email: &db.UserEmail{
+			email: &database.UserEmail{
 				Email:  "alice@example.com",
 				UserID: 1,
 				LastVerificationSentAt: func() *time.Time {
@@ -239,13 +239,13 @@ func TestResendUserEmailVerification(t *testing.T) {
 				emailSent = true
 				return nil
 			}
-			db.Mocks.UserEmails.Get = func(id int32, email string) (string, bool, error) {
+			database.Mocks.UserEmails.Get = func(id int32, email string) (string, bool, error) {
 				if email != test.email.Email {
 					return "", false, fmt.Errorf("oh no!")
 				}
 				return test.email.Email, test.email.VerifiedAt != nil, nil
 			}
-			db.Mocks.UserEmails.GetLatestVerificationSentEmail = func(context.Context, string) (*db.UserEmail, error) {
+			database.Mocks.UserEmails.GetLatestVerificationSentEmail = func(context.Context, string) (*database.UserEmail, error) {
 				return test.email, nil
 			}
 

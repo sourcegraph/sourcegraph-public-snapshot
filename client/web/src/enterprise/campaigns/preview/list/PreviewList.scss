@@ -6,7 +6,7 @@
                 auto,
                 1fr
             )
-            [diffstat] min-content [end];
+            [commit_changes] min-content [diffstat] min-content [end];
         align-items: center;
     }
 }

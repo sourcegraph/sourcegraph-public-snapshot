@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 )
 
 func InsertTestOrg(t *testing.T, name string) (orgID int32) {

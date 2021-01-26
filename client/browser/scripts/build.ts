@@ -1,6 +1,6 @@
 import signale from 'signale'
 import webpack from 'webpack'
-import config from '../config/webpack/production.config'
+import { config } from '../config/webpack/production.config'
 import shelljs from 'shelljs'
 import * as tasks from './tasks'
 
