@@ -26,7 +26,8 @@ export const SupersedingCampaignSpecAlert: React.FunctionComponent<SupersedingCa
                     <CreationIcon className="icon icon-inline mr-2" />
                 </div>
                 <div className="flex-grow-1">
-                    A <Link to={applyURL}>newer campaign spec</Link> was uploaded <Timestamp date={createdAt} />.
+                    A <Link to={applyURL}>modified campaign spec</Link> was uploaded but not applied{' '}
+                    <Timestamp date={createdAt} />.
                 </div>
             </div>
         </DismissibleAlert>
