@@ -85,7 +85,7 @@ func redactField(buf string, v interface{}, fields ...*string) (string, error) {
 // UnRedactExternalServiceConfig will replace redacted fields with their undredacted form from the 'old' ExternalService.
 // You should call this when accepting updated config from a user that may have been
 // previously redacted, and pass in the unredacted form directly from the DB as the 'old' parameter
-func (e *ExternalService) UnRedactExternalServiceConfig(old *ExternalService) error {
+func (e *ExternalService) UnredactConfig(old *ExternalService) error {
 	if old.Kind != e.Kind {
 		return fmt.Errorf(
 			"UnRedactExternalServiceConfig: unmatched external service kinds, old: %q, e: %q",
