@@ -36,20 +36,19 @@ import { StreamingProgress } from './progress/StreamingProgress'
 import { StreamingSearchResultsFilterBars } from './StreamingSearchResultsFilterBars'
 import {
     CaseSensitivityProps,
-    parseSearchURL,
     PatternTypeProps,
     SearchStreamingProps,
     resolveVersionContext,
-    MutableVersionContextProps,
     ParsedSearchQueryProps,
+    MutableVersionContextProps,
 } from '../..'
 
 export interface StreamingSearchResultsProps
     extends SearchStreamingProps,
         Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
         Pick<PatternTypeProps, 'patternType'>,
-        MutableVersionContextProps,
-        CaseSensitivityProps,
+        Pick<MutableVersionContextProps, 'versionContext' | 'availableVersionContexts' | 'previousVersionContext'>,
+        Pick<CaseSensitivityProps, 'caseSensitive'>,
         SettingsCascadeProps,
         ExtensionsControllerProps<'executeCommand' | 'extHostAPI' | 'services'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
@@ -101,7 +100,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
         if (query_data.query?.field_type && query_data.query.field_type.value_diff > 0) {
             telemetryService.log('DiffSearchResultsQueried')
         }
-    }, [caseSensitive, location.search, query, telemetryService])
+    }, [caseSensitive, query, telemetryService])
 
     const trace = useMemo(() => new URLSearchParams(location.search).get('trace') ?? undefined, [location.search])
     const results = useObservable(
