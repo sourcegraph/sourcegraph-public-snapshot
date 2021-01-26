@@ -30,7 +30,7 @@ func TestRoundTripRedactExternalServiceConfig(t *testing.T) {
 		Kind:   extsvc.KindGitHub,
 		Config: old,
 	}
-	if err := RedactExternalServiceConfig(&svc); err != nil {
+	if err := svc.RedactExternalServiceConfig(); err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
@@ -61,7 +61,7 @@ func TestRoundTripRedactExternalServiceConfig(t *testing.T) {
 		Config: string(buf),
 	}
 	// unredact fields in newSvc config
-	if err := UnRedactExternalServiceConfig(&oldSvc, &newSvc); err != nil {
+	if err := newSvc.UnRedactExternalServiceConfig(&oldSvc); err != nil {
 		t.Errorf("unexpected error: %s", err)
 	}
 
