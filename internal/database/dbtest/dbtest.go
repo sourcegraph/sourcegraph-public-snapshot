@@ -65,8 +65,11 @@ func NewDB(t testing.TB, dsn string) *sql.DB {
 	config.Path = "/" + dbname
 	testDB := dbConn(t, config)
 
-	for _, databaseName := range dbconn.PostgresDatabaseNames {
-		m, err := dbconn.NewMigrate(testDB, databaseName)
+	for _, database := range []*dbconn.Database{
+		dbconn.Frontend,
+		dbconn.CodeIntel,
+	} {
+		m, err := dbconn.NewMigrate(testDB, database)
 		if err != nil {
 			t.Fatalf("failed to construct migrations: %s", err)
 		}
