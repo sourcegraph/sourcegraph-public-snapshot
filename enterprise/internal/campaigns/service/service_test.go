@@ -131,6 +131,11 @@ func TestServicePermissionLevels(t *testing.T) {
 				tc.assertFunc(t, err)
 			})
 
+			t.Run("ReenqueueChangeset", func(t *testing.T) {
+				_, _, err := svc.ReenqueueChangeset(currentUserCtx, changeset.ID)
+				tc.assertFunc(t, err)
+			})
+
 			t.Run("CloseCampaign", func(t *testing.T) {
 				_, err := svc.CloseCampaign(currentUserCtx, campaign.ID, false)
 				tc.assertFunc(t, err)
@@ -315,6 +320,49 @@ func TestService(t *testing.T) {
 
 		// should result in a not found error
 		if err := svc.EnqueueChangesetSync(ctx, changeset.ID); !errcode.IsNotFound(err) {
+			t.Fatalf("expected not-found error but got %v", err)
+		}
+	})
+
+	t.Run("ReenqueueChangeset", func(t *testing.T) {
+		spec := testCampaignSpec(admin.ID)
+		if err := s.CreateCampaignSpec(ctx, spec); err != nil {
+			t.Fatal(err)
+		}
+
+		campaign := testCampaign(admin.ID, spec)
+		if err := s.CreateCampaign(ctx, campaign); err != nil {
+			t.Fatal(err)
+		}
+
+		changeset := testChangeset(rs[0].ID, campaign.ID, campaigns.ChangesetExternalStateOpen)
+		if err := s.CreateChangeset(ctx, changeset); err != nil {
+			t.Fatal(err)
+		}
+
+		ct.SetChangesetFailed(t, ctx, s, changeset)
+
+		if _, _, err := svc.ReenqueueChangeset(ctx, changeset.ID); err != nil {
+			t.Fatal(err)
+		}
+
+		ct.ReloadAndAssertChangeset(t, ctx, s, changeset, ct.ChangesetAssertions{
+			Repo:          rs[0].ID,
+			ExternalState: campaigns.ChangesetExternalStateOpen,
+			ExternalID:    "ext-id-5",
+
+			// The important fields:
+			ReconcilerState: campaigns.ReconcilerStateQueued,
+			NumResets:       0,
+			NumFailures:     0,
+			FailureMessage:  nil,
+		})
+
+		// rs[0] is filtered out
+		ct.MockRepoPermissions(t, user.ID, rs[1].ID, rs[2].ID, rs[3].ID)
+
+		// should result in a not found error
+		if _, _, err := svc.ReenqueueChangeset(ctx, changeset.ID); !errcode.IsNotFound(err) {
 			t.Fatalf("expected not-found error but got %v", err)
 		}
 	})

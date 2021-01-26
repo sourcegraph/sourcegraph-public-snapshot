@@ -418,40 +418,10 @@ func (s *Service) EnqueueChangesetSync(ctx context.Context, id int64) (err error
 	return nil
 }
 
-func (s *Service) ViewerCanAdministerChangeset(ctx context.Context, changeset *campaigns.Changeset, repo *types.Repo) (bool, error) {
-	// Cannot administer changesets where the user has no access to the repo.
-	if repo == nil {
-		return false, nil
-	}
-
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err == nil {
-		return true, nil
-	}
-
-	attachedCampaigns, _, err := s.store.ListCampaigns(ctx, store.ListCampaignsOpts{ChangesetID: changeset.ID})
-	if err != nil {
-		return false, err
-	}
-
-	userActor := actor.FromContext(ctx)
-	if !userActor.IsAuthenticated() {
-		return false, nil
-	}
-
-	// Check whether the user has admin permissions for one of the campaigns.
-	for _, c := range attachedCampaigns {
-		if c.InitialApplierID == userActor.UID {
-			return true, nil
-		}
-	}
-
-	return false, nil
-}
-
 // ReenqueueChangeset loads the given changeset from the database, checks
 // whether the actor in the context has permission to enqueue a reconciler run and then
 // enqueues it by calling ResetQueued.
-func (s *Service) ReenqueueChangeset(ctx context.Context, id int64) (changeset *campaigns.Changeset, err error) {
+func (s *Service) ReenqueueChangeset(ctx context.Context, id int64) (changeset *campaigns.Changeset, repo *types.Repo, err error) {
 	traceTitle := fmt.Sprintf("changeset: %d", id)
 	tr, ctx := trace.New(ctx, "service.RenqueueChangeset", traceTitle)
 	defer func() {
@@ -461,34 +431,52 @@ func (s *Service) ReenqueueChangeset(ctx context.Context, id int64) (changeset *
 
 	changeset, err = s.store.GetChangeset(ctx, store.GetChangesetOpts{ID: id})
 	if err != nil {
-		return nil, err
-	}
-
-	if changeset.ReconcilerState != campaigns.ReconcilerStateFailed {
-		return nil, errors.New("cannot re-enqueue changeset not in failed state")
+		return nil, nil, err
 	}
 
 	// 🚨 SECURITY: We use database.Repos.Get to check whether the user has access to
 	// the repository or not.
-	repo, err := database.ReposWith(s.store).Get(ctx, changeset.RepoID)
+	repo, err = database.ReposWith(s.store).Get(ctx, changeset.RepoID)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	// 🚨 SECURITY: ViewerCanReenqueueChangeset checks if the user has access to the changeset.
-	if access, err := s.ViewerCanAdministerChangeset(ctx, changeset, repo); err != nil {
-		return nil, err
-	} else if !access {
-		return nil, &backend.InsufficientAuthorizationError{Message: "No admin permission for the given changeset"}
+	attachedCampaigns, _, err := s.store.ListCampaigns(ctx, store.ListCampaignsOpts{ChangesetID: id})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Check whether the user has admin rights for one of the campaigns.
+	var (
+		authErr        error
+		hasAdminRights bool
+	)
+
+	for _, c := range attachedCampaigns {
+		err := backend.CheckSiteAdminOrSameUser(ctx, c.InitialApplierID)
+		if err != nil {
+			authErr = err
+		} else {
+			hasAdminRights = true
+			break
+		}
+	}
+
+	if !hasAdminRights {
+		return nil, nil, authErr
+	}
+
+	if changeset.ReconcilerState != campaigns.ReconcilerStateFailed {
+		return nil, nil, errors.New("cannot re-enqueue changeset not in failed state")
 	}
 
 	changeset.ResetQueued()
 
 	if err = s.store.UpdateChangeset(ctx, changeset); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return changeset, nil
+	return changeset, repo, nil
 }
 
 // checkNamespaceAccess checks whether the current user in the ctx has access

@@ -793,13 +793,9 @@ func (r *Resolver) ReenqueueChangeset(ctx context.Context, args *graphqlbackend.
 		return nil, ErrIDIsZero{}
 	}
 
-	// 🚨 SECURITY: EnqueueChangesetSync checks whether current user is authorized.
+	// 🚨 SECURITY: ReenqueueChangeset checks whether the current user is authorized and can administer the changeset.
 	svc := service.New(r.store)
-	changeset, err := svc.ReenqueueChangeset(ctx, changesetID)
-	if err != nil {
-		return nil, err
-	}
-	repo, err := database.ReposWith(r.store).Get(ctx, changeset.RepoID)
+	changeset, repo, err := svc.ReenqueueChangeset(ctx, changesetID)
 	if err != nil {
 		return nil, err
 	}

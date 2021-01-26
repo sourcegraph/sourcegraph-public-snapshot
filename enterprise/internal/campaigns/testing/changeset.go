@@ -132,6 +132,7 @@ type ChangesetAssertions struct {
 	Body  string
 
 	FailureMessage *string
+	NumResets      int64
 	NumFailures    int64
 
 	DetachFrom []int64
@@ -218,6 +219,10 @@ func AssertChangeset(t *testing.T, c *campaigns.Changeset, a ChangesetAssertions
 		t.Fatalf("changeset NumFailures wrong. want=%d, have=%d", want, have)
 	}
 
+	if have, want := c.NumResets, a.NumResets; have != want {
+		t.Fatalf("changeset NumResets wrong. want=%d, have=%d", want, have)
+	}
+
 	if have, want := c.ExternalBranch, a.ExternalBranch; have != want {
 		t.Fatalf("changeset ExternalBranch wrong. want=%s, have=%s", want, have)
 	}
@@ -285,7 +290,7 @@ var FailedChangesetFailureMessage = "Failed test"
 func SetChangesetFailed(t *testing.T, ctx context.Context, s UpdateChangeseter, c *campaigns.Changeset) {
 	t.Helper()
 
-	c.ReconcilerState = campaigns.ReconcilerStateErrored
+	c.ReconcilerState = campaigns.ReconcilerStateFailed
 	c.FailureMessage = &FailedChangesetFailureMessage
 	c.NumFailures = 5
 
