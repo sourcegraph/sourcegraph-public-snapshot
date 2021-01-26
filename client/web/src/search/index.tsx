@@ -44,13 +44,13 @@ export function parseSearchURLPatternType(query: string): SearchPatternType | un
  * Parses the version context out of the URL search params (the 'c' parameter). If the version context
  * is not present, return undefined.
  */
-export function parseSearchURLVersionContext(query: string): string | undefined {
+function parseSearchURLVersionContext(query: string): string | undefined {
     const searchParameters = new URLSearchParams(query)
     const context = searchParameters.get('c')
     return context ?? undefined
 }
 
-export function searchURLIsCaseSensitive(query: string): boolean {
+function searchURLIsCaseSensitive(query: string): boolean {
     const globalCase = findFilter(parseSearchURLQuery(query) || '', 'case', FilterKind.Global)
     if (globalCase?.value && globalCase.value.type === 'literal') {
         // if `case:` filter exists in the query, override the existing case: query param
