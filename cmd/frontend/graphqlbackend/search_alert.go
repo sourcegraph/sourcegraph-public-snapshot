@@ -511,14 +511,14 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 	}
 	return buildAlert(proposedQueries, description)
 }
-func alertForRepoLimitErr(err *errRepoLimit) *searchAlert {
+func alertForRepoLimitErr(err *repoLimitError) *searchAlert {
 	return &searchAlert{
 		prometheusType: "exceeded_diff_commit_search_limit",
 		title:          fmt.Sprintf("Too many matching repositories for %s search to handle", err.ResultType),
 		description:    fmt.Sprintf(`%s search can currently only handle searching over %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`, strings.Title(err.ResultType), err.Max),
 	}
 }
-func alertForTimeLimitErr(err *errTimeLimit) *searchAlert {
+func alertForTimeLimitErr(err *timeLimitError) *searchAlert {
 	return &searchAlert{
 		prometheusType: "exceeded_diff_commit_with_time_search_limit",
 		title:          fmt.Sprintf("Too many matching repositories for %s search to handle", err.ResultType),
@@ -542,7 +542,7 @@ func alertForStructuralSearchSearcher() *searchAlert {
 	}
 }
 
-func alertForStructuralSearchNoIndexedRepos(err *errStructuralSearchNoIndexedRepos) *searchAlert {
+func alertForStructuralSearchNoIndexedRepos(err *structuralSearchNoIndexedReposError) *searchAlert {
 	return &searchAlert{
 		prometheusType: "structural_search_on_zero_indexed_repos",
 		title:          "Unindexed repositories or repository revisions with structural search",
@@ -550,7 +550,7 @@ func alertForStructuralSearchNoIndexedRepos(err *errStructuralSearchNoIndexedRep
 	}
 }
 
-func alertForStructuralSearchNotSet(err *errStructuralSearchNotSet) *searchAlert {
+func alertForStructuralSearchNotSet(err *structuralSearchNotSetError) *searchAlert {
 	return &searchAlert{
 		prometheusType: "structural_search_not_set",
 		title:          "No results",
@@ -563,7 +563,7 @@ func alertForStructuralSearchNotSet(err *errStructuralSearchNotSet) *searchAlert
 	}
 }
 
-func alertForMissingRepoRevs(err *errMissingRepoRevs) *searchAlert {
+func alertForMissingRepoRevs(err *missingRepoRevsError) *searchAlert {
 	var description string
 	if len(err.missingRepoRevs) == 1 {
 		if len(err.missingRepoRevs[0].RevSpecs()) == 1 {
@@ -647,11 +647,11 @@ func (searchAlert) Stats(context.Context) (*searchResultsStats, error) { return 
 func alertForError(err error) *searchAlert {
 	var (
 		alert *searchAlert
-		iErr  *errStructuralSearchNoIndexedRepos
-		mErr  *errMissingRepoRevs
-		rErr  *errRepoLimit
-		sErr  *errStructuralSearchNotSet
-		tErr  *errTimeLimit
+		iErr  *structuralSearchNoIndexedReposError
+		mErr  *missingRepoRevsError
+		rErr  *repoLimitError
+		sErr  *structuralSearchNotSetError
+		tErr  *timeLimitError
 	)
 	if errors.As(err, &mErr) {
 		alert = alertForMissingRepoRevs(mErr)
@@ -659,9 +659,9 @@ func alertForError(err error) *searchAlert {
 		alert = alertForStructuralSearchNotSet(sErr)
 	} else if errors.As(err, &iErr) {
 		alert = alertForStructuralSearchNoIndexedRepos(iErr)
-	} else if errors.Is(err, errStructuralSearchMem) {
+	} else if errors.Is(err, structuralSearchMemError) {
 		alert = alertForStructuralSearchMem()
-	} else if errors.Is(err, errStructuralSearchSearcher) {
+	} else if errors.Is(err, structuralSearchSearcherError) {
 		alert = alertForStructuralSearchSearcher()
 	} else if errors.As(err, &rErr) {
 		alert = alertForRepoLimitErr(rErr)
@@ -672,7 +672,7 @@ func alertForError(err error) *searchAlert {
 }
 
 // unhandledError returns the first unhandled error we find.
-func unhandledError(e error) (u error) {
+func unhandledError(e error) error {
 	if e == nil {
 		return nil
 	}
@@ -683,18 +683,10 @@ func unhandledError(e error) (u error) {
 	default:
 		errs = []error{e}
 	}
-LOOP:
 	for _, err := range errs {
-		switch err.(type) {
-		case *errStructuralSearchNoIndexedRepos:
-		case *errMissingRepoRevs:
-		case *errRepoLimit:
-		case *errStructuralSearchNotSet:
-		case *errTimeLimit:
-		default:
-			u = err
-			break LOOP
+		if a := alertForError(err); a == nil {
+			return err
 		}
 	}
-	return u
+	return nil
 }

@@ -1622,14 +1622,14 @@ type DiffCommitError struct {
 	Max        int
 }
 
-type errRepoLimit DiffCommitError
-type errTimeLimit DiffCommitError
+type repoLimitError DiffCommitError
+type timeLimitError DiffCommitError
 
-func (*errRepoLimit) Error() string {
+func (*repoLimitError) Error() string {
 	return "repo limit error"
 }
 
-func (*errTimeLimit) Error() string {
+func (*timeLimitError) Error() string {
 	return "time limit error"
 }
 
@@ -1649,10 +1649,10 @@ func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameter
 
 	limits := searchrepos.SearchLimits()
 	if max := limits.CommitDiffMaxRepos; !hasTimeFilter && len(repos) > max {
-		return &errRepoLimit{ResultType: resultType, Max: max}
+		return &repoLimitError{ResultType: resultType, Max: max}
 	}
 	if max := limits.CommitDiffWithTimeFilterMaxRepos; hasTimeFilter && len(repos) > max {
-		return &errTimeLimit{ResultType: resultType, Max: max}
+		return &timeLimitError{ResultType: resultType, Max: max}
 	}
 	return nil
 }
@@ -2058,11 +2058,11 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	tr.LazyPrintf("results=%d %s", len(results), &common)
 
 	if len(results) == 0 && r.patternType != query.SearchTypeStructural && comby.MatchHoleRegexp.MatchString(r.originalQuery) {
-		multiErr = multierror.Append(multiErr, &errStructuralSearchNotSet{originalQuery: r.originalQuery})
+		multiErr = multierror.Append(multiErr, &structuralSearchNotSetError{originalQuery: r.originalQuery})
 	}
 
 	if len(resolved.MissingRepoRevs) > 0 {
-		multiErr = multierror.Append(multiErr, &errMissingRepoRevs{r.patternType, resolved.MissingRepoRevs})
+		multiErr = multierror.Append(multiErr, &missingRepoRevsError{r.patternType, resolved.MissingRepoRevs})
 	}
 
 	multiErr = convertErrorsForStructuralSearch(multiErr)
@@ -2081,12 +2081,12 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	return &resultsResolver, multiErr.ErrorOrNil()
 }
 
-type errMissingRepoRevs struct {
+type missingRepoRevsError struct {
 	patternType     query.SearchType
 	missingRepoRevs []*search.RepositoryRevisions
 }
 
-func (*errMissingRepoRevs) Error() string {
+func (*missingRepoRevsError) Error() string {
 	return "missing repository revisions"
 }
 

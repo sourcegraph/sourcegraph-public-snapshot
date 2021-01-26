@@ -184,22 +184,22 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 	}
 }
 
-type errStructuralSearchNotSet struct {
+type structuralSearchNotSetError struct {
 	originalQuery string
 }
 
-func (*errStructuralSearchNotSet) Error() string {
+func (*structuralSearchNotSetError) Error() string {
 	return "structural search not set"
 }
 
-var errStructuralSearchMem = fmt.Errorf("structural search needs more memory")
-var errStructuralSearchSearcher = fmt.Errorf("searcher needs more memory")
+var structuralSearchMemError = fmt.Errorf("structural search needs more memory")
+var structuralSearchSearcherError = fmt.Errorf("searcher needs more memory")
 
-type errStructuralSearchNoIndexedRepos struct {
+type structuralSearchNoIndexedReposError struct {
 	msg string
 }
 
-func (*errStructuralSearchNoIndexedRepos) Error() string {
+func (*structuralSearchNoIndexedReposError) Error() string {
 	return "no indexed repositories for structural search"
 }
 
@@ -211,9 +211,9 @@ func convertErrorsForStructuralSearch(multiErr *multierror.Error) (newMultiErr *
 	}
 	for _, err := range multiErr.Errors {
 		if strings.Contains(err.Error(), "Worker_oomed") || strings.Contains(err.Error(), "Worker_exited_abnormally") {
-			newMultiErr = multierror.Append(newMultiErr, errStructuralSearchMem)
+			newMultiErr = multierror.Append(newMultiErr, structuralSearchMemError)
 		} else if strings.Contains(err.Error(), "Out of memory") {
-			newMultiErr = multierror.Append(newMultiErr, errStructuralSearchSearcher)
+			newMultiErr = multierror.Append(newMultiErr, structuralSearchSearcherError)
 		} else if strings.Contains(err.Error(), "no indexed repositories for structural search") {
 			var msg string
 			if envvar.SourcegraphDotComMode() {
@@ -221,7 +221,7 @@ func convertErrorsForStructuralSearch(multiErr *multierror.Error) (newMultiErr *
 			} else {
 				msg = "Learn more about managing indexed repositories in our documentation: https://docs.sourcegraph.com/admin/search#indexed-search."
 			}
-			newMultiErr = multierror.Append(newMultiErr, &errStructuralSearchNoIndexedRepos{msg: msg})
+			newMultiErr = multierror.Append(newMultiErr, &structuralSearchNoIndexedReposError{msg: msg})
 		} else {
 			newMultiErr = multierror.Append(newMultiErr, err)
 		}
