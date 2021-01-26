@@ -645,7 +645,6 @@ func (searchAlert) Suggestions(context.Context, *searchSuggestionsArgs) ([]*sear
 func (searchAlert) Stats(context.Context) (*searchResultsStats, error) { return nil, nil }
 
 func alertForError(err error) *searchAlert {
-	// TODO: check if it works for pointers as well
 	var (
 		alert *searchAlert
 		iErr  *errStructuralSearchNoIndexedRepos
@@ -674,77 +673,25 @@ func alertForError(err error) *searchAlert {
 
 // unhandledError returns the first unhandled error we find.
 func unhandledError(e error) (u error) {
-	var iter errIter
+	var errs []error
 	switch e.(type) {
 	case *multierror.Error:
-		iter = newMultiErrIter(e.(*multierror.Error))
+		errs = e.(*multierror.Error).Errors
 	default:
-		iter = newWrappedIter(e)
+		errs = []error{e}
 	}
 LOOP:
-	for iter.next() {
-		switch iter.item().(type) {
+	for _, err := range errs {
+		switch err.(type) {
 		case *errStructuralSearchNoIndexedRepos:
 		case *errMissingRepoRevs:
 		case *errRepoLimit:
 		case *errStructuralSearchNotSet:
 		case *errTimeLimit:
 		default:
-			u = iter.item()
+			u = err
 			break LOOP
 		}
 	}
 	return u
-}
-
-type errIter interface {
-	next() bool
-	item() error
-}
-
-func newMultiErrIter(err *multierror.Error) *multiErrIter {
-	return &multiErrIter{err.Errors, true}
-}
-
-type multiErrIter struct {
-	errors []error
-	first  bool
-}
-
-func (i *multiErrIter) next() bool {
-	if i.first {
-		i.first = false
-		return len(i.errors) > 0
-	}
-	if len(i.errors) > 1 {
-		i.errors = i.errors[1:]
-		return true
-	}
-	return false
-}
-
-func (i *multiErrIter) item() error {
-	return i.errors[0]
-}
-
-func newWrappedIter(err error) *wrappedErrIter {
-	return &wrappedErrIter{err, true}
-}
-
-type wrappedErrIter struct {
-	err   error
-	first bool
-}
-
-func (i *wrappedErrIter) next() bool {
-	if i.first {
-		i.first = false
-	} else {
-		i.err = errors.Unwrap(i.err)
-	}
-	return i.err != nil
-}
-
-func (i *wrappedErrIter) item() error {
-	return i.err
 }
