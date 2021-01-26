@@ -354,7 +354,7 @@ func TestRepos_List(t *testing.T) {
 	}
 }
 
-func Test_GetUserAddedRepos(t *testing.T) {
+func TestRepos_ListRepoNames_userID(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -423,11 +423,11 @@ func Test_GetUserAddedRepos(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := []api.RepoName{
-		repo.Name,
+	want := []*types.RepoName{
+		{ID: repo.ID, Name: repo.Name},
 	}
 
-	have, err := Repos(db).GetUserAddedRepoNames(ctx, user.ID)
+	have, err := Repos(db).ListRepoNames(ctx, ReposListOptions{UserID: user.ID})
 	if err != nil {
 		t.Fatal(err)
 	}

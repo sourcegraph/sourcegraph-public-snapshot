@@ -243,7 +243,7 @@ const getRepoByQueryFmtstr = `
 SELECT %s
 FROM %%s
 WHERE
-	deleted_at IS NULL
+	repo.deleted_at IS NULL
 AND %%s   -- Populates "queryConds"
 AND (%%s) -- Populates "authzConds"
 %%s       -- Populates "querySuffix"
@@ -457,6 +457,9 @@ type ReposListOptions struct {
 	// IDs of repos to list. When zero-valued, this is omitted from the predicate set.
 	IDs []api.RepoID
 
+	// Limits the set of results to repositories added by the user.
+	UserID int32
+
 	// ServiceTypes of repos to list. When zero-valued, this is omitted from the predicate set.
 	ServiceTypes []string
 
@@ -633,6 +636,14 @@ func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, minimal bool, opt
 			serviceIDQuery = append(serviceIDQuery, sqlf.Sprintf("%s", id))
 		}
 		fromClause = sqlf.Sprintf("repo JOIN external_service_repos e ON (repo.id = e.repo_id AND e.external_service_id IN (%s))", sqlf.Join(serviceIDQuery, ","))
+	} else if opt.UserID != 0 {
+		fromClause = sqlf.Sprintf(`
+			repo
+				LEFT JOIN external_service_repos esr ON repo.id = esr.repo_id
+				LEFT JOIN external_services es ON esr.external_service_id = es.id
+				LEFT JOIN user_public_repos upr ON repo.id = upr.repo_id
+		`)
+		conds = append(conds, sqlf.Sprintf("%d IN (es.namespace_user_id, upr.user_id)", opt.UserID))
 	}
 
 	queryConds := sqlf.Sprintf("TRUE")
@@ -1201,54 +1212,6 @@ func (*RepoStore) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error)
 	}
 
 	return conds, nil
-}
-
-// GetUserAddedRepoNames returns name of all repositories added by the given user.
-func (s *RepoStore) GetUserAddedRepoNames(ctx context.Context, userID int32) ([]api.RepoName, error) {
-	s.ensureStore()
-
-	authzConds, err := AuthzQueryConds(ctx, s.Handle().DB())
-	if err != nil {
-		return nil, err
-	}
-
-	const fmtString = `
-SELECT DISTINCT(repo.name) FROM repo
-JOIN external_service_repos esr ON repo.id = esr.repo_id
-WHERE
-	esr.external_service_id IN (
-		SELECT id from external_services
-		WHERE namespace_user_id = %s
-		AND deleted_at IS NULL
-	)
-AND (%s) -- Populates "authzConds"
-AND repo.deleted_at IS NULL
-`
-	q := sqlf.Sprintf(
-		fmtString,
-		userID,
-		authzConds, // 🚨 SECURITY: Enforce repository permissions
-	)
-
-	rows, err := s.Query(ctx, q)
-	if err != nil {
-		return nil, errors.Wrap(err, "getting user repos")
-	}
-	defer rows.Close()
-
-	var repoNames []api.RepoName
-	for rows.Next() {
-		var name api.RepoName
-		if err := rows.Scan(&name); err != nil {
-			return nil, err
-		}
-		repoNames = append(repoNames, name)
-	}
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return repoNames, nil
 }
 
 // parseCursorConds checks whether the query is using cursor-based pagination, and
