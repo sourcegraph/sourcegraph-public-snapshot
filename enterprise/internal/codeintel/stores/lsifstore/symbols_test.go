@@ -6,15 +6,14 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	protocol "github.com/sourcegraph/lsif-protocol"
 )
 
 func TestBuildSymbolTree(t *testing.T) {
 	symbolData := func(id uint64, children ...uint64) SymbolData {
 		return SymbolData{
-			ID:         id,
-			SymbolData: protocol.SymbolData{Text: fmt.Sprint(id)},
-			Children:   children,
+			ID:       id,
+			Text:     fmt.Sprint(id),
+			Children: children,
 		}
 	}
 	tests := []struct {
@@ -25,9 +24,9 @@ func TestBuildSymbolTree(t *testing.T) {
 			datas: []SymbolData{symbolData(1, 2), symbolData(2)},
 			want: []Symbol{
 				{
-					SymbolData: protocol.SymbolData{Text: "1"},
+					Text: "1",
 					Children: []Symbol{
-						{SymbolData: protocol.SymbolData{Text: "2"}},
+						{Text: "2"},
 					},
 				},
 			},
@@ -44,26 +43,26 @@ func TestBuildSymbolTree(t *testing.T) {
 			},
 			want: []Symbol{
 				{
-					SymbolData: protocol.SymbolData{Text: "10"},
+					Text: "10",
 					Children: []Symbol{
 						{
-							SymbolData: protocol.SymbolData{Text: "20"},
+							Text: "20",
 							Children: []Symbol{
 								{
-									SymbolData: protocol.SymbolData{Text: "21"},
+									Text: "21",
 									Children: []Symbol{
-										{SymbolData: protocol.SymbolData{Text: "23"}},
+										{Text: "23"},
 									},
 								},
 								{
-									SymbolData: protocol.SymbolData{Text: "22"},
+									Text: "22",
 								},
 							},
 						},
 						{
-							SymbolData: protocol.SymbolData{Text: "30"},
+							Text: "30",
 							Children: []Symbol{
-								{SymbolData: protocol.SymbolData{Text: "31"}},
+								{Text: "31"},
 							},
 						},
 					},
@@ -94,7 +93,7 @@ func TestFindPathToSymbolInTree(t *testing.T) {
 			wantOK: false,
 		},
 		{
-			root:   Symbol{SymbolData: protocol.SymbolData{Text: "*"}},
+			root:   Symbol{Text: "*"},
 			want:   nil,
 			wantOK: true,
 		},
@@ -109,7 +108,7 @@ func TestFindPathToSymbolInTree(t *testing.T) {
 							{
 								Children: []Symbol{
 									{}, {},
-									{SymbolData: protocol.SymbolData{Text: "*"}},
+									{Text: "*"},
 									{},
 								},
 							},
@@ -138,14 +137,14 @@ func TestFindPathToSymbolInTree(t *testing.T) {
 func TestTrimSymbolTree(t *testing.T) {
 	tree := []Symbol{
 		{
-			SymbolData: protocol.SymbolData{Text: "0"},
+			Text: "0",
 			Children: []Symbol{
-				{SymbolData: protocol.SymbolData{Text: "0a"}},
+				{Text: "0a"},
 				{
-					SymbolData: protocol.SymbolData{Text: "0b"},
+					Text: "0b",
 					Children: []Symbol{
-						{SymbolData: protocol.SymbolData{Text: "0b0"}},
-						{SymbolData: protocol.SymbolData{Text: "0b1"}},
+						{Text: "0b0"},
+						{Text: "0b1"},
 					},
 				},
 			},
@@ -158,12 +157,12 @@ func TestTrimSymbolTree(t *testing.T) {
 
 	want := []Symbol{
 		{
-			SymbolData: protocol.SymbolData{Text: "0"},
+			Text: "0",
 			Children: []Symbol{
 				{
-					SymbolData: protocol.SymbolData{Text: "0b"},
+					Text: "0b",
 					Children: []Symbol{
-						{SymbolData: protocol.SymbolData{Text: "0b1"}},
+						{Text: "0b1"},
 					},
 				},
 			},

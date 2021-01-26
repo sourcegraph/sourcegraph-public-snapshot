@@ -5,8 +5,6 @@ import { map } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
 import { useObservable } from '../../../../shared/src/util/useObservable'
 import { requestGraphQL } from '../../backend/graphql'
-import { BreadcrumbSetters } from '../../components/Breadcrumbs'
-import { RepoHeaderContributionsLifecycleProps } from '../../repo/RepoHeader'
 import { eventLogger } from '../../tracking/eventLogger'
 import {
     RepositoryExpSymbolsFields,
@@ -73,9 +71,9 @@ const queryRepositorySymbols = (vars: RepositoryExpSymbolsVariables): Observable
 
 interface Props
     extends Pick<RepoRevisionContainerContext, 'repo' | 'resolvedRev'>,
-    SettingsCascadeProps,
-    SymbolsSidebarOptionsSetterProps,
-    SymbolsViewOptionsProps {
+        SettingsCascadeProps,
+        SymbolsSidebarOptionsSetterProps,
+        SymbolsViewOptionsProps {
     history: H.History
     location: H.Location
 }

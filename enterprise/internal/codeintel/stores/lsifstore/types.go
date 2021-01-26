@@ -71,6 +71,8 @@ type DiagnosticData struct {
 // TODO(sqs): when the schema for this settles, inline the fields instead of referring to the
 // external lsif-protocol package's type definitions, so that the persisted data format is
 // explicit and less likely to be accidentally changed.
+//
+// MARK
 type SymbolData struct {
 	ID uint64 // ID (unique within a bundle)
 

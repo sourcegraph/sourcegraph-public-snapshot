@@ -434,6 +434,7 @@ func (s *Store) Packages(ctx context.Context, bundleID int, prefix string, skip,
 
 // Symbols returns all symbols (subject to the filters).
 func (s *Store) Symbols(ctx context.Context, bundleID int, filters *gql.SymbolFilters, skip, take int) (_ []Symbol, _ int, err error) {
+	// MARK
 	ctx, endObservation := s.operations.symbols.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.Int("skip", skip),
@@ -470,8 +471,6 @@ func (s *Store) Symbols(ctx context.Context, bundleID int, filters *gql.SymbolFi
 					return true
 				}
 			}
-			// TODO(sqs): different ways of determining this based on the language and/or if the
-			// exported/unexported symbol tags are known to be in use?
 			return true // default to true
 		}
 		trimSymbolTree(&rootSymbols, func(symbol *Symbol) bool {
@@ -484,6 +483,7 @@ func (s *Store) Symbols(ctx context.Context, bundleID int, filters *gql.SymbolFi
 		})
 	}
 
+	// TODO(beyang): remove totalCount (appears unused, can always add later)
 	totalCount := len(rootSymbols) // TODO(sqs): doesnt account for skip/take
 
 	return rootSymbols, totalCount, nil
