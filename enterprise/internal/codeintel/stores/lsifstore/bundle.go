@@ -449,16 +449,24 @@ func (s *Store) Symbols(ctx context.Context, bundleID int, filters *gql.SymbolFi
 
 	rootSymbols := buildSymbolTree(symbolDatas, bundleID)
 
-	// Try to associate a moniker with each symbol.
-	allMonikers, err := s.readMonikerLocations(ctx, bundleID, "definitions", skip, take)
-	if err != nil {
-		return nil, 0, pkgerrors.Wrap(err, "store.ReadDefinitions")
-	}
-	for i := range rootSymbols {
-		WalkSymbolTree(&rootSymbols[i], func(symbol *Symbol) {
-			associateMoniker(symbol, allMonikers)
-		})
-	}
+	// NEXT:
+	//
+	// - Understand the relationship between RangeBasedDocumentSymbol + lsp.DocumentSymbol, what
+	//   we store in the DB, and the Symbol struct
+	// - Determine whether it makes sense to associate monikers to symbols at write time or read time
+	// - Finish addressing https://sourcegraph.slack.com/archives/D02FRPWF5/p1611687471010700
+	// - Make the tests pass in bundle_test.go (and the other tests in this package)
+
+	// // Try to associate a moniker with each symbol.
+	// allMonikers, err := s.readMonikerLocations(ctx, bundleID, "definitions", skip, take)
+	// if err != nil {
+	// 	return nil, 0, pkgerrors.Wrap(err, "store.ReadDefinitions")
+	// }
+	// for i := range rootSymbols {
+	// 	WalkSymbolTree(&rootSymbols[i], func(symbol *Symbol) {
+	// 		associateMoniker(symbol, allMonikers)
+	// 	})
+	// }
 
 	// Apply filters.
 	if filters != nil {

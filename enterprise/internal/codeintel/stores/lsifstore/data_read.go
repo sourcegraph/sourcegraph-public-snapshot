@@ -225,6 +225,7 @@ func (s *Store) readMonikerLocations(ctx context.Context, bundleID int, tableNam
 }
 
 func (s *Store) ReadSymbols(ctx context.Context, bundleID int) (_ []SymbolData, err error) {
+	// logg.Printf("# Store.ReadSymbols")
 	ctx, endObservation := s.operations.readSymbols.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 	}})
@@ -247,6 +248,9 @@ func (s *Store) ReadSymbols(ctx context.Context, bundleID int) (_ []SymbolData, 
 		if err != nil {
 			return nil, err
 		}
+		// if symbols[i].Text == "ToolInfo" {
+		// 	logg.Printf("# %d", len(symbols[i].Monikers))
+		// }
 	}
 
 	return symbols, nil
