@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/enforcement"
 	eauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/db"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
