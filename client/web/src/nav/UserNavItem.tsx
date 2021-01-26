@@ -1,8 +1,6 @@
 import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
 import * as H from 'history'
-import MenuDownIcon from 'mdi-react/MenuDownIcon'
-import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
