@@ -202,7 +202,7 @@ const ChangesetError: React.FunctionComponent<{
         } catch (error) {
             setIsLoading(asError(error))
         }
-    }, [])
+    }, [node.id, setNode])
 
     if (!node.error) {
         return null
