@@ -188,7 +188,7 @@ type errStructuralSearchNotSet struct {
 	originalQuery string
 }
 
-func (errStructuralSearchNotSet) Error() string {
+func (*errStructuralSearchNotSet) Error() string {
 	return "structural search not set"
 }
 
@@ -199,7 +199,7 @@ type errStructuralSearchNoIndexedRepos struct {
 	msg string
 }
 
-func (errStructuralSearchNoIndexedRepos) Error() string {
+func (*errStructuralSearchNoIndexedRepos) Error() string {
 	return "no indexed repositories for structural search"
 }
 
@@ -221,7 +221,7 @@ func convertErrorsForStructuralSearch(multiErr *multierror.Error) (newMultiErr *
 			} else {
 				msg = "Learn more about managing indexed repositories in our documentation: https://docs.sourcegraph.com/admin/search#indexed-search."
 			}
-			newMultiErr = multierror.Append(newMultiErr, errStructuralSearchNoIndexedRepos{msg: msg})
+			newMultiErr = multierror.Append(newMultiErr, &errStructuralSearchNoIndexedRepos{msg: msg})
 		} else {
 			newMultiErr = multierror.Append(newMultiErr, err)
 		}

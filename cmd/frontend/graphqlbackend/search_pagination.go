@@ -189,7 +189,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 	var alert *searchAlert
 
 	if len(resolved.MissingRepoRevs) > 0 {
-		alert = alertForMissingRepoRevs(errMissingRepoRevs{
+		alert = alertForMissingRepoRevs(&errMissingRepoRevs{
 			patternType:     r.patternType,
 			missingRepoRevs: resolved.MissingRepoRevs,
 		})

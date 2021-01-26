@@ -1625,11 +1625,11 @@ type DiffCommitError struct {
 type errRepoLimit DiffCommitError
 type errTimeLimit DiffCommitError
 
-func (errRepoLimit) Error() string {
+func (*errRepoLimit) Error() string {
 	return "repo limit error"
 }
 
-func (errTimeLimit) Error() string {
+func (*errTimeLimit) Error() string {
 	return "time limit error"
 }
 
@@ -1649,10 +1649,10 @@ func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameter
 
 	limits := searchrepos.SearchLimits()
 	if max := limits.CommitDiffMaxRepos; !hasTimeFilter && len(repos) > max {
-		return errRepoLimit{ResultType: resultType, Max: max}
+		return &errRepoLimit{ResultType: resultType, Max: max}
 	}
 	if max := limits.CommitDiffWithTimeFilterMaxRepos; hasTimeFilter && len(repos) > max {
-		return errTimeLimit{ResultType: resultType, Max: max}
+		return &errTimeLimit{ResultType: resultType, Max: max}
 	}
 	return nil
 }
@@ -2058,11 +2058,11 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	tr.LazyPrintf("results=%d %s", len(results), &common)
 
 	if len(results) == 0 && r.patternType != query.SearchTypeStructural && comby.MatchHoleRegexp.MatchString(r.originalQuery) {
-		multiErr = multierror.Append(multiErr, errStructuralSearchNotSet{originalQuery: r.originalQuery})
+		multiErr = multierror.Append(multiErr, &errStructuralSearchNotSet{originalQuery: r.originalQuery})
 	}
 
 	if len(resolved.MissingRepoRevs) > 0 {
-		multiErr = multierror.Append(multiErr, errMissingRepoRevs{r.patternType, resolved.MissingRepoRevs})
+		multiErr = multierror.Append(multiErr, &errMissingRepoRevs{r.patternType, resolved.MissingRepoRevs})
 	}
 
 	multiErr = convertErrorsForStructuralSearch(multiErr)
@@ -2086,7 +2086,7 @@ type errMissingRepoRevs struct {
 	missingRepoRevs []*search.RepositoryRevisions
 }
 
-func (errMissingRepoRevs) Error() string {
+func (*errMissingRepoRevs) Error() string {
 	return "missing repository revisions"
 }
 

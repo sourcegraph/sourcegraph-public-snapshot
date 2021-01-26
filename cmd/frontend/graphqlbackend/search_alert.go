@@ -511,14 +511,14 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 	}
 	return buildAlert(proposedQueries, description)
 }
-func alertForRepoLimitErr(err errRepoLimit) *searchAlert {
+func alertForRepoLimitErr(err *errRepoLimit) *searchAlert {
 	return &searchAlert{
 		prometheusType: "exceeded_diff_commit_search_limit",
 		title:          fmt.Sprintf("Too many matching repositories for %s search to handle", err.ResultType),
 		description:    fmt.Sprintf(`%s search can currently only handle searching over %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`, strings.Title(err.ResultType), err.Max),
 	}
 }
-func alertForTimeLimitErr(err errTimeLimit) *searchAlert {
+func alertForTimeLimitErr(err *errTimeLimit) *searchAlert {
 	return &searchAlert{
 		prometheusType: "exceeded_diff_commit_with_time_search_limit",
 		title:          fmt.Sprintf("Too many matching repositories for %s search to handle", err.ResultType),
@@ -542,7 +542,7 @@ func alertForStructuralSearchSearcher() *searchAlert {
 	}
 }
 
-func alertForStructuralSearchNoIndexedRepos(err errStructuralSearchNoIndexedRepos) *searchAlert {
+func alertForStructuralSearchNoIndexedRepos(err *errStructuralSearchNoIndexedRepos) *searchAlert {
 	return &searchAlert{
 		prometheusType: "structural_search_on_zero_indexed_repos",
 		title:          "Unindexed repositories or repository revisions with structural search",
@@ -550,7 +550,7 @@ func alertForStructuralSearchNoIndexedRepos(err errStructuralSearchNoIndexedRepo
 	}
 }
 
-func alertForStructuralSearchNotSet(err errStructuralSearchNotSet) *searchAlert {
+func alertForStructuralSearchNotSet(err *errStructuralSearchNotSet) *searchAlert {
 	return &searchAlert{
 		prometheusType: "structural_search_not_set",
 		title:          "No results",
@@ -563,7 +563,7 @@ func alertForStructuralSearchNotSet(err errStructuralSearchNotSet) *searchAlert 
 	}
 }
 
-func alertForMissingRepoRevs(err errMissingRepoRevs) *searchAlert {
+func alertForMissingRepoRevs(err *errMissingRepoRevs) *searchAlert {
 	var description string
 	if len(err.missingRepoRevs) == 1 {
 		if len(err.missingRepoRevs[0].RevSpecs()) == 1 {
@@ -645,13 +645,14 @@ func (searchAlert) Suggestions(context.Context, *searchSuggestionsArgs) ([]*sear
 func (searchAlert) Stats(context.Context) (*searchResultsStats, error) { return nil, nil }
 
 func alertForError(err error) *searchAlert {
+	// TODO: check if it works for pointers as well
 	var (
 		alert *searchAlert
-		iErr  errStructuralSearchNoIndexedRepos
-		mErr  errMissingRepoRevs
-		rErr  errRepoLimit
-		sErr  errStructuralSearchNotSet
-		tErr  errTimeLimit
+		iErr  *errStructuralSearchNoIndexedRepos
+		mErr  *errMissingRepoRevs
+		rErr  *errRepoLimit
+		sErr  *errStructuralSearchNotSet
+		tErr  *errTimeLimit
 	)
 	if errors.As(err, &mErr) {
 		alert = alertForMissingRepoRevs(mErr)
@@ -683,11 +684,11 @@ func unhandledError(e error) (u error) {
 LOOP:
 	for iter.next() {
 		switch iter.item().(type) {
-		case errStructuralSearchNoIndexedRepos:
-		case errMissingRepoRevs:
-		case errRepoLimit:
-		case errStructuralSearchNotSet:
-		case errTimeLimit:
+		case *errStructuralSearchNoIndexedRepos:
+		case *errMissingRepoRevs:
+		case *errRepoLimit:
+		case *errStructuralSearchNotSet:
+		case *errTimeLimit:
 		default:
 			u = iter.item()
 			break LOOP

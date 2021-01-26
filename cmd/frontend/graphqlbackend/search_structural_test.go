@@ -159,7 +159,7 @@ func TestConvertErrorsForStructuralSearch(t *testing.T) {
 				errors.New("some other error"),
 				errStructuralSearchSearcher,
 				errors.New("yet another error"),
-				errStructuralSearchNoIndexedRepos{msg: "Learn more about managing indexed repositories in our documentation: https://docs.sourcegraph.com/admin/search#indexed-search."},
+				&errStructuralSearchNoIndexedRepos{msg: "Learn more about managing indexed repositories in our documentation: https://docs.sourcegraph.com/admin/search#indexed-search."},
 			},
 		},
 	}

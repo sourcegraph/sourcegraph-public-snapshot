@@ -164,17 +164,17 @@ func TestAlertForDiffCommitSearchLimits(t *testing.T) {
 	}{
 		{
 			name:                 "diff_search_warns_on_repos_greater_than_search_limit",
-			multiErr:             multierror.Append(&multierror.Error{}, errRepoLimit{ResultType: "diff", Max: 50}),
+			multiErr:             multierror.Append(&multierror.Error{}, &errRepoLimit{ResultType: "diff", Max: 50}),
 			wantAlertDescription: `Diff search can currently only handle searching over 50 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`,
 		},
 		{
 			name:                 "commit_search_warns_on_repos_greater_than_search_limit",
-			multiErr:             multierror.Append(&multierror.Error{}, errRepoLimit{ResultType: "commit", Max: 50}),
+			multiErr:             multierror.Append(&multierror.Error{}, &errRepoLimit{ResultType: "commit", Max: 50}),
 			wantAlertDescription: `Commit search can currently only handle searching over 50 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`,
 		},
 		{
 			name:                 "commit_search_warns_on_repos_greater_than_search_limit_with_time_filter",
-			multiErr:             multierror.Append(&multierror.Error{}, errTimeLimit{ResultType: "commit", Max: 10000}),
+			multiErr:             multierror.Append(&multierror.Error{}, &errTimeLimit{ResultType: "commit", Max: 10000}),
 			wantAlertDescription: `Commit search can currently only handle searching over 10000 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`,
 		},
 	}
@@ -399,23 +399,28 @@ func TestAlertForError(t *testing.T) {
 		},
 		{
 			name:      "multi-error with 1 known error",
-			multiErr:  multierror.Append(&multierror.Error{}, errRepoLimit{ResultType: "diff", Max: 50}),
-			wantAlert: alertForRepoLimitErr(errRepoLimit{ResultType: "diff", Max: 50}),
+			multiErr:  multierror.Append(&multierror.Error{}, &errRepoLimit{ResultType: "diff", Max: 50}),
+			wantAlert: alertForRepoLimitErr(&errRepoLimit{ResultType: "diff", Max: 50}),
+		},
+		{
+			name:      "multi-error with pointer to 1 known error",
+			multiErr:  multierror.Append(&multierror.Error{}, &errRepoLimit{ResultType: "diff", Max: 50}),
+			wantAlert: alertForRepoLimitErr(&errRepoLimit{ResultType: "diff", Max: 50}),
 		},
 		{
 			name:      "multi-error with other errors",
-			multiErr:  multierror.Append(&multierror.Error{}, fmt.Errorf("other error"), errRepoLimit{ResultType: "diff", Max: 50}, fmt.Errorf("other error")),
-			wantAlert: alertForRepoLimitErr(errRepoLimit{ResultType: "diff", Max: 50}),
+			multiErr:  multierror.Append(&multierror.Error{}, fmt.Errorf("other error"), &errRepoLimit{ResultType: "diff", Max: 50}, fmt.Errorf("other error")),
+			wantAlert: alertForRepoLimitErr(&errRepoLimit{ResultType: "diff", Max: 50}),
 		},
 		{
 			name:      "prioritize errStructuralSearchNotSet 1",
-			multiErr:  multierror.Append(&multierror.Error{}, errRepoLimit{ResultType: "diff", Max: 50}, errStructuralSearchNotSet{"foo"}),
-			wantAlert: alertForStructuralSearchNotSet(errStructuralSearchNotSet{"foo"}),
+			multiErr:  multierror.Append(&multierror.Error{}, &errRepoLimit{ResultType: "diff", Max: 50}, &errStructuralSearchNotSet{"foo"}),
+			wantAlert: alertForStructuralSearchNotSet(&errStructuralSearchNotSet{"foo"}),
 		},
 		{
 			name:      "prioritize errStructuralSearchNotSet 2",
-			multiErr:  multierror.Append(&multierror.Error{}, errStructuralSearchNotSet{"foo"}, errRepoLimit{ResultType: "diff", Max: 50}),
-			wantAlert: alertForStructuralSearchNotSet(errStructuralSearchNotSet{"foo"}),
+			multiErr:  multierror.Append(&multierror.Error{}, &errStructuralSearchNotSet{"foo"}, &errRepoLimit{ResultType: "diff", Max: 50}),
+			wantAlert: alertForStructuralSearchNotSet(&errStructuralSearchNotSet{"foo"}),
 		},
 	}
 	for _, tt := range tests {
@@ -436,13 +441,13 @@ func TestContainsUnhandledError(t *testing.T) {
 		wantErr error
 	}{
 		{
-			name:    "1 unknown multi-error",
-			err:     multierror.Append(&multierror.Error{}, fmt.Errorf("unknown error"), errTimeLimit{}),
+			name:    "multi-error with 1 unknown error",
+			err:     multierror.Append(&multierror.Error{}, fmt.Errorf("unknown error"), &errTimeLimit{}),
 			wantErr: fmt.Errorf("unknown error"),
 		},
 		{
 			name:    "multi-error only known errors",
-			err:     multierror.Append(&multierror.Error{}, errRepoLimit{ResultType: "diff", Max: 50}, errStructuralSearchNotSet{"foo"}, errTimeLimit{}),
+			err:     multierror.Append(&multierror.Error{}, &errRepoLimit{ResultType: "diff", Max: 50}, &errStructuralSearchNotSet{"foo"}, &errTimeLimit{}),
 			wantErr: nil,
 		},
 		{
@@ -457,8 +462,8 @@ func TestContainsUnhandledError(t *testing.T) {
 		},
 		{
 			name:    "unknown error wraps known error",
-			err:     fmt.Errorf("unknown %w", errTimeLimit{}),
-			wantErr: fmt.Errorf("unknown %w", errTimeLimit{}),
+			err:     fmt.Errorf("unknown %w", &errTimeLimit{}),
+			wantErr: fmt.Errorf("unknown %w", &errTimeLimit{}),
 		},
 	}
 	for _, tt := range tests {
