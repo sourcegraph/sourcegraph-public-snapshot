@@ -8,6 +8,7 @@ import { ISavedSearch } from '../../../shared/src/graphql/schema'
 import { EventLogResult } from './backend'
 import { AggregateStreamingSearchResults, StreamSearchOptions } from './stream'
 import { findFilter, FilterKind } from '../../../shared/src/search/query/validate'
+import { VersionContextProps } from '../../../shared/src/search/util'
 
 /**
  * Parses the query out of the URL search params (the 'q' parameter). In non-interactive mode, if the 'q' parameter is not present, it
@@ -60,6 +61,13 @@ export function searchURLIsCaseSensitive(query: string): boolean {
     return discreteValueAliases.yes.includes(caseSensitive || '')
 }
 
+export interface ParsedSearchURL {
+    query: string | undefined
+    patternType: SearchPatternType | undefined
+    caseSensitive: boolean
+    versionContext: string | undefined
+}
+
 /**
  * parseSearchURL takes a URL's search querystring and returns
  * an object containing:
@@ -69,14 +77,7 @@ export function searchURLIsCaseSensitive(query: string): boolean {
  *
  * @param urlSearchQuery a URL's query string.
  */
-export function parseSearchURL(
-    urlSearchQuery: string
-): {
-    query: string | undefined
-    patternType: SearchPatternType | undefined
-    caseSensitive: boolean
-    versionContext: string | undefined
-} {
+export function parseSearchURL(urlSearchQuery: string): ParsedSearchURL {
     let finalQuery = parseSearchURLQuery(urlSearchQuery) || ''
     let patternType = parseSearchURLPatternType(urlSearchQuery)
     let caseSensitive = searchURLIsCaseSensitive(urlSearchQuery)
@@ -135,6 +136,11 @@ export function quoteIfNeeded(string: string): string {
     return string
 }
 
+export interface ParsedSearchQueryProps {
+    parsedSearchQuery: string
+    setParsedSearchQuery: (query: string) => void
+}
+
 export interface PatternTypeProps {
     patternType: SearchPatternType
     setPatternType: (patternType: SearchPatternType) => void
@@ -143,6 +149,12 @@ export interface PatternTypeProps {
 export interface CaseSensitivityProps {
     caseSensitive: boolean
     setCaseSensitivity: (caseSensitive: boolean) => void
+}
+
+export interface MutableVersionContextProps extends VersionContextProps {
+    setVersionContext: (versionContext: string | undefined) => void
+    availableVersionContexts: VersionContext[] | undefined
+    previousVersionContext: string | null
 }
 
 export interface CopyQueryButtonProps {
