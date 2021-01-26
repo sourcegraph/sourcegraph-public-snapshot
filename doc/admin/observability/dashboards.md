@@ -1929,7 +1929,7 @@ This panel indicates remaining calls to GitHub search API before hitting the rat
 
 This panel indicates time spent waiting for the GitHub graphql API rate limiter.
 
-Indicates how long we`re waiting on the rate limit once it has been exceeded`
+Indicates how long we`re waiting on the rate limit once it has been exceeded
 
 <sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
@@ -1939,7 +1939,7 @@ Indicates how long we`re waiting on the rate limit once it has been exceeded`
 
 This panel indicates time spent waiting for the GitHub rest API rate limiter.
 
-Indicates how long we`re waiting on the rate limit once it has been exceeded`
+Indicates how long we`re waiting on the rate limit once it has been exceeded
 
 <sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
@@ -1949,7 +1949,7 @@ Indicates how long we`re waiting on the rate limit once it has been exceeded`
 
 This panel indicates time spent waiting for the GitHub search API rate limiter.
 
-Indicates how long we`re waiting on the rate limit once it has been exceeded`
+Indicates how long we`re waiting on the rate limit once it has been exceeded
 
 <sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
@@ -1969,7 +1969,7 @@ This panel indicates remaining calls to GitLab rest API before hitting the rate 
 
 This panel indicates time spent waiting for the GitLab rest API rate limiter.
 
-Indicates how long we`re waiting on the rate limit once it has been exceeded`
+Indicates how long we`re waiting on the rate limit once it has been exceeded
 
 <sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
