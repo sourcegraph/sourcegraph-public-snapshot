@@ -1,5 +1,5 @@
 import * as H from 'history'
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect } from 'react'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
