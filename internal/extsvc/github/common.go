@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -48,7 +49,7 @@ func APIRoot(baseURL *url.URL) (apiURL *url.URL, githubDotCom bool) {
 	return baseURL.ResolveReference(&url.URL{Path: "api"}), false
 }
 
-func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, rateLimitMonitor *ratelimit.Monitor, httpClient httpcli.Doer, req *http.Request, result interface{}) (err error) {
+func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, rateLimitMonitor *ratelimit.Monitor, resource string, httpClient httpcli.Doer, req *http.Request, result interface{}) (err error) {
 	req.URL.Path = path.Join(apiURL.Path, req.URL.Path)
 	req.URL = apiURL.ResolveReference(req.URL)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
