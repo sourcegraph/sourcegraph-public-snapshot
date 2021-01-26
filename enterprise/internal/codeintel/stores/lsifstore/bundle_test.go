@@ -243,7 +243,7 @@ func TestDatabaseHover(t *testing.T) {
 	}
 }
 
-const testDatabasePackageInformationID = "18" // changes when lsif-go@ad3507cb.sql is regenerated
+const testDatabasePackageInformationID = "11" // changes when lsif-go@ad3507cb.sql is regenerated
 
 func TestDatabaseMonikersByPosition(t *testing.T) {
 	if testing.Short() {
@@ -388,7 +388,8 @@ func TestDatabaseSymbols(t *testing.T) {
 		{
 			DumpID: testBundleID,
 			Text:   "ToolInfo",
-			Kind:   11,
+			Kind:   protocol.Struct,
+			Tags:   []protocol.SymbolTag{protocol.Exported},
 			Locations: []SymbolLocation{
 				{
 					URI: "protocol/protocol.go",
@@ -397,7 +398,7 @@ func TestDatabaseSymbols(t *testing.T) {
 						End:   protocol.Pos{Line: 66, Character: 13},
 					},
 					FullRange: protocol.RangeData{
-						Start: protocol.Pos{Line: 66, Character: 0},
+						Start: protocol.Pos{Line: 66, Character: 5},
 						End:   protocol.Pos{Line: 73, Character: 1},
 					},
 				},
