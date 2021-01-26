@@ -24,7 +24,7 @@ const RedactedSecret = "REDACTED"
 
 // RedactExternalServiceConfig replaces any secret fields in the Config field with RedactedSecret, be sure to call
 // UnRedactExternalServiceConfig before writing back to the database, otherwise validation will throw errors.
-func (e *ExternalService) RedactExternalServiceConfig() error {
+func (e *ExternalService) RedactConfig() error {
 	var (
 		newCfg string
 		err    error
