@@ -31,12 +31,10 @@ const streamingSearchResult: AggregateStreamingSearchResults = {
 }
 
 const defaultProps: StreamingSearchResultsProps = {
+    parsedSearchQuery: 'r:golang/oauth2 test f:travis',
     caseSensitive: false,
-    setCaseSensitivity: sinon.spy(),
     patternType: SearchPatternType.literal,
-    setPatternType: sinon.spy(),
     versionContext: undefined,
-    setVersionContext: sinon.spy(),
     availableVersionContexts: [],
     previousVersionContext: null,
 
