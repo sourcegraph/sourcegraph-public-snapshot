@@ -382,7 +382,7 @@ func RepoUpdater() *monitoring.Container {
 							Panel:          monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
 							Owner:          monitoring.ObservableOwnerCloud,
 							NoAlert:        true,
-							Interpretation: `Indicates how long we're waiting on the rate limit once it has been exceeded`,
+							Interpretation: "Indicates how long we're waiting on the rate limit once it has been exceeded",
 						},
 						{
 							Name:           "github_rest_rate_limit_wait_duration",
@@ -391,7 +391,7 @@ func RepoUpdater() *monitoring.Container {
 							Panel:          monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
 							Owner:          monitoring.ObservableOwnerCloud,
 							NoAlert:        true,
-							Interpretation: `Indicates how long we're waiting on the rate limit once it has been exceeded`,
+							Interpretation: "Indicates how long we're waiting on the rate limit once it has been exceeded",
 						},
 						{
 							Name:           "github_search_rate_limit_wait_duration",
@@ -400,7 +400,7 @@ func RepoUpdater() *monitoring.Container {
 							Panel:          monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
 							Owner:          monitoring.ObservableOwnerCloud,
 							NoAlert:        true,
-							Interpretation: `Indicates how long we're waiting on the rate limit once it has been exceeded`,
+							Interpretation: "Indicates how long we're waiting on the rate limit once it has been exceeded",
 						},
 					},
 					{
@@ -421,7 +421,7 @@ func RepoUpdater() *monitoring.Container {
 							Panel:          monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
 							Owner:          monitoring.ObservableOwnerCloud,
 							NoAlert:        true,
-							Interpretation: `Indicates how long we're waiting on the rate limit once it has been exceeded`,
+							Interpretation: "Indicates how long we're waiting on the rate limit once it has been exceeded",
 						},
 					},
 				},
