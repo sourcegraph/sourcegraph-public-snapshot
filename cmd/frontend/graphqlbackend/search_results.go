@@ -2069,6 +2069,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 
 	r.sortResults(ctx, results)
 
+	// Don't set the field alert here. The caller is responsible for converting the
+	// returned error into an appropriate alert.
 	resultsResolver := SearchResultsResolver{
 		start:         start,
 		Stats:         common,
