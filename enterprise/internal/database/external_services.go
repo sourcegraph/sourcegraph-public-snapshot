@@ -1,4 +1,4 @@
-package db
+package database
 
 import (
 	"github.com/sourcegraph/sourcegraph/internal/authz/bitbucketserver"
