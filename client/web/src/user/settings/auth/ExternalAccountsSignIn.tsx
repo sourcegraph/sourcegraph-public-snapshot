@@ -42,6 +42,7 @@ interface Props {
 }
 
 const getNormalizedAccount = (accounts: ExternalAccountsByType, kind: ExternalServiceKind): NormalizedMinAccount => {
+    // kind and type match except for the casing
     const type = kind.toLocaleLowerCase() as ServiceType
 
     const account = accounts[type]
@@ -103,7 +104,7 @@ export const ExternalAccountsSignIn: React.FunctionComponent<Props> = ({
 }) => (
     <>
         {accounts && (
-            <ul className="list-group user-settings-sec-page__sign-ins-container mt-3 pb-2">
+            <ul className="list-group user-settings-security__sign-ins-container mt-3 pb-2">
                 {supported.map(kind => {
                     const type = kind.toLocaleLowerCase() as ServiceType
                     const authProvider = authProviders[type]

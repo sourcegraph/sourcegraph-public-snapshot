@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react'
 import { Link } from '../../../../../shared/src/components/Link'
-
+import { LoaderButton } from '../../../components/LoaderButton'
 import { ErrorLike } from '../../../../../shared/src/util/errors'
 import { RemoveExternalAccountModal } from './RemoveExternalAccountModal'
 import type { NormalizedMinAccount } from './ExternalAccountsSignIn'
@@ -14,10 +14,16 @@ interface Props {
 }
 
 export const ExternalAccount: React.FunctionComponent<Props> = ({ account, authProvider, onDidRemove, onDidError }) => {
+    const [isLoading, setIsLoading] = useState(false)
     const [isRemoveAccountModalOpen, setIsRemoveAccountModalOpen] = useState(false)
     const toggleRemoveAccountModal = useCallback(() => setIsRemoveAccountModalOpen(!isRemoveAccountModalOpen), [
         isRemoveAccountModalOpen,
     ])
+
+    const navigateToAuthProvider = useCallback((): void => {
+        setIsLoading(true)
+        window.location.assign(`${authProvider.authenticationURL as string}&redirect=${window.location.href}`)
+    }, [authProvider.authenticationURL])
 
     const { icon: AccountIcon } = account
 
@@ -57,14 +63,13 @@ export const ExternalAccount: React.FunctionComponent<Props> = ({ account, authP
                         Remove
                     </button>
                 ) : (
-                    <a
-                        // authenticationURL should always be there
-                        href={`${authProvider.authenticationURL as string}&redirect=${window.location.href}`}
-                        rel="noopener noreferrer"
+                    <LoaderButton
+                        loading={isLoading}
+                        label="Add"
+                        type="button"
                         className="btn btn-secondary btn-block"
-                    >
-                        Add
-                    </a>
+                        onClick={navigateToAuthProvider}
+                    />
                 )}
             </div>
         </div>

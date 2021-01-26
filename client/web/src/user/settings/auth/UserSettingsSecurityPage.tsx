@@ -10,7 +10,6 @@ import { PageTitle } from '../../../components/PageTitle'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { updatePassword } from '../backend'
 import { ErrorAlert } from '../../../components/alerts'
-import * as H from 'history'
 import { AuthenticatedUser } from '../../../auth'
 import {
     UserAreaUserFields,
@@ -26,6 +25,7 @@ import { gql, dataOrThrowErrors } from '../../../../../shared/src/graphql/graphq
 import { requestGraphQL } from '../../../backend/graphql'
 import { ErrorLike, asError } from '../../../../../shared/src/util/errors'
 
+// pick only the fields we need
 type MinExternalAccount = Pick<ExternalAccountFields, 'id' | 'serviceID' | 'serviceType' | 'accountData'>
 type UserExternalAccount = UserExternalAccountsResult['site']['externalAccounts']['nodes'][0]
 type ServiceType = AuthProvider['serviceType']
@@ -45,8 +45,7 @@ interface UserExternalAccountsResult {
 interface Props extends RouteComponentProps<{}> {
     user: UserAreaUserFields
     authenticatedUser: AuthenticatedUser
-    history: H.History
-    context: Pick<SourcegraphContext, 'authProviders' | 'sourcegraphDotComMode'>
+    context: Pick<SourcegraphContext, 'authProviders'>
 }
 
 interface State {
@@ -58,6 +57,17 @@ interface State {
     newPassword: string
     newPasswordConfirmation: string
 }
+
+const LoadingAnimation: JSX.Element = (
+    <ul className="list-group ml-3 mt-3">
+        <li className="row">
+            <div className="user-settings-security__shimmer--line col-sm-7" />
+        </li>
+        <li className="row mt-2">
+            <div className="user-settings-security__shimmer--line col-sm-7" />
+        </li>
+    </ul>
+)
 
 const fetchUserExternalAccountsByType = async (userID: Scalars['ID']): Promise<MinExternalAccount[]> => {
     const result = dataOrThrowErrors(
@@ -151,6 +161,7 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                                     newPassword: '',
                                     newPasswordConfirmation: '',
                                     saved: true,
+                                    accounts: {},
                                 }),
                             error => this.handleError(error)
                         )
@@ -206,11 +217,7 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                 </span>
 
                 {/* external accounts not fetched yet */}
-                {!this.state.accounts.fetched && (
-                    <div className="d-flex justify-content-center mt-4">
-                        <LoadingSpinner className="icon-inline" />
-                    </div>
-                )}
+                {!this.state.accounts.fetched && LoadingAnimation}
 
                 {/* fetched external accounts */}
                 {this.state.accounts.fetched && (
@@ -228,7 +235,7 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                     <>
                         <hr className="my-4" />
                         <h3 className="pt-2">Password</h3>
-                        <Form className="mt-3 user-settings-sec-page__passwords-container" onSubmit={this.handleSubmit}>
+                        <Form className="mt-3 user-settings-security__passwords-container" onSubmit={this.handleSubmit}>
                             {/* Include a username field as a hint for password managers to update the saved password. */}
                             <input
                                 type="text"
@@ -294,7 +301,6 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
 
     private onAccountRemoval = (removeId: string, name: string): void => {
         // keep every account that doesn't match removeId
-        //  accounts.fetched: previousState.accounts.fetched?.filter(({ id }) => id !== removeId),
         this.setState(previousState => ({
             accounts: {
                 fetched: previousState.accounts.fetched?.filter(({ id }) => id !== removeId),

@@ -61,7 +61,7 @@ export const RemoveExternalAccountModal: React.FunctionComponent<{
                 <Form onSubmit={onAccountRemove}>
                     <div className="form-group mb-4">
                         You are about to remove the sign in connection with {name}. After removing it, you won’t be able
-                        to use GitHub to sign in to Sourcegraph.
+                        to use {name} to sign in to Sourcegraph.
                     </div>
                     <div className="d-flex justify-content-end">
                         <button

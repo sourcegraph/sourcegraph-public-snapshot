@@ -1,8 +1,23 @@
-.user-settings-sec-page {
+.user-settings-security {
     &__sign-ins-container {
         max-width: 60%;
     }
     &__passwords-container {
         max-width: 55%;
+    }
+    &__shimmer--line {
+        background: linear-gradient(to right, var(--color-bg-2) 5%, var(--color-bg-1) 25%, var(--color-bg-2) 35%);
+        animation: shimmer 2s infinite linear;
+        background-size: 1000px 100%;
+        border-radius: 5px;
+        padding: 2.2rem;
+    }
+    @keyframes shimmer {
+        0% {
+            background-position: -1000px 0;
+        }
+        100% {
+            background-position: 1000px 0;
+        }
     }
 }
