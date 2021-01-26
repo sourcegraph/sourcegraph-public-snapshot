@@ -14,8 +14,6 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -203,16 +201,6 @@ func isGitLabDotComURL(baseURL *url.URL) bool {
 	return hostname == "gitlab.com" || hostname == "www.gitlab.com"
 }
 
-var gitlabRequestCounter = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "src_gitlab_request_count",
-	Help: "The number of requests made to GitLab",
-}, []string{})
-
-var gitlabRequestDurationCounter = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "src_gitlab_request_duration_seconds",
-	Help: "Duration of requests made to GitLab",
-}, []string{})
-
 func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) (responseHeader http.Header, responseCode int, err error) {
 	req.URL = c.baseURL.ResolveReference(req.URL)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
@@ -241,12 +229,6 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 			return nil, 0, errors.Wrap(err, "rate limit")
 		}
 	}
-
-	gitlabRequestCounter.WithLabelValues().Inc()
-	start := time.Now()
-	defer func() {
-		gitlabRequestDurationCounter.WithLabelValues().Add(time.Since(start).Seconds())
-	}()
 
 	resp, err = c.httpClient.Do(req.WithContext(ctx))
 	if err != nil {

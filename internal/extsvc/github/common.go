@@ -12,11 +12,8 @@ import (
 	"path"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/pkg/errors"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -52,16 +49,6 @@ func APIRoot(baseURL *url.URL) (apiURL *url.URL, githubDotCom bool) {
 	return baseURL.ResolveReference(&url.URL{Path: "api"}), false
 }
 
-var githubRequestCounter = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "src_github_request_count",
-	Help: "The number of requests made to GitHub",
-}, []string{"resource"})
-
-var githubRequestDurationCounter = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "src_github_request_duration_seconds",
-	Help: "Duration of requests made to GitHub",
-}, []string{"resource"})
-
 func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, rateLimitMonitor *ratelimit.Monitor, resource string, httpClient httpcli.Doer, req *http.Request, result interface{}) (err error) {
 	req.URL.Path = path.Join(apiURL.Path, req.URL.Path)
 	req.URL = apiURL.ResolveReference(req.URL)
@@ -84,12 +71,6 @@ func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, ra
 			span.SetTag("status", resp.Status)
 		}
 		span.Finish()
-	}()
-
-	githubRequestCounter.WithLabelValues(resource).Inc()
-	start := time.Now()
-	defer func() {
-		githubRequestDurationCounter.WithLabelValues(resource).Add(time.Since(start).Seconds())
 	}()
 
 	resp, err = httpClient.Do(req.WithContext(ctx))
