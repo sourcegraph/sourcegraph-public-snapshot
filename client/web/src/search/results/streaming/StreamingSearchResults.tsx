@@ -46,8 +46,8 @@ import {
 
 export interface StreamingSearchResultsProps
     extends SearchStreamingProps,
-        ParsedSearchQueryProps,
-        PatternTypeProps,
+        Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
+        Pick<PatternTypeProps, 'patternType'>,
         MutableVersionContextProps,
         CaseSensitivityProps,
         SettingsCascadeProps,
@@ -254,7 +254,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
 
                 {showVersionContextWarning && (
                     <VersionContextWarning
-                        versionContext={currentVersionContext}
+                        versionContext={versionContext}
                         onDismissWarning={onDismissVersionContextWarning}
                     />
                 )}
