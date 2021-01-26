@@ -73,7 +73,7 @@ func NewMigrate(db *sql.DB, database *Database) (*migrate.Migrate, error) {
 		return nil, err
 	}
 
-	d, err := bindata.WithInstance(schemaData.Resource)
+	d, err := bindata.WithInstance(database.Resource)
 	if err != nil {
 		return nil, err
 	}
