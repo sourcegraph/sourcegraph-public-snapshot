@@ -3,7 +3,7 @@
 exports[`MenuNavItem add menu children 1`] = `
 <MenuNavItem>
   <ButtonDropdown
-    className="menu-nav-items"
+    className="menu-nav-item"
     direction="down"
     isOpen={false}
     toggle={[Function]}
@@ -12,7 +12,7 @@ exports[`MenuNavItem add menu children 1`] = `
       a11y={true}
       active={false}
       addonType={false}
-      className="menu-nav-items"
+      className="menu-nav-item"
       direction="down"
       group={true}
       inNavbar={false}
@@ -23,12 +23,12 @@ exports[`MenuNavItem add menu children 1`] = `
     >
       <Manager>
         <div
-          className="menu-nav-items btn-group"
+          className="menu-nav-item btn-group"
           onKeyDown={[Function]}
         >
           <DropdownToggle
             aria-haspopup={true}
-            caret={false}
+            caret={true}
             className="bg-transparent"
             color="secondary"
             nav={true}
@@ -40,14 +40,11 @@ exports[`MenuNavItem add menu children 1`] = `
                 <a
                   aria-expanded={false}
                   aria-haspopup={true}
-                  className="bg-transparent nav-link"
+                  className="bg-transparent dropdown-toggle nav-link"
                   href="#"
                   onClick={[Function]}
                 >
                   <Memo(MenuIcon)
-                    className="icon-inline"
-                  />
-                  <Memo(MenuDownIcon)
                     className="icon-inline"
                   />
                 </a>
@@ -55,13 +52,13 @@ exports[`MenuNavItem add menu children 1`] = `
             </Reference>
           </DropdownToggle>
           <DropdownMenu
-            className="menu-nav-items__dropdown-menu"
+            className="menu-nav-item__dropdown-menu"
             flip={true}
             tag="div"
           >
             <div
               aria-hidden={true}
-              className="menu-nav-items__dropdown-menu dropdown-menu"
+              className="menu-nav-item__dropdown-menu dropdown-menu"
               role="menu"
               tabIndex="-1"
             >

@@ -21,7 +21,7 @@ import {
     KEYBOARD_SHORTCUT_SWITCH_THEME,
 } from '../keyboardShortcuts/keyboardShortcuts'
 import { isErrorLike } from '../../../shared/src/util/errors'
-import { Settings } from '../schema/settings.schema'
+import { Settings, SettingsExperimentalFeatures } from '../schema/settings.schema'
 import { InsightsNavItem } from '../insights/InsightsNavLink'
 import { CodeMonitoringNavItem } from '../enterprise/code-monitoring/CodeMonitoringNavItem'
 import { AuthenticatedUser } from '../auth'
@@ -48,6 +48,13 @@ interface Props
 export class NavLinks extends React.PureComponent<Props> {
     private subscriptions = new Subscription()
 
+    private experimentalFeatures(feature: keyof SettingsExperimentalFeatures): boolean | undefined {
+        return (
+            !isErrorLike(this.props.settingsCascade.final) &&
+            this.props.settingsCascade.final?.experimentalFeatures?.[feature]
+        )
+    }
+
     public componentWillUnmount(): void {
         this.subscriptions.unsubscribe()
     }
@@ -69,20 +76,16 @@ export class NavLinks extends React.PureComponent<Props> {
                         <ActivationDropdown activation={this.props.activation} history={this.props.history} />
                     </li>
                 )}
-                {!isErrorLike(this.props.settingsCascade.final) &&
-                    this.props.settingsCascade.final?.experimentalFeatures?.codeInsights &&
-                    !this.props.minimalNavLinks && (
-                        <li className="nav-item d-none d-lg-block">
-                            <InsightsNavItem />
-                        </li>
-                    )}
-                {!isErrorLike(this.props.settingsCascade.final) &&
-                    this.props.settingsCascade.final?.experimentalFeatures?.codeMonitoring &&
-                    !this.props.minimalNavLinks && (
-                        <li className="nav-item d-none d-lg-block">
-                            <CodeMonitoringNavItem />
-                        </li>
-                    )}
+                {this.experimentalFeatures('codeInsights') && !this.props.minimalNavLinks && (
+                    <li className="nav-item d-none d-lg-block">
+                        <InsightsNavItem />
+                    </li>
+                )}
+                {this.experimentalFeatures('codeMonitoring') && !this.props.minimalNavLinks && (
+                    <li className="nav-item d-none d-lg-block">
+                        <CodeMonitoringNavItem />
+                    </li>
+                )}
                 {!this.props.minimalNavLinks && this.props.showCampaigns && (
                     <li className="nav-item d-none d-lg-block">
                         <CampaignsNavItem />
@@ -90,13 +93,13 @@ export class NavLinks extends React.PureComponent<Props> {
                 )}
                 <li className="nav-item d-lg-none">
                     <MenuNavItem>
-                        {!isErrorLike(this.props.settingsCascade.final) &&
-                            this.props.settingsCascade.final?.experimentalFeatures?.codeInsights &&
-                            !this.props.minimalNavLinks && <InsightsNavItem />}
+                        {this.experimentalFeatures('codeInsights') && !this.props.minimalNavLinks && (
+                            <InsightsNavItem />
+                        )}
 
-                        {!isErrorLike(this.props.settingsCascade.final) &&
-                            this.props.settingsCascade.final?.experimentalFeatures?.codeMonitoring &&
-                            !this.props.minimalNavLinks && <CodeMonitoringNavItem />}
+                        {this.experimentalFeatures('codeMonitoring') && !this.props.minimalNavLinks && (
+                            <CodeMonitoringNavItem />
+                        )}
 
                         {!this.props.minimalNavLinks && this.props.showCampaigns && <CampaignsNavItem />}
                     </MenuNavItem>

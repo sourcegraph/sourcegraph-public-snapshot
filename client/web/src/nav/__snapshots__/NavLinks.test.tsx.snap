@@ -60,12 +60,12 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
     class="nav-item d-lg-none"
   >
     <div
-      class="menu-nav-items btn-group"
+      class="menu-nav-item btn-group"
     >
       <a
         aria-expanded="false"
         aria-haspopup="true"
-        class="bg-transparent nav-link"
+        class="bg-transparent dropdown-toggle nav-link"
         href="#"
       >
         <svg
@@ -79,21 +79,10 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
             d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"
           />
         </svg>
-        <svg
-          class="mdi-icon icon-inline"
-          fill="currentColor"
-          height="24"
-          viewBox="0 0 24 24"
-          width="24"
-        >
-          <path
-            d="M7,10L12,15L17,10H7Z"
-          />
-        </svg>
       </a>
       <div
         aria-hidden="true"
-        class="menu-nav-items__dropdown-menu dropdown-menu"
+        class="menu-nav-item__dropdown-menu dropdown-menu"
         role="menu"
         tabindex="-1"
       >
@@ -257,7 +246,7 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
       <a
         aria-expanded="false"
         aria-haspopup="true"
-        class="bg-transparent d-flex align-items-center test-user-nav-item-toggle nav-link"
+        class="bg-transparent d-flex align-items-center test-user-nav-item-toggle dropdown-toggle nav-link"
         href="#"
       >
         <div
@@ -276,17 +265,6 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
           >
             <path
               d="M12,19.2C9.5,19.2 7.29,17.92 6,16C6.03,14 10,12.9 12,12.9C14,12.9 17.97,14 18,16C16.71,17.92 14.5,19.2 12,19.2M12,5A3,3 0 0,1 15,8A3,3 0 0,1 12,11A3,3 0 0,1 9,8A3,3 0 0,1 12,5M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12C22,6.47 17.5,2 12,2Z"
-            />
-          </svg>
-          <svg
-            class="mdi-icon icon-inline"
-            fill="currentColor"
-            height="24"
-            viewBox="0 0 24 24"
-            width="24"
-          >
-            <path
-              d="M7,10L12,15L17,10H7Z"
             />
           </svg>
         </div>
@@ -520,12 +498,12 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
     class="nav-item d-lg-none"
   >
     <div
-      class="menu-nav-items btn-group"
+      class="menu-nav-item btn-group"
     >
       <a
         aria-expanded="false"
         aria-haspopup="true"
-        class="bg-transparent nav-link"
+        class="bg-transparent dropdown-toggle nav-link"
         href="#"
       >
         <svg
@@ -539,21 +517,10 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
             d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"
           />
         </svg>
-        <svg
-          class="mdi-icon icon-inline"
-          fill="currentColor"
-          height="24"
-          viewBox="0 0 24 24"
-          width="24"
-        >
-          <path
-            d="M7,10L12,15L17,10H7Z"
-          />
-        </svg>
       </a>
       <div
         aria-hidden="true"
-        class="menu-nav-items__dropdown-menu dropdown-menu"
+        class="menu-nav-item__dropdown-menu dropdown-menu"
         role="menu"
         tabindex="-1"
       >
@@ -717,7 +684,7 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
       <a
         aria-expanded="false"
         aria-haspopup="true"
-        class="bg-transparent d-flex align-items-center test-user-nav-item-toggle nav-link"
+        class="bg-transparent d-flex align-items-center test-user-nav-item-toggle dropdown-toggle nav-link"
         href="#"
       >
         <div
@@ -736,17 +703,6 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
           >
             <path
               d="M12,19.2C9.5,19.2 7.29,17.92 6,16C6.03,14 10,12.9 12,12.9C14,12.9 17.97,14 18,16C16.71,17.92 14.5,19.2 12,19.2M12,5A3,3 0 0,1 15,8A3,3 0 0,1 12,11A3,3 0 0,1 9,8A3,3 0 0,1 12,5M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12C22,6.47 17.5,2 12,2Z"
-            />
-          </svg>
-          <svg
-            class="mdi-icon icon-inline"
-            fill="currentColor"
-            height="24"
-            viewBox="0 0 24 24"
-            width="24"
-          >
-            <path
-              d="M7,10L12,15L17,10H7Z"
             />
           </svg>
         </div>
@@ -990,12 +946,12 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
     class="nav-item d-lg-none"
   >
     <div
-      class="menu-nav-items btn-group"
+      class="menu-nav-item btn-group"
     >
       <a
         aria-expanded="false"
         aria-haspopup="true"
-        class="bg-transparent nav-link"
+        class="bg-transparent dropdown-toggle nav-link"
         href="#"
       >
         <svg
@@ -1009,21 +965,10 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
             d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"
           />
         </svg>
-        <svg
-          class="mdi-icon icon-inline"
-          fill="currentColor"
-          height="24"
-          viewBox="0 0 24 24"
-          width="24"
-        >
-          <path
-            d="M7,10L12,15L17,10H7Z"
-          />
-        </svg>
       </a>
       <div
         aria-hidden="true"
-        class="menu-nav-items__dropdown-menu dropdown-menu"
+        class="menu-nav-item__dropdown-menu dropdown-menu"
         role="menu"
         tabindex="-1"
       >
@@ -1187,7 +1132,7 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
       <a
         aria-expanded="false"
         aria-haspopup="true"
-        class="bg-transparent d-flex align-items-center test-user-nav-item-toggle nav-link"
+        class="bg-transparent d-flex align-items-center test-user-nav-item-toggle dropdown-toggle nav-link"
         href="#"
       >
         <div
@@ -1206,17 +1151,6 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
           >
             <path
               d="M12,19.2C9.5,19.2 7.29,17.92 6,16C6.03,14 10,12.9 12,12.9C14,12.9 17.97,14 18,16C16.71,17.92 14.5,19.2 12,19.2M12,5A3,3 0 0,1 15,8A3,3 0 0,1 12,11A3,3 0 0,1 9,8A3,3 0 0,1 12,5M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12C22,6.47 17.5,2 12,2Z"
-            />
-          </svg>
-          <svg
-            class="mdi-icon icon-inline"
-            fill="currentColor"
-            height="24"
-            viewBox="0 0 24 24"
-            width="24"
-          >
-            <path
-              d="M7,10L12,15L17,10H7Z"
             />
           </svg>
         </div>
@@ -1431,12 +1365,12 @@ exports[`NavLinks authed self-hosted /search 1`] = `
     class="nav-item d-lg-none"
   >
     <div
-      class="menu-nav-items btn-group"
+      class="menu-nav-item btn-group"
     >
       <a
         aria-expanded="false"
         aria-haspopup="true"
-        class="bg-transparent nav-link"
+        class="bg-transparent dropdown-toggle nav-link"
         href="#"
       >
         <svg
@@ -1450,21 +1384,10 @@ exports[`NavLinks authed self-hosted /search 1`] = `
             d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"
           />
         </svg>
-        <svg
-          class="mdi-icon icon-inline"
-          fill="currentColor"
-          height="24"
-          viewBox="0 0 24 24"
-          width="24"
-        >
-          <path
-            d="M7,10L12,15L17,10H7Z"
-          />
-        </svg>
       </a>
       <div
         aria-hidden="true"
-        class="menu-nav-items__dropdown-menu dropdown-menu"
+        class="menu-nav-item__dropdown-menu dropdown-menu"
         role="menu"
         tabindex="-1"
       >
@@ -1628,7 +1551,7 @@ exports[`NavLinks authed self-hosted /search 1`] = `
       <a
         aria-expanded="false"
         aria-haspopup="true"
-        class="bg-transparent d-flex align-items-center test-user-nav-item-toggle nav-link"
+        class="bg-transparent d-flex align-items-center test-user-nav-item-toggle dropdown-toggle nav-link"
         href="#"
       >
         <div
@@ -1647,17 +1570,6 @@ exports[`NavLinks authed self-hosted /search 1`] = `
           >
             <path
               d="M12,19.2C9.5,19.2 7.29,17.92 6,16C6.03,14 10,12.9 12,12.9C14,12.9 17.97,14 18,16C16.71,17.92 14.5,19.2 12,19.2M12,5A3,3 0 0,1 15,8A3,3 0 0,1 12,11A3,3 0 0,1 9,8A3,3 0 0,1 12,5M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12C22,6.47 17.5,2 12,2Z"
-            />
-          </svg>
-          <svg
-            class="mdi-icon icon-inline"
-            fill="currentColor"
-            height="24"
-            viewBox="0 0 24 24"
-            width="24"
-          >
-            <path
-              d="M7,10L12,15L17,10H7Z"
             />
           </svg>
         </div>
@@ -1882,12 +1794,12 @@ exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
     class="nav-item d-lg-none"
   >
     <div
-      class="menu-nav-items btn-group"
+      class="menu-nav-item btn-group"
     >
       <a
         aria-expanded="false"
         aria-haspopup="true"
-        class="bg-transparent nav-link"
+        class="bg-transparent dropdown-toggle nav-link"
         href="#"
       >
         <svg
@@ -1901,21 +1813,10 @@ exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
             d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"
           />
         </svg>
-        <svg
-          class="mdi-icon icon-inline"
-          fill="currentColor"
-          height="24"
-          viewBox="0 0 24 24"
-          width="24"
-        >
-          <path
-            d="M7,10L12,15L17,10H7Z"
-          />
-        </svg>
       </a>
       <div
         aria-hidden="true"
-        class="menu-nav-items__dropdown-menu dropdown-menu"
+        class="menu-nav-item__dropdown-menu dropdown-menu"
         role="menu"
         tabindex="-1"
       >
@@ -2086,12 +1987,12 @@ exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
     class="nav-item d-lg-none"
   >
     <div
-      class="menu-nav-items btn-group"
+      class="menu-nav-item btn-group"
     >
       <a
         aria-expanded="false"
         aria-haspopup="true"
-        class="bg-transparent nav-link"
+        class="bg-transparent dropdown-toggle nav-link"
         href="#"
       >
         <svg
@@ -2105,21 +2006,10 @@ exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
             d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"
           />
         </svg>
-        <svg
-          class="mdi-icon icon-inline"
-          fill="currentColor"
-          height="24"
-          viewBox="0 0 24 24"
-          width="24"
-        >
-          <path
-            d="M7,10L12,15L17,10H7Z"
-          />
-        </svg>
       </a>
       <div
         aria-hidden="true"
-        class="menu-nav-items__dropdown-menu dropdown-menu"
+        class="menu-nav-item__dropdown-menu dropdown-menu"
         role="menu"
         tabindex="-1"
       >
@@ -2300,12 +2190,12 @@ exports[`NavLinks unauthed self-hosted /foo 1`] = `
     class="nav-item d-lg-none"
   >
     <div
-      class="menu-nav-items btn-group"
+      class="menu-nav-item btn-group"
     >
       <a
         aria-expanded="false"
         aria-haspopup="true"
-        class="bg-transparent nav-link"
+        class="bg-transparent dropdown-toggle nav-link"
         href="#"
       >
         <svg
@@ -2319,21 +2209,10 @@ exports[`NavLinks unauthed self-hosted /foo 1`] = `
             d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"
           />
         </svg>
-        <svg
-          class="mdi-icon icon-inline"
-          fill="currentColor"
-          height="24"
-          viewBox="0 0 24 24"
-          width="24"
-        >
-          <path
-            d="M7,10L12,15L17,10H7Z"
-          />
-        </svg>
       </a>
       <div
         aria-hidden="true"
-        class="menu-nav-items__dropdown-menu dropdown-menu"
+        class="menu-nav-item__dropdown-menu dropdown-menu"
         role="menu"
         tabindex="-1"
       >
@@ -2492,12 +2371,12 @@ exports[`NavLinks unauthed self-hosted /search 1`] = `
     class="nav-item d-lg-none"
   >
     <div
-      class="menu-nav-items btn-group"
+      class="menu-nav-item btn-group"
     >
       <a
         aria-expanded="false"
         aria-haspopup="true"
-        class="bg-transparent nav-link"
+        class="bg-transparent dropdown-toggle nav-link"
         href="#"
       >
         <svg
@@ -2511,21 +2390,10 @@ exports[`NavLinks unauthed self-hosted /search 1`] = `
             d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"
           />
         </svg>
-        <svg
-          class="mdi-icon icon-inline"
-          fill="currentColor"
-          height="24"
-          viewBox="0 0 24 24"
-          width="24"
-        >
-          <path
-            d="M7,10L12,15L17,10H7Z"
-          />
-        </svg>
       </a>
       <div
         aria-hidden="true"
-        class="menu-nav-items__dropdown-menu dropdown-menu"
+        class="menu-nav-item__dropdown-menu dropdown-menu"
         role="menu"
         tabindex="-1"
       >

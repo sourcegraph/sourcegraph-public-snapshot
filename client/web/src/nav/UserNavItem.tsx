@@ -101,7 +101,11 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
 
     return (
         <ButtonDropdown isOpen={isOpen} toggle={toggleIsOpen} className="py-0">
-            <DropdownToggle className="bg-transparent d-flex align-items-center test-user-nav-item-toggle" nav={true}>
+            <DropdownToggle
+                className="bg-transparent d-flex align-items-center test-user-nav-item-toggle"
+                caret={true}
+                nav={true}
+            >
                 <div className="position-relative">
                     <div
                         className={classNames({
@@ -109,7 +113,6 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                         })}
                     />
                     <UserAvatar user={props.authenticatedUser} size={48} targetID={targetID} />
-                    {isOpen ? <MenuUpIcon className="icon-inline" /> : <MenuDownIcon className="icon-inline" />}
                 </div>
                 {isExtensionAlertAnimating && (
                     <Tooltip

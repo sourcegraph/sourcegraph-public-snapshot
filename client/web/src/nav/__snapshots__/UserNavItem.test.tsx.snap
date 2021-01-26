@@ -68,6 +68,7 @@ exports[`UserNavItem simple 1`] = `
             >
               <DropdownToggle
                 aria-haspopup={true}
+                caret={true}
                 className="bg-transparent d-flex align-items-center test-user-nav-item-toggle"
                 color="secondary"
                 nav={true}
@@ -79,7 +80,7 @@ exports[`UserNavItem simple 1`] = `
                     <a
                       aria-expanded={false}
                       aria-haspopup={true}
-                      className="bg-transparent d-flex align-items-center test-user-nav-item-toggle nav-link"
+                      className="bg-transparent d-flex align-items-center test-user-nav-item-toggle dropdown-toggle nav-link"
                       href="#"
                       onClick={[Function]}
                     >
@@ -127,9 +128,6 @@ exports[`UserNavItem simple 1`] = `
                             id="target-user-avatar"
                           />
                         </UserAvatar>
-                        <Memo(MenuDownIcon)
-                          className="icon-inline"
-                        />
                       </div>
                     </a>
                   </InnerReference>
