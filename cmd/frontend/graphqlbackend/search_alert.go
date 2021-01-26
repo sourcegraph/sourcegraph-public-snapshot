@@ -673,6 +673,9 @@ func alertForError(err error) *searchAlert {
 
 // unhandledError returns the first unhandled error we find.
 func unhandledError(e error) (u error) {
+	if e == nil {
+		return nil
+	}
 	var errs []error
 	switch e.(type) {
 	case *multierror.Error:
