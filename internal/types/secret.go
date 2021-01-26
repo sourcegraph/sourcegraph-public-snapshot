@@ -98,66 +98,46 @@ func UnRedactExternalServiceConfig(old, new *ExternalService) error {
 			new.Kind,
 		)
 	}
+	var (
+		unRedacted string
+		err        error
+	)
 	switch strings.ToUpper(new.Kind) {
 	case extsvc.KindGitHub:
 		cfg := schema.GitHubConnection{}
-		unRedacted, err := unRedactField(old.Config, new.Config, &cfg, &cfg.Token)
-		if err != nil {
-			return err
-		}
-		new.Config = unRedacted
+		unRedacted, err = unRedactField(old.Config, new.Config, &cfg, &cfg.Token)
 	case extsvc.KindGitLab:
 		cfg := schema.GitLabConnection{}
-		unRedacted, err := unRedactField(old.Config, new.Config, &cfg, &cfg.Token)
-		if err != nil {
-			return err
-		}
-		new.Config = unRedacted
+		unRedacted, err = unRedactField(old.Config, new.Config, &cfg, &cfg.Token)
 	case extsvc.KindBitbucketServer:
 		cfg := schema.BitbucketServerConnection{}
-		unRedacted, err := unRedactField(old.Config, new.Config, &cfg, &cfg.Token, &cfg.Password)
-		if err != nil {
-			return err
-		}
-		new.Config = unRedacted
+		unRedacted, err = unRedactField(old.Config, new.Config, &cfg, &cfg.Token, &cfg.Password)
 	case extsvc.KindBitbucketCloud:
 		cfg := schema.BitbucketCloudConnection{}
-		unRedacted, err := unRedactField(old.Config, new.Config, &cfg, &cfg.AppPassword)
-		if err != nil {
-			return err
-		}
-		new.Config = unRedacted
+		unRedacted, err = unRedactField(old.Config, new.Config, &cfg, &cfg.AppPassword)
 	case extsvc.KindAWSCodeCommit:
 		cfg := schema.AWSCodeCommitConnection{}
-		unRedacted, err := unRedactField(old.Config, new.Config, &cfg, &cfg.SecretAccessKey)
-		if err != nil {
-			return err
-		}
-		new.Config = unRedacted
+		unRedacted, err = unRedactField(old.Config, new.Config, &cfg, &cfg.SecretAccessKey)
 	case extsvc.KindPhabricator:
 		cfg := schema.PhabricatorConnection{}
-		unRedacted, err := unRedactField(old.Config, new.Config, &cfg, &cfg.Token)
-		if err != nil {
-			return err
-		}
-		new.Config = unRedacted
+		unRedacted, err = unRedactField(old.Config, new.Config, &cfg, &cfg.Token)
 	case extsvc.KindPerforce:
 		cfg := schema.PerforceConnection{}
-		unRedacted, err := unRedactField(old.Config, new.Config, &cfg, &cfg.P4Passwd)
-		if err != nil {
-			return err
-		}
-		new.Config = unRedacted
+		unRedacted, err = unRedactField(old.Config, new.Config, &cfg, &cfg.P4Passwd)
 	case extsvc.KindGitolite:
 		// no secret fields?
-		return nil
+		err = nil
 	case extsvc.KindOther:
 		// no secret fields?
-		return nil
+		err = nil
 	default:
 		// return an error here, it's safer to fail than to incorrectly return unsafe data.
-		return fmt.Errorf("UnRedactExternalServiceConfig: kind %q not implemented", new.Kind)
+		err = fmt.Errorf("UnRedactExternalServiceConfig: kind %q not implemented", new.Kind)
 	}
+	if err != nil {
+		return err
+	}
+	new.Config = unRedacted
 	return nil
 }
 
