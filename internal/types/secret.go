@@ -133,7 +133,13 @@ func (e *ExternalService) UnredactConfig(old *ExternalService) error {
 }
 
 func unRedactField(old, new string, cfg interface{}, fields ...*string) (string, error) {
-	err := json.Unmarshal([]byte(old), cfg)
+	// first we zero the fields on cfg, as they will contain data we don't need from the e.Configuration() call
+	// we just want an empty struct of the correct type for marshaling into
+	err := zeroFields(cfg)
+	if err != nil {
+		return "", err
+	}
+	err = json.Unmarshal([]byte(old), cfg)
 	if err != nil {
 		return "", err
 	}
