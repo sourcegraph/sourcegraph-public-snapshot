@@ -774,6 +774,39 @@ func (r *Resolver) SyncChangeset(ctx context.Context, args *graphqlbackend.SyncC
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
+func (r *Resolver) ReenqueueChangeset(ctx context.Context, args *graphqlbackend.ReenqueueChangesetArgs) (_ graphqlbackend.ChangesetResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.ReenqueueChangeset", fmt.Sprintf("Changeset: %q", args.Changeset))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+	if err := campaignsEnabled(ctx); err != nil {
+		return nil, err
+	}
+
+	changesetID, err := unmarshalChangesetID(args.Changeset)
+	if err != nil {
+		return nil, err
+	}
+
+	if changesetID == 0 {
+		return nil, ErrIDIsZero{}
+	}
+
+	// 🚨 SECURITY: EnqueueChangesetSync checks whether current user is authorized.
+	svc := service.New(r.store)
+	changeset, err := svc.ReenqueueChangeset(ctx, changesetID)
+	if err != nil {
+		return nil, err
+	}
+	repo, err := database.ReposWith(r.store).Get(ctx, changeset.RepoID)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewChangesetResolver(r.store, changeset, repo), nil
+}
+
 func (r *Resolver) CreateCampaignsCredential(ctx context.Context, args *graphqlbackend.CreateCampaignsCredentialArgs) (_ graphqlbackend.CampaignsCredentialResolver, err error) {
 	tr, ctx := trace.New(ctx, "Resolver.CreateCampaignsCredential", fmt.Sprintf("%q (%q)", args.ExternalServiceKind, args.ExternalServiceURL))
 	defer func() {

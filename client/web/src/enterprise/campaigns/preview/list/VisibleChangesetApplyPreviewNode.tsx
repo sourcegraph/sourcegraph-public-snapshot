@@ -426,7 +426,7 @@ const VisibleChangesetApplyPreviewNodeStatusCell: React.FunctionComponent<
     Pick<VisibleChangesetApplyPreviewNodeProps, 'node'> & { className?: string }
 > = ({ node, className }) => {
     if (node.targets.__typename === 'VisibleApplyPreviewTargetsAttach') {
-        return <ChangesetStatusCell changeset={{ state: ChangesetState.UNPUBLISHED }} className={className} />
+        return <ChangesetStatusCell state={ChangesetState.UNPUBLISHED} className={className} />
     }
-    return <ChangesetStatusCell changeset={{ state: node.targets.changeset.state }} className={className} />
+    return <ChangesetStatusCell state={node.targets.changeset.state} className={className} />
 }

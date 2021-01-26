@@ -21,6 +21,9 @@ import {
     CampaignByNamespaceVariables,
     ChangesetDiffResult,
     ChangesetDiffVariables,
+    ReenqueueChangesetVariables,
+    ReenqueueChangesetResult,
+    ChangesetFields,
 } from '../../../graphql-operations'
 import { requestGraphQL } from '../../../backend/graphql'
 
@@ -276,6 +279,26 @@ export async function syncChangeset(changeset: Scalars['ID']): Promise<void> {
         { changeset }
     ).toPromise()
     dataOrThrowErrors(result)
+}
+
+export async function reenqueueChangeset(changeset: Scalars['ID']): Promise<ChangesetFields> {
+    return requestGraphQL<ReenqueueChangesetResult, ReenqueueChangesetVariables>(
+        gql`
+            mutation ReenqueueChangeset($changeset: ID!) {
+                reenqueueChangeset(changeset: $changeset) {
+                    ...ChangesetFields
+                }
+            }
+
+            ${changesetFieldsFragment}
+        `,
+        { changeset }
+    )
+        .pipe(
+            map(dataOrThrowErrors),
+            map(data => data.reenqueueChangeset)
+        )
+        .toPromise()
 }
 
 // Because thats the name in the API:
