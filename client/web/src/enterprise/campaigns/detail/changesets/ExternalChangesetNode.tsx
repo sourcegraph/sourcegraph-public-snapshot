@@ -214,30 +214,30 @@ const ChangesetError: React.FunctionComponent<{
                 <ErrorAlert error={isLoading} prefix="Error re-enqueueing changeset" history={history} />
             )}
             <div className="alert alert-danger" role="alert">
-                <div>
+                <div className="d-flex justify-content-between">
                     <h4 className="alert-heading">
                         <AlertCircleIcon className="icon icon-inline" /> Failed to run operations on changeset
                     </h4>
-                    <ErrorMessage error={node.error} history={history} />
+                    {viewerCanAdminister && node.state === ChangesetState.FAILED && (
+                        <div className="d-flex justify-content-end">
+                            <button
+                                className="btn btn-link alert-link"
+                                type="button"
+                                onClick={onRetry}
+                                disabled={isLoading === true}
+                            >
+                                <SyncIcon
+                                    className={classNames(
+                                        'icon-inline',
+                                        isLoading === true && 'external-changeset-node__retry--spinning'
+                                    )}
+                                />{' '}
+                                Retry
+                            </button>
+                        </div>
+                    )}
                 </div>
-                {viewerCanAdminister && node.state === ChangesetState.FAILED && (
-                    <div className="d-flex justify-content-end">
-                        <button
-                            className="btn btn-link alert-link"
-                            type="button"
-                            onClick={onRetry}
-                            disabled={isLoading === true}
-                        >
-                            <SyncIcon
-                                className={classNames(
-                                    'icon-inline',
-                                    isLoading === true && 'external-changeset-node__retry--spinning'
-                                )}
-                            />{' '}
-                            Retry
-                        </button>
-                    </div>
-                )}
+                <ErrorMessage error={node.error} history={history} />
             </div>
         </>
     )
