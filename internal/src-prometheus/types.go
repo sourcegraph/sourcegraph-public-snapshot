@@ -21,7 +21,7 @@ type MonitoringAlert struct {
 	NameValue        string    `json:"name"`
 	ServiceNameValue string    `json:"service_name"`
 	OwnerValue       string    `json:"owner"`
-	// AverageValue indicates average over past 12 hours, see alertsHistoryQuery
+	// AverageValue indicates average over past 12 hours, see alertsHistoryQuery and GraphQL schema docs for MonitoringAlert
 	AverageValue float64 `json:"average"`
 }
 
