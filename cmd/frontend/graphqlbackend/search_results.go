@@ -1960,6 +1960,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		return nil, err
 	}
 	if alertResult != nil {
+		// LOCAL: send alert and return
 		return alertResult, nil
 	}
 

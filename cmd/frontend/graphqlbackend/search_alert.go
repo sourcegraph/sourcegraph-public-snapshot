@@ -21,11 +21,22 @@ import (
 	querytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
 )
 
+// Global Enum of alert types
+
+type SearchAlert struct {
+	//
+	Type string
+	Priority int
+}
+
 type searchAlert struct {
 	prometheusType  string
 	title           string
 	description     string
 	proposedQueries []*searchQueryDescription
+
+	// priority, the smaller the number the more important the alert.
+	priority int
 }
 
 func (a searchAlert) Title() string { return a.title }
@@ -654,28 +665,94 @@ func alertForError(err error) *searchAlert {
 		tErr  *timeLimitError
 	)
 	if errors.As(err, &mErr) {
+		// LOCAL: determineRepos could send an Alert event
 		alert = alertForMissingRepoRevs(mErr)
+		alert.priority = 0
 	} else if errors.As(err, &sErr) {
+		// GLOBAL: needs to know there are no results
 		alert = alertForStructuralSearchNotSet(sErr)
+		alert.priority = 1
 	} else if errors.As(err, &iErr) {
+		// LOCAL: can do it after partitioning between indexed and unindexed
 		alert = alertForStructuralSearchNoIndexedRepos(iErr)
+		alert.priority = 2
 	} else if errors.Is(err, structuralSearchMemError) {
+		// LOCAL: converts errors from searcher by inspecting them
 		alert = alertForStructuralSearchMem()
+		alert.priority = 3
 	} else if errors.Is(err, structuralSearchSearcherError) {
+		// LOCAL: converts errors from searcher by inspecting them
 		alert = alertForStructuralSearchSearcher()
+		alert.priority = 4
 	} else if errors.As(err, &rErr) {
+		// LOCAL: runs before we do a diff search
 		alert = alertForRepoLimitErr(rErr)
+		alert.priority = 5
 	} else if errors.As(err, &tErr) {
+		// LOCAL: runs before we do a diff search
 		alert = alertForTimeLimitErr(tErr)
+		alert.priority = 6
 	}
 	return alert
 }
 
+type alertObserver struct {
+	// alert is the current alert to show.
+	alert *searchAlert
+	err error
+	hasResults bool
+}
+
+// Next returns a non-nil alert if there is a new alert to show to the user.
+func (o *alertObserver) Next(event SearchEvent) *searchAlert {
+	if len(event.Results) > 0 {
+		o.hasResults = true
+	}
+
+	if event.Error = nil {
+		return nil
+	}
+
+	alert := alertForError(event.Error)
+	if alert == nil {
+		o.err = multierror.Append(o.err, event.Error)
+		return nil
+	}
+	if o.alert == nil || alert.priority < o.alert.priority {
+		o.alert = alert
+		return o.alert
+	}
+
+	return nil
+}
+
+func (o *alertObserver) Done(stats *streaming.Stats) error {
+	if o.hasResults && o.err != nil {
+		log15.Error("Errors during search", "error", o.err)
+		return nil
+	}
+
+	if o.err == nil {
+		check if allReposTimedout
+	}
+
+	return o.err
+}
+
 // unhandledError returns the first unhandled error we find.
-func unhandledError(e error) error {
+func unhandledError(err error) (*searchAlert, error) {
 	if e == nil {
 		return nil
 	}
+
+	// If there is an unhandled error, return that
+	// Otherwise return the most important error we find (tie break for earlier)
+
+	if a := alertForError(err); a != nil {
+		return a, nil
+	}
+	return nil, e
+
 	var errs []error
 	switch e.(type) {
 	case *multierror.Error:
@@ -686,7 +763,8 @@ func unhandledError(e error) error {
 	for _, err := range errs {
 		if a := alertForError(err); a == nil {
 			return err
-		}
+		} else {
+			return
 	}
 	return nil
 }
