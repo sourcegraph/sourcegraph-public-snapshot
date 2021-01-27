@@ -457,7 +457,8 @@ type ReposListOptions struct {
 	// IDs of repos to list. When zero-valued, this is omitted from the predicate set.
 	IDs []api.RepoID
 
-	// Limits the set of results to repositories added by the user.
+	// UserID, if non zero, will limit the set of results to repositories added by the user
+	// through external services. Mutually exclusive with the ExternalServiceIDs option.
 	UserID int32
 
 	// ServiceTypes of repos to list. When zero-valued, this is omitted from the predicate set.
@@ -465,6 +466,7 @@ type ReposListOptions struct {
 
 	// ExternalServiceIDs, if non empty, will only return repos added by the given external services.
 	// The id is that of the external_services table NOT the external_service_id in the repo table
+	// Mutually exclusive with the UserID option.
 	ExternalServiceIDs []int64
 
 	// ExternalRepos of repos to list. When zero-valued, this is omitted from the predicate set.
@@ -624,6 +626,10 @@ func (s *RepoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (re
 }
 
 func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, minimal bool, opt ReposListOptions, scanRepo func(rows *sql.Rows) error) error {
+	if len(opt.ExternalServiceIDs) != 0 && opt.UserID != 0 {
+		return errors.New("options ExternalServiceIDs and UserID are mutually exclusive")
+	}
+
 	conds, err := s.listSQL(opt)
 	if err != nil {
 		return err
@@ -639,11 +645,10 @@ func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, minimal bool, opt
 	} else if opt.UserID != 0 {
 		fromClause = sqlf.Sprintf(`
 			repo
-				LEFT JOIN external_service_repos esr ON repo.id = esr.repo_id
-				LEFT JOIN external_services es ON esr.external_service_id = es.id
-				LEFT JOIN user_public_repos upr ON repo.id = upr.repo_id
+				JOIN external_service_repos esr ON repo.id = esr.repo_id
+				JOIN external_services es ON esr.external_service_id = es.id
 		`)
-		conds = append(conds, sqlf.Sprintf("%d IN (es.namespace_user_id, upr.user_id)", opt.UserID))
+		conds = append(conds, sqlf.Sprintf("es.namespace_user_id = %d AND es.deleted_at IS NULL", opt.UserID))
 	}
 
 	queryConds := sqlf.Sprintf("TRUE")

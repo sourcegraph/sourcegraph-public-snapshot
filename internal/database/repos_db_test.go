@@ -1681,6 +1681,17 @@ func TestRepos_ListRepoNames_queryAndPatternsMutuallyExclusive(t *testing.T) {
 	})
 }
 
+func TestRepos_ListRepoNames_UserIDAndExternalServiceIDsMutuallyExclusive(t *testing.T) {
+	ctx := actor.WithInternalActor(context.Background())
+	wantErr := "options ExternalServiceIDs and UserID are mutually exclusive"
+
+	db := dbtesting.GetDB(t)
+	_, err := Repos(db).ListRepoNames(ctx, ReposListOptions{UserID: 1, ExternalServiceIDs: []int64{2}})
+	if err == nil || !strings.Contains(err.Error(), wantErr) {
+		t.Fatalf("got error %v, want it to contain %q", err, wantErr)
+	}
+}
+
 func TestRepos_ListRepoNames_useOr(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
