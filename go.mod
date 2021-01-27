@@ -44,7 +44,7 @@ require (
 	github.com/felixge/fgprof v0.9.1
 	github.com/felixge/httpsnoop v1.0.1
 	github.com/fsnotify/fsnotify v1.4.9
-	github.com/gchaincl/sqlhooks v1.3.0
+	github.com/gchaincl/sqlhooks/v2 v2.0.1
 	github.com/getsentry/raven-go v0.2.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/gitchander/permutation v0.0.0-20181107151852-9e56b92e9909
@@ -219,8 +219,6 @@ replace (
 // These entries indicate temporary replace directives due to a pending pull request upstream
 // or issues with specific versions.
 replace (
-	// Pending: https://github.com/gchaincl/sqlhooks/pull/33
-	github.com/gchaincl/sqlhooks => github.com/asdine/sqlhooks v1.3.1-0.20210120094401-480358310a5b
 	// Pending: https://github.com/ghodss/yaml/pull/65
 	github.com/ghodss/yaml => github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152
 	// protobuf v1.3.5+ causes issues - https://github.com/sourcegraph/sourcegraph/issues/11804
