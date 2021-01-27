@@ -2,8 +2,9 @@ package types
 
 import (
 	"encoding/json"
-	"reflect"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 
@@ -73,8 +74,8 @@ func TestRoundTripRedactExternalServiceConfig(t *testing.T) {
 	}
 
 	// our updated fields are still here
-	if !reflect.DeepEqual(finalCfg.Repos, newCfg.Repos) {
-		t.Errorf("expected %s, got %s", newCfg.Repos, finalCfg.Repos)
+	if diff := cmp.Diff(finalCfg.Repos, newCfg.Repos); diff != "" {
+		t.Errorf("unexpected diff: %s", diff)
 	}
 	// and the secret is no longer redacted
 	if want, got := someSecret, finalCfg.Token; want != got {
