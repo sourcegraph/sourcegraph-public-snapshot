@@ -133,15 +133,9 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            this.props.extensionsController.services.contribution
-                .getContributions()
-                .subscribe(contributions => this.setState({ contributions }))
-        )
-
-        this.subscriptions.add(
             from(this.props.extensionsController.extHostAPI)
-                .pipe(switchMap(extHostAPI => wrapRemoteObservable(extHostAPI.getContributions())))
-                .subscribe(contributions => console.log('contribs from cmdlist! from exthost!', contributions))
+                .pipe(switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getContributions())))
+                .subscribe(contributions => this.setState({ contributions }))
         )
 
         this.subscriptions.add(

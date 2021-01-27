@@ -1,8 +1,6 @@
 import { isEqual } from 'lodash'
 import { from, Observable, Unsubscribable } from 'rxjs'
 import { distinctUntilChanged, filter, first, map, mapTo, publishReplay, refCount } from 'rxjs/operators'
-import { parseTemplate } from '../../../../../shared/src/api/client/context/expr/evaluator'
-import { Services } from '../../../../../shared/src/api/client/services'
 import type { HoverAlert } from 'sourcegraph'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
 import { PlatformContext } from '../../../../../shared/src/platform/context'
@@ -13,6 +11,8 @@ import { MutationRecordLike } from '../../util/dom'
 import { CodeHost } from './codeHost'
 import { trackViews } from './views'
 import { userNeedsToSetupPrivateInstance } from './hoverAlerts'
+import { Controller as ExtensionsController } from '../../../../../shared/src/extensions/controller'
+import { syncSubscription } from '../../../../../shared/src/api/util'
 
 const NATIVE_TOOLTIP_HIDDEN = 'native-tooltip--hidden'
 const NATIVE_TOOLTIP_TYPE = 'nativeTooltips'
@@ -78,36 +78,37 @@ export function nativeTooltipsEnabledFromSettings(settings: PlatformContext['set
     )
 }
 
-export function registerNativeTooltipContributions(extensionsController: {
-    services: Pick<Services, 'contribution'>
-}): Unsubscribable {
-    return extensionsController.services.contribution.registerContributions({
-        contributions: {
-            actions: [
-                {
-                    id: 'codeHost.toggleUseNativeTooltips',
-                    command: 'updateConfiguration',
-                    category: parseTemplate('Code host'),
-                    commandArguments: [
-                        parseTemplate('codeHost.useNativeTooltips'),
-                        /* eslint-disable-next-line no-template-curly-in-string */
-                        parseTemplate('${!config.codeHost.useNativeTooltips}'),
-                        null,
-                        parseTemplate('json'),
-                    ],
-                    title: parseTemplate(
-                        /* eslint-disable-next-line no-template-curly-in-string */
-                        'Prefer ${config.codeHost.useNativeTooltips && "Sourcegraph" || "non-Sourcegraph"} hover tooltips'
-                    ),
-                },
-            ],
-            menus: {
-                commandPalette: [
+export function registerNativeTooltipContributions(
+    extensionsController: Pick<ExtensionsController, 'extHostAPI'>
+): Unsubscribable {
+    return syncSubscription(
+        extensionsController.extHostAPI.then(extensionHostAPI =>
+            extensionHostAPI.registerContributions({
+                actions: [
                     {
-                        action: 'codeHost.toggleUseNativeTooltips',
+                        id: 'codeHost.toggleUseNativeTooltips',
+                        command: 'updateConfiguration',
+                        category: 'Code host',
+                        commandArguments: [
+                            'codeHost.useNativeTooltips',
+                            /* eslint-disable-next-line no-template-curly-in-string */
+                            '${!config.codeHost.useNativeTooltips}',
+                            null,
+                            'json',
+                        ],
+                        title:
+                            /* eslint-disable-next-line no-template-curly-in-string */
+                            'Prefer ${config.codeHost.useNativeTooltips && "Sourcegraph" || "non-Sourcegraph"} hover tooltips',
                     },
                 ],
-            },
-        },
-    })
+                menus: {
+                    commandPalette: [
+                        {
+                            action: 'codeHost.toggleUseNativeTooltips',
+                        },
+                    ],
+                },
+            })
+        )
+    )
 }

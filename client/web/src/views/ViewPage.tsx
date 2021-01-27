@@ -7,9 +7,12 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { getView } from '../../../shared/src/api/client/services/viewService'
 import { useObservable } from '../../../shared/src/util/useObservable'
 import { ViewContentProps, ViewContent } from './ViewContent'
+import { switchMap } from 'rxjs/operators'
+import { from } from 'rxjs'
+import { wrapRemoteObservable } from '../../../shared/src/api/client/api/common'
 
 interface Props
-    extends ExtensionsControllerProps<'services'>,
+    extends ExtensionsControllerProps<'services' | 'extHostAPI'>,
         Omit<ViewContentProps, 'viewContent' | 'containerClassName'> {
     viewID: string
     extraPath: string
@@ -37,9 +40,14 @@ export const ViewPage: React.FunctionComponent<Props> = ({
         [extraPath, location.search]
     )
 
-    const contributions = useMemo(() => extensionsController.services.contribution.getContributions(), [
-        extensionsController.services.contribution,
-    ])
+    const contributions = useMemo(
+        () =>
+            from(extensionsController.extHostAPI).pipe(
+                switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getContributions()))
+            ),
+        [extensionsController]
+    )
+
     const view = useObservable(
         useMemo(
             () =>

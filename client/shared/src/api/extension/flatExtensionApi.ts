@@ -459,8 +459,6 @@ export const initNewExtensionAPI = (
         registerContributions: rawContributions => {
             const parsedContributions = parseContributionExpressions(rawContributions)
 
-            console.log('extHostContributions', { rawContributions, parsedContributions })
-
             return proxy(addWithRollback(state.contributions, parsedContributions))
         },
         getContributions: (scope, extraContext) =>
@@ -535,6 +533,10 @@ export const initNewExtensionAPI = (
         }
         return configuration
     }
+    exposedToMain.registerContributions({
+        actions: [{ id: 'bs', title: 'some bs' }],
+        menus: { 'directory/page': [{ action: 'bs' }] },
+    })
 
     // Workspace
     const workspace: typeof sourcegraph['workspace'] = {

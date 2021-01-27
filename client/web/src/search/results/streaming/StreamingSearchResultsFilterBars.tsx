@@ -14,6 +14,9 @@ import {
     SettingsCascadeOrError,
     SettingsCascadeProps,
 } from '../../../../../shared/src/settings/settings'
+import { from } from 'rxjs'
+import { switchMap } from 'rxjs/operators'
+import { wrapRemoteObservable } from '../../../../../shared/src/api/client/api/common'
 
 interface Props
     extends SettingsCascadeProps,
@@ -35,8 +38,15 @@ export const StreamingSearchResultsFilterBars: React.FunctionComponent<Props> = 
     const { extensionsController, results, settingsCascade } = props
 
     const contributions = useObservable(
-        useMemo(() => extensionsController.services.contribution.getContributions(), [extensionsController])
+        useMemo(
+            () =>
+                from(extensionsController.extHostAPI).pipe(
+                    switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getContributions()))
+                ),
+            [extensionsController]
+        )
     )
+
     const filters = props.results?.filters
     const quickLinks = (isSettingsValid<Settings>(settingsCascade) && settingsCascade.final.quicklinks) || []
 

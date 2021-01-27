@@ -19,7 +19,6 @@ import {
 import { ActionItemAction } from '../actions/ActionItem'
 import { wrapRemoteObservable } from '../api/client/api/common'
 import { Context } from '../api/client/context/context'
-import { parse, parseTemplate } from '../api/client/context/expr/evaluator'
 import { Services } from '../api/client/services'
 import { WorkspaceRootWithMetadata } from '../api/client/services/workspaceService'
 import { ContributableMenu, TextDocumentPositionParameters } from '../api/protocol'
@@ -60,9 +59,12 @@ export function getHoverActions(
         hoverContext
     ).pipe(
         switchMap(context =>
-            extensionsController.services.contribution
-                .getContributions(undefined, context)
-                .pipe(map(contributions => getContributedActionItems(contributions, ContributableMenu.Hover)))
+            from(extensionsController.extHostAPI).pipe(
+                switchMap(extensionHostAPI =>
+                    wrapRemoteObservable(extensionHostAPI.getContributions(undefined, context))
+                ),
+                map(contributions => getContributedActionItems(contributions, ContributableMenu.Hover))
+            )
         )
     )
 }
