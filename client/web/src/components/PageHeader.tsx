@@ -43,7 +43,7 @@ export const PageHeader: React.FunctionComponent<Props> = ({ annotation, path, b
                 <h1 className="flex-grow-1 d-block m-0">
                     {path.map(({ to, text, icon: Icon }, index) => (
                         <React.Fragment key={index}>
-                            {index !== 0 && <span className="mr-2">/</span>}
+                            {index !== 0 && <span className="mr-2 text-muted">/</span>}
                             <LinkOrSpan to={to}>
                                 {Icon && <Icon className="icon-inline page-header__icon mr-2" />}
                                 {text && <span className="mr-2">{text}</span>}

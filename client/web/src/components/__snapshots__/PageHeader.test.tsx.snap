@@ -27,7 +27,7 @@ exports[`PageHeader renders correctly 1`] = `
             </svg>
           </a>
           <span
-            class="mr-2"
+            class="mr-2 text-muted"
           >
             /
           </span>
@@ -42,7 +42,7 @@ exports[`PageHeader renders correctly 1`] = `
             </span>
           </a>
           <span
-            class="mr-2"
+            class="mr-2 text-muted"
           >
             /
           </span>
@@ -57,7 +57,7 @@ exports[`PageHeader renders correctly 1`] = `
             </span>
           </a>
           <span
-            class="mr-2"
+            class="mr-2 text-muted"
           >
             /
           </span>
