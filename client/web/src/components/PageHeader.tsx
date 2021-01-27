@@ -27,7 +27,9 @@ interface Props {
 }
 
 export const PageHeader: React.FunctionComponent<Props> = ({ annotation, path, byline, actions, className }) => {
-    if (path.length === 0) return null
+    if (path.length === 0) {
+        return null
+    }
 
     return (
         <header
