@@ -7,7 +7,7 @@ const statusStyleMapping: Record<Status, string> = {
     beta: 'badge-info',
 }
 
-export const StatusBadge: React.FC<{ status: Status }> = ({ status }) => (
+export const StatusBadge: React.FunctionComponent<{ status: Status }> = ({ status }) => (
     <div className="d-flex align-items-center">
         <span className={`badge ${statusStyleMapping[status]} text-uppercase mr-2`}>{status}</span>
         <a href="mailto:support@sourcegraph.com" target="_blank" rel="noopener noreferrer">
