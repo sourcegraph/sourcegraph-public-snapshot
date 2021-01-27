@@ -237,6 +237,12 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			config:  `{"url": "https://github.com", "projectQuery": ["none"], "token": "` + types.RedactedSecret + `"}`,
 			wantErr: "found unexpected Redacted string: \"" + types.RedactedSecret + "\", has ExternalService.UnredactConfig been called before attempting to write?",
 		},
+		{
+			name:    "0 errors - potentially redacted string",
+			kind:    extsvc.KindGitHub,
+			config:  `{"url": "https://github.com", "repositoryQuery": ["github.com/srcgraph_redacted"], "token": "abc"}`,
+			wantErr: "<nil>",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
