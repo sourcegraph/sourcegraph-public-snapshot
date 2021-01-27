@@ -98,7 +98,7 @@ func emptyDBPreserveSchema(t testing.TB, d *sql.DB) {
 
 	var conds []string
 	conds = append(conds, fmt.Sprintf("table_name != '%s'", dbconn.Frontend.MigrationsTable))
-	conds = append(conds, fmt.Sprintf("table_name != '%s'", dbconn.CodeInsights.MigrationsTable))
+	conds = append(conds, fmt.Sprintf("table_name != '%s'", dbconn.CodeIntel.MigrationsTable))
 
 	rows, err := d.Query("SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE' AND " + strings.Join(conds, " AND "))
 	if err != nil {
