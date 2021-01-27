@@ -19,7 +19,7 @@ import {
 import PlusIcon from 'mdi-react/PlusIcon'
 import { Link } from '../../../../../shared/src/components/Link'
 import { PageHeader } from '../../../components/PageHeader'
-import { CampaignsIconFlushLeft } from '../icons'
+import { CampaignsIcon } from '../icons'
 import { CampaignsListEmpty } from './CampaignsListEmpty'
 import { CampaignListIntro } from './CampaignListIntro'
 import { filter, map, tap, withLatestFrom } from 'rxjs/operators'
@@ -117,7 +117,7 @@ export const CampaignListPage: React.FunctionComponent<CampaignListPageProps> = 
     return (
         <>
             <PageHeader
-                path={[{ icon: CampaignsIconFlushLeft, text: 'Campaigns' }]}
+                path={[{ icon: CampaignsIcon, text: 'Campaigns' }]}
                 className="test-campaign-list-page mb-3"
                 actions={<NewCampaignButton location={location} />}
                 byline="Run custom code over hundreds of repositories and manage the resulting changesets"

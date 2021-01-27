@@ -20,7 +20,7 @@ import { SupersedingCampaignSpecAlert } from '../detail/SupersedingCampaignSpecA
 import { queryChangesetSpecFileDiffs, queryChangesetApplyPreview } from './list/backend'
 import { CampaignPreviewStatsBar } from './CampaignPreviewStatsBar'
 import { PageHeader } from '../../../components/PageHeader'
-import { CampaignsIconFlushLeft } from '../icons'
+import { CampaignsIcon } from '../icons'
 
 export interface CampaignPreviewPageProps extends ThemeProps, TelemetryProps {
     campaignSpecID: string
@@ -82,7 +82,7 @@ export const CampaignPreviewPage: React.FunctionComponent<CampaignPreviewPagePro
             <PageHeader
                 path={[
                     {
-                        icon: CampaignsIconFlushLeft,
+                        icon: CampaignsIcon,
                         to: '/campaigns',
                     },
                     { to: `${spec.namespace.url}/campaigns`, text: spec.namespace.namespaceName },

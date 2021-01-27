@@ -26,7 +26,7 @@ import { CampaignDetailsActionSection } from './CampaignDetailsActionSection'
 import { CampaignInfoByline } from './CampaignInfoByline'
 import { UnpublishedNotice } from './UnpublishedNotice'
 import { SupersedingCampaignSpecAlert } from './SupersedingCampaignSpecAlert'
-import { CampaignsIconFlushLeft } from '../icons'
+import { CampaignsIcon } from '../icons'
 import { PageHeader } from '../../../components/PageHeader'
 
 export interface CampaignDetailsPageProps
@@ -109,7 +109,7 @@ export const CampaignDetailsPage: React.FunctionComponent<CampaignDetailsPagePro
             <PageHeader
                 path={[
                     {
-                        icon: CampaignsIconFlushLeft,
+                        icon: CampaignsIcon,
                         to: '/campaigns',
                     },
                     { to: `${campaign.namespace.url}/campaigns`, text: campaign.namespace.namespaceName },
