@@ -58,7 +58,7 @@ func (r *repositoryMirrorInfoResolver) repoUpdateSchedulerInfo(ctx context.Conte
 
 // TODO(flying-robot): this regex and the majority of the removeUserInfo function can
 // be extracted to a common location in a subsequent change.
-var nonSCPURLRegex = lazyregexp.New(`^(git\+)?(https?|ssh|rsync|file|git)://`)
+var nonSCPURLRegex = lazyregexp.New(`^(git\+)?(https?|ssh|rsync|file|git|perforce)://`)
 
 func (r *repositoryMirrorInfoResolver) RemoteURL(ctx context.Context) (string, error) {
 	// 🚨 SECURITY: The remote URL might contain secret credentials in the URL userinfo, so

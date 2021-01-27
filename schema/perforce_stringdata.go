@@ -30,7 +30,7 @@ const PerforceSchemaJSON = `{
     "depots": {
       "description": "Depots can have arbitrary paths, e.g. a path to depot root or a subdirectory.",
       "type": "array",
-      "items": { "type": "string", "pattern": "^\\/[\\/\\w]+/$" },
+      "items": { "type": "string", "pattern": "^\\/[\\/\\S]+\\/$" },
       "examples": [["//Sourcegraph/", "//Engineering/Cloud/"]]
     },
     "maxChanges": {

@@ -52,8 +52,8 @@ func TestSearchFilesInRepos(t *testing.T) {
 			return nil, false, &vcs.RepoNotExistError{Repo: repoName, CloneInProgress: true}
 		case "foo/missing":
 			return nil, false, &vcs.RepoNotExistError{Repo: repoName}
-		case "foo/missing-db":
-			return nil, false, &errcode.Mock{Message: "repo not found: foo/missing-db", IsNotFound: true}
+		case "foo/missing-database":
+			return nil, false, &errcode.Mock{Message: "repo not found: foo/missing-database", IsNotFound: true}
 		case "foo/timedout":
 			return nil, false, context.DeadlineExceeded
 		case "foo/no-rev":
@@ -73,7 +73,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	repoRevs := makeRepositoryRevisions("foo/one", "foo/two", "foo/empty", "foo/cloning", "foo/missing", "foo/missing-db", "foo/timedout", "foo/no-rev")
+	repoRevs := makeRepositoryRevisions("foo/one", "foo/two", "foo/empty", "foo/cloning", "foo/missing", "foo/missing-database", "foo/timedout", "foo/no-rev")
 	args := &search.TextParameters{
 		PatternInfo: &search.TextPatternInfo{
 			FileMatchLimit: defaultMaxSearchResults,
@@ -96,14 +96,14 @@ func TestSearchFilesInRepos(t *testing.T) {
 		repoNames[rr.Repo.ID] = string(rr.Repo.Name)
 	}
 	assertReposStatus(t, repoNames, common.Status, map[string]search.RepoStatus{
-		"foo/cloning":    search.RepoStatusCloning,
-		"foo/empty":      search.RepoStatusSearched,
-		"foo/missing":    search.RepoStatusMissing,
-		"foo/missing-db": search.RepoStatusMissing,
-		"foo/no-rev":     0,
-		"foo/one":        search.RepoStatusSearched,
-		"foo/timedout":   search.RepoStatusTimedout,
-		"foo/two":        search.RepoStatusSearched,
+		"foo/cloning":          search.RepoStatusCloning,
+		"foo/empty":            search.RepoStatusSearched,
+		"foo/missing":          search.RepoStatusMissing,
+		"foo/missing-database": search.RepoStatusMissing,
+		"foo/no-rev":           0,
+		"foo/one":              search.RepoStatusSearched,
+		"foo/timedout":         search.RepoStatusTimedout,
+		"foo/two":              search.RepoStatusSearched,
 	})
 
 	// If we specify a rev and it isn't found, we fail the whole search since

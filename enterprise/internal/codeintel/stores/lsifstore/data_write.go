@@ -6,8 +6,8 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/internal/db/batch"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/batch"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )

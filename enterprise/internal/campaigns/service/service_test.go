@@ -16,9 +16,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -452,7 +452,7 @@ func TestService(t *testing.T) {
 		})
 
 		t.Run("missing access to namespace org", func(t *testing.T) {
-			org, err := db.GlobalOrgs.Create(ctx, "test-org", nil)
+			org, err := database.GlobalOrgs.Create(ctx, "test-org", nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -471,7 +471,7 @@ func TestService(t *testing.T) {
 			}
 
 			// Create org membership and try again
-			if _, err := db.GlobalOrgMembers.Create(ctx, org.ID, user.ID); err != nil {
+			if _, err := database.GlobalOrgMembers.Create(ctx, org.ID, user.ID); err != nil {
 				t.Fatal(err)
 			}
 
@@ -646,7 +646,7 @@ func TestService(t *testing.T) {
 		t.Run("new org namespace", func(t *testing.T) {
 			campaign := createCampaign(t, "old-name", admin.ID, admin.ID, 0)
 
-			org, err := db.GlobalOrgs.Create(ctx, "org", nil)
+			org, err := database.GlobalOrgs.Create(ctx, "org", nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -669,7 +669,7 @@ func TestService(t *testing.T) {
 		t.Run("new org namespace but current user is missing access", func(t *testing.T) {
 			campaign := createCampaign(t, "old-name", user.ID, user.ID, 0)
 
-			org, err := db.GlobalOrgs.Create(ctx, "org-no-access", nil)
+			org, err := database.GlobalOrgs.Create(ctx, "org-no-access", nil)
 			if err != nil {
 				t.Fatal(err)
 			}

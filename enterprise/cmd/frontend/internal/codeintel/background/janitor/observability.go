@@ -40,7 +40,7 @@ func newMetrics(observationContext *observation.Context) *metrics {
 	)
 	numUploadsPurged := counter(
 		"src_codeintel_background_uploads_purged_total",
-		"The number of uploads for which records in the codeintel db were removed.",
+		"The number of uploads for which records in the codeintel database were removed.",
 	)
 	numUploadResets := counter(
 		"src_codeintel_background_upload_resets_total",

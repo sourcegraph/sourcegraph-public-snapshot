@@ -112,7 +112,7 @@ Your site admin can configure indexed branches in site configuration under the `
 "experimentalFeatures": {
   "search.index.branches": {
    "github.com/sourcegraph/sourcegraph": ["3.15", "develop"],
-   "github.com/sourcegraph/src-cli": "next"
+   "github.com/sourcegraph/src-cli": ["next"]
   }
 }
 ```

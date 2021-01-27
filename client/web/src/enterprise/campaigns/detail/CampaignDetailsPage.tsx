@@ -132,7 +132,12 @@ export const CampaignDetailsPage: React.FunctionComponent<CampaignDetailsPagePro
                 total={campaign.changesetsStats.total}
                 className="mb-3"
             />
-            <CampaignStatsCard closedAt={campaign.closedAt} stats={campaign.changesetsStats} className="mb-3" />
+            <CampaignStatsCard
+                closedAt={campaign.closedAt}
+                stats={campaign.changesetsStats}
+                diff={campaign.diffStat}
+                className="mb-3"
+            />
             <Description history={history} description={campaign.description} />
             <CampaignTabs
                 campaign={campaign}

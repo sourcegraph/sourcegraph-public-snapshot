@@ -208,31 +208,32 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 	} else {
 		settings, err := decodedViewerFinalSettings(ctx)
 		if err != nil {
-			log15.Warn("DynamicFilters: could not get user settings from db")
+			log15.Warn("DynamicFilters: could not get user settings from database")
 		} else {
 			globbing = getBoolPtr(settings.SearchGlobbing, false)
 		}
 	}
 	tr.LogFields(otlog.Bool("globbing", globbing))
 
-	filters := map[string]*searchFilterResolver{}
+	filters := map[string]*streaming.Filter{}
 	repoToMatchCount := make(map[string]int32)
-	add := func(value string, label string, count int32, limitHit bool, kind string, score score) {
+	add := func(value string, label string, count int32, limitHit bool, kind string) {
 		sf, ok := filters[value]
 		if !ok {
-			sf = &searchFilterResolver{
-				value:    value,
-				label:    label,
-				count:    count,
-				limitHit: limitHit,
-				kind:     kind,
+			sf = &streaming.Filter{
+				Value:      value,
+				Label:      label,
+				Count:      int(count),
+				IsLimitHit: limitHit,
+				Kind:       kind,
 			}
 			filters[value] = sf
 		} else {
-			sf.count = count
+			sf.Count = int(count)
 		}
-
-		sf.score = score
+	}
+	important := func(value string) {
+		filters[value].Important = true
 	}
 
 	addRepoFilter := func(repo *RepositoryResolver, rev string, lineMatchCount int32) {
@@ -252,7 +253,7 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 		limitHit := sr.Stats.Status.Get(repo.IDInt32())&search.RepoStatusLimitHit != 0
 		// Increment number of matches per repo. Add will override previous entry for uri
 		repoToMatchCount[uri] += lineMatchCount
-		add(filter, uri, repoToMatchCount[uri], limitHit, "repo", scoreDefault)
+		add(filter, uri, repoToMatchCount[uri], limitHit, "repo")
 	}
 
 	addFileFilter := func(fileMatchPath string, lineMatchCount int32, limitHit bool) {
@@ -261,9 +262,9 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 			// since we have no native library call to match `**` for globs.
 			if ff.regexp.MatchString(fileMatchPath) {
 				if globbing {
-					add(ff.globFilter, ff.globFilter, lineMatchCount, limitHit, "file", scoreDefault)
+					add(ff.globFilter, ff.globFilter, lineMatchCount, limitHit, "file")
 				} else {
-					add(ff.regexFilter, ff.regexFilter, lineMatchCount, limitHit, "file", scoreDefault)
+					add(ff.regexFilter, ff.regexFilter, lineMatchCount, limitHit, "file")
 				}
 			}
 		}
@@ -281,16 +282,18 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 					language = strconv.Quote(language)
 				}
 				value := fmt.Sprintf(`lang:%s`, language)
-				add(value, value, lineMatchCount, limitHit, "lang", scoreDefault)
+				add(value, value, lineMatchCount, limitHit, "lang")
 			}
 		}
 	}
 
 	if sr.Stats.ExcludedForks > 0 {
-		add("fork:yes", "fork:yes", int32(sr.Stats.ExcludedForks), sr.IsLimitHit, "repo", scoreImportant)
+		add("fork:yes", "fork:yes", int32(sr.Stats.ExcludedForks), sr.IsLimitHit, "repo")
+		important("fork:yes")
 	}
 	if sr.Stats.ExcludedArchived > 0 {
-		add("archived:yes", "archived:yes", int32(sr.Stats.ExcludedArchived), sr.IsLimitHit, "repo", scoreImportant)
+		add("archived:yes", "archived:yes", int32(sr.Stats.ExcludedArchived), sr.IsLimitHit, "repo")
+		important("archived:yes")
 	}
 	for _, result := range sr.SearchResults {
 		if fm, ok := result.ToFileMatch(); ok {
@@ -304,7 +307,7 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 			addFileFilter(fm.path(), lines, fm.LimitHit())
 
 			if len(fm.symbols) > 0 {
-				add("type:symbol", "type:symbol", 1, fm.LimitHit(), "symbol", scoreDefault)
+				add("type:symbol", "type:symbol", 1, fm.LimitHit(), "symbol")
 			}
 		} else if r, ok := result.ToRepository(); ok {
 			// It should be fine to leave this blank since revision specifiers
@@ -314,17 +317,20 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 		}
 	}
 
-	filterSlice := make([]*searchFilterResolver, 0, len(filters))
-	repoFilterSlice := make([]*searchFilterResolver, 0, len(filters)/2) // heuristic - half of all filters are repo filters.
+	filterSlice := make([]*streaming.Filter, 0, len(filters))
+	repoFilterSlice := make([]*streaming.Filter, 0, len(filters)/2) // heuristic - half of all filters are repo filters.
 	for _, f := range filters {
-		if f.kind == "repo" {
+		if f.Kind == "repo" {
 			repoFilterSlice = append(repoFilterSlice, f)
 		} else {
 			filterSlice = append(filterSlice, f)
 		}
 	}
 	sort.Slice(filterSlice, func(i, j int) bool {
-		return filterSlice[j].score < filterSlice[i].score
+		if filterSlice[i].Important == filterSlice[j].Important {
+			return filterSlice[i].Count > filterSlice[j].Count
+		}
+		return filterSlice[i].Important
 	})
 	// limit amount of non-repo filters to be rendered arbitrarily to 12
 	if len(filterSlice) > 12 {
@@ -335,60 +341,42 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 	sort.Slice(allFilters, func(i, j int) bool {
 		left := allFilters[i]
 		right := allFilters[j]
-		if left.score == right.score {
+		if left.Important == right.Important {
 			// Order alphabetically for equal scores.
-			return strings.Compare(left.value, right.value) < 0
+			return strings.Compare(left.Value, right.Value) < 0
 		}
-		return left.score < right.score
+		return left.Important
 	})
 
-	return allFilters
+	var resolvers []*searchFilterResolver
+	for _, f := range allFilters {
+		resolvers = append(resolvers, &searchFilterResolver{filter: *f})
+	}
+	return resolvers
 }
 
 type searchFilterResolver struct {
-	value string
-
-	// the string to be displayed in the UI
-	label string
-
-	// the number of matches in a particular repository. Only used for `repo:` filters.
-	count int32
-
-	// whether the results returned for a repository are incomplete
-	limitHit bool
-
-	// the kind of filter. Should be "repo", "file", or "lang".
-	kind string
-
-	// score is used to prioritize the order that filters appear in
-	score score
+	filter streaming.Filter
 }
 
-type score int
-
-const (
-	scoreImportant score = iota
-	scoreDefault
-)
-
 func (sf *searchFilterResolver) Value() string {
-	return sf.value
+	return sf.filter.Value
 }
 
 func (sf *searchFilterResolver) Label() string {
-	return sf.label
+	return sf.filter.Label
 }
 
 func (sf *searchFilterResolver) Count() int32 {
-	return sf.count
+	return int32(sf.filter.Count)
 }
 
 func (sf *searchFilterResolver) LimitHit() bool {
-	return sf.limitHit
+	return sf.filter.IsLimitHit
 }
 
 func (sf *searchFilterResolver) Kind() string {
-	return sf.kind
+	return sf.filter.Kind
 }
 
 // blameFileMatch blames the specified file match to produce the time at which

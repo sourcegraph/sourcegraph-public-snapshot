@@ -441,7 +441,7 @@ const messageHandlers: {
                 // See https://developer.mozilla.org/en-US/docs/Web/API/EventSource/error_event
                 observer.error(
                     new Error(
-                        'There was a network error retrieving search results. Check your Internet connection and try again.'
+                        'The connection was closed before your search was completed. This may be due to a problem with a firewall, VPN or proxy, or a failure with the Sourcegraph server.'
                     )
                 )
             }

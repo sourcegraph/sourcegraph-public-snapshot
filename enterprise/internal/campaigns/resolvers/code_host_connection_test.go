@@ -14,9 +14,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 )
@@ -42,8 +42,8 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 	bbsRepos, _ := ct.CreateBbsTestRepos(t, ctx, dbconn.Global, 1)
 	bbsRepo := bbsRepos[0]
 
-	cred, err := db.GlobalUserCredentials.Create(ctx, db.UserCredentialScope{
-		Domain:              db.UserCredentialDomainCampaigns,
+	cred, err := database.GlobalUserCredentials.Create(ctx, database.UserCredentialScope{
+		Domain:              database.UserCredentialDomainCampaigns,
 		ExternalServiceID:   ghRepo.ExternalRepo.ServiceID,
 		ExternalServiceType: ghRepo.ExternalRepo.ServiceType,
 		UserID:              userID,

@@ -6,7 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 // SearchFilterSuggestions provides search filter and default value suggestions.
@@ -26,8 +26,8 @@ func (r *schemaResolver) SearchFilterSuggestions(ctx context.Context) (*searchFi
 	}
 
 	// List at most 10 repositories as default suggestions.
-	repos, err := backend.Repos.List(ctx, db.ReposListOptions{
-		LimitOffset: &db.LimitOffset{
+	repos, err := backend.Repos.List(ctx, database.ReposListOptions{
+		LimitOffset: &database.LimitOffset{
 			Limit: 10,
 		},
 	})

@@ -19,9 +19,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/storetest"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
 func init() {
@@ -188,7 +188,7 @@ func TestIsAllowedToEdit(t *testing.T) {
 	siteAdmin := insertTestUser(t, dbconn.Global, "cm-user3", true)
 
 	admContext := actor.WithActor(context.Background(), actor.FromUser(siteAdmin))
-	org, err := db.GlobalOrgs.Create(admContext, "cm-test-org", nil)
+	org, err := database.GlobalOrgs.Create(admContext, "cm-test-org", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -243,7 +243,7 @@ func TestIsAllowedToCreate(t *testing.T) {
 	siteAdmin := insertTestUser(t, dbconn.Global, "cm-user3", true)
 
 	admContext := actor.WithActor(context.Background(), actor.FromUser(siteAdmin))
-	org, err := db.GlobalOrgs.Create(admContext, "cm-test-org", nil)
+	org, err := database.GlobalOrgs.Create(admContext, "cm-test-org", nil)
 	if err != nil {
 		t.Fatal(err)
 	}

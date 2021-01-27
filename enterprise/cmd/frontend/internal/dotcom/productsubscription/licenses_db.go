@@ -8,8 +8,8 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 )
 
 // dbLicense describes an product license row in the product_licenses DB table.
@@ -83,7 +83,7 @@ func (s dbLicenses) GetByLicenseKey(ctx context.Context, licenseKey string) (*db
 type dbLicensesListOptions struct {
 	LicenseKeySubstring   string
 	ProductSubscriptionID string // only list product licenses for this subscription (by UUID)
-	*db.LimitOffset
+	*database.LimitOffset
 }
 
 func (o dbLicensesListOptions) sqlConditions() []*sqlf.Query {
@@ -106,7 +106,7 @@ func (s dbLicenses) List(ctx context.Context, opt dbLicensesListOptions) ([]*dbL
 	return s.list(ctx, opt.sqlConditions(), opt.LimitOffset)
 }
 
-func (dbLicenses) list(ctx context.Context, conds []*sqlf.Query, limitOffset *db.LimitOffset) ([]*dbLicense, error) {
+func (dbLicenses) list(ctx context.Context, conds []*sqlf.Query, limitOffset *database.LimitOffset) ([]*dbLicense, error) {
 	q := sqlf.Sprintf(`
 SELECT id, product_subscription_id, license_key, created_at FROM product_licenses
 WHERE (%s)

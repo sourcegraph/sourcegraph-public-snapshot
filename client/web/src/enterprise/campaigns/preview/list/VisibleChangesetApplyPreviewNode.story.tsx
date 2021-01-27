@@ -497,6 +497,108 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
             },
         },
     },
+    'Update commit message': {
+        __typename: 'VisibleChangesetApplyPreview',
+        operations: [ChangesetSpecOperation.PUSH],
+        delta: {
+            titleChanged: false,
+            baseRefChanged: false,
+            diffChanged: false,
+            bodyChanged: false,
+            authorEmailChanged: false,
+            authorNameChanged: false,
+            commitMessageChanged: true,
+        },
+        targets: {
+            __typename: 'VisibleApplyPreviewTargetsUpdate',
+            changesetSpec: baseChangesetSpec(true),
+            changeset: {
+                id: '123123',
+                title: 'the old title',
+                state: ChangesetState.OPEN,
+                currentSpec: {
+                    description: {
+                        __typename: 'GitBranchChangesetDescription',
+                        baseRef: 'main',
+                        body: 'body',
+                        commits: [
+                            {
+                                subject: 'Abc',
+                                body: 'Current commit message',
+                                author: {
+                                    avatarURL: null,
+                                    displayName: 'alice',
+                                    email: 'alice@sourcegraph.test',
+                                    user: null,
+                                },
+                            },
+                        ],
+                        title: 'Title',
+                    },
+                },
+                author: {
+                    displayName: 'Alice',
+                    email: 'alice@email.test',
+                    user: {
+                        displayName: 'Alice',
+                        url: '/users/alice',
+                        username: 'alice',
+                    },
+                },
+            },
+        },
+    },
+    'Update commit author': {
+        __typename: 'VisibleChangesetApplyPreview',
+        operations: [ChangesetSpecOperation.PUSH],
+        delta: {
+            titleChanged: false,
+            baseRefChanged: false,
+            diffChanged: false,
+            bodyChanged: false,
+            authorEmailChanged: true,
+            authorNameChanged: true,
+            commitMessageChanged: false,
+        },
+        targets: {
+            __typename: 'VisibleApplyPreviewTargetsUpdate',
+            changesetSpec: baseChangesetSpec(true),
+            changeset: {
+                id: '123123',
+                title: 'the old title',
+                state: ChangesetState.OPEN,
+                currentSpec: {
+                    description: {
+                        __typename: 'GitBranchChangesetDescription',
+                        baseRef: 'main',
+                        body: 'body',
+                        commits: [
+                            {
+                                subject: 'Abc',
+                                body: 'Current commit message',
+                                author: {
+                                    avatarURL: null,
+                                    displayName: 'alice',
+                                    email: 'alice@sourcegraph.test',
+                                    user: null,
+                                },
+                            },
+                        ],
+                        title: 'Title',
+                    },
+                },
+                author: {
+                    displayName: 'Bob',
+                    email: 'bob@email.test',
+                    user: {
+                        displayName: 'Bob',
+                        url: '/users/bob',
+                        username: 'bob',
+                    },
+                },
+            },
+        },
+    },
 }
 
 const queryEmptyFileDiffs = () => of({ totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] })

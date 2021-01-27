@@ -10,14 +10,14 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
 func isSiteAdmin(ctx context.Context) bool {
-	user, err := db.GlobalUsers.GetByCurrentAuthUser(ctx)
+	user, err := database.GlobalUsers.GetByCurrentAuthUser(ctx)
 	if err != nil {
-		if errcode.IsNotFound(err) || err == db.ErrNoCurrentUser {
+		if errcode.IsNotFound(err) || err == database.ErrNoCurrentUser {
 			return false
 		}
 

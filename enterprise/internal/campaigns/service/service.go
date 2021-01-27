@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -90,9 +90,9 @@ func (s *Service) CreateCampaignSpec(ctx context.Context, opts CreateCampaignSpe
 		return nil, err
 	}
 
-	// 🚨 SECURITY: db.Repos.GetRepoIDsSet uses the authzFilter under the hood and
+	// 🚨 SECURITY: database.Repos.GetRepoIDsSet uses the authzFilter under the hood and
 	// filters out repositories that the user doesn't have access to.
-	accessibleReposByID, err := db.GlobalRepos.GetReposSetByIDs(ctx, cs.RepoIDs()...)
+	accessibleReposByID, err := database.GlobalRepos.GetReposSetByIDs(ctx, cs.RepoIDs()...)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +102,7 @@ func (s *Service) CreateCampaignSpec(ctx context.Context, opts CreateCampaignSpe
 		// 🚨 SECURITY: We return an error if the user doesn't have access to one
 		// of the repositories associated with a ChangesetSpec.
 		if _, ok := accessibleReposByID[changesetSpec.RepoID]; !ok {
-			return nil, &db.RepoNotFoundErr{ID: changesetSpec.RepoID}
+			return nil, &database.RepoNotFoundErr{ID: changesetSpec.RepoID}
 		}
 		byRandID[changesetSpec.RandID] = changesetSpec
 	}
@@ -153,9 +153,9 @@ func (s *Service) CreateChangesetSpec(ctx context.Context, rawSpec string, userI
 		return nil, err
 	}
 
-	// 🚨 SECURITY: We use db.Repos.Get to check whether the user has access to
+	// 🚨 SECURITY: We use database.Repos.Get to check whether the user has access to
 	// the repository or not.
-	if _, err = db.GlobalRepos.Get(ctx, spec.RepoID); err != nil {
+	if _, err = database.GlobalRepos.Get(ctx, spec.RepoID); err != nil {
 		return nil, err
 	}
 
@@ -379,9 +379,9 @@ func (s *Service) EnqueueChangesetSync(ctx context.Context, id int64) (err error
 		return err
 	}
 
-	// 🚨 SECURITY: We use db.Repos.Get to check whether the user has access to
+	// 🚨 SECURITY: We use database.Repos.Get to check whether the user has access to
 	// the repository or not.
-	if _, err = db.GlobalRepos.Get(ctx, changeset.RepoID); err != nil {
+	if _, err = database.GlobalRepos.Get(ctx, changeset.RepoID); err != nil {
 		return err
 	}
 
@@ -459,7 +459,7 @@ func (s *Service) FetchUsernameForBitbucketServerToken(ctx context.Context, exte
 		return "", err
 	}
 
-	esStore := db.ExternalServicesWith(s.store)
+	esStore := database.ExternalServicesWith(s.store)
 	externalService, err := esStore.GetByID(ctx, extSvcID)
 	if err != nil {
 		if errcode.IsNotFound(err) {

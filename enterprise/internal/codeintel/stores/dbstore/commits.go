@@ -11,9 +11,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commitgraph"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/db/batch"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/batch"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 

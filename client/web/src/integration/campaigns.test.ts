@@ -271,6 +271,7 @@ function mockCommonGraphQLResponses(
                     namespaceName: entityType === 'user' ? 'alice' : 'test-org',
                     url: namespaceURL,
                 },
+                diffStat: { added: 1000, changed: 2000, deleted: 1000 },
                 url: `${namespaceURL}/campaigns/test-campaign`,
                 viewerCanAdminister: true,
                 lastAppliedAt: subDays(new Date(), 5).toISOString(),

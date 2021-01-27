@@ -4,7 +4,7 @@ Code intelligence is enabled by [Sourcegraph extensions](../../../extensions/ind
 
 [**Search-based code intelligence**](./search_based_code_intelligence.md) works out of the box with all of the most popular programming languages via [extensions](https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22).
 
-**Precise code intelligence** is an opt-in feature that is enabled in your admin settings and requires you to upload [LSIF data](../lsif_quickstart.md) for each repository to your Sourcegraph instance. Once setup is complete on Sourcegraph, precise code intelligence is available for use across popular development tools:
+**Precise code intelligence** is an opt-in feature that is enabled in your admin settings and requires you to upload LSIF data for each repository to your Sourcegraph instance. Once setup is complete on Sourcegraph, precise code intelligence is available for use across popular development tools:
 
 - On the Sourcegraph web UI
 - On code files on your code host, via [integrations](../../../integration/index.md)

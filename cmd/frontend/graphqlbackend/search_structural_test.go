@@ -12,7 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
@@ -30,10 +30,10 @@ func TestStructuralSearchRepoFilter(t *testing.T) {
 
 	unindexedRepo := &types.RepoName{Name: api.RepoName("unindexed/one")}
 
-	db.Mocks.Repos.ListRepoNames = func(_ context.Context, op db.ReposListOptions) ([]*types.RepoName, error) {
+	database.Mocks.Repos.ListRepoNames = func(_ context.Context, op database.ReposListOptions) ([]*types.RepoName, error) {
 		return []*types.RepoName{indexedRepo, unindexedRepo}, nil
 	}
-	defer func() { db.Mocks = db.MockStores{} }()
+	defer func() { database.Mocks = database.MockStores{} }()
 
 	mockSearchFilesInRepo = func(
 		ctx context.Context,
@@ -57,7 +57,7 @@ func TestStructuralSearchRepoFilter(t *testing.T) {
 			return nil, false, errors.New("Unexpected repo")
 		}
 	}
-	db.Mocks.Repos.Count = mockCount
+	database.Mocks.Repos.Count = mockCount
 	defer func() { mockSearchFilesInRepo = nil }()
 
 	zoektRepo := &zoekt.RepoListEntry{

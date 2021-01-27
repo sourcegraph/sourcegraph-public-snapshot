@@ -10,7 +10,7 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -570,7 +570,7 @@ func TestSyncRateLimiters(t *testing.T) {
 			services = append(services, svc)
 		}
 		return &MockExternalServicesLister{
-			list: func(ctx context.Context, args db.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+			list: func(ctx context.Context, args database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 				return services, nil
 			},
 		}
@@ -714,9 +714,9 @@ func TestSyncRateLimiters(t *testing.T) {
 }
 
 type MockExternalServicesLister struct {
-	list func(context.Context, db.ExternalServicesListOptions) ([]*types.ExternalService, error)
+	list func(context.Context, database.ExternalServicesListOptions) ([]*types.ExternalService, error)
 }
 
-func (m MockExternalServicesLister) List(ctx context.Context, args db.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+func (m MockExternalServicesLister) List(ctx context.Context, args database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 	return m.list(ctx, args)
 }
