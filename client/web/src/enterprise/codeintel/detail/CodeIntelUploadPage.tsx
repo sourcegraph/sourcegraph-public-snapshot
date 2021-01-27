@@ -95,7 +95,6 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
     ) : (
         <div className="site-admin-lsif-upload-page w-100 web-content">
             <PageTitle title="Code intelligence - uploads" />
-
             {isErrorLike(uploadOrError) ? (
                 <ErrorAlert prefix="Error loading LSIF upload" error={uploadOrError} history={history} />
             ) : !uploadOrError ? (
@@ -103,28 +102,32 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
             ) : (
                 <>
                     <PageHeader
-                        title={
-                            <>
-                                <span className="text-muted">Upload for commit</span>
-                                <span className="ml-2">
-                                    {uploadOrError.projectRoot
-                                        ? uploadOrError.projectRoot.commit.abbreviatedOID
-                                        : uploadOrError.inputCommit.slice(0, 7)}
-                                </span>
-                                <span className="ml-2 text-muted">indexed by</span>
-                                <span className="ml-2">{uploadOrError.inputIndexer}</span>
-                                <span className="ml-2 text-muted">rooted at</span>
-                                <span className="ml-2">
-                                    {(uploadOrError.projectRoot
-                                        ? uploadOrError.projectRoot.path
-                                        : uploadOrError.inputRoot) || '/'}
-                                </span>
-                            </>
-                        }
+                        path={[
+                            {
+                                text: (
+                                    <>
+                                        <span className="text-muted">Upload for commit</span>
+                                        <span className="ml-2">
+                                            {uploadOrError.projectRoot
+                                                ? uploadOrError.projectRoot.commit.abbreviatedOID
+                                                : uploadOrError.inputCommit.slice(0, 7)}
+                                        </span>
+                                        <span className="ml-2 text-muted">indexed by</span>
+                                        <span className="ml-2">{uploadOrError.inputIndexer}</span>
+                                        <span className="ml-2 text-muted">rooted at</span>
+                                        <span className="ml-2">
+                                            {(uploadOrError.projectRoot
+                                                ? uploadOrError.projectRoot.path
+                                                : uploadOrError.inputRoot) || '/'}
+                                        </span>
+                                    </>
+                                ),
+                            },
+                        ]}
                         actions={
                             <CodeIntelDeleteUpload deleteUpload={deleteUpload} deletionOrError={deletionOrError} />
                         }
-                        className="mb-2"
+                        className="mb-3"
                     />
                     <CodeIntelStateBanner
                         state={uploadOrError.state}

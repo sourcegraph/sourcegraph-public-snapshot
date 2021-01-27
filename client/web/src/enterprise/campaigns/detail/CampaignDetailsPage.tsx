@@ -28,7 +28,6 @@ import { UnpublishedNotice } from './UnpublishedNotice'
 import { SupersedingCampaignSpecAlert } from './SupersedingCampaignSpecAlert'
 import { CampaignsIconFlushLeft } from '../icons'
 import { PageHeader } from '../../../components/PageHeader'
-import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
 
 export interface CampaignDetailsPageProps
     extends ThemeProps,
@@ -108,15 +107,14 @@ export const CampaignDetailsPage: React.FunctionComponent<CampaignDetailsPagePro
         <>
             <PageTitle title={campaign.name} />
             <PageHeader
-                title={
-                    <PageBreadcrumbs
-                        icon={CampaignsIconFlushLeft}
-                        path={[
-                            { to: `${campaign.namespace.url}/campaigns`, text: campaign.namespace.namespaceName },
-                            { text: campaign.name },
-                        ]}
-                    />
-                }
+                path={[
+                    {
+                        icon: CampaignsIconFlushLeft,
+                        to: '/campaigns',
+                    },
+                    { to: `${campaign.namespace.url}/campaigns`, text: campaign.namespace.namespaceName },
+                    { text: campaign.name },
+                ]}
                 byline={
                     <CampaignInfoByline
                         createdAt={campaign.createdAt}
@@ -134,7 +132,7 @@ export const CampaignDetailsPage: React.FunctionComponent<CampaignDetailsPagePro
                         history={history}
                     />
                 }
-                className="test-campaign-details-page"
+                className="test-campaign-details-page mb-3"
             />
             <SupersedingCampaignSpecAlert spec={campaign.currentSpec.supersedingCampaignSpec} />
             <UnpublishedNotice

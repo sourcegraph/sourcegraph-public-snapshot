@@ -5,9 +5,8 @@ import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 
 import webStyles from '../SourcegraphWebApp.scss'
 import { PageHeader } from './PageHeader'
-import { PageBreadcrumbs } from './PageBreadcrumbs'
 import { Link } from '../../../shared/src/components/Link'
-import { StatusAnnotation } from './StatusAnnotation'
+import { StatusBadge } from './StatusBadge'
 
 const { add } = storiesOf('web/PageHeader', module).addDecorator(story => (
     <>
@@ -22,8 +21,7 @@ add(
     'Basic header',
     () => (
         <PageHeader
-            icon={PuzzleOutlineIcon}
-            title="Header"
+            path={[{ icon: PuzzleOutlineIcon, text: 'Header' }]}
             actions={
                 <Link to={`${location.pathname}/close`} className="btn btn-secondary mr-1">
                     <SearchIcon className="icon-inline" /> Button with icon
@@ -44,13 +42,12 @@ add(
     'Complex header',
     () => (
         <PageHeader
-            annotation={<StatusAnnotation status="beta" />}
-            title={
-                <PageBreadcrumbs
-                    icon={PuzzleOutlineIcon}
-                    path={[{ to: '/level-1', text: 'Level 1' }, { text: 'Level 2' }]}
-                />
-            }
+            annotation={<StatusBadge status="beta" />}
+            path={[
+                { to: '/level-0', icon: PuzzleOutlineIcon },
+                { to: '/level-1', text: 'Level 1' },
+                { text: 'Level 2' },
+            ]}
             byline={
                 <>
                     Created by <Link to="/page">user</Link> 3 months ago

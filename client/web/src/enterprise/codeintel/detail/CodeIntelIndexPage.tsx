@@ -96,18 +96,22 @@ export const CodeIntelIndexPage: FunctionComponent<CodeIntelIndexPageProps> = ({
             ) : (
                 <>
                     <PageHeader
-                        title={
-                            <>
-                                <span className="text-muted">Auto-index record for commit</span>
-                                <span className="ml-2">
-                                    {indexOrError.projectRoot
-                                        ? indexOrError.projectRoot.commit.abbreviatedOID
-                                        : indexOrError.inputCommit.slice(0, 7)}
-                                </span>
-                            </>
-                        }
+                        path={[
+                            {
+                                text: (
+                                    <>
+                                        <span className="text-muted">Auto-index record for commit</span>
+                                        <span className="ml-2">
+                                            {indexOrError.projectRoot
+                                                ? indexOrError.projectRoot.commit.abbreviatedOID
+                                                : indexOrError.inputCommit.slice(0, 7)}
+                                        </span>
+                                    </>
+                                ),
+                            },
+                        ]}
                         actions={<CodeIntelDeleteIndex deleteIndex={deleteIndex} deletionOrError={deletionOrError} />}
-                        className="mb-2"
+                        className="mb-3"
                     />
                     <CodeIntelStateBanner
                         state={indexOrError.state}

@@ -76,7 +76,7 @@ export const CodeIntelUploadsPage: FunctionComponent<CodeIntelUploadsPageProps> 
         <div className="code-intel-uploads web-content">
             <PageTitle title="Precise code intelligence uploads" />
             <PageHeader
-                title="Precise code intelligence upload"
+                path={[{ text: 'Precise code intelligence upload' }]}
                 byline={
                     <>
                         <p>

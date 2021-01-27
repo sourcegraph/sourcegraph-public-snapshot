@@ -70,7 +70,7 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
         <div className="code-intel-indexes web-content">
             <PageTitle title="Precise code intelligence auto-index records" />
             <PageHeader
-                title="Precise code intelligence auto-index records"
+                path={[{ text: 'Precise code intelligence auto-index records' }]}
                 byline={
                     <p>
                         Popular repositories are indexed automatically on{' '}

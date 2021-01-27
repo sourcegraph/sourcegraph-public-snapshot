@@ -18,7 +18,7 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { Settings } from '../../schema/settings.schema'
 import { CodeMonitoringLogo } from './CodeMonitoringLogo'
-import { StatusAnnotation } from '../../components/StatusAnnotation'
+import { StatusBadge } from '../../components/StatusBadge'
 
 export interface CodeMonitoringPageProps
     extends BreadcrumbsProps,
@@ -77,9 +77,13 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
         <div className="code-monitoring-page container mt-5">
             <PageTitle title="Code Monitoring" />
             <PageHeader
-                annotation={<StatusAnnotation status="prototype" />}
-                icon={CodeMonitoringLogo}
-                title="Code monitoring"
+                annotation={<StatusBadge status="prototype" />}
+                path={[
+                    {
+                        icon: CodeMonitoringLogo,
+                        text: 'Code monitoring',
+                    },
+                ]}
                 actions={
                     userHasCodeMonitors &&
                     userHasCodeMonitors !== 'loading' &&
@@ -90,6 +94,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                         </Link>
                     )
                 }
+                className="mb-3"
             />
             {userHasCodeMonitors === 'loading' && <LoadingSpinner />}
             {!userHasCodeMonitors && (

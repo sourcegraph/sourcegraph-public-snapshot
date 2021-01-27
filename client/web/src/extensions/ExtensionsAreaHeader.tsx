@@ -23,8 +23,7 @@ export const ExtensionsAreaHeader: React.FunctionComponent<ExtensionsAreaHeaderP
     <div className="container">
         {props.isPrimaryHeader && (
             <PageHeader
-                title="Extensions"
-                icon={PuzzleOutlineIcon}
+                path={[{ icon: PuzzleOutlineIcon, text: 'Extensions' }]}
                 actions={props.actionButtons.map(
                     ({ condition = () => true, to, icon: Icon, label, tooltip }) =>
                         condition(props) && (

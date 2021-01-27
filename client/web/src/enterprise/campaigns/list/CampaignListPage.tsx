@@ -117,9 +117,8 @@ export const CampaignListPage: React.FunctionComponent<CampaignListPageProps> = 
     return (
         <>
             <PageHeader
-                icon={CampaignsIconFlushLeft}
-                title="Campaigns"
-                className="test-campaign-list-page"
+                path={[{ icon: CampaignsIconFlushLeft, text: 'Campaigns' }]}
+                className="test-campaign-list-page mb-3"
                 actions={<NewCampaignButton location={location} />}
                 byline="Run custom code over hundreds of repositories and manage the resulting changesets"
             />

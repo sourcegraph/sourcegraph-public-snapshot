@@ -1,11 +1,15 @@
 import React from 'react'
 import { render, RenderResult } from '@testing-library/react'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
-import { PageBreadcrumbs } from './PageBreadcrumbs'
+import { PageHeader } from './PageHeader'
 
-describe('PageBreadcrumbs', () => {
+describe('PageHeader', () => {
     let queries: RenderResult
     const breadcrumbs = [
+        {
+            to: '/link-0',
+            icon: PuzzleOutlineIcon,
+        },
         {
             to: '/link-1',
             text: 'Link 1',
@@ -20,12 +24,16 @@ describe('PageBreadcrumbs', () => {
     ]
 
     beforeEach(() => {
-        queries = render(<PageBreadcrumbs icon={PuzzleOutlineIcon} path={breadcrumbs} />)
+        queries = render(<PageHeader path={breadcrumbs} />)
+    })
+
+    it('renders correctly', () => {
+        expect(queries.baseElement).toMatchSnapshot()
     })
 
     it('renders links correctly', () => {
-        expect((queries.getByText('Link 1') as HTMLAnchorElement).pathname).toBe('/link-1')
-        expect((queries.getByText('Link 2') as HTMLAnchorElement).pathname).toBe('/link-2')
+        expect(queries.getByText('Link 1').closest('a')?.pathname).toBe('/link-1')
+        expect(queries.getByText('Link 2').closest('a')?.pathname).toBe('/link-2')
     })
 
     it('renders current page correctly', () => {

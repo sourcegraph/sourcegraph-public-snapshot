@@ -11,7 +11,7 @@ import GearIcon from 'mdi-react/GearIcon'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { PageHeader } from '../components/PageHeader'
 import { BreadcrumbsProps, BreadcrumbSetters } from '../components/Breadcrumbs'
-import { StatusAnnotation } from '../components/StatusAnnotation'
+import { StatusBadge } from '../components/StatusBadge'
 
 interface InsightsPageProps
     extends ExtensionsControllerProps,
@@ -43,9 +43,8 @@ export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props =>
         <div className="w-100">
             <div className="container mt-3 web-content">
                 <PageHeader
-                    annotation={<StatusAnnotation status="prototype" />}
-                    icon={InsightsIcon}
-                    title="Insights"
+                    annotation={<StatusBadge status="prototype" />}
+                    path={[{ icon: InsightsIcon, text: 'Insights' }]}
                     actions={
                         <>
                             <Link to="/user/settings" className="btn btn-secondary mr-1">

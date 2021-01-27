@@ -2,9 +2,9 @@ import React from 'react'
 import { storiesOf } from '@storybook/react'
 import { select } from '@storybook/addon-knobs'
 import webStyles from '../SourcegraphWebApp.scss'
-import { StatusAnnotation } from './StatusAnnotation'
+import { StatusBadge } from './StatusBadge'
 
-const { add } = storiesOf('web/StatusAnnotation', module).addDecorator(story => (
+const { add } = storiesOf('web/StatusBadge', module).addDecorator(story => (
     <>
         <style>{webStyles}</style>
         <div className="layout__app-router-container">
@@ -15,5 +15,5 @@ const { add } = storiesOf('web/StatusAnnotation', module).addDecorator(story => 
 
 add('Basic', () => {
     const status = select('Status', { Beta: 'beta', Prototype: 'prototype' }, 'beta')
-    return <StatusAnnotation status={status} />
+    return <StatusBadge status={status} />
 })

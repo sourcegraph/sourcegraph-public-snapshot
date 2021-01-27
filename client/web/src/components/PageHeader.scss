@@ -1,5 +1,16 @@
 .page-header {
-    &__icon {
-        color: var(--header-icon-color);
+    &__annotation {
+        font-size: 0.75rem;
+        margin-bottom: 0.5rem;
+    }
+
+    &__byline {
+        font-size: 0.75rem;
+        margin-top: 0.75rem;
+    }
+
+    & .page-header__icon {
+        height: 2rem;
+        width: 2rem;
     }
 }

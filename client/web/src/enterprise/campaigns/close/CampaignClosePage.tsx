@@ -22,7 +22,6 @@ import { CampaignInfoByline } from '../detail/CampaignInfoByline'
 import { ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { CampaignsIconFlushLeft } from '../icons'
 import { PageHeader } from '../../../components/PageHeader'
-import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
 
 export interface CampaignClosePageProps
     extends ThemeProps,
@@ -103,15 +102,14 @@ export const CampaignClosePage: React.FunctionComponent<CampaignClosePageProps> 
         <>
             <PageTitle title="Preview close" />
             <PageHeader
-                title={
-                    <PageBreadcrumbs
-                        icon={CampaignsIconFlushLeft}
-                        path={[
-                            { to: `${campaign.namespace.url}/campaigns`, text: campaign.namespace.namespaceName },
-                            { text: campaign.name },
-                        ]}
-                    />
-                }
+                path={[
+                    {
+                        icon: CampaignsIconFlushLeft,
+                        to: '/campaigns',
+                    },
+                    { to: `${campaign.namespace.url}/campaigns`, text: campaign.namespace.namespaceName },
+                    { text: campaign.name },
+                ]}
                 byline={
                     <CampaignInfoByline
                         createdAt={campaign.createdAt}
@@ -120,7 +118,7 @@ export const CampaignClosePage: React.FunctionComponent<CampaignClosePageProps> 
                         lastApplier={campaign.lastApplier}
                     />
                 }
-                className="test-campaign-close-page"
+                className="test-campaign-close-page mb-3"
             />
             {totalCount !== undefined && (
                 <CampaignCloseAlert

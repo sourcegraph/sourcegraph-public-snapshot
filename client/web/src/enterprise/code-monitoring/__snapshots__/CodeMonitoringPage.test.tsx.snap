@@ -49,7 +49,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
         </AnchorLink>
       }
       annotation={
-        <StatusAnnotation
+        <StatusBadge
           status="prototype"
         />
       }
@@ -64,7 +64,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
             <div
               className="text-muted mb-3"
             >
-              <StatusAnnotation
+              <StatusBadge
                 status="prototype"
               >
                 <div
@@ -83,7 +83,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                     Share feedback
                   </a>
                 </div>
-              </StatusAnnotation>
+              </StatusBadge>
             </div>
           </Muted>
           <h1
@@ -107,7 +107,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                 />
               </svg>
             </CodeMonitoringLogo>
-             
+
             Code monitoring
           </h1>
         </div>
@@ -135,7 +135,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
       className="text-muted mb-4"
     >
       Watch your code for changes and trigger actions to get notifications, send webhooks, and more.
-       
+
       <a
         href="https://docs.sourcegraph.com/code_monitoring"
       >
@@ -584,7 +584,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-                               
+
                             </div>
                           </div>
                           <div
@@ -695,7 +695,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-                               
+
                             </div>
                           </div>
                           <div
@@ -806,7 +806,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-                               
+
                             </div>
                           </div>
                           <div
@@ -917,7 +917,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-                               
+
                             </div>
                           </div>
                           <div
@@ -1028,7 +1028,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-                               
+
                             </div>
                           </div>
                           <div
@@ -1139,7 +1139,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-                               
+
                             </div>
                           </div>
                           <div
@@ -1250,7 +1250,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-                               
+
                             </div>
                           </div>
                           <div
@@ -1361,7 +1361,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-                               
+
                             </div>
                           </div>
                           <div
@@ -1472,7 +1472,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-                               
+
                             </div>
                           </div>
                           <div
@@ -1583,7 +1583,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-                               
+
                             </div>
                           </div>
                           <div
@@ -1640,7 +1640,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
         className="mt-5"
       >
         We want to hear your feedback!
-         
+
         <a
           href="mailto:feedback@sourcegraph.com"
         >
@@ -1701,7 +1701,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
         </AnchorLink>
       }
       annotation={
-        <StatusAnnotation
+        <StatusBadge
           status="prototype"
         />
       }
@@ -1716,7 +1716,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
             <div
               className="text-muted mb-3"
             >
-              <StatusAnnotation
+              <StatusBadge
                 status="prototype"
               >
                 <div
@@ -1735,7 +1735,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                     Share feedback
                   </a>
                 </div>
-              </StatusAnnotation>
+              </StatusBadge>
             </div>
           </Muted>
           <h1
@@ -1759,7 +1759,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                 />
               </svg>
             </CodeMonitoringLogo>
-             
+
             Code monitoring
           </h1>
         </div>
@@ -1787,7 +1787,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
       className="text-muted mb-4"
     >
       Watch your code for changes and trigger actions to get notifications, send webhooks, and more.
-       
+
       <a
         href="https://docs.sourcegraph.com/code_monitoring"
       >
@@ -2054,7 +2054,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-                               
+
                             </div>
                           </div>
                           <div
@@ -2165,7 +2165,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-                               
+
                             </div>
                           </div>
                           <div
@@ -2276,7 +2276,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-                               
+
                             </div>
                           </div>
                           <div
@@ -2333,7 +2333,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
         className="mt-5"
       >
         We want to hear your feedback!
-         
+
         <a
           href="mailto:feedback@sourcegraph.com"
         >
@@ -2394,7 +2394,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
         </AnchorLink>
       }
       annotation={
-        <StatusAnnotation
+        <StatusBadge
           status="prototype"
         />
       }
@@ -2409,7 +2409,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
             <div
               className="text-muted mb-3"
             >
-              <StatusAnnotation
+              <StatusBadge
                 status="prototype"
               >
                 <div
@@ -2428,7 +2428,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                     Share feedback
                   </a>
                 </div>
-              </StatusAnnotation>
+              </StatusBadge>
             </div>
           </Muted>
           <h1
@@ -2452,7 +2452,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                 />
               </svg>
             </CodeMonitoringLogo>
-             
+
             Code monitoring
           </h1>
         </div>
@@ -2480,7 +2480,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
       className="text-muted mb-4"
     >
       Watch your code for changes and trigger actions to get notifications, send webhooks, and more.
-       
+
       <a
         href="https://docs.sourcegraph.com/code_monitoring"
       >
@@ -2981,7 +2981,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-                               
+
                             </div>
                           </div>
                           <div
@@ -3092,7 +3092,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-                               
+
                             </div>
                           </div>
                           <div
@@ -3203,7 +3203,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-                               
+
                             </div>
                           </div>
                           <div
@@ -3314,7 +3314,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-                               
+
                             </div>
                           </div>
                           <div
@@ -3425,7 +3425,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-                               
+
                             </div>
                           </div>
                           <div
@@ -3536,7 +3536,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-                               
+
                             </div>
                           </div>
                           <div
@@ -3647,7 +3647,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-                               
+
                             </div>
                           </div>
                           <div
@@ -3758,7 +3758,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-                               
+
                             </div>
                           </div>
                           <div
@@ -3869,7 +3869,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-                               
+
                             </div>
                           </div>
                           <div
@@ -3980,7 +3980,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-                               
+
                             </div>
                           </div>
                           <div
@@ -4091,7 +4091,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-                               
+
                             </div>
                           </div>
                           <div
@@ -4202,7 +4202,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-                               
+
                             </div>
                           </div>
                           <div
@@ -4256,12 +4256,12 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                   <small>
                     <span>
                       12
-                       
+
                       code monitors
-                       
+
                       total
                     </span>
-                     
+
                   </small>
                 </p>
                 <button
@@ -4280,7 +4280,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
         className="mt-5"
       >
         We want to hear your feedback!
-         
+
         <a
           href="mailto:feedback@sourcegraph.com"
         >
