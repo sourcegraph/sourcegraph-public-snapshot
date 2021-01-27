@@ -21,9 +21,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-const RedactedSecret = "REDACTED"
+const RedactedSecret = "SRCGRAPH_REDACTED"
 
-// RedactExternalServiceConfig replaces any secret fields in the Config field with RedactedSecret, be sure to call
+// RedactConfig replaces any secret fields in the Config field with RedactedSecret, be sure to call
 // UnRedactExternalServiceConfig before writing back to the database, otherwise validation will throw errors.
 func (e *ExternalService) RedactConfig() error {
 	var (
@@ -83,7 +83,7 @@ func redactField(buf string, v interface{}, fields ...*string) (string, error) {
 	return string(out), err
 }
 
-// UnredactExternalServiceConfig will replace redacted fields with their undredacted form from the 'old' ExternalService.
+// UnredactConfig will replace redacted fields with their undredacted form from the 'old' ExternalService.
 // You should call this when accepting updated config from a user that may have been
 // previously redacted, and pass in the unredacted form directly from the DB as the 'old' parameter
 func (e *ExternalService) UnredactConfig(old *ExternalService) error {
