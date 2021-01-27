@@ -341,10 +341,9 @@ func serviceConnections() conftypes.ServiceConnections {
 		}
 
 		serviceConnectionsVal = conftypes.ServiceConnections{
-			GitServers:               gitServers(),
-			PostgresDSN:              dbutil.PostgresDSN("", username, os.Getenv),
-			CodeIntelPostgresDSN:     dbutil.PostgresDSN("codeintel", username, os.Getenv),
-			CodeInsightsTimescaleDSN: dbutil.PostgresDSN("codeinsights", username, os.Getenv),
+			GitServers:           gitServers(),
+			PostgresDSN:          dbutil.PostgresDSN("", username, os.Getenv),
+			CodeIntelPostgresDSN: dbutil.PostgresDSN("codeintel", username, os.Getenv),
 		}
 
 		// We set this envvar in development to disable the following check
