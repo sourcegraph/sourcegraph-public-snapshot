@@ -2,7 +2,7 @@
 
 Site admins can associate Git repositories on [Phabricator](https://phabricator.org) with Sourcegraph so that users can jump to the Phabricator repository from Sourcegraph and use the [Phabricator extension](#native-extension) and [browser extension](../../integration/browser_extension.md) with Phabricator.
 
-> NOTE: Sourcegraph does not support mirroring Phabricator repositories (as it does for repositories on other code hosts).
+> NOTE: Sourcegraph does not support mirroring Phabricator repositories (as it does for repositories on other code hosts). This impacts mirroring permissions, synching repositories with Sourcegraph, and updating the stored list of repositories within Sourcegraph. Generally Phabricator is paired with another, canonical code host such as GitHub to access those features in Sourcegraph.
 
 To connect Phabricator to Sourcegraph:
 
