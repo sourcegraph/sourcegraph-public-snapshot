@@ -225,6 +225,18 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			},
 			wantErr: `existing external service, "GITHUB 1", of same kind already added`,
 		},
+		{
+			name:    "1 errors - GitHub.com",
+			kind:    extsvc.KindGitHub,
+			config:  `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "` + types.RedactedSecret + `"}`,
+			wantErr: "found unexpected Redacted string: \"REDACTED\", has ExternalService.UnredactConfig been called before attempting to write?",
+		},
+		{
+			name:    "1 errors - GitLab.com",
+			kind:    extsvc.KindGitLab,
+			config:  `{"url": "https://github.com", "projectQuery": ["none"], "token": "` + types.RedactedSecret + `"}`,
+			wantErr: "found unexpected Redacted string: \"REDACTED\", has ExternalService.UnredactConfig been called before attempting to write?",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
