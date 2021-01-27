@@ -2,7 +2,7 @@
 
 Sourcegraph comes with built-in code intelligence provided by search-based heuristics.
 
-If you are interested in enabling precise code intelligence for your repository, see our [quickstart guide](../lsif_quickstart.md).
+If you are interested in enabling precise code intelligence for your repository, see our [how-to guides](../how-to/index.md).
 
 ## How does it work?
 

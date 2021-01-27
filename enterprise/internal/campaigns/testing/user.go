@@ -7,7 +7,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -16,8 +16,8 @@ var CreateTestUser = func() func(*testing.T, bool) *types.User {
 	count := 0
 
 	// This function replicates the minium amount of work required by
-	// db.Users.Create to create a new user, but it doesn't require passing in
-	// a full db.NewUser every time.
+	// database.Users.Create to create a new user, but it doesn't require passing in
+	// a full database.NewUser every time.
 	return func(t *testing.T, siteAdmin bool) *types.User {
 		t.Helper()
 

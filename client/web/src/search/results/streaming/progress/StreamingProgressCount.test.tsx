@@ -35,4 +35,15 @@ describe('StreamingProgressCount', () => {
 
         expect(mount(<StreamingProgressCount state="complete" progress={progress} />)).toMatchSnapshot()
     })
+
+    it('should render correctly for big numbers complete', () => {
+        const progress: Progress = {
+            durationMs: 52500,
+            matchCount: 1234567,
+            repositoriesCount: 8901,
+            skipped: [],
+        }
+
+        expect(mount(<StreamingProgressCount state="complete" progress={progress} />)).toMatchSnapshot()
+    })
 })

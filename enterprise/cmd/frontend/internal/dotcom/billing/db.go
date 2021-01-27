@@ -6,8 +6,8 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 )
 
 // dbBilling provides billing-related database operations.
@@ -28,7 +28,7 @@ func (dbBilling) getUserBillingCustomerID(ctx context.Context, tx *sql.Tx, userI
 	query := sqlf.Sprintf("SELECT billing_customer_id FROM users WHERE id=%d AND deleted_at IS NULL", userID)
 	err = dbh.QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...).Scan(&billingCustomerID)
 	if err == sql.ErrNoRows {
-		return nil, db.NewUserNotFoundError(userID)
+		return nil, database.NewUserNotFoundError(userID)
 	}
 	return billingCustomerID, err
 }
@@ -55,7 +55,7 @@ func (dbBilling) setUserBillingCustomerID(ctx context.Context, tx *sql.Tx, userI
 		return err
 	}
 	if nrows == 0 {
-		return db.NewUserNotFoundError(userID)
+		return database.NewUserNotFoundError(userID)
 	}
 	return nil
 }

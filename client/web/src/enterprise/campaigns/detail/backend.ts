@@ -60,6 +60,10 @@ const campaignFragment = gql`
             url
         }
 
+        diffStat {
+            ...DiffStatFields
+        }
+
         updatedAt
         closedAt
         viewerCanAdminister
@@ -78,6 +82,8 @@ const campaignFragment = gql`
     }
 
     ${changesetsStatsFragment}
+
+    ${diffStatFields}
 `
 
 const changesetLabelFragment = gql`

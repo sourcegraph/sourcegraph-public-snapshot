@@ -36,18 +36,12 @@ func (r lsifTscJobRecognizer) InferIndexJobs(paths []string, gitserver Gitserver
 			continue
 		}
 
-		var isYarn bool
-		var dockerSteps []DockerStep
-		for _, dir := range ancestorDirs(path) {
-			if exists := contains(paths, filepath.Join(dir, "lerna.json")); exists && !isYarn {
-				if b, err := gitserver.RawContents(context.TODO(), "lerna.json"); err == nil {
-					var c lernaConfig
-					if err := json.Unmarshal(b, &c); err == nil {
-						isYarn = c.NPMClient == "yarn"
-					}
-				}
-			}
+		// check first if anywhere along the ancestor path there is a lerna.json
+		isYarn := checkLernaFile(path, paths, gitserver)
 
+		var dockerSteps []DockerStep
+
+		for _, dir := range ancestorDirs(path) {
 			if !contains(paths, filepath.Join(dir, "package.json")) {
 				continue
 			}
@@ -81,6 +75,21 @@ func (r lsifTscJobRecognizer) InferIndexJobs(paths []string, gitserver Gitserver
 	}
 
 	return indexes
+}
+
+func checkLernaFile(path string, paths []string, gitserver GitserverClientWrapper) (isYarn bool) {
+	for _, dir := range ancestorDirs(path) {
+		lernaPath := filepath.Join(dir, "lerna.json")
+		if exists := contains(paths, lernaPath); exists && !isYarn {
+			if b, err := gitserver.RawContents(context.TODO(), lernaPath); err == nil {
+				var c lernaConfig
+				if err := json.Unmarshal(b, &c); err == nil {
+					isYarn = c.NPMClient == "yarn"
+				}
+			}
+		}
+	}
+	return
 }
 
 func (lsifTscJobRecognizer) Patterns() []*regexp.Regexp {

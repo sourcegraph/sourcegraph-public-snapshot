@@ -16,9 +16,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 // This is a test script that I use to manually integration-test the new
@@ -289,7 +289,7 @@ func deleteEverything() {
 	dsn := dbutil.PostgresDSN("", "sourcegraph", os.Getenv)
 	db, err := dbconn.New(dsn, "campaigns-reconciler")
 	if err != nil {
-		log.Fatalf("failed to initialize db store: %v", err)
+		log.Fatalf("failed to initialize database store: %v", err)
 	}
 
 	if _, err := db.ExecContext(ctx, "DELETE FROM changeset_events;"); err != nil {
@@ -313,7 +313,7 @@ func getRepositoryID(name string) string {
 	dsn := dbutil.PostgresDSN("", "sourcegraph", os.Getenv)
 	s, err := basestore.New(dsn, "campaigns-reconciler", sql.TxOptions{})
 	if err != nil {
-		log.Fatalf("failed to initialize db store: %v", err)
+		log.Fatalf("failed to initialize database store: %v", err)
 	}
 
 	q := sqlf.Sprintf("select id from repo where name = %q", name)

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 func TestCheckEmailAbuse(t *testing.T) {
@@ -17,7 +17,7 @@ func TestCheckEmailAbuse(t *testing.T) {
 
 	tests := []struct {
 		name      string
-		mockEmail *db.UserEmail
+		mockEmail *database.UserEmail
 		mockErr   error
 		expAbused bool
 		expReason string
@@ -26,14 +26,14 @@ func TestCheckEmailAbuse(t *testing.T) {
 		{
 			name:      "no emails found",
 			mockEmail: nil,
-			mockErr:   db.MockUserEmailNotFoundErr,
+			mockErr:   database.MockUserEmailNotFoundErr,
 			expAbused: false,
 			expReason: "",
 			expErr:    nil,
 		},
 		{
 			name: "needs cool down",
-			mockEmail: &db.UserEmail{
+			mockEmail: &database.UserEmail{
 				LastVerificationSentAt: &farFuture,
 			},
 			mockErr:   nil,
@@ -44,7 +44,7 @@ func TestCheckEmailAbuse(t *testing.T) {
 
 		{
 			name: "no abuse",
-			mockEmail: &db.UserEmail{
+			mockEmail: &database.UserEmail{
 				LastVerificationSentAt: &yesterday,
 			},
 			mockErr:   nil,
@@ -56,11 +56,11 @@ func TestCheckEmailAbuse(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			db.Mocks.UserEmails.GetLatestVerificationSentEmail = func(context.Context, string) (*db.UserEmail, error) {
+			database.Mocks.UserEmails.GetLatestVerificationSentEmail = func(context.Context, string) (*database.UserEmail, error) {
 				return test.mockEmail, test.mockErr
 			}
 			defer func() {
-				db.Mocks.UserEmails.GetLatestVerificationSentEmail = nil
+				database.Mocks.UserEmails.GetLatestVerificationSentEmail = nil
 			}()
 
 			abused, reason, err := checkEmailAbuse(ctx, "fake@localhost")

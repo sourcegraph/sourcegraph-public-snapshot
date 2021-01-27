@@ -1,7 +1,7 @@
 import { noop } from 'lodash'
 import signale from 'signale'
 import webpack from 'webpack'
-import config from '../config/webpack/development.config'
+import { config } from '../config/webpack/development.config'
 import * as autoReloading from './auto-reloading'
 import * as tasks from './tasks'
 

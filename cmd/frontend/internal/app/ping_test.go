@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -56,8 +56,8 @@ func TestLatestPingHandler(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			db.Mocks.EventLogs.LatestPing = test.pingFn
-			defer func() { db.Mocks.EventLogs.LatestPing = nil }()
+			database.Mocks.EventLogs.LatestPing = test.pingFn
+			defer func() { database.Mocks.EventLogs.LatestPing = nil }()
 
 			req, _ := http.NewRequest("GET", "/site-admin/pings/latest", nil)
 			rec := httptest.NewRecorder()

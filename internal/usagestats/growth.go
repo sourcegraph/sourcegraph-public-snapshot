@@ -5,7 +5,7 @@ package usagestats
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 

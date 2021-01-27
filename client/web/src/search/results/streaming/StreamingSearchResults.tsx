@@ -335,10 +335,6 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                         </h3>
                     </div>
                 )}
-
-                {results?.state === 'complete' && results?.results.length > 0 && (
-                    <small className="d-block my-4 text-center">Showing {results?.results.length} results</small>
-                )}
             </div>
         </div>
     )

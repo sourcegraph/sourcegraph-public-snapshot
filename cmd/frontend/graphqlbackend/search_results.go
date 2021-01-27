@@ -208,7 +208,7 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 	} else {
 		settings, err := decodedViewerFinalSettings(ctx)
 		if err != nil {
-			log15.Warn("DynamicFilters: could not get user settings from db")
+			log15.Warn("DynamicFilters: could not get user settings from database")
 		} else {
 			globbing = getBoolPtr(settings.SearchGlobbing, false)
 		}

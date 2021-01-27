@@ -23,9 +23,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -94,8 +94,8 @@ func TestCreateCampaignSpec(t *testing.T) {
 	userID := user.ID
 
 	cstore := store.New(dbconn.Global)
-	repoStore := db.ReposWith(cstore)
-	esStore := db.ExternalServicesWith(cstore)
+	repoStore := database.ReposWith(cstore)
+	esStore := database.ExternalServicesWith(cstore)
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/create-campaign-spec-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
@@ -267,8 +267,8 @@ func TestCreateChangesetSpec(t *testing.T) {
 	userID := ct.CreateTestUser(t, true).ID
 
 	cstore := store.New(dbconn.Global)
-	repoStore := db.ReposWith(cstore)
-	esStore := db.ExternalServicesWith(cstore)
+	repoStore := database.ReposWith(cstore)
+	esStore := database.ExternalServicesWith(cstore)
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/create-changeset-spec-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
@@ -342,8 +342,8 @@ func TestApplyCampaign(t *testing.T) {
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
 	cstore := store.NewWithClock(dbconn.Global, clock)
-	repoStore := db.ReposWith(cstore)
-	esStore := db.ExternalServicesWith(cstore)
+	repoStore := database.ReposWith(cstore)
+	esStore := database.ExternalServicesWith(cstore)
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/apply-campaign-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
@@ -854,8 +854,8 @@ func TestDeleteCampaignsCredential(t *testing.T) {
 
 	userID := ct.CreateTestUser(t, true).ID
 
-	cred, err := db.GlobalUserCredentials.Create(ctx, db.UserCredentialScope{
-		Domain:              db.UserCredentialDomainCampaigns,
+	cred, err := database.GlobalUserCredentials.Create(ctx, database.UserCredentialScope{
+		Domain:              database.UserCredentialDomainCampaigns,
 		ExternalServiceType: extsvc.TypeGitHub,
 		ExternalServiceID:   "https://github.com/",
 		UserID:              userID,

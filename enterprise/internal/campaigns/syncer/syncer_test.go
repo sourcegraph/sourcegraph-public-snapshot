@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -334,7 +334,7 @@ func TestSyncRegistry(t *testing.T) {
 	var repoStore MockRepoStore
 
 	esStore := MockExternalServiceStore{
-		list: func(context.Context, db.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+		list: func(context.Context, database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 			return []*types.ExternalService{
 				extSvc,
 			}, nil
@@ -459,9 +459,9 @@ func (m MockRepoStore) Get(ctx context.Context, id api.RepoID) (*types.Repo, err
 }
 
 type MockExternalServiceStore struct {
-	list func(context.Context, db.ExternalServicesListOptions) ([]*types.ExternalService, error)
+	list func(context.Context, database.ExternalServicesListOptions) ([]*types.ExternalService, error)
 }
 
-func (m MockExternalServiceStore) List(ctx context.Context, args db.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+func (m MockExternalServiceStore) List(ctx context.Context, args database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 	return m.list(ctx, args)
 }
