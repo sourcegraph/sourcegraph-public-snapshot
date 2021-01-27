@@ -1,4 +1,4 @@
-package db
+package database
 
 var Mocks MockStores
 
