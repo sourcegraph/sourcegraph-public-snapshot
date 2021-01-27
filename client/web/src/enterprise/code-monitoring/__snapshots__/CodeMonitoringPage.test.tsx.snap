@@ -53,66 +53,80 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
           status="prototype"
         />
       }
-      icon={[Function]}
-      title="Code monitoring"
+      className="mb-3"
+      path={
+        Array [
+          Object {
+            "icon": [Function],
+            "text": "Code monitoring",
+          },
+        ]
+      }
     >
       <header
-        className="page-header d-flex flex-column flex-md-row flex-wrap justify-content-between align-items-lg-center"
+        className="page-header d-flex flex-column flex-md-row flex-wrap justify-content-between align-items-lg-center mb-3"
       >
         <div>
-          <Muted>
-            <div
-              className="text-muted mb-3"
-            >
-              <StatusBadge
-                status="prototype"
-              >
-                <div
-                  className="d-flex align-items-center"
-                >
-                  <span
-                    className="badge badge-warning text-uppercase mr-2"
-                  >
-                    prototype
-                  </span>
-                  <a
-                    href="mailto:support@sourcegraph.com"
-                    rel="noopener noreferrer"
-                    target="_blank"
-                  >
-                    Share feedback
-                  </a>
-                </div>
-              </StatusBadge>
-            </div>
-          </Muted>
-          <h1
-            className="flex-grow-1 d-block"
+          <div
+            className="text-muted page-header__annotation"
           >
-            <CodeMonitoringLogo
-              className="icon-inline"
+            <StatusBadge
+              status="prototype"
             >
-              <svg
-                className="icon-inline"
-                fill="currentColor"
-                height="20"
-                viewBox="0 0 20 20"
-                width="20"
-                xmlns="http://www.w3.org/2000/svg"
+              <div
+                className="d-flex align-items-center"
               >
-                <path
-                  clipRule="evenodd"
-                  d="M18.01 8.01C18.01 8.29 18.23 8.51 18.51 8.51C18.79 8.51 19.01 8.29 19.01 8.01C19.01 4.15 15.87 1 12 1C11.72 1 11.5 1.22 11.5 1.5C11.5 1.78 11.72 2 12 2C15.31 2 18.01 4.7 18.01 8.01ZM16.1801 7.96002C15.9001 7.96002 15.6801 7.74002 15.6801 7.46002C15.6801 5.81002 14.3301 4.46002 12.6801 4.46002C12.4001 4.46002 12.1801 4.24002 12.1801 3.96002C12.1801 3.68002 12.4001 3.46002 12.6801 3.46002C14.8901 3.46002 16.6801 5.25002 16.6801 7.46002C16.6801 7.74002 16.4601 7.96002 16.1801 7.96002ZM4.83996 6.79999L13.34 15.3C12.39 15.88 11.29 16.18 10.15 16.18C8.49996 16.18 6.93996 15.54 5.76996 14.37C4.59996 13.2 3.94996 11.65 3.94996 9.98999C3.94996 8.84999 4.25996 7.74999 4.83996 6.79999ZM4.70996 4.54999C1.70996 7.54999 1.70996 12.43 4.70996 15.43C6.20996 16.93 8.17996 17.68 10.15 17.68C12.12 17.68 14.09 16.93 15.59 15.43L4.70996 4.54999ZM4 16.14C3.7 15.84 3.43 15.52 3.18 15.18L2.89 15.69L1 18.97H4.79H8.59L8.31 18.49C6.69 18.14 5.2 17.34 4 16.14ZM13.85 8.04999C13.85 9.01999 13.07 9.79999 12.1 9.79999C11.13 9.79999 10.35 9.01999 10.35 8.04999C10.35 7.07999 11.13 6.29999 12.1 6.29999C13.07 6.29999 13.85 7.07999 13.85 8.04999Z"
-                  fillRule="evenodd"
-                />
-              </svg>
-            </CodeMonitoringLogo>
-
-            Code monitoring
+                <span
+                  className="badge badge-warning text-uppercase mr-2"
+                >
+                  prototype
+                </span>
+                <a
+                  href="mailto:support@sourcegraph.com"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  Share feedback
+                </a>
+              </div>
+            </StatusBadge>
+          </div>
+          <h1
+            className="flex-grow-1 d-block m-0"
+          >
+            <LinkOrSpan>
+              <span
+                className=""
+              >
+                <CodeMonitoringLogo
+                  className="icon-inline page-header__icon mr-2"
+                >
+                  <svg
+                    className="icon-inline page-header__icon mr-2"
+                    fill="currentColor"
+                    height="20"
+                    viewBox="0 0 20 20"
+                    width="20"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      clipRule="evenodd"
+                      d="M18.01 8.01C18.01 8.29 18.23 8.51 18.51 8.51C18.79 8.51 19.01 8.29 19.01 8.01C19.01 4.15 15.87 1 12 1C11.72 1 11.5 1.22 11.5 1.5C11.5 1.78 11.72 2 12 2C15.31 2 18.01 4.7 18.01 8.01ZM16.1801 7.96002C15.9001 7.96002 15.6801 7.74002 15.6801 7.46002C15.6801 5.81002 14.3301 4.46002 12.6801 4.46002C12.4001 4.46002 12.1801 4.24002 12.1801 3.96002C12.1801 3.68002 12.4001 3.46002 12.6801 3.46002C14.8901 3.46002 16.6801 5.25002 16.6801 7.46002C16.6801 7.74002 16.4601 7.96002 16.1801 7.96002ZM4.83996 6.79999L13.34 15.3C12.39 15.88 11.29 16.18 10.15 16.18C8.49996 16.18 6.93996 15.54 5.76996 14.37C4.59996 13.2 3.94996 11.65 3.94996 9.98999C3.94996 8.84999 4.25996 7.74999 4.83996 6.79999ZM4.70996 4.54999C1.70996 7.54999 1.70996 12.43 4.70996 15.43C6.20996 16.93 8.17996 17.68 10.15 17.68C12.12 17.68 14.09 16.93 15.59 15.43L4.70996 4.54999ZM4 16.14C3.7 15.84 3.43 15.52 3.18 15.18L2.89 15.69L1 18.97H4.79H8.59L8.31 18.49C6.69 18.14 5.2 17.34 4 16.14ZM13.85 8.04999C13.85 9.01999 13.07 9.79999 12.1 9.79999C11.13 9.79999 10.35 9.01999 10.35 8.04999C10.35 7.07999 11.13 6.29999 12.1 6.29999C13.07 6.29999 13.85 7.07999 13.85 8.04999Z"
+                      fillRule="evenodd"
+                    />
+                  </svg>
+                </CodeMonitoringLogo>
+                <span
+                  className="mr-2"
+                >
+                  Code monitoring
+                </span>
+              </span>
+            </LinkOrSpan>
           </h1>
         </div>
         <div
-          className="mb-3 mb-md-0"
+          className="mt-3 mt-md-0"
         >
           <AnchorLink
             className="btn btn-secondary"
@@ -135,7 +149,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
       className="text-muted mb-4"
     >
       Watch your code for changes and trigger actions to get notifications, send webhooks, and more.
-
+       
       <a
         href="https://docs.sourcegraph.com/code_monitoring"
       >
@@ -584,7 +598,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-
+                               
                             </div>
                           </div>
                           <div
@@ -695,7 +709,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-
+                               
                             </div>
                           </div>
                           <div
@@ -806,7 +820,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-
+                               
                             </div>
                           </div>
                           <div
@@ -917,7 +931,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-
+                               
                             </div>
                           </div>
                           <div
@@ -1028,7 +1042,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-
+                               
                             </div>
                           </div>
                           <div
@@ -1139,7 +1153,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-
+                               
                             </div>
                           </div>
                           <div
@@ -1250,7 +1264,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-
+                               
                             </div>
                           </div>
                           <div
@@ -1361,7 +1375,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-
+                               
                             </div>
                           </div>
                           <div
@@ -1472,7 +1486,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-
+                               
                             </div>
                           </div>
                           <div
@@ -1583,7 +1597,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-
+                               
                             </div>
                           </div>
                           <div
@@ -1640,7 +1654,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
         className="mt-5"
       >
         We want to hear your feedback!
-
+         
         <a
           href="mailto:feedback@sourcegraph.com"
         >
@@ -1705,66 +1719,80 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
           status="prototype"
         />
       }
-      icon={[Function]}
-      title="Code monitoring"
+      className="mb-3"
+      path={
+        Array [
+          Object {
+            "icon": [Function],
+            "text": "Code monitoring",
+          },
+        ]
+      }
     >
       <header
-        className="page-header d-flex flex-column flex-md-row flex-wrap justify-content-between align-items-lg-center"
+        className="page-header d-flex flex-column flex-md-row flex-wrap justify-content-between align-items-lg-center mb-3"
       >
         <div>
-          <Muted>
-            <div
-              className="text-muted mb-3"
-            >
-              <StatusBadge
-                status="prototype"
-              >
-                <div
-                  className="d-flex align-items-center"
-                >
-                  <span
-                    className="badge badge-warning text-uppercase mr-2"
-                  >
-                    prototype
-                  </span>
-                  <a
-                    href="mailto:support@sourcegraph.com"
-                    rel="noopener noreferrer"
-                    target="_blank"
-                  >
-                    Share feedback
-                  </a>
-                </div>
-              </StatusBadge>
-            </div>
-          </Muted>
-          <h1
-            className="flex-grow-1 d-block"
+          <div
+            className="text-muted page-header__annotation"
           >
-            <CodeMonitoringLogo
-              className="icon-inline"
+            <StatusBadge
+              status="prototype"
             >
-              <svg
-                className="icon-inline"
-                fill="currentColor"
-                height="20"
-                viewBox="0 0 20 20"
-                width="20"
-                xmlns="http://www.w3.org/2000/svg"
+              <div
+                className="d-flex align-items-center"
               >
-                <path
-                  clipRule="evenodd"
-                  d="M18.01 8.01C18.01 8.29 18.23 8.51 18.51 8.51C18.79 8.51 19.01 8.29 19.01 8.01C19.01 4.15 15.87 1 12 1C11.72 1 11.5 1.22 11.5 1.5C11.5 1.78 11.72 2 12 2C15.31 2 18.01 4.7 18.01 8.01ZM16.1801 7.96002C15.9001 7.96002 15.6801 7.74002 15.6801 7.46002C15.6801 5.81002 14.3301 4.46002 12.6801 4.46002C12.4001 4.46002 12.1801 4.24002 12.1801 3.96002C12.1801 3.68002 12.4001 3.46002 12.6801 3.46002C14.8901 3.46002 16.6801 5.25002 16.6801 7.46002C16.6801 7.74002 16.4601 7.96002 16.1801 7.96002ZM4.83996 6.79999L13.34 15.3C12.39 15.88 11.29 16.18 10.15 16.18C8.49996 16.18 6.93996 15.54 5.76996 14.37C4.59996 13.2 3.94996 11.65 3.94996 9.98999C3.94996 8.84999 4.25996 7.74999 4.83996 6.79999ZM4.70996 4.54999C1.70996 7.54999 1.70996 12.43 4.70996 15.43C6.20996 16.93 8.17996 17.68 10.15 17.68C12.12 17.68 14.09 16.93 15.59 15.43L4.70996 4.54999ZM4 16.14C3.7 15.84 3.43 15.52 3.18 15.18L2.89 15.69L1 18.97H4.79H8.59L8.31 18.49C6.69 18.14 5.2 17.34 4 16.14ZM13.85 8.04999C13.85 9.01999 13.07 9.79999 12.1 9.79999C11.13 9.79999 10.35 9.01999 10.35 8.04999C10.35 7.07999 11.13 6.29999 12.1 6.29999C13.07 6.29999 13.85 7.07999 13.85 8.04999Z"
-                  fillRule="evenodd"
-                />
-              </svg>
-            </CodeMonitoringLogo>
-
-            Code monitoring
+                <span
+                  className="badge badge-warning text-uppercase mr-2"
+                >
+                  prototype
+                </span>
+                <a
+                  href="mailto:support@sourcegraph.com"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  Share feedback
+                </a>
+              </div>
+            </StatusBadge>
+          </div>
+          <h1
+            className="flex-grow-1 d-block m-0"
+          >
+            <LinkOrSpan>
+              <span
+                className=""
+              >
+                <CodeMonitoringLogo
+                  className="icon-inline page-header__icon mr-2"
+                >
+                  <svg
+                    className="icon-inline page-header__icon mr-2"
+                    fill="currentColor"
+                    height="20"
+                    viewBox="0 0 20 20"
+                    width="20"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      clipRule="evenodd"
+                      d="M18.01 8.01C18.01 8.29 18.23 8.51 18.51 8.51C18.79 8.51 19.01 8.29 19.01 8.01C19.01 4.15 15.87 1 12 1C11.72 1 11.5 1.22 11.5 1.5C11.5 1.78 11.72 2 12 2C15.31 2 18.01 4.7 18.01 8.01ZM16.1801 7.96002C15.9001 7.96002 15.6801 7.74002 15.6801 7.46002C15.6801 5.81002 14.3301 4.46002 12.6801 4.46002C12.4001 4.46002 12.1801 4.24002 12.1801 3.96002C12.1801 3.68002 12.4001 3.46002 12.6801 3.46002C14.8901 3.46002 16.6801 5.25002 16.6801 7.46002C16.6801 7.74002 16.4601 7.96002 16.1801 7.96002ZM4.83996 6.79999L13.34 15.3C12.39 15.88 11.29 16.18 10.15 16.18C8.49996 16.18 6.93996 15.54 5.76996 14.37C4.59996 13.2 3.94996 11.65 3.94996 9.98999C3.94996 8.84999 4.25996 7.74999 4.83996 6.79999ZM4.70996 4.54999C1.70996 7.54999 1.70996 12.43 4.70996 15.43C6.20996 16.93 8.17996 17.68 10.15 17.68C12.12 17.68 14.09 16.93 15.59 15.43L4.70996 4.54999ZM4 16.14C3.7 15.84 3.43 15.52 3.18 15.18L2.89 15.69L1 18.97H4.79H8.59L8.31 18.49C6.69 18.14 5.2 17.34 4 16.14ZM13.85 8.04999C13.85 9.01999 13.07 9.79999 12.1 9.79999C11.13 9.79999 10.35 9.01999 10.35 8.04999C10.35 7.07999 11.13 6.29999 12.1 6.29999C13.07 6.29999 13.85 7.07999 13.85 8.04999Z"
+                      fillRule="evenodd"
+                    />
+                  </svg>
+                </CodeMonitoringLogo>
+                <span
+                  className="mr-2"
+                >
+                  Code monitoring
+                </span>
+              </span>
+            </LinkOrSpan>
           </h1>
         </div>
         <div
-          className="mb-3 mb-md-0"
+          className="mt-3 mt-md-0"
         >
           <AnchorLink
             className="btn btn-secondary"
@@ -1787,7 +1815,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
       className="text-muted mb-4"
     >
       Watch your code for changes and trigger actions to get notifications, send webhooks, and more.
-
+       
       <a
         href="https://docs.sourcegraph.com/code_monitoring"
       >
@@ -2054,7 +2082,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-
+                               
                             </div>
                           </div>
                           <div
@@ -2165,7 +2193,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-
+                               
                             </div>
                           </div>
                           <div
@@ -2276,7 +2304,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-
+                               
                             </div>
                           </div>
                           <div
@@ -2333,7 +2361,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
         className="mt-5"
       >
         We want to hear your feedback!
-
+         
         <a
           href="mailto:feedback@sourcegraph.com"
         >
@@ -2398,66 +2426,80 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
           status="prototype"
         />
       }
-      icon={[Function]}
-      title="Code monitoring"
+      className="mb-3"
+      path={
+        Array [
+          Object {
+            "icon": [Function],
+            "text": "Code monitoring",
+          },
+        ]
+      }
     >
       <header
-        className="page-header d-flex flex-column flex-md-row flex-wrap justify-content-between align-items-lg-center"
+        className="page-header d-flex flex-column flex-md-row flex-wrap justify-content-between align-items-lg-center mb-3"
       >
         <div>
-          <Muted>
-            <div
-              className="text-muted mb-3"
-            >
-              <StatusBadge
-                status="prototype"
-              >
-                <div
-                  className="d-flex align-items-center"
-                >
-                  <span
-                    className="badge badge-warning text-uppercase mr-2"
-                  >
-                    prototype
-                  </span>
-                  <a
-                    href="mailto:support@sourcegraph.com"
-                    rel="noopener noreferrer"
-                    target="_blank"
-                  >
-                    Share feedback
-                  </a>
-                </div>
-              </StatusBadge>
-            </div>
-          </Muted>
-          <h1
-            className="flex-grow-1 d-block"
+          <div
+            className="text-muted page-header__annotation"
           >
-            <CodeMonitoringLogo
-              className="icon-inline"
+            <StatusBadge
+              status="prototype"
             >
-              <svg
-                className="icon-inline"
-                fill="currentColor"
-                height="20"
-                viewBox="0 0 20 20"
-                width="20"
-                xmlns="http://www.w3.org/2000/svg"
+              <div
+                className="d-flex align-items-center"
               >
-                <path
-                  clipRule="evenodd"
-                  d="M18.01 8.01C18.01 8.29 18.23 8.51 18.51 8.51C18.79 8.51 19.01 8.29 19.01 8.01C19.01 4.15 15.87 1 12 1C11.72 1 11.5 1.22 11.5 1.5C11.5 1.78 11.72 2 12 2C15.31 2 18.01 4.7 18.01 8.01ZM16.1801 7.96002C15.9001 7.96002 15.6801 7.74002 15.6801 7.46002C15.6801 5.81002 14.3301 4.46002 12.6801 4.46002C12.4001 4.46002 12.1801 4.24002 12.1801 3.96002C12.1801 3.68002 12.4001 3.46002 12.6801 3.46002C14.8901 3.46002 16.6801 5.25002 16.6801 7.46002C16.6801 7.74002 16.4601 7.96002 16.1801 7.96002ZM4.83996 6.79999L13.34 15.3C12.39 15.88 11.29 16.18 10.15 16.18C8.49996 16.18 6.93996 15.54 5.76996 14.37C4.59996 13.2 3.94996 11.65 3.94996 9.98999C3.94996 8.84999 4.25996 7.74999 4.83996 6.79999ZM4.70996 4.54999C1.70996 7.54999 1.70996 12.43 4.70996 15.43C6.20996 16.93 8.17996 17.68 10.15 17.68C12.12 17.68 14.09 16.93 15.59 15.43L4.70996 4.54999ZM4 16.14C3.7 15.84 3.43 15.52 3.18 15.18L2.89 15.69L1 18.97H4.79H8.59L8.31 18.49C6.69 18.14 5.2 17.34 4 16.14ZM13.85 8.04999C13.85 9.01999 13.07 9.79999 12.1 9.79999C11.13 9.79999 10.35 9.01999 10.35 8.04999C10.35 7.07999 11.13 6.29999 12.1 6.29999C13.07 6.29999 13.85 7.07999 13.85 8.04999Z"
-                  fillRule="evenodd"
-                />
-              </svg>
-            </CodeMonitoringLogo>
-
-            Code monitoring
+                <span
+                  className="badge badge-warning text-uppercase mr-2"
+                >
+                  prototype
+                </span>
+                <a
+                  href="mailto:support@sourcegraph.com"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  Share feedback
+                </a>
+              </div>
+            </StatusBadge>
+          </div>
+          <h1
+            className="flex-grow-1 d-block m-0"
+          >
+            <LinkOrSpan>
+              <span
+                className=""
+              >
+                <CodeMonitoringLogo
+                  className="icon-inline page-header__icon mr-2"
+                >
+                  <svg
+                    className="icon-inline page-header__icon mr-2"
+                    fill="currentColor"
+                    height="20"
+                    viewBox="0 0 20 20"
+                    width="20"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      clipRule="evenodd"
+                      d="M18.01 8.01C18.01 8.29 18.23 8.51 18.51 8.51C18.79 8.51 19.01 8.29 19.01 8.01C19.01 4.15 15.87 1 12 1C11.72 1 11.5 1.22 11.5 1.5C11.5 1.78 11.72 2 12 2C15.31 2 18.01 4.7 18.01 8.01ZM16.1801 7.96002C15.9001 7.96002 15.6801 7.74002 15.6801 7.46002C15.6801 5.81002 14.3301 4.46002 12.6801 4.46002C12.4001 4.46002 12.1801 4.24002 12.1801 3.96002C12.1801 3.68002 12.4001 3.46002 12.6801 3.46002C14.8901 3.46002 16.6801 5.25002 16.6801 7.46002C16.6801 7.74002 16.4601 7.96002 16.1801 7.96002ZM4.83996 6.79999L13.34 15.3C12.39 15.88 11.29 16.18 10.15 16.18C8.49996 16.18 6.93996 15.54 5.76996 14.37C4.59996 13.2 3.94996 11.65 3.94996 9.98999C3.94996 8.84999 4.25996 7.74999 4.83996 6.79999ZM4.70996 4.54999C1.70996 7.54999 1.70996 12.43 4.70996 15.43C6.20996 16.93 8.17996 17.68 10.15 17.68C12.12 17.68 14.09 16.93 15.59 15.43L4.70996 4.54999ZM4 16.14C3.7 15.84 3.43 15.52 3.18 15.18L2.89 15.69L1 18.97H4.79H8.59L8.31 18.49C6.69 18.14 5.2 17.34 4 16.14ZM13.85 8.04999C13.85 9.01999 13.07 9.79999 12.1 9.79999C11.13 9.79999 10.35 9.01999 10.35 8.04999C10.35 7.07999 11.13 6.29999 12.1 6.29999C13.07 6.29999 13.85 7.07999 13.85 8.04999Z"
+                      fillRule="evenodd"
+                    />
+                  </svg>
+                </CodeMonitoringLogo>
+                <span
+                  className="mr-2"
+                >
+                  Code monitoring
+                </span>
+              </span>
+            </LinkOrSpan>
           </h1>
         </div>
         <div
-          className="mb-3 mb-md-0"
+          className="mt-3 mt-md-0"
         >
           <AnchorLink
             className="btn btn-secondary"
@@ -2480,7 +2522,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
       className="text-muted mb-4"
     >
       Watch your code for changes and trigger actions to get notifications, send webhooks, and more.
-
+       
       <a
         href="https://docs.sourcegraph.com/code_monitoring"
       >
@@ -2981,7 +3023,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-
+                               
                             </div>
                           </div>
                           <div
@@ -3092,7 +3134,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-
+                               
                             </div>
                           </div>
                           <div
@@ -3203,7 +3245,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-
+                               
                             </div>
                           </div>
                           <div
@@ -3314,7 +3356,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-
+                               
                             </div>
                           </div>
                           <div
@@ -3425,7 +3467,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-
+                               
                             </div>
                           </div>
                           <div
@@ -3536,7 +3578,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-
+                               
                             </div>
                           </div>
                           <div
@@ -3647,7 +3689,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-
+                               
                             </div>
                           </div>
                           <div
@@ -3758,7 +3800,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-
+                               
                             </div>
                           </div>
                           <div
@@ -3869,7 +3911,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-
+                               
                             </div>
                           </div>
                           <div
@@ -3980,7 +4022,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-
+                               
                             </div>
                           </div>
                           <div
@@ -4091,7 +4133,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-
+                               
                             </div>
                           </div>
                           <div
@@ -4202,7 +4244,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                               className="d-flex text-muted"
                             >
                               New search result → Sends email notifications
-
+                               
                             </div>
                           </div>
                           <div
@@ -4256,12 +4298,12 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                   <small>
                     <span>
                       12
-
+                       
                       code monitors
-
+                       
                       total
                     </span>
-
+                     
                   </small>
                 </p>
                 <button
@@ -4280,7 +4322,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
         className="mt-5"
       >
         We want to hear your feedback!
-
+         
         <a
           href="mailto:feedback@sourcegraph.com"
         >
