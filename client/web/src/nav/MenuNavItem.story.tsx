@@ -13,7 +13,7 @@ add(
     () => (
         <WebStory>
             {() => (
-                <MenuNavItem>
+                <MenuNavItem openByDefault={true}>
                     <CampaignsNavItem />
                     <InsightsNavItem />
                     <CodeMonitoringNavItem />

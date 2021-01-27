@@ -4,6 +4,7 @@ import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reac
 
 interface MenuNavItemProps {
     children: React.ReactNode
+    openByDefault?: boolean
 }
 
 /**
@@ -13,8 +14,8 @@ interface MenuNavItemProps {
  */
 
 export const MenuNavItem: React.FunctionComponent<MenuNavItemProps> = props => {
-    const { children } = props
-    const [isOpen, setIsOpen] = useState(() => false)
+    const { children, openByDefault } = props
+    const [isOpen, setIsOpen] = useState(() => !!openByDefault)
     const toggleIsOpen = useCallback(() => setIsOpen(open => !open), [])
 
     return (
