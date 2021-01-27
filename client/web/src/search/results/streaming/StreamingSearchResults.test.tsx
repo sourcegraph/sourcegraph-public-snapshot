@@ -77,7 +77,7 @@ describe('StreamingSearchResults', () => {
             <BrowserRouter>
                 <StreamingSearchResults
                     {...defaultProps}
-                    parsedSearchQuery="r:golang/oauth2 test f:travis case:yes"
+                    parsedSearchQuery="r:golang/oauth2 test f:travis"
                     patternType={SearchPatternType.regexp}
                     caseSensitive={true}
                     versionContext="test"
@@ -89,9 +89,10 @@ describe('StreamingSearchResults', () => {
 
         sinon.assert.calledOnce(searchSpy)
         sinon.assert.calledWith(searchSpy, {
-            query: 'r:golang/oauth2 test f:travis case:yes',
+            query: 'r:golang/oauth2 test f:travis',
             version: 'V2',
             patternType: SearchPatternType.regexp,
+            caseSensitive: true,
             versionContext: 'test',
             trace: undefined,
         })
@@ -109,9 +110,9 @@ describe('StreamingSearchResults', () => {
             <BrowserRouter>
                 <StreamingSearchResults
                     {...defaultProps}
-                    parsedSearchQuery="r:golang/oauth2 test f:travis case:yes"
+                    parsedSearchQuery="r:golang/oauth2 test f:travis"
                     patternType={SearchPatternType.regexp}
-                    caseSensitive={true}
+                    caseSensitive={false}
                     versionContext="test"
                     streamSearch={searchSpy}
                     availableVersionContexts={[{ name: 'something', revisions: [] }]}
@@ -121,9 +122,10 @@ describe('StreamingSearchResults', () => {
 
         sinon.assert.calledOnce(searchSpy)
         sinon.assert.calledWith(searchSpy, {
-            query: 'r:golang/oauth2 test f:travis case:yes',
+            query: 'r:golang/oauth2 test f:travis',
             version: 'V2',
             patternType: SearchPatternType.regexp,
+            caseSensitive: false,
             versionContext: undefined,
             trace: undefined,
         })

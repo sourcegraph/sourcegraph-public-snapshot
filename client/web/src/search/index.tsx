@@ -77,7 +77,10 @@ export interface ParsedSearchURL {
  *
  * @param urlSearchQuery a URL's query string.
  */
-export function parseSearchURL(urlSearchQuery: string): ParsedSearchURL {
+export function parseSearchURL(
+    urlSearchQuery: string,
+    { appendCaseFilter = false }: { appendCaseFilter?: boolean } = {}
+): ParsedSearchURL {
     let finalQuery = parseSearchURLQuery(urlSearchQuery) || ''
     let patternType = parseSearchURLPatternType(urlSearchQuery)
     let caseSensitive = searchURLIsCaseSensitive(urlSearchQuery)
@@ -100,8 +103,11 @@ export function parseSearchURL(urlSearchQuery: string): ParsedSearchURL {
             caseSensitive = false
         }
     }
-    // Invariant: If case:value was in the query, it is erased at this point. Add case:yes if needed.
-    finalQuery = caseSensitive ? `${finalQuery} case:yes` : finalQuery
+
+    if (appendCaseFilter) {
+        // Invariant: If case:value was in the query, it is erased at this point. Add case:yes if needed.
+        finalQuery = caseSensitive ? `${finalQuery} case:yes` : finalQuery
+    }
 
     return {
         query: finalQuery,

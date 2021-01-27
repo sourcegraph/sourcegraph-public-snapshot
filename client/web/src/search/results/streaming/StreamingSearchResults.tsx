@@ -110,10 +110,11 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                     query,
                     version: LATEST_VERSION,
                     patternType: patternType ?? SearchPatternType.literal,
+                    caseSensitive,
                     versionContext: resolveVersionContext(versionContext, availableVersionContexts),
                     trace,
                 }),
-            [streamSearch, query, patternType, versionContext, availableVersionContexts, trace]
+            [streamSearch, query, patternType, caseSensitive, versionContext, availableVersionContexts, trace]
         )
     )
 
