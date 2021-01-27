@@ -5011,49 +5011,130 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
-## prometheus: prometheus_rule_group_evaluation
+## prometheus: prometheus_rule_eval_duration
 
-<p class="subtitle">average prometheus rule group evaluation duration over 10m</p>
+<p class="subtitle">average prometheus rule group evaluation duration over 10m by rule group</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> prometheus: 30s+ average prometheus rule group evaluation duration over 10m
+- <span class="badge badge-warning">warning</span> prometheus: 30s+ average prometheus rule group evaluation duration over 10m by rule group
 
 **Possible solutions**
 
-- Try increasing resources for Prometheus.
+- Check the Container monitoring (not available on server) panels and try increasing resources for Prometheus if necessary.
+- If the rule group taking a long time to evaluate belongs to `/sg_prometheus_addons`, try reducing the complexity of any custom Prometheus rules provided.
+- If the rule group taking a long time to evaluate belongs to `/sg_config_prometheus`, please [open an issue](https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=&template=bug_report.md&title=).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_prometheus_prometheus_rule_group_evaluation"
+  "warning_prometheus_prometheus_rule_eval_duration"
 ]
 ```
 
-> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#prometheus-prometheus-rule-group-evaluation).
+> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#prometheus-prometheus-rule-eval-duration).
 
 <sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
 
 <br />
 
-## prometheus: alertmanager_notifications_failed_total
+## prometheus: prometheus_rule_eval_failures
 
-<p class="subtitle">failed alertmanager notifications over 1m</p>
+<p class="subtitle">failed prometheus rule evaluations over 5m by rule group</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> prometheus: 0+ failed alertmanager notifications over 1m
+- <span class="badge badge-warning">warning</span> prometheus: 0+ failed prometheus rule evaluations over 5m by rule group
 
 **Possible solutions**
 
-- Ensure that your [`observability.alerts` configuration](https://docs.sourcegraph.com/admin/observability/alerting#setting-up-alerting) (in site configuration) is valid.
+- Check Prometheus logs for messages related to rule group evaluation (generally with log field `component="rule manager"`).
+- If the rule group failing to evaluate belongs to `/sg_prometheus_addons`, ensure any custom Prometheus configuration provided is valid.
+- If the rule group taking a long time to evaluate belongs to `/sg_config_prometheus`, please [open an issue](https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=&template=bug_report.md&title=).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_prometheus_alertmanager_notifications_failed_total"
+  "warning_prometheus_prometheus_rule_eval_failures"
 ]
 ```
+
+> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#prometheus-prometheus-rule-eval-failures).
+
+<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
+
+<br />
+
+## prometheus: alertmanager_notification_latency
+
+<p class="subtitle">alertmanager notification latency over 1m by integration</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> prometheus: 1s+ alertmanager notification latency over 1m by integration
+
+**Possible solutions**
+
+- Check the Container monitoring (not available on server) panels and try increasing resources for Prometheus if necessary.
+- Ensure that your [`observability.alerts` configuration](https://docs.sourcegraph.com/admin/observability/alerting#setting-up-alerting) (in site configuration) is valid.
+- Check if the relevant alert integration service is experiencing downtime or issues.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_prometheus_alertmanager_notification_latency"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
+
+<br />
+
+## prometheus: alertmanager_notification_failures
+
+<p class="subtitle">failed alertmanager notifications over 1m by integration</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> prometheus: 0+ failed alertmanager notifications over 1m by integration
+
+**Possible solutions**
+
+- Ensure that your [`observability.alerts` configuration](https://docs.sourcegraph.com/admin/observability/alerting#setting-up-alerting) (in site configuration) is valid.
+- Check if the relevant alert integration service is experiencing downtime or issues.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_prometheus_alertmanager_notification_failures"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
+
+<br />
+
+## prometheus: prometheus_config_status
+
+<p class="subtitle">prometheus configuration reload status</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> prometheus: less than 1 prometheus configuration reload status
+
+**Possible solutions**
+
+- Check Prometheus logs for messages related to configuration loading.
+- Ensure any [custom configuration you have provided Prometheus](https://docs.sourcegraph.com/admin/observability/metrics#prometheus-configuration) is valid.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_prometheus_prometheus_config_status"
+]
+```
+
+> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#prometheus-prometheus-config-status).
 
 <sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
 
@@ -5086,11 +5167,11 @@ with your code hosts connections or networking issues affecting communication wi
 
 ## prometheus: prometheus_tsdb_op_failure
 
-<p class="subtitle">prometheus tsdb failures by operation over 1m</p>
+<p class="subtitle">prometheus tsdb failures by operation over 1m by operation</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> prometheus: 0+ prometheus tsdb failures by operation over 1m
+- <span class="badge badge-warning">warning</span> prometheus: 0+ prometheus tsdb failures by operation over 1m by operation
 
 **Possible solutions**
 
@@ -5102,32 +5183,6 @@ with your code hosts connections or networking issues affecting communication wi
   "warning_prometheus_prometheus_tsdb_op_failure"
 ]
 ```
-
-<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
-
-<br />
-
-## prometheus: prometheus_config_status
-
-<p class="subtitle">prometheus configuration reload status</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> prometheus: less than 1 prometheus configuration reload status
-
-**Possible solutions**
-
-- Check Prometheus logs for messages related to configuration loading.
-- Ensure any custom configuration you have provided Prometheus is valid.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_prometheus_prometheus_config_status"
-]
-```
-
-> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#prometheus-prometheus-config-status).
 
 <sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
 
