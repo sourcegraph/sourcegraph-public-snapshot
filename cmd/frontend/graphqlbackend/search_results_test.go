@@ -962,11 +962,13 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 			fields: fields{
 				results: []SearchResultResolver{
 					&FileMatchResolver{
-						symbols: []*searchSymbolResult{
-							// 1
-							{},
-							// 2
-							{},
+						FileMatch: FileMatch{
+							symbols: []*searchSymbolResult{
+								// 1
+								{},
+								// 2
+								{},
+							},
 						},
 					},
 				},
@@ -979,11 +981,13 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 			fields: fields{
 				results: []SearchResultResolver{
 					&FileMatchResolver{
-						symbols: []*searchSymbolResult{
-							// 1
-							{},
-							// 2
-							{},
+						FileMatch: FileMatch{
+							symbols: []*searchSymbolResult{
+								// 1
+								{},
+								// 2
+								{},
+							},
 						},
 					},
 				},
@@ -1065,10 +1069,10 @@ func TestGetExactFilePatterns(t *testing.T) {
 
 func TestCompareSearchResults(t *testing.T) {
 	makeResult := func(repo, file string) *FileMatchResolver {
-		return &FileMatchResolver{
-			Repo:  &RepositoryResolver{innerRepo: &types.Repo{Name: api.RepoName(repo)}},
+		return mkFileMatchResolver(FileMatch{
+			Repo:  &types.RepoName{Name: api.RepoName(repo)},
 			JPath: file,
-		}
+		})
 	}
 
 	tests := []struct {

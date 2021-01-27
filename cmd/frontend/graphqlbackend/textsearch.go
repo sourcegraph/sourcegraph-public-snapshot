@@ -37,20 +37,26 @@ var textSearchLimiter = mutablelimiter.New(32)
 // A light wrapper around the search service. We implement the service here so
 // that we can unmarshal the result directly into graphql resolvers.
 
-// FileMatchResolver is a resolver for the GraphQL type `FileMatch`
-type FileMatchResolver struct {
+type FileMatch struct {
 	JPath        string       `json:"Path"`
 	JLineMatches []*lineMatch `json:"LineMatches"`
 	JLimitHit    bool         `json:"LimitHit"`
 	MatchCount   int          // Number of matches. Different from len(JLineMatches), as multiple lines may correspond to one logical match.
 	symbols      []*searchSymbolResult
 	uri          string
-	Repo         *RepositoryResolver
+	Repo         *types.RepoName
 	CommitID     api.CommitID
 	// InputRev is the Git revspec that the user originally requested to search. It is used to
 	// preserve the original revision specifier from the user instead of navigating them to the
 	// absolute commit ID when they select a result.
 	InputRev *string
+}
+
+// FileMatchResolver is a resolver for the GraphQL type `FileMatch`
+type FileMatchResolver struct {
+	FileMatch
+
+	RepoResolver *RepositoryResolver
 }
 
 func (fm *FileMatchResolver) Equal(other *FileMatchResolver) bool {
@@ -67,7 +73,7 @@ func (fm *FileMatchResolver) File() *GitTreeEntryResolver {
 	// values for all other fields.
 	return &GitTreeEntryResolver{
 		commit: &GitCommitResolver{
-			repoResolver: fm.Repo,
+			repoResolver: fm.RepoResolver,
 			oid:          GitObjectID(fm.CommitID),
 			inputRev:     fm.InputRev,
 		},
@@ -76,7 +82,7 @@ func (fm *FileMatchResolver) File() *GitTreeEntryResolver {
 }
 
 func (fm *FileMatchResolver) Repository() *RepositoryResolver {
-	return fm.Repo
+	return fm.RepoResolver
 }
 
 func (fm *FileMatchResolver) RevSpec() *gitRevSpec {
@@ -223,15 +229,17 @@ func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo *ty
 		}
 
 		resolvers = append(resolvers, &FileMatchResolver{
-			JPath:        fm.Path,
-			JLineMatches: lineMatches,
-			JLimitHit:    fm.LimitHit,
-			MatchCount:   fm.MatchCount,
-
-			uri:      workspace + fm.Path,
-			Repo:     repoResolver,
-			CommitID: commit,
-			InputRev: &rev,
+			FileMatch: FileMatch{
+				JPath:        fm.Path,
+				JLineMatches: lineMatches,
+				JLimitHit:    fm.LimitHit,
+				MatchCount:   fm.MatchCount,
+				Repo:         repo,
+				uri:          workspace + fm.Path,
+				CommitID:     commit,
+				InputRev:     &rev,
+			},
+			RepoResolver: repoResolver,
 		})
 	}
 
@@ -641,7 +649,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 						mu.Unlock()
 						return
 					}
-					name := string(fm.Repo.Name())
+					name := string(fm.Repo.Name)
 					partition[name] = append(partition[name], fm.JPath)
 				}
 
