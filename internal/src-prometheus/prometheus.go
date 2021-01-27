@@ -17,21 +17,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
-var promURL = env.Get("PROMETHEUS_URL", "", "prometheus server URL")
-
-// PrometheusURL retrieves the configured Prometheus URL, or ErrPrometheusUnavailable
-func PrometheusURL() (string, error) {
-	if promURL == "" {
-		return "", ErrPrometheusUnavailable
-	}
-	return promURL, nil
-}
-
 // ErrPrometheusUnavailable is raised specifically when prometheusURL is unset or when
 // prometheus API access times out, both of which indicate that the server API has likely
 // been configured to explicitly disallow access to prometheus, or that prometheus is not
 // deployed at all. The website checks for this error in `fetchMonitoringStats`, for example.
 var ErrPrometheusUnavailable = errors.New("prometheus API is unavailable")
+
+// PrometheusURL is the configured Prometheus instance.
+var PrometheusURL = env.Get("PROMETHEUS_URL", "", "prometheus server URL")
 
 type Client interface {
 	GetAlertsStatus(ctx context.Context) (*AlertsStatus, error)
@@ -44,13 +37,19 @@ type client struct {
 	promURL url.URL
 }
 
-// NewClient provides a client for interacting with Sourcegraph Prometheus
+// NewClient provides a client for interacting with Sourcegraph Prometheus. It errors if
+// the target Prometheus URL is invalid, or if no Prometheus URL is configured at all.
+// Users should check for the latter case by asserting against `ErrPrometheusUnavailable`
+// to avoid rendering an error.
 //
 // See https://docs.sourcegraph.com/dev/background-information/observability/prometheus
 func NewClient(prometheusURL string) (Client, error) {
+	if prometheusURL == "" {
+		return nil, ErrPrometheusUnavailable
+	}
 	promURL, err := url.Parse(prometheusURL)
 	if err != nil {
-		return nil, fmt.Errorf("Prometheus misconfigured: %w", err)
+		return nil, fmt.Errorf("invalid URL: %w", err)
 	}
 	return &client{
 		http: http.Client{
@@ -82,7 +81,7 @@ func (c *client) GetAlertsStatus(ctx context.Context) (*AlertsStatus, error) {
 	}
 	resp, err := c.do(ctx, req)
 	if err != nil {
-		return nil, fmt.Errorf("unable to fetch alerts status: %w", err)
+		return nil, fmt.Errorf("alerts status: %w", err)
 	}
 
 	var alertsStatus AlertsStatus
@@ -105,7 +104,7 @@ func (c *client) GetAlertsHistory(ctx context.Context, timespan time.Duration) (
 	}
 	resp, err := c.do(ctx, req)
 	if err != nil {
-		return nil, fmt.Errorf("unable to fetch alerts history: %w", err)
+		return nil, fmt.Errorf("alerts history: %w", err)
 	}
 
 	var alertsHistory AlertsHistory
@@ -127,7 +126,7 @@ func (c *client) GetConfigStatus(ctx context.Context) (*ConfigStatus, error) {
 	}
 	resp, err := c.do(ctx, req)
 	if err != nil {
-		return nil, fmt.Errorf("unable to fetch alerts history: %w", err)
+		return nil, fmt.Errorf("config status: %w", err)
 	}
 
 	var status ConfigStatus
@@ -138,7 +137,7 @@ func (c *client) GetConfigStatus(ctx context.Context) (*ConfigStatus, error) {
 	return &status, nil
 }
 
-// roundTripper reats certain connection errors as ErrPrometheusUnavailable which can be
+// roundTripper treats certain connection errors as `ErrPrometheusUnavailable` which can be
 // handled explicitly for environments without Prometheus available.
 type roundTripper struct{}
 

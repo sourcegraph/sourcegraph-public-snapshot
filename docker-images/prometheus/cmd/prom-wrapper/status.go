@@ -46,7 +46,8 @@ func (s *AlertsStatusReporter) Handler() http.Handler {
 				return
 			}
 		}
-		results, warn, err := s.prometheus.QueryRange(req.Context(), `max by (level,name,service_name,owner)(avg_over_time(alert_count{name!=""}[12h]))`,
+		const alertsHistoryQuery = `max by (level,name,service_name,owner)(avg_over_time(alert_count{name!=""}[12h]))`
+		results, warn, err := s.prometheus.QueryRange(req.Context(), alertsHistoryQuery,
 			prometheus.Range{
 				Start: time.Now().Add(-timespan),
 				End:   time.Now(),

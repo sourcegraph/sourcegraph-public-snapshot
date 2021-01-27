@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -105,9 +106,13 @@ func init() {
 	AlertFuncs = append(AlertFuncs, updateAvailableAlert)
 
 	// Notify admins if critical alerts are firing, if Prometheus is configured.
-	promURL, err := srcprometheus.PrometheusURL()
-	if err == nil {
-		AlertFuncs = append(AlertFuncs, observabilityActiveAlertsAlert(promURL))
+	prom, err := srcprometheus.NewClient(srcprometheus.PrometheusURL)
+	if err != nil {
+		if errors.Is(err, srcprometheus.ErrPrometheusUnavailable) {
+			AlertFuncs = append(AlertFuncs, observabilityActiveAlertsAlert(prom))
+		} else {
+			log15.Warn("WARNING: possibly misconfigured Prometheus", "error", err)
+		}
 	}
 
 	// Warn about invalid site configuration.
@@ -272,7 +277,7 @@ func determineOutOfDateAlert(isAdmin bool, months int, offline bool) *Alert {
 }
 
 // observabilityActiveAlertsAlert directs admins to check Grafana if critical alerts are firing
-func observabilityActiveAlertsAlert(prometheusURL string) func(AlertFuncArgs) []*Alert {
+func observabilityActiveAlertsAlert(prom srcprometheus.Client) func(AlertFuncArgs) []*Alert {
 	return func(args AlertFuncArgs) []*Alert {
 		// true by default - change settings.schema.json if this changes
 		observabilitySiteAlertsDisabled := true
@@ -280,19 +285,14 @@ func observabilityActiveAlertsAlert(prometheusURL string) func(AlertFuncArgs) []
 			observabilitySiteAlertsDisabled = *args.ViewerFinalSettings.AlertsHideObservabilitySiteAlerts
 		}
 
-		if !args.IsSiteAdmin || prometheusURL == "" || observabilitySiteAlertsDisabled {
+		if !args.IsSiteAdmin || observabilitySiteAlertsDisabled {
 			return nil
-		}
-
-		client, err := srcprometheus.NewClient(prometheusURL)
-		if err != nil {
-			return []*Alert{{TypeValue: AlertTypeWarning, MessageValue: err.Error()}}
 		}
 
 		// use a short timeout to avoid having this block problems from loading
 		ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 		defer cancel()
-		status, err := client.GetAlertsStatus(ctx)
+		status, err := prom.GetAlertsStatus(ctx)
 		if err != nil {
 			return []*Alert{{TypeValue: AlertTypeWarning, MessageValue: err.Error()}}
 		}

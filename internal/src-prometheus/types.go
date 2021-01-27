@@ -14,12 +14,15 @@ type AlertsStatus struct {
 }
 
 // MonitoringAlert implements the GraphQL type MonitoringAlert.
+//
+// Internal fields named to accomodate GraphQL getters and setters, see grapqhlbackend.MonitoringAlert
 type MonitoringAlert struct {
-	TimestampValue   time.Time
-	NameValue        string
-	ServiceNameValue string
-	OwnerValue       string
-	AverageValue     float64
+	TimestampValue   time.Time `json:"timestamp"`
+	NameValue        string    `json:"name"`
+	ServiceNameValue string    `json:"service_name"`
+	OwnerValue       string    `json:"owner"`
+	// AverageValue indicates average over past 12 hours, see alertsHistoryQuery
+	AverageValue float64 `json:"average"`
 }
 
 type MonitoringAlerts []*MonitoringAlert

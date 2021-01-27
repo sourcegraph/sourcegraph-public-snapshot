@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
+// MonitoringAlert implements GraphQL getters on top of srcprometheus.MonitoringAlert
 type MonitoringAlert srcprometheus.MonitoringAlert
 
 func (r *MonitoringAlert) Timestamp() DateTime { return DateTime{r.TimestampValue} }
@@ -21,13 +22,9 @@ func (r *MonitoringAlert) Average() float64    { return r.AverageValue }
 func (r *siteResolver) MonitoringStatistics(ctx context.Context, args *struct {
 	Days *int32
 }) (*siteMonitoringStatisticsResolver, error) {
-	promURL, err := srcprometheus.PrometheusURL()
+	prom, err := srcprometheus.NewClient(srcprometheus.PrometheusURL)
 	if err != nil {
-		return nil, err
-	}
-	prom, err := srcprometheus.NewClient(promURL)
-	if err != nil {
-		return nil, err
+		return nil, err // clients should check for ErrPrometheusUnavailable
 	}
 	return &siteMonitoringStatisticsResolver{
 		prom:     prom,
@@ -54,10 +51,14 @@ func (r *siteMonitoringStatisticsResolver) Alerts(ctx context.Context) ([]*Monit
 		span.Finish()
 	}()
 
+	if r.prom == nil {
+		return nil, srcprometheus.ErrPrometheusUnavailable
+	}
 	alertsHistory, err := r.prom.GetAlertsHistory(ctx, r.timespan)
 	if err != nil {
 		return nil, err
 	}
+	// cast into graphql type
 	alerts := make([]*MonitoringAlert, len(alertsHistory.Alerts))
 	for i, a := range alertsHistory.Alerts {
 		alert := MonitoringAlert(*a)
