@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 
@@ -101,7 +102,10 @@ func (s *GitRepoSyncer) RemoteShowCommand(ctx context.Context, url string) (cmd 
 }
 
 // PerforceDepotSyncer is a syncer for Perforce depots.
-type PerforceDepotSyncer struct{}
+type PerforceDepotSyncer struct {
+	// MaxChanges indicates to only import at most n changes when possible.
+	MaxChanges int
+}
 
 // decomposePerforceCloneURL decomposes information back from a clone URL for a
 // Perforce depot.
@@ -229,7 +233,14 @@ func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, url, tmpPath str
 		return nil, errors.Wrap(err, "ping with login")
 	}
 
-	cmd := exec.CommandContext(ctx, "git", "p4", "clone", "--bare", depot+"@all", tmpPath)
+	// Example: git p4 clone --bare --max-changes 1000 //Sourcegraph/@all /tmp/clone-584194180/.git
+	args := []string{"p4", "clone", "--bare"}
+	if s.MaxChanges > 0 {
+		args = append(args, "--max-changes", strconv.Itoa(s.MaxChanges))
+	}
+	args = append(args, depot+"@all", tmpPath)
+
+	cmd := exec.CommandContext(ctx, "git", args...)
 	cmd.Env = append(os.Environ(),
 		"P4PORT="+host,
 		"P4USER="+username,
@@ -250,7 +261,13 @@ func (s *PerforceDepotSyncer) FetchCommand(ctx context.Context, url string) (cmd
 		return nil, false, errors.Wrap(err, "ping with login")
 	}
 
-	cmd = exec.CommandContext(ctx, "git", "p4", "sync")
+	// Example: git p4 sync --max-changes 1000
+	args := []string{"p4", "sync"}
+	if s.MaxChanges > 0 {
+		args = append(args, "--max-changes", strconv.Itoa(s.MaxChanges))
+	}
+
+	cmd = exec.CommandContext(ctx, "git", args...)
 	cmd.Env = append(os.Environ(),
 		"P4PORT="+host,
 		"P4USER="+username,
