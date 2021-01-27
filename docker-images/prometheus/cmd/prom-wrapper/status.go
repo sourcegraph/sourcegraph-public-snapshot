@@ -35,7 +35,8 @@ func NewAlertsStatusReporter(logger log15.Logger, alertmanager *amclient.Alertma
 
 func (s *AlertsStatusReporter) Handler() http.Handler {
 	handler := http.NewServeMux()
-	handler.HandleFunc(srcprometheus.PathPrefixAlertsStatus+"/history", func(w http.ResponseWriter, req *http.Request) {
+	// see EndpointAlertsStatusHistory usages
+	handler.HandleFunc(srcprometheus.EndpointAlertsStatusHistory, func(w http.ResponseWriter, req *http.Request) {
 		timespan := 24 * time.Hour
 		if timespanParam := req.URL.Query().Get("timespan"); timespanParam != "" {
 			var err error
@@ -112,7 +113,8 @@ func (s *AlertsStatusReporter) Handler() http.Handler {
 		}
 		_, _ = w.Write(b)
 	})
-	handler.HandleFunc(srcprometheus.PathPrefixAlertsStatus, func(w http.ResponseWriter, req *http.Request) {
+	// see EndpointAlertsStatus usages
+	handler.HandleFunc(srcprometheus.EndpointAlertsStatus, func(w http.ResponseWriter, req *http.Request) {
 		if noAlertmanager == "true" {
 			w.WriteHeader(http.StatusServiceUnavailable)
 			_, _ = w.Write([]byte("alertmanager is disabled"))

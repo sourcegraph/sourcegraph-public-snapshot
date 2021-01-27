@@ -26,6 +26,8 @@ var ErrPrometheusUnavailable = errors.New("prometheus API is unavailable")
 // PrometheusURL is the configured Prometheus instance.
 var PrometheusURL = env.Get("PROMETHEUS_URL", "", "prometheus server URL")
 
+// Client provides the interface for interacting with Sourcegraph Prometheus, including
+// prom-wrapper. See https://docs.sourcegraph.com/dev/background-information/observability/prometheus
 type Client interface {
 	GetAlertsStatus(ctx context.Context) (*AlertsStatus, error)
 	GetAlertsHistory(ctx context.Context, timespan time.Duration) (*AlertsHistory, error)
@@ -59,6 +61,19 @@ func NewClient(prometheusURL string) (Client, error) {
 	}, nil
 }
 
+func (c *client) newRequest(endpoint string, query url.Values) (*http.Request, error) {
+	target := c.promURL
+	target.Path = endpoint
+	if query != nil {
+		target.RawQuery = query.Encode()
+	}
+	req, err := http.NewRequest(http.MethodGet, target.String(), nil)
+	if err != nil {
+		return nil, fmt.Errorf("prometheus misconfigured: %w", err)
+	}
+	return req, nil
+}
+
 func (c *client) do(ctx context.Context, req *http.Request) (*http.Response, error) {
 	resp, err := http.DefaultClient.Do(req.WithContext(ctx))
 	if err != nil {
@@ -70,14 +85,13 @@ func (c *client) do(ctx context.Context, req *http.Request) (*http.Response, err
 	return resp, nil
 }
 
-const PathPrefixAlertsStatus = "/prom-wrapper/alerts-status"
+const EndpointAlertsStatus = "/prom-wrapper/alerts-status"
 
+// GetAlertsStatus retrieves an overview of current alerts
 func (c *client) GetAlertsStatus(ctx context.Context) (*AlertsStatus, error) {
-	requestURL := c.promURL
-	requestURL.Path = PathPrefixAlertsStatus
-	req, err := http.NewRequest("GET", requestURL.String(), nil)
+	req, err := c.newRequest(EndpointAlertsStatus, nil)
 	if err != nil {
-		return nil, fmt.Errorf("prometheus misconfigured: %w", err)
+		return nil, err
 	}
 	resp, err := c.do(ctx, req)
 	if err != nil {
@@ -92,15 +106,15 @@ func (c *client) GetAlertsStatus(ctx context.Context) (*AlertsStatus, error) {
 	return &alertsStatus, nil
 }
 
+const EndpointAlertsStatusHistory = EndpointAlertsStatus + "/history"
+
+// GetAlertsHistory retrieves a historical summary of all alerts
 func (c *client) GetAlertsHistory(ctx context.Context, timespan time.Duration) (*AlertsHistory, error) {
-	requestURL := c.promURL
-	requestURL.Path = PathPrefixAlertsStatus + "/history"
 	query := make(url.Values)
 	query.Add("timespan", timespan.String())
-	requestURL.RawQuery = query.Encode()
-	req, err := http.NewRequest("GET", requestURL.String(), nil)
+	req, err := c.newRequest(EndpointAlertsStatusHistory, nil)
 	if err != nil {
-		return nil, fmt.Errorf("prometheus misconfigured: %w", err)
+		return nil, err
 	}
 	resp, err := c.do(ctx, req)
 	if err != nil {
@@ -115,14 +129,12 @@ func (c *client) GetAlertsHistory(ctx context.Context, timespan time.Duration) (
 	return &alertsHistory, nil
 }
 
-const PathPrefixConfigSubscriber = "/prom-wrapper/config-subscriber"
+const EndpointConfigSubscriber = "/prom-wrapper/config-subscriber"
 
 func (c *client) GetConfigStatus(ctx context.Context) (*ConfigStatus, error) {
-	requestURL := c.promURL
-	requestURL.Path = PathPrefixConfigSubscriber
-	req, err := http.NewRequest("GET", requestURL.String(), nil)
+	req, err := c.newRequest(EndpointConfigSubscriber, nil)
 	if err != nil {
-		return nil, fmt.Errorf("prometheus misconfigured: %w", err)
+		return nil, err
 	}
 	resp, err := c.do(ctx, req)
 	if err != nil {

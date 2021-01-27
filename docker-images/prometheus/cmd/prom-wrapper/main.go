@@ -101,7 +101,7 @@ func main() {
 			go subscriber.Subscribe(ctx)
 
 			// serve subscriber status
-			router.PathPrefix(srcprometheus.PathPrefixConfigSubscriber).Handler(subscriber.Handler())
+			router.PathPrefix(srcprometheus.EndpointConfigSubscriber).Handler(subscriber.Handler())
 		}
 
 		// serve alertmanager via reverse proxy
@@ -115,7 +115,7 @@ func main() {
 
 	// serve alerts summary status
 	alertsReporter := NewAlertsStatusReporter(log, alertmanager, prometheus.NewAPI(promClient))
-	router.PathPrefix(srcprometheus.PathPrefixAlertsStatus).Handler(alertsReporter.Handler())
+	router.PathPrefix(srcprometheus.EndpointAlertsStatus).Handler(alertsReporter.Handler())
 
 	// serve prometheus by default via reverse proxy - place last so other prefixes get served first
 	router.PathPrefix("/").Handler(&httputil.ReverseProxy{

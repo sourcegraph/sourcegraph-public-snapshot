@@ -136,7 +136,7 @@ func TestAlertsStatusReporterHistory(t *testing.T) {
 			recorder := httptest.NewRecorder()
 			r.Handler().ServeHTTP(recorder, &http.Request{
 				Method: http.MethodGet,
-				URL:    &url.URL{Path: srcprometheus.PathPrefixAlertsStatus + "/history"},
+				URL:    &url.URL{Path: srcprometheus.EndpointAlertsStatusHistory},
 			})
 			var history srcprometheus.AlertsHistory
 			if err := json.NewDecoder(recorder.Result().Body).Decode(&history); err != nil {

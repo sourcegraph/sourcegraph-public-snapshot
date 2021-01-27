@@ -122,7 +122,8 @@ func NewSiteConfigSubscriber(logger log15.Logger, alertmanager *amclient.Alertma
 
 func (c *SiteConfigSubscriber) Handler() http.Handler {
 	handler := http.NewServeMux()
-	handler.HandleFunc(srcprometheus.PathPrefixConfigSubscriber, func(w http.ResponseWriter, req *http.Request) {
+	// see EndpointConfigSubscriber usages
+	handler.HandleFunc(srcprometheus.EndpointConfigSubscriber, func(w http.ResponseWriter, req *http.Request) {
 		c.mux.RLock()
 		defer c.mux.RUnlock()
 
