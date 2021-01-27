@@ -453,7 +453,7 @@ func SyncChangeset(ctx context.Context, syncStore SyncStore, source repos.Change
 		_, ok := err.(repos.ChangesetNotFoundError)
 		if !ok {
 			// Store the error as the syncer error.
-			errMsg := fmt.Sprintf("Error while syncing changeset:\n\n```\n%s\n```", err.Error())
+			errMsg := err.Error()
 			c.SyncErrorMessage = &errMsg
 			if err2 := syncStore.UpdateChangeset(ctx, c); err2 != nil {
 				return errors.Wrap(err, err2.Error())

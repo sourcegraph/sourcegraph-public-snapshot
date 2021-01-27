@@ -69,7 +69,7 @@ export const ChangesetLastSynced: React.FunctionComponent<Props> = ({ changeset,
         <small className="text-muted">
             {changeset.__typename === 'ExternalChangeset' && changeset.syncerError ? (
                 <span data-tooltip="Expand to see details.">
-                    <ErrorIcon className="icon-inline" /> Last sync failed.
+                    <ErrorIcon className="icon-inline text-danger" /> Syncing from code host failed.
                 </span>
             ) : (
                 <>Last synced {formatDistance(parseISO(changeset.updatedAt), _now ?? new Date())} ago.</>
