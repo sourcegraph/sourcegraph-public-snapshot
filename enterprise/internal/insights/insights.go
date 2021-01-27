@@ -19,11 +19,12 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 		// TimescaleDB in those deployments. https://github.com/sourcegraph/sourcegraph/issues/17218
 		return nil
 	}
-	_, err := initializeCodeInsightsDB()
+	timescale, err := initializeCodeInsightsDB()
 	if err != nil {
 		return err
 	}
-	enterpriseServices.InsightsResolver = resolvers.New()
+	postgres := dbconn.Global
+	enterpriseServices.InsightsResolver = resolvers.New(timescale, postgres)
 	return nil
 }
 
