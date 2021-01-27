@@ -35,16 +35,19 @@ type Database struct {
 
 var (
 	Frontend = &Database{
+		Name:            "frontend",
 		MigrationsTable: "schema_migrations",
 		Resource:        bindata.Resource(frontendMigrations.AssetNames(), frontendMigrations.Asset),
 	}
 
 	CodeIntel = &Database{
+		Name:            "codeintel",
 		MigrationsTable: "codeintel_schema_migrations",
 		Resource:        bindata.Resource(codeintelMigrations.AssetNames(), codeintelMigrations.Asset),
 	}
 
 	CodeInsights = &Database{
+		Name:               "codeinsights",
 		TargetsTimescaleDB: true,
 		MigrationsTable:    "codeinsights_schema_migrations",
 		Resource:           bindata.Resource(codeinsightsMigrations.AssetNames(), codeinsightsMigrations.Asset),
