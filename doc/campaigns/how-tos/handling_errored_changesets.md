@@ -10,7 +10,7 @@ Errored changesets that are marked as **Retrying** are being automatically retri
 
 Changesets that are marked as **Failed** can be [retried manually](#manual-retrying-of-errored-changesets) and will be retried when [re-applying of the campaign spec](#manual-retrying-by-re-applying-the-campaign-spec):
 
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/failed_changeset.png" class="screenshot">
+<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/failed_changeset_retry.png" class="screenshot">
 
 ## Types of errors
 

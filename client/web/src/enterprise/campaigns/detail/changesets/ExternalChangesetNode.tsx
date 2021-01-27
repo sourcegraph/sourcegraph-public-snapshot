@@ -183,6 +183,7 @@ const SyncerError: React.FunctionComponent<{ syncerError: string; history: H.His
         </p>
     </div>
 )
+
 const ChangesetError: React.FunctionComponent<{
     node: ExternalChangesetFields
     setNode: (node: ExternalChangesetFields) => void
