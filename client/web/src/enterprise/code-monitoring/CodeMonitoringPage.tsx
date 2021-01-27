@@ -1,7 +1,6 @@
 import * as H from 'history'
 import classnames from 'classnames'
 import React, { useCallback, useMemo, useState } from 'react'
-import { BreadcrumbSetters, BreadcrumbsProps } from '../../components/Breadcrumbs'
 import { PageHeader } from '../../components/PageHeader'
 import { PageTitle } from '../../components/PageTitle'
 import { AuthenticatedUser } from '../../auth'
@@ -21,9 +20,7 @@ import { CodeMonitoringLogo } from './CodeMonitoringLogo'
 import { StatusBadge } from '../../components/StatusBadge'
 
 export interface CodeMonitoringPageProps
-    extends BreadcrumbsProps,
-        BreadcrumbSetters,
-        Pick<CodeMonitoringProps, 'fetchUserCodeMonitors' | 'toggleCodeMonitorEnabled'>,
+    extends Pick<CodeMonitoringProps, 'fetchUserCodeMonitors' | 'toggleCodeMonitorEnabled'>,
         SettingsCascadeProps<Settings> {
     authenticatedUser: AuthenticatedUser
     location: H.Location
