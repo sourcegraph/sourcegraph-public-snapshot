@@ -14,6 +14,11 @@ import (
 
 // Init initializes the given enterpriseServices to include the required resolvers for insights.
 func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
+	if !conf.IsDev(conf.DeployType()) {
+		// Code Insights is not yet deployed to non-dev/testing instances. We don't yet have
+		// TimescaleDB in those deployments. https://github.com/sourcegraph/sourcegraph/issues/17218
+		return nil
+	}
 	timescale, err := initializeCodeInsightsDB()
 	if err != nil {
 		return err
