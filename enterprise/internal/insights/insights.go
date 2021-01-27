@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 )
 
 // Init initializes the given enterpriseServices to include the required resolvers for insights.
@@ -38,7 +38,7 @@ func initializeCodeInsightsDB() (*sql.DB, error) {
 		return nil, fmt.Errorf("Failed to connect to codeinsights database: %s", err)
 	}
 
-	if err := dbconn.MigrateDB(db, "codeinsights"); err != nil {
+	if err := dbconn.MigrateDB(db, dbconn.CodeInsights); err != nil {
 		return nil, fmt.Errorf("Failed to perform codeinsights database migration: %s", err)
 	}
 	return db, nil
