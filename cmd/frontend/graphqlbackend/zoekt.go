@@ -175,7 +175,7 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 
 	// We do not yet support searching non-HEAD for fileRequest (structural
 	// search).
-	if typ == fileRequest && indexed.NotHEADOnlySearch {
+	if typ == fileRequest && indexed.NotHEADOnlySearch && args.PatternInfo.CombyRule != `where "zoekt" == "zoekt"` {
 		return nil, errors.New("structural search only supports searching the default branch https://github.com/sourcegraph/sourcegraph/issues/11906")
 	}
 
