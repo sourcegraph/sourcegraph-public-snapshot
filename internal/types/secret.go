@@ -21,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-const RedactedSecret = "REDACTED"
+const RedactedSecret = "SRCGRAPH_REDACTED"
 
 // RedactConfig replaces any secret fields in the Config field with RedactedSecret, be sure to call
 // UnRedactExternalServiceConfig before writing back to the database, otherwise validation will throw errors.
