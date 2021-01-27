@@ -404,6 +404,9 @@ func (u *UserStore) Update(ctx context.Context, id int32, update UserUpdate) (er
 
 		// Ensure new username is available in shared users+orgs namespace.
 		if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE names SET name=%s WHERE user_id=%s", update.Username, id)); err != nil {
+			if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.ConstraintName == "names_pkey" {
+				return fmt.Errorf("Username is already in use.")
+			}
 			return err
 		}
 	}
