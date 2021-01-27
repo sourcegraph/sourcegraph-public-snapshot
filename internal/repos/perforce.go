@@ -3,6 +3,7 @@ package repos
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -44,6 +45,19 @@ func (s PerforceSource) ListRepos(ctx context.Context, results chan SourceResult
 	}
 }
 
+// composePerforceCloneURL composes a clone URL for a Perforce depot based on
+// given information. e.g.
+// perforce://admin:password@ssl:111.222.333.444:1666//Sourcegraph/
+func composePerforceCloneURL(username, password, host, depot string) string {
+	cloneURL := url.URL{
+		Scheme: "perforce",
+		User:   url.UserPassword(username, password),
+		Host:   host,
+		Path:   depot,
+	}
+	return cloneURL.String()
+}
+
 func (s PerforceSource) makeRepo(depot string) *types.Repo {
 	if !strings.HasSuffix(depot, "/") {
 		depot += "/"
@@ -51,8 +65,7 @@ func (s PerforceSource) makeRepo(depot string) *types.Repo {
 	name := strings.Trim(depot, "/")
 	urn := s.svc.URN()
 
-	// e.g. perforce://admin:password@ssl:111.222.333.444:1666//Sourcegraph/
-	cloneURL := fmt.Sprintf("perforce://%s:%s@%s%s", s.config.P4User, s.config.P4Passwd, s.config.P4Port, depot)
+	cloneURL := composePerforceCloneURL(s.config.P4User, s.config.P4Passwd, s.config.P4Port, depot)
 
 	return &types.Repo{
 		Name: api.RepoName(name),

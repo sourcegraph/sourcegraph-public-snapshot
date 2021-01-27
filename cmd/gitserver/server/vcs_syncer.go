@@ -1,11 +1,16 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"net/url"
+	"os"
 	"os/exec"
 	"strings"
+	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -22,6 +27,8 @@ type VCSSyncer interface {
 	CloneCommand(ctx context.Context, url, tmpPath string) (cmd *exec.Cmd, err error)
 	// FetchCommand returns the command to be executed for fetching updates from remote.
 	FetchCommand(ctx context.Context, url string) (cmd *exec.Cmd, configRemoteOpts bool, err error)
+	// RemoteShowCommand returns the command to be executed for showing remote.
+	RemoteShowCommand(ctx context.Context, url string) (cmd *exec.Cmd, err error)
 }
 
 // GitRepoSyncer is a syncer for Git repositories.
@@ -88,20 +95,172 @@ func (s *GitRepoSyncer) FetchCommand(ctx context.Context, url string) (cmd *exec
 	return cmd, configRemoteOpts, nil
 }
 
+// RemoteShowCommand returns the command to be executed for showing remote of a Git repository.
+func (s *GitRepoSyncer) RemoteShowCommand(ctx context.Context, url string) (cmd *exec.Cmd, err error) {
+	return exec.CommandContext(ctx, "git", "remote", "show", url), nil
+}
+
 // PerforceDepotSyncer is a syncer for Perforce depots.
 type PerforceDepotSyncer struct{}
 
-// TODO(jchen)
+// decomposePerforceCloneURL decomposes information back from a clone URL for a
+// Perforce depot.
+func decomposePerforceCloneURL(cloneURL string) (username, password, host, depot string, err error) {
+	url, err := url.Parse(cloneURL)
+	if err != nil {
+		return "", "", "", "", err
+	}
+
+	if url.Scheme != "perforce" {
+		return "", "", "", "", errors.New(`scheme is not "perforce"`)
+	}
+
+	password, _ = url.User.Password()
+	return url.User.Username(), password, url.Host, url.Path, nil
+}
+
+// ping sends one message to the Perforce Server to check connectivity.
+func (s *PerforceDepotSyncer) ping(ctx context.Context, host, username string) error {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "p4", "ping", "-c", "1")
+	cmd.Env = append(os.Environ(),
+		"P4PORT="+host,
+		"P4USER="+username,
+	)
+
+	out, err := runWith(ctx, cmd, false, nil)
+	if err != nil {
+		if ctxerr := ctx.Err(); ctxerr != nil {
+			err = ctxerr
+		}
+		if len(out) > 0 {
+			err = fmt.Errorf("%s (output follows)\n\n%s", err, out)
+		}
+		return err
+	}
+	return nil
+}
+
+// login performs a "p4 login" operation against the Perforce Server to obtain a session.
+func (s *PerforceDepotSyncer) login(ctx context.Context, host, username, password string) error {
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "p4", "login", "-a")
+	cmd.Env = append(os.Environ(),
+		"P4PORT="+host,
+		"P4USER="+username,
+	)
+
+	var stdout bytes.Buffer
+	cmd.Stdout = &stdout
+
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		return errors.Wrap(err, "get stdin pipe")
+	}
+
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				time.Sleep(100 * time.Millisecond)
+			}
+
+			if strings.Contains(stdout.String(), "Enter password: ") {
+				_, err = stdin.Write([]byte(password + "\n"))
+				if err != nil {
+					log15.Error("Failed to enter p4 login password", "error", err)
+					return
+				}
+
+				log15.Debug("PerforceDepotSyncer.login.passwordEntered", "host", host, "username", username)
+				return
+			}
+		}
+	}()
+
+	_, err = runCommand(ctx, cmd)
+	return err
+}
+
+// pingWithLogin attempts to ping the Perforce Server and performs a login operation when needed.
+func (s *PerforceDepotSyncer) pingWithLogin(ctx context.Context, host, username, password string) error {
+	// Attempt to check connectivity, may be prompted to login (again)
+	err := s.ping(ctx, host, username)
+	if err == nil {
+		return nil // The ping worked, session still validate for the user
+	} else if !strings.Contains(err.Error(), "Your session has expired, please login again.") &&
+		!strings.Contains(err.Error(), "Perforce password (P4PASSWD) invalid or unset.") {
+		return errors.Wrap(err, "ping")
+	}
+
+	err = s.login(ctx, host, username, password)
+	if err != nil {
+		return errors.Wrap(err, "login")
+	}
+	return nil
+}
+
+// IsCloneable checks to see if the Perforce remote URL is cloneable.
 func (s *PerforceDepotSyncer) IsCloneable(ctx context.Context, url string) error {
-	return errors.New("not yet implemented") // p4 ping
+	username, password, host, _, err := decomposePerforceCloneURL(url)
+	if err != nil {
+		return errors.Wrap(err, "decompose")
+	}
+
+	// FIXME: Need to find a way to determine if depot exists instead of a general ping to the Perforce server.
+	return s.pingWithLogin(ctx, host, username, password)
 }
 
-// TODO(jchen)
-func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, url, tmpPath string) (cmd *exec.Cmd, err error) {
-	return nil, errors.New("not yet implemented") // git p4 clone
+// CloneCommand returns the command to be executed for cloning a Perforce depot as a Git repository.
+func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, url, tmpPath string) (*exec.Cmd, error) {
+	username, password, host, depot, err := decomposePerforceCloneURL(url)
+	if err != nil {
+		return nil, errors.Wrap(err, "decompose")
+	}
+
+	err = s.pingWithLogin(ctx, host, username, password)
+	if err != nil {
+		return nil, errors.Wrap(err, "ping with login")
+	}
+
+	cmd := exec.CommandContext(ctx, "git", "p4", "clone", "--bare", depot+"@all", tmpPath)
+	cmd.Env = append(os.Environ(),
+		"P4PORT="+host,
+		"P4USER="+username,
+	)
+
+	return cmd, nil
 }
 
-// TODO(jchen)
+// FetchCommand returns the command to be executed for fetching updates of a Perforce depot as a Git repository.
 func (s *PerforceDepotSyncer) FetchCommand(ctx context.Context, url string) (cmd *exec.Cmd, configRemoteOpts bool, err error) {
-	return nil, false, errors.New("not yet implemented") // git p4 sync
+	username, password, host, _, err := decomposePerforceCloneURL(url)
+	if err != nil {
+		return nil, false, errors.Wrap(err, "decompose")
+	}
+
+	err = s.pingWithLogin(ctx, host, username, password)
+	if err != nil {
+		return nil, false, errors.Wrap(err, "ping with login")
+	}
+
+	cmd = exec.CommandContext(ctx, "git", "p4", "sync")
+	cmd.Env = append(os.Environ(),
+		"P4PORT="+host,
+		"P4USER="+username,
+	)
+
+	return cmd, false, nil
+}
+
+// RemoteShowCommand returns the command to be executed for showing Git remote of a Perforce depot.
+func (s *PerforceDepotSyncer) RemoteShowCommand(ctx context.Context, url string) (cmd *exec.Cmd, err error) {
+	// Remote info is encoded as in the current repository
+	return exec.CommandContext(ctx, "git", "remote", "show", "./"), nil
 }

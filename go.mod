@@ -81,7 +81,7 @@ require (
 	github.com/gorilla/sessions v1.2.1
 	github.com/gosimple/slug v1.9.0 // indirect
 	github.com/goware/urlx v0.3.1
-	github.com/grafana-tools/sdk v0.0.0-20200908142517-0a69ce5bbb82
+	github.com/grafana-tools/sdk v0.0.0-20210121201358-e16eca879125
 	github.com/graph-gophers/graphql-go v0.0.0-20200819123640-3b5ddcd884ae
 	github.com/graphql-go/graphql v0.7.9
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
@@ -199,40 +199,45 @@ require (
 	honnef.co/go/tools v0.0.1-2020.1.5 // indirect
 )
 
+// Permanent replace directives
+// ============================
+// These entries indicate permanent replace directives due to significant changes from upstream
+// or intentional forks.
 replace (
+	// We maintain our own fork of Zoekt. Update with ./dev/zoekt/update
+	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20201124084228-b6ed3e04a806
+	// We use a fork of Alertmanager to allow prom-wrapper to better manipulate Alertmanager configuration.
+	// See https://docs.sourcegraph.com/dev/background-information/observability/prometheus
+	github.com/prometheus/alertmanager => github.com/sourcegraph/alertmanager v0.21.1-0.20200727091526-3e856a90b534
+	// We publish 'enterprise/dev/ci/images' as a package for import in other tooling.
+	// When developing Sourcegraph itself, this replace uses the local package instead of a pushed version.
+	github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images => ./enterprise/dev/ci/images
+)
+
+// Temporary replace directives
+// ============================
+// These entries indicate temporary replace directives due to a pending pull request upstream
+// or issues with specific versions.
+replace (
+	// Pending: https://github.com/gchaincl/sqlhooks/pull/33
+	github.com/gchaincl/sqlhooks => github.com/asdine/sqlhooks v1.3.1-0.20210120094401-480358310a5b
+	// Pending: https://github.com/ghodss/yaml/pull/65
+	github.com/ghodss/yaml => github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152
 	// protobuf v1.3.5+ causes issues - https://github.com/sourcegraph/sourcegraph/issues/11804
 	github.com/golang/protobuf => github.com/golang/protobuf v1.3.5
-
 	// We need our fork until https://github.com/graph-gophers/graphql-go/pull/400 is merged upstream
 	// Our change limits the number of goroutines spawned by resolvers which was causing memory spikes on our frontend
 	github.com/graph-gophers/graphql-go => github.com/sourcegraph/graphql-go v0.0.0-20201007040903-ec61a5417d66
-	github.com/mattn/goreman => github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d
-
-	// prom-wrapper needs to be able to write alertmanager configuration with secrets, etc, which
-	// the alertmanager project is currently not planning on accepting changes for.
-	github.com/prometheus/alertmanager => github.com/sourcegraph/alertmanager v0.21.1-0.20200727091526-3e856a90b534
-
-	github.com/russellhaering/gosaml2 => github.com/sourcegraph/gosaml2 v0.6.1-0.20201216035416-70944041979a
 )
 
-// We maintain our own fork of Zoekt. Update with ./dev/zoekt/update
-replace github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20201124084228-b6ed3e04a806
-
-replace github.com/russross/blackfriday => github.com/russross/blackfriday v1.5.2
-
-replace github.com/dghubble/gologin => github.com/sourcegraph/gologin v1.0.2-0.20181110030308-c6f1b62954d8
-
-replace golang.org/x/oauth2 => github.com/sourcegraph/oauth2 v0.0.0-20201011192344-605770292164
-
-replace github.com/golang/lint => golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f
-
-// See: https://github.com/ghodss/yaml/pull/65
-replace github.com/ghodss/yaml => github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152
-
-replace github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images => ./enterprise/dev/ci/images
-
-// Pending: https://github.com/grafana-tools/sdk/pull/121
-replace github.com/grafana-tools/sdk => github.com/sourcegraph/grafana-sdk v0.0.0-20210112115824-13757501ee8a
-
-// Pending: https://github.com/gchaincl/sqlhooks/pull/33
-replace github.com/gchaincl/sqlhooks => github.com/asdine/sqlhooks v1.3.1-0.20210120094401-480358310a5b
+// Status unclear replace directives
+// =================================
+// These entries indicate replace directives that are defined for unknown reasons.
+replace (
+	github.com/dghubble/gologin => github.com/sourcegraph/gologin v1.0.2-0.20181110030308-c6f1b62954d8
+	github.com/golang/lint => golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f
+	github.com/mattn/goreman => github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d
+	github.com/russellhaering/gosaml2 => github.com/sourcegraph/gosaml2 v0.6.1-0.20201216035416-70944041979a
+	github.com/russross/blackfriday => github.com/russross/blackfriday v1.5.2
+	golang.org/x/oauth2 => github.com/sourcegraph/oauth2 v0.0.0-20201011192344-605770292164
+)

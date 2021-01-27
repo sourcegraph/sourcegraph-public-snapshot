@@ -90,6 +90,7 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 	resp, err := args.Zoekt.Client.Search(ctx, q, &searchOpts)
 	if err != nil {
 		c <- SearchEvent{Error: err}
+		return
 	}
 
 	mkStatusMap := func(mask search.RepoStatus) search.RepoStatusMap {

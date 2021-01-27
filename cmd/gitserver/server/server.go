@@ -876,9 +876,12 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		if err != nil {
 			return errors.Wrap(err, "get clone command")
 		}
+		if cmd.Env == nil {
+			cmd.Env = os.Environ()
+		}
 
 		// see issue #7322: skip LFS content in repositories with Git LFS configured
-		cmd.Env = append(os.Environ(), "GIT_LFS_SKIP_SMUDGE=1")
+		cmd.Env = append(cmd.Env, "GIT_LFS_SKIP_SMUDGE=1")
 		log15.Info("cloning repo", "repo", repo, "tmp", tmpPath, "dst", dstPath)
 
 		pr, pw := io.Pipe()
@@ -1375,7 +1378,10 @@ func (s *Server) doRepoUpdate2(repo api.RepoName) error {
 	headBranch := "master"
 
 	// try to fetch HEAD from origin
-	cmd = exec.CommandContext(ctx, "git", "remote", "show", url)
+	cmd, err = syncer.RemoteShowCommand(ctx, url)
+	if err != nil {
+		return errors.Wrap(err, "get remote show command")
+	}
 	cmd.Dir = path.Join(s.ReposDir, string(repo))
 	output, err := runWithRemoteOpts(ctx, cmd, nil)
 	if err != nil {
@@ -1386,7 +1392,7 @@ func (s *Server) doRepoUpdate2(repo api.RepoName) error {
 	if len(submatches) == 2 {
 		submatch := string(submatches[1])
 		if submatch != "(unknown)" {
-			headBranch = string(submatch)
+			headBranch = submatch
 		}
 	}
 

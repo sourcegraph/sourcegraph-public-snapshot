@@ -6,9 +6,6 @@ import (
 )
 
 type Promise struct {
-	getOnce sync.Once
-	err     error
-
 	initOnce sync.Once
 	done     chan struct{}
 
@@ -31,18 +28,18 @@ func (p *Promise) Resolve(v interface{}) *Promise {
 }
 
 // Get returns the value. It blocks until the promise resolves or the context is
-// canceled. Further calls to Get will always return the original results, IE err
-// will stay nil even if the context expired between the first and the second
-// call. Vice versa, if ctx finishes while resolving, then we will always return
-// ctx.Err()
+// canceled.
 func (p *Promise) Get(ctx context.Context) (interface{}, error) {
-	p.getOnce.Do(func() {
-		p.init()
-		select {
-		case <-ctx.Done():
-			p.err = ctx.Err()
-		case <-p.done:
-		}
-	})
-	return p.value, p.err
+	p.init()
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case <-p.done:
+	}
+	return p.value, nil
 }
