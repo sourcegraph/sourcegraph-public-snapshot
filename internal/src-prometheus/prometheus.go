@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -77,10 +78,11 @@ func (c *client) newRequest(endpoint string, query url.Values) (*http.Request, e
 func (c *client) do(ctx context.Context, req *http.Request) (*http.Response, error) {
 	resp, err := http.DefaultClient.Do(req.WithContext(ctx))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("src-prometheus: %w", err)
 	}
 	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("request failed with status %d", resp.StatusCode)
+		log15.Error("src-prometheus request made but failed with non-zero status", "request", req, "resp", resp)
+		return nil, fmt.Errorf("src-prometheus: %s %q: failed with status %d", req.Method, req.URL.String(), resp.StatusCode)
 	}
 	return resp, nil
 }
@@ -95,7 +97,7 @@ func (c *client) GetAlertsStatus(ctx context.Context) (*AlertsStatus, error) {
 	}
 	resp, err := c.do(ctx, req)
 	if err != nil {
-		return nil, fmt.Errorf("alerts status: %w", err)
+		return nil, err
 	}
 
 	var alertsStatus AlertsStatus
@@ -118,7 +120,7 @@ func (c *client) GetAlertsHistory(ctx context.Context, timespan time.Duration) (
 	}
 	resp, err := c.do(ctx, req)
 	if err != nil {
-		return nil, fmt.Errorf("alerts history: %w", err)
+		return nil, err
 	}
 
 	var alertsHistory AlertsHistory
@@ -138,7 +140,7 @@ func (c *client) GetConfigStatus(ctx context.Context) (*ConfigStatus, error) {
 	}
 	resp, err := c.do(ctx, req)
 	if err != nil {
-		return nil, fmt.Errorf("config status: %w", err)
+		return nil, err
 	}
 
 	var status ConfigStatus

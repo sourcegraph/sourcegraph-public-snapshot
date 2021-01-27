@@ -19,7 +19,6 @@ import (
 )
 
 func Test_prometheusValidator(t *testing.T) {
-	// test some simple problem cases
 	type args struct {
 		prometheusURL string
 		config        conf.Unified

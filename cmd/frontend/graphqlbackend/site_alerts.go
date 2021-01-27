@@ -280,6 +280,7 @@ func determineOutOfDateAlert(isAdmin bool, months int, offline bool) *Alert {
 func observabilityActiveAlertsAlert(prom srcprometheus.Client) func(AlertFuncArgs) []*Alert {
 	return func(args AlertFuncArgs) []*Alert {
 		// true by default - change settings.schema.json if this changes
+		// blocked by https://github.com/sourcegraph/sourcegraph/issues/12190
 		observabilitySiteAlertsDisabled := true
 		if args.ViewerFinalSettings != nil && args.ViewerFinalSettings.AlertsHideObservabilitySiteAlerts != nil {
 			observabilitySiteAlertsDisabled = *args.ViewerFinalSettings.AlertsHideObservabilitySiteAlerts
@@ -294,7 +295,7 @@ func observabilityActiveAlertsAlert(prom srcprometheus.Client) func(AlertFuncArg
 		defer cancel()
 		status, err := prom.GetAlertsStatus(ctx)
 		if err != nil {
-			return []*Alert{{TypeValue: AlertTypeWarning, MessageValue: err.Error()}}
+			return []*Alert{{TypeValue: AlertTypeWarning, MessageValue: fmt.Sprintf("Failed to fetch alerts status: %s", err)}}
 		}
 
 		msg := fmt.Sprintf("%s across %s currently firing - [view alerts](/-/debug/grafana)",
