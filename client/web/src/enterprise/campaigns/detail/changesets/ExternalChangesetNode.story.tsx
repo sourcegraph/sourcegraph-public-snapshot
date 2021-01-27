@@ -36,6 +36,7 @@ add('All states', () => {
                                     __typename: 'ExternalChangeset',
                                     title: 'Changeset title on code host',
                                     error: null,
+                                    syncerError: null,
                                     body: 'This changeset does the following things:\nIs awesome\nIs useful',
                                     checkState: ChangesetCheckState.PENDING,
                                     createdAt: now.toISOString(),
@@ -103,6 +104,7 @@ add('Unpublished', () => {
                         state: ChangesetState.UNPUBLISHED,
                         title: 'Changeset title on code host',
                         error: null,
+                        syncerError: null,
                         body: 'This changeset does the following things:\nIs awesome\nIs useful',
                         checkState: null,
                         createdAt: now.toISOString(),
@@ -167,6 +169,7 @@ add('Importing', () => {
                         // No title yet, still importing.
                         title: null,
                         error: null,
+                        syncerError: null,
                         body: null,
                         checkState: null,
                         createdAt: now.toISOString(),
@@ -220,6 +223,51 @@ add('Importing failed', () => {
                         // No title, because it wasn't found.
                         title: null,
                         error: 'Changeset with external ID 99999 not found',
+                        syncerError: null,
+                        body: null,
+                        checkState: null,
+                        createdAt: now.toISOString(),
+                        externalID: '99999',
+                        externalURL: null,
+                        diffStat: null,
+                        labels: [],
+                        repository: {
+                            id: 'repoid',
+                            name: 'github.com/sourcegraph/sourcegraph',
+                            url: 'http://test.test/sourcegraph/sourcegraph',
+                        },
+                        reviewState: null,
+                        currentSpec: null,
+                    }}
+                    viewerCanAdminister={boolean('viewerCanAdminister', true)}
+                    queryExternalChangesetWithFileDiffs={() =>
+                        of({
+                            diff: null,
+                        })
+                    }
+                />
+            )}
+        </EnterpriseWebStory>
+    )
+})
+
+add('Sync failed', () => {
+    const now = new Date()
+    return (
+        <EnterpriseWebStory>
+            {props => (
+                <ExternalChangesetNode
+                    {...props}
+                    node={{
+                        __typename: 'ExternalChangeset',
+                        id: 'somechangeset-2',
+                        updatedAt: now.toISOString(),
+                        nextSyncAt: null,
+                        state: ChangesetState.FAILED,
+                        // No title, because it wasn't found.
+                        title: null,
+                        error: null,
+                        syncerError: 'Invalid token, cannot load PR.',
                         body: null,
                         checkState: null,
                         createdAt: now.toISOString(),
