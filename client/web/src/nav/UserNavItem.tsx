@@ -1,6 +1,8 @@
 import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
 import * as H from 'history'
+import MenuDownIcon from 'mdi-react/MenuDownIcon'
+import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -99,18 +101,16 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
 
     return (
         <ButtonDropdown isOpen={isOpen} toggle={toggleIsOpen} className="py-0">
-            <DropdownToggle
-                className="bg-transparent d-flex align-items-center test-user-nav-item-toggle"
-                caret={true}
-                nav={true}
-            >
+            <DropdownToggle className="bg-transparent d-flex align-items-center test-user-nav-item-toggle" nav={true}>
                 <div className="position-relative">
                     <div
-                        className={classNames({
+                        className={classNames('align-items-center d-flex', {
                             'user-nav-item__avatar-background': isExtensionAlertAnimating,
                         })}
-                    />
-                    <UserAvatar user={props.authenticatedUser} size={48} targetID={targetID} />
+                    >
+                        <UserAvatar user={props.authenticatedUser} size={48} targetID={targetID} />
+                        {isOpen ? <MenuUpIcon className="icon-inline" /> : <MenuDownIcon className="icon-inline" />}
+                    </div>
                 </div>
                 {isExtensionAlertAnimating && (
                     <Tooltip

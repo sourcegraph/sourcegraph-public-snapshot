@@ -1,4 +1,6 @@
+import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import MenuIcon from 'mdi-react/MenuIcon'
+import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import React, { useCallback, useState } from 'react'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 
@@ -20,8 +22,9 @@ export const MenuNavItem: React.FunctionComponent<MenuNavItemProps> = props => {
 
     return (
         <ButtonDropdown className="menu-nav-item" direction="down" isOpen={isOpen} toggle={toggleIsOpen}>
-            <DropdownToggle caret={true} className="bg-transparent" nav={true}>
+            <DropdownToggle className="bg-transparent" nav={true}>
                 <MenuIcon className="icon-inline" />
+                {isOpen ? <MenuUpIcon className="icon-inline" /> : <MenuDownIcon className="icon-inline" />}
             </DropdownToggle>
             <DropdownMenu className="menu-nav-item__dropdown-menu">
                 {React.Children.map(children, child => child && <DropdownItem>{child}</DropdownItem>)}

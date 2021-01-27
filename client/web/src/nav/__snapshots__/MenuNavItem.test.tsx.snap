@@ -28,7 +28,6 @@ exports[`MenuNavItem add menu children 1`] = `
         >
           <DropdownToggle
             aria-haspopup={true}
-            caret={true}
             className="bg-transparent"
             color="secondary"
             nav={true}
@@ -40,11 +39,14 @@ exports[`MenuNavItem add menu children 1`] = `
                 <a
                   aria-expanded={false}
                   aria-haspopup={true}
-                  className="bg-transparent dropdown-toggle nav-link"
+                  className="bg-transparent nav-link"
                   href="#"
                   onClick={[Function]}
                 >
                   <Memo(MenuIcon)
+                    className="icon-inline"
+                  />
+                  <Memo(MenuDownIcon)
                     className="icon-inline"
                   />
                 </a>
