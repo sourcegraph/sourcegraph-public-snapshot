@@ -32,7 +32,7 @@ func TestIntegration(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to connect to codeinsights database: %s", err)
 		}
-		if err := dbconn.MigrateDB(db, "codeinsights"); err != nil {
+		if err := dbconn.MigrateDB(db, dbconn.CodeInsights); err != nil {
 			t.Fatalf("Failed to perform codeinsights database migration: %s", err)
 		}
 		return db
