@@ -76,15 +76,6 @@ var githubRatelimitWaitCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 	Help: "The amount of time spent waiting on the rate limit",
 }, []string{"resource", "name"})
 
-func init() {
-	go func() {
-		for {
-			githubRatelimitWaitCounter.WithLabelValues("rest", "TESTNAME").Add((time.Millisecond * 100).Seconds())
-			time.Sleep(1 * time.Second)
-		}
-	}()
-}
-
 func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf *httpcli.Factory) (*GithubSource, error) {
 	baseURL, err := url.Parse(c.Url)
 	if err != nil {
