@@ -19,9 +19,13 @@ type Breadcrumb = {
 )
 
 interface Props {
+    /** Renders small print above the heading */
     annotation?: React.ReactNode
+    /** Heading content */
     path: Breadcrumb[]
+    /** Renders small print below the heading */
     byline?: React.ReactNode
+    /** Align additional content (e.g. buttons) alongside the heading */
     actions?: React.ReactNode
     className?: string
 }
@@ -39,7 +43,7 @@ export const PageHeader: React.FunctionComponent<Props> = ({ annotation, path, b
             )}
         >
             <div>
-                {annotation && <div className="text-muted page-header__annotation">{annotation}</div>}
+                {annotation && <small className="text-muted d-block mb-2">{annotation}</small>}
                 <h1 className="flex-grow-1 d-block m-0">
                     {path.map(({ to, text, icon: Icon }, index) => (
                         <React.Fragment key={index}>
@@ -51,7 +55,7 @@ export const PageHeader: React.FunctionComponent<Props> = ({ annotation, path, b
                         </React.Fragment>
                     ))}
                 </h1>
-                {byline && <div className="text-muted page-header__byline">{byline}</div>}
+                {byline && <small className="text-muted d-block page-header__byline">{byline}</small>}
             </div>
             {actions && <div className="mt-3 mt-md-0">{actions}</div>}
         </header>
