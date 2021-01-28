@@ -739,6 +739,24 @@ type ImportChangesets struct {
 	// Repository description: The repository name as configured on your Sourcegraph instance.
 	Repository string `json:"repository"`
 }
+type Insight struct {
+	// Description description: The description of this insight
+	Description string `json:"description"`
+	// Series description: Series of data to show for this insight
+	Series []*InsightSeries `json:"series"`
+	// Title description: The short title of this insight
+	Title string `json:"title"`
+}
+type InsightSeries struct {
+	// Label description: The label to use for the series in the graph.
+	Label string `json:"label"`
+	// RepositoriesList description: Performs a search query and shows the number of results returned.
+	RepositoriesList []interface{} `json:"repositoriesList,omitempty"`
+	// Search description: Performs a search query and shows the number of results returned.
+	Search string `json:"search,omitempty"`
+	// Webhook description: (not yet supported) Fetch data from a webhook URL.
+	Webhook string `json:"webhook,omitempty"`
+}
 
 // Log description: Configuration for logging and alerting, including to external services.
 type Log struct {
