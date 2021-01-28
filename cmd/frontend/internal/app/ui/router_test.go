@@ -25,6 +25,7 @@ func init() {
 }
 
 func TestRouter(t *testing.T) {
+	InitRouter()
 	router := Router()
 	tests := []struct {
 		path      string
@@ -209,6 +210,7 @@ func TestRouter(t *testing.T) {
 }
 
 func TestRouter_RootPath(t *testing.T) {
+	InitRouter()
 	router := Router()
 
 	tests := []struct {
