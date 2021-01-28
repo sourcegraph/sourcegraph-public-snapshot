@@ -217,7 +217,7 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                                 {this.state.creationOrError === 'loading' ? (
                                     <LoadingSpinner className="icon-inline" />
                                 ) : (
-                                        <AddIcon className="icon-inline" />
+                                    <AddIcon className="icon-inline" />
                                     )}{' '}
                                 Create extension
                             </button>
