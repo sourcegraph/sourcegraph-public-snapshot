@@ -955,7 +955,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				// Now we update the changeset to simulate that closing failed.
 				ct.SetChangesetFailed(t, ctx, store, c)
 				assertions.Closing = true
-				assertions.ReconcilerState = campaigns.ReconcilerStateErrored
+				assertions.ReconcilerState = campaigns.ReconcilerStateFailed
 				assertions.ExternalState = campaigns.ChangesetExternalStateOpen
 
 				// Side-effects of ct.setChangesetFailed.

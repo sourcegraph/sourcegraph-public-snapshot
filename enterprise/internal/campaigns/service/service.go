@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // New returns a Service.
@@ -415,6 +416,67 @@ func (s *Service) EnqueueChangesetSync(ctx context.Context, id int64) (err error
 	}
 
 	return nil
+}
+
+// ReenqueueChangeset loads the given changeset from the database, checks
+// whether the actor in the context has permission to enqueue a reconciler run and then
+// enqueues it by calling ResetQueued.
+func (s *Service) ReenqueueChangeset(ctx context.Context, id int64) (changeset *campaigns.Changeset, repo *types.Repo, err error) {
+	traceTitle := fmt.Sprintf("changeset: %d", id)
+	tr, ctx := trace.New(ctx, "service.RenqueueChangeset", traceTitle)
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	changeset, err = s.store.GetChangeset(ctx, store.GetChangesetOpts{ID: id})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// 🚨 SECURITY: We use database.Repos.Get to check whether the user has access to
+	// the repository or not.
+	repo, err = database.ReposWith(s.store).Get(ctx, changeset.RepoID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	attachedCampaigns, _, err := s.store.ListCampaigns(ctx, store.ListCampaignsOpts{ChangesetID: id})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Check whether the user has admin rights for one of the campaigns.
+	var (
+		authErr        error
+		hasAdminRights bool
+	)
+
+	for _, c := range attachedCampaigns {
+		err := backend.CheckSiteAdminOrSameUser(ctx, c.InitialApplierID)
+		if err != nil {
+			authErr = err
+		} else {
+			hasAdminRights = true
+			break
+		}
+	}
+
+	if !hasAdminRights {
+		return nil, nil, authErr
+	}
+
+	if changeset.ReconcilerState != campaigns.ReconcilerStateFailed {
+		return nil, nil, errors.New("cannot re-enqueue changeset not in failed state")
+	}
+
+	changeset.ResetQueued()
+
+	if err = s.store.UpdateChangeset(ctx, changeset); err != nil {
+		return nil, nil, err
+	}
+
+	return changeset, repo, nil
 }
 
 // checkNamespaceAccess checks whether the current user in the ctx has access

@@ -146,7 +146,7 @@ func (r *ChangesetRewirer) attachTrackingChangeset(changeset *campaigns.Changese
 	changeset.Campaigns = append(changeset.Campaigns, campaigns.CampaignAssoc{CampaignID: r.campaignID})
 
 	// If it's errored and not created by another campaign, we re-enqueue it.
-	if changeset.OwnedByCampaignID == 0 && changeset.ReconcilerState == campaigns.ReconcilerStateErrored {
+	if changeset.OwnedByCampaignID == 0 && (changeset.ReconcilerState == campaigns.ReconcilerStateErrored || changeset.ReconcilerState == campaigns.ReconcilerStateFailed) {
 		changeset.ResetQueued()
 	}
 }
