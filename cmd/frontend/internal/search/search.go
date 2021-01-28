@@ -49,6 +49,10 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Always send a final done event so clients know the stream is shutting
+	// down.
+	defer eventWriter.Event("done", map[string]interface{}{})
+
 	// Log events to trace
 	eventWriter.StatHook = eventStreamOTHook(tr.LogFields)
 
@@ -197,9 +201,6 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	pr := progress.Build()
 	pr.Done = true
 	_ = eventWriter.Event("progress", pr)
-
-	// TODO done event includes progress
-	_ = eventWriter.Event("done", map[string]interface{}{})
 }
 
 type searchResolver interface {
