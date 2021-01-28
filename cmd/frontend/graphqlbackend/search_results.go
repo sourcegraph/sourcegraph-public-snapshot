@@ -1476,7 +1476,7 @@ func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameter
 	return nil
 }
 
-func newAggregator(ctx context.Context, stream SearchStream, searchContext *SearchInputs) *aggregator {
+func newAggregator(ctx context.Context, stream SearchStream, inputs *SearchInputs) *aggregator {
 	childStream := make(chan SearchEvent, cap(stream))
 	agg := &aggregator{
 		stream:        childStream,
@@ -1492,7 +1492,7 @@ func newAggregator(ctx context.Context, stream SearchStream, searchContext *Sear
 				event.Error = nil
 			}
 			if event.Error != nil {
-				agg.Next(event, searchContext)
+				agg.Next(event, inputs)
 			}
 			agg.results = append(agg.results, event.Results...)
 			agg.common.Update(&event.Stats)

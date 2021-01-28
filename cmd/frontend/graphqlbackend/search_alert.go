@@ -677,7 +677,7 @@ func (searchAlert) Suggestions(context.Context, *searchSuggestionsArgs) ([]*sear
 }
 func (searchAlert) Stats(context.Context) (*searchResultsStats, error) { return nil, nil }
 
-func alertForError(err error, searchContext *SearchInputs) *searchAlert {
+func alertForError(err error, inputs *SearchInputs) *searchAlert {
 	var (
 		alert *searchAlert
 		rErr  *RepoLimitError
@@ -687,7 +687,7 @@ func alertForError(err error, searchContext *SearchInputs) *searchAlert {
 
 	if false {
 	} else if errors.As(err, &mErr) {
-		alert = alertForMissingRepoRevs(searchContext.PatternType, mErr.Missing)
+		alert = alertForMissingRepoRevs(inputs.PatternType, mErr.Missing)
 		alert.priority = 6
 	} else if strings.Contains(err.Error(), "Worker_oomed") || strings.Contains(err.Error(), "Worker_exited_abnormally") {
 		alert = &searchAlert{
@@ -742,7 +742,7 @@ type AlertObserver struct {
 }
 
 // Next returns a non-nil alert if there is a new alert to show to the user.
-func (o *AlertObserver) Next(event SearchEvent, searchContext *SearchInputs) *searchAlert {
+func (o *AlertObserver) Next(event SearchEvent, inputs *SearchInputs) *searchAlert {
 	if len(event.Results) > 0 {
 		o.hasResults = true
 	}
@@ -751,7 +751,7 @@ func (o *AlertObserver) Next(event SearchEvent, searchContext *SearchInputs) *se
 		return nil
 	}
 
-	alert := alertForError(event.Error, searchContext)
+	alert := alertForError(event.Error, inputs)
 	if alert == nil {
 		o.err = multierror.Append(o.err, event.Error)
 		return nil
