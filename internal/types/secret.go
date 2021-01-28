@@ -13,6 +13,7 @@ package types
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/cockroachdb/errors"
 
@@ -23,7 +24,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-const RedactedSecret = "" // redacted strings are empty
+// redacted strings are zero width spaces, so we can detect any redacted fields when validating on the way back in to
+// the database
+const RedactedSecret = string('\u200B')
 
 // RedactConfig replaces any secret fields in the Config field with RedactedSecret, be sure to call
 // UnRedactExternalServiceConfig before writing back to the database, otherwise validation will throw errors.
@@ -176,6 +179,11 @@ func unredactField(old, new string, cfg interface{}, fields ...jsonStringField) 
 			return new, errors.Errorf("invalid type %T for field %s", v, field.path)
 		}
 		if stringValue != RedactedSecret {
+			// using unicode zero width space might mean the user includes it when editing still, we strip that out here
+			new, err = jsonc.Edit(new, strings.Replace(stringValue, RedactedSecret, "", -1), field.path)
+			if err != nil {
+				return new, err
+			}
 			// if the field has been edited we should skip unredaction to allow edits
 			continue
 		}
