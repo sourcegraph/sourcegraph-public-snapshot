@@ -684,3 +684,11 @@ func (e *badRequestError) Error() string {
 func (e *badRequestError) Cause() error {
 	return e.err
 }
+
+type MissingRepoRevsError struct {
+	Missing []*search.RepositoryRevisions
+}
+
+func (*MissingRepoRevsError) Error() string {
+	return "missing repo revs"
+}

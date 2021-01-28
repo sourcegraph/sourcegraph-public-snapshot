@@ -12,14 +12,18 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/inconshreveable/log15"
+
 	"github.com/hashicorp/go-multierror"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
+	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	querytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
 
 type searchAlert struct {
@@ -27,6 +31,8 @@ type searchAlert struct {
 	title           string
 	description     string
 	proposedQueries []*searchQueryDescription
+	// The higher the priority the more important is the alert.
+	priority int
 }
 
 func (a searchAlert) Title() string { return a.title }
@@ -517,8 +523,8 @@ func alertForDiffCommitSearch(multiErr *multierror.Error) (newMultiErr *multierr
 	if multiErr == nil {
 		return newMultiErr, alert
 	}
-	rErr := &RepoLimitErr{}
-	tErr := &TimeLimitErr{}
+	rErr := &RepoLimitError{}
+	tErr := &TimeLimitError{}
 	for _, err := range multiErr.Errors {
 		if ok := errors.As(err, rErr); ok {
 			alert = &searchAlert{
@@ -671,6 +677,111 @@ func (searchAlert) Suggestions(context.Context, *searchSuggestionsArgs) ([]*sear
 	return nil, nil
 }
 func (searchAlert) Stats(context.Context) (*searchResultsStats, error) { return nil, nil }
+
+func alertForError(err error, searchContext *SearchInputs) *searchAlert {
+	var (
+		alert *searchAlert
+		rErr  *RepoLimitError
+		tErr  *TimeLimitError
+		mErr  *searchrepos.MissingRepoRevsError
+	)
+
+	if false {
+	} else if errors.As(err, &mErr) {
+		alert = alertForMissingRepoRevs(searchContext.PatternType, mErr.Missing)
+		alert.priority = 6
+	} else if strings.Contains(err.Error(), "Worker_oomed") || strings.Contains(err.Error(), "Worker_exited_abnormally") {
+		alert = &searchAlert{
+			prometheusType: "structural_search_needs_more_memory",
+			title:          "Structural search needs more memory",
+			description:    "Running your structural search may require more memory. If you are running the query on many repositories, try reducing the number of repositories with the `repo:` filter.",
+		}
+		alert.priority = 5
+	} else if strings.Contains(err.Error(), "Out of memory") {
+		a := searchAlert{
+			prometheusType: "structural_search_needs_more_memory__give_searcher_more_memory",
+			title:          "Structural search needs more memory",
+			description:    `Running your structural search requires more memory. You could try reducing the number of repositories with the "repo:" filter. If you are an administrator, try double the memory allocated for the "searcher" service. If you're unsure, reach out to us at support@sourcegraph.com.`,
+		}
+		a.priority = 4
+	} else if strings.Contains(err.Error(), "no indexed repositories for structural search") {
+		var msg string
+		if envvar.SourcegraphDotComMode() {
+			msg = "The good news is you can index any repository you like in a self-install. It takes less than 5 minutes to set up: https://docs.sourcegraph.com/#quickstart"
+		} else {
+			msg = "Learn more about managing indexed repositories in our documentation: https://docs.sourcegraph.com/admin/search#indexed-search."
+		}
+		alert = &searchAlert{
+			prometheusType: "structural_search_on_zero_indexed_repos",
+			title:          "Unindexed repositories or repository revisions with structural search",
+			description:    fmt.Sprintf("Structural search currently only works on indexed repositories or revisions. Some of the repositories or revisions to search are not indexed, so we can't return results for them. %s", msg),
+		}
+		alert.priority = 3
+	} else if errors.As(err, &rErr) {
+		alert = &searchAlert{
+			prometheusType: "exceeded_diff_commit_search_limit",
+			title:          fmt.Sprintf("Too many matching repositories for %s search to handle", rErr.ResultType),
+			description:    fmt.Sprintf(`%s search can currently only handle searching over %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`, strings.Title(rErr.ResultType), rErr.Max),
+		}
+		alert.priority = 2
+	} else if errors.As(err, &tErr) {
+		alert = &searchAlert{
+			prometheusType: "exceeded_diff_commit_with_time_search_limit",
+			title:          fmt.Sprintf("Too many matching repositories for %s search to handle", tErr.ResultType),
+			description:    fmt.Sprintf(`%s search can currently only handle searching over %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`, strings.Title(tErr.ResultType), tErr.Max),
+		}
+		alert.priority = 1
+	}
+	return alert
+}
+
+type AlertObserver struct {
+	// alert is the current alert to show.
+	alert      *searchAlert
+	err        error
+	hasResults bool
+}
+
+// Next returns a non-nil alert if there is a new alert to show to the user.
+func (o *AlertObserver) Next(event SearchEvent, searchContext *SearchInputs) *searchAlert {
+	if len(event.Results) > 0 {
+		o.hasResults = true
+	}
+
+	if event.Error == nil {
+		return nil
+	}
+
+	alert := alertForError(event.Error, searchContext)
+	if alert == nil {
+		o.err = multierror.Append(o.err, event.Error)
+		return nil
+	}
+	return o.update(alert)
+}
+
+func (o *AlertObserver) update(alert *searchAlert) *searchAlert {
+	if o.alert == nil || alert.priority > o.alert.priority {
+		o.alert = alert
+		return o.alert
+	}
+	return nil
+}
+
+//  Done returns the highest priority alert and a multierror.Error containing all
+//  errors that could not be converted to alerts.
+func (o *AlertObserver) Done(stats *streaming.Stats, s *SearchInputs) (*searchAlert, error) {
+	if !o.hasResults && s.PatternType != query.SearchTypeStructural && comby.MatchHoleRegexp.MatchString(s.OriginalQuery) {
+		o.update(alertForStructuralSearchNotSet(s.OriginalQuery))
+	}
+
+	if o.hasResults && o.err != nil {
+		log15.Error("Errors during search", "error", o.err)
+		return o.alert, nil
+	}
+
+	return o.alert, o.err
+}
 
 func (searchAlert) SetStream(c SearchStream) {}
 func (searchAlert) Inputs() *SearchInputs {

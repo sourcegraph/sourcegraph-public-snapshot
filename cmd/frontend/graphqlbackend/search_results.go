@@ -29,7 +29,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
@@ -1442,14 +1441,14 @@ type DiffCommitError struct {
 	Max        int
 }
 
-type RepoLimitErr DiffCommitError
-type TimeLimitErr DiffCommitError
+type RepoLimitError DiffCommitError
+type TimeLimitError DiffCommitError
 
-func (RepoLimitErr) Error() string {
+func (*RepoLimitError) Error() string {
 	return "repo limit error"
 }
 
-func (TimeLimitErr) Error() string {
+func (*TimeLimitError) Error() string {
 	return "time limit error"
 }
 
@@ -1469,30 +1468,31 @@ func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameter
 
 	limits := searchrepos.SearchLimits()
 	if max := limits.CommitDiffMaxRepos; !hasTimeFilter && len(repos) > max {
-		return RepoLimitErr{ResultType: resultType, Max: max}
+		return &RepoLimitError{ResultType: resultType, Max: max}
 	}
 	if max := limits.CommitDiffWithTimeFilterMaxRepos; hasTimeFilter && len(repos) > max {
-		return TimeLimitErr{ResultType: resultType, Max: max}
+		return &TimeLimitError{ResultType: resultType, Max: max}
 	}
 	return nil
 }
 
-func newAggregator(ctx context.Context, stream SearchStream) *aggregator {
+func newAggregator(ctx context.Context, stream SearchStream, searchContext *SearchInputs) *aggregator {
 	childStream := make(chan SearchEvent, cap(stream))
 	agg := &aggregator{
-		stream: childStream,
-		done:   make(chan struct{}),
+		stream:        childStream,
+		done:          make(chan struct{}),
+		AlertObserver: &AlertObserver{},
 	}
 
 	go func() {
 		defer close(agg.done)
 		for event := range childStream {
 			// Timeouts are reported through Stats so don't report an error for them
-			if event.Error != nil && !isContextError(ctx, event.Error) {
+			if event.Error != nil && isContextError(ctx, event.Error) {
 				event.Error = nil
 			}
 			if event.Error != nil {
-				agg.multiErr = multierror.Append(agg.multiErr, event.Error)
+				agg.Next(event, searchContext)
 			}
 			agg.results = append(agg.results, event.Results...)
 			agg.common.Update(&event.Stats)
@@ -1508,6 +1508,8 @@ func newAggregator(ctx context.Context, stream SearchStream) *aggregator {
 type aggregator struct {
 	stream SearchStream
 
+	*AlertObserver
+
 	done chan struct{}
 
 	results  []SearchResultResolver
@@ -1518,11 +1520,12 @@ type aggregator struct {
 // get finalises aggregation over the stream and returns the aggregated
 // result. It should only be called once each do* function is finished
 // running.
-func (a *aggregator) get() ([]SearchResultResolver, streaming.Stats, *multierror.Error) {
+func (a *aggregator) get(s *SearchInputs) ([]SearchResultResolver, streaming.Stats, error, *searchAlert) {
 	close(a.stream)
 	<-a.done
 
-	return a.results, a.common, a.multiErr
+	alert, err := a.Done(&a.common, s)
+	return a.results, a.common, err, alert
 }
 
 func (a *aggregator) send(event SearchEvent) {
@@ -1730,7 +1733,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		return &optionalWg
 	}
 
-	agg := newAggregator(ctx, r.resultChannel)
+	agg := newAggregator(ctx, r.resultChannel, r.SearchInputs)
 
 	// This ensures we properly cleanup in the case of an early return. In
 	// particular we want to cancel global searches before returning early.
@@ -1742,7 +1745,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		cancel()
 		requiredWg.Wait()
 		optionalWg.Wait()
-		_, _, _ = agg.get()
+		_, _, _, _ = agg.get(r.SearchInputs)
 	}()
 
 	isFileOrPath := func() bool {
@@ -1781,6 +1784,9 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 	if alertResult != nil {
 		return alertResult, nil
+	}
+	if len(resolved.MissingRepoRevs) > 0 {
+		agg.send(SearchEvent{Error: &searchrepos.MissingRepoRevsError{Missing: resolved.MissingRepoRevs}})
 	}
 
 	// Send down our first bit of progress.
@@ -1873,36 +1879,9 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 
 	// We have to call get once all waitgroups are done since it relies on
 	// collecting from the streams.
-	results, common, multiErr := agg.get()
+	results, common, err, alert := agg.get(r.SearchInputs)
 
 	tr.LazyPrintf("results=%d %s", len(results), &common)
-
-	var alert *searchAlert
-
-	multiErr, newAlert := alertForDiffCommitSearch(multiErr)
-	if newAlert != nil {
-		alert = newAlert
-	}
-
-	multiErr, newAlert = alertForStructuralSearch(multiErr)
-	if newAlert != nil {
-		alert = newAlert // takes higher precedence
-	}
-
-	if len(results) == 0 && r.PatternType != query.SearchTypeStructural && comby.MatchHoleRegexp.MatchString(r.OriginalQuery) {
-		alert = alertForStructuralSearchNotSet(r.OriginalQuery)
-	}
-
-	if len(resolved.MissingRepoRevs) > 0 {
-		alert = alertForMissingRepoRevs(r.PatternType, resolved.MissingRepoRevs)
-	}
-
-	// If we have some results, only log the error instead of returning it,
-	// because otherwise the client would not receive the partial results
-	if len(results) > 0 && multiErr != nil {
-		log15.Error("Errors during search", "error", multiErr)
-		multiErr = nil
-	}
 
 	r.sortResults(ctx, results)
 
@@ -1913,8 +1892,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		limit:         int(r.maxResults()),
 		alert:         alert,
 	}
-
-	return &resultsResolver, multiErr.ErrorOrNil()
+	return &resultsResolver, err
 }
 
 // isContextError returns true if ctx.Err() is not nil or if err
