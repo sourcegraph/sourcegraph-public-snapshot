@@ -740,7 +740,7 @@ func BenchmarkSearchResults(b *testing.B) {
 			b.Fatal(err)
 		}
 		resolver := &searchResolver{
-			SearchContext: &SearchContext{
+			SearchInputs: &SearchInputs{
 				Query:        q,
 				UserSettings: &schema.Settings{},
 			},
@@ -818,7 +818,7 @@ func BenchmarkIntegrationSearchResults(b *testing.B) {
 			b.Fatal(err)
 		}
 		resolver := &searchResolver{
-			SearchContext: &SearchContext{
+			SearchInputs: &SearchInputs{
 				Query: q,
 			},
 			zoekt:    z,

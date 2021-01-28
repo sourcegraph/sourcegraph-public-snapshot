@@ -544,7 +544,7 @@ func TestVersionContext(t *testing.T) {
 			}
 
 			resolver := searchResolver{
-				SearchContext: &SearchContext{
+				SearchInputs: &SearchInputs{
 					Query:          qinfo,
 					VersionContext: &tc.versionContext,
 					UserSettings:   &schema.Settings{},

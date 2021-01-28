@@ -78,6 +78,6 @@ func (h *mockSearchResolver) Close() {
 	close(h.done)
 }
 
-func (h *mockSearchResolver) Context() *graphqlbackend.SearchContext {
-	return &graphqlbackend.SearchContext{}
+func (h *mockSearchResolver) Inputs() *graphqlbackend.SearchInputs {
+	return &graphqlbackend.SearchInputs{}
 }

@@ -521,7 +521,7 @@ func TestSearchResolver_getPatternInfo(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			sr := searchResolver{SearchContext: &SearchContext{Query: query}}
+			sr := searchResolver{SearchInputs: &SearchInputs{Query: query}}
 			p, err := sr.getPatternInfo(nil)
 			if err != nil {
 				t.Fatal(err)
@@ -830,7 +830,7 @@ func TestSearchResultsHydration(t *testing.T) {
 		t.Fatal(err)
 	}
 	resolver := &searchResolver{
-		SearchContext: &SearchContext{
+		SearchInputs: &SearchInputs{
 			Query:        q,
 			UserSettings: &schema.Settings{},
 		},
@@ -1063,7 +1063,7 @@ func TestGetExactFilePatterns(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			r := searchResolver{SearchContext: &SearchContext{Query: q, OriginalQuery: tt.in}}
+			r := searchResolver{SearchInputs: &SearchInputs{Query: q, OriginalQuery: tt.in}}
 			if got := r.getExactFilePatterns(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("getExactFilePatterns() = %v, want %v", got, tt.want)
 			}
@@ -1264,10 +1264,10 @@ func TestEvaluateAnd(t *testing.T) {
 				t.Fatal(err)
 			}
 			resolver := &searchResolver{
-				SearchContext: &SearchContext{Query: q, UserSettings: &schema.Settings{}},
-				zoekt:         z,
-				reposMu:       &sync.Mutex{},
-				resolved:      &searchrepos.Resolved{},
+				SearchInputs: &SearchInputs{Query: q, UserSettings: &schema.Settings{}},
+				zoekt:        z,
+				reposMu:      &sync.Mutex{},
+				resolved:     &searchrepos.Resolved{},
 			}
 			results, err := resolver.Results(ctx)
 			if err != nil {

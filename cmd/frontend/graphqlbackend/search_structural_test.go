@@ -92,7 +92,7 @@ func TestStructuralSearchRepoFilter(t *testing.T) {
 		t.Fatal(err)
 	}
 	resolver := &searchResolver{
-		SearchContext: &SearchContext{
+		SearchInputs: &SearchInputs{
 			Query:        q,
 			PatternType:  query.SearchTypeStructural,
 			UserSettings: &schema.Settings{},

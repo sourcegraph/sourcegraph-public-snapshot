@@ -109,7 +109,7 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (_ SearchImplem
 	}
 
 	return &searchResolver{
-		SearchContext: &SearchContext{
+		SearchInputs: &SearchInputs{
 			Query:          queryInfo,
 			OriginalQuery:  args.Query,
 			VersionContext: args.VersionContext,
@@ -238,8 +238,8 @@ func getBoolPtr(b *bool, def bool) bool {
 	return *b
 }
 
-// SearchContext contains fields we set before kicking off search.
-type SearchContext struct {
+// SearchInputs contains fields we set before kicking off search.
+type SearchInputs struct {
 	Query          query.QueryInfo       // the query, either containing and/or expressions or otherwise ordinary
 	OriginalQuery  string                // the raw string of the original search query
 	Pagination     *searchPaginationInfo // pagination information, or nil if the request is not paginated.
@@ -250,7 +250,7 @@ type SearchContext struct {
 
 // searchResolver is a resolver for the GraphQL type `Search`
 type searchResolver struct {
-	*SearchContext
+	*SearchInputs
 	invalidateRepoCache bool // if true, invalidates the repo cache when evaluating search subexpressions.
 
 	// resultChannel if non-nil will send all results we receive down it. See
@@ -329,8 +329,8 @@ func (r *searchResolver) SetStream(c SearchStream) {
 	r.resultChannel = c
 }
 
-func (r *searchResolver) Context() *SearchContext {
-	return r.SearchContext
+func (r *searchResolver) Inputs() *SearchInputs {
+	return r.SearchInputs
 }
 
 // rawQuery returns the original query string input.
