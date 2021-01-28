@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	querytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
@@ -132,6 +133,8 @@ func alertForStalePermissions() *searchAlert {
 // query does not contain any repos to search.
 func (r *searchResolver) reposExist(ctx context.Context, options searchrepos.Options) bool {
 	options.UserSettings = r.userSettings
+	options.Zoekt = r.zoekt
+	options.DefaultReposFunc = database.GlobalDefaultRepos.List
 	resolved, err := searchrepos.ResolveRepositories(ctx, options)
 	return err == nil && len(resolved.RepoRevs) > 0
 }

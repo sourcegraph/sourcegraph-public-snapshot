@@ -14,6 +14,7 @@ import (
 
 	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -33,12 +34,13 @@ import (
 var mockResolveRepositories func(effectiveRepoFieldValues []string) (resolved searchrepos.Resolved, err error)
 
 type SearchArgs struct {
-	Version        string
-	PatternType    *string
-	Query          string
-	After          *string
-	First          *int32
-	VersionContext *string
+	Version           string
+	PatternType       *string
+	Query             string
+	After             *string
+	First             *int32
+	SearchContextSpec *string
+	VersionContext    *string
 
 	// For tests
 	Settings *schema.Settings
@@ -109,16 +111,17 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (_ SearchImplem
 	}
 
 	return &searchResolver{
-		query:          queryInfo,
-		originalQuery:  args.Query,
-		versionContext: args.VersionContext,
-		userSettings:   settings,
-		pagination:     pagination,
-		patternType:    searchType,
-		zoekt:          search.Indexed(),
-		searcherURLs:   search.SearcherURLs(),
-		reposMu:        &sync.Mutex{},
-		resolved:       &searchrepos.Resolved{},
+		query:             queryInfo,
+		originalQuery:     args.Query,
+		versionContext:    args.VersionContext,
+		searchContextSpec: args.SearchContextSpec,
+		userSettings:      settings,
+		pagination:        pagination,
+		patternType:       searchType,
+		zoekt:             search.Indexed(),
+		searcherURLs:      search.SearcherURLs(),
+		reposMu:           &sync.Mutex{},
+		resolved:          &searchrepos.Resolved{},
 	}, nil
 }
 
@@ -242,6 +245,7 @@ type searchResolver struct {
 	originalQuery       string                // the raw string of the original search query
 	pagination          *searchPaginationInfo // pagination information, or nil if the request is not paginated.
 	patternType         query.SearchType
+	searchContextSpec   *string
 	versionContext      *string
 	userSettings        *schema.Settings
 	invalidateRepoCache bool // if true, invalidates the repo cache when evaluating search subexpressions.
@@ -451,12 +455,17 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 	if r.versionContext != nil {
 		versionContextName = *r.versionContext
 	}
+	var searchContextSpec string
+	if r.searchContextSpec != nil {
+		searchContextSpec = *r.searchContextSpec
+	}
 
 	tr.LazyPrintf("resolveRepositories - start")
 	options := searchrepos.Options{
 		RepoFilters:        repoFilters,
 		MinusRepoFilters:   minusRepoFilters,
 		RepoGroupFilters:   repoGroupFilters,
+		SearchContextSpec:  searchContextSpec,
 		VersionContextName: versionContextName,
 		UserSettings:       r.userSettings,
 		OnlyForks:          fork == searchrepos.Only,
@@ -467,6 +476,8 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		OnlyPublic:         visibility == query.Public,
 		CommitAfter:        commitAfter,
 		Query:              r.query,
+		DefaultReposFunc:   database.GlobalDefaultRepos.List,
+		Zoekt:              r.zoekt,
 	}
 	resolved, err := searchrepos.ResolveRepositories(ctx, options)
 	tr.LazyPrintf("resolveRepositories - done")

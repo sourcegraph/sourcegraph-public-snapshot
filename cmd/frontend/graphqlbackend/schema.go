@@ -2982,7 +2982,11 @@ type Query {
         The search query (such as "foo" or "repo:myrepo foo").
         """
         query: String = ""
-
+        """
+        (experimental) Optionally specify the searchContextSpec. If not specified or empty
+        the global search context is used.
+        """
+        searchContextSpec: String
         """
         (experimental) Optionally specify the versionContext. If not specified the
         default version context is used (all repositories on the default branch).
