@@ -190,12 +190,13 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 	filters := SearchFilters{
 		Globbing: globbing,
 	}
-
-	var resolvers []*searchFilterResolver
-	for _, f := range filters.Compute(SearchEvent{
+	filters.Update(SearchEvent{
 		Results: sr.SearchResults,
 		Stats:   sr.Stats,
-	}) {
+	})
+
+	var resolvers []*searchFilterResolver
+	for _, f := range filters.Compute() {
 		resolvers = append(resolvers, &searchFilterResolver{filter: *f})
 	}
 	return resolvers
