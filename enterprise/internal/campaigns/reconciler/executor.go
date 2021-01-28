@@ -555,7 +555,15 @@ func buildPushConfig(extSvcType, cloneURL string, a auth.Authenticator) (*protoc
 	}
 
 	if u.Scheme == "ssh" {
-		return nil, ErrNoSSHPush{}
+		sshKey := ""
+		// For ssh, we don't set any credentials, just falling back to the ssh keys installed on the gitserver.
+		switch av := a.(type) {
+		case *auth.BasicAuth:
+			sshKey = av.SSHKey
+		case *auth.OAuthBearerToken:
+			sshKey = av.SSHKey
+		}
+		return &protocol.PushConfig{RemoteURL: u.String(), SSHKey: sshKey}, nil
 	}
 
 	switch av := a.(type) {

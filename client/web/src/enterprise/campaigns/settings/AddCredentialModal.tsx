@@ -90,9 +90,14 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
     const labelId = 'addCredential'
     const [isLoading, setIsLoading] = useState<boolean | Error>(false)
     const [credential, setCredential] = useState<string>('')
+    const [sshKey, setSshKey] = useState<string>('')
 
     const onChangeCredential = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
         setCredential(event.target.value)
+    }, [])
+
+    const onChangeSshKey = useCallback<React.ChangeEventHandler<HTMLTextAreaElement>>(event => {
+        setSshKey(event.target.value)
     }, [])
 
     const onSubmit = useCallback<React.FormEventHandler>(
@@ -100,13 +105,19 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
             event.preventDefault()
             setIsLoading(true)
             try {
-                await createCampaignsCredential({ user: userID, credential, externalServiceKind, externalServiceURL })
+                await createCampaignsCredential({
+                    user: userID,
+                    credential,
+                    externalServiceKind,
+                    externalServiceURL,
+                    sshKey: sshKey || null,
+                })
                 afterCreate()
             } catch (error) {
                 setIsLoading(asError(error))
             }
         },
-        [afterCreate, userID, credential, externalServiceKind, externalServiceURL]
+        [afterCreate, userID, credential, externalServiceKind, externalServiceURL, sshKey]
     )
 
     return (
@@ -132,6 +143,18 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
                             minLength={1}
                             value={credential}
                             onChange={onChangeCredential}
+                        />
+                        <p className="form-text">{helpTexts[externalServiceKind]}</p>
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="token">SSH key</label>
+                        <textarea
+                            id="token"
+                            name="token"
+                            className="form-control"
+                            required={false}
+                            value={sshKey}
+                            onChange={onChangeSshKey}
                         />
                         <p className="form-text">{helpTexts[externalServiceKind]}</p>
                     </div>

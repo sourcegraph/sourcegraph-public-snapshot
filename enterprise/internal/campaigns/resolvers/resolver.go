@@ -861,9 +861,17 @@ func (r *Resolver) CreateCampaignsCredential(ctx context.Context, args *graphqlb
 		if err != nil {
 			return nil, err
 		}
-		a = &auth.BasicAuth{Username: username, Password: args.Credential}
+		sshKey := ""
+		if args.SSHKey != nil {
+			sshKey = *args.SSHKey
+		}
+		a = &auth.BasicAuth{Username: username, Password: args.Credential, SSHKey: sshKey}
 	} else {
-		a = &auth.OAuthBearerToken{Token: args.Credential}
+		sshKey := ""
+		if args.SSHKey != nil {
+			sshKey = *args.SSHKey
+		}
+		a = &auth.OAuthBearerToken{Token: args.Credential, SSHKey: sshKey}
 	}
 
 	cred, err := r.store.UserCredentials().Create(ctx, scope, a)

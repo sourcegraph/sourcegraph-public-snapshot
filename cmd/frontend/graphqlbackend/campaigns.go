@@ -91,6 +91,7 @@ type CreateCampaignsCredentialArgs struct {
 	ExternalServiceURL  string
 	User                graphql.ID
 	Credential          string
+	SSHKey              *string
 }
 
 type DeleteCampaignsCredentialArgs struct {

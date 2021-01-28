@@ -28,12 +28,14 @@ export function createCampaignsCredential(args: CreateCampaignsCredentialVariabl
                 $credential: String!
                 $externalServiceKind: ExternalServiceKind!
                 $externalServiceURL: String!
+                $sshKey: String
             ) {
                 createCampaignsCredential(
                     user: $user
                     credential: $credential
                     externalServiceKind: $externalServiceKind
                     externalServiceURL: $externalServiceURL
+                    sshKey: $sshKey
                 ) {
                     ...CampaignsCredentialFields
                 }

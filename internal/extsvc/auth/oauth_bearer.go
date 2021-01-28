@@ -9,7 +9,8 @@ import (
 // OAuthBearerToken implements OAuth Bearer Token authentication for extsvc
 // clients.
 type OAuthBearerToken struct {
-	Token string
+	Token  string
+	SSHKey string
 }
 
 var _ Authenticator = &OAuthBearerToken{}

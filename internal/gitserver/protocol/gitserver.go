@@ -204,6 +204,9 @@ type PushConfig struct {
 	// The URL needs to include HTTP basic auth credentials if no
 	// unauthenticated requests are allowed by the remote host.
 	RemoteURL string
+	// SSHKey is an optional config to use a ssh private key file instead of auth
+	// baked into the RemoteURL.
+	SSHKey string
 }
 
 // CreateCommitFromPatchResponse is the response type returned after creating
