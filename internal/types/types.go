@@ -36,16 +36,7 @@ type SourceInfo struct {
 // ExternalServiceID returns the ID of the external service this
 // SourceInfo refers to.
 func (i SourceInfo) ExternalServiceID() int64 {
-	ps := strings.SplitN(i.ID, ":", 3)
-	if len(ps) != 3 {
-		return -1
-	}
-
-	id, err := strconv.ParseInt(ps[2], 10, 64)
-	if err != nil {
-		return -1
-	}
-
+	_, id := extsvc.DecodeURN(i.ID)
 	return id
 }
 

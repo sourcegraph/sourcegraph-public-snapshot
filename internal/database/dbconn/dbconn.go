@@ -15,7 +15,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gchaincl/sqlhooks"
+	"github.com/gchaincl/sqlhooks/v2"
 	"github.com/inconshreveable/log15"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/stdlib"

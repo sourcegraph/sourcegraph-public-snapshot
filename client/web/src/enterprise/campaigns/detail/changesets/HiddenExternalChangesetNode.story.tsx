@@ -20,6 +20,7 @@ add('All states', () => {
                             key={index}
                             {...props}
                             node={{
+                                __typename: 'HiddenExternalChangeset',
                                 id: 'somechangeset',
                                 updatedAt: now.toISOString(),
                                 nextSyncAt: addHours(now, 1).toISOString(),

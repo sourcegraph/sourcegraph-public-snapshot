@@ -449,6 +449,7 @@ type ExternalChangesetResolver interface {
 	Labels(ctx context.Context) ([]ChangesetLabelResolver, error)
 
 	Error() *string
+	SyncerError() *string
 
 	CurrentSpec(ctx context.Context) (VisibleChangesetSpecResolver, error)
 }
