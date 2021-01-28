@@ -68,6 +68,10 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Start: time.Now(),
 	}
 
+	filters := &graphqlbackend.SearchFilters{
+		Globbing: false, // TODO
+	}
+
 	const matchesChunk = 1000
 	matchesBuf := make([]interface{}, 0, matchesChunk)
 	flushMatchesBuf := func() {
@@ -102,6 +106,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		progress.Update(event)
+		filters.Update(event)
 
 		for _, result := range event.Results {
 			if fm, ok := result.ToFileMatch(); ok {
@@ -146,24 +151,16 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	flushMatchesBuf()
 
-	final := <-resultsStreamDone
-	resultsResolver, err := final.resultsResolver, final.err
-	if err != nil {
-		_ = eventWriter.Event("error", err.Error())
-		return
-	}
-
-	// Send dynamic filters once. When this is true streaming we may want to
-	// send updated filters as we find more results.
-	if filters := resultsResolver.DynamicFilters(ctx); len(filters) > 0 {
+	// Send dynamic filters once.
+	if filters := filters.Compute(); len(filters) > 0 {
 		buf := make([]eventFilter, 0, len(filters))
 		for _, f := range filters {
 			buf = append(buf, eventFilter{
-				Value:    f.Value(),
-				Label:    f.Label(),
-				Count:    int(f.Count()),
-				LimitHit: f.LimitHit(),
-				Kind:     f.Kind(),
+				Value:    f.Value,
+				Label:    f.Label,
+				Count:    f.Count,
+				LimitHit: f.IsLimitHit,
+				Kind:     f.Kind,
 			})
 		}
 
@@ -171,6 +168,13 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			// EOF
 			return
 		}
+	}
+
+	final := <-resultsStreamDone
+	resultsResolver, err := final.resultsResolver, final.err
+	if err != nil {
+		_ = eventWriter.Event("error", err.Error())
+		return
 	}
 
 	if alert := resultsResolver.Alert(); alert != nil {

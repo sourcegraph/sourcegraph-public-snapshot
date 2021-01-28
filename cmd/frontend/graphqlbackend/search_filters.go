@@ -23,6 +23,9 @@ import (
 type SearchFilters struct {
 	// Globbing is true if the user has enabled globbing support.
 	Globbing bool
+
+	filters          map[string]*streaming.Filter
+	repoToMatchCount map[string]int32
 }
 
 // commonFileFilters are common filters used. It is used by SearchFilters to
@@ -52,13 +55,21 @@ var commonFileFilters = []struct {
 	},
 }
 
-// Compute returns an ordered slice of Filters to present to the user based on
-// event.
-func (sf *SearchFilters) Compute(event SearchEvent) []*streaming.Filter {
-	filters := map[string]*streaming.Filter{}
-	repoToMatchCount := make(map[string]int32)
+// Update internal state for the results in event.
+func (s *SearchFilters) Update(event SearchEvent) {
+	// Avoid work if nothing to observe.
+	if len(event.Results) == 0 {
+		return
+	}
+
+	// Initialize state on first call.
+	if s.filters == nil {
+		s.filters = map[string]*streaming.Filter{}
+		s.repoToMatchCount = make(map[string]int32)
+	}
+
 	add := func(value string, label string, count int32, limitHit bool, kind string) {
-		sf, ok := filters[value]
+		sf, ok := s.filters[value]
 		if !ok {
 			sf = &streaming.Filter{
 				Value:      value,
@@ -67,19 +78,19 @@ func (sf *SearchFilters) Compute(event SearchEvent) []*streaming.Filter {
 				IsLimitHit: limitHit,
 				Kind:       kind,
 			}
-			filters[value] = sf
+			s.filters[value] = sf
 		} else {
 			sf.Count = int(count)
 		}
 	}
 	important := func(value string) {
-		filters[value].Important = true
+		s.filters[value].Important = true
 	}
 
 	addRepoFilter := func(repo *RepositoryResolver, rev string, lineMatchCount int32) {
 		uri := repo.Name()
 		var filter string
-		if sf.Globbing {
+		if s.Globbing {
 			filter = fmt.Sprintf(`repo:%s`, uri)
 		} else {
 			filter = fmt.Sprintf(`repo:^%s$`, regexp.QuoteMeta(uri))
@@ -92,8 +103,8 @@ func (sf *SearchFilters) Compute(event SearchEvent) []*streaming.Filter {
 		}
 		limitHit := event.Stats.Status.Get(repo.IDInt32())&search.RepoStatusLimitHit != 0
 		// Increment number of matches per repo. Add will override previous entry for uri
-		repoToMatchCount[uri] += lineMatchCount
-		add(filter, uri, repoToMatchCount[uri], limitHit, "repo")
+		s.repoToMatchCount[uri] += lineMatchCount
+		add(filter, uri, s.repoToMatchCount[uri], limitHit, "repo")
 	}
 
 	addFileFilter := func(fileMatchPath string, lineMatchCount int32, limitHit bool) {
@@ -101,7 +112,7 @@ func (sf *SearchFilters) Compute(event SearchEvent) []*streaming.Filter {
 			// use regexp to match file paths unconditionally, whether globbing is enabled or not,
 			// since we have no native library call to match `**` for globs.
 			if ff.regexp.MatchString(fileMatchPath) {
-				if sf.Globbing {
+				if s.Globbing {
 					add(ff.globFilter, ff.globFilter, lineMatchCount, limitHit, "file")
 				} else {
 					add(ff.regexFilter, ff.regexFilter, lineMatchCount, limitHit, "file")
@@ -156,10 +167,14 @@ func (sf *SearchFilters) Compute(event SearchEvent) []*streaming.Filter {
 			addRepoFilter(r, "", 1)
 		}
 	}
+}
 
-	filterSlice := make([]*streaming.Filter, 0, len(filters))
-	repoFilterSlice := make([]*streaming.Filter, 0, len(filters)/2) // heuristic - half of all filters are repo filters.
-	for _, f := range filters {
+// Compute returns an ordered slice of Filters to present to the user based on
+// events passed to Next.
+func (s *SearchFilters) Compute() []*streaming.Filter {
+	filterSlice := make([]*streaming.Filter, 0, len(s.filters))
+	repoFilterSlice := make([]*streaming.Filter, 0, len(s.filters)/2) // heuristic - half of all filters are repo filters.
+	for _, f := range s.filters {
 		if f.Kind == "repo" {
 			repoFilterSlice = append(repoFilterSlice, f)
 		} else {
