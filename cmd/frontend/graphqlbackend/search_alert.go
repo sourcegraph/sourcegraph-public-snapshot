@@ -610,6 +610,10 @@ func (searchAlert) Suggestions(context.Context, *searchSuggestionsArgs) ([]*sear
 	return nil, nil
 }
 func (searchAlert) Stats(context.Context) (*searchResultsStats, error) { return nil, nil }
+func (searchAlert) SetStream(c SearchStream)                           {}
+func (searchAlert) Inputs() *SearchInputs {
+	return nil
+}
 
 func alertForError(err error, inputs *SearchInputs) *searchAlert {
 	var (
@@ -674,34 +678,35 @@ type AlertObserver struct {
 	hasResults bool
 }
 
-// Next returns a non-nil alert if there is a new alert to show to the user.
-func (o *AlertObserver) Next(event SearchEvent, inputs *SearchInputs) *searchAlert {
+// Next updates AlertObserver's state based on event.
+func (o *AlertObserver) Next(event SearchEvent, inputs *SearchInputs) {
 	if len(event.Results) > 0 {
 		o.hasResults = true
 	}
 
 	if event.Error == nil {
-		return nil
+		return
 	}
 
-	alert := alertForError(event.Error, inputs)
-	if alert == nil {
-		o.err = multierror.Append(o.err, event.Error)
-		return nil
+	// The error can be converted into an alert.
+	if alert := alertForError(event.Error, inputs); alert != nil {
+		o.update(alert)
+		return
 	}
-	return o.update(alert)
+
+	// Track the unexpected error for reporting when calling Done.
+	o.err = multierror.Append(o.err, event.Error)
 }
 
-func (o *AlertObserver) update(alert *searchAlert) *searchAlert {
+// update to alert if it is more important than our current alert.
+func (o *AlertObserver) update(alert *searchAlert) {
 	if o.alert == nil || alert.priority > o.alert.priority {
 		o.alert = alert
-		return o.alert
 	}
-	return nil
 }
 
-//  Done returns the highest priority alert and a multierror.Error containing all
-//  errors that could not be converted to alerts.
+//  Done returns the highest priority alert and a multierror.Error containing
+//  all errors that could not be converted to alerts.
 func (o *AlertObserver) Done(stats *streaming.Stats, s *SearchInputs) (*searchAlert, error) {
 	if !o.hasResults && s.PatternType != query.SearchTypeStructural && comby.MatchHoleRegexp.MatchString(s.OriginalQuery) {
 		o.update(alertForStructuralSearchNotSet(s.OriginalQuery))
@@ -713,9 +718,4 @@ func (o *AlertObserver) Done(stats *streaming.Stats, s *SearchInputs) (*searchAl
 	}
 
 	return o.alert, o.err
-}
-
-func (searchAlert) SetStream(c SearchStream) {}
-func (searchAlert) Inputs() *SearchInputs {
-	return nil
 }
