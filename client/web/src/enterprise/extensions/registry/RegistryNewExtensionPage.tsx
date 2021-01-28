@@ -218,7 +218,7 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                                     <LoadingSpinner className="icon-inline" />
                                 ) : (
                                     <AddIcon className="icon-inline" />
-                                    )}{' '}
+                                )}{' '}
                                 Create extension
                             </button>
                         </Form>
