@@ -17,49 +17,45 @@ import (
 	frontendMigrations "github.com/sourcegraph/sourcegraph/migrations/frontend"
 )
 
-// databases configures the migrations we want based on a database name. This
-// configuration includes the name of the migration version table as well as
-// the raw migration assets to run to migrate the target schema to a new version.
-var databases = map[string]struct {
+// Database describes one of our Postgres (or Postgres-like) databases.
+type Database struct {
+	// Name is the name of the database.
+	Name string
+
+	// MigrationsTable is the migrations SQL table name.
 	MigrationsTable string
-	Resource        *bindata.AssetSource
-}{
-	"frontend": {
-		MigrationsTable: "schema_migrations",
-		Resource:        bindata.Resource(frontendMigrations.AssetNames(), frontendMigrations.Asset),
-	},
-	"codeintel": {
-		MigrationsTable: "codeintel_schema_migrations",
-		Resource:        bindata.Resource(codeintelMigrations.AssetNames(), codeintelMigrations.Asset),
-	},
-	"codeinsights": {
-		MigrationsTable: "codeinsights_schema_migrations",
-		Resource:        bindata.Resource(codeinsightsMigrations.AssetNames(), codeinsightsMigrations.Asset),
-	},
+
+	// Resource describes the raw migration assets to run to migrate the target schema to a new
+	// version.
+	Resource *bindata.AssetSource
+
+	// TargetsTimescaleDB indicates if the database targets TimescaleDB. Otherwise, Postgres.
+	TargetsTimescaleDB bool
 }
 
-// DatabaseNames returns the list of database names (configured via `dbutil.databases`)..
-var DatabaseNames = func() []string {
-	var names []string
-	for databaseName := range databases {
-		names = append(names, databaseName)
+var (
+	Frontend = &Database{
+		Name:            "frontend",
+		MigrationsTable: "schema_migrations",
+		Resource:        bindata.Resource(frontendMigrations.AssetNames(), frontendMigrations.Asset),
 	}
 
-	return names
-}()
-
-// MigrationTables returns the list of migration table names (configured via `dbutil.databases`).
-var MigrationTables = func() []string {
-	var migrationTables []string
-	for _, db := range databases {
-		migrationTables = append(migrationTables, db.MigrationsTable)
+	CodeIntel = &Database{
+		Name:            "codeintel",
+		MigrationsTable: "codeintel_schema_migrations",
+		Resource:        bindata.Resource(codeintelMigrations.AssetNames(), codeintelMigrations.Asset),
 	}
 
-	return migrationTables
-}()
+	CodeInsights = &Database{
+		Name:               "codeinsights",
+		TargetsTimescaleDB: true,
+		MigrationsTable:    "codeinsights_schema_migrations",
+		Resource:           bindata.Resource(codeinsightsMigrations.AssetNames(), codeinsightsMigrations.Asset),
+	}
+)
 
-func MigrateDB(db *sql.DB, databaseName string) error {
-	m, err := NewMigrate(db, databaseName)
+func MigrateDB(db *sql.DB, database *Database) error {
+	m, err := NewMigrate(db, database)
 	if err != nil {
 		return err
 	}
@@ -69,23 +65,18 @@ func MigrateDB(db *sql.DB, databaseName string) error {
 	return nil
 }
 
-// NewMigrate returns a new configured migration object for the given database name. This database
-// name must be present in the `dbconn.databases` map. This migration can be subsequently run by
-// invoking `dbconn.DoMigrate`.
-func NewMigrate(db *sql.DB, databaseName string) (*migrate.Migrate, error) {
-	schemaData, ok := databases[databaseName]
-	if !ok {
-		return nil, fmt.Errorf("unknown database '%s'", databaseName)
-	}
+// NewMigrate returns a new configured migration object for the given database. The migration can
+// be subsequently run by invoking `dbconn.DoMigrate`.
+func NewMigrate(db *sql.DB, database *Database) (*migrate.Migrate, error) {
 
 	driver, err := postgres.WithInstance(db, &postgres.Config{
-		MigrationsTable: schemaData.MigrationsTable,
+		MigrationsTable: database.MigrationsTable,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	d, err := bindata.WithInstance(schemaData.Resource)
+	d, err := bindata.WithInstance(database.Resource)
 	if err != nil {
 		return nil, err
 	}

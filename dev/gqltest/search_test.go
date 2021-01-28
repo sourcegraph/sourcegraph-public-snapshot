@@ -454,7 +454,7 @@ func TestSearch(t *testing.T) {
 			// Repohascommitafter
 			{
 				name:  `Repohascommitafter, nonzero result`,
-				query: `repo:^github\.com/sgtest/go-diff$ repohascommitafter:"8 months ago" test patterntype:literal count:1`,
+				query: `repo:^github\.com/sgtest/go-diff$ repohascommitafter:"2019-01-01" test patterntype:literal count:1`,
 			},
 			// Regex text search
 			{

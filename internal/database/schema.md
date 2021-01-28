@@ -171,6 +171,7 @@ Referenced by:
  num_failures          | integer                  | not null default 0
  log_contents          | text                     | 
  execution_logs        | json[]                   | 
+ syncer_error          | text                     | 
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)

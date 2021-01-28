@@ -48,6 +48,7 @@ const nodes: ChangesetFields[] = [
             },
             reviewState: ChangesetReviewState.COMMENTED,
             error: null,
+            syncerError: null,
             currentSpec: {
                 id: 'spec-rand-id-1',
                 type: ChangesetSpecType.BRANCH,

@@ -17,15 +17,19 @@ func TestMigrations(t *testing.T) {
 	db := dbtesting.GetDB(t)
 
 	migrate := func() {
-		for _, databaseName := range dbconn.DatabaseNames {
-			if err := dbconn.MigrateDB(db, databaseName); err != nil {
-				t.Errorf("error running initial migrations: %s", err)
-			}
+		if err := dbconn.MigrateDB(db, dbconn.Frontend); err != nil {
+			t.Errorf("error running initial migrations: %s", err)
+		}
+		if err := dbconn.MigrateDB(db, dbconn.CodeIntel); err != nil {
+			t.Errorf("error running initial migrations: %s", err)
 		}
 	}
 
-	for _, databaseName := range dbconn.DatabaseNames {
-		t.Run(databaseName, func(t *testing.T) {
+	for _, database := range []*dbconn.Database{
+		dbconn.Frontend,
+		dbconn.CodeIntel,
+	} {
+		t.Run(database.Name, func(t *testing.T) {
 			// Dropping a squash schema _all_ the way down just drops the entire public
 			// schema. Because we have a "combined" database that runs migrations for
 			// multiple disjoint schemas in development environments, migrating all the
@@ -33,7 +37,7 @@ func TestMigrations(t *testing.T) {
 			// migrations, so we prep our tests by re-migrating up on each iteration.
 			migrate()
 
-			m, err := dbconn.NewMigrate(db, databaseName)
+			m, err := dbconn.NewMigrate(db, database)
 			if err != nil {
 				t.Errorf("error constructing migrations: %s", err)
 			}

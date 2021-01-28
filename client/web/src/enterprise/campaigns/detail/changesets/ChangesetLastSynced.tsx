@@ -7,10 +7,12 @@ import SyncIcon from 'mdi-react/SyncIcon'
 import ErrorIcon from 'mdi-react/ErrorIcon'
 import { isErrorLike } from '../../../../../../shared/src/util/errors'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
-import { ChangesetFields } from '../../../../graphql-operations'
+import { ExternalChangesetFields, HiddenExternalChangesetFields } from '../../../../graphql-operations'
 
 interface Props {
-    changeset: Pick<ChangesetFields, 'id' | 'nextSyncAt' | 'updatedAt'>
+    changeset:
+        | Pick<HiddenExternalChangesetFields, 'id' | 'nextSyncAt' | 'updatedAt' | '__typename'>
+        | Pick<ExternalChangesetFields, 'id' | 'nextSyncAt' | 'updatedAt' | '__typename' | 'syncerError'>
     viewerCanAdminister: boolean
     /** For testing purposes only */
     _now?: Date
@@ -65,7 +67,13 @@ export const ChangesetLastSynced: React.FunctionComponent<Props> = ({ changeset,
 
     return (
         <small className="text-muted">
-            Last synced {formatDistance(parseISO(changeset.updatedAt), _now ?? new Date())} ago.{' '}
+            {changeset.__typename === 'ExternalChangeset' && changeset.syncerError ? (
+                <span data-tooltip="Expand to see details.">
+                    <ErrorIcon className="icon-inline text-danger" /> Syncing from code host failed.
+                </span>
+            ) : (
+                <>Last synced {formatDistance(parseISO(changeset.updatedAt), _now ?? new Date())} ago.</>
+            )}{' '}
             {isErrorLike(lastUpdatedAt) && (
                 <ErrorIcon data-tooltip={lastUpdatedAt.message} className="ml-2 icon-inline small" />
             )}

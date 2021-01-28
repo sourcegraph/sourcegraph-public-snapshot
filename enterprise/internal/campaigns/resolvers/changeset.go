@@ -383,6 +383,8 @@ func (r *changesetResolver) CheckState() *campaigns.ChangesetCheckState {
 
 func (r *changesetResolver) Error() *string { return r.changeset.FailureMessage }
 
+func (r *changesetResolver) SyncerError() *string { return r.changeset.SyncErrorMessage }
+
 func (r *changesetResolver) CurrentSpec(ctx context.Context) (graphqlbackend.VisibleChangesetSpecResolver, error) {
 	if r.changeset.CurrentSpecID == 0 {
 		return nil, nil

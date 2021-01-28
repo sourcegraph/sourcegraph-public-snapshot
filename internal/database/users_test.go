@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -429,8 +431,9 @@ func TestUsers_Update(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := Users(db).Update(ctx, user2.ID, UserUpdate{Username: "u1"}); err == nil {
-		t.Fatal("want error when updating user to existing username")
+	err = Users(db).Update(ctx, user2.ID, UserUpdate{Username: "u1"})
+	if diff := cmp.Diff(err.Error(), "Username is already in use."); diff != "" {
+		t.Fatal(diff)
 	}
 
 	// Can't update nonexistent user.

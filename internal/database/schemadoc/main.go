@@ -35,9 +35,9 @@ var logger = log.New(os.Stderr, "", log.LstdFlags)
 
 var versionRe = lazyregexp.New(fmt.Sprintf(`\b%s\b`, regexp.QuoteMeta("9.6")))
 
-var databases = map[string]string{
-	"frontend":  "schema.md",
-	"codeintel": "schema.codeintel.md",
+var databases = map[*dbconn.Database]string{
+	dbconn.Frontend:  "schema.md",
+	dbconn.CodeIntel: "schema.codeintel.md",
 }
 
 // This script generates markdown formatted output containing descriptions of
@@ -61,8 +61,8 @@ func mainErr() error {
 func mainLocal() error {
 	dataSourcePrefix := "dbname=" + databaseNamePrefix
 
-	for databaseName, destinationFile := range databases {
-		if err := generateAndWrite(databaseName, dataSourcePrefix+databaseName, nil, destinationFile); err != nil {
+	for database, destinationFile := range databases {
+		if err := generateAndWrite(database, dataSourcePrefix+database.Name, nil, destinationFile); err != nil {
 			return err
 		}
 	}
@@ -81,8 +81,8 @@ func mainContainer() error {
 
 	dataSourcePrefix := "postgres://postgres@127.0.0.1:5433/postgres?dbname=" + databaseNamePrefix
 
-	for databaseName, destinationFile := range databases {
-		if err := generateAndWrite(databaseName, dataSourcePrefix+databaseName, prefix, destinationFile); err != nil {
+	for database, destinationFile := range databases {
+		if err := generateAndWrite(database, dataSourcePrefix+database.Name, prefix, destinationFile); err != nil {
 			return err
 		}
 	}
@@ -90,20 +90,20 @@ func mainContainer() error {
 	return nil
 }
 
-func generateAndWrite(databaseName, dataSource string, commandPrefix []string, destinationFile string) error {
+func generateAndWrite(database *dbconn.Database, dataSource string, commandPrefix []string, destinationFile string) error {
 	run := runWithPrefix(commandPrefix)
 
 	// Try to drop a database if it already exists
-	_, _ = run(true, "dropdb", databaseNamePrefix+databaseName)
+	_, _ = run(true, "dropdb", databaseNamePrefix+database.Name)
 
 	// Let's also try to clean up after ourselves
-	defer func() { _, _ = run(true, "dropdb", databaseNamePrefix+databaseName) }()
+	defer func() { _, _ = run(true, "dropdb", databaseNamePrefix+database.Name) }()
 
-	if out, err := run(false, "createdb", databaseNamePrefix+databaseName); err != nil {
+	if out, err := run(false, "createdb", databaseNamePrefix+database.Name); err != nil {
 		return errors.Wrap(err, fmt.Sprintf("run: %s", out))
 	}
 
-	out, err := generateInternal(databaseName, dataSource, run)
+	out, err := generateInternal(database, dataSource, run)
 	if err != nil {
 		return err
 	}
@@ -153,7 +153,7 @@ func startDocker() (commandPrefix []string, shutdown func(), _ error) {
 	return []string{"docker", "exec", "-u", "postgres", containerName}, shutdown, nil
 }
 
-func generateInternal(databaseName, dataSource string, run runFunc) (string, error) {
+func generateInternal(database *dbconn.Database, dataSource string, run runFunc) (string, error) {
 	db, err := dbconn.NewRaw(dataSource)
 	if err != nil {
 		return "", errors.Wrap(err, "NewRaw")
@@ -164,7 +164,7 @@ func generateInternal(databaseName, dataSource string, run runFunc) (string, err
 		}
 	}()
 
-	if err := dbconn.MigrateDB(db, databaseName); err != nil {
+	if err := dbconn.MigrateDB(db, database); err != nil {
 		return "", errors.Wrap(err, "MigrateDB")
 	}
 
@@ -197,7 +197,7 @@ func generateInternal(databaseName, dataSource string, run runFunc) (string, err
 			for table := range ch {
 				logger.Println("describe", table)
 
-				doc, err := describeTable(db, databaseName, table, run)
+				doc, err := describeTable(db, database.Name, table, run)
 				if err != nil {
 					logger.Fatalf("error: %s", err)
 					continue

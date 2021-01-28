@@ -14,11 +14,12 @@ import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import { ChangesetStatusCell } from './ChangesetStatusCell'
 import { ChangesetCheckStatusCell } from './ChangesetCheckStatusCell'
 import { ChangesetReviewStatusCell } from './ChangesetReviewStatusCell'
-import { ErrorAlert } from '../../../../components/alerts'
+import { ErrorAlert, ErrorMessage } from '../../../../components/alerts'
 import { ChangesetFileDiff } from './ChangesetFileDiff'
 import { ExternalChangesetInfoCell } from './ExternalChangesetInfoCell'
 import { DownloadDiffButton } from './DownloadDiffButton'
 import classNames from 'classnames'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 
 export interface ExternalChangesetNodeProps extends ThemeProps {
     node: ExternalChangesetFields
@@ -132,6 +133,7 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                             <DownloadDiffButton changesetID={node.id} />
                         )}
                         {node.error && <ErrorAlert error={node.error} history={history} />}
+                        {node.syncerError && <SyncerError syncerError={node.syncerError} history={history} />}
                         <ChangesetFileDiff
                             changesetID={node.id}
                             isLightTheme={isLightTheme}
@@ -149,3 +151,20 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
         </>
     )
 }
+
+const SyncerError: React.FunctionComponent<{ syncerError: string; history: H.History }> = ({
+    syncerError,
+    history,
+}) => (
+    <div className="alert alert-danger" role="alert">
+        <h4 className="alert-heading">
+            <AlertCircleIcon className="icon icon-inline" /> Encountered error during last attempt to sync changeset
+            data from code host
+        </h4>
+        <ErrorMessage error={syncerError} history={history} />
+        <hr className="my-2" />
+        <p className="mb-0">
+            <small>This might be an ephemeral error that resolves itself at the next sync.</small>
+        </p>
+    </div>
+)
