@@ -105,11 +105,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                             Watch your code for changes and trigger actions to get notifications, send webhooks, and
                             more. <a href="https://docs.sourcegraph.com/code_monitoring">Learn more.</a>
                         </p>
-                        <Link
-                            to="/code-monitoring/new"
-                            className="code-monitoring-page__start-button btn btn-primary"
-                            type="button"
-                        >
+                        <Link to="/code-monitoring/new" className="code-monitoring-page__start-button btn btn-primary">
                             Create your first code monitor →
                         </Link>
                     </div>
