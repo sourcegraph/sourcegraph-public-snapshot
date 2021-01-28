@@ -452,6 +452,12 @@ func SyncChangeset(ctx context.Context, syncStore SyncStore, source repos.Change
 	if err := source.LoadChangeset(ctx, repoChangeset); err != nil {
 		_, ok := err.(repos.ChangesetNotFoundError)
 		if !ok {
+			// Store the error as the syncer error.
+			errMsg := err.Error()
+			c.SyncErrorMessage = &errMsg
+			if err2 := syncStore.UpdateChangeset(ctx, c); err2 != nil {
+				return errors.Wrap(err, err2.Error())
+			}
 			return err
 		}
 
@@ -468,6 +474,9 @@ func SyncChangeset(ctx context.Context, syncStore SyncStore, source repos.Change
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
+
+	// Reset syncer error message state.
+	c.SyncErrorMessage = nil
 
 	err = tx.UpdateChangeset(ctx, c)
 	if err != nil {

@@ -4,6 +4,7 @@ import { WebStory } from './WebStory'
 import { Timeline } from './Timeline'
 import CheckIcon from 'mdi-react/CheckIcon'
 import ErrorIcon from 'mdi-react/ErrorIcon'
+import { parseISO } from 'date-fns'
 
 const { add } = storiesOf('web/Timeline', module)
 
@@ -54,6 +55,7 @@ add('Details', () => (
     <WebStory>
         {() => (
             <Timeline
+                now={() => parseISO('2020-08-01T16:21:00+00:00')}
                 stages={[
                     {
                         icon: <CheckIcon />,

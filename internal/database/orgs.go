@@ -49,12 +49,12 @@ func OrgsWith(other basestore.ShareableStore) *OrgStore {
 	return &OrgStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 
-func (s *OrgStore) With(other basestore.ShareableStore) *OrgStore {
-	return &OrgStore{Store: s.Store.With(other)}
+func (o *OrgStore) With(other basestore.ShareableStore) *OrgStore {
+	return &OrgStore{Store: o.Store.With(other)}
 }
 
-func (s *OrgStore) Transact(ctx context.Context) (*OrgStore, error) {
-	txBase, err := s.Store.Transact(ctx)
+func (o *OrgStore) Transact(ctx context.Context) (*OrgStore, error) {
+	txBase, err := o.Store.Transact(ctx)
 	return &OrgStore{Store: txBase}, err
 }
 
@@ -129,6 +129,7 @@ func (o *OrgStore) Count(ctx context.Context, opt OrgsListOptions) (int, error) 
 	if Mocks.Orgs.Count != nil {
 		return Mocks.Orgs.Count(ctx, opt)
 	}
+	o.ensureStore()
 
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM orgs WHERE %s", o.listSQL(opt))
 

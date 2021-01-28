@@ -2302,6 +2302,11 @@ type ExternalChangeset implements Node & Changeset {
     error: String
 
     """
+    An error that has occured during the last sync of the changeset. Null, if was successful.
+    """
+    syncerError: String
+
+    """
     The current changeset spec for this changeset.
 
     Null if the changeset was only imported.

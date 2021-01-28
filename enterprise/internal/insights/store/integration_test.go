@@ -29,6 +29,14 @@ func TestIntegration(t *testing.T) {
 		timescaleDSN := dbutil.PostgresDSN("codeinsights", username, os.Getenv)
 		db, err := dbconn.New(timescaleDSN, "insights-test-"+strings.Replace(t.Name(), "/", "_", -1))
 		if err != nil {
+			t.Log("")
+			t.Log("README: To run these tests you need to have the codeinsights TimescaleDB running:")
+			t.Log("")
+			t.Log("$ ./dev/codeinsights-db.sh &")
+			t.Log("$ export CODEINSIGHTS_PGDATASOURCE=postgres://postgres:password@127.0.0.1:5435")
+			t.Log("")
+			t.Log("Or skip them with 'go test -short'")
+			t.Log("")
 			t.Fatalf("Failed to connect to codeinsights database: %s", err)
 		}
 		if err := dbconn.MigrateDB(db, dbconn.CodeInsights); err != nil {

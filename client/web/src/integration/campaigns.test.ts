@@ -178,6 +178,7 @@ const CampaignChangesets: (variables: CampaignChangesetsVariables) => CampaignCh
                         deleted: 23,
                     },
                     error: null,
+                    syncerError: null,
                     externalID: '123',
                     state: ChangesetState.OPEN,
                     externalURL: {

@@ -18,9 +18,12 @@ import (
 		"github.com/sourcegraph/sourcegraph/internal/campaigns"
 		"github.com/sourcegraph/sourcegraph/internal/db"
 		"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	*/)
+	*/
+)
 
 func testInsights(t *testing.T, ctx context.Context, s *Store, clock func() time.Time) {
+	// TODO: write tests against the store once it is implemented
+	// https://github.com/sourcegraph/sourcegraph/issues/17218
 	/*
 			cs := make([]*campaigns.Campaign, 0, 3)
 
@@ -613,4 +616,4 @@ func testInsights(t *testing.T, ctx context.Context, s *Store, clock func() time
 				}
 			})
 	*/
-}
+)
