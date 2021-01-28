@@ -29,6 +29,12 @@ All notable changes to Sourcegraph are documented in this file.
 
 -
 
+## 3.24.1
+
+### Fixed
+
+- Fixes an issue that SAML is not able to proceed with the error `Expected Enveloped and C14N transforms`. [#13032](https://github.com/sourcegraph/sourcegraph/issues/13032)
+
 ## 3.24.0
 
 ### Added
