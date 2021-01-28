@@ -431,7 +431,7 @@ func URN(kind string, id int64) string {
 
 // DecodeURN returns the kind of the external service and its ID.
 func DecodeURN(urn string) (kind string, id int64) {
-	fields := strings.SplitN(urn, ":", 3)
+	fields := strings.Split(urn, ":")
 	if len(fields) != 3 {
 		return "", 0
 	}
