@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"os"
+	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/resolvers"
@@ -21,6 +23,11 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 	}
 	if conf.IsDeployTypeSingleDockerContainer(conf.DeployType()) {
 		// Code insights is not supported in single-container Docker demo deployments.
+		return nil
+	}
+	if v, _ := strconv.ParseBool(os.Getenv("DISABLE_CODE_INSIGHTS")); v {
+		// Dev option for disabling code insights. Helpful if e.g. you have issues running the
+		// codeinsights-db or don't want to spend resources on it.
 		return nil
 	}
 	timescale, err := initializeCodeInsightsDB()
