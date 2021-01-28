@@ -28,18 +28,36 @@ func (p *progressAggregator) Update(event graphqlbackend.SearchEvent) {
 	}
 }
 
-func (p *progressAggregator) Build() api.Progress {
-	return api.BuildProgressEvent(api.ProgressStats{
+func (p *progressAggregator) currentStats() api.ProgressStats {
+	return api.ProgressStats{
 		MatchCount:          p.MatchCount,
 		ElapsedMilliseconds: int(time.Since(p.Start).Milliseconds()),
-		RepositoriesCount:   len(p.Stats.Repos),
 		ExcludedArchived:    p.Stats.ExcludedArchived,
 		ExcludedForks:       p.Stats.ExcludedForks,
 		Timedout:            getNames(p.Stats, searchshared.RepoStatusTimedout),
 		Missing:             getNames(p.Stats, searchshared.RepoStatusMissing),
 		Cloning:             getNames(p.Stats, searchshared.RepoStatusCloning),
 		LimitHit:            p.Stats.IsLimitHit,
-	})
+	}
+}
+
+// Current returns the current progress event.
+func (p *progressAggregator) Current() api.Progress {
+	return api.BuildProgressEvent(p.currentStats())
+}
+
+// Final returns the current progress event, but with final fields set to
+// indicate it is the last progress event.
+func (p *progressAggregator) Final() api.Progress {
+	s := p.currentStats()
+
+	// We only send RepositoriesCount at the end because the number is
+	// confusing to users to see while searching.
+	s.RepositoriesCount = len(p.Stats.Repos)
+
+	event := api.BuildProgressEvent(s)
+	event.Done = true
+	return event
 }
 
 type namerFunc string
