@@ -18,8 +18,8 @@
     "upcomingRelease": "3.24.1",
 
     // Release dates
-    "releaseDate": "28 February 2021 10:00 PST",
-    "oneWorkingDayAfterRelease": "28 February 2021 10:00 PST",
+    "releaseDate": "28 January 2021 10:00 PST",
+    "oneWorkingDayAfterRelease": "28 January 2021 10:00 PST",
 
     // Channel where messages from the tooling are posted
     "slackAnnounceChannel": "dev-announce",
