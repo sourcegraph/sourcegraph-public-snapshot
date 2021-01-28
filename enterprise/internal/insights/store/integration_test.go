@@ -33,7 +33,7 @@ func TestIntegration(t *testing.T) {
 			t.Log("README: To run these tests you need to have the codeinsights TimescaleDB running:")
 			t.Log("")
 			t.Log("$ ./dev/codeinsights-db.sh &")
-			t.Log("$ export CODEINSIGHTS_PGDATASOURCE=postgres://postgres:password@127.0.0.1:5435")
+			t.Log("$ export CODEINSIGHTS_PGDATASOURCE=postgres://postgres:password@127.0.0.1:5435/postgres")
 			t.Log("")
 			t.Log("Or skip them with 'go test -short'")
 			t.Log("")
