@@ -1783,7 +1783,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		return alertResult, nil
 	}
 	if len(resolved.MissingRepoRevs) > 0 {
-		agg.send(SearchEvent{Error: &searchrepos.MissingRepoRevsError{Missing: resolved.MissingRepoRevs}})
+		agg.send(SearchEvent{Error: &missingRepoRevsError{Missing: resolved.MissingRepoRevs}})
 	}
 
 	// Send down our first bit of progress.

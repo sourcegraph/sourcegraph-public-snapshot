@@ -531,6 +531,14 @@ func alertForStructuralSearchNotSet(queryString string) *searchAlert {
 	}
 }
 
+type missingRepoRevsError struct {
+	Missing []*search.RepositoryRevisions
+}
+
+func (*missingRepoRevsError) Error() string {
+	return "missing repo revs"
+}
+
 func alertForMissingRepoRevs(patternType query.SearchType, missingRepoRevs []*search.RepositoryRevisions) *searchAlert {
 	var description string
 	if len(missingRepoRevs) == 1 {
@@ -620,7 +628,7 @@ func alertForError(err error, inputs *SearchInputs) *searchAlert {
 		alert *searchAlert
 		rErr  *RepoLimitError
 		tErr  *TimeLimitError
-		mErr  *searchrepos.MissingRepoRevsError
+		mErr  *missingRepoRevsError
 	)
 
 	if errors.As(err, &mErr) {
