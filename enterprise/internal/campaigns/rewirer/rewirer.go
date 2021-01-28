@@ -114,7 +114,7 @@ func (r *ChangesetRewirer) updateChangesetToNewSpec(c *campaigns.Changeset, spec
 	c.CurrentSpecID = spec.ID
 
 	// Ensure that the changeset is attached to the campaign
-	attachToCampaign(c, r.campaignID)
+	c.Attach(r.campaignID)
 
 	// We need to enqueue it for the changeset reconciler, so the
 	// reconciler wakes up, compares old and new spec and, if
@@ -143,7 +143,7 @@ func (r *ChangesetRewirer) createTrackingChangeset(repo *types.Repo, externalID 
 func (r *ChangesetRewirer) attachTrackingChangeset(changeset *campaigns.Changeset) {
 	// We already have a changeset with the given repoID and
 	// externalID, so we can track it.
-	attachToCampaign(changeset, r.campaignID)
+	changeset.Attach(r.campaignID)
 
 	// If it's errored and not created by another campaign, we re-enqueue it.
 	if changeset.OwnedByCampaignID == 0 && (changeset.ReconcilerState == campaigns.ReconcilerStateErrored || changeset.ReconcilerState == campaigns.ReconcilerStateFailed) {
@@ -187,26 +187,13 @@ func (r *ChangesetRewirer) closeChangeset(changeset *campaigns.Changeset) {
 	}
 
 	// Disassociate the changeset with the campaign.
-	for i := range changeset.Campaigns {
-		if changeset.Campaigns[i].CampaignID == r.campaignID && !changeset.Campaigns[i].Detach {
-			changeset.Campaigns[i].Detach = true
-			reset = true
-			break
-		}
+	if wasAttached := changeset.Detach(r.campaignID); wasAttached {
+		reset = true
 	}
+
 	if reset {
 		changeset.ResetQueued()
 	}
-}
-
-func attachToCampaign(changeset *campaigns.Changeset, campaignID int64) {
-	for i := range changeset.Campaigns {
-		if changeset.Campaigns[i].CampaignID == campaignID {
-			changeset.Campaigns[i].Detach = false
-			return
-		}
-	}
-	changeset.Campaigns = append(changeset.Campaigns, campaigns.CampaignAssoc{CampaignID: campaignID})
 }
 
 // ErrRepoNotSupported is thrown by the rewirer when it encounters a mapping
