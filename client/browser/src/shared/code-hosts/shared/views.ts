@@ -2,7 +2,6 @@ import { asyncScheduler, defer, from, Observable, OperatorFunction, Subscription
 import { concatAll, filter, mergeMap, observeOn, tap } from 'rxjs/operators'
 import { isDefined, isInstanceOf } from '../../../../../shared/src/util/types'
 import { MutationRecordLike, querySelectorAllOrSelf } from '../../util/dom'
-import { $D } from 'rxjs-debug'
 
 interface View {
     element: HTMLElement
@@ -56,7 +55,7 @@ export function trackViews<V extends View>(
     return mutations =>
         defer(() => {
             const viewStates = new Map<HTMLElement, ViewWithSubscriptions<V>>()
-            return $D(mutations, { id: 'trackViews' }).pipe(
+            return mutations.pipe(
                 observeOn(asyncScheduler),
                 concatAll(),
                 // Inspect removed nodes for known views
@@ -82,41 +81,30 @@ export function trackViews<V extends View>(
                 mergeMap(mutation =>
                     // Find all new code views within the added nodes
                     // (MutationObservers don't emit all descendant nodes of an addded node recursively)
-                    $D(from(mutation.addedNodes), { id: 'addedNodes' }).pipe(
-                        tap(addedNode => {
-                            if (viewResolvers.length > 0) {
-                                console.log(
-                                    'Sourcegraph: YES: addedNode with a viewResolvers',
-                                    addedNode,
-                                    viewResolvers
-                                )
-                            }
-                        }),
+                    from(mutation.addedNodes).pipe(
                         filter(isInstanceOf(HTMLElement)),
-                        mergeMap(addedElement => {
-                            console.log('Sourcegraph: trackViews: first mergemap', addedElement)
-                            return $D(from(viewResolvers), { id: 'viewResolvers' }).pipe(
-                                mergeMap(({ selector, resolveView }) => {
-                                    console.log('Sourcegraph: trackViews: second mergemap', selector, addedElement)
-                                    return [...queryWithSelector(addedElement, selector)].map(
-                                        (element): ViewWithSubscriptions<V> | null => {
-                                            const view = resolveView(element)
-                                            return (
-                                                view && {
-                                                    ...view,
-                                                    subscriptions: new Subscription(),
-                                                }
-                                            )
-                                        }
-                                    )
-                                }),
+                        mergeMap(addedElement =>
+                            from(viewResolvers).pipe(
+                                mergeMap(({ selector, resolveView }) =>
+                                    [...queryWithSelector(addedElement, selector)].map((element): ViewWithSubscriptions<
+                                        V
+                                    > | null => {
+                                        const view = resolveView(element)
+                                        return (
+                                            view && {
+                                                ...view,
+                                                subscriptions: new Subscription(),
+                                            }
+                                        )
+                                    })
+                                ),
                                 filter(isDefined),
                                 filter(view => !viewStates.has(view.element)),
                                 tap(view => {
                                     viewStates.set(view.element, view)
                                 })
                             )
-                        })
+                        )
                     )
                 )
             )

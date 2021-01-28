@@ -38,16 +38,15 @@ function parseGerritChange(): GerritChangeAndPatchSet {
 }
 
 const resolveFileListCodeView: ViewResolver<CodeView> = {
-    selector(existingElement: HTMLElement) {
+    selector(target: HTMLElement) {
         // The Gerrit mutation observer uses this selector to emit added nodes.
         // But `trackViews` calls this selector also, to check if an added node
         // contains a code view, even though in Gerrit this is redundant. When
         // the selector is called with an existing matching element, then it
         // must return that element (and only that one element) rather than all
         // matching elements on the page.
-        if (existingElement.matches('#diffTable')) {
-            console.log('Sourcegraph: resolveFileListCodeView.selector: matched existing element', existingElement)
-            return [existingElement]
+        if (target.matches('#diffTable')) {
+            return [target]
         }
 
         const fileListElement = querySelectorAcrossShadowRoots(document, [
@@ -66,7 +65,7 @@ const resolveFileListCodeView: ViewResolver<CodeView> = {
             if (!stickyArea) {
                 return
             }
-            return querySelectorAcrossShadowRoots(stickyArea, ['gr-diff-host', 'gr-diff', 'table']) as HTMLElement
+            return querySelectorAcrossShadowRoots(stickyArea, ['gr-diff-host', 'gr-diff', '#diffTable']) as HTMLElement
         })
         return compact(diffTables)
     },
@@ -156,24 +155,32 @@ const diffTableDomFunctions: DOMFunctions = {
 
 const resolveFilePageCodeView: ViewResolver<CodeView> = {
     selector(target: HTMLElement) {
-        console.log('Sourcegraph: resolveFilePageCodeView.selector called with', target)
+        // if (target.matches('#diffTable')) {
+        //     return [target]
+        // }
         // TODO: rewrite query using querySelectorAcrossShadowRoots
-        const diffTableElement = document.body
-            .querySelector('#app')
-            ?.shadowRoot?.querySelector('#app-element')
-            ?.shadowRoot?.querySelector('main > gr-diff-view')
-            ?.shadowRoot?.querySelector('#diffHost')
-            ?.shadowRoot?.querySelector('#diff')
-            ?.shadowRoot?.querySelector('#diffTable')
+        // const diffTableElement = document.body
+        //     .querySelector('#app')
+        //     ?.shadowRoot?.querySelector('#app-element')
+        //     ?.shadowRoot?.querySelector('main > gr-diff-view')
+        //     ?.shadowRoot?.querySelector('#diffHost')
+        //     ?.shadowRoot?.querySelector('#diff')
+        //     ?.shadowRoot?.querySelector('#diffTable')
+        const diffTableElement = querySelectorAcrossShadowRoots(document.body, [
+            '#app',
+            '#app-element',
+            'main > gr-diff-view',
+            '#diffHost',
+            '#diff',
+            '#diffTable',
+        ])
 
         if (diffTableElement) {
-            console.log('Sourcegraph: resolveFilePageCodeView.selector returning', diffTableElement)
             return [diffTableElement as HTMLElement]
         }
         return []
     },
     resolveView(element: HTMLElement): CodeView | null {
-        console.log('Sourcegraph: resolveFilePageCodeView.resolveView: called with', element)
         const gerritChange = parseGerritChange()
         const gerritChangeString = buildGerritChangeString(gerritChange)
         let parent = getParentCommit() || gerritChangeString + '^'
@@ -303,7 +310,9 @@ function querySelectorAcrossShadowRoots(element: ParentNode, selectors: string[]
         if (!currentElement) {
             return null
         }
+        console.log(`**** Querying "${selector}" across shadow root...`, currentElement)
         currentElement = currentElement.querySelector(selector)?.shadowRoot || null
+        console.log('....... -> and obtained', currentElement)
     }
     return currentElement?.querySelector(lastSelector) as Element
 }
