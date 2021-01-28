@@ -846,8 +846,8 @@ github.com/joho/godotenv v1.3.0/go.mod h1:7hK45KPybAkOC6peb+G5yklZfMxEjkZhHbwpqx
 github.com/jonboulle/clockwork v0.1.0 h1:VKV+ZcuP6l3yW9doeqz6ziZGgcynBVQO+obU0+0hcPo=
 github.com/jonboulle/clockwork v0.1.0/go.mod h1:Ii8DK3G1RaLaWxj9trq07+26W01tbo22gdxWY5EU2bo=
 github.com/jonboulle/clockwork v0.2.0/go.mod h1:Pkfl5aHPm1nk2H9h0bjmnJD/BcgbGXUBGnn1kMkgxc8=
-github.com/jonboulle/clockwork v0.2.1 h1:S/EaQvW6FpWMYAvYvY+OBDvpaM+izu0oiwo5y0MH7U0=
-github.com/jonboulle/clockwork v0.2.1/go.mod h1:Pkfl5aHPm1nk2H9h0bjmnJD/BcgbGXUBGnn1kMkgxc8=
+github.com/jonboulle/clockwork v0.2.2 h1:UOGuzwb1PwsrDAObMuhUnj0p5ULPj8V/xJ7Kx9qUBdQ=
+github.com/jonboulle/clockwork v0.2.2/go.mod h1:Pkfl5aHPm1nk2H9h0bjmnJD/BcgbGXUBGnn1kMkgxc8=
 github.com/jordan-wright/email v4.0.1-0.20200824153738-3f5bafa1cd84+incompatible h1:d60x4RsAHk/UX/0OT8Gc6D7scVvhBbEANpTAWrDhA/I=
 github.com/jordan-wright/email v4.0.1-0.20200824153738-3f5bafa1cd84+incompatible/go.mod h1:1c7szIrayyPPB/987hsnvNzLushdWf4o/79s3P08L8A=
 github.com/josharian/intern v1.0.0 h1:vlS4z54oSdjm0bgjRigI+G1HpF+tI+9rE5LLzOg8HmY=
@@ -1251,8 +1251,8 @@ github.com/rs/zerolog v1.13.0/go.mod h1:YbFCdg8HfsridGWAh22vktObvhZbQsZXe4/zB0OK
 github.com/rs/zerolog v1.15.0/go.mod h1:xYTKnLHcpfU2225ny5qZjxnj9NvkumZYjJHlAThCjNc=
 github.com/russellhaering/goxmldsig v0.0.0-20180430223755-7acd5e4a6ef7 h1:J4AOUcOh/t1XbQcJfkEqhzgvMJ2tDxdCVvmHxW5QXao=
 github.com/russellhaering/goxmldsig v0.0.0-20180430223755-7acd5e4a6ef7/go.mod h1:Oz4y6ImuOQZxynhbSXk7btjEfNBtGlj2dcaOvXl2FSM=
-github.com/russellhaering/goxmldsig v1.1.0 h1:lK/zeJie2sqG52ZAlPNn1oBBqsIsEKypUUBGpYYF6lk=
-github.com/russellhaering/goxmldsig v1.1.0/go.mod h1:QK8GhXPB3+AfuCrfo0oRISa9NfzeCpWmxeGnqEpDF9o=
+github.com/russellhaering/goxmldsig v1.1.1-0.20201210191726-3541f5e554ee h1:crOrBljowvmyKZv2tCRyngWUPHyMHeKRaycSJuEw5/Q=
+github.com/russellhaering/goxmldsig v1.1.1-0.20201210191726-3541f5e554ee/go.mod h1:QK8GhXPB3+AfuCrfo0oRISa9NfzeCpWmxeGnqEpDF9o=
 github.com/russross/blackfriday v1.5.2 h1:HyvC0ARfnZBqnXwABFeSZHpKvJHJJfPz81GNueLj0oo=
 github.com/russross/blackfriday v1.5.2/go.mod h1:JO/DiYxRf+HjHt06OyowR9PTA263kcR/rfWxYHBV53g=
 github.com/russross/blackfriday/v2 v2.0.1 h1:lPqVAte+HuHNfhJ/0LC98ESWRz8afy9tM/0RK8m9o+Q=
@@ -1337,8 +1337,8 @@ github.com/sourcegraph/go-lsp v0.0.0-20200429204803-219e11d77f5d h1:afLbh+ltiygT
 github.com/sourcegraph/go-lsp v0.0.0-20200429204803-219e11d77f5d/go.mod h1:SULmZY7YNBsvNiQbrb/BEDdEJ84TGnfyUQxaHt8t8rY=
 github.com/sourcegraph/gologin v1.0.2-0.20181110030308-c6f1b62954d8 h1:K7hzuWsJGoU8ILHJzrXxsuvXvLHpP/g4iUk7VFj2lY8=
 github.com/sourcegraph/gologin v1.0.2-0.20181110030308-c6f1b62954d8/go.mod h1:0VfoEApmSPgPhnePllwhrB4vwCUkI0K0w8aueOgoJQI=
-github.com/sourcegraph/gosaml2 v0.6.1-0.20201216035416-70944041979a h1:O2mWuMjZ1gyMHT6CRCTmGbaKf5hsUryHSoGkStgHeUE=
-github.com/sourcegraph/gosaml2 v0.6.1-0.20201216035416-70944041979a/go.mod h1:CtzxpPr4+bevsATaqR0rw3aqrNlX274b+3C6vFTLCk8=
+github.com/sourcegraph/gosaml2 v0.6.1-0.20210128133756-84151d087b10 h1:lLSG41QZ5I81jSOakWLB1qEXZhJ65spo81f4SEd8Z20=
+github.com/sourcegraph/gosaml2 v0.6.1-0.20210128133756-84151d087b10/go.mod h1:CAOGXqoL6YYtu7kCSx69SZlbNZWbwUchYzOacZatJ3s=
 github.com/sourcegraph/gosyntect v0.0.0-20200429204402-842ed26129d0 h1:AEImdu3+4bPQegJFuRHwDQq+F6qTgnF+m2ksHA8y/W8=
 github.com/sourcegraph/gosyntect v0.0.0-20200429204402-842ed26129d0/go.mod h1:WiNJKgKTnR3psOIGzVZQjLqZjJZuoL3F8tCh25Uk8dU=
 github.com/sourcegraph/grafana-sdk v0.0.0-20210112115824-13757501ee8a h1:Wy8RU8C2H0OmsfAv6oidY5zpE26mKjGG+ypqVnR76vE=
