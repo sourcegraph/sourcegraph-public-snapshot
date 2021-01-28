@@ -678,8 +678,8 @@ type AlertObserver struct {
 	hasResults bool
 }
 
-// Next updates AlertObserver's state based on event.
-func (o *AlertObserver) Next(event SearchEvent, inputs *SearchInputs) {
+// Update AlertObserver's state based on event.
+func (o *AlertObserver) Update(event SearchEvent, inputs *SearchInputs) {
 	if len(event.Results) > 0 {
 		o.hasResults = true
 	}

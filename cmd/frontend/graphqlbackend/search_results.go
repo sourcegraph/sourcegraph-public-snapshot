@@ -1490,7 +1490,7 @@ func newAggregator(ctx context.Context, stream SearchStream, inputs *SearchInput
 			if event.Error != nil && isContextError(ctx, event.Error) {
 				event.Error = nil
 			}
-			agg.Next(event, inputs)
+			agg.Update(event, inputs)
 			agg.results = append(agg.results, event.Results...)
 			agg.common.Update(&event.Stats)
 			if stream != nil {
