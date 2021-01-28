@@ -1,19 +1,18 @@
 import * as React from 'react'
-import * as H from 'history'
 import { SearchType } from './SearchResults'
 import { NavLink } from 'react-router-dom'
 import { toggleSearchType } from '../helpers'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { constant } from 'lodash'
-import { PatternTypeProps, CaseSensitivityProps, parseSearchURLQuery } from '..'
+import { PatternTypeProps, CaseSensitivityProps, ParsedSearchQueryProps } from '..'
 import { scanSearchQuery } from '../../../../shared/src/search/query/scanner'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 
 interface Props
     extends Omit<PatternTypeProps, 'setPatternType'>,
         Omit<CaseSensitivityProps, 'setCaseSensitivity'>,
+        Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
         VersionContextProps {
-    location: H.Location
     type: SearchType
     query: string
 }
@@ -27,9 +26,9 @@ const typeToProse: Record<Exclude<SearchType, null>, string> = {
 }
 
 export const SearchResultTabHeader: React.FunctionComponent<Props> = ({
-    location,
     type,
     query,
+    parsedSearchQuery,
     patternType,
     caseSensitive,
     versionContext,
@@ -37,7 +36,7 @@ export const SearchResultTabHeader: React.FunctionComponent<Props> = ({
     const caseToggledQuery = toggleSearchType(query, type)
     const builtURLQuery = buildSearchURLQuery(caseToggledQuery, patternType, caseSensitive, versionContext)
 
-    const currentQuery = parseSearchURLQuery(location.search) || ''
+    const currentQuery = parsedSearchQuery
     const scannedQuery = scanSearchQuery(currentQuery)
     let typeInQuery: SearchType = null
 

@@ -46,12 +46,7 @@ import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
-import {
-    parseSearchURLPatternType,
-    searchURLIsCaseSensitive,
-    parseSearchURLVersionContext,
-    resolveVersionContext,
-} from './search'
+import { resolveVersionContext, parseSearchURL } from './search'
 import { KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
 import { QueryState } from './search/helpers'
 import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
@@ -121,6 +116,12 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      * The current search query in the navbar.
      */
     navbarSearchQueryState: QueryState
+
+    /**
+     * The current parsed search query, with all UI-configurable parameters
+     * (eg. pattern type, case sensitivity, version context) removed
+     */
+    parsedSearchQuery: string
 
     /**
      * The current search pattern type.
@@ -231,17 +232,15 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         super(props)
         this.subscriptions.add(this.extensionsController)
 
+        const parsedSearchURL = parseSearchURL(window.location.search)
         // The patternType in the URL query parameter. If none is provided, default to literal.
         // This will be updated with the default in settings when the web app mounts.
-        const urlPatternType = parseSearchURLPatternType(window.location.search) || SearchPatternType.literal
-        const urlCase = searchURLIsCaseSensitive(window.location.search)
+        const urlPatternType = parsedSearchURL.patternType || SearchPatternType.literal
+        const urlCase = parsedSearchURL.caseSensitive
         const availableVersionContexts = window.context.experimentalFeatures.versionContexts
         const previousVersionContext = localStorage.getItem(LAST_VERSION_CONTEXT_KEY)
         const resolvedVersionContext = availableVersionContexts
-            ? resolveVersionContext(
-                  parseSearchURLVersionContext(window.location.search) || undefined,
-                  availableVersionContexts
-              ) ||
+            ? resolveVersionContext(parsedSearchURL.versionContext || undefined, availableVersionContexts) ||
               resolveVersionContext(previousVersionContext || undefined, availableVersionContexts) ||
               undefined
             : undefined
@@ -252,6 +251,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             navbarSearchQueryState: { query: '' },
             settingsCascade: EMPTY_SETTINGS_CASCADE,
             viewerSubject: SITE_SUBJECT_NO_ADMIN,
+            parsedSearchQuery: parsedSearchURL.query || '',
             searchPatternType: urlPatternType,
             searchCaseSensitivity: urlCase,
             copyQueryButton: false,
@@ -395,20 +395,22 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     onNavbarQueryChange={this.onNavbarQueryChange}
                                     fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                                     searchRequest={search}
+                                    parsedSearchQuery={this.state.parsedSearchQuery}
+                                    setParsedSearchQuery={this.setParsedSearchQuery}
+                                    patternType={this.state.searchPatternType}
+                                    setPatternType={this.setPatternType}
+                                    caseSensitive={this.state.searchCaseSensitivity}
+                                    setCaseSensitivity={this.setCaseSensitivity}
+                                    versionContext={this.state.versionContext}
+                                    setVersionContext={this.setVersionContext}
+                                    availableVersionContexts={this.state.availableVersionContexts}
+                                    previousVersionContext={this.state.previousVersionContext}
+                                    copyQueryButton={this.state.copyQueryButton}
                                     // Extensions
                                     platformContext={this.platformContext}
                                     extensionsController={this.extensionsController}
                                     telemetryService={eventLogger}
                                     isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                                    patternType={this.state.searchPatternType}
-                                    caseSensitive={this.state.searchCaseSensitivity}
-                                    setPatternType={this.setPatternType}
-                                    setCaseSensitivity={this.setCaseSensitivity}
-                                    copyQueryButton={this.state.copyQueryButton}
-                                    versionContext={this.state.versionContext}
-                                    setVersionContext={this.setVersionContext}
-                                    availableVersionContexts={this.state.availableVersionContexts}
-                                    previousVersionContext={this.state.previousVersionContext}
                                     showRepogroupHomepage={this.state.showRepogroupHomepage}
                                     showOnboardingTour={this.state.showOnboardingTour}
                                     showEnterpriseHomePanels={this.state.showEnterpriseHomePanels}
@@ -449,6 +451,10 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
 
     private onNavbarQueryChange = (navbarSearchQueryState: QueryState): void => {
         this.setState({ navbarSearchQueryState })
+    }
+
+    private setParsedSearchQuery = (query: string): void => {
+        this.setState({ parsedSearchQuery: query })
     }
 
     private setPatternType = (patternType: SearchPatternType): void => {
