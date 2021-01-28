@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 	amclient "github.com/prometheus/alertmanager/api/v2/client"
 	"github.com/prometheus/alertmanager/api/v2/client/general"
@@ -121,7 +122,8 @@ func NewSiteConfigSubscriber(logger log15.Logger, alertmanager *amclient.Alertma
 }
 
 func (c *SiteConfigSubscriber) Handler() http.Handler {
-	handler := http.NewServeMux()
+	handler := mux.NewRouter()
+	handler.StrictSlash(true)
 	// see EndpointConfigSubscriber usages
 	handler.HandleFunc(srcprometheus.EndpointConfigSubscriber, func(w http.ResponseWriter, req *http.Request) {
 		c.mux.RLock()

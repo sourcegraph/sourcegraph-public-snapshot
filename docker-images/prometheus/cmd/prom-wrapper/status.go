@@ -7,6 +7,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 	amclient "github.com/prometheus/alertmanager/api/v2/client"
 	"github.com/prometheus/alertmanager/api/v2/client/alert"
@@ -34,7 +35,8 @@ func NewAlertsStatusReporter(logger log15.Logger, alertmanager *amclient.Alertma
 }
 
 func (s *AlertsStatusReporter) Handler() http.Handler {
-	handler := http.NewServeMux()
+	handler := mux.NewRouter()
+	handler.StrictSlash(true)
 	// see EndpointAlertsStatusHistory usages
 	handler.HandleFunc(srcprometheus.EndpointAlertsStatusHistory, func(w http.ResponseWriter, req *http.Request) {
 		timespan := 24 * time.Hour
