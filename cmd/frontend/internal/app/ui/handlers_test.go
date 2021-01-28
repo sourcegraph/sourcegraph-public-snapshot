@@ -30,6 +30,7 @@ func TestRedirects(t *testing.T) {
 	check := func(t *testing.T, path string, wantStatusCode int, wantRedirectLocation string, userAgent string) {
 		t.Helper()
 
+		InitRouter()
 		rw := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", path, nil)
 		req.Header.Set("User-Agent", userAgent)

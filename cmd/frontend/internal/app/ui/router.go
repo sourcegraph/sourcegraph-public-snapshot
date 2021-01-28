@@ -102,6 +102,14 @@ func Router() *mux.Router {
 	return uirouter.Router
 }
 
+// InitRouter create the router that serves pages for our web app
+// and assigns it to uirouter.Router.
+// The router can be accessed by calling Router().
+func InitRouter() {
+	router := newRouter()
+	initRouter(router)
+}
+
 var mockServeRepo func(w http.ResponseWriter, r *http.Request)
 
 func newRouter() *mux.Router {
@@ -183,10 +191,6 @@ func newRouter() *mux.Router {
 	return r
 }
 
-func init() {
-	initRouter()
-}
-
 // brandNameSubtitle returns a string with the specified title sequence and the brand name as the
 // last title component. This function indirectly calls conf.Get(), so should not be invoked from
 // any function that is invoked by an init function.
@@ -194,10 +198,10 @@ func brandNameSubtitle(titles ...string) string {
 	return strings.Join(append(titles, globals.Branding().BrandName), " - ")
 }
 
-func initRouter() {
-	// basic pages with static titles
-	router := newRouter()
+func initRouter(router *mux.Router) {
 	uirouter.Router = router // make accessible to other packages
+
+	// basic pages with static titles
 	router.Get(routeHome).Handler(handler(serveHome))
 	router.Get(routeThreads).Handler(handler(serveBrandedPageString("Threads", nil)))
 	router.Get(routeInsights).Handler(handler(serveBrandedPageString("Insights", nil)))
