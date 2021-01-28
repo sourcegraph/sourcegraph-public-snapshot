@@ -1480,6 +1480,9 @@ func newAggregator(ctx context.Context, stream SearchStream, inputs *SearchInput
 	agg := &aggregator{
 		stream: childStream,
 		done:   make(chan struct{}),
+		alert: alertObserver{
+			Inputs: inputs,
+		},
 	}
 
 	go func() {
@@ -1489,7 +1492,7 @@ func newAggregator(ctx context.Context, stream SearchStream, inputs *SearchInput
 			if event.Error != nil && isContextError(ctx, event.Error) {
 				event.Error = nil
 			}
-			agg.alert.Update(event, inputs)
+			agg.alert.Update(event)
 			agg.results = append(agg.results, event.Results...)
 			agg.common.Update(&event.Stats)
 			if stream != nil {
@@ -1514,11 +1517,11 @@ type aggregator struct {
 // get finalises aggregation over the stream and returns the aggregated
 // result. It should only be called once each do* function is finished
 // running.
-func (a *aggregator) get(s *SearchInputs) ([]SearchResultResolver, streaming.Stats, *searchAlert, error) {
+func (a *aggregator) get() ([]SearchResultResolver, streaming.Stats, *searchAlert, error) {
 	close(a.stream)
 	<-a.done
 
-	alert, err := a.alert.Done(&a.common, s)
+	alert, err := a.alert.Done(&a.common)
 	return a.results, a.common, alert, err
 }
 
@@ -1739,7 +1742,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		cancel()
 		requiredWg.Wait()
 		optionalWg.Wait()
-		_, _, _, _ = agg.get(r.SearchInputs)
+		_, _, _, _ = agg.get()
 	}()
 
 	isFileOrPath := func() bool {
@@ -1873,7 +1876,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 
 	// We have to call get once all waitgroups are done since it relies on
 	// collecting from the streams.
-	results, common, alert, err := agg.get(r.SearchInputs)
+	results, common, alert, err := agg.get()
 
 	tr.LazyPrintf("results=%d %s", len(results), &common)
 

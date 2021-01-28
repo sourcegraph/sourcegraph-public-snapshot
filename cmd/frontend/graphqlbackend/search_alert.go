@@ -672,6 +672,9 @@ func alertForError(err error, inputs *SearchInputs) *searchAlert {
 }
 
 type alertObserver struct {
+	// Inputs are used to generate alert messages based on the query.
+	Inputs *SearchInputs
+
 	// alert is the current alert to show.
 	alert      *searchAlert
 	err        error
@@ -679,7 +682,7 @@ type alertObserver struct {
 }
 
 // Update AlertObserver's state based on event.
-func (o *alertObserver) Update(event SearchEvent, inputs *SearchInputs) {
+func (o *alertObserver) Update(event SearchEvent) {
 	if len(event.Results) > 0 {
 		o.hasResults = true
 	}
@@ -689,7 +692,7 @@ func (o *alertObserver) Update(event SearchEvent, inputs *SearchInputs) {
 	}
 
 	// The error can be converted into an alert.
-	if alert := alertForError(event.Error, inputs); alert != nil {
+	if alert := alertForError(event.Error, o.Inputs); alert != nil {
 		o.update(alert)
 		return
 	}
@@ -707,9 +710,9 @@ func (o *alertObserver) update(alert *searchAlert) {
 
 //  Done returns the highest priority alert and a multierror.Error containing
 //  all errors that could not be converted to alerts.
-func (o *alertObserver) Done(stats *streaming.Stats, s *SearchInputs) (*searchAlert, error) {
-	if !o.hasResults && s.PatternType != query.SearchTypeStructural && comby.MatchHoleRegexp.MatchString(s.OriginalQuery) {
-		o.update(alertForStructuralSearchNotSet(s.OriginalQuery))
+func (o *alertObserver) Done(stats *streaming.Stats) (*searchAlert, error) {
+	if !o.hasResults && o.Inputs.PatternType != query.SearchTypeStructural && comby.MatchHoleRegexp.MatchString(o.Inputs.OriginalQuery) {
+		o.update(alertForStructuralSearchNotSet(o.Inputs.OriginalQuery))
 	}
 
 	if o.hasResults && o.err != nil {
