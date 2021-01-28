@@ -12,9 +12,8 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/hashicorp/go-multierror"
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
