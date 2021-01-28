@@ -218,7 +218,7 @@ type ErrRepoNotSupported struct {
 
 func (e ErrRepoNotSupported) Error() string {
 	return fmt.Sprintf(
-		"External service type %s of repository %q is currently not supported for use with campaigns",
+		"Code host type %s of repository %q is currently not supported for use with campaigns",
 		e.ServiceType,
 		e.RepoName,
 	)
