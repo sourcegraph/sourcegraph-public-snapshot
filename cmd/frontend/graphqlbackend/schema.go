@@ -4204,6 +4204,14 @@ type ExternalService implements Node {
     will contain any errors that occured during the most recent completed sync.
     """
     lastSyncError: String
+    """
+    LastSyncAt is the time the last sync job was run for this code host
+    """
+    lastSyncAt: DateTime!
+    """
+    The timestamp of the next sync job
+    """
+    nextSyncAt: DateTime!
 }
 
 """
