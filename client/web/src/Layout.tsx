@@ -163,16 +163,19 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             setParsedSearchQuery(query)
         }
 
-        if (patternType && patternType !== currentPatternType) {
-            setPatternType(patternType)
-        }
+        // Only override filters from URL if there is a search query
+        if (query) {
+            if (patternType && patternType !== currentPatternType) {
+                setPatternType(patternType)
+            }
 
-        if (caseSensitive !== currentCaseSensitive) {
-            setCaseSensitivity(caseSensitive)
-        }
+            if (caseSensitive !== currentCaseSensitive) {
+                setCaseSensitivity(caseSensitive)
+            }
 
-        if (versionContext !== currentVersionContext) {
-            setVersionContext(versionContext)
+            if (versionContext !== currentVersionContext) {
+                setVersionContext(versionContext)
+            }
         }
     }, [
         caseSensitive,
