@@ -81,8 +81,8 @@ func NewMockResolver() *MockResolver {
 			},
 		},
 		IndexConfigurationFunc: &ResolverIndexConfigurationFunc{
-			defaultHook: func(context.Context, int) (dbstore.IndexConfiguration, error) {
-				return dbstore.IndexConfiguration{}, nil
+			defaultHook: func(context.Context, int) ([]byte, error) {
+				return nil, nil
 			},
 		},
 		IndexConnectionResolverFunc: &ResolverIndexConnectionResolverFunc{
@@ -701,15 +701,15 @@ func (c ResolverGetUploadByIDFuncCall) Results() []interface{} {
 // ResolverIndexConfigurationFunc describes the behavior when the
 // IndexConfiguration method of the parent MockResolver instance is invoked.
 type ResolverIndexConfigurationFunc struct {
-	defaultHook func(context.Context, int) (dbstore.IndexConfiguration, error)
-	hooks       []func(context.Context, int) (dbstore.IndexConfiguration, error)
+	defaultHook func(context.Context, int) ([]byte, error)
+	hooks       []func(context.Context, int) ([]byte, error)
 	history     []ResolverIndexConfigurationFuncCall
 	mutex       sync.Mutex
 }
 
 // IndexConfiguration delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockResolver) IndexConfiguration(v0 context.Context, v1 int) (dbstore.IndexConfiguration, error) {
+func (m *MockResolver) IndexConfiguration(v0 context.Context, v1 int) ([]byte, error) {
 	r0, r1 := m.IndexConfigurationFunc.nextHook()(v0, v1)
 	m.IndexConfigurationFunc.appendCall(ResolverIndexConfigurationFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -718,7 +718,7 @@ func (m *MockResolver) IndexConfiguration(v0 context.Context, v1 int) (dbstore.I
 // SetDefaultHook sets function that is called when the IndexConfiguration
 // method of the parent MockResolver instance is invoked and the hook queue
 // is empty.
-func (f *ResolverIndexConfigurationFunc) SetDefaultHook(hook func(context.Context, int) (dbstore.IndexConfiguration, error)) {
+func (f *ResolverIndexConfigurationFunc) SetDefaultHook(hook func(context.Context, int) ([]byte, error)) {
 	f.defaultHook = hook
 }
 
@@ -726,7 +726,7 @@ func (f *ResolverIndexConfigurationFunc) SetDefaultHook(hook func(context.Contex
 // IndexConfiguration method of the parent MockResolver instance inovkes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *ResolverIndexConfigurationFunc) PushHook(hook func(context.Context, int) (dbstore.IndexConfiguration, error)) {
+func (f *ResolverIndexConfigurationFunc) PushHook(hook func(context.Context, int) ([]byte, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -734,21 +734,21 @@ func (f *ResolverIndexConfigurationFunc) PushHook(hook func(context.Context, int
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *ResolverIndexConfigurationFunc) SetDefaultReturn(r0 dbstore.IndexConfiguration, r1 error) {
-	f.SetDefaultHook(func(context.Context, int) (dbstore.IndexConfiguration, error) {
+func (f *ResolverIndexConfigurationFunc) SetDefaultReturn(r0 []byte, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) ([]byte, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *ResolverIndexConfigurationFunc) PushReturn(r0 dbstore.IndexConfiguration, r1 error) {
-	f.PushHook(func(context.Context, int) (dbstore.IndexConfiguration, error) {
+func (f *ResolverIndexConfigurationFunc) PushReturn(r0 []byte, r1 error) {
+	f.PushHook(func(context.Context, int) ([]byte, error) {
 		return r0, r1
 	})
 }
 
-func (f *ResolverIndexConfigurationFunc) nextHook() func(context.Context, int) (dbstore.IndexConfiguration, error) {
+func (f *ResolverIndexConfigurationFunc) nextHook() func(context.Context, int) ([]byte, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -789,7 +789,7 @@ type ResolverIndexConfigurationFuncCall struct {
 	Arg1 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 dbstore.IndexConfiguration
+	Result0 []byte
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error

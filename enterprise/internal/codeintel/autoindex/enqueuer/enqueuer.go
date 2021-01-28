@@ -41,6 +41,38 @@ func (s *IndexEnqueuer) ForceQueueIndex(ctx context.Context, repositoryID int) e
 	return s.queueIndex(ctx, repositoryID, true)
 }
 
+func (s *IndexEnqueuer) InferIndexConfiguration(ctx context.Context, repositoryID int) (_ *config.IndexConfiguration, err error) {
+	ctx, traceLog, endObservation := s.operations.InferIndexConfiguration.WithAndLogger(ctx, &err, observation.Args{
+		LogFields: []log.Field{
+			log.Int("repositoryID", repositoryID),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
+	commit, err := s.gitserverClient.Head(ctx, repositoryID)
+	if err != nil {
+		return nil, errors.Wrap(err, "gitserver.Head")
+	}
+	traceLog(log.String("commit", commit))
+
+	paths, err := s.gitserverClient.ListFiles(ctx, repositoryID, commit, inference.Patterns)
+	if err != nil {
+		return nil, err
+	}
+
+	gitserverClient := inference.NewGitserverClientShim(repositoryID, commit, s.gitserverClient)
+
+	var indexJobs []config.IndexJob
+	for _, recognizer := range inference.Recognizers {
+		indexJobs = append(indexJobs, recognizer.InferIndexJobs(paths, gitserverClient)...)
+	}
+
+	return &config.IndexConfiguration{
+		SharedSteps: nil,
+		IndexJobs: indexJobs,
+	}, nil
+}
+
 func (s *IndexEnqueuer) queueIndex(ctx context.Context, repositoryID int, force bool) (err error) {
 	ctx, traceLog, endObservation := s.operations.QueueIndex.WithAndLogger(ctx, &err, observation.Args{
 		LogFields: []log.Field{
@@ -230,10 +262,10 @@ func convertIndexConfiguration(repositoryID int, commit string, indexConfigurati
 	return indexes
 }
 
-func convertInferredConfiguration(repositoryID int, commit string, indexJobs []inference.IndexJob) (indexes []store.Index) {
+func convertInferredConfiguration(repositoryID int, commit string, indexJobs []config.IndexJob) (indexes []store.Index) {
 	for _, indexJob := range indexJobs {
 		var dockerSteps []store.DockerStep
-		for _, dockerStep := range indexJob.DockerSteps {
+		for _, dockerStep := range indexJob.Steps {
 			dockerSteps = append(dockerSteps, store.DockerStep{
 				Root:     dockerStep.Root,
 				Image:    dockerStep.Image,
