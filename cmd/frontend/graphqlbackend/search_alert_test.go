@@ -349,10 +349,11 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 				t.Fatal(err)
 			}
 			sr := searchResolver{
-				query: q,
-				userSettings: &schema.Settings{
-					SearchGlobbing: &test.globbing,
-				},
+				SearchContext: &SearchContext{
+					Query: q,
+					UserSettings: &schema.Settings{
+						SearchGlobbing: &test.globbing,
+					}},
 			}
 
 			ctx, cancel := context.WithCancel(context.Background())

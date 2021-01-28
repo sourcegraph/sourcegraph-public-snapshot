@@ -109,16 +109,18 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (_ SearchImplem
 	}
 
 	return &searchResolver{
-		query:          queryInfo,
-		originalQuery:  args.Query,
-		versionContext: args.VersionContext,
-		userSettings:   settings,
-		pagination:     pagination,
-		patternType:    searchType,
-		zoekt:          search.Indexed(),
-		searcherURLs:   search.SearcherURLs(),
-		reposMu:        &sync.Mutex{},
-		resolved:       &searchrepos.Resolved{},
+		SearchContext: &SearchContext{
+			Query:          queryInfo,
+			OriginalQuery:  args.Query,
+			VersionContext: args.VersionContext,
+			UserSettings:   settings,
+			Pagination:     pagination,
+			PatternType:    searchType,
+		},
+		zoekt:        search.Indexed(),
+		searcherURLs: search.SearcherURLs(),
+		reposMu:      &sync.Mutex{},
+		resolved:     &searchrepos.Resolved{},
 	}, nil
 }
 
@@ -236,14 +238,19 @@ func getBoolPtr(b *bool, def bool) bool {
 	return *b
 }
 
+// SearchContext contains fields we set before kicking off search.
+type SearchContext struct {
+	Query          query.QueryInfo       // the query, either containing and/or expressions or otherwise ordinary
+	OriginalQuery  string                // the raw string of the original search query
+	Pagination     *searchPaginationInfo // pagination information, or nil if the request is not paginated.
+	PatternType    query.SearchType
+	VersionContext *string
+	UserSettings   *schema.Settings
+}
+
 // searchResolver is a resolver for the GraphQL type `Search`
 type searchResolver struct {
-	query               query.QueryInfo       // the query, either containing and/or expressions or otherwise ordinary
-	originalQuery       string                // the raw string of the original search query
-	pagination          *searchPaginationInfo // pagination information, or nil if the request is not paginated.
-	patternType         query.SearchType
-	versionContext      *string
-	userSettings        *schema.Settings
+	*SearchContext
 	invalidateRepoCache bool // if true, invalidates the repo cache when evaluating search subexpressions.
 
 	// resultChannel if non-nil will send all results we receive down it. See
@@ -322,14 +329,18 @@ func (r *searchResolver) SetStream(c SearchStream) {
 	r.resultChannel = c
 }
 
+func (r *searchResolver) Context() *SearchContext {
+	return r.SearchContext
+}
+
 // rawQuery returns the original query string input.
 func (r *searchResolver) rawQuery() string {
-	return r.originalQuery
+	return r.OriginalQuery
 }
 
 func (r *searchResolver) countIsSet() bool {
-	count, _ := r.query.StringValues(query.FieldCount)
-	max, _ := r.query.StringValues(query.FieldMax)
+	count, _ := r.Query.StringValues(query.FieldCount)
+	max, _ := r.Query.StringValues(query.FieldMax)
 	return len(count) > 0 || len(max) > 0
 }
 
@@ -337,20 +348,20 @@ const defaultMaxSearchResults = 30
 const maxSearchResultsPerPaginatedRequest = 5000
 
 func (r *searchResolver) maxResults() int32 {
-	if r.pagination != nil {
+	if r.Pagination != nil {
 		// Paginated search requests always consume an entire result set for a
 		// given repository, so we do not want any limit here. See
 		// search_pagination.go for details on why this is necessary .
 		return math.MaxInt32
 	}
-	count, _ := r.query.StringValues(query.FieldCount)
+	count, _ := r.Query.StringValues(query.FieldCount)
 	if len(count) > 0 {
 		n, _ := strconv.Atoi(count[0])
 		if n > 0 {
 			return int32(n)
 		}
 	}
-	max, _ := r.query.StringValues(query.FieldMax)
+	max, _ := r.Query.StringValues(query.FieldMax)
 	if len(max) > 0 {
 		n, _ := strconv.Atoi(max[0])
 		if n > 0 {
@@ -410,21 +421,21 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		}
 	}
 
-	repoFilters, minusRepoFilters := r.query.RegexpPatterns(query.FieldRepo)
+	repoFilters, minusRepoFilters := r.Query.RegexpPatterns(query.FieldRepo)
 	if effectiveRepoFieldValues != nil {
 		repoFilters = effectiveRepoFieldValues
 	}
-	repoGroupFilters, _ := r.query.StringValues(query.FieldRepoGroup)
+	repoGroupFilters, _ := r.Query.StringValues(query.FieldRepoGroup)
 
 	var settingForks, settingArchived bool
-	if v := r.userSettings.SearchIncludeForks; v != nil {
+	if v := r.UserSettings.SearchIncludeForks; v != nil {
 		settingForks = *v
 	}
-	if v := r.userSettings.SearchIncludeArchived; v != nil {
+	if v := r.UserSettings.SearchIncludeArchived; v != nil {
 		settingArchived = *v
 	}
 
-	forkStr, _ := r.query.StringValue(query.FieldFork)
+	forkStr, _ := r.Query.StringValue(query.FieldFork)
 	fork := searchrepos.ParseYesNoOnly(forkStr)
 	if fork == searchrepos.Invalid && !searchrepos.ExactlyOneRepo(repoFilters) && !settingForks {
 		// fork defaults to No unless either of:
@@ -433,7 +444,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		fork = searchrepos.No
 	}
 
-	archivedStr, _ := r.query.StringValue(query.FieldArchived)
+	archivedStr, _ := r.Query.StringValue(query.FieldArchived)
 	archived := searchrepos.ParseYesNoOnly(archivedStr)
 	if archived == searchrepos.Invalid && !searchrepos.ExactlyOneRepo(repoFilters) && !settingArchived {
 		// archived defaults to No unless either of:
@@ -442,14 +453,14 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		archived = searchrepos.No
 	}
 
-	visibilityStr, _ := r.query.StringValue(query.FieldVisibility)
+	visibilityStr, _ := r.Query.StringValue(query.FieldVisibility)
 	visibility := query.ParseVisibility(visibilityStr)
 
-	commitAfter, _ := r.query.StringValue(query.FieldRepoHasCommitAfter)
+	commitAfter, _ := r.Query.StringValue(query.FieldRepoHasCommitAfter)
 
 	var versionContextName string
-	if r.versionContext != nil {
-		versionContextName = *r.versionContext
+	if r.VersionContext != nil {
+		versionContextName = *r.VersionContext
 	}
 
 	tr.LazyPrintf("resolveRepositories - start")
@@ -458,7 +469,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		MinusRepoFilters:   minusRepoFilters,
 		RepoGroupFilters:   repoGroupFilters,
 		VersionContextName: versionContextName,
-		UserSettings:       r.userSettings,
+		UserSettings:       r.UserSettings,
 		OnlyForks:          fork == searchrepos.Only,
 		NoForks:            fork == searchrepos.No,
 		OnlyArchived:       archived == searchrepos.Only,
@@ -466,7 +477,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		OnlyPrivate:        visibility == query.Private,
 		OnlyPublic:         visibility == query.Public,
 		CommitAfter:        commitAfter,
-		Query:              r.query,
+		Query:              r.Query,
 	}
 	resolved, err := searchrepos.ResolveRepositories(ctx, options)
 	tr.LazyPrintf("resolveRepositories - done")
@@ -497,7 +508,7 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*se
 	args := search.TextParameters{
 		PatternInfo:     p,
 		RepoPromise:     (&search.Promise{}).Resolve(resolved.RepoRevs),
-		Query:           r.query,
+		Query:           r.Query,
 		UseFullDeadline: r.searchTimeoutFieldSet(),
 		Zoekt:           r.zoekt,
 		SearcherURLs:    r.searcherURLs,

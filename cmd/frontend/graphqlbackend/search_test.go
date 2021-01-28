@@ -544,11 +544,13 @@ func TestVersionContext(t *testing.T) {
 			}
 
 			resolver := searchResolver{
-				query:          qinfo,
-				versionContext: &tc.versionContext,
-				userSettings:   &schema.Settings{},
-				reposMu:        &sync.Mutex{},
-				resolved:       &searchrepos.Resolved{},
+				SearchContext: &SearchContext{
+					Query:          qinfo,
+					VersionContext: &tc.versionContext,
+					UserSettings:   &schema.Settings{},
+				},
+				reposMu:  &sync.Mutex{},
+				resolved: &searchrepos.Resolved{},
 			}
 
 			database.Mocks.Repos.ListRepoNames = func(ctx context.Context, opts database.ReposListOptions) ([]*types.RepoName, error) {
