@@ -1,4 +1,4 @@
-import { mount, shallow } from 'enzyme'
+import { mount } from 'enzyme'
 import { createBrowserHistory } from 'history'
 import React from 'react'
 import { BrowserRouter } from 'react-router-dom'
