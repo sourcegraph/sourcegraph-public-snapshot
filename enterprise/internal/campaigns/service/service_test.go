@@ -350,6 +350,7 @@ func TestService(t *testing.T) {
 			Repo:          rs[0].ID,
 			ExternalState: campaigns.ChangesetExternalStateOpen,
 			ExternalID:    "ext-id-5",
+			AttachedTo:    []int64{campaign.ID},
 
 			// The important fields:
 			ReconcilerState: campaigns.ReconcilerStateQueued,
