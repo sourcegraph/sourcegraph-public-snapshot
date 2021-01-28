@@ -55,9 +55,13 @@ var commonFileFilters = []struct {
 	},
 }
 
-// Compute returns an ordered slice of Filters to present to the user based on
-// event.
-func (s *SearchFilters) Compute(event SearchEvent) []*streaming.Filter {
+// Update internal state for the results in event.
+func (s *SearchFilters) Update(event SearchEvent) {
+	// Avoid work if nothing to observe.
+	if len(event.Results) == 0 {
+		return
+	}
+
 	// Initialize state on first call.
 	if s.filters == nil {
 		s.filters = map[string]*streaming.Filter{}
@@ -163,7 +167,11 @@ func (s *SearchFilters) Compute(event SearchEvent) []*streaming.Filter {
 			addRepoFilter(r, "", 1)
 		}
 	}
+}
 
+// Compute returns an ordered slice of Filters to present to the user based on
+// events passed to Next.
+func (s *SearchFilters) Compute() []*streaming.Filter {
 	filterSlice := make([]*streaming.Filter, 0, len(s.filters))
 	repoFilterSlice := make([]*streaming.Filter, 0, len(s.filters)/2) // heuristic - half of all filters are repo filters.
 	for _, f := range s.filters {
