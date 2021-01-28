@@ -200,10 +200,14 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 		end = args.To.Time.UTC()
 	}
 
-	eventsOpts := store.ListChangesetEventsOpts{ChangesetIDs: cs.IDs(), Kinds: state.RequiredEventTypesForHistory}
-	es, _, err := r.store.ListChangesetEvents(ctx, eventsOpts)
-	if err != nil {
-		return resolvers, err
+	var es []*campaigns.ChangesetEvent
+	changesetIDs := cs.IDs()
+	if len(changesetIDs) > 0 {
+		eventsOpts := store.ListChangesetEventsOpts{ChangesetIDs: changesetIDs, Kinds: state.RequiredEventTypesForHistory}
+		es, _, err = r.store.ListChangesetEvents(ctx, eventsOpts)
+		if err != nil {
+			return resolvers, err
+		}
 	}
 
 	counts, err := state.CalcCounts(start, end, cs, es...)
