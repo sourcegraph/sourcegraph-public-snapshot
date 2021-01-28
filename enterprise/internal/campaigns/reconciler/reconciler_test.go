@@ -152,6 +152,7 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 			assertions := tc.wantChangeset
 			assertions.Repo = rs[0].ID
 			assertions.OwnedByCampaign = changesetOpts.OwnedByCampaign
+			assertions.AttachedTo = []int64{campaign.ID}
 			assertions.CurrentSpec = changesetSpec.ID
 			assertions.PreviousSpec = previousSpec.ID
 			ct.ReloadAndAssertChangeset(t, ctx, store, changeset, assertions)
