@@ -31,7 +31,7 @@ func (r *campaignsConnectionResolver) Nodes(ctx context.Context) ([]graphqlbacke
 	}
 	resolvers := make([]graphqlbackend.CampaignResolver, 0, len(nodes))
 	for _, c := range nodes {
-		resolvers = append(resolvers, &campaignResolver{store: r.store, Campaign: c})
+		resolvers = append(resolvers, &campaignResolver{store: r.store, campaign: c})
 	}
 	return resolvers, nil
 }

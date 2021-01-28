@@ -19,8 +19,8 @@ import (
 var _ graphqlbackend.CampaignResolver = &campaignResolver{}
 
 type campaignResolver struct {
-	store *store.Store
-	*campaigns.Campaign
+	store    *store.Store
+	campaign *campaigns.Campaign
 
 	// Cache the namespace on the resolver, since it's accessed more than once.
 	namespaceOnce sync.Once
@@ -40,22 +40,22 @@ func unmarshalCampaignID(id graphql.ID) (campaignID int64, err error) {
 }
 
 func (r *campaignResolver) ID() graphql.ID {
-	return marshalCampaignID(r.Campaign.ID)
+	return marshalCampaignID(r.campaign.ID)
 }
 
 func (r *campaignResolver) Name() string {
-	return r.Campaign.Name
+	return r.campaign.Name
 }
 
 func (r *campaignResolver) Description() *string {
-	if r.Campaign.Description == "" {
+	if r.campaign.Description == "" {
 		return nil
 	}
-	return &r.Campaign.Description
+	return &r.campaign.Description
 }
 
 func (r *campaignResolver) InitialApplier(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	user, err := graphqlbackend.UserByIDInt32(ctx, r.Campaign.InitialApplierID)
+	user, err := graphqlbackend.UserByIDInt32(ctx, r.campaign.InitialApplierID)
 	if errcode.IsNotFound(err) {
 		return nil, nil
 	}
@@ -63,7 +63,7 @@ func (r *campaignResolver) InitialApplier(ctx context.Context) (*graphqlbackend.
 }
 
 func (r *campaignResolver) LastApplier(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	user, err := graphqlbackend.UserByIDInt32(ctx, r.Campaign.LastApplierID)
+	user, err := graphqlbackend.UserByIDInt32(ctx, r.campaign.LastApplierID)
 	if errcode.IsNotFound(err) {
 		return nil, nil
 	}
@@ -71,12 +71,12 @@ func (r *campaignResolver) LastApplier(ctx context.Context) (*graphqlbackend.Use
 }
 
 func (r *campaignResolver) LastAppliedAt() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: r.Campaign.LastAppliedAt}
+	return graphqlbackend.DateTime{Time: r.campaign.LastAppliedAt}
 }
 
 func (r *campaignResolver) SpecCreator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
 	spec, err := r.store.GetCampaignSpec(ctx, store.GetCampaignSpecOpts{
-		ID: r.Campaign.CampaignSpecID,
+		ID: r.campaign.CampaignSpecID,
 	})
 	if err != nil {
 		return nil, err
@@ -89,7 +89,7 @@ func (r *campaignResolver) SpecCreator(ctx context.Context) (*graphqlbackend.Use
 }
 
 func (r *campaignResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	return checkSiteAdminOrSameUser(ctx, r.Campaign.InitialApplierID)
+	return checkSiteAdminOrSameUser(ctx, r.campaign.InitialApplierID)
 }
 
 func (r *campaignResolver) URL(ctx context.Context) (string, error) {
@@ -106,15 +106,15 @@ func (r *campaignResolver) Namespace(ctx context.Context) (graphqlbackend.Namesp
 
 func (r *campaignResolver) computeNamespace(ctx context.Context) (graphqlbackend.NamespaceResolver, error) {
 	r.namespaceOnce.Do(func() {
-		if r.Campaign.NamespaceUserID != 0 {
+		if r.campaign.NamespaceUserID != 0 {
 			r.namespace.Namespace, r.namespaceErr = graphqlbackend.UserByIDInt32(
 				ctx,
-				r.Campaign.NamespaceUserID,
+				r.campaign.NamespaceUserID,
 			)
 		} else {
 			r.namespace.Namespace, r.namespaceErr = graphqlbackend.OrgByIDInt32(
 				ctx,
-				r.Campaign.NamespaceOrgID,
+				r.campaign.NamespaceOrgID,
 			)
 		}
 		if errcode.IsNotFound(r.namespaceErr) {
@@ -127,23 +127,23 @@ func (r *campaignResolver) computeNamespace(ctx context.Context) (graphqlbackend
 }
 
 func (r *campaignResolver) CreatedAt() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: r.Campaign.CreatedAt}
+	return graphqlbackend.DateTime{Time: r.campaign.CreatedAt}
 }
 
 func (r *campaignResolver) UpdatedAt() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: r.Campaign.UpdatedAt}
+	return graphqlbackend.DateTime{Time: r.campaign.UpdatedAt}
 }
 
 func (r *campaignResolver) ClosedAt() *graphqlbackend.DateTime {
-	if !r.Campaign.Closed() {
+	if !r.campaign.Closed() {
 		return nil
 	}
-	return &graphqlbackend.DateTime{Time: r.Campaign.ClosedAt}
+	return &graphqlbackend.DateTime{Time: r.campaign.ClosedAt}
 }
 
 func (r *campaignResolver) ChangesetsStats(ctx context.Context) (graphqlbackend.ChangesetsStatsResolver, error) {
 	stats, err := r.store.GetChangesetsStats(ctx, store.GetChangesetsStatsOpts{
-		CampaignID: r.Campaign.ID,
+		CampaignID: r.campaign.ID,
 	})
 	if err != nil {
 		return nil, err
@@ -155,11 +155,11 @@ func (r *campaignResolver) Changesets(
 	ctx context.Context,
 	args *graphqlbackend.ListChangesetsArgs,
 ) (graphqlbackend.ChangesetsConnectionResolver, error) {
-	opts, safe, err := listChangesetOptsFromArgs(args, r.Campaign.ID)
+	opts, safe, err := listChangesetOptsFromArgs(args, r.campaign.ID)
 	if err != nil {
 		return nil, err
 	}
-	opts.CampaignID = r.Campaign.ID
+	opts.CampaignID = r.campaign.ID
 	return &changesetsConnectionResolver{
 		store:    r.store,
 		opts:     opts,
@@ -175,7 +175,7 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 
 	publishedState := campaigns.ChangesetPublicationStatePublished
 	opts := store.ListChangesetsOpts{
-		CampaignID: r.Campaign.ID,
+		CampaignID: r.campaign.ID,
 		// Only load fully-synced changesets, so that the data we use for computing the changeset counts is complete.
 		PublicationState: &publishedState,
 	}
@@ -187,7 +187,7 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 	now := r.store.Clock()()
 
 	weekAgo := now.Add(-7 * 24 * time.Hour)
-	start := r.Campaign.CreatedAt.UTC()
+	start := r.campaign.CreatedAt.UTC()
 	if start.After(weekAgo) {
 		start = weekAgo
 	}
@@ -223,7 +223,7 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 }
 
 func (r *campaignResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
-	diffStat, err := r.store.GetCampaignDiffStat(ctx, store.GetCampaignDiffStatOpts{CampaignID: r.Campaign.ID})
+	diffStat, err := r.store.GetCampaignDiffStat(ctx, store.GetCampaignDiffStatOpts{CampaignID: r.campaign.ID})
 	if err != nil {
 		return nil, err
 	}
@@ -231,7 +231,7 @@ func (r *campaignResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffSt
 }
 
 func (r *campaignResolver) CurrentSpec(ctx context.Context) (graphqlbackend.CampaignSpecResolver, error) {
-	campaignSpec, err := r.store.GetCampaignSpec(ctx, store.GetCampaignSpecOpts{ID: r.Campaign.CampaignSpecID})
+	campaignSpec, err := r.store.GetCampaignSpec(ctx, store.GetCampaignSpecOpts{ID: r.campaign.CampaignSpecID})
 	if err != nil {
 		// This spec should always exist, so fail hard on not found errors as well.
 		return nil, err

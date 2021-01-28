@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -34,8 +33,8 @@ type Resolver struct {
 }
 
 // New returns a new Resolver whose store uses the given database
-func New(db *sql.DB) graphqlbackend.CampaignsResolver {
-	return &Resolver{store: store.New(db)}
+func New(store *store.Store) graphqlbackend.CampaignsResolver {
+	return &Resolver{store: store}
 }
 
 func campaignsEnabled(ctx context.Context) error {
@@ -140,7 +139,7 @@ func (r *Resolver) CampaignByID(ctx context.Context, id graphql.ID) (graphqlback
 		return nil, err
 	}
 
-	return &campaignResolver{store: r.store, Campaign: campaign}, nil
+	return &campaignResolver{store: r.store, campaign: campaign}, nil
 }
 
 func (r *Resolver) Campaign(ctx context.Context, args *graphqlbackend.CampaignArgs) (graphqlbackend.CampaignResolver, error) {
@@ -163,7 +162,7 @@ func (r *Resolver) Campaign(ctx context.Context, args *graphqlbackend.CampaignAr
 		return nil, err
 	}
 
-	return &campaignResolver{store: r.store, Campaign: campaign}, nil
+	return &campaignResolver{store: r.store, campaign: campaign}, nil
 }
 
 func (r *Resolver) CampaignSpecByID(ctx context.Context, id graphql.ID) (graphqlbackend.CampaignSpecResolver, error) {
@@ -286,7 +285,7 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 		return nil, err
 	}
 
-	return &campaignResolver{store: r.store, Campaign: campaign}, nil
+	return &campaignResolver{store: r.store, campaign: campaign}, nil
 }
 
 func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.ApplyCampaignArgs) (graphqlbackend.CampaignResolver, error) {
@@ -334,7 +333,7 @@ func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.Apply
 		return nil, err
 	}
 
-	return &campaignResolver{store: r.store, Campaign: campaign}, nil
+	return &campaignResolver{store: r.store, campaign: campaign}, nil
 }
 
 func (r *Resolver) CreateCampaignSpec(ctx context.Context, args *graphqlbackend.CreateCampaignSpecArgs) (graphqlbackend.CampaignSpecResolver, error) {
@@ -490,7 +489,7 @@ func (r *Resolver) MoveCampaign(ctx context.Context, args *graphqlbackend.MoveCa
 		return nil, err
 	}
 
-	return &campaignResolver{store: r.store, Campaign: campaign}, nil
+	return &campaignResolver{store: r.store, campaign: campaign}, nil
 }
 
 func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.DeleteCampaignArgs) (_ *graphqlbackend.EmptyResponse, err error) {
@@ -743,7 +742,7 @@ func (r *Resolver) CloseCampaign(ctx context.Context, args *graphqlbackend.Close
 		return nil, errors.Wrap(err, "closing campaign")
 	}
 
-	return &campaignResolver{store: r.store, Campaign: campaign}, nil
+	return &campaignResolver{store: r.store, campaign: campaign}, nil
 }
 
 func (r *Resolver) SyncChangeset(ctx context.Context, args *graphqlbackend.SyncChangesetArgs) (_ *graphqlbackend.EmptyResponse, err error) {

@@ -44,9 +44,7 @@ var (
 )
 
 type Webhook struct {
-	Store            *store.Store
-	ExternalServices *database.ExternalServiceStore
-	Now              func() time.Time
+	Store *store.Store
 
 	// ServiceType corresponds to api.ExternalRepoSpec.ServiceType
 	// Example values: extsvc.TypeBitbucketServer, extsvc.TypeGitHub
@@ -146,7 +144,7 @@ func (h Webhook) upsertChangesetEvent(
 		return err
 	}
 
-	now := h.Now()
+	now := h.Store.Clock()()
 	event := &campaigns.ChangesetEvent{
 		ChangesetID: cs.ID,
 		Kind:        campaigns.ChangesetEventKindFor(ev),
@@ -213,8 +211,8 @@ type BitbucketServerWebhook struct {
 	configCache map[int64]*schema.BitbucketServerConnection
 }
 
-func NewGitHubWebhook(store *store.Store, externalServices *database.ExternalServiceStore, now func() time.Time) *GitHubWebhook {
-	return &GitHubWebhook{&Webhook{store, externalServices, now, extsvc.TypeGitHub}}
+func NewGitHubWebhook(store *store.Store) *GitHubWebhook {
+	return &GitHubWebhook{&Webhook{store, extsvc.TypeGitHub}}
 }
 
 // Register registers this webhook handler to handle events with the passed webhook router
@@ -769,9 +767,9 @@ func (*GitHubWebhook) checkRunEvent(cr *gh.CheckRun) *github.CheckRun {
 	}
 }
 
-func NewBitbucketServerWebhook(store *store.Store, externalServices *database.ExternalServiceStore, now func() time.Time, name string) *BitbucketServerWebhook {
+func NewBitbucketServerWebhook(store *store.Store, name string) *BitbucketServerWebhook {
 	return &BitbucketServerWebhook{
-		Webhook:     &Webhook{store, externalServices, now, extsvc.TypeBitbucketServer},
+		Webhook:     &Webhook{store, extsvc.TypeBitbucketServer},
 		Name:        name,
 		configCache: make(map[int64]*schema.BitbucketServerConnection),
 	}
@@ -831,7 +829,7 @@ func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *type
 	if externalServiceID != 0 {
 		args.IDs = append(args.IDs, externalServiceID)
 	}
-	es, err := h.ExternalServices.List(r.Context(), args)
+	es, err := database.ExternalServicesWith(h.Store).List(r.Context(), args)
 	if err != nil {
 		return nil, nil, &httpError{http.StatusInternalServerError, err}
 	}

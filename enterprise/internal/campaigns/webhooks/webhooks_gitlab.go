@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
@@ -24,8 +23,8 @@ import (
 
 type GitLabWebhook struct{ *Webhook }
 
-func NewGitLabWebhook(store *store.Store, externalServices *database.ExternalServiceStore, now func() time.Time) *GitLabWebhook {
-	return &GitLabWebhook{&Webhook{store, externalServices, now, extsvc.TypeGitLab}}
+func NewGitLabWebhook(store *store.Store) *GitLabWebhook {
+	return &GitLabWebhook{&Webhook{store, extsvc.TypeGitLab}}
 }
 
 // ServeHTTP implements the http.Handler interface.
@@ -107,7 +106,7 @@ func (h *GitLabWebhook) getExternalServiceFromRawID(ctx context.Context, raw str
 		return nil, errors.Wrap(err, "parsing the raw external service ID")
 	}
 
-	es, err := h.ExternalServices.List(ctx, database.ExternalServicesListOptions{
+	es, err := database.ExternalServicesWith(h.Store).List(ctx, database.ExternalServicesListOptions{
 		IDs:   []int64{id},
 		Kinds: []string{extsvc.KindGitLab},
 	})

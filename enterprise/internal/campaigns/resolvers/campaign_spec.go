@@ -233,7 +233,7 @@ func (r *campaignSpecResolver) AppliesToCampaign(ctx context.Context) (graphqlba
 
 	return &campaignResolver{
 		store:    r.store,
-		Campaign: campaign,
+		campaign: campaign,
 	}, nil
 }
 
