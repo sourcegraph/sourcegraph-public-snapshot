@@ -7,6 +7,7 @@ import { CampaignsCodeHostFields, Scalars } from '../../../graphql-operations'
 import { AddCredentialModal } from './AddCredentialModal'
 import { RemoveCredentialModal } from './RemoveCredentialModal'
 import { Subject } from 'rxjs'
+import KeyIcon from 'mdi-react/KeyIcon'
 
 export interface CodeHostConnectionNodeProps {
     node: CampaignsCodeHostFields
@@ -61,6 +62,9 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
                             />
                         )}
                         <Icon className="icon-inline mx-2" /> {node.externalServiceURL}
+                        {node.credential?.hasSSHKey && (
+                            <KeyIcon data-tooltip="SSH key configured" className="ml-2 text-success icon-inline" />
+                        )}
                     </h3>
                     <div className="mb-0">
                         {isEnabled && (

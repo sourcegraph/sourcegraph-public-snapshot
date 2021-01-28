@@ -17,6 +17,7 @@ export const campaignsCredentialFieldsFragment = gql`
     fragment CampaignsCredentialFields on CampaignsCredential {
         id
         createdAt
+        hasSSHKey
     }
 `
 

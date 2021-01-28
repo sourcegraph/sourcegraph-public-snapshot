@@ -3,9 +3,11 @@ package resolvers
 import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 )
 
 const campaignsCredentialIDKind = "CampaignsCredential"
@@ -40,4 +42,15 @@ func (c *campaignsCredentialResolver) ExternalServiceURL() string {
 
 func (c *campaignsCredentialResolver) CreatedAt() graphqlbackend.DateTime {
 	return graphqlbackend.DateTime{Time: c.credential.CreatedAt}
+}
+
+func (c *campaignsCredentialResolver) HasSSHKey() bool {
+	has := false
+	switch a := c.credential.Credential.(type) {
+	case *auth.OAuthBearerToken:
+		has = a.SSHKey != ""
+	case *auth.BasicAuth:
+		has = a.SSHKey != ""
+	}
+	return has
 }

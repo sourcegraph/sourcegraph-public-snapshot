@@ -9,6 +9,9 @@ import (
 // OAuthBearerToken implements OAuth Bearer Token authentication for extsvc
 // clients.
 type OAuthBearerToken struct {
+	Token string
+}
+type OAuthBearerTokenWithSSH struct {
 	Token  string
 	SSHKey string
 }
@@ -16,6 +19,10 @@ type OAuthBearerToken struct {
 var _ Authenticator = &OAuthBearerToken{}
 
 func (token *OAuthBearerToken) Authenticate(req *http.Request) error {
+	req.Header.Set("Authorization", "Bearer "+token.Token)
+	return nil
+}
+func (token *OAuthBearerToken) Authenticate(req gitserver.PushConfig) error {
 	req.Header.Set("Authorization", "Bearer "+token.Token)
 	return nil
 }

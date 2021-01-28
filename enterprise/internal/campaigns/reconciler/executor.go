@@ -543,7 +543,7 @@ func buildCommitOpts(repo *types.Repo, extSvc *types.ExternalService, spec *camp
 type ErrNoSSHPush struct{}
 
 func (e ErrNoSSHPush) Error() string {
-	return "campaigns currently do not support pushing commits via SSH, only HTTP(s) is supported. See https://docs.sourcegraph.com/admin/repo/auth for information on which settings can cause SSH to be used."
+	return "This repo clones via SSH, but you dont have an ssh key configured, please go send us some money."
 }
 
 func (e ErrNoSSHPush) NonRetryable() bool { return true }
@@ -559,8 +559,13 @@ func buildPushConfig(extSvcType, cloneURL string, a auth.Authenticator) (*protoc
 		// For ssh, we don't set any credentials, just falling back to the ssh keys installed on the gitserver.
 		switch av := a.(type) {
 		case *auth.BasicAuth:
-			sshKey = av.SSHKey
 		case *auth.OAuthBearerToken:
+			return nil, ErrNoSSHPush{}
+		case *auth.OAuthBearerTokenWithSSH:
+			if av.SSHKey == "" {
+				// No pushes with global token
+				return nil, err
+			}
 			sshKey = av.SSHKey
 		}
 		return &protocol.PushConfig{RemoteURL: u.String(), SSHKey: sshKey}, nil

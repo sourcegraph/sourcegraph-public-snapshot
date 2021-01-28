@@ -938,6 +938,8 @@ type CampaignsCredential implements Node {
     The date and time this token has been created at.
     """
     createdAt: DateTime!
+
+    hasSSHKey: Boolean!
 }
 
 """
