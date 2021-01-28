@@ -95,23 +95,12 @@ func (r lsifTscJobRecognizer) InferIndexJobs(paths []string, gitserver Gitserver
 }
 
 func checkCanDeriveNodeVersion(path string, paths []string, gitserver GitserverClientWrapper) bool {
-	hasEnginesField := func(packageJSONPath string) (hasField bool) {
-		packageJSON := &packageJSONEngine{}
-		if b, err := gitserver.RawContents(context.TODO(), packageJSONPath); err == nil {
-			if err := json.Unmarshal(b, packageJSON); err == nil {
-				if packageJSON.Engines != nil && packageJSON.Engines.Node != nil {
-					return true
-				}
-			}
-		}
-		return
-	}
 	for _, dir := range ancestorDirs(path) {
 		packageJSONPath := filepath.Join(dir, "package.json")
 		nvmrcPath := filepath.Join(dir, ".nvmrc")
 		nodeVersionPath := filepath.Join(dir, ".node-version")
 		nnodeVersionPath := filepath.Join(dir, ".n-node-version")
-		if (contains(paths, packageJSONPath) && hasEnginesField(packageJSONPath)) ||
+		if (contains(paths, packageJSONPath) && hasEnginesField(packageJSONPath, gitserver)) ||
 			contains(paths, nvmrcPath) ||
 			contains(paths, nodeVersionPath) ||
 			contains(paths, nnodeVersionPath) {
@@ -119,6 +108,18 @@ func checkCanDeriveNodeVersion(path string, paths []string, gitserver GitserverC
 		}
 	}
 	return false
+}
+
+func hasEnginesField(packageJSONPath string, gitserver GitserverClientWrapper) (hasField bool) {
+	packageJSON := &packageJSONEngine{}
+	if b, err := gitserver.RawContents(context.TODO(), packageJSONPath); err == nil {
+		if err := json.Unmarshal(b, packageJSON); err == nil {
+			if packageJSON.Engines != nil && packageJSON.Engines.Node != nil {
+				return true
+			}
+		}
+	}
+	return
 }
 
 func checkLernaFile(path string, paths []string, gitserver GitserverClientWrapper) (isYarn bool) {
