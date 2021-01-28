@@ -90,6 +90,30 @@ describe('Layout', () => {
         element.unmount()
     })
 
+    it('should update parsedSearchQuery if changing to empty', () => {
+        const history = createBrowserHistory()
+        history.replace({ search: 'q=&patternType=regexp' })
+
+        const setParsedSearchQuery = sinon.spy()
+
+        const element = mount(
+            <BrowserRouter>
+                <Layout
+                    {...defaultProps}
+                    history={history}
+                    location={history.location}
+                    setParsedSearchQuery={setParsedSearchQuery}
+                />
+            </BrowserRouter>,
+            { attachTo: document.querySelector('#root') as HTMLElement }
+        )
+
+        sinon.assert.calledOnce(setParsedSearchQuery)
+        sinon.assert.calledWith(setParsedSearchQuery, '')
+
+        element.unmount()
+    })
+
     it('should update patternType if different between URL and context', () => {
         const history = createBrowserHistory()
         history.replace({ search: 'q=r:golang/oauth2+test+f:travis&patternType=regexp' })
@@ -139,6 +163,30 @@ describe('Layout', () => {
         element.unmount()
     })
 
+    it('should not update patternType if query is empty', () => {
+        const history = createBrowserHistory()
+        history.replace({ search: 'q=&patternType=regexp' })
+
+        const setPatternTypeSpy = sinon.spy()
+
+        const element = mount(
+            <BrowserRouter>
+                <Layout
+                    {...defaultProps}
+                    history={history}
+                    location={history.location}
+                    patternType={SearchPatternType.literal}
+                    setPatternType={setPatternTypeSpy}
+                />
+            </BrowserRouter>,
+            { attachTo: document.querySelector('#root') as HTMLElement }
+        )
+
+        sinon.assert.notCalled(setPatternTypeSpy)
+
+        element.unmount()
+    })
+
     it('should update caseSensitive if different between URL and context', () => {
         const history = createBrowserHistory()
         history.replace({ search: 'q=r:golang/oauth2+test+f:travis case:yes' })
@@ -177,6 +225,30 @@ describe('Layout', () => {
                     history={history}
                     location={history.location}
                     caseSensitive={true}
+                    setCaseSensitivity={setCaseSensitivitySpy}
+                />
+            </BrowserRouter>,
+            { attachTo: document.querySelector('#root') as HTMLElement }
+        )
+
+        sinon.assert.notCalled(setCaseSensitivitySpy)
+
+        element.unmount()
+    })
+
+    it('should not update caseSensitive if query is empty', () => {
+        const history = createBrowserHistory()
+        history.replace({ search: 'q=case:yes' })
+
+        const setCaseSensitivitySpy = sinon.spy()
+
+        const element = mount(
+            <BrowserRouter>
+                <Layout
+                    {...defaultProps}
+                    history={history}
+                    location={history.location}
+                    caseSensitive={false}
                     setCaseSensitivity={setCaseSensitivitySpy}
                 />
             </BrowserRouter>,
@@ -270,6 +342,34 @@ describe('Layout', () => {
 
         sinon.assert.calledOnce(setVersionContextSpy)
         sinon.assert.calledWith(setVersionContextSpy, undefined)
+
+        element.unmount()
+    })
+
+    it('should not update versionContext if query is empty', () => {
+        const history = createBrowserHistory()
+        history.replace({ search: 'q=&c=test' })
+
+        const setVersionContextSpy = sinon.spy()
+
+        const element = mount(
+            <BrowserRouter>
+                <Layout
+                    {...defaultProps}
+                    history={history}
+                    location={history.location}
+                    versionContext="other"
+                    setVersionContext={setVersionContextSpy}
+                    availableVersionContexts={[
+                        { name: 'test', revisions: [] },
+                        { name: 'other', revisions: [] },
+                    ]}
+                />
+            </BrowserRouter>,
+            { attachTo: document.querySelector('#root') as HTMLElement }
+        )
+
+        sinon.assert.notCalled(setVersionContextSpy)
 
         element.unmount()
     })
