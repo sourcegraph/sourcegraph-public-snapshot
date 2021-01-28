@@ -229,19 +229,13 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			name:    "1 errors - GitHub.com",
 			kind:    extsvc.KindGitHub,
 			config:  `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "` + types.RedactedSecret + `"}`,
-			wantErr: "found unexpected Redacted string: \"" + types.RedactedSecret + "\", has ExternalService.UnredactConfig been called before attempting to write?",
+			wantErr: "unable to write external service config as it contains redacted fields, this is likely a bug rather than a problem with your config",
 		},
 		{
 			name:    "1 errors - GitLab.com",
 			kind:    extsvc.KindGitLab,
 			config:  `{"url": "https://github.com", "projectQuery": ["none"], "token": "` + types.RedactedSecret + `"}`,
-			wantErr: "found unexpected Redacted string: \"" + types.RedactedSecret + "\", has ExternalService.UnredactConfig been called before attempting to write?",
-		},
-		{
-			name:    "0 errors - potentially redacted string",
-			kind:    extsvc.KindGitHub,
-			config:  `{"url": "https://github.com", "repositoryQuery": ["github.com/srcgraph_redacted"], "token": "abc"}`,
-			wantErr: "<nil>",
+			wantErr: "unable to write external service config as it contains redacted fields, this is likely a bug rather than a problem with your config",
 		},
 	}
 	for _, test := range tests {
