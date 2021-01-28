@@ -1339,6 +1339,26 @@ type ExtensionUsageStatistics struct {
 	AverageActivations *float64
 }
 
+type CodeInsightsUsageStatistics struct {
+	InsightsPageViews              *int32
+	InsightsUniquePageViews        *int32
+	SearchInsightsHovers           *int32
+	CodeStatsInsightsHovers        *int32
+	InsightsUICustomizations       *int32
+	InsightsDataPointClicks        *int32
+	CodeStatsInsightsEdits         *int32
+	CodeStatsInsightsAdditions     *int32
+	CodeStatsInsightsRemovals      *int32
+	SearchInsightsEdits            *int32
+	SearchInsightsAdditions        *int32
+	SearchInsightsRemovals         *int32
+	InsightConfigureClick          *int32
+	InsightAddMoreClick            *int32
+	WeekStart                      time.Time
+	WeeklyInsightCreators          *int32
+	WeeklyFirstTimeInsightCreators *int32
+}
+
 // Secret represents the secrets table
 type Secret struct {
 	ID int32
