@@ -42,7 +42,7 @@ func TestLsifTscJobRecognizerInferIndexJobsTsConfigRoot(t *testing.T) {
 
 	expectedIndexJobs := []config.IndexJob{
 		{
-			Steps: nil,
+			Steps:       nil,
 			Root:        "",
 			Indexer:     lsifTscImage,
 			IndexerArgs: []string{"lsif-tsc", "-p", "."},
@@ -64,21 +64,21 @@ func TestLsifTscJobRecognizerInferIndexJobsTsConfigSubdirs(t *testing.T) {
 
 	expectedIndexJobs := []config.IndexJob{
 		{
-			Steps: nil,
+			Steps:       nil,
 			Root:        "a",
 			Indexer:     lsifTscImage,
 			IndexerArgs: []string{"lsif-tsc", "-p", "."},
 			Outfile:     "",
 		},
 		{
-			Steps: nil,
+			Steps:       nil,
 			Root:        "b",
 			Indexer:     lsifTscImage,
 			IndexerArgs: []string{"lsif-tsc", "-p", "."},
 			Outfile:     "",
 		},
 		{
-			Steps: nil,
+			Steps:       nil,
 			Root:        "c",
 			Indexer:     lsifTscImage,
 			IndexerArgs: []string{"lsif-tsc", "-p", "."},

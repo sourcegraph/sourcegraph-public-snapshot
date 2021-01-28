@@ -69,7 +69,7 @@ func (s *IndexEnqueuer) InferIndexConfiguration(ctx context.Context, repositoryI
 
 	return &config.IndexConfiguration{
 		SharedSteps: nil,
-		IndexJobs: indexJobs,
+		IndexJobs:   indexJobs,
 	}, nil
 }
 
