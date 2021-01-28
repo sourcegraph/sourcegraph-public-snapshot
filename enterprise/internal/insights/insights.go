@@ -19,6 +19,10 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 		// TimescaleDB in those deployments. https://github.com/sourcegraph/sourcegraph/issues/17218
 		return nil
 	}
+	if conf.IsDeployTypeSingleDockerContainer(conf.DeployType()) {
+		// Code insights is not supported in single-container Docker demo deployments.
+		return nil
+	}
 	timescale, err := initializeCodeInsightsDB()
 	if err != nil {
 		return err
