@@ -12,7 +12,7 @@ echo "--- comby install"
 
 # For code insights test
 ./dev/codeinsights-db.sh &
-export CODEINSIGHTS_PGDATASOURCE=postgres://postgres:password@127.0.0.1:5435
+export CODEINSIGHTS_PGDATASOURCE=postgres://postgres:password@127.0.0.1:5435/postgres
 
 # Separate out time for go mod from go test
 echo "--- go mod download"
