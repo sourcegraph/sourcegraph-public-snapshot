@@ -107,12 +107,10 @@ func init() {
 
 	// Notify admins if critical alerts are firing, if Prometheus is configured.
 	prom, err := srcprometheus.NewClient(srcprometheus.PrometheusURL)
-	if err != nil {
-		if errors.Is(err, srcprometheus.ErrPrometheusUnavailable) {
-			AlertFuncs = append(AlertFuncs, observabilityActiveAlertsAlert(prom))
-		} else {
-			log15.Warn("WARNING: possibly misconfigured Prometheus", "error", err)
-		}
+	if err == nil {
+		AlertFuncs = append(AlertFuncs, observabilityActiveAlertsAlert(prom))
+	} else if !errors.Is(err, srcprometheus.ErrPrometheusUnavailable) {
+		log15.Warn("WARNING: possibly misconfigured Prometheus", "error", err)
 	}
 
 	// Warn about invalid site configuration.
@@ -298,6 +296,10 @@ func observabilityActiveAlertsAlert(prom srcprometheus.Client) func(AlertFuncArg
 			return []*Alert{{TypeValue: AlertTypeWarning, MessageValue: fmt.Sprintf("Failed to fetch alerts status: %s", err)}}
 		}
 
+		// decide whether to render a message about alerts
+		if status.Critical == 0 {
+			return nil
+		}
 		msg := fmt.Sprintf("%s across %s currently firing - [view alerts](/-/debug/grafana)",
 			pluralize(status.Critical, "critical alert", "critical alerts"),
 			pluralize(status.ServicesCritical, "service", "services"))
