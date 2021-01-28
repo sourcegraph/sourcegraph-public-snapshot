@@ -62,7 +62,6 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		_ = eventWriter.Event("error", err.Error())
 		return
 	}
-
 	resultsStream, resultsStreamDone := newResultsStream(ctx, search)
 
 	progress := progressAggregator{
@@ -202,6 +201,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 type searchResolver interface {
 	Results(context.Context) (*graphqlbackend.SearchResultsResolver, error)
 	SetStream(c graphqlbackend.SearchStream)
+	Inputs() *graphqlbackend.SearchInputs
 }
 
 func defaultNewSearchResolver(ctx context.Context, args *graphqlbackend.SearchArgs) (searchResolver, error) {
