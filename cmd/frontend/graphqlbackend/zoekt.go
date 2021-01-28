@@ -414,18 +414,21 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 					symbols = zoektFileMatchToSymbolResults(repoResolver, inputRev, &file)
 				}
 				fm := &FileMatchResolver{
-					JPath:        file.FileName,
-					JLineMatches: lines,
-					JLimitHit:    fileLimitHit,
-					MatchCount:   matchCount, // We do not use resp.MatchCount because it counts the number of lines matched, not the number of fragments.
-					uri:          fileMatchURI(repo.Name, inputRev, file.FileName),
-					symbols:      symbols,
-					Repo:         repoResolver,
-					CommitID:     api.CommitID(file.Version),
-					InputRev:     &inputRev,
+					FileMatch: FileMatch{
+						JPath:        file.FileName,
+						JLineMatches: lines,
+						JLimitHit:    fileLimitHit,
+						MatchCount:   matchCount, // We do not use resp.MatchCount because it counts the number of lines matched, not the number of fragments.
+						uri:          fileMatchURI(repo.Name, inputRev, file.FileName),
+						symbols:      symbols,
+						Repo:         repo,
+						CommitID:     api.CommitID(file.Version),
+						InputRev:     &inputRev,
+					},
+					RepoResolver: repoResolver,
 				}
 				matches = append(matches, fm)
-				if id := fm.Repo.innerRepo.ID; lastID != id {
+				if id := repo.ID; lastID != id {
 					statusMap.Update(id, search.RepoStatusSearched|search.RepoStatusIndexed)
 					lastID = id
 				}

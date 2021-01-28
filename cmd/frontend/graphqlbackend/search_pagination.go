@@ -316,7 +316,7 @@ func repoOfResult(result SearchResultResolver) string {
 	case *RepositoryResolver:
 		return string(r.Name())
 	case *FileMatchResolver:
-		return r.Repo.Name()
+		return string(r.Repo.Name)
 	case *CommitSearchResultResolver:
 		// Pagination does not support commit searches at the
 		// moment. Ideally we want to return the repo associated

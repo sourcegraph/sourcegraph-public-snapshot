@@ -305,7 +305,7 @@ func fromFileMatch(fm *graphqlbackend.FileMatchResolver) eventFileMatch {
 	return eventFileMatch{
 		Type:        fileMatch,
 		Path:        fm.JPath,
-		Repository:  fm.Repo.Name(),
+		Repository:  string(fm.Repo.Name),
 		Branches:    branches,
 		Version:     string(fm.CommitID),
 		LineMatches: lineMatches,
@@ -321,7 +321,7 @@ func fromSymbolMatch(fm *graphqlbackend.FileMatchResolver, symbols []symbol) eve
 	return eventSymbolMatch{
 		Type:       symbolMatch,
 		Path:       fm.JPath,
-		Repository: fm.Repo.Name(),
+		Repository: string(fm.Repo.Name),
 		Branches:   branches,
 		Version:    string(fm.CommitID),
 		Symbols:    symbols,
