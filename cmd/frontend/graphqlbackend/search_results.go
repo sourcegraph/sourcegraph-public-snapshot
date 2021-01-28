@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/go-enry/go-enry/v2"
-	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go"
@@ -1506,15 +1505,13 @@ func newAggregator(ctx context.Context, stream SearchStream, inputs *SearchInput
 }
 
 type aggregator struct {
-	stream SearchStream
-
 	*AlertObserver
+	stream SearchStream
 
 	done chan struct{}
 
-	results  []SearchResultResolver
-	common   streaming.Stats
-	multiErr *multierror.Error
+	results []SearchResultResolver
+	common  streaming.Stats
 }
 
 // get finalises aggregation over the stream and returns the aggregated
