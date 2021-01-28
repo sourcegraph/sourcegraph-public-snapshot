@@ -155,17 +155,9 @@ const diffTableDomFunctions: DOMFunctions = {
 
 const resolveFilePageCodeView: ViewResolver<CodeView> = {
     selector(target: HTMLElement) {
-        // if (target.matches('#diffTable')) {
-        //     return [target]
-        // }
-        // TODO: rewrite query using querySelectorAcrossShadowRoots
-        // const diffTableElement = document.body
-        //     .querySelector('#app')
-        //     ?.shadowRoot?.querySelector('#app-element')
-        //     ?.shadowRoot?.querySelector('main > gr-diff-view')
-        //     ?.shadowRoot?.querySelector('#diffHost')
-        //     ?.shadowRoot?.querySelector('#diff')
-        //     ?.shadowRoot?.querySelector('#diffTable')
+        // Because we expect only one code view to be present on an individual file
+        // page, we don't have to consider the existing element (`target`) here in
+        // the same way as in resolveFileListCodeView.
         const diffTableElement = querySelectorAcrossShadowRoots(document.body, [
             '#app',
             '#app-element',
@@ -284,13 +276,13 @@ export const gerritCodeHost: CodeHost = {
 }
 
 function getParentCommit(): string | null | undefined {
-    // TODO: rewrite using querySelectorAcrossShadowRoots
-    const metadataPanel = document
-        .querySelector('#app')
-        ?.shadowRoot?.querySelector('#app-element')
-        ?.shadowRoot?.querySelector('main > gr-change-view')
-        ?.shadowRoot?.querySelector('#metadata')
-        ?.shadowRoot?.querySelector('gr-commit-info')
+    const metadataPanel = querySelectorAcrossShadowRoots(document.body, [
+        '#app',
+        '#app-element',
+        'gr-change-view',
+        '#metadata',
+        'gr-commit-info',
+    ])
     if (!metadataPanel) {
         return null
     }
@@ -298,7 +290,6 @@ function getParentCommit(): string | null | undefined {
 }
 
 function getSideFromCodeElement(codeElement: HTMLElement): string | undefined {
-    console.log('Sourcegraph: getSideFromCodeElement', codeElement)
     return codeElement.querySelector('.contentText')?.getAttribute('data-side') || undefined
 }
 
@@ -310,9 +301,7 @@ function querySelectorAcrossShadowRoots(element: ParentNode, selectors: string[]
         if (!currentElement) {
             return null
         }
-        console.log(`**** Querying "${selector}" across shadow root...`, currentElement)
         currentElement = currentElement.querySelector(selector)?.shadowRoot || null
-        console.log('....... -> and obtained', currentElement)
     }
     return currentElement?.querySelector(lastSelector) as Element
 }
