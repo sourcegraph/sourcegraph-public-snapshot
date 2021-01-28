@@ -49,6 +49,9 @@ type SearchImplementer interface {
 	Suggestions(context.Context, *searchSuggestionsArgs) ([]*searchSuggestionResolver, error)
 	//lint:ignore U1000 is used by graphql via reflection
 	Stats(context.Context) (*searchResultsStats, error)
+
+	SetStream(c SearchStream)
+	Inputs() *SearchInputs
 }
 
 // NewSearchImplementer returns a SearchImplementer that provides search results and suggestions.
