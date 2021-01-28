@@ -72,6 +72,10 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Start: time.Now(),
 	}
 
+	sendProgress := func() {
+		_ = eventWriter.Event("progress", progress.Build())
+	}
+
 	filters := &graphqlbackend.SearchFilters{
 		Globbing: false, // TODO
 	}
@@ -86,12 +90,15 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 			matchesBuf = matchesBuf[:0]
 
-			_ = eventWriter.Event("progress", progress.Build())
+			sendProgress()
 		}
 	}
 
 	flushTicker := time.NewTicker(100 * time.Millisecond)
 	defer flushTicker.Stop()
+
+	pingTicker := time.NewTicker(5 * time.Second)
+	defer pingTicker.Stop()
 
 	first := true
 
@@ -103,6 +110,9 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		case <-flushTicker.C:
 			ok = true
 			flushMatchesBuf()
+		case <-pingTicker.C:
+			ok = true
+			sendProgress()
 		}
 
 		if !ok {
