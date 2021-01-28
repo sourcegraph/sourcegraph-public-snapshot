@@ -501,7 +501,7 @@ func (r *searchResolver) logSearchLatency(ctx context.Context, durationMs int32)
 		tr.Finish()
 	}()
 	var types []string
-	resultTypes, _ := r.query.StringValues(query.FieldType)
+	resultTypes, _ := r.Query.StringValues(query.FieldType)
 	for _, typ := range resultTypes {
 		switch typ {
 		case "repo", "symbol", "diff", "commit":
@@ -511,11 +511,11 @@ func (r *searchResolver) logSearchLatency(ctx context.Context, durationMs int32)
 			types = append(types, "file")
 		case "file":
 			switch {
-			case r.patternType == query.SearchTypeStructural:
+			case r.PatternType == query.SearchTypeStructural:
 				types = append(types, "structural")
-			case r.patternType == query.SearchTypeLiteral:
+			case r.PatternType == query.SearchTypeLiteral:
 				types = append(types, "literal")
-			case r.patternType == query.SearchTypeRegex:
+			case r.PatternType == query.SearchTypeRegex:
 				types = append(types, "regexp")
 			}
 		}
@@ -529,10 +529,10 @@ func (r *searchResolver) logSearchLatency(ctx context.Context, durationMs int32)
 	}
 
 	options := &getPatternInfoOptions{}
-	if r.patternType == query.SearchTypeStructural {
+	if r.PatternType == query.SearchTypeStructural {
 		options = &getPatternInfoOptions{performStructuralSearch: true}
 	}
-	if r.patternType == query.SearchTypeLiteral {
+	if r.PatternType == query.SearchTypeLiteral {
 		options = &getPatternInfoOptions{performLiteralSearch: true}
 	}
 	p, _ := r.getPatternInfo(options)
@@ -542,14 +542,14 @@ func (r *searchResolver) logSearchLatency(ctx context.Context, durationMs int32)
 		// If a pattern was specified, a content search happened.
 		if p.Pattern != "" {
 			switch {
-			case r.patternType == query.SearchTypeStructural:
+			case r.PatternType == query.SearchTypeStructural:
 				types = append(types, "structural")
-			case r.patternType == query.SearchTypeLiteral:
+			case r.PatternType == query.SearchTypeLiteral:
 				types = append(types, "literal")
-			case r.patternType == query.SearchTypeRegex:
+			case r.PatternType == query.SearchTypeRegex:
 				types = append(types, "regexp")
 			}
-		} else if len(r.query.Fields()["file"]) > 0 {
+		} else if len(r.Query.Fields()["file"]) > 0 {
 			// No search pattern specified and file: is specified.
 			types = append(types, "file")
 		} else {
@@ -586,7 +586,7 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResultsReso
 	}()
 	start := time.Now()
 	// If the request specifies stable:truthy, use pagination to return a stable ordering.
-	if r.query.BoolValue("stable") {
+	if r.Query.BoolValue("stable") {
 		result, err := r.paginatedResults(ctx)
 		if err != nil {
 			return nil, err
@@ -609,7 +609,7 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResultsReso
 
 	// If the request is a paginated one, we handle it separately. See
 	// paginatedResults for more details.
-	if r.pagination != nil {
+	if r.Pagination != nil {
 		return r.paginatedResults(ctx)
 	}
 
@@ -1040,7 +1040,7 @@ func (r *searchResolver) setQuery(q []query.Node) {
 		r.resolved.MissingRepoRevs = nil
 		r.repoErr = nil
 	}
-	r.query.(*query.AndOrQuery).Query = q
+	r.Query.(*query.AndOrQuery).Query = q
 }
 
 // evaluatePatternExpression evaluates a search pattern containing and/or expressions.
@@ -1107,7 +1107,7 @@ func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolve
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	switch q := r.query.(type) {
+	switch q := r.Query.(type) {
 	case *query.OrdinaryQuery:
 		srr, err = r.evaluateLeaf(ctx)
 	case *query.AndOrQuery:
@@ -1144,11 +1144,11 @@ func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolve
 		}
 	default:
 		// Unreachable.
-		return nil, fmt.Errorf("unrecognized type %T in searchResolver Results", r.query)
+		return nil, fmt.Errorf("unrecognized type %T in searchResolver Results", r.Query)
 	}
 	// copy userSettings from searchResolver to SearchResultsResolver
 	if srr != nil {
-		srr.UserSettings = r.userSettings
+		srr.UserSettings = r.UserSettings
 	}
 	if srr == nil {
 		srr = &SearchResultsResolver{}
@@ -1347,7 +1347,7 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Te
 		opts.fileMatchLimit = r.maxResults()
 	}
 
-	return getPatternInfo(r.query, opts)
+	return getPatternInfo(r.Query, opts)
 }
 
 func isPatternNegated(q []query.Node) bool {
@@ -1517,14 +1517,14 @@ var (
 )
 
 func (r *searchResolver) searchTimeoutFieldSet() bool {
-	timeout, _ := r.query.StringValue(query.FieldTimeout)
+	timeout, _ := r.Query.StringValue(query.FieldTimeout)
 	return timeout != "" || r.countIsSet()
 }
 
 func (r *searchResolver) withTimeout(ctx context.Context) (context.Context, context.CancelFunc, error) {
 	d := defaultTimeout
 	maxTimeout := time.Duration(searchrepos.SearchLimits().MaxTimeoutSeconds) * time.Second
-	timeout, _ := r.query.StringValue(query.FieldTimeout)
+	timeout, _ := r.Query.StringValue(query.FieldTimeout)
 	if timeout != "" {
 		var err error
 		d, err = time.ParseDuration(timeout)
@@ -1547,7 +1547,7 @@ func (r *searchResolver) determineResultTypes(args search.TextParameters, forceO
 	if forceOnlyResultType != "" {
 		resultTypes = []string{forceOnlyResultType}
 	} else {
-		resultTypes, _ = r.query.StringValues(query.FieldType)
+		resultTypes, _ = r.Query.StringValues(query.FieldType)
 		if len(resultTypes) == 0 {
 			resultTypes = []string{"file", "path", "repo"}
 		}
@@ -1801,13 +1801,13 @@ func statsDeref(s *streaming.Stats) streaming.Stats {
 // repohasfile filters. For structural queries and queries with version context
 // isGlobalSearch always return false.
 func (r *searchResolver) isGlobalSearch() bool {
-	if r.patternType == query.SearchTypeStructural {
+	if r.PatternType == query.SearchTypeStructural {
 		return false
 	}
-	if r.versionContext != nil && *r.versionContext != "" {
+	if r.VersionContext != nil && *r.VersionContext != "" {
 		return false
 	}
-	return len(r.query.Values(query.FieldRepo)) == 0 && len(r.query.Values(query.FieldRepoGroup)) == 0 && len(r.query.Values(query.FieldRepoHasFile)) == 0
+	return len(r.Query.Values(query.FieldRepo)) == 0 && len(r.Query.Values(query.FieldRepoGroup)) == 0 && len(r.Query.Values(query.FieldRepoHasFile)) == 0
 }
 
 // doResults is one of the highest level search functions that handles finding results.
@@ -1832,11 +1832,11 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	defer cancel()
 
 	options := &getPatternInfoOptions{}
-	if r.patternType == query.SearchTypeStructural {
+	if r.PatternType == query.SearchTypeStructural {
 		options = &getPatternInfoOptions{performStructuralSearch: true}
 		forceOnlyResultType = "file"
 	}
-	if r.patternType == query.SearchTypeLiteral {
+	if r.PatternType == query.SearchTypeLiteral {
 		options = &getPatternInfoOptions{performLiteralSearch: true}
 	}
 	p, err := r.getPatternInfo(options)
@@ -1846,15 +1846,15 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 
 	// Fallback to literal search for searching repos and files if
 	// the structural search pattern is empty.
-	if r.patternType == query.SearchTypeStructural && p.Pattern == "" {
-		r.patternType = query.SearchTypeLiteral
+	if r.PatternType == query.SearchTypeStructural && p.Pattern == "" {
+		r.PatternType = query.SearchTypeLiteral
 		p.IsStructuralPat = false
 		forceOnlyResultType = ""
 	}
 
 	args := search.TextParameters{
 		PatternInfo:     p,
-		Query:           r.query,
+		Query:           r.Query,
 		UseFullDeadline: r.searchTimeoutFieldSet(),
 		Zoekt:           r.zoekt,
 		SearcherURLs:    r.searcherURLs,
@@ -2042,12 +2042,12 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		alert = newAlert // takes higher precedence
 	}
 
-	if len(results) == 0 && r.patternType != query.SearchTypeStructural && comby.MatchHoleRegexp.MatchString(r.originalQuery) {
-		alert = alertForStructuralSearchNotSet(r.originalQuery)
+	if len(results) == 0 && r.PatternType != query.SearchTypeStructural && comby.MatchHoleRegexp.MatchString(r.OriginalQuery) {
+		alert = alertForStructuralSearchNotSet(r.OriginalQuery)
 	}
 
 	if len(resolved.MissingRepoRevs) > 0 {
-		alert = alertForMissingRepoRevs(r.patternType, resolved.MissingRepoRevs)
+		alert = alertForMissingRepoRevs(r.PatternType, resolved.MissingRepoRevs)
 	}
 
 	// If we have some results, only log the error instead of returning it,
@@ -2160,7 +2160,7 @@ func compareSearchResults(left, right SearchResultResolver, exactFilePatterns ma
 
 func (r *searchResolver) sortResults(ctx context.Context, results []SearchResultResolver) {
 	var exactPatterns map[string]struct{}
-	if getBoolPtr(r.userSettings.SearchGlobbing, false) {
+	if getBoolPtr(r.UserSettings.SearchGlobbing, false) {
 		exactPatterns = r.getExactFilePatterns()
 	}
 	sort.Slice(results, func(i, j int) bool { return compareSearchResults(results[i], results[j], exactPatterns) })
@@ -2170,10 +2170,10 @@ func (r *searchResolver) sortResults(ctx context.Context, results []SearchResult
 func (r *searchResolver) getExactFilePatterns() map[string]struct{} {
 	m := map[string]struct{}{}
 	query.VisitField(
-		r.query.(*query.AndOrQuery).Query,
+		r.Query.(*query.AndOrQuery).Query,
 		query.FieldFile,
 		func(value string, negated bool, annotation query.Annotation) {
-			originalValue := r.originalQuery[annotation.Range.Start.Column+len(query.FieldFile)+1 : annotation.Range.End.Column]
+			originalValue := r.OriginalQuery[annotation.Range.Start.Column+len(query.FieldFile)+1 : annotation.Range.End.Column]
 			if !negated && query.ContainsNoGlobSyntax(originalValue) {
 				m[originalValue] = struct{}{}
 			}

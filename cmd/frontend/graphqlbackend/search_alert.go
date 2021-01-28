@@ -112,8 +112,8 @@ func alertForTimeout(usedTime time.Duration, suggestTime time.Duration, r *searc
 		proposedQueries: []*searchQueryDescription{
 			{
 				description: "query with longer timeout",
-				query:       fmt.Sprintf("timeout:%v %s", suggestTime, query.OmitQueryField(r.query.ParseTree(), query.FieldTimeout)),
-				patternType: r.patternType,
+				query:       fmt.Sprintf("timeout:%v %s", suggestTime, query.OmitQueryField(r.Query.ParseTree(), query.FieldTimeout)),
+				patternType: r.PatternType,
 			},
 		},
 	}
@@ -132,7 +132,7 @@ func alertForStalePermissions() *searchAlert {
 // raising NoResolvedRepos alerts with suggestions when we know the original
 // query does not contain any repos to search.
 func (r *searchResolver) reposExist(ctx context.Context, options searchrepos.Options) bool {
-	options.UserSettings = r.userSettings
+	options.UserSettings = r.UserSettings
 	options.Zoekt = r.zoekt
 	options.DefaultReposFunc = database.GlobalDefaultRepos.List
 	resolved, err := searchrepos.ResolveRepositories(ctx, options)
@@ -140,14 +140,14 @@ func (r *searchResolver) reposExist(ctx context.Context, options searchrepos.Opt
 }
 
 func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAlert {
-	globbing := getBoolPtr(r.userSettings.SearchGlobbing, false)
+	globbing := getBoolPtr(r.UserSettings.SearchGlobbing, false)
 
-	repoFilters, minusRepoFilters := r.query.RegexpPatterns(query.FieldRepo)
-	repoGroupFilters, _ := r.query.StringValues(query.FieldRepoGroup)
-	fork, _ := r.query.StringValue(query.FieldFork)
+	repoFilters, minusRepoFilters := r.Query.RegexpPatterns(query.FieldRepo)
+	repoGroupFilters, _ := r.Query.StringValues(query.FieldRepoGroup)
+	fork, _ := r.Query.StringValue(query.FieldFork)
 	onlyForks, noForks := fork == "only", fork == "no"
 	forksNotSet := len(fork) == 0
-	archived, _ := r.query.StringValue(query.FieldArchived)
+	archived, _ := r.Query.StringValue(query.FieldArchived)
 	archivedNotSet := len(archived) == 0
 
 	// Handle repogroup-only scenarios.
@@ -175,7 +175,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 
 	// TODO(sqs): handle -repo:foo fields.
 
-	withoutRepoFields := query.OmitQueryField(r.query.ParseTree(), query.FieldRepo)
+	withoutRepoFields := query.OmitQueryField(r.Query.ParseTree(), query.FieldRepo)
 
 	switch {
 	case len(repoGroupFilters) > 1:
@@ -205,8 +205,8 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			proposedQueries = []*searchQueryDescription{
 				{
 					description: fmt.Sprintf("include repositories outside of repogroup:%s", repoGroupFilters[0]),
-					query:       query.OmitQueryField(r.query.ParseTree(), query.FieldRepoGroup),
-					patternType: r.patternType,
+					query:       query.OmitQueryField(r.Query.ParseTree(), query.FieldRepoGroup),
+					patternType: r.PatternType,
 				},
 			}
 		}
@@ -223,14 +223,14 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			proposedQueries = append(proposedQueries, &searchQueryDescription{
 				description: "include repositories satisfying any (not all) of your repo: filters",
 				query:       withoutRepoFields + fmt.Sprintf(" repo:%s", unionRepoFilter),
-				patternType: r.patternType,
+				patternType: r.PatternType,
 			})
 		} else {
 			// Fall back to removing repo filters.
 			proposedQueries = append(proposedQueries, &searchQueryDescription{
 				description: "remove repo: filters",
 				query:       withoutRepoFields,
-				patternType: r.patternType,
+				patternType: r.PatternType,
 			})
 		}
 
@@ -260,8 +260,8 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			proposedQueries = []*searchQueryDescription{
 				{
 					description: fmt.Sprintf("include repositories outside of repogroup:%s", repoGroupFilters[0]),
-					query:       query.OmitQueryField(r.query.ParseTree(), query.FieldRepoGroup),
-					patternType: r.patternType,
+					query:       query.OmitQueryField(r.Query.ParseTree(), query.FieldRepoGroup),
+					patternType: r.PatternType,
 				},
 			}
 		}
@@ -269,7 +269,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 		proposedQueries = append(proposedQueries, &searchQueryDescription{
 			description: "remove repo: filters",
 			query:       withoutRepoFields,
-			patternType: r.patternType,
+			patternType: r.PatternType,
 		})
 		return &searchAlert{
 			prometheusType:  "no_resolved_repogroups",
@@ -299,7 +299,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			proposedQueries = append(proposedQueries, &searchQueryDescription{
 				description: "include repositories satisfying any (not all) of your repo: filters",
 				query:       withoutRepoFields + fmt.Sprintf(" repo:%s", unionRepoFilter),
-				patternType: r.patternType,
+				patternType: r.PatternType,
 			})
 		}
 
@@ -351,8 +351,8 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			if r.reposExist(ctx, tryIncludeForks) {
 				proposedQueries = append(proposedQueries, &searchQueryDescription{
 					description: "include forked repositories in your query.",
-					query:       r.originalQuery + " fork:yes",
-					patternType: r.patternType,
+					query:       r.OriginalQuery + " fork:yes",
+					patternType: r.PatternType,
 				})
 			}
 		}
@@ -368,8 +368,8 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			if r.reposExist(ctx, tryIncludeArchived) {
 				proposedQueries = append(proposedQueries, &searchQueryDescription{
 					description: "include archived repositories in your query.",
-					query:       r.originalQuery + " archived:yes",
-					patternType: r.patternType,
+					query:       r.OriginalQuery + " archived:yes",
+					patternType: r.PatternType,
 				})
 			}
 		}
@@ -378,7 +378,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			proposedQueries = append(proposedQueries, &searchQueryDescription{
 				description: "remove repo: filter",
 				query:       withoutRepoFields,
-				patternType: r.patternType,
+				patternType: r.PatternType,
 			})
 		}
 		return &searchAlert{
@@ -437,7 +437,7 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 
 	// If globbing is active we return a simple alert for now. The alert is still
 	// helpful but it doesn't contain any proposed queries.
-	if getBoolPtr(r.userSettings.SearchGlobbing, false) {
+	if getBoolPtr(r.UserSettings.SearchGlobbing, false) {
 		return buildAlert(proposedQueries, description)
 	}
 
@@ -459,7 +459,7 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 				break
 			}
 			repoParentPattern := "^" + regexp.QuoteMeta(repoParent) + "/"
-			repoFieldValues, _ := r.query.RegexpPatterns(query.FieldRepo)
+			repoFieldValues, _ := r.Query.RegexpPatterns(query.FieldRepo)
 
 			for _, v := range repoFieldValues {
 				if strings.HasPrefix(v, strings.TrimSuffix(repoParentPattern, "/")) {
@@ -485,11 +485,11 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 			// add it to the user's query, but be smart. For example, if the user's
 			// query was "repo:foo" and the parent is "foobar/", then propose "repo:foobar/"
 			// not "repo:foo repo:foobar/" (which are equivalent, but shorter is better).
-			newExpr := query.AddRegexpField(r.query.ParseTree(), query.FieldRepo, repoParentPattern)
+			newExpr := query.AddRegexpField(r.Query.ParseTree(), query.FieldRepo, repoParentPattern)
 			proposedQueries = append(proposedQueries, &searchQueryDescription{
 				description: fmt.Sprintf("in repositories under %s %s", repoParent, more),
 				query:       newExpr,
-				patternType: r.patternType,
+				patternType: r.PatternType,
 			})
 		}
 		if len(proposedQueries) == 0 || ctx.Err() == context.DeadlineExceeded {
@@ -504,11 +504,11 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 				if i >= maxReposToPropose {
 					break
 				}
-				newExpr := query.AddRegexpField(r.query.ParseTree(), query.FieldRepo, "^"+regexp.QuoteMeta(pathToPropose)+"$")
+				newExpr := query.AddRegexpField(r.Query.ParseTree(), query.FieldRepo, "^"+regexp.QuoteMeta(pathToPropose)+"$")
 				proposedQueries = append(proposedQueries, &searchQueryDescription{
 					description: fmt.Sprintf("in the repository %s", strings.TrimPrefix(pathToPropose, "github.com/")),
 					query:       newExpr,
-					patternType: r.patternType,
+					patternType: r.PatternType,
 				})
 			}
 		}
