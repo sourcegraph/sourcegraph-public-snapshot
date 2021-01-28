@@ -32,7 +32,8 @@ const GitHubSchemaJSON = `{
     },
     "token": {
       "description": "A GitHub personal access token. Create one for GitHub.com at https://github.com/settings/tokens/new?description=Sourcegraph (for GitHub Enterprise, replace github.com with your instance's hostname). See https://docs.sourcegraph.com/admin/external_service/github#github-api-token-and-access for which scopes are required for which use cases.",
-      "type": "string"
+      "type": "string",
+      "minLength": 1
     },
     "rateLimit": {
       "description": "Rate limit applied when making background API requests to GitHub.",

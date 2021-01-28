@@ -26,7 +26,8 @@ const GitLabSchemaJSON = `{
     },
     "token": {
       "description": "A GitLab access token with \"api\" scope. If you are enabling permissions with identity provider type \"external\", this token should also have \"sudo\" scope.",
-      "type": "string"
+      "type": "string",
+      "minLength": 1
     },
     "rateLimit": {
       "description": "Rate limit applied when making background API requests to GitLab.",

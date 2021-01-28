@@ -20,7 +20,8 @@ const PhabricatorSchemaJSON = `{
     },
     "token": {
       "description": "API token for the Phabricator instance.",
-      "type": "string"
+      "type": "string",
+      "minLength": 1
     },
     "repos": {
       "description": "The list of repositories available on Phabricator.",
