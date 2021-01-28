@@ -671,7 +671,7 @@ func alertForError(err error, inputs *SearchInputs) *searchAlert {
 	return alert
 }
 
-type AlertObserver struct {
+type alertObserver struct {
 	// alert is the current alert to show.
 	alert      *searchAlert
 	err        error
@@ -679,7 +679,7 @@ type AlertObserver struct {
 }
 
 // Update AlertObserver's state based on event.
-func (o *AlertObserver) Update(event SearchEvent, inputs *SearchInputs) {
+func (o *alertObserver) Update(event SearchEvent, inputs *SearchInputs) {
 	if len(event.Results) > 0 {
 		o.hasResults = true
 	}
@@ -699,7 +699,7 @@ func (o *AlertObserver) Update(event SearchEvent, inputs *SearchInputs) {
 }
 
 // update to alert if it is more important than our current alert.
-func (o *AlertObserver) update(alert *searchAlert) {
+func (o *alertObserver) update(alert *searchAlert) {
 	if o.alert == nil || alert.priority > o.alert.priority {
 		o.alert = alert
 	}
@@ -707,7 +707,7 @@ func (o *AlertObserver) update(alert *searchAlert) {
 
 //  Done returns the highest priority alert and a multierror.Error containing
 //  all errors that could not be converted to alerts.
-func (o *AlertObserver) Done(stats *streaming.Stats, s *SearchInputs) (*searchAlert, error) {
+func (o *alertObserver) Done(stats *streaming.Stats, s *SearchInputs) (*searchAlert, error) {
 	if !o.hasResults && s.PatternType != query.SearchTypeStructural && comby.MatchHoleRegexp.MatchString(s.OriginalQuery) {
 		o.update(alertForStructuralSearchNotSet(s.OriginalQuery))
 	}

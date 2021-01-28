@@ -1478,9 +1478,8 @@ func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameter
 func newAggregator(ctx context.Context, stream SearchStream, inputs *SearchInputs) *aggregator {
 	childStream := make(chan SearchEvent, cap(stream))
 	agg := &aggregator{
-		stream:        childStream,
-		done:          make(chan struct{}),
-		AlertObserver: &AlertObserver{},
+		stream: childStream,
+		done:   make(chan struct{}),
 	}
 
 	go func() {
@@ -1490,7 +1489,7 @@ func newAggregator(ctx context.Context, stream SearchStream, inputs *SearchInput
 			if event.Error != nil && isContextError(ctx, event.Error) {
 				event.Error = nil
 			}
-			agg.Update(event, inputs)
+			agg.alert.Update(event, inputs)
 			agg.results = append(agg.results, event.Results...)
 			agg.common.Update(&event.Stats)
 			if stream != nil {
@@ -1503,24 +1502,24 @@ func newAggregator(ctx context.Context, stream SearchStream, inputs *SearchInput
 }
 
 type aggregator struct {
-	*AlertObserver
 	stream SearchStream
 
 	done chan struct{}
 
 	results []SearchResultResolver
 	common  streaming.Stats
+	alert   alertObserver
 }
 
 // get finalises aggregation over the stream and returns the aggregated
 // result. It should only be called once each do* function is finished
 // running.
-func (a *aggregator) get(s *SearchInputs) ([]SearchResultResolver, streaming.Stats, error, *searchAlert) {
+func (a *aggregator) get(s *SearchInputs) ([]SearchResultResolver, streaming.Stats, *searchAlert, error) {
 	close(a.stream)
 	<-a.done
 
-	alert, err := a.Done(&a.common, s)
-	return a.results, a.common, err, alert
+	alert, err := a.alert.Done(&a.common, s)
+	return a.results, a.common, alert, err
 }
 
 func (a *aggregator) send(event SearchEvent) {
@@ -1874,7 +1873,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 
 	// We have to call get once all waitgroups are done since it relies on
 	// collecting from the streams.
-	results, common, err, alert := agg.get(r.SearchInputs)
+	results, common, alert, err := agg.get(r.SearchInputs)
 
 	tr.LazyPrintf("results=%d %s", len(results), &common)
 
