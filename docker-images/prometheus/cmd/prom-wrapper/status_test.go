@@ -1,19 +1,24 @@
-package graphqlbackend
+package main
 
 import (
 	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/pkg/errors"
 	prometheus "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
-	"github.com/sourcegraph/sourcegraph/internal/prometheusutil"
+
+	"github.com/sourcegraph/sourcegraph/docker-images/prometheus/cmd/prom-wrapper/mocks"
+	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
 )
 
-func Test_siteMonitoringStatisticsResolver_Alerts(t *testing.T) {
-	mock := prometheusutil.NewMockPrometheusQuerier()
+func TestAlertsStatusReporterHistory(t *testing.T) {
+	mock := mocks.NewMockAPI()
 	sampleT := model.Time(time.Now().UTC().Unix())
 	type fields struct {
 		queryValue    model.Value
@@ -21,10 +26,9 @@ func Test_siteMonitoringStatisticsResolver_Alerts(t *testing.T) {
 		queryErr      error
 	}
 	tests := []struct {
-		name    string
-		fields  fields
-		want    []*MonitoringAlert
-		wantErr error
+		name   string
+		fields fields
+		want   srcprometheus.MonitoringAlerts
 	}{
 		{
 			name: "includes alerts with no occurrences",
@@ -35,13 +39,12 @@ func Test_siteMonitoringStatisticsResolver_Alerts(t *testing.T) {
 						Values: []model.SamplePair{{Timestamp: sampleT, Value: model.SampleValue(0)}}},
 				},
 			},
-			want: []*MonitoringAlert{{
-				TimestampValue:   DateTime{sampleT.Time().Truncate(time.Hour)},
+			want: []*srcprometheus.MonitoringAlert{{
+				TimestampValue:   sampleT.Time().Truncate(time.Hour),
 				NameValue:        "warn: hello",
 				ServiceNameValue: "world",
 				AverageValue:     0,
 			}},
-			wantErr: nil,
 		}, {
 			name: "includes alerts with occurrences",
 			fields: fields{
@@ -51,13 +54,12 @@ func Test_siteMonitoringStatisticsResolver_Alerts(t *testing.T) {
 						Values: []model.SamplePair{{Timestamp: sampleT, Value: model.SampleValue(1)}}},
 				},
 			},
-			want: []*MonitoringAlert{{
-				TimestampValue:   DateTime{sampleT.Time().Truncate(time.Hour)},
+			want: []*srcprometheus.MonitoringAlert{{
+				TimestampValue:   sampleT.Time().Truncate(time.Hour),
 				NameValue:        "warn: hello",
 				ServiceNameValue: "world",
 				AverageValue:     1,
 			}},
-			wantErr: nil,
 		}, {
 			name: "discards repeated values",
 			fields: fields{
@@ -71,13 +73,12 @@ func Test_siteMonitoringStatisticsResolver_Alerts(t *testing.T) {
 						}},
 				},
 			},
-			want: []*MonitoringAlert{{
-				TimestampValue:   DateTime{sampleT.Time().Truncate(time.Hour)},
+			want: []*srcprometheus.MonitoringAlert{{
+				TimestampValue:   sampleT.Time().Truncate(time.Hour),
 				NameValue:        "warn: hello",
 				ServiceNameValue: "world",
 				AverageValue:     1,
 			}},
-			wantErr: nil,
 		}, {
 			name: "elements are sorted",
 			fields: fields{
@@ -103,28 +104,27 @@ func Test_siteMonitoringStatisticsResolver_Alerts(t *testing.T) {
 					},
 				},
 			},
-			want: []*MonitoringAlert{{
-				TimestampValue:   DateTime{sampleT.Time().Truncate(time.Hour)},
+			want: []*srcprometheus.MonitoringAlert{{
+				TimestampValue:   sampleT.Time().Truncate(time.Hour),
 				NameValue:        "warn: a",
 				ServiceNameValue: "a",
 				AverageValue:     1,
 			}, {
-				TimestampValue:   DateTime{sampleT.Time().Truncate(time.Hour)},
+				TimestampValue:   sampleT.Time().Truncate(time.Hour),
 				NameValue:        "warn: a",
 				ServiceNameValue: "b",
 				AverageValue:     1,
 			}, {
-				TimestampValue:   DateTime{sampleT.Time().Truncate(time.Hour)},
+				TimestampValue:   sampleT.Time().Truncate(time.Hour),
 				NameValue:        "warn: b",
 				ServiceNameValue: "b",
 				AverageValue:     1,
 			}, {
-				TimestampValue:   DateTime{sampleT.Time().Add(time.Hour).Truncate(time.Hour)},
+				TimestampValue:   sampleT.Time().Add(time.Hour).Truncate(time.Hour),
 				NameValue:        "warn: a",
 				ServiceNameValue: "b",
 				AverageValue:     2,
 			}},
-			wantErr: nil,
 		},
 	}
 	for _, tt := range tests {
@@ -132,19 +132,18 @@ func Test_siteMonitoringStatisticsResolver_Alerts(t *testing.T) {
 			mock.QueryRangeFunc.SetDefaultHook(func(ctx context.Context, query string, r prometheus.Range) (model.Value, prometheus.Warnings, error) {
 				return tt.fields.queryValue, tt.fields.queryWarnings, tt.fields.queryErr
 			})
-			r := &siteMonitoringStatisticsResolver{
-				prom:     mock,
-				timespan: 24 * time.Hour,
+			r := &AlertsStatusReporter{prometheus: mock}
+			recorder := httptest.NewRecorder()
+			r.Handler().ServeHTTP(recorder, &http.Request{
+				Method: http.MethodGet,
+				URL:    &url.URL{Path: srcprometheus.EndpointAlertsStatusHistory},
+			})
+			var history srcprometheus.AlertsHistory
+			if err := json.NewDecoder(recorder.Result().Body).Decode(&history); err != nil {
+				t.Errorf("expected no error, got %v", err)
+				return
 			}
-			alerts, err := r.Alerts(context.Background())
-			if err != nil {
-				if tt.wantErr == nil {
-					t.Errorf("expected no error, got %v", err)
-				} else if !errors.Is(err, tt.wantErr) {
-					t.Errorf("expected error %v, got %v", tt.wantErr, err)
-				}
-			}
-			if diff := cmp.Diff(tt.want, alerts); diff != "" {
+			if diff := cmp.Diff(tt.want, history.Alerts); diff != "" {
 				t.Errorf("alerts: %s", diff)
 			}
 		})
