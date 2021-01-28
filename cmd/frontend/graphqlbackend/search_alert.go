@@ -619,8 +619,7 @@ func alertForError(err error, inputs *SearchInputs) *searchAlert {
 		mErr  *searchrepos.MissingRepoRevsError
 	)
 
-	if false {
-	} else if errors.As(err, &mErr) {
+	if errors.As(err, &mErr) {
 		alert = alertForMissingRepoRevs(inputs.PatternType, mErr.Missing)
 		alert.priority = 6
 	} else if strings.Contains(err.Error(), "Worker_oomed") || strings.Contains(err.Error(), "Worker_exited_abnormally") {
