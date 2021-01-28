@@ -1,7 +1,6 @@
 package database
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
 	"fmt"
@@ -188,13 +187,6 @@ func (e *ExternalServiceStore) ValidateConfig(ctx context.Context, opt ValidateE
 	normalized, err = jsonc.Parse(opt.Config)
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to normalize JSON")
-	}
-
-	if bytes.Contains(normalized, []byte(types.RedactedSecret)) {
-		return nil, errors.Errorf(
-			"found unexpected Redacted string: %q, has ExternalService.UnredactConfig been called before attempting to write?",
-			types.RedactedSecret,
-		)
 	}
 
 	// For user-added external services, we need to prevent them from using disallowed fields.
@@ -666,6 +658,15 @@ func (e *ExternalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 		if err != nil {
 			return err
 		}
+		newSvc := types.ExternalService{
+			Kind:   externalService.Kind,
+			Config: *update.Config,
+		}
+		err = newSvc.UnredactConfig(externalService)
+		if err != nil {
+			return errors.Wrapf(err, "error unredacting config")
+		}
+		update.Config = &newSvc.Config
 
 		normalized, err = e.ValidateConfig(ctx, ValidateExternalServiceConfigOptions{
 			ExternalServiceID: id,

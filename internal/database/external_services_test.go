@@ -124,14 +124,14 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 		{
 			name:    "1 error",
 			kind:    extsvc.KindGitHub,
-			config:  `{"url": "https://github.com", "repositoryQuery": ["none"], "token": ""}`,
-			wantErr: "1 error occurred:\n\t* token: String length must be greater than or equal to 1\n\n",
+			config:  `{"url": "https://github.com", "repositoryQuery": [], "token": "abc"}`,
+			wantErr: "1 error occurred:\n\t* repositoryQuery: Array must have at least 1 items\n\n",
 		},
 		{
 			name:    "2 errors",
 			kind:    extsvc.KindGitHub,
-			config:  `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "", "x": 123}`,
-			wantErr: "2 errors occurred:\n\t* Additional property x is not allowed\n\t* token: String length must be greater than or equal to 1\n\n",
+			config:  `{"url": "https://github.com", "repositoryQuery": [], "token": "abc", "x": 123}`,
+			wantErr: "2 errors occurred:\n\t* Additional property x is not allowed\n\t* repositoryQuery: Array must have at least 1 items\n\n",
 		},
 		{
 			name:   "no conflicting rate limit",
@@ -224,18 +224,6 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 				}
 			},
 			wantErr: `existing external service, "GITHUB 1", of same kind already added`,
-		},
-		{
-			name:    "1 errors - GitHub.com",
-			kind:    extsvc.KindGitHub,
-			config:  `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "` + types.RedactedSecret + `"}`,
-			wantErr: "found unexpected Redacted string: \"" + types.RedactedSecret + "\", has ExternalService.UnredactConfig been called before attempting to write?",
-		},
-		{
-			name:    "1 errors - GitLab.com",
-			kind:    extsvc.KindGitLab,
-			config:  `{"url": "https://github.com", "projectQuery": ["none"], "token": "` + types.RedactedSecret + `"}`,
-			wantErr: "found unexpected Redacted string: \"" + types.RedactedSecret + "\", has ExternalService.UnredactConfig been called before attempting to write?",
 		},
 		{
 			name:    "0 errors - potentially redacted string",
