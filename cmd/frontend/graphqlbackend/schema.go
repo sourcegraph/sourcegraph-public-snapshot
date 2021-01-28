@@ -2421,9 +2421,54 @@ type ChangesetEventConnection {
 }
 
 """
-Insights about code.
+A list of insights.
 """
-type Insights {
+type InsightConnection {
+    """
+    A list of insights.
+    """
+    nodes: [Insight!]!
+
+    """
+    The total number of insights in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+An insight about code.
+"""
+type Insight {
+    """
+    The short title of the insight.
+    """
+    title: String!
+
+    """
+    The description of the insight.
+    """
+    description: String!
+
+    """
+    Data points over a time range (inclusive)
+    """
+    series: [InsightsSeries!]!
+}
+
+"""
+A series of data about a code insight.
+"""
+type InsightsSeries {
+    """
+    The label used to describe this series of data points.
+    """
+    label: String!
+
     """
     Data points over a time range (inclusive)
     """
@@ -2762,7 +2807,7 @@ type Query {
     """
     EXPERIMENTAL: Queries code insights
     """
-    insights: Insights
+    insights: InsightConnection
 
     """
     Looks up a repository by either name or cloneURL.
