@@ -8,14 +8,14 @@
     justify-content: center;
 
     &--md {
-        // stylelint-disable-next-line declaration-property-unit-allow-list
+        // stylelint-disable-next-line declaration-property-unit-whitelist
         font-size: 0.625rem;
         height: 1.5rem;
         width: 1.5rem;
     }
 
     &--lg {
-        // stylelint-disable-next-line declaration-property-unit-allow-list
+        // stylelint-disable-next-line declaration-property-unit-whitelist
         font-size: 1.25rem;
         height: 3rem;
         width: 3rem;
