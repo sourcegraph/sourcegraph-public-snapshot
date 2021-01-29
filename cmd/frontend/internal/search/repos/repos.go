@@ -419,8 +419,7 @@ func resolveVersionContext(versionContext string) (*schema.VersionContext, error
 const globalSearchContextName = "global"
 
 func resolveSearchContextSpec(ctx context.Context, searchContextSpec string) (*types.SearchContext, error) {
-	// Empty search context spec resolves to global search context
-	if searchContextSpec == "" || searchContextSpec == globalSearchContextName {
+	if IsGlobalSearchContextSpec(searchContextSpec) {
 		return &types.SearchContext{Name: globalSearchContextName}, nil
 	} else if len(searchContextSpec) > 0 && searchContextSpec[:1] == "@" {
 		name := searchContextSpec[1:]
@@ -436,8 +435,13 @@ func resolveSearchContextSpec(ctx context.Context, searchContextSpec string) (*t
 	return nil, errors.New("search context spec does not have the correct format")
 }
 
-func isGlobalSearchContext(sc *types.SearchContext) bool {
-	return sc != nil && sc.Name == globalSearchContextName
+func IsGlobalSearchContextSpec(searchContextSpec string) bool {
+	// Empty search context spec resolves to global search context
+	return searchContextSpec == "" || searchContextSpec == globalSearchContextName
+}
+
+func isGlobalSearchContext(searchContext *types.SearchContext) bool {
+	return searchContext != nil && searchContext.Name == globalSearchContextName
 }
 
 // Cf. golang/go/src/regexp/syntax/parse.go.

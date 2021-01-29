@@ -1650,13 +1650,16 @@ func statsDeref(s *streaming.Stats) streaming.Stats {
 }
 
 // isGlobalSearch returns true if the query does not contain repo, repogroup, or
-// repohasfile filters. For structural queries and queries with version context
-// isGlobalSearch always return false.
+// repohasfile filters. For structural queries, queries with version context
+// isGlobalSearch, and queries with non-global search context always return false.
 func (r *searchResolver) isGlobalSearch() bool {
 	if r.PatternType == query.SearchTypeStructural {
 		return false
 	}
 	if r.VersionContext != nil && *r.VersionContext != "" {
+		return false
+	}
+	if envvar.SourcegraphDotComMode() && r.SearchContextSpec != nil && !searchrepos.IsGlobalSearchContextSpec(*r.SearchContextSpec) {
 		return false
 	}
 	return len(r.Query.Values(query.FieldRepo)) == 0 && len(r.Query.Values(query.FieldRepoGroup)) == 0 && len(r.Query.Values(query.FieldRepoHasFile)) == 0
