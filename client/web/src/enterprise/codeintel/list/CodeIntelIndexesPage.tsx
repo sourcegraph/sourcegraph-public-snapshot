@@ -20,8 +20,8 @@ export interface CodeIntelIndexesPageProps extends RouteComponentProps<{}>, Tele
 const filters: FilteredConnectionFilter[] = [
     {
         id: 'filters',
-        label: 'Filters',
-        type: 'radio',
+        label: 'Index state',
+        type: 'select',
         values: [
             {
                 label: 'All',
