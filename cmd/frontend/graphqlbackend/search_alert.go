@@ -619,8 +619,8 @@ func (searchAlert) Suggestions(context.Context, *searchSuggestionsArgs) ([]*sear
 }
 func (searchAlert) Stats(context.Context) (*searchResultsStats, error) { return nil, nil }
 func (searchAlert) SetStream(c SearchStream)                           {}
-func (searchAlert) Inputs() *SearchInputs {
-	return nil
+func (searchAlert) Inputs() SearchInputs {
+	return SearchInputs{}
 }
 
 func alertForError(err error, inputs *SearchInputs) *searchAlert {

@@ -23,12 +23,19 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
-- Fixes an issue that prevented the hard deletion of a user if they had saved searches. [#181](https://github.com/sourcegraph/customer/issues/181)
+- Fixes an issue that prevented the hard deletion of a user if they had saved searches. [#17461](https://github.com/sourcegraph/sourcegraph/pull/17461)
 - Fixes an issue that caused some missing results for `type:commit` when a pattern was used instead of the `message` field. [#17490](https://github.com/sourcegraph/sourcegraph/pull/17490#issuecomment-764004758)
+- Fixes an issue where cAdvisor-based alerts would not fire correctly for services with multiple replicas. [#17600](https://github.com/sourcegraph/sourcegraph/pull/17600)
 
 ### Removed
 
 - Removed the `search.migrateParser` setting. As of 3.20 and onward, a new parser processes search queries by default. Previously, `search.migrateParser` was available to enable the legacy parser. Enabling/disabling this setting now no longer has any effect. [#17344](https://github.com/sourcegraph/sourcegraph/pull/17344)
+
+## 3.24.1
+
+### Fixed
+
+- Fixes an issue that SAML is not able to proceed with the error `Expected Enveloped and C14N transforms`. [#13032](https://github.com/sourcegraph/sourcegraph/issues/13032)
 
 ## 3.24.0
 

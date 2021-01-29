@@ -72,6 +72,7 @@ const commonProps = () =>
             },
         },
         onThemePreferenceChange: action('onThemePreferenceChange'),
+        parsedSearchQuery: 'r:golang/oauth2 test f:travis',
         patternType: SearchPatternType.literal,
         setPatternType: action('setPatternType'),
         caseSensitive: false,

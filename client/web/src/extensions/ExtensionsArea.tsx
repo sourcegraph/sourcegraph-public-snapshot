@@ -78,7 +78,7 @@ export const ExtensionsArea: React.FunctionComponent<ExtensionsAreaProps> = prop
     }
 
     return (
-        <div className="extensions-area web-content">
+        <div className="extensions-area web-content mt-3">
             <ExtensionsAreaHeader
                 {...props}
                 {...context}

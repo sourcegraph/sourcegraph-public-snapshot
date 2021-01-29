@@ -23,6 +23,7 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     onThemePreferenceChange: () => undefined,
     isLightTheme: true,
     themePreference: ThemePreference.Light,
+    parsedSearchQuery: 'r:golang/oauth2 test f:travis',
     patternType: SearchPatternType.literal,
     setPatternType: () => undefined,
     caseSensitive: false,

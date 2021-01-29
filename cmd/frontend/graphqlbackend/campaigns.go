@@ -48,6 +48,10 @@ type SyncChangesetArgs struct {
 	Changeset graphql.ID
 }
 
+type ReenqueueChangesetArgs struct {
+	Changeset graphql.ID
+}
+
 type CreateChangesetSpecArgs struct {
 	ChangesetSpec string
 }
@@ -113,6 +117,7 @@ type CampaignsResolver interface {
 	CreateChangesetSpec(ctx context.Context, args *CreateChangesetSpecArgs) (ChangesetSpecResolver, error)
 	CreateCampaignSpec(ctx context.Context, args *CreateCampaignSpecArgs) (CampaignSpecResolver, error)
 	SyncChangeset(ctx context.Context, args *SyncChangesetArgs) (*EmptyResponse, error)
+	ReenqueueChangeset(ctx context.Context, args *ReenqueueChangesetArgs) (ChangesetResolver, error)
 	CreateCampaignsCredential(ctx context.Context, args *CreateCampaignsCredentialArgs) (CampaignsCredentialResolver, error)
 	DeleteCampaignsCredential(ctx context.Context, args *DeleteCampaignsCredentialArgs) (*EmptyResponse, error)
 
@@ -510,6 +515,10 @@ func (defaultCampaignsResolver) CloseCampaign(ctx context.Context, args *CloseCa
 }
 
 func (defaultCampaignsResolver) SyncChangeset(ctx context.Context, args *SyncChangesetArgs) (*EmptyResponse, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) ReenqueueChangeset(ctx context.Context, args *ReenqueueChangesetArgs) (ChangesetResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 

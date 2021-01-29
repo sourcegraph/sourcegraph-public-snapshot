@@ -2,6 +2,7 @@ package testing
 
 import (
 	"context"
+	"sort"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -131,9 +132,12 @@ type ChangesetAssertions struct {
 	Title string
 	Body  string
 
-	FailureMessage *string
-	NumFailures    int64
+	FailureMessage   *string
+	SyncErrorMessage *string
+	NumFailures      int64
+	NumResets        int64
 
+	AttachedTo []int64
 	DetachFrom []int64
 }
 
@@ -201,8 +205,25 @@ func AssertChangeset(t *testing.T, c *campaigns.Changeset, a ChangesetAssertions
 	if a.DetachFrom == nil {
 		a.DetachFrom = []int64{}
 	}
+	sort.Slice(toDetach, func(i, j int) bool { return toDetach[i] < toDetach[j] })
+	sort.Slice(a.DetachFrom, func(i, j int) bool { return a.DetachFrom[i] < a.DetachFrom[j] })
 	if diff := cmp.Diff(a.DetachFrom, toDetach); diff != "" {
 		t.Fatalf("changeset DetachFrom wrong. (-want +got):\n%s", diff)
+	}
+
+	attachedTo := []int64{}
+	for _, assoc := range c.Campaigns {
+		if !assoc.Detach {
+			attachedTo = append(attachedTo, assoc.CampaignID)
+		}
+	}
+	if a.AttachedTo == nil {
+		a.AttachedTo = []int64{}
+	}
+	sort.Slice(attachedTo, func(i, j int) bool { return attachedTo[i] < attachedTo[j] })
+	sort.Slice(a.AttachedTo, func(i, j int) bool { return a.AttachedTo[i] < a.AttachedTo[j] })
+	if diff := cmp.Diff(a.AttachedTo, attachedTo); diff != "" {
+		t.Fatalf("changeset AttachedTo wrong. (-want +got):\n%s", diff)
 	}
 
 	if want := c.FailureMessage; want != nil {
@@ -214,8 +235,21 @@ func AssertChangeset(t *testing.T, c *campaigns.Changeset, a ChangesetAssertions
 		}
 	}
 
+	if want := c.SyncErrorMessage; want != nil {
+		if c.SyncErrorMessage == nil {
+			t.Fatalf("expected sync error message %q but have none", *want)
+		}
+		if want, have := *a.SyncErrorMessage, *c.SyncErrorMessage; have != want {
+			t.Fatalf("wrong sync error message. want=%q, have=%q", want, have)
+		}
+	}
+
 	if have, want := c.NumFailures, a.NumFailures; have != want {
 		t.Fatalf("changeset NumFailures wrong. want=%d, have=%d", want, have)
+	}
+
+	if have, want := c.NumResets, a.NumResets; have != want {
+		t.Fatalf("changeset NumResets wrong. want=%d, have=%d", want, have)
 	}
 
 	if have, want := c.ExternalBranch, a.ExternalBranch; have != want {
@@ -285,7 +319,7 @@ var FailedChangesetFailureMessage = "Failed test"
 func SetChangesetFailed(t *testing.T, ctx context.Context, s UpdateChangeseter, c *campaigns.Changeset) {
 	t.Helper()
 
-	c.ReconcilerState = campaigns.ReconcilerStateErrored
+	c.ReconcilerState = campaigns.ReconcilerStateFailed
 	c.FailureMessage = &FailedChangesetFailureMessage
 	c.NumFailures = 5
 
