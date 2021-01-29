@@ -8,12 +8,12 @@ import {
 } from '../../../components/FilteredConnection'
 import { PageHeader } from '../../../components/PageHeader'
 import { PageTitle } from '../../../components/PageTitle'
-import { LsifIndexFields, LSIFIndexState, SettingsAreaRepositoryFields } from '../../../graphql-operations'
+import { LsifIndexFields, LSIFIndexState } from '../../../graphql-operations'
 import { fetchLsifIndexes as defaultFetchLsifIndexes } from './backend'
 import { CodeIntelIndexNode, CodeIntelIndexNodeProps } from './CodeIntelIndexNode'
 
 export interface CodeIntelIndexesPageProps extends RouteComponentProps<{}>, TelemetryProps {
-    repo?: SettingsAreaRepositoryFields
+    repo?: { id: string }
     fetchLsifIndexes?: typeof defaultFetchLsifIndexes
     now?: () => Date
 }
@@ -21,8 +21,8 @@ export interface CodeIntelIndexesPageProps extends RouteComponentProps<{}>, Tele
 const filters: FilteredConnectionFilter[] = [
     {
         id: 'filters',
-        label: 'Filters',
-        type: 'radio',
+        label: 'Index state',
+        type: 'select',
         values: [
             {
                 label: 'All',
