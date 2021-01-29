@@ -38,7 +38,7 @@ export const UserAreaHeader: React.FunctionComponent<Props> = ({ url, navItems, 
                                 icon: () => <UserAvatar className="user-area-header__avatar" user={props.user} />,
                             },
                         ]}
-                        className="mb-4"
+                        className="mb-3"
                     />
                     <div className="d-flex align-items-end justify-content-between">
                         <ul className="nav nav-tabs border-bottom-0">

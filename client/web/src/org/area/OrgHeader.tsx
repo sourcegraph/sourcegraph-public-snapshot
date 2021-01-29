@@ -36,8 +36,7 @@ export const OrgHeader: React.FunctionComponent<Props> = ({
                                 text: <span className="org-header__title-text">{org.displayName || org.name}</span>,
                             },
                         ]}
-                        // todo: mb-3.5?
-                        className="mb-4"
+                        className="mb-3"
                     />
                     <div className="d-flex align-items-end justify-content-between">
                         <ul className="nav nav-tabs border-bottom-0">
