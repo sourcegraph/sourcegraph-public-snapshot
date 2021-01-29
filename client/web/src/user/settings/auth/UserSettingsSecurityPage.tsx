@@ -1,14 +1,13 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-// import { Link } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, filter, mergeMap, tap } from 'rxjs/operators'
 import { PasswordInput } from '../../../auth/SignInSignUpCommon'
 import { Form } from '../../../../../branded/src/components/Form'
 import { PageTitle } from '../../../components/PageTitle'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { updatePassword } from '../backend'
+import { updatePassword, createPassword } from '../backend'
 import { ErrorAlert } from '../../../components/alerts'
 import { AuthenticatedUser } from '../../../auth'
 import {
@@ -139,8 +138,17 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                             }),
                             filter(event => event.currentTarget.checkValidity()),
                             tap(() => this.setState({ loading: true })),
-                            mergeMap(() =>
-                                updatePassword({
+                            mergeMap(() => {
+                                if (this.state.accounts.lastRemoved) {
+                                    return createPassword({
+                                        newPassword: this.state.newPassword,
+                                    }).pipe(
+                                        tap(() => (window.location.href = '/-/sign-out')),
+                                        catchError(error => this.handleError(error))
+                                    )
+                                }
+
+                                return updatePassword({
                                     oldPassword: this.state.oldPassword,
                                     newPassword: this.state.newPassword,
                                 }).pipe(
@@ -150,7 +158,7 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                                     tap(() => (window.location.href = '/-/sign-out')),
                                     catchError(error => this.handleError(error))
                                 )
-                            )
+                            })
                         )
                         .subscribe(
                             () =>
@@ -245,17 +253,20 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                                 readOnly={true}
                                 hidden={true}
                             />
-                            <div className="form-group">
-                                <label>Old password</label>
-                                <PasswordInput
-                                    value={this.state.oldPassword}
-                                    onChange={this.onOldPasswordFieldChange}
-                                    disabled={this.state.loading}
-                                    name="oldPassword"
-                                    placeholder=" "
-                                    autoComplete="current-password"
-                                />
-                            </div>
+                            {!this.state.accounts.lastRemoved && (
+                                <div className="form-group">
+                                    <label>Old password</label>
+                                    <PasswordInput
+                                        value={this.state.oldPassword}
+                                        onChange={this.onOldPasswordFieldChange}
+                                        disabled={this.state.loading}
+                                        name="oldPassword"
+                                        placeholder=" "
+                                        autoComplete="current-password"
+                                    />
+                                </div>
+                            )}
+
                             <div className="form-group">
                                 <label>New password</label>
                                 <PasswordInput
@@ -285,7 +296,7 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                                 type="submit"
                                 disabled={this.state.loading}
                             >
-                                Update password
+                                {this.state.accounts.lastRemoved ? 'Set password' : 'Update password'}
                             </button>
                             {this.state.loading && (
                                 <div className="icon-inline">

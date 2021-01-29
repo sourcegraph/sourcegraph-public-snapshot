@@ -14,6 +14,8 @@ import {
     SetUserEmailVerifiedVariables,
     UpdatePasswordResult,
     UpdatePasswordVariables,
+    CreatePasswordResult,
+    CreatePasswordVariables,
 } from '../../graphql-operations'
 
 export function updatePassword(args: UpdatePasswordVariables): Observable<void> {
@@ -33,6 +35,27 @@ export function updatePassword(args: UpdatePasswordVariables): Observable<void> 
                 throw createAggregateError(errors)
             }
             eventLogger.log('PasswordUpdated')
+        })
+    )
+}
+
+export function createPassword(args: { newPassword: string }): Observable<void> {
+    return requestGraphQL<CreatePasswordResult, CreatePasswordVariables>(
+        gql`
+            mutation CreatePassword($newPassword: String!) {
+                createPassword(newPassword: $newPassword) {
+                    alwaysNil
+                }
+            }
+        `,
+        args
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.createPassword) {
+                eventLogger.log('CreatePasswordFailed')
+                throw createAggregateError(errors)
+            }
+            eventLogger.log('PasswordCreated')
         })
     )
 }
