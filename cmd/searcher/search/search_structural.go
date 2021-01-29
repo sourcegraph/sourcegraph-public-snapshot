@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 // The Sourcegraph frontend and interface only allow LineMatches (matches on a
@@ -211,9 +210,6 @@ func structuralSearch(ctx context.Context, zipPath, pattern, rule string, langua
 		Rule:          rule,
 		NumWorkers:    numWorkers,
 	}
-
-	span, ctx := ot.StartSpanFromContext(ctx, "Comby")
-	defer span.Finish()
 
 	combyMatches, err := comby.Matches(ctx, args)
 	if err != nil {
