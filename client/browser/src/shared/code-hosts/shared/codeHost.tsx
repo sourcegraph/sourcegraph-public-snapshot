@@ -760,9 +760,7 @@ export function handleCodeHost({
     }
 
     /** A stream of added or removed code views with the resolved file info */
-    console.log('Sourcegraph: attaching to mutations')
     const codeViews = mutations.pipe(
-        tap(mutation => console.log('Sourcegraph: mutation piped into trackCodeViews', mutation)),
         trackCodeViews(codeHost),
         tap(codeViewEvent => {
             codeViewCount.next(codeViewCount.value + 1)
@@ -884,7 +882,6 @@ export function handleCodeHost({
             codeViewEvent.subscriptions.add(() => console.log('Code view removed'))
 
             const { element, diffOrBlobInfo, getPositionAdjuster, getToolbarMount, toolbarButtonProps } = codeViewEvent
-            console.log({ diffOrBlobInfo })
             const initializeModelAndViewerForFileInfo = (
                 fileInfo: FileInfoWithContent & FileInfoWithRepoName
             ): CodeEditorWithPartialModel => {
