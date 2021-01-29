@@ -46,6 +46,7 @@ func (s *Store) With(other basestore.ShareableStore) *Store {
 
 type SeriesPointsOpts struct {
 	SeriesID *int32
+	From, To *time.Time
 	Limit    int
 }
 
@@ -79,11 +80,16 @@ ORDER BY time DESC
 `
 
 func seriesPointsQuery(opts SeriesPointsOpts) *sqlf.Query {
-	joins := []*sqlf.Query{}
 	preds := []*sqlf.Query{}
 
 	if opts.SeriesID != nil {
 		preds = append(preds, sqlf.Sprintf("series_id = %s", *opts.SeriesID))
+	}
+	if opts.From != nil {
+		preds = append(preds, sqlf.Sprintf("time > %s", *opts.From))
+	}
+	if opts.To != nil {
+		preds = append(preds, sqlf.Sprintf("time < %s", *opts.To))
 	}
 
 	if len(preds) == 0 {
@@ -95,7 +101,6 @@ func seriesPointsQuery(opts SeriesPointsOpts) *sqlf.Query {
 	}
 	return sqlf.Sprintf(
 		seriesPointsQueryFmtstr+limitClause,
-		sqlf.Join(joins, "\n"),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
