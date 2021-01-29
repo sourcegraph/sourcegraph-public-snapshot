@@ -489,6 +489,12 @@ const (
 
     // BitsPerSecond, e.g. for representing network and disk IO.
     BitsPerSecond UnitType = "bps"
+
+    // ReadsPerSecond, e.g for representing disk IO.
+    ReadsPerSecond = "rps"
+
+    // WritesPerSecond, e.g for representing disk IO.
+    WritesPerSecond = "wps"
 )
 ```
 
