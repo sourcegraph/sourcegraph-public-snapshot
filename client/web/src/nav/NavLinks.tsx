@@ -49,7 +49,7 @@ export class NavLinks extends React.PureComponent<Props> {
     private subscriptions = new Subscription()
 
     private navItems(): JSX.Element[] {
-        let items = []
+        const items = []
         if (!isErrorLike(this.props.settingsCascade.final)) {
             if (this.props.settingsCascade.final?.experimentalFeatures?.codeInsights) {
                 items.push(<InsightsNavItem />)
@@ -86,7 +86,7 @@ export class NavLinks extends React.PureComponent<Props> {
                 )}
                 {!this.props.minimalNavLinks && (
                     <>
-                        {this.items.map(item => (
+                        {React.Children.map(this.items, item => (
                             <li className="nav-item d-none d-lg-block">{item}</li>
                         ))}
                         {this.props.showCampaigns && (
