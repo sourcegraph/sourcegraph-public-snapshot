@@ -32,7 +32,7 @@ export const OrgHeader: React.FunctionComponent<Props> = ({
                     <PageHeader
                         path={[
                             {
-                                icon: () => <OrgAvatar org={org.name} className="org-header__avatar" />,
+                                icon: () => <OrgAvatar org={org.name} size="lg" className="mr-3" />,
                                 text: <span className="org-header__title-text">{org.displayName || org.name}</span>,
                             },
                         ]}
