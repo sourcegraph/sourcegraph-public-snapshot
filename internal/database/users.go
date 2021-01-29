@@ -905,6 +905,9 @@ func (u *UserStore) SetPassword(ctx context.Context, id int32, resetCode, newPas
 	if newPassword == "" {
 		return false, errors.New("new password was empty")
 	}
+	if err := CheckPasswordLength(newPassword); err != nil {
+		return false, err
+	}
 
 	resetLinkExpiryDuration := conf.AuthPasswordResetLinkExpiry()
 
@@ -969,6 +972,59 @@ func (u *UserStore) UpdatePassword(ctx context.Context, id int32, oldPassword, n
 	// 🚨 SECURITY: Set the new password
 	if err := u.Exec(ctx, sqlf.Sprintf("UPDATE users SET passwd_reset_code=NULL, passwd_reset_time=NULL, passwd=%s WHERE id=%s", passwd, id)); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// CreatePassword creates a user's password iff don't have a password and they
+// don't have any valid login connections.
+func (u *UserStore) CreatePassword(ctx context.Context, id int32, password string) error {
+	u.ensureStore()
+
+	// 🚨 SECURITY: Check min and max password length
+	if password == "" {
+		return errors.New("new password was empty")
+	}
+	if err := CheckPasswordLength(password); err != nil {
+		return err
+	}
+
+	passwd, err := hashPassword(password)
+	if err != nil {
+		return err
+	}
+
+	// 🚨 SECURITY: Create the password
+	res, err := u.ExecResult(ctx, sqlf.Sprintf(`
+UPDATE users
+SET passwd=%s
+WHERE id=%s
+  AND deleted_at IS NULL
+  AND passwd IS NULL
+  AND passwd_reset_code IS NULL
+  AND passwd_reset_time IS NULL
+  AND NOT EXISTS (
+    SELECT 1
+    FROM user_external_accounts
+    WHERE
+          user_id = %s
+      AND deleted_at IS NULL
+      AND expired_at IS NULL
+    )
+`, passwd, id, id))
+
+	if err != nil {
+		return errors.Wrap(err, "creating password")
+	}
+
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return errors.Wrap(err, "checking rows affected when creating password")
+	}
+
+	if affected == 0 {
+		return errors.New("password not created")
 	}
 
 	return nil

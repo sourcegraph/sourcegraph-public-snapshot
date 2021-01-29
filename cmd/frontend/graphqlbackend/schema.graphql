@@ -229,6 +229,11 @@ type Mutation {
     """
     updatePassword(oldPassword: String!, newPassword: String!): EmptyResponse
     """
+    Creates a password for the current user. It is only permitted if the user does not have a password and
+    they don't have any login connections.
+    """
+    createPassword(newPassword: String!): EmptyResponse
+    """
     Creates an access token that grants the privileges of the specified user (referred to as the access token's
     "subject" user after token creation). The result is the access token value, which the caller is responsible
     for storing (it is not accessible by Sourcegraph after creation).
