@@ -76,7 +76,7 @@ func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook webhooks.Re
 
 	m.Get(apirouter.GraphQL).Handler(trace.TraceRoute(handler(serveGraphQL(schema))))
 
-	m.Get(apirouter.SearchStream).Handler(trace.TraceRoute(frontendsearch.StreamHandler))
+	m.Get(apirouter.SearchStream).Handler(trace.TraceRoute(frontendsearch.StreamHandler()))
 
 	// Return the minimum src-cli version that's compatible with this instance
 	m.Get(apirouter.SrcCliVersion).Handler(trace.TraceRoute(handler(srcCliVersionServe)))
