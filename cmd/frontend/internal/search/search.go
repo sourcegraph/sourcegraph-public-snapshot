@@ -76,7 +76,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sendProgress := func() {
-		_ = eventWriter.Event("progress", progress.Current())
+		_ = eventWriter.Event("progress", progress.Build())
 	}
 
 	filters := &graphqlbackend.SearchFilters{
@@ -211,7 +211,9 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	_ = eventWriter.Event("progress", progress.Final())
+	pr := progress.Build()
+	pr.Done = true
+	_ = eventWriter.Event("progress", pr)
 }
 
 type searchResolver interface {
