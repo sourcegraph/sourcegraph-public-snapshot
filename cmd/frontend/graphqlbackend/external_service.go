@@ -40,6 +40,11 @@ func externalServiceByID(ctx context.Context, gqlID graphql.ID) (*externalServic
 		return nil, err
 	}
 
+	err = es.RedactConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "error redacting config")
+	}
+
 	// 🚨 SECURITY: Only site admins may read all or a user's external services.
 	// Otherwise, the authenticated user can only read external services under the same namespace.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
