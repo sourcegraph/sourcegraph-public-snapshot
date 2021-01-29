@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-multierror"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )

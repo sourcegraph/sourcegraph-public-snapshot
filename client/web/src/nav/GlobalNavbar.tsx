@@ -1,16 +1,16 @@
 import * as H from 'history'
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect } from 'react'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { AuthenticatedUser } from '../auth'
 import {
-    parseSearchURLQuery,
     PatternTypeProps,
     CaseSensitivityProps,
     CopyQueryButtonProps,
     OnboardingTourProps,
+    ParsedSearchQueryProps,
 } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { showDotComMarketing } from '../util/features'
@@ -38,6 +38,7 @@ interface Props
         ThemePreferenceProps,
         ExtensionAlertAnimationProps,
         ActivationProps,
+        Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
         PatternTypeProps,
         CaseSensitivityProps,
         CopyQueryButtonProps,
@@ -101,7 +102,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     // Workaround: can't put this in optional parameter value because of https://github.com/babel/babel/issues/11166
     branding = branding ?? window.context?.branding
 
-    const query = useMemo(() => parseSearchURLQuery(location.search || ''), [location.search])
+    const query = props.parsedSearchQuery
 
     useEffect(() => {
         // On a non-search related page or non-repo page, we clear the query in

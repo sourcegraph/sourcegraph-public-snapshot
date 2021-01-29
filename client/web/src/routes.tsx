@@ -1,7 +1,6 @@
 import * as React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { LayoutProps } from './Layout'
-import { parseSearchURLQuery } from './search'
 import { lazyComponent } from './util/lazyComponent'
 import { isErrorLike } from '../../shared/src/util/errors'
 import { RepogroupPage } from './repogroups/RepogroupPage'
@@ -71,7 +70,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/search',
         render: props =>
-            parseSearchURLQuery(props.location.search) ? (
+            props.parsedSearchQuery ? (
                 !isErrorLike(props.settingsCascade.final) &&
                 props.settingsCascade.final?.experimentalFeatures?.searchStreaming ? (
                     <StreamingSearchResults {...props} />
