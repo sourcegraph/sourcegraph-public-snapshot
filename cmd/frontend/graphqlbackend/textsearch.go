@@ -605,7 +605,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 		}()
 	}
 
-	if isStructuralSearch && args.PatternInfo.CombyRule == `where "zoekt" == "zoekt"` {
+	if isStructuralSearch && args.PatternInfo.CombyRule != `where "zoekt" == "zoekt"` {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()

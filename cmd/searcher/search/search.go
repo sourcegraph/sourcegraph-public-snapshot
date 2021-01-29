@@ -191,7 +191,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 		}
 	}(time.Now())
 
-	if p.IsStructuralPat && p.CombyRule == `where "zoekt" == "zoekt"` {
+	if p.IsStructuralPat && p.CombyRule != `where "zoekt" == "zoekt"` {
 		// Execute the new structural search path that directly calls Zoekt.
 		return structuralSearchWithZoekt(ctx, p)
 	}
