@@ -6,7 +6,7 @@ describe('search/index', () => {
         expect(
             parseSearchURL('q=TEST+repo:sourcegraph/sourcegraph+case:yes&patternType=literal&case=yes')
         ).toStrictEqual({
-            query: 'TEST repo:sourcegraph/sourcegraph  case:yes',
+            query: 'TEST repo:sourcegraph/sourcegraph ',
             patternType: SearchPatternType.literal,
             caseSensitive: true,
             versionContext: undefined,
@@ -24,14 +24,14 @@ describe('search/index', () => {
         expect(
             parseSearchURL('q=TEST+repo:sourcegraph/sourcegraph+patternType:regexp&patternType=literal&case=yes')
         ).toStrictEqual({
-            query: 'TEST repo:sourcegraph/sourcegraph  case:yes',
+            query: 'TEST repo:sourcegraph/sourcegraph ',
             patternType: SearchPatternType.regexp,
             caseSensitive: true,
             versionContext: undefined,
         })
 
         expect(parseSearchURL('q=TEST+repo:sourcegraph/sourcegraph+case:yes&patternType=literal')).toStrictEqual({
-            query: 'TEST repo:sourcegraph/sourcegraph  case:yes',
+            query: 'TEST repo:sourcegraph/sourcegraph ',
             patternType: SearchPatternType.literal,
             caseSensitive: true,
             versionContext: undefined,
@@ -44,6 +44,80 @@ describe('search/index', () => {
         ).toStrictEqual({
             query: 'TEST repo:sourcegraph/sourcegraph  ',
             patternType: SearchPatternType.regexp,
+            caseSensitive: false,
+            versionContext: undefined,
+        })
+
+        expect(parseSearchURL('q=TEST+repo:sourcegraph/sourcegraph&patternType=literal')).toStrictEqual({
+            query: 'TEST repo:sourcegraph/sourcegraph',
+            patternType: SearchPatternType.literal,
+            caseSensitive: false,
+            versionContext: undefined,
+        })
+    })
+
+    test('parseSearchURL with appendCaseFilter', () => {
+        expect(
+            parseSearchURL('q=TEST+repo:sourcegraph/sourcegraph+case:yes&patternType=literal&case=yes', {
+                appendCaseFilter: true,
+            })
+        ).toStrictEqual({
+            query: 'TEST repo:sourcegraph/sourcegraph  case:yes',
+            patternType: SearchPatternType.literal,
+            caseSensitive: true,
+            versionContext: undefined,
+        })
+
+        expect(
+            parseSearchURL('q=TEST+repo:sourcegraph/sourcegraph+case:no&patternType=literal&case=yes', {
+                appendCaseFilter: true,
+            })
+        ).toStrictEqual({
+            query: 'TEST repo:sourcegraph/sourcegraph ',
+            patternType: SearchPatternType.literal,
+            caseSensitive: false,
+            versionContext: undefined,
+        })
+
+        expect(
+            parseSearchURL('q=TEST+repo:sourcegraph/sourcegraph+patternType:regexp&patternType=literal&case=yes', {
+                appendCaseFilter: true,
+            })
+        ).toStrictEqual({
+            query: 'TEST repo:sourcegraph/sourcegraph  case:yes',
+            patternType: SearchPatternType.regexp,
+            caseSensitive: true,
+            versionContext: undefined,
+        })
+
+        expect(
+            parseSearchURL('q=TEST+repo:sourcegraph/sourcegraph+case:yes&patternType=literal', {
+                appendCaseFilter: true,
+            })
+        ).toStrictEqual({
+            query: 'TEST repo:sourcegraph/sourcegraph  case:yes',
+            patternType: SearchPatternType.literal,
+            caseSensitive: true,
+            versionContext: undefined,
+        })
+
+        expect(
+            parseSearchURL(
+                'q=TEST+repo:sourcegraph/sourcegraph+case:no+patternType:regexp&patternType=literal&case=yes',
+                { appendCaseFilter: true }
+            )
+        ).toStrictEqual({
+            query: 'TEST repo:sourcegraph/sourcegraph  ',
+            patternType: SearchPatternType.regexp,
+            caseSensitive: false,
+            versionContext: undefined,
+        })
+
+        expect(
+            parseSearchURL('q=TEST+repo:sourcegraph/sourcegraph&patternType=literal', { appendCaseFilter: true })
+        ).toStrictEqual({
+            query: 'TEST repo:sourcegraph/sourcegraph',
+            patternType: SearchPatternType.literal,
             caseSensitive: false,
             versionContext: undefined,
         })

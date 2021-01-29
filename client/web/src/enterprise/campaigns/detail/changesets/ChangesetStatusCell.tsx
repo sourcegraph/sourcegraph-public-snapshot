@@ -11,14 +11,14 @@ import classNames from 'classnames'
 
 export interface ChangesetStatusCellProps {
     className?: string
-    changeset: Pick<ChangesetFields, 'state'>
+    state: ChangesetFields['state']
 }
 
 export const ChangesetStatusCell: React.FunctionComponent<ChangesetStatusCellProps> = ({
-    changeset,
+    state,
     className = 'd-flex',
 }) => {
-    switch (changeset.state) {
+    switch (state) {
         case ChangesetState.FAILED:
             return <ChangesetStatusError className={className} />
         case ChangesetState.RETRYING:

@@ -39,6 +39,7 @@ func TestSearchProgress(t *testing.T) {
 			Missing:             []Namer{repo{"missing-1"}, repo{"missing-2"}},
 			Cloning:             []Namer{repo{"cloning-1"}},
 			LimitHit:            true,
+			SuggestedLimit:      1000,
 		},
 	}
 

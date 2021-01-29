@@ -76,6 +76,7 @@ exports[`GlobalNavbar default 1`] = `
       }
       onChange={[Function]}
       onThemePreferenceChange={[Function]}
+      parsedSearchQuery="r:golang/oauth2 test f:travis"
       patternType="literal"
       platformContext={Object {}}
       setCaseSensitivity={[Function]}

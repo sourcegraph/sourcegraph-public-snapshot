@@ -31,6 +31,7 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     availableVersionContexts: [],
     globbing: false,
     enableSmartQuery: false,
+    parsedSearchQuery: 'r:golang/oauth2 test f:travis',
     patternType: SearchPatternType.literal,
     setPatternType: () => undefined,
     caseSensitive: false,
