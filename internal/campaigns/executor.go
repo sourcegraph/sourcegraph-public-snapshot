@@ -410,7 +410,7 @@ func reachedTimeout(cmdCtx context.Context, err error) bool {
 		}
 	}
 
-	return errors.Is(err, context.DeadlineExceeded)
+	return errors.Is(errors.Cause(err), context.DeadlineExceeded)
 }
 
 func createChangesetSpecs(task *Task, result ExecutionResult, features featureFlags) ([]*ChangesetSpec, error) {
