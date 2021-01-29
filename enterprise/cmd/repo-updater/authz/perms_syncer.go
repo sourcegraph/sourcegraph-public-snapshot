@@ -14,17 +14,18 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/db"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // PermsSyncer is a permissions syncing manager that is in charge of keeping
@@ -35,7 +36,7 @@ type PermsSyncer struct {
 	// The priority queue to maintain the permissions syncing requests.
 	queue *requestQueue
 	// The database interface for any repos and external services operations.
-	reposStore repos.Store
+	reposStore *repos.Store
 	// The database interface for any permissions operations.
 	permsStore *edb.PermsStore
 	// The mockable function to return the current time.
@@ -48,7 +49,7 @@ type PermsSyncer struct {
 
 // NewPermsSyncer returns a new permissions syncing manager.
 func NewPermsSyncer(
-	reposStore repos.Store,
+	reposStore *repos.Store,
 	permsStore *edb.PermsStore,
 	clock func() time.Time,
 	rateLimiterRegistry *ratelimit.Registry,
@@ -181,7 +182,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	ctx, save := s.observe(ctx, "PermsSyncer.syncUserPerms", "")
 	defer save(requestTypeUser, userID, &err)
 
-	user, err := db.Users.GetByID(ctx, userID)
+	user, err := database.GlobalUsers.GetByID(ctx, userID)
 	if err != nil {
 		return errors.Wrap(err, "get user")
 	}
@@ -221,7 +222,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 			continue
 		}
 
-		err = db.ExternalAccounts.AssociateUserAndSave(ctx, user.ID, acct.AccountSpec, acct.AccountData)
+		err = database.GlobalExternalAccounts.AssociateUserAndSave(ctx, user.ID, acct.AccountSpec, acct.AccountData)
 		if err != nil {
 			log15.Error("Could not associate external account to user",
 				"userID", user.ID,
@@ -248,12 +249,19 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		extIDs, err := provider.FetchUserPerms(ctx, acct)
 		if err != nil {
 			// The "401 Unauthorized" is returned by code hosts when the token is no longer valid
-			if errcode.IsUnauthorized(errors.Cause(err)) {
-				err = db.ExternalAccounts.TouchExpired(ctx, acct.ID)
+			unauthorized := errcode.IsUnauthorized(errors.Cause(err))
+
+			// Detect GitHub account suspension error
+			accountSuspended := errcode.IsAccountSuspended(errors.Cause(err))
+
+			if unauthorized || accountSuspended {
+				err = database.GlobalExternalAccounts.TouchExpired(ctx, acct.ID)
 				if err != nil {
 					return errors.Wrapf(err, "set expired for external account %d", acct.ID)
 				}
-				log15.Debug("PermsSyncer.syncUserPerms.setExternalAccountExpired", "userID", user.ID, "id", acct.ID)
+				log15.Debug("PermsSyncer.syncUserPerms.setExternalAccountExpired",
+					"userID", user.ID, "id", acct.ID,
+					"unauthorized", unauthorized, "accountSuspended", accountSuspended)
 
 				// We still want to continue processing other external accounts
 				continue
@@ -265,7 +273,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 			}
 			log15.Warn("PermsSyncer.syncUserPerms.proceedWithPartialResults", "userID", user.ID, "error", err)
 		} else {
-			err = db.ExternalAccounts.TouchLastValid(ctx, acct.ID)
+			err = database.GlobalExternalAccounts.TouchLastValid(ctx, acct.ID)
 			if err != nil {
 				return errors.Wrapf(err, "set last valid for external account %d", acct.ID)
 			}
@@ -280,12 +288,12 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		}
 	}
 
-	var rs []*repos.Repo
+	var rs []*types.Repo
 	if len(repoSpecs) > 0 {
 		// Get corresponding internal database IDs
-		rs, err = s.reposStore.ListRepos(ctx, repos.StoreListReposArgs{
+		rs, err = s.reposStore.RepoStore.List(ctx, database.ReposListOptions{
 			ExternalRepos: repoSpecs,
-			PrivateOnly:   true,
+			OnlyPrivate:   true,
 		})
 		if err != nil {
 			return errors.Wrap(err, "list external repositories")
@@ -319,7 +327,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	ctx, save := s.observe(ctx, "PermsSyncer.syncRepoPerms", "")
 	defer save(requestTypeRepo, int32(repoID), &err)
 
-	rs, err := s.reposStore.ListRepos(ctx, repos.StoreListReposArgs{
+	rs, err := s.reposStore.RepoStore.List(ctx, database.ReposListOptions{
 		IDs: []api.RepoID{repoID},
 	})
 	if err != nil {
@@ -434,7 +442,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	if err != nil {
 		return errors.Wrap(err, "start transaction")
 	}
-	defer txs.Done(&err)
+	defer func() { err = txs.Done(err) }()
 
 	accounts := &extsvc.Accounts{
 		ServiceType: provider.ServiceType(),

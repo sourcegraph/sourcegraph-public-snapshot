@@ -4,9 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"strconv"
+	"strings"
 	"time"
 
+	"google.golang.org/api/googleapi"
 	"google.golang.org/api/sheets/v4"
 )
 
@@ -34,20 +37,69 @@ func toSheetValues(resources Resources) [][]interface{} {
 	return values
 }
 
-func updateSheet(ctx context.Context, sheetID string, resources Resources, highlighted int) (string, error) {
+const generatedSheetPagePrefix = "Report-"
+
+type updateSheetOptions struct {
+	// First n rows to highlight
+	HighlightedRows int
+	// Prune sheets created more than the given duration ago
+	PruneOlderThan time.Duration
+	// Verbose log output toggle
+	Verbose bool
+}
+
+func updateSheet(ctx context.Context, sheetID string, resources Resources, opts updateSheetOptions) (string, error) {
 	client, err := sheets.NewService(ctx)
 	if err != nil {
 		return "", fmt.Errorf("failed to init client: %w", err)
 	}
 
 	reportTime := time.Now()
+	var sheetOps []*sheets.Request
 	newPageID := reportTime.Unix()
-	newPage := fmt.Sprintf("Report-%s", reportTime.UTC().Format(time.RFC3339))
+	newPage := generatedSheetPagePrefix + reportTime.UTC().Format(time.RFC3339)
 
-	_, err = client.Spreadsheets.BatchUpdate(sheetID, &sheets.BatchUpdateSpreadsheetRequest{
-		Requests: []*sheets.Request{
+	// query for pages (sheets) we might need to delete
+	if opts.PruneOlderThan > 0 {
+		oldestSheet := reportTime.Add(-opts.PruneOlderThan)
+		if opts.Verbose {
+			log.Printf("pruning pages older than %s\n", oldestSheet)
+		}
+		mainSheet, err := client.Spreadsheets.Get(sheetID).Fields(googleapi.Field("sheets")).Context(ctx).Do()
+		if err != nil {
+			return "", fmt.Errorf("unable to get sheet %q: %w", sheetID, err)
+		}
+		for _, page := range mainSheet.Sheets {
+			if page == nil || page.Properties == nil {
+				continue
+			}
+			if strings.HasPrefix(page.Properties.Title, generatedSheetPagePrefix) {
+				// parse date out of the sheet id, which we set to be unix timestamps (see above)
+				reportID := page.Properties.SheetId
+				reportCreatedDate := time.Unix(reportID, 0)
+				if reportCreatedDate.Before(oldestSheet) {
+					sheetOps = append(sheetOps, &sheets.Request{
+						DeleteSheet: &sheets.DeleteSheetRequest{
+							SheetId: reportID,
+						},
+					})
+					if opts.Verbose {
+						log.Printf("adding op to delete sheet '%d' (%s older than delete threshold)\n",
+							reportID, oldestSheet.Sub(reportCreatedDate))
+					}
+				}
+			}
+		}
+	}
+
+	// set up a new page (sheet) within the sheet if there are resources to report
+	if len(resources) > 0 {
+		if opts.Verbose {
+			log.Printf("creating page %q (ID: %d) with %d rows higlighted\n", newPage, newPageID, opts.HighlightedRows)
+		}
+		sheetOps = append(sheetOps,
 			// generate new sheet for this report
-			{AddSheet: &sheets.AddSheetRequest{
+			&sheets.Request{AddSheet: &sheets.AddSheetRequest{
 				Properties: &sheets.SheetProperties{
 					SheetId: newPageID,
 					Title:   newPage,
@@ -59,13 +111,12 @@ func updateSheet(ctx context.Context, sheetID string, resources Resources, highl
 					},
 				},
 			}},
-
 			// highlight cells for most recent entries
-			{RepeatCell: &sheets.RepeatCellRequest{
+			&sheets.Request{RepeatCell: &sheets.RepeatCellRequest{
 				Range: &sheets.GridRange{
 					SheetId:        newPageID,
 					StartRowIndex:  1,
-					EndRowIndex:    int64(highlighted) + 1,
+					EndRowIndex:    int64(opts.HighlightedRows) + 1,
 					EndColumnIndex: int64(len(reportSheetHeaders)),
 				},
 				Cell: &sheets.CellData{
@@ -74,19 +125,33 @@ func updateSheet(ctx context.Context, sheetID string, resources Resources, highl
 					},
 				},
 				Fields: "userEnteredFormat.textFormat.bold",
-			}},
-		},
-	}).Context(ctx).Do()
-	if err != nil {
-		return "", fmt.Errorf("failed to format report: %w", err)
+			}})
 	}
 
-	// append report to new sheet
-	_, err = client.Spreadsheets.Values.Update(sheetID, fmt.Sprintf("'%s'!A:Z", newPage), &sheets.ValueRange{
-		Values: toSheetValues(resources),
-	}).ValueInputOption("RAW").Context(ctx).Do()
-	if err != nil {
-		return "", fmt.Errorf("failed to update report: %w", err)
+	// make the changes (if there are any)
+	if len(sheetOps) > 0 {
+		_, err = client.Spreadsheets.BatchUpdate(sheetID, &sheets.BatchUpdateSpreadsheetRequest{
+			Requests: sheetOps,
+		}).Context(ctx).Do()
+		if err != nil {
+			return "", fmt.Errorf("failed to format report: %w", err)
+		}
+	} else if opts.Verbose {
+		log.Println("no changes to make to sheet")
+	}
+
+	// append report to new sheet (if there are resources)
+	if len(resources) > 0 {
+		sheetValues := toSheetValues(resources)
+		_, err = client.Spreadsheets.Values.Update(sheetID, fmt.Sprintf("'%s'!A:Z", newPage), &sheets.ValueRange{
+			Values: sheetValues,
+		}).ValueInputOption("RAW").Context(ctx).Do()
+		if err != nil {
+			return "", fmt.Errorf("failed to update report values: %w", err)
+		}
+		if opts.Verbose {
+			log.Printf("wrote %d resources to sheet %q", len(sheetValues), newPageID)
+		}
 	}
 
 	return strconv.Itoa(int(newPageID)), nil

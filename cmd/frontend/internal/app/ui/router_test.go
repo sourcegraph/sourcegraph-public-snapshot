@@ -22,12 +22,11 @@ import (
 func init() {
 	// Enable SourcegraphDotComMode for all tests in this package.
 	envvar.MockSourcegraphDotComMode(true)
-
-	// Reinit router
-	initRouter()
 }
 
 func TestRouter(t *testing.T) {
+	InitRouter()
+	router := Router()
 	tests := []struct {
 		path      string
 		wantRoute string
@@ -196,7 +195,7 @@ func TestRouter(t *testing.T) {
 				routeMatch mux.RouteMatch
 				routeName  string
 			)
-			match := Router().Match(&http.Request{Method: "GET", URL: &url.URL{Path: tst.path}}, &routeMatch)
+			match := router.Match(&http.Request{Method: "GET", URL: &url.URL{Path: tst.path}}, &routeMatch)
 			if match {
 				routeName = routeMatch.Route.GetName()
 			}
@@ -211,6 +210,9 @@ func TestRouter(t *testing.T) {
 }
 
 func TestRouter_RootPath(t *testing.T) {
+	InitRouter()
+	router := Router()
+
 	tests := []struct {
 		repo   api.RepoName
 		exists bool
@@ -247,7 +249,7 @@ func TestRouter_RootPath(t *testing.T) {
 			// Perform a request that we expect to redirect to the about subdomain.
 			rec := httptest.NewRecorder()
 			req := &http.Request{Method: "GET", URL: &url.URL{Path: "/" + string(tst.repo)}}
-			Router().ServeHTTP(rec, req)
+			router.ServeHTTP(rec, req)
 			if !tst.exists {
 				// expecting redirect
 				if rec.Code != http.StatusTemporaryRedirect {

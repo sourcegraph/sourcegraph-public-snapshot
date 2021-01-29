@@ -3,9 +3,7 @@
   "description": "Scripts for managing release captain duties",
   "private": true,
   "scripts": {
-    "release": "node ./out/release.js",
-    "build": "../../node_modules/.bin/tsc -b .",
-    "watch": "../../node_modules/.bin/tsc -b . -w",
+    "release": "../../node_modules/.bin/ts-node --transpile-only ./src/main.ts",
     "eslint": "../../node_modules/.bin/eslint 'src/**/*.ts'"
   },
   "dependencies": {}

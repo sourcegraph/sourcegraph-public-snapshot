@@ -7,13 +7,13 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { GitReferenceNode, queryGitReferences as queryGitReferencesFromBackend } from '../GitReference'
 import { RepositoryReleasesAreaPageProps } from './RepositoryReleasesArea'
 import { Observable } from 'rxjs'
-import { GitRefType } from '../../graphql-operations'
+import { GitRefType, Scalars } from '../../graphql-operations'
 
 interface Props extends RepositoryReleasesAreaPageProps {
     history: H.History
     location: H.Location
     queryGitReferences?: (args: {
-        repo: GQL.ID
+        repo: Scalars['ID']
         first?: number
         query?: string
         type: GitRefType

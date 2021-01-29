@@ -217,8 +217,8 @@ describe('Search', () => {
             await driver.page.waitForSelector('#monaco-query-input')
             expect(await getSearchFieldValue(driver)).toStrictEqual('foo')
             // Field value is cleared when navigating to a non search-related page
-            await driver.page.waitForSelector('[data-testid="extensions"]')
-            await driver.page.click('[data-testid="extensions"]')
+            await driver.page.waitForSelector('[data-testid="campaigns"]')
+            await driver.page.click('[data-testid="campaigns"]')
             expect(await getSearchFieldValue(driver)).toStrictEqual('')
             // Field value is restored when the back button is pressed
             await driver.page.goBack()
@@ -298,7 +298,8 @@ describe('Search', () => {
 
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
             await driver.page.waitForSelector('.test-search-button', { visible: true })
-            await driver.page.keyboard.type(' hello')
+            // Note: Delay added because this test has been intermittently failing without it. Monaco search bar may drop events if it gets too many too fast.
+            await driver.page.keyboard.type(' hello', { delay: 50 })
             await driver.page.click('.test-search-button')
             await driver.assertWindowLocation('/search?q=test+hello&patternType=regexp')
         })
@@ -335,8 +336,7 @@ describe('Search', () => {
             }),
         }
 
-        // Skip streaming search tests until streaming search UI is properly implemented
-        test.skip('Streaming search with single repo result', async () => {
+        test('Streaming search with single repo result', async () => {
             const searchStreamEvents: SearchEvent[] = [
                 { type: 'matches', data: [{ type: 'repo', repository: 'github.com/sourcegraph/sourcegraph' }] },
                 { type: 'done', data: {} },

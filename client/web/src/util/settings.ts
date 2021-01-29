@@ -47,7 +47,6 @@ export function defaultPatternTypeFromSettings(settingsCascade: SettingsCascadeO
 export function experimentalFeaturesFromSettings(
     settingsCascade: SettingsCascadeOrError
 ): {
-    splitSearchModes: boolean
     copyQueryButton: boolean
     showRepogroupHomepage: boolean
     showOnboardingTour: boolean
@@ -55,24 +54,24 @@ export function experimentalFeaturesFromSettings(
     showMultilineSearchConsole: boolean
     showQueryBuilder: boolean
     enableSmartQuery: boolean
+    enableCodeMonitoring: boolean
 } {
     const experimentalFeatures: SettingsExperimentalFeatures =
         (settingsCascade.final && !isErrorLike(settingsCascade.final) && settingsCascade.final.experimentalFeatures) ||
         {}
 
     const {
-        splitSearchModes = false,
         copyQueryButton = false,
         showRepogroupHomepage = false,
         showOnboardingTour = true, // Default to true if not set
         showEnterpriseHomePanels = true, // Default to true if not set
         showMultilineSearchConsole = false,
         showQueryBuilder = false,
-        enableSmartQuery = false,
+        enableSmartQuery = true,
+        codeMonitoring = false,
     } = experimentalFeatures
 
     return {
-        splitSearchModes,
         copyQueryButton,
         showRepogroupHomepage,
         showOnboardingTour,
@@ -80,5 +79,6 @@ export function experimentalFeaturesFromSettings(
         showMultilineSearchConsole,
         showQueryBuilder,
         enableSmartQuery,
+        enableCodeMonitoring: codeMonitoring,
     }
 }

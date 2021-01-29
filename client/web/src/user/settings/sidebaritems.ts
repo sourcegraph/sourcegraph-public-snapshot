@@ -30,8 +30,8 @@ export const userSettingsSideBarItems: UserSettingsSidebarItems = {
             condition: () => window.context.accessTokensAllow !== 'none',
         },
         {
-            label: 'Code hosts',
-            to: '/external-services',
+            label: 'Code host connections',
+            to: '/code-hosts',
             condition: props =>
                 window.context.externalServicesUserModeEnabled ||
                 (props.user.id === props.authenticatedUser.id &&

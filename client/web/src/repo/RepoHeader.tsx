@@ -15,6 +15,7 @@ import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 import { SettingsCascadeOrError } from '../../../shared/src/settings/settings'
 import { AuthenticatedUser } from '../auth'
 import classNames from 'classnames'
+import { Scalars } from '../../../shared/src/graphql-operations'
 
 /**
  * Stores the list of RepoHeaderContributions, manages addition/deletion, and ensures they are sorted.
@@ -136,9 +137,9 @@ interface Props extends PlatformContextProps, ExtensionsControllerProps, Telemet
     repo:
         | GQL.IRepository
         | {
-              /** The repository's GQL.ID, if it has one.
+              /** The repository's ID, if it has one.
                */
-              id?: GQL.ID
+              id?: Scalars['ID']
 
               name: string
               url: string

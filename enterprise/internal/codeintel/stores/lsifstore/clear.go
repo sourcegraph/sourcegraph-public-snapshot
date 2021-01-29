@@ -7,6 +7,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -47,10 +48,15 @@ func (s *Store) Clear(ctx context.Context, bundleIDs ...int) (err error) {
 	}()
 
 	for _, tableName := range tableNames {
-		if err := tx.Exec(ctx, sqlf.Sprintf(`DELETE FROM "`+tableName+`" WHERE dump_id IN (%s)`, sqlf.Join(ids, ","))); err != nil {
+		if err := tx.Exec(ctx, sqlf.Sprintf(clearQuery, sqlf.Sprintf(tableName), sqlf.Join(ids, ","))); err != nil {
 			return err
 		}
 	}
 
 	return nil
 }
+
+const clearQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/clear.go:Clear
+DELETE FROM %s WHERE dump_id IN (%s)
+`

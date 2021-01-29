@@ -419,7 +419,7 @@ func TestHandleEnqueueMultipartFinalizeIncompleteUpload(t *testing.T) {
 	}
 }
 
-func setupRepoMocks(t *testing.T) {
+func setupRepoMocks(t testing.TB) {
 	t.Cleanup(func() {
 		backend.Mocks.Repos.GetByName = nil
 		backend.Mocks.Repos.ResolveRev = nil

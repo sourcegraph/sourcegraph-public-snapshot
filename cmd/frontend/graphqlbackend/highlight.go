@@ -46,20 +46,22 @@ type HighlightArgs struct {
 
 type highlightedFileResolver struct {
 	aborted bool
-	html    string
+	html    template.HTML
 }
 
 func (h *highlightedFileResolver) Aborted() bool { return h.aborted }
-func (h *highlightedFileResolver) HTML() string  { return h.html }
+func (h *highlightedFileResolver) HTML() string  { return string(h.html) }
+func (h *highlightedFileResolver) LineRanges(args *struct{ Ranges []highlight.LineRange }) ([][]string, error) {
+	return highlight.SplitLineRanges(h.html, args.Ranges)
+}
 
 func highlightContent(ctx context.Context, args *HighlightArgs, content, path string, metadata highlight.Metadata) (*highlightedFileResolver, error) {
 	var (
-		html            template.HTML
 		result          = &highlightedFileResolver{}
 		err             error
 		simulateTimeout = metadata.RepoName == "github.com/sourcegraph/AlwaysHighlightTimeoutTest"
 	)
-	html, result.aborted, err = highlight.Code(ctx, highlight.Params{
+	result.html, result.aborted, err = highlight.Code(ctx, highlight.Params{
 		Content:            []byte(content),
 		Filepath:           path,
 		DisableTimeout:     args.DisableTimeout,
@@ -71,6 +73,5 @@ func highlightContent(ctx context.Context, args *HighlightArgs, content, path st
 	if err != nil {
 		return nil, err
 	}
-	result.html = string(html)
 	return result, nil
 }

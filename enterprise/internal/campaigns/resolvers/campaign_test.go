@@ -10,13 +10,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
@@ -28,23 +28,22 @@ func TestCampaignResolver(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
-	username := "campaign-resolver-username"
-	userID := insertTestUser(t, dbconn.Global, username, true)
-	org, err := db.Orgs.Create(ctx, "test-org", nil)
+	userID := ct.CreateTestUser(t, true).ID
+	org, err := database.GlobalOrgs.Create(ctx, "test-campaign-resolver-org", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	store := ee.NewStoreWithClock(dbconn.Global, clock)
+	cstore := store.NewWithClock(dbconn.Global, clock)
 
 	campaignSpec := &campaigns.CampaignSpec{
 		RawSpec:        ct.TestRawCampaignSpec,
 		UserID:         userID,
 		NamespaceOrgID: org.ID,
 	}
-	if err := store.CreateCampaignSpec(ctx, campaignSpec); err != nil {
+	if err := cstore.CreateCampaignSpec(ctx, campaignSpec); err != nil {
 		t.Fatal(err)
 	}
 
@@ -57,11 +56,11 @@ func TestCampaignResolver(t *testing.T) {
 		LastAppliedAt:    now,
 		CampaignSpecID:   campaignSpec.ID,
 	}
-	if err := store.CreateCampaign(ctx, campaign); err != nil {
+	if err := cstore.CreateCampaign(ctx, campaign); err != nil {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(&Resolver{store: store}, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(dbconn.Global, &Resolver{store: cstore}, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -106,7 +105,7 @@ func TestCampaignResolver(t *testing.T) {
 	}
 
 	// Now soft-delete the user and check we can still access the campaign in the org namespace.
-	err = db.Users.Delete(ctx, userID)
+	err = database.GlobalUsers.Delete(ctx, userID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -125,7 +124,7 @@ func TestCampaignResolver(t *testing.T) {
 	}
 
 	// Now hard-delete the user and check we can still access the campaign in the org namespace.
-	err = db.Users.HardDelete(ctx, userID)
+	err = database.GlobalUsers.HardDelete(ctx, userID)
 	if err != nil {
 		t.Fatal(err)
 	}

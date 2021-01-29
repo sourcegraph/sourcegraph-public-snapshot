@@ -9,11 +9,12 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"golang.org/x/time/rate"
+
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"golang.org/x/time/rate"
 )
 
 // V3Client is a caching GitHub API client for GitHub's REST API v3.
@@ -49,6 +50,10 @@ type V3Client struct {
 
 	// rateLimit is our self imposed rate limiter
 	rateLimit *rate.Limiter
+
+	// resource specifies which API this client is intended for.
+	// One of 'rest' or 'search'.
+	resource string
 }
 
 // NewV3Client creates a new GitHub API client with an optional default
@@ -57,6 +62,19 @@ type V3Client struct {
 // apiURL must point to the base URL of the GitHub API. See the docstring for
 // V3Client.apiURL.
 func NewV3Client(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V3Client {
+	return newV3Client(apiURL, a, "rest", cli)
+}
+
+// NewV3SearchClient creates a new GitHub API client intended for use with the
+// search API with an optional default authenticator.
+//
+// apiURL must point to the base URL of the GitHub API. See the docstring for
+// V3Client.apiURL.
+func NewV3SearchClient(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V3Client {
+	return newV3Client(apiURL, a, "search", cli)
+}
+
+func newV3Client(apiURL *url.URL, a auth.Authenticator, resource string, cli httpcli.Doer) *V3Client {
 	apiURL = canonicalizedURL(apiURL)
 	if gitHubDisable {
 		cli = disabledClient{}
@@ -82,7 +100,7 @@ func NewV3Client(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V3Cli
 	}
 
 	rl := ratelimit.DefaultRegistry.Get(apiURL.String())
-	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(apiURL.String(), tokenHash, &ratelimit.Monitor{HeaderPrefix: "X-"})
+	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(apiURL.String(), tokenHash, resource, &ratelimit.Monitor{HeaderPrefix: "X-"})
 
 	return &V3Client{
 		apiURL:           apiURL,
@@ -92,6 +110,7 @@ func NewV3Client(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V3Cli
 		rateLimit:        rl,
 		rateLimitMonitor: rlm,
 		repoCache:        newRepoCache(apiURL, a),
+		resource:         resource,
 	}
 }
 
@@ -99,15 +118,7 @@ func NewV3Client(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V3Cli
 // the current V3Client, except authenticated as the GitHub user with the given
 // authenticator instance (most likely a token).
 func (c *V3Client) WithAuthenticator(a auth.Authenticator) *V3Client {
-	return NewV3Client(c.apiURL, a, c.httpClient)
-}
-
-// WithSeparateRateLimitMonitor returns a new V3Client that uses the same configuration as
-// the current V3Client, except the rate limit monitor not from the global shared pool.
-func (c *V3Client) WithSeparateRateLimitMonitor() *V3Client {
-	client := NewV3Client(c.apiURL, c.auth, c.httpClient)
-	client.rateLimitMonitor = &ratelimit.Monitor{HeaderPrefix: "X-"}
-	return client
+	return newV3Client(c.apiURL, a, c.resource, c.httpClient)
 }
 
 // RateLimitMonitor exposes the rate limit monitor.
@@ -134,10 +145,10 @@ func (c *V3Client) requestGet(ctx context.Context, requestURI string, result int
 
 	err = c.rateLimit.Wait(ctx)
 	if err != nil {
-		return errors.Wrap(err, "rate limit")
+		return errInternalRateLimitExceeded
 	}
 
-	return doRequest(ctx, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, result)
+	return doRequest(ctx, c.apiURL, c.auth, c.rateLimitMonitor, c.resource, c.httpClient, req, result)
 }
 
 // newRepoCache creates a new cache for GitHub repository metadata. The backing
@@ -175,6 +186,10 @@ func (e *APIError) Error() string {
 
 func (e *APIError) Unauthorized() bool {
 	return e.Code == http.StatusUnauthorized
+}
+
+func (e *APIError) AccountSuspended() bool {
+	return e.Code == http.StatusForbidden && strings.Contains(e.Message, "account was suspended")
 }
 
 // HTTPErrorCode returns err's HTTP status code, if it is an HTTP error from

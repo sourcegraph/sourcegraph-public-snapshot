@@ -1,52 +1,59 @@
 import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
-import MenuDownIcon from 'mdi-react/MenuDownIcon'
-import React, { useCallback, useState, useMemo } from 'react'
-import { Button, Popover, PopoverBody } from 'reactstrap'
-import { defaultProgress, StreamingProgressProps } from './StreamingProgress'
+import React, { useCallback, useMemo, useState } from 'react'
+import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
+import { StreamingProgressProps } from './StreamingProgress'
 import { StreamingProgressSkippedPopover } from './StreamingProgressSkippedPopover'
 
-export const StreamingProgressSkippedButton: React.FunctionComponent<StreamingProgressProps> = ({
-    progress = defaultProgress,
-}) => {
+export const StreamingProgressSkippedButton: React.FunctionComponent<
+    Pick<StreamingProgressProps, 'progress' | 'onSearchAgain' | 'history'>
+> = ({ progress, onSearchAgain, history }) => {
     const [isOpen, setIsOpen] = useState(false)
     const toggleOpen = useCallback(() => setIsOpen(previous => !previous), [setIsOpen])
 
-    const skippedWithWarning = useMemo(() => progress.skipped.some(skipped => skipped.severity === 'warn'), [progress])
+    const skippedWithWarningOrError = useMemo(
+        () => progress.skipped.some(skipped => skipped.severity === 'warn' || skipped.severity === 'error'),
+        [progress]
+    )
+
+    const onSearchAgainWithPopupClose = useCallback(
+        (filters: string[]) => {
+            setIsOpen(false)
+            onSearchAgain(filters)
+        },
+        [setIsOpen, onSearchAgain]
+    )
 
     return (
         <>
             {progress.skipped.length > 0 && (
-                <>
-                    <Button
-                        className={classNames('streaming-progress__skipped p-2 mb-0 d-flex align-items-center', {
-                            'alert alert-danger': skippedWithWarning,
-                        })}
-                        color={skippedWithWarning ? 'danger' : 'secondary'}
-                        onClick={toggleOpen}
-                        id="streaming-progress__skipped"
-                    >
-                        {skippedWithWarning ? (
-                            <AlertCircleIcon className="mr-2" />
-                        ) : (
-                            <InformationOutlineIcon className="mr-2" />
+                <ButtonDropdown isOpen={isOpen} toggle={toggleOpen}>
+                    <DropdownToggle
+                        className={classNames(
+                            'streaming-progress__skipped mb-0 ml-2 d-flex align-items-center text-decoration-none',
+                            {
+                                'streaming-progress__skipped--warning': skippedWithWarningOrError,
+                            }
                         )}
-                        Some repositories excluded
-                        <MenuDownIcon className="icon-inline" />
-                    </Button>
-                    <Popover
-                        placement="bottom-start"
-                        isOpen={isOpen}
-                        toggle={toggleOpen}
-                        target="streaming-progress__skipped"
-                        hideArrow={true}
+                        caret={true}
+                        color="link"
                     >
-                        <PopoverBody className="streaming-progress__skipped-popover">
-                            <StreamingProgressSkippedPopover progress={progress} />
-                        </PopoverBody>
-                    </Popover>
-                </>
+                        {skippedWithWarningOrError ? (
+                            <AlertCircleIcon className="mr-2 icon-inline" />
+                        ) : (
+                            <InformationOutlineIcon className="mr-2 icon-inline" />
+                        )}
+                        Some results excluded
+                    </DropdownToggle>
+                    <DropdownMenu className="streaming-progress__skipped-popover">
+                        <StreamingProgressSkippedPopover
+                            progress={progress}
+                            onSearchAgain={onSearchAgainWithPopupClose}
+                            history={history}
+                        />
+                    </DropdownMenu>
+                </ButtonDropdown>
             )}
         </>
     )

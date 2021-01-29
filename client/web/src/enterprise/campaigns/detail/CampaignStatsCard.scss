@@ -33,4 +33,8 @@
             padding-right: 0.5rem;
         }
     }
+    &__divider {
+        border: 1px solid var(--border-color);
+        height: 2rem;
+    }
 }

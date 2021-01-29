@@ -4,8 +4,9 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/apiclient"
+
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 )
 
 func TestTransformRecord(t *testing.T) {
@@ -49,7 +50,7 @@ func TestTransformRecord(t *testing.T) {
 			},
 			{
 				Image:    "lsif-node",
-				Commands: []string{"-p", "."},
+				Commands: []string{"-p ."},
 				Dir:      "web",
 			},
 		},
@@ -63,6 +64,7 @@ func TestTransformRecord(t *testing.T) {
 					"-root", "web",
 					"-upload-route", "/.executors/lsif/upload",
 					"-file", "dump.lsif",
+					"-associated-index-id", "42",
 				},
 				Dir: "web",
 				Env: []string{"SRC_ENDPOINT=https://test%2A:hunter2@test.io"},
@@ -139,6 +141,7 @@ func TestTransformRecordWithoutIndexer(t *testing.T) {
 					"-root", ".",
 					"-upload-route", "/.executors/lsif/upload",
 					"-file", "other/path/lsif.dump",
+					"-associated-index-id", "42",
 				},
 				Dir: "",
 				Env: []string{"SRC_ENDPOINT=https://test%2A:hunter2@test.io"},

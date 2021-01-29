@@ -45,6 +45,12 @@ type AWSCodeCommitGitCredentials struct {
 	// Username description: The Git username
 	Username string `json:"username"`
 }
+type AdditionalProperties struct {
+	// Format description: The expected format of the output. If set, the output is being parsed in that format before being stored in the var. If not set, 'text' is assumed to the format.
+	Format string `json:"format,omitempty"`
+	// Value description: The value of the output, which can be a template string.
+	Value string `json:"value"`
+}
 
 // AuthAccessTokens description: Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.
 type AuthAccessTokens struct {
@@ -317,6 +323,10 @@ type CampaignSpec struct {
 	On []interface{} `json:"on,omitempty"`
 	// Steps description: The sequence of commands to run (for each repository branch matched in the `on` property) to produce the campaign's changes.
 	Steps []*Step `json:"steps,omitempty"`
+	// TransformChanges description: Optional transformations to apply to the changes produced in each repository.
+	TransformChanges *TransformChanges `json:"transformChanges,omitempty"`
+	// Workspaces description: Individual workspace configurations for one or more repositories that define which workspaces to use for the execution of steps in the repositories.
+	Workspaces []*WorkspaceConfiguration `json:"workspaces,omitempty"`
 }
 
 // ChangesetTemplate description: A template describing how to create (and update) changesets with the file changes produced by the command steps.
@@ -431,6 +441,8 @@ type ExperimentalFeatures struct {
 	EnablePermissionsWebhooks bool `json:"enablePermissionsWebhooks,omitempty"`
 	// EventLogging description: Enables user event logging inside of the Sourcegraph instance. This will allow admins to have greater visibility of user activity, such as frequently viewed pages, frequent searches, and more. These event logs (and any specific user actions) are only stored locally, and never leave this Sourcegraph instance.
 	EventLogging string `json:"eventLogging,omitempty"`
+	// Perforce description: Allow adding Perforce code host connections
+	Perforce string `json:"perforce,omitempty"`
 	// SearchIndexBranches description: A map from repository name to a list of extra revs (branch, ref, tag, commit sha, etc) to index for a repository. We always index the default branch ("HEAD") and revisions in version contexts. This allows specifying additional revisions. Sourcegraph can index up to 64 branches per repository.
 	SearchIndexBranches map[string][]string `json:"search.index.branches,omitempty"`
 	// SearchMultipleRevisionsPerRepository description: DEPRECATED. Always on. Will be removed in 3.19.
@@ -812,7 +824,7 @@ type NotifierOpsGenie struct {
 type NotifierPagerduty struct {
 	ApiUrl string `json:"apiUrl,omitempty"`
 	// IntegrationKey description: Integration key for the PagerDuty Events API v2 - see https://developer.pagerduty.com/docs/events-api-v2/overview
-	IntegrationKey string `json:"integrationKey,omitempty"`
+	IntegrationKey string `json:"integrationKey"`
 	// Severity description: Severity level for PagerDuty alert
 	Severity string `json:"severity,omitempty"`
 	Type     string `json:"type"`
@@ -913,6 +925,32 @@ type OtherExternalServiceConnection struct {
 // ParentSourcegraph description: URL to fetch unreachable repository details from. Defaults to "https://sourcegraph.com"
 type ParentSourcegraph struct {
 	Url string `json:"url,omitempty"`
+}
+
+// PerforceAuthorization description: If non-null, enforces Perforce depot permissions.
+type PerforceAuthorization struct {
+}
+
+// PerforceConnection description: Configuration for a connection to Perforce Server.
+type PerforceConnection struct {
+	// Authorization description: If non-null, enforces Perforce depot permissions.
+	Authorization *PerforceAuthorization `json:"authorization,omitempty"`
+	// Depots description: Depots can have arbitrary paths, e.g. a path to depot root or a subdirectory.
+	Depots []string `json:"depots,omitempty"`
+	// MaxChanges description: Only import at most n changes when possible (git p4 clone --max-changes).
+	MaxChanges float64 `json:"maxChanges,omitempty"`
+	// P4Passwd description: The plain password of the user (P4PASSWD).
+	P4Passwd string `json:"p4.passwd"`
+	// P4Port description: The Perforce Server address to be used for p4 CLI (P4PORT).
+	P4Port string `json:"p4.port"`
+	// P4User description: The user to be authenticated for p4 CLI (P4USER).
+	P4User string `json:"p4.user"`
+	// RepositoryPathPattern description: The pattern used to generate the corresponding Sourcegraph repository name for a Perforce depot. In the pattern, the variable "{depot}" is replaced with the Perforce depot's path.
+	//
+	// For example, if your Perforce depot path is "//Sourcegraph/" and your Sourcegraph URL is https://src.example.com, then a repositoryPathPattern of "perforce/{depot}" would mean that the Perforce depot is available on Sourcegraph at https://src.example.com/perforce/Sourcegraph.
+	//
+	// It is important that the Sourcegraph repository name generated with this pattern be unique to this Perforce Server. If different Perforce Servers generate repository names that collide, Sourcegraph's behavior is undefined.
+	RepositoryPathPattern string `json:"repositoryPathPattern,omitempty"`
 }
 
 // PermissionsUserMapping description: Settings for Sourcegraph permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This setting cannot be enabled if repository permissions for any specific external service are enabled (i.e., when the external service's `authorization` field is set).
@@ -1041,6 +1079,8 @@ type SearchScope struct {
 
 // Sentry description: Configuration for Sentry
 type Sentry struct {
+	// BackendDSN description: Sentry Data Source Name (DSN) for backend errors. Per the Sentry docs (https://docs.sentry.io/quickstart/#about-the-dsn), it should match the following pattern: '{PROTOCOL}://{PUBLIC_KEY}@{HOST}/{PATH}{PROJECT_ID}'.
+	BackendDSN string `json:"backendDSN,omitempty"`
 	// Dsn description: Sentry Data Source Name (DSN). Per the Sentry docs (https://docs.sentry.io/quickstart/#about-the-dsn), it should match the following pattern: '{PROTOCOL}://{PUBLIC_KEY}@{HOST}/{PATH}{PROJECT_ID}'.
 	Dsn string `json:"dsn,omitempty"`
 }
@@ -1087,7 +1127,7 @@ type Settings struct {
 	SearchIncludeArchived *bool `json:"search.includeArchived,omitempty"`
 	// SearchIncludeForks description: Whether searches should include searching forked repositories.
 	SearchIncludeForks *bool `json:"search.includeForks,omitempty"`
-	// SearchMigrateParser description: If false, disables the new and/or-compatible parser for all search queries. It is a flag to aid transition to the new parser.
+	// SearchMigrateParser description: REMOVED. Previously, a flag to enable and/or-expressions in queries as an aid transition to new language features in versions <= 3.24.0.
 	SearchMigrateParser *bool `json:"search.migrateParser,omitempty"`
 	// SearchRepositoryGroups description: Named groups of repositories that can be referenced in a search query using the `repogroup:` operator. The list can contain string literals (to include single repositories) and JSON objects with a "regex" field (to include all repositories matching the regular expression). Retrieving repogroups via the GQL interface will currently exclude repositories matched by regex patterns. #14208.
 	SearchRepositoryGroups map[string][]interface{} `json:"search.repositoryGroups,omitempty"`
@@ -1107,6 +1147,8 @@ type SettingsExperimentalFeatures struct {
 	CodeMonitoring *bool `json:"codeMonitoring,omitempty"`
 	// CopyQueryButton description: Enables displaying the copy query button in the search bar when hovering over the global navigation bar.
 	CopyQueryButton *bool `json:"copyQueryButton,omitempty"`
+	// EnableFastResultLoading description: Enables optimized search result loading (syntax highlighting / file contents fetching)
+	EnableFastResultLoading *bool `json:"enableFastResultLoading,omitempty"`
 	// EnableSmartQuery description: Enables contextual syntax highlighting and hovers for search queries in the web app
 	EnableSmartQuery *bool `json:"enableSmartQuery,omitempty"`
 	// SearchStats description: Enables a new page that shows language statistics about the results for a search query.
@@ -1115,6 +1157,8 @@ type SettingsExperimentalFeatures struct {
 	SearchStreaming *bool `json:"searchStreaming,omitempty"`
 	// ShowBadgeAttachments description: Enables the UI indicators for code intelligence precision.
 	ShowBadgeAttachments *bool `json:"showBadgeAttachments,omitempty"`
+	// ShowCodeMonitoringTestEmailButton description: Enables the 'Send test email' debugging button for code monitoring.
+	ShowCodeMonitoringTestEmailButton *bool `json:"showCodeMonitoringTestEmailButton,omitempty"`
 	// ShowEnterpriseHomePanels description: Enabled the homepage panels in the Enterprise homepage
 	ShowEnterpriseHomePanels *bool `json:"showEnterpriseHomePanels,omitempty"`
 	// ShowMultilineSearchConsole description: Enables the multiline search console at search/console
@@ -1125,8 +1169,6 @@ type SettingsExperimentalFeatures struct {
 	ShowQueryBuilder *bool `json:"showQueryBuilder,omitempty"`
 	// ShowRepogroupHomepage description: Enables the repository group homepage
 	ShowRepogroupHomepage *bool `json:"showRepogroupHomepage,omitempty"`
-	// SplitSearchModes description: Enables toggling between the current omni search mode, and experimental interactive search mode.
-	SplitSearchModes *bool `json:"splitSearchModes,omitempty"`
 }
 
 // SiteConfiguration description: Configuration for a Sourcegraph site.
@@ -1171,6 +1213,8 @@ type SiteConfiguration struct {
 	CampaignsReadAccessEnabled *bool `json:"campaigns.readAccess.enabled,omitempty"`
 	// CampaignsRestrictToAdmins description: When enabled, only site admins can create and apply campaigns.
 	CampaignsRestrictToAdmins bool `json:"campaigns.restrictToAdmins,omitempty"`
+	// CodeIntelAutoIndexingEnabled description: Enables/disables the code intel auto indexing feature.
+	CodeIntelAutoIndexingEnabled *bool `json:"codeIntelAutoIndexing.enabled,omitempty"`
 	// CorsOrigin description: Required when using any of the native code host integrations for Phabricator, GitLab, or Bitbucket Server. It is a space-separated list of allowed origins for cross-origin HTTP requests which should be the base URL for your Phabricator, GitLab, or Bitbucket Server instance.
 	CorsOrigin string `json:"corsOrigin,omitempty"`
 	// DebugSearchSymbolsParallelism description: (debug) controls the amount of symbol search parallelism. Defaults to 20. It is not recommended to change this outside of debugging scenarios. This option will be removed in a future version.
@@ -1203,6 +1247,8 @@ type SiteConfiguration struct {
 	GitCloneURLToRepositoryName []*CloneURLToRepositoryName `json:"git.cloneURLToRepositoryName,omitempty"`
 	// GitMaxConcurrentClones description: Maximum number of git clone processes that will be run concurrently per gitserver to update repositories. Note: the global git update scheduler respects gitMaxConcurrentClones. However, we allow each gitserver to run upto gitMaxConcurrentClones to allow for urgent fetches. Urgent fetches are used when a user is browsing a PR and we do not have the commit yet.
 	GitMaxConcurrentClones int `json:"gitMaxConcurrentClones,omitempty"`
+	// GitUpdateInterval description: JSON array of repo name patterns and update intervals. If a repo matches a pattern, the associated interval will be used. If it matches no patterns a default backoff heuristic will be used. Pattern matches are attempted in the order they are provided.
+	GitUpdateInterval []*UpdateIntervalRule `json:"gitUpdateInterval,omitempty"`
 	// GithubClientID description: Client ID for GitHub. (DEPRECATED)
 	GithubClientID string `json:"githubClientID,omitempty"`
 	// GithubClientSecret description: Client secret for GitHub. (DEPRECATED)
@@ -1267,6 +1313,8 @@ type Step struct {
 	Env interface{} `json:"env,omitempty"`
 	// Files description: Files that should be mounted into or be created inside the Docker container.
 	Files map[string]string `json:"files,omitempty"`
+	// Outputs description: Output variables of this step that can be referenced in the changesetTemplate or other steps via outputs.<name-of-output>
+	Outputs map[string]AdditionalProperties `json:"outputs,omitempty"`
 	// Run description: The shell command to run in the container. It can also be a multi-line shell script. The working directory is the root directory of the repository checkout.
 	Run string `json:"run"`
 }
@@ -1278,6 +1326,18 @@ type TlsExternal struct {
 	// InsecureSkipVerify description: insecureSkipVerify controls whether a client verifies the server's certificate chain and host name.
 	// If InsecureSkipVerify is true, TLS accepts any certificate presented by the server and any host name in that certificate. In this mode, TLS is susceptible to man-in-the-middle attacks.
 	InsecureSkipVerify bool `json:"insecureSkipVerify,omitempty"`
+}
+
+// TransformChanges description: Optional transformations to apply to the changes produced in each repository.
+type TransformChanges struct {
+	// Group description: A list of groups of changes in a repository that each create a separate, additional changeset for this repository, with all ungrouped changes being in the default changeset.
+	Group []interface{} `json:"group,omitempty"`
+}
+type UpdateIntervalRule struct {
+	// Interval description: An integer representing the number of minutes to wait until the next update
+	Interval int `json:"interval"`
+	// Pattern description: A regular expression matching a repo name
+	Pattern string `json:"pattern"`
 }
 type UsernameIdentity struct {
 	Type string `json:"type"`
@@ -1305,4 +1365,12 @@ type VersionContextRevision struct {
 type Webhooks struct {
 	// Secret description: Secret for authenticating incoming webhook payloads
 	Secret string `json:"secret,omitempty"`
+}
+
+// WorkspaceConfiguration description: Configuration for how to setup workspaces in repositories
+type WorkspaceConfiguration struct {
+	// In description: The repositories in which to apply the workspace configuration. Supports globbing.
+	In string `json:"in,omitempty"`
+	// RootAtLocationOf description: The name of the file that sits at the root of the desired workspace.
+	RootAtLocationOf string `json:"rootAtLocationOf"`
 }

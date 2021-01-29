@@ -327,6 +327,7 @@ func TestSearch(t *testing.T) {
 			query         string
 			zeroResult    bool
 			minMatchCount int64
+			wantAlert     *gqltestutil.SearchAlert
 		}{
 			// Global search
 			{
@@ -427,6 +428,24 @@ func TestSearch(t *testing.T) {
 				name:  "commit search, nonzero result",
 				query: `repo:^github\.com/sgtest/go-diff$ type:commit count:1`,
 			},
+			{
+				name:       "commit search, non-existent ref",
+				query:      `repo:^github\.com/sgtest/go-diff$@ref/noexist type:commit count:1`,
+				zeroResult: true,
+				wantAlert: &gqltestutil.SearchAlert{
+					Title:           "Some repositories could not be searched",
+					Description:     `The repository github.com/sgtest/go-diff matched by your repo: filter could not be searched because it does not contain the revision "ref/noexist".`,
+					ProposedQueries: nil,
+				},
+			},
+			{
+				name:  "commit search, non-zero result message",
+				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ type:commit message:test`,
+			},
+			{
+				name:  "commit search, non-zero result pattern",
+				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ type:commit test`,
+			},
 			// Diff search
 			{
 				name:  "diff search, nonzero result",
@@ -435,7 +454,7 @@ func TestSearch(t *testing.T) {
 			// Repohascommitafter
 			{
 				name:  `Repohascommitafter, nonzero result`,
-				query: `repo:^github\.com/sgtest/go-diff$ repohascommitafter:"8 months ago" test patterntype:literal count:1`,
+				query: `repo:^github\.com/sgtest/go-diff$ repohascommitafter:"2019-01-01" test patterntype:literal count:1`,
 			},
 			// Regex text search
 			{
@@ -467,8 +486,8 @@ func TestSearch(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				if results.Alert != nil {
-					t.Fatalf("Unexpected alert: %v", results.Alert)
+				if diff := cmp.Diff(test.wantAlert, results.Alert); diff != "" {
+					t.Fatalf("Alert mismatch (-want +got):\n%s", diff)
 				}
 
 				if test.zeroResult {
@@ -767,10 +786,11 @@ func TestSearch(t *testing.T) {
 
 	t.Run("And/Or search expression queries", func(t *testing.T) {
 		tests := []struct {
-			name       string
-			query      string
-			zeroResult bool
-			wantAlert  *gqltestutil.SearchAlert
+			name            string
+			query           string
+			zeroResult      bool
+			exactMatchCount int64
+			wantAlert       *gqltestutil.SearchAlert
 		}{
 			{
 				name:  `Or distributive property on content and file`,
@@ -785,12 +805,19 @@ func TestSearch(t *testing.T) {
 				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ (type:diff or type:commit) author:felix yarn`,
 			},
 			{
-				name:  `Or distributive property on rev`,
-				query: `repo:^github\.com/sgtest/go-diff$ (rev:garo/lsif-indexing-campaign or rev:test-already-exist-pr) file:README.md`,
+				name:            `Or match on both diff and commit returns both`,
+				query:           `repo:^github\.com/sgtest/sourcegraph-typescript$ (type:diff or type:commit) subscription after:"june 11 2019" before:"june 13 2019"`,
+				exactMatchCount: 2,
 			},
 			{
-				name:  `Or distributive property on rev`,
-				query: `repo:^github\.com/sgtest/go-diff$ (rev:garo/lsif-indexing-campaign or rev:test-already-exist-pr)`,
+				name:            `Or distributive property on rev`,
+				query:           `repo:^github\.com/sgtest/mux$ (rev:v1.7.3 or revision:v1.7.2)`,
+				exactMatchCount: 2,
+			},
+			{
+				name:            `Or distributive property on rev with file`,
+				query:           `repo:^github\.com/sgtest/mux$ (rev:v1.7.3 or revision:v1.7.2) file:README.md`,
+				exactMatchCount: 2,
 			},
 			{
 				name:  `Or distributive property on repo`,
@@ -799,6 +826,11 @@ func TestSearch(t *testing.T) {
 			{
 				name:  `Or distributive property on repo where only one repo contains match (tests repo cache is invalidated)`,
 				query: `(repo:^github\.com/sgtest/sourcegraph-typescript$ or repo:^github\.com/sgtest/go-diff$) package diff provides`,
+			},
+			{
+				name:            `Or distributive property on commits deduplicates and merges`,
+				query:           `repo:^github\.com/sgtest/go-diff$ type:commit (message:add or message:file)`,
+				exactMatchCount: 21,
 			},
 		}
 		for _, test := range tests {
@@ -820,6 +852,9 @@ func TestSearch(t *testing.T) {
 					if len(results.Results) == 0 {
 						t.Fatal("Want non-zero results but got 0")
 					}
+				}
+				if test.exactMatchCount != 0 && results.MatchCount != test.exactMatchCount {
+					t.Fatalf("Want exactly %d results but got %d", test.exactMatchCount, results.MatchCount)
 				}
 			})
 		}

@@ -12,13 +12,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name string }) (*OrgResolver, error) {
-	org, err := db.Orgs.GetByName(ctx, args.Name)
+	org, err := database.GlobalOrgs.GetByName(ctx, args.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +42,7 @@ func OrgByID(ctx context.Context, id graphql.ID) (*OrgResolver, error) {
 }
 
 func OrgByIDInt32(ctx context.Context, orgID int32) (*OrgResolver, error) {
-	org, err := db.Orgs.GetByID(ctx, orgID)
+	org, err := database.GlobalOrgs.GetByID(ctx, orgID)
 	if err != nil {
 		return nil, err
 	}
@@ -91,13 +91,13 @@ func (o *OrgResolver) Members(ctx context.Context) (*staticUserConnectionResolve
 		return nil, err
 	}
 
-	memberships, err := db.OrgMembers.GetByOrgID(ctx, o.org.ID)
+	memberships, err := database.GlobalOrgMembers.GetByOrgID(ctx, o.org.ID)
 	if err != nil {
 		return nil, err
 	}
 	users := make([]*types.User, len(memberships))
 	for i, membership := range memberships {
-		user, err := db.Users.GetByID(ctx, membership.UserID)
+		user, err := database.GlobalUsers.GetByID(ctx, membership.UserID)
 		if err != nil {
 			return nil, err
 		}
@@ -117,7 +117,7 @@ func (o *OrgResolver) LatestSettings(ctx context.Context) (*settingsResolver, er
 		return nil, err
 	}
 
-	settings, err := db.Settings.GetLatest(ctx, o.settingsSubject())
+	settings, err := database.GlobalSettings.GetLatest(ctx, o.settingsSubject())
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +135,7 @@ func (o *OrgResolver) ConfigurationCascade() *settingsCascade { return o.Setting
 
 func (o *OrgResolver) ViewerPendingInvitation(ctx context.Context) (*organizationInvitationResolver, error) {
 	if actor := actor.FromContext(ctx); actor.IsAuthenticated() {
-		orgInvitation, err := db.OrgInvitations.GetPending(ctx, o.org.ID, actor.UID)
+		orgInvitation, err := database.GlobalOrgInvitations.GetPending(ctx, o.org.ID, actor.UID)
 		if errcode.IsNotFound(err) {
 			return nil, nil
 		}
@@ -161,7 +161,7 @@ func (o *OrgResolver) ViewerIsMember(ctx context.Context) (bool, error) {
 	if !actor.IsAuthenticated() {
 		return false, nil
 	}
-	if _, err := db.OrgMembers.GetByOrgIDAndUserID(ctx, o.org.ID, actor.UID); err != nil {
+	if _, err := database.GlobalOrgMembers.GetByOrgIDAndUserID(ctx, o.org.ID, actor.UID); err != nil {
 		if errcode.IsNotFound(err) {
 			err = nil
 		}
@@ -193,13 +193,13 @@ func (*schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 	if err := suspiciousnames.CheckNameAllowedForUserOrOrganization(args.Name); err != nil {
 		return nil, err
 	}
-	newOrg, err := db.Orgs.Create(ctx, args.Name, args.DisplayName)
+	newOrg, err := database.GlobalOrgs.Create(ctx, args.Name, args.DisplayName)
 	if err != nil {
 		return nil, err
 	}
 
 	// Add the current user as the first member of the new org.
-	_, err = db.OrgMembers.Create(ctx, newOrg.ID, currentUser.user.ID)
+	_, err = database.GlobalOrgMembers.Create(ctx, newOrg.ID, currentUser.user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -222,7 +222,7 @@ func (*schemaResolver) UpdateOrganization(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	updatedOrg, err := db.Orgs.Update(ctx, orgID, args.DisplayName)
+	updatedOrg, err := database.GlobalOrgs.Update(ctx, orgID, args.DisplayName)
 	if err != nil {
 		return nil, err
 	}
@@ -250,7 +250,7 @@ func (*schemaResolver) RemoveUserFromOrganization(ctx context.Context, args *str
 	}
 
 	log15.Info("removing user from org", "user", userID, "org", orgID)
-	return nil, db.OrgMembers.Remove(ctx, orgID, userID)
+	return nil, database.GlobalOrgMembers.Remove(ctx, orgID, userID)
 }
 
 func (*schemaResolver) AddUserToOrganization(ctx context.Context, args *struct {
@@ -272,7 +272,7 @@ func (*schemaResolver) AddUserToOrganization(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, err
 	}
-	if _, err := db.OrgMembers.Create(ctx, orgID, userToInvite.ID); err != nil {
+	if _, err := database.GlobalOrgMembers.Create(ctx, orgID, userToInvite.ID); err != nil {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil

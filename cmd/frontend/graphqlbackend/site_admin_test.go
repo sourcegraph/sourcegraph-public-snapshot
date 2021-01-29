@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -20,7 +20,7 @@ import (
 func TestDeleteUser(t *testing.T) {
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		resetMocks()
-		db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
 			return &types.User{}, nil
 		}
 
@@ -41,7 +41,7 @@ func TestDeleteUser(t *testing.T) {
 
 	t.Run("delete current user", func(t *testing.T) {
 		resetMocks()
-		db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
 			return &types.User{ID: 1, SiteAdmin: true}, nil
 		}
 
@@ -58,26 +58,26 @@ func TestDeleteUser(t *testing.T) {
 		}
 	})
 
-	// Mocking all database interactions here, but they are all thoroughly tested in the lower layer in "db" package.
+	// Mocking all database interactions here, but they are all thoroughly tested in the lower layer in "database" package.
 	resetMocks()
-	db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+	database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
 		return &types.User{SiteAdmin: true}, nil
 	}
-	db.Mocks.Users.GetByID = func(_ context.Context, id int32) (*types.User, error) {
+	database.Mocks.Users.GetByID = func(_ context.Context, id int32) (*types.User, error) {
 		return &types.User{ID: id, Username: "alice"}, nil
 	}
-	db.Mocks.Users.Delete = func(context.Context, int32) error {
+	database.Mocks.Users.Delete = func(context.Context, int32) error {
 		return nil
 	}
-	db.Mocks.Users.HardDelete = func(context.Context, int32) error {
+	database.Mocks.Users.HardDelete = func(context.Context, int32) error {
 		return nil
 	}
-	db.Mocks.UserEmails.ListByUser = func(context.Context, db.UserEmailsListOptions) ([]*db.UserEmail, error) {
-		return []*db.UserEmail{
+	database.Mocks.UserEmails.ListByUser = func(context.Context, database.UserEmailsListOptions) ([]*database.UserEmail, error) {
+		return []*database.UserEmail{
 			{Email: "alice@example.com"},
 		}, nil
 	}
-	db.Mocks.ExternalAccounts.List = func(db.ExternalAccountsListOptions) ([]*extsvc.Account, error) {
+	database.Mocks.ExternalAccounts.List = func(database.ExternalAccountsListOptions) ([]*extsvc.Account, error) {
 		return []*extsvc.Account{
 			{
 				AccountSpec: extsvc.AccountSpec{
@@ -88,7 +88,7 @@ func TestDeleteUser(t *testing.T) {
 			},
 		}, nil
 	}
-	db.Mocks.Authz.RevokeUserPermissions = func(_ context.Context, args *db.RevokeUserPermissionsArgs) error {
+	database.Mocks.Authz.RevokeUserPermissions = func(_ context.Context, args *database.RevokeUserPermissionsArgs) error {
 		if args.UserID != 6 {
 			return fmt.Errorf("args.UserID: want 6 but got %v", args.UserID)
 		}

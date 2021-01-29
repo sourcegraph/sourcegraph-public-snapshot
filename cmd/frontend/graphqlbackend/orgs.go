@@ -5,14 +5,14 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 func (r *schemaResolver) Organizations(args *struct {
 	graphqlutil.ConnectionArgs
 	Query *string
 }) *orgConnectionResolver {
-	var opt db.OrgsListOptions
+	var opt database.OrgsListOptions
 	if args.Query != nil {
 		opt.Query = *args.Query
 	}
@@ -21,7 +21,7 @@ func (r *schemaResolver) Organizations(args *struct {
 }
 
 type orgConnectionResolver struct {
-	opt db.OrgsListOptions
+	opt database.OrgsListOptions
 }
 
 func (r *orgConnectionResolver) Nodes(ctx context.Context) ([]*OrgResolver, error) {
@@ -30,7 +30,7 @@ func (r *orgConnectionResolver) Nodes(ctx context.Context) ([]*OrgResolver, erro
 		return nil, err
 	}
 
-	orgs, err := db.Orgs.List(ctx, &r.opt)
+	orgs, err := database.GlobalOrgs.List(ctx, &r.opt)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +50,7 @@ func (r *orgConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
 		return 0, err
 	}
 
-	count, err := db.Orgs.Count(ctx, r.opt)
+	count, err := database.GlobalOrgs.Count(ctx, r.opt)
 	return int32(count), err
 }
 

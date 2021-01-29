@@ -3,6 +3,7 @@ package definitions
 import (
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
@@ -17,35 +18,12 @@ func GitHubProxy() *monitoring.Container {
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:              "github_core_rate_limit_remaining",
-							Description:       "remaining calls to GitHub before hitting the rate limit",
-							Query:             `src_github_rate_limit_remaining{resource="core"}`,
-							DataMayNotExist:   true,
-							Critical:          monitoring.Alert().LessOrEqual(500).For(5 * time.Minute),
-							PanelOptions:      monitoring.PanelOptions().LegendFormat("calls remaining"),
-							Owner:             monitoring.ObservableOwnerCloud,
-							PossibleSolutions: `Try restarting the pod to get a different public IP.`,
-						},
-						{
-							Name:              "github_search_rate_limit_remaining",
-							Description:       "remaining calls to GitHub search before hitting the rate limit",
-							Query:             `src_github_rate_limit_remaining{resource="search"}`,
-							DataMayNotExist:   true,
-							Warning:           monitoring.Alert().LessOrEqual(5),
-							PanelOptions:      monitoring.PanelOptions().LegendFormat("calls remaining"),
-							Owner:             monitoring.ObservableOwnerCloud,
-							PossibleSolutions: `Try restarting the pod to get a different public IP.`,
-						},
-					},
-					{
-						{
-							Name:            "github_proxy_waiting_requests",
-							Description:     "number of requests waiting on the global mutex",
-							Query:           `github_proxy_waiting_requests`,
-							DataMayNotExist: true,
-							Warning:         monitoring.Alert().GreaterOrEqual(100).For(5 * time.Minute),
-							PanelOptions:    monitoring.PanelOptions().LegendFormat("requests waiting"),
-							Owner:           monitoring.ObservableOwnerCloud,
+							Name:        "github_proxy_waiting_requests",
+							Description: "number of requests waiting on the global mutex",
+							Query:       `max(github_proxy_waiting_requests)`,
+							Warning:     monitoring.Alert().GreaterOrEqual(100).For(5 * time.Minute),
+							Panel:       monitoring.Panel().LegendFormat("requests waiting"),
+							Owner:       monitoring.ObservableOwnerCloud,
 							PossibleSolutions: `
 								- **Check github-proxy logs for network connection issues.
 								- **Check github status.`,
@@ -54,49 +32,48 @@ func GitHubProxy() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Container monitoring (not available on server)",
+				Title:  shared.TitleContainerMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedContainerCPUUsage("github-proxy", monitoring.ObservableOwnerCloud),
-						sharedContainerMemoryUsage("github-proxy", monitoring.ObservableOwnerCloud),
+						shared.ContainerCPUUsage("github-proxy", monitoring.ObservableOwnerCloud).Observable(),
+						shared.ContainerMemoryUsage("github-proxy", monitoring.ObservableOwnerCloud).Observable(),
 					},
 					{
-						sharedContainerRestarts("github-proxy", monitoring.ObservableOwnerCloud),
-						sharedContainerFsInodes("github-proxy", monitoring.ObservableOwnerCloud),
+						shared.ContainerMissing("github-proxy", monitoring.ObservableOwnerCloud).Observable(),
 					},
 				},
 			},
 			{
-				Title:  "Provisioning indicators (not available on server)",
+				Title:  shared.TitleProvisioningIndicators,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedProvisioningCPUUsageLongTerm("github-proxy", monitoring.ObservableOwnerCloud),
-						sharedProvisioningMemoryUsageLongTerm("github-proxy", monitoring.ObservableOwnerCloud),
+						shared.ProvisioningCPUUsageLongTerm("github-proxy", monitoring.ObservableOwnerCloud).Observable(),
+						shared.ProvisioningMemoryUsageLongTerm("github-proxy", monitoring.ObservableOwnerCloud).Observable(),
 					},
 					{
-						sharedProvisioningCPUUsageShortTerm("github-proxy", monitoring.ObservableOwnerCloud),
-						sharedProvisioningMemoryUsageShortTerm("github-proxy", monitoring.ObservableOwnerCloud),
-					},
-				},
-			},
-			{
-				Title:  "Golang runtime monitoring",
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						sharedGoGoroutines("github-proxy", monitoring.ObservableOwnerCloud),
-						sharedGoGcDuration("github-proxy", monitoring.ObservableOwnerCloud),
+						shared.ProvisioningCPUUsageShortTerm("github-proxy", monitoring.ObservableOwnerCloud).Observable(),
+						shared.ProvisioningMemoryUsageShortTerm("github-proxy", monitoring.ObservableOwnerCloud).Observable(),
 					},
 				},
 			},
 			{
-				Title:  "Kubernetes monitoring (ignore if using Docker Compose or server)",
+				Title:  shared.TitleGolangMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedKubernetesPodsAvailable("github-proxy", monitoring.ObservableOwnerCloud),
+						shared.GoGoroutines("github-proxy", monitoring.ObservableOwnerCloud).Observable(),
+						shared.GoGcDuration("github-proxy", monitoring.ObservableOwnerCloud).Observable(),
+					},
+				},
+			},
+			{
+				Title:  shared.TitleKubernetesMonitoring,
+				Hidden: true,
+				Rows: []monitoring.Row{
+					{
+						shared.KubernetesPodsAvailable("github-proxy", monitoring.ObservableOwnerCloud).Observable(),
 					},
 				},
 			},

@@ -22,6 +22,7 @@
 | `-tmp` | Directory for storing temporary data, such as log files. Default is /tmp. Can also be set with environment variable SRC_CAMPAIGNS_TMP_DIR; if both are set, this flag will be used and not the environment variable. | `/tmp` |
 | `-trace` | Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing | `false` |
 | `-v` | print verbose output | `false` |
+| `-workspace` | Workspace mode to use ("auto", "bind", or "volume") | `auto` |
 
 
 ## Usage
@@ -61,6 +62,8 @@ Usage of 'src campaigns preview':
   -trace
     	Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing
   -v	print verbose output
+  -workspace string
+    	Workspace mode to use ("auto", "bind", or "volume") (default "auto")
 
 'src campaigns preview' executes the steps in a campaign spec and uploads it to
 a Sourcegraph instance, ready to be previewed and applied.

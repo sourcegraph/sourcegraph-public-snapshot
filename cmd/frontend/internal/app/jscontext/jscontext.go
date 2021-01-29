@@ -20,7 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
+	"github.com/sourcegraph/sourcegraph/internal/database/globalstatedb"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -85,6 +85,8 @@ type JSContext struct {
 	Branding *schema.Branding `json:"branding"`
 
 	CampaignsEnabled bool `json:"campaignsEnabled"`
+
+	CodeIntelAutoIndexingEnabled bool `json:"codeIntelAutoIndexingEnabled"`
 
 	ExperimentalFeatures schema.ExperimentalFeatures `json:"experimentalFeatures"`
 }
@@ -185,6 +187,8 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		Branding: globals.Branding(),
 
 		CampaignsEnabled: campaignsEnabled,
+
+		CodeIntelAutoIndexingEnabled: conf.CodeIntelAutoIndexingEnabled(),
 
 		ExperimentalFeatures: conf.ExperimentalFeatures(),
 	}

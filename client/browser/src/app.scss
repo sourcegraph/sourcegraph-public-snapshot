@@ -19,6 +19,7 @@ $theme-colors-light: (
 
 :root {
     --border-color: rgba(0, 0, 0, 0.125);
+    --mark-bg: #{$mark-bg-light};
 }
 
 .sg-icon .icon {
@@ -33,10 +34,12 @@ $theme-colors-light: (
 }
 
 .selection-highlight,
-.selection-highlight span,
-.selection-highlight-sticky,
-.selection-highlight-sticky span {
-    background-color: rgba(255, 192, 120, 0.5);
+.selection-highlight-sticky {
+    background-color: var(--mark-bg);
+
+    .sourcegraph-document-highlight {
+        background-color: initial;
+    }
 }
 
 @import 'bootstrap/scss/functions';
@@ -46,6 +49,7 @@ $theme-colors-light: (
 @import 'bootstrap/scss/utilities/screenreaders';
 @import '../../shared/src/global-styles/icons';
 @import './highlight';
+@import './shared';
 @import './shared/components/CodeViewToolbar.scss';
 @import './shared/code-hosts/bitbucket/style.scss';
 @import './shared/code-hosts/gitlab/style.scss';
@@ -54,4 +58,3 @@ $theme-colors-light: (
 @import './shared/code-hosts/shared/HoverOverlay.scss';
 @import './shared/code-hosts/shared/ViewOnSourcegraphButton';
 @import './shared/code-hosts/shared/nativeTooltips';
-@import './shared';

@@ -9,7 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -19,9 +19,9 @@ import (
 func TestCheckMirrorRepositoryConnection(t *testing.T) {
 	resetMocks()
 
-	const repoName = "my/repo"
+	const repoName = api.RepoName("my/repo")
 
-	db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+	database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
 		return &types.User{SiteAdmin: true}, nil
 	}
 
@@ -30,22 +30,10 @@ func TestCheckMirrorRepositoryConnection(t *testing.T) {
 			return &types.Repo{Name: repoName}, nil
 		}
 
-		calledRepoLookup := false
-		repoupdater.MockRepoLookup = func(args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
-			calledRepoLookup = true
-			if args.Repo != repoName {
-				t.Errorf("got %q, want %q", args.Repo, repoName)
-			}
-			return &protocol.RepoLookupResult{
-				Repo: &protocol.RepoInfo{Name: repoName, VCS: protocol.VCSInfo{URL: "http://example.com/my/repo"}},
-			}, nil
-		}
-		defer func() { repoupdater.MockRepoLookup = nil }()
-
 		calledIsRepoCloneable := false
-		gitserver.MockIsRepoCloneable = func(repo gitserver.Repo) error {
+		gitserver.MockIsRepoCloneable = func(repo api.RepoName) error {
 			calledIsRepoCloneable = true
-			if want := (gitserver.Repo{Name: repoName, URL: "http://example.com/my/repo"}); !reflect.DeepEqual(repo, want) {
+			if want := repoName; !reflect.DeepEqual(repo, want) {
 				t.Errorf("got %+v, want %+v", repo, want)
 			}
 			return nil
@@ -72,9 +60,6 @@ func TestCheckMirrorRepositoryConnection(t *testing.T) {
 			},
 		})
 
-		if !calledRepoLookup {
-			t.Error("!calledRepoLookup")
-		}
 		if !calledIsRepoCloneable {
 			t.Error("!calledIsRepoCloneable")
 		}
@@ -86,22 +71,10 @@ func TestCheckMirrorRepositoryConnection(t *testing.T) {
 			return nil, nil
 		}
 
-		calledRepoLookup := false
-		repoupdater.MockRepoLookup = func(args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
-			calledRepoLookup = true
-			if args.Repo != repoName {
-				t.Errorf("got %q, want %q", args.Repo, repoName)
-			}
-			return &protocol.RepoLookupResult{
-				Repo: &protocol.RepoInfo{Name: repoName, VCS: protocol.VCSInfo{URL: "http://example.com/my/repo"}},
-			}, nil
-		}
-		defer func() { repoupdater.MockRepoLookup = nil }()
-
 		calledIsRepoCloneable := false
-		gitserver.MockIsRepoCloneable = func(repo gitserver.Repo) error {
+		gitserver.MockIsRepoCloneable = func(repo api.RepoName) error {
 			calledIsRepoCloneable = true
-			if want := (gitserver.Repo{Name: repoName, URL: "http://example.com/my/repo"}); !reflect.DeepEqual(repo, want) {
+			if want := repoName; !reflect.DeepEqual(repo, want) {
 				t.Errorf("got %+v, want %+v", repo, want)
 			}
 			return nil
@@ -128,9 +101,6 @@ func TestCheckMirrorRepositoryConnection(t *testing.T) {
 			},
 		})
 
-		if !calledRepoLookup {
-			t.Error("!calledRepoLookup")
-		}
 		if !calledIsRepoCloneable {
 			t.Error("!calledIsRepoCloneable")
 		}
@@ -214,7 +184,7 @@ func TestCheckMirrorRepositoryRemoteURL(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.repoURL, func(t *testing.T) {
-			db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+			database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
 				return &types.User{SiteAdmin: true}, nil
 			}
 

@@ -10,7 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -20,7 +20,7 @@ const exampleCommitSHA1 = "1234567890123456789012345678901234567890"
 
 func TestRepository_Commit(t *testing.T) {
 	resetMocks()
-	db.Mocks.Repos.MockGetByName(t, "github.com/gorilla/mux", 2)
+	database.Mocks.Repos.MockGetByName(t, "github.com/gorilla/mux", 2)
 	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
 		if repo.ID != 2 || rev != "abc" {
 			t.Error("wrong arguments to ResolveRev")
@@ -62,19 +62,17 @@ func TestRepositoryHydration(t *testing.T) {
 		minimal := types.Repo{
 			ID:   api.RepoID(id),
 			Name: api.RepoName(name),
-			ExternalRepo: api.ExternalRepoSpec{
-				ID:          name,
-				ServiceType: extsvc.TypeGitHub,
-				ServiceID:   "https://github.com",
-			},
 		}
 
 		hydrated := minimal
-		hydrated.RepoFields = &types.RepoFields{
-			URI:         fmt.Sprintf("github.com/foobar/%s", name),
-			Description: "This is a description of a repository",
-			Fork:        false,
+		hydrated.ExternalRepo = api.ExternalRepoSpec{
+			ID:          name,
+			ServiceType: extsvc.TypeGitHub,
+			ServiceID:   "https://github.com",
 		}
+		hydrated.URI = fmt.Sprintf("github.com/foobar/%s", name)
+		hydrated.Description = "This is a description of a repository"
+		hydrated.Fork = false
 
 		return &minimal, &hydrated
 	}
@@ -83,12 +81,12 @@ func TestRepositoryHydration(t *testing.T) {
 
 	t.Run("hydrated without errors", func(t *testing.T) {
 		minimalRepo, hydratedRepo := makeRepos()
-		db.Mocks.Repos.Get = func(ctx context.Context, id api.RepoID) (*types.Repo, error) {
+		database.Mocks.Repos.Get = func(ctx context.Context, id api.RepoID) (*types.Repo, error) {
 			return hydratedRepo, nil
 		}
-		defer func() { db.Mocks = db.MockStores{} }()
+		defer func() { database.Mocks = database.MockStores{} }()
 
-		repoResolver := &RepositoryResolver{repo: minimalRepo}
+		repoResolver := &RepositoryResolver{innerRepo: minimalRepo}
 		assertRepoResolverHydrated(ctx, t, repoResolver, hydratedRepo)
 	})
 
@@ -97,12 +95,12 @@ func TestRepositoryHydration(t *testing.T) {
 
 		dbErr := errors.New("cannot load repo")
 
-		db.Mocks.Repos.Get = func(ctx context.Context, id api.RepoID) (*types.Repo, error) {
+		database.Mocks.Repos.Get = func(ctx context.Context, id api.RepoID) (*types.Repo, error) {
 			return nil, dbErr
 		}
-		defer func() { db.Mocks = db.MockStores{} }()
+		defer func() { database.Mocks = database.MockStores{} }()
 
-		repoResolver := &RepositoryResolver{repo: minimalRepo}
+		repoResolver := &RepositoryResolver{innerRepo: minimalRepo}
 		_, err := repoResolver.Description(ctx)
 		if err == nil {
 			t.Fatal("err is unexpected nil")

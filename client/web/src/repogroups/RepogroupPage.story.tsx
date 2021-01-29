@@ -6,7 +6,6 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { NEVER } from 'rxjs'
 import { NOOP_SETTINGS_CASCADE } from '../../../shared/src/util/searchTestHelpers'
 import { ThemePreference } from '../theme'
-import { NOOP_TELEMETRY_SERVICE } from '../../../shared/src/telemetry/telemetryService'
 import { ActionItemComponentProps } from '../../../shared/src/actions/ActionItem'
 import { Services } from '../../../shared/src/api/client/services'
 import { AuthenticatedUser } from '../auth'
@@ -73,20 +72,15 @@ const commonProps = () =>
             },
         },
         onThemePreferenceChange: action('onThemePreferenceChange'),
+        parsedSearchQuery: 'r:golang/oauth2 test f:travis',
         patternType: SearchPatternType.literal,
         setPatternType: action('setPatternType'),
         caseSensitive: false,
         copyQueryButton: false,
         extensionsController: { ...EXTENSIONS_CONTROLLER, services: {} as Services },
         platformContext: PLATFORM_CONTEXT,
-        filtersInQuery: {},
-        interactiveSearchMode: false,
         keyboardShortcuts: [],
-        onFiltersInQueryChange: action('onFiltersInQueryChange'),
         setCaseSensitivity: action('setCaseSensitivity'),
-        splitSearchModes: false,
-        telemetryService: NOOP_TELEMETRY_SERVICE,
-        toggleSearchMode: action('toggleSearchMode'),
         versionContext: undefined,
         activation: undefined,
         isSourcegraphDotCom: true,

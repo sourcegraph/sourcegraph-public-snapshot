@@ -48,6 +48,7 @@ var SourcegraphDockerImages = []string{
 	"indexed-searcher",
 	"postgres-11.4",
 	"redis-cache",
+	"redis_exporter",
 	"redis-store",
 	"search-indexer",
 	"syntax-highlighter",
@@ -55,6 +56,7 @@ var SourcegraphDockerImages = []string{
 	"jaeger-all-in-one",
 	"codeintel-db",
 	"minio",
+	"postgres_exporter",
 }
 
 // CandidateImageTag provides the tag for a candidate image built for this Buildkite run.

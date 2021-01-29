@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -59,12 +60,12 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 		for _, n := range lineNumbers {
 			lines = append(lines, &lineMatch{JLineNumber: n})
 		}
-		return &FileMatchResolver{
+		return mkFileMatchResolver(FileMatch{
 			JPath:        path,
 			JLineMatches: lines,
-			Repo:         &RepositoryResolver{repo: &types.Repo{Name: "r"}},
+			Repo:         &types.RepoName{Name: "r"},
 			CommitID:     wantCommitID,
-		}
+		})
 	}
 
 	tests := map[string]struct {
@@ -98,7 +99,7 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 		"1 entire repo": {
 			results: []SearchResultResolver{
 				&RepositoryResolver{
-					repo: &types.Repo{Name: "r"},
+					innerRepo: &types.Repo{Name: "r", CreatedAt: time.Now()},
 				},
 			},
 			getFiles: []os.FileInfo{

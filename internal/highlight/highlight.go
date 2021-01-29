@@ -17,11 +17,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/gosyntect"
+	"golang.org/x/net/html"
+	"golang.org/x/net/html/atom"
+
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-	"golang.org/x/net/html"
-	"golang.org/x/net/html/atom"
 )
 
 var (
@@ -325,6 +326,20 @@ func preSpansToTable(h string) (string, error) {
 		codeTd.AppendChild(codeCell)
 		codeTd.Attr = append(codeCell.Attr, html.Attribute{Key: "class", Val: "code"})
 	}
+	addNewRows := func(textNode *html.Node) {
+		// Text node, create a new table row for each newline at the end.
+		nodeData := textNode.Data
+		// Trim the preceding newlines and check if the entire node was *not* made up of newlines.
+		// This prevents us from counting the preceding newlines and appending them as rows at the end.
+		trimmedNodeData := strings.TrimLeft(nodeData, "\n")
+		if len(trimmedNodeData) > 0 {
+			nodeData = trimmedNodeData
+		}
+		newlines := strings.Count(nodeData, "\n")
+		for i := 0; i < newlines; i++ {
+			newRow()
+		}
+	}
 	newRow()
 	for next != nil {
 		nextSibling := next.NextSibling
@@ -343,11 +358,7 @@ func preSpansToTable(h string) (string, error) {
 				for nextChild != nil {
 					switch {
 					case nextChild.Type == html.TextNode:
-						// Text node, create a new table row for each newline.
-						newlines := strings.Count(nextChild.Data, "\n")
-						for i := 0; i < newlines; i++ {
-							newRow()
-						}
+						addNewRows(nextChild)
 					default:
 						return "", fmt.Errorf("unexpected HTML child structure (encountered %+v)", nextChild)
 					}
@@ -355,11 +366,7 @@ func preSpansToTable(h string) (string, error) {
 				}
 			}
 		case next.Type == html.TextNode:
-			// Text node, create a new table row for each newline.
-			newlines := strings.Count(next.Data, "\n")
-			for i := 0; i < newlines; i++ {
-				newRow()
-			}
+			addNewRows(next)
 		default:
 			return "", fmt.Errorf("unexpected HTML structure (encountered %+v)", next)
 		}
@@ -477,14 +484,14 @@ func CodeAsLines(ctx context.Context, p Params) ([]template.HTML, bool, error) {
 	if err != nil {
 		return nil, aborted, err
 	}
-	lines, err := splitHighlightedLines(html)
+	lines, err := splitHighlightedLines(html, false)
 	return lines, aborted, err
 }
 
 // splitHighlightedLines takes the highlighted HTML table and returns a slice
 // of highlighted strings, where each string corresponds a single line in the
 // original, highlighted file.
-func splitHighlightedLines(input template.HTML) ([]template.HTML, error) {
+func splitHighlightedLines(input template.HTML, wholeRow bool) ([]template.HTML, error) {
 	doc, err := html.Parse(strings.NewReader(string(input)))
 	if err != nil {
 		return nil, err
@@ -501,8 +508,13 @@ func splitHighlightedLines(input template.HTML) ([]template.HTML, error) {
 	var buf bytes.Buffer
 	tr := table.FirstChild.FirstChild // table > tbody > tr
 	for tr != nil {
-		div := tr.LastChild.FirstChild // tr > td > div
-		err = html.Render(&buf, div)
+		var render *html.Node
+		if wholeRow {
+			render = tr
+		} else {
+			render = tr.LastChild.FirstChild // tr > td > div
+		}
+		err = html.Render(&buf, render)
 		if err != nil {
 			return nil, err
 		}
@@ -532,4 +544,45 @@ func normalizeFilepath(p string) string {
 	ext := path.Ext(p)
 	ext = strings.ToLower(ext)
 	return p[:len(p)-len(ext)] + ext
+}
+
+// LineRange describes a line range.
+//
+// It uses int32 for GraphQL compatability.
+type LineRange struct {
+	// StartLine is the 0-based inclusive start line of the range.
+	StartLine int32
+
+	// EndLine is the 0-based exclusive end line of the range.
+	EndLine int32
+}
+
+// SplitLineRanges takes a syntax highlighted HTML table (returned by highlight.Code) and splits out
+// the specified line ranges, returning HTML table rows `<tr>...</tr>` for each line range.
+//
+// Input line ranges will automatically be clamped within the bounds of the file.
+func SplitLineRanges(html template.HTML, ranges []LineRange) ([][]string, error) {
+	lines, err := splitHighlightedLines(html, true)
+	if err != nil {
+		return nil, err
+	}
+	var lineRanges [][]string
+	for _, r := range ranges {
+		if r.StartLine < 0 {
+			r.StartLine = 0
+		}
+		if r.EndLine > int32(len(lines)) {
+			r.EndLine = int32(len(lines))
+		}
+		if r.StartLine > r.EndLine {
+			r.StartLine = 0
+			r.EndLine = 0
+		}
+		tableRows := make([]string, 0, r.EndLine-r.StartLine)
+		for _, line := range lines[r.StartLine:r.EndLine] {
+			tableRows = append(tableRows, string(line))
+		}
+		lineRanges = append(lineRanges, tableRows)
+	}
+	return lineRanges, nil
 }

@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -41,24 +40,24 @@ var (
 	}
 )
 
-var MockSearch func(ctx context.Context, repo gitserver.Repo, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*protocol.FileMatch, limitHit bool, err error)
+var MockSearch func(ctx context.Context, repo api.RepoName, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*protocol.FileMatch, limitHit bool, err error)
 
 // Search searches repo@commit with p.
-func Search(ctx context.Context, searcherURLs *endpoint.Map, repo gitserver.Repo, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*protocol.FileMatch, limitHit bool, err error) {
+func Search(ctx context.Context, searcherURLs *endpoint.Map, repo api.RepoName, branch string, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration, indexerEndpoints []string) (matches []*protocol.FileMatch, limitHit bool, err error) {
 	if MockSearch != nil {
 		return MockSearch(ctx, repo, commit, p, fetchTimeout)
 	}
 
-	tr, ctx := trace.New(ctx, "searcher.client", fmt.Sprintf("%s@%s", repo.Name, commit))
+	tr, ctx := trace.New(ctx, "searcher.client", fmt.Sprintf("%s@%s", repo, commit))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
 	q := url.Values{
-		"Repo":            []string{string(repo.Name)},
-		"URL":             []string{repo.URL},
+		"Repo":            []string{string(repo)},
 		"Commit":          []string{string(commit)},
+		"Branch":          []string{string(branch)},
 		"Pattern":         []string{p.Pattern},
 		"ExcludePattern":  []string{p.ExcludePattern},
 		"IncludePatterns": p.IncludePatterns,
@@ -67,6 +66,7 @@ func Search(ctx context.Context, searcherURLs *endpoint.Map, repo gitserver.Repo
 		"CombyRule":       []string{p.CombyRule},
 
 		"PathPatternsAreRegExps": []string{"true"},
+		"IndexerEndpoints":       indexerEndpoints,
 	}
 	if deadline, ok := ctx.Deadline(); ok {
 		t, err := deadline.MarshalText()
@@ -103,7 +103,7 @@ func Search(ctx context.Context, searcherURLs *endpoint.Map, repo gitserver.Repo
 	// Searcher caches the file contents for repo@commit since it is
 	// relatively expensive to fetch from gitserver. So we use consistent
 	// hashing to increase cache hits.
-	consistentHashKey := string(repo.Name) + "@" + string(commit)
+	consistentHashKey := string(repo) + "@" + string(commit)
 	tr.LazyPrintf("%s", consistentHashKey)
 
 	var (

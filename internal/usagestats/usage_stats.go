@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -22,12 +22,12 @@ var (
 // GetArchive generates and returns a usage statistics ZIP archive containing the CSV
 // files defined in RFC 145, or an error in case of failure.
 func GetArchive(ctx context.Context) ([]byte, error) {
-	counts, err := db.EventLogs.UsersUsageCounts(ctx)
+	counts, err := database.GlobalEventLogs.UsersUsageCounts(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	dates, err := db.Users.ListDates(ctx)
+	dates, err := database.GlobalUsers.ListDates(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -113,27 +113,27 @@ func GetByUserID(ctx context.Context, userID int32) (*types.UserUsageStatistics,
 		return MockGetByUserID(userID)
 	}
 
-	pageViews, err := db.EventLogs.CountByUserIDAndEventNamePrefix(ctx, userID, "View")
+	pageViews, err := database.GlobalEventLogs.CountByUserIDAndEventNamePrefix(ctx, userID, "View")
 	if err != nil {
 		return nil, err
 	}
-	searchQueries, err := db.EventLogs.CountByUserIDAndEventName(ctx, userID, "SearchResultsQueried")
+	searchQueries, err := database.GlobalEventLogs.CountByUserIDAndEventName(ctx, userID, "SearchResultsQueried")
 	if err != nil {
 		return nil, err
 	}
-	codeIntelligenceActions, err := db.EventLogs.CountByUserIDAndEventNames(ctx, userID, []string{"hover", "findReferences", "goToDefinition.preloaded", "goToDefinition"})
+	codeIntelligenceActions, err := database.GlobalEventLogs.CountByUserIDAndEventNames(ctx, userID, []string{"hover", "findReferences", "goToDefinition.preloaded", "goToDefinition"})
 	if err != nil {
 		return nil, err
 	}
-	findReferencesActions, err := db.EventLogs.CountByUserIDAndEventName(ctx, userID, "findReferences")
+	findReferencesActions, err := database.GlobalEventLogs.CountByUserIDAndEventName(ctx, userID, "findReferences")
 	if err != nil {
 		return nil, err
 	}
-	lastActiveTime, err := db.EventLogs.MaxTimestampByUserID(ctx, userID)
+	lastActiveTime, err := database.GlobalEventLogs.MaxTimestampByUserID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
-	lastCodeHostIntegrationTime, err := db.EventLogs.MaxTimestampByUserIDAndSource(ctx, userID, "CODEHOSTINTEGRATION")
+	lastCodeHostIntegrationTime, err := database.GlobalEventLogs.MaxTimestampByUserIDAndSource(ctx, userID, "CODEHOSTINTEGRATION")
 	if err != nil {
 		return nil, err
 	}
@@ -152,27 +152,27 @@ func GetByUserID(ctx context.Context, userID int32) (*types.UserUsageStatistics,
 func GetUsersActiveTodayCount(ctx context.Context) (int, error) {
 	now := timeNow().UTC()
 	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
-	return db.EventLogs.CountUniqueUsersAll(ctx, today, today.AddDate(0, 0, 1))
+	return database.GlobalEventLogs.CountUniqueUsersAll(ctx, today, today.AddDate(0, 0, 1))
 }
 
 // ListRegisteredUsersToday returns a list of the registered users that were active today.
 func ListRegisteredUsersToday(ctx context.Context) ([]int32, error) {
 	now := timeNow().UTC()
 	start := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
-	return db.EventLogs.ListUniqueUsersAll(ctx, start, start.AddDate(0, 0, 1))
+	return database.GlobalEventLogs.ListUniqueUsersAll(ctx, start, start.AddDate(0, 0, 1))
 }
 
 // ListRegisteredUsersThisWeek returns a list of the registered users that were active this week.
 func ListRegisteredUsersThisWeek(ctx context.Context) ([]int32, error) {
 	start := timeutil.StartOfWeek(timeNow().UTC(), 0)
-	return db.EventLogs.ListUniqueUsersAll(ctx, start, start.AddDate(0, 0, 7))
+	return database.GlobalEventLogs.ListUniqueUsersAll(ctx, start, start.AddDate(0, 0, 7))
 }
 
 // ListRegisteredUsersThisMonth returns a list of the registered users that were active this month.
 func ListRegisteredUsersThisMonth(ctx context.Context) ([]int32, error) {
 	now := timeNow().UTC()
 	start := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
-	return db.EventLogs.ListUniqueUsersAll(ctx, start, start.AddDate(0, 1, 0))
+	return database.GlobalEventLogs.ListUniqueUsersAll(ctx, start, start.AddDate(0, 1, 0))
 }
 
 // SiteUsageStatisticsOptions contains options for the number of daily, weekly, and monthly periods in
@@ -204,15 +204,15 @@ func GetSiteUsageStatistics(ctx context.Context, opt *SiteUsageStatisticsOptions
 		}
 	}
 
-	daus, err := activeUsers(ctx, db.Daily, dayPeriods)
+	daus, err := activeUsers(ctx, database.Daily, dayPeriods)
 	if err != nil {
 		return nil, err
 	}
-	waus, err := activeUsers(ctx, db.Weekly, weekPeriods)
+	waus, err := activeUsers(ctx, database.Weekly, weekPeriods)
 	if err != nil {
 		return nil, err
 	}
-	maus, err := activeUsers(ctx, db.Monthly, monthPeriods)
+	maus, err := activeUsers(ctx, database.Monthly, monthPeriods)
 	if err != nil {
 		return nil, err
 	}
@@ -224,22 +224,22 @@ func GetSiteUsageStatistics(ctx context.Context, opt *SiteUsageStatisticsOptions
 }
 
 // activeUsers returns counts of active users in the given number of days, weeks, or months, as selected (including the current, partially completed period).
-func activeUsers(ctx context.Context, periodType db.PeriodType, periods int) ([]*types.SiteActivityPeriod, error) {
+func activeUsers(ctx context.Context, periodType database.PeriodType, periods int) ([]*types.SiteActivityPeriod, error) {
 	if periods == 0 {
 		return []*types.SiteActivityPeriod{}, nil
 	}
 
-	uniqueUsers, err := db.EventLogs.CountUniqueUsersPerPeriod(ctx, periodType, timeNow().UTC(), periods, nil)
+	uniqueUsers, err := database.GlobalEventLogs.CountUniqueUsersPerPeriod(ctx, periodType, timeNow().UTC(), periods, nil)
 	if err != nil {
 		return nil, err
 	}
-	registeredUniqueUsers, err := db.EventLogs.CountUniqueUsersPerPeriod(ctx, periodType, timeNow().UTC(), periods, &db.CountUniqueUsersOptions{
+	registeredUniqueUsers, err := database.GlobalEventLogs.CountUniqueUsersPerPeriod(ctx, periodType, timeNow().UTC(), periods, &database.CountUniqueUsersOptions{
 		RegisteredOnly: true,
 	})
 	if err != nil {
 		return nil, err
 	}
-	integrationUniqueUsers, err := db.EventLogs.CountUniqueUsersPerPeriod(ctx, periodType, timeNow().UTC(), periods, &db.CountUniqueUsersOptions{
+	integrationUniqueUsers, err := database.GlobalEventLogs.CountUniqueUsersPerPeriod(ctx, periodType, timeNow().UTC(), periods, &database.CountUniqueUsersOptions{
 		IntegrationOnly: true,
 	})
 	if err != nil {

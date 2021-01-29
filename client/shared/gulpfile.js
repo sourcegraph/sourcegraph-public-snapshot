@@ -9,7 +9,7 @@ const { readFile, writeFile, mkdir } = require('mz/fs')
 const path = require('path')
 const { format, resolveConfig } = require('prettier')
 
-const { generateGraphQlOperations } = require('./dev/generateGraphQlOperations')
+const { generateGraphQlOperations, ALL_DOCUMENTS_GLOB } = require('./dev/generateGraphQlOperations')
 
 const GRAPHQL_SCHEMA_PATH = path.join(__dirname, '../../cmd/frontend/graphqlbackend/schema.graphql')
 
@@ -67,10 +67,64 @@ async function watchGraphQlSchema() {
 }
 
 /**
+ * Determine whether to regenerate GraphQL operations based on the given
+ * Chokidar event. If we can determine that the file being modified is a
+ * non-GraphQL-using TypeScript or JavaScript file, then we can skip the
+ * expensive generation step.
+ *
+ * @param {string} type
+ * @param {string} name
+ * @returns bool
+ */
+async function shouldRegenerateGraphQlOperations(type, name) {
+  if (type === 'unlink' || type === 'unlinkDir') {
+    // For all deletions, we'll regenerate, since we don't know if the file(s)
+    // that were deleted were used when generating the GraphQL operations.
+    return true
+  }
+
+  // If we're watching a JavaScript or TypeScript file, then we should only
+  // regenerate if there are gql-tagged strings. But first, we have to figure
+  // out if it is that type of file.
+  const isJS = ['.tsx', '.ts', '.jsx', '.js'].reduce((previous, extension) => {
+    if (previous) {
+      return previous
+    }
+    return name.endsWith(extension)
+  }, false)
+  if (isJS) {
+    // Look for the tagged string in the most naïve way imaginable.
+    return (await readFile(name)).includes('gql`')
+  }
+
+  // Finally, for non-JavaScript/TypeScript files, we'll be safe and always
+  // regenerate.
+  return true
+}
+
+/**
  * Generates the new query-specific types on file changes.
  */
-async function watchGraphQlOperations() {
-  await generateGraphQlOperations({ watch: true })
+function watchGraphQlOperations() {
+  // Although graphql-codegen has watching capabilities, they don't appear to
+  // use chokidar correctly and rely on polling. Instead, let's get gulp to
+  // watch for us, since we know it'll do it more efficiently, and then we can
+  // trigger the code generation more selectively.
+  return gulp
+    .watch(ALL_DOCUMENTS_GLOB, {
+      ignored: /** @param {string} name */ name => name.endsWith('graphql-operations.ts'),
+    })
+    .on('all', (type, name) => {
+      ;(async () => {
+        if (await shouldRegenerateGraphQlOperations(type, name)) {
+          console.log('Regenerating GraphQL types')
+          await generateGraphQlOperations()
+          console.log('Done regenerating GraphQL types')
+        }
+      })().catch(error => {
+        console.error(error)
+      })
+    })
 }
 
 /**

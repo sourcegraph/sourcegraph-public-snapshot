@@ -14,7 +14,7 @@ export const UnpublishedNotice: React.FunctionComponent<UnpublishedNoticeProps> 
     total,
     className,
 }) => {
-    if (unpublished !== total) {
+    if (total === 0 || unpublished !== total) {
         return <></>
     }
     return (

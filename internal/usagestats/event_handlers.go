@@ -7,7 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/pubsub"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -102,7 +102,7 @@ func logLocalEvent(ctx context.Context, name, url string, userID int32, userCook
 		}
 	}
 
-	info := &db.Event{
+	info := &database.Event{
 		Name:            name,
 		URL:             url,
 		UserID:          uint32(userID),
@@ -111,5 +111,5 @@ func logLocalEvent(ctx context.Context, name, url string, userID int32, userCook
 		Argument:        argument,
 		Timestamp:       timeNow().UTC(),
 	}
-	return db.EventLogs.Insert(ctx, info)
+	return database.GlobalEventLogs.Insert(ctx, info)
 }

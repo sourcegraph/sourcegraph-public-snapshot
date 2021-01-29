@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"log"
@@ -22,18 +23,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/loghandlers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
+	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/sysreq"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
@@ -82,11 +85,11 @@ func defaultExternalURL(nginxAddr, httpAddr string) *url.URL {
 	return &url.URL{Scheme: "http", Host: hostPort}
 }
 
-// InitDB initializes the global database connection and sets the
+// InitDB initializes and returns the global database connection and sets the
 // version of the frontend in our versions table.
-func InitDB() error {
+func InitDB() (*sql.DB, error) {
 	if err := dbconn.SetupGlobalConnection(""); err != nil {
-		return fmt.Errorf("failed to connect to frontend database: %s", err)
+		return nil, fmt.Errorf("failed to connect to frontend database: %s", err)
 	}
 
 	ctx := context.Background()
@@ -98,16 +101,16 @@ func InitDB() error {
 		// it's missing, we run the migrations and try to update the version again.
 
 		err := backend.UpdateServiceVersion(ctx, "frontend", version.Version())
-		if err != nil && !dbutil.IsPostgresError(err, "undefined_table") {
-			return err
+		if err != nil && !dbutil.IsPostgresError(err, "42P01") {
+			return nil, err
 		}
 
 		if !migrate {
-			return nil
+			return dbconn.Global, nil
 		}
 
-		if err := dbconn.MigrateDB(dbconn.Global, "frontend"); err != nil {
-			return err
+		if err := dbconn.MigrateDB(dbconn.Global, dbconn.Frontend); err != nil {
+			return nil, err
 		}
 
 		migrate = false
@@ -119,9 +122,16 @@ func Main(enterpriseSetupHook func() enterprise.Services) error {
 	log.SetFlags(0)
 	log.SetPrefix("")
 
-	if err := InitDB(); err != nil {
+	if err := profiler.Init(); err != nil {
+		log.Fatalf("failed to initialize profiling: %v", err)
+	}
+
+	db, err := InitDB()
+	if err != nil {
 		log.Fatalf("ERROR: %v", err)
 	}
+
+	ui.InitRouter()
 
 	if err := handleConfigOverrides(); err != nil {
 		log.Fatal("applying config overrides:", err)
@@ -193,8 +203,6 @@ func Main(enterpriseSetupHook func() enterprise.Services) error {
 	globals.WatchExternalURL(defaultExternalURL(nginxAddr, httpAddr))
 	globals.WatchPermissionsUserMapping()
 
-	goroutine.Go(func() { bg.MigrateAllSettingsMOTDToNotices(context.Background()) })
-	goroutine.Go(func() { bg.MigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(context.Background()) })
 	goroutine.Go(func() { bg.CheckRedisCacheEvictionPolicy() })
 	goroutine.Go(func() { bg.DeleteOldCacheDataInRedis() })
 	goroutine.Go(func() { bg.DeleteOldEventLogsInPostgres(context.Background()) })
@@ -206,7 +214,7 @@ func Main(enterpriseSetupHook func() enterprise.Services) error {
 		return errors.New("dbconn.Global is nil when trying to parse GraphQL schema")
 	}
 
-	schema, err := graphqlbackend.NewSchema(enterprise.CampaignsResolver, enterprise.CodeIntelResolver, enterprise.AuthzResolver, enterprise.CodeMonitorsResolver)
+	schema, err := graphqlbackend.NewSchema(db, enterprise.CampaignsResolver, enterprise.CodeIntelResolver, enterprise.InsightsResolver, enterprise.AuthzResolver, enterprise.CodeMonitorsResolver, enterprise.LicenseResolver)
 	if err != nil {
 		return err
 	}

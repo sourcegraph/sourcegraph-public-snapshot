@@ -2,12 +2,11 @@ package worker
 
 import (
 	"context"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
-	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
 
 type DBStore interface {
@@ -21,8 +20,6 @@ type DBStore interface {
 	UpdatePackages(ctx context.Context, packages []lsifstore.Package) error
 	UpdatePackageReferences(ctx context.Context, packageReferences []lsifstore.PackageReference) error
 	MarkRepositoryAsDirty(ctx context.Context, repositoryID int) error
-	MarkComplete(ctx context.Context, id int) error
-	Requeue(ctx context.Context, id int, after time.Time) error
 	DeleteOverlappingDumps(ctx context.Context, repositoryID int, commit, root, indexer string) error
 }
 

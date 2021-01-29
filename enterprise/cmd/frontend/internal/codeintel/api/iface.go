@@ -64,5 +64,6 @@ type LSIFStore interface {
 }
 
 type GitserverClient interface {
+	CommitExists(ctx context.Context, repositoryID int, commit string) (bool, error)
 	CommitGraph(ctx context.Context, repositoryID int, options gitserver.CommitGraphOptions) (*gitserver.CommitGraph, error)
 }

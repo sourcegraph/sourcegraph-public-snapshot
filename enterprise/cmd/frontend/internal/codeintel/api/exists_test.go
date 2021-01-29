@@ -2,9 +2,11 @@ package api
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -18,10 +20,11 @@ func TestFindClosestDumps(t *testing.T) {
 	setMockDBStoreHasRepository(t, mockDBStore, 42, true)
 	setMockDBStoreHasCommit(t, mockDBStore, 42, testCommit, true)
 	setMockDBStoreFindClosestDumps(t, mockDBStore, 42, testCommit, "s1/main.go", true, "idx", []store.Dump{
-		{ID: 50, Root: "s1/"},
-		{ID: 51, Root: "s1/"},
-		{ID: 52, Root: "s1/"},
-		{ID: 53, Root: "s2/"},
+		{ID: 50, RepositoryID: 42, Commit: makeCommit(0), Root: "s1/"},
+		{ID: 51, RepositoryID: 42, Commit: makeCommit(1), Root: "s1/"},
+		{ID: 52, RepositoryID: 42, Commit: makeCommit(2), Root: "s1/"},
+		{ID: 53, RepositoryID: 42, Commit: makeCommit(3), Root: "s2/"},
+		{ID: 54, RepositoryID: 42, Commit: makeCommit(4), Root: "s3/"},
 	})
 	setMultimockLSIFStoreExists(
 		t,
@@ -30,7 +33,12 @@ func TestFindClosestDumps(t *testing.T) {
 		existsSpec{51, "main.go", false},
 		existsSpec{52, "main.go", true},
 		existsSpec{53, "s1/main.go", false},
+		existsSpec{54, "s1/main.go", true},
 	)
+
+	mockGitserverClient.CommitExistsFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string) (bool, error) {
+		return strings.Compare(commit, makeCommit(3)) <= 0, nil
+	})
 
 	api := New(mockDBStore, mockLSIFStore, mockGitserverClient, &observation.TestContext)
 	dumps, err := api.FindClosestDumps(context.Background(), 42, testCommit, "s1/main.go", true, "idx")
@@ -39,8 +47,8 @@ func TestFindClosestDumps(t *testing.T) {
 	}
 
 	expected := []store.Dump{
-		{ID: 50, Root: "s1/"},
-		{ID: 52, Root: "s1/"},
+		{ID: 50, RepositoryID: 42, Commit: makeCommit(0), Root: "s1/"},
+		{ID: 52, RepositoryID: 42, Commit: makeCommit(2), Root: "s1/"},
 	}
 	if diff := cmp.Diff(expected, dumps); diff != "" {
 		t.Errorf("unexpected dumps (-want +got):\n%s", diff)
@@ -51,6 +59,7 @@ func TestFindClosestDumpsInfersClosestUploads(t *testing.T) {
 	mockDBStore := NewMockDBStore()
 	mockLSIFStore := NewMockLSIFStore()
 	mockGitserverClient := NewMockGitserverClient()
+	mockGitserverClient.CommitExistsFunc.SetDefaultReturn(true, nil)
 
 	graph := gitserver.ParseCommitGraph([]string{
 		"d",
@@ -106,6 +115,7 @@ func TestFindClosestDumpsDoesNotInferClosestUploadForUnknownRepository(t *testin
 	mockDBStore := NewMockDBStore()
 	mockLSIFStore := NewMockLSIFStore()
 	mockGitserverClient := NewMockGitserverClient()
+	mockGitserverClient.CommitExistsFunc.SetDefaultReturn(true, nil)
 
 	setMockDBStoreHasRepository(t, mockDBStore, 42, false)
 	setMockDBStoreHasCommit(t, mockDBStore, 42, testCommit, false)

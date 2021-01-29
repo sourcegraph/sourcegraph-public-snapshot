@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/schema"
+	"github.com/hashicorp/go-multierror"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
@@ -121,6 +122,18 @@ func IsUnauthorized(err error) bool {
 	})
 }
 
+// IsAccountSuspended will check if err or one of its causes was due to the
+// account being suspended
+func IsAccountSuspended(err error) bool {
+	type accountSuspendeder interface {
+		AccountSuspended() bool
+	}
+	return isErrorPredicate(err, func(err error) bool {
+		e, ok := err.(accountSuspendeder)
+		return ok && e.AccountSuspended()
+	})
+}
+
 // IsBadRequest will check if err or one of its causes is a bad request.
 func IsBadRequest(err error) bool {
 	type badRequester interface {
@@ -175,15 +188,25 @@ func isErrorPredicate(err error, p func(err error) bool) bool {
 		Cause() error
 	}
 
-	for err != nil {
-		if p(err) {
-			return true
-		}
-		cause, ok := err.(causer)
-		if !ok {
-			break
-		}
-		err = cause.Cause()
+	errs := []error{err}
+
+	// We often use multierr.Error which doesn't implement causer
+	if me, ok := err.(*multierror.Error); ok {
+		errs = me.Errors
 	}
+
+	for _, err := range errs {
+		for err != nil {
+			if p(err) {
+				return true
+			}
+			cause, ok := err.(causer)
+			if !ok {
+				break
+			}
+			err = cause.Cause()
+		}
+	}
+
 	return false
 }

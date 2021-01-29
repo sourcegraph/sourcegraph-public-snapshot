@@ -108,6 +108,9 @@ func TestRequest(t *testing.T) {
 		GetRemoteURLFunc: func(ctx context.Context, name api.RepoName) (string, error) {
 			return "https://" + string(name) + ".git", nil
 		},
+		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
+			return &GitRepoSyncer{}, nil
+		},
 	}
 	h := s.Handler()
 
@@ -115,14 +118,14 @@ func TestRequest(t *testing.T) {
 		return dir == s.dir("github.com/gorilla/mux") || dir == s.dir("my-mux")
 	}
 
-	testRepoExists = func(ctx context.Context, url string) error {
+	testGitRepoExists = func(ctx context.Context, url string) error {
 		if url == "https://github.com/nicksnyder/go-i18n.git" {
 			return nil
 		}
 		return errors.New("not cloneable")
 	}
 	defer func() {
-		testRepoExists = nil
+		testGitRepoExists = nil
 	}()
 
 	runCommandMock = func(ctx context.Context, cmd *exec.Cmd) (int, error) {
@@ -392,6 +395,9 @@ func TestCloneRepo(t *testing.T) {
 	s := &Server{
 		ReposDir:         reposDir,
 		GetRemoteURLFunc: staticGetRemoteURL(remote),
+		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
+			return &GitRepoSyncer{}, nil
+		},
 		ctx:              context.Background(),
 		locker:           &RepositoryLocker{},
 		cloneLimiter:     mutablelimiter.New(1),
@@ -512,6 +518,9 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		server := &Server{
 			ReposDir:         reposDir,
 			GetRemoteURLFunc: staticGetRemoteURL(remote),
+			GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
+				return &GitRepoSyncer{}, nil
+			},
 			ctx:              ctx,
 			locker:           &RepositoryLocker{},
 			cloneLimiter:     mutablelimiter.New(1),
@@ -537,6 +546,9 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		server := &Server{
 			ReposDir:         reposDir,
 			GetRemoteURLFunc: staticGetRemoteURL(remote),
+			GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
+				return &GitRepoSyncer{}, nil
+			},
 			ctx:              ctx,
 			locker:           &RepositoryLocker{},
 			cloneLimiter:     mutablelimiter.New(1),
@@ -564,6 +576,9 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		s := &Server{
 			ReposDir:         reposDir,
 			GetRemoteURLFunc: staticGetRemoteURL(remote),
+			GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
+				return &GitRepoSyncer{}, nil
+			},
 			ctx:              ctx,
 			locker:           &RepositoryLocker{},
 			cloneLimiter:     mutablelimiter.New(1),
@@ -611,6 +626,9 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		s := &Server{
 			ReposDir:         reposDir,
 			GetRemoteURLFunc: staticGetRemoteURL(remote),
+			GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
+				return &GitRepoSyncer{}, nil
+			},
 			ctx:              ctx,
 			locker:           &RepositoryLocker{},
 			cloneLimiter:     mutablelimiter.New(1),

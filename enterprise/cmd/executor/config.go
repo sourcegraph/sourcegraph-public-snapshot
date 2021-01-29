@@ -5,9 +5,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/apiclient"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/command"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
+	apiworker "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
@@ -67,9 +68,10 @@ func (c *Config) APIWorkerOptions(transport http.RoundTripper) apiworker.Options
 
 func (c *Config) WorkerOptions() workerutil.WorkerOptions {
 	return workerutil.WorkerOptions{
+		Name:        "precise_code_intel_index_worker",
 		NumHandlers: c.MaximumNumJobs,
 		Interval:    c.QueuePollInterval,
-		Metrics:     makeWorkerMetrics(),
+		Metrics:     makeWorkerMetrics(c.QueueName),
 	}
 }
 
@@ -100,8 +102,7 @@ func (c *Config) ClientOptions(transport http.RoundTripper) apiclient.Options {
 
 func (c *Config) BaseClientOptions(transport http.RoundTripper) apiclient.BaseClientOptions {
 	return apiclient.BaseClientOptions{
-		TraceOperationName: "Executor Queue Client",
-		Transport:          transport,
+		Transport: transport,
 	}
 }
 

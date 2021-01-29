@@ -60,7 +60,7 @@ export const DownloadDiffButton: React.FunctionComponent<DownloadDiffButtonProps
     if (isErrorLike(state)) {
         icon = <AlertCircleIcon className="icon icon-inline" data-tooltip={state?.message} />
     } else if (state === DownloadState.LOADING) {
-        icon = <LoadingSpinner />
+        icon = <LoadingSpinner className="icon-inline" />
     } else {
         icon = <DownloadIcon className="icon-inline" />
     }
@@ -70,12 +70,13 @@ export const DownloadDiffButton: React.FunctionComponent<DownloadDiffButtonProps
             <button
                 type="button"
                 className="btn btn-link"
-                aria-label="Download diff"
+                aria-label="Download generated diff"
+                data-tooltip="This is the changeset diff created when src campaign preview|apply executed the campaign"
                 onClick={loadDiff}
                 disabled={state === DownloadState.LOADING}
             >
                 {icon}
-                <span className="pl-1">Download diff</span>
+                <span className="pl-1">Download generated diff</span>
             </button>
         </div>
     )

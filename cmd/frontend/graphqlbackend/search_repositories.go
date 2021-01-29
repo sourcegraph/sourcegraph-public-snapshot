@@ -6,20 +6,20 @@ import (
 	"regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-var mockSearchRepositories func(args *search.TextParameters) ([]SearchResultResolver, *searchResultsCommon, error)
+var mockSearchRepositories func(args *search.TextParameters) ([]SearchResultResolver, *streaming.Stats, error)
 var repoIcon = "data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIGlkPSJMYXllcl8xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB4PSIwcHgiIHk9IjBweCIKCSB2aWV3Qm94PSIwIDAgNjQgNjQiIHN0eWxlPSJlbmFibGUtYmFja2dyb3VuZDpuZXcgMCAwIDY0IDY0OyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSI+Cjx0aXRsZT5JY29ucyA0MDA8L3RpdGxlPgo8Zz4KCTxwYXRoIGQ9Ik0yMywyMi40YzEuMywwLDIuNC0xLjEsMi40LTIuNHMtMS4xLTIuNC0yLjQtMi40Yy0xLjMsMC0yLjQsMS4xLTIuNCwyLjRTMjEuNywyMi40LDIzLDIyLjR6Ii8+Cgk8cGF0aCBkPSJNMzUsMjYuNGMxLjMsMCwyLjQtMS4xLDIuNC0yLjRzLTEuMS0yLjQtMi40LTIuNHMtMi40LDEuMS0yLjQsMi40UzMzLjcsMjYuNCwzNSwyNi40eiIvPgoJPHBhdGggZD0iTTIzLDQyLjRjMS4zLDAsMi40LTEuMSwyLjQtMi40cy0xLjEtMi40LTIuNC0yLjRzLTIuNCwxLjEtMi40LDIuNFMyMS43LDQyLjQsMjMsNDIuNHoiLz4KCTxwYXRoIGQ9Ik01MCwxNmgtMS41Yy0wLjMsMC0wLjUsMC4yLTAuNSwwLjV2MzVjMCwwLjMtMC4yLDAuNS0wLjUsMC41aC0yN2MtMC41LDAtMS0wLjItMS40LTAuNmwtMC42LTAuNmMtMC4xLTAuMS0wLjEtMC4yLTAuMS0wLjQKCQljMC0wLjMsMC4yLTAuNSwwLjUtMC41SDQ0YzEuMSwwLDItMC45LDItMlYxMmMwLTEuMS0wLjktMi0yLTJIMTRjLTEuMSwwLTIsMC45LTIsMnYzNi4zYzAsMS4xLDAuNCwyLjEsMS4yLDIuOGwzLjEsMy4xCgkJYzEuMSwxLjEsMi43LDEuOCw0LjIsMS44SDUwYzEuMSwwLDItMC45LDItMlYxOEM1MiwxNi45LDUxLjEsMTYsNTAsMTZ6IE0xOSwyMGMwLTIuMiwxLjgtNCw0LTRjMS40LDAsMi44LDAuOCwzLjUsMgoJCWMxLjEsMS45LDAuNCw0LjMtMS41LDUuNFYzM2MxLTAuNiwyLjMtMC45LDQtMC45YzEsMCwyLTAuNSwyLjgtMS4zQzMyLjUsMzAsMzMsMjkuMSwzMywyOHYtMC42Yy0xLjItMC43LTItMi0yLTMuNQoJCWMwLTIuMiwxLjgtNCw0LTRjMi4yLDAsNCwxLjgsNCw0YzAsMS41LTAuOCwyLjctMiwzLjVoMGMtMC4xLDIuMS0wLjksNC40LTIuNSw2Yy0xLjYsMS42LTMuNCwyLjQtNS41LDIuNWMtMC44LDAtMS40LDAuMS0xLjksMC4zCgkJYy0wLjIsMC4xLTEsMC44LTEuMiwwLjlDMjYuNiwzOCwyNywzOC45LDI3LDQwYzAsMi4yLTEuOCw0LTQsNHMtNC0xLjgtNC00YzAtMS41LDAuOC0yLjcsMi0zLjRWMjMuNEMxOS44LDIyLjcsMTksMjEuNCwxOSwyMHoiLz4KPC9nPgo8L3N2Zz4K"
 
 // searchRepositories searches for repositories by name.
 //
 // For a repository to match a query, the repository's name must match all of the repo: patterns AND the
 // default patterns (i.e., the patterns that are not prefixed with any search field).
-func searchRepositories(ctx context.Context, args *search.TextParameters, limit int32) (res []SearchResultResolver, common *searchResultsCommon, err error) {
+func searchRepositories(ctx context.Context, args *search.TextParameters, limit int32) (res []SearchResultResolver, common *streaming.Stats, err error) {
 	if mockSearchRepositories != nil {
 		return mockSearchRepositories(args)
 	}
@@ -65,7 +65,7 @@ func searchRepositories(ctx context.Context, args *search.TextParameters, limit 
 		return nil, nil, err
 	}
 
-	common, repos := matchRepos(pattern, resolved)
+	repos := matchRepos(pattern, resolved)
 
 	// Filter the repos if there is a repohasfile: or -repohasfile field.
 	if len(args.PatternInfo.FilePatternsReposMustExclude) > 0 || len(args.PatternInfo.FilePatternsReposMustInclude) > 0 {
@@ -75,11 +75,13 @@ func searchRepositories(ctx context.Context, args *search.TextParameters, limit 
 		}
 	}
 
+	limitHit := false
+
 	// Convert the repos to RepositoryResolvers.
 	results := make([]SearchResultResolver, 0, len(repos))
 	for _, r := range repos {
 		if len(results) == int(limit) {
-			common.limitHit = true
+			limitHit = true
 			break
 		}
 
@@ -89,14 +91,16 @@ func searchRepositories(ctx context.Context, args *search.TextParameters, limit 
 			revs = r.RevSpecs()
 		}
 		for _, rev := range revs {
-			results = append(results, &RepositoryResolver{repo: r.Repo, icon: repoIcon, rev: rev})
+			results = append(results, &RepositoryResolver{innerRepo: r.Repo.ToRepo(), icon: repoIcon, rev: rev})
 		}
 	}
 
-	return results, common, nil
+	return results, &streaming.Stats{
+		IsLimitHit: limitHit,
+	}, nil
 }
 
-func matchRepos(pattern *regexp.Regexp, resolved []*search.RepositoryRevisions) (*searchResultsCommon, []*search.RepositoryRevisions) {
+func matchRepos(pattern *regexp.Regexp, resolved []*search.RepositoryRevisions) []*search.RepositoryRevisions {
 	/*
 		Local benchmarks showed diminishing returns for higher levels of concurrency.
 		5 workers seems to be a good trade-off for now. We might want to revisit this
@@ -146,17 +150,12 @@ func matchRepos(pattern *regexp.Regexp, resolved []*search.RepositoryRevisions) 
 		offset = next
 	}
 
-	repos := make([]*types.Repo, len(resolved))
-	for i := range resolved {
-		repos[i] = resolved[i].Repo
-	}
-
 	var matched []*search.RepositoryRevisions
 	for w := 0; w < workers; w++ {
 		matched = append(matched, <-results...)
 	}
 
-	return &searchResultsCommon{repos: repos}, matched
+	return matched
 }
 
 // reposToAdd determines which repositories should be included in the result set based on whether they fit in the subset
@@ -169,7 +168,7 @@ func reposToAdd(ctx context.Context, args *search.TextParameters, repos []*searc
 			// len(repos) could mean we miss some repos since there could be for example len(repos) file matches in
 			// the first repo and some more in other repos.
 			p := search.TextPatternInfo{IsRegExp: true, FileMatchLimit: math.MaxInt32, IncludePatterns: []string{pattern}, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
-			q, err := query.ParseAndCheck("file:" + pattern)
+			q, err := query.ParseLiteral("file:" + pattern)
 			if err != nil {
 				return nil, err
 			}
@@ -178,12 +177,12 @@ func reposToAdd(ctx context.Context, args *search.TextParameters, repos []*searc
 			newArgs.RepoPromise = (&search.Promise{}).Resolve(repos)
 			newArgs.Query = q
 			newArgs.UseFullDeadline = true
-			matches, _, err := searchFilesInRepos(ctx, &newArgs)
+			matches, _, err := searchFilesInReposBatch(ctx, &newArgs)
 			if err != nil {
 				return nil, err
 			}
 			for _, m := range matches {
-				matchingIDs[m.Repo.repo.ID] = true
+				matchingIDs[m.Repo.ID] = true
 			}
 		}
 	} else {
@@ -206,12 +205,12 @@ func reposToAdd(ctx context.Context, args *search.TextParameters, repos []*searc
 			newArgs.RepoPromise = rp
 			newArgs.Query = q
 			newArgs.UseFullDeadline = true
-			matches, _, err := searchFilesInRepos(ctx, &newArgs)
+			matches, _, err := searchFilesInReposBatch(ctx, &newArgs)
 			if err != nil {
 				return nil, err
 			}
 			for _, m := range matches {
-				matchingIDs[m.Repo.repo.ID] = false
+				matchingIDs[m.Repo.ID] = false
 			}
 		}
 	}

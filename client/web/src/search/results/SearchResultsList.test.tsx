@@ -16,7 +16,6 @@ import {
 } from '../../../../shared/src/util/searchTestHelpers'
 import { SearchResultsList, SearchResultsListProps } from './SearchResultsList'
 import { NEVER, of } from 'rxjs'
-import { FiltersToTypeAndValue, FilterType } from '../../../../shared/src/search/interactive/util'
 import { SearchPatternType } from '../../../../shared/src/graphql-operations'
 
 let VISIBILITY_CHANGED_CALLBACKS: ((isVisible: boolean) => void)[] = []
@@ -100,11 +99,9 @@ describe('SearchResultsList', () => {
 
         showSavedQueryModal: false,
         onSavedQueryModalClose: sinon.spy(),
-        onDidCreateSavedQuery: sinon.spy(),
         onSaveQueryClick: sinon.spy(),
-        didSave: false,
 
-        fetchHighlightedFileLines: HIGHLIGHTED_FILE_LINES_REQUEST,
+        fetchHighlightedFileLineRanges: HIGHLIGHTED_FILE_LINES_REQUEST,
 
         isLightTheme: true,
         settingsCascade: {
@@ -114,21 +111,18 @@ describe('SearchResultsList', () => {
         extensionsController: { executeCommand: sinon.spy(), services: extensionsController.services },
         platformContext: { forceUpdateTooltip: sinon.spy(), settings: NEVER },
         telemetryService: NOOP_TELEMETRY_SERVICE,
+        parsedSearchQuery: 'r:golang/oauth2 test f:travis',
         patternType: SearchPatternType.regexp,
         setPatternType: sinon.spy(),
         caseSensitive: false,
         setCaseSensitivity: sinon.spy(),
 
-        interactiveSearchMode: false,
-        filtersInQuery: {},
-        toggleSearchMode: sinon.fake(),
-        onFiltersInQueryChange: sinon.fake(),
-        splitSearchModes: false,
         versionContext: undefined,
 
-        navbarSearchQueryState: { query: '', cursorPosition: 0 },
+        navbarSearchQueryState: { query: '' },
 
         shouldDisplayPerformanceWarning: () => of(false),
+        enableCodeMonitoring: false,
     }
 
     it('displays loading text when results is undefined', () => {
@@ -289,23 +283,9 @@ describe('SearchResultsList', () => {
             ],
         }
 
-        const filtersInQuery: FiltersToTypeAndValue = {
-            a: {
-                type: FilterType.repo,
-                value: 'test1',
-                editable: true,
-            },
-            b: {
-                type: FilterType.repo,
-                value: 'test2',
-                editable: true,
-            },
-        }
-
         const props = {
             ...defaultProps,
             resultsOrError,
-            filtersInQuery,
         }
 
         const { container } = render(

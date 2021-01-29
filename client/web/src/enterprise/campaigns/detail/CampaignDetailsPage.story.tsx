@@ -5,11 +5,10 @@ import { CampaignDetailsPage } from './CampaignDetailsPage'
 import { of } from 'rxjs'
 import {
     CampaignFields,
-    ChangesetExternalState,
-    ChangesetPublicationState,
-    ChangesetReconcilerState,
     ChangesetCheckState,
     ChangesetReviewState,
+    ChangesetSpecType,
+    ChangesetState,
 } from '../../../graphql-operations'
 import {
     fetchCampaignByNamespace,
@@ -65,7 +64,9 @@ const campaignDefaults: CampaignFields = {
     },
     currentSpec: {
         originalInput: 'name: awesome-campaign\ndescription: somestring',
+        supersedingCampaignSpec: null,
     },
+    diffStat: { added: 1000, changed: 2000, deleted: 1000 },
 }
 
 const queryChangesets: typeof _queryChangesets = () =>
@@ -79,41 +80,41 @@ const queryChangesets: typeof _queryChangesets = () =>
             {
                 __typename: 'HiddenExternalChangeset',
                 createdAt: subDays(now, 5).toISOString(),
-                externalState: null,
+                state: ChangesetState.UNPUBLISHED,
                 id: 'someh1',
                 nextSyncAt: null,
-                publicationState: ChangesetPublicationState.UNPUBLISHED,
-                reconcilerState: ChangesetReconcilerState.COMPLETED,
                 updatedAt: subDays(now, 5).toISOString(),
             },
             {
                 __typename: 'HiddenExternalChangeset',
                 createdAt: subDays(now, 5).toISOString(),
-                externalState: ChangesetExternalState.OPEN,
+                state: ChangesetState.PROCESSING,
                 id: 'someh2',
                 nextSyncAt: null,
-                publicationState: ChangesetPublicationState.PUBLISHED,
-                reconcilerState: ChangesetReconcilerState.PROCESSING,
                 updatedAt: subDays(now, 5).toISOString(),
             },
             {
                 __typename: 'HiddenExternalChangeset',
                 createdAt: subDays(now, 5).toISOString(),
-                externalState: ChangesetExternalState.OPEN,
+                state: ChangesetState.RETRYING,
                 id: 'someh3',
                 nextSyncAt: null,
-                publicationState: ChangesetPublicationState.UNPUBLISHED,
-                reconcilerState: ChangesetReconcilerState.ERRORED,
                 updatedAt: subDays(now, 5).toISOString(),
             },
             {
                 __typename: 'HiddenExternalChangeset',
                 createdAt: subDays(now, 5).toISOString(),
-                externalState: ChangesetExternalState.OPEN,
+                state: ChangesetState.FAILED,
+                id: 'someh5',
+                nextSyncAt: null,
+                updatedAt: subDays(now, 5).toISOString(),
+            },
+            {
+                __typename: 'HiddenExternalChangeset',
+                createdAt: subDays(now, 5).toISOString(),
+                state: ChangesetState.OPEN,
                 id: 'someh4',
                 nextSyncAt: null,
-                publicationState: ChangesetPublicationState.PUBLISHED,
-                reconcilerState: ChangesetReconcilerState.COMPLETED,
                 updatedAt: subDays(now, 5).toISOString(),
             },
             {
@@ -139,13 +140,19 @@ const queryChangesets: typeof _queryChangesets = () =>
                 title: 'Add prettier to all projects',
                 createdAt: subDays(now, 5).toISOString(),
                 updatedAt: subDays(now, 5).toISOString(),
-                externalState: ChangesetExternalState.OPEN,
+                state: ChangesetState.OPEN,
                 nextSyncAt: null,
                 id: 'somev1',
-                reconcilerState: ChangesetReconcilerState.COMPLETED,
-                publicationState: ChangesetPublicationState.PUBLISHED,
                 error: null,
-                currentSpec: { id: 'spec-rand-id-1' },
+                syncerError: null,
+                currentSpec: {
+                    id: 'spec-rand-id-1',
+                    type: ChangesetSpecType.BRANCH,
+                    description: {
+                        __typename: 'GitBranchChangesetDescription',
+                        headRef: 'my-branch',
+                    },
+                },
             },
             {
                 __typename: 'ExternalChangeset',
@@ -168,13 +175,19 @@ const queryChangesets: typeof _queryChangesets = () =>
                 title: 'Add prettier to all projects',
                 createdAt: subDays(now, 5).toISOString(),
                 updatedAt: subDays(now, 5).toISOString(),
-                externalState: null,
+                state: ChangesetState.RETRYING,
                 nextSyncAt: null,
                 id: 'somev2',
-                reconcilerState: ChangesetReconcilerState.ERRORED,
-                publicationState: ChangesetPublicationState.UNPUBLISHED,
                 error: 'Cannot create PR, insufficient token scope.',
-                currentSpec: { id: 'spec-rand-id-2' },
+                syncerError: null,
+                currentSpec: {
+                    id: 'spec-rand-id-2',
+                    type: ChangesetSpecType.BRANCH,
+                    description: {
+                        __typename: 'GitBranchChangesetDescription',
+                        headRef: 'my-branch',
+                    },
+                },
             },
         ],
     })
@@ -260,23 +273,34 @@ const queryChangesetCountsOverTime: typeof _queryChangesetCountsOverTime = () =>
 
 const deleteCampaign = () => Promise.resolve(undefined)
 
-const stories: Record<string, string> = {
-    Overview: '/users/alice/campaigns/awesome-campaign',
-    'Burndown chart': '/users/alice/campaigns/awesome-campaign?tab=chart',
-    'Spec file': '/users/alice/campaigns/awesome-campaign?tab=spec',
+const stories: Record<string, { url: string; supersededCampaignSpec?: boolean }> = {
+    Overview: { url: '/users/alice/campaigns/awesome-campaign' },
+    'Burndown chart': { url: '/users/alice/campaigns/awesome-campaign?tab=chart' },
+    'Spec file': { url: '/users/alice/campaigns/awesome-campaign?tab=spec' },
+    'Superseded campaign': { url: '/users/alice/campaigns/awesome-campaign', supersededCampaignSpec: true },
 }
 
-for (const [name, url] of Object.entries(stories)) {
+for (const [name, { url, supersededCampaignSpec }] of Object.entries(stories)) {
     add(name, () => {
+        const supersedingCampaignSpec = boolean('supersedingCampaignSpec', !!supersededCampaignSpec)
         const viewerCanAdminister = boolean('viewerCanAdminister', true)
         const isClosed = boolean('isClosed', false)
         const campaign: CampaignFields = useMemo(
             () => ({
                 ...campaignDefaults,
+                currentSpec: {
+                    originalInput: campaignDefaults.currentSpec.originalInput,
+                    supersedingCampaignSpec: supersedingCampaignSpec
+                        ? {
+                              createdAt: subDays(new Date(), 1).toISOString(),
+                              applyURL: '/users/alice/campaigns/apply/newspecid',
+                          }
+                        : null,
+                },
                 viewerCanAdminister,
                 closedAt: isClosed ? subDays(now, 1).toISOString() : null,
             }),
-            [viewerCanAdminister, isClosed]
+            [supersedingCampaignSpec, viewerCanAdminister, isClosed]
         )
 
         const fetchCampaign: typeof fetchCampaignByNamespace = useCallback(() => of(campaign), [campaign])

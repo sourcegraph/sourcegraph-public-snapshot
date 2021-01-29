@@ -9,23 +9,23 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater/authz"
 	frontendAuthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
-	campaignsBackground "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/background"
 	codemonitorsBackground "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/background"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/db"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	ossAuthz "github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	ossDB "github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	ossDB "github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
@@ -39,26 +39,21 @@ func main() {
 
 func enterpriseInit(
 	db *sql.DB,
-	repoStore repos.Store,
+	repoStore *repos.Store,
 	cf *httpcli.Factory,
 	server *repoupdater.Server,
 ) (debugDumpers []debugserver.Dumper) {
-	ctx := context.Background()
+	// NOTE: Internal actor is required to have full visibility of the repo table
+	// 	(i.e. bypass repository authorization).
+	ctx := actor.WithInternalActor(context.Background())
 
 	codemonitorsBackground.StartBackgroundJobs(ctx, db)
 
-	campaignsStore := campaigns.NewStoreWithClock(db, timeutil.Now)
-
-	syncRegistry := campaigns.NewSyncRegistry(ctx, campaignsStore, repoStore, cf)
-	if server != nil {
-		server.ChangesetSyncRegistry = syncRegistry
-	}
-
-	campaignsBackground.StartBackgroundJobs(ctx, db, campaignsStore, repoStore, cf)
+	campaigns.InitBackgroundJobs(ctx, db, cf, server)
 
 	// TODO(jchen): This is an unfortunate compromise to not rewrite ossDB.ExternalServices for now.
 	dbconn.Global = db
-	permsStore := edb.NewPermsStore(db, timeutil.Now)
+	permsStore := edb.Perms(db, timeutil.Now)
 	permsSyncer := authz.NewPermsSyncer(repoStore, permsStore, timeutil.Now, ratelimit.DefaultRegistry)
 	go startBackgroundPermsSync(ctx, permsSyncer, db)
 	debugDumpers = append(debugDumpers, permsSyncer)
@@ -76,7 +71,7 @@ func startBackgroundPermsSync(ctx context.Context, syncer *authz.PermsSyncer, db
 		t := time.NewTicker(5 * time.Second)
 		for range t.C {
 			allowAccessByDefault, authzProviders, _, _ :=
-				frontendAuthz.ProvidersFromConfig(ctx, conf.Get(), ossDB.ExternalServices)
+				frontendAuthz.ProvidersFromConfig(ctx, conf.Get(), ossDB.GlobalExternalServices)
 			ossAuthz.SetProviders(allowAccessByDefault, authzProviders)
 		}
 	}()

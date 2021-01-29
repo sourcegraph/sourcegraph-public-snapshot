@@ -2,13 +2,13 @@ import * as H from 'history'
 import React, { useCallback, useEffect, useMemo } from 'react'
 import {
     PatternTypeProps,
-    InteractiveSearchProps,
     CaseSensitivityProps,
     CopyQueryButtonProps,
     RepogroupHomepageProps,
     OnboardingTourProps,
     HomePanelsProps,
     ShowQueryBuilderProps,
+    ParsedSearchQueryProps,
 } from '..'
 import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
@@ -43,13 +43,13 @@ export interface SearchPageProps
         ThemeProps,
         ThemePreferenceProps,
         ActivationProps,
+        Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
         PatternTypeProps,
         CaseSensitivityProps,
         KeyboardShortcutsProps,
         TelemetryProps,
         ExtensionsControllerProps<'executeCommand' | 'services'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
-        InteractiveSearchProps,
         CopyQueryButtonProps,
         VersionContextProps,
         RepogroupHomepageProps,

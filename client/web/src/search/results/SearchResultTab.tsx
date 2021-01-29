@@ -1,20 +1,18 @@
 import * as React from 'react'
-import * as H from 'history'
 import { SearchType } from './SearchResults'
 import { NavLink } from 'react-router-dom'
 import { toggleSearchType } from '../helpers'
-import { buildSearchURLQuery, generateFiltersQuery } from '../../../../shared/src/util/url'
+import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { constant } from 'lodash'
-import { PatternTypeProps, CaseSensitivityProps, parseSearchURLQuery, InteractiveSearchProps } from '..'
-import { scanSearchQuery } from '../../../../shared/src/search/parser/scanner'
+import { PatternTypeProps, CaseSensitivityProps, ParsedSearchQueryProps } from '..'
+import { scanSearchQuery } from '../../../../shared/src/search/query/scanner'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 
 interface Props
     extends Omit<PatternTypeProps, 'setPatternType'>,
         Omit<CaseSensitivityProps, 'setCaseSensitivity'>,
-        Partial<Pick<InteractiveSearchProps, 'filtersInQuery'>>,
+        Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
         VersionContextProps {
-    location: H.Location
     type: SearchType
     query: string
 }
@@ -28,19 +26,17 @@ const typeToProse: Record<Exclude<SearchType, null>, string> = {
 }
 
 export const SearchResultTabHeader: React.FunctionComponent<Props> = ({
-    location,
     type,
     query,
-    filtersInQuery = {},
+    parsedSearchQuery,
     patternType,
     caseSensitive,
     versionContext,
 }) => {
-    const fullQuery = [query, generateFiltersQuery(filtersInQuery)].filter(query => query.length > 0).join(' ')
-    const caseToggledQuery = toggleSearchType(fullQuery, type)
+    const caseToggledQuery = toggleSearchType(query, type)
     const builtURLQuery = buildSearchURLQuery(caseToggledQuery, patternType, caseSensitive, versionContext)
 
-    const currentQuery = parseSearchURLQuery(location.search) || ''
+    const currentQuery = parsedSearchQuery
     const scannedQuery = scanSearchQuery(currentQuery)
     let typeInQuery: SearchType = null
 

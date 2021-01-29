@@ -4,8 +4,8 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -19,7 +19,7 @@ func NewStore(db dbutil.DB, observationContext *observation.Context) *Store {
 	return &Store{
 		Store:      basestore.NewWithHandle(basestore.NewHandleWithDB(db, sql.TxOptions{})),
 		serializer: newSerializer(),
-		operations: makeOperations(observationContext),
+		operations: newOperations(observationContext),
 	}
 }
 

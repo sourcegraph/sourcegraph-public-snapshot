@@ -137,6 +137,7 @@ func (c *Client) waitForReposByQuery(name, query string, repos ...string) ([]str
 // ExternalLink is a link to an external service.
 type ExternalLink struct {
 	URL         string `json:"url"`         // The URL to the resource
+	ServiceKind string `json:"serviceKind"` // The kind of service that the URL points to
 	ServiceType string `json:"serviceType"` // The type of service that the URL points to
 }
 
@@ -150,6 +151,7 @@ query FileExternalLinks($repoName: String!, $revision: String!, $filePath: Strin
 				externalURLs {
 					... on ExternalLink {
 						url
+						serviceKind
 						serviceType
 					}
 				}

@@ -3,7 +3,6 @@ import * as H from 'history'
 import { fromEvent } from 'rxjs'
 import { filter } from 'rxjs/operators'
 import { PatternTypeProps, CaseSensitivityProps } from '../..'
-import { FiltersToTypeAndValue } from '../../../../../shared/src/search/interactive/util'
 import classNames from 'classnames'
 import { Key } from 'ts-key-enum'
 
@@ -24,8 +23,6 @@ export interface ToggleProps extends PatternTypeProps, CaseSensitivityProps {
      * For multiple true conditions, use the first rule that evalutes to true.
      */
     disableOn?: { condition: boolean; reason: string }[]
-    /** Filters in the query in interactive mode. */
-    filtersInQuery?: FiltersToTypeAndValue
     hasGlobalQueryBehavior?: boolean
     className?: string
     activeClassName?: string
@@ -65,21 +62,22 @@ export const QueryInputToggle: React.FunctionComponent<ToggleProps> = ({ onToggl
     }, [onCheckboxToggled])
 
     const Icon = props.icon
+    const isActive = props.isActive && !disabledRule
 
     return (
         <div
             ref={toggleCheckbox}
             onClick={onCheckboxToggled}
             className={classNames(
-                'btn btn-icon icon-inline toggle-container__toggle test-regexp-toggle',
+                'btn btn-icon icon-inline toggle-container__toggle',
                 props.className,
                 { disabled: !!disabledRule },
-                { 'toggle-container__toggle--active': props.isActive },
+                { 'toggle-container__toggle--active': isActive },
                 props.activeClassName
             )}
             role="checkbox"
             aria-disabled={!!disabledRule}
-            aria-checked={props.isActive}
+            aria-checked={isActive}
             aria-label={`${props.title} toggle`}
             tabIndex={0}
             data-tooltip={tooltipValue}

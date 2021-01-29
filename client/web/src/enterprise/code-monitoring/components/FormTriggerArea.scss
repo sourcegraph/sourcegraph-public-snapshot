@@ -1,0 +1,41 @@
+.trigger-area {
+    &__query-input {
+        display: flex;
+        align-items: flex-start;
+
+        &-preview-link {
+            white-space: nowrap;
+            font-size: 12px;
+            background-color: var(--color-bg-2);
+            border: 1px solid var(--input-border-color);
+            border-top-right-radius: 2px;
+            border-bottom-right-radius: 2px;
+
+            &-text {
+                display: flex;
+                align-items: center;
+                line-height: 1rem;
+                height: 1rem;
+            }
+
+            &-icon {
+                max-height: 1rem;
+                max-width: 1rem;
+            }
+        }
+
+        &-error-message {
+            font-size: 12px;
+        }
+
+        &-field {
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+            padding-right: 8rem;
+        }
+    }
+
+    &__query-label {
+        white-space: pre-wrap;
+    }
+}

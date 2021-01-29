@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -20,15 +20,17 @@ func TestSetActorDeleteSession(t *testing.T) {
 	cleanup := ResetMockSessionStore(t)
 	defer cleanup()
 
-	db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
-		return &types.User{ID: id}, nil
+	userCreatedAt := time.Now()
+
+	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+		return &types.User{ID: id, CreatedAt: userCreatedAt}, nil
 	}
-	defer func() { db.Mocks = db.MockStores{} }()
+	defer func() { database.Mocks = database.MockStores{} }()
 
 	// Start new session
 	w := httptest.NewRecorder()
 	actr := &actor.Actor{UID: 123, FromSessionCookie: true}
-	if err := SetActor(w, httptest.NewRequest("GET", "/", nil), actr, 24*time.Hour); err != nil {
+	if err := SetActor(w, httptest.NewRequest("GET", "/", nil), actr, 24*time.Hour, userCreatedAt); err != nil {
 		t.Fatal(err)
 	}
 	var authCookies []*http.Cookie
@@ -134,15 +136,17 @@ func TestSessionExpiry(t *testing.T) {
 	cleanup := ResetMockSessionStore(t)
 	defer cleanup()
 
-	db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
-		return &types.User{ID: id}, nil
+	userCreatedAt := time.Now()
+
+	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+		return &types.User{ID: id, CreatedAt: userCreatedAt}, nil
 	}
-	defer func() { db.Mocks = db.MockStores{} }()
+	defer func() { database.Mocks = database.MockStores{} }()
 
 	// Start new session
 	w := httptest.NewRecorder()
 	actr := &actor.Actor{UID: 123, FromSessionCookie: true}
-	if err := SetActor(w, httptest.NewRequest("GET", "/", nil), actr, time.Second); err != nil {
+	if err := SetActor(w, httptest.NewRequest("GET", "/", nil), actr, time.Second, userCreatedAt); err != nil {
 		t.Fatal(err)
 	}
 	var authCookies []*http.Cookie
@@ -175,16 +179,16 @@ func TestManualSessionExpiry(t *testing.T) {
 	defer cleanup()
 
 	user := &types.User{ID: 123, InvalidatedSessionsAt: time.Now()}
-	db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
 		user.ID = id
 		return user, nil
 	}
-	defer func() { db.Mocks = db.MockStores{} }()
+	defer func() { database.Mocks = database.MockStores{} }()
 
 	// Start new session
 	w := httptest.NewRecorder()
 	actr := &actor.Actor{UID: 123, FromSessionCookie: true}
-	if err := SetActor(w, httptest.NewRequest("GET", "/", nil), actr, time.Hour); err != nil {
+	if err := SetActor(w, httptest.NewRequest("GET", "/", nil), actr, time.Hour, time.Now()); err != nil {
 		t.Fatal(err)
 	}
 	var authCookies []*http.Cookie
@@ -214,23 +218,24 @@ func TestCookieMiddleware(t *testing.T) {
 	defer cleanup()
 
 	actors := []*actor.Actor{{UID: 123, FromSessionCookie: true}, {UID: 456}, {UID: 789}}
+	userCreatedAt := time.Now()
 
-	db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
 		if id == actors[0].UID {
-			return &types.User{ID: id}, nil
+			return &types.User{ID: id, CreatedAt: userCreatedAt}, nil
 		}
 		if id == actors[1].UID {
 			return nil, &errcode.Mock{IsNotFound: true}
 		}
 		return nil, errors.New("x") // other error
 	}
-	defer func() { db.Mocks = db.MockStores{} }()
+	defer func() { database.Mocks = database.MockStores{} }()
 
 	// Start new sessions for all actors
 	authedReqs := make([]*http.Request, len(actors))
 	for i, actr := range actors {
 		w := httptest.NewRecorder()
-		if err := SetActor(w, httptest.NewRequest("GET", "/", nil), actr, time.Hour); err != nil {
+		if err := SetActor(w, httptest.NewRequest("GET", "/", nil), actr, time.Hour, userCreatedAt); err != nil {
 			t.Fatal(err)
 		}
 
@@ -326,5 +331,117 @@ func TestRecoverFromInvalidCookieValue(t *testing.T) {
 		Raw:        cookieName + "=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Max-Age=0",
 	}}; !reflect.DeepEqual(cookies, want) {
 		t.Errorf("got cookies %+v, want %+v", cookies, want)
+	}
+}
+
+func TestMismatchedUserCreationFails(t *testing.T) {
+	cleanup := ResetMockSessionStore(t)
+	defer cleanup()
+
+	// The user's creation date is fixed in the database, which
+	// will be reflected in the session store after an authenticated
+	// request. Later we'll change the value in the database, and the
+	// mismatch will be noticed, terminating the session.
+	user := &types.User{ID: 1, CreatedAt: time.Now()}
+	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+		return user, nil
+	}
+	defer func() { database.Mocks = database.MockStores{} }()
+
+	// Start a new session for the user with ID 1. Their creation time
+	// will be recorded into the session store.
+	w := httptest.NewRecorder()
+	actr := &actor.Actor{UID: 1, FromSessionCookie: true}
+	if err := SetActor(w, httptest.NewRequest("GET", "/", nil), actr, time.Hour, user.CreatedAt); err != nil {
+		t.Fatal(err)
+	}
+
+	// Grab the auth cookie so we can make a request as this user.
+	var authCookies []*http.Cookie
+	for _, cookie := range w.Result().Cookies() {
+		if cookie.Expires.After(time.Now()) || cookie.MaxAge > 0 {
+			authCookies = append(authCookies, cookie)
+		}
+	}
+
+	// Perform the authenticated request and verify that the session
+	// was created successfully.
+	req := httptest.NewRequest("GET", "/", nil)
+	for _, cookie := range authCookies {
+		req.AddCookie(cookie)
+	}
+	actr = actor.FromContext(authenticateByCookie(req, w))
+	if reflect.DeepEqual(actr, &actor.Actor{}) {
+		t.Fatal("session was not created")
+	}
+
+	// Now try again, but in this case the authenticated user's creation timestamp
+	// won't match what we have in the database, so we indicate that something has gone
+	// wrong / someone may be impersonated etc.
+	user = &types.User{ID: 1, CreatedAt: time.Now().Add(time.Minute)}
+	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+		return user, nil
+	}
+	defer func() { database.Mocks = database.MockStores{} }()
+
+	// Perform the authenticated request again and verify that the
+	// session was terminated due to the mismatch.
+	req = httptest.NewRequest("GET", "/", nil)
+	for _, cookie := range authCookies {
+		req.AddCookie(cookie)
+	}
+	actr = actor.FromContext(authenticateByCookie(req, w))
+	if !reflect.DeepEqual(actr, &actor.Actor{}) {
+		t.Fatal("session was not deleted")
+	}
+}
+
+func TestOldUserSessionSucceeds(t *testing.T) {
+	cleanup := ResetMockSessionStore(t)
+	defer cleanup()
+
+	// This user's session will _not_ have the UserCreatedAt value in the session
+	// store. When that situation occurs, we want to allow the session to continue
+	// as this is a logged-in user with a session that was created before the change.
+	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+		return &types.User{ID: 1, CreatedAt: time.Now()}, nil
+	}
+	defer func() { database.Mocks = database.MockStores{} }()
+
+	// Start a new session for the user with ID 1. Their creation time will not be
+	// be recorded into the session store.
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest("GET", "/", nil)
+	actr := &actor.Actor{UID: 1, FromSessionCookie: true}
+	session := &sessionInfo{Actor: actr, ExpiryPeriod: 9999999999999999, LastActive: time.Now()}
+	if err := SetData(w, req, "actor", session); err != nil {
+		t.Fatal(err)
+	}
+
+	// Grab the auth cookie so we can make a request as this user.
+	var authCookies []*http.Cookie
+	for _, cookie := range w.Result().Cookies() {
+		if cookie.Expires.After(time.Now()) || cookie.MaxAge > 0 {
+			authCookies = append(authCookies, cookie)
+		}
+	}
+
+	// Perform the authenticated request and verify that the session
+	// was created successfully.
+	for _, cookie := range authCookies {
+		req.AddCookie(cookie)
+	}
+	actr = actor.FromContext(authenticateByCookie(req, w))
+	if reflect.DeepEqual(actr, &actor.Actor{}) {
+		t.Fatal("session was not created")
+	}
+
+	// Ensure that the UserCreatedAt value was set behind the scenes.
+	var info *sessionInfo
+	if err := GetData(req, "actor", &info); err != nil {
+		t.Fatal(err)
+	}
+	if info.UserCreatedAt.IsZero() {
+		t.Fatal("user creation date was not set")
 	}
 }

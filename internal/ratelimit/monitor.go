@@ -26,11 +26,15 @@ type MonitorRegistry struct {
 	monitors map[string]*Monitor
 }
 
-// GetOrSet fetches the rate limit monitor associated with the given code host / token tuple.
-// If none has been configured yet, the provided monitor will be set.
-func (r *MonitorRegistry) GetOrSet(baseURL, authHash string, monitor *Monitor) *Monitor {
+// GetOrSet fetches the rate limit monitor associated with the given code host /
+// token tuple and an optional resource key. If none has been configured yet, the
+// provided monitor will be set.
+func (r *MonitorRegistry) GetOrSet(baseURL, authHash, resource string, monitor *Monitor) *Monitor {
 	baseURL = normaliseURL(baseURL)
 	key := baseURL + ":" + authHash
+	if len(resource) > 0 {
+		key = key + ":" + resource
+	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if _, ok := r.monitors[key]; !ok {
@@ -46,6 +50,13 @@ func (r *MonitorRegistry) Count() int {
 	return len(r.monitors)
 }
 
+// MetricsCollector is used so that we can inject metric collection functions for
+// difference monitor configurations.
+type MetricsCollector struct {
+	Remaining    func(n float64)
+	WaitDuration func(n time.Duration)
+}
+
 // Monitor monitors an external service's rate limit based on the X-RateLimit-Remaining or RateLimit-Remaining
 // headers. It supports both GitHub's and GitLab's APIs.
 //
@@ -55,10 +66,11 @@ type Monitor struct {
 
 	mu        sync.Mutex
 	known     bool
-	limit     int       // last RateLimit-Limit HTTP response header value
-	remaining int       // last RateLimit-Remaining HTTP response header value
-	reset     time.Time // last RateLimit-Remaining HTTP response header value
-	retry     time.Time // deadline based on Retry-After HTTP response header value
+	limit     int               // last RateLimit-Limit HTTP response header value
+	remaining int               // last RateLimit-Remaining HTTP response header value
+	reset     time.Time         // last RateLimit-Remaining HTTP response header value
+	retry     time.Time         // deadline based on Retry-After HTTP response header value
+	collector *MetricsCollector // metrics collector
 
 	clock func() time.Time
 }
@@ -96,9 +108,15 @@ func (c *Monitor) Get() (remaining int, reset, retry time.Duration, known bool) 
 // out-of-synchronization.
 //
 // See https://developer.github.com/v4/guides/resource-limitations/#rate-limit.
-func (c *Monitor) RecommendedWaitForBackgroundOp(cost int) time.Duration {
+func (c *Monitor) RecommendedWaitForBackgroundOp(cost int) (timeRemaining time.Duration) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+
+	if c.collector != nil && c.collector.WaitDuration != nil {
+		defer func() {
+			c.collector.WaitDuration(timeRemaining)
+		}()
+	}
 
 	now := c.now()
 	if !c.retry.IsZero() {
@@ -122,7 +140,7 @@ func (c *Monitor) RecommendedWaitForBackgroundOp(cost int) time.Duration {
 
 	// Be conservative.
 	limitRemaining *= 0.8
-	timeRemaining := resetAt.Sub(now) + 3*time.Minute
+	timeRemaining = resetAt.Sub(now) + 3*time.Minute
 
 	n := limitRemaining / float64(cost) // number of times this op can run before exhausting rate limit
 	if n < 1 {
@@ -176,6 +194,17 @@ func (c *Monitor) Update(h http.Header) {
 	c.limit = limit
 	c.remaining = remaining
 	c.reset = time.Unix(resetAtSeconds, 0)
+
+	if c.known && c.collector != nil && c.collector.Remaining != nil {
+		c.collector.Remaining(float64(c.remaining))
+	}
+}
+
+// SetCollector sets the metric collector.
+func (c *Monitor) SetCollector(collector *MetricsCollector) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.collector = collector
 }
 
 func (c *Monitor) now() time.Time {

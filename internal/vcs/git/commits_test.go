@@ -26,7 +26,7 @@ func TestRepository_GetCommit(t *testing.T) {
 		Parents:   []api.CommitID{"ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"},
 	}
 	tests := map[string]struct {
-		repo             gitserver.Repo
+		repo             api.RepoName
 		id               api.CommitID
 		wantCommit       *Commit
 		noEnsureRevision bool
@@ -185,7 +185,7 @@ func TestRepository_Commits(t *testing.T) {
 		},
 	}
 	tests := map[string]struct {
-		repo        gitserver.Repo
+		repo        api.RepoName
 		id          api.CommitID
 		wantCommits []*Commit
 		wantTotal   uint
@@ -267,7 +267,7 @@ func TestRepository_Commits_options(t *testing.T) {
 		},
 	}
 	tests := map[string]struct {
-		repo        gitserver.Repo
+		repo        api.RepoName
 		opt         CommitsOptions
 		wantCommits []*Commit
 		wantTotal   uint
@@ -346,7 +346,7 @@ func TestRepository_Commits_options_path(t *testing.T) {
 		},
 	}
 	tests := map[string]struct {
-		repo        gitserver.Repo
+		repo        api.RepoName
 		opt         CommitsOptions
 		wantCommits []*Commit
 		wantTotal   uint

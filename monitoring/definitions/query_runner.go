@@ -1,6 +1,9 @@
 package definitions
 
-import "github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+import (
+	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
+	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+)
 
 func QueryRunner() *monitoring.Container {
 	return &monitoring.Container{
@@ -12,54 +15,53 @@ func QueryRunner() *monitoring.Container {
 				Title: "General",
 				Rows: []monitoring.Row{
 					{
-						sharedFrontendInternalAPIErrorResponses("query-runner", monitoring.ObservableOwnerSearch),
+						shared.FrontendInternalAPIErrorResponses("query-runner", monitoring.ObservableOwnerSearch).Observable(),
 					},
 				},
 			},
 			{
-				Title:  "Container monitoring (not available on server)",
+				Title:  shared.TitleContainerMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedContainerMemoryUsage("query-runner", monitoring.ObservableOwnerSearch),
-						sharedContainerCPUUsage("query-runner", monitoring.ObservableOwnerSearch),
+						shared.ContainerMemoryUsage("query-runner", monitoring.ObservableOwnerSearch).Observable(),
+						shared.ContainerCPUUsage("query-runner", monitoring.ObservableOwnerSearch).Observable(),
 					},
 					{
-						sharedContainerRestarts("query-runner", monitoring.ObservableOwnerSearch),
-						sharedContainerFsInodes("query-runner", monitoring.ObservableOwnerSearch),
+						shared.ContainerMissing("query-runner", monitoring.ObservableOwnerSearch).Observable(),
 					},
 				},
 			},
 			{
-				Title:  "Provisioning indicators (not available on server)",
+				Title:  shared.TitleProvisioningIndicators,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedProvisioningCPUUsageLongTerm("query-runner", monitoring.ObservableOwnerSearch),
-						sharedProvisioningMemoryUsageLongTerm("query-runner", monitoring.ObservableOwnerSearch),
+						shared.ProvisioningCPUUsageLongTerm("query-runner", monitoring.ObservableOwnerSearch).Observable(),
+						shared.ProvisioningMemoryUsageLongTerm("query-runner", monitoring.ObservableOwnerSearch).Observable(),
 					},
 					{
-						sharedProvisioningCPUUsageShortTerm("query-runner", monitoring.ObservableOwnerSearch),
-						sharedProvisioningMemoryUsageShortTerm("query-runner", monitoring.ObservableOwnerSearch),
-					},
-				},
-			},
-			{
-				Title:  "Golang runtime monitoring",
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						sharedGoGoroutines("query-runner", monitoring.ObservableOwnerSearch),
-						sharedGoGcDuration("query-runner", monitoring.ObservableOwnerSearch),
+						shared.ProvisioningCPUUsageShortTerm("query-runner", monitoring.ObservableOwnerSearch).Observable(),
+						shared.ProvisioningMemoryUsageShortTerm("query-runner", monitoring.ObservableOwnerSearch).Observable(),
 					},
 				},
 			},
 			{
-				Title:  "Kubernetes monitoring (ignore if using Docker Compose or server)",
+				Title:  shared.TitleGolangMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedKubernetesPodsAvailable("query-runner", monitoring.ObservableOwnerSearch),
+						shared.GoGoroutines("query-runner", monitoring.ObservableOwnerSearch).Observable(),
+						shared.GoGcDuration("query-runner", monitoring.ObservableOwnerSearch).Observable(),
+					},
+				},
+			},
+			{
+				Title:  shared.TitleKubernetesMonitoring,
+				Hidden: true,
+				Rows: []monitoring.Row{
+					{
+						shared.KubernetesPodsAvailable("query-runner", monitoring.ObservableOwnerSearch).Observable(),
 					},
 				},
 			},

@@ -1,0 +1,161 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
+<div
+  className="search-results-info-bar"
+  data-testid="results-info-bar"
+>
+  <small
+    className="search-results-info-bar__row"
+  >
+    <div />
+    <ul
+      className="nav align-items-center justify-content-end"
+    >
+      <li
+        className="nav-item"
+      >
+        <button
+          className="btn btn-link nav-link text-decoration-none test-save-search-link"
+          onClick={[Function]}
+          type="button"
+        >
+          Save search
+        </button>
+      </li>
+      <li
+        className="nav-item"
+      >
+        <button
+          className="btn btn-link nav-link text-decoration-none"
+          data-tooltip="Hide more matches on all results"
+          onClick={[Function]}
+          type="button"
+        >
+          <svg
+            className="mdi-icon icon-inline"
+            fill="currentColor"
+            height={24}
+            viewBox="0 0 24 24"
+            width={24}
+          >
+            <path
+              d="M4,12H20V14H4V12M4,9H20V11H4V9M16,4L12,8L8,4H11V1H13V4H16M8,19L12,15L16,19H13V22H11V19H8Z"
+            />
+          </svg>
+        </button>
+      </li>
+    </ul>
+  </small>
+</div>
+`;
+
+exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create monitor from query 1`] = `
+<div
+  className="search-results-info-bar"
+  data-testid="results-info-bar"
+>
+  <small
+    className="search-results-info-bar__row"
+  >
+    <div />
+    <ul
+      className="nav align-items-center justify-content-end"
+    >
+      <li
+        className="nav-item"
+      >
+        <a
+          className="btn btn-link nav-link text-decoration-none"
+          href="/code-monitoring/new?trigger-query=foo+type%3Adiff+patterntype%3Aliteral"
+        >
+          Create code monitor
+        </a>
+      </li>
+      <li
+        className="nav-item"
+      >
+        <button
+          className="btn btn-link nav-link text-decoration-none test-save-search-link"
+          onClick={[Function]}
+          type="button"
+        >
+          Save search
+        </button>
+      </li>
+      <li
+        className="nav-item"
+      >
+        <button
+          className="btn btn-link nav-link text-decoration-none"
+          data-tooltip="Hide more matches on all results"
+          onClick={[Function]}
+          type="button"
+        >
+          <svg
+            className="mdi-icon icon-inline"
+            fill="currentColor"
+            height={24}
+            viewBox="0 0 24 24"
+            width={24}
+          >
+            <path
+              d="M4,12H20V14H4V12M4,9H20V11H4V9M16,4L12,8L8,4H11V1H13V4H16M8,19L12,15L16,19H13V22H11V19H8Z"
+            />
+          </svg>
+        </button>
+      </li>
+    </ul>
+  </small>
+</div>
+`;
+
+exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot create monitor from query 1`] = `
+<div
+  className="search-results-info-bar"
+  data-testid="results-info-bar"
+>
+  <small
+    className="search-results-info-bar__row"
+  >
+    <div />
+    <ul
+      className="nav align-items-center justify-content-end"
+    >
+      <li
+        className="nav-item"
+      >
+        <button
+          className="btn btn-link nav-link text-decoration-none test-save-search-link"
+          onClick={[Function]}
+          type="button"
+        >
+          Save search
+        </button>
+      </li>
+      <li
+        className="nav-item"
+      >
+        <button
+          className="btn btn-link nav-link text-decoration-none"
+          data-tooltip="Hide more matches on all results"
+          onClick={[Function]}
+          type="button"
+        >
+          <svg
+            className="mdi-icon icon-inline"
+            fill="currentColor"
+            height={24}
+            viewBox="0 0 24 24"
+            width={24}
+          >
+            <path
+              d="M4,12H20V14H4V12M4,9H20V11H4V9M16,4L12,8L8,4H11V1H13V4H16M8,19L12,15L16,19H13V22H11V19H8Z"
+            />
+          </svg>
+        </button>
+      </li>
+    </ul>
+  </small>
+</div>
+`;

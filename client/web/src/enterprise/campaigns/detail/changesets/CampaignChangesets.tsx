@@ -26,6 +26,7 @@ import { getLSPTextDocumentPositionParameters } from '../../utils'
 import { CampaignChangesetsHeader } from './CampaignChangesetsHeader'
 import { ChangesetFilters, ChangesetFilterRow } from './ChangesetFilterRow'
 import { EmptyChangesetListElement } from './EmptyChangesetListElement'
+import { EmptyChangesetSearchElement } from './EmptyChangesetSearchElement'
 
 interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, ExtensionsControllerProps {
     campaignID: Scalars['ID']
@@ -62,31 +63,28 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
 }) => {
     const [changesetFilters, setChangesetFilters] = useState<ChangesetFilters>({
         checkState: null,
-        externalState: null,
+        state: null,
         reviewState: null,
-        publicationState: null,
-        reconcilerState: null,
+        search: null,
     })
     const queryChangesetsConnection = useCallback(
         (args: FilteredConnectionQueryArguments) =>
             queryChangesets({
-                externalState: changesetFilters.externalState,
+                state: changesetFilters.state,
                 reviewState: changesetFilters.reviewState,
                 checkState: changesetFilters.checkState,
-                publicationState: changesetFilters.publicationState,
-                reconcilerState: changesetFilters.reconcilerState,
                 first: args.first ?? null,
                 after: args.after ?? null,
                 campaign: campaignID,
                 onlyPublishedByThisCampaign: null,
+                search: changesetFilters.search,
             }).pipe(repeatWhen(notifier => notifier.pipe(delay(5000)))),
         [
             campaignID,
-            changesetFilters.externalState,
+            changesetFilters.state,
             changesetFilters.reviewState,
             changesetFilters.checkState,
-            changesetFilters.reconcilerState,
-            changesetFilters.publicationState,
+            changesetFilters.search,
             queryChangesets,
         ]
     )
@@ -148,9 +146,7 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
     return (
         <>
             {!hideFilters && (
-                <div className="d-flex justify-content-end">
-                    <ChangesetFilterRow history={history} location={location} onFiltersChange={setChangesetFilters} />
-                </div>
+                <ChangesetFilterRow history={history} location={location} onFiltersChange={setChangesetFilters} />
             )}
             <div className="list-group position-relative" ref={nextContainerElement}>
                 <FilteredConnection<ChangesetFields, Omit<ChangesetNodeProps, 'node'>>
@@ -177,7 +173,13 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
                     listClassName="campaign-changesets__grid mb-3"
                     headComponent={CampaignChangesetsHeader}
                     // Only show the empty element, if no filters are selected.
-                    emptyElement={filtersSelected(changesetFilters) ? undefined : <EmptyChangesetListElement />}
+                    emptyElement={
+                        filtersSelected(changesetFilters) ? (
+                            <EmptyChangesetSearchElement />
+                        ) : (
+                            <EmptyChangesetListElement />
+                        )
+                    }
                     noSummaryIfAllNodesVisible={true}
                 />
                 {hoverState?.hoverOverlayProps && (
@@ -201,11 +203,5 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
  * Returns true, if any filter is selected.
  */
 function filtersSelected(filters: ChangesetFilters): boolean {
-    return (
-        filters.checkState !== null ||
-        filters.externalState !== null ||
-        filters.publicationState !== null ||
-        filters.reconcilerState !== null ||
-        filters.reviewState !== null
-    )
+    return filters.checkState !== null || filters.state !== null || filters.reviewState !== null || !!filters.search
 }

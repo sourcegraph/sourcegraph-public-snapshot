@@ -2,8 +2,9 @@ package enterprise
 
 import (
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"net/http"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 )
@@ -19,7 +20,9 @@ type Services struct {
 	AuthzResolver             graphqlbackend.AuthzResolver
 	CampaignsResolver         graphqlbackend.CampaignsResolver
 	CodeIntelResolver         graphqlbackend.CodeIntelResolver
+	InsightsResolver          graphqlbackend.InsightsResolver
 	CodeMonitorsResolver      graphqlbackend.CodeMonitorsResolver
+	LicenseResolver           graphqlbackend.LicenseResolver
 }
 
 // NewCodeIntelUploadHandler creates a new handler for the LSIF upload endpoint. The
@@ -41,7 +44,9 @@ func DefaultServices() Services {
 		NewExecutorProxyHandler:   func() http.Handler { return makeNotFoundHandler("executor proxy") },
 		AuthzResolver:             graphqlbackend.DefaultAuthzResolver,
 		CampaignsResolver:         graphqlbackend.DefaultCampaignsResolver,
+		InsightsResolver:          graphqlbackend.DefaultInsightsResolver,
 		CodeMonitorsResolver:      graphqlbackend.DefaultCodeMonitorsResolver,
+		LicenseResolver:           graphqlbackend.DefaultLicenseResolver,
 	}
 }
 

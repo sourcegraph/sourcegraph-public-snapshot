@@ -3,9 +3,11 @@ package codeintel
 import (
 	"fmt"
 	"net/url"
+	"strconv"
+	"strings"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/apiclient"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 )
 
 const defaultOutfile = "dump.lsif"
@@ -25,7 +27,7 @@ func transformRecord(index store.Index, config *Config) (apiclient.Job, error) {
 	if index.Indexer != "" {
 		dockerSteps = append(dockerSteps, apiclient.DockerStep{
 			Image:    index.Indexer,
-			Commands: index.IndexerArgs,
+			Commands: append(index.LocalSteps, strings.Join(index.IndexerArgs, " ")),
 			Dir:      index.Root,
 			Env:      nil,
 		})
@@ -66,6 +68,7 @@ func transformRecord(index store.Index, config *Config) (apiclient.Job, error) {
 					"-root", root,
 					"-upload-route", uploadRoute,
 					"-file", outfile,
+					"-associated-index-id", strconv.Itoa(index.ID),
 				},
 				Dir: index.Root,
 				Env: []string{

@@ -1,16 +1,27 @@
 package dbstore
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
+	"encoding/csv"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/keegancsmith/sqlf"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commitgraph"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
 func TestHasRepository(t *testing.T) {
@@ -64,8 +75,8 @@ func TestHasCommit(t *testing.T) {
 		{51, makeCommit(1), false},
 	}
 
-	insertNearestUploads(t, dbconn.Global, 50, map[string][]UploadMeta{makeCommit(1): {{UploadID: 42, Flags: 1}}})
-	insertNearestUploads(t, dbconn.Global, 51, map[string][]UploadMeta{makeCommit(2): {{UploadID: 43, Flags: 2}}})
+	insertNearestUploads(t, dbconn.Global, 50, map[string][]commitgraph.UploadMeta{makeCommit(1): {{UploadID: 42, Distance: 1}}})
+	insertNearestUploads(t, dbconn.Global, 51, map[string][]commitgraph.UploadMeta{makeCommit(2): {{UploadID: 43, Distance: 2}}})
 
 	for _, testCase := range testCases {
 		name := fmt.Sprintf("repositoryID=%d commit=%s", testCase.repositoryID, testCase.commit)
@@ -111,6 +122,51 @@ func TestMarkRepositoryAsDirty(t *testing.T) {
 	}
 }
 
+func TestCommitGraphMetadata(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	store := testStore()
+
+	if err := store.MarkRepositoryAsDirty(context.Background(), 50); err != nil {
+		t.Errorf("unexpected error marking repository as dirty: %s", err)
+	}
+
+	updatedAt := time.Unix(1587396557, 0).UTC()
+	query := sqlf.Sprintf("INSERT INTO lsif_dirty_repositories VALUES (%s, %s, %s, %s)", 51, 10, 10, updatedAt)
+	if _, err := dbconn.Global.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+		t.Fatalf("unexpected error inserting commit graph metadata: %s", err)
+	}
+
+	testCases := []struct {
+		RepositoryID int
+		Stale        bool
+		UpdatedAt    *time.Time
+	}{
+		{50, true, nil},
+		{51, false, &updatedAt},
+		{52, false, nil},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(fmt.Sprintf("repositoryID=%d", testCase.RepositoryID), func(t *testing.T) {
+			stale, updatedAt, err := store.CommitGraphMetadata(context.Background(), testCase.RepositoryID)
+			if err != nil {
+				t.Fatalf("unexpected error getting commit graph metadata: %s", err)
+			}
+
+			if stale != testCase.Stale {
+				t.Errorf("unexpected value for stale. want=%v have=%v", testCase.Stale, stale)
+			}
+
+			if diff := cmp.Diff(testCase.UpdatedAt, updatedAt); diff != "" {
+				t.Errorf("unexpected value for uploadedAt (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
 func TestCalculateVisibleUploads(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -142,21 +198,21 @@ func TestCalculateVisibleUploads(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, makeCommit(8), 0); err != nil {
+	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, makeCommit(8), 0, time.Time{}); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 
-	expectedVisibleUploads := map[string][]UploadMeta{
-		makeCommit(1): {{UploadID: 1, Flags: 0}},
-		makeCommit(2): {{UploadID: 1, Flags: 1}},
-		makeCommit(3): {{UploadID: 2, Flags: 0}},
-		makeCommit(4): {{UploadID: 2, Flags: 1}},
-		makeCommit(5): {{UploadID: 1, Flags: 2}},
-		makeCommit(6): {{UploadID: 3, Flags: 1}},
-		makeCommit(7): {{UploadID: 3, Flags: 0}},
-		makeCommit(8): {{UploadID: 1, Flags: 4}},
+	expectedVisibleUploads := map[string][]int{
+		makeCommit(1): {1},
+		makeCommit(2): {1},
+		makeCommit(3): {2},
+		makeCommit(4): {2},
+		makeCommit(5): {1},
+		makeCommit(6): {1},
+		makeCommit(7): {3},
+		makeCommit(8): {1},
 	}
-	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, dbconn.Global, 50), UploadMetaComparer); diff != "" {
+	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, dbconn.Global, 50, keysOf(expectedVisibleUploads))); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
 	}
 
@@ -196,16 +252,15 @@ func TestCalculateVisibleUploadsAlternateCommitGraph(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, makeCommit(3), 0); err != nil {
+	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, makeCommit(3), 0, time.Time{}); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 
-	expectedVisibleUploads := map[string][]UploadMeta{
-		makeCommit(1): {{UploadID: 1, Flags: 1}},
-		makeCommit(2): {{UploadID: 1, Flags: 0}},
-		makeCommit(3): {{UploadID: 1, Flags: 1}},
+	expectedVisibleUploads := map[string][]int{
+		makeCommit(2): {1},
+		makeCommit(3): {1},
 	}
-	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, dbconn.Global, 50), UploadMetaComparer); diff != "" {
+	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, dbconn.Global, 50, keysOf(expectedVisibleUploads))); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
 	}
 
@@ -236,15 +291,14 @@ func TestCalculateVisibleUploadsDistinctRoots(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, makeCommit(2), 0); err != nil {
+	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, makeCommit(2), 0, time.Time{}); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 
-	expectedVisibleUploads := map[string][]UploadMeta{
-		makeCommit(1): {{UploadID: 1, Flags: 1}, {UploadID: 2, Flags: 1}},
-		makeCommit(2): {{UploadID: 1, Flags: 0}, {UploadID: 2, Flags: 0}},
+	expectedVisibleUploads := map[string][]int{
+		makeCommit(2): {1, 2},
 	}
-	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, dbconn.Global, 50), UploadMetaComparer); diff != "" {
+	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, dbconn.Global, 50, keysOf(expectedVisibleUploads))); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
 	}
 
@@ -302,19 +356,19 @@ func TestCalculateVisibleUploadsOverlappingRoots(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, makeCommit(6), 0); err != nil {
+	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, makeCommit(6), 0, time.Time{}); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 
-	expectedVisibleUploads := map[string][]UploadMeta{
-		makeCommit(1): {{UploadID: 1, Flags: 0}, {UploadID: 2, Flags: 0}, {UploadID: 3, Flags: 1}, {UploadID: 4, Flags: 1}, {UploadID: 5, Flags: 1}},
-		makeCommit(2): {{UploadID: 1, Flags: 1}, {UploadID: 2, Flags: 1}, {UploadID: 3, Flags: 0}, {UploadID: 4, Flags: 0}, {UploadID: 5, Flags: 0}},
-		makeCommit(3): {{UploadID: 1, Flags: 2}, {UploadID: 2, Flags: 2}, {UploadID: 4, Flags: 1}, {UploadID: 5, Flags: 1}, {UploadID: 6, Flags: 0}},
-		makeCommit(4): {{UploadID: 1, Flags: 2}, {UploadID: 2, Flags: 2}, {UploadID: 3, Flags: 1}, {UploadID: 4, Flags: 1}, {UploadID: 7, Flags: 0}},
-		makeCommit(5): {{UploadID: 1, Flags: 3}, {UploadID: 2, Flags: 3}, {UploadID: 6, Flags: 1}, {UploadID: 7, Flags: 1}, {UploadID: 8, Flags: 0}},
-		makeCommit(6): {{UploadID: 1, Flags: 4}, {UploadID: 2, Flags: 4}, {UploadID: 7, Flags: 2}, {UploadID: 8, Flags: 1}, {UploadID: 9, Flags: 0}},
+	expectedVisibleUploads := map[string][]int{
+		makeCommit(1): {1, 2},
+		makeCommit(2): {1, 2, 3, 4, 5},
+		makeCommit(3): {1, 2, 4, 5, 6},
+		makeCommit(4): {1, 2, 3, 4, 7},
+		makeCommit(5): {1, 2, 6, 7, 8},
+		makeCommit(6): {1, 2, 7, 8, 9},
 	}
-	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, dbconn.Global, 50), UploadMetaComparer); diff != "" {
+	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, dbconn.Global, 50, keysOf(expectedVisibleUploads))); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
 	}
 
@@ -354,33 +408,18 @@ func TestCalculateVisibleUploadsIndexerName(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, makeCommit(5), 0); err != nil {
+	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, makeCommit(5), 0, time.Time{}); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 
-	expectedVisibleUploads := map[string][]UploadMeta{
-		makeCommit(1): {
-			{UploadID: 1, Flags: 0}, {UploadID: 2, Flags: 1}, {UploadID: 3, Flags: 2}, {UploadID: 4, Flags: 3},
-			{UploadID: 5, Flags: 0}, {UploadID: 6, Flags: 1}, {UploadID: 7, Flags: 2}, {UploadID: 8, Flags: 3},
-		},
-		makeCommit(2): {
-			{UploadID: 1, Flags: 1}, {UploadID: 2, Flags: 0}, {UploadID: 3, Flags: 1}, {UploadID: 4, Flags: 2},
-			{UploadID: 5, Flags: 1}, {UploadID: 6, Flags: 0}, {UploadID: 7, Flags: 1}, {UploadID: 8, Flags: 2},
-		},
-		makeCommit(3): {
-			{UploadID: 1, Flags: 2}, {UploadID: 2, Flags: 1}, {UploadID: 3, Flags: 0}, {UploadID: 4, Flags: 1},
-			{UploadID: 5, Flags: 2}, {UploadID: 6, Flags: 1}, {UploadID: 7, Flags: 0}, {UploadID: 8, Flags: 1},
-		},
-		makeCommit(4): {
-			{UploadID: 1, Flags: 3}, {UploadID: 2, Flags: 2}, {UploadID: 3, Flags: 1}, {UploadID: 4, Flags: 0},
-			{UploadID: 5, Flags: 3}, {UploadID: 6, Flags: 2}, {UploadID: 7, Flags: 1}, {UploadID: 8, Flags: 0},
-		},
-		makeCommit(5): {
-			{UploadID: 1, Flags: 4}, {UploadID: 2, Flags: 3}, {UploadID: 3, Flags: 2}, {UploadID: 4, Flags: 1},
-			{UploadID: 5, Flags: 4}, {UploadID: 6, Flags: 3}, {UploadID: 7, Flags: 2}, {UploadID: 8, Flags: 1},
-		},
+	expectedVisibleUploads := map[string][]int{
+		makeCommit(1): {1, 5},
+		makeCommit(2): {1, 2, 5, 6},
+		makeCommit(3): {1, 2, 3, 5, 6, 7},
+		makeCommit(4): {1, 2, 3, 4, 5, 6, 7, 8},
+		makeCommit(5): {1, 2, 3, 4, 5, 6, 7, 8},
 	}
-	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, dbconn.Global, 50), UploadMetaComparer); diff != "" {
+	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, dbconn.Global, 50, keysOf(expectedVisibleUploads))); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
 	}
 
@@ -416,31 +455,140 @@ func TestCalculateVisibleUploadsResetsDirtyFlag(t *testing.T) {
 		}
 	}
 
+	now := time.Unix(1587396557, 0).UTC()
+
 	// Non-latest dirty token - should not clear flag
-	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, makeCommit(3), 2); err != nil {
+	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, makeCommit(3), 2, now); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
-
 	repositoryIDs, err := store.DirtyRepositories(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error listing dirty repositories: %s", err)
 	}
-
 	if len(repositoryIDs) == 0 {
 		t.Errorf("did not expect repository to be unmarked")
 	}
 
 	// Latest dirty token - should clear flag
-	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, makeCommit(3), 3); err != nil {
+	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, makeCommit(3), 3, now); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
-
 	repositoryIDs, err = store.DirtyRepositories(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error listing dirty repositories: %s", err)
 	}
-
 	if len(repositoryIDs) != 0 {
 		t.Errorf("expected repository to be unmarked")
 	}
+
+	stale, updatedAt, err := store.CommitGraphMetadata(context.Background(), 50)
+	if err != nil {
+		t.Fatalf("unexpected error getting commit graph metadata: %s", err)
+	}
+	if stale {
+		t.Errorf("unexpected value for stale. want=%v have=%v", false, stale)
+	}
+	if diff := cmp.Diff(&now, updatedAt); diff != "" {
+		t.Errorf("unexpected value for uploadedAt (-want +got):\n%s", diff)
+	}
+}
+
+func keysOf(m map[string][]int) (keys []string) {
+	for k := range m {
+		keys = append(keys, k)
+	}
+
+	return keys
+}
+
+//
+// Benchmarks
+//
+
+func BenchmarkCalculateVisibleUploads(b *testing.B) {
+	dbtesting.SetupGlobalTestDB(b)
+	store := testStore()
+
+	graph, err := readBenchmarkCommitGraph()
+	if err != nil {
+		b.Fatalf("unexpected error reading benchmark commit graph: %s", err)
+	}
+
+	uploads, err := readBenchmarkCommitGraphView()
+	if err != nil {
+		b.Fatalf("unexpected error reading benchmark uploads: %s", err)
+	}
+	insertUploads(b, dbconn.Global, uploads...)
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, makeCommit(3), 0, time.Time{}); err != nil {
+		b.Fatalf("unexpected error while calculating visible uploads: %s", err)
+	}
+}
+
+func readBenchmarkCommitGraph() (*gitserver.CommitGraph, error) {
+	contents, err := readBenchmarkFile("../../commitgraph/testdata/commits.txt.gz")
+	if err != nil {
+		return nil, err
+	}
+
+	return gitserver.ParseCommitGraph(strings.Split(string(contents), "\n")), nil
+}
+
+func readBenchmarkCommitGraphView() ([]Upload, error) {
+	contents, err := readBenchmarkFile("../../commitgraph/testdata/uploads.txt.gz")
+	if err != nil {
+		return nil, err
+	}
+
+	reader := csv.NewReader(bytes.NewReader(contents))
+
+	var uploads []Upload
+	for {
+		record, err := reader.Read()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+
+			return nil, err
+		}
+
+		id, err := strconv.Atoi(record[0])
+		if err != nil {
+			return nil, err
+		}
+
+		uploads = append(uploads, Upload{
+			ID:           id,
+			RepositoryID: 50,
+			Commit:       record[1],
+			Root:         record[2],
+		})
+	}
+
+	return uploads, nil
+}
+
+func readBenchmarkFile(path string) ([]byte, error) {
+	uploadsFile, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer uploadsFile.Close()
+
+	r, err := gzip.NewReader(uploadsFile)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Close()
+
+	contents, err := ioutil.ReadAll(r)
+	if err != nil {
+		return nil, err
+	}
+
+	return contents, nil
 }

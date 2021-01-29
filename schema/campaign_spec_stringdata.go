@@ -61,6 +61,29 @@ const CampaignSpecSchemaJSON = `{
         ]
       }
     },
+    "workspaces": {
+      "type": "array",
+      "description": "Individual workspace configurations for one or more repositories that define which workspaces to use for the execution of steps in the repositories.",
+      "items": {
+        "title": "WorkspaceConfiguration",
+        "type": "object",
+        "description": "Configuration for how to setup workspaces in repositories",
+        "additionalProperties": false,
+        "required": ["rootAtLocationOf"],
+        "properties": {
+          "rootAtLocationOf": {
+            "type": "string",
+            "description": "The name of the file that sits at the root of the desired workspace.",
+            "examples": ["package.json", "go.mod", "Gemfile", "Cargo.toml", "README.md"]
+          },
+          "in": {
+            "type": "string",
+            "description": "The repositories in which to apply the workspace configuration. Supports globbing.",
+            "examples": ["github.com/sourcegraph/src-cli", "github.com/sourcegraph/*"]
+          }
+        }
+      }
+    },
     "steps": {
       "type": "array",
       "description": "The sequence of commands to run (for each repository branch matched in the ` + "`" + `on` + "`" + ` property) to produce the campaign's changes.",
@@ -79,6 +102,26 @@ const CampaignSpecSchemaJSON = `{
             "type": "string",
             "description": "The Docker image used to launch the Docker container in which the shell command is run.",
             "examples": ["alpine:3"]
+          },
+          "outputs": {
+            "type": "object",
+            "description": "Output variables of this step that can be referenced in the changesetTemplate or other steps via outputs.<name-of-output>",
+            "additionalProperties": {
+              "type": "object",
+              "required": ["value"],
+              "properties": {
+                "value": {
+                  "type": "string",
+                  "description": "The value of the output, which can be a template string.",
+                  "examples": ["hello world", "${{ step.stdout }}", "${{ repository.name }}"]
+                },
+                "format": {
+                  "type": "string",
+                  "description": "The expected format of the output. If set, the output is being parsed in that format before being stored in the var. If not set, 'text' is assumed to the format.",
+                  "enum": ["json", "yaml", "text"]
+                }
+              }
+            }
           },
           "env": {
             "description": "Environment variables to set in the step environment.",
@@ -113,8 +156,36 @@ const CampaignSpecSchemaJSON = `{
           "files": {
             "type": "object",
             "description": "Files that should be mounted into or be created inside the Docker container.",
-            "additionalProperties": {
-              "type": "string"
+            "additionalProperties": { "type": "string" }
+          }
+        }
+      }
+    },
+    "transformChanges": {
+      "type": "object",
+      "description": "Optional transformations to apply to the changes produced in each repository.",
+      "additionalProperties": false,
+      "properties": {
+        "group": {
+          "type": "array",
+          "description": "A list of groups of changes in a repository that each create a separate, additional changeset for this repository, with all ungrouped changes being in the default changeset.",
+          "additionalProperties": false,
+          "required": ["directory", "branchSuffix"],
+          "properties": {
+            "directory": {
+              "type": "string",
+              "description": "The directory path (relative to the repository root) of the changes to include in this group.",
+              "minLength": 1
+            },
+            "branch": {
+              "type": "string",
+              "description": "The branch on the repository to propose changes to. If unset, the repository's default branch is used.",
+              "minLength": 1
+            },
+            "repository": {
+              "type": "string",
+              "description": "Only apply this transformation in the repository with this name (as it is known to Sourcegraph).",
+              "examples": ["github.com/foo/bar"]
             }
           }
         }

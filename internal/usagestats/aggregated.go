@@ -4,12 +4,12 @@ import (
 	"context"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func GetSiteUsageStats(ctx context.Context, monthsOnly bool) (*types.SiteUsageStatistics, error) {
-	summary, err := db.EventLogs.SiteUsage(ctx)
+	summary, err := database.GlobalEventLogs.SiteUsage(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +59,7 @@ func groupSiteUsageStats(summary types.SiteUsageSummary, monthsOnly bool) *types
 
 // GetAggregatedCodeIntelStats returns aggregated statistics for code intelligence usage.
 func GetAggregatedCodeIntelStats(ctx context.Context) (*types.NewCodeIntelUsageStatistics, error) {
-	codeIntelEvents, err := db.EventLogs.AggregatedCodeIntelEvents(ctx)
+	codeIntelEvents, err := database.GlobalEventLogs.AggregatedCodeIntelEvents(ctx)
 	if err != nil {
 		return nil, err
 	} else if len(codeIntelEvents) == 0 {
@@ -67,7 +67,7 @@ func GetAggregatedCodeIntelStats(ctx context.Context) (*types.NewCodeIntelUsageS
 	}
 	stats := groupAggregatedCodeIntelStats(codeIntelEvents)
 
-	usersCount, err := db.EventLogs.CodeIntelligenceCombinedWAU(ctx)
+	usersCount, err := database.GlobalEventLogs.CodeIntelligenceCombinedWAU(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +128,7 @@ func groupAggregatedCodeIntelStats(rawEvents []types.CodeIntelAggregatedEvent) *
 
 // GetAggregatedSearchStats returns aggregates statistics for search usage.
 func GetAggregatedSearchStats(ctx context.Context) (*types.SearchUsageStatistics, error) {
-	events, err := db.EventLogs.AggregatedSearchEvents(ctx)
+	events, err := database.GlobalEventLogs.AggregatedSearchEvents(ctx)
 	if err != nil {
 		return nil, err
 	}

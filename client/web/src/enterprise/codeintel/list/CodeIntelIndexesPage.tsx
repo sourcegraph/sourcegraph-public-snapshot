@@ -6,6 +6,7 @@ import {
     FilteredConnectionFilter,
     FilteredConnectionQueryArguments,
 } from '../../../components/FilteredConnection'
+import { PageHeader } from '../../../components/PageHeader'
 import { PageTitle } from '../../../components/PageTitle'
 import { LsifIndexFields, LSIFIndexState, SettingsAreaRepositoryFields } from '../../../graphql-operations'
 import { fetchLsifIndexes as defaultFetchLsifIndexes } from './backend'
@@ -67,11 +68,21 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
 
     return (
         <div className="code-intel-indexes web-content">
-            <CodeIntelIndexPageTitle />
-
+            <PageTitle title="Precise code intelligence auto-index records" />
+            <PageHeader
+                path={[{ text: 'Precise code intelligence auto-index records' }]}
+                byline={
+                    <p>
+                        Popular repositories are indexed automatically on{' '}
+                        <a href="https://sourcegraph.com" target="_blank" rel="noreferrer noopener">
+                            Sourcegraph.com
+                        </a>
+                        .
+                    </p>
+                }
+            />
             <div className="list-group position-relative">
                 <FilteredConnection<LsifIndexFields, Omit<CodeIntelIndexNodeProps, 'node'>>
-                    className="mt-2"
                     listComponent="div"
                     listClassName="codeintel-indexes__grid mb-3"
                     noun="index"
@@ -89,29 +100,3 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
         </div>
     )
 }
-
-const CodeIntelIndexPageTitle: FunctionComponent<{}> = () => (
-    <>
-        <PageTitle title="Precise code intelligence auto-index records" />
-        <h2>Precise code intelligence auto-index records</h2>
-        <p>
-            Popular Go repositories are indexed automatically via{' '}
-            <a href="https://github.com/sourcegraph/lsif-go" target="_blank" rel="noreferrer noopener">
-                lsif-go
-            </a>{' '}
-            on{' '}
-            <a href="https://sourcegraph.com" target="_blank" rel="noreferrer noopener">
-                Sourcegraph.com
-            </a>
-            . Enable precise code intelligence for non-Go code by{' '}
-            <a
-                href="https://docs.sourcegraph.com/code_intelligence/precise_code_intelligence"
-                target="_blank"
-                rel="noreferrer noopener"
-            >
-                uploading LSIF data
-            </a>
-            .
-        </p>
-    </>
-)

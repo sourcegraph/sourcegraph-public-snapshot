@@ -9,6 +9,7 @@
 
 .streaming-progress {
     &__count {
+        padding: 0.375rem 0.75rem; // Match padding for .btn (but this is not a button)
         color: var(--link-color);
 
         &--in-progress {
@@ -24,15 +25,59 @@
     }
 
     &__skipped {
-        border: none;
-        &.btn.btn-secondary {
-            color: var(--link-color);
-            background-color: transparent;
-            box-shadow: none;
+        margin-left: 0.25rem;
+
+        &--warning {
+            color: var(--infobar-warning-color);
         }
 
         &-popover {
-            max-width: 350px;
+            width: 20rem;
+            padding: 0;
+        }
+    }
+}
+
+.streaming-skipped-item {
+    background: transparent !important;
+    border: none !important;
+
+    &:disabled {
+        opacity: 1;
+    }
+
+    &__icon {
+        color: var(--primary);
+    }
+
+    &__message {
+        $border-size: 2px;
+
+        border-left: $border-size solid var(--primary);
+
+        // Border should appear directly under the width of the icon
+        // Halfway past the icon, minus half the border size
+        margin-left: calc(#{$icon-inline-size} / 2 - #{$border-size} / 2);
+        // Halfway past the icon, minus half the border size, plus the icon's right margin
+        padding-left: calc(#{$icon-inline-size} / 2 - #{$border-size} / 2 + 0.5rem);
+
+        &.markdown code {
+            // Force line breaks on markdown `code` elements
+            white-space: normal;
+        }
+    }
+
+    &__bottom-border-spacer {
+        border-bottom: 1px solid var(--border-color-2);
+    }
+
+    &--warn {
+        .streaming-skipped-item__icon {
+            color: var(--danger);
+        }
+
+        .streaming-skipped-item__message {
+            border-left-color: var(--danger);
         }
     }
 }

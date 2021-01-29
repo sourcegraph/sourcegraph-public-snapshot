@@ -1,4 +1,4 @@
-# Index a popular Typescript repository
+# Manually index a popular Typescript repository
 
 <style>
 .markdown-body pre.chroma {
@@ -32,10 +32,7 @@ We recommend that use the latest version of Sourcegraph and that you have a basi
 1. ["Sourcegraph quickstart"](../../index.md)
 1. ["Introduction to code intelligence"](../explanations/introduction_to_code_intelligence.md)
 
-For the purposes of the tutorial we’ll be using the following repository: [https://github.com/apache/incubator-echarts](https://github.com/apache/incubator-echarts). Before starting the tutorial, you should first complete the following:
-
-1. ["Add the repo to Sourcegraph"](../how-to/add_a_repository.md)
-1. ["Enable LSIF in your global settings"](../how-to/enable_lsif.md)
+For the purposes of the tutorial we’ll be using the following repository: [https://github.com/apache/incubator-echarts](https://github.com/apache/incubator-echarts). Before starting the tutorial, you should first ["Add the repo to Sourcegraph"](../how-to/add_a_repository.md).
 
 
 ### Clone the TypeScript repository locally

@@ -1,5 +1,9 @@
 import React, { useEffect, useCallback, useState, useMemo } from 'react'
-import { queryCampaigns as _queryCampaigns, queryCampaignsByNamespace } from './backend'
+import {
+    areCampaignsLicensed as _areCampaignsLicensed,
+    queryCampaigns as _queryCampaigns,
+    queryCampaignsByNamespace,
+} from './backend'
 import { RouteComponentProps } from 'react-router'
 import { FilteredConnection, FilteredConnectionFilter } from '../../../components/FilteredConnection'
 import { CampaignNode, CampaignNodeProps } from './CampaignNode'
@@ -15,17 +19,20 @@ import {
 import PlusIcon from 'mdi-react/PlusIcon'
 import { Link } from '../../../../../shared/src/components/Link'
 import { PageHeader } from '../../../components/PageHeader'
-import { CampaignsIconFlushLeft } from '../icons'
+import { CampaignsIcon } from '../icons'
 import { CampaignsListEmpty } from './CampaignsListEmpty'
 import { CampaignListIntro } from './CampaignListIntro'
 import { filter, map, tap, withLatestFrom } from 'rxjs/operators'
 import { Observable, ReplaySubject } from 'rxjs'
 import classNames from 'classnames'
+import { useObservable } from '../../../../../shared/src/util/useObservable'
 
 export interface CampaignListPageProps extends TelemetryProps, Pick<RouteComponentProps, 'history' | 'location'> {
     displayNamespace?: boolean
     /** For testing only. */
     queryCampaigns?: typeof _queryCampaigns
+    /** For testing only. */
+    areCampaignsLicensed?: typeof _areCampaignsLicensed
     /** For testing only. */
     openTab?: SelectedTab
 }
@@ -65,6 +72,7 @@ type SelectedTab = 'campaigns' | 'gettingStarted'
  */
 export const CampaignListPage: React.FunctionComponent<CampaignListPageProps> = ({
     queryCampaigns = _queryCampaigns,
+    areCampaignsLicensed = _areCampaignsLicensed,
     displayNamespace = true,
     location,
     openTab,
@@ -104,19 +112,17 @@ export const CampaignListPage: React.FunctionComponent<CampaignListPageProps> = 
             ),
         [queryCampaigns, isFirstFetch, openTab]
     )
+    const licensed: boolean | undefined = useObservable(useMemo(() => areCampaignsLicensed(), [areCampaignsLicensed]))
 
     return (
         <>
             <PageHeader
-                icon={CampaignsIconFlushLeft}
-                title="Campaigns"
-                className="justify-content-end test-campaign-list-page"
+                path={[{ icon: CampaignsIcon, text: 'Campaigns' }]}
+                className="test-campaign-list-page mb-3"
                 actions={<NewCampaignButton location={location} />}
+                byline="Run custom code over hundreds of repositories and manage the resulting changesets"
             />
-            <p className="text-muted">
-                Run custom code over hundreds of repositories and manage the resulting changesets
-            </p>
-            <CampaignListIntro />
+            <CampaignListIntro licensed={licensed} />
             <CampaignListTabHeader selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
             {selectedTab === 'gettingStarted' && <CampaignsListEmpty />}
             {selectedTab === 'campaigns' && (
@@ -183,8 +189,8 @@ const CampaignListEmptyElement: React.FunctionComponent<CampaignListEmptyElement
 interface NewCampaignButtonProps extends Pick<RouteComponentProps, 'location'> {}
 
 const NewCampaignButton: React.FunctionComponent<NewCampaignButtonProps> = ({ location }) => (
-    <Link to={`${location.pathname}/create`} className="btn btn-primary">
-        <PlusIcon className="icon-inline" /> New campaign
+    <Link to={`${location.pathname}/create`} className="btn btn-secondary">
+        <PlusIcon className="icon-inline" /> Create campaign
     </Link>
 )
 

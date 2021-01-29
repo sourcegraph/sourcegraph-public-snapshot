@@ -7,6 +7,7 @@ import {
     extensionsController,
     HIGHLIGHTED_FILE_LINES_REQUEST,
     MULTIPLE_SEARCH_REQUEST,
+    REPO_MATCH_RESULT,
     SEARCH_REQUEST,
 } from '../../../../shared/src/util/searchTestHelpers'
 import { SearchResultsList, SearchResultsListProps } from './SearchResultsList'
@@ -18,6 +19,8 @@ import { ISearchResults } from '../../../../shared/src/graphql/schema'
 
 const history = createBrowserHistory()
 history.replace({ search: 'q=r:golang/oauth2+test+f:travis' })
+
+window.context.deployType = 'dev'
 
 const defaultProps: SearchResultsListProps = {
     location: history.location,
@@ -34,11 +37,9 @@ const defaultProps: SearchResultsListProps = {
 
     showSavedQueryModal: false,
     onSavedQueryModalClose: sinon.spy(),
-    onDidCreateSavedQuery: sinon.spy(),
     onSaveQueryClick: sinon.spy(),
-    didSave: false,
 
-    fetchHighlightedFileLines: HIGHLIGHTED_FILE_LINES_REQUEST,
+    fetchHighlightedFileLineRanges: HIGHLIGHTED_FILE_LINES_REQUEST,
 
     isLightTheme: true,
     settingsCascade: {
@@ -48,21 +49,18 @@ const defaultProps: SearchResultsListProps = {
     extensionsController: { executeCommand: sinon.spy(), services: extensionsController.services },
     platformContext: { forceUpdateTooltip: sinon.spy(), settings: NEVER },
     telemetryService: NOOP_TELEMETRY_SERVICE,
+    parsedSearchQuery: 'r:golang/oauth2 test f:travis',
     patternType: SearchPatternType.regexp,
     setPatternType: sinon.spy(),
     caseSensitive: false,
     setCaseSensitivity: sinon.spy(),
 
-    interactiveSearchMode: false,
-    filtersInQuery: {},
-    toggleSearchMode: sinon.fake(),
-    onFiltersInQueryChange: sinon.fake(),
-    splitSearchModes: false,
     versionContext: undefined,
 
-    navbarSearchQueryState: { query: '', cursorPosition: 0 },
+    navbarSearchQueryState: { query: '' },
 
     shouldDisplayPerformanceWarning: () => of(false),
+    enableCodeMonitoring: false,
 }
 
 const { add } = storiesOf('web/search/results/SearchResultsList', module).addParameters({
@@ -135,6 +133,33 @@ add('show server side alert', () => {
             proposedQueries: [{ __typename: 'SearchQueryDescription', description: 'Test query', query: 'test' }],
             title: 'Test Alert',
         },
+    }
+
+    return (
+        <WebStory>
+            {() => (
+                <SearchResultsList
+                    {...defaultProps}
+                    resultsOrError={resultsOrError}
+                    shouldDisplayPerformanceWarning={shouldDisplayPerformanceWarning}
+                />
+            )}
+        </WebStory>
+    )
+})
+
+add('show server side alert with timeout warning', () => {
+    const shouldDisplayPerformanceWarning = () => of(true)
+    const resultsOrError: ISearchResults = {
+        ...(defaultProps.resultsOrError as ISearchResults),
+        alert: {
+            __typename: 'SearchAlert',
+            description: 'This is a test alert',
+            proposedQueries: [{ __typename: 'SearchQueryDescription', description: 'Test query', query: 'test' }],
+            title: 'Test Alert',
+        },
+        timedout: [REPO_MATCH_RESULT],
+        repositoriesCount: 1,
     }
 
     return (

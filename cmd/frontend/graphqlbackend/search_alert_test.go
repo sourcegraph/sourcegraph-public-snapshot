@@ -8,8 +8,11 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+
 	"github.com/hashicorp/go-multierror"
 
+	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -145,7 +148,7 @@ func TestAddQueryRegexpField(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			got := addRegexpField(parseTree, test.addField, test.addPattern)
+			got := query.AddRegexpField(parseTree, test.addField, test.addPattern)
 			if got != test.want {
 				t.Errorf("got %q, want %q", got, test.want)
 			}
@@ -153,17 +156,47 @@ func TestAddQueryRegexpField(t *testing.T) {
 	}
 }
 
+func TestAlertForDiffCommitSearchLimits(t *testing.T) {
+	cases := []struct {
+		name                 string
+		multiErr             *multierror.Error
+		wantAlertDescription string
+	}{
+		{
+			name:                 "diff_search_warns_on_repos_greater_than_search_limit",
+			multiErr:             multierror.Append(&multierror.Error{}, &RepoLimitError{ResultType: "diff", Max: 50}),
+			wantAlertDescription: `Diff search can currently only handle searching over 50 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`,
+		},
+		{
+			name:                 "commit_search_warns_on_repos_greater_than_search_limit",
+			multiErr:             multierror.Append(&multierror.Error{}, &RepoLimitError{ResultType: "commit", Max: 50}),
+			wantAlertDescription: `Commit search can currently only handle searching over 50 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`,
+		},
+		{
+			name:                 "commit_search_warns_on_repos_greater_than_search_limit_with_time_filter",
+			multiErr:             multierror.Append(&multierror.Error{}, &TimeLimitError{ResultType: "commit", Max: 10000}),
+			wantAlertDescription: `Commit search can currently only handle searching over 10000 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`,
+		},
+	}
+
+	for _, test := range cases {
+		alert := alertForError(test.multiErr, &SearchInputs{})
+		haveAlertDescription := alert.description
+		if diff := cmp.Diff(test.wantAlertDescription, haveAlertDescription); diff != "" {
+			t.Fatalf("test %s, mismatched alert (-want, +got):\n%s", test.name, diff)
+		}
+	}
+}
+
 func TestErrorToAlertStructuralSearch(t *testing.T) {
 	cases := []struct {
 		name           string
 		errors         []error
-		wantErrors     []error
 		wantAlertTitle string
 	}{
 		{
 			name:           "multierr_is_unaffected",
 			errors:         []error{errors.New("some error")},
-			wantErrors:     []error{errors.New("some error")},
 			wantAlertTitle: "",
 		},
 		{
@@ -171,10 +204,6 @@ func TestErrorToAlertStructuralSearch(t *testing.T) {
 			errors: []error{
 				errors.New("some error"),
 				errors.New("Worker_oomed"),
-				errors.New("some other error"),
-			},
-			wantErrors: []error{
-				errors.New("some error"),
 				errors.New("some other error"),
 			},
 			wantAlertTitle: "Structural search needs more memory",
@@ -185,11 +214,7 @@ func TestErrorToAlertStructuralSearch(t *testing.T) {
 			Errors:      test.errors,
 			ErrorFormat: multierror.ListFormatFunc,
 		}
-		haveMultiErr, haveAlert := alertForStructuralSearch(multiErr)
-
-		if !reflect.DeepEqual(haveMultiErr.Errors, test.wantErrors) {
-			t.Fatalf("test %s, have errors: %q, want: %q", test.name, haveMultiErr.Errors, test.wantErrors)
-		}
+		haveAlert := alertForError(multiErr, &SearchInputs{})
 
 		if haveAlert != nil && haveAlert.title != test.wantAlertTitle {
 			t.Fatalf("test %s, have alert: %q, want: %q", test.name, haveAlert.title, test.wantAlertTitle)
@@ -206,7 +231,7 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 		j := 0
 		for i := range repoRevs {
 			repoRevs[i] = &search.RepositoryRevisions{
-				Repo: &types.Repo{
+				Repo: &types.RepoName{
 					ID:   api.RepoID(i),
 					Name: api.RepoName(chars[j] + "/repoName" + strconv.Itoa(i)),
 				},
@@ -221,11 +246,11 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 	}
 
 	setMockResolveRepositories := func(numRepos int) {
-		mockResolveRepositories = func(effectiveRepoFieldValues []string) (resolved resolvedRepositories, err error) {
-			return resolvedRepositories{
-				repoRevs:        generateRepoRevs(numRepos),
-				missingRepoRevs: make([]*search.RepositoryRevisions, 0),
-				overLimit:       true,
+		mockResolveRepositories = func(effectiveRepoFieldValues []string) (resolved searchrepos.Resolved, err error) {
+			return searchrepos.Resolved{
+				RepoRevs:        generateRepoRevs(numRepos),
+				MissingRepoRevs: make([]*search.RepositoryRevisions, 0),
+				OverLimit:       true,
 			}, nil
 		}
 	}
@@ -311,10 +336,11 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 				t.Fatal(err)
 			}
 			sr := searchResolver{
-				query: q,
-				userSettings: &schema.Settings{
-					SearchGlobbing: &test.globbing,
-				},
+				SearchInputs: &SearchInputs{
+					Query: q,
+					UserSettings: &schema.Settings{
+						SearchGlobbing: &test.globbing,
+					}},
 			}
 
 			ctx, cancel := context.WithCancel(context.Background())
@@ -326,6 +352,26 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 			wantAlert := test.wantAlert
 			if !reflect.DeepEqual(alert, wantAlert) {
 				t.Fatalf("test %s, have alert %+v, want: %+v", test.name, alert, test.wantAlert)
+			}
+		})
+	}
+}
+
+func TestCapFirst(t *testing.T) {
+	tests := []struct {
+		name string
+		in   string
+		want string
+	}{
+		{name: "empty", in: "", want: ""},
+		{name: "a", in: "a", want: "A"},
+		{name: "ab", in: "ab", want: "Ab"},
+		{name: "хлеб", in: "хлеб", want: "Хлеб"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := capFirst(tt.in); got != tt.want {
+				t.Errorf("makeTitle() = %v, want %v", got, tt.want)
 			}
 		})
 	}

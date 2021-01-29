@@ -116,7 +116,7 @@ describe('codeHost', () => {
             createOverlayMount('some-code-host', document.body)
             const mount = document.body.querySelector('.hover-overlay-mount')
             expect(mount).toBeDefined()
-            expect(mount!.className).toBe('hover-overlay-mount hover-overlay-mount__some-code-host theme-light')
+            expect(mount!.className).toBe('hover-overlay-mount hover-overlay-mount__some-code-host')
         })
     })
 
@@ -155,7 +155,7 @@ describe('codeHost', () => {
             )
             const overlayMount = document.body.querySelector('.hover-overlay-mount')
             expect(overlayMount).toBeDefined()
-            expect(overlayMount!.className).toBe('hover-overlay-mount hover-overlay-mount__github theme-light')
+            expect(overlayMount!.className).toBe('hover-overlay-mount hover-overlay-mount__github')
             const renderedOverlay = elementRenderedAtMount(overlayMount!)
             expect(renderedOverlay).not.toBeUndefined()
         })

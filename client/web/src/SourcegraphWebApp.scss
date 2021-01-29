@@ -110,7 +110,6 @@ body,
 @import './repo/settings/RepoSettingsArea';
 @import './repo/actions//InstallBrowserExtensionPopover.scss';
 @import './repo/actions/InstallBrowserExtensionAlert.scss';
-@import './components/PageHeader';
 @import './components/completion/CompletionWidgetDropdown';
 @import './components/CopyableText';
 @import './components/FilteredConnection';
@@ -123,6 +122,7 @@ body,
 @import './components/CtaBanner.scss';
 @import './user/settings/UserSettingsArea';
 @import './user/settings/emails/UserSettingsEmailsPage.scss';
+@import './user/settings/codeHosts/UserAddCodeHostsPage.scss';
 @import './site-admin/SiteAdminAlert';
 @import './site/DockerForMacAlert';
 @import './user/UserAvatar';

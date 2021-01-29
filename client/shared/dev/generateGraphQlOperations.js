@@ -24,17 +24,17 @@ const BROWSER_DOCUMENTS_GLOB = [
   '!**/*.d.ts',
 ]
 
+// Define ALL_DOCUMENTS_GLOB as the union of the previous glob arrays.
+const ALL_DOCUMENTS_GLOB = [...new Set([...SHARED_DOCUMENTS_GLOB, ...WEB_DOCUMENTS_GLOB, ...BROWSER_DOCUMENTS_GLOB])]
+
 const plugins = [`${SHARED_FOLDER}/dev/extractGraphQlOperationCodegenPlugin.js`, 'typescript', 'typescript-operations']
 
 /**
  * Generates TypeScript files with types for all GraphQL operations.
- *
- * @param {{ watch?: boolean }} [options]
  */
-async function generateGraphQlOperations({ watch } = {}) {
+async function generateGraphQlOperations() {
   await generate(
     {
-      watch,
       schema: SCHEMA_PATH,
       hooks: {
         afterOneFileWrite: 'prettier --write',
@@ -103,4 +103,9 @@ async function generateGraphQlOperations({ watch } = {}) {
   )
 }
 
-module.exports = { generateGraphQlOperations, SHARED_DOCUMENTS_GLOB, WEB_DOCUMENTS_GLOB }
+module.exports = {
+  generateGraphQlOperations,
+  SHARED_DOCUMENTS_GLOB,
+  WEB_DOCUMENTS_GLOB,
+  ALL_DOCUMENTS_GLOB,
+}

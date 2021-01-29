@@ -12,6 +12,7 @@ import (
 
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -26,8 +27,27 @@ type Client struct {
 func New(dbStore DBStore, observationContext *observation.Context) *Client {
 	return &Client{
 		dbStore:    dbStore,
-		operations: makeOperations(observationContext),
+		operations: newOperations(observationContext),
 	}
+}
+
+// Head determines the tip commit of the default branch for the given repository.
+func (c *Client) CommitExists(ctx context.Context, repositoryID int, commit string) (_ bool, err error) {
+	ctx, endObservation := c.operations.commitExists.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+		log.String("commit", commit),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	out, err := c.execGitCommand(ctx, repositoryID, "cat-file", "-t", commit)
+	if err == nil {
+		return true, nil
+	}
+
+	if strings.Contains(out, "Not a valid object name") {
+		err = nil
+	}
+	return false, err
 }
 
 // Head determines the tip commit of the default branch for the given repository.
@@ -48,7 +68,7 @@ func (c *Client) CommitDate(ctx context.Context, repositoryID int, commit string
 	}})
 	defer endObservation(1, observation.Args{})
 
-	out, err := c.execGitCommand(ctx, repositoryID, "show", "-s", "--format=%cI", commit)
+	out, err := c.execResolveRevGitCommand(ctx, repositoryID, commit, "show", "-s", "--format=%cI", commit)
 	if err != nil {
 		return time.Time{}, err
 	}
@@ -65,9 +85,10 @@ func (c *CommitGraph) Graph() map[string][]string { return c.graph }
 func (c *CommitGraph) Order() []string            { return c.order }
 
 type CommitGraphOptions struct {
-	Commit string
-	Limit  int
-	Since  *time.Time
+	Commit  string
+	AllRefs bool
+	Limit   int
+	Since   *time.Time
 }
 
 // CommitGraph returns the commit graph for the given repository as a mapping from a commit
@@ -81,7 +102,10 @@ func (c *Client) CommitGraph(ctx context.Context, repositoryID int, opts CommitG
 	}})
 	defer endObservation(1, observation.Args{})
 
-	commands := []string{"log", "--all", "--pretty=%H %P", "--topo-order"}
+	commands := []string{"log", "--pretty=%H %P", "--topo-order"}
+	if opts.AllRefs {
+		commands = append(commands, "--all")
+	}
 	if opts.Commit != "" {
 		commands = append(commands, opts.Commit)
 	}
@@ -92,7 +116,7 @@ func (c *Client) CommitGraph(ctx context.Context, repositoryID int, opts CommitG
 		commands = append(commands, fmt.Sprintf("-%d", opts.Limit))
 	}
 
-	out, err := c.execGitCommand(ctx, repositoryID, commands...)
+	out, err := c.execResolveRevGitCommand(ctx, repositoryID, opts.Commit, commands...)
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +182,7 @@ func (c *Client) RawContents(ctx context.Context, repositoryID int, commit, file
 	}})
 	defer endObservation(1, observation.Args{})
 
-	out, err := c.execGitCommand(ctx, repositoryID, "show", fmt.Sprintf("%s:%s", commit, file))
+	out, err := c.execResolveRevGitCommand(ctx, repositoryID, commit, "show", fmt.Sprintf("%s:%s", commit, file))
 	if err != nil {
 		return nil, err
 	}
@@ -176,7 +200,7 @@ func (c *Client) DirectoryChildren(ctx context.Context, repositoryID int, commit
 	}})
 	defer endObservation(1, observation.Args{})
 
-	out, err := c.execGitCommand(ctx, repositoryID, append([]string{"ls-tree", "--name-only", commit, "--"}, cleanDirectoriesForLsTree(dirnames)...)...)
+	out, err := c.execResolveRevGitCommand(ctx, repositoryID, commit, append([]string{"ls-tree", "--name-only", commit, "--"}, cleanDirectoriesForLsTree(dirnames)...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -284,7 +308,7 @@ func (c *Client) ListFiles(ctx context.Context, repositoryID int, commit string,
 	}})
 	defer endObservation(1, observation.Args{})
 
-	out, err := c.execGitCommand(ctx, repositoryID, "ls-tree", "--name-only", "-r", commit, "--")
+	out, err := c.execResolveRevGitCommand(ctx, repositoryID, commit, "ls-tree", "--name-only", "-r", commit, "--")
 	if err != nil {
 		return nil, err
 	}
@@ -301,6 +325,12 @@ func (c *Client) ListFiles(ctx context.Context, repositoryID int, commit string,
 
 // execGitCommand executes a git command for the given repository by identifier.
 func (c *Client) execGitCommand(ctx context.Context, repositoryID int, args ...string) (string, error) {
+	return c.execResolveRevGitCommand(ctx, repositoryID, "", args...)
+}
+
+// execResolveRevGitCommand executes a git command for the given repository by identifier if the
+// given revision is resolvable prior to running the command.
+func (c *Client) execResolveRevGitCommand(ctx context.Context, repositoryID int, revision string, args ...string) (string, error) {
 	repo, err := c.repositoryIDToRepo(ctx, repositoryID)
 	if err != nil {
 		return "", err
@@ -308,16 +338,33 @@ func (c *Client) execGitCommand(ctx context.Context, repositoryID int, args ...s
 
 	cmd := gitserver.DefaultClient.Command("git", args...)
 	cmd.Repo = repo
-	out, err := cmd.CombinedOutput(ctx)
-	return string(bytes.TrimSpace(out)), errors.Wrap(err, "gitserver.Command")
-}
 
-// repositoryIDToRepo creates a gitserver.Repo from a repository identifier.
-func (c *Client) repositoryIDToRepo(ctx context.Context, repositoryID int) (gitserver.Repo, error) {
-	repoName, err := c.dbStore.RepoName(ctx, repositoryID)
-	if err != nil {
-		return gitserver.Repo{}, errors.Wrap(err, "store.RepoName")
+	out, err := cmd.CombinedOutput(ctx)
+	if err == nil {
+		return string(bytes.TrimSpace(out)), nil
 	}
 
-	return gitserver.Repo{Name: api.RepoName(repoName)}, nil
+	if revision != "" {
+		// If we're returning an error, try to resolve revision that was the
+		// target of the command (if any). If the revision fails to resolve,
+		// we return a RevisionNotFoundError error instead of an "exit 128".
+		if _, err := git.ResolveRevision(ctx, repo, revision, git.ResolveRevisionOptions{}); err != nil {
+			return "", errors.Wrap(err, "git.ResolveRevision")
+		}
+	}
+
+	// If we didn't expect a particular revision to exist, or we did but it
+	// resolved without error, return the original error as the command had
+	// failed for another reason.
+	return "", errors.Wrap(err, "gitserver.Command")
+}
+
+// repositoryIDToRepo creates a api.RepoName from a repository identifier.
+func (c *Client) repositoryIDToRepo(ctx context.Context, repositoryID int) (api.RepoName, error) {
+	repoName, err := c.dbStore.RepoName(ctx, repositoryID)
+	if err != nil {
+		return "", errors.Wrap(err, "store.RepoName")
+	}
+
+	return api.RepoName(repoName), nil
 }

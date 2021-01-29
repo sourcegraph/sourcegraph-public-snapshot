@@ -102,6 +102,12 @@ const SiteSchemaJSON = `{
           "default": false,
           "!go": { "pointer": true }
         },
+        "perforce": {
+          "description": "Allow adding Perforce code host connections",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "enabled"
+        },
         "tls.external": {
           "description": "Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.",
           "type": "object",
@@ -283,6 +289,13 @@ const SiteSchemaJSON = `{
       "group": "Campaigns",
       "default": false
     },
+    "codeIntelAutoIndexing.enabled": {
+      "description": "Enables/disables the code intel auto indexing feature.",
+      "type": "boolean",
+      "!go": { "pointer": true },
+      "group": "Code intelligence",
+      "default": false
+    },
     "corsOrigin": {
       "description": "Required when using any of the native code host integrations for Phabricator, GitLab, or Bitbucket Server. It is a space-separated list of allowed origins for cross-origin HTTP requests which should be the base URL for your Phabricator, GitLab, or Bitbucket Server instance.",
       "type": "string",
@@ -306,6 +319,29 @@ const SiteSchemaJSON = `{
       "description": "Disable periodically fetching git contents for existing repositories.",
       "type": "boolean",
       "default": false,
+      "group": "External services"
+    },
+    "gitUpdateInterval": {
+      "description": "JSON array of repo name patterns and update intervals. If a repo matches a pattern, the associated interval will be used. If it matches no patterns a default backoff heuristic will be used. Pattern matches are attempted in the order they are provided.",
+      "type": "array",
+      "items": {
+        "title": "UpdateIntervalRule",
+        "type": "object",
+        "required": ["pattern", "interval"],
+        "additionalProperties": false,
+        "properties": {
+          "pattern": {
+            "description": "A regular expression matching a repo name",
+            "type": "string",
+            "minLength": 1
+          },
+          "interval": {
+            "description": "An integer representing the number of minutes to wait until the next update",
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
       "group": "External services"
     },
     "disablePublicRepoRedirects": {
@@ -629,6 +665,11 @@ const SiteSchemaJSON = `{
           "properties": {
             "dsn": {
               "description": "Sentry Data Source Name (DSN). Per the Sentry docs (https://docs.sentry.io/quickstart/#about-the-dsn), it should match the following pattern: '{PROTOCOL}://{PUBLIC_KEY}@{HOST}/{PATH}{PROJECT_ID}'.",
+              "type": "string",
+              "pattern": "^https?://"
+            },
+            "backendDSN": {
+              "description": "Sentry Data Source Name (DSN) for backend errors. Per the Sentry docs (https://docs.sentry.io/quickstart/#about-the-dsn), it should match the following pattern: '{PROTOCOL}://{PUBLIC_KEY}@{HOST}/{PATH}{PROJECT_ID}'.",
               "type": "string",
               "pattern": "^https?://"
             }
@@ -1130,7 +1171,7 @@ const SiteSchemaJSON = `{
     "NotifierPagerduty": {
       "description": "PagerDuty notifier",
       "type": "object",
-      "required": ["type", "routingKey"],
+      "required": ["type", "integrationKey"],
       "properties": {
         "type": {
           "type": "string",

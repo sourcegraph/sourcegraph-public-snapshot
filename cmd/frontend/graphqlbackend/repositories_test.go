@@ -8,7 +8,7 @@ import (
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/gqltesting"
 
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -18,13 +18,11 @@ func TestRepositories(t *testing.T) {
 		{Name: "repo1"},
 		{Name: "repo2"},
 		{
-			Name: "repo3",
-			RepoFields: &types.RepoFields{
-				Cloned: true,
-			},
+			Name:   "repo3",
+			Cloned: true,
 		},
 	}
-	db.Mocks.Repos.List = func(ctx context.Context, opt db.ReposListOptions) ([]*types.Repo, error) {
+	database.Mocks.Repos.List = func(ctx context.Context, opt database.ReposListOptions) ([]*types.Repo, error) {
 		if opt.NoCloned {
 			return repos[0:2], nil
 		}
@@ -35,7 +33,7 @@ func TestRepositories(t *testing.T) {
 		return repos, nil
 	}
 
-	db.Mocks.Repos.Count = func(context.Context, db.ReposListOptions) (int, error) { return 3, nil }
+	database.Mocks.Repos.Count = func(context.Context, database.ReposListOptions) (int, error) { return 3, nil }
 	gqltesting.RunTests(t, []*gqltesting.Test{
 		{
 			Schema: mustParseGraphQLSchema(t),
@@ -190,10 +188,10 @@ func TestRepositories_CursorPagination(t *testing.T) {
 	}
 
 	t.Run("Initial page without a cursor present", func(t *testing.T) {
-		db.Mocks.Repos.List = func(ctx context.Context, opt db.ReposListOptions) ([]*types.Repo, error) {
+		database.Mocks.Repos.List = func(ctx context.Context, opt database.ReposListOptions) ([]*types.Repo, error) {
 			return repos[0:2], nil
 		}
-		defer func() { db.Mocks.Repos.List = nil }()
+		defer func() { database.Mocks.Repos.List = nil }()
 
 		gqltesting.RunTests(t, []*gqltesting.Test{
 			{
@@ -227,10 +225,10 @@ func TestRepositories_CursorPagination(t *testing.T) {
 	})
 
 	t.Run("Second page in ascending order", func(t *testing.T) {
-		db.Mocks.Repos.List = func(ctx context.Context, opt db.ReposListOptions) ([]*types.Repo, error) {
+		database.Mocks.Repos.List = func(ctx context.Context, opt database.ReposListOptions) ([]*types.Repo, error) {
 			return repos[1:], nil
 		}
-		defer func() { db.Mocks.Repos.List = nil }()
+		defer func() { database.Mocks.Repos.List = nil }()
 
 		gqltesting.RunTests(t, []*gqltesting.Test{
 			{
@@ -264,10 +262,10 @@ func TestRepositories_CursorPagination(t *testing.T) {
 	})
 
 	t.Run("Second page in descending order", func(t *testing.T) {
-		db.Mocks.Repos.List = func(ctx context.Context, opt db.ReposListOptions) ([]*types.Repo, error) {
+		database.Mocks.Repos.List = func(ctx context.Context, opt database.ReposListOptions) ([]*types.Repo, error) {
 			return repos[1:], nil
 		}
-		defer func() { db.Mocks.Repos.List = nil }()
+		defer func() { database.Mocks.Repos.List = nil }()
 
 		gqltesting.RunTests(t, []*gqltesting.Test{
 			{
@@ -301,10 +299,10 @@ func TestRepositories_CursorPagination(t *testing.T) {
 	})
 
 	t.Run("Initial page with no further rows to fetch", func(t *testing.T) {
-		db.Mocks.Repos.List = func(ctx context.Context, opt db.ReposListOptions) ([]*types.Repo, error) {
+		database.Mocks.Repos.List = func(ctx context.Context, opt database.ReposListOptions) ([]*types.Repo, error) {
 			return repos, nil
 		}
-		defer func() { db.Mocks.Repos.List = nil }()
+		defer func() { database.Mocks.Repos.List = nil }()
 
 		gqltesting.RunTests(t, []*gqltesting.Test{
 			{
@@ -342,10 +340,10 @@ func TestRepositories_CursorPagination(t *testing.T) {
 	})
 
 	t.Run("With no repositories present", func(t *testing.T) {
-		db.Mocks.Repos.List = func(ctx context.Context, opt db.ReposListOptions) ([]*types.Repo, error) {
+		database.Mocks.Repos.List = func(ctx context.Context, opt database.ReposListOptions) ([]*types.Repo, error) {
 			return nil, nil
 		}
-		defer func() { db.Mocks.Repos.List = nil }()
+		defer func() { database.Mocks.Repos.List = nil }()
 
 		gqltesting.RunTests(t, []*gqltesting.Test{
 			{
@@ -377,10 +375,10 @@ func TestRepositories_CursorPagination(t *testing.T) {
 	})
 
 	t.Run("With an invalid cursor provided", func(t *testing.T) {
-		db.Mocks.Repos.List = func(ctx context.Context, opt db.ReposListOptions) ([]*types.Repo, error) {
+		database.Mocks.Repos.List = func(ctx context.Context, opt database.ReposListOptions) ([]*types.Repo, error) {
 			return nil, nil
 		}
-		defer func() { db.Mocks.Repos.List = nil }()
+		defer func() { database.Mocks.Repos.List = nil }()
 
 		gqltesting.RunTests(t, []*gqltesting.Test{
 			{

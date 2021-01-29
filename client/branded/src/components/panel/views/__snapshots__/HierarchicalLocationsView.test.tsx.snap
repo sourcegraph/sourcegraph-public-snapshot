@@ -114,6 +114,18 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                                
                             </td>
                           </tr>
+                          <tr>
+                            <td
+                              className="line"
+                            >
+                              3
+                            </td>
+                            <td
+                              className="code"
+                            >
+                               
+                            </td>
+                          </tr>
                         </tbody>
                       </table>
                     </code>
@@ -148,11 +160,6 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
       }
     >
       <div
-        className="resizable__ghost "
-        onMouseMove={[Function]}
-        onMouseUp={[Function]}
-      />
-      <div
         className="list-group list-group-flush hierarchical-locations-view__list test-hierarchical-locations-view-list"
       >
         <span
@@ -166,9 +173,13 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
             <span
               className="hierarchical-locations-view__item-name-text"
             >
-               
-              <span>
-                file1.txt
+              <span
+                className=""
+              >
+                 
+                <span>
+                  file1.txt
+                </span>
               </span>
             </span>
           </span>
@@ -189,9 +200,13 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
             <span
               className="hierarchical-locations-view__item-name-text"
             >
-               
-              <span>
-                file2.txt
+              <span
+                className=""
+              >
+                 
+                <span>
+                  file2.txt
+                </span>
               </span>
             </span>
           </span>
@@ -338,6 +353,18 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                                
                             </td>
                           </tr>
+                          <tr>
+                            <td
+                              className="line"
+                            >
+                              5
+                            </td>
+                            <td
+                              className="code"
+                            >
+                               
+                            </td>
+                          </tr>
                         </tbody>
                       </table>
                     </code>
@@ -463,6 +490,18 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                               className="line"
                             >
                               2
+                            </td>
+                            <td
+                              className="code"
+                            >
+                               
+                            </td>
+                          </tr>
+                          <tr>
+                            <td
+                              className="line"
+                            >
+                              3
                             </td>
                             <td
                               className="code"

@@ -11,6 +11,7 @@ import (
 	"github.com/Masterminds/semver"
 	"github.com/pkg/errors"
 	"github.com/segmentio/fasthash/fnv1"
+
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 

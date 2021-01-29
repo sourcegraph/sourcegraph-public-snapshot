@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/datastructures"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/existence"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/lsif"
@@ -279,7 +280,7 @@ func correlateContainsEdge(state *wrappedState, id int, edge lsif.Edge) error {
 
 	for _, inV := range edge.InVs {
 		if _, ok := state.RangeData[inV]; !ok {
-			return malformedDump(id, edge.InV, "range")
+			return malformedDump(id, inV, "range")
 		}
 		state.Contains.SetAdd(edge.OutV, inV)
 	}
@@ -305,7 +306,7 @@ func correlateItemEdge(state *wrappedState, id int, edge lsif.Edge) error {
 	if documentMap, ok := state.DefinitionData[edge.OutV]; ok {
 		for _, inV := range edge.InVs {
 			if _, ok := state.RangeData[inV]; !ok {
-				return malformedDump(id, edge.InV, "range")
+				return malformedDump(id, inV, "range")
 			}
 
 			// Link definition data to defining range
@@ -322,7 +323,7 @@ func correlateItemEdge(state *wrappedState, id int, edge lsif.Edge) error {
 				state.LinkedReferenceResults.Link(edge.OutV, inV)
 			} else {
 				if _, ok = state.RangeData[inV]; !ok {
-					return malformedDump(id, edge.InV, "range")
+					return malformedDump(id, inV, "range")
 				}
 
 				// Link reference data to a reference range

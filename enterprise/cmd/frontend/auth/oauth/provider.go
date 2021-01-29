@@ -6,10 +6,11 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"net/http"
 	"net/url"
 	"path"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 
 	"github.com/dghubble/gologin"
 	goauth2 "github.com/dghubble/gologin/oauth2"

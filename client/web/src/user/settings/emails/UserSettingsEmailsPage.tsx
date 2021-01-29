@@ -24,14 +24,21 @@ interface Props extends RouteComponentProps<{}> {
 
 type UserEmail = NonNullable<UserEmailsResult['node']>['emails'][number]
 type Status = undefined | 'loading' | 'loaded' | ErrorLike
+type EmailActionError = undefined | ErrorLike
 
 export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user, history }) => {
     const [emails, setEmails] = useState<UserEmail[]>([])
     const [statusOrError, setStatusOrError] = useState<Status>()
+    const [emailActionError, setEmailActionError] = useState<EmailActionError>()
 
-    const onEmailRemove = useCallback((deletedEmail: string): void => {
-        setEmails(emails => emails.filter(({ email }) => email !== deletedEmail))
-    }, [])
+    const onEmailRemove = useCallback(
+        (deletedEmail: string): void => {
+            setEmails(emails => emails.filter(({ email }) => email !== deletedEmail))
+            // always cleanup email action errors when removing emails
+            setEmailActionError(undefined)
+        },
+        [setEmailActionError]
+    )
 
     const fetchEmails = useCallback(async (): Promise<void> => {
         setStatusOrError('loading')
@@ -57,6 +64,9 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user, history
             ).toPromise()
         )
 
+        // always cleanup email action errors when re-fetching emails
+        setEmailActionError(undefined)
+
         if (fetchedEmails?.node?.emails) {
             setEmails(fetchedEmails.node.emails)
             setStatusOrError('loaded')
@@ -80,7 +90,6 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user, history
     return (
         <div className="user-settings-emails-page">
             <PageTitle title="Emails" />
-            <h2>Emails</h2>
 
             {flags && !flags.sendsEmailVerificationEmails && (
                 <div className="alert alert-warning mt-2">
@@ -90,6 +99,11 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user, history
             )}
 
             {isErrorLike(statusOrError) && <ErrorAlert className="mt-2" error={statusOrError} history={history} />}
+            {isErrorLike(emailActionError) && (
+                <ErrorAlert className="mt-2" error={emailActionError} history={history} />
+            )}
+
+            <h2>Emails</h2>
 
             {statusOrError === 'loading' ? (
                 <div className="d-flex justify-content-center">
@@ -104,8 +118,9 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user, history
                                     user={user.id}
                                     email={email}
                                     onEmailVerify={fetchEmails}
+                                    onEmailResendVerification={fetchEmails}
                                     onDidRemove={onEmailRemove}
-                                    history={history}
+                                    onError={setEmailActionError}
                                 />
                             </li>
                         ))}

@@ -1,8 +1,10 @@
 package gitserver
 
 import (
+	"errors"
 	"fmt"
 
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -12,12 +14,13 @@ type operations struct {
 	commitGraph       *observation.Operation
 	directoryChildren *observation.Operation
 	fileExists        *observation.Operation
+	commitExists      *observation.Operation
 	head              *observation.Operation
 	listFiles         *observation.Operation
 	rawContents       *observation.Operation
 }
 
-func makeOperations(observationContext *observation.Context) *operations {
+func newOperations(observationContext *observation.Context) *operations {
 	metrics := metrics.NewOperationMetrics(
 		observationContext.Registerer,
 		"codeintel_gitserver",
@@ -30,6 +33,15 @@ func makeOperations(observationContext *observation.Context) *operations {
 			Name:         fmt.Sprintf("codeintel.gitserver.%s", name),
 			MetricLabels: []string{name},
 			Metrics:      metrics,
+			ErrorFilter: func(err error) bool {
+				for ex := err; ex != nil; ex = errors.Unwrap(ex) {
+					if gitserver.IsRevisionNotFound(ex) {
+						return true
+					}
+				}
+
+				return false
+			},
 		})
 	}
 
@@ -38,6 +50,7 @@ func makeOperations(observationContext *observation.Context) *operations {
 		commitGraph:       op("CommitGraph"),
 		directoryChildren: op("DirectoryChildren"),
 		fileExists:        op("FileExists"),
+		commitExists:      op("CommitExists"),
 		head:              op("Head"),
 		listFiles:         op("ListFiles"),
 		rawContents:       op("RawContents"),

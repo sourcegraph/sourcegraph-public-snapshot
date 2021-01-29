@@ -2,6 +2,7 @@ package apitest
 
 import (
 	"github.com/sourcegraph/go-diff/diff"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 )
@@ -114,28 +115,27 @@ type Repository struct {
 
 type ExternalURL struct {
 	URL         string
+	ServiceKind string
 	ServiceType string
 }
 
 type Changeset struct {
-	Typename         string `json:"__typename"`
-	ID               string
-	Repository       Repository
-	Campaigns        CampaignConnection
-	CreatedAt        string
-	UpdatedAt        string
-	NextSyncAt       string
-	Title            string
-	Body             string
-	PublicationState string
-	ReconcilerState  string
-	Error            string
-	ExternalState    string
-	ExternalID       string
-	ExternalURL      ExternalURL
-	ReviewState      string
-	CheckState       string
-	Events           ChangesetEventConnection
+	Typename    string `json:"__typename"`
+	ID          string
+	Repository  Repository
+	Campaigns   CampaignConnection
+	CreatedAt   string
+	UpdatedAt   string
+	NextSyncAt  string
+	Title       string
+	Body        string
+	Error       string
+	State       string
+	ExternalID  string
+	ExternalURL ExternalURL
+	ReviewState string
+	CheckState  string
+	Events      ChangesetEventConnection
 
 	Diff Comparison
 
@@ -196,6 +196,7 @@ type CampaignSpec struct {
 	Creator   *User
 
 	ChangesetSpecs ChangesetSpecConnection
+	ApplyPreview   ChangesetApplyPreviewConnection
 
 	ViewerCanAdminister bool
 
@@ -211,6 +212,8 @@ type CampaignSpec struct {
 
 	CreatedAt graphqlbackend.DateTime
 	ExpiresAt *graphqlbackend.DateTime
+
+	SupersedingCampaignSpec *CampaignSpec
 }
 
 // ChangesetSpecDelta is the delta between two ChangesetSpecs describing the same Changeset.
@@ -229,12 +232,6 @@ type ChangesetSpec struct {
 	Typename string `json:"__typename"`
 	ID       string
 
-	Operations []campaigns.ReconcilerOperation
-	Delta      ChangesetSpecDelta
-	Changeset  struct {
-		ID string
-	}
-
 	Description ChangesetSpecDescription
 
 	ExpiresAt *graphqlbackend.DateTime
@@ -244,6 +241,42 @@ type ChangesetSpecConnection struct {
 	Nodes      []ChangesetSpec
 	TotalCount int
 	PageInfo   PageInfo
+}
+
+type ChangesetApplyPreviewConnection struct {
+	Nodes      []ChangesetApplyPreview
+	TotalCount int
+	PageInfo   PageInfo
+	Stats      ChangesetApplyPreviewConnectionStats
+}
+
+type ChangesetApplyPreviewConnectionStats struct {
+	Push         int32
+	Update       int32
+	Undraft      int32
+	Publish      int32
+	PublishDraft int32
+	Sync         int32
+	Import       int32
+	Close        int32
+	Reopen       int32
+	Sleep        int32
+	Detach       int32
+}
+
+type ChangesetApplyPreview struct {
+	Typename string `json:"__typename"`
+
+	Operations []campaigns.ReconcilerOperation
+	Delta      ChangesetSpecDelta
+	Targets    ChangesetApplyPreviewTargets
+}
+
+type ChangesetApplyPreviewTargets struct {
+	Typename string `json:"__typename"`
+
+	ChangesetSpec ChangesetSpec
+	Changeset     Changeset
 }
 
 type ChangesetSpecDescription struct {

@@ -8,9 +8,9 @@ The Kubernetes manifests for a Sourcegraph on Kubernetes installation are in the
 
 ## Requirements
 
-- [Kubernetes](https://kubernetes.io/) v1.9 or later with an SSD storage class
+- [Kubernetes](https://kubernetes.io/) v1.15 or later with an SSD storage class
   - [Cluster role administrator access](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
-- [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) v1.9.7 or later
+- [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) v1.15 or later
 - Access to server infrastructure on which you can create a Kubernetes cluster (see
   [resource allocation guidelines](scale.md)).
 - [Sourcegraph Enterprise license](configure.md#add-license-key). You can run through these instructions without one, but you must obtain a license for instances of more than 10 users.
@@ -26,9 +26,9 @@ The Kubernetes manifests for a Sourcegraph on Kubernetes installation are in the
 
    - If you are using GCP, you'll need to give your user the ability to create roles in Kubernetes [(see GCP's documentation)](https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#prerequisites_for_using_role-based_access_control):
 
-     ```bash
-     kubectl create clusterrolebinding cluster-admin-binding --clusterrole cluster-admin --user $(gcloud config get-value account)
-     ```
+       ```bash
+       kubectl create clusterrolebinding cluster-admin-binding --clusterrole cluster-admin --user $(gcloud config get-value account)
+       ```
 
 - Clone the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository and check out the version tag you wish to deploy.
 
@@ -71,6 +71,10 @@ The Kubernetes manifests for a Sourcegraph on Kubernetes installation are in the
 
 - Now [configure your deployment](configure.md).
 
+### Configuration
+
+See the [configuration docs](configure.md).
+
 ### Troubleshooting
 
 See the [Troubleshooting docs](troubleshoot.md).
@@ -103,4 +107,4 @@ manifests that cannot be installed otherwise.
    ```
 
 We also provide an [overlay](configure.md#non-privileged-overlay) that generates a version of the manifests that does not
-require cluster-admin privileges. 
+require cluster-admin privileges.

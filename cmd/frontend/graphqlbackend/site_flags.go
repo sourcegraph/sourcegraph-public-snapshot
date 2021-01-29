@@ -7,7 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 func (r *siteResolver) NeedsRepositoryConfiguration(ctx context.Context) (bool, error) {
@@ -26,14 +26,14 @@ func (r *siteResolver) NeedsRepositoryConfiguration(ctx context.Context) (bool, 
 }
 
 func needsRepositoryConfiguration(ctx context.Context) (bool, error) {
-	kinds := make([]string, 0, len(db.ExternalServiceKinds))
-	for kind, config := range db.ExternalServiceKinds {
+	kinds := make([]string, 0, len(database.ExternalServiceKinds))
+	for kind, config := range database.ExternalServiceKinds {
 		if config.CodeHost {
 			kinds = append(kinds, kind)
 		}
 	}
 
-	count, err := db.ExternalServices.Count(ctx, db.ExternalServicesListOptions{
+	count, err := database.GlobalExternalServices.Count(ctx, database.ExternalServicesListOptions{
 		Kinds: kinds,
 	})
 	if err != nil {
@@ -62,7 +62,7 @@ func (r *siteResolver) FreeUsersExceeded(ctx context.Context) (bool, error) {
 		return false, nil
 	}
 
-	userCount, err := db.Users.Count(ctx, nil)
+	userCount, err := database.GlobalUsers.Count(ctx, nil)
 	if err != nil {
 		return false, err
 	}

@@ -27,41 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// RepoFields are lazy loaded data fields on a Repo (from the DB).
-type RepoFields struct {
-	// URI is the full name for this repository (e.g.,
-	// "github.com/user/repo"). See the documentation for the Name field.
-	URI string
-
-	// Description is a brief description of the repository.
-	Description string
-
-	// Fork is whether this repository is a fork of another repository.
-	Fork bool
-
-	// Archived is whether this repository has been archived.
-	Archived bool
-
-	// Cloned is whether this repository is cloned.
-	Cloned bool
-
-	// CreatedAt indicates when the repository record was created.
-	CreatedAt time.Time
-
-	// UpdatedAt is when this repository's metadata was last updated on Sourcegraph.
-	UpdatedAt time.Time
-
-	// DeletedAt is when this repository was soft-deleted from Sourcegraph.
-	DeletedAt time.Time
-
-	// Metadata contains the raw source code host JSON metadata.
-	Metadata interface{}
-
-	// Sources identifies all the repo sources this Repo belongs to.
-	// The key is a URN created by extsvc.URN
-	Sources map[string]*SourceInfo
-}
-
 // A SourceInfo represents a source a Repo belongs to (such as an external service).
 type SourceInfo struct {
 	ID       string
@@ -71,16 +36,7 @@ type SourceInfo struct {
 // ExternalServiceID returns the ID of the external service this
 // SourceInfo refers to.
 func (i SourceInfo) ExternalServiceID() int64 {
-	ps := strings.SplitN(i.ID, ":", 3)
-	if len(ps) != 3 {
-		return -1
-	}
-
-	id, err := strconv.ParseInt(ps[2], 10, 64)
-	if err != nil {
-		return -1
-	}
-
+	_, id := extsvc.DecodeURN(i.ID)
 	return id
 }
 
@@ -88,28 +44,39 @@ func (i SourceInfo) ExternalServiceID() int64 {
 type Repo struct {
 	// ID is the unique numeric ID for this repository.
 	ID api.RepoID
-	// ExternalRepo identifies this repository by its ID on the external service where it resides (and the external
-	// service itself).
-	ExternalRepo api.ExternalRepoSpec
 	// Name is the name for this repository (e.g., "github.com/user/repo"). It
 	// is the same as URI, unless the user configures a non-default
 	// repositoryPathPattern.
 	//
 	// Previously, this was called RepoURI.
 	Name api.RepoName
-
-	// Private is whether the repository is private on the code host.
+	// URI is the full name for this repository (e.g.,
+	// "github.com/user/repo"). See the documentation for the Name field.
+	URI string
+	// Description is a brief description of the repository.
+	Description string
+	// Fork is whether this repository is a fork of another repository.
+	Fork bool
+	// Archived is whether the repository has been archived.
+	Archived bool
+	// Private is whether the repository is private.
 	Private bool
-
-	// RepoFields contains fields that are loaded from the DB only when necessary.
-	// This is to reduce memory usage when loading thousands of repos.
-	*RepoFields
-}
-
-// RepoName represents a source code repository name and its ID.
-type RepoName struct {
-	ID   api.RepoID
-	Name api.RepoName
+	// Cloned is whether the repository is cloned.
+	Cloned bool
+	// CreatedAt is when this repository was created on Sourcegraph.
+	CreatedAt time.Time
+	// UpdatedAt is when this repository's metadata was last updated on Sourcegraph.
+	UpdatedAt time.Time
+	// DeletedAt is when this repository was soft-deleted from Sourcegraph.
+	DeletedAt time.Time
+	// ExternalRepo identifies this repository by its ID on the external service where it resides (and the external
+	// service itself).
+	ExternalRepo api.ExternalRepoSpec
+	// Sources identifies all the repo sources this Repo belongs to.
+	// The key is a URN created by extsvc.URN
+	Sources map[string]*SourceInfo
+	// Metadata contains the raw source code host JSON metadata.
+	Metadata interface{}
 }
 
 // CloneURLs returns all the clone URLs this repo is clonable from.
@@ -199,10 +166,6 @@ func (r *Repo) Clone() *Repo {
 		return nil
 	}
 	clone := *r
-	if r.RepoFields != nil {
-		repoFields := *r.RepoFields
-		clone.RepoFields = &repoFields
-	}
 	if r.Sources != nil {
 		clone.Sources = make(map[string]*SourceInfo, len(r.Sources))
 		for k, v := range r.Sources {
@@ -292,7 +255,7 @@ func sortedSliceLess(a, b []string) bool {
 type Repos []*Repo
 
 func (rs Repos) Len() int           { return len(rs) }
-func (rs Repos) Less(i, j int) bool { return rs[i].ID < rs[j].ID }
+func (rs Repos) Less(i, j int) bool { return rs[i].Less(rs[j]) }
 func (rs Repos) Swap(i, j int)      { rs[i], rs[j] = rs[j], rs[i] }
 
 // IDs returns the list of ids from all Repos.
@@ -396,6 +359,32 @@ func (rs Repos) Filter(pred func(*Repo) bool) (fs Repos) {
 	return fs
 }
 
+// RepoName represents a source code repository name and its ID.
+type RepoName struct {
+	ID   api.RepoID
+	Name api.RepoName
+}
+
+func (r *RepoName) ToRepo() *Repo {
+	return &Repo{
+		ID:   r.ID,
+		Name: r.Name,
+	}
+}
+
+// RepoNames is an utility type with convenience methods for operating on lists of repo names
+type RepoNames []*RepoName
+
+func (rs RepoNames) Len() int           { return len(rs) }
+func (rs RepoNames) Less(i, j int) bool { return rs[i].ID < rs[j].ID }
+func (rs RepoNames) Swap(i, j int)      { rs[i], rs[j] = rs[j], rs[i] }
+
+type CodeHostRepository struct {
+	Name       string
+	CodeHostID int64
+	Private    bool
+}
+
 // ExternalService is a connection to an external service.
 type ExternalService struct {
 	ID              int64
@@ -409,6 +398,7 @@ type ExternalService struct {
 	NextSyncAt      time.Time
 	NamespaceUserID int32
 	Unrestricted    bool // Whether access to repositories belong to this external service is unrestricted.
+	CloudDefault    bool // Whether this external service is our default public service on Cloud
 }
 
 // URN returns a unique resource identifier of this external service,

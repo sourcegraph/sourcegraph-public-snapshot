@@ -5,39 +5,46 @@ import { pluralize } from '../util/strings'
 import * as GQL from '../graphql/schema'
 import { SettingsCascadeProps } from '../settings/settings'
 import { FetchFileParameters } from './CodeExcerpt'
-import { FileMatchChildren } from './FileMatchChildren'
+import { EventLogger, FileMatchChildren } from './FileMatchChildren'
 import { RepoFileLink } from './RepoFileLink'
 import { Props as ResultContainerProps, ResultContainer } from './ResultContainer'
 import { BadgeAttachmentRenderOptions } from 'sourcegraph'
 
 const SUBSET_COUNT_KEY = 'fileMatchSubsetCount'
 
-export type IFileMatch = Partial<Pick<GQL.IFileMatch, 'revSpec' | 'symbols' | 'limitHit'>> & {
+export type FileLineMatch = Partial<Pick<GQL.IFileMatch, 'revSpec' | 'symbols' | 'limitHit'>> & {
     file: Pick<GQL.IFile, 'path' | 'url'> & { commit: Pick<GQL.IGitCommit, 'oid'> }
     repository: Pick<GQL.IRepository, 'name' | 'url'>
-    lineMatches: ILineMatch[]
+    lineMatches: LineMatch[]
 }
 
-export type ILineMatch = Pick<GQL.ILineMatch, 'preview' | 'lineNumber' | 'offsetAndLengths' | 'limitHit'> & {
+export type LineMatch = Pick<GQL.ILineMatch, 'preview' | 'lineNumber' | 'offsetAndLengths' | 'limitHit'> & {
     badge?: BadgeAttachmentRenderOptions
 }
 
-export interface IMatchItem {
+export interface MatchItem {
     highlightRanges: {
         start: number
         highlightLength: number
     }[]
     preview: string
+    /**
+     * The 0-based line number of this match.
+     */
     line: number
     badge?: BadgeAttachmentRenderOptions
 }
 
 interface Props extends SettingsCascadeProps {
     location: H.Location
+    eventLogger?: EventLogger
     /**
      * The file match search result.
      */
-    result: IFileMatch
+    result: FileLineMatch
+
+    /* Called when the first result has fully loaded. */
+    onFirstResultLoad?: () => void
 
     /**
      * Formatted repository name to be displayed in repository link. If not
@@ -69,7 +76,7 @@ interface Props extends SettingsCascadeProps {
 
     allExpanded?: boolean
 
-    fetchHighlightedFileLines: (parameters: FetchFileParameters, force?: boolean) => Observable<string[]>
+    fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
 
 export class FileMatch extends React.PureComponent<Props> {
@@ -86,7 +93,7 @@ export class FileMatch extends React.PureComponent<Props> {
 
     public render(): React.ReactNode {
         const result = this.props.result
-        const items: IMatchItem[] = this.props.result.lineMatches.map(match => ({
+        const items: MatchItem[] = this.props.result.lineMatches.map(match => ({
             highlightRanges: match.offsetAndLengths.map(([start, highlightLength]) => ({ start, highlightLength })),
             preview: match.preview,
             line: match.lineNumber,

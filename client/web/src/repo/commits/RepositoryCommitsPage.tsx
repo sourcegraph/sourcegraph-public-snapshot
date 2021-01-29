@@ -13,7 +13,7 @@ import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { GitCommitNode, GitCommitNodeProps } from './GitCommitNode'
 import { RevisionSpec, ResolvedRevisionSpec } from '../../../../shared/src/util/url'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
-import { GitCommitFields, RepositoryFields } from '../../graphql-operations'
+import { GitCommitFields, RepositoryFields, Scalars } from '../../graphql-operations'
 import { externalLinkFieldsFragment } from '../backend'
 
 export const gitCommitFragment = gql`
@@ -65,7 +65,7 @@ export const gitCommitFragment = gql`
 `
 
 const fetchGitCommits = (args: {
-    repo: GQL.ID
+    repo: Scalars['ID']
     revspec: string
     first?: number
     query?: string

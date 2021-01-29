@@ -226,6 +226,13 @@ func CampaignsEnabled() bool {
 	return true
 }
 
+func CodeIntelAutoIndexingEnabled() bool {
+	if enabled := Get().CodeIntelAutoIndexingEnabled; enabled != nil {
+		return *enabled
+	}
+	return false
+}
+
 func ExternalURL() string {
 	return Get().ExternalURL
 }

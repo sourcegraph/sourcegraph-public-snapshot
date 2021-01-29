@@ -21,10 +21,17 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
   history="[History]"
   location="[Location path=/code-monitoring]"
   setBreadcrumb={[Function]}
+  settingsCascade={
+    Object {
+      "final": Object {},
+      "subjects": Array [],
+    }
+  }
+  toggleCodeMonitorEnabled={[Function]}
   useBreadcrumb={[Function]}
 >
   <div
-    className="container mt-3 web-content"
+    className="code-monitoring-page container mt-5"
   >
     <PageTitle
       title="Code Monitoring"
@@ -38,65 +45,105 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
           <Memo(PlusIcon)
             className="icon-inline"
           />
-          Add new code monitor
+          Create new code monitor
         </AnchorLink>
       }
-      icon={
-        Object {
-          "$$typeof": Symbol(react.memo),
-          "compare": null,
-          "type": [Function],
-        }
+      annotation={
+        <StatusBadge
+          status="prototype"
+        />
       }
-      title={
-        <React.Fragment>
-          Code monitoring
-           
-          <sup>
-            <span
-              className="badge badge-info text-uppercase"
-            >
-              Prototype
-            </span>
-          </sup>
-        </React.Fragment>
+      className="mb-3"
+      path={
+        Array [
+          Object {
+            "icon": [Function],
+            "text": "Code monitoring",
+          },
+        ]
       }
     >
-      <div
-        className="page-header d-flex flex-wrap align-items-center"
+      <header
+        className="d-flex flex-column flex-md-row flex-wrap justify-content-between align-items-lg-center mb-3"
       >
-        <h1
-          className="flex-grow-1"
-        >
-          <Memo(VideoInputAntennaIcon)
-            className="icon-inline page-header__icon"
-          />
-           
-          Code monitoring
-           
-          <sup>
-            <span
-              className="badge badge-info text-uppercase"
-            >
-              Prototype
-            </span>
-          </sup>
-        </h1>
-        <AnchorLink
-          className="btn btn-secondary"
-          to="/code-monitoring/new"
-        >
-          <a
-            className="btn btn-secondary"
-            href="/code-monitoring/new"
+        <div>
+          <small
+            className="text-muted d-block mb-2"
           >
-            <Memo(PlusIcon)
-              className="icon-inline"
-            />
-            Add new code monitor
-          </a>
-        </AnchorLink>
-      </div>
+            <StatusBadge
+              status="prototype"
+            >
+              <div
+                className="d-flex align-items-center"
+              >
+                <span
+                  className="badge badge-warning text-uppercase mr-2"
+                >
+                  prototype
+                </span>
+                <a
+                  href="mailto:support@sourcegraph.com"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  Share feedback
+                </a>
+              </div>
+            </StatusBadge>
+          </small>
+          <h1
+            className="flex-grow-1 d-block m-0"
+          >
+            <LinkOrSpan>
+              <span
+                className=""
+              >
+                <CodeMonitoringLogo
+                  className="icon-inline py-1 mr-1"
+                >
+                  <svg
+                    className="icon-inline py-1 mr-1"
+                    fill="currentColor"
+                    height="20"
+                    viewBox="0 0 20 20"
+                    width="20"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      clipRule="evenodd"
+                      d="M18.01 8.01C18.01 8.29 18.23 8.51 18.51 8.51C18.79 8.51 19.01 8.29 19.01 8.01C19.01 4.15 15.87 1 12 1C11.72 1 11.5 1.22 11.5 1.5C11.5 1.78 11.72 2 12 2C15.31 2 18.01 4.7 18.01 8.01ZM16.1801 7.96002C15.9001 7.96002 15.6801 7.74002 15.6801 7.46002C15.6801 5.81002 14.3301 4.46002 12.6801 4.46002C12.4001 4.46002 12.1801 4.24002 12.1801 3.96002C12.1801 3.68002 12.4001 3.46002 12.6801 3.46002C14.8901 3.46002 16.6801 5.25002 16.6801 7.46002C16.6801 7.74002 16.4601 7.96002 16.1801 7.96002ZM4.83996 6.79999L13.34 15.3C12.39 15.88 11.29 16.18 10.15 16.18C8.49996 16.18 6.93996 15.54 5.76996 14.37C4.59996 13.2 3.94996 11.65 3.94996 9.98999C3.94996 8.84999 4.25996 7.74999 4.83996 6.79999ZM4.70996 4.54999C1.70996 7.54999 1.70996 12.43 4.70996 15.43C6.20996 16.93 8.17996 17.68 10.15 17.68C12.12 17.68 14.09 16.93 15.59 15.43L4.70996 4.54999ZM4 16.14C3.7 15.84 3.43 15.52 3.18 15.18L2.89 15.69L1 18.97H4.79H8.59L8.31 18.49C6.69 18.14 5.2 17.34 4 16.14ZM13.85 8.04999C13.85 9.01999 13.07 9.79999 12.1 9.79999C11.13 9.79999 10.35 9.01999 10.35 8.04999C10.35 7.07999 11.13 6.29999 12.1 6.29999C13.07 6.29999 13.85 7.07999 13.85 8.04999Z"
+                      fillRule="evenodd"
+                    />
+                  </svg>
+                </CodeMonitoringLogo>
+                <span
+                  className="mr-2"
+                >
+                  Code monitoring
+                </span>
+              </span>
+            </LinkOrSpan>
+          </h1>
+        </div>
+        <div
+          className="mt-3 mt-md-0"
+        >
+          <AnchorLink
+            className="btn btn-secondary"
+            to="/code-monitoring/new"
+          >
+            <a
+              className="btn btn-secondary"
+              href="/code-monitoring/new"
+            >
+              <Memo(PlusIcon)
+                className="icon-inline"
+              />
+              Create new code monitor
+            </a>
+          </AnchorLink>
+        </div>
+      </header>
     </PageHeader>
     <div
       className="text-muted mb-4"
@@ -104,7 +151,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
       Watch your code for changes and trigger actions to get notifications, send webhooks, and more.
        
       <a
-        href="/"
+        href="https://docs.sourcegraph.com/code_monitoring"
       >
         Learn more.
       </a>
@@ -171,7 +218,14 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
             nodeComponent={[Function]}
             nodeComponentProps={
               Object {
+                "authentictedUser": Object {
+                  "email": "alice@alice.com",
+                  "id": "foobar",
+                  "username": "alice",
+                },
                 "location": "[Location path=/code-monitoring]",
+                "showCodeMonitoringTestEmailButton": false,
+                "toggleCodeMonitorEnabled": [Function],
               }
             }
             noun="code monitor"
@@ -180,7 +234,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
             useURLQuery={true}
           >
             <div
-              className="filtered-connection test-filtered-connection filtered-connection--noncompact "
+              className="filtered-connection test-filtered-connection filtered-connection--noncompact"
             >
               <ConnectionNodes
                 connection={
@@ -188,13 +242,16 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                     "nodes": Array [
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-0",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-0 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-0",
                                   },
                                 ],
                               },
@@ -204,16 +261,23 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         "description": "Test code monitor",
                         "enabled": true,
                         "id": "foo0",
+                        "trigger": Object {
+                          "id": "test-0",
+                          "query": "test",
+                        },
                       },
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-1",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-1 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-1",
                                   },
                                 ],
                               },
@@ -223,16 +287,23 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         "description": "Second test code monitor",
                         "enabled": true,
                         "id": "foo1",
+                        "trigger": Object {
+                          "id": "test-1",
+                          "query": "test",
+                        },
                       },
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-2",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-2 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-2",
                                   },
                                 ],
                               },
@@ -242,16 +313,23 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         "description": "Third test code monitor",
                         "enabled": true,
                         "id": "foo2",
+                        "trigger": Object {
+                          "id": "test-2",
+                          "query": "test",
+                        },
                       },
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-3",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-3 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-3",
                                   },
                                 ],
                               },
@@ -261,16 +339,23 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         "description": "Fourth test code monitor",
                         "enabled": true,
                         "id": "foo3",
+                        "trigger": Object {
+                          "id": "test-3",
+                          "query": "test",
+                        },
                       },
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-4",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-4 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-4",
                                   },
                                 ],
                               },
@@ -280,16 +365,23 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         "description": "Fifth test code monitor",
                         "enabled": true,
                         "id": "foo4",
+                        "trigger": Object {
+                          "id": "test-4",
+                          "query": "test",
+                        },
                       },
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-5",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-5 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-5",
                                   },
                                 ],
                               },
@@ -299,16 +391,23 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         "description": "Sixth test code monitor",
                         "enabled": true,
                         "id": "foo5",
+                        "trigger": Object {
+                          "id": "test-5",
+                          "query": "test",
+                        },
                       },
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-6",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-6 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-6",
                                   },
                                 ],
                               },
@@ -318,16 +417,23 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         "description": "Seventh test code monitor",
                         "enabled": true,
                         "id": "foo6",
+                        "trigger": Object {
+                          "id": "test-6",
+                          "query": "test",
+                        },
                       },
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-7",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-7 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-7",
                                   },
                                 ],
                               },
@@ -337,16 +443,23 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         "description": "Eighth test code monitor",
                         "enabled": true,
                         "id": "foo7",
+                        "trigger": Object {
+                          "id": "test-7",
+                          "query": "test",
+                        },
                       },
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-9",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-9 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-9",
                                   },
                                 ],
                               },
@@ -356,16 +469,23 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         "description": "Ninth test code monitor",
                         "enabled": true,
                         "id": "foo9",
+                        "trigger": Object {
+                          "id": "test-9",
+                          "query": "test",
+                        },
                       },
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-0",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-0 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-0",
                                   },
                                 ],
                               },
@@ -375,6 +495,10 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         "description": "Tenth test code monitor",
                         "enabled": true,
                         "id": "foo10",
+                        "trigger": Object {
+                          "id": "test-0",
+                          "query": "test",
+                        },
                       },
                     ],
                     "pageInfo": Object {
@@ -392,7 +516,14 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                 nodeComponent={[Function]}
                 nodeComponentProps={
                   Object {
+                    "authentictedUser": Object {
+                      "email": "alice@alice.com",
+                      "id": "foobar",
+                      "username": "alice",
+                    },
                     "location": "[Location path=/code-monitoring]",
+                    "showCodeMonitoringTestEmailButton": false,
+                    "toggleCodeMonitorEnabled": [Function],
                   }
                 }
                 noun="code monitor"
@@ -401,21 +532,31 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                 query=""
               >
                 <ul
-                  className="filtered-connection__nodes "
+                  className="filtered-connection__nodes"
                 >
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo0"
                     location="[Location path=/code-monitoring]"
                     node={
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-0",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-0 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-0",
                                   },
                                 ],
                               },
@@ -425,41 +566,51 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         "description": "Test code monitor",
                         "enabled": true,
                         "id": "foo0",
+                        "trigger": Object {
+                          "id": "test-0",
+                          "query": "test",
+                        },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
-                    <div
-                      className="card p-3 mb-2"
+                    <AnchorLink
+                      className="code-monitoring-node card p-3"
+                      to="/code-monitoring/foo0"
                     >
-                      <div
-                        className="d-flex justify-content-between align-items-center"
+                      <a
+                        className="code-monitoring-node card p-3"
+                        href="/code-monitoring/foo0"
                       >
                         <div
-                          className="d-flex flex-column"
+                          className="d-flex justify-content-between align-items-center"
                         >
                           <div
-                            className="font-weight-bold"
+                            className="d-flex flex-column"
                           >
-                            Test code monitor
+                            <div
+                              className="font-weight-bold"
+                            >
+                              Test code monitor
+                            </div>
+                            <div
+                              className="d-flex text-muted"
+                            >
+                              New search result → Sends email notifications
+                               
+                            </div>
                           </div>
-                          <div
-                            className="text-muted"
-                          >
-                            New search result → Sends email notifications
-                          </div>
-                        </div>
-                        <div
-                          className="d-flex flex-column"
-                        >
                           <div
                             className="d-flex"
                           >
                             <div
-                              onClick={[Function]}
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
                             >
                               <Toggle
                                 className="mr-3"
                                 disabled={false}
+                                onClick={[Function]}
                                 value={true}
                               >
                                 <button
@@ -483,33 +634,40 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                 </button>
                               </Toggle>
                             </div>
-                            <AnchorLink
-                              to="/code-monitoring/foo0"
+                            <button
+                              className="btn btn-link code-monitoring-node__edit-button"
+                              type="button"
                             >
-                              <a
-                                href="/code-monitoring/foo0"
-                              >
-                                Edit
-                              </a>
-                            </AnchorLink>
+                              Edit
+                            </button>
                           </div>
                         </div>
-                      </div>
-                    </div>
+                      </a>
+                    </AnchorLink>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo1"
                     location="[Location path=/code-monitoring]"
                     node={
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-1",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-1 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-1",
                                   },
                                 ],
                               },
@@ -519,41 +677,51 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         "description": "Second test code monitor",
                         "enabled": true,
                         "id": "foo1",
+                        "trigger": Object {
+                          "id": "test-1",
+                          "query": "test",
+                        },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
-                    <div
-                      className="card p-3 mb-2"
+                    <AnchorLink
+                      className="code-monitoring-node card p-3"
+                      to="/code-monitoring/foo1"
                     >
-                      <div
-                        className="d-flex justify-content-between align-items-center"
+                      <a
+                        className="code-monitoring-node card p-3"
+                        href="/code-monitoring/foo1"
                       >
                         <div
-                          className="d-flex flex-column"
+                          className="d-flex justify-content-between align-items-center"
                         >
                           <div
-                            className="font-weight-bold"
+                            className="d-flex flex-column"
                           >
-                            Second test code monitor
+                            <div
+                              className="font-weight-bold"
+                            >
+                              Second test code monitor
+                            </div>
+                            <div
+                              className="d-flex text-muted"
+                            >
+                              New search result → Sends email notifications
+                               
+                            </div>
                           </div>
-                          <div
-                            className="text-muted"
-                          >
-                            New search result → Sends email notifications
-                          </div>
-                        </div>
-                        <div
-                          className="d-flex flex-column"
-                        >
                           <div
                             className="d-flex"
                           >
                             <div
-                              onClick={[Function]}
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
                             >
                               <Toggle
                                 className="mr-3"
                                 disabled={false}
+                                onClick={[Function]}
                                 value={true}
                               >
                                 <button
@@ -577,33 +745,40 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                 </button>
                               </Toggle>
                             </div>
-                            <AnchorLink
-                              to="/code-monitoring/foo1"
+                            <button
+                              className="btn btn-link code-monitoring-node__edit-button"
+                              type="button"
                             >
-                              <a
-                                href="/code-monitoring/foo1"
-                              >
-                                Edit
-                              </a>
-                            </AnchorLink>
+                              Edit
+                            </button>
                           </div>
                         </div>
-                      </div>
-                    </div>
+                      </a>
+                    </AnchorLink>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo2"
                     location="[Location path=/code-monitoring]"
                     node={
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-2",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-2 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-2",
                                   },
                                 ],
                               },
@@ -613,41 +788,51 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         "description": "Third test code monitor",
                         "enabled": true,
                         "id": "foo2",
+                        "trigger": Object {
+                          "id": "test-2",
+                          "query": "test",
+                        },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
-                    <div
-                      className="card p-3 mb-2"
+                    <AnchorLink
+                      className="code-monitoring-node card p-3"
+                      to="/code-monitoring/foo2"
                     >
-                      <div
-                        className="d-flex justify-content-between align-items-center"
+                      <a
+                        className="code-monitoring-node card p-3"
+                        href="/code-monitoring/foo2"
                       >
                         <div
-                          className="d-flex flex-column"
+                          className="d-flex justify-content-between align-items-center"
                         >
                           <div
-                            className="font-weight-bold"
+                            className="d-flex flex-column"
                           >
-                            Third test code monitor
+                            <div
+                              className="font-weight-bold"
+                            >
+                              Third test code monitor
+                            </div>
+                            <div
+                              className="d-flex text-muted"
+                            >
+                              New search result → Sends email notifications
+                               
+                            </div>
                           </div>
-                          <div
-                            className="text-muted"
-                          >
-                            New search result → Sends email notifications
-                          </div>
-                        </div>
-                        <div
-                          className="d-flex flex-column"
-                        >
                           <div
                             className="d-flex"
                           >
                             <div
-                              onClick={[Function]}
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
                             >
                               <Toggle
                                 className="mr-3"
                                 disabled={false}
+                                onClick={[Function]}
                                 value={true}
                               >
                                 <button
@@ -671,33 +856,40 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                 </button>
                               </Toggle>
                             </div>
-                            <AnchorLink
-                              to="/code-monitoring/foo2"
+                            <button
+                              className="btn btn-link code-monitoring-node__edit-button"
+                              type="button"
                             >
-                              <a
-                                href="/code-monitoring/foo2"
-                              >
-                                Edit
-                              </a>
-                            </AnchorLink>
+                              Edit
+                            </button>
                           </div>
                         </div>
-                      </div>
-                    </div>
+                      </a>
+                    </AnchorLink>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo3"
                     location="[Location path=/code-monitoring]"
                     node={
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-3",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-3 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-3",
                                   },
                                 ],
                               },
@@ -707,41 +899,51 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         "description": "Fourth test code monitor",
                         "enabled": true,
                         "id": "foo3",
+                        "trigger": Object {
+                          "id": "test-3",
+                          "query": "test",
+                        },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
-                    <div
-                      className="card p-3 mb-2"
+                    <AnchorLink
+                      className="code-monitoring-node card p-3"
+                      to="/code-monitoring/foo3"
                     >
-                      <div
-                        className="d-flex justify-content-between align-items-center"
+                      <a
+                        className="code-monitoring-node card p-3"
+                        href="/code-monitoring/foo3"
                       >
                         <div
-                          className="d-flex flex-column"
+                          className="d-flex justify-content-between align-items-center"
                         >
                           <div
-                            className="font-weight-bold"
+                            className="d-flex flex-column"
                           >
-                            Fourth test code monitor
+                            <div
+                              className="font-weight-bold"
+                            >
+                              Fourth test code monitor
+                            </div>
+                            <div
+                              className="d-flex text-muted"
+                            >
+                              New search result → Sends email notifications
+                               
+                            </div>
                           </div>
-                          <div
-                            className="text-muted"
-                          >
-                            New search result → Sends email notifications
-                          </div>
-                        </div>
-                        <div
-                          className="d-flex flex-column"
-                        >
                           <div
                             className="d-flex"
                           >
                             <div
-                              onClick={[Function]}
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
                             >
                               <Toggle
                                 className="mr-3"
                                 disabled={false}
+                                onClick={[Function]}
                                 value={true}
                               >
                                 <button
@@ -765,33 +967,40 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                 </button>
                               </Toggle>
                             </div>
-                            <AnchorLink
-                              to="/code-monitoring/foo3"
+                            <button
+                              className="btn btn-link code-monitoring-node__edit-button"
+                              type="button"
                             >
-                              <a
-                                href="/code-monitoring/foo3"
-                              >
-                                Edit
-                              </a>
-                            </AnchorLink>
+                              Edit
+                            </button>
                           </div>
                         </div>
-                      </div>
-                    </div>
+                      </a>
+                    </AnchorLink>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo4"
                     location="[Location path=/code-monitoring]"
                     node={
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-4",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-4 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-4",
                                   },
                                 ],
                               },
@@ -801,41 +1010,51 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         "description": "Fifth test code monitor",
                         "enabled": true,
                         "id": "foo4",
+                        "trigger": Object {
+                          "id": "test-4",
+                          "query": "test",
+                        },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
-                    <div
-                      className="card p-3 mb-2"
+                    <AnchorLink
+                      className="code-monitoring-node card p-3"
+                      to="/code-monitoring/foo4"
                     >
-                      <div
-                        className="d-flex justify-content-between align-items-center"
+                      <a
+                        className="code-monitoring-node card p-3"
+                        href="/code-monitoring/foo4"
                       >
                         <div
-                          className="d-flex flex-column"
+                          className="d-flex justify-content-between align-items-center"
                         >
                           <div
-                            className="font-weight-bold"
+                            className="d-flex flex-column"
                           >
-                            Fifth test code monitor
+                            <div
+                              className="font-weight-bold"
+                            >
+                              Fifth test code monitor
+                            </div>
+                            <div
+                              className="d-flex text-muted"
+                            >
+                              New search result → Sends email notifications
+                               
+                            </div>
                           </div>
-                          <div
-                            className="text-muted"
-                          >
-                            New search result → Sends email notifications
-                          </div>
-                        </div>
-                        <div
-                          className="d-flex flex-column"
-                        >
                           <div
                             className="d-flex"
                           >
                             <div
-                              onClick={[Function]}
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
                             >
                               <Toggle
                                 className="mr-3"
                                 disabled={false}
+                                onClick={[Function]}
                                 value={true}
                               >
                                 <button
@@ -859,33 +1078,40 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                 </button>
                               </Toggle>
                             </div>
-                            <AnchorLink
-                              to="/code-monitoring/foo4"
+                            <button
+                              className="btn btn-link code-monitoring-node__edit-button"
+                              type="button"
                             >
-                              <a
-                                href="/code-monitoring/foo4"
-                              >
-                                Edit
-                              </a>
-                            </AnchorLink>
+                              Edit
+                            </button>
                           </div>
                         </div>
-                      </div>
-                    </div>
+                      </a>
+                    </AnchorLink>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo5"
                     location="[Location path=/code-monitoring]"
                     node={
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-5",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-5 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-5",
                                   },
                                 ],
                               },
@@ -895,41 +1121,51 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         "description": "Sixth test code monitor",
                         "enabled": true,
                         "id": "foo5",
+                        "trigger": Object {
+                          "id": "test-5",
+                          "query": "test",
+                        },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
-                    <div
-                      className="card p-3 mb-2"
+                    <AnchorLink
+                      className="code-monitoring-node card p-3"
+                      to="/code-monitoring/foo5"
                     >
-                      <div
-                        className="d-flex justify-content-between align-items-center"
+                      <a
+                        className="code-monitoring-node card p-3"
+                        href="/code-monitoring/foo5"
                       >
                         <div
-                          className="d-flex flex-column"
+                          className="d-flex justify-content-between align-items-center"
                         >
                           <div
-                            className="font-weight-bold"
+                            className="d-flex flex-column"
                           >
-                            Sixth test code monitor
+                            <div
+                              className="font-weight-bold"
+                            >
+                              Sixth test code monitor
+                            </div>
+                            <div
+                              className="d-flex text-muted"
+                            >
+                              New search result → Sends email notifications
+                               
+                            </div>
                           </div>
-                          <div
-                            className="text-muted"
-                          >
-                            New search result → Sends email notifications
-                          </div>
-                        </div>
-                        <div
-                          className="d-flex flex-column"
-                        >
                           <div
                             className="d-flex"
                           >
                             <div
-                              onClick={[Function]}
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
                             >
                               <Toggle
                                 className="mr-3"
                                 disabled={false}
+                                onClick={[Function]}
                                 value={true}
                               >
                                 <button
@@ -953,33 +1189,40 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                 </button>
                               </Toggle>
                             </div>
-                            <AnchorLink
-                              to="/code-monitoring/foo5"
+                            <button
+                              className="btn btn-link code-monitoring-node__edit-button"
+                              type="button"
                             >
-                              <a
-                                href="/code-monitoring/foo5"
-                              >
-                                Edit
-                              </a>
-                            </AnchorLink>
+                              Edit
+                            </button>
                           </div>
                         </div>
-                      </div>
-                    </div>
+                      </a>
+                    </AnchorLink>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo6"
                     location="[Location path=/code-monitoring]"
                     node={
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-6",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-6 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-6",
                                   },
                                 ],
                               },
@@ -989,41 +1232,51 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         "description": "Seventh test code monitor",
                         "enabled": true,
                         "id": "foo6",
+                        "trigger": Object {
+                          "id": "test-6",
+                          "query": "test",
+                        },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
-                    <div
-                      className="card p-3 mb-2"
+                    <AnchorLink
+                      className="code-monitoring-node card p-3"
+                      to="/code-monitoring/foo6"
                     >
-                      <div
-                        className="d-flex justify-content-between align-items-center"
+                      <a
+                        className="code-monitoring-node card p-3"
+                        href="/code-monitoring/foo6"
                       >
                         <div
-                          className="d-flex flex-column"
+                          className="d-flex justify-content-between align-items-center"
                         >
                           <div
-                            className="font-weight-bold"
+                            className="d-flex flex-column"
                           >
-                            Seventh test code monitor
+                            <div
+                              className="font-weight-bold"
+                            >
+                              Seventh test code monitor
+                            </div>
+                            <div
+                              className="d-flex text-muted"
+                            >
+                              New search result → Sends email notifications
+                               
+                            </div>
                           </div>
-                          <div
-                            className="text-muted"
-                          >
-                            New search result → Sends email notifications
-                          </div>
-                        </div>
-                        <div
-                          className="d-flex flex-column"
-                        >
                           <div
                             className="d-flex"
                           >
                             <div
-                              onClick={[Function]}
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
                             >
                               <Toggle
                                 className="mr-3"
                                 disabled={false}
+                                onClick={[Function]}
                                 value={true}
                               >
                                 <button
@@ -1047,33 +1300,40 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                 </button>
                               </Toggle>
                             </div>
-                            <AnchorLink
-                              to="/code-monitoring/foo6"
+                            <button
+                              className="btn btn-link code-monitoring-node__edit-button"
+                              type="button"
                             >
-                              <a
-                                href="/code-monitoring/foo6"
-                              >
-                                Edit
-                              </a>
-                            </AnchorLink>
+                              Edit
+                            </button>
                           </div>
                         </div>
-                      </div>
-                    </div>
+                      </a>
+                    </AnchorLink>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo7"
                     location="[Location path=/code-monitoring]"
                     node={
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-7",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-7 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-7",
                                   },
                                 ],
                               },
@@ -1083,41 +1343,51 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         "description": "Eighth test code monitor",
                         "enabled": true,
                         "id": "foo7",
+                        "trigger": Object {
+                          "id": "test-7",
+                          "query": "test",
+                        },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
-                    <div
-                      className="card p-3 mb-2"
+                    <AnchorLink
+                      className="code-monitoring-node card p-3"
+                      to="/code-monitoring/foo7"
                     >
-                      <div
-                        className="d-flex justify-content-between align-items-center"
+                      <a
+                        className="code-monitoring-node card p-3"
+                        href="/code-monitoring/foo7"
                       >
                         <div
-                          className="d-flex flex-column"
+                          className="d-flex justify-content-between align-items-center"
                         >
                           <div
-                            className="font-weight-bold"
+                            className="d-flex flex-column"
                           >
-                            Eighth test code monitor
+                            <div
+                              className="font-weight-bold"
+                            >
+                              Eighth test code monitor
+                            </div>
+                            <div
+                              className="d-flex text-muted"
+                            >
+                              New search result → Sends email notifications
+                               
+                            </div>
                           </div>
-                          <div
-                            className="text-muted"
-                          >
-                            New search result → Sends email notifications
-                          </div>
-                        </div>
-                        <div
-                          className="d-flex flex-column"
-                        >
                           <div
                             className="d-flex"
                           >
                             <div
-                              onClick={[Function]}
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
                             >
                               <Toggle
                                 className="mr-3"
                                 disabled={false}
+                                onClick={[Function]}
                                 value={true}
                               >
                                 <button
@@ -1141,33 +1411,40 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                 </button>
                               </Toggle>
                             </div>
-                            <AnchorLink
-                              to="/code-monitoring/foo7"
+                            <button
+                              className="btn btn-link code-monitoring-node__edit-button"
+                              type="button"
                             >
-                              <a
-                                href="/code-monitoring/foo7"
-                              >
-                                Edit
-                              </a>
-                            </AnchorLink>
+                              Edit
+                            </button>
                           </div>
                         </div>
-                      </div>
-                    </div>
+                      </a>
+                    </AnchorLink>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo9"
                     location="[Location path=/code-monitoring]"
                     node={
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-9",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-9 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-9",
                                   },
                                 ],
                               },
@@ -1177,41 +1454,51 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         "description": "Ninth test code monitor",
                         "enabled": true,
                         "id": "foo9",
+                        "trigger": Object {
+                          "id": "test-9",
+                          "query": "test",
+                        },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
-                    <div
-                      className="card p-3 mb-2"
+                    <AnchorLink
+                      className="code-monitoring-node card p-3"
+                      to="/code-monitoring/foo9"
                     >
-                      <div
-                        className="d-flex justify-content-between align-items-center"
+                      <a
+                        className="code-monitoring-node card p-3"
+                        href="/code-monitoring/foo9"
                       >
                         <div
-                          className="d-flex flex-column"
+                          className="d-flex justify-content-between align-items-center"
                         >
                           <div
-                            className="font-weight-bold"
+                            className="d-flex flex-column"
                           >
-                            Ninth test code monitor
+                            <div
+                              className="font-weight-bold"
+                            >
+                              Ninth test code monitor
+                            </div>
+                            <div
+                              className="d-flex text-muted"
+                            >
+                              New search result → Sends email notifications
+                               
+                            </div>
                           </div>
-                          <div
-                            className="text-muted"
-                          >
-                            New search result → Sends email notifications
-                          </div>
-                        </div>
-                        <div
-                          className="d-flex flex-column"
-                        >
                           <div
                             className="d-flex"
                           >
                             <div
-                              onClick={[Function]}
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
                             >
                               <Toggle
                                 className="mr-3"
                                 disabled={false}
+                                onClick={[Function]}
                                 value={true}
                               >
                                 <button
@@ -1235,33 +1522,40 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                 </button>
                               </Toggle>
                             </div>
-                            <AnchorLink
-                              to="/code-monitoring/foo9"
+                            <button
+                              className="btn btn-link code-monitoring-node__edit-button"
+                              type="button"
                             >
-                              <a
-                                href="/code-monitoring/foo9"
-                              >
-                                Edit
-                              </a>
-                            </AnchorLink>
+                              Edit
+                            </button>
                           </div>
                         </div>
-                      </div>
-                    </div>
+                      </a>
+                    </AnchorLink>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo10"
                     location="[Location path=/code-monitoring]"
                     node={
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-0",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-0 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-0",
                                   },
                                 ],
                               },
@@ -1271,41 +1565,51 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         "description": "Tenth test code monitor",
                         "enabled": true,
                         "id": "foo10",
+                        "trigger": Object {
+                          "id": "test-0",
+                          "query": "test",
+                        },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
-                    <div
-                      className="card p-3 mb-2"
+                    <AnchorLink
+                      className="code-monitoring-node card p-3"
+                      to="/code-monitoring/foo10"
                     >
-                      <div
-                        className="d-flex justify-content-between align-items-center"
+                      <a
+                        className="code-monitoring-node card p-3"
+                        href="/code-monitoring/foo10"
                       >
                         <div
-                          className="d-flex flex-column"
+                          className="d-flex justify-content-between align-items-center"
                         >
                           <div
-                            className="font-weight-bold"
+                            className="d-flex flex-column"
                           >
-                            Tenth test code monitor
+                            <div
+                              className="font-weight-bold"
+                            >
+                              Tenth test code monitor
+                            </div>
+                            <div
+                              className="d-flex text-muted"
+                            >
+                              New search result → Sends email notifications
+                               
+                            </div>
                           </div>
-                          <div
-                            className="text-muted"
-                          >
-                            New search result → Sends email notifications
-                          </div>
-                        </div>
-                        <div
-                          className="d-flex flex-column"
-                        >
                           <div
                             className="d-flex"
                           >
                             <div
-                              onClick={[Function]}
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
                             >
                               <Toggle
                                 className="mr-3"
                                 disabled={false}
+                                onClick={[Function]}
                                 value={true}
                               >
                                 <button
@@ -1329,19 +1633,16 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                 </button>
                               </Toggle>
                             </div>
-                            <AnchorLink
-                              to="/code-monitoring/foo10"
+                            <button
+                              className="btn btn-link code-monitoring-node__edit-button"
+                              type="button"
                             >
-                              <a
-                                href="/code-monitoring/foo10"
-                              >
-                                Edit
-                              </a>
-                            </AnchorLink>
+                              Edit
+                            </button>
                           </div>
                         </div>
-                      </div>
-                    </div>
+                      </a>
+                    </AnchorLink>
                   </CodeMonitorNode>
                 </ul>
               </ConnectionNodes>
@@ -1352,9 +1653,10 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
       <div
         className="mt-5"
       >
-        We want to hear your feedback! 
+        We want to hear your feedback!
+         
         <a
-          href="/"
+          href="mailto:feedback@sourcegraph.com"
         >
           Share your thoughts
         </a>
@@ -1385,10 +1687,17 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
   history="[History]"
   location="[Location path=/code-monitoring]"
   setBreadcrumb={[Function]}
+  settingsCascade={
+    Object {
+      "final": Object {},
+      "subjects": Array [],
+    }
+  }
+  toggleCodeMonitorEnabled={[Function]}
   useBreadcrumb={[Function]}
 >
   <div
-    className="container mt-3 web-content"
+    className="code-monitoring-page container mt-5"
   >
     <PageTitle
       title="Code Monitoring"
@@ -1402,65 +1711,105 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
           <Memo(PlusIcon)
             className="icon-inline"
           />
-          Add new code monitor
+          Create new code monitor
         </AnchorLink>
       }
-      icon={
-        Object {
-          "$$typeof": Symbol(react.memo),
-          "compare": null,
-          "type": [Function],
-        }
+      annotation={
+        <StatusBadge
+          status="prototype"
+        />
       }
-      title={
-        <React.Fragment>
-          Code monitoring
-           
-          <sup>
-            <span
-              className="badge badge-info text-uppercase"
-            >
-              Prototype
-            </span>
-          </sup>
-        </React.Fragment>
+      className="mb-3"
+      path={
+        Array [
+          Object {
+            "icon": [Function],
+            "text": "Code monitoring",
+          },
+        ]
       }
     >
-      <div
-        className="page-header d-flex flex-wrap align-items-center"
+      <header
+        className="d-flex flex-column flex-md-row flex-wrap justify-content-between align-items-lg-center mb-3"
       >
-        <h1
-          className="flex-grow-1"
-        >
-          <Memo(VideoInputAntennaIcon)
-            className="icon-inline page-header__icon"
-          />
-           
-          Code monitoring
-           
-          <sup>
-            <span
-              className="badge badge-info text-uppercase"
-            >
-              Prototype
-            </span>
-          </sup>
-        </h1>
-        <AnchorLink
-          className="btn btn-secondary"
-          to="/code-monitoring/new"
-        >
-          <a
-            className="btn btn-secondary"
-            href="/code-monitoring/new"
+        <div>
+          <small
+            className="text-muted d-block mb-2"
           >
-            <Memo(PlusIcon)
-              className="icon-inline"
-            />
-            Add new code monitor
-          </a>
-        </AnchorLink>
-      </div>
+            <StatusBadge
+              status="prototype"
+            >
+              <div
+                className="d-flex align-items-center"
+              >
+                <span
+                  className="badge badge-warning text-uppercase mr-2"
+                >
+                  prototype
+                </span>
+                <a
+                  href="mailto:support@sourcegraph.com"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  Share feedback
+                </a>
+              </div>
+            </StatusBadge>
+          </small>
+          <h1
+            className="flex-grow-1 d-block m-0"
+          >
+            <LinkOrSpan>
+              <span
+                className=""
+              >
+                <CodeMonitoringLogo
+                  className="icon-inline py-1 mr-1"
+                >
+                  <svg
+                    className="icon-inline py-1 mr-1"
+                    fill="currentColor"
+                    height="20"
+                    viewBox="0 0 20 20"
+                    width="20"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      clipRule="evenodd"
+                      d="M18.01 8.01C18.01 8.29 18.23 8.51 18.51 8.51C18.79 8.51 19.01 8.29 19.01 8.01C19.01 4.15 15.87 1 12 1C11.72 1 11.5 1.22 11.5 1.5C11.5 1.78 11.72 2 12 2C15.31 2 18.01 4.7 18.01 8.01ZM16.1801 7.96002C15.9001 7.96002 15.6801 7.74002 15.6801 7.46002C15.6801 5.81002 14.3301 4.46002 12.6801 4.46002C12.4001 4.46002 12.1801 4.24002 12.1801 3.96002C12.1801 3.68002 12.4001 3.46002 12.6801 3.46002C14.8901 3.46002 16.6801 5.25002 16.6801 7.46002C16.6801 7.74002 16.4601 7.96002 16.1801 7.96002ZM4.83996 6.79999L13.34 15.3C12.39 15.88 11.29 16.18 10.15 16.18C8.49996 16.18 6.93996 15.54 5.76996 14.37C4.59996 13.2 3.94996 11.65 3.94996 9.98999C3.94996 8.84999 4.25996 7.74999 4.83996 6.79999ZM4.70996 4.54999C1.70996 7.54999 1.70996 12.43 4.70996 15.43C6.20996 16.93 8.17996 17.68 10.15 17.68C12.12 17.68 14.09 16.93 15.59 15.43L4.70996 4.54999ZM4 16.14C3.7 15.84 3.43 15.52 3.18 15.18L2.89 15.69L1 18.97H4.79H8.59L8.31 18.49C6.69 18.14 5.2 17.34 4 16.14ZM13.85 8.04999C13.85 9.01999 13.07 9.79999 12.1 9.79999C11.13 9.79999 10.35 9.01999 10.35 8.04999C10.35 7.07999 11.13 6.29999 12.1 6.29999C13.07 6.29999 13.85 7.07999 13.85 8.04999Z"
+                      fillRule="evenodd"
+                    />
+                  </svg>
+                </CodeMonitoringLogo>
+                <span
+                  className="mr-2"
+                >
+                  Code monitoring
+                </span>
+              </span>
+            </LinkOrSpan>
+          </h1>
+        </div>
+        <div
+          className="mt-3 mt-md-0"
+        >
+          <AnchorLink
+            className="btn btn-secondary"
+            to="/code-monitoring/new"
+          >
+            <a
+              className="btn btn-secondary"
+              href="/code-monitoring/new"
+            >
+              <Memo(PlusIcon)
+                className="icon-inline"
+              />
+              Create new code monitor
+            </a>
+          </AnchorLink>
+        </div>
+      </header>
     </PageHeader>
     <div
       className="text-muted mb-4"
@@ -1468,7 +1817,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
       Watch your code for changes and trigger actions to get notifications, send webhooks, and more.
        
       <a
-        href="/"
+        href="https://docs.sourcegraph.com/code_monitoring"
       >
         Learn more.
       </a>
@@ -1535,7 +1884,14 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
             nodeComponent={[Function]}
             nodeComponentProps={
               Object {
+                "authentictedUser": Object {
+                  "email": "alice@alice.com",
+                  "id": "foobar",
+                  "username": "alice",
+                },
                 "location": "[Location path=/code-monitoring]",
+                "showCodeMonitoringTestEmailButton": false,
+                "toggleCodeMonitorEnabled": [Function],
               }
             }
             noun="code monitor"
@@ -1544,7 +1900,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
             useURLQuery={true}
           >
             <div
-              className="filtered-connection test-filtered-connection filtered-connection--noncompact "
+              className="filtered-connection test-filtered-connection filtered-connection--noncompact"
             >
               <ConnectionNodes
                 connection={
@@ -1552,13 +1908,16 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                     "nodes": Array [
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-0",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-0 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-0",
                                   },
                                 ],
                               },
@@ -1568,16 +1927,23 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                         "description": "Test code monitor",
                         "enabled": true,
                         "id": "foo0",
+                        "trigger": Object {
+                          "id": "test-0",
+                          "query": "test",
+                        },
                       },
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-1",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-1 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-1",
                                   },
                                 ],
                               },
@@ -1587,16 +1953,23 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                         "description": "Second test code monitor",
                         "enabled": true,
                         "id": "foo1",
+                        "trigger": Object {
+                          "id": "test-1",
+                          "query": "test",
+                        },
                       },
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-2",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-2 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-2",
                                   },
                                 ],
                               },
@@ -1606,6 +1979,10 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                         "description": "Third test code monitor",
                         "enabled": true,
                         "id": "foo2",
+                        "trigger": Object {
+                          "id": "test-2",
+                          "query": "test",
+                        },
                       },
                     ],
                     "pageInfo": Object {
@@ -1623,7 +2000,14 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                 nodeComponent={[Function]}
                 nodeComponentProps={
                   Object {
+                    "authentictedUser": Object {
+                      "email": "alice@alice.com",
+                      "id": "foobar",
+                      "username": "alice",
+                    },
                     "location": "[Location path=/code-monitoring]",
+                    "showCodeMonitoringTestEmailButton": false,
+                    "toggleCodeMonitorEnabled": [Function],
                   }
                 }
                 noun="code monitor"
@@ -1632,21 +2016,31 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                 query=""
               >
                 <ul
-                  className="filtered-connection__nodes "
+                  className="filtered-connection__nodes"
                 >
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo0"
                     location="[Location path=/code-monitoring]"
                     node={
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-0",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-0 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-0",
                                   },
                                 ],
                               },
@@ -1656,41 +2050,51 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                         "description": "Test code monitor",
                         "enabled": true,
                         "id": "foo0",
+                        "trigger": Object {
+                          "id": "test-0",
+                          "query": "test",
+                        },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
-                    <div
-                      className="card p-3 mb-2"
+                    <AnchorLink
+                      className="code-monitoring-node card p-3"
+                      to="/code-monitoring/foo0"
                     >
-                      <div
-                        className="d-flex justify-content-between align-items-center"
+                      <a
+                        className="code-monitoring-node card p-3"
+                        href="/code-monitoring/foo0"
                       >
                         <div
-                          className="d-flex flex-column"
+                          className="d-flex justify-content-between align-items-center"
                         >
                           <div
-                            className="font-weight-bold"
+                            className="d-flex flex-column"
                           >
-                            Test code monitor
+                            <div
+                              className="font-weight-bold"
+                            >
+                              Test code monitor
+                            </div>
+                            <div
+                              className="d-flex text-muted"
+                            >
+                              New search result → Sends email notifications
+                               
+                            </div>
                           </div>
-                          <div
-                            className="text-muted"
-                          >
-                            New search result → Sends email notifications
-                          </div>
-                        </div>
-                        <div
-                          className="d-flex flex-column"
-                        >
                           <div
                             className="d-flex"
                           >
                             <div
-                              onClick={[Function]}
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
                             >
                               <Toggle
                                 className="mr-3"
                                 disabled={false}
+                                onClick={[Function]}
                                 value={true}
                               >
                                 <button
@@ -1714,33 +2118,40 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                                 </button>
                               </Toggle>
                             </div>
-                            <AnchorLink
-                              to="/code-monitoring/foo0"
+                            <button
+                              className="btn btn-link code-monitoring-node__edit-button"
+                              type="button"
                             >
-                              <a
-                                href="/code-monitoring/foo0"
-                              >
-                                Edit
-                              </a>
-                            </AnchorLink>
+                              Edit
+                            </button>
                           </div>
                         </div>
-                      </div>
-                    </div>
+                      </a>
+                    </AnchorLink>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo1"
                     location="[Location path=/code-monitoring]"
                     node={
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-1",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-1 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-1",
                                   },
                                 ],
                               },
@@ -1750,41 +2161,51 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                         "description": "Second test code monitor",
                         "enabled": true,
                         "id": "foo1",
+                        "trigger": Object {
+                          "id": "test-1",
+                          "query": "test",
+                        },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
-                    <div
-                      className="card p-3 mb-2"
+                    <AnchorLink
+                      className="code-monitoring-node card p-3"
+                      to="/code-monitoring/foo1"
                     >
-                      <div
-                        className="d-flex justify-content-between align-items-center"
+                      <a
+                        className="code-monitoring-node card p-3"
+                        href="/code-monitoring/foo1"
                       >
                         <div
-                          className="d-flex flex-column"
+                          className="d-flex justify-content-between align-items-center"
                         >
                           <div
-                            className="font-weight-bold"
+                            className="d-flex flex-column"
                           >
-                            Second test code monitor
+                            <div
+                              className="font-weight-bold"
+                            >
+                              Second test code monitor
+                            </div>
+                            <div
+                              className="d-flex text-muted"
+                            >
+                              New search result → Sends email notifications
+                               
+                            </div>
                           </div>
-                          <div
-                            className="text-muted"
-                          >
-                            New search result → Sends email notifications
-                          </div>
-                        </div>
-                        <div
-                          className="d-flex flex-column"
-                        >
                           <div
                             className="d-flex"
                           >
                             <div
-                              onClick={[Function]}
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
                             >
                               <Toggle
                                 className="mr-3"
                                 disabled={false}
+                                onClick={[Function]}
                                 value={true}
                               >
                                 <button
@@ -1808,33 +2229,40 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                                 </button>
                               </Toggle>
                             </div>
-                            <AnchorLink
-                              to="/code-monitoring/foo1"
+                            <button
+                              className="btn btn-link code-monitoring-node__edit-button"
+                              type="button"
                             >
-                              <a
-                                href="/code-monitoring/foo1"
-                              >
-                                Edit
-                              </a>
-                            </AnchorLink>
+                              Edit
+                            </button>
                           </div>
                         </div>
-                      </div>
-                    </div>
+                      </a>
+                    </AnchorLink>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo2"
                     location="[Location path=/code-monitoring]"
                     node={
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-2",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-2 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-2",
                                   },
                                 ],
                               },
@@ -1844,41 +2272,51 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                         "description": "Third test code monitor",
                         "enabled": true,
                         "id": "foo2",
+                        "trigger": Object {
+                          "id": "test-2",
+                          "query": "test",
+                        },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
-                    <div
-                      className="card p-3 mb-2"
+                    <AnchorLink
+                      className="code-monitoring-node card p-3"
+                      to="/code-monitoring/foo2"
                     >
-                      <div
-                        className="d-flex justify-content-between align-items-center"
+                      <a
+                        className="code-monitoring-node card p-3"
+                        href="/code-monitoring/foo2"
                       >
                         <div
-                          className="d-flex flex-column"
+                          className="d-flex justify-content-between align-items-center"
                         >
                           <div
-                            className="font-weight-bold"
+                            className="d-flex flex-column"
                           >
-                            Third test code monitor
+                            <div
+                              className="font-weight-bold"
+                            >
+                              Third test code monitor
+                            </div>
+                            <div
+                              className="d-flex text-muted"
+                            >
+                              New search result → Sends email notifications
+                               
+                            </div>
                           </div>
-                          <div
-                            className="text-muted"
-                          >
-                            New search result → Sends email notifications
-                          </div>
-                        </div>
-                        <div
-                          className="d-flex flex-column"
-                        >
                           <div
                             className="d-flex"
                           >
                             <div
-                              onClick={[Function]}
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
                             >
                               <Toggle
                                 className="mr-3"
                                 disabled={false}
+                                onClick={[Function]}
                                 value={true}
                               >
                                 <button
@@ -1902,19 +2340,16 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                                 </button>
                               </Toggle>
                             </div>
-                            <AnchorLink
-                              to="/code-monitoring/foo2"
+                            <button
+                              className="btn btn-link code-monitoring-node__edit-button"
+                              type="button"
                             >
-                              <a
-                                href="/code-monitoring/foo2"
-                              >
-                                Edit
-                              </a>
-                            </AnchorLink>
+                              Edit
+                            </button>
                           </div>
                         </div>
-                      </div>
-                    </div>
+                      </a>
+                    </AnchorLink>
                   </CodeMonitorNode>
                 </ul>
               </ConnectionNodes>
@@ -1925,9 +2360,10 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
       <div
         className="mt-5"
       >
-        We want to hear your feedback! 
+        We want to hear your feedback!
+         
         <a
-          href="/"
+          href="mailto:feedback@sourcegraph.com"
         >
           Share your thoughts
         </a>
@@ -1958,10 +2394,17 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
   history="[History]"
   location="[Location path=/code-monitoring]"
   setBreadcrumb={[Function]}
+  settingsCascade={
+    Object {
+      "final": Object {},
+      "subjects": Array [],
+    }
+  }
+  toggleCodeMonitorEnabled={[Function]}
   useBreadcrumb={[Function]}
 >
   <div
-    className="container mt-3 web-content"
+    className="code-monitoring-page container mt-5"
   >
     <PageTitle
       title="Code Monitoring"
@@ -1975,65 +2418,105 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
           <Memo(PlusIcon)
             className="icon-inline"
           />
-          Add new code monitor
+          Create new code monitor
         </AnchorLink>
       }
-      icon={
-        Object {
-          "$$typeof": Symbol(react.memo),
-          "compare": null,
-          "type": [Function],
-        }
+      annotation={
+        <StatusBadge
+          status="prototype"
+        />
       }
-      title={
-        <React.Fragment>
-          Code monitoring
-           
-          <sup>
-            <span
-              className="badge badge-info text-uppercase"
-            >
-              Prototype
-            </span>
-          </sup>
-        </React.Fragment>
+      className="mb-3"
+      path={
+        Array [
+          Object {
+            "icon": [Function],
+            "text": "Code monitoring",
+          },
+        ]
       }
     >
-      <div
-        className="page-header d-flex flex-wrap align-items-center"
+      <header
+        className="d-flex flex-column flex-md-row flex-wrap justify-content-between align-items-lg-center mb-3"
       >
-        <h1
-          className="flex-grow-1"
-        >
-          <Memo(VideoInputAntennaIcon)
-            className="icon-inline page-header__icon"
-          />
-           
-          Code monitoring
-           
-          <sup>
-            <span
-              className="badge badge-info text-uppercase"
-            >
-              Prototype
-            </span>
-          </sup>
-        </h1>
-        <AnchorLink
-          className="btn btn-secondary"
-          to="/code-monitoring/new"
-        >
-          <a
-            className="btn btn-secondary"
-            href="/code-monitoring/new"
+        <div>
+          <small
+            className="text-muted d-block mb-2"
           >
-            <Memo(PlusIcon)
-              className="icon-inline"
-            />
-            Add new code monitor
-          </a>
-        </AnchorLink>
-      </div>
+            <StatusBadge
+              status="prototype"
+            >
+              <div
+                className="d-flex align-items-center"
+              >
+                <span
+                  className="badge badge-warning text-uppercase mr-2"
+                >
+                  prototype
+                </span>
+                <a
+                  href="mailto:support@sourcegraph.com"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  Share feedback
+                </a>
+              </div>
+            </StatusBadge>
+          </small>
+          <h1
+            className="flex-grow-1 d-block m-0"
+          >
+            <LinkOrSpan>
+              <span
+                className=""
+              >
+                <CodeMonitoringLogo
+                  className="icon-inline py-1 mr-1"
+                >
+                  <svg
+                    className="icon-inline py-1 mr-1"
+                    fill="currentColor"
+                    height="20"
+                    viewBox="0 0 20 20"
+                    width="20"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      clipRule="evenodd"
+                      d="M18.01 8.01C18.01 8.29 18.23 8.51 18.51 8.51C18.79 8.51 19.01 8.29 19.01 8.01C19.01 4.15 15.87 1 12 1C11.72 1 11.5 1.22 11.5 1.5C11.5 1.78 11.72 2 12 2C15.31 2 18.01 4.7 18.01 8.01ZM16.1801 7.96002C15.9001 7.96002 15.6801 7.74002 15.6801 7.46002C15.6801 5.81002 14.3301 4.46002 12.6801 4.46002C12.4001 4.46002 12.1801 4.24002 12.1801 3.96002C12.1801 3.68002 12.4001 3.46002 12.6801 3.46002C14.8901 3.46002 16.6801 5.25002 16.6801 7.46002C16.6801 7.74002 16.4601 7.96002 16.1801 7.96002ZM4.83996 6.79999L13.34 15.3C12.39 15.88 11.29 16.18 10.15 16.18C8.49996 16.18 6.93996 15.54 5.76996 14.37C4.59996 13.2 3.94996 11.65 3.94996 9.98999C3.94996 8.84999 4.25996 7.74999 4.83996 6.79999ZM4.70996 4.54999C1.70996 7.54999 1.70996 12.43 4.70996 15.43C6.20996 16.93 8.17996 17.68 10.15 17.68C12.12 17.68 14.09 16.93 15.59 15.43L4.70996 4.54999ZM4 16.14C3.7 15.84 3.43 15.52 3.18 15.18L2.89 15.69L1 18.97H4.79H8.59L8.31 18.49C6.69 18.14 5.2 17.34 4 16.14ZM13.85 8.04999C13.85 9.01999 13.07 9.79999 12.1 9.79999C11.13 9.79999 10.35 9.01999 10.35 8.04999C10.35 7.07999 11.13 6.29999 12.1 6.29999C13.07 6.29999 13.85 7.07999 13.85 8.04999Z"
+                      fillRule="evenodd"
+                    />
+                  </svg>
+                </CodeMonitoringLogo>
+                <span
+                  className="mr-2"
+                >
+                  Code monitoring
+                </span>
+              </span>
+            </LinkOrSpan>
+          </h1>
+        </div>
+        <div
+          className="mt-3 mt-md-0"
+        >
+          <AnchorLink
+            className="btn btn-secondary"
+            to="/code-monitoring/new"
+          >
+            <a
+              className="btn btn-secondary"
+              href="/code-monitoring/new"
+            >
+              <Memo(PlusIcon)
+                className="icon-inline"
+              />
+              Create new code monitor
+            </a>
+          </AnchorLink>
+        </div>
+      </header>
     </PageHeader>
     <div
       className="text-muted mb-4"
@@ -2041,7 +2524,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
       Watch your code for changes and trigger actions to get notifications, send webhooks, and more.
        
       <a
-        href="/"
+        href="https://docs.sourcegraph.com/code_monitoring"
       >
         Learn more.
       </a>
@@ -2108,7 +2591,14 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
             nodeComponent={[Function]}
             nodeComponentProps={
               Object {
+                "authentictedUser": Object {
+                  "email": "alice@alice.com",
+                  "id": "foobar",
+                  "username": "alice",
+                },
                 "location": "[Location path=/code-monitoring]",
+                "showCodeMonitoringTestEmailButton": false,
+                "toggleCodeMonitorEnabled": [Function],
               }
             }
             noun="code monitor"
@@ -2117,7 +2607,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
             useURLQuery={true}
           >
             <div
-              className="filtered-connection test-filtered-connection filtered-connection--noncompact "
+              className="filtered-connection test-filtered-connection filtered-connection--noncompact"
             >
               <ConnectionNodes
                 connection={
@@ -2125,13 +2615,16 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                     "nodes": Array [
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-0",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-0 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-0",
                                   },
                                 ],
                               },
@@ -2141,16 +2634,23 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         "description": "Test code monitor",
                         "enabled": true,
                         "id": "foo0",
+                        "trigger": Object {
+                          "id": "test-0",
+                          "query": "test",
+                        },
                       },
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-1",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-1 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-1",
                                   },
                                 ],
                               },
@@ -2160,16 +2660,23 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         "description": "Second test code monitor",
                         "enabled": true,
                         "id": "foo1",
+                        "trigger": Object {
+                          "id": "test-1",
+                          "query": "test",
+                        },
                       },
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-2",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-2 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-2",
                                   },
                                 ],
                               },
@@ -2179,16 +2686,23 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         "description": "Third test code monitor",
                         "enabled": true,
                         "id": "foo2",
+                        "trigger": Object {
+                          "id": "test-2",
+                          "query": "test",
+                        },
                       },
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-3",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-3 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-3",
                                   },
                                 ],
                               },
@@ -2198,16 +2712,23 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         "description": "Fourth test code monitor",
                         "enabled": true,
                         "id": "foo3",
+                        "trigger": Object {
+                          "id": "test-3",
+                          "query": "test",
+                        },
                       },
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-4",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-4 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-4",
                                   },
                                 ],
                               },
@@ -2217,16 +2738,23 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         "description": "Fifth test code monitor",
                         "enabled": true,
                         "id": "foo4",
+                        "trigger": Object {
+                          "id": "test-4",
+                          "query": "test",
+                        },
                       },
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-5",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-5 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-5",
                                   },
                                 ],
                               },
@@ -2236,16 +2764,23 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         "description": "Sixth test code monitor",
                         "enabled": true,
                         "id": "foo5",
+                        "trigger": Object {
+                          "id": "test-5",
+                          "query": "test",
+                        },
                       },
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-6",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-6 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-6",
                                   },
                                 ],
                               },
@@ -2255,16 +2790,23 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         "description": "Seventh test code monitor",
                         "enabled": true,
                         "id": "foo6",
+                        "trigger": Object {
+                          "id": "test-6",
+                          "query": "test",
+                        },
                       },
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-7",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-7 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-7",
                                   },
                                 ],
                               },
@@ -2274,16 +2816,23 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         "description": "Eighth test code monitor",
                         "enabled": true,
                         "id": "foo7",
+                        "trigger": Object {
+                          "id": "test-7",
+                          "query": "test",
+                        },
                       },
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-9",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-9 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-9",
                                   },
                                 ],
                               },
@@ -2293,16 +2842,23 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         "description": "Ninth test code monitor",
                         "enabled": true,
                         "id": "foo9",
+                        "trigger": Object {
+                          "id": "test-9",
+                          "query": "test",
+                        },
                       },
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-0",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-0 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-0",
                                   },
                                 ],
                               },
@@ -2312,16 +2868,23 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         "description": "Tenth test code monitor",
                         "enabled": true,
                         "id": "foo10",
+                        "trigger": Object {
+                          "id": "test-0",
+                          "query": "test",
+                        },
                       },
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-1",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-1 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-1",
                                   },
                                 ],
                               },
@@ -2331,16 +2894,23 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         "description": "Eleventh test code monitor",
                         "enabled": true,
                         "id": "foo11",
+                        "trigger": Object {
+                          "id": "test-1",
+                          "query": "test",
+                        },
                       },
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-2",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-2 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-2",
                                   },
                                 ],
                               },
@@ -2350,6 +2920,10 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         "description": "Twelfth test code monitor",
                         "enabled": true,
                         "id": "foo12",
+                        "trigger": Object {
+                          "id": "test-2",
+                          "query": "test",
+                        },
                       },
                     ],
                     "pageInfo": Object {
@@ -2367,7 +2941,14 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                 nodeComponent={[Function]}
                 nodeComponentProps={
                   Object {
+                    "authentictedUser": Object {
+                      "email": "alice@alice.com",
+                      "id": "foobar",
+                      "username": "alice",
+                    },
                     "location": "[Location path=/code-monitoring]",
+                    "showCodeMonitoringTestEmailButton": false,
+                    "toggleCodeMonitorEnabled": [Function],
                   }
                 }
                 noun="code monitor"
@@ -2376,21 +2957,31 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                 query=""
               >
                 <ul
-                  className="filtered-connection__nodes "
+                  className="filtered-connection__nodes"
                 >
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo0"
                     location="[Location path=/code-monitoring]"
                     node={
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-0",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-0 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-0",
                                   },
                                 ],
                               },
@@ -2400,41 +2991,51 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         "description": "Test code monitor",
                         "enabled": true,
                         "id": "foo0",
+                        "trigger": Object {
+                          "id": "test-0",
+                          "query": "test",
+                        },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
-                    <div
-                      className="card p-3 mb-2"
+                    <AnchorLink
+                      className="code-monitoring-node card p-3"
+                      to="/code-monitoring/foo0"
                     >
-                      <div
-                        className="d-flex justify-content-between align-items-center"
+                      <a
+                        className="code-monitoring-node card p-3"
+                        href="/code-monitoring/foo0"
                       >
                         <div
-                          className="d-flex flex-column"
+                          className="d-flex justify-content-between align-items-center"
                         >
                           <div
-                            className="font-weight-bold"
+                            className="d-flex flex-column"
                           >
-                            Test code monitor
+                            <div
+                              className="font-weight-bold"
+                            >
+                              Test code monitor
+                            </div>
+                            <div
+                              className="d-flex text-muted"
+                            >
+                              New search result → Sends email notifications
+                               
+                            </div>
                           </div>
-                          <div
-                            className="text-muted"
-                          >
-                            New search result → Sends email notifications
-                          </div>
-                        </div>
-                        <div
-                          className="d-flex flex-column"
-                        >
                           <div
                             className="d-flex"
                           >
                             <div
-                              onClick={[Function]}
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
                             >
                               <Toggle
                                 className="mr-3"
                                 disabled={false}
+                                onClick={[Function]}
                                 value={true}
                               >
                                 <button
@@ -2458,33 +3059,40 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                 </button>
                               </Toggle>
                             </div>
-                            <AnchorLink
-                              to="/code-monitoring/foo0"
+                            <button
+                              className="btn btn-link code-monitoring-node__edit-button"
+                              type="button"
                             >
-                              <a
-                                href="/code-monitoring/foo0"
-                              >
-                                Edit
-                              </a>
-                            </AnchorLink>
+                              Edit
+                            </button>
                           </div>
                         </div>
-                      </div>
-                    </div>
+                      </a>
+                    </AnchorLink>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo1"
                     location="[Location path=/code-monitoring]"
                     node={
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-1",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-1 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-1",
                                   },
                                 ],
                               },
@@ -2494,41 +3102,51 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         "description": "Second test code monitor",
                         "enabled": true,
                         "id": "foo1",
+                        "trigger": Object {
+                          "id": "test-1",
+                          "query": "test",
+                        },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
-                    <div
-                      className="card p-3 mb-2"
+                    <AnchorLink
+                      className="code-monitoring-node card p-3"
+                      to="/code-monitoring/foo1"
                     >
-                      <div
-                        className="d-flex justify-content-between align-items-center"
+                      <a
+                        className="code-monitoring-node card p-3"
+                        href="/code-monitoring/foo1"
                       >
                         <div
-                          className="d-flex flex-column"
+                          className="d-flex justify-content-between align-items-center"
                         >
                           <div
-                            className="font-weight-bold"
+                            className="d-flex flex-column"
                           >
-                            Second test code monitor
+                            <div
+                              className="font-weight-bold"
+                            >
+                              Second test code monitor
+                            </div>
+                            <div
+                              className="d-flex text-muted"
+                            >
+                              New search result → Sends email notifications
+                               
+                            </div>
                           </div>
-                          <div
-                            className="text-muted"
-                          >
-                            New search result → Sends email notifications
-                          </div>
-                        </div>
-                        <div
-                          className="d-flex flex-column"
-                        >
                           <div
                             className="d-flex"
                           >
                             <div
-                              onClick={[Function]}
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
                             >
                               <Toggle
                                 className="mr-3"
                                 disabled={false}
+                                onClick={[Function]}
                                 value={true}
                               >
                                 <button
@@ -2552,33 +3170,40 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                 </button>
                               </Toggle>
                             </div>
-                            <AnchorLink
-                              to="/code-monitoring/foo1"
+                            <button
+                              className="btn btn-link code-monitoring-node__edit-button"
+                              type="button"
                             >
-                              <a
-                                href="/code-monitoring/foo1"
-                              >
-                                Edit
-                              </a>
-                            </AnchorLink>
+                              Edit
+                            </button>
                           </div>
                         </div>
-                      </div>
-                    </div>
+                      </a>
+                    </AnchorLink>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo2"
                     location="[Location path=/code-monitoring]"
                     node={
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-2",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-2 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-2",
                                   },
                                 ],
                               },
@@ -2588,41 +3213,51 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         "description": "Third test code monitor",
                         "enabled": true,
                         "id": "foo2",
+                        "trigger": Object {
+                          "id": "test-2",
+                          "query": "test",
+                        },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
-                    <div
-                      className="card p-3 mb-2"
+                    <AnchorLink
+                      className="code-monitoring-node card p-3"
+                      to="/code-monitoring/foo2"
                     >
-                      <div
-                        className="d-flex justify-content-between align-items-center"
+                      <a
+                        className="code-monitoring-node card p-3"
+                        href="/code-monitoring/foo2"
                       >
                         <div
-                          className="d-flex flex-column"
+                          className="d-flex justify-content-between align-items-center"
                         >
                           <div
-                            className="font-weight-bold"
+                            className="d-flex flex-column"
                           >
-                            Third test code monitor
+                            <div
+                              className="font-weight-bold"
+                            >
+                              Third test code monitor
+                            </div>
+                            <div
+                              className="d-flex text-muted"
+                            >
+                              New search result → Sends email notifications
+                               
+                            </div>
                           </div>
-                          <div
-                            className="text-muted"
-                          >
-                            New search result → Sends email notifications
-                          </div>
-                        </div>
-                        <div
-                          className="d-flex flex-column"
-                        >
                           <div
                             className="d-flex"
                           >
                             <div
-                              onClick={[Function]}
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
                             >
                               <Toggle
                                 className="mr-3"
                                 disabled={false}
+                                onClick={[Function]}
                                 value={true}
                               >
                                 <button
@@ -2646,33 +3281,40 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                 </button>
                               </Toggle>
                             </div>
-                            <AnchorLink
-                              to="/code-monitoring/foo2"
+                            <button
+                              className="btn btn-link code-monitoring-node__edit-button"
+                              type="button"
                             >
-                              <a
-                                href="/code-monitoring/foo2"
-                              >
-                                Edit
-                              </a>
-                            </AnchorLink>
+                              Edit
+                            </button>
                           </div>
                         </div>
-                      </div>
-                    </div>
+                      </a>
+                    </AnchorLink>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo3"
                     location="[Location path=/code-monitoring]"
                     node={
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-3",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-3 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-3",
                                   },
                                 ],
                               },
@@ -2682,41 +3324,51 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         "description": "Fourth test code monitor",
                         "enabled": true,
                         "id": "foo3",
+                        "trigger": Object {
+                          "id": "test-3",
+                          "query": "test",
+                        },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
-                    <div
-                      className="card p-3 mb-2"
+                    <AnchorLink
+                      className="code-monitoring-node card p-3"
+                      to="/code-monitoring/foo3"
                     >
-                      <div
-                        className="d-flex justify-content-between align-items-center"
+                      <a
+                        className="code-monitoring-node card p-3"
+                        href="/code-monitoring/foo3"
                       >
                         <div
-                          className="d-flex flex-column"
+                          className="d-flex justify-content-between align-items-center"
                         >
                           <div
-                            className="font-weight-bold"
+                            className="d-flex flex-column"
                           >
-                            Fourth test code monitor
+                            <div
+                              className="font-weight-bold"
+                            >
+                              Fourth test code monitor
+                            </div>
+                            <div
+                              className="d-flex text-muted"
+                            >
+                              New search result → Sends email notifications
+                               
+                            </div>
                           </div>
-                          <div
-                            className="text-muted"
-                          >
-                            New search result → Sends email notifications
-                          </div>
-                        </div>
-                        <div
-                          className="d-flex flex-column"
-                        >
                           <div
                             className="d-flex"
                           >
                             <div
-                              onClick={[Function]}
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
                             >
                               <Toggle
                                 className="mr-3"
                                 disabled={false}
+                                onClick={[Function]}
                                 value={true}
                               >
                                 <button
@@ -2740,33 +3392,40 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                 </button>
                               </Toggle>
                             </div>
-                            <AnchorLink
-                              to="/code-monitoring/foo3"
+                            <button
+                              className="btn btn-link code-monitoring-node__edit-button"
+                              type="button"
                             >
-                              <a
-                                href="/code-monitoring/foo3"
-                              >
-                                Edit
-                              </a>
-                            </AnchorLink>
+                              Edit
+                            </button>
                           </div>
                         </div>
-                      </div>
-                    </div>
+                      </a>
+                    </AnchorLink>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo4"
                     location="[Location path=/code-monitoring]"
                     node={
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-4",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-4 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-4",
                                   },
                                 ],
                               },
@@ -2776,41 +3435,51 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         "description": "Fifth test code monitor",
                         "enabled": true,
                         "id": "foo4",
+                        "trigger": Object {
+                          "id": "test-4",
+                          "query": "test",
+                        },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
-                    <div
-                      className="card p-3 mb-2"
+                    <AnchorLink
+                      className="code-monitoring-node card p-3"
+                      to="/code-monitoring/foo4"
                     >
-                      <div
-                        className="d-flex justify-content-between align-items-center"
+                      <a
+                        className="code-monitoring-node card p-3"
+                        href="/code-monitoring/foo4"
                       >
                         <div
-                          className="d-flex flex-column"
+                          className="d-flex justify-content-between align-items-center"
                         >
                           <div
-                            className="font-weight-bold"
+                            className="d-flex flex-column"
                           >
-                            Fifth test code monitor
+                            <div
+                              className="font-weight-bold"
+                            >
+                              Fifth test code monitor
+                            </div>
+                            <div
+                              className="d-flex text-muted"
+                            >
+                              New search result → Sends email notifications
+                               
+                            </div>
                           </div>
-                          <div
-                            className="text-muted"
-                          >
-                            New search result → Sends email notifications
-                          </div>
-                        </div>
-                        <div
-                          className="d-flex flex-column"
-                        >
                           <div
                             className="d-flex"
                           >
                             <div
-                              onClick={[Function]}
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
                             >
                               <Toggle
                                 className="mr-3"
                                 disabled={false}
+                                onClick={[Function]}
                                 value={true}
                               >
                                 <button
@@ -2834,33 +3503,40 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                 </button>
                               </Toggle>
                             </div>
-                            <AnchorLink
-                              to="/code-monitoring/foo4"
+                            <button
+                              className="btn btn-link code-monitoring-node__edit-button"
+                              type="button"
                             >
-                              <a
-                                href="/code-monitoring/foo4"
-                              >
-                                Edit
-                              </a>
-                            </AnchorLink>
+                              Edit
+                            </button>
                           </div>
                         </div>
-                      </div>
-                    </div>
+                      </a>
+                    </AnchorLink>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo5"
                     location="[Location path=/code-monitoring]"
                     node={
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-5",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-5 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-5",
                                   },
                                 ],
                               },
@@ -2870,41 +3546,51 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         "description": "Sixth test code monitor",
                         "enabled": true,
                         "id": "foo5",
+                        "trigger": Object {
+                          "id": "test-5",
+                          "query": "test",
+                        },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
-                    <div
-                      className="card p-3 mb-2"
+                    <AnchorLink
+                      className="code-monitoring-node card p-3"
+                      to="/code-monitoring/foo5"
                     >
-                      <div
-                        className="d-flex justify-content-between align-items-center"
+                      <a
+                        className="code-monitoring-node card p-3"
+                        href="/code-monitoring/foo5"
                       >
                         <div
-                          className="d-flex flex-column"
+                          className="d-flex justify-content-between align-items-center"
                         >
                           <div
-                            className="font-weight-bold"
+                            className="d-flex flex-column"
                           >
-                            Sixth test code monitor
+                            <div
+                              className="font-weight-bold"
+                            >
+                              Sixth test code monitor
+                            </div>
+                            <div
+                              className="d-flex text-muted"
+                            >
+                              New search result → Sends email notifications
+                               
+                            </div>
                           </div>
-                          <div
-                            className="text-muted"
-                          >
-                            New search result → Sends email notifications
-                          </div>
-                        </div>
-                        <div
-                          className="d-flex flex-column"
-                        >
                           <div
                             className="d-flex"
                           >
                             <div
-                              onClick={[Function]}
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
                             >
                               <Toggle
                                 className="mr-3"
                                 disabled={false}
+                                onClick={[Function]}
                                 value={true}
                               >
                                 <button
@@ -2928,33 +3614,40 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                 </button>
                               </Toggle>
                             </div>
-                            <AnchorLink
-                              to="/code-monitoring/foo5"
+                            <button
+                              className="btn btn-link code-monitoring-node__edit-button"
+                              type="button"
                             >
-                              <a
-                                href="/code-monitoring/foo5"
-                              >
-                                Edit
-                              </a>
-                            </AnchorLink>
+                              Edit
+                            </button>
                           </div>
                         </div>
-                      </div>
-                    </div>
+                      </a>
+                    </AnchorLink>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo6"
                     location="[Location path=/code-monitoring]"
                     node={
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-6",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-6 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-6",
                                   },
                                 ],
                               },
@@ -2964,41 +3657,51 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         "description": "Seventh test code monitor",
                         "enabled": true,
                         "id": "foo6",
+                        "trigger": Object {
+                          "id": "test-6",
+                          "query": "test",
+                        },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
-                    <div
-                      className="card p-3 mb-2"
+                    <AnchorLink
+                      className="code-monitoring-node card p-3"
+                      to="/code-monitoring/foo6"
                     >
-                      <div
-                        className="d-flex justify-content-between align-items-center"
+                      <a
+                        className="code-monitoring-node card p-3"
+                        href="/code-monitoring/foo6"
                       >
                         <div
-                          className="d-flex flex-column"
+                          className="d-flex justify-content-between align-items-center"
                         >
                           <div
-                            className="font-weight-bold"
+                            className="d-flex flex-column"
                           >
-                            Seventh test code monitor
+                            <div
+                              className="font-weight-bold"
+                            >
+                              Seventh test code monitor
+                            </div>
+                            <div
+                              className="d-flex text-muted"
+                            >
+                              New search result → Sends email notifications
+                               
+                            </div>
                           </div>
-                          <div
-                            className="text-muted"
-                          >
-                            New search result → Sends email notifications
-                          </div>
-                        </div>
-                        <div
-                          className="d-flex flex-column"
-                        >
                           <div
                             className="d-flex"
                           >
                             <div
-                              onClick={[Function]}
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
                             >
                               <Toggle
                                 className="mr-3"
                                 disabled={false}
+                                onClick={[Function]}
                                 value={true}
                               >
                                 <button
@@ -3022,33 +3725,40 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                 </button>
                               </Toggle>
                             </div>
-                            <AnchorLink
-                              to="/code-monitoring/foo6"
+                            <button
+                              className="btn btn-link code-monitoring-node__edit-button"
+                              type="button"
                             >
-                              <a
-                                href="/code-monitoring/foo6"
-                              >
-                                Edit
-                              </a>
-                            </AnchorLink>
+                              Edit
+                            </button>
                           </div>
                         </div>
-                      </div>
-                    </div>
+                      </a>
+                    </AnchorLink>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo7"
                     location="[Location path=/code-monitoring]"
                     node={
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-7",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-7 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-7",
                                   },
                                 ],
                               },
@@ -3058,41 +3768,51 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         "description": "Eighth test code monitor",
                         "enabled": true,
                         "id": "foo7",
+                        "trigger": Object {
+                          "id": "test-7",
+                          "query": "test",
+                        },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
-                    <div
-                      className="card p-3 mb-2"
+                    <AnchorLink
+                      className="code-monitoring-node card p-3"
+                      to="/code-monitoring/foo7"
                     >
-                      <div
-                        className="d-flex justify-content-between align-items-center"
+                      <a
+                        className="code-monitoring-node card p-3"
+                        href="/code-monitoring/foo7"
                       >
                         <div
-                          className="d-flex flex-column"
+                          className="d-flex justify-content-between align-items-center"
                         >
                           <div
-                            className="font-weight-bold"
+                            className="d-flex flex-column"
                           >
-                            Eighth test code monitor
+                            <div
+                              className="font-weight-bold"
+                            >
+                              Eighth test code monitor
+                            </div>
+                            <div
+                              className="d-flex text-muted"
+                            >
+                              New search result → Sends email notifications
+                               
+                            </div>
                           </div>
-                          <div
-                            className="text-muted"
-                          >
-                            New search result → Sends email notifications
-                          </div>
-                        </div>
-                        <div
-                          className="d-flex flex-column"
-                        >
                           <div
                             className="d-flex"
                           >
                             <div
-                              onClick={[Function]}
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
                             >
                               <Toggle
                                 className="mr-3"
                                 disabled={false}
+                                onClick={[Function]}
                                 value={true}
                               >
                                 <button
@@ -3116,33 +3836,40 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                 </button>
                               </Toggle>
                             </div>
-                            <AnchorLink
-                              to="/code-monitoring/foo7"
+                            <button
+                              className="btn btn-link code-monitoring-node__edit-button"
+                              type="button"
                             >
-                              <a
-                                href="/code-monitoring/foo7"
-                              >
-                                Edit
-                              </a>
-                            </AnchorLink>
+                              Edit
+                            </button>
                           </div>
                         </div>
-                      </div>
-                    </div>
+                      </a>
+                    </AnchorLink>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo9"
                     location="[Location path=/code-monitoring]"
                     node={
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-9",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-9 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-9",
                                   },
                                 ],
                               },
@@ -3152,41 +3879,51 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         "description": "Ninth test code monitor",
                         "enabled": true,
                         "id": "foo9",
+                        "trigger": Object {
+                          "id": "test-9",
+                          "query": "test",
+                        },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
-                    <div
-                      className="card p-3 mb-2"
+                    <AnchorLink
+                      className="code-monitoring-node card p-3"
+                      to="/code-monitoring/foo9"
                     >
-                      <div
-                        className="d-flex justify-content-between align-items-center"
+                      <a
+                        className="code-monitoring-node card p-3"
+                        href="/code-monitoring/foo9"
                       >
                         <div
-                          className="d-flex flex-column"
+                          className="d-flex justify-content-between align-items-center"
                         >
                           <div
-                            className="font-weight-bold"
+                            className="d-flex flex-column"
                           >
-                            Ninth test code monitor
+                            <div
+                              className="font-weight-bold"
+                            >
+                              Ninth test code monitor
+                            </div>
+                            <div
+                              className="d-flex text-muted"
+                            >
+                              New search result → Sends email notifications
+                               
+                            </div>
                           </div>
-                          <div
-                            className="text-muted"
-                          >
-                            New search result → Sends email notifications
-                          </div>
-                        </div>
-                        <div
-                          className="d-flex flex-column"
-                        >
                           <div
                             className="d-flex"
                           >
                             <div
-                              onClick={[Function]}
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
                             >
                               <Toggle
                                 className="mr-3"
                                 disabled={false}
+                                onClick={[Function]}
                                 value={true}
                               >
                                 <button
@@ -3210,33 +3947,40 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                 </button>
                               </Toggle>
                             </div>
-                            <AnchorLink
-                              to="/code-monitoring/foo9"
+                            <button
+                              className="btn btn-link code-monitoring-node__edit-button"
+                              type="button"
                             >
-                              <a
-                                href="/code-monitoring/foo9"
-                              >
-                                Edit
-                              </a>
-                            </AnchorLink>
+                              Edit
+                            </button>
                           </div>
                         </div>
-                      </div>
-                    </div>
+                      </a>
+                    </AnchorLink>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo10"
                     location="[Location path=/code-monitoring]"
                     node={
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-0",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-0 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-0",
                                   },
                                 ],
                               },
@@ -3246,41 +3990,51 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         "description": "Tenth test code monitor",
                         "enabled": true,
                         "id": "foo10",
+                        "trigger": Object {
+                          "id": "test-0",
+                          "query": "test",
+                        },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
-                    <div
-                      className="card p-3 mb-2"
+                    <AnchorLink
+                      className="code-monitoring-node card p-3"
+                      to="/code-monitoring/foo10"
                     >
-                      <div
-                        className="d-flex justify-content-between align-items-center"
+                      <a
+                        className="code-monitoring-node card p-3"
+                        href="/code-monitoring/foo10"
                       >
                         <div
-                          className="d-flex flex-column"
+                          className="d-flex justify-content-between align-items-center"
                         >
                           <div
-                            className="font-weight-bold"
+                            className="d-flex flex-column"
                           >
-                            Tenth test code monitor
+                            <div
+                              className="font-weight-bold"
+                            >
+                              Tenth test code monitor
+                            </div>
+                            <div
+                              className="d-flex text-muted"
+                            >
+                              New search result → Sends email notifications
+                               
+                            </div>
                           </div>
-                          <div
-                            className="text-muted"
-                          >
-                            New search result → Sends email notifications
-                          </div>
-                        </div>
-                        <div
-                          className="d-flex flex-column"
-                        >
                           <div
                             className="d-flex"
                           >
                             <div
-                              onClick={[Function]}
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
                             >
                               <Toggle
                                 className="mr-3"
                                 disabled={false}
+                                onClick={[Function]}
                                 value={true}
                               >
                                 <button
@@ -3304,33 +4058,40 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                 </button>
                               </Toggle>
                             </div>
-                            <AnchorLink
-                              to="/code-monitoring/foo10"
+                            <button
+                              className="btn btn-link code-monitoring-node__edit-button"
+                              type="button"
                             >
-                              <a
-                                href="/code-monitoring/foo10"
-                              >
-                                Edit
-                              </a>
-                            </AnchorLink>
+                              Edit
+                            </button>
                           </div>
                         </div>
-                      </div>
-                    </div>
+                      </a>
+                    </AnchorLink>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo11"
                     location="[Location path=/code-monitoring]"
                     node={
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-1",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-1 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-1",
                                   },
                                 ],
                               },
@@ -3340,41 +4101,51 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         "description": "Eleventh test code monitor",
                         "enabled": true,
                         "id": "foo11",
+                        "trigger": Object {
+                          "id": "test-1",
+                          "query": "test",
+                        },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
-                    <div
-                      className="card p-3 mb-2"
+                    <AnchorLink
+                      className="code-monitoring-node card p-3"
+                      to="/code-monitoring/foo11"
                     >
-                      <div
-                        className="d-flex justify-content-between align-items-center"
+                      <a
+                        className="code-monitoring-node card p-3"
+                        href="/code-monitoring/foo11"
                       >
                         <div
-                          className="d-flex flex-column"
+                          className="d-flex justify-content-between align-items-center"
                         >
                           <div
-                            className="font-weight-bold"
+                            className="d-flex flex-column"
                           >
-                            Eleventh test code monitor
+                            <div
+                              className="font-weight-bold"
+                            >
+                              Eleventh test code monitor
+                            </div>
+                            <div
+                              className="d-flex text-muted"
+                            >
+                              New search result → Sends email notifications
+                               
+                            </div>
                           </div>
-                          <div
-                            className="text-muted"
-                          >
-                            New search result → Sends email notifications
-                          </div>
-                        </div>
-                        <div
-                          className="d-flex flex-column"
-                        >
                           <div
                             className="d-flex"
                           >
                             <div
-                              onClick={[Function]}
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
                             >
                               <Toggle
                                 className="mr-3"
                                 disabled={false}
+                                onClick={[Function]}
                                 value={true}
                               >
                                 <button
@@ -3398,33 +4169,40 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                 </button>
                               </Toggle>
                             </div>
-                            <AnchorLink
-                              to="/code-monitoring/foo11"
+                            <button
+                              className="btn btn-link code-monitoring-node__edit-button"
+                              type="button"
                             >
-                              <a
-                                href="/code-monitoring/foo11"
-                              >
-                                Edit
-                              </a>
-                            </AnchorLink>
+                              Edit
+                            </button>
                           </div>
                         </div>
-                      </div>
-                    </div>
+                      </a>
+                    </AnchorLink>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo12"
                     location="[Location path=/code-monitoring]"
                     node={
                       Object {
                         "actions": Object {
+                          "enabled": true,
+                          "id": "test-2",
                           "nodes": Array [
                             Object {
                               "enabled": true,
+                              "id": "test-action-2 ",
                               "recipients": Object {
                                 "nodes": Array [
                                   Object {
-                                    "id": "baz",
+                                    "id": "baz-2",
                                   },
                                 ],
                               },
@@ -3434,41 +4212,51 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         "description": "Twelfth test code monitor",
                         "enabled": true,
                         "id": "foo12",
+                        "trigger": Object {
+                          "id": "test-2",
+                          "query": "test",
+                        },
                       }
                     }
+                    showCodeMonitoringTestEmailButton={false}
+                    toggleCodeMonitorEnabled={[Function]}
                   >
-                    <div
-                      className="card p-3 mb-2"
+                    <AnchorLink
+                      className="code-monitoring-node card p-3"
+                      to="/code-monitoring/foo12"
                     >
-                      <div
-                        className="d-flex justify-content-between align-items-center"
+                      <a
+                        className="code-monitoring-node card p-3"
+                        href="/code-monitoring/foo12"
                       >
                         <div
-                          className="d-flex flex-column"
+                          className="d-flex justify-content-between align-items-center"
                         >
                           <div
-                            className="font-weight-bold"
+                            className="d-flex flex-column"
                           >
-                            Twelfth test code monitor
+                            <div
+                              className="font-weight-bold"
+                            >
+                              Twelfth test code monitor
+                            </div>
+                            <div
+                              className="d-flex text-muted"
+                            >
+                              New search result → Sends email notifications
+                               
+                            </div>
                           </div>
-                          <div
-                            className="text-muted"
-                          >
-                            New search result → Sends email notifications
-                          </div>
-                        </div>
-                        <div
-                          className="d-flex flex-column"
-                        >
                           <div
                             className="d-flex"
                           >
                             <div
-                              onClick={[Function]}
+                              className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
                             >
                               <Toggle
                                 className="mr-3"
                                 disabled={false}
+                                onClick={[Function]}
                                 value={true}
                               >
                                 <button
@@ -3492,19 +4280,16 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                 </button>
                               </Toggle>
                             </div>
-                            <AnchorLink
-                              to="/code-monitoring/foo12"
+                            <button
+                              className="btn btn-link code-monitoring-node__edit-button"
+                              type="button"
                             >
-                              <a
-                                href="/code-monitoring/foo12"
-                              >
-                                Edit
-                              </a>
-                            </AnchorLink>
+                              Edit
+                            </button>
                           </div>
                         </div>
-                      </div>
-                    </div>
+                      </a>
+                    </AnchorLink>
                   </CodeMonitorNode>
                 </ul>
                 <p
@@ -3522,7 +4307,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                   </small>
                 </p>
                 <button
-                  className="btn btn-secondary btn-sm filtered-connection__show-more "
+                  className="btn btn-secondary btn-sm filtered-connection__show-more"
                   onClick={[Function]}
                   type="button"
                 >
@@ -3536,9 +4321,10 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
       <div
         className="mt-5"
       >
-        We want to hear your feedback! 
+        We want to hear your feedback!
+         
         <a
-          href="/"
+          href="mailto:feedback@sourcegraph.com"
         >
           Share your thoughts
         </a>

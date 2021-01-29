@@ -1,7 +1,6 @@
 package types
 
 import (
-	"reflect"
 	"sort"
 	"strconv"
 	"testing"
@@ -10,17 +9,17 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 func MakeRepo(name, serviceID, serviceType string, services ...*ExternalService) *Repo {
-	clock := dbtesting.NewFakeClock(time.Now(), 0)
+	clock := timeutil.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
 	repo := Repo{
@@ -29,13 +28,11 @@ func MakeRepo(name, serviceID, serviceType string, services ...*ExternalService)
 			ServiceType: serviceType,
 			ServiceID:   serviceID,
 		},
-		Name: api.RepoName(name),
-		RepoFields: &RepoFields{
-			URI:         name,
-			Description: "The description",
-			CreatedAt:   now,
-			Sources:     make(map[string]*SourceInfo),
-		},
+		Name:        api.RepoName(name),
+		URI:         name,
+		Description: "The description",
+		CreatedAt:   now,
+		Sources:     make(map[string]*SourceInfo),
 	}
 
 	for _, svc := range services {
@@ -50,28 +47,28 @@ func MakeRepo(name, serviceID, serviceType string, services ...*ExternalService)
 // MakeGithubRepo returns a configured Github repository.
 func MakeGithubRepo(services ...*ExternalService) *Repo {
 	repo := MakeRepo("github.com/foo/bar", "http://github.com", extsvc.TypeGitHub, services...)
-	repo.RepoFields.Metadata = new(github.Repository)
+	repo.Metadata = new(github.Repository)
 	return repo
 }
 
 // MakeGitlabRepo returns a configured Gitlab repository.
 func MakeGitlabRepo(services ...*ExternalService) *Repo {
 	repo := MakeRepo("gitlab.com/foo/bar", "http://gitlab.com", extsvc.TypeGitLab, services...)
-	repo.RepoFields.Metadata = new(gitlab.Project)
+	repo.Metadata = new(gitlab.Project)
 	return repo
 }
 
 // MakeBitbucketServerRepo returns a configured Bitbucket Server repository.
 func MakeBitbucketServerRepo(services ...*ExternalService) *Repo {
 	repo := MakeRepo("bitbucketserver.mycorp.com/foo/bar", "http://bitbucketserver.mycorp.com", extsvc.TypeBitbucketServer, services...)
-	repo.RepoFields.Metadata = new(bitbucketserver.Repo)
+	repo.Metadata = new(bitbucketserver.Repo)
 	return repo
 }
 
 // MakeAWSCodeCommitRepo returns a configured AWS Code Commit repository.
 func MakeAWSCodeCommitRepo(services ...*ExternalService) *Repo {
 	repo := MakeRepo("git-codecommit.us-west-1.amazonaws.com/stripe-go", "arn:aws:codecommit:us-west-1:999999999999:", extsvc.KindAWSCodeCommit, services...)
-	repo.RepoFields.Metadata = new(awscodecommit.Repository)
+	repo.Metadata = new(awscodecommit.Repository)
 	return repo
 }
 
@@ -84,7 +81,7 @@ func MakeOtherRepo(services ...*ExternalService) *Repo {
 // MakeGitoliteRepo returns a configured Gitolite repository.
 func MakeGitoliteRepo(services ...*ExternalService) *Repo {
 	repo := MakeRepo("gitolite.mycorp.com/bar", "git@gitolite.mycorp.com", extsvc.KindGitolite, services...)
-	repo.RepoFields.Metadata = new(gitolite.Repo)
+	repo.Metadata = new(gitolite.Repo)
 	return repo
 }
 
@@ -107,7 +104,7 @@ func GenerateRepos(n int, base ...*Repo) Repos {
 
 // MakeExternalServices creates one configured external service per kind and returns the list.
 func MakeExternalServices() ExternalServices {
-	clock := dbtesting.NewFakeClock(time.Now(), 0)
+	clock := timeutil.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
 	githubSvc := ExternalService{
@@ -313,8 +310,8 @@ var Assert = struct {
 			t.Helper()
 			// Exclude auto-generated IDs from equality tests
 			have = append(Repos{}, have...).With(Opt.RepoID(0))
-			if !reflect.DeepEqual(have, want) {
-				t.Errorf("repos (-want +got): %s", cmp.Diff(want, have))
+			if diff := cmp.Diff(want, have); diff != "" {
+				t.Errorf("repos (-want +got): %s", diff)
 			}
 		}
 	},
@@ -325,7 +322,7 @@ var Assert = struct {
 			sort.Slice(want, func(i, j int) bool {
 				return ord(want[i], want[j])
 			})
-			if !reflect.DeepEqual(have, want) {
+			if diff := cmp.Diff(want, have); diff != "" {
 				t.Errorf("repos (-want +got): %s", cmp.Diff(want, have))
 			}
 		}
@@ -336,7 +333,7 @@ var Assert = struct {
 			t.Helper()
 			// Exclude auto-generated IDs from equality tests
 			have = append(ExternalServices{}, have...).With(Opt.ExternalServiceID(0))
-			if !reflect.DeepEqual(have, want) {
+			if diff := cmp.Diff(want, have); diff != "" {
 				t.Errorf("external services (-want +got): %s", cmp.Diff(want, have))
 			}
 		}
@@ -348,7 +345,7 @@ var Assert = struct {
 			sort.Slice(want, func(i, j int) bool {
 				return ord(want[i], want[j])
 			})
-			if !reflect.DeepEqual(have, want) {
+			if diff := cmp.Diff(want, have); diff != "" {
 				t.Errorf("external services (-want +got): %s", cmp.Diff(want, have))
 			}
 		}

@@ -1,9 +1,9 @@
 package definitions
 
 import (
-	"fmt"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
@@ -21,9 +21,8 @@ func ZoektWebServer() *monitoring.Container {
 							Name:              "indexed_search_request_errors",
 							Description:       "indexed search request errors every 5m by code",
 							Query:             `sum by (code)(increase(src_zoekt_request_duration_seconds_count{code!~"2.."}[5m])) / ignoring(code) group_left sum(increase(src_zoekt_request_duration_seconds_count[5m])) * 100`,
-							DataMayNotExist:   true,
 							Warning:           monitoring.Alert().GreaterOrEqual(5).For(5 * time.Minute),
-							PanelOptions:      monitoring.PanelOptions().LegendFormat("{{code}}").Unit(monitoring.Percentage),
+							Panel:             monitoring.Panel().LegendFormat("{{code}}").Unit(monitoring.Percentage),
 							Owner:             monitoring.ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
@@ -31,47 +30,41 @@ func ZoektWebServer() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Container monitoring (not available on server)",
+				Title:  shared.TitleContainerMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedContainerCPUUsage("zoekt-webserver", monitoring.ObservableOwnerSearch),
-						sharedContainerMemoryUsage("zoekt-webserver", monitoring.ObservableOwnerSearch),
+						shared.ContainerCPUUsage("zoekt-webserver", monitoring.ObservableOwnerSearch).Observable(),
+						shared.ContainerMemoryUsage("zoekt-webserver", monitoring.ObservableOwnerSearch).Observable(),
 					},
 					{
-						sharedContainerRestarts("zoekt-webserver", monitoring.ObservableOwnerSearch),
-						sharedContainerFsInodes("zoekt-webserver", monitoring.ObservableOwnerSearch),
-					},
-					{
-						{
-							Name:              "fs_io_operations",
-							Description:       "filesystem reads and writes by instance rate over 1h",
-							Query:             fmt.Sprintf(`sum by(name) (rate(container_fs_reads_total{%[1]s}[1h]) + rate(container_fs_writes_total{%[1]s}[1h]))`, promCadvisorContainerMatchers("zoekt-webserver")),
-							DataMayNotExist:   true,
-							Warning:           monitoring.Alert().GreaterOrEqual(5000),
-							PanelOptions:      monitoring.PanelOptions().LegendFormat("{{name}}"),
-							Owner:             monitoring.ObservableOwnerSearch,
-							PossibleSolutions: "none",
-						},
+						// indexed-search does not have 0-downtime deploy, so deploys can
+						// cause extended container restarts. still seta warning alert for
+						// extended periods of container restarts, since this might still
+						// indicate a problem.
+						shared.ContainerMissing("zoekt-webserver", monitoring.ObservableOwnerSearch).Observable(),
+						shared.ContainerIOUsage("zoekt-webserver", monitoring.ObservableOwnerSearch).Observable(),
 					},
 				},
 			},
 			{
-				Title:  "Provisioning indicators (not available on server)",
+				Title:  shared.TitleProvisioningIndicators,
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedProvisioningCPUUsageLongTerm("zoekt-webserver", monitoring.ObservableOwnerSearch),
-						sharedProvisioningMemoryUsageLongTerm("zoekt-webserver", monitoring.ObservableOwnerSearch),
+						shared.ProvisioningCPUUsageLongTerm("zoekt-webserver", monitoring.ObservableOwnerSearch).Observable(),
+						shared.ProvisioningMemoryUsageLongTerm("zoekt-webserver", monitoring.ObservableOwnerSearch).Observable(),
 					},
 					{
-						sharedProvisioningCPUUsageShortTerm("zoekt-webserver", monitoring.ObservableOwnerSearch),
-						sharedProvisioningMemoryUsageShortTerm("zoekt-webserver", monitoring.ObservableOwnerSearch),
+						shared.ProvisioningCPUUsageShortTerm("zoekt-webserver", monitoring.ObservableOwnerSearch).Observable(),
+						shared.ProvisioningMemoryUsageShortTerm("zoekt-webserver", monitoring.ObservableOwnerSearch).Observable(),
 					},
 				},
 			},
 			// kubernetes monitoring for zoekt-web-server is provided by zoekt-index-server,
 			// since both services are deployed together
 		},
+
+		NoSourcegraphDebugServer: true,
 	}
 }

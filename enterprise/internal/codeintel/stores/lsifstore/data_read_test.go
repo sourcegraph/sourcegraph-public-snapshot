@@ -5,8 +5,9 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -23,7 +24,7 @@ func TestReadWriteMeta(t *testing.T) {
 		t.Fatalf("unexpected error while writing: %s", err)
 	}
 
-	meta, err := store.ReadMeta(ctx, 42)
+	meta, err := store.readMeta(ctx, 42)
 	if err != nil {
 		t.Fatalf("unexpected error reading from database: %s", err)
 	}
@@ -71,7 +72,7 @@ func TestReadWriteDocument(t *testing.T) {
 		t.Fatalf("unexpected error while writing documents: %s", err)
 	}
 
-	documentData, _, err := store.ReadDocument(ctx, 42, "foo.go")
+	documentData, _, err := store.readDocument(ctx, 42, "foo.go")
 	if err != nil {
 		t.Fatalf("unexpected error reading from database: %s", err)
 	}
@@ -125,7 +126,7 @@ func TestReadWriteResultChunk(t *testing.T) {
 		t.Fatalf("unexpected error while writing result chunks: %s", err)
 	}
 
-	resultChunkData, _, err := store.ReadResultChunk(ctx, 42, 7)
+	resultChunkData, _, err := store.readResultChunk(ctx, 42, 7)
 	if err != nil {
 		t.Fatalf("unexpected error reading from database: %s", err)
 	}
@@ -161,7 +162,7 @@ func TestReadWriteDefinitions(t *testing.T) {
 		t.Fatalf("unexpected error while writing definitions: %s", err)
 	}
 
-	definitions, _, err := store.ReadDefinitions(ctx, 42, "scheme A", "ident A", 0, 100)
+	definitions, _, err := store.readDefinitions(ctx, 42, "scheme A", "ident A", 0, 100)
 	if err != nil {
 		t.Fatalf("unexpected error reading from database: %s", err)
 	}
@@ -197,7 +198,7 @@ func TestReadWriteReferences(t *testing.T) {
 		t.Fatalf("unexpected error while writing references: %s", err)
 	}
 
-	references, _, err := store.ReadReferences(ctx, 42, "scheme C", "ident C", 0, 100)
+	references, _, err := store.readReferences(ctx, 42, "scheme C", "ident C", 0, 100)
 	if err != nil {
 		t.Fatalf("unexpected error reading from database: %s", err)
 	}
@@ -227,7 +228,7 @@ func TestPathsWithPrefix(t *testing.T) {
 		t.Fatalf("unexpected error while writing documents: %s", err)
 	}
 
-	paths, err := store.PathsWithPrefix(ctx, 42, "foo")
+	paths, err := store.pathsWithPrefix(ctx, 42, "foo")
 	if err != nil {
 		t.Fatalf("unexpected error reading from database: %s", err)
 	}
