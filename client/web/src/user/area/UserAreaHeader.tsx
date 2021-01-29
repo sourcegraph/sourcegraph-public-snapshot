@@ -1,4 +1,3 @@
-import AccountCircleIcon from 'mdi-react/AccountCircleIcon'
 import * as React from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { PageHeader } from '../../components/PageHeader'

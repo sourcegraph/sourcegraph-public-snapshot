@@ -36,6 +36,7 @@ describe('RegistryExtensionOverviewPage', () => {
                                 },
                             }}
                             history={history}
+                            isLightTheme={true}
                         />
                     </Router>
                 )
@@ -68,6 +69,7 @@ describe('RegistryExtensionOverviewPage', () => {
                                 },
                             }}
                             history={history}
+                            isLightTheme={true}
                         />
                     </Router>
                 )
@@ -92,6 +94,7 @@ describe('RegistryExtensionOverviewPage', () => {
                             },
                         }}
                         history={createMemoryHistory()}
+                        isLightTheme={true}
                     />
                 </Router>
             ).root
