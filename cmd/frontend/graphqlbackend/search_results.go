@@ -1189,7 +1189,7 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Te
 	}
 
 	if opts.fileMatchLimit == 0 {
-		opts.fileMatchLimit = r.maxResults()
+		opts.fileMatchLimit = int32(r.Limit)
 	}
 
 	return getPatternInfo(r.Query, opts)
@@ -1825,14 +1825,14 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
-				agg.doRepoSearch(ctx, &args, r.maxResults())
+				agg.doRepoSearch(ctx, &args, int32(r.Limit))
 			})
 		case "symbol":
 			wg := waitGroup(len(resultTypes) == 1)
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
-				agg.doSymbolSearch(ctx, &args, int(r.maxResults()))
+				agg.doSymbolSearch(ctx, &args, r.Limit)
 			})
 		case "file", "path":
 			if searchedFileContentsOrPaths || args.Mode == search.NoFilePath {
@@ -1891,7 +1891,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		start:         start,
 		Stats:         common,
 		SearchResults: results,
-		limit:         int(r.maxResults()),
+		limit:         r.Limit,
 		alert:         alert,
 	}
 	return &resultsResolver, err
