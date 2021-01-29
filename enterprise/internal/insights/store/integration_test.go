@@ -23,7 +23,7 @@ func TestIntegration(t *testing.T) {
 	getTimescaleDB := func(t testing.TB) *sql.DB {
 		// Setup TimescaleDB for testing.
 		if os.Getenv("CODEINSIGHTS_PGDATASOURCE") == "" {
-			os.Setenv("CODEINSIGHTS_PGDATASOURCE", "postgres://postgres:password@127.0.0.1:5435/postgres")			
+			os.Setenv("CODEINSIGHTS_PGDATASOURCE", "postgres://postgres:password@127.0.0.1:5435/postgres")
 		}
 		username := ""
 		if user, err := user.Current(); err == nil {
