@@ -3030,6 +3030,10 @@ type Query {
     """
     versionContexts: [VersionContext!]!
     """
+    (experimental) All search contexts.
+    """
+    searchContexts: [SearchContext!]!
+    """
     (experimental) Return the parse tree of a search query.
     """
     parseSearchQuery(
@@ -4752,6 +4756,31 @@ type VersionContext {
     The description of the version context.
     """
     description: String!
+}
+
+"""
+(experimental) A search context. Specifies a set of repositories to be searched.
+"""
+type SearchContext {
+    """
+    The search context ID.
+    """
+    id: ID!
+    """
+    The name of the search context. The "username" part in @username, or
+    the "searchContext" part in @username/searchContext.
+    """
+    name: String!
+    """
+    The namespace of the search context. Not present for global search context.
+    """
+    namespace: Namespace
+    """
+    Whether the search context is autodefined by Sourcegraph. Current examples include:
+    global search context ("global"), default user search context ("@user"), and
+    default organization search context ("@org").
+    """
+    autoDefined: Boolean!
 }
 
 """

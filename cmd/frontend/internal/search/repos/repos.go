@@ -17,6 +17,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -101,12 +102,12 @@ func ResolveRepositories(ctx context.Context, op Options) (Resolved, error) {
 
 	var searchContext *types.SearchContext
 	if envvar.SourcegraphDotComMode() {
-		searchContext, err = resolveSearchContextSpec(ctx, op.SearchContextSpec)
+		searchContext, err = searchcontexts.ResolveSearchContextSpec(ctx, op.SearchContextSpec)
 		if err != nil {
 			return Resolved{}, err
 		}
 	}
-	missingOrGlobalSearchContext := searchContext == nil || isGlobalSearchContext(searchContext)
+	missingOrGlobalSearchContext := searchContext == nil || searchcontexts.IsGlobalSearchContext(searchContext)
 
 	var defaultRepos []*types.RepoName
 
@@ -414,30 +415,6 @@ func resolveVersionContext(versionContext string) (*schema.VersionContext, error
 	}
 
 	return nil, errors.New("version context not found")
-}
-
-const globalSearchContextName = "global"
-
-func resolveSearchContextSpec(ctx context.Context, searchContextSpec string) (*types.SearchContext, error) {
-	// Empty search context spec resolves to global search context
-	if searchContextSpec == "" || searchContextSpec == globalSearchContextName {
-		return &types.SearchContext{Name: globalSearchContextName}, nil
-	} else if len(searchContextSpec) > 0 && searchContextSpec[:1] == "@" {
-		name := searchContextSpec[1:]
-		namespace, err := database.GlobalNamespaces.GetByName(ctx, name)
-		if err != nil {
-			return nil, err
-		}
-		if namespace.User == 0 {
-			return nil, errors.New("search context not found")
-		}
-		return &types.SearchContext{Name: name, UserID: &namespace.User}, nil
-	}
-	return nil, errors.New("search context spec does not have the correct format")
-}
-
-func isGlobalSearchContext(sc *types.SearchContext) bool {
-	return sc != nil && sc.Name == globalSearchContextName
 }
 
 // Cf. golang/go/src/regexp/syntax/parse.go.
