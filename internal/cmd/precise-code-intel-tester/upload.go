@@ -115,15 +115,20 @@ func makeProcessedSignals(revsByRepo map[string][]string) map[string]map[string]
 	return processedSignals
 }
 
+type refreshState struct {
+	Stale bool
+	Err   error
+}
+
 // refreshedSignals returns a map of error channels for each repository.
-func makeRefreshedSignals(revsByRepo map[string][]string) map[string]chan error {
-	refreshedSignals := map[string]chan error{}
+func makeRefreshedSignals(revsByRepo map[string][]string) map[string]chan refreshState {
+	refreshedSignals := map[string]chan refreshState{}
 	for repo, revs := range revsByRepo {
-		// Each channel may receive two values for each revision: a sentinel
-		// error indicating that the repo is out of date, and a nil error when
-		// the repository's commit graph has been refreshed. At any point, the
-		// channel can receive an error value and be closed.
-		refreshedSignals[repo] = make(chan error, len(revs)*2)
+		// Each channel may receive two values for each revision: a value when
+		// a new upload has been processed and the repository becomes stale by
+		// definition, and a value when the repository's commit graph has been
+		// refreshed (or an error occurs).
+		refreshedSignals[repo] = make(chan refreshState, len(revs)*2)
 	}
 
 	return refreshedSignals
@@ -136,13 +141,12 @@ func watchStateChanges(
 	ctx context.Context,
 	uploaded chan Upload,
 	processedSignals map[string]map[string]chan error,
-	refreshedSignals map[string]chan error,
+	refreshedSignals map[string]chan refreshState,
 ) {
 	send := func(err error) {
 		// Send err to everybody and exit
 		for name, revs := range processedSignals {
-			for rev := range revs {
-				ch := processedSignals[name][rev]
+			for rev, ch := range revs {
 				if err != nil {
 					ch <- err
 				}
@@ -154,7 +158,7 @@ func watchStateChanges(
 
 		for name, ch := range refreshedSignals {
 			if err != nil {
-				ch <- err
+				ch <- refreshState{Err: err}
 			}
 
 			close(ch)
@@ -203,7 +207,7 @@ func watchStateChanges(
 				// If another upload is processed for this repository, we will
 				// perform the same set of actions all over again; see below
 				// when when the upload state is COMPLETED.
-				refreshedSignals[name] <- nil
+				refreshedSignals[name] <- refreshState{Stale: false}
 				delete(repositoryMap, name)
 			}
 		}
@@ -222,7 +226,7 @@ func watchStateChanges(
 				// Add repository to list of repositories with a stale
 				// commit graph and watch until it becomes fresh again.
 				repositoryMap[upload.Name] = struct{}{}
-				refreshedSignals[upload.Name] <- ErrStaleCommitGraph
+				refreshedSignals[upload.Name] <- refreshState{Stale: true}
 
 				// Signal to listeners that this rev has been processed
 				ch := processedSignals[upload.Name][upload.Rev]
@@ -239,11 +243,6 @@ func watchStateChanges(
 
 // ErrProcessingFailed occurs when an upload enters the ERRORED state.
 var ErrProcessingFailed = errors.New("processing failed")
-
-// ErrStaleCommitGraph is a sentinel error value indicating that a new upload
-// was just processed for a repository, and the repository's commit graph is
-// out of date (by definition).
-var ErrStaleCommitGraph = errors.New("commit graph out of date")
 
 const uploadQueryFragment = `
 	u%d: node(id: "%s") {
@@ -304,7 +303,7 @@ func makeTestUploadForRepositoryFunction(
 	revs []string,
 	uploaded chan Upload,
 	processedSignals map[string]map[string]chan error,
-	refreshedSignals map[string]chan error,
+	refreshedSignals map[string]chan refreshState,
 	limiter *util.Limiter,
 ) util.ParallelFn {
 	var numUploaded uint32
@@ -366,7 +365,7 @@ func makeTestUploadForRepositoryFunction(
 			// commit graph is stale, we'll continue to wait on the channel for an
 			// additional nil value indicating the refresh.
 
-			var lastValue error
+			var lastValue refreshState
 		refreshLoop:
 			for {
 				select {
@@ -383,8 +382,8 @@ func makeTestUploadForRepositoryFunction(
 			}
 
 			for {
-				if lastValue != ErrStaleCommitGraph {
-					return lastValue
+				if !lastValue.Stale {
+					return lastValue.Err
 				}
 
 				select {
