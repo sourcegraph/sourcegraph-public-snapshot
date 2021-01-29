@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react'
+import React, { useState, useCallback } from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
 import { isExtensionEnabled } from '../../../../shared/src/extensions/extension'
 import { ExtensionManifest } from '../../../../shared/src/schema/extensionSchema'
@@ -6,13 +6,12 @@ import { isErrorLike } from '../../../../shared/src/util/errors'
 import { NavItemWithIconDescriptor } from '../../util/contributions'
 import { ExtensionToggle } from '../ExtensionToggle'
 import { ExtensionAreaRouteContext } from './ExtensionArea'
-import { isEncodedImage } from '../../../../shared/src/util/icon'
 import { useTimeoutManager } from '../../../../shared/src/util/useTimeoutManager'
 import classNames from 'classnames'
 import { splitExtensionID } from './extension'
 import { PageHeader } from '../../components/PageHeader'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
-import { StatusBadge } from '../../components/StatusBadge'
+import { ExtensionStatusBadge } from './ExtensionStatusBadge'
 
 interface ExtensionAreaHeaderProps extends ExtensionAreaRouteContext, RouteComponentProps<{}> {
     navItems: readonly ExtensionAreaHeaderNavItem[]
@@ -34,27 +33,6 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
 ) => {
     const manifest: ExtensionManifest | undefined =
         props.extension.manifest && !isErrorLike(props.extension.manifest) ? props.extension.manifest : undefined
-
-    const iconURL = useMemo(() => {
-        let iconURL: URL | undefined
-
-        try {
-            if (props.isLightTheme) {
-                if (manifest?.icon && isEncodedImage(manifest.icon)) {
-                    iconURL = new URL(manifest.icon)
-                }
-            } else if (manifest?.iconDark && isEncodedImage(manifest.iconDark)) {
-                iconURL = new URL(manifest.iconDark)
-            } else if (manifest?.icon && isEncodedImage(manifest.icon)) {
-                // fallback: show default icon on dark theme if dark icon isn't specified
-                iconURL = new URL(manifest.icon)
-            }
-        } catch {
-            // noop
-        }
-
-        return iconURL
-    }, [manifest?.icon, manifest?.iconDark, props.isLightTheme])
 
     const isWorkInProgress = props.extension.registryExtension?.isWorkInProgress
 
@@ -96,12 +74,9 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                         <PageHeader
                             annotation={
                                 isWorkInProgress && (
-                                    <StatusBadge
-                                        status="prototype"
-                                        tooltip={
-                                            props.extension.registryExtension?.viewerCanAdminister
-                                                ? 'Remove "WIP" from the title when this extension is ready for use.'
-                                                : 'Work in progress (not ready for use)'
+                                    <ExtensionStatusBadge
+                                        viewerCanAdminister={
+                                            props.extension.registryExtension?.viewerCanAdminister || false
                                         }
                                     />
                                 )
@@ -147,7 +122,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                 </div>
                             }
                         />
-                        <div className="mt-3">
+                        <div className="mt-4">
                             <ul className="nav nav-tabs border-bottom-0">
                                 {props.navItems.map(
                                     ({ to, label, exact, icon: Icon, condition = () => true }) =>

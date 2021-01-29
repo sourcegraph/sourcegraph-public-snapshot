@@ -15,7 +15,7 @@ import { Link } from 'react-router-dom'
 import { DefaultIconEnabled, DefaultIcon, SourcegraphExtensionIcon } from './icons'
 import { ThemeProps } from '../../../shared/src/theme'
 import { useTimeoutManager } from '../../../shared/src/util/useTimeoutManager'
-import { StatusBadge } from '../components/StatusBadge'
+import { ExtensionStatusBadge } from './extension/ExtensionStatusBadge'
 
 interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettings'>, ThemeProps {
     node: Pick<
@@ -202,13 +202,8 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                                 )}
                             </span>
                             {extension.registryExtension?.isWorkInProgress && (
-                                <StatusBadge
-                                    status="prototype"
-                                    tooltip={
-                                        extension.registryExtension.viewerCanAdminister
-                                            ? 'Remove "WIP" from the title when this extension is ready for use.'
-                                            : 'Work in progress (not ready for use)'
-                                    }
+                                <ExtensionStatusBadge
+                                    viewerCanAdminister={extension.registryExtension.viewerCanAdminister}
                                 />
                             )}
                         </div>

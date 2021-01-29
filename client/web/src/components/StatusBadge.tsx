@@ -1,9 +1,10 @@
 import React from 'react'
 
-type Status = 'beta' | 'prototype'
+type Status = 'beta' | 'prototype' | 'wip'
 
 const statusStyleMapping: Record<Status, string> = {
     prototype: 'badge-warning',
+    wip: 'badge-warning',
     beta: 'badge-info',
 }
 
