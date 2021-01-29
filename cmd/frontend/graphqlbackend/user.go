@@ -331,7 +331,6 @@ func (r *schemaResolver) CreatePassword(ctx context.Context, args *struct {
 	if user == nil {
 		return nil, errors.New("no authenticated user")
 	}
-
 	if err := database.GlobalUsers.CreatePassword(ctx, user.ID, args.NewPassword); err != nil {
 		return nil, err
 	}

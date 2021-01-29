@@ -905,6 +905,9 @@ func (u *UserStore) SetPassword(ctx context.Context, id int32, resetCode, newPas
 	if newPassword == "" {
 		return false, errors.New("new password was empty")
 	}
+	if err := CheckPasswordLength(newPassword); err != nil {
+		return false, err
+	}
 
 	resetLinkExpiryDuration := conf.AuthPasswordResetLinkExpiry()
 
@@ -974,8 +977,8 @@ func (u *UserStore) UpdatePassword(ctx context.Context, id int32, oldPassword, n
 	return nil
 }
 
-// CreatePassword creates a user's password iff they have never had one set and
-// they don't have any other valid login connections.
+// CreatePassword creates a user's password iff don't have a password and they
+// don't have any valid login connections.
 func (u *UserStore) CreatePassword(ctx context.Context, id int32, password string) error {
 	u.ensureStore()
 

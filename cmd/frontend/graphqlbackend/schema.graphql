@@ -229,7 +229,7 @@ type Mutation {
     """
     updatePassword(oldPassword: String!, newPassword: String!): EmptyResponse
     """
-    Creates a password for the current user. It is only permitted if the user has never had a password and
+    Creates a password for the current user. It is only permitted if the user does not have a password and
     they don't have any login connections.
     """
     createPassword(newPassword: String!): EmptyResponse
