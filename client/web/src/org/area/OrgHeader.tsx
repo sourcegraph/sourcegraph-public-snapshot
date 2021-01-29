@@ -33,7 +33,7 @@ export const OrgHeader: React.FunctionComponent<Props> = ({
                         path={[
                             {
                                 icon: () => <OrgAvatar org={org.name} size="lg" className="mr-3" />,
-                                text: <span className="org-header__title-text">{org.displayName || org.name}</span>,
+                                text: <span className="align-middle">{org.displayName || org.name}</span>,
                             },
                         ]}
                         className="mb-3"

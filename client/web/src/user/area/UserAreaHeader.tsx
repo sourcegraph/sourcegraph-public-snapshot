@@ -31,7 +31,13 @@ export const UserAreaHeader: React.FunctionComponent<Props> = ({ url, navItems, 
                             {
                                 text: (
                                     <span className="align-middle">
-                                        {props.user.displayName || props.user.username}
+                                        {props.user.displayName ? (
+                                            <>
+                                                {props.user.displayName} ({props.user.username})
+                                            </>
+                                        ) : (
+                                            props.user.username
+                                        )}
                                     </span>
                                 ),
                                 icon: () => <UserAvatar className="user-area-header__avatar" user={props.user} />,
