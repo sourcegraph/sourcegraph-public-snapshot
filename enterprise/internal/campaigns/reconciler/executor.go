@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -63,14 +63,14 @@ func (e *executor) Run(ctx context.Context, plan *Plan) (err error) {
 		return nil
 	}
 
-	reposStore := db.NewRepoStoreWith(e.tx)
+	reposStore := database.ReposWith(e.tx)
 
-	e.repo, err = loadRepo(ctx, reposStore, e.ch.RepoID)
+	e.repo, err = reposStore.Get(ctx, e.ch.RepoID)
 	if err != nil {
 		return errors.Wrap(err, "failed to load repository")
 	}
 
-	esStore := db.NewExternalServicesStoreWith(e.tx)
+	esStore := database.ExternalServicesWith(e.tx)
 
 	e.extSvc, err = loadExternalService(ctx, esStore, e.repo)
 	if err != nil {
@@ -608,12 +608,12 @@ func loadCampaign(ctx context.Context, tx getCampaigner, id int64) (*campaigns.C
 }
 
 func loadUser(ctx context.Context, id int32) (*types.User, error) {
-	return db.Users.GetByID(ctx, id)
+	return database.GlobalUsers.GetByID(ctx, id)
 }
 
-func loadUserCredential(ctx context.Context, userID int32, repo *types.Repo) (*db.UserCredential, error) {
-	return db.UserCredentials.GetByScope(ctx, db.UserCredentialScope{
-		Domain:              db.UserCredentialDomainCampaigns,
+func loadUserCredential(ctx context.Context, userID int32, repo *types.Repo) (*database.UserCredential, error) {
+	return database.GlobalUserCredentials.GetByScope(ctx, database.UserCredentialScope{
+		Domain:              database.UserCredentialDomainCampaigns,
 		UserID:              userID,
 		ExternalServiceType: repo.ExternalRepo.ServiceType,
 		ExternalServiceID:   repo.ExternalRepo.ServiceID,
@@ -628,7 +628,7 @@ func decorateChangesetBody(ctx context.Context, tx getCampaigner, cs *repos.Chan
 
 	// We need to get the namespace, since external campaign URLs are
 	// namespaced.
-	ns, err := db.Namespaces.GetByID(ctx, campaign.NamespaceOrgID, campaign.NamespaceUserID)
+	ns, err := database.GlobalNamespaces.GetByID(ctx, campaign.NamespaceOrgID, campaign.NamespaceUserID)
 	if err != nil {
 		return errors.Wrap(err, "retrieving namespace")
 	}
@@ -651,7 +651,7 @@ var internalClient interface {
 	ExternalURL(context.Context) (string, error)
 } = api.InternalClient
 
-func campaignURL(ctx context.Context, ns *db.Namespace, c *campaigns.Campaign) (string, error) {
+func campaignURL(ctx context.Context, ns *database.Namespace, c *campaigns.Campaign) (string, error) {
 	// To build the absolute URL, we need to know where Sourcegraph is!
 	extStr, err := internalClient.ExternalURL(ctx)
 	if err != nil {
@@ -672,7 +672,7 @@ func campaignURL(ctx context.Context, ns *db.Namespace, c *campaigns.Campaign) (
 	return u.String(), nil
 }
 
-func namespaceURL(ns *db.Namespace) string {
+func namespaceURL(ns *database.Namespace) string {
 	prefix := "/users/"
 	if ns.Organization != 0 {
 		prefix = "/organizations/"

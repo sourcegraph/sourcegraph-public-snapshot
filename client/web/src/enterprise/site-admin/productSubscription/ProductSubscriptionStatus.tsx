@@ -17,7 +17,10 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
 import * as H from 'history'
 
-const queryProductLicenseInfo = (): Observable<GQL.IProductSubscriptionStatus> =>
+const queryProductLicenseInfo = (): Observable<{
+    productSubscription: GQL.IProductSubscriptionStatus
+    currentUserCount: number
+}> =>
     queryGraphQL(gql`
         query ProductLicenseInfo {
             site {
@@ -33,10 +36,16 @@ const queryProductLicenseInfo = (): Observable<GQL.IProductSubscriptionStatus> =
                     }
                 }
             }
+            users {
+                totalCount
+            }
         }
     `).pipe(
         map(dataOrThrowErrors),
-        map(data => data.site.productSubscription)
+        map(({ site, users }) => ({
+            productSubscription: site.productSubscription,
+            currentUserCount: users.totalCount,
+        }))
     )
 
 interface Props {
@@ -72,11 +81,14 @@ export const ProductSubscriptionStatus: React.FunctionComponent<Props> = ({ clas
     }
 
     const {
-        productNameWithBrand,
-        actualUserCount,
-        actualUserCountDate,
-        noLicenseWarningUserCount,
-        license,
+        productSubscription: {
+            productNameWithBrand,
+            actualUserCount,
+            actualUserCountDate,
+            noLicenseWarningUserCount,
+            license,
+        },
+        currentUserCount,
     } = statusOrError
 
     // No license means Sourcegraph Free. For that, show the user that they can use this for free
@@ -104,8 +116,9 @@ export const ProductSubscriptionStatus: React.FunctionComponent<Props> = ({ clas
                         {license ? (
                             <>
                                 <div>
-                                    <strong>User licenses:</strong> {numberWithCommas(actualUserCount)} used /{' '}
-                                    {numberWithCommas(license.userCount - actualUserCount)} remaining
+                                    <strong>User licenses:</strong> {numberWithCommas(currentUserCount)} currently used
+                                    / {numberWithCommas(license.userCount - currentUserCount)} remaining (
+                                    {numberWithCommas(actualUserCount)} maximum ever used)
                                 </div>
                                 <a
                                     href="https://about.sourcegraph.com/pricing"

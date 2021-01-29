@@ -21,8 +21,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestatsdeprecated"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
@@ -99,12 +99,12 @@ func hasFindRefsOccurred(ctx context.Context) (_ bool, err error) {
 
 func getTotalUsersCount(ctx context.Context) (_ int, err error) {
 	defer recordOperation("getTotalUsersCount")(&err)
-	return db.Users.Count(ctx, &db.UsersListOptions{})
+	return database.GlobalUsers.Count(ctx, &database.UsersListOptions{})
 }
 
 func getTotalReposCount(ctx context.Context) (_ int, err error) {
 	defer recordOperation("getTotalReposCount")(&err)
-	return db.Repos.Count(ctx, db.ReposListOptions{})
+	return database.GlobalRepos.Count(ctx, database.ReposListOptions{})
 }
 
 func getUsersActiveTodayCount(ctx context.Context) (_ int, err error) {
@@ -114,7 +114,7 @@ func getUsersActiveTodayCount(ctx context.Context) (_ int, err error) {
 
 func getInitialSiteAdminEmail(ctx context.Context) (_ string, err error) {
 	defer recordOperation("getInitialSiteAdminEmail")(&err)
-	return db.UserEmails.GetInitialSiteAdminEmail(ctx)
+	return database.GlobalUserEmails.GetInitialSiteAdminEmail(ctx)
 }
 
 func getAndMarshalCampaignsUsageJSON(ctx context.Context) (_ json.RawMessage, err error) {
@@ -297,12 +297,12 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 
 	totalUsers, err := getTotalUsersCount(ctx)
 	if err != nil {
-		logFunc("telemetry: db.Users.Count failed", "error", err)
+		logFunc("telemetry: database.Users.Count failed", "error", err)
 	}
 	r.TotalUsers = int32(totalUsers)
 	r.InitialAdminEmail, err = getInitialSiteAdminEmail(ctx)
 	if err != nil {
-		logFunc("telemetry: db.UserEmails.GetInitialSiteAdminEmail failed", "error", err)
+		logFunc("telemetry: database.UserEmails.GetInitialSiteAdminEmail failed", "error", err)
 	}
 
 	r.DependencyVersions, err = getDependencyVersions(ctx, logFunc)
@@ -428,7 +428,7 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		return nil, err
 	}
 
-	err = db.EventLogs.Insert(ctx, &db.Event{
+	err = database.GlobalEventLogs.Insert(ctx, &database.Event{
 		UserID:          0,
 		Name:            "ping",
 		URL:             "",
@@ -452,7 +452,7 @@ func authProviderTypes() []string {
 
 func externalServiceKinds(ctx context.Context) (kinds []string, err error) {
 	defer recordOperation("externalServiceKinds")(&err)
-	kinds, err = db.ExternalServices.DistinctKinds(ctx)
+	kinds, err = database.GlobalExternalServices.DistinctKinds(ctx)
 	return kinds, err
 }
 

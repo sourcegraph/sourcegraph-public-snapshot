@@ -13,9 +13,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -44,8 +44,8 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 	campaign := ct.CreateCampaign(t, ctx, cstore, campaignName, userID, oldCampaignSpec.ID)
 	campaignSpec := ct.CreateCampaignSpec(t, ctx, cstore, campaignName, userID)
 
-	esStore := db.NewExternalServicesStoreWith(cstore)
-	repoStore := db.NewRepoStoreWith(cstore)
+	esStore := database.ExternalServicesWith(cstore)
+	repoStore := database.ReposWith(cstore)
 
 	rs := make([]*types.Repo, 0, 3)
 	for i := 0; i < cap(rs); i++ {
@@ -98,7 +98,7 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 		OwnedByCampaign:  campaign.ID,
 	})
 
-	s, err := graphqlbackend.NewSchema(&Resolver{store: cstore}, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(dbconn.Global, &Resolver{store: cstore}, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

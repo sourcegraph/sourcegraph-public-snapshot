@@ -31,6 +31,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -126,6 +127,12 @@ type Server struct {
 	// Note: internal uses should call getRemoteURL which will handle
 	// GetRemoteURLFunc being nil.
 	GetRemoteURLFunc func(context.Context, api.RepoName) (string, error)
+
+	// GetVCSSyncer is a function which returns the VCS syncer for a repository.
+	// This is used when cloning or fetching a repository. In production this will
+	// speak to the database to determine the code host type. In tests this is
+	// usually set to return a GitRepoSyncer.
+	GetVCSSyncer func(context.Context, api.RepoName) (VCSSyncer, error)
 
 	// skipCloneForTests is set by tests to avoid clones.
 	skipCloneForTests bool
@@ -363,16 +370,26 @@ func (s *Server) handleIsRepoCloneable(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var syncer VCSSyncer
 	remoteURL, err := s.getRemoteURL(r.Context(), req.Repo)
 	if err != nil {
 		// We use this endpoint to verify if a repo exists without consuming
 		// API rate limit, since many users visit private or bogus repos,
 		// so we deduce the unauthenticated clone URL from the repo name.
 		remoteURL = "https://" + string(req.Repo) + ".git"
+
+		// At this point we are assuming it's a git repo
+		syncer = &GitRepoSyncer{}
+	} else {
+		syncer, err = s.GetVCSSyncer(r.Context(), req.Repo)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	var resp protocol.IsRepoCloneableResponse
-	if err := s.isCloneable(r.Context(), remoteURL); err == nil {
+	if err := syncer.IsCloneable(r.Context(), remoteURL); err == nil {
 		resp = protocol.IsRepoCloneableResponse{Cloneable: true}
 	} else {
 		resp = protocol.IsRepoCloneableResponse{
@@ -768,7 +785,7 @@ type cloneOptions struct {
 	Overwrite bool
 }
 
-// cloneRepo issues a git clone command for the given repo. It is
+// cloneRepo performs a clone operation for the given repository. It is
 // non-blocking by default.
 func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOptions) (string, error) {
 	if strings.ToLower(string(repo)) == "github.com/sourcegraphtest/alwayscloningtest" {
@@ -781,6 +798,11 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 	// ensure we are not already cloning.
 	if progress, cloneInProgress := s.locker.Status(dir); cloneInProgress {
 		return progress, nil
+	}
+
+	syncer, err := s.GetVCSSyncer(ctx, repo)
+	if err != nil {
+		return "", errors.Wrap(err, "get VCS syncer")
 	}
 
 	url, err := s.getRemoteURL(ctx, repo)
@@ -800,7 +822,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		return "", err // err will be a context error
 	}
 	defer cancel()
-	if err := s.isCloneable(ctx, url); err != nil {
+	if err := syncer.IsCloneable(ctx, url); err != nil {
 		return "", fmt.Errorf("error cloning repo: repo %s not cloneable: %s", repo, redactor.redact(err.Error()))
 	}
 
@@ -855,17 +877,16 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		tmpPath = filepath.Join(tmpPath, ".git")
 		tmp := GitDir(tmpPath)
 
-		var cmd *exec.Cmd
-		if useRefspecOverrides() {
-			cmd, err = refspecOverridesCloneCmd(ctx, url, tmpPath)
-			if err != nil {
-				return err
-			}
-		} else {
-			cmd = exec.CommandContext(ctx, "git", "clone", "--mirror", "--progress", url, tmpPath)
+		cmd, err := syncer.CloneCommand(ctx, url, tmpPath)
+		if err != nil {
+			return errors.Wrap(err, "get clone command")
 		}
+		if cmd.Env == nil {
+			cmd.Env = os.Environ()
+		}
+
 		// see issue #7322: skip LFS content in repositories with Git LFS configured
-		cmd.Env = append(os.Environ(), "GIT_LFS_SKIP_SMUDGE=1")
+		cmd.Env = append(cmd.Env, "GIT_LFS_SKIP_SMUDGE=1")
 		log15.Info("cloning repo", "repo", repo, "tmp", tmpPath, "dst", dstPath)
 
 		pr, pw := io.Pipe()
@@ -1025,36 +1046,9 @@ func scanCRLF(data []byte, atEOF bool) (advance int, token []byte, err error) {
 	return 0, nil, nil
 }
 
-// testRepoExists is a test fixture that overrides the return value
-// for isCloneable when it is set.
-var testRepoExists func(ctx context.Context, url string) error
-
-// isCloneable checks to see if the Git remote URL is cloneable.
-func (s *Server) isCloneable(ctx context.Context, url string) error {
-	args := []string{"ls-remote", url, "HEAD"}
-	ctx, cancel := context.WithTimeout(ctx, shortGitCommandTimeout(args))
-	defer cancel()
-
-	if strings.ToLower(string(protocol.NormalizeRepo(api.RepoName(url)))) == "github.com/sourcegraphtest/alwayscloningtest" {
-		return nil
-	}
-	if testRepoExists != nil {
-		return testRepoExists(ctx, url)
-	}
-
-	cmd := exec.CommandContext(ctx, "git", args...)
-	out, err := runWithRemoteOpts(ctx, cmd, nil)
-	if err != nil {
-		if ctxerr := ctx.Err(); ctxerr != nil {
-			err = ctxerr
-		}
-		if len(out) > 0 {
-			err = fmt.Errorf("%s (output follows)\n\n%s", err, out)
-		}
-		return err
-	}
-	return nil
-}
+// testGitRepoExists is a test fixture that overrides the return value for
+// GitRepoSyncer.IsCloneable when it is set.
+var testGitRepoExists func(ctx context.Context, url string) error
 
 var (
 	execRunning = prometheus.NewGaugeVec(prometheus.GaugeOpts{
@@ -1354,28 +1348,16 @@ func (s *Server) doRepoUpdate2(repo api.RepoName) error {
 		return errors.Wrap(err, "failed to determine Git remote URL")
 	}
 
-	configRemoteOpts := true
-	var cmd *exec.Cmd
-	if customCmd := customFetchCmd(ctx, url); customCmd != nil {
-		cmd = customCmd
-		configRemoteOpts = false
-	} else if useRefspecOverrides() {
-		cmd = refspecOverridesFetchCmd(ctx, url)
-	} else {
-		cmd = exec.CommandContext(ctx, "git", "fetch", "--prune", url,
-			// Normal git refs
-			"+refs/heads/*:refs/heads/*", "+refs/tags/*:refs/tags/*",
-			// GitHub pull requests
-			"+refs/pull/*:refs/pull/*",
-			// GitLab merge requests
-			"+refs/merge-requests/*:refs/merge-requests/*",
-			// Bitbucket pull requests
-			"+refs/pull-requests/*:refs/pull-requests/*",
-			// Gerrit changesets
-			"+refs/changes/*:refs/changes/*",
-			// Possibly deprecated refs for sourcegraph zap experiment?
-			"+refs/sourcegraph/*:refs/sourcegraph/*")
+	syncer, err := s.GetVCSSyncer(ctx, repo)
+	if err != nil {
+		return errors.Wrap(err, "get VCS syncer")
 	}
+
+	cmd, configRemoteOpts, err := syncer.FetchCommand(ctx, url)
+	if err != nil {
+		return errors.Wrap(err, "get fetch command")
+	}
+
 	dir.Set(cmd)
 
 	// drop temporary pack files after a fetch. this function won't
@@ -1401,7 +1383,10 @@ func (s *Server) doRepoUpdate2(repo api.RepoName) error {
 	headBranch := "master"
 
 	// try to fetch HEAD from origin
-	cmd = exec.CommandContext(ctx, "git", "remote", "show", url)
+	cmd, err = syncer.RemoteShowCommand(ctx, url)
+	if err != nil {
+		return errors.Wrap(err, "get remote show command")
+	}
 	cmd.Dir = path.Join(s.ReposDir, string(repo))
 	output, err := runWithRemoteOpts(ctx, cmd, nil)
 	if err != nil {
@@ -1412,7 +1397,7 @@ func (s *Server) doRepoUpdate2(repo api.RepoName) error {
 	if len(submatches) == 2 {
 		submatch := string(submatches[1])
 		if submatch != "(unknown)" {
-			headBranch = string(submatch)
+			headBranch = submatch
 		}
 	}
 

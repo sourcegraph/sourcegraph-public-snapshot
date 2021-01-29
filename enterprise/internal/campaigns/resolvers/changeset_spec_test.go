@@ -14,9 +14,9 @@ import (
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -31,10 +31,10 @@ func TestChangesetSpecResolver(t *testing.T) {
 	userID := ct.CreateTestUser(t, false).ID
 
 	cstore := store.New(dbconn.Global)
-	esStore := db.NewExternalServicesStoreWith(cstore)
+	esStore := database.ExternalServicesWith(cstore)
 
 	// Creating user with matching email to the changeset spec author.
-	user, err := db.Users.Create(ctx, db.NewUser{
+	user, err := database.GlobalUsers.Create(ctx, database.NewUser{
 		Username:        "mary",
 		Email:           ct.ChangesetSpecAuthorEmail,
 		EmailIsVerified: true,
@@ -44,7 +44,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	repoStore := db.NewRepoStoreWith(cstore)
+	repoStore := database.ReposWith(cstore)
 	repo := newGitHubTestRepo("github.com/sourcegraph/changeset-spec-resolver-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
@@ -63,7 +63,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(&Resolver{store: cstore}, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(dbconn.Global, &Resolver{store: cstore}, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

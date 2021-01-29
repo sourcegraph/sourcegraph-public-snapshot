@@ -11,7 +11,7 @@ type lsifGoJobRecognizer struct{}
 
 var _ IndexJobRecognizer = lsifGoJobRecognizer{}
 
-func (r lsifGoJobRecognizer) CanIndex(paths []string) bool {
+func (r lsifGoJobRecognizer) CanIndex(paths []string, gitserver GitserverClientWrapper) bool {
 	for _, path := range paths {
 		if r.canIndexPath(path) {
 			return true
@@ -21,7 +21,7 @@ func (r lsifGoJobRecognizer) CanIndex(paths []string) bool {
 	return false
 }
 
-func (r lsifGoJobRecognizer) InferIndexJobs(paths []string) (indexes []IndexJob) {
+func (r lsifGoJobRecognizer) InferIndexJobs(paths []string, gitserver GitserverClientWrapper) (indexes []IndexJob) {
 	for _, path := range paths {
 		if !r.canIndexPath(path) {
 			continue

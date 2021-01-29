@@ -15,10 +15,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	cm "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/email"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
-// NewResolver returns a new Resolver that uses the given db
+// NewResolver returns a new Resolver that uses the given database
 func NewResolver(db dbutil.DB) graphqlbackend.CodeMonitorsResolver {
 	return &Resolver{store: cm.NewStore(db)}
 }

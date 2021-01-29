@@ -61,6 +61,11 @@ export CODEINTEL_PGSSLMODE="${PGSSLMODE:-}"
 export CODEINTEL_PGDATASOURCE="${PGDATASOURCE:-}"
 export CODEINTEL_PG_ALLOW_SINGLE_DB=true
 
+# Code Insights uses a separate database, because it's easier to run TimescaleDB in
+# Docker than install as a Postgres extension in dev environments.
+export CODEINSIGHTS_PGDATASOURCE=postgres://postgres:password@127.0.0.1:5435/postgres
+export DB_STARTUP_TIMEOUT=30s # codeinsights-db needs more time to start in some instances.
+
 # Default to "info" level debugging, and "condensed" log format (nice for human readers)
 export SRC_LOG_LEVEL=${SRC_LOG_LEVEL:-info}
 export SRC_LOG_FORMAT=${SRC_LOG_FORMAT:-condensed}

@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"log"
@@ -22,13 +23,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/loghandlers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -83,11 +85,11 @@ func defaultExternalURL(nginxAddr, httpAddr string) *url.URL {
 	return &url.URL{Scheme: "http", Host: hostPort}
 }
 
-// InitDB initializes the global database connection and sets the
+// InitDB initializes and returns the global database connection and sets the
 // version of the frontend in our versions table.
-func InitDB() error {
+func InitDB() (*sql.DB, error) {
 	if err := dbconn.SetupGlobalConnection(""); err != nil {
-		return fmt.Errorf("failed to connect to frontend database: %s", err)
+		return nil, fmt.Errorf("failed to connect to frontend database: %s", err)
 	}
 
 	ctx := context.Background()
@@ -100,15 +102,15 @@ func InitDB() error {
 
 		err := backend.UpdateServiceVersion(ctx, "frontend", version.Version())
 		if err != nil && !dbutil.IsPostgresError(err, "42P01") {
-			return err
+			return nil, err
 		}
 
 		if !migrate {
-			return nil
+			return dbconn.Global, nil
 		}
 
-		if err := dbconn.MigrateDB(dbconn.Global, "frontend"); err != nil {
-			return err
+		if err := dbconn.MigrateDB(dbconn.Global, dbconn.Frontend); err != nil {
+			return nil, err
 		}
 
 		migrate = false
@@ -124,9 +126,12 @@ func Main(enterpriseSetupHook func() enterprise.Services) error {
 		log.Fatalf("failed to initialize profiling: %v", err)
 	}
 
-	if err := InitDB(); err != nil {
+	db, err := InitDB()
+	if err != nil {
 		log.Fatalf("ERROR: %v", err)
 	}
+
+	ui.InitRouter()
 
 	if err := handleConfigOverrides(); err != nil {
 		log.Fatal("applying config overrides:", err)
@@ -209,7 +214,7 @@ func Main(enterpriseSetupHook func() enterprise.Services) error {
 		return errors.New("dbconn.Global is nil when trying to parse GraphQL schema")
 	}
 
-	schema, err := graphqlbackend.NewSchema(enterprise.CampaignsResolver, enterprise.CodeIntelResolver, enterprise.AuthzResolver, enterprise.CodeMonitorsResolver, enterprise.LicenseResolver)
+	schema, err := graphqlbackend.NewSchema(db, enterprise.CampaignsResolver, enterprise.CodeIntelResolver, enterprise.InsightsResolver, enterprise.AuthzResolver, enterprise.CodeMonitorsResolver, enterprise.LicenseResolver)
 	if err != nil {
 		return err
 	}

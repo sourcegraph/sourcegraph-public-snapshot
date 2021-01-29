@@ -7,7 +7,7 @@ import (
 	"github.com/graph-gophers/graphql-go/gqltesting"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -50,10 +50,10 @@ func TestStatusMessages(t *testing.T) {
 	})
 
 	t.Run("authenticated as non-site-admin", func(t *testing.T) {
-		db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
+		database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
 			return &types.User{ID: 1, SiteAdmin: false}, nil
 		}
-		defer func() { db.Mocks.Users.GetByCurrentAuthUser = nil }()
+		defer func() { database.Mocks.Users.GetByCurrentAuthUser = nil }()
 
 		result, err := (&schemaResolver{}).StatusMessages(context.Background())
 		if want := backend.ErrMustBeSiteAdmin; err != want {
@@ -65,10 +65,10 @@ func TestStatusMessages(t *testing.T) {
 	})
 
 	t.Run("no messages", func(t *testing.T) {
-		db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
+		database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
 			return &types.User{ID: 1, SiteAdmin: true}, nil
 		}
-		defer func() { db.Mocks.Users.GetByCurrentAuthUser = nil }()
+		defer func() { database.Mocks.Users.GetByCurrentAuthUser = nil }()
 
 		repoupdater.MockStatusMessages = func(_ context.Context) (*protocol.StatusMessagesResponse, error) {
 			res := &protocol.StatusMessagesResponse{Messages: []protocol.StatusMessage{}}
@@ -90,15 +90,15 @@ func TestStatusMessages(t *testing.T) {
 	})
 
 	t.Run("messages", func(t *testing.T) {
-		db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
+		database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
 			return &types.User{ID: 1, SiteAdmin: true}, nil
 		}
-		defer func() { db.Mocks.Users.GetByCurrentAuthUser = nil }()
+		defer func() { database.Mocks.Users.GetByCurrentAuthUser = nil }()
 
-		db.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
+		database.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
 			return &types.ExternalService{ID: 1, DisplayName: "GitHub.com testing"}, nil
 		}
-		defer func() { db.Mocks.ExternalServices.GetByID = nil }()
+		defer func() { database.Mocks.ExternalServices.GetByID = nil }()
 
 		repoupdater.MockStatusMessages = func(_ context.Context) (*protocol.StatusMessagesResponse, error) {
 			res := &protocol.StatusMessagesResponse{Messages: []protocol.StatusMessage{

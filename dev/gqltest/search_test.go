@@ -438,6 +438,14 @@ func TestSearch(t *testing.T) {
 					ProposedQueries: nil,
 				},
 			},
+			{
+				name:  "commit search, non-zero result message",
+				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ type:commit message:test`,
+			},
+			{
+				name:  "commit search, non-zero result pattern",
+				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ type:commit test`,
+			},
 			// Diff search
 			{
 				name:  "diff search, nonzero result",
@@ -446,7 +454,7 @@ func TestSearch(t *testing.T) {
 			// Repohascommitafter
 			{
 				name:  `Repohascommitafter, nonzero result`,
-				query: `repo:^github\.com/sgtest/go-diff$ repohascommitafter:"8 months ago" test patterntype:literal count:1`,
+				query: `repo:^github\.com/sgtest/go-diff$ repohascommitafter:"2019-01-01" test patterntype:literal count:1`,
 			},
 			// Regex text search
 			{

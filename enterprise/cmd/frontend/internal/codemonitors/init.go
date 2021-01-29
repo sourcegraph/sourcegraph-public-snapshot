@@ -5,7 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 )
 
 func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {

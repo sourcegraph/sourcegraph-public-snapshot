@@ -755,7 +755,7 @@ export function fetchSiteUpdateCheck(): Observable<SiteUpdateCheckResult['site']
  * @param days number of days of data to fetch
  */
 export function fetchMonitoringStats(days: number): Observable<GQL.IMonitoringStatistics | false> {
-    // more details in /internal/prometheusutil.ErrPrometheusUnavailable
+    // more details in /internal/srcprometheus.ErrPrometheusUnavailable
     const errorPrometheusUnavailable = 'prometheus API is unavailable'
     return queryGraphQL(
         gql`

@@ -13,7 +13,7 @@ import (
 	"github.com/stripe/stripe-go/customer"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 )
 
 // GetOrAssignUserCustomerID returns the billing customer ID associated with the user. If no billing

@@ -18,7 +18,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -187,7 +187,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 	ids := []int64{externalServiceID}
 	// We don't use tx here as the sourcing process below can be slow and we don't
 	// want to hold a lock on the external_services table for too long.
-	svcs, err := s.Store.ExternalServiceStore.List(ctx, db.ExternalServicesListOptions{IDs: ids})
+	svcs, err := s.Store.ExternalServiceStore.List(ctx, database.ExternalServicesListOptions{IDs: ids})
 	if err != nil {
 		return errors.Wrap(err, "fetching external services")
 	}
@@ -256,7 +256,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 	// Unless explicitly specified with the "all" setting or the owner of the service has the "AllowUserExternalServicePrivate" tag,
 	// user added external services should only sync public code.
 	if isUserOwned && conf.ExternalServiceUserMode() != conf.ExternalServiceModeAll {
-		ok, err := db.Users.HasTag(ctx, svc.NamespaceUserID, db.TagAllowUserExternalServicePrivate)
+		ok, err := database.GlobalUsers.HasTag(ctx, svc.NamespaceUserID, database.TagAllowUserExternalServicePrivate)
 		if err != nil {
 			return errors.Wrap(err, "checking user tag")
 		}
@@ -267,7 +267,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 
 	var storedServiceRepos types.Repos
 	// Fetch repos from our DB related to externalServiceID
-	if storedServiceRepos, err = tx.RepoStore.List(ctx, db.ReposListOptions{ExternalServiceIDs: []int64{externalServiceID}}); err != nil {
+	if storedServiceRepos, err = tx.RepoStore.List(ctx, database.ReposListOptions{ExternalServiceIDs: []int64{externalServiceID}}); err != nil {
 		return errors.Wrap(err, "syncer.sync.store.list-repos")
 	}
 
@@ -275,7 +275,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 	// Repo names must be globally unique, if there's conflict we need to deterministically choose one.
 	var conflicting types.Repos
 	if len(sourced) > 0 {
-		if conflicting, err = tx.RepoStore.List(ctx, db.ReposListOptions{Names: sourced.Names()}); err != nil {
+		if conflicting, err = tx.RepoStore.List(ctx, database.ReposListOptions{Names: sourced.Names()}); err != nil {
 			return errors.Wrap(err, "syncer.sync.store.list-repos")
 		}
 		conflicting = conflicting.Filter(func(r *types.Repo) bool {
@@ -289,7 +289,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 		})
 	}
 
-	// Add the conflicts to the list of repos fetched from the db.
+	// Add the conflicts to the list of repos fetched from the database.
 	// NewDiff modifies the storedServiceRepos slice so we clone it before passing it
 	storedServiceReposAndConflicting := append(storedServiceRepos.Clone(), conflicting...)
 
@@ -398,7 +398,7 @@ func (e ErrAccountSuspended) AccountSuspended() bool {
 }
 
 // We need to resolve name conflicts by deciding whether to keep the newly added repo
-// or the repo that already exists in the db.
+// or the repo that already exists in the database.
 // If the new repo wins, then the old repo is added to the diff.Deleted slice.
 // If the old repo wins, then the new repo is no longer inserted and is filtered out from
 // the diff.Added slice.
@@ -511,7 +511,7 @@ func (s *Syncer) syncRepo(ctx context.Context, store *Store, insertOnly bool, pu
 	}
 
 	var storedSubset types.Repos
-	args := db.ReposListOptions{
+	args := database.ReposListOptions{
 		Names:         []string{string(sourcedRepo.Name)},
 		ExternalRepos: []api.ExternalRepoSpec{sourcedRepo.ExternalRepo},
 		UseOr:         true,
@@ -684,7 +684,7 @@ func (s *Syncer) initialUnmodifiedDiffFromStore(ctx context.Context, store *Stor
 		return
 	}
 
-	stored, err := store.RepoStore.List(ctx, db.ReposListOptions{})
+	stored, err := store.RepoStore.List(ctx, database.ReposListOptions{})
 	if err != nil {
 		if s.Logger != nil {
 			s.Logger.Warn("initialUnmodifiedDiffFromStore store.ListRepos", "error", err)

@@ -14,12 +14,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/db"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
@@ -55,12 +55,12 @@ func (r *Resolver) checkLicense() error {
 
 func NewResolver(db dbutil.DB, clock func() time.Time) graphqlbackend.AuthzResolver {
 	return &Resolver{
-		store:             edb.NewPermsStore(db, clock),
+		store:             edb.Perms(db, clock),
 		repoupdaterClient: repoupdater.DefaultClient,
 	}
 }
 
-func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *graphqlbackend.RepoPermsArgs) (*graphqlbackend.EmptyResponse, error) {
+func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *graphqlbackend.RepoPermsArgs) (resp *graphqlbackend.EmptyResponse, err error) {
 	if err := r.checkLicense(); err != nil {
 		return nil, err
 	}
@@ -75,7 +75,7 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 		return nil, err
 	}
 	// Make sure the repo ID is valid.
-	if _, err = db.Repos.Get(ctx, repoID); err != nil {
+	if _, err = database.GlobalRepos.Get(ctx, repoID); err != nil {
 		return nil, err
 	}
 
@@ -102,7 +102,7 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 	cfg := globals.PermissionsUserMapping()
 	switch cfg.BindID {
 	case "email":
-		emails, err := db.UserEmails.GetVerifiedEmails(ctx, bindIDs...)
+		emails, err := database.GlobalUserEmails.GetVerifiedEmails(ctx, bindIDs...)
 		if err != nil {
 			return nil, err
 		}
@@ -113,7 +113,7 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 		}
 
 	case "username":
-		users, err := db.Users.GetByUsernames(ctx, bindIDs...)
+		users, err := database.GlobalUsers.GetByUsernames(ctx, bindIDs...)
 		if err != nil {
 			return nil, err
 		}
@@ -136,7 +136,7 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 	if err != nil {
 		return nil, errors.Wrap(err, "start transaction")
 	}
-	defer txs.Done(&err)
+	defer func() { err = txs.Done(err) }()
 
 	accounts := &extsvc.Accounts{
 		ServiceType: authz.SourcegraphServiceType,
@@ -215,10 +215,10 @@ func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphql
 	if args.Email != nil {
 		bindID = *args.Email
 		// 🚨 SECURITY: It is critical to ensure the email is verified.
-		user, err = db.Users.GetByVerifiedEmail(ctx, *args.Email)
+		user, err = database.GlobalUsers.GetByVerifiedEmail(ctx, *args.Email)
 	} else if args.Username != nil {
 		bindID = *args.Username
-		user, err = db.Users.GetByUsername(ctx, *args.Username)
+		user, err = database.GlobalUsers.GetByUsername(ctx, *args.Username)
 	} else {
 		return nil, errors.New("neither email nor username is given to identify a user")
 	}
@@ -281,7 +281,7 @@ func (r *Resolver) AuthorizedUsers(ctx context.Context, args *graphqlbackend.Rep
 		return nil, err
 	}
 	// Make sure the repo ID is valid.
-	if _, err = db.Repos.Get(ctx, repoID); err != nil {
+	if _, err = database.GlobalRepos.Get(ctx, repoID); err != nil {
 		return nil, err
 	}
 
@@ -337,7 +337,7 @@ func (r *Resolver) RepositoryPermissionsInfo(ctx context.Context, id graphql.ID)
 		return nil, err
 	}
 	// Make sure the repo ID is valid and not soft-deleted.
-	if _, err = db.Repos.Get(ctx, repoID); err != nil {
+	if _, err = database.GlobalRepos.Get(ctx, repoID); err != nil {
 		return nil, err
 	}
 
@@ -372,7 +372,7 @@ func (r *Resolver) UserPermissionsInfo(ctx context.Context, id graphql.ID) (grap
 		return nil, err
 	}
 	// Make sure the user ID is valid and not soft-deleted.
-	if _, err = db.Users.GetByID(ctx, userID); err != nil {
+	if _, err = database.GlobalUsers.GetByID(ctx, userID); err != nil {
 		return nil, err
 	}
 

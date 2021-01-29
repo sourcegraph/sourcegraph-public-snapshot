@@ -10,8 +10,8 @@ import (
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
@@ -22,7 +22,7 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 		t := time.NewTicker(5 * time.Second)
 		for range t.C {
 			allowAccessByDefault, authzProviders, _, _ :=
-				eiauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices)
+				eiauthz.ProvidersFromConfig(ctx, conf.Get(), database.GlobalExternalServices)
 			authz.SetProviders(allowAccessByDefault, authzProviders)
 		}
 	}()

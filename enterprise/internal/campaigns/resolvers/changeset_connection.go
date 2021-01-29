@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/syncer"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -43,13 +43,16 @@ func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlback
 		return nil, err
 	}
 
-	syncData, err := r.store.ListChangesetSyncData(ctx, store.ListChangesetSyncDataOpts{ChangesetIDs: changesetsPage.IDs()})
-	if err != nil {
-		return nil, err
-	}
 	scheduledSyncs := make(map[int64]time.Time)
-	for _, d := range syncData {
-		scheduledSyncs[d.ChangesetID] = syncer.NextSync(time.Now, d)
+	changesetIDs := changesetsPage.IDs()
+	if len(changesetIDs) > 0 {
+		syncData, err := r.store.ListChangesetSyncData(ctx, store.ListChangesetSyncDataOpts{ChangesetIDs: changesetIDs})
+		if err != nil {
+			return nil, err
+		}
+		for _, d := range syncData {
+			scheduledSyncs[d.ChangesetID] = syncer.NextSync(time.Now, d)
+		}
 	}
 
 	resolvers := make([]graphqlbackend.ChangesetResolver, 0, len(changesetsPage))
@@ -96,9 +99,9 @@ func (r *changesetsConnectionResolver) compute(ctx context.Context) (allChangese
 			return
 		}
 
-		// 🚨 SECURITY: db.Repos.GetRepoIDsSet uses the authzFilter under the hood and
+		// 🚨 SECURITY: database.Repos.GetRepoIDsSet uses the authzFilter under the hood and
 		// filters out repositories that the user doesn't have access to.
-		r.reposByID, err = db.Repos.GetReposSetByIDs(ctx, cs.RepoIDs()...)
+		r.reposByID, err = database.GlobalRepos.GetReposSetByIDs(ctx, cs.RepoIDs()...)
 		if err != nil {
 			r.err = err
 			return

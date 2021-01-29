@@ -16,7 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
@@ -25,15 +25,15 @@ import (
 func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 	// Enforce the license's max user count by preventing the creation of new users when the max is
 	// reached.
-	db.Users.BeforeCreateUser = enforcement.NewBeforeCreateUserHook(&usersStore{})
+	database.GlobalUsers.BeforeCreateUser = enforcement.NewBeforeCreateUserHook(&usersStore{})
 
 	// Enforce non-site admin roles in Free tier.
-	db.Users.AfterCreateUser = enforcement.NewAfterCreateUserHook()
-	db.Users.BeforeSetUserIsSiteAdmin = enforcement.NewBeforeSetUserIsSiteAdmin()
+	database.GlobalUsers.AfterCreateUser = enforcement.NewAfterCreateUserHook()
+	database.GlobalUsers.BeforeSetUserIsSiteAdmin = enforcement.NewBeforeSetUserIsSiteAdmin()
 
 	// Enforce the license's max external service count by preventing the creation of new external
 	// services when the max is reached.
-	db.ExternalServices.PreCreateExternalService = enforcement.NewPreCreateExternalServiceHook(&externalServicesStore{})
+	database.GlobalExternalServices.PreCreateExternalService = enforcement.NewPreCreateExternalServiceHook(&externalServicesStore{})
 
 	// Enforce the license's feature check for monitoring. If the license does not support the monitoring
 	// feature, then alternative debug handlers will be invoked.
@@ -114,11 +114,11 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 type usersStore struct{}
 
 func (usersStore) Count(ctx context.Context) (int, error) {
-	return db.Users.Count(ctx, nil)
+	return database.GlobalUsers.Count(ctx, nil)
 }
 
 type externalServicesStore struct{}
 
-func (externalServicesStore) Count(ctx context.Context, opts db.ExternalServicesListOptions) (int, error) {
-	return db.ExternalServices.Count(ctx, opts)
+func (externalServicesStore) Count(ctx context.Context, opts database.ExternalServicesListOptions) (int, error) {
+	return database.GlobalExternalServices.Count(ctx, opts)
 }

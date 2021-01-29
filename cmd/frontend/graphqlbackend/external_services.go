@@ -20,7 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -82,7 +82,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 		externalService.NamespaceUserID = namespaceUserID
 	}
 
-	if err := db.ExternalServices.Create(ctx, conf.Get, externalService); err != nil {
+	if err := database.GlobalExternalServices.Create(ctx, conf.Get, externalService); err != nil {
 		return nil, err
 	}
 
@@ -114,7 +114,7 @@ func (*schemaResolver) UpdateExternalService(ctx context.Context, args *updateEx
 		return nil, err
 	}
 
-	es, err := db.ExternalServices.GetByID(ctx, id)
+	es, err := database.GlobalExternalServices.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -134,16 +134,16 @@ func (*schemaResolver) UpdateExternalService(ctx context.Context, args *updateEx
 	}
 
 	ps := conf.Get().AuthProviders
-	update := &db.ExternalServiceUpdate{
+	update := &database.ExternalServiceUpdate{
 		DisplayName: args.Input.DisplayName,
 		Config:      args.Input.Config,
 	}
-	if err := db.ExternalServices.Update(ctx, ps, id, update); err != nil {
+	if err := database.GlobalExternalServices.Update(ctx, ps, id, update); err != nil {
 		return nil, err
 	}
 
 	// Fetch from database again to get all fields with updated values.
-	es, err = db.ExternalServices.GetByID(ctx, id)
+	es, err = database.GlobalExternalServices.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -196,7 +196,7 @@ func (*schemaResolver) DeleteExternalService(ctx context.Context, args *deleteEx
 		return nil, err
 	}
 
-	es, err := db.ExternalServices.GetByID(ctx, id)
+	es, err := database.GlobalExternalServices.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -211,7 +211,7 @@ func (*schemaResolver) DeleteExternalService(ctx context.Context, args *deleteEx
 		}
 	}
 
-	if err := db.ExternalServices.Delete(ctx, id); err != nil {
+	if err := database.GlobalExternalServices.Delete(ctx, id); err != nil {
 		return nil, err
 	}
 	now := time.Now()
@@ -270,7 +270,7 @@ func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalSer
 		}
 	}
 
-	opt := db.ExternalServicesListOptions{
+	opt := database.ExternalServicesListOptions{
 		NamespaceUserID: namespaceUserID,
 		AfterID:         afterID,
 	}
@@ -279,7 +279,7 @@ func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalSer
 }
 
 type externalServiceConnectionResolver struct {
-	opt db.ExternalServicesListOptions
+	opt database.ExternalServicesListOptions
 
 	// cache results because they are used by multiple fields
 	once             sync.Once
@@ -289,7 +289,7 @@ type externalServiceConnectionResolver struct {
 
 func (r *externalServiceConnectionResolver) compute(ctx context.Context) ([]*types.ExternalService, error) {
 	r.once.Do(func() {
-		r.externalServices, r.err = db.ExternalServices.List(ctx, r.opt)
+		r.externalServices, r.err = database.GlobalExternalServices.List(ctx, r.opt)
 	})
 	return r.externalServices, r.err
 }
@@ -310,7 +310,7 @@ func (r *externalServiceConnectionResolver) TotalCount(ctx context.Context) (int
 	// Reset pagination cursor to get correct total count
 	opt := r.opt
 	opt.AfterID = 0
-	count, err := db.ExternalServices.Count(ctx, opt)
+	count, err := database.GlobalExternalServices.Count(ctx, opt)
 	return int32(count), err
 }
 
@@ -333,7 +333,7 @@ func (r *externalServiceConnectionResolver) PageInfo(ctx context.Context) (*grap
 	// In case the number of results happens to be the same as the limit,
 	// we need another query to get accurate total count with same cursor
 	// to determine if there are more results than the limit we set.
-	count, err := db.ExternalServices.Count(ctx, r.opt)
+	count, err := database.GlobalExternalServices.Count(ctx, r.opt)
 	if err != nil {
 		return nil, err
 	}

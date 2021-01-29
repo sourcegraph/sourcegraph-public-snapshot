@@ -10,16 +10,16 @@
  */
 {
     // Captain information
-    "captainSlackUsername": "dave",
-    "captainGitHubUsername": "davejrt",
+    "captainSlackUsername": "gonza",
+    "captainGitHubUsername": "pecigonzalo",
 
     // Release versions
-    "previousRelease": "3.23.0",
-    "upcomingRelease": "3.24.0",
+    "previousRelease": "3.24.0",
+    "upcomingRelease": "3.24.1",
 
     // Release dates
-    "releaseDate": "20 January 2021 10:00 PST",
-    "oneWorkingDayAfterRelease": "21 January 2021 10:00 PST",
+    "releaseDate": "28 January 2021 10:00 PST",
+    "oneWorkingDayAfterRelease": "28 January 2021 10:00 PST",
 
     // Channel where messages from the tooling are posted
     "slackAnnounceChannel": "dev-announce",

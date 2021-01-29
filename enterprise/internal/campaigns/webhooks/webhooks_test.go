@@ -27,7 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/syncer"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	idb "github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -56,8 +56,8 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		defer save()
 
 		secret := "secret"
-		repoStore := idb.NewRepoStoreWithDB(db)
-		esStore := idb.NewExternalServicesStoreWithDB(db)
+		repoStore := database.Repos(db)
+		esStore := database.ExternalServices(db)
 		extSvc := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "GitHub",
@@ -229,8 +229,8 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		defer save()
 
 		secret := "secret"
-		repoStore := idb.NewRepoStoreWithDB(db)
-		esStore := idb.NewExternalServicesStoreWithDB(db)
+		repoStore := database.Repos(db)
+		esStore := database.ExternalServices(db)
 		extSvc := &types.ExternalService{
 			Kind:        extsvc.KindBitbucketServer,
 			DisplayName: "Bitbucket",

@@ -9,11 +9,12 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
@@ -28,7 +29,7 @@ type userEmails struct{}
 // of other people whom they want to annoy.
 func checkEmailAbuse(ctx context.Context, userID int32) (abused bool, reason string, err error) {
 	if conf.EmailVerificationRequired() {
-		emails, err := db.UserEmails.ListByUser(ctx, db.UserEmailsListOptions{
+		emails, err := database.GlobalUserEmails.ListByUser(ctx, database.UserEmailsListOptions{
 			UserID: userID,
 		})
 		if err != nil {
@@ -72,7 +73,7 @@ func checkEmailAbuse(ctx context.Context, userID int32) (abused bool, reason str
 		// TODO(sqs): This reuses the "invite quota", which is really just a number that counts
 		// down (not specific to invites). Generalize this to just "quota" (remove "invite" from
 		// the name).
-		if ok, err := db.Users.CheckAndDecrementInviteQuota(ctx, userID); err != nil {
+		if ok, err := database.GlobalUsers.CheckAndDecrementInviteQuota(ctx, userID); err != nil {
 			return false, "", err
 		} else if !ok {
 			return true, "email address quota exceeded (contact support to increase the quota)", nil
@@ -114,18 +115,18 @@ func (userEmails) Add(ctx context.Context, userID int32, email string) error {
 	// user that another user has already verified it, to avoid needlessly leaking the existence
 	// of emails.
 	var emailAlreadyExistsAndIsVerified bool
-	if _, err := db.Users.GetByVerifiedEmail(ctx, email); err != nil && !errcode.IsNotFound(err) {
+	if _, err := database.GlobalUsers.GetByVerifiedEmail(ctx, email); err != nil && !errcode.IsNotFound(err) {
 		return err
 	} else if err == nil {
 		emailAlreadyExistsAndIsVerified = true
 	}
 
-	if err := db.UserEmails.Add(ctx, userID, email, code); err != nil {
+	if err := database.GlobalUserEmails.Add(ctx, userID, email, code); err != nil {
 		return err
 	}
 
 	if conf.EmailVerificationRequired() && !emailAlreadyExistsAndIsVerified {
-		usr, err := db.Users.GetByID(ctx, userID)
+		usr, err := database.GlobalUsers.GetByID(ctx, userID)
 		if err != nil {
 			return err
 		}
@@ -133,7 +134,7 @@ func (userEmails) Add(ctx context.Context, userID int32, email string) error {
 		// Send email verification email.
 		if err := SendUserEmailVerificationEmail(ctx, usr.Username, email, *code); err != nil {
 			return errors.Wrap(err, "SendUserEmailVerificationEmail")
-		} else if err = db.UserEmails.SetLastVerification(ctx, userID, email, *code); err != nil {
+		} else if err = database.GlobalUserEmails.SetLastVerification(ctx, userID, email, *code); err != nil {
 			return errors.Wrap(err, "SetLastVerificationSentAt")
 		}
 	}
@@ -194,12 +195,12 @@ Please verify your email address on Sourcegraph ({{.Host}}) by clicking this lin
 // SendUserEmailOnFieldUpdate sends the user an email that important account information has changed.
 // The change is the information we want to provide the user about the change
 func (userEmails) SendUserEmailOnFieldUpdate(ctx context.Context, id int32, change string) error {
-	email, _, err := db.UserEmails.GetPrimaryEmail(ctx, id)
+	email, _, err := database.GlobalUserEmails.GetPrimaryEmail(ctx, id)
 	if err != nil {
 		log15.Warn("Failed to get user email", "error", err)
 		return err
 	}
-	usr, err := db.Users.GetByID(ctx, id)
+	usr, err := database.GlobalUsers.GetByID(ctx, id)
 	if err != nil {
 		log15.Warn("Failed to get user from database", "error", err)
 		return err

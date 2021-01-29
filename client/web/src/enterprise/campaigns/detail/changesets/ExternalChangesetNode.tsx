@@ -5,20 +5,27 @@ import { HoverMerged } from '../../../../../../shared/src/api/client/types/hover
 import { ActionItemAction } from '../../../../../../shared/src/actions/ActionItem'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import * as H from 'history'
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import { DiffStat } from '../../../../components/diff/DiffStat'
-import { queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs } from '../backend'
+import {
+    queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
+    reenqueueChangeset,
+} from '../backend'
 import { ChangesetSpecType, ExternalChangesetFields } from '../../../../graphql-operations'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import { ChangesetStatusCell } from './ChangesetStatusCell'
 import { ChangesetCheckStatusCell } from './ChangesetCheckStatusCell'
 import { ChangesetReviewStatusCell } from './ChangesetReviewStatusCell'
-import { ErrorAlert } from '../../../../components/alerts'
+import { ErrorAlert, ErrorMessage } from '../../../../components/alerts'
 import { ChangesetFileDiff } from './ChangesetFileDiff'
 import { ExternalChangesetInfoCell } from './ExternalChangesetInfoCell'
 import { DownloadDiffButton } from './DownloadDiffButton'
 import classNames from 'classnames'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import { ChangesetState } from '../../../../../../shared/src/graphql-operations'
+import { asError, isErrorLike } from '../../../../../../shared/src/util/errors'
+import SyncIcon from 'mdi-react/SyncIcon'
 
 export interface ExternalChangesetNodeProps extends ThemeProps {
     node: ExternalChangesetFields
@@ -35,7 +42,7 @@ export interface ExternalChangesetNodeProps extends ThemeProps {
 }
 
 export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNodeProps> = ({
-    node,
+    node: initialNode,
     viewerCanAdminister,
     isLightTheme,
     history,
@@ -44,6 +51,10 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
     queryExternalChangesetWithFileDiffs,
     expandByDefault,
 }) => {
+    const [node, setNode] = useState(initialNode)
+    useEffect(() => {
+        setNode(initialNode)
+    }, [initialNode])
     const [isExpanded, setIsExpanded] = useState(expandByDefault ?? false)
     const toggleIsExpanded = useCallback<React.MouseEventHandler<HTMLButtonElement>>(
         event => {
@@ -68,7 +79,7 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                 )}
             </button>
             <ChangesetStatusCell
-                changeset={node}
+                state={node.state}
                 className="p-2 align-self-stretch external-changeset-node__state d-block d-sm-flex"
             />
             <ExternalChangesetInfoCell
@@ -86,10 +97,20 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                 {node.reviewState && <ChangesetReviewStatusCell reviewState={node.reviewState} className="mr-3" />}
                 {node.diffStat && <DiffStat {...node.diffStat} expandedCounts={true} separateLines={true} />}
             </div>
-            <span className={classNames('align-self-stretch d-none d-md-flex', node.checkState && 'p-2')}>
+            <span
+                className={classNames(
+                    'align-self-stretch d-none d-md-flex justify-content-center',
+                    node.checkState && 'p-2'
+                )}
+            >
                 {node.checkState && <ChangesetCheckStatusCell checkState={node.checkState} />}
             </span>
-            <span className={classNames('align-self-stretch d-none d-md-flex', node.reviewState && 'p-2')}>
+            <span
+                className={classNames(
+                    'align-self-stretch d-none d-md-flex justify-content-center',
+                    node.reviewState && 'p-2'
+                )}
+            >
                 {node.reviewState && <ChangesetReviewStatusCell reviewState={node.reviewState} />}
             </span>
             <div
@@ -121,7 +142,13 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                         {node.currentSpec?.type === ChangesetSpecType.BRANCH && (
                             <DownloadDiffButton changesetID={node.id} />
                         )}
-                        {node.error && <ErrorAlert error={node.error} history={history} />}
+                        {node.syncerError && <SyncerError syncerError={node.syncerError} history={history} />}
+                        <ChangesetError
+                            node={node}
+                            setNode={setNode}
+                            viewerCanAdminister={viewerCanAdminister}
+                            history={history}
+                        />
                         <ChangesetFileDiff
                             changesetID={node.id}
                             isLightTheme={isLightTheme}
@@ -136,6 +163,83 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                     </div>
                 </>
             )}
+        </>
+    )
+}
+
+const SyncerError: React.FunctionComponent<{ syncerError: string; history: H.History }> = ({
+    syncerError,
+    history,
+}) => (
+    <div className="alert alert-danger" role="alert">
+        <h4 className="alert-heading">
+            <AlertCircleIcon className="icon icon-inline" /> Encountered error during last attempt to sync changeset
+            data from code host
+        </h4>
+        <ErrorMessage error={syncerError} history={history} />
+        <hr className="my-2" />
+        <p className="mb-0">
+            <small>This might be an ephemeral error that resolves itself at the next sync.</small>
+        </p>
+    </div>
+)
+
+const ChangesetError: React.FunctionComponent<{
+    node: ExternalChangesetFields
+    setNode: (node: ExternalChangesetFields) => void
+    viewerCanAdminister: boolean
+    history: H.History
+}> = ({ node, setNode, viewerCanAdminister, history }) => {
+    const [isLoading, setIsLoading] = useState<boolean | Error>(false)
+    const onRetry = useCallback(async () => {
+        setIsLoading(true)
+        try {
+            const changeset = await reenqueueChangeset(node.id)
+            // If repository permissions changed in between - ignore and await fetch (at most 5s) to reflect the new state.
+            if (changeset.__typename === 'ExternalChangeset') {
+                setNode(changeset)
+            }
+            setIsLoading(false)
+        } catch (error) {
+            setIsLoading(asError(error))
+        }
+    }, [node.id, setNode])
+
+    if (!node.error) {
+        return null
+    }
+
+    return (
+        <>
+            {isErrorLike(isLoading) && (
+                <ErrorAlert error={isLoading} prefix="Error re-enqueueing changeset" history={history} />
+            )}
+            <div className="alert alert-danger" role="alert">
+                <div className="d-flex justify-content-between">
+                    <h4 className="alert-heading">
+                        <AlertCircleIcon className="icon icon-inline" /> Failed to run operations on changeset
+                    </h4>
+                    {viewerCanAdminister && node.state === ChangesetState.FAILED && (
+                        <div className="d-flex justify-content-end">
+                            <button
+                                className="btn btn-link alert-link"
+                                type="button"
+                                onClick={onRetry}
+                                disabled={isLoading === true}
+                            >
+                                <SyncIcon
+                                    className={classNames(
+                                        'icon-inline',
+                                        isLoading === true && 'external-changeset-node__retry--spinning'
+                                    )}
+                                />{' '}
+                                Retry
+                            </button>
+                        </div>
+                    )}
+                </div>
+                <ErrorMessage error={node.error} history={history} />
+            </div>
         </>
     )
 }

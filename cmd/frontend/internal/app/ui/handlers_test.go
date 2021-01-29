@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
+	"github.com/sourcegraph/sourcegraph/internal/database/globalstatedb"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -30,6 +30,7 @@ func TestRedirects(t *testing.T) {
 	check := func(t *testing.T, path string, wantStatusCode int, wantRedirectLocation string, userAgent string) {
 		t.Helper()
 
+		InitRouter()
 		rw := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", path, nil)
 		req.Header.Set("User-Agent", userAgent)

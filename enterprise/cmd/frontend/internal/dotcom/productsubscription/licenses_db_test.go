@@ -4,15 +4,15 @@ import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
 func TestProductLicenses_Create(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := context.Background()
 
-	u, err := db.Users.Create(ctx, db.NewUser{Username: "u"})
+	u, err := database.GlobalUsers.Create(ctx, database.NewUser{Username: "u"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -65,7 +65,7 @@ func TestProductLicenses_List(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := context.Background()
 
-	u1, err := db.Users.Create(ctx, db.NewUser{Username: "u1"})
+	u1, err := database.GlobalUsers.Create(ctx, database.NewUser{Username: "u1"})
 	if err != nil {
 		t.Fatal(err)
 	}

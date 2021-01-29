@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 // All SAML endpoints are under this path prefix.
@@ -145,7 +145,7 @@ func samlSPHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		user, err := db.Users.GetByID(r.Context(), actor.UID)
+		user, err := database.GlobalUsers.GetByID(r.Context(), actor.UID)
 		if err != nil {
 			log15.Error("Error retrieving SAML-authenticated user from database.", "error", err)
 			http.Error(w, "Failed to retrieve user: "+err.Error(), http.StatusInternalServerError)

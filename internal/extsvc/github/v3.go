@@ -9,11 +9,12 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"golang.org/x/time/rate"
+
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"golang.org/x/time/rate"
 )
 
 // V3Client is a caching GitHub API client for GitHub's REST API v3.
@@ -147,7 +148,7 @@ func (c *V3Client) requestGet(ctx context.Context, requestURI string, result int
 		return errInternalRateLimitExceeded
 	}
 
-	return doRequest(ctx, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, result)
+	return doRequest(ctx, c.apiURL, c.auth, c.rateLimitMonitor, c.resource, c.httpClient, req, result)
 }
 
 // newRepoCache creates a new cache for GitHub repository metadata. The backing

@@ -5,7 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 func CurrentUserAllowedExternalServices(ctx context.Context) conf.ExternalServiceMode {
@@ -20,12 +20,12 @@ func CurrentUserAllowedExternalServices(ctx context.Context) conf.ExternalServic
 	}
 
 	// The user may have a tag that opts them in
-	ok, _ := db.Users.HasTag(ctx, a.UID, db.TagAllowUserExternalServicePrivate)
+	ok, _ := database.GlobalUsers.HasTag(ctx, a.UID, database.TagAllowUserExternalServicePrivate)
 	if ok {
 		return conf.ExternalServiceModeAll
 	}
 
-	ok, _ = db.Users.HasTag(ctx, a.UID, db.TagAllowUserExternalServicePublic)
+	ok, _ = database.GlobalUsers.HasTag(ctx, a.UID, database.TagAllowUserExternalServicePublic)
 	if ok {
 		return conf.ExternalServiceModePublic
 	}

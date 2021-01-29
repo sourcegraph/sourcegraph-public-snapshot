@@ -18,9 +18,9 @@ import (
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -79,8 +79,8 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 
 	userID := ct.CreateTestUser(t, false).ID
 
-	repoStore := db.NewRepoStoreWithDB(dbconn.Global)
-	esStore := db.NewExternalServicesStoreWithDB(dbconn.Global)
+	repoStore := database.Repos(dbconn.Global)
+	esStore := database.ExternalServices(dbconn.Global)
 
 	githubExtSvc := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
@@ -170,7 +170,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		}
 	}
 
-	s, err := graphqlbackend.NewSchema(&Resolver{store: cstore}, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(dbconn.Global, &Resolver{store: cstore}, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -6,13 +6,12 @@ import { isEqual } from 'lodash'
 import { PageTitle } from '../../../components/PageTitle'
 import { fetchCampaignSpecById as _fetchCampaignSpecById } from './backend'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { CampaignHeader } from '../detail/CampaignHeader'
 import { PreviewList } from './list/PreviewList'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { CreateUpdateCampaignAlert } from './CreateUpdateCampaignAlert'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { HeroPage } from '../../../components/HeroPage'
-import { CampaignDescription } from '../detail/CampaignDescription'
+import { Description } from '../Description'
 import { CampaignSpecInfoByline } from './CampaignSpecInfoByline'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 import { AuthenticatedUser } from '../../../auth'
@@ -20,12 +19,16 @@ import { MissingCredentialsAlert } from './MissingCredentialsAlert'
 import { SupersedingCampaignSpecAlert } from '../detail/SupersedingCampaignSpecAlert'
 import { queryChangesetSpecFileDiffs, queryChangesetApplyPreview } from './list/backend'
 import { CampaignPreviewStatsBar } from './CampaignPreviewStatsBar'
+import { PageHeader } from '../../../components/PageHeader'
+import { CampaignsIcon } from '../icons'
+
+export type PreviewPageAuthenticatedUser = Pick<AuthenticatedUser, 'url' | 'displayName' | 'username' | 'email'>
 
 export interface CampaignPreviewPageProps extends ThemeProps, TelemetryProps {
     campaignSpecID: string
     history: H.History
     location: H.Location
-    authenticatedUser: Pick<AuthenticatedUser, 'url'>
+    authenticatedUser: PreviewPageAuthenticatedUser
 
     /** Used for testing. */
     fetchCampaignSpecById?: typeof _fetchCampaignSpecById
@@ -54,7 +57,7 @@ export const CampaignPreviewPage: React.FunctionComponent<CampaignPreviewPagePro
             () =>
                 fetchCampaignSpecById(specID).pipe(
                     repeatWhen(notifier => notifier.pipe(delay(5000))),
-                    distinctUntilChanged(isEqual)
+                    distinctUntilChanged((a, b) => isEqual(a, b))
                 ),
             [specID, fetchCampaignSpecById]
         )
@@ -78,12 +81,18 @@ export const CampaignPreviewPage: React.FunctionComponent<CampaignPreviewPagePro
     return (
         <>
             <PageTitle title="Apply campaign spec" />
-            <CampaignHeader
-                name={spec.description.name}
-                namespace={spec.namespace}
-                className="test-campaign-apply-page"
+            <PageHeader
+                path={[
+                    {
+                        icon: CampaignsIcon,
+                        to: '/campaigns',
+                    },
+                    { to: `${spec.namespace.url}/campaigns`, text: spec.namespace.namespaceName },
+                    { text: spec.description.name },
+                ]}
+                byline={<CampaignSpecInfoByline createdAt={spec.createdAt} creator={spec.creator} />}
+                className="test-campaign-apply-page mb-3"
             />
-            <CampaignSpecInfoByline createdAt={spec.createdAt} creator={spec.creator} className="mb-3" />
             <MissingCredentialsAlert
                 authenticatedUser={authenticatedUser}
                 viewerCampaignsCodeHosts={spec.viewerCampaignsCodeHosts}
@@ -97,11 +106,12 @@ export const CampaignPreviewPage: React.FunctionComponent<CampaignPreviewPagePro
                 viewerCanAdminister={spec.viewerCanAdminister}
                 telemetryService={telemetryService}
             />
-            <CampaignDescription history={history} description={spec.description.description} />
+            <Description history={history} description={spec.description.description} />
             <PreviewList
                 campaignSpecID={specID}
                 history={history}
                 location={location}
+                authenticatedUser={authenticatedUser}
                 isLightTheme={isLightTheme}
                 queryChangesetApplyPreview={queryChangesetApplyPreview}
                 queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}

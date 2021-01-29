@@ -116,6 +116,8 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
 
     const onClick = useCallback(
         (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
+            eventLogger.log('GoToCodeHostClicked')
+
             if (showPopover) {
                 event.preventDefault()
                 setShowPopover(false)

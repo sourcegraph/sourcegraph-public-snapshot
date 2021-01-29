@@ -50,7 +50,7 @@ Array [
       aria-checked={false}
       aria-disabled={true}
       aria-label="Case sensitivity toggle"
-      className="btn btn-icon icon-inline toggle-container__toggle test-regexp-toggle test-case-sensitivity-toggle disabled test-case-sensitivity-toggle--active"
+      className="btn btn-icon icon-inline toggle-container__toggle test-case-sensitivity-toggle disabled test-case-sensitivity-toggle--active"
       data-tooltip="Query already contains one or more case subexpressions"
       onClick={[Function]}
       role="checkbox"
@@ -63,7 +63,7 @@ Array [
     aria-checked={false}
     aria-disabled={true}
     aria-label="Case sensitivity toggle"
-    className="btn btn-icon icon-inline toggle-container__toggle test-regexp-toggle test-case-sensitivity-toggle disabled test-case-sensitivity-toggle--active"
+    className="btn btn-icon icon-inline toggle-container__toggle test-case-sensitivity-toggle disabled test-case-sensitivity-toggle--active"
     data-tooltip="Query already contains one or more case subexpressions"
     onClick={[Function]}
     role="checkbox"
@@ -124,7 +124,7 @@ Array [
       aria-checked={false}
       aria-disabled={true}
       aria-label="Case sensitivity toggle"
-      className="btn btn-icon icon-inline toggle-container__toggle test-regexp-toggle test-case-sensitivity-toggle disabled test-case-sensitivity-toggle--active"
+      className="btn btn-icon icon-inline toggle-container__toggle test-case-sensitivity-toggle disabled test-case-sensitivity-toggle--active"
       data-tooltip="Query contains one or more patterntype subexpressions, cannot apply global case-sensitivity"
       onClick={[Function]}
       role="checkbox"
@@ -137,7 +137,7 @@ Array [
     aria-checked={false}
     aria-disabled={true}
     aria-label="Case sensitivity toggle"
-    className="btn btn-icon icon-inline toggle-container__toggle test-regexp-toggle test-case-sensitivity-toggle disabled test-case-sensitivity-toggle--active"
+    className="btn btn-icon icon-inline toggle-container__toggle test-case-sensitivity-toggle disabled test-case-sensitivity-toggle--active"
     data-tooltip="Query contains one or more patterntype subexpressions, cannot apply global case-sensitivity"
     onClick={[Function]}
     role="checkbox"
@@ -150,22 +150,10 @@ Array [
 
 exports[`Query input toggle state regexp toggle for patterntype subexpressions 1`] = `
 Array [
-  <div
-    aria-checked={false}
-    aria-disabled={true}
-    aria-label="Case sensitivity toggle"
-    className="btn btn-icon icon-inline toggle-container__toggle test-regexp-toggle test-case-sensitivity-toggle disabled test-case-sensitivity-toggle--active"
-    data-tooltip="Query contains one or more patterntype subexpressions, cannot apply global case-sensitivity"
-    onClick={[Function]}
-    role="checkbox"
-    tabIndex={0}
-  >
-    <Memo(FormatLetterCaseIcon) />
-  </div>,
   <QueryInputToggle
     activeClassName="test-regexp-toggle--active"
     caseSensitive={false}
-    className="test-regexp-toggle"
+    className="toggle-container__regexp-button test-regexp-toggle"
     copyQueryButton={false}
     disableOn={
       Array [
@@ -202,7 +190,7 @@ Array [
       aria-checked={false}
       aria-disabled={true}
       aria-label="Regular expression toggle"
-      className="btn btn-icon icon-inline toggle-container__toggle test-regexp-toggle test-regexp-toggle disabled test-regexp-toggle--active"
+      className="btn btn-icon icon-inline toggle-container__toggle toggle-container__regexp-button test-regexp-toggle disabled test-regexp-toggle--active"
       data-tooltip="Query already contains one or more patterntype subexpressions"
       onClick={[Function]}
       role="checkbox"
@@ -215,25 +203,13 @@ Array [
     aria-checked={false}
     aria-disabled={true}
     aria-label="Regular expression toggle"
-    className="btn btn-icon icon-inline toggle-container__toggle test-regexp-toggle test-regexp-toggle disabled test-regexp-toggle--active"
+    className="btn btn-icon icon-inline toggle-container__toggle toggle-container__regexp-button test-regexp-toggle disabled test-regexp-toggle--active"
     data-tooltip="Query already contains one or more patterntype subexpressions"
     onClick={[Function]}
     role="checkbox"
     tabIndex={0}
   >
     <Memo(RegexIcon) />
-  </div>,
-  <div
-    aria-checked={false}
-    aria-disabled={true}
-    aria-label="Structural search toggle"
-    className="btn btn-icon icon-inline toggle-container__toggle test-regexp-toggle test-structural-search-toggle disabled test-structural-search-toggle--active"
-    data-tooltip="Query already contains one or more patterntype subexpressions"
-    onClick={[Function]}
-    role="checkbox"
-    tabIndex={0}
-  >
-    <Memo(CodeBracketsIcon) />
   </div>,
 ]
 `;

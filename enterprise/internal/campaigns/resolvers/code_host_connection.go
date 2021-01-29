@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
@@ -17,13 +17,13 @@ type campaignsCodeHostConnectionResolver struct {
 	userID                int32
 	onlyWithoutCredential bool
 	opts                  store.ListCodeHostsOpts
-	limitOffset           db.LimitOffset
+	limitOffset           database.LimitOffset
 	store                 *store.Store
 
 	once          sync.Once
 	chs           []*campaigns.CodeHost
 	chsPage       []*campaigns.CodeHost
-	credsByIDType map[idType]*db.UserCredential
+	credsByIDType map[idType]*database.UserCredential
 	chsErr        error
 }
 
@@ -70,7 +70,7 @@ func (c *campaignsCodeHostConnectionResolver) Nodes(ctx context.Context) ([]grap
 	return nodes, nil
 }
 
-func (c *campaignsCodeHostConnectionResolver) compute(ctx context.Context) (all, page []*campaigns.CodeHost, credsByIDType map[idType]*db.UserCredential, err error) {
+func (c *campaignsCodeHostConnectionResolver) compute(ctx context.Context) (all, page []*campaigns.CodeHost, credsByIDType map[idType]*database.UserCredential, err error) {
 	c.once.Do(func() {
 		// Don't pass c.limitOffset here, as we want all code hosts for the totalCount anyways.
 		c.chs, c.chsErr = c.store.ListCodeHosts(ctx, c.opts)
@@ -79,13 +79,13 @@ func (c *campaignsCodeHostConnectionResolver) compute(ctx context.Context) (all,
 		}
 
 		// Fetch all user credentials to avoid N+1 per credential resolver.
-		creds, _, err := db.UserCredentials.List(ctx, db.UserCredentialsListOpts{Scope: db.UserCredentialScope{Domain: db.UserCredentialDomainCampaigns, UserID: c.userID}})
+		creds, _, err := database.GlobalUserCredentials.List(ctx, database.UserCredentialsListOpts{Scope: database.UserCredentialScope{Domain: database.UserCredentialDomainCampaigns, UserID: c.userID}})
 		if err != nil {
 			c.chsErr = err
 			return
 		}
 
-		c.credsByIDType = make(map[idType]*db.UserCredential)
+		c.credsByIDType = make(map[idType]*database.UserCredential)
 		for _, cred := range creds {
 			t := idType{
 				externalServiceID:   cred.ExternalServiceID,

@@ -4,7 +4,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
@@ -20,7 +20,7 @@ func unmarshalCampaignsCredentialID(id graphql.ID) (cid int64, err error) {
 }
 
 type campaignsCredentialResolver struct {
-	credential *db.UserCredential
+	credential *database.UserCredential
 }
 
 var _ graphqlbackend.CampaignsCredentialResolver = &campaignsCredentialResolver{}

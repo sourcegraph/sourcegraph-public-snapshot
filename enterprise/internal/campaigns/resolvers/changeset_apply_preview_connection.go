@@ -60,13 +60,16 @@ func (r *changesetApplyPreviewConnectionResolver) Nodes(ctx context.Context) ([]
 		return nil, err
 	}
 
-	syncData, err := r.store.ListChangesetSyncData(ctx, store.ListChangesetSyncDataOpts{ChangesetIDs: mappings.ChangesetIDs()})
-	if err != nil {
-		return nil, err
-	}
 	scheduledSyncs := make(map[int64]time.Time)
-	for _, d := range syncData {
-		scheduledSyncs[d.ChangesetID] = syncer.NextSync(time.Now, d)
+	changesetIDs := mappings.ChangesetIDs()
+	if len(changesetIDs) > 0 {
+		syncData, err := r.store.ListChangesetSyncData(ctx, store.ListChangesetSyncDataOpts{ChangesetIDs: changesetIDs})
+		if err != nil {
+			return nil, err
+		}
+		for _, d := range syncData {
+			scheduledSyncs[d.ChangesetID] = syncer.NextSync(time.Now, d)
+		}
 	}
 
 	resolvers := make([]graphqlbackend.ChangesetApplyPreviewResolver, 0, len(mappings))

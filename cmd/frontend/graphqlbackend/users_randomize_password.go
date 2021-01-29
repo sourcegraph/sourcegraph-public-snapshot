@@ -4,10 +4,11 @@ import (
 	"context"
 
 	"github.com/graph-gophers/graphql-go"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 type randomizeUserPasswordResult struct {
@@ -43,7 +44,7 @@ func (*schemaResolver) RandomizeUserPassword(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	if err := db.Users.RandomizePasswordAndClearPasswordResetRateLimit(ctx, userID); err != nil {
+	if err := database.GlobalUsers.RandomizePasswordAndClearPasswordResetRateLimit(ctx, userID); err != nil {
 		return nil, err
 	}
 

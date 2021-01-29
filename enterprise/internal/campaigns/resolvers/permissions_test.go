@@ -18,9 +18,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -38,7 +38,7 @@ func TestPermissionLevels(t *testing.T) {
 
 	cstore := store.New(dbconn.Global)
 	sr := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(sr, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(dbconn.Global, sr, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -55,8 +55,8 @@ func TestPermissionLevels(t *testing.T) {
 	adminID := ct.CreateTestUser(t, true).ID
 	userID := ct.CreateTestUser(t, false).ID
 
-	repoStore := db.NewRepoStoreWith(cstore)
-	esStore := db.NewExternalServicesStoreWith(cstore)
+	repoStore := database.ReposWith(cstore)
+	esStore := database.ExternalServicesWith(cstore)
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/permission-levels-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
@@ -340,8 +340,8 @@ func TestPermissionLevels(t *testing.T) {
 				t.Run(tc.name, func(t *testing.T) {
 					pruneUserCredentials(t)
 
-					cred, err := db.UserCredentials.Create(ctx, db.UserCredentialScope{
-						Domain:              db.UserCredentialDomainCampaigns,
+					cred, err := database.GlobalUserCredentials.Create(ctx, database.UserCredentialScope{
+						Domain:              database.UserCredentialDomainCampaigns,
 						ExternalServiceID:   "https://github.com/",
 						ExternalServiceType: extsvc.TypeGitHub,
 						UserID:              tc.user,
@@ -407,8 +407,8 @@ func TestPermissionLevels(t *testing.T) {
 				t.Run(tc.name, func(t *testing.T) {
 					pruneUserCredentials(t)
 
-					cred, err := db.UserCredentials.Create(ctx, db.UserCredentialScope{
-						Domain:              db.UserCredentialDomainCampaigns,
+					cred, err := database.GlobalUserCredentials.Create(ctx, database.UserCredentialScope{
+						Domain:              database.UserCredentialDomainCampaigns,
 						ExternalServiceID:   "https://github.com/",
 						ExternalServiceType: extsvc.TypeGitHub,
 						UserID:              tc.user,
@@ -551,6 +551,12 @@ func TestPermissionLevels(t *testing.T) {
 				name: "syncChangeset",
 				mutationFunc: func(campaignID, changesetID, campaignSpecID string) string {
 					return fmt.Sprintf(`mutation { syncChangeset(changeset: %q) { alwaysNil } }`, changesetID)
+				},
+			},
+			{
+				name: "reenqueueChangeset",
+				mutationFunc: func(campaignID, changesetID, campaignSpecID string) string {
+					return fmt.Sprintf(`mutation { reenqueueChangeset(changeset: %q) { id } }`, changesetID)
 				},
 			},
 			{
@@ -758,7 +764,7 @@ func TestRepositoryPermissions(t *testing.T) {
 
 	cstore := store.New(dbconn.Global)
 	sr := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(sr, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(dbconn.Global, sr, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -771,8 +777,8 @@ func TestRepositoryPermissions(t *testing.T) {
 	// Global test data that we reuse in every test
 	userID := ct.CreateTestUser(t, false).ID
 
-	repoStore := db.NewRepoStoreWith(cstore)
-	esStore := db.NewExternalServicesStoreWith(cstore)
+	repoStore := database.ReposWith(cstore)
+	esStore := database.ExternalServicesWith(cstore)
 
 	// Create 2 repositories
 	repos := make([]*types.Repo, 0, 2)

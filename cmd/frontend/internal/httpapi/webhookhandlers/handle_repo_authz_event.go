@@ -6,11 +6,12 @@ import (
 
 	gh "github.com/google/go-github/v28/github"
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -49,7 +50,7 @@ func scheduleRepoUpdate(ctx context.Context, repo *gh.Repository) error {
 
 	// 🚨 SECURITY: we want to be able to find any private repo here, so set internal actor
 	ctx = actor.WithActor(ctx, &actor.Actor{Internal: true})
-	r, err := db.Repos.GetByName(ctx, api.RepoName("github.com/"+repo.GetFullName()))
+	r, err := database.GlobalRepos.GetByName(ctx, api.RepoName("github.com/"+repo.GetFullName()))
 	if err != nil {
 		return err
 	}

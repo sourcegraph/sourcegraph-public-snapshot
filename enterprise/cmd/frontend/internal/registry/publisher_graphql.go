@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	frontendregistry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 func init() {
@@ -33,7 +33,7 @@ func extensionRegistryViewerPublishers(ctx context.Context) ([]graphqlbackend.Re
 	}
 	publishers = append(publishers, &registryPublisher{user: user})
 
-	orgs, err := db.Orgs.GetByUserID(ctx, user.DatabaseID())
+	orgs, err := database.GlobalOrgs.GetByUserID(ctx, user.DatabaseID())
 	if err != nil {
 		return nil, err
 	}

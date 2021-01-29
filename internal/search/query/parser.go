@@ -1087,3 +1087,11 @@ func ProcessAndOr(in string, options ParserOptions) (QueryInfo, error) {
 	}
 	return &AndOrQuery{Query: query}, nil
 }
+
+func ParseLiteral(in string) (QueryInfo, error) {
+	return ProcessAndOr(in, ParserOptions{SearchType: SearchTypeLiteral})
+}
+
+func ParseRegexp(in string) (QueryInfo, error) {
+	return ProcessAndOr(in, ParserOptions{SearchType: SearchTypeRegex})
+}

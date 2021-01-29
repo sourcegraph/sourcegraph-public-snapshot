@@ -16,9 +16,9 @@ import (
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
@@ -31,8 +31,8 @@ func TestCampaignSpecResolver(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 
 	cstore := store.New(dbconn.Global)
-	repoStore := db.NewRepoStoreWith(cstore)
-	esStore := db.NewExternalServicesStoreWith(cstore)
+	repoStore := database.ReposWith(cstore)
+	esStore := database.ExternalServicesWith(cstore)
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/campaign-spec-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
@@ -43,7 +43,7 @@ func TestCampaignSpecResolver(t *testing.T) {
 	orgname := "test-org"
 	userID := ct.CreateTestUser(t, false).ID
 	adminID := ct.CreateTestUser(t, true).ID
-	org, err := db.Orgs.Create(ctx, orgname, nil)
+	org, err := database.GlobalOrgs.Create(ctx, orgname, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -83,7 +83,7 @@ func TestCampaignSpecResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(&Resolver{store: cstore}, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(dbconn.Global, &Resolver{store: cstore}, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -212,7 +212,7 @@ func TestCampaignSpecResolver(t *testing.T) {
 	}
 
 	// Now soft-delete the creator and check that the campaign spec is still retrievable.
-	err = db.Users.Delete(ctx, userID)
+	err = database.GlobalUsers.Delete(ctx, userID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -236,7 +236,7 @@ func TestCampaignSpecResolver(t *testing.T) {
 	}
 
 	// Now hard-delete the creator and check that the campaign spec is still retrievable.
-	err = db.Users.HardDelete(ctx, userID)
+	err = database.GlobalUsers.HardDelete(ctx, userID)
 	if err != nil {
 		t.Fatal(err)
 	}

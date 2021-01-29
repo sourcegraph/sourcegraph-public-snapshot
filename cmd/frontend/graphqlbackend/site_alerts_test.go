@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
+	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -105,8 +107,7 @@ func Test_determineOutOfDateAlert(t *testing.T) {
 func TestObservabilityActiveAlertsAlert(t *testing.T) {
 	f := false
 	type args struct {
-		prometheusURL string
-		args          AlertFuncArgs
+		args AlertFuncArgs
 	}
 	tests := []struct {
 		name string
@@ -114,10 +115,10 @@ func TestObservabilityActiveAlertsAlert(t *testing.T) {
 		want []*Alert
 	}{
 		{
-			name: "not admin",
+			name: "do not show anything for non-admin",
 			args: args{
 				args: AlertFuncArgs{
-					IsSiteAdmin: true,
+					IsSiteAdmin: false,
 					ViewerFinalSettings: &schema.Settings{
 						AlertsHideObservabilitySiteAlerts: &f,
 					},
@@ -126,19 +127,7 @@ func TestObservabilityActiveAlertsAlert(t *testing.T) {
 			want: nil,
 		},
 		{
-			name: "prometheus disabled",
-			args: args{
-				args: AlertFuncArgs{
-					IsSiteAdmin: true,
-					ViewerFinalSettings: &schema.Settings{
-						AlertsHideObservabilitySiteAlerts: &f,
-					}},
-				prometheusURL: "",
-			},
-			want: nil,
-		},
-		{
-			name: "prometheus malformed",
+			name: "prometheus unreachable for admin",
 			args: args{
 				args: AlertFuncArgs{
 					IsSiteAdmin: true,
@@ -146,46 +135,38 @@ func TestObservabilityActiveAlertsAlert(t *testing.T) {
 						AlertsHideObservabilitySiteAlerts: &f,
 					},
 				},
-				prometheusURL: " http://prometheus:9090",
 			},
 			want: []*Alert{{
 				TypeValue:    AlertTypeWarning,
-				MessageValue: "Prometheus misconfigured",
+				MessageValue: "Failed to fetch alerts status",
 			}},
 		},
 		{
-			name: "prometheus unreachable",
-			args: args{
-				args: AlertFuncArgs{
-					IsSiteAdmin: true,
-					ViewerFinalSettings: &schema.Settings{
-						AlertsHideObservabilitySiteAlerts: &f,
-					},
-				},
-				prometheusURL: "http://no-prometheus:9090",
-			},
-			want: []*Alert{{
-				TypeValue:    AlertTypeWarning,
-				MessageValue: "Unable to fetch alerts status",
-			}},
-		},
-		{
-			name: "alerts disabled by default",
+			// blocked by https://github.com/sourcegraph/sourcegraph/issues/12190
+			// see observabilityActiveAlertsAlert docstrings
+			name: "alerts disabled by default for admin",
 			args: args{
 				args: AlertFuncArgs{
 					IsSiteAdmin: true,
 				},
-				prometheusURL: "http://no-prometheus:9090",
 			},
 			want: nil,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fn := observabilityActiveAlertsAlert(tt.args.prometheusURL)
+			// observabilityActiveAlertsAlert does not report NewClient errors,
+			// the prometheus validator does
+			prom, err := srcprometheus.NewClient("http://no-prometheus:9090")
+			if err != nil {
+				t.Errorf("unexpected error: %v", err)
+				return
+			}
+			fn := observabilityActiveAlertsAlert(prom)
 			gotAlerts := fn(tt.args.args)
 			if len(gotAlerts) != len(tt.want) {
 				t.Errorf("expected %+v, got %+v", tt.want, gotAlerts)
+				return
 			}
 			// test for message substring equality
 			for i, got := range gotAlerts {

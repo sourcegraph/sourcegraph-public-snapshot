@@ -28,7 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -208,10 +208,10 @@ func TestMiddleware(t *testing.T) {
 	}
 	defer func() { auth.MockGetAndSaveUser = nil }()
 
-	db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
 		return &types.User{ID: id, CreatedAt: time.Now()}, nil
 	}
-	defer func() { db.Mocks = db.MockStores{} }()
+	defer func() { database.Mocks = database.MockStores{} }()
 
 	// Set up the test handler.
 	authedHandler := http.NewServeMux()

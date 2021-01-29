@@ -9,8 +9,8 @@ import (
 
 	"github.com/jackc/pgconn"
 
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
@@ -44,7 +44,7 @@ func TestRegistryExtensions_validNames(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := context.Background()
 
-	user, err := db.Users.Create(ctx, db.NewUser{Username: "u"})
+	user, err := database.GlobalUsers.Create(ctx, database.NewUser{Username: "u"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -117,11 +117,11 @@ func TestRegistryExtensions(t *testing.T) {
 		}
 	}
 
-	user, err := db.Users.Create(ctx, db.NewUser{Username: "u"})
+	user, err := database.GlobalUsers.Create(ctx, database.NewUser{Username: "u"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	org, err := db.Orgs.Create(ctx, "o", nil)
+	org, err := database.GlobalOrgs.Create(ctx, "o", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -224,8 +224,8 @@ func TestRegistryExtensions(t *testing.T) {
 				testListCount(t, dbExtensionsListOptions{Query: c.publisherName + "/" + x.Name}, wantByCurrent)
 			})
 			t.Run("List/Count with prioritizeExtensionIDs", func(t *testing.T) {
-				testList(t, dbExtensionsListOptions{PrioritizeExtensionIDs: []string{xu.NonCanonicalExtensionID}, LimitOffset: &db.LimitOffset{Limit: 1}}, []*dbExtension{xu})
-				testList(t, dbExtensionsListOptions{PrioritizeExtensionIDs: []string{xo.NonCanonicalExtensionID}, LimitOffset: &db.LimitOffset{Limit: 1}}, []*dbExtension{xo})
+				testList(t, dbExtensionsListOptions{PrioritizeExtensionIDs: []string{xu.NonCanonicalExtensionID}, LimitOffset: &database.LimitOffset{Limit: 1}}, []*dbExtension{xu})
+				testList(t, dbExtensionsListOptions{PrioritizeExtensionIDs: []string{xo.NonCanonicalExtensionID}, LimitOffset: &database.LimitOffset{Limit: 1}}, []*dbExtension{xo})
 			})
 
 			if err := (dbExtensions{}).Delete(ctx, x.ID); err != nil {
@@ -330,7 +330,7 @@ func TestRegistryExtensions(t *testing.T) {
 		xnonwip2.NonCanonicalIsWorkInProgress = false
 
 		// The non-WIP extension should be sorted first.
-		testList(t, dbExtensionsListOptions{Query: "wiptest", LimitOffset: &db.LimitOffset{Limit: 5}}, []*dbExtension{xnonwip1, xnonwip2, xwip1, xwip2, xwip3})
+		testList(t, dbExtensionsListOptions{Query: "wiptest", LimitOffset: &database.LimitOffset{Limit: 5}}, []*dbExtension{xnonwip1, xnonwip2, xwip1, xwip2, xwip3})
 	})
 }
 
@@ -359,7 +359,7 @@ func TestRegistryExtensions_ListCount(t *testing.T) {
 		}
 	}
 
-	user, err := db.Users.Create(ctx, db.NewUser{Username: "u"})
+	user, err := database.GlobalUsers.Create(ctx, database.NewUser{Username: "u"})
 	if err != nil {
 		t.Fatal(err)
 	}

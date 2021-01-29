@@ -15,8 +15,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/search"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -57,6 +57,7 @@ var ChangesetColumns = []*sqlf.Query{
 	sqlf.Sprintf("changesets.num_resets"),
 	sqlf.Sprintf("changesets.num_failures"),
 	sqlf.Sprintf("changesets.closing"),
+	sqlf.Sprintf("changesets.syncer_error"),
 }
 
 // changesetInsertColumns is the list of changeset columns that are modified in
@@ -91,6 +92,7 @@ var changesetInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("num_resets"),
 	sqlf.Sprintf("num_failures"),
 	sqlf.Sprintf("closing"),
+	sqlf.Sprintf("syncer_error"),
 }
 
 func (s *Store) changesetWriteQuery(q string, includeID bool, c *campaigns.Changeset) (*sqlf.Query, error) {
@@ -145,6 +147,7 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *campaigns.Chang
 		c.NumResets,
 		c.NumFailures,
 		c.Closing,
+		c.SyncErrorMessage,
 	}
 
 	if includeID {
@@ -185,7 +188,7 @@ func (s *Store) CreateChangeset(ctx context.Context, c *campaigns.Changeset) err
 var createChangesetQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:CreateChangeset
 INSERT INTO changesets (%s)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING %s
 `
 
@@ -552,7 +555,7 @@ func (s *Store) UpdateChangeset(ctx context.Context, cs *campaigns.Changeset) er
 var updateChangesetQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store_changesets.go:UpdateChangeset
 UPDATE changesets
-SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   %s
@@ -651,7 +654,8 @@ SET
   reconciler_state = %s,
   failure_message = NULL,
   num_failures = 0,
-  closing = TRUE
+  closing = TRUE,
+  syncer_error = NULL
 WHERE
   owned_by_campaign_id = %d AND
   publication_state = %s AND
@@ -738,6 +742,7 @@ func scanChangeset(t *campaigns.Changeset, s scanner) error {
 		externalReviewState string
 		externalCheckState  string
 		failureMessage      string
+		syncErrorMessage    string
 		reconcilerState     string
 	)
 	err := s.Scan(
@@ -771,6 +776,7 @@ func scanChangeset(t *campaigns.Changeset, s scanner) error {
 		&t.NumResets,
 		&t.NumFailures,
 		&t.Closing,
+		&dbutil.NullString{S: &syncErrorMessage},
 	)
 	if err != nil {
 		return errors.Wrap(err, "scanning changeset")
@@ -781,6 +787,9 @@ func scanChangeset(t *campaigns.Changeset, s scanner) error {
 	t.ExternalCheckState = campaigns.ChangesetCheckState(externalCheckState)
 	if failureMessage != "" {
 		t.FailureMessage = &failureMessage
+	}
+	if syncErrorMessage != "" {
+		t.SyncErrorMessage = &syncErrorMessage
 	}
 	t.ReconcilerState = campaigns.ReconcilerState(strings.ToUpper(reconcilerState))
 
@@ -818,6 +827,9 @@ func (s *Store) GetChangesetsStats(ctx context.Context, opts GetChangesetsStatsO
 	err = s.query(ctx, q, func(sc scanner) error {
 		if err := sc.Scan(
 			&stats.Total,
+			&stats.Retrying,
+			&stats.Failed,
+			&stats.Processing,
 			&stats.Unpublished,
 			&stats.Closed,
 			&stats.Draft,
@@ -839,13 +851,15 @@ const getChangesetStatsFmtstr = `
 -- source: enterprise/internal/campaigns/store_changesets.go:GetChangesetsStats
 SELECT
 	COUNT(*) AS total,
-	-- Include all changesets that aren't published yet and are not imported.
-	COUNT(*) FILTER (WHERE changesets.publication_state = 'UNPUBLISHED' AND current_spec_id IS NOT NULL) AS unpublished,
-	COUNT(*) FILTER (WHERE changesets.publication_state = 'PUBLISHED' AND changesets.external_state = 'CLOSED') AS closed,
-	COUNT(*) FILTER (WHERE changesets.publication_state = 'PUBLISHED' AND changesets.external_state = 'DRAFT') AS draft,
-	COUNT(*) FILTER (WHERE changesets.publication_state = 'PUBLISHED' AND changesets.external_state = 'MERGED') AS merged,
-	COUNT(*) FILTER (WHERE changesets.publication_state = 'PUBLISHED' AND changesets.external_state = 'OPEN') AS open,
-	COUNT(*) FILTER (WHERE changesets.publication_state = 'PUBLISHED' AND changesets.external_state = 'DELETED') AS deleted
+	COUNT(*) FILTER (WHERE changesets.reconciler_state = 'errored') AS retrying,
+	COUNT(*) FILTER (WHERE changesets.reconciler_state = 'failed') AS failed,
+	COUNT(*) FILTER (WHERE changesets.reconciler_state NOT IN ('failed', 'errored', 'completed')) AS processing,
+	COUNT(*) FILTER (WHERE changesets.publication_state = 'UNPUBLISHED' AND changesets.reconciler_state = 'completed') AS unpublished,
+	COUNT(*) FILTER (WHERE changesets.publication_state = 'PUBLISHED' AND changesets.reconciler_state = 'completed' AND changesets.external_state = 'CLOSED') AS closed,
+	COUNT(*) FILTER (WHERE changesets.publication_state = 'PUBLISHED' AND changesets.reconciler_state = 'completed' AND changesets.external_state = 'DRAFT') AS draft,
+	COUNT(*) FILTER (WHERE changesets.publication_state = 'PUBLISHED' AND changesets.reconciler_state = 'completed' AND changesets.external_state = 'MERGED') AS merged,
+	COUNT(*) FILTER (WHERE changesets.publication_state = 'PUBLISHED' AND changesets.reconciler_state = 'completed' AND changesets.external_state = 'OPEN') AS open,
+	COUNT(*) FILTER (WHERE changesets.publication_state = 'PUBLISHED' AND changesets.reconciler_state = 'completed' AND changesets.external_state = 'DELETED') AS deleted
 FROM changesets
 INNER JOIN repo on repo.id = changesets.repo_id
 WHERE

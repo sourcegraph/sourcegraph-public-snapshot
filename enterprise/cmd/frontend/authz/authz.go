@@ -14,18 +14,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/enforcement"
 	eauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/db"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 func Init(d dbutil.DB, clock func() time.Time) {
 	// TODO(efritz) - de-globalize assignments in this function
-	db.ExternalServices = edb.NewExternalServicesStore()
-	db.Authz = edb.NewAuthzStore(d, clock)
+	database.GlobalExternalServices = edb.NewExternalServicesStore(d)
+	database.GlobalAuthz = edb.NewAuthzStore(d, clock)
 
 	// Warn about usage of auth providers that are not enabled by the license.
 	graphqlbackend.AlertFuncs = append(graphqlbackend.AlertFuncs, func(args graphqlbackend.AlertFuncArgs) []*graphqlbackend.Alert {
@@ -39,7 +39,7 @@ func Init(d dbutil.DB, clock func() time.Time) {
 		}
 
 		// We can ignore problems returned here because they would have been surfaced in other places.
-		_, providers, _, _ := eauthz.ProvidersFromConfig(context.Background(), conf.Get(), db.ExternalServices)
+		_, providers, _, _ := eauthz.ProvidersFromConfig(context.Background(), conf.Get(), database.GlobalExternalServices)
 		if len(providers) == 0 {
 			return nil
 		}
@@ -131,7 +131,7 @@ func init() {
 	// Report any authz provider problems in external configs.
 	conf.ContributeWarning(func(cfg conf.Unified) (problems conf.Problems) {
 		_, _, seriousProblems, warnings :=
-			eauthz.ProvidersFromConfig(context.Background(), &cfg, db.ExternalServices)
+			eauthz.ProvidersFromConfig(context.Background(), &cfg, database.GlobalExternalServices)
 		problems = append(problems, conf.NewExternalServiceProblems(seriousProblems...)...)
 		problems = append(problems, conf.NewExternalServiceProblems(warnings...)...)
 		return problems

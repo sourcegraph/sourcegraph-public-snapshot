@@ -1,7 +1,6 @@
 import * as H from 'history'
 import classnames from 'classnames'
 import React, { useCallback, useMemo, useState } from 'react'
-import { BreadcrumbSetters, BreadcrumbsProps } from '../../components/Breadcrumbs'
 import { PageHeader } from '../../components/PageHeader'
 import { PageTitle } from '../../components/PageTitle'
 import { AuthenticatedUser } from '../../auth'
@@ -18,11 +17,10 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { Settings } from '../../schema/settings.schema'
 import { CodeMonitoringLogo } from './CodeMonitoringLogo'
+import { StatusBadge } from '../../components/StatusBadge'
 
 export interface CodeMonitoringPageProps
-    extends BreadcrumbsProps,
-        BreadcrumbSetters,
-        Pick<CodeMonitoringProps, 'fetchUserCodeMonitors' | 'toggleCodeMonitorEnabled'>,
+    extends Pick<CodeMonitoringProps, 'fetchUserCodeMonitors' | 'toggleCodeMonitorEnabled'>,
         SettingsCascadeProps<Settings> {
     authenticatedUser: AuthenticatedUser
     location: H.Location
@@ -76,15 +74,13 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
         <div className="code-monitoring-page container mt-5">
             <PageTitle title="Code Monitoring" />
             <PageHeader
-                title={
-                    <>
-                        Code monitoring{' '}
-                        <sup>
-                            <span className="badge badge-info text-uppercase">Prototype</span>
-                        </sup>
-                    </>
-                }
-                icon={CodeMonitoringLogo}
+                annotation={<StatusBadge status="prototype" />}
+                path={[
+                    {
+                        icon: CodeMonitoringLogo,
+                        text: 'Code monitoring',
+                    },
+                ]}
                 actions={
                     userHasCodeMonitors &&
                     userHasCodeMonitors !== 'loading' &&
@@ -95,6 +91,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                         </Link>
                     )
                 }
+                className="mb-3"
             />
             {userHasCodeMonitors === 'loading' && <LoadingSpinner />}
             {!userHasCodeMonitors && (
@@ -103,13 +100,9 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                         <h2>Get started with code monitoring</h2>
                         <p className="text-muted code-monitoring-page__start-subheading mb-4">
                             Watch your code for changes and trigger actions to get notifications, send webhooks, and
-                            more. <a href="">Learn more.</a>
+                            more. <a href="https://docs.sourcegraph.com/code_monitoring">Learn more.</a>
                         </p>
-                        <Link
-                            to="/code-monitoring/new"
-                            className="code-monitoring-page__start-button btn btn-primary"
-                            type="button"
-                        >
+                        <Link to="/code-monitoring/new" className="code-monitoring-page__start-button btn btn-primary">
                             Create your first code monitor →
                         </Link>
                     </div>
@@ -147,7 +140,9 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                                 </div>
                             </div>
                         </div>
-                        <a className="link">Find more starting points in the docs</a>
+                        <a className="link" href="https://docs.sourcegraph.com/code_monitoring/how-tos/starting_points">
+                            Find more starting points in the docs
+                        </a>
                     </div>
                     <div className="code-monitoring-page__learn-more container mt-5">
                         <h3 className="mb-3">Learn more about code monitoring</h3>
@@ -171,7 +166,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                                     <h4>Starting points and ideas</h4>
                                     <p className="text-muted">
                                         Find specific examples of useful code monitors to keep on top of security and
-                                        consistency concerns.
+                                        consistency concerns.{' '}
                                         <a
                                             href="https://docs.sourcegraph.com/code_monitoring/how-tos/starting_points"
                                             className="link"

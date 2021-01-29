@@ -5,7 +5,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -36,7 +36,7 @@ func NewPersonResolver(name, email string, includeUserInfo bool) *PersonResolver
 func (r *PersonResolver) resolveUser(ctx context.Context) (*types.User, error) {
 	r.once.Do(func() {
 		if r.includeUserInfo && r.email != "" {
-			r.user, r.err = db.Users.GetByVerifiedEmail(ctx, r.email)
+			r.user, r.err = database.GlobalUsers.GetByVerifiedEmail(ctx, r.email)
 			if errcode.IsNotFound(r.err) {
 				r.err = nil
 			}

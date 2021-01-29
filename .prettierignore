@@ -4,8 +4,8 @@ client/phabricator/scripts/loader.js
 client/browser/build
 **/package.json
 **/coverage
-internal/db/schema.md
-internal/db/schema.*.md
+internal/database/schema.md
+internal/database/schema.*.md
 cmd/xlang-python/python-langserver/
 package-lock.json
 package.json

@@ -178,6 +178,7 @@ const CampaignChangesets: (variables: CampaignChangesetsVariables) => CampaignCh
                         deleted: 23,
                     },
                     error: null,
+                    syncerError: null,
                     externalID: '123',
                     state: ChangesetState.OPEN,
                     externalURL: {
@@ -271,6 +272,7 @@ function mockCommonGraphQLResponses(
                     namespaceName: entityType === 'user' ? 'alice' : 'test-org',
                     url: namespaceURL,
                 },
+                diffStat: { added: 1000, changed: 2000, deleted: 1000 },
                 url: `${namespaceURL}/campaigns/test-campaign`,
                 viewerCanAdminister: true,
                 lastAppliedAt: subDays(new Date(), 5).toISOString(),
@@ -588,6 +590,11 @@ describe('Campaigns', () => {
                                         delta: {
                                             titleChanged: false,
                                             baseRefChanged: false,
+                                            diffChanged: false,
+                                            bodyChanged: false,
+                                            authorEmailChanged: false,
+                                            authorNameChanged: false,
+                                            commitMessageChanged: false,
                                         },
                                         targets: {
                                             __typename: 'VisibleApplyPreviewTargetsAttach',

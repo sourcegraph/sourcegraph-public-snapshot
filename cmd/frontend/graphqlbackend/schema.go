@@ -726,6 +726,11 @@ type Mutation {
     syncChangeset(changeset: ID!): EmptyResponse!
 
     """
+    Re-enqueue the changeset for processing by the reconciler. The changeset must be in FAILED state.
+    """
+    reenqueueChangeset(changeset: ID!): Changeset!
+
+    """
     Create a new credential for the given user for the given code host.
     If another token for that code host already exists, an error with the error code
     ErrDuplicateCredential is returned.
@@ -2234,6 +2239,12 @@ type ExternalChangeset implements Node & Changeset {
     body: String
 
     """
+    The author of the changeset, or null if the data hasn't been synced from the code host yet,
+    or the changeset has not yet been published.
+    """
+    author: Person
+
+    """
     The publication state of the changeset.
     """
     publicationState: ChangesetPublicationState!
@@ -2296,6 +2307,11 @@ type ExternalChangeset implements Node & Changeset {
     error: String
 
     """
+    An error that has occured during the last sync of the changeset. Null, if was successful.
+    """
+    syncerError: String
+
+    """
     The current changeset spec for this changeset.
 
     Null if the changeset was only imported.
@@ -2331,6 +2347,18 @@ type ChangesetsStats {
     The count of externalState: DELETED changesets.
     """
     deleted: Int!
+    """
+    The count of changesets in retrying state.
+    """
+    retrying: Int!
+    """
+    The count of changesets in failed state.
+    """
+    failed: Int!
+    """
+    The count of changesets that are currently processing or enqueued to be.
+    """
+    processing: Int!
     """
     The count of all changesets.
     """
@@ -2395,6 +2423,31 @@ type ChangesetEventConnection {
     Pagination information.
     """
     pageInfo: PageInfo!
+}
+
+"""
+Insights about code.
+"""
+type Insights {
+    """
+    Data points over a time range (inclusive)
+    """
+    points(from: DateTime, to: DateTime): [InsightDataPoint!]!
+}
+
+"""
+A code insight data point.
+"""
+type InsightDataPoint {
+    """
+    The time of this data point.
+    """
+    dateTime: DateTime!
+
+    """
+    The value of the insight at this point in time.
+    """
+    value: Float!
 }
 
 """
@@ -2710,6 +2763,11 @@ type Query {
         """
         name: String!
     ): Campaign
+
+    """
+    EXPERIMENTAL: Queries code insights
+    """
+    insights: Insights
 
     """
     Looks up a repository by either name or cloneURL.
@@ -4494,6 +4552,12 @@ type Repository implements Node & GenericSearchResultInterface {
     indexConfiguration: IndexConfiguration
 
     """
+    Information and status related to the commit graph of this repository calculated
+    for use by code intelligence features.
+    """
+    codeIntelligenceCommitGraph: CodeIntelligenceCommitGraph!
+
+    """
     A list of authorized users to access this repository with the given permission.
     This API currently only returns permissions from the Sourcegraph provider, i.e.
     "permissions.userMapping" in site configuration.
@@ -4518,6 +4582,22 @@ type Repository implements Node & GenericSearchResultInterface {
     It is null when there is no permissions data stored for the repository.
     """
     permissionsInfo: PermissionsInfo
+}
+
+"""
+Information and status related to the commit graph of this repository calculated
+for use by code intelligence features.
+"""
+type CodeIntelligenceCommitGraph {
+    """
+    Whether or not the commit graph needs to be updated.
+    """
+    stale: Boolean!
+
+    """
+    When, if ever, the commit graph was last refreshed.
+    """
+    updatedAt: DateTime
 }
 
 """

@@ -16,8 +16,8 @@ import (
 
 	gh "github.com/google/go-github/v28/github"
 
-	idb "github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -116,7 +116,7 @@ func TestGithubWebhookExternalServices(t *testing.T) {
 	ctx := context.Background()
 
 	secret := "secret"
-	esStore := idb.NewExternalServicesStoreWithDB(db)
+	esStore := database.ExternalServices(db)
 	extSvc := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub",

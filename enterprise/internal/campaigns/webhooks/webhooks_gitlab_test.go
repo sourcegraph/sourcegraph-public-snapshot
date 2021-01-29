@@ -19,9 +19,9 @@ import (
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	idb "github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
@@ -237,7 +237,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 
 			t.Run("error from handleEvent", func(t *testing.T) {
 				store, esStore, clock := gitLabTestSetup(t, db)
-				repoStore := idb.NewRepoStoreWith(store)
+				repoStore := database.ReposWith(store)
 				h := NewGitLabWebhook(store, esStore, clock.Now)
 				es := createGitLabExternalService(t, ctx, esStore)
 				repo := createGitLabRepo(t, ctx, repoStore, es)
@@ -284,7 +284,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 				for _, action := range []string{"approved", "unapproved"} {
 					t.Run(action, func(t *testing.T) {
 						store, esStore, clock := gitLabTestSetup(t, db)
-						repoStore := idb.NewRepoStoreWith(store)
+						repoStore := database.ReposWith(store)
 						h := NewGitLabWebhook(store, esStore, clock.Now)
 						es := createGitLabExternalService(t, ctx, esStore)
 						repo := createGitLabRepo(t, ctx, repoStore, es)
@@ -330,7 +330,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 				} {
 					t.Run(action, func(t *testing.T) {
 						store, esStore, clock := gitLabTestSetup(t, db)
-						repoStore := idb.NewRepoStoreWith(store)
+						repoStore := database.ReposWith(store)
 						h := NewGitLabWebhook(store, esStore, clock.Now)
 						es := createGitLabExternalService(t, ctx, esStore)
 						repo := createGitLabRepo(t, ctx, repoStore, es)
@@ -360,7 +360,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 
 			t.Run("valid pipeline events", func(t *testing.T) {
 				store, esStore, clock := gitLabTestSetup(t, db)
-				repoStore := idb.NewRepoStoreWith(store)
+				repoStore := database.ReposWith(store)
 				h := NewGitLabWebhook(store, esStore, clock.Now)
 				es := createGitLabExternalService(t, ctx, esStore)
 				repo := createGitLabRepo(t, ctx, repoStore, es)
@@ -461,7 +461,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			// function above because it needs to set up a bad database
 			// connection on the repo store.
 			store, _, clock := gitLabTestSetup(t, db)
-			esStore := idb.NewExternalServicesStoreWithDB(&brokenDB{errors.New("foo")})
+			esStore := database.ExternalServices(&brokenDB{errors.New("foo")})
 			h := NewGitLabWebhook(store, esStore, clock.Now)
 
 			_, err := h.getExternalServiceFromRawID(ctx, "12345")
@@ -569,7 +569,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			// Since these tests don't write to the database, we can just share
 			// the same database setup.
 			store, esStore, clock := gitLabTestSetup(t, db)
-			repoStore := idb.NewRepoStoreWith(store)
+			repoStore := database.ReposWith(store)
 			h := NewGitLabWebhook(store, esStore, clock.Now)
 			es := createGitLabExternalService(t, ctx, esStore)
 			repo := createGitLabRepo(t, ctx, repoStore, es)
@@ -822,13 +822,13 @@ func (nntx *noNestingTx) BeginTx(ctx context.Context, opts *sql.TxOptions) error
 // gitLabTestSetup instantiates the stores and a clock for use within tests.
 // Any changes made to the stores will be rolled back after the test is
 // complete.
-func gitLabTestSetup(t *testing.T, db *sql.DB) (*store.Store, *idb.ExternalServiceStore, ct.Clock) {
+func gitLabTestSetup(t *testing.T, db *sql.DB) (*store.Store, *database.ExternalServiceStore, ct.Clock) {
 	c := &ct.TestClock{Time: timeutil.Now()}
 	tx := dbtest.NewTx(t, db)
 
 	// Note that tx is wrapped in nestedTx to effectively neuter further use of
 	// transactions within the test.
-	return store.NewWithClock(&nestedTx{tx}, c.Now), idb.NewExternalServicesStoreWithDB(tx), c
+	return store.NewWithClock(&nestedTx{tx}, c.Now), database.ExternalServices(tx), c
 }
 
 // assertBodyIncludes checks for a specific substring within the given response
@@ -872,7 +872,7 @@ func assertChangesetEventForChangeset(t *testing.T, ctx context.Context, tx *sto
 
 // createGitLabExternalService creates a mock GitLab service with a valid
 // configuration, including the secrets "super" and "secret".
-func createGitLabExternalService(t *testing.T, ctx context.Context, esStore *idb.ExternalServiceStore) *types.ExternalService {
+func createGitLabExternalService(t *testing.T, ctx context.Context, esStore *database.ExternalServiceStore) *types.ExternalService {
 	es := &types.ExternalService{
 		Kind:        extsvc.KindGitLab,
 		DisplayName: "gitlab",
@@ -894,7 +894,7 @@ func createGitLabExternalService(t *testing.T, ctx context.Context, esStore *idb
 
 // createGitLabRepo creates a mock GitLab repo attached to the given external
 // service.
-func createGitLabRepo(t *testing.T, ctx context.Context, rstore *idb.RepoStore, es *types.ExternalService) *types.Repo {
+func createGitLabRepo(t *testing.T, ctx context.Context, rstore *database.RepoStore, es *types.ExternalService) *types.Repo {
 	repo := (&types.Repo{
 		Name: "gitlab.com/sourcegraph/test",
 		URI:  "gitlab.com/sourcegraph/test",
