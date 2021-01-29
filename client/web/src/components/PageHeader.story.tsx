@@ -42,7 +42,7 @@ add(
     'Complex header',
     () => (
         <PageHeader
-            annotation={<StatusBadge status="beta" />}
+            annotation={<StatusBadge status="beta" feedback={{ mailto: 'support@sourcegraph.com' }} />}
             path={[
                 { to: '/level-0', icon: PuzzleOutlineIcon },
                 { to: '/level-1', text: 'Level 1' },

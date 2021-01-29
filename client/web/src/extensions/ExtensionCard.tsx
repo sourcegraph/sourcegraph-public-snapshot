@@ -9,13 +9,13 @@ import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { isErrorLike } from '../../../shared/src/util/errors'
 import { isExtensionAdded, splitExtensionID } from './extension/extension'
 import { ExtensionConfigurationState } from './extension/ExtensionConfigurationState'
-import { WorkInProgressBadge } from './extension/WorkInProgressBadge'
 import { ExtensionToggle, OptimisticUpdateFailure } from './ExtensionToggle'
 import { isEncodedImage } from '../../../shared/src/util/icon'
 import { Link } from 'react-router-dom'
 import { DefaultIconEnabled, DefaultIcon, SourcegraphExtensionIcon } from './icons'
 import { ThemeProps } from '../../../shared/src/theme'
 import { useTimeoutManager } from '../../../shared/src/util/useTimeoutManager'
+import { StatusBadge } from '../components/StatusBadge'
 
 interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettings'>, ThemeProps {
     node: Pick<
@@ -202,8 +202,13 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                                 )}
                             </span>
                             {extension.registryExtension?.isWorkInProgress && (
-                                <WorkInProgressBadge
-                                    viewerCanAdminister={extension.registryExtension.viewerCanAdminister}
+                                <StatusBadge
+                                    status="prototype"
+                                    tooltip={
+                                        extension.registryExtension.viewerCanAdminister
+                                            ? 'Remove "WIP" from the title when this extension is ready for use.'
+                                            : 'Work in progress (not ready for use)'
+                                    }
                                 />
                             )}
                         </div>

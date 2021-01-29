@@ -6,13 +6,13 @@ import { isErrorLike } from '../../../../shared/src/util/errors'
 import { NavItemWithIconDescriptor } from '../../util/contributions'
 import { ExtensionToggle } from '../ExtensionToggle'
 import { ExtensionAreaRouteContext } from './ExtensionArea'
-import { WorkInProgressBadge } from './WorkInProgressBadge'
 import { isEncodedImage } from '../../../../shared/src/util/icon'
 import { useTimeoutManager } from '../../../../shared/src/util/useTimeoutManager'
 import classNames from 'classnames'
 import { splitExtensionID } from './extension'
 import { PageHeader } from '../../components/PageHeader'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
+import { StatusBadge } from '../../components/StatusBadge'
 
 interface ExtensionAreaHeaderProps extends ExtensionAreaRouteContext, RouteComponentProps<{}> {
     navItems: readonly ExtensionAreaHeaderNavItem[]
@@ -96,10 +96,12 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                         <PageHeader
                             annotation={
                                 isWorkInProgress && (
-                                    <WorkInProgressBadge
-                                        viewerCanAdminister={
-                                            !!props.extension.registryExtension &&
-                                            props.extension.registryExtension.viewerCanAdminister
+                                    <StatusBadge
+                                        status="prototype"
+                                        tooltip={
+                                            props.extension.registryExtension?.viewerCanAdminister
+                                                ? 'Remove "WIP" from the title when this extension is ready for use.'
+                                                : 'Work in progress (not ready for use)'
                                         }
                                     />
                                 )
@@ -112,7 +114,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                 )
                             }
                             actions={
-                                <div className="d-flex flex-column align-items-center justify-content-end position-relative">
+                                <div className="position-relative extension-area-header__actions">
                                     {change && (
                                         <div
                                             className={classNames('alert px-2 py-1 mb-0 extension-area-header__alert', {
@@ -132,7 +134,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                         </div>
                                     )}
                                     <ExtensionToggle
-                                        className="extension-area-header__toggle mt-3"
+                                        className="mt-md-3"
                                         enabled={isExtensionEnabled(props.settingsCascade.final, props.extension.id)}
                                         extensionID={props.extension.id}
                                         settingsCascade={props.settingsCascade}

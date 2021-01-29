@@ -43,7 +43,7 @@ export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props =>
         <div className="w-100">
             <div className="container mt-4 web-content">
                 <PageHeader
-                    annotation={<StatusBadge status="prototype" />}
+                    annotation={<StatusBadge status="prototype" feedback={{ mailto: 'support@sourcegraph.com' }} />}
                     path={[{ icon: InsightsIcon, text: 'Code insights' }]}
                     actions={
                         <>

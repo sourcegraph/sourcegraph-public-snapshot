@@ -15,5 +15,5 @@ const { add } = storiesOf('web/StatusBadge', module).addDecorator(story => (
 
 add('Basic', () => {
     const status = select('Status', { Beta: 'beta', Prototype: 'prototype' }, 'beta')
-    return <StatusBadge status={status} />
+    return <StatusBadge status={status} tooltip="This is a tooltip" feedback={{ mailto: 'support@sourcegraph.com' }} />
 })
