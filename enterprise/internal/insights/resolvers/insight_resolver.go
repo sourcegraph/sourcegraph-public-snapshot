@@ -18,6 +18,10 @@ func (r *insightResolver) Title() string { return r.insight.Title }
 func (r *insightResolver) Description() string { return r.insight.Description }
 
 func (r *insightResolver) Series() []graphqlbackend.InsightSeriesResolver {
-	// TODO: locate time series from r.store DB.
-	return nil
+	series := r.insight.Series
+	resolvers := make([]graphqlbackend.InsightSeriesResolver, 0, len(series))
+	for _, series := range series {
+		resolvers = append(resolvers, &insightSeriesResolver{store: r.store, series: series})
+	}
+	return resolvers
 }
