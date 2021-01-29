@@ -85,7 +85,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/search/query-builder',
         render: props =>
-            props.showQueryBuilder ? (
+            true ? (
                 lazyComponent(() => import('./search/queryBuilder/QueryBuilderPage'), 'QueryBuilderPage')(props)
             ) : (
                 <Redirect to="/search" />
@@ -189,9 +189,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         path: '/insights',
         exact: true,
         render: lazyComponent(() => import('./insights/InsightsPage'), 'InsightsPage'),
-        condition: props =>
-            !isErrorLike(props.settingsCascade.final) &&
-            !!props.settingsCascade.final?.experimentalFeatures?.codeInsights,
+        condition: props => true,
     },
     {
         path: '/views',

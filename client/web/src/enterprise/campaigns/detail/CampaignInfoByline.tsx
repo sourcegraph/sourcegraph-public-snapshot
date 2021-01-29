@@ -19,7 +19,7 @@ export const CampaignInfoByline: React.FunctionComponent<Props> = ({
         {initialApplier ? <Link to={initialApplier.url}>{initialApplier.username}</Link> : 'a deleted user'}
         {lastAppliedAt !== createdAt && (
             <>
-                <span className="mx-2">•</span>
+                <span className="mx-2">|</span>
                 Updated <Timestamp date={lastAppliedAt} />
                 {lastApplier?.username !== initialApplier?.username && (
                     <>

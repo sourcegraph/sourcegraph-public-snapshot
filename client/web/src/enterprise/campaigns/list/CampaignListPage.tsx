@@ -120,6 +120,7 @@ export const CampaignListPage: React.FunctionComponent<CampaignListPageProps> = 
                 path={[{ icon: CampaignsIcon, text: 'Campaigns' }]}
                 className="test-campaign-list-page mb-3"
                 actions={<NewCampaignButton location={location} />}
+                // todo: confirm we want to remove byline
             />
             <CampaignListIntro licensed={licensed} />
             <CampaignListTabHeader selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
