@@ -1499,7 +1499,7 @@ func newAggregator(ctx context.Context, stream SearchStream, inputs *SearchInput
 			}
 
 			agg.alert.Update(event)
-			agg.common.Update(&event.Stats)
+			agg.stats.Update(&event.Stats)
 			if stream != nil {
 				stream <- event
 			}
@@ -1515,7 +1515,7 @@ type aggregator struct {
 	done chan struct{}
 
 	results []SearchResultResolver
-	common  streaming.Stats
+	stats   streaming.Stats
 	alert   alertObserver
 }
 
@@ -1526,8 +1526,8 @@ func (a *aggregator) get() ([]SearchResultResolver, streaming.Stats, *searchAler
 	close(a.stream)
 	<-a.done
 
-	alert, err := a.alert.Done(&a.common)
-	return a.results, a.common, alert, err
+	alert, err := a.alert.Done(&a.stats)
+	return a.results, a.stats, alert, err
 }
 
 func (a *aggregator) send(event SearchEvent) {
