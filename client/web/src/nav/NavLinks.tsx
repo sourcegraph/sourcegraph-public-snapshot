@@ -48,6 +48,21 @@ interface Props
 export class NavLinks extends React.PureComponent<Props> {
     private subscriptions = new Subscription()
 
+    private navItems(): JSX.Element[] {
+        let items = []
+        if (!isErrorLike(this.props.settingsCascade.final)) {
+            if (this.props.settingsCascade.final?.experimentalFeatures?.codeInsights) {
+                items.push(<InsightsNavItem />)
+            }
+            if (this.props.settingsCascade.final?.experimentalFeatures?.codeMonitoring) {
+                items.push(<CodeMonitoringNavItem />)
+            }
+        }
+        return items
+    }
+
+    private items = this.navItems()
+
     public componentWillUnmount(): void {
         this.subscriptions.unsubscribe()
     }
@@ -71,21 +86,10 @@ export class NavLinks extends React.PureComponent<Props> {
                 )}
                 {!this.props.minimalNavLinks && (
                     <>
-                        {!isErrorLike(this.props.settingsCascade.final) && (
-                            <>
-                                {this.props.settingsCascade.final?.experimentalFeatures?.codeInsights && (
-                                    <li className="nav-item d-none d-lg-block">
-                                        <InsightsNavItem />
-                                    </li>
-                                )}
-                                {this.props.settingsCascade.final?.experimentalFeatures?.codeMonitoring && (
-                                    <li className="nav-item d-none d-lg-block">
-                                        <CodeMonitoringNavItem />
-                                    </li>
-                                )}
-                            </>
-                        )}
-                        {!this.props.minimalNavLinks && this.props.showCampaigns && (
+                        {this.items.map(item => (
+                            <li className="nav-item d-none d-lg-block">{item}</li>
+                        ))}
+                        {this.props.showCampaigns && (
                             <li className="nav-item d-none d-lg-block">
                                 <CampaignsNavItem />
                             </li>
@@ -93,23 +97,12 @@ export class NavLinks extends React.PureComponent<Props> {
                     </>
                 )}
                 <li className="nav-item d-lg-none">
-                    <MenuNavItem>
-                        {!this.props.minimalNavLinks && (
-                            <>
-                                {!isErrorLike(this.props.settingsCascade.final) && (
-                                    <>
-                                        {this.props.settingsCascade.final?.experimentalFeatures?.codeInsights && (
-                                            <InsightsNavItem />
-                                        )}
-                                        {this.props.settingsCascade.final?.experimentalFeatures?.codeMonitoring && (
-                                            <CodeMonitoringNavItem />
-                                        )}
-                                    </>
-                                )}
-                                {this.props.showCampaigns && <CampaignsNavItem />}
-                            </>
-                        )}
-                    </MenuNavItem>
+                    {!this.props.minimalNavLinks && (
+                        <MenuNavItem>
+                            {this.items}
+                            {this.props.showCampaigns && <CampaignsNavItem />}
+                        </MenuNavItem>
+                    )}
                 </li>
                 {!this.props.authenticatedUser && (
                     <>
