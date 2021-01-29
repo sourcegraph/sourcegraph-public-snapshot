@@ -28,6 +28,40 @@ exports[`StreamingProgressCount should render correctly for 0 items in progress 
 </StreamingProgressCount>
 `;
 
+exports[`StreamingProgressCount should render correctly for 0 repositories 1`] = `
+<StreamingProgressCount
+  progress={
+    Object {
+      "durationMs": 0,
+      "matchCount": 0,
+      "repositoriesCount": 0,
+      "skipped": Array [],
+    }
+  }
+  state="loading"
+>
+  <div
+    className="streaming-progress__count d-flex align-items-center streaming-progress__count--in-progress"
+  >
+    <Memo(CalculatorIcon)
+      className="mr-2 icon-inline"
+    />
+    0
+     
+    results
+     in
+     
+    0.00
+    s
+     
+    from 
+    0
+     
+    repositories
+  </div>
+</StreamingProgressCount>
+`;
+
 exports[`StreamingProgressCount should render correctly for 1 item complete 1`] = `
 <StreamingProgressCount
   progress={
