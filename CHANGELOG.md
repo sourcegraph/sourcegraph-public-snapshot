@@ -26,7 +26,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixes an issue that prevented the hard deletion of a user if they had saved searches. [#17461](https://github.com/sourcegraph/sourcegraph/pull/17461)
 - Fixes an issue that caused some missing results for `type:commit` when a pattern was used instead of the `message` field. [#17490](https://github.com/sourcegraph/sourcegraph/pull/17490#issuecomment-764004758)
 - Fixes an issue where cAdvisor-based alerts would not fire correctly for services with multiple replicas. [#17600](https://github.com/sourcegraph/sourcegraph/pull/17600)
-- Significantly improved performance of structural search on large repositories [#17846](https://github.com/sourcegraph/sourcegraph/pull/17846)
+- Significantly improved performance of structural search on monorepo deployments [#17846](https://github.com/sourcegraph/sourcegraph/pull/17846)
 
 ### Removed
 
