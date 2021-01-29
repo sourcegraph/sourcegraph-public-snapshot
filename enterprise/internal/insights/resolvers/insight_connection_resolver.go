@@ -9,7 +9,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var _ graphqlbackend.InsightConnectionResolver = &insightConnectionResolver{}
@@ -20,7 +23,7 @@ type insightConnectionResolver struct {
 
 	// cache results because they are used by multiple fields
 	once     sync.Once
-	insights []graphqlbackend.InsightResolver
+	insights []*schema.Insight
 	next     int64
 	err      error
 }
@@ -52,10 +55,31 @@ func (r *insightConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.
 	return graphqlutil.HasNextPage(false), nil
 }
 
-func (r *insightConnectionResolver) compute(ctx context.Context) ([]graphqlbackend.InsightResolver, int64, error) {
+func (r *insightConnectionResolver) compute(ctx context.Context) ([]*schema.Insight, int64, error) {
 	r.once.Do(func() {
-		// TODO: populate r.insights, r.next, r.err
-		// TODO: locate insights from user, org, global settings using r.settingStore.ListAll()
+		// Get latest Global user settings.
+		//
+		// FUTURE: include user/org settings.
+		subject := api.SettingsSubject{Site: true}
+		globalSettingsRaw, err := r.settingStore.GetLatest(ctx, subject)
+		if err != nil {
+			r.err = err
+			return
+		}
+		globalSettings, err := parseUserSettings(globalSettingsRaw)
+		r.insights = globalSettings.Insights
 	})
 	return r.insights, r.next, r.err
+}
+
+func parseUserSettings(settings *api.Settings) (*schema.Settings, error) {
+	if settings == nil {
+		// Settings have never been saved for this subject; equivalent to `{}`.
+		return &schema.Settings{}, nil
+	}
+	var v schema.Settings
+	if err := jsonc.Unmarshal(settings.Contents, &v); err != nil {
+		return nil, err
+	}
+	return &v, nil
 }
