@@ -260,10 +260,10 @@ func initRouter(router *mux.Router) {
 	}, nil)))
 
 	// streaming search
-	router.Get(routeSearchStream).Handler(search.StreamHandler)
+	router.Get(routeSearchStream).Handler(search.StreamHandler())
 
 	// search badge
-	router.Get(routeSearchBadge).Handler(searchBadgeHandler)
+	router.Get(routeSearchBadge).Handler(searchBadgeHandler())
 
 	if envvar.SourcegraphDotComMode() {
 		// about subdomain

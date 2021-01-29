@@ -15,8 +15,10 @@ import (
 )
 
 // StreamHandler is an http handler which streams back search results.
-var StreamHandler http.Handler = &streamHandler{
-	newSearchResolver: defaultNewSearchResolver,
+func StreamHandler() http.Handler {
+	return &streamHandler{
+		newSearchResolver: defaultNewSearchResolver,
+	}
 }
 
 type streamHandler struct {
