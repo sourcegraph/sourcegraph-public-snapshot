@@ -202,7 +202,12 @@ const resolveFilePageCodeView: ViewResolver<CodeView> = {
                 if (!subheaderElement) {
                     throw new Error('Could not find subheader')
                 }
+                const existingMountElement = subheaderElement.querySelector('.sourcegraph-toolbar-mount')
+                if (existingMountElement) {
+                    return existingMountElement as HTMLElement
+                }
                 const mountElement = document.createElement('div')
+                mountElement.classList.add('sourcegraph-toolbar-mount')
                 subheaderElement.append(mountElement)
                 subheaderElement.append(createStyleElement(toolbarStyles))
                 return mountElement
@@ -313,13 +318,16 @@ export const gerritCodeHost: CodeHost = {
             return null
         }
         console.log('secondaryActionsElement', secondaryActionsElement)
-        const mount = document.createElement('gr-button')
-        mount.setAttribute('link', 'link')
-        mount.classList.add('OPEN_IN_SOURCEGRAPH')
-        secondaryActionsElement.prepend(mount)
+        const existingMountElement = secondaryActionsElement.querySelector('.open-in-sourcegraph-mount')
+        if (existingMountElement) {
+            return existingMountElement as HTMLElement
+        }
+        const mountElement = document.createElement('gr-button')
+        mountElement.setAttribute('link', 'link')
+        mountElement.classList.add('open-in-sourcegraph-mount')
+        secondaryActionsElement.prepend(mountElement)
         secondaryActionsElement.append(createStyleElement(toolbarStyles))
-
-        return mount
+        return mountElement
     },
 }
 
