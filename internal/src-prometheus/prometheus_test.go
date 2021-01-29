@@ -1,4 +1,4 @@
-package prometheusutil
+package srcprometheus
 
 import (
 	"errors"

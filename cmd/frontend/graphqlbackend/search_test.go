@@ -544,11 +544,13 @@ func TestVersionContext(t *testing.T) {
 			}
 
 			resolver := searchResolver{
-				query:          qinfo,
-				versionContext: &tc.versionContext,
-				userSettings:   &schema.Settings{},
-				reposMu:        &sync.Mutex{},
-				resolved:       &searchrepos.Resolved{},
+				SearchInputs: &SearchInputs{
+					Query:          qinfo,
+					VersionContext: &tc.versionContext,
+					UserSettings:   &schema.Settings{},
+				},
+				reposMu:  &sync.Mutex{},
+				resolved: &searchrepos.Resolved{},
 			}
 
 			database.Mocks.Repos.ListRepoNames = func(ctx context.Context, opts database.ReposListOptions) ([]*types.RepoName, error) {
@@ -589,12 +591,12 @@ func mkFileMatch(repo *types.RepoName, path string, lineNumbers ...int32) *FileM
 	for _, n := range lineNumbers {
 		lines = append(lines, &lineMatch{JLineNumber: n})
 	}
-	return &FileMatchResolver{
+	return mkFileMatchResolver(FileMatch{
 		uri:          fileMatchURI(repo.Name, "", path),
 		JPath:        path,
 		JLineMatches: lines,
-		Repo:         &RepositoryResolver{innerRepo: repo.ToRepo()},
-	}
+		Repo:         repo,
+	})
 }
 
 func repoRev(revSpec string) *search.RepositoryRevisions {

@@ -114,10 +114,12 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 		q, err = buildQuery(args, repos, filePathPatterns, false)
 		if err != nil {
 			c <- SearchEvent{Error: err}
+			return
 		}
 		resp, err = args.Zoekt.Client.Search(ctx, q, &searchOpts)
 		if err != nil {
 			c <- SearchEvent{Error: err}
+			return
 		}
 		if since(t0) >= searchOpts.MaxWallTime {
 			c <- SearchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusTimedout | search.RepoStatusIndexed)}}
@@ -162,11 +164,14 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 			repoResolvers[repoRev.Repo.Name] = &RepositoryResolver{innerRepo: repoRev.Repo.ToRepo()}
 		}
 		matches[i] = &FileMatchResolver{
-			JPath:     file.FileName,
-			JLimitHit: fileLimitHit,
-			uri:       fileMatchURI(repoRev.Repo.Name, "", file.FileName),
-			Repo:      repoResolvers[repoRev.Repo.Name],
-			CommitID:  api.CommitID(file.Version),
+			FileMatch: FileMatch{
+				JPath:     file.FileName,
+				JLimitHit: fileLimitHit,
+				uri:       fileMatchURI(repoRev.Repo.Name, "", file.FileName),
+				Repo:      repoRev.Repo,
+				CommitID:  api.CommitID(file.Version),
+			},
+			RepoResolver: repoResolvers[repoRev.Repo.Name],
 		}
 	}
 

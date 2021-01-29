@@ -354,7 +354,7 @@ func TestRepos_List(t *testing.T) {
 	}
 }
 
-func Test_GetUserAddedRepos(t *testing.T) {
+func TestRepos_ListRepoNames_userID(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -423,11 +423,11 @@ func Test_GetUserAddedRepos(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := []api.RepoName{
-		repo.Name,
+	want := []*types.RepoName{
+		{ID: repo.ID, Name: repo.Name},
 	}
 
-	have, err := Repos(db).GetUserAddedRepoNames(ctx, user.ID)
+	have, err := Repos(db).ListRepoNames(ctx, ReposListOptions{UserID: user.ID})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1679,6 +1679,17 @@ func TestRepos_ListRepoNames_queryAndPatternsMutuallyExclusive(t *testing.T) {
 			t.Fatalf("got error %v, want it to contain %q", err, wantErr)
 		}
 	})
+}
+
+func TestRepos_ListRepoNames_UserIDAndExternalServiceIDsMutuallyExclusive(t *testing.T) {
+	ctx := actor.WithInternalActor(context.Background())
+	wantErr := "options ExternalServiceIDs and UserID are mutually exclusive"
+
+	db := dbtesting.GetDB(t)
+	_, err := Repos(db).ListRepoNames(ctx, ReposListOptions{UserID: 1, ExternalServiceIDs: []int64{2}})
+	if err == nil || !strings.Contains(err.Error(), wantErr) {
+		t.Fatalf("got error %v, want it to contain %q", err, wantErr)
+	}
 }
 
 func TestRepos_ListRepoNames_useOr(t *testing.T) {

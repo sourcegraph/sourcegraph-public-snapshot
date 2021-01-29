@@ -521,7 +521,7 @@ func TestSearchResolver_getPatternInfo(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			sr := searchResolver{query: query}
+			sr := searchResolver{SearchInputs: &SearchInputs{Query: query}}
 			p, err := sr.getPatternInfo(nil)
 			if err != nil {
 				t.Fatal(err)
@@ -829,7 +829,16 @@ func TestSearchResultsHydration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	resolver := &searchResolver{query: q, zoekt: z, userSettings: &schema.Settings{}, reposMu: &sync.Mutex{}, resolved: &searchrepos.Resolved{}}
+	resolver := &searchResolver{
+		SearchInputs: &SearchInputs{
+			Query:        q,
+			UserSettings: &schema.Settings{},
+			Limit:        defaultMaxSearchResults,
+		},
+		zoekt:    z,
+		reposMu:  &sync.Mutex{},
+		resolved: &searchrepos.Resolved{},
+	}
 	results, err := resolver.Results(ctx)
 	if err != nil {
 		t.Fatal("Results:", err)
@@ -863,20 +872,20 @@ func TestCheckDiffCommitSearchLimits(t *testing.T) {
 			name:        "diff_search_warns_on_repos_greater_than_search_limit",
 			resultType:  "diff",
 			numRepoRevs: 51,
-			wantError:   RepoLimitErr{ResultType: "diff", Max: 50},
+			wantError:   &RepoLimitError{ResultType: "diff", Max: 50},
 		},
 		{
 			name:        "commit_search_warns_on_repos_greater_than_search_limit",
 			resultType:  "commit",
 			numRepoRevs: 51,
-			wantError:   RepoLimitErr{ResultType: "commit", Max: 50},
+			wantError:   &RepoLimitError{ResultType: "commit", Max: 50},
 		},
 		{
 			name:        "commit_search_warns_on_repos_greater_than_search_limit_with_time_filter",
 			fields:      []query.Node{query.Parameter{Field: "after"}},
 			resultType:  "commit",
 			numRepoRevs: 20000,
-			wantError:   TimeLimitErr{ResultType: "commit", Max: 10000},
+			wantError:   &TimeLimitError{ResultType: "commit", Max: 10000},
 		},
 		{
 			name:        "no_warning_when_commit_search_within_search_limit",
@@ -962,11 +971,13 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 			fields: fields{
 				results: []SearchResultResolver{
 					&FileMatchResolver{
-						symbols: []*searchSymbolResult{
-							// 1
-							{},
-							// 2
-							{},
+						FileMatch: FileMatch{
+							symbols: []*searchSymbolResult{
+								// 1
+								{},
+								// 2
+								{},
+							},
 						},
 					},
 				},
@@ -979,11 +990,13 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 			fields: fields{
 				results: []SearchResultResolver{
 					&FileMatchResolver{
-						symbols: []*searchSymbolResult{
-							// 1
-							{},
-							// 2
-							{},
+						FileMatch: FileMatch{
+							symbols: []*searchSymbolResult{
+								// 1
+								{},
+								// 2
+								{},
+							},
 						},
 					},
 				},
@@ -1055,7 +1068,7 @@ func TestGetExactFilePatterns(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			r := searchResolver{query: q, originalQuery: tt.in}
+			r := searchResolver{SearchInputs: &SearchInputs{Query: q, OriginalQuery: tt.in}}
 			if got := r.getExactFilePatterns(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("getExactFilePatterns() = %v, want %v", got, tt.want)
 			}
@@ -1065,10 +1078,10 @@ func TestGetExactFilePatterns(t *testing.T) {
 
 func TestCompareSearchResults(t *testing.T) {
 	makeResult := func(repo, file string) *FileMatchResolver {
-		return &FileMatchResolver{
-			Repo:  &RepositoryResolver{innerRepo: &types.Repo{Name: api.RepoName(repo)}},
+		return mkFileMatchResolver(FileMatch{
+			Repo:  &types.RepoName{Name: api.RepoName(repo)},
 			JPath: file,
-		}
+		})
 	}
 
 	tests := []struct {
@@ -1255,7 +1268,12 @@ func TestEvaluateAnd(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			resolver := &searchResolver{query: q, zoekt: z, userSettings: &schema.Settings{}, reposMu: &sync.Mutex{}, resolved: &searchrepos.Resolved{}}
+			resolver := &searchResolver{
+				SearchInputs: &SearchInputs{Query: q, UserSettings: &schema.Settings{}, Limit: 100},
+				zoekt:        z,
+				reposMu:      &sync.Mutex{},
+				resolved:     &searchrepos.Resolved{},
+			}
 			results, err := resolver.Results(ctx)
 			if err != nil {
 				t.Fatal("Results:", err)

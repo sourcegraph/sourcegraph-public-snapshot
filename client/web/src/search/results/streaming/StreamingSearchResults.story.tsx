@@ -31,12 +31,10 @@ const streamingSearchResult: AggregateStreamingSearchResults = {
 }
 
 const defaultProps: StreamingSearchResultsProps = {
+    parsedSearchQuery: 'r:golang/oauth2 test f:travis',
     caseSensitive: false,
-    setCaseSensitivity: sinon.spy(),
     patternType: SearchPatternType.literal,
-    setPatternType: sinon.spy(),
     versionContext: undefined,
-    setVersionContext: sinon.spy(),
     availableVersionContexts: [],
     previousVersionContext: null,
 
@@ -83,27 +81,17 @@ add('no results', () => {
     return <WebStory>{() => <StreamingSearchResults {...defaultProps} streamSearch={() => of(result)} />}</WebStory>
 })
 
-add('diffs tab selected', () => {
-    const history = createBrowserHistory()
-    history.replace({ search: 'q=r:golang/oauth2+test+f:travis+type:diff' })
+add('diffs tab selected', () => (
+    <WebStory>
+        {() => <StreamingSearchResults {...defaultProps} parsedSearchQuery="r:golang/oauth2 test f:travis type:diff" />}
+    </WebStory>
+))
 
-    return (
-        <WebStory>
-            {() => <StreamingSearchResults {...defaultProps} history={history} location={history.location} />}
-        </WebStory>
-    )
-})
-
-add('search with quotes', () => {
-    const history = createBrowserHistory()
-    history.replace({ search: 'q=r:golang/oauth2+test+f:travis+"test"' })
-
-    return (
-        <WebStory>
-            {() => <StreamingSearchResults {...defaultProps} history={history} location={history.location} />}
-        </WebStory>
-    )
-})
+add('search with quotes', () => (
+    <WebStory>
+        {() => <StreamingSearchResults {...defaultProps} parsedSearchQuery='r:golang/oauth2 test f:travis "test"' />}
+    </WebStory>
+))
 
 add('progress with warnings', () => {
     const result: AggregateStreamingSearchResults = {

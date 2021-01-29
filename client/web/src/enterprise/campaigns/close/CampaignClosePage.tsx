@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react'
 import * as H from 'history'
 import { PageTitle } from '../../../components/PageTitle'
-import { CampaignHeader } from '../detail/CampaignHeader'
 import { CampaignCloseAlert } from './CampaignCloseAlert'
 import { CampaignChangesetsResult, CampaignFields, Scalars } from '../../../graphql-operations'
 import {
@@ -21,6 +20,8 @@ import { HeroPage } from '../../../components/HeroPage'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { CampaignInfoByline } from '../detail/CampaignInfoByline'
 import { ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
+import { CampaignsIcon } from '../icons'
+import { PageHeader } from '../../../components/PageHeader'
 
 export interface CampaignClosePageProps
     extends ThemeProps,
@@ -100,13 +101,24 @@ export const CampaignClosePage: React.FunctionComponent<CampaignClosePageProps> 
     return (
         <>
             <PageTitle title="Preview close" />
-            <CampaignHeader name={campaign.name} namespace={campaign.namespace} className="test-campaign-close-page" />
-            <CampaignInfoByline
-                createdAt={campaign.createdAt}
-                initialApplier={campaign.initialApplier}
-                lastAppliedAt={campaign.lastAppliedAt}
-                lastApplier={campaign.lastApplier}
-                className="mb-3"
+            <PageHeader
+                path={[
+                    {
+                        icon: CampaignsIcon,
+                        to: '/campaigns',
+                    },
+                    { to: `${campaign.namespace.url}/campaigns`, text: campaign.namespace.namespaceName },
+                    { text: campaign.name },
+                ]}
+                byline={
+                    <CampaignInfoByline
+                        createdAt={campaign.createdAt}
+                        initialApplier={campaign.initialApplier}
+                        lastAppliedAt={campaign.lastAppliedAt}
+                        lastApplier={campaign.lastApplier}
+                    />
+                }
+                className="test-campaign-close-page mb-3"
             />
             {totalCount !== undefined && (
                 <CampaignCloseAlert

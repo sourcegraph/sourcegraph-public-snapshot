@@ -128,7 +128,7 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
         onSubmit={[Function]}
         type="submit"
       >
-        Done
+        Continue
       </button>
       <button
         className="btn btn-outline-secondary"

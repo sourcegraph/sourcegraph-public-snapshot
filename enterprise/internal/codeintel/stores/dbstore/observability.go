@@ -19,6 +19,7 @@ type operations struct {
 	dequeue                                *observation.Operation
 	dequeueIndex                           *observation.Operation
 	dirtyRepositories                      *observation.Operation
+	commitGraphMetadata                    *observation.Operation
 	findClosestDumps                       *observation.Operation
 	findClosestDumpsFromGraphFragment      *observation.Operation
 	getDumpByID                            *observation.Operation
@@ -89,6 +90,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		dequeue:                                op("Dequeue"),
 		dequeueIndex:                           op("DequeueIndex"),
 		dirtyRepositories:                      op("DirtyRepositories"),
+		commitGraphMetadata:                    op("CommitGraphMetadata"),
 		findClosestDumps:                       op("FindClosestDumps"),
 		findClosestDumpsFromGraphFragment:      op("FindClosestDumpsFromGraphFragment"),
 		getDumpByID:                            op("GetDumpByID"),

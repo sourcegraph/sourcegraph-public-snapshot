@@ -740,11 +740,13 @@ func BenchmarkSearchResults(b *testing.B) {
 			b.Fatal(err)
 		}
 		resolver := &searchResolver{
-			query:        q,
-			zoekt:        z,
-			userSettings: &schema.Settings{},
-			reposMu:      &sync.Mutex{},
-			resolved:     &searchrepos.Resolved{},
+			SearchInputs: &SearchInputs{
+				Query:        q,
+				UserSettings: &schema.Settings{},
+			},
+			zoekt:    z,
+			reposMu:  &sync.Mutex{},
+			resolved: &searchrepos.Resolved{},
 		}
 		results, err := resolver.Results(ctx)
 		if err != nil {
@@ -815,7 +817,14 @@ func BenchmarkIntegrationSearchResults(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		resolver := &searchResolver{query: q, zoekt: z, reposMu: &sync.Mutex{}, resolved: &searchrepos.Resolved{}}
+		resolver := &searchResolver{
+			SearchInputs: &SearchInputs{
+				Query: q,
+			},
+			zoekt:    z,
+			reposMu:  &sync.Mutex{},
+			resolved: &searchrepos.Resolved{},
+		}
 		results, err := resolver.Results(ctx)
 		if err != nil {
 			b.Fatal("Results:", err)

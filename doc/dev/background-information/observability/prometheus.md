@@ -24,6 +24,7 @@ It manages Prometheus and Alertmanager, and provides integration with the Sourcg
 Learn more about it [here](https://about.sourcegraph.com/handbook/engineering/observability/monitoring_architecture#prom-wrapper).
 
 The source code for this program is currently kept in [`docker-images/prometheus/cmd/prom-wrapper`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/docker-images/prometheus/cmd/prom-wrapper).
+The prom-wrapper also exports an API which can be leveraged through the [`internal/src-prometheus` package](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/internal/src-prometheus).
 
 To learn more about developing our observability stack, see the [local Sourcegraph monitoring development guide](../../how-to/monitoring_local_dev.md).
 

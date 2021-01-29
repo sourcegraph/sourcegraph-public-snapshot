@@ -13,8 +13,11 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/keegancsmith/sqlf"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commitgraph"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
@@ -119,6 +122,51 @@ func TestMarkRepositoryAsDirty(t *testing.T) {
 	}
 }
 
+func TestCommitGraphMetadata(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	store := testStore()
+
+	if err := store.MarkRepositoryAsDirty(context.Background(), 50); err != nil {
+		t.Errorf("unexpected error marking repository as dirty: %s", err)
+	}
+
+	updatedAt := time.Unix(1587396557, 0).UTC()
+	query := sqlf.Sprintf("INSERT INTO lsif_dirty_repositories VALUES (%s, %s, %s, %s)", 51, 10, 10, updatedAt)
+	if _, err := dbconn.Global.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+		t.Fatalf("unexpected error inserting commit graph metadata: %s", err)
+	}
+
+	testCases := []struct {
+		RepositoryID int
+		Stale        bool
+		UpdatedAt    *time.Time
+	}{
+		{50, true, nil},
+		{51, false, &updatedAt},
+		{52, false, nil},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(fmt.Sprintf("repositoryID=%d", testCase.RepositoryID), func(t *testing.T) {
+			stale, updatedAt, err := store.CommitGraphMetadata(context.Background(), testCase.RepositoryID)
+			if err != nil {
+				t.Fatalf("unexpected error getting commit graph metadata: %s", err)
+			}
+
+			if stale != testCase.Stale {
+				t.Errorf("unexpected value for stale. want=%v have=%v", testCase.Stale, stale)
+			}
+
+			if diff := cmp.Diff(testCase.UpdatedAt, updatedAt); diff != "" {
+				t.Errorf("unexpected value for uploadedAt (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
 func TestCalculateVisibleUploads(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -150,7 +198,7 @@ func TestCalculateVisibleUploads(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, makeCommit(8), 0); err != nil {
+	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, makeCommit(8), 0, time.Time{}); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 
@@ -204,7 +252,7 @@ func TestCalculateVisibleUploadsAlternateCommitGraph(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, makeCommit(3), 0); err != nil {
+	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, makeCommit(3), 0, time.Time{}); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 
@@ -243,7 +291,7 @@ func TestCalculateVisibleUploadsDistinctRoots(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, makeCommit(2), 0); err != nil {
+	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, makeCommit(2), 0, time.Time{}); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 
@@ -308,7 +356,7 @@ func TestCalculateVisibleUploadsOverlappingRoots(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, makeCommit(6), 0); err != nil {
+	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, makeCommit(6), 0, time.Time{}); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 
@@ -360,7 +408,7 @@ func TestCalculateVisibleUploadsIndexerName(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, makeCommit(5), 0); err != nil {
+	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, makeCommit(5), 0, time.Time{}); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 
@@ -407,32 +455,41 @@ func TestCalculateVisibleUploadsResetsDirtyFlag(t *testing.T) {
 		}
 	}
 
+	now := time.Unix(1587396557, 0).UTC()
+
 	// Non-latest dirty token - should not clear flag
-	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, makeCommit(3), 2); err != nil {
+	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, makeCommit(3), 2, now); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
-
 	repositoryIDs, err := store.DirtyRepositories(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error listing dirty repositories: %s", err)
 	}
-
 	if len(repositoryIDs) == 0 {
 		t.Errorf("did not expect repository to be unmarked")
 	}
 
 	// Latest dirty token - should clear flag
-	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, makeCommit(3), 3); err != nil {
+	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, makeCommit(3), 3, now); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
-
 	repositoryIDs, err = store.DirtyRepositories(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error listing dirty repositories: %s", err)
 	}
-
 	if len(repositoryIDs) != 0 {
 		t.Errorf("expected repository to be unmarked")
+	}
+
+	stale, updatedAt, err := store.CommitGraphMetadata(context.Background(), 50)
+	if err != nil {
+		t.Fatalf("unexpected error getting commit graph metadata: %s", err)
+	}
+	if stale {
+		t.Errorf("unexpected value for stale. want=%v have=%v", false, stale)
+	}
+	if diff := cmp.Diff(&now, updatedAt); diff != "" {
+		t.Errorf("unexpected value for uploadedAt (-want +got):\n%s", diff)
 	}
 }
 
@@ -466,7 +523,7 @@ func BenchmarkCalculateVisibleUploads(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 
-	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, makeCommit(3), 2); err != nil {
+	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, makeCommit(3), 0, time.Time{}); err != nil {
 		b.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 }

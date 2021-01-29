@@ -203,7 +203,7 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                             onClick={completeForm}
                             onSubmit={completeForm}
                         >
-                            Done
+                            Continue
                         </button>
                         <button type="button" className="btn btn-outline-secondary" onClick={cancelForm}>
                             Cancel

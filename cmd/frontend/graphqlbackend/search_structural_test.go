@@ -92,11 +92,14 @@ func TestStructuralSearchRepoFilter(t *testing.T) {
 		t.Fatal(err)
 	}
 	resolver := &searchResolver{
-		query:        q,
-		patternType:  query.SearchTypeStructural,
+		SearchInputs: &SearchInputs{
+			Query:        q,
+			PatternType:  query.SearchTypeStructural,
+			UserSettings: &schema.Settings{},
+			Limit:        defaultMaxSearchResults,
+		},
 		zoekt:        z,
 		searcherURLs: endpoint.Static("test"),
-		userSettings: &schema.Settings{},
 		reposMu:      &sync.Mutex{},
 		resolved:     &repos.Resolved{},
 	}

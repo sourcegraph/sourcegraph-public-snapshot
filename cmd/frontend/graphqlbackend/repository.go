@@ -333,6 +333,10 @@ func (r *RepositoryResolver) IndexConfiguration(ctx context.Context) (IndexConfi
 	return EnterpriseResolvers.codeIntelResolver.IndexConfiguration(ctx, r.ID())
 }
 
+func (r *RepositoryResolver) CodeIntelligenceCommitGraph(ctx context.Context) (CodeIntelligenceCommitGraphResolver, error) {
+	return EnterpriseResolvers.codeIntelResolver.CommitGraph(ctx, r.ID())
+}
+
 type AuthorizedUserArgs struct {
 	RepositoryID graphql.ID
 	Permission   string

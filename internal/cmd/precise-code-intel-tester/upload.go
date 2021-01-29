@@ -7,12 +7,14 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/cmd/precise-code-intel-tester/util"
 )
 
@@ -50,16 +52,17 @@ func uploadIndexes(ctx context.Context) error {
 	total := countRevs(revsByRepo)
 	uploaded := make(chan Upload, total)
 	processedSignals := makeProcessedSignals(revsByRepo)
+	refreshedSignals := makeRefreshedSignals(revsByRepo)
 
 	// Watch API for changes in state, and inform workers when their upload has been processed
-	go watchStateChanges(ctx, uploaded, processedSignals)
+	go watchStateChanges(ctx, uploaded, processedSignals, refreshedSignals)
 
 	limiter := util.NewLimiter(numConcurrentUploads)
 	defer limiter.Close()
 
 	var fns []util.ParallelFn
 	for name, revs := range revsByRepo {
-		fns = append(fns, makeTestUploadForRepositoryFunction(name, revs, uploaded, processedSignals, limiter))
+		fns = append(fns, makeTestUploadForRepositoryFunction(name, revs, uploaded, processedSignals, refreshedSignals, limiter))
 	}
 
 	return util.RunParallel(ctx, total, fns)
@@ -112,11 +115,59 @@ func makeProcessedSignals(revsByRepo map[string][]string) map[string]map[string]
 	return processedSignals
 }
 
+type refreshState struct {
+	Stale bool
+	Err   error
+}
+
+// refreshedSignals returns a map of error channels for each repository.
+func makeRefreshedSignals(revsByRepo map[string][]string) map[string]chan refreshState {
+	refreshedSignals := map[string]chan refreshState{}
+	for repo, revs := range revsByRepo {
+		// Each channel may receive two values for each revision: a value when
+		// a new upload has been processed and the repository becomes stale by
+		// definition, and a value when the repository's commit graph has been
+		// refreshed (or an error occurs).
+		refreshedSignals[repo] = make(chan refreshState, len(revs)*2)
+	}
+
+	return refreshedSignals
+}
+
 // watchStateChanges maintains a list of uploaded but nonterminal upload records. This function
 // polls the API and signals the worker when their upload has been processed. If an upload fails
 // to process, the error will be sent to the worker.
-func watchStateChanges(ctx context.Context, uploaded chan Upload, processedSignals map[string]map[string]chan error) {
+func watchStateChanges(
+	ctx context.Context,
+	uploaded chan Upload,
+	processedSignals map[string]map[string]chan error,
+	refreshedSignals map[string]chan refreshState,
+) {
+	send := func(err error) {
+		// Send err to everybody and exit
+		for name, revs := range processedSignals {
+			for rev, ch := range revs {
+				if err != nil {
+					ch <- err
+				}
+
+				close(ch)
+				delete(processedSignals[name], rev)
+			}
+		}
+
+		for name, ch := range refreshedSignals {
+			if err != nil {
+				ch <- refreshState{Err: err}
+			}
+
+			close(ch)
+			delete(refreshedSignals, name)
+		}
+	}
+
 	var uploads []Upload
+	repositoryMap := map[string]struct{}{}
 
 	for {
 		select {
@@ -128,15 +179,7 @@ func watchStateChanges(ctx context.Context, uploaded chan Upload, processedSigna
 			// Check states
 
 		case <-ctx.Done():
-			// Close all signal channels (avoid race)
-			for name, revs := range processedSignals {
-				for rev := range revs {
-					ch := processedSignals[name][rev]
-					delete(processedSignals[name], rev)
-					close(ch)
-				}
-			}
-
+			send(nil)
 			return
 		}
 
@@ -144,89 +187,125 @@ func watchStateChanges(ctx context.Context, uploaded chan Upload, processedSigna
 		for _, upload := range uploads {
 			ids = append(ids, upload.UploadID)
 		}
+		sort.Strings(ids)
 
-		states, err := uploadStates(ctx, ids)
+		var names []string
+		for name := range repositoryMap {
+			names = append(names, name)
+		}
+		sort.Strings(names)
+
+		stateByUpload, staleCommitGraphByRepo, err := uploadStates(ctx, ids, names)
 		if err != nil {
-			// Send err to everybody and exit
-			for name, revs := range processedSignals {
-				for rev := range revs {
-					ch := processedSignals[name][rev]
-					delete(processedSignals[name], rev)
-					ch <- err
-					close(ch)
-				}
-			}
-
+			send(err)
 			return
 		}
 
-		// Remove terminal uploads and send signals to workers
-		uploads = filterUploadsByState(uploads, processedSignals, states)
+		for name, stale := range staleCommitGraphByRepo {
+			if !stale {
+				// Repository is now up to date! Stop listening for updates.
+				// If another upload is processed for this repository, we will
+				// perform the same set of actions all over again; see below
+				// when when the upload state is COMPLETED.
+				refreshedSignals[name] <- refreshState{Stale: false}
+				delete(repositoryMap, name)
+			}
+		}
+
+		temp := uploads
+		uploads = uploads[:0]
+
+		for _, upload := range temp {
+			var err error
+			switch stateByUpload[upload.UploadID] {
+			case "ERRORED":
+				err = ErrProcessingFailed
+				fallthrough
+
+			case "COMPLETED":
+				// Add repository to list of repositories with a stale
+				// commit graph and watch until it becomes fresh again.
+				repositoryMap[upload.Name] = struct{}{}
+				refreshedSignals[upload.Name] <- refreshState{Stale: true}
+
+				// Signal to listeners that this rev has been processed
+				ch := processedSignals[upload.Name][upload.Rev]
+				delete(processedSignals[upload.Name], upload.Rev)
+				ch <- err
+				close(ch)
+
+			default:
+				uploads = append(uploads, upload)
+			}
+		}
 	}
 }
 
+// ErrProcessingFailed occurs when an upload enters the ERRORED state.
+var ErrProcessingFailed = errors.New("processing failed")
+
+const uploadQueryFragment = `
+	u%d: node(id: "%s") {
+		... on LSIFUpload { state }
+	}
+`
+
+const repositoryQueryFragment = `
+	r%d: repository(name: "%s") {
+		codeIntelligenceCommitGraph {
+			stale
+		}
+	}
+`
+
 // uploadStates returns a map from upload identifier to its current state.
-func uploadStates(ctx context.Context, ids []string) (map[string]string, error) {
+func uploadStates(ctx context.Context, ids, names []string) (stateByUpload map[string]string, staleCommitGraphByRepo map[string]bool, _ error) {
 	var fragments []string
 	for i, id := range ids {
-		fragments = append(fragments, fmt.Sprintf(`
-			u%d: node(id: "%s") {
-				... on LSIFUpload {
-					state
-				}
-			}
-		`, i, id))
+		fragments = append(fragments, fmt.Sprintf(uploadQueryFragment, i, id))
+	}
+	for i, name := range names {
+		fullName := fmt.Sprintf("github.com/%s/%s", "sourcegraph-testing", name)
+		fragments = append(fragments, fmt.Sprintf(repositoryQueryFragment, i, fullName))
 	}
 	query := fmt.Sprintf("{%s}", strings.Join(fragments, "\n"))
 
 	payload := struct {
 		Data map[string]struct {
-			State string `json:"state"`
+			State       string `json:"state"`
+			CommitGraph struct {
+				Stale bool `json:"stale"`
+			} `json:"codeIntelligenceCommitGraph"`
 		} `json:"data"`
 	}{}
 	if err := util.QueryGraphQL(ctx, endpoint, token, query, nil, &payload); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	states := map[string]string{}
+	stateByUpload = map[string]string{}
 	for i, id := range ids {
-		states[id] = payload.Data[fmt.Sprintf("u%d", i)].State
+		stateByUpload[id] = payload.Data[fmt.Sprintf("u%d", i)].State
 	}
 
-	return states, nil
-}
-
-// filterUploadsByState filters all terminal uploads from the input list. For each terminal upload,
-// the corresponding channel is closed to inform the worker that it can unblock. If the upload failed
-// to process, a meaningful error value is passed to the worker.
-func filterUploadsByState(uploads []Upload, processedSignals map[string]map[string]chan error, states map[string]string) []Upload {
-	nonterminals := make([]Upload, 0, len(uploads))
-
-	for _, upload := range uploads {
-		var err error
-		switch states[upload.UploadID] {
-		case "ERRORED":
-			err = errors.New("processing failed")
-			fallthrough
-
-		case "COMPLETED":
-			ch := processedSignals[upload.Name][upload.Rev]
-			delete(processedSignals[upload.Name], upload.Rev)
-			ch <- err
-			close(ch)
-
-		default:
-			nonterminals = append(nonterminals, upload)
-		}
+	staleCommitGraphByRepo = map[string]bool{}
+	for i, name := range names {
+		staleCommitGraphByRepo[name] = payload.Data[fmt.Sprintf("r%d", i)].CommitGraph.Stale
 	}
 
-	return nonterminals
+	return stateByUpload, staleCommitGraphByRepo, nil
 }
 
 // makeTestUploadForRepositoryFunction constructs a function for RunParallel that uploads the index files
 // for the given repo, then blocks until the upload records enter a terminal state. If any upload fails to
 // process, an error is returned.
-func makeTestUploadForRepositoryFunction(name string, revs []string, uploaded chan Upload, processedSignals map[string]map[string]chan error, limiter *util.Limiter) util.ParallelFn {
+func makeTestUploadForRepositoryFunction(
+	name string,
+	revs []string,
+	uploaded chan Upload,
+	processedSignals map[string]map[string]chan error,
+	refreshedSignals map[string]chan refreshState,
+	limiter *util.Limiter,
+) util.ParallelFn {
 	var numUploaded uint32
 	var numProcessed uint32
 
@@ -263,13 +342,57 @@ func makeTestUploadForRepositoryFunction(name string, revs []string, uploaded ch
 			}()
 
 			// wait for all uploads to process
+		processLoop:
 			for {
 				select {
 				case err, ok := <-ch:
-					if err != nil || !ok {
+					if err != nil {
 						return err
 					}
+					if !ok {
+						break processLoop
+					}
 					atomic.AddUint32(&numProcessed, 1)
+
+				case <-ctx.Done():
+					return ctx.Err()
+				}
+			}
+
+			// consume all values from the refreshedSignals channel that have already
+			// been written. If the last one written is nil, then there will be no more
+			// updates to the commit graph. If the last one written indicates that the
+			// commit graph is stale, we'll continue to wait on the channel for an
+			// additional nil value indicating the refresh.
+
+			var lastValue refreshState
+		refreshLoop:
+			for {
+				select {
+				case err, ok := <-refreshedSignals[name]:
+					if !ok {
+						return nil
+					}
+
+					lastValue = err
+				default:
+					// no more values already in the channel, jump down
+					break refreshLoop
+				}
+			}
+
+			for {
+				if !lastValue.Stale {
+					return lastValue.Err
+				}
+
+				select {
+				case err, ok := <-refreshedSignals[name]:
+					if !ok {
+						return nil
+					}
+
+					lastValue = err
 
 				case <-ctx.Done():
 					return ctx.Err()
@@ -281,7 +404,11 @@ func makeTestUploadForRepositoryFunction(name string, revs []string, uploaded ch
 				return fmt.Sprintf("Uploading index %d of %d for %s...", n+1, len(revs), name)
 			}
 
-			return fmt.Sprintf("Waiting for uploads to process for %s...", name)
+			if n := atomic.LoadUint32(&numProcessed); n < uint32(len(revs)) {
+				return fmt.Sprintf("Waiting for %d remaining uploads to process for %s...", len(revs)-int(n), name)
+			}
+
+			return fmt.Sprintf("Waiting for commit graph to update for %s...", name)
 		},
 		Total:    func() int { return len(revs) },
 		Finished: func() int { return int(atomic.LoadUint32(&numProcessed)) },

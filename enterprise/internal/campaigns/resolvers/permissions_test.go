@@ -554,6 +554,12 @@ func TestPermissionLevels(t *testing.T) {
 				},
 			},
 			{
+				name: "reenqueueChangeset",
+				mutationFunc: func(campaignID, changesetID, campaignSpecID string) string {
+					return fmt.Sprintf(`mutation { reenqueueChangeset(changeset: %q) { id } }`, changesetID)
+				},
+			},
+			{
 				name: "applyCampaign",
 				mutationFunc: func(campaignID, changesetID, campaignSpecID string) string {
 					return fmt.Sprintf(`mutation { applyCampaign(campaignSpec: %q) { id } }`, campaignSpecID)
