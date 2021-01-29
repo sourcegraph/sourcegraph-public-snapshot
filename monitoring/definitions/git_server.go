@@ -1,6 +1,8 @@
 package definitions
 
 import (
+	"time"
+
 	"github.com/grafana-tools/sdk"
 	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
@@ -166,13 +168,19 @@ func GitServer() *monitoring.Container {
 							Name:        "running_git_commands",
 							Description: "git commands sent to each gitserver instance",
 							Query:       "sum by (instance, cmd) (src_gitserver_exec_running{instance=~\"${shard:regex}\"})",
-							NoAlert:     true,
+							Warning:     monitoring.Alert().GreaterOrEqual(50).For(2 * time.Minute),
+							Critical:    monitoring.Alert().GreaterOrEqual(100).For(5 * time.Minute),
 							Panel: monitoring.Panel().LegendFormat("{{instance}} {{cmd}}").With(func(o monitoring.Observable, g *sdk.GraphPanel) {
 								g.Legend.RightSide = true
 							}),
 							Owner: monitoring.ObservableOwnerCloud,
 							Interpretation: `
 								A high value signals load.
+							`,
+							PossibleSolutions: `
+								- **Check if the problem may be an intermittent and temporary peak** using the "Container monitoring" section at the bottom of the Git Server dashboard.
+								- **Single container deployments:** Consider upgrading to a [Docker Compose deployment](../install/docker-compose/migrate.md) which offers better scalability and resource isolation.
+								- **Kubernetes and Docker Compose:** Check that you are running a similar number of git server replicas and that their CPU/memory limits are allocated according to what is shown in the [Sourcegraph resource estimator](../install/resource_estimator.md).
 							`,
 						},
 					}, {

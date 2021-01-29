@@ -846,6 +846,8 @@ This panel indicates git commands sent to each gitserver instance.
 
 A high value signals load.
 
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#gitserver-running-git-commands).
+
 <sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
 <br />

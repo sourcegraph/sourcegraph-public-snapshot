@@ -1484,12 +1484,12 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 ## gitserver: running_git_commands
 
-<p class="subtitle">running git commands</p>
+<p class="subtitle">git commands sent to each gitserver instance</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> gitserver: 50+ running git commands for 2m0s
-- <span class="badge badge-critical">critical</span> gitserver: 100+ running git commands for 5m0s
+- <span class="badge badge-warning">warning</span> gitserver: 50+ git commands sent to each gitserver instance for 2m0s
+- <span class="badge badge-critical">critical</span> gitserver: 100+ git commands sent to each gitserver instance for 5m0s
 
 **Possible solutions**
 
