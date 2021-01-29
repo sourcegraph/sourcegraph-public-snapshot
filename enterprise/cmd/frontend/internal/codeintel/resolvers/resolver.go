@@ -26,6 +26,7 @@ type Resolver interface {
 	DeleteIndexByID(ctx context.Context, id int) error
 	IndexConfiguration(ctx context.Context, repositoryID int) (store.IndexConfiguration, error)
 	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, configuration string) error
+	CommitGraph(ctx context.Context, repositoryID int) (gql.CodeIntelligenceCommitGraphResolver, error)
 	QueueAutoIndexJobForRepo(ctx context.Context, repositoryID int) error
 	QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataArgs) (QueryResolver, error)
 }
@@ -99,6 +100,15 @@ func (r *resolver) UpdateIndexConfigurationByRepositoryID(ctx context.Context, r
 	}
 
 	return r.dbStore.UpdateIndexConfigurationByRepositoryID(ctx, repositoryID, []byte(configuration))
+}
+
+func (r *resolver) CommitGraph(ctx context.Context, repositoryID int) (gql.CodeIntelligenceCommitGraphResolver, error) {
+	stale, updatedAt, err := r.dbStore.CommitGraphMetadata(ctx, repositoryID)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewCommitGraphResolver(stale, updatedAt), nil
 }
 
 func (r *resolver) QueueAutoIndexJobForRepo(ctx context.Context, repositoryID int) error {

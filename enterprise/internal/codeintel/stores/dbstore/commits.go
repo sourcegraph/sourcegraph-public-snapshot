@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"strconv"
+	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
@@ -133,6 +134,46 @@ const dirtyRepositoriesQuery = `
 SELECT repository_id, dirty_token FROM lsif_dirty_repositories WHERE dirty_token > update_token
 `
 
+// CommitGraphMetadata returns whether or not the commit graph for the given repository is stale, along with the date of
+// the most recent commit graph refresh for the given repository.
+func (s *Store) CommitGraphMetadata(ctx context.Context, repositoryID int) (stale bool, updatedAt *time.Time, err error) {
+	ctx, endObservation := s.operations.commitGraphMetadata.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	defer endObservation(1, observation.Args{})
+
+	updateToken, dirtyToken, updatedAt, exists, err := scanCommitGraphMetadata(s.Store.Query(ctx, sqlf.Sprintf(commitGraphQuery, repositoryID)))
+	if err != nil {
+		return false, nil, err
+	}
+	if !exists {
+		return false, nil, nil
+	}
+
+	return updateToken != dirtyToken, updatedAt, err
+}
+
+const commitGraphQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/commits.go:CommitGraphMetadata
+SELECT update_token, dirty_token, updated_at FROM lsif_dirty_repositories WHERE repository_id = %s LIMIT 1
+`
+
+// scanCommitGraphMetadata scans a a commit graph metadata row from the return value of `*Store.query`.
+func scanCommitGraphMetadata(rows *sql.Rows, queryErr error) (updateToken, dirtyToken int, updatedAt *time.Time, _ bool, err error) {
+	if queryErr != nil {
+		return 0, 0, nil, false, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	if rows.Next() {
+		if err := rows.Scan(&updateToken, &dirtyToken, &updatedAt); err != nil {
+			return 0, 0, nil, false, err
+		}
+
+		return updateToken, dirtyToken, updatedAt, true, nil
+	}
+
+	return 0, 0, nil, false, nil
+}
+
 // CalculateVisibleUploads uses the given commit graph and the tip commit of the default branch to determine the
 // set of LSIF uploads that are visible for each commit, and the set of uploads which are visible at the tip. The
 // decorated commit graph is serialized to Postgres for use by find closest dumps queries.
@@ -140,7 +181,7 @@ SELECT repository_id, dirty_token FROM lsif_dirty_repositories WHERE dirty_token
 // If dirtyToken is supplied, the repository will be unmarked when the supplied token does matches the most recent
 // token stored in the database, the flag will not be cleared as another request for update has come in since this
 // token has been read.
-func (s *Store) CalculateVisibleUploads(ctx context.Context, repositoryID int, commitGraph *gitserver.CommitGraph, tipCommit string, dirtyToken int) (err error) {
+func (s *Store) CalculateVisibleUploads(ctx context.Context, repositoryID int, commitGraph *gitserver.CommitGraph, tipCommit string, dirtyToken int, now time.Time) (err error) {
 	ctx, traceLog, endObservation := s.operations.calculateVisibleUploads.WithAndLogger(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", repositoryID),
@@ -274,7 +315,7 @@ func (s *Store) CalculateVisibleUploads(ctx context.Context, repositoryID int, c
 		// the dirty token if it wouldn't decrease the value. Dirty repositories are determined
 		// by having a non-equal dirty and update token, and we want the most recent upload
 		// token to win this write.
-		if err := tx.Store.Exec(ctx, sqlf.Sprintf(calculateVisibleUploadsDirtyRepositoryQuery, dirtyToken, repositoryID)); err != nil {
+		if err := tx.Store.Exec(ctx, sqlf.Sprintf(calculateVisibleUploadsDirtyRepositoryQuery, dirtyToken, now, repositoryID)); err != nil {
 			return err
 		}
 	}
@@ -294,7 +335,7 @@ DELETE FROM %s WHERE repository_id = %s
 
 const calculateVisibleUploadsDirtyRepositoryQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/commits.go:CalculateVisibleUploads
-UPDATE lsif_dirty_repositories SET update_token = GREATEST(update_token, %s) WHERE repository_id = %s
+UPDATE lsif_dirty_repositories SET update_token = GREATEST(update_token, %s), updated_at = %s WHERE repository_id = %s
 `
 
 type uploadMetaListSerializer struct {

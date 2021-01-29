@@ -4545,6 +4545,12 @@ type Repository implements Node & GenericSearchResultInterface {
     indexConfiguration: IndexConfiguration
 
     """
+    Information and status related to the commit graph of this repository calculated
+    for use by code intelligence features.
+    """
+    codeIntelligenceCommitGraph: CodeIntelligenceCommitGraph!
+
+    """
     A list of authorized users to access this repository with the given permission.
     This API currently only returns permissions from the Sourcegraph provider, i.e.
     "permissions.userMapping" in site configuration.
@@ -4569,6 +4575,22 @@ type Repository implements Node & GenericSearchResultInterface {
     It is null when there is no permissions data stored for the repository.
     """
     permissionsInfo: PermissionsInfo
+}
+
+"""
+Information and status related to the commit graph of this repository calculated
+for use by code intelligence features.
+"""
+type CodeIntelligenceCommitGraph {
+    """
+    Whether or not the commit graph needs to be updated.
+    """
+    stale: Boolean!
+
+    """
+    When, if ever, the commit graph was last refreshed.
+    """
+    updatedAt: DateTime
 }
 
 """
