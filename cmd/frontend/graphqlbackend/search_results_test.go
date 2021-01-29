@@ -833,7 +833,6 @@ func TestSearchResultsHydration(t *testing.T) {
 		SearchInputs: &SearchInputs{
 			Query:        q,
 			UserSettings: &schema.Settings{},
-			Limit:        defaultMaxSearchResults,
 		},
 		zoekt:    z,
 		reposMu:  &sync.Mutex{},
@@ -1269,7 +1268,7 @@ func TestEvaluateAnd(t *testing.T) {
 				t.Fatal(err)
 			}
 			resolver := &searchResolver{
-				SearchInputs: &SearchInputs{Query: q, UserSettings: &schema.Settings{}, Limit: 100},
+				SearchInputs: &SearchInputs{Query: q, UserSettings: &schema.Settings{}},
 				zoekt:        z,
 				reposMu:      &sync.Mutex{},
 				resolved:     &searchrepos.Resolved{},

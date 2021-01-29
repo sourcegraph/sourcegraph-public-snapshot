@@ -20,11 +20,7 @@
     "reason": "shard-match-limit",
     "title": "result limit hit",
     "message": "Not all results have been returned due to hitting a match limit. Sourcegraph has limits for the number of results returned from a line, document and repository.",
-    "severity": "info",
-    "suggested": {
-     "title": "increase limit",
-     "queryExpression": "count:1000"
-    }
+    "severity": "info"
    },
    {
     "reason": "shard-timeout",
