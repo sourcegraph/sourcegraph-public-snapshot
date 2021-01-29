@@ -1189,7 +1189,7 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Te
 	}
 
 	if opts.fileMatchLimit == 0 {
-		opts.fileMatchLimit = r.maxResults()
+		opts.fileMatchLimit = int32(r.Limit)
 	}
 
 	return getPatternInfo(r.Query, opts)
@@ -1499,7 +1499,7 @@ func newAggregator(ctx context.Context, stream SearchStream, inputs *SearchInput
 			}
 
 			agg.alert.Update(event)
-			agg.common.Update(&event.Stats)
+			agg.stats.Update(&event.Stats)
 			if stream != nil {
 				stream <- event
 			}
@@ -1515,7 +1515,7 @@ type aggregator struct {
 	done chan struct{}
 
 	results []SearchResultResolver
-	common  streaming.Stats
+	stats   streaming.Stats
 	alert   alertObserver
 }
 
@@ -1526,8 +1526,8 @@ func (a *aggregator) get() ([]SearchResultResolver, streaming.Stats, *searchAler
 	close(a.stream)
 	<-a.done
 
-	alert, err := a.alert.Done(&a.common)
-	return a.results, a.common, alert, err
+	alert, err := a.alert.Done(&a.stats)
+	return a.results, a.stats, alert, err
 }
 
 func (a *aggregator) send(event SearchEvent) {
@@ -1825,14 +1825,14 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
-				agg.doRepoSearch(ctx, &args, r.maxResults())
+				agg.doRepoSearch(ctx, &args, int32(r.Limit))
 			})
 		case "symbol":
 			wg := waitGroup(len(resultTypes) == 1)
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
-				agg.doSymbolSearch(ctx, &args, int(r.maxResults()))
+				agg.doSymbolSearch(ctx, &args, r.Limit)
 			})
 		case "file", "path":
 			if searchedFileContentsOrPaths || args.Mode == search.NoFilePath {
@@ -1891,7 +1891,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		start:         start,
 		Stats:         common,
 		SearchResults: results,
-		limit:         int(r.maxResults()),
+		limit:         r.Limit,
 		alert:         alert,
 	}
 	return &resultsResolver, err

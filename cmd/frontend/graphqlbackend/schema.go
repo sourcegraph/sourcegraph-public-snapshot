@@ -4555,7 +4555,7 @@ type Repository implements Node & GenericSearchResultInterface {
     Information and status related to the commit graph of this repository calculated
     for use by code intelligence features.
     """
-    codeIntelligenceCommitGraph: CodeIntelligenceCommitGraph
+    codeIntelligenceCommitGraph: CodeIntelligenceCommitGraph!
 
     """
     A list of authorized users to access this repository with the given permission.

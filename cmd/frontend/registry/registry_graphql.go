@@ -11,7 +11,9 @@ import (
 )
 
 func init() {
-	graphqlbackend.ExtensionRegistry = &ExtensionRegistry
+	graphqlbackend.ExtensionRegistry = func() graphqlbackend.ExtensionRegistryResolver {
+		return &ExtensionRegistry
+	}
 }
 
 // ExtensionRegistry is the implementation of the GraphQL types ExtensionRegistry and

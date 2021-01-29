@@ -127,14 +127,6 @@ func jsonbColumn(metadata interface{}) (msg json.RawMessage, err error) {
 	return
 }
 
-func jsonSetColumn(ids []int64) ([]byte, error) {
-	set := make(map[int64]*struct{}, len(ids))
-	for _, id := range ids {
-		set[id] = nil
-	}
-	return json.Marshal(set)
-}
-
 func nullInt32Column(n int32) *int32 {
 	if n == 0 {
 		return nil

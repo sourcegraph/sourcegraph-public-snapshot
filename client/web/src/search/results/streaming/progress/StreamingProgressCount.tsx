@@ -29,7 +29,7 @@ export const StreamingProgressCount: React.FunctionComponent<Pick<StreamingProgr
         <CalculatorIcon className="mr-2 icon-inline" />
         {abbreviateNumber(progress.matchCount)} {pluralize('result', progress.matchCount)} in{' '}
         {(progress.durationMs / 1000).toFixed(2)}s
-        {progress.repositoriesCount && (
+        {progress.repositoriesCount !== undefined && (
             <>
                 {' '}
                 from {abbreviateNumber(progress.repositoriesCount)}{' '}
