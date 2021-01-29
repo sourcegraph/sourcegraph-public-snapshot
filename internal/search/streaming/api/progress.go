@@ -40,6 +40,9 @@ type ProgressStats struct {
 	Cloning  []Namer
 
 	LimitHit bool
+
+	// SuggestedLimit is what to suggest to the user for count if needed.
+	SuggestedLimit int
 }
 
 func skippedReposHandler(repos []Namer, titleVerb, messageReason string, base Skipped) (Skipped, bool) {
@@ -104,11 +107,20 @@ func shardMatchLimitHandler(resultsResolver ProgressStats) (Skipped, bool) {
 		return Skipped{}, false
 	}
 
+	var suggest *SkippedSuggested
+	if resultsResolver.SuggestedLimit > 0 {
+		suggest = &SkippedSuggested{
+			Title:           "increase limit",
+			QueryExpression: fmt.Sprintf("count:%d", resultsResolver.SuggestedLimit),
+		}
+	}
+
 	return Skipped{
-		Reason:   ShardMatchLimit,
-		Title:    "result limit hit",
-		Message:  "Not all results have been returned due to hitting a match limit. Sourcegraph has limits for the number of results returned from a line, document and repository.",
-		Severity: SeverityInfo,
+		Reason:    ShardMatchLimit,
+		Title:     "result limit hit",
+		Message:   "Not all results have been returned due to hitting a match limit. Sourcegraph has limits for the number of results returned from a line, document and repository.",
+		Severity:  SeverityInfo,
+		Suggested: suggest,
 	}, true
 }
 
