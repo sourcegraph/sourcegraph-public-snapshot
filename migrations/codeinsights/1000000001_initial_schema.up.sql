@@ -55,6 +55,10 @@ CREATE INDEX metadata_metadata_gin ON metadata USING GIN (metadata);
 -- The name can be used to refer to the name of the repository at the time of the event's creation,
 -- for example to trace the change in a gauge back to a repository being renamed.
 CREATE TABLE series_points (
+    -- A unique identifier for the series of data being recorded. This is not an ID from another
+    -- table, but rather just a unique identifier.
+    series_id integer,
+
     -- The timestamp of the recorded event.
     time TIMESTAMPTZ NOT NULL,
 
