@@ -29,7 +29,8 @@
 		{{else}}
 			{{if .ContentVersionNotFoundError}}
 				<h1>Version not found</h1>
-				<p>The version <code>{{.ContentVersion}}</code> was not found.</p>
+                <p>The version <code>{{.ContentVersion}}</code> was not found.</p>
+                <p><a href="/{{.ContentPagePath}}">Click here</a> to view the latest version of this page instead.</p>
 			{{else if .ContentPageNotFoundError}}
 				<h1>Page not found</h1>
 				<p>The page <code>{{.ContentPagePath}}</code> was not found.</p>
