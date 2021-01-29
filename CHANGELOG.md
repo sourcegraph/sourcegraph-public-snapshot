@@ -23,8 +23,9 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
-- Fixes an issue that prevented the hard deletion of a user if they had saved searches. [#181](https://github.com/sourcegraph/customer/issues/181)
+- Fixes an issue that prevented the hard deletion of a user if they had saved searches. [#17461](https://github.com/sourcegraph/sourcegraph/pull/17461)
 - Fixes an issue that caused some missing results for `type:commit` when a pattern was used instead of the `message` field. [#17490](https://github.com/sourcegraph/sourcegraph/pull/17490#issuecomment-764004758)
+- Fixes an issue where cAdvisor-based alerts would not fire correctly for services with multiple replicas. [#17600](https://github.com/sourcegraph/sourcegraph/pull/17600)
 
 ### Removed
 

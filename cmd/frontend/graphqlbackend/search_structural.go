@@ -114,10 +114,12 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 		q, err = buildQuery(args, repos, filePathPatterns, false)
 		if err != nil {
 			c <- SearchEvent{Error: err}
+			return
 		}
 		resp, err = args.Zoekt.Client.Search(ctx, q, &searchOpts)
 		if err != nil {
 			c <- SearchEvent{Error: err}
+			return
 		}
 		if since(t0) >= searchOpts.MaxWallTime {
 			c <- SearchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusTimedout | search.RepoStatusIndexed)}}

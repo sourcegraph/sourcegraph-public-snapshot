@@ -9,7 +9,7 @@ import {
     Scalars,
     UserCampaignsCodeHostsVariables,
 } from '../../../graphql-operations'
-import { CampaignsIconFlushLeft } from '../icons'
+import { CampaignsIcon } from '../icons'
 import { queryUserCampaignsCodeHosts as _queryUserCampaignsCodeHosts } from './backend'
 import { CodeHostConnectionNode, CodeHostConnectionNodeProps } from './CodeHostConnectionNode'
 
@@ -37,7 +37,7 @@ export const CodeHostConnections: React.FunctionComponent<CodeHostConnectionsPro
     )
     return (
         <>
-            <PageHeader icon={CampaignsIconFlushLeft} title="Campaigns" className="justify-content-end" />
+            <PageHeader path={[{ icon: CampaignsIcon, text: 'Campaigns' }]} className="mb-3" />
             <h2>Code host tokens</h2>
             <p>Add authentication tokens to enable campaigns changeset creation on your code hosts.</p>
             <FilteredConnection<CampaignsCodeHostFields, Omit<CodeHostConnectionNodeProps, 'node'>>
