@@ -15,7 +15,6 @@ type progressAggregator struct {
 	Start      time.Time
 	MatchCount int
 	Stats      streaming.Stats
-	Limit      int
 }
 
 func (p *progressAggregator) Update(event graphqlbackend.SearchEvent) {
@@ -30,9 +29,6 @@ func (p *progressAggregator) Update(event graphqlbackend.SearchEvent) {
 }
 
 func (p *progressAggregator) Build() api.Progress {
-	// Suggest the next 1000 after rounding off.
-	suggestedLimit := (p.Limit + 1500) / 1000 * 1000
-
 	return api.BuildProgressEvent(api.ProgressStats{
 		MatchCount:          p.MatchCount,
 		ElapsedMilliseconds: int(time.Since(p.Start).Milliseconds()),
@@ -43,7 +39,6 @@ func (p *progressAggregator) Build() api.Progress {
 		Missing:             getNames(p.Stats, searchshared.RepoStatusMissing),
 		Cloning:             getNames(p.Stats, searchshared.RepoStatusCloning),
 		LimitHit:            p.Stats.IsLimitHit,
-		SuggestedLimit:      suggestedLimit,
 	})
 }
 
