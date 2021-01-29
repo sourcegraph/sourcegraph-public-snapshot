@@ -15,9 +15,49 @@ import { extensionIDPrefix, extensionsQuery, urlToExtensionsQuery, validCategori
 import { ExtensionAreaRouteContext } from './ExtensionArea'
 import { ExtensionReadme } from './RegistryExtensionReadme'
 import { isEncodedImage } from '../../../../shared/src/util/icon'
+import { DefaultIcon } from '../icons'
 
 interface Props extends Pick<ExtensionAreaRouteContext, 'extension' | 'telemetryService' | 'isLightTheme'> {
     history: H.History
+}
+
+const RegistryExtensionOverviewIcon: React.FunctionComponent<Pick<Props, 'extension' | 'isLightTheme'>> = ({
+    extension,
+    isLightTheme,
+}) => {
+    const manifest: ExtensionManifest | undefined =
+        extension.manifest && !isErrorLike(extension.manifest) ? extension.manifest : undefined
+
+    const iconURL = useMemo(() => {
+        let iconURL: URL | undefined
+
+        try {
+            if (isLightTheme) {
+                if (manifest?.icon && isEncodedImage(manifest.icon)) {
+                    iconURL = new URL(manifest.icon)
+                }
+            } else if (manifest?.iconDark && isEncodedImage(manifest.iconDark)) {
+                iconURL = new URL(manifest.iconDark)
+            } else if (manifest?.icon && isEncodedImage(manifest.icon)) {
+                // fallback: show default icon on dark theme if dark icon isn't specified
+                iconURL = new URL(manifest.icon)
+            }
+        } catch {
+            // noop
+        }
+
+        return iconURL
+    }, [manifest?.icon, manifest?.iconDark, isLightTheme])
+
+    if (iconURL) {
+        return <img className="registry-extension-overview-page__icon mb-3" src={iconURL.href} aria-hidden="true" />
+    }
+
+    if (manifest?.publisher === 'sourcegraph') {
+        return <DefaultIcon className="registry-extension-overview-page__icon mb-3" />
+    }
+
+    return null
 }
 
 /** A page that displays overview information about a registry extension. */
@@ -55,30 +95,6 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
         }
     }
 
-    const manifest: ExtensionManifest | undefined =
-        extension.manifest && !isErrorLike(extension.manifest) ? extension.manifest : undefined
-
-    const iconURL = useMemo(() => {
-        let iconURL: URL | undefined
-
-        try {
-            if (isLightTheme) {
-                if (manifest?.icon && isEncodedImage(manifest.icon)) {
-                    iconURL = new URL(manifest.icon)
-                }
-            } else if (manifest?.iconDark && isEncodedImage(manifest.iconDark)) {
-                iconURL = new URL(manifest.iconDark)
-            } else if (manifest?.icon && isEncodedImage(manifest.icon)) {
-                // fallback: show default icon on dark theme if dark icon isn't specified
-                iconURL = new URL(manifest.icon)
-            }
-        } catch {
-            // noop
-        }
-
-        return iconURL
-    }, [manifest?.icon, manifest?.iconDark, isLightTheme])
-
     return (
         <div className="registry-extension-overview-page d-flex flex-wrap">
             <PageTitle title={extension.id} />
@@ -88,13 +104,7 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
             <aside className="registry-extension-overview-page__sidebar">
                 {categories && (
                     <div className="mb-3">
-                        {iconURL && (
-                            <img
-                                className="registry-extension-overview-page__icon mb-3"
-                                src={iconURL.href}
-                                aria-hidden="true"
-                            />
-                        )}
+                        <RegistryExtensionOverviewIcon extension={extension} isLightTheme={isLightTheme} />
                         <h3>Categories</h3>
                         <ul className="list-inline test-registry-extension-categories">
                             {categories.map(category => (
