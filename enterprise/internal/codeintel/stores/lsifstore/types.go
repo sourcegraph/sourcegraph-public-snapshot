@@ -15,7 +15,13 @@ type DocumentData struct {
 	HoverResults       map[ID]string // hover text normalized to markdown string
 	Monikers           map[ID]MonikerData
 	PackageInformation map[ID]PackageInformationData
+	Symbols            []DocumentSymbolData
 	Diagnostics        []DiagnosticData
+}
+
+type DocumentSymbolData struct {
+	RangeID  ID
+	Children []DocumentSymbolData
 }
 
 // RangeData represents a range vertex within an index. It contains the same relevant

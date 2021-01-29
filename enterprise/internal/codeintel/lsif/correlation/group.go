@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	protocol "github.com/sourcegraph/lsif-protocol"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bloomfilter"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/datastructures"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/lsif"
@@ -109,6 +110,7 @@ func serializeDocument(state *State, documentID int) lsifstore.DocumentData {
 		HoverResults:       map[lsifstore.ID]string{},
 		Monikers:           map[lsifstore.ID]lsifstore.MonikerData{},
 		PackageInformation: map[lsifstore.ID]lsifstore.PackageInformationData{},
+		Symbols:            []lsifstore.DocumentSymbolData{},
 		Diagnostics:        make([]lsifstore.DiagnosticData, 0, state.Diagnostics.SetLen(documentID)),
 	}
 
@@ -168,7 +170,31 @@ func serializeDocument(state *State, documentID int) lsifstore.DocumentData {
 		}
 	})
 
+	if symbolResultID, ok := state.TextDocumentDocumentSymbol[documentID]; ok {
+		if docSymbols, ok := state.DocumentSymbols[symbolResultID]; ok {
+			symbols := make([]lsifstore.DocumentSymbolData, len(docSymbols))
+			for i, docSymbol := range docSymbols {
+				symbols[i] = documentSymbolToSymbolData(docSymbol)
+			}
+			document.Symbols = symbols
+		}
+	}
+
 	return document
+}
+
+func documentSymbolToSymbolData(docSymbol *protocol.RangeBasedDocumentSymbol) lsifstore.DocumentSymbolData {
+	var children []lsifstore.DocumentSymbolData
+	if len(docSymbol.Children) > 0 {
+		children = make([]lsifstore.DocumentSymbolData, len(docSymbol.Children))
+		for i, child := range docSymbol.Children {
+			children[i] = documentSymbolToSymbolData(child)
+		}
+	}
+	return lsifstore.DocumentSymbolData{
+		RangeID:  toID(int(docSymbol.ID)), // TODO(beyang): uint64 -> int conversion unsafe
+		Children: children,
+	}
 }
 
 func serializeResultChunks(ctx context.Context, state *State, numResultChunks int) chan lsifstore.IndexedResultChunkData {

@@ -9,6 +9,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	protocol "github.com/sourcegraph/lsif-protocol"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/datastructures"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/existence"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/lsif"
@@ -103,16 +104,17 @@ func correlateElement(state *wrappedState, element lsif.Element) error {
 }
 
 var vertexHandlers = map[string]func(state *wrappedState, element lsif.Element) error{
-	"metaData":           correlateMetaData,
-	"document":           correlateDocument,
-	"range":              correlateRange,
-	"resultSet":          correlateResultSet,
-	"definitionResult":   correlateDefinitionResult,
-	"referenceResult":    correlateReferenceResult,
-	"hoverResult":        correlateHoverResult,
-	"moniker":            correlateMoniker,
-	"packageInformation": correlatePackageInformation,
-	"diagnosticResult":   correlateDiagnosticResult,
+	"metaData":             correlateMetaData,
+	"document":             correlateDocument,
+	"documentSymbolResult": correlateDocumentSymbolResult,
+	"range":                correlateRange,
+	"resultSet":            correlateResultSet,
+	"definitionResult":     correlateDefinitionResult,
+	"referenceResult":      correlateReferenceResult,
+	"hoverResult":          correlateHoverResult,
+	"moniker":              correlateMoniker,
+	"packageInformation":   correlatePackageInformation,
+	"diagnosticResult":     correlateDiagnosticResult,
 }
 
 // correlateElement maps a single vertex element into the correlation state.
@@ -132,16 +134,17 @@ func correlateVertex(state *wrappedState, element lsif.Element) error {
 }
 
 var edgeHandlers = map[string]func(state *wrappedState, id int, edge lsif.Edge) error{
-	"contains":                correlateContainsEdge,
-	"next":                    correlateNextEdge,
-	"item":                    correlateItemEdge,
-	"textDocument/definition": correlateTextDocumentDefinitionEdge,
-	"textDocument/references": correlateTextDocumentReferencesEdge,
-	"textDocument/hover":      correlateTextDocumentHoverEdge,
-	"moniker":                 correlateMonikerEdge,
-	"nextMoniker":             correlateNextMonikerEdge,
-	"packageInformation":      correlatePackageInformationEdge,
-	"textDocument/diagnostic": correlateDiagnosticEdge,
+	"contains":                    correlateContainsEdge,
+	"next":                        correlateNextEdge,
+	"item":                        correlateItemEdge,
+	"textDocument/definition":     correlateTextDocumentDefinitionEdge,
+	"textDocument/references":     correlateTextDocumentReferencesEdge,
+	"textDocument/hover":          correlateTextDocumentHoverEdge,
+	"textDocument/documentSymbol": correlateTextDocumentDocumentSymbolEdge,
+	"moniker":                     correlateMonikerEdge,
+	"nextMoniker":                 correlateNextMonikerEdge,
+	"packageInformation":          correlatePackageInformationEdge,
+	"textDocument/diagnostic":     correlateDiagnosticEdge,
 }
 
 // correlateElement maps a single edge element into the correlation state.
@@ -204,6 +207,15 @@ func correlateDocument(state *wrappedState, element lsif.Element) error {
 	}
 
 	state.DocumentData[element.ID] = relativeURI
+	return nil
+}
+
+func correlateDocumentSymbolResult(state *wrappedState, element lsif.Element) error {
+	payload, ok := element.Payload.([]*protocol.RangeBasedDocumentSymbol)
+	if !ok {
+		return ErrUnexpectedPayload
+	}
+	state.DocumentSymbols[element.ID] = payload
 	return nil
 }
 
@@ -384,6 +396,17 @@ func correlateTextDocumentHoverEdge(state *wrappedState, id int, edge lsif.Edge)
 	} else {
 		return malformedDump(id, edge.OutV, "range", "resultSet")
 	}
+	return nil
+}
+
+func correlateTextDocumentDocumentSymbolEdge(state *wrappedState, id int, edge lsif.Edge) error {
+	if _, ok := state.DocumentSymbols[edge.InV]; !ok {
+		return malformedDump(id, edge.InV, "documentSymbolResult")
+	}
+	if _, ok := state.DocumentData[edge.OutV]; !ok {
+		return malformedDump(id, edge.OutV, "document")
+	}
+	state.TextDocumentDocumentSymbol[edge.OutV] = edge.InV
 	return nil
 }
 
