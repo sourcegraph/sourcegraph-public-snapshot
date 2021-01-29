@@ -110,26 +110,41 @@ const resolveFileListCodeView: ViewResolver<CodeView> = {
     },
 }
 
+const getLineElementFromLineNumber: DOMFunctions['getCodeElementFromLineNumber'] = (codeView, line, part) => {
+    const side = part === 'head' ? 'right' : 'left'
+    // Split diff: line element is next sibling
+    const lineNumberCell = codeView.querySelector(`td.lineNum.${side}[data-value="${line}"]`)
+    if (!lineNumberCell) {
+        return null
+    }
+    const contentCell = nextMatchingSibling(lineNumberCell, 'td.content')
+    const codeElement = contentCell?.querySelector('.contentText')
+    // const lineRow = lineNumberCell?.closest('tr')
+    // const codeElement = lineRow?.querySelector(`.contentText[data-side="${side}]"`)
+    return codeElement as HTMLElement
+}
+
 const diffTableDomFunctions: DOMFunctions = {
-    getLineElementFromLineNumber: (codeView, line, part) => {
-        const side = part === 'head' ? 'right' : 'left'
-        // Split diff: line element is next sibling
-        const lineNumberCell = codeView.querySelector(`td.lineNum.${side}[data-value="${line}"]`)
-        const lineRow = lineNumberCell?.closest('tr')
-        const codeElement = lineRow?.querySelector(`.contentText[data-side="${side}"`)
-        return codeElement?.closest('tr') as HTMLElement
-    },
-    getCodeElementFromLineNumber: (codeView, line, part) => {
-        const side = part === 'head' ? 'right' : 'left'
-        const lineNumberCell = codeView.querySelector(`td.lineNum.${side}[data-value="${line}"]`)
-        const lineRow = lineNumberCell?.closest('tr')
-        const codeElement = lineRow?.querySelector(`.contentText[data-side="${side}"`)
+    getLineElementFromLineNumber,
+    getCodeElementFromLineNumber: getLineElementFromLineNumber,
+    getCodeElementFromTarget: (target: HTMLElement) => {
+        const codeElement = target.closest('td.content')
+        // Check if we are on a line which has "File" in the line number cell.
+        const fileElement = codeElement?.closest('tr')?.querySelector('[data-line-number]')
+        if (fileElement) {
+            const lineNumberString = fileElement.getAttribute('data-line-number')
+            console.log('Data-line-number:', lineNumberString)
+
+            if (lineNumberString === 'FILE') {
+                return null
+            }
+        }
         return codeElement as HTMLElement
     },
-    getCodeElementFromTarget: (target: HTMLElement) => target.closest('td.content'),
     getLineNumberFromCodeElement: (codeElement: HTMLElement): number => {
         const side = getSideFromCodeElement(codeElement)
         if (!side) {
+            console.error(codeElement)
             throw new TypeError('Could not find line number (no side)')
         }
         const cell = codeElement.closest('td')
@@ -219,20 +234,27 @@ export const observeMutations = (
     options?: MutationObserverInit,
     paused?: Subject<boolean>
 ): Observable<MutationRecordLike[]> => {
-    const knownElements = new Set<HTMLElement>()
+    const knownElements = new Set<{ element: HTMLElement; filePath: string }>()
     return interval(POLLING_INTERVAL).pipe(
         map(() => {
+            const { filePath } = parseGerritChange()
             const elements = codeViewResolvers
                 .map(resolver => [...queryWithSelector(document.body, resolver.selector)])
                 .flat()
-            const addedNodes = elements.filter(element => !knownElements.has(element))
-            const removedNodes = [...knownElements].filter(element => !elements.includes(element))
+            const addedNodes = elements.filter(
+                element =>
+                    ![...knownElements].find(
+                        knownElements => knownElements.element === element && knownElements.filePath === filePath
+                    )
+            )
+            const removedNodes = [...knownElements].filter(element => !elements.includes(element.element))
             for (const addedNode of addedNodes) {
                 knownElements.add(addedNode)
             }
             for (const removedNode of removedNodes) {
                 knownElements.delete(removedNode)
             }
+            console.log('knownElements', knownElements)
             return { addedNodes, removedNodes }
         }),
         // Filter to emit only non-empty records.
@@ -289,8 +311,45 @@ function getParentCommit(): string | null | undefined {
     return metadataPanel?.shadowRoot?.querySelector('.container')?.textContent?.trim()
 }
 
-function getSideFromCodeElement(codeElement: HTMLElement): string | undefined {
-    return codeElement.querySelector('.contentText')?.getAttribute('data-side') || undefined
+function getDiffTypeFromCodeElement(codeElement: HTMLElement): 'side-by-side' | 'unified' {
+    const rowElement = codeElement.closest('tr')
+    if (rowElement?.matches('.unified')) {
+        return 'unified'
+    }
+    return 'side-by-side'
+}
+
+function getSideFromCodeElement(codeElement: HTMLElement): 'left' | 'right' {
+    const diffType = getDiffTypeFromCodeElement(codeElement)
+    if (diffType === 'unified') {
+        // If there is a line number cell for the right side, in this row, then we're on the right.
+        // Otherwise we're on the left.
+        const rightLineNumber = codeElement.closest('tr')?.querySelector('td.right')?.getAttribute('data-value')
+
+        if (rightLineNumber) {
+            return 'right'
+        }
+        return 'left'
+    }
+
+    // Side-by-side
+    if (codeElement.closest('td')?.previousElementSibling?.matches('.right')) {
+        return 'right'
+    }
+    return 'left'
+}
+
+function nextMatchingSibling(element: Element, selector: string): HTMLElement | null {
+    const allSiblings = [...(element.parentElement?.childNodes || [])]
+    const nextSiblings = allSiblings.slice(allSiblings.indexOf(element) + 1)
+    for (const sibling of nextSiblings) {
+        if (sibling instanceof HTMLElement) {
+            if (sibling.matches(selector)) {
+                return sibling
+            }
+        }
+    }
+    return null
 }
 
 function querySelectorAcrossShadowRoots(element: ParentNode, selectors: string[]): Element | null {
