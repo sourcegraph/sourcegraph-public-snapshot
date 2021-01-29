@@ -200,11 +200,17 @@ func (s *indexedSearchRequest) Repos() map[string]*search.RepositoryRevisions {
 	return s.repos.repoRevs
 }
 
-type streamFunc func(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration, c SearchStream)
+// Temporary type to help with the transition away from storing Error in event.
+type searchEventWithError struct {
+	SearchEvent
+	Error error
+}
+
+type streamFunc func(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration, c SearchStream) error
 
 // Search returns a search event stream. Ensure you drain the stream.
-func (s *indexedSearchRequest) Search(ctx context.Context) <-chan SearchEvent {
-	c := make(chan SearchEvent)
+func (s *indexedSearchRequest) Search(ctx context.Context) <-chan searchEventWithError {
+	c := make(chan searchEventWithError)
 	go func() {
 		defer close(c)
 		s.doSearch(ctx, c)
@@ -213,7 +219,7 @@ func (s *indexedSearchRequest) Search(ctx context.Context) <-chan SearchEvent {
 	return c
 }
 
-func (s *indexedSearchRequest) doSearch(ctx context.Context, c SearchStream) {
+func (s *indexedSearchRequest) doSearch(ctx context.Context, c chan<- searchEventWithError) {
 	if s.args == nil {
 		return
 	}
@@ -247,12 +253,12 @@ func (s *indexedSearchRequest) doSearch(ctx context.Context, c SearchStream) {
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration, c SearchStream) {
+func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration, c SearchStream) error {
 	if args == nil {
-		return
+		return nil
 	}
 	if len(repos.repoRevs) == 0 && args.Mode != search.ZoektGlobalSearch {
-		return
+		return nil
 	}
 
 	queryExceptRepos, err := queryToZoektQuery(args.PatternInfo, typ)
