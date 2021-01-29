@@ -407,6 +407,7 @@ func doSearch(u string, p *protocol.Request) ([]protocol.FileMatch, error) {
 		"FetchTimeout":    []string{p.FetchTimeout},
 		"IncludePatterns": p.IncludePatterns,
 		"ExcludePattern":  []string{p.ExcludePattern},
+		"CombyRule":       []string{p.CombyRule},
 	}
 	if p.IsRegExp {
 		form.Set("IsRegExp", "true")
