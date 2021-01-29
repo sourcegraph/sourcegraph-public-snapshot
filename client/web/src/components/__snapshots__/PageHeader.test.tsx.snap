@@ -4,7 +4,7 @@ exports[`PageHeader renders correctly 1`] = `
 <body>
   <div>
     <header
-      class="page-header d-flex flex-column flex-md-row flex-wrap justify-content-between align-items-lg-center"
+      class="d-flex flex-column flex-md-row flex-wrap justify-content-between align-items-lg-center"
     >
       <div>
         <h1
@@ -15,7 +15,7 @@ exports[`PageHeader renders correctly 1`] = `
             href="/link-0"
           >
             <svg
-              class="mdi-icon icon-inline page-header__icon mr-2"
+              class="mdi-icon icon-inline py-1 mr-1"
               fill="currentColor"
               height="24"
               viewBox="0 0 24 24"
