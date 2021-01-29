@@ -1,7 +1,6 @@
 import * as H from 'history'
 import classnames from 'classnames'
 import React, { useCallback, useMemo, useState } from 'react'
-import { BreadcrumbSetters, BreadcrumbsProps } from '../../components/Breadcrumbs'
 import { PageHeader } from '../../components/PageHeader'
 import { PageTitle } from '../../components/PageTitle'
 import { AuthenticatedUser } from '../../auth'
@@ -18,11 +17,10 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { Settings } from '../../schema/settings.schema'
 import { CodeMonitoringLogo } from './CodeMonitoringLogo'
+import { StatusBadge } from '../../components/StatusBadge'
 
 export interface CodeMonitoringPageProps
-    extends BreadcrumbsProps,
-        BreadcrumbSetters,
-        Pick<CodeMonitoringProps, 'fetchUserCodeMonitors' | 'toggleCodeMonitorEnabled'>,
+    extends Pick<CodeMonitoringProps, 'fetchUserCodeMonitors' | 'toggleCodeMonitorEnabled'>,
         SettingsCascadeProps<Settings> {
     authenticatedUser: AuthenticatedUser
     location: H.Location
@@ -76,15 +74,13 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
         <div className="code-monitoring-page container mt-5">
             <PageTitle title="Code Monitoring" />
             <PageHeader
-                title={
-                    <>
-                        Code monitoring{' '}
-                        <sup>
-                            <span className="badge badge-info text-uppercase">Prototype</span>
-                        </sup>
-                    </>
-                }
-                icon={CodeMonitoringLogo}
+                annotation={<StatusBadge status="prototype" />}
+                path={[
+                    {
+                        icon: CodeMonitoringLogo,
+                        text: 'Code monitoring',
+                    },
+                ]}
                 actions={
                     userHasCodeMonitors &&
                     userHasCodeMonitors !== 'loading' &&
@@ -95,6 +91,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                         </Link>
                     )
                 }
+                className="mb-3"
             />
             {userHasCodeMonitors === 'loading' && <LoadingSpinner />}
             {!userHasCodeMonitors && (
