@@ -84,6 +84,46 @@ INSERT INTO series_points(
 );
 ```
 
+## Inserting fake data
+
+```
+INSERT INTO series_points(
+    time,
+    value,
+    metadata_id,
+    repo_id,
+    repo_name_id,
+    original_repo_name_id)
+SELECT time,
+    random()*80 - 40,
+    (SELECT id FROM metadata WHERE metadata = '{"hello": "world", "languages": ["Go", "Python", "Java"]}'),
+    2,
+    (SELECT id FROM repo_names WHERE name = 'github.com/gorilla/mux-renamed'),
+    (SELECT id FROM repo_names WHERE name = 'github.com/gorilla/mux-original')
+    FROM generate_series(TIMESTAMP '2020-01-01 00:00:00', TIMESTAMP '2020-06-01 00:00:00', INTERVAL '10 min') AS time;
+```
+
+## Example Global Settings
+
+```
+  "insights": [
+    {
+      "title": "fmt usage",
+      "description": "fmt.Errorf/fmt.Printf usage",
+      "series": [
+        {
+          "label": "fmt.Errorf",
+          "search": "errorf",
+        },
+        {
+          "label": "printf",
+          "search": "fmt.Printf",
+        }
+      ]
+    }
+  ]
+```
+
 ## Query data
 
 ### All data
