@@ -1,8 +1,12 @@
 package store
 
 import (
+	"context"
 	"database/sql"
+	"fmt"
 	"time"
+
+	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -40,16 +44,55 @@ func (s *Store) With(other basestore.ShareableStore) *Store {
 	return &Store{Store: s.Store.With(other), now: s.now}
 }
 
-/*
-// Transact creates a new transaction.
-// It's required to implement this method and wrap the Transact method of the
-// underlying basestore.Store.
-func (s *Store) Transact(ctx context.Context) (*Store, error) {
-	txBase, err := s.Store.Transact(ctx)
-	if err != nil {
-		return nil, err
+type SeriesPointsOpts struct {
+	Limit int
+}
+
+type SeriesPoint struct {
+	Time  time.Time
+	Value float64
+}
+
+func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]SeriesPoint, error) {
+	points := make([]SeriesPoint, 0, opts.Limit)
+	err := s.query(ctx, seriesPointsQuery(opts), func(sc scanner) error {
+		var point SeriesPoint
+		err := sc.Scan(
+			&point.Time,
+			&point.Value,
+		)
+		if err != nil {
+			return err
+		}
+		points = append(points, point)
+		return nil
+	})
+	return points, err
+}
+
+var seriesPointsQueryFmtstr = `
+-- source: enterprise/internal/insights/store/series_points.go
+SELECT time, value FROM series_points
+WHERE %s
+ORDER BY time DESC
+`
+
+func seriesPointsQuery(opts SeriesPointsOpts) *sqlf.Query {
+	joins := []*sqlf.Query{}
+	preds := []*sqlf.Query{}
+
+	if len(preds) == 0 {
+		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
-	return &Store{Store: txBase, now: s.now}, nil
+	limitClause := ""
+	if opts.Limit > 0 {
+		limitClause = fmt.Sprintf("LIMIT %d", opts.Limit)
+	}
+	return sqlf.Sprintf(
+		seriesPointsQueryFmtstr+limitClause,
+		sqlf.Join(joins, "\n"),
+		sqlf.Join(preds, "\n AND "),
+	)
 }
 
 func (s *Store) query(ctx context.Context, q *sqlf.Query, sc scanFunc) error {
@@ -58,14 +101,6 @@ func (s *Store) query(ctx context.Context, q *sqlf.Query, sc scanFunc) error {
 		return err
 	}
 	return scanAll(rows, sc)
-}
-
-func (s *Store) queryCount(ctx context.Context, q *sqlf.Query) (int, error) {
-	count, ok, err := basestore.ScanFirstInt(s.Query(ctx, q))
-	if err != nil || !ok {
-		return count, err
-	}
-	return count, nil
 }
 
 // scanner captures the Scan method of sql.Rows and sql.Row
@@ -79,88 +114,10 @@ type scanFunc func(scanner) (err error)
 
 func scanAll(rows *sql.Rows, scan scanFunc) (err error) {
 	defer func() { err = basestore.CloseRows(rows, err) }()
-
 	for rows.Next() {
 		if err = scan(rows); err != nil {
 			return err
 		}
 	}
-
 	return rows.Err()
 }
-*/
-
-/*
-func jsonbColumn(metadata interface{}) (msg json.RawMessage, err error) {
-	switch m := metadata.(type) {
-	case nil:
-		msg = json.RawMessage("{}")
-	case string:
-		msg = json.RawMessage(m)
-	case []byte:
-		msg = m
-	case json.RawMessage:
-		msg = m
-	default:
-		msg, err = json.MarshalIndent(m, "        ", "    ")
-	}
-	return
-}
-
-func jsonSetColumn(ids []int64) ([]byte, error) {
-	set := make(map[int64]*struct{}, len(ids))
-	for _, id := range ids {
-		set[id] = nil
-	}
-	return json.Marshal(set)
-}
-
-func nullInt32Column(n int32) *int32 {
-	if n == 0 {
-		return nil
-	}
-	return &n
-}
-
-func nullInt64Column(n int64) *int64 {
-	if n == 0 {
-		return nil
-	}
-	return &n
-}
-
-func nullTimeColumn(t time.Time) *time.Time {
-	if t.IsZero() {
-		return nil
-	}
-	return &t
-}
-
-func nullStringColumn(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
-}
-
-type LimitOpts struct {
-	Limit int
-}
-
-func (o LimitOpts) DBLimit() int {
-	if o.Limit == 0 {
-		return o.Limit
-	}
-	// We always request one item more than actually requested, to determine the next ID for pagination.
-	// The store should make sure to strip the last element in a result set, if len(rs) == o.DBLimit().
-	return o.Limit + 1
-}
-g
-func (o LimitOpts) ToDB() string {
-	var limitClause string
-	if o.Limit > 0 {
-		limitClause = fmt.Sprintf("LIMIT %d", o.DBLimit())
-	}
-	return limitClause
-}
-*/
