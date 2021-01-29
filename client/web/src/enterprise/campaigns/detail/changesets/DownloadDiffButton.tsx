@@ -66,18 +66,16 @@ export const DownloadDiffButton: React.FunctionComponent<DownloadDiffButtonProps
     }
 
     return (
-        <div className="download-diff-button pb-1 d-flex justify-content-end">
-            <button
-                type="button"
-                className="btn btn-link"
-                aria-label="Download generated diff"
-                data-tooltip="This is the changeset diff created when src campaign preview|apply executed the campaign"
-                onClick={loadDiff}
-                disabled={state === DownloadState.LOADING}
-            >
-                {icon}
-                <span className="pl-1">Download generated diff</span>
-            </button>
-        </div>
+        <button
+            type="button"
+            className="btn btn-link mb-1"
+            aria-label="Download generated diff"
+            data-tooltip="This is the changeset diff created when src campaign preview|apply executed the campaign"
+            onClick={loadDiff}
+            disabled={state === DownloadState.LOADING}
+        >
+            {icon}
+            <span className="pl-1">Download generated diff</span>
+        </button>
     )
 }

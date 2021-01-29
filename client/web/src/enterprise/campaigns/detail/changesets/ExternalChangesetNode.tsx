@@ -139,16 +139,21 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                 <>
                     <div className="external-changeset-node__bg-expanded align-self-stretch" />
                     <div className="external-changeset-node__expanded-section external-changeset-node__bg-expanded p-2">
-                        {node.currentSpec?.type === ChangesetSpecType.BRANCH && (
-                            <DownloadDiffButton changesetID={node.id} />
-                        )}
+                        <div className="d-flex justify-content-end">
+                            {viewerCanAdminister && node.state === ChangesetState.FAILED && node.error && (
+                                <RetryChangesetButton
+                                    node={node}
+                                    setNode={setNode}
+                                    viewerCanAdminister={viewerCanAdminister}
+                                    history={history}
+                                />
+                            )}
+                            {node.currentSpec?.type === ChangesetSpecType.BRANCH && (
+                                <DownloadDiffButton changesetID={node.id} />
+                            )}
+                        </div>
                         {node.syncerError && <SyncerError syncerError={node.syncerError} history={history} />}
-                        <ChangesetError
-                            node={node}
-                            setNode={setNode}
-                            viewerCanAdminister={viewerCanAdminister}
-                            history={history}
-                        />
+                        <ChangesetError node={node} history={history} />
                         <ChangesetFileDiff
                             changesetID={node.id}
                             isLightTheme={isLightTheme}
@@ -186,10 +191,28 @@ const SyncerError: React.FunctionComponent<{ syncerError: string; history: H.His
 
 const ChangesetError: React.FunctionComponent<{
     node: ExternalChangesetFields
+    history: H.History
+}> = ({ node, history }) => {
+    if (!node.error) {
+        return null
+    }
+
+    return (
+        <div className="alert alert-danger" role="alert">
+            <h4 className="alert-heading">
+                <AlertCircleIcon className="icon icon-inline" /> Failed to run operations on changeset
+            </h4>
+            <ErrorMessage error={node.error} history={history} />
+        </div>
+    )
+}
+
+const RetryChangesetButton: React.FunctionComponent<{
+    node: ExternalChangesetFields
     setNode: (node: ExternalChangesetFields) => void
     viewerCanAdminister: boolean
     history: H.History
-}> = ({ node, setNode, viewerCanAdminister, history }) => {
+}> = ({ node, setNode, history }) => {
     const [isLoading, setIsLoading] = useState<boolean | Error>(false)
     const onRetry = useCallback(async () => {
         setIsLoading(true)
@@ -197,49 +220,27 @@ const ChangesetError: React.FunctionComponent<{
             const changeset = await reenqueueChangeset(node.id)
             // If repository permissions changed in between - ignore and await fetch (at most 5s) to reflect the new state.
             if (changeset.__typename === 'ExternalChangeset') {
+                setIsLoading(false)
                 setNode(changeset)
             }
-            setIsLoading(false)
         } catch (error) {
             setIsLoading(asError(error))
         }
     }, [node.id, setNode])
-
-    if (!node.error) {
-        return null
-    }
-
     return (
         <>
             {isErrorLike(isLoading) && (
                 <ErrorAlert error={isLoading} prefix="Error re-enqueueing changeset" history={history} />
             )}
-            <div className="alert alert-danger" role="alert">
-                <div className="d-flex justify-content-between">
-                    <h4 className="alert-heading">
-                        <AlertCircleIcon className="icon icon-inline" /> Failed to run operations on changeset
-                    </h4>
-                    {viewerCanAdminister && node.state === ChangesetState.FAILED && (
-                        <div className="d-flex justify-content-end">
-                            <button
-                                className="btn btn-link alert-link"
-                                type="button"
-                                onClick={onRetry}
-                                disabled={isLoading === true}
-                            >
-                                <SyncIcon
-                                    className={classNames(
-                                        'icon-inline',
-                                        isLoading === true && 'external-changeset-node__retry--spinning'
-                                    )}
-                                />{' '}
-                                Retry
-                            </button>
-                        </div>
+            <button className="btn btn-link mb-1" type="button" onClick={onRetry} disabled={isLoading === true}>
+                <SyncIcon
+                    className={classNames(
+                        'icon-inline',
+                        isLoading === true && 'external-changeset-node__retry--spinning'
                     )}
-                </div>
-                <ErrorMessage error={node.error} history={history} />
-            </div>
+                />{' '}
+                Retry
+            </button>
         </>
     )
 }
