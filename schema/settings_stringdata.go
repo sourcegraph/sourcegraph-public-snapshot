@@ -326,13 +326,13 @@ const SettingsSchemaJSON = `{
       "!go": {
         "pointer": true
       }
-    }
-  },
-  "insights": {
-    "description": "EXPERIMENTAL: Code Insights",
-    "type": "array",
-    "items": {
-      "$ref": "#/definitions/Insight"
+    },
+    "insights": {
+      "description": "EXPERIMENTAL: Code Insights",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Insight"
+      }
     }
   },
   "definitions": {
