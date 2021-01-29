@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Masterminds/semver"
 	amconfig "github.com/prometheus/alertmanager/config"
 	commoncfg "github.com/prometheus/common/config"
-	"golang.org/x/mod/semver"
 
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -33,11 +33,11 @@ const alertSolutionsPagePath = "admin/observability/alert_solutions"
 // if it is available and it is a semantic version.
 func alertSolutionsURL() string {
 	maybeSemver := "v" + version.Version()
-	if semver.IsValid(maybeSemver) && !version.IsDev(version.Version()) {
+	_, semverErr := semver.NewVersion(maybeSemver)
+	if semverErr == nil && !version.IsDev(version.Version()) {
 		return fmt.Sprintf("%s/@%s/%s", docsURL, maybeSemver, alertSolutionsPagePath)
 	}
 	return fmt.Sprintf("%s/%s", docsURL, alertSolutionsPagePath)
-
 }
 
 // commonLabels defines the set of labels we group alerts by, such that each alert falls in a unique group.
