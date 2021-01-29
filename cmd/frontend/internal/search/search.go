@@ -74,7 +74,9 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sendProgress := func() {
-		_ = eventWriter.Event("progress", progress.Build())
+		pr := progress.Build()
+		pr.RepositoriesCount = nil // don't send repository counts during search.
+		_ = eventWriter.Event("progress", pr)
 	}
 
 	filters := &graphqlbackend.SearchFilters{
