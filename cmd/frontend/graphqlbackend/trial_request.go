@@ -5,7 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/hubspot/hubspotutil"
 )
@@ -23,7 +23,7 @@ func (r *schemaResolver) RequestTrial(ctx context.Context, args *struct {
 
 	// If user is authenticated, use their uid and overwrite the optional email field.
 	if actor := actor.FromContext(ctx); actor.IsAuthenticated() {
-		e, _, err := db.UserEmails.GetPrimaryEmail(ctx, actor.UID)
+		e, _, err := database.GlobalUserEmails.GetPrimaryEmail(ctx, actor.UID)
 		if err != nil && !errcode.IsNotFound(err) {
 			return nil, err
 		}

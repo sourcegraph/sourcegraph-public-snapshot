@@ -9,15 +9,15 @@ import (
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
-	rs := db.NewRepoStoreWith(s.Store)
-	es := db.NewExternalServicesStoreWith(s.Store)
+	rs := database.ReposWith(s.Store)
+	es := database.ExternalServicesWith(s.Store)
 
 	repo := ct.TestRepo(t, es, extsvc.KindGitHub)
 	otherRepo := ct.TestRepo(t, es, extsvc.KindGitHub)

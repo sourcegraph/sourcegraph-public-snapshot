@@ -10,7 +10,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -123,6 +123,14 @@ func (s *Store) GetIndexByID(ctx context.Context, id int) (_ Index, _ bool, err 
 	return scanFirstIndex(s.Store.Query(ctx, sqlf.Sprintf(getIndexByIDQuery, id)))
 }
 
+const indexRankQueryFragment = `
+SELECT
+	r.id,
+	ROW_NUMBER() OVER (ORDER BY COALESCE(r.process_after, r.queued_at), r.id) as rank
+FROM lsif_indexes_with_repository_name r
+WHERE r.state = 'queued'
+`
+
 const getIndexByIDQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/indexes.go:GetIndexByID
 SELECT
@@ -147,11 +155,7 @@ SELECT
 	s.rank,
 	u.local_steps
 FROM lsif_indexes_with_repository_name u
-LEFT JOIN (
-	SELECT r.id, RANK() OVER (ORDER BY COALESCE(r.process_after, r.queued_at)) as rank
-	FROM lsif_indexes_with_repository_name r
-	WHERE r.state = 'queued'
-) s
+LEFT JOIN (` + indexRankQueryFragment + `) s
 ON u.id = s.id
 WHERE u.id = %s
 `
@@ -237,11 +241,7 @@ SELECT
 	s.rank,
 	u.local_steps
 FROM lsif_indexes_with_repository_name u
-LEFT JOIN (
-	SELECT r.id, RANK() OVER (ORDER BY COALESCE(r.process_after, r.queued_at)) as rank
-	FROM lsif_indexes_with_repository_name r
-	WHERE r.state = 'queued'
-) s
+LEFT JOIN (` + indexRankQueryFragment + `) s
 ON u.id = s.id
 WHERE %s ORDER BY queued_at DESC LIMIT %d OFFSET %d
 `

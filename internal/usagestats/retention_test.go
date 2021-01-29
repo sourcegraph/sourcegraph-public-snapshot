@@ -7,9 +7,9 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -26,7 +26,7 @@ func TestRetentionUsageStatistics(t *testing.T) {
 	mockTimeNow(eventDate)
 	dbtesting.SetupGlobalTestDB(t)
 
-	events := []db.Event{{
+	events := []database.Event{{
 		Name:      "ViewHome",
 		URL:       "https://sourcegraph.test:3443/search",
 		UserID:    1,
@@ -41,7 +41,7 @@ func TestRetentionUsageStatistics(t *testing.T) {
 	}}
 
 	for _, event := range events {
-		err := db.EventLogs.Insert(ctx, &event)
+		err := database.GlobalEventLogs.Insert(ctx, &event)
 		if err != nil {
 			t.Fatal(err)
 		}

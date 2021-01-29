@@ -14,9 +14,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
@@ -29,7 +29,7 @@ func TestCampaignResolver(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 
 	userID := ct.CreateTestUser(t, true).ID
-	org, err := db.Orgs.Create(ctx, "test-campaign-resolver-org", nil)
+	org, err := database.GlobalOrgs.Create(ctx, "test-campaign-resolver-org", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,7 +60,7 @@ func TestCampaignResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(&Resolver{store: cstore}, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(dbconn.Global, &Resolver{store: cstore}, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -105,7 +105,7 @@ func TestCampaignResolver(t *testing.T) {
 	}
 
 	// Now soft-delete the user and check we can still access the campaign in the org namespace.
-	err = db.Users.Delete(ctx, userID)
+	err = database.GlobalUsers.Delete(ctx, userID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -124,7 +124,7 @@ func TestCampaignResolver(t *testing.T) {
 	}
 
 	// Now hard-delete the user and check we can still access the campaign in the org namespace.
-	err = db.Users.HardDelete(ctx, userID)
+	err = database.GlobalUsers.HardDelete(ctx, userID)
 	if err != nil {
 		t.Fatal(err)
 	}

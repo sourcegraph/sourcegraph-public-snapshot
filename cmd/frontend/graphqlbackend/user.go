@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -26,7 +26,7 @@ func (r *schemaResolver) User(ctx context.Context, args struct {
 }) (*UserResolver, error) {
 	switch {
 	case args.Username != nil:
-		user, err := db.Users.GetByUsername(ctx, *args.Username)
+		user, err := database.GlobalUsers.GetByUsername(ctx, *args.Username)
 		if err != nil {
 			return nil, err
 		}
@@ -40,7 +40,7 @@ func (r *schemaResolver) User(ctx context.Context, args struct {
 				return nil, err
 			}
 		}
-		user, err := db.Users.GetByVerifiedEmail(ctx, *args.Email)
+		user, err := database.GlobalUsers.GetByVerifiedEmail(ctx, *args.Email)
 		if err != nil {
 			return nil, err
 		}
@@ -74,7 +74,7 @@ func UserByID(ctx context.Context, id graphql.ID) (*UserResolver, error) {
 // UserByIDInt32 looks up and returns the user with the given database ID. If no such user exists,
 // it returns a non-nil error.
 func UserByIDInt32(ctx context.Context, id int32) (*UserResolver, error) {
-	user, err := db.Users.GetByID(ctx, id)
+	user, err := database.GlobalUsers.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +101,7 @@ func (r *UserResolver) Email(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	email, _, err := db.UserEmails.GetPrimaryEmail(ctx, r.user.ID)
+	email, _, err := database.GlobalUserEmails.GetPrimaryEmail(ctx, r.user.ID)
 	if err != nil && !errcode.IsNotFound(err) {
 		return "", err
 	}
@@ -154,7 +154,7 @@ func (r *UserResolver) LatestSettings(ctx context.Context) (*settingsResolver, e
 		return nil, err
 	}
 
-	settings, err := db.Settings.GetLatest(ctx, r.settingsSubject())
+	settings, err := database.GlobalSettings.GetLatest(ctx, r.settingsSubject())
 	if err != nil {
 		return nil, err
 	}
@@ -203,7 +203,7 @@ func (*schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (*U
 		}
 	}
 
-	update := db.UserUpdate{
+	update := database.UserUpdate{
 		DisplayName: args.DisplayName,
 		AvatarURL:   args.AvatarURL,
 	}
@@ -213,7 +213,7 @@ func (*schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (*U
 		}
 		update.Username = *args.Username
 	}
-	if err := db.Users.Update(ctx, userID, update); err != nil {
+	if err := database.GlobalUsers.Update(ctx, userID, update); err != nil {
 		return nil, err
 	}
 	return UserByIDInt32(ctx, userID)
@@ -222,9 +222,9 @@ func (*schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (*U
 // CurrentUser returns the authenticated user if any. If there is no authenticated user, it returns
 // (nil, nil). If some other error occurs, then the error is returned.
 func CurrentUser(ctx context.Context) (*UserResolver, error) {
-	user, err := db.Users.GetByCurrentAuthUser(ctx)
+	user, err := database.GlobalUsers.GetByCurrentAuthUser(ctx)
 	if err != nil {
-		if errcode.IsNotFound(err) || err == db.ErrNoCurrentUser {
+		if errcode.IsNotFound(err) || err == database.ErrNoCurrentUser {
 			return nil, nil
 		}
 		return nil, err
@@ -233,7 +233,7 @@ func CurrentUser(ctx context.Context) (*UserResolver, error) {
 }
 
 func (r *UserResolver) Organizations(ctx context.Context) (*orgConnectionStaticResolver, error) {
-	orgs, err := db.Orgs.GetByUserID(ctx, r.user.ID)
+	orgs, err := database.GlobalOrgs.GetByUserID(ctx, r.user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -258,7 +258,7 @@ func (r *UserResolver) SurveyResponses(ctx context.Context) ([]*surveyResponseRe
 		return nil, err
 	}
 
-	responses, err := db.SurveyResponses.GetByUserID(ctx, r.user.ID)
+	responses, err := database.GlobalSurveyResponses.GetByUserID(ctx, r.user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -300,7 +300,7 @@ func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 	NewPassword string
 }) (*EmptyResponse, error) {
 	// 🚨 SECURITY: A user can only change their own password.
-	user, err := db.Users.GetByCurrentAuthUser(ctx)
+	user, err := database.GlobalUsers.GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -308,7 +308,7 @@ func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 		return nil, errors.New("no authenticated user")
 	}
 
-	if err := db.Users.UpdatePassword(ctx, user.ID, args.OldPassword, args.NewPassword); err != nil {
+	if err := database.GlobalUsers.UpdatePassword(ctx, user.ID, args.OldPassword, args.NewPassword); err != nil {
 		return nil, err
 	}
 
@@ -345,12 +345,12 @@ type ListUserRepositoriesArgs struct {
 }
 
 func (r *UserResolver) Repositories(ctx context.Context, args *ListUserRepositoriesArgs) (RepositoryConnectionResolver, error) {
-	opt := db.ReposListOptions{}
+	opt := database.ReposListOptions{}
 	if args.Query != nil {
 		opt.Query = *args.Query
 	}
 	if args.First != nil {
-		opt.LimitOffset = &db.LimitOffset{Limit: int(*args.First)}
+		opt.LimitOffset = &database.LimitOffset{Limit: int(*args.First)}
 	}
 	if args.After != nil {
 		cursor, err := unmarshalRepositoryCursor(args.After)
@@ -365,12 +365,12 @@ func (r *UserResolver) Repositories(ctx context.Context, args *ListUserRepositor
 		opt.CursorDirection = "next"
 	}
 	if args.OrderBy != nil {
-		opt.OrderBy = db.RepoListOrderBy{{
+		opt.OrderBy = database.RepoListOrderBy{{
 			Field:      toDBRepoListColumn(*args.OrderBy),
 			Descending: args.Descending,
 		}}
 	}
-	extSvcs, err := db.ExternalServices.List(ctx, db.ExternalServicesListOptions{
+	extSvcs, err := database.GlobalExternalServices.List(ctx, database.ExternalServicesListOptions{
 		NamespaceUserID: r.user.ID,
 	})
 	if err != nil {
@@ -428,7 +428,7 @@ func viewerCanChangeUsername(ctx context.Context, userID int32) bool {
 // If that subject's username is different from the proposed one, then a
 // change is being attempted and may be rejected by viewerCanChangeUsername.
 func viewerIsChangingUsername(ctx context.Context, subjectUserID int32, proposedUsername string) bool {
-	subject, err := db.Users.GetByID(ctx, subjectUserID)
+	subject, err := database.GlobalUsers.GetByID(ctx, subjectUserID)
 	if err != nil {
 		log15.Warn("viewerIsChangingUsername", "error", err)
 		return true

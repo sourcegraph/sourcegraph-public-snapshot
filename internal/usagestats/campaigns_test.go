@@ -9,9 +9,9 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -21,8 +21,8 @@ func TestCampaignsUsageStatistics(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 
 	// Create stub repo.
-	repoStore := db.NewRepoStoreWithDB(dbconn.Global)
-	esStore := db.NewExternalServicesStoreWithDB(dbconn.Global)
+	repoStore := database.Repos(dbconn.Global)
+	esStore := database.ExternalServices(dbconn.Global)
 
 	now := time.Now()
 	svc := types.ExternalService{
@@ -54,7 +54,7 @@ func TestCampaignsUsageStatistics(t *testing.T) {
 	}
 
 	// Create a user.
-	user, err := db.Users.Create(ctx, db.NewUser{Username: "test"})
+	user, err := database.GlobalUsers.Create(ctx, database.NewUser{Username: "test"})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -164,26 +164,23 @@ func TestAlertForDiffCommitSearchLimits(t *testing.T) {
 	}{
 		{
 			name:                 "diff_search_warns_on_repos_greater_than_search_limit",
-			multiErr:             multierror.Append(&multierror.Error{}, RepoLimitErr{ResultType: "diff", Max: 50}),
+			multiErr:             multierror.Append(&multierror.Error{}, &RepoLimitError{ResultType: "diff", Max: 50}),
 			wantAlertDescription: `Diff search can currently only handle searching over 50 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`,
 		},
 		{
 			name:                 "commit_search_warns_on_repos_greater_than_search_limit",
-			multiErr:             multierror.Append(&multierror.Error{}, RepoLimitErr{ResultType: "commit", Max: 50}),
+			multiErr:             multierror.Append(&multierror.Error{}, &RepoLimitError{ResultType: "commit", Max: 50}),
 			wantAlertDescription: `Commit search can currently only handle searching over 50 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`,
 		},
 		{
 			name:                 "commit_search_warns_on_repos_greater_than_search_limit_with_time_filter",
-			multiErr:             multierror.Append(&multierror.Error{}, TimeLimitErr{ResultType: "commit", Max: 10000}),
+			multiErr:             multierror.Append(&multierror.Error{}, &TimeLimitError{ResultType: "commit", Max: 10000}),
 			wantAlertDescription: `Commit search can currently only handle searching over 10000 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`,
 		},
 	}
 
 	for _, test := range cases {
-		haveMultiErr, alert := alertForDiffCommitSearch(test.multiErr)
-		if haveMultiErr != nil {
-			t.Fatalf("the alert should have been filtered from the multierror")
-		}
+		alert := alertForError(test.multiErr, &SearchInputs{})
 		haveAlertDescription := alert.description
 		if diff := cmp.Diff(test.wantAlertDescription, haveAlertDescription); diff != "" {
 			t.Fatalf("test %s, mismatched alert (-want, +got):\n%s", test.name, diff)
@@ -195,13 +192,11 @@ func TestErrorToAlertStructuralSearch(t *testing.T) {
 	cases := []struct {
 		name           string
 		errors         []error
-		wantErrors     []error
 		wantAlertTitle string
 	}{
 		{
 			name:           "multierr_is_unaffected",
 			errors:         []error{errors.New("some error")},
-			wantErrors:     []error{errors.New("some error")},
 			wantAlertTitle: "",
 		},
 		{
@@ -209,10 +204,6 @@ func TestErrorToAlertStructuralSearch(t *testing.T) {
 			errors: []error{
 				errors.New("some error"),
 				errors.New("Worker_oomed"),
-				errors.New("some other error"),
-			},
-			wantErrors: []error{
-				errors.New("some error"),
 				errors.New("some other error"),
 			},
 			wantAlertTitle: "Structural search needs more memory",
@@ -223,11 +214,7 @@ func TestErrorToAlertStructuralSearch(t *testing.T) {
 			Errors:      test.errors,
 			ErrorFormat: multierror.ListFormatFunc,
 		}
-		haveMultiErr, haveAlert := alertForStructuralSearch(multiErr)
-
-		if !reflect.DeepEqual(haveMultiErr.Errors, test.wantErrors) {
-			t.Fatalf("test %s, have errors: %q, want: %q", test.name, haveMultiErr.Errors, test.wantErrors)
-		}
+		haveAlert := alertForError(multiErr, &SearchInputs{})
 
 		if haveAlert != nil && haveAlert.title != test.wantAlertTitle {
 			t.Fatalf("test %s, have alert: %q, want: %q", test.name, haveAlert.title, test.wantAlertTitle)
@@ -349,10 +336,11 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 				t.Fatal(err)
 			}
 			sr := searchResolver{
-				query: q,
-				userSettings: &schema.Settings{
-					SearchGlobbing: &test.globbing,
-				},
+				SearchInputs: &SearchInputs{
+					Query: q,
+					UserSettings: &schema.Settings{
+						SearchGlobbing: &test.globbing,
+					}},
 			}
 
 			ctx, cancel := context.WithCancel(context.Background())

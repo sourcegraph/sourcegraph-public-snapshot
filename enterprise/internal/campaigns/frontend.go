@@ -7,9 +7,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/webhooks"
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/globalstatedb"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
@@ -22,7 +22,7 @@ func InitFrontend(ctx context.Context, enterpriseServices *enterprise.Services) 
 	}
 
 	cstore := store.NewWithClock(dbconn.Global, timeutil.Now)
-	esStore := db.NewExternalServicesStoreWithDB(dbconn.Global)
+	esStore := database.ExternalServices(dbconn.Global)
 
 	enterpriseServices.CampaignsResolver = resolvers.New(dbconn.Global)
 	enterpriseServices.GitHubWebhook = webhooks.NewGitHubWebhook(cstore, esStore, timeutil.Now)

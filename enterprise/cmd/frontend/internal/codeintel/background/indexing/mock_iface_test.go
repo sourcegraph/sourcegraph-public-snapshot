@@ -642,12 +642,18 @@ func (c DBStoreUpdateIndexableRepositoryFuncCall) Results() []interface{} {
 // github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/background/indexing)
 // used for unit testing.
 type MockGitserverClient struct {
+	// FileExistsFunc is an instance of a mock function object controlling
+	// the behavior of the method FileExists.
+	FileExistsFunc *GitserverClientFileExistsFunc
 	// HeadFunc is an instance of a mock function object controlling the
 	// behavior of the method Head.
 	HeadFunc *GitserverClientHeadFunc
 	// ListFilesFunc is an instance of a mock function object controlling
 	// the behavior of the method ListFiles.
 	ListFilesFunc *GitserverClientListFilesFunc
+	// RawContentsFunc is an instance of a mock function object controlling
+	// the behavior of the method RawContents.
+	RawContentsFunc *GitserverClientRawContentsFunc
 }
 
 // NewMockGitserverClient creates a new mock of the GitserverClient
@@ -655,6 +661,11 @@ type MockGitserverClient struct {
 // overwritten.
 func NewMockGitserverClient() *MockGitserverClient {
 	return &MockGitserverClient{
+		FileExistsFunc: &GitserverClientFileExistsFunc{
+			defaultHook: func(context.Context, int, string, string) (bool, error) {
+				return false, nil
+			},
+		},
 		HeadFunc: &GitserverClientHeadFunc{
 			defaultHook: func(context.Context, int) (string, error) {
 				return "", nil
@@ -662,6 +673,11 @@ func NewMockGitserverClient() *MockGitserverClient {
 		},
 		ListFilesFunc: &GitserverClientListFilesFunc{
 			defaultHook: func(context.Context, int, string, *regexp.Regexp) ([]string, error) {
+				return nil, nil
+			},
+		},
+		RawContentsFunc: &GitserverClientRawContentsFunc{
+			defaultHook: func(context.Context, int, string, string) ([]byte, error) {
 				return nil, nil
 			},
 		},
@@ -673,13 +689,134 @@ func NewMockGitserverClient() *MockGitserverClient {
 // overwritten.
 func NewMockGitserverClientFrom(i GitserverClient) *MockGitserverClient {
 	return &MockGitserverClient{
+		FileExistsFunc: &GitserverClientFileExistsFunc{
+			defaultHook: i.FileExists,
+		},
 		HeadFunc: &GitserverClientHeadFunc{
 			defaultHook: i.Head,
 		},
 		ListFilesFunc: &GitserverClientListFilesFunc{
 			defaultHook: i.ListFiles,
 		},
+		RawContentsFunc: &GitserverClientRawContentsFunc{
+			defaultHook: i.RawContents,
+		},
 	}
+}
+
+// GitserverClientFileExistsFunc describes the behavior when the FileExists
+// method of the parent MockGitserverClient instance is invoked.
+type GitserverClientFileExistsFunc struct {
+	defaultHook func(context.Context, int, string, string) (bool, error)
+	hooks       []func(context.Context, int, string, string) (bool, error)
+	history     []GitserverClientFileExistsFuncCall
+	mutex       sync.Mutex
+}
+
+// FileExists delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGitserverClient) FileExists(v0 context.Context, v1 int, v2 string, v3 string) (bool, error) {
+	r0, r1 := m.FileExistsFunc.nextHook()(v0, v1, v2, v3)
+	m.FileExistsFunc.appendCall(GitserverClientFileExistsFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the FileExists method of
+// the parent MockGitserverClient instance is invoked and the hook queue is
+// empty.
+func (f *GitserverClientFileExistsFunc) SetDefaultHook(hook func(context.Context, int, string, string) (bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// FileExists method of the parent MockGitserverClient instance inovkes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *GitserverClientFileExistsFunc) PushHook(hook func(context.Context, int, string, string) (bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *GitserverClientFileExistsFunc) SetDefaultReturn(r0 bool, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string, string) (bool, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *GitserverClientFileExistsFunc) PushReturn(r0 bool, r1 error) {
+	f.PushHook(func(context.Context, int, string, string) (bool, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverClientFileExistsFunc) nextHook() func(context.Context, int, string, string) (bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverClientFileExistsFunc) appendCall(r0 GitserverClientFileExistsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverClientFileExistsFuncCall objects
+// describing the invocations of this function.
+func (f *GitserverClientFileExistsFunc) History() []GitserverClientFileExistsFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverClientFileExistsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverClientFileExistsFuncCall is an object that describes an
+// invocation of method FileExists on an instance of MockGitserverClient.
+type GitserverClientFileExistsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 bool
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverClientFileExistsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverClientFileExistsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // GitserverClientHeadFunc describes the behavior when the Head method of
@@ -903,6 +1040,121 @@ func (c GitserverClientListFilesFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverClientListFilesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitserverClientRawContentsFunc describes the behavior when the
+// RawContents method of the parent MockGitserverClient instance is invoked.
+type GitserverClientRawContentsFunc struct {
+	defaultHook func(context.Context, int, string, string) ([]byte, error)
+	hooks       []func(context.Context, int, string, string) ([]byte, error)
+	history     []GitserverClientRawContentsFuncCall
+	mutex       sync.Mutex
+}
+
+// RawContents delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGitserverClient) RawContents(v0 context.Context, v1 int, v2 string, v3 string) ([]byte, error) {
+	r0, r1 := m.RawContentsFunc.nextHook()(v0, v1, v2, v3)
+	m.RawContentsFunc.appendCall(GitserverClientRawContentsFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the RawContents method
+// of the parent MockGitserverClient instance is invoked and the hook queue
+// is empty.
+func (f *GitserverClientRawContentsFunc) SetDefaultHook(hook func(context.Context, int, string, string) ([]byte, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RawContents method of the parent MockGitserverClient instance inovkes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *GitserverClientRawContentsFunc) PushHook(hook func(context.Context, int, string, string) ([]byte, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *GitserverClientRawContentsFunc) SetDefaultReturn(r0 []byte, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string, string) ([]byte, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *GitserverClientRawContentsFunc) PushReturn(r0 []byte, r1 error) {
+	f.PushHook(func(context.Context, int, string, string) ([]byte, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverClientRawContentsFunc) nextHook() func(context.Context, int, string, string) ([]byte, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverClientRawContentsFunc) appendCall(r0 GitserverClientRawContentsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverClientRawContentsFuncCall objects
+// describing the invocations of this function.
+func (f *GitserverClientRawContentsFunc) History() []GitserverClientRawContentsFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverClientRawContentsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverClientRawContentsFuncCall is an object that describes an
+// invocation of method RawContents on an instance of MockGitserverClient.
+type GitserverClientRawContentsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []byte
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverClientRawContentsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverClientRawContentsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

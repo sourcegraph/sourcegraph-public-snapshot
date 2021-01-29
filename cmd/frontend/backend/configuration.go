@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -17,7 +17,7 @@ type configuration struct{}
 // GetForSubject gets the latest settings for a single settings subject, without performing any
 // cascading (merging settings from multiple subjects).
 func (configuration) GetForSubject(ctx context.Context, subject api.SettingsSubject) (*schema.Settings, error) {
-	settings, err := db.Settings.GetLatest(ctx, subject)
+	settings, err := database.GlobalSettings.GetLatest(ctx, subject)
 	if err != nil {
 		return nil, err
 	}

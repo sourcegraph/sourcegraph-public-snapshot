@@ -12,7 +12,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
@@ -107,7 +107,7 @@ func linksForRepository(ctx context.Context, repo *types.Repo) (phabRepo *types.
 	span.SetTag("ExternalRepo", repo.ExternalRepo)
 
 	var err error
-	phabRepo, err = db.Phabricator.GetByName(ctx, repo.Name)
+	phabRepo, err = database.GlobalPhabricator.GetByName(ctx, repo.Name)
 	if err != nil && !errcode.IsNotFound(err) {
 		ext.Error.Set(span, true)
 		span.SetTag("phabErr", err.Error())

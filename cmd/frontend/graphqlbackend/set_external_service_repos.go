@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 func (r *schemaResolver) SetExternalServiceRepos(ctx context.Context, args struct {
@@ -22,7 +22,7 @@ func (r *schemaResolver) SetExternalServiceRepos(ctx context.Context, args struc
 		return nil, err
 	}
 
-	es, err := db.ExternalServices.GetByID(ctx, id)
+	es, err := database.GlobalExternalServices.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +60,7 @@ func (r *schemaResolver) SetExternalServiceRepos(ctx context.Context, args struc
 	// set to time.Zero to sync ASAP
 	es.NextSyncAt = time.Time{}
 
-	err = db.ExternalServices.Upsert(ctx, es)
+	err = database.GlobalExternalServices.Upsert(ctx, es)
 	if err != nil {
 		return nil, err
 	}

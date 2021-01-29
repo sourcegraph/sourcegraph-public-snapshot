@@ -8,7 +8,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
@@ -74,7 +74,7 @@ func middleware(next http.Handler) http.Handler {
 			return
 		}
 		userID, safeErrMsg, err := auth.GetAndSaveUser(r.Context(), auth.GetAndSaveUserOp{
-			UserProps: db.NewUser{Username: username},
+			UserProps: database.NewUser{Username: username},
 			ExternalAccount: extsvc.AccountSpec{
 				ServiceType: providerType,
 				// Store rawUsername, not normalized username, to prevent two users with distinct

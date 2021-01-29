@@ -16,14 +16,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-// SyncRegistry manages a ChangesetSyncer per code host
+// SyncRegistry manages a changesetSyncer per code host
 type SyncRegistry struct {
 	Ctx                  context.Context
 	SyncStore            SyncStore
@@ -44,7 +44,7 @@ type RepoStore interface {
 }
 
 type ExternalServiceStore interface {
-	List(context.Context, db.ExternalServicesListOptions) ([]*types.ExternalService, error)
+	List(context.Context, database.ExternalServicesListOptions) ([]*types.ExternalService, error)
 }
 
 // NewSyncRegistry creates a new sync registry which starts a syncer for each code host and will update them
@@ -60,7 +60,7 @@ func NewSyncRegistry(ctx context.Context, store SyncStore, repoStore RepoStore, 
 		syncers:              make(map[string]*changesetSyncer),
 	}
 
-	services, err := esStore.List(ctx, db.ExternalServicesListOptions{})
+	services, err := esStore.List(ctx, database.ExternalServicesListOptions{})
 	if err != nil {
 		log15.Error("Fetching initial external services", "err", err)
 	}
@@ -115,7 +115,7 @@ func (s *SyncRegistry) Add(extSvc *types.ExternalService) {
 	go syncer.Run(ctx)
 }
 
-// handlePriorityItems fetches changesets in the priority queue from the db and passes them
+// handlePriorityItems fetches changesets in the priority queue from the database and passes them
 // to the appropriate syncer.
 func (s *SyncRegistry) handlePriorityItems() {
 	fetchSyncData := func(ids []int64) ([]*campaigns.ChangesetSyncData, error) {
@@ -426,7 +426,7 @@ func (s *changesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 		return err
 	}
 
-	repo, err := loadRepo(ctx, s.reposStore, cs.RepoID)
+	repo, err := s.reposStore.Get(ctx, cs.RepoID)
 	if err != nil {
 		return err
 	}
@@ -452,6 +452,12 @@ func SyncChangeset(ctx context.Context, syncStore SyncStore, source repos.Change
 	if err := source.LoadChangeset(ctx, repoChangeset); err != nil {
 		_, ok := err.(repos.ChangesetNotFoundError)
 		if !ok {
+			// Store the error as the syncer error.
+			errMsg := err.Error()
+			c.SyncErrorMessage = &errMsg
+			if err2 := syncStore.UpdateChangeset(ctx, c); err2 != nil {
+				return errors.Wrap(err, err2.Error())
+			}
 			return err
 		}
 
@@ -469,7 +475,11 @@ func SyncChangeset(ctx context.Context, syncStore SyncStore, source repos.Change
 	}
 	defer func() { err = tx.Done(err) }()
 
-	if err := tx.UpdateChangeset(ctx, c); err != nil {
+	// Reset syncer error message state.
+	c.SyncErrorMessage = nil
+
+	err = tx.UpdateChangeset(ctx, c)
+	if err != nil {
 		return err
 	}
 
@@ -484,6 +494,9 @@ func buildChangesetSource(
 	sources, err := sourcer(extSvc)
 	if err != nil {
 		return nil, err
+	}
+	if len(sources) != 1 {
+		return nil, fmt.Errorf("got no Source for external service %q", extSvc.Kind)
 	}
 
 	source, ok := sources[0].(repos.ChangesetSource)

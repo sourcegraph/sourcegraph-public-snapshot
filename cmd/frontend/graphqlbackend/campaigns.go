@@ -48,6 +48,10 @@ type SyncChangesetArgs struct {
 	Changeset graphql.ID
 }
 
+type ReenqueueChangesetArgs struct {
+	Changeset graphql.ID
+}
+
 type CreateChangesetSpecArgs struct {
 	ChangesetSpec string
 }
@@ -113,6 +117,7 @@ type CampaignsResolver interface {
 	CreateChangesetSpec(ctx context.Context, args *CreateChangesetSpecArgs) (ChangesetSpecResolver, error)
 	CreateCampaignSpec(ctx context.Context, args *CreateCampaignSpecArgs) (CampaignSpecResolver, error)
 	SyncChangeset(ctx context.Context, args *SyncChangesetArgs) (*EmptyResponse, error)
+	ReenqueueChangeset(ctx context.Context, args *ReenqueueChangesetArgs) (ChangesetResolver, error)
 	CreateCampaignsCredential(ctx context.Context, args *CreateCampaignsCredentialArgs) (CampaignsCredentialResolver, error)
 	DeleteCampaignsCredential(ctx context.Context, args *DeleteCampaignsCredentialArgs) (*EmptyResponse, error)
 
@@ -377,6 +382,9 @@ type CampaignsConnectionResolver interface {
 }
 
 type ChangesetsStatsResolver interface {
+	Retrying() int32
+	Failed() int32
+	Processing() int32
 	Unpublished() int32
 	Draft() int32
 	Open() int32
@@ -434,6 +442,7 @@ type ExternalChangesetResolver interface {
 	ExternalID() *string
 	Title(context.Context) (*string, error)
 	Body(context.Context) (*string, error)
+	Author() (*PersonResolver, error)
 	ExternalURL() (*externallink.Resolver, error)
 	ReviewState(context.Context) *campaigns.ChangesetReviewState
 	CheckState() *campaigns.ChangesetCheckState
@@ -445,6 +454,7 @@ type ExternalChangesetResolver interface {
 	Labels(ctx context.Context) ([]ChangesetLabelResolver, error)
 
 	Error() *string
+	SyncerError() *string
 
 	CurrentSpec(ctx context.Context) (VisibleChangesetSpecResolver, error)
 }
@@ -505,6 +515,10 @@ func (defaultCampaignsResolver) CloseCampaign(ctx context.Context, args *CloseCa
 }
 
 func (defaultCampaignsResolver) SyncChangeset(ctx context.Context, args *SyncChangesetArgs) (*EmptyResponse, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) ReenqueueChangeset(ctx context.Context, args *ReenqueueChangesetArgs) (ChangesetResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 

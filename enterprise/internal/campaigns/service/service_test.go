@@ -16,9 +16,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -128,6 +128,11 @@ func TestServicePermissionLevels(t *testing.T) {
 				t.Cleanup(func() { repoupdater.MockEnqueueChangesetSync = nil })
 
 				err := svc.EnqueueChangesetSync(currentUserCtx, changeset.ID)
+				tc.assertFunc(t, err)
+			})
+
+			t.Run("ReenqueueChangeset", func(t *testing.T) {
+				_, _, err := svc.ReenqueueChangeset(currentUserCtx, changeset.ID)
 				tc.assertFunc(t, err)
 			})
 
@@ -319,6 +324,50 @@ func TestService(t *testing.T) {
 		}
 	})
 
+	t.Run("ReenqueueChangeset", func(t *testing.T) {
+		spec := testCampaignSpec(admin.ID)
+		if err := s.CreateCampaignSpec(ctx, spec); err != nil {
+			t.Fatal(err)
+		}
+
+		campaign := testCampaign(admin.ID, spec)
+		if err := s.CreateCampaign(ctx, campaign); err != nil {
+			t.Fatal(err)
+		}
+
+		changeset := testChangeset(rs[0].ID, campaign.ID, campaigns.ChangesetExternalStateOpen)
+		if err := s.CreateChangeset(ctx, changeset); err != nil {
+			t.Fatal(err)
+		}
+
+		ct.SetChangesetFailed(t, ctx, s, changeset)
+
+		if _, _, err := svc.ReenqueueChangeset(ctx, changeset.ID); err != nil {
+			t.Fatal(err)
+		}
+
+		ct.ReloadAndAssertChangeset(t, ctx, s, changeset, ct.ChangesetAssertions{
+			Repo:          rs[0].ID,
+			ExternalState: campaigns.ChangesetExternalStateOpen,
+			ExternalID:    "ext-id-5",
+			AttachedTo:    []int64{campaign.ID},
+
+			// The important fields:
+			ReconcilerState: campaigns.ReconcilerStateQueued,
+			NumResets:       0,
+			NumFailures:     0,
+			FailureMessage:  nil,
+		})
+
+		// rs[0] is filtered out
+		ct.MockRepoPermissions(t, user.ID, rs[1].ID, rs[2].ID, rs[3].ID)
+
+		// should result in a not found error
+		if _, _, err := svc.ReenqueueChangeset(ctx, changeset.ID); !errcode.IsNotFound(err) {
+			t.Fatalf("expected not-found error but got %v", err)
+		}
+	})
+
 	t.Run("CreateCampaignSpec", func(t *testing.T) {
 		changesetSpecs := make([]*campaigns.ChangesetSpec, 0, len(rs))
 		changesetSpecRandIDs := make([]string, 0, len(rs))
@@ -452,7 +501,7 @@ func TestService(t *testing.T) {
 		})
 
 		t.Run("missing access to namespace org", func(t *testing.T) {
-			org, err := db.Orgs.Create(ctx, "test-org", nil)
+			org, err := database.GlobalOrgs.Create(ctx, "test-org", nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -471,7 +520,7 @@ func TestService(t *testing.T) {
 			}
 
 			// Create org membership and try again
-			if _, err := db.OrgMembers.Create(ctx, org.ID, user.ID); err != nil {
+			if _, err := database.GlobalOrgMembers.Create(ctx, org.ID, user.ID); err != nil {
 				t.Fatal(err)
 			}
 
@@ -646,7 +695,7 @@ func TestService(t *testing.T) {
 		t.Run("new org namespace", func(t *testing.T) {
 			campaign := createCampaign(t, "old-name", admin.ID, admin.ID, 0)
 
-			org, err := db.Orgs.Create(ctx, "org", nil)
+			org, err := database.GlobalOrgs.Create(ctx, "org", nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -669,7 +718,7 @@ func TestService(t *testing.T) {
 		t.Run("new org namespace but current user is missing access", func(t *testing.T) {
 			campaign := createCampaign(t, "old-name", user.ID, user.ID, 0)
 
-			org, err := db.Orgs.Create(ctx, "org-no-access", nil)
+			org, err := database.GlobalOrgs.Create(ctx, "org-no-access", nil)
 			if err != nil {
 				t.Fatal(err)
 			}

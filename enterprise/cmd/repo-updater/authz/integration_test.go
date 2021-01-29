@@ -11,14 +11,14 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/db"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	authzGitHub "github.com/sourcegraph/sourcegraph/internal/authz/github"
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	extsvcGitHub "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -108,7 +108,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 	}
 
 	dbconn.Global = testDB
-	newUser := db.NewUser{
+	newUser := database.NewUser{
 		Email:           "sourcegraph-vcr-bob@sourcegraph.com",
 		Username:        "sourcegraph-vcr-bob",
 		EmailIsVerified: true,
@@ -118,12 +118,12 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 		ServiceID:   "https://github.com/",
 		AccountID:   "66464926",
 	}
-	userID, err := db.ExternalAccounts.CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{})
+	userID, err := database.GlobalExternalAccounts.CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	permsStore := edb.NewPermsStore(testDB, timeutil.Now)
+	permsStore := edb.Perms(testDB, timeutil.Now)
 	syncer := NewPermsSyncer(reposStore, permsStore, timeutil.Now, nil)
 
 	err = syncer.syncRepoPerms(ctx, repo.ID, false)

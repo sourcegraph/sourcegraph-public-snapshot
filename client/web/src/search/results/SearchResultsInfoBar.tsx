@@ -20,7 +20,7 @@ export interface SearchResultsInfoBarProps
     extends ExtensionsControllerProps<'executeCommand' | 'services'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         TelemetryProps,
-        PatternTypeProps,
+        Pick<PatternTypeProps, 'patternType'>,
         Pick<CodeMonitoringProps, 'enableCodeMonitoring'> {
     history: H.History
     /** The currently authenticated user or null */

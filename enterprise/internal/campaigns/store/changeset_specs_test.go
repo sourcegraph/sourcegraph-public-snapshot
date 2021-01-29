@@ -13,14 +13,14 @@ import (
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
-	repoStore := db.NewRepoStoreWith(s)
-	esStore := db.NewExternalServicesStoreWith(s)
+	repoStore := database.ReposWith(s)
+	esStore := database.ExternalServicesWith(s)
 
 	repo := ct.TestRepo(t, esStore, extsvc.KindGitHub)
 	deletedRepo := ct.TestRepo(t, esStore, extsvc.KindGitHub).With(types.Opt.RepoDeletedAt(clock.Now()))
@@ -563,7 +563,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
 					opts := GetRewirerMappingsOpts{
 						CampaignSpecID: campaignSpec.ID,
-						LimitOffset:    &db.LimitOffset{Limit: i},
+						LimitOffset:    &database.LimitOffset{Limit: i},
 					}
 					ts, err := s.GetRewirerMappings(ctx, opts)
 					if err != nil {
@@ -623,7 +623,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
 					opts := GetRewirerMappingsOpts{
 						CampaignSpecID: campaignSpec.ID,
-						LimitOffset:    &db.LimitOffset{Limit: 1, Offset: offset},
+						LimitOffset:    &database.LimitOffset{Limit: 1, Offset: offset},
 					}
 					ts, err := s.GetRewirerMappings(ctx, opts)
 					if err != nil {
@@ -678,8 +678,8 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 }
 
 func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
-	repoStore := db.NewRepoStoreWith(s)
-	esStore := db.NewExternalServicesStoreWith(s)
+	repoStore := database.ReposWith(s)
+	esStore := database.ExternalServicesWith(s)
 
 	// OK, let's set up an interesting scenario. We're going to set up a
 	// campaign that tracks two changesets in different repositories, and
@@ -930,7 +930,7 @@ func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Sto
 				have, err := s.GetRewirerMappings(ctx, GetRewirerMappingsOpts{
 					CampaignSpecID: newCampaignSpec.ID,
 					CampaignID:     campaign.ID,
-					LimitOffset:    &db.LimitOffset{Limit: 1},
+					LimitOffset:    &database.LimitOffset{Limit: 1},
 					TextSearch:     tc.search,
 				})
 				if err != nil {
@@ -950,7 +950,7 @@ func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Sto
 				have, err := s.GetRewirerMappings(ctx, GetRewirerMappingsOpts{
 					CampaignSpecID: newCampaignSpec.ID,
 					CampaignID:     campaign.ID,
-					LimitOffset:    &db.LimitOffset{Offset: 1, Limit: 1},
+					LimitOffset:    &database.LimitOffset{Offset: 1, Limit: 1},
 					TextSearch:     tc.search,
 				})
 				if err != nil {

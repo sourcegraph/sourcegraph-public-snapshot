@@ -188,6 +188,15 @@ func (r *Resolver) UpdateRepositoryIndexConfiguration(ctx context.Context, args 
 	return &gql.EmptyResponse{}, nil
 }
 
+func (r *Resolver) CommitGraph(ctx context.Context, id graphql.ID) (gql.CodeIntelligenceCommitGraphResolver, error) {
+	repositoryID, err := gql.UnmarshalRepositoryID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.resolver.CommitGraph(ctx, int(repositoryID))
+}
+
 func (r *Resolver) QueueAutoIndexJobForRepo(ctx context.Context, id graphql.ID) (*gql.EmptyResponse, error) {
 	if !autoIndexingEnabled() {
 		return nil, errAutoIndexingNotEnabled

@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -22,7 +22,7 @@ func TestGetArchive(t *testing.T) {
 	now := time.Now().UTC()
 	ctx := context.Background()
 
-	user, err := db.Users.Create(ctx, db.NewUser{
+	user, err := database.GlobalUsers.Create(ctx, database.NewUser{
 		Email:           "foo@bar.com",
 		Username:        "admin",
 		EmailIsVerified: true,
@@ -31,7 +31,7 @@ func TestGetArchive(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	event := &db.Event{
+	event := &database.Event{
 		Name:      "SearchResultsQueried",
 		URL:       "test",
 		UserID:    uint32(user.ID),
@@ -39,12 +39,12 @@ func TestGetArchive(t *testing.T) {
 		Timestamp: now,
 	}
 
-	err = db.EventLogs.Insert(ctx, event)
+	err = database.GlobalEventLogs.Insert(ctx, event)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	dates, err := db.Users.ListDates(ctx)
+	dates, err := database.GlobalUsers.ListDates(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}

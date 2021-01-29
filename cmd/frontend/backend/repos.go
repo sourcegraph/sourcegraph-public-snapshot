@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -48,7 +48,7 @@ func (s *repos) Get(ctx context.Context, repo api.RepoID) (_ *types.Repo, err er
 	ctx, done := trace(ctx, "Repos", "Get", repo, &err)
 	defer done()
 
-	return db.Repos.Get(ctx, repo)
+	return database.GlobalRepos.Get(ctx, repo)
 }
 
 // GetByName retrieves the repository with the given name. On sourcegraph.com,
@@ -63,7 +63,7 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 	ctx, done := trace(ctx, "Repos", "GetByName", name, &err)
 	defer done()
 
-	switch repo, err := db.Repos.GetByName(ctx, name); {
+	switch repo, err := database.GlobalRepos.GetByName(ctx, name); {
 	case err == nil:
 		return repo, nil
 	case !errcode.IsNotFound(err):
@@ -73,7 +73,7 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 		if err := s.Add(ctx, name); err != nil {
 			return nil, err
 		}
-		return db.Repos.GetByName(ctx, name)
+		return database.GlobalRepos.GetByName(ctx, name)
 	case shouldRedirect(name):
 		return nil, ErrRepoSeeOther{RedirectURL: (&url.URL{
 			Scheme:   "https",
@@ -128,7 +128,7 @@ func (s *repos) Add(ctx context.Context, name api.RepoName) (err error) {
 	return err
 }
 
-func (s *repos) List(ctx context.Context, opt db.ReposListOptions) (repos []*types.Repo, err error) {
+func (s *repos) List(ctx context.Context, opt database.ReposListOptions) (repos []*types.Repo, err error) {
 	if Mocks.Repos.List != nil {
 		return Mocks.Repos.List(ctx, opt)
 	}
@@ -142,10 +142,10 @@ func (s *repos) List(ctx context.Context, opt db.ReposListOptions) (repos []*typ
 		done()
 	}()
 
-	return db.Repos.List(ctx, opt)
+	return database.GlobalRepos.List(ctx, opt)
 }
 
-// ListDefault calls db.DefaultRepos.List, with tracing.
+// ListDefault calls database.DefaultRepos.List, with tracing.
 func (s *repos) ListDefault(ctx context.Context) (repos []*types.RepoName, err error) {
 	ctx, done := trace(ctx, "Repos", "ListDefault", nil, &err)
 	defer func() {
@@ -155,7 +155,7 @@ func (s *repos) ListDefault(ctx context.Context) (repos []*types.RepoName, err e
 		}
 		done()
 	}()
-	return db.DefaultRepos.List(ctx)
+	return database.GlobalDefaultRepos.List(ctx)
 }
 
 func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api.CommitID, forceEnhancedLanguageDetection bool) (res *inventory.Inventory, err error) {

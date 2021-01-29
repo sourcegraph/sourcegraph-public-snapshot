@@ -60,6 +60,28 @@ add('1 result from 1 repository, in progress', () => {
     )
 })
 
+add('big numbers, done', () => {
+    const progress: Progress = {
+        durationMs: 52500,
+        matchCount: 1234567,
+        repositoriesCount: 8901,
+        skipped: [],
+    }
+
+    return (
+        <WebStory>
+            {() => (
+                <StreamingProgress
+                    progress={progress}
+                    state="complete"
+                    onSearchAgain={onSearchAgain}
+                    history={history}
+                />
+            )}
+        </WebStory>
+    )
+})
+
 add('2 results from 2 repositories, complete, skipped with info', () => {
     const progress: Progress = {
         durationMs: 1500,

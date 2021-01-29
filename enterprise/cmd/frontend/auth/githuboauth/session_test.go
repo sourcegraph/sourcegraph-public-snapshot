@@ -13,7 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	githubsvc "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"golang.org/x/oauth2"
@@ -241,8 +241,8 @@ func TestGetOrCreateUser(t *testing.T) {
 	}
 }
 
-func u(username, email string, emailIsVerified bool) db.NewUser {
-	return db.NewUser{
+func u(username, email string, emailIsVerified bool) database.NewUser {
+	return database.NewUser{
 		Username:        username,
 		Email:           email,
 		EmailIsVerified: emailIsVerified,

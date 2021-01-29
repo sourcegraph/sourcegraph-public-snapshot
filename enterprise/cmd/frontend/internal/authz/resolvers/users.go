@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -55,7 +55,7 @@ func (r *userConnectionResolver) compute(ctx context.Context) ([]*types.User, *g
 			}
 		}
 
-		r.users, r.err = db.Users.List(ctx, &db.UsersListOptions{
+		r.users, r.err = database.GlobalUsers.List(ctx, &database.UsersListOptions{
 			UserIDs: userIDs,
 		})
 		if r.err != nil {

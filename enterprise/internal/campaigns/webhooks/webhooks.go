@@ -20,7 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -45,7 +45,7 @@ var (
 
 type Webhook struct {
 	Store            *store.Store
-	ExternalServices *db.ExternalServiceStore
+	ExternalServices *database.ExternalServiceStore
 	Now              func() time.Time
 
 	// ServiceType corresponds to api.ExternalRepoSpec.ServiceType
@@ -64,8 +64,8 @@ func (h Webhook) getRepoForPR(
 	pr PR,
 	externalServiceID string,
 ) (*types.Repo, error) {
-	reposTx := db.NewRepoStoreWith(tx)
-	rs, err := reposTx.List(ctx, db.ReposListOptions{
+	reposTx := database.ReposWith(tx)
+	rs, err := reposTx.List(ctx, database.ReposListOptions{
 		ExternalRepos: []api.ExternalRepoSpec{
 			{
 				ID:          pr.RepoExternalID,
@@ -213,7 +213,7 @@ type BitbucketServerWebhook struct {
 	configCache map[int64]*schema.BitbucketServerConnection
 }
 
-func NewGitHubWebhook(store *store.Store, externalServices *db.ExternalServiceStore, now func() time.Time) *GitHubWebhook {
+func NewGitHubWebhook(store *store.Store, externalServices *database.ExternalServiceStore, now func() time.Time) *GitHubWebhook {
 	return &GitHubWebhook{&Webhook{store, externalServices, now, extsvc.TypeGitHub}}
 }
 
@@ -769,7 +769,7 @@ func (*GitHubWebhook) checkRunEvent(cr *gh.CheckRun) *github.CheckRun {
 	}
 }
 
-func NewBitbucketServerWebhook(store *store.Store, externalServices *db.ExternalServiceStore, now func() time.Time, name string) *BitbucketServerWebhook {
+func NewBitbucketServerWebhook(store *store.Store, externalServices *database.ExternalServiceStore, now func() time.Time, name string) *BitbucketServerWebhook {
 	return &BitbucketServerWebhook{
 		Webhook:     &Webhook{store, externalServices, now, extsvc.TypeBitbucketServer},
 		Name:        name,
@@ -827,7 +827,7 @@ func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *type
 		}
 	}
 
-	args := db.ExternalServicesListOptions{Kinds: []string{extsvc.KindBitbucketServer}}
+	args := database.ExternalServicesListOptions{Kinds: []string{extsvc.KindBitbucketServer}}
 	if externalServiceID != 0 {
 		args.IDs = append(args.IDs, externalServiceID)
 	}

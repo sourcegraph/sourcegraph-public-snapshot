@@ -13,6 +13,7 @@ import {
     CopyQueryButtonProps,
     OnboardingTourProps,
     ShowQueryBuilderProps,
+    ParsedSearchQueryProps,
 } from '../search'
 import { eventLogger } from '../tracking/eventLogger'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
@@ -38,6 +39,7 @@ export interface RepogroupPageProps
         ThemePreferenceProps,
         ActivationProps,
         TelemetryProps,
+        Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
         PatternTypeProps,
         CaseSensitivityProps,
         KeyboardShortcutsProps,

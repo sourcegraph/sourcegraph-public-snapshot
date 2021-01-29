@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 )
@@ -61,7 +61,7 @@ func (r *statusMessageResolver) Message() (string, error) {
 
 func (r *statusMessageResolver) ExternalService(ctx context.Context) (*externalServiceResolver, error) {
 	id := r.message.ExternalServiceSyncError.ExternalServiceId
-	externalService, err := db.ExternalServices.GetByID(ctx, id)
+	externalService, err := database.GlobalExternalServices.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}

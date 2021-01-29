@@ -10,14 +10,14 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	idb "github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func TestRepo(t *testing.T, store *idb.ExternalServiceStore, serviceKind string) *types.Repo {
+func TestRepo(t *testing.T, store *database.ExternalServiceStore, serviceKind string) *types.Repo {
 	t.Helper()
 
 	clock := timeutil.NewFakeClock(time.Now(), 0)
@@ -26,7 +26,7 @@ func TestRepo(t *testing.T, store *idb.ExternalServiceStore, serviceKind string)
 	svc := types.ExternalService{
 		Kind:        serviceKind,
 		DisplayName: serviceKind + " - Test",
-		Config:      `{"url": "https://github.com"}`,
+		Config:      `{"url": "https://github.com", "authorization": {}}`,
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
@@ -56,8 +56,8 @@ func TestRepo(t *testing.T, store *idb.ExternalServiceStore, serviceKind string)
 func CreateTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) ([]*types.Repo, *types.ExternalService) {
 	t.Helper()
 
-	repoStore := idb.NewRepoStoreWithDB(db)
-	esStore := idb.NewExternalServicesStoreWithDB(db)
+	repoStore := database.Repos(db)
+	esStore := database.ExternalServices(db)
 
 	ext := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
@@ -101,8 +101,8 @@ func CreateTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) (
 func CreateGitlabTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) ([]*types.Repo, *types.ExternalService) {
 	t.Helper()
 
-	repoStore := idb.NewRepoStoreWithDB(db)
-	esStore := idb.NewExternalServicesStoreWithDB(db)
+	repoStore := database.Repos(db)
+	esStore := database.ExternalServices(db)
 
 	ext := &types.ExternalService{
 		Kind:        extsvc.KindGitLab,
@@ -170,8 +170,8 @@ func createBbsRepos(t *testing.T, ctx context.Context, db *sql.DB, ext *types.Ex
 
 	t.Helper()
 
-	repoStore := idb.NewRepoStoreWithDB(db)
-	esStore := idb.NewExternalServicesStoreWithDB(db)
+	repoStore := database.Repos(db)
+	esStore := database.ExternalServices(db)
 
 	if err := esStore.Upsert(ctx, ext); err != nil {
 		t.Fatal(err)

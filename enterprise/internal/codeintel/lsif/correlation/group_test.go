@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/lsif-protocol/reader"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bloomfilter"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/datastructures"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/lsif"
@@ -22,74 +24,92 @@ func TestGroupBundleData(t *testing.T) {
 		},
 		RangeData: map[int]lsif.Range{
 			2001: {
-				StartLine:          1,
-				StartCharacter:     2,
-				EndLine:            3,
-				EndCharacter:       4,
+				Range: reader.Range{
+					StartLine:      1,
+					StartCharacter: 2,
+					EndLine:        3,
+					EndCharacter:   4,
+				},
 				DefinitionResultID: 3001,
 				ReferenceResultID:  0,
 			},
 			2002: {
-				StartLine:          2,
-				StartCharacter:     3,
-				EndLine:            4,
-				EndCharacter:       5,
+				Range: reader.Range{
+					StartLine:      2,
+					StartCharacter: 3,
+					EndLine:        4,
+					EndCharacter:   5,
+				},
 				DefinitionResultID: 0,
 				ReferenceResultID:  3006,
 			},
 			2003: {
-				StartLine:          3,
-				StartCharacter:     4,
-				EndLine:            5,
-				EndCharacter:       6,
+				Range: reader.Range{
+					StartLine:      3,
+					StartCharacter: 4,
+					EndLine:        5,
+					EndCharacter:   6,
+				},
 				DefinitionResultID: 3002,
 				ReferenceResultID:  0,
 			},
 			2004: {
-				StartLine:          4,
-				StartCharacter:     5,
-				EndLine:            6,
-				EndCharacter:       7,
+				Range: reader.Range{
+					StartLine:      4,
+					StartCharacter: 5,
+					EndLine:        6,
+					EndCharacter:   7,
+				},
 				DefinitionResultID: 0,
 				ReferenceResultID:  3007,
 			},
 			2005: {
-				StartLine:          5,
-				StartCharacter:     6,
-				EndLine:            7,
-				EndCharacter:       8,
+				Range: reader.Range{
+					StartLine:      5,
+					StartCharacter: 6,
+					EndLine:        7,
+					EndCharacter:   8,
+				},
 				DefinitionResultID: 3003,
 				ReferenceResultID:  0,
 			},
 			2006: {
-				StartLine:          6,
-				StartCharacter:     7,
-				EndLine:            8,
-				EndCharacter:       9,
+				Range: reader.Range{
+					StartLine:      6,
+					StartCharacter: 7,
+					EndLine:        8,
+					EndCharacter:   9,
+				},
 				DefinitionResultID: 0,
 				HoverResultID:      3008,
 			},
 			2007: {
-				StartLine:          7,
-				StartCharacter:     8,
-				EndLine:            9,
-				EndCharacter:       0,
+				Range: reader.Range{
+					StartLine:      7,
+					StartCharacter: 8,
+					EndLine:        9,
+					EndCharacter:   0,
+				},
 				DefinitionResultID: 3004,
 				ReferenceResultID:  0,
 			},
 			2008: {
-				StartLine:          8,
-				StartCharacter:     9,
-				EndLine:            0,
-				EndCharacter:       1,
+				Range: reader.Range{
+					StartLine:      8,
+					StartCharacter: 9,
+					EndLine:        0,
+					EndCharacter:   1,
+				},
 				DefinitionResultID: 0,
 				HoverResultID:      3009,
 			},
 			2009: {
-				StartLine:          9,
-				StartCharacter:     0,
-				EndLine:            1,
-				EndCharacter:       2,
+				Range: reader.Range{
+					StartLine:      9,
+					StartCharacter: 0,
+					EndLine:        1,
+					EndCharacter:   2,
+				},
 				DefinitionResultID: 3005,
 				ReferenceResultID:  0,
 			},
@@ -137,27 +157,35 @@ func TestGroupBundleData(t *testing.T) {
 		},
 		MonikerData: map[int]lsif.Moniker{
 			4001: {
-				Kind:                 "import",
-				Scheme:               "scheme A",
-				Identifier:           "ident A",
+				Moniker: reader.Moniker{
+					Kind:       "import",
+					Scheme:     "scheme A",
+					Identifier: "ident A",
+				},
 				PackageInformationID: 5001,
 			},
 			4002: {
-				Kind:                 "import",
-				Scheme:               "scheme B",
-				Identifier:           "ident B",
+				Moniker: reader.Moniker{
+					Kind:       "import",
+					Scheme:     "scheme B",
+					Identifier: "ident B",
+				},
 				PackageInformationID: 0,
 			},
 			4003: {
-				Kind:                 "export",
-				Scheme:               "scheme C",
-				Identifier:           "ident C",
+				Moniker: reader.Moniker{
+					Kind:       "export",
+					Scheme:     "scheme C",
+					Identifier: "ident C",
+				},
 				PackageInformationID: 5002,
 			},
 			4004: {
-				Kind:                 "export",
-				Scheme:               "scheme D",
-				Identifier:           "ident D",
+				Moniker: reader.Moniker{
+					Kind:       "export",
+					Scheme:     "scheme D",
+					Identifier: "ident D",
+				},
 				PackageInformationID: 0,
 			},
 		},

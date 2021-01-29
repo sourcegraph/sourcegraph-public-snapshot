@@ -11,8 +11,8 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
@@ -30,12 +30,12 @@ type Store struct {
 	now func() time.Time
 }
 
-// New returns a new Store backed by the given db.
+// New returns a new Store backed by the given database.
 func New(db dbutil.DB) *Store {
 	return NewWithClock(db, timeutil.Now)
 }
 
-// NewWithClock returns a new Store backed by the given db and
+// NewWithClock returns a new Store backed by the given database and
 // clock for timestamps.
 func NewWithClock(db dbutil.DB, clock func() time.Time) *Store {
 	return &Store{Store: basestore.NewWithDB(db, sql.TxOptions{}), now: clock}
@@ -125,14 +125,6 @@ func jsonbColumn(metadata interface{}) (msg json.RawMessage, err error) {
 		msg, err = json.MarshalIndent(m, "        ", "    ")
 	}
 	return
-}
-
-func jsonSetColumn(ids []int64) ([]byte, error) {
-	set := make(map[int64]*struct{}, len(ids))
-	for _, id := range ids {
-		set[id] = nil
-	}
-	return json.Marshal(set)
 }
 
 func nullInt32Column(n int32) *int32 {

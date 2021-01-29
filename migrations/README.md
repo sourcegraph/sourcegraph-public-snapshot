@@ -46,7 +46,7 @@ After adding SQL statements to those files, embed them into the Go code and upda
 
 ```
 go generate ./migrations/...
-go generate ./internal/db/
+go generate ./internal/database/
 ```
 
 Alternatively, regenerate everything in the repository via `./dev/generate.sh`.

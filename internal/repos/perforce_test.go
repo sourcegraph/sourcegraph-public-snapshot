@@ -104,6 +104,14 @@ func TestPerforceSource_makeRepo(t *testing.T) {
 				P4User:   "admin",
 				P4Passwd: "pa$$word",
 			},
+		}, {
+			name: "path-pattern",
+			schmea: &schema.PerforceConnection{
+				P4Port:                "ssl:111.222.333.444:1666",
+				P4User:                "admin",
+				P4Passwd:              "pa$$word",
+				RepositoryPathPattern: "perforce/{depot}",
+			},
 		},
 	}
 	for _, test := range tests {

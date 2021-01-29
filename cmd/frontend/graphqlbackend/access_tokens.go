@@ -9,12 +9,13 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 type createAccessTokenInput struct {
@@ -72,7 +73,7 @@ func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAcce
 		return nil, fmt.Errorf("all access tokens must have scope %q", authz.ScopeUserAll)
 	}
 
-	id, token, err := db.AccessTokens.Create(ctx, userID, args.Scopes, args.Note, actor.FromContext(ctx).UID)
+	id, token, err := database.GlobalAccessTokens.Create(ctx, userID, args.Scopes, args.Note, actor.FromContext(ctx).UID)
 
 	if conf.CanSendEmail() {
 		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, userID, "created an access token"); err != nil {
@@ -111,7 +112,7 @@ func (r *schemaResolver) DeleteAccessToken(ctx context.Context, args *deleteAcce
 		if err != nil {
 			return nil, err
 		}
-		token, err := db.AccessTokens.GetByID(ctx, accessTokenID)
+		token, err := database.GlobalAccessTokens.GetByID(ctx, accessTokenID)
 		if err != nil {
 			return nil, err
 		}
@@ -121,12 +122,12 @@ func (r *schemaResolver) DeleteAccessToken(ctx context.Context, args *deleteAcce
 		if err := backend.CheckSiteAdminOrSameUser(ctx, token.SubjectUserID); err != nil {
 			return nil, err
 		}
-		if err := db.AccessTokens.DeleteByID(ctx, token.ID, token.SubjectUserID); err != nil {
+		if err := database.GlobalAccessTokens.DeleteByID(ctx, token.ID, token.SubjectUserID); err != nil {
 			return nil, err
 		}
 
 	case args.ByToken != nil:
-		token, err := db.AccessTokens.GetByToken(ctx, *args.ByToken)
+		token, err := database.GlobalAccessTokens.GetByToken(ctx, *args.ByToken)
 		if err != nil {
 			return nil, err
 		}
@@ -134,7 +135,7 @@ func (r *schemaResolver) DeleteAccessToken(ctx context.Context, args *deleteAcce
 
 		// 🚨 SECURITY: This is easier than the ByID case because anyone holding the access token's
 		// secret value is assumed to be allowed to delete it.
-		if err := db.AccessTokens.DeleteByToken(ctx, *args.ByToken); err != nil {
+		if err := database.GlobalAccessTokens.DeleteByToken(ctx, *args.ByToken); err != nil {
 			return nil, err
 		}
 
@@ -157,7 +158,7 @@ func (r *siteResolver) AccessTokens(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	var opt db.AccessTokensListOptions
+	var opt database.AccessTokensListOptions
 	args.ConnectionArgs.Set(&opt.LimitOffset)
 	return &accessTokenConnectionResolver{opt: opt}, nil
 }
@@ -170,7 +171,7 @@ func (r *UserResolver) AccessTokens(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	opt := db.AccessTokensListOptions{SubjectUserID: r.user.ID}
+	opt := database.AccessTokensListOptions{SubjectUserID: r.user.ID}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
 	return &accessTokenConnectionResolver{opt: opt}, nil
 }
@@ -180,15 +181,15 @@ func (r *UserResolver) AccessTokens(ctx context.Context, args *struct {
 // 🚨 SECURITY: When instantiating an accessTokenConnectionResolver value, the caller MUST check
 // permissions.
 type accessTokenConnectionResolver struct {
-	opt db.AccessTokensListOptions
+	opt database.AccessTokensListOptions
 
 	// cache results because they are used by multiple fields
 	once         sync.Once
-	accessTokens []*db.AccessToken
+	accessTokens []*database.AccessToken
 	err          error
 }
 
-func (r *accessTokenConnectionResolver) compute(ctx context.Context) ([]*db.AccessToken, error) {
+func (r *accessTokenConnectionResolver) compute(ctx context.Context) ([]*database.AccessToken, error) {
 	r.once.Do(func() {
 		opt2 := r.opt
 		if opt2.LimitOffset != nil {
@@ -197,7 +198,7 @@ func (r *accessTokenConnectionResolver) compute(ctx context.Context) ([]*db.Acce
 			opt2.Limit++ // so we can detect if there is a next page
 		}
 
-		r.accessTokens, r.err = db.AccessTokens.List(ctx, opt2)
+		r.accessTokens, r.err = database.GlobalAccessTokens.List(ctx, opt2)
 	})
 	return r.accessTokens, r.err
 }
@@ -219,7 +220,7 @@ func (r *accessTokenConnectionResolver) Nodes(ctx context.Context) ([]*accessTok
 }
 
 func (r *accessTokenConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	count, err := db.AccessTokens.Count(ctx, r.opt)
+	count, err := database.GlobalAccessTokens.Count(ctx, r.opt)
 	return int32(count), err
 }
 

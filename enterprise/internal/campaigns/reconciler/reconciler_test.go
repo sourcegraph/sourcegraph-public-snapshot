@@ -10,8 +10,8 @@ import (
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -152,6 +152,7 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 			assertions := tc.wantChangeset
 			assertions.Repo = rs[0].ID
 			assertions.OwnedByCampaign = changesetOpts.OwnedByCampaign
+			assertions.AttachedTo = []int64{campaign.ID}
 			assertions.CurrentSpec = changesetSpec.ID
 			assertions.PreviousSpec = previousSpec.ID
 			ct.ReloadAndAssertChangeset(t, ctx, store, changeset, assertions)

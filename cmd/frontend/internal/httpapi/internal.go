@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -50,7 +50,7 @@ func servePhabricatorRepoCreate(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	phabRepo, err := db.Phabricator.CreateOrUpdate(r.Context(), repo.Callsign, repo.RepoName, repo.URL)
+	phabRepo, err := database.GlobalPhabricator.CreateOrUpdate(r.Context(), repo.Callsign, repo.RepoName, repo.URL)
 	if err != nil {
 		return err
 	}
@@ -72,17 +72,17 @@ func serveExternalServiceConfigs(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	options := db.ExternalServicesListOptions{
+	options := database.ExternalServicesListOptions{
 		Kinds:   []string{req.Kind},
 		AfterID: int64(req.AfterID),
 	}
 	if req.Limit > 0 {
-		options.LimitOffset = &db.LimitOffset{
+		options.LimitOffset = &database.LimitOffset{
 			Limit: req.Limit,
 		}
 	}
 
-	services, err := db.ExternalServices.List(r.Context(), options)
+	services, err := database.GlobalExternalServices.List(r.Context(), options)
 	if err != nil {
 		return err
 	}
@@ -124,17 +124,17 @@ func serveExternalServicesList(w http.ResponseWriter, r *http.Request) error {
 		req.Kinds = append(req.Kinds, req.Kind)
 	}
 
-	options := db.ExternalServicesListOptions{
+	options := database.ExternalServicesListOptions{
 		Kinds:   []string{req.Kind},
 		AfterID: int64(req.AfterID),
 	}
 	if req.Limit > 0 {
-		options.LimitOffset = &db.LimitOffset{
+		options.LimitOffset = &database.LimitOffset{
 			Limit: req.Limit,
 		}
 	}
 
-	services, err := db.ExternalServices.List(r.Context(), options)
+	services, err := database.GlobalExternalServices.List(r.Context(), options)
 	if err != nil {
 		return err
 	}
@@ -166,7 +166,7 @@ func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 	siteConfig := conf.Get().SiteConfiguration
 	getRepoIndexOptions := func(repoName string) (*searchbackend.RepoIndexOptions, error) {
-		repo, err := db.Repos.GetByName(ctx, api.RepoName(repoName))
+		repo, err := database.GlobalRepos.GetByName(ctx, api.RepoName(repoName))
 		if err != nil {
 			return nil, err
 		}
@@ -207,7 +207,7 @@ type reposListServer struct {
 		// ListDefault returns the repositories to index on Sourcegraph.com
 		ListDefault(context.Context) ([]*types.RepoName, error)
 		// List returns a list of repositories
-		List(context.Context, db.ReposListOptions) ([]*types.Repo, error)
+		List(context.Context, database.ReposListOptions) ([]*types.Repo, error)
 	}
 
 	// Indexers is the subset of searchbackend.Indexers methods we
@@ -249,7 +249,7 @@ func (h *reposListServer) serveIndex(w http.ResponseWriter, r *http.Request) err
 		}
 	} else {
 		trueP := true
-		res, err := h.Repos.List(r.Context(), db.ReposListOptions{Index: &trueP})
+		res, err := h.Repos.List(r.Context(), database.ReposListOptions{Index: &trueP})
 		if err != nil {
 			return errors.Wrap(err, "listing repos")
 		}
@@ -283,7 +283,7 @@ func (h *reposListServer) serveIndex(w http.ResponseWriter, r *http.Request) err
 }
 
 func serveReposListEnabled(w http.ResponseWriter, r *http.Request) error {
-	names, err := db.Repos.ListEnabledNames(r.Context())
+	names, err := database.GlobalRepos.ListEnabledNames(r.Context())
 	if err != nil {
 		return err
 	}
@@ -292,9 +292,9 @@ func serveReposListEnabled(w http.ResponseWriter, r *http.Request) error {
 
 func serveSavedQueriesListAll(w http.ResponseWriter, r *http.Request) error {
 	// List settings for all users, orgs, etc.
-	settings, err := db.SavedSearches.ListAll(r.Context())
+	settings, err := database.GlobalSavedSearches.ListAll(r.Context())
 	if err != nil {
-		return errors.Wrap(err, "db.SavedSearches.ListAll")
+		return errors.Wrap(err, "database.SavedSearches.ListAll")
 	}
 
 	queries := make([]api.SavedQuerySpecAndConfig, 0, len(settings))
@@ -325,7 +325,7 @@ func serveSavedQueriesGetInfo(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return errors.Wrap(err, "Decode")
 	}
-	info, err := db.QueryRunnerState.Get(r.Context(), query)
+	info, err := database.GlobalQueryRunnerState.Get(r.Context(), query)
 	if err != nil {
 		return errors.Wrap(err, "SavedQueries.Get")
 	}
@@ -341,7 +341,7 @@ func serveSavedQueriesSetInfo(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return errors.Wrap(err, "Decode")
 	}
-	err = db.QueryRunnerState.Set(r.Context(), &db.SavedQueryInfo{
+	err = database.GlobalQueryRunnerState.Set(r.Context(), &database.SavedQueryInfo{
 		Query:        info.Query,
 		LastExecuted: info.LastExecuted,
 		LatestResult: info.LatestResult,
@@ -361,7 +361,7 @@ func serveSavedQueriesDeleteInfo(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return errors.Wrap(err, "Decode")
 	}
-	err = db.QueryRunnerState.Delete(r.Context(), query)
+	err = database.GlobalQueryRunnerState.Delete(r.Context(), query)
 	if err != nil {
 		return errors.Wrap(err, "SavedQueries.Delete")
 	}
@@ -375,7 +375,7 @@ func serveSettingsGetForSubject(w http.ResponseWriter, r *http.Request) error {
 	if err := json.NewDecoder(r.Body).Decode(&subject); err != nil {
 		return errors.Wrap(err, "Decode")
 	}
-	settings, err := db.Settings.GetLatest(r.Context(), subject)
+	settings, err := database.GlobalSettings.GetLatest(r.Context(), subject)
 	if err != nil {
 		return errors.Wrap(err, "Settings.GetLatest")
 	}
@@ -391,7 +391,7 @@ func serveOrgsListUsers(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return errors.Wrap(err, "Decode")
 	}
-	orgMembers, err := db.OrgMembers.GetByOrgID(r.Context(), orgID)
+	orgMembers, err := database.GlobalOrgMembers.GetByOrgID(r.Context(), orgID)
 	if err != nil {
 		return errors.Wrap(err, "OrgMembers.GetByOrgID")
 	}
@@ -411,7 +411,7 @@ func serveOrgsGetByName(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return errors.Wrap(err, "Decode")
 	}
-	org, err := db.Orgs.GetByName(r.Context(), orgName)
+	org, err := database.GlobalOrgs.GetByName(r.Context(), orgName)
 	if err != nil {
 		return errors.Wrap(err, "Orgs.GetByName")
 	}
@@ -427,7 +427,7 @@ func serveUsersGetByUsername(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return errors.Wrap(err, "Decode")
 	}
-	user, err := db.Users.GetByUsername(r.Context(), username)
+	user, err := database.GlobalUsers.GetByUsername(r.Context(), username)
 	if err != nil {
 		return errors.Wrap(err, "Users.GetByUsername")
 	}
@@ -443,7 +443,7 @@ func serveUserEmailsGetEmail(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return errors.Wrap(err, "Decode")
 	}
-	email, _, err := db.UserEmails.GetPrimaryEmail(r.Context(), userID)
+	email, _, err := database.GlobalUserEmails.GetPrimaryEmail(r.Context(), userID)
 	if err != nil {
 		return errors.Wrap(err, "UserEmails.GetEmail")
 	}
@@ -533,7 +533,7 @@ func serveGitExec(w http.ResponseWriter, r *http.Request) error {
 		return nil
 	}
 
-	repo, err := db.Repos.Get(r.Context(), api.RepoID(repoID))
+	repo, err := database.GlobalRepos.Get(r.Context(), api.RepoID(repoID))
 	if err != nil {
 		return err
 	}

@@ -8,7 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -32,7 +32,7 @@ func TestCheckEmailAbuse(t *testing.T) {
 
 	tests := []struct {
 		name       string
-		mockEmails []*db.UserEmail
+		mockEmails []*database.UserEmail
 		hasQuote   bool
 		expAbused  bool
 		expReason  string
@@ -40,7 +40,7 @@ func TestCheckEmailAbuse(t *testing.T) {
 	}{
 		{
 			name: "no verified email address",
-			mockEmails: []*db.UserEmail{
+			mockEmails: []*database.UserEmail{
 				{
 					Email: "alice@example.com",
 				},
@@ -52,7 +52,7 @@ func TestCheckEmailAbuse(t *testing.T) {
 		},
 		{
 			name: "reached maximum number of unverified email addresses",
-			mockEmails: []*db.UserEmail{
+			mockEmails: []*database.UserEmail{
 				{
 					Email:      "alice@example.com",
 					VerifiedAt: &now,
@@ -74,7 +74,7 @@ func TestCheckEmailAbuse(t *testing.T) {
 		},
 		{
 			name: "no quota",
-			mockEmails: []*db.UserEmail{
+			mockEmails: []*database.UserEmail{
 				{
 					Email:      "alice@example.com",
 					VerifiedAt: &now,
@@ -88,7 +88,7 @@ func TestCheckEmailAbuse(t *testing.T) {
 
 		{
 			name: "no abuse",
-			mockEmails: []*db.UserEmail{
+			mockEmails: []*database.UserEmail{
 				{
 					Email:      "alice@example.com",
 					VerifiedAt: &now,
@@ -103,15 +103,15 @@ func TestCheckEmailAbuse(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			db.Mocks.Users.CheckAndDecrementInviteQuota = func(context.Context, int32) (bool, error) {
+			database.Mocks.Users.CheckAndDecrementInviteQuota = func(context.Context, int32) (bool, error) {
 				return test.hasQuote, nil
 			}
-			db.Mocks.UserEmails.ListByUser = func(context.Context, db.UserEmailsListOptions) ([]*db.UserEmail, error) {
+			database.Mocks.UserEmails.ListByUser = func(context.Context, database.UserEmailsListOptions) ([]*database.UserEmail, error) {
 				return test.mockEmails, nil
 			}
 			defer func() {
-				db.Mocks.Users.CheckAndDecrementInviteQuota = nil
-				db.Mocks.UserEmails.ListByUser = nil
+				database.Mocks.Users.CheckAndDecrementInviteQuota = nil
+				database.Mocks.UserEmails.ListByUser = nil
 			}()
 
 			abused, reason, err := checkEmailAbuse(ctx, 1)
@@ -164,16 +164,16 @@ func TestSendUserEmailOnFieldUpdate(t *testing.T) {
 		sent = &message
 		return nil
 	}
-	db.Mocks.UserEmails.GetPrimaryEmail = func(ctx context.Context, id int32) (emailCanonicalCase string, verified bool, err error) {
+	database.Mocks.UserEmails.GetPrimaryEmail = func(ctx context.Context, id int32) (emailCanonicalCase string, verified bool, err error) {
 		return "a@example.com", true, nil
 	}
-	db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
 		return &types.User{Username: "Foo"}, nil
 	}
 	defer func() {
 		txemail.MockSend = nil
-		db.Mocks.UserEmails.GetPrimaryEmail = nil
-		db.Mocks.Users.GetByID = nil
+		database.Mocks.UserEmails.GetPrimaryEmail = nil
+		database.Mocks.Users.GetByID = nil
 	}()
 
 	if err := UserEmails.SendUserEmailOnFieldUpdate(context.Background(), 123, "updated password"); err != nil {

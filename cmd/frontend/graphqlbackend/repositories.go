@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -31,8 +31,8 @@ func (r *schemaResolver) Repositories(args *struct {
 	Descending bool
 	After      *string
 }) (*repositoryConnectionResolver, error) {
-	opt := db.ReposListOptions{
-		OrderBy: db.RepoListOrderBy{{
+	opt := database.ReposListOptions{
+		OrderBy: database.RepoListOrderBy{{
 			Field:      toDBRepoListColumn(args.OrderBy),
 			Descending: args.Descending,
 		}},
@@ -83,7 +83,7 @@ type RepositoryConnectionResolver interface {
 var _ RepositoryConnectionResolver = &repositoryConnectionResolver{}
 
 type repositoryConnectionResolver struct {
-	opt        db.ReposListOptions
+	opt        database.ReposListOptions
 	cloned     bool
 	notCloned  bool
 	indexed    bool
@@ -103,7 +103,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			// 🚨 SECURITY: Don't allow non-admins to perform huge queries on Sourcegraph.com.
 			if isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx) == nil; !isSiteAdmin {
 				if opt2.LimitOffset == nil {
-					opt2.LimitOffset = &db.LimitOffset{Limit: 1000}
+					opt2.LimitOffset = &database.LimitOffset{Limit: 1000}
 				}
 			}
 		}
@@ -241,7 +241,7 @@ func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *Tot
 		}()
 	}
 
-	count, err := db.Repos.Count(ctx, r.opt)
+	count, err := database.GlobalRepos.Count(ctx, r.opt)
 	return i32ptr(int32(count)), err
 }
 
@@ -256,9 +256,9 @@ func (r *repositoryConnectionResolver) PageInfo(ctx context.Context) (*graphqlut
 
 	var value string
 	switch r.opt.CursorColumn {
-	case string(db.RepoListName):
+	case string(database.RepoListName):
 		value = string(repos[len(repos)-1].Name)
-	case string(db.RepoListCreatedAt):
+	case string(database.RepoListCreatedAt):
 		value = repos[len(repos)-1].CreatedAt.Format("2006-01-02 15:04:05.999999")
 	}
 	return graphqlutil.NextPageCursor(marshalRepositoryCursor(
@@ -334,12 +334,12 @@ func toRepoNames(repos []*types.RepoName) []api.RepoName {
 	return names
 }
 
-func toDBRepoListColumn(ob string) db.RepoListColumn {
+func toDBRepoListColumn(ob string) database.RepoListColumn {
 	switch ob {
 	case "REPO_URI", "REPOSITORY_NAME":
-		return db.RepoListName
+		return database.RepoListName
 	case "REPO_CREATED_AT", "REPOSITORY_CREATED_AT":
-		return db.RepoListCreatedAt
+		return database.RepoListCreatedAt
 	default:
 		return ""
 	}

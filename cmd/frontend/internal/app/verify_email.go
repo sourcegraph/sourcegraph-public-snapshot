@@ -6,9 +6,10 @@ import (
 	"net/url"
 
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 func serveVerifyEmail(w http.ResponseWriter, r *http.Request) {
@@ -24,13 +25,13 @@ func serveVerifyEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// 🚨 SECURITY: require correct authed user to verify email
-	usr, err := db.Users.GetByCurrentAuthUser(ctx)
+	usr, err := database.GlobalUsers.GetByCurrentAuthUser(ctx)
 	if err != nil {
 		httpLogAndError(w, "Could not get current user", http.StatusUnauthorized)
 		return
 	}
 
-	email, alreadyVerified, err := db.UserEmails.Get(ctx, usr.ID, email)
+	email, alreadyVerified, err := database.GlobalUserEmails.Get(ctx, usr.ID, email)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("No email %q found for user %d", email, usr.ID), http.StatusBadRequest)
 		return
@@ -39,7 +40,7 @@ func serveVerifyEmail(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("User %d email %q is already verified", usr.ID, email), http.StatusBadRequest)
 		return
 	}
-	verified, err := db.UserEmails.Verify(ctx, usr.ID, email, verifyCode)
+	verified, err := database.GlobalUserEmails.Verify(ctx, usr.ID, email, verifyCode)
 	if err != nil {
 		httpLogAndError(w, "Could not verify user email", http.StatusInternalServerError, "userID", usr.ID, "email", email, "error", err)
 		return
@@ -49,7 +50,7 @@ func serveVerifyEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = db.Authz.GrantPendingPermissions(ctx, &db.GrantPendingPermissionsArgs{
+	if err = database.GlobalAuthz.GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
 		UserID: usr.ID,
 		Perm:   authz.Read,
 		Type:   authz.PermRepos,

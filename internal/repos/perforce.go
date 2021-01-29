@@ -3,9 +3,11 @@ package repos
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -44,15 +46,37 @@ func (s PerforceSource) ListRepos(ctx context.Context, results chan SourceResult
 	}
 }
 
+// composePerforceCloneURL composes a clone URL for a Perforce depot based on
+// given information. e.g.
+// perforce://admin:password@ssl:111.222.333.444:1666//Sourcegraph/
+func composePerforceCloneURL(username, password, host, depot string) string {
+	cloneURL := url.URL{
+		Scheme: "perforce",
+		User:   url.UserPassword(username, password),
+		Host:   host,
+		Path:   depot,
+	}
+	return cloneURL.String()
+}
+
 func (s PerforceSource) makeRepo(depot string) *types.Repo {
 	if !strings.HasSuffix(depot, "/") {
 		depot += "/"
 	}
 	name := strings.Trim(depot, "/")
 	urn := s.svc.URN()
+
+	cloneURL := composePerforceCloneURL(s.config.P4User, s.config.P4Passwd, s.config.P4Port, depot)
+
 	return &types.Repo{
-		Name: api.RepoName(name),
-		URI:  name,
+		Name: reposource.PerforceRepoName(
+			s.config.RepositoryPathPattern,
+			name,
+		),
+		URI: string(reposource.PerforceRepoName(
+			"",
+			name,
+		)),
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          depot,
 			ServiceType: extsvc.TypePerforce,
@@ -62,7 +86,7 @@ func (s PerforceSource) makeRepo(depot string) *types.Repo {
 		Sources: map[string]*types.SourceInfo{
 			urn: {
 				ID:       urn,
-				CloneURL: "perforce:" + depot, // e.g. perforce://Sourcegraph/
+				CloneURL: cloneURL,
 			},
 		},
 		Metadata: map[string]interface{}{

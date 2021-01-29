@@ -16,7 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
@@ -83,7 +83,7 @@ func (r *campaignSpecResolver) ApplyPreview(ctx context.Context, args *graphqlba
 		return nil, err
 	}
 	opts := store.GetRewirerMappingsOpts{
-		LimitOffset: &db.LimitOffset{
+		LimitOffset: &database.LimitOffset{
 			Limit: int(args.First),
 		},
 	}
@@ -306,7 +306,7 @@ func (r *campaignSpecResolver) ViewerCampaignsCodeHosts(ctx context.Context, arg
 		opts: store.ListCodeHostsOpts{
 			RepoIDs: specs.RepoIDs(),
 		},
-		limitOffset: db.LimitOffset{
+		limitOffset: database.LimitOffset{
 			Limit:  int(args.First),
 			Offset: offset,
 		},

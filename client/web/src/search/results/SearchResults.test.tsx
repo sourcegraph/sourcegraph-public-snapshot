@@ -34,6 +34,7 @@ describe('SearchResults', () => {
         telemetryService: { log: noop, logViewEvent: noop },
         deployType: 'dev',
         patternType: SearchPatternType.regexp,
+        parsedSearchQuery: 'r:golang/oauth2 test f:travis',
         caseSensitive: false,
         setPatternType: sinon.spy(),
         setCaseSensitivity: sinon.spy(),

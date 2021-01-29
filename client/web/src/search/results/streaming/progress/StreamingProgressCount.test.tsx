@@ -14,6 +14,17 @@ describe('StreamingProgressCount', () => {
         expect(mount(<StreamingProgressCount state="loading" progress={progress} />)).toMatchSnapshot()
     })
 
+    it('should render correctly for 0 repositories', () => {
+        const progress: Progress = {
+            durationMs: 0,
+            matchCount: 0,
+            repositoriesCount: 0,
+            skipped: [],
+        }
+
+        expect(mount(<StreamingProgressCount state="loading" progress={progress} />)).toMatchSnapshot()
+    })
+
     it('should render correctly for 1 item complete', () => {
         const progress: Progress = {
             durationMs: 1250,
@@ -30,6 +41,17 @@ describe('StreamingProgressCount', () => {
             durationMs: 1250,
             matchCount: 123,
             repositoriesCount: 500,
+            skipped: [],
+        }
+
+        expect(mount(<StreamingProgressCount state="complete" progress={progress} />)).toMatchSnapshot()
+    })
+
+    it('should render correctly for big numbers complete', () => {
+        const progress: Progress = {
+            durationMs: 52500,
+            matchCount: 1234567,
+            repositoriesCount: 8901,
             skipped: [],
         }
 

@@ -12,7 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/slack"
 )
@@ -90,7 +90,7 @@ func checkForUpcomingLicenseExpirations(clock glock.Clock, client slackClient) {
 
 func checkLastSubscriptionLicense(ctx context.Context, s *dbSubscription, clock glock.Clock, client slackClient) {
 	// Get the active (i.e., latest created) license.
-	licenses, err := dbLicenses{}.List(ctx, dbLicensesListOptions{ProductSubscriptionID: s.ID, LimitOffset: &db.LimitOffset{Limit: 1}})
+	licenses, err := dbLicenses{}.List(ctx, dbLicensesListOptions{ProductSubscriptionID: s.ID, LimitOffset: &database.LimitOffset{Limit: 1}})
 	if err != nil {
 		log15.Error("startCheckForUpcomingLicenseExpirations: error listing licenses", "error", err)
 		return
@@ -100,7 +100,7 @@ func checkLastSubscriptionLicense(ctx context.Context, s *dbSubscription, clock 
 		return
 	}
 
-	user, err := db.Users.GetByID(ctx, s.UserID)
+	user, err := database.GlobalUsers.GetByID(ctx, s.UserID)
 	if err != nil {
 		log15.Error("startCheckForUpcomingLicenseExpirations: error looking up user", "error", err)
 		return

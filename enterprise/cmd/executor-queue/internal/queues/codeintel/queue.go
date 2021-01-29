@@ -9,8 +9,8 @@ import (
 	apiserver "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor-queue/internal/server"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
-	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -47,7 +47,7 @@ func newWorkerStore(db dbutil.DB, observationContext *observation.Context) dbwor
 		ViewName:          "lsif_indexes_with_repository_name u",
 		ColumnExpressions: store.IndexColumnsWithNullRank,
 		Scan:              store.ScanFirstIndexRecord,
-		OrderByExpression: sqlf.Sprintf("u.queued_at"),
+		OrderByExpression: sqlf.Sprintf("u.queued_at, u.id"),
 		StalledMaxAge:     StalledJobMaximumAge,
 		MaxNumResets:      MaximumNumResets,
 	}

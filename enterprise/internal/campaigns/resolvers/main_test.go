@@ -19,8 +19,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -121,7 +121,7 @@ func parseJSONTime(t testing.TB, ts string) time.Time {
 	return timestamp
 }
 
-func newGitHubExternalService(t *testing.T, store *db.ExternalServiceStore) *types.ExternalService {
+func newGitHubExternalService(t *testing.T, store *database.ExternalServiceStore) *types.ExternalService {
 	t.Helper()
 
 	clock := timeutil.NewFakeClock(time.Now(), 0)
@@ -231,12 +231,12 @@ func addChangeset(t *testing.T, ctx context.Context, s *store.Store, c *campaign
 
 func pruneUserCredentials(t *testing.T) {
 	t.Helper()
-	creds, _, err := db.UserCredentials.List(context.Background(), db.UserCredentialsListOpts{})
+	creds, _, err := database.GlobalUserCredentials.List(context.Background(), database.UserCredentialsListOpts{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, c := range creds {
-		if err := db.UserCredentials.Delete(context.Background(), c.ID); err != nil {
+		if err := database.GlobalUserCredentials.Delete(context.Background(), c.ID); err != nil {
 			t.Fatal(err)
 		}
 	}

@@ -19,7 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -103,7 +103,7 @@ func ResolveRepositories(ctx context.Context, op Options) (Resolved, error) {
 
 	if envvar.SourcegraphDotComMode() && len(includePatterns) == 0 && !hasTypeRepo(op.Query) {
 		start := time.Now()
-		defaultRepos, err = defaultRepositories(ctx, db.DefaultRepos.List, search.Indexed(), excludePatterns)
+		defaultRepos, err = defaultRepositories(ctx, database.GlobalDefaultRepos.List, search.Indexed(), excludePatterns)
 		if err != nil {
 			return Resolved{}, errors.Wrap(err, "getting list of default repos")
 		}
@@ -124,12 +124,12 @@ func ResolveRepositories(ctx context.Context, op Options) (Resolved, error) {
 		}
 	} else {
 		tr.LazyPrintf("Repos.List - start")
-		options := db.ReposListOptions{
+		options := database.ReposListOptions{
 			IncludePatterns: includePatterns,
 			Names:           versionContextRepositories,
 			ExcludePattern:  UnionRegExps(excludePatterns),
 			// List N+1 repos so we can see if there are repos omitted due to our repo limit.
-			LimitOffset:  &db.LimitOffset{Limit: maxRepoListSize + 1},
+			LimitOffset:  &database.LimitOffset{Limit: maxRepoListSize + 1},
 			NoForks:      op.NoForks,
 			OnlyForks:    op.OnlyForks,
 			NoArchived:   op.NoArchived,
@@ -145,7 +145,7 @@ func ResolveRepositories(ctx context.Context, op Options) (Resolved, error) {
 			excludedC <- computeExcludedRepositories(ctx, op.Query, options)
 		}()
 
-		repos, err = db.Repos.ListRepoNames(ctx, options)
+		repos, err = database.GlobalRepos.ListRepoNames(ctx, options)
 		tr.LazyPrintf("Repos.List - done")
 
 		excluded = <-excludedC
@@ -411,7 +411,7 @@ type ExcludedRepos struct {
 
 // computeExcludedRepositories returns a list of excluded repositories (Forks or
 // archives) based on the search Query.
-func computeExcludedRepositories(ctx context.Context, q query.QueryInfo, op db.ReposListOptions) (excluded ExcludedRepos) {
+func computeExcludedRepositories(ctx context.Context, q query.QueryInfo, op database.ReposListOptions) (excluded ExcludedRepos) {
 	if q == nil {
 		return ExcludedRepos{}
 	}
@@ -433,7 +433,7 @@ func computeExcludedRepositories(ctx context.Context, q query.QueryInfo, op db.R
 			selectForks.OnlyForks = true
 			selectForks.NoForks = false
 			var err error
-			numExcludedForks, err = db.Repos.Count(ctx, selectForks)
+			numExcludedForks, err = database.GlobalRepos.Count(ctx, selectForks)
 			if err != nil {
 				log15.Warn("repo count for excluded fork", "err", err)
 			}
@@ -452,7 +452,7 @@ func computeExcludedRepositories(ctx context.Context, q query.QueryInfo, op db.R
 			selectArchived.OnlyArchived = true
 			selectArchived.NoArchived = false
 			var err error
-			numExcludedArchived, err = db.Repos.Count(ctx, selectArchived)
+			numExcludedArchived, err = database.GlobalRepos.Count(ctx, selectArchived)
 			if err != nil {
 				log15.Warn("repo count for excluded archive", "err", err)
 			}
@@ -573,10 +573,10 @@ func hasTypeRepo(q query.QueryInfo) bool {
 type defaultReposFunc func(ctx context.Context) ([]*types.RepoName, error)
 
 func defaultRepositories(ctx context.Context, getRawDefaultRepos defaultReposFunc, z *searchbackend.Zoekt, excludePatterns []string) ([]*types.RepoName, error) {
-	// Get the list of default repos from the db.
+	// Get the list of default repos from the database.
 	defaultRepos, err := getRawDefaultRepos(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "querying db for default repos")
+		return nil, errors.Wrap(err, "querying database for default repos")
 	}
 
 	// Remove excluded repos

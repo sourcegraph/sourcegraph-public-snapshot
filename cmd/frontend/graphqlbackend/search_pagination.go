@@ -14,7 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -91,28 +91,28 @@ func (r *SearchResultsResolver) PageInfo() *graphqlutil.PageInfo {
 //
 func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchResultsResolver, err error) {
 	start := time.Now()
-	if r.pagination == nil {
+	if r.Pagination == nil {
 		panic("never here: this method should never be called in this state")
 	}
 
 	tr, ctx := trace.New(ctx, "graphql.SearchResults.paginatedResults", r.rawQuery())
-	if r.pagination.cursor != nil {
+	if r.Pagination.cursor != nil {
 		tr.LogFields(
-			otlog.Int("Cursor.RepositoryOffset", int(r.pagination.cursor.RepositoryOffset)),
-			otlog.Int("Cursor.ResultOffset", int(r.pagination.cursor.ResultOffset)),
-			otlog.Bool("Cursor.Finished", r.pagination.cursor.Finished),
+			otlog.Int("Cursor.RepositoryOffset", int(r.Pagination.cursor.RepositoryOffset)),
+			otlog.Int("Cursor.ResultOffset", int(r.Pagination.cursor.ResultOffset)),
+			otlog.Bool("Cursor.Finished", r.Pagination.cursor.Finished),
 		)
 		log15.Info("paginated search continue request",
 			"query", fmt.Sprintf("%q", r.rawQuery()),
-			"RepositoryOffset", int(r.pagination.cursor.RepositoryOffset),
-			"ResultOffset", int(r.pagination.cursor.ResultOffset),
-			"Finished", r.pagination.cursor.Finished,
+			"RepositoryOffset", int(r.Pagination.cursor.RepositoryOffset),
+			"ResultOffset", int(r.Pagination.cursor.ResultOffset),
+			"Finished", r.Pagination.cursor.Finished,
 		)
 	} else {
 		tr.LogFields(otlog.String("Cursor", "nil"))
 		log15.Info("paginated search begin request", "query", fmt.Sprintf("%q", r.rawQuery()))
 	}
-	tr.LogFields(otlog.Int("Limit", int(r.pagination.limit)))
+	tr.LogFields(otlog.Int("Limit", int(r.Pagination.limit)))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -149,7 +149,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 	args := search.TextParameters{
 		PatternInfo:     p,
 		RepoPromise:     (&search.Promise{}).Resolve(resolved.RepoRevs),
-		Query:           r.query,
+		Query:           r.Query,
 		UseFullDeadline: false,
 		Zoekt:           r.zoekt,
 		SearcherURLs:    r.searcherURLs,
@@ -177,7 +177,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 	})
 
 	common := streaming.Stats{}
-	cursor, results, fileCommon, err := paginatedSearchFilesInRepos(ctx, &args, r.pagination)
+	cursor, results, fileCommon, err := paginatedSearchFilesInRepos(ctx, &args, r.Pagination)
 	if err != nil {
 		return nil, err
 	}
@@ -189,7 +189,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 	var alert *searchAlert
 
 	if len(resolved.MissingRepoRevs) > 0 {
-		alert = alertForMissingRepoRevs(r.patternType, resolved.MissingRepoRevs)
+		alert = alertForMissingRepoRevs(r.PatternType, resolved.MissingRepoRevs)
 	}
 
 	log15.Info("next cursor for paginated search request",
@@ -256,15 +256,10 @@ func paginatedSearchFilesInRepos(ctx context.Context, args *search.TextParameter
 	return plan.execute(ctx, func(batch []*search.RepositoryRevisions) ([]SearchResultResolver, *streaming.Stats, error) {
 		batchArgs := *args
 		batchArgs.RepoPromise = (&search.Promise{}).Resolve(batch)
-		fileResults, fileCommon, err := searchFilesInRepos(ctx, &batchArgs, nil)
+		fileResults, fileCommon, err := searchFilesInReposBatch(ctx, &batchArgs)
 		// Timeouts are reported through Stats so don't report an error for them
 		if err != nil && !(err == context.DeadlineExceeded || err == context.Canceled) {
 			return nil, nil, err
-		}
-		if fileCommon == nil {
-			// searchFilesInRepos can return a nil structure, but the executor
-			// requires a non-nil one always (which is more sane).
-			fileCommon = &streaming.Stats{}
 		}
 		// fileResults is not sorted so we must sort it now. fileCommon may or
 		// may not be sorted, but we do not rely on its order.
@@ -275,7 +270,7 @@ func paginatedSearchFilesInRepos(ctx context.Context, args *search.TextParameter
 		for _, r := range fileResults {
 			results = append(results, r)
 		}
-		return results, fileCommon, nil
+		return results, &fileCommon, nil
 	})
 }
 
@@ -321,7 +316,7 @@ func repoOfResult(result SearchResultResolver) string {
 	case *RepositoryResolver:
 		return string(r.Name())
 	case *FileMatchResolver:
-		return r.Repo.Name()
+		return string(r.Repo.Name)
 	case *CommitSearchResultResolver:
 		// Pagination does not support commit searches at the
 		// moment. Ideally we want to return the repo associated
@@ -610,7 +605,7 @@ func (n *numTotalReposCache) get(ctx context.Context) int {
 	n.RUnlock()
 
 	n.Lock()
-	newCount, err := db.Repos.Count(ctx, db.ReposListOptions{})
+	newCount, err := database.GlobalRepos.Count(ctx, database.ReposListOptions{})
 	if err != nil {
 		defer n.Unlock()
 		log15.Error("failed to determine numTotalRepos", "error", err)

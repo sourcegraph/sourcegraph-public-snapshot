@@ -16,8 +16,8 @@ import (
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -44,8 +44,8 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		HeadRefName:  "campaigns/test",
 	}
 
-	rs := db.NewRepoStoreWith(s)
-	es := db.NewExternalServicesStoreWith(s)
+	rs := database.ReposWith(s)
+	es := database.ExternalServicesWith(s)
 
 	repo := ct.TestRepo(t, es, extsvc.KindGitHub)
 	otherRepo := ct.TestRepo(t, es, extsvc.KindGitHub)
@@ -971,6 +971,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 			ReconcilerState: campaigns.ReconcilerStateFailed,
 			OwnedByCampaign: campaignID,
 			FailureMessage:  &CanceledChangesetFailureMessage,
+			AttachedTo:      []int64{campaignID},
 		})
 
 		ct.ReloadAndAssertChangeset(t, ctx, s, c2, ct.ChangesetAssertions{
@@ -979,18 +980,21 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 			OwnedByCampaign: campaignID,
 			FailureMessage:  &CanceledChangesetFailureMessage,
 			NumFailures:     1,
+			AttachedTo:      []int64{campaignID},
 		})
 
 		ct.ReloadAndAssertChangeset(t, ctx, s, c3, ct.ChangesetAssertions{
 			Repo:            repo.ID,
 			ReconcilerState: campaigns.ReconcilerStateCompleted,
 			OwnedByCampaign: campaignID,
+			AttachedTo:      []int64{campaignID},
 		})
 
 		ct.ReloadAndAssertChangeset(t, ctx, s, c4, ct.ChangesetAssertions{
 			Repo:             repo.ID,
 			ReconcilerState:  campaigns.ReconcilerStateQueued,
 			PublicationState: campaigns.ChangesetPublicationStateUnpublished,
+			AttachedTo:       []int64{campaignID},
 		})
 
 		ct.ReloadAndAssertChangeset(t, ctx, s, c5, ct.ChangesetAssertions{
@@ -998,6 +1002,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 			ReconcilerState: campaigns.ReconcilerStateFailed,
 			FailureMessage:  &CanceledChangesetFailureMessage,
 			OwnedByCampaign: campaignID,
+			AttachedTo:      []int64{campaignID},
 		})
 	})
 
@@ -1096,6 +1101,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		for changeset, want := range changesets {
 			want.Repo = repo.ID
 			want.OwnedByCampaign = campaignID
+			want.AttachedTo = []int64{campaignID}
 			ct.ReloadAndAssertChangeset(t, ctx, s, changeset, want)
 		}
 	})
@@ -1113,37 +1119,46 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 
 		baseOpts := ct.TestChangesetOpts{Repo: repo.ID}
 
+		// Closed changeset
 		opts1 := baseOpts
 		opts1.Campaign = campaignID
 		opts1.ExternalState = campaigns.ChangesetExternalStateClosed
+		opts1.ReconcilerState = campaigns.ReconcilerStateCompleted
 		opts1.PublicationState = campaigns.ChangesetPublicationStatePublished
 		ct.CreateChangeset(t, ctx, s, opts1)
 
+		// Deleted changeset
 		opts2 := baseOpts
 		opts2.Campaign = campaignID
 		opts2.ExternalState = campaigns.ChangesetExternalStateDeleted
+		opts2.ReconcilerState = campaigns.ReconcilerStateCompleted
 		opts2.PublicationState = campaigns.ChangesetPublicationStatePublished
 		ct.CreateChangeset(t, ctx, s, opts2)
 
+		// Open changeset
 		opts3 := baseOpts
 		opts3.Campaign = campaignID
 		opts3.OwnedByCampaign = campaignID
 		opts3.ExternalState = campaigns.ChangesetExternalStateOpen
+		opts3.ReconcilerState = campaigns.ReconcilerStateCompleted
 		opts3.PublicationState = campaigns.ChangesetPublicationStatePublished
 		ct.CreateChangeset(t, ctx, s, opts3)
 
+		// Open changeset in a deleted repository
 		opts4 := baseOpts
 		// In a deleted repository.
 		opts4.Repo = deletedRepo.ID
 		opts4.Campaign = campaignID
 		opts4.ExternalState = campaigns.ChangesetExternalStateOpen
+		opts4.ReconcilerState = campaigns.ReconcilerStateCompleted
 		opts4.PublicationState = campaigns.ChangesetPublicationStatePublished
 		ct.CreateChangeset(t, ctx, s, opts4)
 
+		// Open changeset in a different campaign
 		opts5 := baseOpts
-		// In a different campaign.
 		opts5.Campaign = campaignID + 999
 		opts5.ExternalState = campaigns.ChangesetExternalStateOpen
+		opts5.ReconcilerState = campaigns.ReconcilerStateCompleted
 		opts5.PublicationState = campaigns.ChangesetPublicationStatePublished
 		ct.CreateChangeset(t, ctx, s, opts5)
 
@@ -1222,8 +1237,8 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 		IncludesCreatedEdit: false,
 	}
 
-	rs := db.NewRepoStoreWith(s)
-	es := db.NewExternalServicesStoreWith(s)
+	rs := database.ReposWith(s)
+	es := database.ExternalServicesWith(s)
 
 	githubRepo := ct.TestRepo(t, es, extsvc.KindGitHub)
 	gitlabRepo := ct.TestRepo(t, es, extsvc.KindGitLab)
@@ -1490,8 +1505,8 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 		return cs
 	}
 
-	rs := db.NewRepoStoreWith(s)
-	es := db.NewExternalServicesStoreWith(s)
+	rs := database.ReposWith(s)
+	es := database.ExternalServicesWith(s)
 
 	// Set up repositories for each code host type we want to test.
 	var (

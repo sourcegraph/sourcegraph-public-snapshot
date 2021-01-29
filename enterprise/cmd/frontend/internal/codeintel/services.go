@@ -19,7 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
@@ -94,7 +94,7 @@ func mustInitializeCodeIntelDB() *sql.DB {
 		log.Fatalf("Failed to connect to codeintel database: %s", err)
 	}
 
-	if err := dbconn.MigrateDB(db, "codeintel"); err != nil {
+	if err := dbconn.MigrateDB(db, dbconn.CodeIntel); err != nil {
 		log.Fatalf("Failed to perform codeintel database migration: %s", err)
 	}
 

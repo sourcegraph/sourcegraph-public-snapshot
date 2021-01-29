@@ -36,16 +36,7 @@ type SourceInfo struct {
 // ExternalServiceID returns the ID of the external service this
 // SourceInfo refers to.
 func (i SourceInfo) ExternalServiceID() int64 {
-	ps := strings.SplitN(i.ID, ":", 3)
-	if len(ps) != 3 {
-		return -1
-	}
-
-	id, err := strconv.ParseInt(ps[2], 10, 64)
-	if err != nil {
-		return -1
-	}
-
+	_, id := extsvc.DecodeURN(i.ID)
 	return id
 }
 
@@ -407,6 +398,7 @@ type ExternalService struct {
 	NextSyncAt      time.Time
 	NamespaceUserID int32
 	Unrestricted    bool // Whether access to repositories belong to this external service is unrestricted.
+	CloudDefault    bool // Whether this external service is our default public service on Cloud
 }
 
 // URN returns a unique resource identifier of this external service,

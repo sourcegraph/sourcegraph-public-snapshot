@@ -1925,11 +1925,51 @@ This panel indicates remaining calls to GitHub search API before hitting the rat
 
 <br />
 
+#### repo-updater: github_graphql_rate_limit_wait_duration
+
+This panel indicates time spent waiting for the GitHub graphql API rate limiter.
+
+Indicates how long we`re waiting on the rate limit once it has been exceeded
+
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+
+<br />
+
+#### repo-updater: github_rest_rate_limit_wait_duration
+
+This panel indicates time spent waiting for the GitHub rest API rate limiter.
+
+Indicates how long we`re waiting on the rate limit once it has been exceeded
+
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+
+<br />
+
+#### repo-updater: github_search_rate_limit_wait_duration
+
+This panel indicates time spent waiting for the GitHub search API rate limiter.
+
+Indicates how long we`re waiting on the rate limit once it has been exceeded
+
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+
+<br />
+
 #### repo-updater: gitlab_rest_rate_limit_remaining
 
 This panel indicates remaining calls to GitLab rest API before hitting the rate limit.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-gitlab-rest-rate-limit-remaining).
+
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+
+<br />
+
+#### repo-updater: gitlab_rest_rate_limit_wait_duration
+
+This panel indicates time spent waiting for the GitLab rest API rate limiter.
+
+Indicates how long we`re waiting on the rate limit once it has been exceeded
 
 <sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
 
@@ -2719,14 +2759,28 @@ This panel indicates container memory usage (5m maximum) by instance.
 
 ### Prometheus: Metrics
 
-#### prometheus: prometheus_rule_group_evaluation
+#### prometheus: prometheus_rule_eval_duration
 
-This panel indicates average prometheus rule group evaluation duration over 10m.
+This panel indicates average prometheus rule group evaluation duration over 10m by rule group.
 
 A high value here indicates Prometheus rule evaluation is taking longer than expected.
 It might indicate that certain rule groups are taking too long to evaluate, or Prometheus is underprovisioned.
 
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#prometheus-prometheus-rule-group-evaluation).
+Rules that Sourcegraph ships with are grouped under `/sg_config_prometheus`. [Custom rules are grouped under `/sg_prometheus_addons`](https://docs.sourcegraph.com/admin/observability/metrics#prometheus-configuration).
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#prometheus-prometheus-rule-eval-duration).
+
+<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
+
+<br />
+
+#### prometheus: prometheus_rule_eval_failures
+
+This panel indicates failed prometheus rule evaluations over 5m by rule group.
+
+Rules that Sourcegraph ships with are grouped under `/sg_config_prometheus`. [Custom rules are grouped under `/sg_prometheus_addons`](https://docs.sourcegraph.com/admin/observability/metrics#prometheus-configuration).
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#prometheus-prometheus-rule-eval-failures).
 
 <sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
 
@@ -2734,11 +2788,35 @@ It might indicate that certain rule groups are taking too long to evaluate, or P
 
 ### Prometheus: Alerts
 
-#### prometheus: alertmanager_notifications_failed_total
+#### prometheus: alertmanager_notification_latency
 
-This panel indicates failed alertmanager notifications over 1m.
+This panel indicates alertmanager notification latency over 1m by integration.
 
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#prometheus-alertmanager-notifications-failed-total).
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#prometheus-alertmanager-notification-latency).
+
+<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
+
+<br />
+
+#### prometheus: alertmanager_notification_failures
+
+This panel indicates failed alertmanager notifications over 1m by integration.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#prometheus-alertmanager-notification-failures).
+
+<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
+
+<br />
+
+### Prometheus: Internals
+
+#### prometheus: prometheus_config_status
+
+This panel indicates prometheus configuration reload status.
+
+A `1` indicates Prometheus reloaded its configuration successfully.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#prometheus-prometheus-config-status).
 
 <sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
 
@@ -2756,25 +2834,11 @@ A `1` indicates Alertmanager reloaded its configuration successfully.
 
 <br />
 
-### Prometheus: Prometheus internals
-
 #### prometheus: prometheus_tsdb_op_failure
 
-This panel indicates prometheus tsdb failures by operation over 1m.
+This panel indicates prometheus tsdb failures by operation over 1m by operation.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#prometheus-prometheus-tsdb-op-failure).
-
-<sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
-
-<br />
-
-#### prometheus: prometheus_config_status
-
-This panel indicates prometheus configuration reload status.
-
-A `1` indicates Prometheus reloaded its configuration successfully.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#prometheus-prometheus-config-status).
 
 <sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
 

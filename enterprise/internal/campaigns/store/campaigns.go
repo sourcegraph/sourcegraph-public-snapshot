@@ -2,10 +2,15 @@ package store
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/pkg/errors"
+	"github.com/sourcegraph/go-diff/diff"
+
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 // campaignColumns are used by the campaign related Store methods to insert,
@@ -44,10 +49,7 @@ var campaignInsertColumns = []*sqlf.Query{
 
 // CreateCampaign creates the given Campaign.
 func (s *Store) CreateCampaign(ctx context.Context, c *campaigns.Campaign) error {
-	q, err := s.createCampaignQuery(c)
-	if err != nil {
-		return err
-	}
+	q := s.createCampaignQuery(c)
 
 	return s.query(ctx, q, func(sc scanner) (err error) {
 		return scanCampaign(c, sc)
@@ -61,7 +63,7 @@ VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING %s
 `
 
-func (s *Store) createCampaignQuery(c *campaigns.Campaign) (*sqlf.Query, error) {
+func (s *Store) createCampaignQuery(c *campaigns.Campaign) *sqlf.Query {
 	if c.CreatedAt.IsZero() {
 		c.CreatedAt = s.now()
 	}
@@ -85,15 +87,12 @@ func (s *Store) createCampaignQuery(c *campaigns.Campaign) (*sqlf.Query, error) 
 		nullTimeColumn(c.ClosedAt),
 		c.CampaignSpecID,
 		sqlf.Join(campaignColumns, ", "),
-	), nil
+	)
 }
 
 // UpdateCampaign updates the given Campaign.
 func (s *Store) UpdateCampaign(ctx context.Context, c *campaigns.Campaign) error {
-	q, err := s.updateCampaignQuery(c)
-	if err != nil {
-		return err
-	}
+	q := s.updateCampaignQuery(c)
 
 	return s.query(ctx, q, func(sc scanner) (err error) { return scanCampaign(c, sc) })
 }
@@ -106,7 +105,7 @@ WHERE id = %s
 RETURNING %s
 `
 
-func (s *Store) updateCampaignQuery(c *campaigns.Campaign) (*sqlf.Query, error) {
+func (s *Store) updateCampaignQuery(c *campaigns.Campaign) *sqlf.Query {
 	c.UpdatedAt = s.now()
 
 	return sqlf.Sprintf(
@@ -125,7 +124,7 @@ func (s *Store) updateCampaignQuery(c *campaigns.Campaign) (*sqlf.Query, error) 
 		c.CampaignSpecID,
 		c.ID,
 		sqlf.Join(campaignColumns, ", "),
-	), nil
+	)
 }
 
 // DeleteCampaign deletes the Campaign with the given ID.
@@ -255,7 +254,6 @@ func getCampaignQuery(opts *GetCampaignOpts) *sqlf.Query {
 
 	if opts.Name != "" {
 		preds = append(preds, sqlf.Sprintf("campaigns.name = %s", opts.Name))
-
 	}
 
 	if len(preds) == 0 {
@@ -267,6 +265,48 @@ func getCampaignQuery(opts *GetCampaignOpts) *sqlf.Query {
 		sqlf.Join(campaignColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
+}
+
+type GetCampaignDiffStatOpts struct {
+	CampaignID int64
+}
+
+func (s *Store) GetCampaignDiffStat(ctx context.Context, opts GetCampaignDiffStatOpts) (*diff.Stat, error) {
+	authzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB())
+	if err != nil {
+		return nil, errors.Wrap(err, "GetCampaignDiffStat generating authz query conds")
+	}
+	q := getCampaignDiffStatQuery(opts, authzConds)
+
+	var diffStat diff.Stat
+	err = s.query(ctx, q, func(sc scanner) error {
+		return sc.Scan(&diffStat.Added, &diffStat.Changed, &diffStat.Deleted)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &diffStat, nil
+}
+
+var getCampaignDiffStatQueryFmtstr = `
+-- source: enterprise/internal/campaigns/store.go:GetCampaignDiffStat
+SELECT
+	COALESCE(SUM(diff_stat_added), 0) AS added,
+	COALESCE(SUM(diff_stat_changed), 0) AS changed,
+	COALESCE(SUM(diff_stat_deleted), 0) AS deleted
+FROM
+	changesets
+INNER JOIN repo ON changesets.repo_id = repo.id
+WHERE
+	changesets.campaign_ids ? %s AND
+	repo.deleted_at IS NULL AND
+	-- authz conditions:
+	%s
+`
+
+func getCampaignDiffStatQuery(opts GetCampaignDiffStatOpts, authzConds *sqlf.Query) *sqlf.Query {
+	return sqlf.Sprintf(getCampaignDiffStatQueryFmtstr, strconv.Itoa(int(opts.CampaignID)), authzConds)
 }
 
 // ListCampaignsOpts captures the query options needed for

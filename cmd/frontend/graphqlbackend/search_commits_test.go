@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -46,7 +46,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	}
 	defer git.ResetMocks()
 
-	query, err := query.ParseAndCheck("p")
+	q, err := query.ParseLiteral("p")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -57,7 +57,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	results, limitHit, timedOut, err := searchCommitsInRepo(ctx, search.CommitParameters{
 		RepoRevs:    repoRevs,
 		PatternInfo: &search.CommitPatternInfo{Pattern: "p", FileMatchLimit: int32(defaultMaxSearchResults)},
-		Query:       query,
+		Query:       q,
 		Diff:        true,
 	})
 	if err != nil {
@@ -100,18 +100,18 @@ func (r *CommitSearchResultResolver) String() string {
 
 func TestExpandUsernamesToEmails(t *testing.T) {
 	resetMocks()
-	db.Mocks.Users.GetByUsername = func(ctx context.Context, username string) (*types.User, error) {
+	database.Mocks.Users.GetByUsername = func(ctx context.Context, username string) (*types.User, error) {
 		if want := "alice"; username != want {
 			t.Errorf("got %q, want %q", username, want)
 		}
 		return &types.User{ID: 123}, nil
 	}
-	db.Mocks.UserEmails.ListByUser = func(_ context.Context, opt db.UserEmailsListOptions) ([]*db.UserEmail, error) {
+	database.Mocks.UserEmails.ListByUser = func(_ context.Context, opt database.UserEmailsListOptions) ([]*database.UserEmail, error) {
 		if want := int32(123); opt.UserID != want {
 			t.Errorf("got %v, want %v", opt.UserID, want)
 		}
 		t := time.Now()
-		return []*db.UserEmail{
+		return []*database.UserEmail{
 			{Email: "alice@example.com", VerifiedAt: &t},
 			{Email: "alice@example.org", VerifiedAt: &t},
 		}, nil

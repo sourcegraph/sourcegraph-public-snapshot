@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
@@ -37,7 +37,7 @@ func OverrideAuthMiddleware(next http.Handler) http.Handler {
 			}
 
 			userID, safeErrMsg, err := auth.GetAndSaveUser(r.Context(), auth.GetAndSaveUserOp{
-				UserProps: db.NewUser{
+				UserProps: database.NewUser{
 					Username:        username,
 					Email:           username + "+override@example.com",
 					EmailIsVerified: true,
@@ -56,13 +56,13 @@ func OverrideAuthMiddleware(next http.Handler) http.Handler {
 
 			// Make the user a site admin because that is more useful for e2e tests and local dev
 			// scripting (which are the use cases of this override auth provider).
-			if err := db.Users.SetIsSiteAdmin(r.Context(), userID, true); err != nil {
+			if err := database.GlobalUsers.SetIsSiteAdmin(r.Context(), userID, true); err != nil {
 				log15.Error("Error setting auth-override user as site admin.", "error", err)
 				http.Error(w, "", http.StatusInternalServerError)
 				return
 			}
 
-			user, err := db.Users.GetByID(r.Context(), userID)
+			user, err := database.GlobalUsers.GetByID(r.Context(), userID)
 			if err != nil {
 				log15.Error("Error retrieving user from database.", "error", err)
 				http.Error(w, "", http.StatusInternalServerError)

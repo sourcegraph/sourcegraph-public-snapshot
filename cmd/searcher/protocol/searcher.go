@@ -22,6 +22,10 @@ type Request struct {
 	// "599cba5e7b6137d46ddf58fb1765f5d928e69604"
 	Commit api.CommitID
 
+	// Branch is used for structural search as an alternative to Commit
+	// because Zoekt only takes branch names
+	Branch string
+
 	PatternInfo
 
 	// The amount of time to wait for a repo archive to fetch.
@@ -41,6 +45,10 @@ type Request struct {
 	// The deadline for the search request.
 	// It is parsed with time.Time.UnmarshalText.
 	Deadline string
+
+	// Endpoint(s) for reaching Zoekt. See description in
+	// endpoint.go:Static(...)
+	IndexerEndpoints []string
 }
 
 // PatternInfo describes a search request on a repo. Most of the fields

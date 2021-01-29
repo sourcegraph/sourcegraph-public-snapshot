@@ -11,8 +11,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commitgraph"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
 func TestGetDumpByID(t *testing.T) {
@@ -32,36 +32,39 @@ func TestGetDumpByID(t *testing.T) {
 	uploadedAt := time.Unix(1587396557, 0).UTC()
 	startedAt := uploadedAt.Add(time.Minute)
 	finishedAt := uploadedAt.Add(time.Minute * 2)
+	expectedAssociatedIndexID := 42
 	expected := Dump{
-		ID:             1,
-		Commit:         makeCommit(1),
-		Root:           "sub/",
-		VisibleAtTip:   true,
-		UploadedAt:     uploadedAt,
-		State:          "completed",
-		FailureMessage: nil,
-		StartedAt:      &startedAt,
-		FinishedAt:     &finishedAt,
-		RepositoryID:   50,
-		RepositoryName: "n-50",
-		Indexer:        "lsif-go",
+		ID:                1,
+		Commit:            makeCommit(1),
+		Root:              "sub/",
+		VisibleAtTip:      true,
+		UploadedAt:        uploadedAt,
+		State:             "completed",
+		FailureMessage:    nil,
+		StartedAt:         &startedAt,
+		FinishedAt:        &finishedAt,
+		RepositoryID:      50,
+		RepositoryName:    "n-50",
+		Indexer:           "lsif-go",
+		AssociatedIndexID: &expectedAssociatedIndexID,
 	}
 
 	insertUploads(t, dbconn.Global, Upload{
-		ID:             expected.ID,
-		Commit:         expected.Commit,
-		Root:           expected.Root,
-		UploadedAt:     expected.UploadedAt,
-		State:          expected.State,
-		FailureMessage: expected.FailureMessage,
-		StartedAt:      expected.StartedAt,
-		FinishedAt:     expected.FinishedAt,
-		ProcessAfter:   expected.ProcessAfter,
-		NumResets:      expected.NumResets,
-		NumFailures:    expected.NumFailures,
-		RepositoryID:   expected.RepositoryID,
-		RepositoryName: expected.RepositoryName,
-		Indexer:        expected.Indexer,
+		ID:                expected.ID,
+		Commit:            expected.Commit,
+		Root:              expected.Root,
+		UploadedAt:        expected.UploadedAt,
+		State:             expected.State,
+		FailureMessage:    expected.FailureMessage,
+		StartedAt:         expected.StartedAt,
+		FinishedAt:        expected.FinishedAt,
+		ProcessAfter:      expected.ProcessAfter,
+		NumResets:         expected.NumResets,
+		NumFailures:       expected.NumFailures,
+		RepositoryID:      expected.RepositoryID,
+		RepositoryName:    expected.RepositoryName,
+		Indexer:           expected.Indexer,
+		AssociatedIndexID: expected.AssociatedIndexID,
 	})
 	insertVisibleAtTip(t, dbconn.Global, 50, 1)
 

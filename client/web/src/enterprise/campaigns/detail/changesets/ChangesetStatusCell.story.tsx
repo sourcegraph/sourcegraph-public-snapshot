@@ -11,8 +11,6 @@ const { add } = storiesOf('web/campaigns/ChangesetStatusCell', module).addDecora
 
 for (const state of Object.values(ChangesetState)) {
     add(capitalize(state), () => (
-        <EnterpriseWebStory>
-            {() => <ChangesetStatusCell changeset={{ state }} className="d-flex" />}
-        </EnterpriseWebStory>
+        <EnterpriseWebStory>{() => <ChangesetStatusCell state={state} className="d-flex" />}</EnterpriseWebStory>
     ))
 }

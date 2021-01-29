@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -35,7 +35,7 @@ func externalServiceByID(ctx context.Context, gqlID graphql.ID) (*externalServic
 		return nil, err
 	}
 
-	es, err := db.ExternalServices.GetByID(ctx, id)
+	es, err := database.GlobalExternalServices.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +138,7 @@ func (r *externalServiceResolver) Warning() *string {
 }
 
 func (r *externalServiceResolver) LastSyncError(ctx context.Context) (*string, error) {
-	latestError, err := db.ExternalServices.GetLastSyncError(ctx, r.externalService.ID)
+	latestError, err := database.GlobalExternalServices.GetLastSyncError(ctx, r.externalService.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -149,7 +149,7 @@ func (r *externalServiceResolver) LastSyncError(ctx context.Context) (*string, e
 }
 
 func (r *externalServiceResolver) RepoCount(ctx context.Context) (int32, error) {
-	return db.ExternalServices.RepoCount(ctx, r.externalService.ID)
+	return database.GlobalExternalServices.RepoCount(ctx, r.externalService.ID)
 }
 
 func (r *externalServiceResolver) LastSyncAt() DateTime {

@@ -15,7 +15,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	idb "github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -188,7 +188,7 @@ func testStoreUpsertRepos(t *testing.T, store *repos.Store) func(*testing.T) {
 				t.Fatalf("UpsertRepos didn't assign an ID to all repos: %v", noID.Names())
 			}
 
-			have, err := tx.RepoStore.List(ctx, idb.ReposListOptions{
+			have, err := tx.RepoStore.List(ctx, database.ReposListOptions{
 				ServiceTypes: kinds,
 			})
 			if err != nil {
@@ -215,14 +215,14 @@ func testStoreUpsertRepos(t *testing.T, store *repos.Store) func(*testing.T) {
 				t.Errorf("UpsertRepos error: %s", err)
 			} else if err = tx.UpsertSources(ctx, want.Clone().Sources(), nil, nil); err != nil {
 				t.Fatalf("UpsertSources error: %s", err)
-			} else if have, err = tx.RepoStore.List(ctx, idb.ReposListOptions{}); err != nil {
+			} else if have, err = tx.RepoStore.List(ctx, database.ReposListOptions{}); err != nil {
 				t.Errorf("ListRepos error: %s", err)
 			} else if diff := cmp.Diff(have, []*types.Repo(want), cmpopts.EquateEmpty()); diff != "" {
 				t.Errorf("ListRepos:\n%s", diff)
 			}
 
 			deleted := want.Clone().With(types.Opt.RepoDeletedAt(now))
-			args := idb.ReposListOptions{}
+			args := database.ReposListOptions{}
 
 			if err = tx.UpsertRepos(ctx, deleted...); err != nil {
 				t.Fatalf("UpsertRepos error: %s", err)
@@ -237,7 +237,7 @@ func testStoreUpsertRepos(t *testing.T, store *repos.Store) func(*testing.T) {
 				t.Errorf("UpsertRepos error: %s", err)
 			} else if err = tx.UpsertSources(ctx, want.Clone().Sources(), nil, nil); err != nil {
 				t.Fatalf("UpsertSources error: %s", err)
-			} else if have, err = tx.RepoStore.List(ctx, idb.ReposListOptions{}); err != nil {
+			} else if have, err = tx.RepoStore.List(ctx, database.ReposListOptions{}); err != nil {
 				t.Errorf("ListRepos error: %s", err)
 			} else if diff := cmp.Diff(have, []*types.Repo(want), cmpopts.EquateEmpty()); diff != "" {
 				t.Errorf("ListRepos:\n%s", diff)
@@ -255,7 +255,7 @@ func testStoreUpsertRepos(t *testing.T, store *repos.Store) func(*testing.T) {
 				t.Fatalf("UpsertRepos want error: %s", err)
 			} else if err = tx.UpsertSources(ctx, want.Sources(), nil, nil); err != nil {
 				t.Fatalf("UpsertSources error: %s", err)
-			} else if have, err = tx.RepoStore.List(ctx, idb.ReposListOptions{}); err != nil {
+			} else if have, err = tx.RepoStore.List(ctx, database.ReposListOptions{}); err != nil {
 				t.Errorf("ListRepos error: %s", err)
 			} else if diff := cmp.Diff(have, []*types.Repo(want), cmpopts.EquateEmpty()); diff != "" {
 				t.Errorf("ListRepos:\n%s", diff)
@@ -280,7 +280,7 @@ func testStoreUpsertRepos(t *testing.T, store *repos.Store) func(*testing.T) {
 				t.Fatalf("UpsertRepos didn't assign an ID to all repos: %v", noID.Names())
 			}
 
-			have, err := tx.RepoStore.List(ctx, idb.ReposListOptions{
+			have, err := tx.RepoStore.List(ctx, database.ReposListOptions{
 				ServiceTypes: kinds,
 			})
 			if err != nil {
@@ -292,7 +292,7 @@ func testStoreUpsertRepos(t *testing.T, store *repos.Store) func(*testing.T) {
 			}
 
 			allDeleted := all.Clone().With(types.Opt.RepoDeletedAt(now))
-			args := idb.ReposListOptions{}
+			args := database.ReposListOptions{}
 
 			if err = tx.UpsertRepos(ctx, allDeleted...); err != nil {
 				t.Fatalf("UpsertRepos error: %s", err)
@@ -315,7 +315,7 @@ func testStoreUpsertRepos(t *testing.T, store *repos.Store) func(*testing.T) {
 				t.Fatalf("UpsertSources error: %s", err)
 			}
 
-			if have, err = tx.RepoStore.List(ctx, idb.ReposListOptions{}); err != nil {
+			if have, err = tx.RepoStore.List(ctx, database.ReposListOptions{}); err != nil {
 				t.Fatalf("ListRepos error: %s", err)
 			}
 			if diff := cmp.Diff(have, []*types.Repo(want), cmpopts.EquateEmpty()); diff != "" {
@@ -446,7 +446,7 @@ func testStoreUpsertSources(t *testing.T, store *repos.Store) func(*testing.T) {
 			// it should not contain any source
 			want[0].Sources = nil
 
-			got, err := tx.RepoStore.List(ctx, idb.ReposListOptions{})
+			got, err := tx.RepoStore.List(ctx, database.ReposListOptions{})
 			if err != nil {
 				t.Fatalf("ListRepos error: %s", err)
 			}
@@ -495,7 +495,7 @@ func testStoreUpsertSources(t *testing.T, store *repos.Store) func(*testing.T) {
 				}
 			})
 
-			got, err := tx.RepoStore.List(ctx, idb.ReposListOptions{})
+			got, err := tx.RepoStore.List(ctx, database.ReposListOptions{})
 			if err != nil {
 				t.Fatalf("ListRepos error: %s", err)
 			}
@@ -518,7 +518,7 @@ func testStoreUpsertSources(t *testing.T, store *repos.Store) func(*testing.T) {
 				t.Fatalf("UpsertSources error: %s", err)
 			}
 
-			have, err := tx.RepoStore.List(ctx, idb.ReposListOptions{})
+			have, err := tx.RepoStore.List(ctx, database.ReposListOptions{})
 			if err != nil {
 				t.Fatalf("ListRepos error: %s", err)
 			}
@@ -547,7 +547,7 @@ func testStoreUpsertSources(t *testing.T, store *repos.Store) func(*testing.T) {
 			// by the time it become orphaned.
 			want = append(want[:1], want[2:]...)
 
-			have, err = tx.RepoStore.List(ctx, idb.ReposListOptions{})
+			have, err = tx.RepoStore.List(ctx, database.ReposListOptions{})
 			if err != nil {
 				t.Fatalf("ListRepos error: %s", err)
 			}
@@ -591,7 +591,7 @@ func testStoreSetClonedRepos(t *testing.T, store *repos.Store) func(*testing.T) 
 		check := func(t testing.TB, ctx context.Context, tx *repos.Store, wantNames []string) {
 			t.Helper()
 
-			res, err := tx.RepoStore.List(ctx, idb.ReposListOptions{})
+			res, err := tx.RepoStore.List(ctx, database.ReposListOptions{})
 			if err != nil {
 				t.Fatalf("ListRepos error: %s", err)
 			}
@@ -1052,7 +1052,7 @@ func createExternalServices(t *testing.T, store *repos.Store) map[string]*types.
 		t.Fatalf("failed to insert external services: %v", err)
 	}
 
-	services, err := store.ExternalServiceStore.List(context.Background(), idb.ExternalServicesListOptions{})
+	services, err := store.ExternalServiceStore.List(context.Background(), database.ExternalServicesListOptions{})
 	if err != nil {
 		t.Fatal("failed to list external services")
 	}

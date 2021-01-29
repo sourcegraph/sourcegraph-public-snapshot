@@ -10,7 +10,7 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -57,7 +57,7 @@ func scheduleUserUpdate(ctx context.Context, extSvc *types.ExternalService, gith
 	if githubUser == nil {
 		return nil
 	}
-	accs, err := db.ExternalAccounts.List(ctx, db.ExternalAccountsListOptions{
+	accs, err := database.GlobalExternalAccounts.List(ctx, database.ExternalAccountsListOptions{
 		ServiceID:   fmt.Sprint(extSvc.ID),
 		ServiceType: "github",
 		AccountID:   githubUser.GetID(),

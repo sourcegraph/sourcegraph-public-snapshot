@@ -14,11 +14,11 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/db"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -182,7 +182,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	ctx, save := s.observe(ctx, "PermsSyncer.syncUserPerms", "")
 	defer save(requestTypeUser, userID, &err)
 
-	user, err := db.Users.GetByID(ctx, userID)
+	user, err := database.GlobalUsers.GetByID(ctx, userID)
 	if err != nil {
 		return errors.Wrap(err, "get user")
 	}
@@ -222,7 +222,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 			continue
 		}
 
-		err = db.ExternalAccounts.AssociateUserAndSave(ctx, user.ID, acct.AccountSpec, acct.AccountData)
+		err = database.GlobalExternalAccounts.AssociateUserAndSave(ctx, user.ID, acct.AccountSpec, acct.AccountData)
 		if err != nil {
 			log15.Error("Could not associate external account to user",
 				"userID", user.ID,
@@ -255,7 +255,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 			accountSuspended := errcode.IsAccountSuspended(errors.Cause(err))
 
 			if unauthorized || accountSuspended {
-				err = db.ExternalAccounts.TouchExpired(ctx, acct.ID)
+				err = database.GlobalExternalAccounts.TouchExpired(ctx, acct.ID)
 				if err != nil {
 					return errors.Wrapf(err, "set expired for external account %d", acct.ID)
 				}
@@ -273,7 +273,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 			}
 			log15.Warn("PermsSyncer.syncUserPerms.proceedWithPartialResults", "userID", user.ID, "error", err)
 		} else {
-			err = db.ExternalAccounts.TouchLastValid(ctx, acct.ID)
+			err = database.GlobalExternalAccounts.TouchLastValid(ctx, acct.ID)
 			if err != nil {
 				return errors.Wrapf(err, "set last valid for external account %d", acct.ID)
 			}
@@ -291,7 +291,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	var rs []*types.Repo
 	if len(repoSpecs) > 0 {
 		// Get corresponding internal database IDs
-		rs, err = s.reposStore.RepoStore.List(ctx, db.ReposListOptions{
+		rs, err = s.reposStore.RepoStore.List(ctx, database.ReposListOptions{
 			ExternalRepos: repoSpecs,
 			OnlyPrivate:   true,
 		})
@@ -327,7 +327,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	ctx, save := s.observe(ctx, "PermsSyncer.syncRepoPerms", "")
 	defer save(requestTypeRepo, int32(repoID), &err)
 
-	rs, err := s.reposStore.RepoStore.List(ctx, db.ReposListOptions{
+	rs, err := s.reposStore.RepoStore.List(ctx, database.ReposListOptions{
 		IDs: []api.RepoID{repoID},
 	})
 	if err != nil {
@@ -442,7 +442,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	if err != nil {
 		return errors.Wrap(err, "start transaction")
 	}
-	defer txs.Done(&err)
+	defer func() { err = txs.Done(err) }()
 
 	accounts := &extsvc.Accounts{
 		ServiceType: provider.ServiceType(),

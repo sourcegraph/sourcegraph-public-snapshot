@@ -9,7 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -25,7 +25,7 @@ func ReposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoNam
 		return repoName, nil
 	}
 
-	opt := db.ExternalServicesListOptions{
+	opt := database.ExternalServicesListOptions{
 		Kinds: []string{
 			extsvc.KindGitHub,
 			extsvc.KindGitLab,
@@ -33,12 +33,12 @@ func ReposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoNam
 			extsvc.KindAWSCodeCommit,
 			extsvc.KindGitolite,
 		},
-		LimitOffset: &db.LimitOffset{
+		LimitOffset: &database.LimitOffset{
 			Limit: 500, // The number is randomly chosen
 		},
 	}
 	for {
-		svcs, err := db.ExternalServices.List(ctx, opt)
+		svcs, err := database.GlobalExternalServices.List(ctx, opt)
 		if err != nil {
 			return "", errors.Wrap(err, "list")
 		}

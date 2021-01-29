@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 // campaignSpecColumns are used by the campaignSpec related Store methods to insert,
@@ -272,7 +272,6 @@ func getNewestCampaignSpecQuery(opts *GetNewestCampaignSpecOpts) *sqlf.Query {
 		sqlf.Join(campaignSpecColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
-
 }
 
 // ListCampaignSpecsOpts captures the query options needed for

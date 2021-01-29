@@ -61,6 +61,29 @@ const CampaignSpecSchemaJSON = `{
         ]
       }
     },
+    "workspaces": {
+      "type": "array",
+      "description": "Individual workspace configurations for one or more repositories that define which workspaces to use for the execution of steps in the repositories.",
+      "items": {
+        "title": "WorkspaceConfiguration",
+        "type": "object",
+        "description": "Configuration for how to setup workspaces in repositories",
+        "additionalProperties": false,
+        "required": ["rootAtLocationOf"],
+        "properties": {
+          "rootAtLocationOf": {
+            "type": "string",
+            "description": "The name of the file that sits at the root of the desired workspace.",
+            "examples": ["package.json", "go.mod", "Gemfile", "Cargo.toml", "README.md"]
+          },
+          "in": {
+            "type": "string",
+            "description": "The repositories in which to apply the workspace configuration. Supports globbing.",
+            "examples": ["github.com/sourcegraph/src-cli", "github.com/sourcegraph/*"]
+          }
+        }
+      }
+    },
     "steps": {
       "type": "array",
       "description": "The sequence of commands to run (for each repository branch matched in the ` + "`" + `on` + "`" + ` property) to produce the campaign's changes.",

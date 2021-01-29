@@ -168,7 +168,7 @@ func reposToAdd(ctx context.Context, args *search.TextParameters, repos []*searc
 			// len(repos) could mean we miss some repos since there could be for example len(repos) file matches in
 			// the first repo and some more in other repos.
 			p := search.TextPatternInfo{IsRegExp: true, FileMatchLimit: math.MaxInt32, IncludePatterns: []string{pattern}, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
-			q, err := query.ParseAndCheck("file:" + pattern)
+			q, err := query.ParseLiteral("file:" + pattern)
 			if err != nil {
 				return nil, err
 			}
@@ -177,12 +177,12 @@ func reposToAdd(ctx context.Context, args *search.TextParameters, repos []*searc
 			newArgs.RepoPromise = (&search.Promise{}).Resolve(repos)
 			newArgs.Query = q
 			newArgs.UseFullDeadline = true
-			matches, _, err := searchFilesInRepos(ctx, &newArgs, nil)
+			matches, _, err := searchFilesInReposBatch(ctx, &newArgs)
 			if err != nil {
 				return nil, err
 			}
 			for _, m := range matches {
-				matchingIDs[m.Repo.IDInt32()] = true
+				matchingIDs[m.Repo.ID] = true
 			}
 		}
 	} else {
@@ -205,12 +205,12 @@ func reposToAdd(ctx context.Context, args *search.TextParameters, repos []*searc
 			newArgs.RepoPromise = rp
 			newArgs.Query = q
 			newArgs.UseFullDeadline = true
-			matches, _, err := searchFilesInRepos(ctx, &newArgs, nil)
+			matches, _, err := searchFilesInReposBatch(ctx, &newArgs)
 			if err != nil {
 				return nil, err
 			}
 			for _, m := range matches {
-				matchingIDs[m.Repo.IDInt32()] = false
+				matchingIDs[m.Repo.ID] = false
 			}
 		}
 	}

@@ -13,6 +13,7 @@ export const PreviewListHeader: React.FunctionComponent<PreviewListHeaderProps> 
         </h5>
         <h5 className="p-2 d-none d-sm-block text-uppercase text-nowrap">Actions</h5>
         <h5 className="p-2 d-none d-sm-block text-uppercase text-nowrap">Changeset information</h5>
-        <h5 className="p-2 d-none d-sm-block text-uppercase text-center text-nowrap">Changes</h5>
+        <h5 className="p-2 d-none d-sm-block text-uppercase text-center text-nowrap">Commit changes</h5>
+        <h5 className="p-2 d-none d-sm-block text-uppercase text-center text-nowrap">Change state</h5>
     </>
 )

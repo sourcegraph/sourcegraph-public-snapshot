@@ -5,14 +5,14 @@ import (
 	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
 // ExternalServicesStore is implemented by any type that can act as a
 // repository for external services (e.g. GitHub, GitLab).
 type ExternalServicesStore interface {
-	Count(context.Context, db.ExternalServicesListOptions) (int, error)
+	Count(context.Context, database.ExternalServicesListOptions) (int, error)
 }
 
 // NewPreCreateExternalServiceHook enforces any per-tier validations prior to
@@ -38,7 +38,7 @@ func NewPreCreateExternalServiceHook(externalServices ExternalServicesStore) fun
 		}
 
 		// Next we'll grab the current count of external services.
-		extSvcCount, err := externalServices.Count(ctx, db.ExternalServicesListOptions{})
+		extSvcCount, err := externalServices.Count(ctx, database.ExternalServicesListOptions{})
 		if err != nil {
 			return err
 		}

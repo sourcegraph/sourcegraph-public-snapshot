@@ -57,12 +57,17 @@ func init() {
 		log.Fatal(err)
 	}
 
-	srv := &http.Server{Handler: (&server.Server{
-		ReposDir: filepath.Join(root, "repos"),
-		GetRemoteURLFunc: func(ctx context.Context, name api.RepoName) (string, error) {
-			return filepath.Join(root, "remotes", string(name)), nil
-		},
-	}).Handler()}
+	srv := &http.Server{
+		Handler: (&server.Server{
+			ReposDir: filepath.Join(root, "repos"),
+			GetRemoteURLFunc: func(ctx context.Context, name api.RepoName) (string, error) {
+				return filepath.Join(root, "remotes", string(name)), nil
+			},
+			GetVCSSyncer: func(ctx context.Context, name api.RepoName) (server.VCSSyncer, error) {
+				return &server.GitRepoSyncer{}, nil
+			},
+		}).Handler(),
+	}
 	go func() {
 		if err := srv.Serve(l); err != nil {
 			log.Fatal(err)

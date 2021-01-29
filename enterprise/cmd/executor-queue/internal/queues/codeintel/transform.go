@@ -3,6 +3,7 @@ package codeintel
 import (
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
@@ -67,6 +68,7 @@ func transformRecord(index store.Index, config *Config) (apiclient.Job, error) {
 					"-root", root,
 					"-upload-route", uploadRoute,
 					"-file", outfile,
+					"-associated-index-id", strconv.Itoa(index.ID),
 				},
 				Dir: index.Root,
 				Env: []string{

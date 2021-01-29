@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
@@ -17,12 +17,12 @@ type Store struct {
 	now func() time.Time
 }
 
-// NewStore returns a new Store backed by the given db.
+// NewStore returns a new Store backed by the given database.
 func NewStore(db dbutil.DB) *Store {
 	return NewStoreWithClock(db, timeutil.Now)
 }
 
-// NewStoreWithClock returns a new Store backed by the given db and
+// NewStoreWithClock returns a new Store backed by the given database and
 // clock for timestamps.
 func NewStoreWithClock(db dbutil.DB, clock func() time.Time) *Store {
 	return &Store{Store: basestore.NewWithDB(db, sql.TxOptions{}), now: clock}
