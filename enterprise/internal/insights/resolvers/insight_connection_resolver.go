@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"errors"
 	"strconv"
 	"sync"
 
@@ -41,7 +40,8 @@ func (r *insightConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend
 }
 
 func (r *insightConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	return 0, errors.New("not yet implemented")
+	insights, _, err := r.compute(ctx)
+	return int32(len(insights)), err
 }
 
 func (r *insightConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
