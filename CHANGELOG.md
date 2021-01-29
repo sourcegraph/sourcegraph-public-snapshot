@@ -19,7 +19,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
--
+- Alert solutions links included in [monitoring alerts](https://docs.sourcegraph.com/admin/observability/alerting) now link to the relevant documentation version. [#17828](https://github.com/sourcegraph/sourcegraph/pull/17828)
 
 ### Fixed
 
