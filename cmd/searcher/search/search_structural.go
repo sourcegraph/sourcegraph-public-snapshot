@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 // The Sourcegraph frontend and interface only allow LineMatches (matches on a
@@ -211,6 +212,9 @@ func structuralSearch(ctx context.Context, zipPath, pattern, rule string, langua
 		NumWorkers:    numWorkers,
 	}
 
+	span, ctx := ot.StartSpanFromContext(ctx, "Comby")
+	defer span.Finish()
+
 	combyMatches, err := comby.Matches(ctx, args)
 	if err != nil {
 		return nil, false, err
@@ -263,7 +267,7 @@ func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request) (matche
 	defer zipFile.Close()
 	defer os.Remove(zipFile.Name())
 
-	if err = writeZip(zipFile, zoektMatches); err != nil {
+	if err = writeZip(ctx, zipFile, zoektMatches); err != nil {
 		return nil, false, false, err
 	}
 
