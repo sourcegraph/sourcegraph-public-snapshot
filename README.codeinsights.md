@@ -67,7 +67,7 @@ UNION
 ## Inserting gauge events
 
 ```
-INSERT INTO gauge_events(
+INSERT INTO series_points(
     time,
     value,
     metadata_id,
@@ -89,14 +89,14 @@ INSERT INTO gauge_events(
 ### All data
 
 ```
-SELECT * FROM gauge_events ORDER BY time DESC LIMIT 100;
+SELECT * FROM series_points ORDER BY time DESC LIMIT 100;
 ```
 
 ### Filter by repo name, returning metadata (may be more optimally queried separately)
 
 ```
 SELECT *
-FROM gauge_events
+FROM series_points
 JOIN metadata ON metadata.id = metadata_id
 WHERE repo_name_id IN (
     SELECT id FROM repo_names WHERE name ~ '.*-renamed'
@@ -109,7 +109,7 @@ DESC LIMIT 100;
 
 ```
 SELECT *
-FROM gauge_events
+FROM series_points
 JOIN metadata ON metadata.id = metadata_id
 WHERE metadata @> '{"hello": "world"}'
 ORDER BY time
@@ -120,7 +120,7 @@ DESC LIMIT 100;
 
 ```
 SELECT *
-FROM gauge_events
+FROM series_points
 JOIN metadata ON metadata.id = metadata_id
 WHERE metadata @> '{"languages": ["Go"]}'
 ORDER BY time
@@ -138,7 +138,7 @@ SELECT
     AVG(value),
     MAX(value),
     MIN(value)
-FROM gauge_events
+FROM series_points
 GROUP BY value, bucket;
 ```
 

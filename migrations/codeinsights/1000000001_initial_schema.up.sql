@@ -54,7 +54,7 @@ CREATE INDEX metadata_metadata_gin ON metadata USING GIN (metadata);
 -- a specific repository, or lookup the current name of a repository after it has been e.g. renamed.
 -- The name can be used to refer to the name of the repository at the time of the event's creation,
 -- for example to trace the change in a gauge back to a repository being renamed.
-CREATE TABLE gauge_events (
+CREATE TABLE series_points (
     -- The timestamp of the recorded event.
     time TIMESTAMPTZ NOT NULL,
 
@@ -95,11 +95,11 @@ CREATE TABLE gauge_events (
 
 -- Create hypertable, partitioning events by time.
 -- See https://docs.timescale.com/latest/using-timescaledb/hypertables
-SELECT create_hypertable('gauge_events', 'time');
+SELECT create_hypertable('series_points', 'time');
 
 -- Create btree indexes for repository filtering.
-CREATE INDEX gauge_events_repo_id_btree ON gauge_events USING btree (repo_id);
-CREATE INDEX gauge_events_repo_name_id_btree ON gauge_events USING btree (repo_name_id);
-CREATE INDEX gauge_events_original_repo_name_id_btree ON gauge_events USING btree (original_repo_name_id);
+CREATE INDEX series_points_repo_id_btree ON series_points USING btree (repo_id);
+CREATE INDEX series_points_repo_name_id_btree ON series_points USING btree (repo_name_id);
+CREATE INDEX series_points_original_repo_name_id_btree ON series_points USING btree (original_repo_name_id);
 
 COMMIT;

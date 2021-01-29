@@ -1,9 +1,9 @@
 BEGIN;
 
-DROP INDEX IF EXISTS gauge_events_repo_id_btree;
-DROP INDEX IF EXISTS gauge_events_repo_name_id_btree;
-DROP INDEX IF EXISTS gauge_events_original_repo_name_id_btree;
-DROP TABLE IF EXISTS gauge_events;
+DROP INDEX IF EXISTS series_points_repo_id_btree;
+DROP INDEX IF EXISTS series_points_repo_name_id_btree;
+DROP INDEX IF EXISTS series_points_original_repo_name_id_btree;
+DROP TABLE IF EXISTS series_points;
 
 DROP INDEX IF EXISTS repo_names_name_unique_idx;
 DROP INDEX IF EXISTS repo_names_name_trgm;
