@@ -1,10 +1,10 @@
-import { compact, find } from 'lodash'
+import { compact, find, head } from 'lodash'
 import { interval, Observable, Subject } from 'rxjs'
 import { filter, map, refCount, publishReplay } from 'rxjs/operators'
 import { MutationRecordLike } from '../../util/dom'
 import { CodeHost } from '../shared/codeHost'
 import { CodeView, DOMFunctions } from '../shared/codeViews'
-import { queryWithSelector, ViewResolver } from '../shared/views'
+import { queryWithSelector, ViewResolver, CustomSelectorFunction } from '../shared/views'
 
 function checkIsGerrit(): boolean {
     const isGerrit = !!document.querySelector('gr-app#app')
@@ -225,6 +225,7 @@ const resolveFilePageCodeView: ViewResolver<CodeView> = {
     },
 }
 
+/** Storing  */
 interface ElementWithFilePath {
     element: HTMLElement
     filePath: string
@@ -240,16 +241,17 @@ export const observeMutations = (
     return interval(POLLING_INTERVAL).pipe(
         map(() => {
             const { filePath = '' } = parseGerritChange()
-            const foundElements = codeViewResolvers
-                .map(resolver => [...queryWithSelector(document.body, resolver.selector)])
-                .flat()
+            const selectors = [...codeViewResolvers.map(resolver => resolver.selector), toolbarSelector]
+            const foundElements = selectors.map(selector => [...queryWithSelector(document.body, selector)]).flat()
             const addedNodes = foundElements.filter(
                 foundElement => !find(knownElements, { element: foundElement, filePath })
             )
             const removedNodes = knownElements.filter(
                 knownElement =>
-                    knownElement.filePath !== filePath ||
-                    !foundElements.find(foundElement => foundElement === knownElement.element)
+                    !(
+                        knownElement.filePath === filePath &&
+                        foundElements.find(foundElement => foundElement === knownElement.element)
+                    )
             )
 
             // Add to known elements
@@ -301,6 +303,35 @@ export const gerritCodeHost: CodeHost = {
         className: 'code-view-toolbar--gerrit',
         actionItemIconClass: 'icon--gerrit',
     },
+    viewOnSourcegraphButtonClassProps: {
+        className: 'open-on-sourcegraph--gerrit',
+        iconClassName: 'open-on-sourcegraph-icon--gerrit',
+    },
+    getViewContextOnSourcegraphMount: target => {
+        const secondaryActionsElement = head(toolbarSelector(target))
+        if (!secondaryActionsElement) {
+            return null
+        }
+        console.log('secondaryActionsElement', secondaryActionsElement)
+        const mount = document.createElement('gr-button')
+        mount.setAttribute('link', 'link')
+        mount.classList.add('OPEN_IN_SOURCEGRAPH')
+        secondaryActionsElement.prepend(mount)
+        secondaryActionsElement.append(createStyleElement(toolbarStyles))
+
+        return mount
+    },
+}
+
+const toolbarSelector: CustomSelectorFunction = () => {
+    const toolbar = querySelectorAcrossShadowRoots(document.body, [
+        '#app',
+        '#app-element',
+        'main > gr-change-view',
+        '#actions',
+        '#secondaryActions',
+    ])
+    return toolbar ? [toolbar as HTMLElement] : null
 }
 
 function getParentCommit(): string | null | undefined {
@@ -393,6 +424,7 @@ function getSubheaderFromCodeView(codeView: HTMLElement): HTMLElement | null | u
 function createStyleElement(styles: string): HTMLStyleElement {
     const styleElement = document.createElement('style')
     styleElement.textContent = styles
+    console.log('Created style element', styleElement)
     return styleElement
 }
 
@@ -401,5 +433,12 @@ const toolbarStyles = `
     height: 1.3rem;
     width: 1.3rem;
     padding: 5px 4px;
+}
+.open-on-sourcegraph-icon--gerrit {
+    height: 1rem;
+    width: 1rem;
+}
+.open-on-sourcegraph--gerrit {
+    text-decoration: none;
 }
 `

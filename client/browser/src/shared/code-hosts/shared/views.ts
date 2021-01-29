@@ -14,7 +14,7 @@ export type ViewWithSubscriptions<V extends View> = V & {
     subscriptions: Subscription
 }
 
-type CustomSelectorFunction = (
+export type CustomSelectorFunction = (
     target: HTMLElement
 ) => ReturnType<ParentNode['querySelectorAll']> | HTMLElement[] | null | undefined
 
