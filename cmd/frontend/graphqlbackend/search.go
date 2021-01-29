@@ -51,6 +51,9 @@ type SearchImplementer interface {
 	Suggestions(context.Context, *searchSuggestionsArgs) ([]*searchSuggestionResolver, error)
 	//lint:ignore U1000 is used by graphql via reflection
 	Stats(context.Context) (*searchResultsStats, error)
+
+	SetStream(c SearchStream)
+	Inputs() SearchInputs
 }
 
 // NewSearchImplementer returns a SearchImplementer that provides search results and suggestions.
@@ -119,6 +122,7 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (_ SearchImplem
 			UserSettings:      settings,
 			Pagination:        pagination,
 			PatternType:       searchType,
+			Limit:             maxResults(args, queryInfo),
 		},
 		zoekt:        search.Indexed(),
 		searcherURLs: search.SearcherURLs(),
@@ -250,6 +254,9 @@ type SearchInputs struct {
 	VersionContext    *string
 	SearchContextSpec *string
 	UserSettings      *schema.Settings
+
+	// Limit is the maximum number of SearchResults to send back to the user.
+	Limit int
 }
 
 // searchResolver is a resolver for the GraphQL type `Search`
@@ -333,8 +340,8 @@ func (r *searchResolver) SetStream(c SearchStream) {
 	r.resultChannel = c
 }
 
-func (r *searchResolver) Inputs() *SearchInputs {
-	return r.SearchInputs
+func (r *searchResolver) Inputs() SearchInputs {
+	return *r.SearchInputs
 }
 
 // rawQuery returns the original query string input.
@@ -351,25 +358,27 @@ func (r *searchResolver) countIsSet() bool {
 const defaultMaxSearchResults = 30
 const maxSearchResultsPerPaginatedRequest = 5000
 
-func (r *searchResolver) maxResults() int32 {
-	if r.Pagination != nil {
+// maxResults computes the limit for the query.
+func maxResults(args *SearchArgs, queryInfo query.QueryInfo) int {
+	if args.First != nil {
 		// Paginated search requests always consume an entire result set for a
 		// given repository, so we do not want any limit here. See
 		// search_pagination.go for details on why this is necessary .
 		return math.MaxInt32
 	}
-	count, _ := r.Query.StringValues(query.FieldCount)
+
+	count, _ := queryInfo.StringValues(query.FieldCount)
 	if len(count) > 0 {
 		n, _ := strconv.Atoi(count[0])
 		if n > 0 {
-			return int32(n)
+			return n
 		}
 	}
-	max, _ := r.Query.StringValues(query.FieldMax)
+	max, _ := queryInfo.StringValues(query.FieldMax)
 	if len(max) > 0 {
 		n, _ := strconv.Atoi(max[0])
 		if n > 0 {
-			return int32(n)
+			return n
 		}
 	}
 	return defaultMaxSearchResults

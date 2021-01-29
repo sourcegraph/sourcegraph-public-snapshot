@@ -726,6 +726,11 @@ type Mutation {
     syncChangeset(changeset: ID!): EmptyResponse!
 
     """
+    Re-enqueue the changeset for processing by the reconciler. The changeset must be in FAILED state.
+    """
+    reenqueueChangeset(changeset: ID!): Changeset!
+
+    """
     Create a new credential for the given user for the given code host.
     If another token for that code host already exists, an error with the error code
     ErrDuplicateCredential is returned.

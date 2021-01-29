@@ -15,8 +15,10 @@ import (
 )
 
 // StreamHandler is an http handler which streams back search results.
-var StreamHandler http.Handler = &streamHandler{
-	newSearchResolver: defaultNewSearchResolver,
+func StreamHandler() http.Handler {
+	return &streamHandler{
+		newSearchResolver: defaultNewSearchResolver,
+	}
 }
 
 type streamHandler struct {
@@ -49,6 +51,10 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Always send a final done event so clients know the stream is shutting
+	// down.
+	defer eventWriter.Event("done", map[string]interface{}{})
+
 	// Log events to trace
 	eventWriter.StatHook = eventStreamOTHook(tr.LogFields)
 
@@ -66,6 +72,15 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	progress := progressAggregator{
 		Start: time.Now(),
+		Limit: search.Inputs().Limit,
+	}
+
+	sendProgress := func() {
+		_ = eventWriter.Event("progress", progress.Current())
+	}
+
+	filters := &graphqlbackend.SearchFilters{
+		Globbing: false, // TODO
 	}
 
 	const matchesChunk = 1000
@@ -78,12 +93,15 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 			matchesBuf = matchesBuf[:0]
 
-			_ = eventWriter.Event("progress", progress.Build())
+			sendProgress()
 		}
 	}
 
 	flushTicker := time.NewTicker(100 * time.Millisecond)
 	defer flushTicker.Stop()
+
+	pingTicker := time.NewTicker(5 * time.Second)
+	defer pingTicker.Stop()
 
 	first := true
 
@@ -95,6 +113,9 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		case <-flushTicker.C:
 			ok = true
 			flushMatchesBuf()
+		case <-pingTicker.C:
+			ok = true
+			sendProgress()
 		}
 
 		if !ok {
@@ -102,6 +123,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		progress.Update(event)
+		filters.Update(event)
 
 		for _, result := range event.Results {
 			if fm, ok := result.ToFileMatch(); ok {
@@ -146,24 +168,16 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	flushMatchesBuf()
 
-	final := <-resultsStreamDone
-	resultsResolver, err := final.resultsResolver, final.err
-	if err != nil {
-		_ = eventWriter.Event("error", err.Error())
-		return
-	}
-
-	// Send dynamic filters once. When this is true streaming we may want to
-	// send updated filters as we find more results.
-	if filters := resultsResolver.DynamicFilters(ctx); len(filters) > 0 {
+	// Send dynamic filters once.
+	if filters := filters.Compute(); len(filters) > 0 {
 		buf := make([]eventFilter, 0, len(filters))
 		for _, f := range filters {
 			buf = append(buf, eventFilter{
-				Value:    f.Value(),
-				Label:    f.Label(),
-				Count:    int(f.Count()),
-				LimitHit: f.LimitHit(),
-				Kind:     f.Kind(),
+				Value:    f.Value,
+				Label:    f.Label,
+				Count:    f.Count,
+				LimitHit: f.IsLimitHit,
+				Kind:     f.Kind,
 			})
 		}
 
@@ -171,6 +185,13 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			// EOF
 			return
 		}
+	}
+
+	final := <-resultsStreamDone
+	resultsResolver, err := final.resultsResolver, final.err
+	if err != nil {
+		_ = eventWriter.Event("error", err.Error())
+		return
 	}
 
 	if alert := resultsResolver.Alert(); alert != nil {
@@ -190,18 +211,13 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	pr := progress.Build()
-	pr.Done = true
-	_ = eventWriter.Event("progress", pr)
-
-	// TODO done event includes progress
-	_ = eventWriter.Event("done", map[string]interface{}{})
+	_ = eventWriter.Event("progress", progress.Final())
 }
 
 type searchResolver interface {
 	Results(context.Context) (*graphqlbackend.SearchResultsResolver, error)
 	SetStream(c graphqlbackend.SearchStream)
-	Inputs() *graphqlbackend.SearchInputs
+	Inputs() graphqlbackend.SearchInputs
 }
 
 func defaultNewSearchResolver(ctx context.Context, args *graphqlbackend.SearchArgs) (searchResolver, error) {
