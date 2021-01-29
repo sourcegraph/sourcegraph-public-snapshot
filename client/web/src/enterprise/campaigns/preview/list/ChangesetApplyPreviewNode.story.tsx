@@ -26,6 +26,12 @@ add('Overview', () => {
                             {...props}
                             key={index}
                             node={node}
+                            authenticatedUser={{
+                                url: '/users/alice',
+                                displayName: 'Alice',
+                                username: 'alice',
+                                email: 'alice@email.test',
+                            }}
                             queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
                         />
                     ))}

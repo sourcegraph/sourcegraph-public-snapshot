@@ -441,7 +441,7 @@ const messageHandlers: {
                 // See https://developer.mozilla.org/en-US/docs/Web/API/EventSource/error_event
                 observer.error(
                     new Error(
-                        'There was a network error retrieving search results. Check your Internet connection and try again.'
+                        'The connection was closed before your search was completed. This may be due to a problem with a firewall, VPN or proxy, or a failure with the Sourcegraph server.'
                     )
                 )
             }
@@ -457,6 +457,7 @@ export interface StreamSearchOptions {
     query: string
     version: string
     patternType: SearchPatternType
+    caseSensitive: boolean
     versionContext: string | undefined
     trace: string | undefined
 }
@@ -467,10 +468,17 @@ export interface StreamSearchOptions {
  *
  * @param query the search query to send to Sourcegraph's backend.
  */
-function search({ query, version, patternType, versionContext, trace }: StreamSearchOptions): Observable<SearchEvent> {
+function search({
+    query,
+    version,
+    patternType,
+    caseSensitive,
+    versionContext,
+    trace,
+}: StreamSearchOptions): Observable<SearchEvent> {
     return new Observable<SearchEvent>(observer => {
         const parameters = [
-            ['q', query],
+            ['q', caseSensitive ? `${query} case:yes` : query],
             ['v', version],
             ['t', patternType as string],
         ]

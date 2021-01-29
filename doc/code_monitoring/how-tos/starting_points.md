@@ -23,5 +23,10 @@ f:\.tsx?$ patterntype:regexp fetch\(['"`]/deprecated-endpoint
 
 If you’re deprecating an API or an endpoint, you may find it useful to set up a code monitor watching for new consumers. As an example, the above query will surface fetch() calls to `/deprecated-endpoint` within TypeScript files. Replace `/deprecated-endpoint` with the actual path of the endpoint being deprecated.
 
+## Get notified when a file changes
 
+```
+patterntype:regexp repo:^github\.com/sourcegraph/sourcegraph$ file:SourcegraphWebApp\.tsx$ type:diff
+```
 
+You may want to get notified when a given file is changed, regardless of the diff contents of the change: the above query will return all changes to the `SourcegraphWebApp.tsx` file on the `github.com/sourcegraph/sourcegraph` repo.

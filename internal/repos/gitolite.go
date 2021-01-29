@@ -11,7 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -173,7 +173,7 @@ func (s *GitolitePhabricatorMetadataSyncer) Sync(ctx context.Context, repos []*t
 		return nil
 	}
 
-	es, err := s.store.ExternalServiceStore.List(ctx, db.ExternalServicesListOptions{IDs: ids})
+	es, err := s.store.ExternalServiceStore.List(ctx, database.ExternalServicesListOptions{IDs: ids})
 	if err != nil {
 		return errors.Wrap(err, "gitolite-phabricator-metadata-syncer.store.list-external-services")
 	}

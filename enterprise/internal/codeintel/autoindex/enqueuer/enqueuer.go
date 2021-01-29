@@ -182,8 +182,10 @@ func (s *IndexEnqueuer) inferIndexJobsFromRepositoryStructure(ctx context.Contex
 		return nil, false, errors.Wrap(err, "gitserver.ListFiles")
 	}
 
+	gitserverClient := inference.NewGitserverClientShim(repositoryID, commit, s.gitserverClient)
+
 	for _, recognizer := range inference.Recognizers {
-		indexes = append(indexes, convertInferredConfiguration(repositoryID, commit, recognizer.InferIndexJobs(paths))...)
+		indexes = append(indexes, convertInferredConfiguration(repositoryID, commit, recognizer.InferIndexJobs(paths, gitserverClient))...)
 	}
 
 	if len(indexes) > s.maxJobsPerCommit {

@@ -1,11 +1,11 @@
 import TerserPlugin from 'terser-webpack-plugin'
 import * as webpack from 'webpack'
-import baseConfig from './base.config'
+import { config as baseConfig } from './base.config'
 import { generateBundleUID } from './utils'
 
 const { plugins, ...base } = baseConfig
 
-const config: webpack.Configuration = {
+export const config: webpack.Configuration = {
     ...base,
     mode: 'production',
     optimization: {
@@ -41,4 +41,3 @@ const config: webpack.Configuration = {
         ]
     ),
 }
-export default config

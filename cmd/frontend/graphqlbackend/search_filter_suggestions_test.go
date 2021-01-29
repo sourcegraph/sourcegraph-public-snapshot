@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -21,13 +21,13 @@ func TestSearchFilterSuggestions(t *testing.T) {
 	}
 	defer func() { searchrepos.MockResolveRepoGroups = nil }()
 
-	db.Mocks.Repos.List = func(_ context.Context, _ db.ReposListOptions) ([]*types.Repo, error) {
+	database.Mocks.Repos.List = func(_ context.Context, _ database.ReposListOptions) ([]*types.Repo, error) {
 		return []*types.Repo{
 			{Name: "github.com/foo/repo"},
 			{Name: "bar-repo"},
 		}, nil
 	}
-	defer func() { db.Mocks.Repos.List = nil }()
+	defer func() { database.Mocks.Repos.List = nil }()
 
 	tests := []struct {
 		want     *searchFilterSuggestions

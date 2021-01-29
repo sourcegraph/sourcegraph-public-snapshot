@@ -12,7 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 // Deprecated: The GraphQL type Configuration is deprecated.
@@ -195,7 +195,7 @@ func (r *settingsMutation) doUpdateSettings(ctx context.Context, computeEdits fu
 
 func (r *settingsMutation) getCurrentSettings(ctx context.Context) (string, error) {
 	// Get the settings file whose contents to mutate.
-	settings, err := db.GlobalSettings.GetLatest(ctx, r.subject.toSubject())
+	settings, err := database.GlobalSettings.GetLatest(ctx, r.subject.toSubject())
 	if err != nil {
 		return "", err
 	}

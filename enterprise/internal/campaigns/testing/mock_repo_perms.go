@@ -7,10 +7,10 @@ import (
 
 	"github.com/RoaringBitmap/roaring"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/db"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 )
 
 // MockRepoPermissions mocks repository permissions to include
@@ -18,7 +18,7 @@ import (
 func MockRepoPermissions(t *testing.T, userID int32, repoIDs ...api.RepoID) {
 	t.Helper()
 
-	permsStore := db.NewPermsStore(dbconn.Global, time.Now)
+	permsStore := database.Perms(dbconn.Global, time.Now)
 
 	userIDs := roaring.New()
 	userIDs.Add(uint32(userID))

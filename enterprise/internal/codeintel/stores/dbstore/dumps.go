@@ -10,29 +10,30 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commitgraph"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // Dump is a subset of the lsif_uploads table (queried via the lsif_dumps_with_repository_name view)
 // and stores only processed records.
 type Dump struct {
-	ID             int        `json:"id"`
-	Commit         string     `json:"commit"`
-	Root           string     `json:"root"`
-	VisibleAtTip   bool       `json:"visibleAtTip"`
-	UploadedAt     time.Time  `json:"uploadedAt"`
-	State          string     `json:"state"`
-	FailureMessage *string    `json:"failureMessage"`
-	StartedAt      *time.Time `json:"startedAt"`
-	FinishedAt     *time.Time `json:"finishedAt"`
-	ProcessAfter   *time.Time `json:"processAfter"`
-	NumResets      int        `json:"numResets"`
-	NumFailures    int        `json:"numFailures"`
-	RepositoryID   int        `json:"repositoryId"`
-	RepositoryName string     `json:"repositoryName"`
-	Indexer        string     `json:"indexer"`
+	ID                int        `json:"id"`
+	Commit            string     `json:"commit"`
+	Root              string     `json:"root"`
+	VisibleAtTip      bool       `json:"visibleAtTip"`
+	UploadedAt        time.Time  `json:"uploadedAt"`
+	State             string     `json:"state"`
+	FailureMessage    *string    `json:"failureMessage"`
+	StartedAt         *time.Time `json:"startedAt"`
+	FinishedAt        *time.Time `json:"finishedAt"`
+	ProcessAfter      *time.Time `json:"processAfter"`
+	NumResets         int        `json:"numResets"`
+	NumFailures       int        `json:"numFailures"`
+	RepositoryID      int        `json:"repositoryId"`
+	RepositoryName    string     `json:"repositoryName"`
+	Indexer           string     `json:"indexer"`
+	AssociatedIndexID *int       `json:"associatedIndex"`
 }
 
 // scanDumps scans a slice of dumps from the return value of `*Store.query`.
@@ -61,6 +62,7 @@ func scanDumps(rows *sql.Rows, queryErr error) (_ []Dump, err error) {
 			&dump.RepositoryID,
 			&dump.RepositoryName,
 			&dump.Indexer,
+			&dump.AssociatedIndexID,
 		); err != nil {
 			return nil, err
 		}
@@ -107,7 +109,8 @@ SELECT
 	d.num_failures,
 	d.repository_id,
 	d.repository_name,
-	d.indexer
+	d.indexer,
+	d.associated_index_id
 FROM lsif_dumps_with_repository_name d WHERE d.id = %s
 `
 
@@ -168,7 +171,8 @@ SELECT
 	d.num_failures,
 	d.repository_id,
 	d.repository_name,
-	d.indexer
+	d.indexer,
+	d.associated_index_id
 FROM visible_uploads vu
 JOIN lsif_dumps_with_repository_name d ON d.id = vu.upload_id
 WHERE %s
@@ -256,7 +260,8 @@ SELECT
 	d.num_failures,
 	d.repository_id,
 	d.repository_name,
-	d.indexer
+	d.indexer,
+	d.associated_index_id
 FROM lsif_dumps_with_repository_name d
 WHERE d.id IN (%s) AND %s
 `

@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/go-lsp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -48,21 +48,21 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 	// If globbing is activated, convert regex patterns of repo, file, and repohasfile
 	// from "field:^foo$" to "field:^foo".
 	globbing := false
-	if getBoolPtr(r.userSettings.SearchGlobbing, false) {
+	if getBoolPtr(r.UserSettings.SearchGlobbing, false) {
 		globbing = true
 	}
-	if AndOrQuery, isAndOr := r.query.(*query.AndOrQuery); globbing && isAndOr {
+	if AndOrQuery, isAndOr := r.Query.(*query.AndOrQuery); globbing && isAndOr {
 		AndOrQuery.Query = query.FuzzifyRegexPatterns(AndOrQuery.Query)
 	}
 
 	args.applyDefaultsAndConstraints()
 
-	if len(r.query.ParseTree()) == 0 {
+	if len(r.Query.ParseTree()) == 0 {
 		return nil, nil
 	}
 
 	// Only suggest for type:file.
-	typeValues, _ := r.query.StringValues(query.FieldType)
+	typeValues, _ := r.Query.StringValues(query.FieldType)
 	for _, resultType := range typeValues {
 		if resultType != "file" {
 			return nil, nil
@@ -80,10 +80,10 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		// * If only repo fields (except 1 term in query), show repo suggestions.
 
 		var effectiveRepoFieldValues []string
-		if len(r.query.Values(query.FieldDefault)) == 1 && (len(r.query.Fields()) == 1 || (len(r.query.Fields()) == 2 && len(r.query.Values(query.FieldRepoGroup)) == 1)) {
-			effectiveRepoFieldValues = append(effectiveRepoFieldValues, r.query.Values(query.FieldDefault)[0].ToString())
-		} else if len(r.query.Values(query.FieldRepo)) > 0 && ((len(r.query.Values(query.FieldRepoGroup)) > 0 && len(r.query.Fields()) == 2) || (len(r.query.Values(query.FieldRepoGroup)) == 0 && len(r.query.Fields()) == 1)) {
-			effectiveRepoFieldValues, _ = r.query.RegexpPatterns(query.FieldRepo)
+		if len(r.Query.Values(query.FieldDefault)) == 1 && (len(r.Query.Fields()) == 1 || (len(r.Query.Fields()) == 2 && len(r.Query.Values(query.FieldRepoGroup)) == 1)) {
+			effectiveRepoFieldValues = append(effectiveRepoFieldValues, r.Query.Values(query.FieldDefault)[0].ToString())
+		} else if len(r.Query.Values(query.FieldRepo)) > 0 && ((len(r.Query.Values(query.FieldRepoGroup)) > 0 && len(r.Query.Fields()) == 2) || (len(r.Query.Values(query.FieldRepoGroup)) == 0 && len(r.Query.Fields()) == 1)) {
+			effectiveRepoFieldValues, _ = r.Query.RegexpPatterns(query.FieldRepo)
 		}
 
 		// If we have a query which is not valid, just ignore it since this is for a suggestion.
@@ -121,9 +121,9 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		// If only repos/repogroups and files are specified (and at most 1 term), then show file
 		// suggestions.  If the query has a single term, then consider it to be a `file:` filter (to
 		// make it easy to jump to files by just typing in their name, not `file:<their name>`).
-		hasOnlyEmptyRepoField := len(r.query.Values(query.FieldRepo)) > 0 && allEmptyStrings(r.query.RegexpPatterns(query.FieldRepo)) && len(r.query.Fields()) == 1
-		hasRepoOrFileFields := len(r.query.Values(query.FieldRepoGroup)) > 0 || len(r.query.Values(query.FieldRepo)) > 0 || len(r.query.Values(query.FieldFile)) > 0
-		if !hasOnlyEmptyRepoField && hasRepoOrFileFields && len(r.query.Values(query.FieldDefault)) <= 1 {
+		hasOnlyEmptyRepoField := len(r.Query.Values(query.FieldRepo)) > 0 && allEmptyStrings(r.Query.RegexpPatterns(query.FieldRepo)) && len(r.Query.Fields()) == 1
+		hasRepoOrFileFields := len(r.Query.Values(query.FieldRepoGroup)) > 0 || len(r.Query.Values(query.FieldRepo)) > 0 || len(r.Query.Values(query.FieldFile)) > 0
+		if !hasOnlyEmptyRepoField && hasRepoOrFileFields && len(r.Query.Values(query.FieldDefault)) <= 1 {
 			ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
 			defer cancel()
 			return r.suggestFilePaths(ctx, maxSearchSuggestions)
@@ -140,10 +140,10 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		// The "repo:" field must be specified for showing language suggestions.
 		// For performance reasons, only try to get languages of the first repository found
 		// within the scope of the "repo:" field value.
-		if len(r.query.Values(query.FieldRepo)) == 0 {
+		if len(r.Query.Values(query.FieldRepo)) == 0 {
 			return nil, nil
 		}
-		effectiveRepoFieldValues, _ := r.query.RegexpPatterns(query.FieldRepo)
+		effectiveRepoFieldValues, _ := r.Query.RegexpPatterns(query.FieldRepo)
 
 		validValues := effectiveRepoFieldValues[:0]
 		for _, v := range effectiveRepoFieldValues {
@@ -162,9 +162,9 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		}
 
 		// Only care about the first found repository.
-		repos, err := backend.Repos.List(ctx, db.ReposListOptions{
+		repos, err := backend.Repos.List(ctx, database.ReposListOptions{
 			IncludePatterns: validValues,
-			LimitOffset: &db.LimitOffset{
+			LimitOffset: &database.LimitOffset{
 				Limit: 1,
 			},
 		})
@@ -219,7 +219,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		fileMatches, _, err := searchSymbols(ctx, &search.TextParameters{
 			PatternInfo:  p,
 			RepoPromise:  (&search.Promise{}).Resolve(resolved.RepoRevs),
-			Query:        r.query,
+			Query:        r.Query,
 			Zoekt:        r.zoekt,
 			SearcherURLs: r.searcherURLs,
 		}, 7)
@@ -271,7 +271,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		// to avoid delaying repo and file suggestions for too long.
 		ctx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
 		defer cancel()
-		if len(r.query.Values(query.FieldDefault)) > 0 {
+		if len(r.Query.Values(query.FieldDefault)) > 0 {
 			results, err := r.doResults(ctx, "file") // only "file" result type
 			if err == context.DeadlineExceeded {
 				err = nil // don't log as error below

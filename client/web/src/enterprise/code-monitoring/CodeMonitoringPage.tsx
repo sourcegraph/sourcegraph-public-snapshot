@@ -100,13 +100,9 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                         <h2>Get started with code monitoring</h2>
                         <p className="text-muted code-monitoring-page__start-subheading mb-4">
                             Watch your code for changes and trigger actions to get notifications, send webhooks, and
-                            more. <a href="">Learn more.</a>
+                            more. <a href="https://docs.sourcegraph.com/code_monitoring">Learn more.</a>
                         </p>
-                        <Link
-                            to="/code-monitoring/new"
-                            className="code-monitoring-page__start-button btn btn-primary"
-                            type="button"
-                        >
+                        <Link to="/code-monitoring/new" className="code-monitoring-page__start-button btn btn-primary">
                             Create your first code monitor →
                         </Link>
                     </div>
@@ -144,7 +140,9 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                                 </div>
                             </div>
                         </div>
-                        <a className="link">Find more starting points in the docs</a>
+                        <a className="link" href="https://docs.sourcegraph.com/code_monitoring/how-tos/starting_points">
+                            Find more starting points in the docs
+                        </a>
                     </div>
                     <div className="code-monitoring-page__learn-more container mt-5">
                         <h3 className="mb-3">Learn more about code monitoring</h3>
@@ -168,7 +166,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                                     <h4>Starting points and ideas</h4>
                                     <p className="text-muted">
                                         Find specific examples of useful code monitors to keep on top of security and
-                                        consistency concerns.
+                                        consistency concerns.{' '}
                                         <a
                                             href="https://docs.sourcegraph.com/code_monitoring/how-tos/starting_points"
                                             className="link"

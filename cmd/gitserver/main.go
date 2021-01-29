@@ -13,23 +13,26 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/pkg/errors"
-
 	"github.com/inconshreveable/log15"
+	jsoniter "github.com/json-iterator/go"
+	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var (
@@ -63,9 +66,9 @@ func main() {
 		log.Fatalf("parsing $SRC_REPOS_DESIRED_PERCENT_FREE: %v", err)
 	}
 
-	repoStore, err := getRepoStore()
+	repoStore, externalServiceStore, err := getStores()
 	if err != nil {
-		log.Fatalf("failed to initialize db repo store: %v", err)
+		log.Fatalf("failed to initialize database stores: %v", err)
 	}
 
 	gitserver := server.Server{
@@ -81,6 +84,39 @@ func main() {
 				return info.CloneURL, nil
 			}
 			return "", fmt.Errorf("no sources for %q", repo)
+		},
+		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (server.VCSSyncer, error) {
+			r, err := repoStore.GetByName(ctx, repo)
+			if err != nil {
+				return nil, errors.Wrap(err, "get repository")
+			}
+
+			switch r.ExternalRepo.ServiceType {
+			case extsvc.TypePerforce:
+				// Extract options from external service config
+				var c schema.PerforceConnection
+				for _, info := range r.Sources {
+					es, err := externalServiceStore.GetByID(ctx, info.ExternalServiceID())
+					if err != nil {
+						return nil, errors.Wrap(err, "get external service")
+					}
+
+					normalized, err := jsonc.Parse(es.Config)
+					if err != nil {
+						return nil, errors.Wrap(err, "normalize JSON")
+					}
+
+					if err = jsoniter.Unmarshal(normalized, &c); err != nil {
+						return nil, errors.Wrap(err, "unmarshal JSON")
+					}
+					break
+				}
+
+				return &server.PerforceDepotSyncer{
+					MaxChanges: int(c.MaxChanges),
+				}, nil
+			}
+			return &server.GitRepoSyncer{}, nil
 		},
 	}
 	gitserver.RegisterMetrics()
@@ -160,9 +196,9 @@ func parsePercent(s string) (int, error) {
 	return p, nil
 }
 
-// getRepoStore initializes a connection to the database and returns a
-// RepoStore.
-func getRepoStore() (*db.RepoStore, error) {
+// getStores initializes a connection to the database and returns RepoStore and
+// ExternalServiceStore.
+func getStores() (*database.RepoStore, *database.ExternalServiceStore, error) {
 	//
 	// START FLAILING
 
@@ -187,8 +223,8 @@ func getRepoStore() (*db.RepoStore, error) {
 
 	h, err := dbconn.New(dsn, "gitserver")
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return db.Repos(h), nil
+	return database.Repos(h), database.ExternalServices(h), nil
 }

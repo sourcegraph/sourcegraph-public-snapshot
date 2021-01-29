@@ -5,7 +5,7 @@ package mocks
 import (
 	"context"
 	sqlf "github.com/keegancsmith/sqlf"
-	basestore "github.com/sourcegraph/sourcegraph/internal/db/basestore"
+	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	workerutil "github.com/sourcegraph/sourcegraph/internal/workerutil"
 	store "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"sync"

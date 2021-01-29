@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -56,7 +56,7 @@ func repositoryByID(ctx context.Context, id graphql.ID) (*RepositoryResolver, er
 	if err := relay.UnmarshalSpec(id, &repoID); err != nil {
 		return nil, err
 	}
-	repo, err := db.GlobalRepos.Get(ctx, repoID)
+	repo, err := database.GlobalRepos.Get(ctx, repoID)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func repositoryByID(ctx context.Context, id graphql.ID) (*RepositoryResolver, er
 }
 
 func RepositoryByIDInt32(ctx context.Context, repoID api.RepoID) (*RepositoryResolver, error) {
-	repo, err := db.GlobalRepos.Get(ctx, repoID)
+	repo, err := database.GlobalRepos.Get(ctx, repoID)
 	if err != nil {
 		return nil, err
 	}
@@ -287,7 +287,7 @@ func (r *RepositoryResolver) ToCommitSearchResult() (*CommitSearchResultResolver
 	return nil, false
 }
 
-func (r *RepositoryResolver) resultCount() int32 {
+func (r *RepositoryResolver) ResultCount() int32 {
 	return 1
 }
 
@@ -306,7 +306,7 @@ func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 		log15.Debug("RepositoryResolver.hydrate", "repo.ID", r.IDInt32())
 
 		var repo *types.Repo
-		repo, r.err = db.GlobalRepos.Get(ctx, r.IDInt32())
+		repo, r.err = database.GlobalRepos.Get(ctx, r.IDInt32())
 		if r.err == nil {
 			r.innerRepo = repo
 		}
@@ -367,7 +367,7 @@ func (*schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {
 		args.URI = args.Name
 	}
 
-	_, err := db.GlobalPhabricator.CreateIfNotExists(ctx, args.Callsign, api.RepoName(*args.URI), args.URL)
+	_, err := database.GlobalPhabricator.CreateIfNotExists(ctx, args.Callsign, api.RepoName(*args.URI), args.URL)
 	if err != nil {
 		log15.Error("adding phabricator repo", "callsign", args.Callsign, "name", args.URI, "url", args.URL)
 	}
@@ -384,7 +384,7 @@ func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct 
 	Description *string
 	Date        *string
 }) (*GitCommitResolver, error) {
-	repo, err := db.GlobalRepos.GetByName(ctx, api.RepoName(args.RepoName))
+	repo, err := database.GlobalRepos.GetByName(ctx, api.RepoName(args.RepoName))
 	if err != nil {
 		return nil, err
 	}
@@ -410,7 +410,7 @@ func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct 
 	}
 
 	origin := ""
-	if phabRepo, err := db.GlobalPhabricator.GetByName(ctx, api.RepoName(args.RepoName)); err == nil {
+	if phabRepo, err := database.GlobalPhabricator.GetByName(ctx, api.RepoName(args.RepoName)); err == nil {
 		origin = phabRepo.URL
 	}
 
@@ -486,14 +486,14 @@ func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct 
 }
 
 func makePhabClientForOrigin(ctx context.Context, origin string) (*phabricator.Client, error) {
-	opt := db.ExternalServicesListOptions{
+	opt := database.ExternalServicesListOptions{
 		Kinds: []string{extsvc.KindPhabricator},
-		LimitOffset: &db.LimitOffset{
+		LimitOffset: &database.LimitOffset{
 			Limit: 500, // The number is randomly chosen
 		},
 	}
 	for {
-		svcs, err := db.GlobalExternalServices.List(ctx, opt)
+		svcs, err := database.GlobalExternalServices.List(ctx, opt)
 		if err != nil {
 			return nil, errors.Wrap(err, "list")
 		}

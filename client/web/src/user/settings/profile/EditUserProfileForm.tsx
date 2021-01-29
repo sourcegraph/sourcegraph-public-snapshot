@@ -101,7 +101,7 @@ export const EditUserProfileForm: React.FunctionComponent<Props> = ({
             >
                 Save
             </button>
-            {isErrorLike(opState) && <div className="mt-3 alert alert-danger">Error: {opState.message}</div>}
+            {isErrorLike(opState) && <div className="mt-3 alert alert-danger">{opState.message}</div>}
             {opState === 'success' && (
                 <div className="mt-3 alert alert-success test-EditUserProfileForm__success">User profile updated.</div>
             )}

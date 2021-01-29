@@ -10,7 +10,7 @@ import (
 	saml2 "github.com/russellhaering/gosaml2"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
@@ -94,7 +94,7 @@ func getOrCreateUser(ctx context.Context, info *authnResponseInfo) (_ *actor.Act
 	}
 
 	userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, auth.GetAndSaveUserOp{
-		UserProps: db.NewUser{
+		UserProps: database.NewUser{
 			Username:        username,
 			Email:           info.email,
 			EmailIsVerified: info.email != "", // SAML emails are assumed to be verified

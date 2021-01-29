@@ -270,7 +270,7 @@ export async function getCompletionItems(
                     suggestions: resolvedFilter.definition.suggestions.map(label => ({
                         label,
                         kind: Monaco.languages.CompletionItemKind.Text,
-                        insertText: label,
+                        insertText: label + ' ',
                         range: value ? toMonacoRange(value.range) : defaultRange,
                         command: COMPLETION_ITEM_SELECTED,
                     })),

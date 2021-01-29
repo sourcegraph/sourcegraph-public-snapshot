@@ -5,7 +5,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
@@ -27,7 +27,7 @@ var uploadWorkerStoreOptions = dbworkerstore.Options{
 	ViewName:          "lsif_uploads_with_repository_name u",
 	ColumnExpressions: uploadColumnsWithNullRank,
 	Scan:              scanFirstUploadRecord,
-	OrderByExpression: sqlf.Sprintf("uploaded_at"),
+	OrderByExpression: sqlf.Sprintf("u.uploaded_at, u.id"),
 	StalledMaxAge:     StalledUploadMaxAge,
 	MaxNumResets:      UploadMaxNumResets,
 }
@@ -53,7 +53,7 @@ var indexWorkerStoreOptions = dbworkerstore.Options{
 	ViewName:          "lsif_indexes_with_repository_name u",
 	ColumnExpressions: indexColumnsWithNullRank,
 	Scan:              scanFirstIndexRecord,
-	OrderByExpression: sqlf.Sprintf("queued_at"),
+	OrderByExpression: sqlf.Sprintf("u.queued_at, u.id"),
 	StalledMaxAge:     StalledIndexMaxAge,
 	MaxNumResets:      IndexMaxNumResets,
 }

@@ -7,7 +7,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
-	"github.com/sourcegraph/sourcegraph/internal/db/batch"
+	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -40,7 +40,8 @@ SELECT
 	d.num_failures,
 	d.repository_id,
 	d.repository_name,
-	d.indexer
+	d.indexer,
+	d.associated_index_id
 FROM lsif_packages p
 JOIN lsif_dumps_with_repository_name d ON d.id = p.dump_id
 WHERE p.scheme = %s AND p.name = %s AND p.version = %s

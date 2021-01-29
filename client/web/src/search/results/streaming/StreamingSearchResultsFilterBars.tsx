@@ -19,9 +19,9 @@ interface Props
     extends SettingsCascadeProps,
         ExtensionsControllerProps<'executeCommand' | 'extHostAPI' | 'services'>,
         TelemetryProps,
-        PatternTypeProps,
-        VersionContextProps,
-        CaseSensitivityProps {
+        Pick<PatternTypeProps, 'patternType'>,
+        Pick<VersionContextProps, 'versionContext'>,
+        Pick<CaseSensitivityProps, 'caseSensitive'> {
     location: H.Location
     history: H.History
 

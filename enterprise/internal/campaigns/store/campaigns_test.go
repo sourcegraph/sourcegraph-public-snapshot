@@ -9,8 +9,13 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/go-diff/diff"
+
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
@@ -446,6 +451,64 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, clock ct.Cl
 				t.Fatalf("have err %v, want %v", have, want)
 			}
 		})
+	})
+
+	t.Run("GetCampaignDiffStat", func(t *testing.T) {
+		userID := ct.CreateTestUser(t, false).ID
+		userCtx := actor.WithActor(ctx, actor.FromUser(userID))
+		repoStore := database.ReposWith(s)
+		esStore := database.ExternalServicesWith(s)
+		repo := ct.TestRepo(t, esStore, extsvc.KindGitHub)
+		repo.Private = true
+		if err := repoStore.Create(ctx, repo); err != nil {
+			t.Fatal(err)
+		}
+
+		campaignID := cs[0].ID
+		var testDiffStatCount int32 = 10
+		ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+			Repo:            repo.ID,
+			Campaigns:       []campaigns.CampaignAssoc{{CampaignID: campaignID}},
+			DiffStatAdded:   testDiffStatCount,
+			DiffStatChanged: testDiffStatCount,
+			DiffStatDeleted: testDiffStatCount,
+		})
+
+		{
+			want := &diff.Stat{
+				Added:   testDiffStatCount,
+				Changed: testDiffStatCount,
+				Deleted: testDiffStatCount,
+			}
+			opts := GetCampaignDiffStatOpts{CampaignID: campaignID}
+			have, err := s.GetCampaignDiffStat(userCtx, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
+			}
+		}
+
+		// Now revoke repo access, and check that we don't see it in the diff stat anymore.
+		ct.MockRepoPermissions(t, 0, repo.ID)
+		{
+			want := &diff.Stat{
+				Added:   0,
+				Changed: 0,
+				Deleted: 0,
+			}
+			opts := GetCampaignDiffStatOpts{CampaignID: campaignID}
+			have, err := s.GetCampaignDiffStat(userCtx, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
+			}
+		}
 	})
 
 	t.Run("Delete", func(t *testing.T) {

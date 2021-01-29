@@ -9,11 +9,13 @@ import { PreviewListHeader } from './PreviewListHeader'
 import { EmptyPreviewListElement } from './EmptyPreviewListElement'
 import { PreviewFilterRow, PreviewFilters } from './PreviewFilterRow'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
+import { PreviewPageAuthenticatedUser } from '../CampaignPreviewPage'
 
 interface Props extends ThemeProps {
     campaignSpecID: Scalars['ID']
     history: H.History
     location: H.Location
+    authenticatedUser: PreviewPageAuthenticatedUser
 
     /** For testing only. */
     queryChangesetApplyPreview?: typeof _queryChangesetApplyPreview
@@ -30,6 +32,7 @@ export const PreviewList: React.FunctionComponent<Props> = ({
     campaignSpecID,
     history,
     location,
+    authenticatedUser,
     isLightTheme,
 
     queryChangesetApplyPreview = _queryChangesetApplyPreview,
@@ -63,6 +66,7 @@ export const PreviewList: React.FunctionComponent<Props> = ({
                     isLightTheme,
                     history,
                     location,
+                    authenticatedUser,
                     queryChangesetSpecFileDiffs,
                     expandChangesetDescriptions,
                 }}

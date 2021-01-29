@@ -5,11 +5,13 @@ import { HiddenChangesetApplyPreviewNode } from './HiddenChangesetApplyPreviewNo
 import { VisibleChangesetApplyPreviewNode } from './VisibleChangesetApplyPreviewNode'
 import { ThemeProps } from '../../../../../../shared/src/theme'
 import { queryChangesetSpecFileDiffs } from './backend'
+import { PreviewPageAuthenticatedUser } from '../CampaignPreviewPage'
 
 export interface ChangesetApplyPreviewNodeProps extends ThemeProps {
     node: ChangesetApplyPreviewFields
     history: H.History
     location: H.Location
+    authenticatedUser: PreviewPageAuthenticatedUser
 
     /** Used for testing. */
     queryChangesetSpecFileDiffs?: typeof queryChangesetSpecFileDiffs
@@ -21,6 +23,7 @@ export const ChangesetApplyPreviewNode: React.FunctionComponent<ChangesetApplyPr
     node,
     history,
     location,
+    authenticatedUser,
     isLightTheme,
     queryChangesetSpecFileDiffs,
     expandChangesetDescriptions,
@@ -41,6 +44,7 @@ export const ChangesetApplyPreviewNode: React.FunctionComponent<ChangesetApplyPr
                 history={history}
                 location={location}
                 isLightTheme={isLightTheme}
+                authenticatedUser={authenticatedUser}
                 queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
                 expandChangesetDescriptions={expandChangesetDescriptions}
             />

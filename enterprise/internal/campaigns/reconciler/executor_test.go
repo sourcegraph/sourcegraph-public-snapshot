@@ -15,9 +15,9 @@ import (
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -512,6 +512,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			assertions := tc.wantChangeset
 			assertions.Repo = rs[0].ID
 			assertions.OwnedByCampaign = changesetOpts.OwnedByCampaign
+			assertions.AttachedTo = []int64{campaign.ID}
 			if changesetSpec != nil {
 				assertions.CurrentSpec = changesetSpec.ID
 			}
@@ -658,8 +659,8 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 
 	t.Run("owned by admin user with credential", func(t *testing.T) {
 		token := &auth.OAuthBearerToken{Token: "abcdef"}
-		if _, err := db.GlobalUserCredentials.Create(ctx, db.UserCredentialScope{
-			Domain:              db.UserCredentialDomainCampaigns,
+		if _, err := database.GlobalUserCredentials.Create(ctx, database.UserCredentialScope{
+			Domain:              database.UserCredentialDomainCampaigns,
 			UserID:              admin.ID,
 			ExternalServiceType: repo.ExternalRepo.ServiceType,
 			ExternalServiceID:   repo.ExternalRepo.ServiceID,
@@ -684,8 +685,8 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 
 	t.Run("owned by normal user with credential", func(t *testing.T) {
 		token := &auth.OAuthBearerToken{Token: "abcdef"}
-		if _, err := db.GlobalUserCredentials.Create(ctx, db.UserCredentialScope{
-			Domain:              db.UserCredentialDomainCampaigns,
+		if _, err := database.GlobalUserCredentials.Create(ctx, database.UserCredentialScope{
+			Domain:              database.UserCredentialDomainCampaigns,
 			UserID:              user.ID,
 			ExternalServiceType: repo.ExternalRepo.ServiceType,
 			ExternalServiceID:   repo.ExternalRepo.ServiceID,
@@ -828,8 +829,8 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 	for i, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.credentials != nil {
-				cred, err := db.GlobalUserCredentials.Create(ctx, db.UserCredentialScope{
-					Domain:              db.UserCredentialDomainCampaigns,
+				cred, err := database.GlobalUserCredentials.Create(ctx, database.UserCredentialScope{
+					Domain:              database.UserCredentialDomainCampaigns,
 					UserID:              tt.user.ID,
 					ExternalServiceType: tt.repo.ExternalRepo.ServiceType,
 					ExternalServiceID:   tt.repo.ExternalRepo.ServiceID,
@@ -837,7 +838,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				defer func() { db.GlobalUserCredentials.Delete(ctx, cred.ID) }()
+				defer func() { database.GlobalUserCredentials.Delete(ctx, cred.ID) }()
 			}
 
 			campaignSpec := ct.CreateCampaignSpec(t, ctx, store, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID)
@@ -881,10 +882,10 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 }
 
 func TestDecorateChangesetBody(t *testing.T) {
-	db.Mocks.Namespaces.GetByID = func(ctx context.Context, org, user int32) (*db.Namespace, error) {
-		return &db.Namespace{Name: "my-user", User: user}, nil
+	database.Mocks.Namespaces.GetByID = func(ctx context.Context, org, user int32) (*database.Namespace, error) {
+		return &database.Namespace{Name: "my-user", User: user}, nil
 	}
-	defer func() { db.Mocks.Namespaces.GetByID = nil }()
+	defer func() { database.Mocks.Namespaces.GetByID = nil }()
 
 	internalClient = &mockInternalClient{externalURL: "https://sourcegraph.test"}
 	defer func() { internalClient = api.InternalClient }()
@@ -932,7 +933,7 @@ func TestCampaignURL(t *testing.T) {
 
 		url, err := campaignURL(
 			ctx,
-			&db.Namespace{Name: "foo", Organization: 123},
+			&database.Namespace{Name: "foo", Organization: 123},
 			&campaigns.Campaign{Name: "bar"},
 		)
 		if err != nil {
@@ -948,19 +949,19 @@ func TestNamespaceURL(t *testing.T) {
 	t.Parallel()
 
 	for name, tc := range map[string]struct {
-		ns   *db.Namespace
+		ns   *database.Namespace
 		want string
 	}{
 		"user": {
-			ns:   &db.Namespace{User: 123, Name: "user"},
+			ns:   &database.Namespace{User: 123, Name: "user"},
 			want: "/users/user",
 		},
 		"org": {
-			ns:   &db.Namespace{Organization: 123, Name: "org"},
+			ns:   &database.Namespace{Organization: 123, Name: "org"},
 			want: "/organizations/org",
 		},
 		"neither": {
-			ns:   &db.Namespace{Name: "user"},
+			ns:   &database.Namespace{Name: "user"},
 			want: "/users/user",
 		},
 	} {

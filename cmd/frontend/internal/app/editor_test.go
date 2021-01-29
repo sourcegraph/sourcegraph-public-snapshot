@@ -8,7 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -59,7 +59,7 @@ func TestEditorRev(t *testing.T) {
 }
 
 func TestEditorRedirect(t *testing.T) {
-	db.Mocks.ExternalServices.List = func(db.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+	database.Mocks.ExternalServices.List = func(database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 		return []*types.ExternalService{
 			{
 				ID:          1,
@@ -69,7 +69,7 @@ func TestEditorRedirect(t *testing.T) {
 			},
 		}, nil
 	}
-	defer func() { db.Mocks.ExternalServices = db.MockExternalServices{} }()
+	defer func() { database.Mocks.ExternalServices = database.MockExternalServices{} }()
 
 	cases := []struct {
 		name            string

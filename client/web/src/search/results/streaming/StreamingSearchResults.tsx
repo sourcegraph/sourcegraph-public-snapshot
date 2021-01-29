@@ -12,18 +12,18 @@ import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/
 import { SearchPatternType } from '../../../../../shared/src/graphql-operations'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
-import { VersionContextProps } from '../../../../../shared/src/search/util'
 import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 import { ThemeProps } from '../../../../../shared/src/theme'
+import { asError } from '../../../../../shared/src/util/errors'
 import { isDefined } from '../../../../../shared/src/util/types'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
 import { AuthenticatedUser } from '../../../auth'
 import { ErrorAlert } from '../../../components/alerts'
 import { PageTitle } from '../../../components/PageTitle'
 import { SearchResult } from '../../../components/SearchResult'
+import { CodeMonitoringProps } from '../../../enterprise/code-monitoring'
 import { SavedSearchModal } from '../../../savedSearches/SavedSearchModal'
-import { VersionContext } from '../../../schema/site.schema'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { QueryState, submitSearch } from '../../helpers'
 import { queryTelemetryData } from '../../queryTelemetry'
@@ -36,19 +36,19 @@ import { StreamingProgress } from './progress/StreamingProgress'
 import { StreamingSearchResultsFilterBars } from './StreamingSearchResultsFilterBars'
 import {
     CaseSensitivityProps,
-    parseSearchURL,
     PatternTypeProps,
     SearchStreamingProps,
     resolveVersionContext,
+    ParsedSearchQueryProps,
+    MutableVersionContextProps,
 } from '../..'
-import { asError } from '../../../../../shared/src/util/errors'
-import { CodeMonitoringProps } from '../../../enterprise/code-monitoring'
 
 export interface StreamingSearchResultsProps
     extends SearchStreamingProps,
-        PatternTypeProps,
-        VersionContextProps,
-        CaseSensitivityProps,
+        Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
+        Pick<PatternTypeProps, 'patternType'>,
+        Pick<MutableVersionContextProps, 'versionContext' | 'availableVersionContexts' | 'previousVersionContext'>,
+        Pick<CaseSensitivityProps, 'caseSensitive'>,
         SettingsCascadeProps,
         ExtensionsControllerProps<'executeCommand' | 'extHostAPI' | 'services'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
@@ -60,10 +60,6 @@ export interface StreamingSearchResultsProps
     history: H.History
     navbarSearchQueryState: QueryState
 
-    setVersionContext: (versionContext: string | undefined) => void
-    availableVersionContexts: VersionContext[] | undefined
-    previousVersionContext: string | null
-
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
 
@@ -72,12 +68,10 @@ const incrementalItemsToShow = 10
 
 export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResultsProps> = props => {
     const {
-        patternType: currentPatternType,
-        setPatternType,
-        caseSensitive: currentCaseSensitive,
-        setCaseSensitivity,
-        versionContext: currentVersionContext,
-        setVersionContext,
+        parsedSearchQuery: query,
+        patternType,
+        caseSensitive,
+        versionContext,
         streamSearch,
         location,
         history,
@@ -97,8 +91,6 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
         []
     )
 
-    const { query = '', patternType, caseSensitive, versionContext } = parseSearchURL(location.search)
-
     // Log search query event when URL changes
     useEffect(() => {
         const query_data = queryTelemetryData(query, caseSensitive)
@@ -108,28 +100,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
         if (query_data.query?.field_type && query_data.query.field_type.value_diff > 0) {
             telemetryService.log('DiffSearchResultsQueried')
         }
-    }, [caseSensitive, location.search, query, telemetryService])
-
-    // Update patternType, caseSensitivity and versionContext based on current URL
-
-    useEffect(() => {
-        if (patternType && patternType !== currentPatternType) {
-            setPatternType(patternType)
-        }
-    }, [patternType, currentPatternType, setPatternType])
-
-    useEffect(() => {
-        if (caseSensitive && caseSensitive !== currentCaseSensitive) {
-            setCaseSensitivity(caseSensitive)
-        }
-    }, [caseSensitive, currentCaseSensitive, setCaseSensitivity])
-
-    useEffect(() => {
-        const resolvedContext = resolveVersionContext(versionContext, availableVersionContexts)
-        if (resolvedContext !== currentVersionContext) {
-            setVersionContext(resolvedContext)
-        }
-    }, [versionContext, currentVersionContext, setVersionContext, availableVersionContexts])
+    }, [caseSensitive, query, telemetryService])
 
     const trace = useMemo(() => new URLSearchParams(location.search).get('trace') ?? undefined, [location.search])
     const results = useObservable(
@@ -139,10 +110,11 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                     query,
                     version: LATEST_VERSION,
                     patternType: patternType ?? SearchPatternType.literal,
+                    caseSensitive,
                     versionContext: resolveVersionContext(versionContext, availableVersionContexts),
                     trace,
                 }),
-            [streamSearch, query, patternType, versionContext, availableVersionContexts, trace]
+            [streamSearch, query, patternType, caseSensitive, versionContext, availableVersionContexts, trace]
         )
     )
 
@@ -282,7 +254,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
 
                 {showVersionContextWarning && (
                     <VersionContextWarning
-                        versionContext={currentVersionContext}
+                        versionContext={versionContext}
                         onDismissWarning={onDismissVersionContextWarning}
                     />
                 )}
@@ -334,10 +306,6 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                             <SearchIcon className="icon-inline" /> No results
                         </h3>
                     </div>
-                )}
-
-                {results?.state === 'complete' && results?.results.length > 0 && (
-                    <small className="d-block my-4 text-center">Showing {results?.results.length} results</small>
                 )}
             </div>
         </div>

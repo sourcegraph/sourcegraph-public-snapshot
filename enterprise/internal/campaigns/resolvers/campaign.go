@@ -200,10 +200,14 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 		end = args.To.Time.UTC()
 	}
 
-	eventsOpts := store.ListChangesetEventsOpts{ChangesetIDs: cs.IDs(), Kinds: state.RequiredEventTypesForHistory}
-	es, _, err := r.store.ListChangesetEvents(ctx, eventsOpts)
-	if err != nil {
-		return resolvers, err
+	var es []*campaigns.ChangesetEvent
+	changesetIDs := cs.IDs()
+	if len(changesetIDs) > 0 {
+		eventsOpts := store.ListChangesetEventsOpts{ChangesetIDs: changesetIDs, Kinds: state.RequiredEventTypesForHistory}
+		es, _, err = r.store.ListChangesetEvents(ctx, eventsOpts)
+		if err != nil {
+			return resolvers, err
+		}
 	}
 
 	counts, err := state.CalcCounts(start, end, cs, es...)
@@ -219,35 +223,11 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 }
 
 func (r *campaignResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
-	changesetsConnection := &changesetsConnectionResolver{
-		store: r.store,
-		opts: store.ListChangesetsOpts{
-			CampaignID: r.Campaign.ID,
-		},
-		optsSafe: true,
-	}
-
-	changesets, err := changesetsConnection.Nodes(ctx)
+	diffStat, err := r.store.GetCampaignDiffStat(ctx, store.GetCampaignDiffStatOpts{CampaignID: r.Campaign.ID})
 	if err != nil {
 		return nil, err
 	}
-
-	totalStat := &graphqlbackend.DiffStat{}
-	for _, cs := range changesets {
-		// Not being able to convert is OK; it just means there's a hidden
-		// changeset that we can't use the stats from.
-		if external, ok := cs.ToExternalChangeset(); ok && external != nil {
-			stat, err := external.DiffStat(ctx)
-			if err != nil {
-				return nil, err
-			}
-			if stat != nil {
-				totalStat.AddDiffStat(stat)
-			}
-		}
-	}
-
-	return totalStat, nil
+	return graphqlbackend.NewDiffStat(*diffStat), nil
 }
 
 func (r *campaignResolver) CurrentSpec(ctx context.Context) (graphqlbackend.CampaignSpecResolver, error) {
