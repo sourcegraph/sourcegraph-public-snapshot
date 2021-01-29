@@ -58,7 +58,7 @@
     },
     "workspaces": {
       "type": "array",
-      "description": "Different workspace configurations",
+      "description": "Individual workspace configurations for one or more repositories that define which workspaces to use for the execution of steps in the repositories.",
       "items": {
         "title": "WorkspaceConfiguration",
         "type": "object",
@@ -68,12 +68,13 @@
         "properties": {
           "rootAtLocationOf": {
             "type": "string",
-            "description": "The name of the file that sits at the root of the desired workspace"
+            "description": "The name of the file that sits at the root of the desired workspace.",
+            "examples": ["package.json", "go.mod", "Gemfile", "Cargo.toml", "README.md"]
           },
           "in": {
             "type": "string",
-            "description": "The repositories in which to apply the workspace configuration",
-            "examples": ["github.com/sourcegraph/*"]
+            "description": "The repositories in which to apply the workspace configuration. Supports globbing.",
+            "examples": ["github.com/sourcegraph/src-cli", "github.com/sourcegraph/*"]
           }
         }
       }

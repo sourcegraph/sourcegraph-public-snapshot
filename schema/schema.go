@@ -325,7 +325,7 @@ type CampaignSpec struct {
 	Steps []*Step `json:"steps,omitempty"`
 	// TransformChanges description: Optional transformations to apply to the changes produced in each repository.
 	TransformChanges *TransformChanges `json:"transformChanges,omitempty"`
-	// Workspaces description: Different workspace configurations
+	// Workspaces description: Individual workspace configurations for one or more repositories that define which workspaces to use for the execution of steps in the repositories.
 	Workspaces []*WorkspaceConfiguration `json:"workspaces,omitempty"`
 }
 
@@ -1363,8 +1363,8 @@ type Webhooks struct {
 
 // WorkspaceConfiguration description: Configuration for how to setup workspaces in repositories
 type WorkspaceConfiguration struct {
-	// In description: The repositories in which to apply the workspace configuration
+	// In description: The repositories in which to apply the workspace configuration. Supports globbing.
 	In string `json:"in,omitempty"`
-	// RootAtLocationOf description: The name of the file that sits at the root of the desired workspace
+	// RootAtLocationOf description: The name of the file that sits at the root of the desired workspace.
 	RootAtLocationOf string `json:"rootAtLocationOf"`
 }
