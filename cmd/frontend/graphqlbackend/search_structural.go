@@ -123,7 +123,6 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 		}
 		if since(t0) >= searchOpts.MaxWallTime {
 			c <- SearchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusTimedout | search.RepoStatusIndexed)}}
-			return
 		}
 		// This is the only place limitHit can be set false, meaning we covered everything.
 		limitHit = resp.FilesSkipped+resp.ShardsSkipped > 0
