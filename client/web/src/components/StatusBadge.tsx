@@ -25,7 +25,7 @@ export const StatusBadge: React.FunctionComponent<Props> = ({ status, feedback, 
             {status}
         </span>
         {feedback && (
-            <a href={feedback.mailto} target="_blank" rel="noopener noreferrer">
+            <a href={`mailto:${feedback.mailto}`} target="_blank" rel="noopener noreferrer">
                 {feedback.text || 'Share feedback'}
             </a>
         )}

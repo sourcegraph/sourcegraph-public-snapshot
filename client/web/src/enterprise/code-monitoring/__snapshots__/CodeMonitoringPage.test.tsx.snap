@@ -50,6 +50,11 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
       }
       annotation={
         <StatusBadge
+          feedback={
+            Object {
+              "mailto": "support@sourcegraph.com",
+            }
+          }
           status="prototype"
         />
       }
@@ -71,6 +76,11 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
             className="text-muted d-block mb-2"
           >
             <StatusBadge
+              feedback={
+                Object {
+                  "mailto": "support@sourcegraph.com",
+                }
+              }
               status="prototype"
             >
               <div
@@ -1716,6 +1726,11 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
       }
       annotation={
         <StatusBadge
+          feedback={
+            Object {
+              "mailto": "support@sourcegraph.com",
+            }
+          }
           status="prototype"
         />
       }
@@ -1737,6 +1752,11 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
             className="text-muted d-block mb-2"
           >
             <StatusBadge
+              feedback={
+                Object {
+                  "mailto": "support@sourcegraph.com",
+                }
+              }
               status="prototype"
             >
               <div
@@ -2423,6 +2443,11 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
       }
       annotation={
         <StatusBadge
+          feedback={
+            Object {
+              "mailto": "support@sourcegraph.com",
+            }
+          }
           status="prototype"
         />
       }
@@ -2444,6 +2469,11 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
             className="text-muted d-block mb-2"
           >
             <StatusBadge
+              feedback={
+                Object {
+                  "mailto": "support@sourcegraph.com",
+                }
+              }
               status="prototype"
             >
               <div
