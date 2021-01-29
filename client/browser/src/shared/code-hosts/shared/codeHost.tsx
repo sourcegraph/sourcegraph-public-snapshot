@@ -81,7 +81,7 @@ import { toTextDocumentIdentifier, toTextDocumentPositionParameters } from '../.
 import { CodeViewToolbar, CodeViewToolbarClassProps } from '../../components/CodeViewToolbar'
 import { resolveRevision, retryWhenCloneInProgressError } from '../../repo/backend'
 import { EventLogger, ConditionalTelemetryService } from '../../tracking/eventLogger'
-import { MutationRecordLike, observeMutations, querySelectorOrSelf } from '../../util/dom'
+import { MutationRecordLike, querySelectorOrSelf } from '../../util/dom'
 import { featureFlags } from '../../util/featureFlags'
 import { bitbucketServerCodeHost } from '../bitbucket/codeHost'
 import { githubCodeHost } from '../github/codeHost'
@@ -448,7 +448,6 @@ function initCodeIntelligence({
             this.state = hoverifier.hoverState
             this.subscription.add(
                 hoverifier.hoverStateUpdates.subscribe(update => {
-                    console.log('Sourcegraph: hoverStateUpdates update.hoverOverlayProps', update.hoverOverlayProps)
                     this.setState(update)
                 })
             )

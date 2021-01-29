@@ -1,4 +1,4 @@
-import { compact } from 'lodash'
+import { compact, find } from 'lodash'
 import { interval, Observable, Subject } from 'rxjs'
 import { filter, map, refCount, publishReplay } from 'rxjs/operators'
 import { MutationRecordLike } from '../../util/dom'
@@ -133,8 +133,6 @@ const diffTableDomFunctions: DOMFunctions = {
         const fileElement = codeElement?.closest('tr')?.querySelector('[data-line-number]')
         if (fileElement) {
             const lineNumberString = fileElement.getAttribute('data-line-number')
-            console.log('Data-line-number:', lineNumberString)
-
             if (lineNumberString === 'FILE') {
                 return null
             }
@@ -193,7 +191,6 @@ const resolveFilePageCodeView: ViewResolver<CodeView> = {
         let parent = getParentCommit() || gerritChangeString + '^'
         // Possible situation: we cannot get the parent commit on the page
         if (!parent) {
-            // TODO: determine if this fallback works.
             parent = gerritChangeString + '^'
         }
 
@@ -228,34 +225,43 @@ const resolveFilePageCodeView: ViewResolver<CodeView> = {
     },
 }
 
+interface ElementWithFilePath {
+    element: HTMLElement
+    filePath: string
+}
+
 const POLLING_INTERVAL = 4000
 export const observeMutations = (
     target: Node,
     options?: MutationObserverInit,
     paused?: Subject<boolean>
 ): Observable<MutationRecordLike[]> => {
-    const knownElements = new Set<{ element: HTMLElement; filePath: string }>()
+    let knownElements: ElementWithFilePath[] = []
     return interval(POLLING_INTERVAL).pipe(
         map(() => {
-            const { filePath } = parseGerritChange()
-            const elements = codeViewResolvers
+            const { filePath = '' } = parseGerritChange()
+            const foundElements = codeViewResolvers
                 .map(resolver => [...queryWithSelector(document.body, resolver.selector)])
                 .flat()
-            const addedNodes = elements.filter(
-                element =>
-                    ![...knownElements].find(
-                        knownElements => knownElements.element === element && knownElements.filePath === filePath
-                    )
+            const addedNodes = foundElements.filter(
+                foundElement => !find(knownElements, { element: foundElement, filePath })
             )
-            const removedNodes = [...knownElements].filter(element => !elements.includes(element.element))
+            const removedNodes = knownElements.filter(
+                knownElement =>
+                    knownElement.filePath !== filePath ||
+                    !foundElements.find(foundElement => foundElement === knownElement.element)
+            )
+
+            // Add to known elements
             for (const addedNode of addedNodes) {
-                knownElements.add(addedNode)
+                knownElements.push({ element: addedNode, filePath })
             }
-            for (const removedNode of removedNodes) {
-                knownElements.delete(removedNode)
-            }
+            // Remove from known elements
+            knownElements = knownElements.filter(knownElement => !find(removedNodes, knownElement))
+
             console.log('knownElements', knownElements)
-            return { addedNodes, removedNodes }
+            console.log({ addedNodes, removedNodes })
+            return { addedNodes, removedNodes: removedNodes.map(node => node.element) }
         }),
         // Filter to emit only non-empty records.
         filter(({ addedNodes, removedNodes }) => !!addedNodes.length || !!removedNodes.length),
