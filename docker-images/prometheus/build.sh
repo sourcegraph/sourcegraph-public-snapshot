@@ -26,6 +26,7 @@ go build \
   -trimpath \
   -installsuffix netgo \
   -tags "dist netgo" \
+  -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" \
   -o "$BUILDDIR"/.bin/prom-wrapper ./cmd/prom-wrapper
 
 # Cross-compile monitoring generator before building the image.

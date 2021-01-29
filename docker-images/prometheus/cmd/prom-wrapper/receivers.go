@@ -8,7 +8,9 @@ import (
 
 	amconfig "github.com/prometheus/alertmanager/config"
 	commoncfg "github.com/prometheus/common/config"
+	"golang.org/x/mod/semver"
 
+	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -24,7 +26,19 @@ const (
 	colorGood     = "#00FF00" // green
 )
 
-const alertSolutionsURL = "https://docs.sourcegraph.com/admin/observability/alert_solutions"
+const docsURL = "https://docs.sourcegraph.com"
+const alertSolutionsPagePath = "admin/observability/alert_solutions"
+
+// alertSolutionsURL generates a link to the alert solutions page that embeds the appropriate version
+// if it is available and it is a semantic version.
+func alertSolutionsURL() string {
+	maybeSemver := "v" + version.Version()
+	if semver.IsValid(maybeSemver) && !version.IsDev(version.Version()) {
+		return fmt.Sprintf("%s/@%s/%s", docsURL, maybeSemver, alertSolutionsPagePath)
+	}
+	return fmt.Sprintf("%s/%s", docsURL, alertSolutionsPagePath)
+
+}
 
 // commonLabels defines the set of labels we group alerts by, such that each alert falls in a unique group.
 // These labels are available in Alertmanager templates as fields of `.CommonLabels`.
@@ -41,7 +55,7 @@ var commonLabels = []string{"alertname", "level", "service_name", "name", "owner
 var (
 	// observableDocAnchorTemplate must match anchors generated in `monitoring/monitoring/documentation.go`.
 	observableDocAnchorTemplate = `{{ .CommonLabels.service_name }}-{{ .CommonLabels.name | reReplaceAll "_" "-" }}`
-	alertSolutionsURLTemplate   = fmt.Sprintf(`%s#%s`, alertSolutionsURL, observableDocAnchorTemplate)
+	alertSolutionsURLTemplate   = fmt.Sprintf(`%s#%s`, alertSolutionsURL(), observableDocAnchorTemplate)
 
 	// Title templates
 	firingTitleTemplate       = "[{{ .CommonLabels.level | toUpper }}] {{ .CommonLabels.description }}"

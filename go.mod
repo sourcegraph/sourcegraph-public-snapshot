@@ -182,6 +182,7 @@ require (
 	go.uber.org/atomic v1.7.0
 	go.uber.org/automaxprocs v1.3.0
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
+	golang.org/x/mod v0.4.0
 	golang.org/x/net v0.0.0-20201021035429-f5854403a974
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	golang.org/x/sync v0.0.0-20201020160332-67f06af15bc9
