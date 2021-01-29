@@ -3,19 +3,13 @@
     background: #a2b0cd;
     color: #39496a;
     text-align: center;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
 
-    &--md {
-        font-size: 10px;
-        height: 1.5rem;
-        width: 1.5rem;
-    }
-
-    &--lg {
-        font-size: 20px;
-        height: 3.5rem;
-        width: 3.5rem;
-    }
+    // TODO: Copied from UserAreaHeader
+    height: 3rem;
+    width: 3rem;
+    margin-right: 1rem;
+    font-size: 1.5rem;
 }

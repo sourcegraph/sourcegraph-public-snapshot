@@ -12,9 +12,11 @@
         }
     }
 
+    // TODO: Revist for icon-inline
     &__avatar {
-        width: 6rem;
+        width: 3rem;
         margin-right: 1rem;
+
         .user-avatar {
             // Scale proportionally.
             width: 100%;

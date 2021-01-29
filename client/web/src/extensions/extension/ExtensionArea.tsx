@@ -214,7 +214,7 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
                     {...this.props}
                     {...context}
                     navItems={this.props.extensionAreaHeaderNavItems}
-                    className="border-bottom mt-4"
+                    className="border-bottom"
                 />
                 <div className="container pt-3">
                     <ErrorBoundary location={this.props.location}>

@@ -120,7 +120,6 @@ export const CampaignListPage: React.FunctionComponent<CampaignListPageProps> = 
                 path={[{ icon: CampaignsIcon, text: 'Campaigns' }]}
                 className="test-campaign-list-page mb-3"
                 actions={<NewCampaignButton location={location} />}
-                byline="Run custom code over hundreds of repositories and manage the resulting changesets"
             />
             <CampaignListIntro licensed={licensed} />
             <CampaignListTabHeader selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
