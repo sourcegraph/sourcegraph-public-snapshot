@@ -676,16 +676,11 @@ func (r *searchResolver) evaluateAndStream(ctx context.Context, scopeParameters 
 	if r.resultChannel == nil {
 		return r.evaluateAnd(ctx, scopeParameters, operands)
 	}
-	// For streaming search we want to run the evaluation of AND expressions in batch
-	// mode. We copy r to r2 and replace the result channel with a sink.
+	// For streaming search we rely on batch evaluation of
+	// results. Implementing true streaming on AND expressions will require
+	// support in backends (eg directly using Zoekt) or ANDing per repo.
 	r2 := *r
-	sink := make(chan SearchEvent)
-	defer close(sink)
-	go func() {
-		for range sink {
-		}
-	}()
-	r2.resultChannel = sink
+	r2.resultChannel = nil
 
 	result, err := r2.evaluateAnd(ctx, scopeParameters, operands)
 	r.resultChannel <- SearchEvent{
