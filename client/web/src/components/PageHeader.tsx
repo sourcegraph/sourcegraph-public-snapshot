@@ -38,7 +38,7 @@ export const PageHeader: React.FunctionComponent<Props> = ({ annotation, path, b
     return (
         <header
             className={classNames(
-                'page-header d-flex flex-column flex-md-row flex-wrap justify-content-between align-items-lg-center',
+                'd-flex flex-column flex-md-row flex-wrap justify-content-between align-items-lg-center',
                 className
             )}
         >
@@ -49,13 +49,13 @@ export const PageHeader: React.FunctionComponent<Props> = ({ annotation, path, b
                         <React.Fragment key={index}>
                             {index !== 0 && <span className="mr-2 text-muted">/</span>}
                             <LinkOrSpan to={to}>
-                                {Icon && <Icon className="icon-inline page-header__icon mr-2" />}
+                                {Icon && <Icon className="icon-inline py-1 mr-1" />}
                                 {text && <span className="mr-2">{text}</span>}
                             </LinkOrSpan>
                         </React.Fragment>
                     ))}
                 </h1>
-                {byline && <small className="text-muted d-block page-header__byline">{byline}</small>}
+                {byline && <small className="text-muted d-block mt-1">{byline}</small>}
             </div>
             {actions && <div className="mt-3 mt-md-0">{actions}</div>}
         </header>
