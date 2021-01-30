@@ -96,7 +96,6 @@ func TestStructuralSearchRepoFilter(t *testing.T) {
 			Query:        q,
 			PatternType:  query.SearchTypeStructural,
 			UserSettings: &schema.Settings{},
-			Limit:        defaultMaxSearchResults,
 		},
 		zoekt:        z,
 		searcherURLs: endpoint.Static("test"),
