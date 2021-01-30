@@ -359,6 +359,9 @@ func (inputs SearchInputs) MaxResults() int {
 		return math.MaxInt32
 	}
 
+	if inputs.Query == nil {
+		return 0
+	}
 	count, _ := inputs.Query.StringValues(query.FieldCount)
 	if len(count) > 0 {
 		n, _ := strconv.Atoi(count[0])
