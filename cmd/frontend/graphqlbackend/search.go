@@ -119,7 +119,7 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (_ SearchImplem
 			UserSettings:   settings,
 			Pagination:     pagination,
 			PatternType:    searchType,
-			Limit:          maxResults(args, queryInfo),
+			Limit:          maxResults(pagination != nil, queryInfo),
 		},
 		zoekt:        search.Indexed(),
 		searcherURLs: search.SearcherURLs(),
@@ -355,8 +355,8 @@ const defaultMaxSearchResults = 30
 const maxSearchResultsPerPaginatedRequest = 5000
 
 // maxResults computes the limit for the query.
-func maxResults(args *SearchArgs, queryInfo query.QueryInfo) int {
-	if args.First != nil {
+func maxResults(pagination bool, queryInfo query.QueryInfo) int {
+	if pagination {
 		// Paginated search requests always consume an entire result set for a
 		// given repository, so we do not want any limit here. See
 		// search_pagination.go for details on why this is necessary .
