@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/types"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -202,6 +204,52 @@ func TestUsers_UpdatePassword(t *testing.T) {
 	if isPassword, err := Users(db).IsPassword(ctx, usr.ID, "right-password"); err == nil && isPassword {
 		t.Fatal("accepted wrong (old) password")
 	}
+}
+
+func TestUserStore_IsPasswordSet(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	db := dbtesting.GetDB(t)
+	ctx := context.Background()
+
+	var usr *types.User
+	var isPasswordSet bool
+	var err error
+
+	// User without a password
+	usr, err = Users(db).Create(ctx, NewUser{
+		Email:                 "usr@foo.com",
+		Username:              "usr",
+		Password:              "",
+		EmailVerificationCode: "c",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if isPasswordSet, err = Users(db).IsPasswordSet(ctx, usr.ID); err != nil {
+		t.Fatal(err)
+	} else if isPasswordSet {
+		t.Fatal("returned true for empty password")
+	}
+
+	usr, err = Users(db).Create(ctx, NewUser{
+		Email:                 "usr1@foo.com",
+		Username:              "usr1",
+		Password:              "27182",
+		EmailVerificationCode: "c",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if isPasswordSet, err = Users(db).IsPasswordSet(ctx, usr.ID); err != nil {
+		t.Fatal(err)
+	} else if !isPasswordSet {
+		t.Fatal("returned false for non-empty password")
+	}
+
 }
 
 func TestUsers_CreatePassword(t *testing.T) {

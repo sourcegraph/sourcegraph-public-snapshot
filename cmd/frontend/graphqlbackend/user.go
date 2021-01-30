@@ -278,6 +278,10 @@ func (r *UserResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
+func (r *UserResolver) IsPasswordSet(ctx context.Context) (bool, error) {
+	return database.GlobalUsers.IsPasswordSet(ctx, r.user.ID)
+}
+
 // UserURLForSiteAdminBilling is called to obtain the GraphQL User.urlForSiteAdminBilling value. It
 // is only set if billing is implemented.
 var UserURLForSiteAdminBilling func(ctx context.Context, userID int32) (*string, error)

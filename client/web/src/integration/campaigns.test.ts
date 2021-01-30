@@ -247,6 +247,7 @@ function mockCommonGraphQLResponses(
                 viewerCanChangeUsername: true,
                 siteAdmin: true,
                 builtinAuth: true,
+                isPasswordSet: true,
                 createdAt: '2020-04-10T21:11:42Z',
                 emails: [{ email: 'alice@example.com', verified: true }],
                 organizations: { nodes: [] },

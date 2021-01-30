@@ -124,6 +124,14 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
         {}
     )
 
+    private shouldShowOldPasswordInput = (): boolean =>
+        /**
+         * Show old password form only when all items are true
+         * 1. user has a password set
+         * 2. user doesn't have external accounts
+         */
+        this.props.user.isPasswordSet && this.state.accounts.fetched?.length === 0
+
     private fetchAccounts = (): void => {
         fetchUserExternalAccountsByType(this.props.user.id)
             .then(accounts => {
@@ -138,27 +146,23 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                             }),
                             filter(event => event.currentTarget.checkValidity()),
                             tap(() => this.setState({ loading: true })),
-                            mergeMap(() => {
-                                if (this.state.accounts.lastRemoved) {
-                                    return createPassword({
-                                        newPassword: this.state.newPassword,
-                                    }).pipe(
-                                        tap(() => (window.location.href = '/-/sign-out')),
-                                        catchError(error => this.handleError(error))
-                                    )
-                                }
-
-                                return updatePassword({
-                                    oldPassword: this.state.oldPassword,
-                                    newPassword: this.state.newPassword,
-                                }).pipe(
+                            mergeMap(() =>
+                                (this.shouldShowOldPasswordInput()
+                                    ? createPassword({
+                                          newPassword: this.state.newPassword,
+                                      })
+                                    : updatePassword({
+                                          oldPassword: this.state.oldPassword,
+                                          newPassword: this.state.newPassword,
+                                      })
+                                ).pipe(
                                     // Sign the user out after their password is changed.
                                     // We do this because the backend will no longer accept their current session
                                     // and failing to sign them out will leave them in a confusing state
                                     tap(() => (window.location.href = '/-/sign-out')),
                                     catchError(error => this.handleError(error))
                                 )
-                            })
+                            )
                         )
                         .subscribe(
                             () =>
@@ -253,7 +257,7 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                                 readOnly={true}
                                 hidden={true}
                             />
-                            {!this.state.accounts.lastRemoved && (
+                            {this.shouldShowOldPasswordInput() && (
                                 <div className="form-group">
                                     <label>Old password</label>
                                     <PasswordInput

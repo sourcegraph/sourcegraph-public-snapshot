@@ -63,6 +63,7 @@ describe('Settings', () => {
                         viewerCanChangeUsername: true,
                         siteAdmin: true,
                         builtinAuth: true,
+                        isPasswordSet: true,
                         createdAt: '2020-03-02T11:52:15Z',
                         emails: [{ email: 'test@sourcegraph.test', verified: true }],
                         organizations: { nodes: [] },

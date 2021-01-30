@@ -37,6 +37,7 @@ export const UserAreaGQLFragment = gql`
         settingsURL
         avatarURL
         viewerCanAdminister
+        isPasswordSet
         siteAdmin @include(if: $siteAdmin)
         builtinAuth
         createdAt

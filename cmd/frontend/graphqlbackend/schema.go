@@ -6677,6 +6677,10 @@ type User implements Node & SettingsSubject & Namespace {
     """
     builtinAuth: Boolean!
     """
+    Whether the user has password or is OAuth only.
+    """
+    isPasswordSet: Boolean!
+    """
     The latest settings for the user.
     Only the user and site admins can access this field.
     """

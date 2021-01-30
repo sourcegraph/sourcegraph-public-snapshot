@@ -853,17 +853,35 @@ func (u *UserStore) getBySQL(ctx context.Context, query *sqlf.Query) ([]*types.U
 	return users, nil
 }
 
-func (u *UserStore) IsPassword(ctx context.Context, id int32, password string) (bool, error) {
+func (u *UserStore) getPassword(ctx context.Context, id int32, passwd *sql.NullString) error {
 	u.ensureStore()
+	return u.QueryRow(ctx, sqlf.Sprintf("SELECT passwd FROM users WHERE deleted_at IS NULL AND id=%s", id)).Scan(passwd)
+}
 
+func (u *UserStore) IsPassword(ctx context.Context, id int32, password string) (bool, error) {
 	var passwd sql.NullString
-	if err := u.QueryRow(ctx, sqlf.Sprintf("SELECT passwd FROM users WHERE deleted_at IS NULL AND id=%s", id)).Scan(&passwd); err != nil {
+
+	if err := u.getPassword(ctx, id, &passwd); err != nil {
 		return false, err
 	}
 	if !passwd.Valid {
 		return false, nil
 	}
 	return validPassword(passwd.String, password), nil
+}
+
+func (u *UserStore) IsPasswordSet(ctx context.Context, id int32) (bool, error) {
+	var passwd sql.NullString
+
+	if err := u.getPassword(ctx, id, &passwd); err != nil {
+		return false, err
+	}
+
+	if passwd.Valid {
+		return true, nil
+	}
+
+	return false, nil
 }
 
 var (
