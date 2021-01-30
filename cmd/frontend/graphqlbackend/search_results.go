@@ -1184,7 +1184,7 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Te
 	}
 
 	if opts.fileMatchLimit == 0 {
-		opts.fileMatchLimit = int32(r.Limit)
+		opts.fileMatchLimit = int32(maxResults(r.Query, r.Pagination != nil))
 	}
 
 	return getPatternInfo(r.Query, opts)
