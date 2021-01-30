@@ -266,8 +266,6 @@ export const observeMutations = (
             // Remove from known elements
             knownElements = knownElements.filter(knownElement => !find(removedNodes, knownElement))
 
-            console.log('knownElements', knownElements)
-            console.log({ addedNodes, removedNodes })
             return { addedNodes, removedNodes: removedNodes.map(node => node.element) }
         }),
         // Filter to emit only non-empty records.
@@ -317,7 +315,6 @@ export const gerritCodeHost: CodeHost = {
         if (!secondaryActionsElement) {
             return null
         }
-        console.log('secondaryActionsElement', secondaryActionsElement)
         const existingMountElement = secondaryActionsElement.querySelector('.open-in-sourcegraph-mount')
         if (existingMountElement) {
             return existingMountElement as HTMLElement
@@ -432,7 +429,6 @@ function getSubheaderFromCodeView(codeView: HTMLElement): HTMLElement | null | u
 function createStyleElement(styles: string): HTMLStyleElement {
     const styleElement = document.createElement('style')
     styleElement.textContent = styles
-    console.log('Created style element', styleElement)
     return styleElement
 }
 
