@@ -39,7 +39,12 @@ func TestIntegration(t *testing.T) {
 			t.Log("")
 			t.Log("Or skip them with 'go test -short'")
 			t.Log("")
-			t.Fatalf("Failed to connect to codeinsights database: %s", err)
+			t.Logf("Failed to connect to codeinsights database: %s", err)
+			if os.Getenv("CI") == "" {
+				t.Skip()
+			} else {
+				t.Fail()
+			}
 		}
 		if err := dbconn.MigrateDB(db, dbconn.CodeInsights); err != nil {
 			t.Fatalf("Failed to perform codeinsights database migration: %s", err)
