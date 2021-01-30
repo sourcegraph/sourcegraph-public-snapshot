@@ -87,7 +87,7 @@ func TestStructuralSearchRepoFilter(t *testing.T) {
 
 	ctx := context.Background()
 
-	q, err := query.ParseAndCheck(`patterntype:structural index:only foo`)
+	q, err := query.ParseLiteral(`patterntype:structural index:only foo`)
 	if err != nil {
 		t.Fatal(err)
 	}
