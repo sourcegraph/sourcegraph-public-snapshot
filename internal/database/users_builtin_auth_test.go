@@ -234,6 +234,7 @@ func TestUserStore_IsPasswordSet(t *testing.T) {
 		t.Fatal("returned true for empty password")
 	}
 
+	// User with non-empty password
 	usr, err = Users(db).Create(ctx, NewUser{
 		Email:                 "usr1@foo.com",
 		Username:              "usr1",
@@ -249,7 +250,6 @@ func TestUserStore_IsPasswordSet(t *testing.T) {
 	} else if !isPasswordSet {
 		t.Fatal("returned false for non-empty password")
 	}
-
 }
 
 func TestUsers_CreatePassword(t *testing.T) {
