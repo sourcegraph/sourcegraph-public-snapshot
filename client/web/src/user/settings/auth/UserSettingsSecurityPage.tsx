@@ -57,17 +57,6 @@ interface State {
     newPasswordConfirmation: string
 }
 
-const LoadingAnimation: JSX.Element = (
-    <ul className="list-group ml-3 mt-3">
-        <li className="row">
-            <div className="user-settings-security__shimmer--line col-sm-7" />
-        </li>
-        <li className="row mt-2">
-            <div className="user-settings-security__shimmer--line col-sm-7" />
-        </li>
-    </ul>
-)
-
 const fetchUserExternalAccountsByType = async (userID: Scalars['ID']): Promise<MinExternalAccount[]> => {
     const result = dataOrThrowErrors(
         await requestGraphQL<UserExternalAccountsResult, ExternalAccountsVariables>(
@@ -229,7 +218,11 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                 </span>
 
                 {/* external accounts not fetched yet */}
-                {!this.state.accounts.fetched && LoadingAnimation}
+                {!this.state.accounts.fetched && (
+                    <div className="d-flex justify-content-center mt-4">
+                        <LoadingSpinner className="icon-inline" />
+                    </div>
+                )}
 
                 {/* fetched external accounts */}
                 {this.state.accounts.fetched && (
@@ -300,7 +293,7 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                                 type="submit"
                                 disabled={this.state.loading}
                             >
-                                {this.state.accounts.lastRemoved ? 'Set password' : 'Update password'}
+                                {this.shouldShowOldPasswordInput() ? 'Update password' : 'Set password'}
                             </button>
                             {this.state.loading && (
                                 <div className="icon-inline">
