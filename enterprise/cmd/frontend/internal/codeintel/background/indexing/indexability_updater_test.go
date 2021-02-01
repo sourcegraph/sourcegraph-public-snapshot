@@ -6,12 +6,10 @@ import (
 	"regexp"
 	"sort"
 	"testing"
-	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/time/rate"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -98,10 +96,6 @@ func TestSkipManualUploads(t *testing.T) {
 	mockDBStore.GetUploadsFunc.SetDefaultReturn([]store.Upload{
 		{AssociatedIndexID: nil},
 	}, 1, nil)
-	mockDBStore.UpdateIndexableRepositoryFunc.SetDefaultHook(func(_ context.Context, _ dbstore.UpdateableIndexableRepository, _ time.Time) error {
-		t.Fatal("IndexabilityUpdater tried to queue index for repo with recent manual upload")
-		return nil
-	})
 	mockGitserverClient := NewMockGitserverClient()
 
 	updater := &IndexabilityUpdater{
@@ -115,5 +109,9 @@ func TestSkipManualUploads(t *testing.T) {
 	err := updater.Handle(context.Background())
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	if len(mockDBStore.UpdateIndexableRepositoryFunc.history) > 0 {
+		t.Fatal("IndexabilityUpdater tried to queue index for repo with recent manual upload")
 	}
 }
