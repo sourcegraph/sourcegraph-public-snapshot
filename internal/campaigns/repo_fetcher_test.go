@@ -58,7 +58,8 @@ func TestRepoFetcher_Fetch(t *testing.T) {
 			deleteZips: false,
 		}
 
-		rz, err := rf.Fetch(context.Background(), repo)
+		zip := rf.Checkout(repo)
+		err := zip.Fetch(context.Background())
 		if err != nil {
 			t.Errorf("unexpected error: %s", err)
 		}
@@ -72,33 +73,56 @@ func TestRepoFetcher_Fetch(t *testing.T) {
 			t.Fatalf("temp dir doesnt contain zip file")
 		}
 
-		if have, want := rz.Path(), filepath.Join(path.Clean(rf.dir), wantZipFile); want != have {
+		if have, want := zip.Path(), filepath.Join(path.Clean(rf.dir), wantZipFile); want != have {
 			t.Errorf("unexpected path: have=%q want=%q", have, want)
 		}
-		rz.Close()
+		zip.Close()
 
 		// Create it a second time and make sure that the server wasn't called
-		rz, err = rf.Fetch(context.Background(), repo)
+		err = zip.Fetch(context.Background())
 		if err != nil {
 			t.Fatalf("unexpected error: %s", err)
 		}
-		rz.Close()
+		zip.Close()
 
 		if requestsReceived != 1 {
 			t.Fatalf("wrong number of requests received: %d", requestsReceived)
 		}
+	})
 
-		// Third time, but this time with cleanup, _after_ unzipping
-		rf.deleteZips = true
-		_, err = rf.Fetch(context.Background(), repo)
+	t.Run("delete on close", func(t *testing.T) {
+		callback := func(_ http.ResponseWriter, _ *http.Request) {}
+
+		ts := httptest.NewServer(newZipArchivesMux(t, callback, archive))
+		defer ts.Close()
+
+		var clientBuffer bytes.Buffer
+		client := api.NewClient(api.ClientOpts{Endpoint: ts.URL, Out: &clientBuffer})
+
+		rf := &repoFetcher{
+			client:     client,
+			dir:        workspaceTmpDir(t),
+			deleteZips: true,
+		}
+
+		zip := rf.Checkout(repo)
+
+		err := zip.Fetch(context.Background())
 		if err != nil {
-			t.Fatalf("unexpected error: %s", err)
+			t.Errorf("unexpected error: %s", err)
 		}
 
-		if requestsReceived != 1 {
-			t.Fatalf("wrong number of requests received: %d", requestsReceived)
+		wantZipFile := repo.Slug() + ".zip"
+		ok, err := dirContains(rf.dir, wantZipFile)
+		if err != nil {
+			t.Fatal(err)
 		}
-		rz.Close()
+		if !ok {
+			t.Fatalf("temp dir doesnt contain zip file")
+		}
+
+		// Should be deleted after closing
+		zip.Close()
 
 		ok, err = dirContains(rf.dir, wantZipFile)
 		if err != nil {
@@ -145,7 +169,8 @@ func TestRepoFetcher_Fetch(t *testing.T) {
 			deleteZips: false,
 		}
 
-		if _, err := rf.Fetch(ctx, repo); err == nil {
+		zip := rf.Checkout(repo)
+		if err := zip.Fetch(ctx); err == nil {
 			t.Error("error is nil")
 		}
 
@@ -183,8 +208,9 @@ func TestRepoFetcher_Fetch(t *testing.T) {
 			dir:        workspaceTmpDir(t),
 			deleteZips: false,
 		}
+		zip := rf.Checkout(repo)
 
-		_, err := rf.Fetch(context.Background(), repo)
+		err := zip.Fetch(context.Background())
 		if err != nil {
 			t.Fatalf("unexpected error: %s", err)
 		}

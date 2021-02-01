@@ -36,7 +36,7 @@ type executionResult struct {
 }
 
 type executionOpts struct {
-	fetcher RepoFetcher
+	archive RepoZip
 
 	wc   WorkspaceCreator
 	path string
@@ -52,14 +52,14 @@ type executionOpts struct {
 
 func runSteps(ctx context.Context, opts *executionOpts) (result executionResult, err error) {
 	opts.reportProgress("Downloading archive")
-	zip, err := opts.fetcher.Fetch(ctx, opts.repo)
+	err = opts.archive.Fetch(ctx)
 	if err != nil {
 		return executionResult{}, errors.Wrap(err, "fetching repo")
 	}
-	defer zip.Close()
+	defer opts.archive.Close()
 
 	opts.reportProgress("Initializing workspace")
-	workspace, err := opts.wc.Create(ctx, opts.repo, opts.steps, zip.Path())
+	workspace, err := opts.wc.Create(ctx, opts.repo, opts.steps, opts.archive.Path())
 	if err != nil {
 		return executionResult{}, errors.Wrap(err, "creating workspace")
 	}

@@ -361,12 +361,8 @@ repository_name=github.com/sourcegraph/src-cli`,
 			cache := newInMemoryExecutionCache()
 			creator := &dockerBindWorkspaceCreator{dir: testTempDir}
 			opts := ExecutorOpts{
-				Cache:   cache,
-				Creator: creator,
-				RepoFetcher: &repoFetcher{
-					client: client,
-					dir:    testTempDir,
-				},
+				Cache:       cache,
+				Creator:     creator,
 				TempDir:     testTempDir,
 				Parallelism: runtime.GOMAXPROCS(0),
 				Timeout:     tc.executorTimeout,
@@ -375,6 +371,10 @@ repository_name=github.com/sourcegraph/src-cli`,
 				opts.Timeout = 30 * time.Second
 			}
 
+			repoFetcher := &repoFetcher{
+				client: client,
+				dir:    testTempDir,
+			}
 			// execute contains the actual logic running the tasks on an
 			// executor. We'll run this multiple times to cover both the cache
 			// and non-cache code paths.
@@ -395,6 +395,7 @@ repository_name=github.com/sourcegraph/src-cli`,
 					}
 
 					task.Steps = tc.steps
+					task.Archive = repoFetcher.Checkout(task.Repository)
 					executor.AddTask(task)
 				}
 

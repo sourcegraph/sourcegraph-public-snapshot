@@ -235,10 +235,14 @@ func campaignsExecute(ctx context.Context, out *output.Output, svc *campaigns.Se
 	pending.VerboseLine(output.Linef("🚧", output.StyleSuccess, "Workspace creator: %T", workspaceCreator))
 	campaignsCompletePending(pending, "Prepared workspaces")
 
+	fetcher := svc.NewRepoFetcher(flags.cacheDir, flags.cleanArchives)
+	for _, task := range tasks {
+		task.Archive = fetcher.Checkout(task.Repository)
+	}
+
 	opts := campaigns.ExecutorOpts{
 		Cache:       svc.NewExecutionCache(flags.cacheDir),
 		Creator:     workspaceCreator,
-		RepoFetcher: svc.NewRepoFetcher(flags.cacheDir, flags.cleanArchives),
 		ClearCache:  flags.clearCache,
 		KeepLogs:    flags.keepLogs,
 		Timeout:     flags.timeout,

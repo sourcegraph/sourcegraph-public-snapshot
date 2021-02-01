@@ -63,6 +63,8 @@ type Task struct {
 
 	Template         *ChangesetTemplate `json:"-"`
 	TransformChanges *TransformChanges  `json:"-"`
+
+	Archive RepoZip `json:"-"`
 }
 
 func (t *Task) cacheKey() ExecutionCacheKey {
@@ -146,7 +148,6 @@ type ExecutorOpts struct {
 	Cache       ExecutionCache
 	Creator     WorkspaceCreator
 	Parallelism int
-	RepoFetcher RepoFetcher
 	Timeout     time.Duration
 
 	ClearCache bool
@@ -162,7 +163,6 @@ type executor struct {
 	features featureFlags
 	logger   *LogManager
 	creator  WorkspaceCreator
-	fetcher  RepoFetcher
 
 	tasks      []*Task
 	statuses   map[*Task]*TaskStatus
@@ -184,7 +184,6 @@ func newExecutor(opts ExecutorOpts, client api.Client, features featureFlags) *e
 		creator:       opts.Creator,
 		client:        client,
 		features:      features,
-		fetcher:       opts.RepoFetcher,
 		doneEnqueuing: make(chan struct{}),
 		logger:        NewLogManager(opts.TempDir, opts.KeepLogs),
 		tempDir:       opts.TempDir,
@@ -349,7 +348,7 @@ func (x *executor) do(ctx context.Context, task *Task) (err error) {
 
 	// Actually execute the steps.
 	opts := &executionOpts{
-		fetcher: x.fetcher,
+		archive: task.Archive,
 		wc:      x.creator,
 		repo:    task.Repository,
 		path:    task.Path,
