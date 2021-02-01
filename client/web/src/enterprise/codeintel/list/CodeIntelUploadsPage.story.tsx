@@ -14,59 +14,63 @@ const { add } = storiesOf('web/codeintel/list/CodeIntelUploadPage', module)
         },
     })
 
-add('Page', () => (
+add('SiteAdminPage', () => (
+    <EnterpriseWebStory>
+        {props => <CodeIntelUploadsPage {...props} now={now} fetchLsifUploads={fetchLsifUploads} />}
+    </EnterpriseWebStory>
+))
+
+add('FreshRepositoryPage', () => (
     <EnterpriseWebStory>
         {props => (
             <CodeIntelUploadsPage
                 {...props}
+                repo={{ id: 'sourcegraph' }}
                 now={now}
-                fetchLsifUploads={fetch(
-                    {
-                        id: '1',
-                        state: LSIFUploadState.UPLOADING,
-                        uploadedAt: '2020-06-15T12:20:30+00:00',
-                        startedAt: null,
-                        finishedAt: null,
-                        failure: null,
-                        placeInQueue: null,
-                    },
-                    {
-                        id: '2',
-                        state: LSIFUploadState.QUEUED,
-                        uploadedAt: '2020-06-15T12:20:30+00:00',
-                        startedAt: null,
-                        finishedAt: null,
-                        placeInQueue: 3,
-                        failure: null,
-                    },
-                    {
-                        id: '3',
-                        state: LSIFUploadState.PROCESSING,
-                        uploadedAt: '2020-06-15T12:20:30+00:00',
-                        startedAt: '2020-06-15T12:25:30+00:00',
-                        finishedAt: null,
-                        failure: null,
-                        placeInQueue: null,
-                    },
-                    {
-                        id: '4',
-                        state: LSIFUploadState.COMPLETED,
-                        uploadedAt: '2020-06-15T12:20:30+00:00',
-                        startedAt: '2020-06-15T12:25:30+00:00',
-                        finishedAt: '2020-06-15T12:30:30+00:00',
-                        failure: null,
-                        placeInQueue: null,
-                    },
-                    {
-                        id: '5',
-                        state: LSIFUploadState.ERRORED,
-                        uploadedAt: '2020-06-15T12:20:30+00:00',
-                        startedAt: '2020-06-15T12:25:30+00:00',
-                        finishedAt: '2020-06-15T12:30:30+00:00',
-                        failure: 'Whoops! The server encountered a boo-boo handling this input.',
-                        placeInQueue: null,
-                    }
-                )}
+                fetchLsifUploads={fetchLsifUploads}
+                fetchCommitGraphMetadata={() => of({ stale: false, updatedAt: now() })}
+            />
+        )}
+    </EnterpriseWebStory>
+))
+
+add('FreshUnupdatedRepositoryPageNeverUpdated', () => (
+    <EnterpriseWebStory>
+        {props => (
+            <CodeIntelUploadsPage
+                {...props}
+                repo={{ id: 'sourcegraph' }}
+                now={now}
+                fetchLsifUploads={fetchLsifUploads}
+                fetchCommitGraphMetadata={() => of({ stale: false, updatedAt: null })}
+            />
+        )}
+    </EnterpriseWebStory>
+))
+
+add('StaleRepositoryPage', () => (
+    <EnterpriseWebStory>
+        {props => (
+            <CodeIntelUploadsPage
+                {...props}
+                repo={{ id: 'sourcegraph' }}
+                now={now}
+                fetchLsifUploads={fetchLsifUploads}
+                fetchCommitGraphMetadata={() => of({ stale: true, updatedAt: now() })}
+            />
+        )}
+    </EnterpriseWebStory>
+))
+
+add('StaleUnupdatedRepositoryPage', () => (
+    <EnterpriseWebStory>
+        {props => (
+            <CodeIntelUploadsPage
+                {...props}
+                repo={{ id: 'sourcegraph' }}
+                now={now}
+                fetchLsifUploads={fetchLsifUploads}
+                fetchCommitGraphMetadata={() => of({ stale: true, updatedAt: null })}
             />
         )}
     </EnterpriseWebStory>
@@ -107,5 +111,53 @@ const fetch = (
             hasNextPage: true,
         },
     })
+
+const fetchLsifUploads = fetch(
+    {
+        id: '1',
+        state: LSIFUploadState.UPLOADING,
+        uploadedAt: '2020-06-15T12:20:30+00:00',
+        startedAt: null,
+        finishedAt: null,
+        failure: null,
+        placeInQueue: null,
+    },
+    {
+        id: '2',
+        state: LSIFUploadState.QUEUED,
+        uploadedAt: '2020-06-15T12:20:30+00:00',
+        startedAt: null,
+        finishedAt: null,
+        placeInQueue: 3,
+        failure: null,
+    },
+    {
+        id: '3',
+        state: LSIFUploadState.PROCESSING,
+        uploadedAt: '2020-06-15T12:20:30+00:00',
+        startedAt: '2020-06-15T12:25:30+00:00',
+        finishedAt: null,
+        failure: null,
+        placeInQueue: null,
+    },
+    {
+        id: '4',
+        state: LSIFUploadState.COMPLETED,
+        uploadedAt: '2020-06-15T12:20:30+00:00',
+        startedAt: '2020-06-15T12:25:30+00:00',
+        finishedAt: '2020-06-15T12:30:30+00:00',
+        failure: null,
+        placeInQueue: null,
+    },
+    {
+        id: '5',
+        state: LSIFUploadState.ERRORED,
+        uploadedAt: '2020-06-15T12:20:30+00:00',
+        startedAt: '2020-06-15T12:25:30+00:00',
+        finishedAt: '2020-06-15T12:30:30+00:00',
+        failure: 'Whoops! The server encountered a boo-boo handling this input.',
+        placeInQueue: null,
+    }
+)
 
 const now = () => new Date('2020-06-15T15:25:00+00:00')

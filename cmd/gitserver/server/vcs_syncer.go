@@ -123,8 +123,8 @@ func decomposePerforceCloneURL(cloneURL string) (username, password, host, depot
 	return url.User.Username(), password, url.Host, url.Path, nil
 }
 
-// ping sends one message to the Perforce Server to check connectivity.
-func (s *PerforceDepotSyncer) ping(ctx context.Context, host, username string) error {
+// p4ping sends one message to the Perforce Server to check connectivity.
+func p4ping(ctx context.Context, host, username string) error {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
@@ -147,8 +147,8 @@ func (s *PerforceDepotSyncer) ping(ctx context.Context, host, username string) e
 	return nil
 }
 
-// login performs a "p4 login" operation against the Perforce Server to obtain a session.
-func (s *PerforceDepotSyncer) login(ctx context.Context, host, username, password string) error {
+// p4login performs a login operation against the Perforce Server to obtain a session.
+func p4login(ctx context.Context, host, username, password string) error {
 	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
 
@@ -192,10 +192,10 @@ func (s *PerforceDepotSyncer) login(ctx context.Context, host, username, passwor
 	return err
 }
 
-// pingWithLogin attempts to ping the Perforce Server and performs a login operation when needed.
-func (s *PerforceDepotSyncer) pingWithLogin(ctx context.Context, host, username, password string) error {
+// p4pingWithLogin attempts to ping the Perforce Server and performs a login operation when needed.
+func p4pingWithLogin(ctx context.Context, host, username, password string) error {
 	// Attempt to check connectivity, may be prompted to login (again)
-	err := s.ping(ctx, host, username)
+	err := p4ping(ctx, host, username)
 	if err == nil {
 		return nil // The ping worked, session still validate for the user
 	} else if !strings.Contains(err.Error(), "Your session has expired, please login again.") &&
@@ -203,7 +203,7 @@ func (s *PerforceDepotSyncer) pingWithLogin(ctx context.Context, host, username,
 		return errors.Wrap(err, "ping")
 	}
 
-	err = s.login(ctx, host, username, password)
+	err = p4login(ctx, host, username, password)
 	if err != nil {
 		return errors.Wrap(err, "login")
 	}
@@ -218,7 +218,7 @@ func (s *PerforceDepotSyncer) IsCloneable(ctx context.Context, url string) error
 	}
 
 	// FIXME: Need to find a way to determine if depot exists instead of a general ping to the Perforce server.
-	return s.pingWithLogin(ctx, host, username, password)
+	return p4pingWithLogin(ctx, host, username, password)
 }
 
 // CloneCommand returns the command to be executed for cloning a Perforce depot as a Git repository.
@@ -228,7 +228,7 @@ func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, url, tmpPath str
 		return nil, errors.Wrap(err, "decompose")
 	}
 
-	err = s.pingWithLogin(ctx, host, username, password)
+	err = p4pingWithLogin(ctx, host, username, password)
 	if err != nil {
 		return nil, errors.Wrap(err, "ping with login")
 	}
@@ -256,7 +256,7 @@ func (s *PerforceDepotSyncer) FetchCommand(ctx context.Context, url string) (cmd
 		return nil, false, errors.Wrap(err, "decompose")
 	}
 
-	err = s.pingWithLogin(ctx, host, username, password)
+	err = p4pingWithLogin(ctx, host, username, password)
 	if err != nil {
 		return nil, false, errors.Wrap(err, "ping with login")
 	}
