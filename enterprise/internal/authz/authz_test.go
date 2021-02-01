@@ -464,8 +464,12 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 			bitbucketServers: test.bitbucketServerConnections,
 		}
 
-		allowAccessByDefault, authzProviders, seriousProblems, _ :=
-			ProvidersFromConfig(context.Background(), &test.cfg, &store)
+		allowAccessByDefault, authzProviders, seriousProblems, _ := ProvidersFromConfig(
+			context.Background(),
+			&test.cfg,
+			&store,
+			&store,
+		)
 		if allowAccessByDefault != test.expAuthzAllowAccessByDefault {
 			t.Errorf("allowAccessByDefault: (actual) %v != (expected) %v", asJSON(t, allowAccessByDefault), asJSON(t, test.expAuthzAllowAccessByDefault))
 		}
@@ -539,4 +543,8 @@ func (s fakeStore) List(ctx context.Context, opt database.ExternalServicesListOp
 	}
 
 	return svcs, nil
+}
+
+func (s fakeStore) ListByUser(ctx context.Context, opt database.UserEmailsListOptions) ([]*database.UserEmail, error) {
+	panic("implement me")
 }

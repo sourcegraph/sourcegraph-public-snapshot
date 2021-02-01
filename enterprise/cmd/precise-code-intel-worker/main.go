@@ -130,7 +130,12 @@ func mustInitializeDB() *sql.DB {
 	ctx := context.Background()
 	go func() {
 		for range time.NewTicker(5 * time.Second).C {
-			allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), database.GlobalExternalServices)
+			allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(
+				ctx,
+				conf.Get(),
+				database.ExternalServices(dbconn.Global),
+				database.UserEmails(dbconn.Global),
+			)
 			authz.SetProviders(allowAccessByDefault, authzProviders)
 		}
 	}()

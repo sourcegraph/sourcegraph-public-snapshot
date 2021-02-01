@@ -23,7 +23,12 @@ func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigrat
 		t := time.NewTicker(5 * time.Second)
 		for range t.C {
 			allowAccessByDefault, authzProviders, _, _ :=
-				eiauthz.ProvidersFromConfig(ctx, conf.Get(), database.GlobalExternalServices)
+				eiauthz.ProvidersFromConfig(
+					ctx,
+					conf.Get(),
+					database.ExternalServices(dbconn.Global),
+					database.UserEmails(dbconn.Global),
+				)
 			authz.SetProviders(allowAccessByDefault, authzProviders)
 		}
 	}()

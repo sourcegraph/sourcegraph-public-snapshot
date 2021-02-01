@@ -39,7 +39,12 @@ func Init(d dbutil.DB, clock func() time.Time) {
 		}
 
 		// We can ignore problems returned here because they would have been surfaced in other places.
-		_, providers, _, _ := eauthz.ProvidersFromConfig(context.Background(), conf.Get(), database.GlobalExternalServices)
+		_, providers, _, _ := eauthz.ProvidersFromConfig(
+			context.Background(),
+			conf.Get(),
+			database.ExternalServices(d),
+			database.UserEmails(d),
+		)
 		if len(providers) == 0 {
 			return nil
 		}
@@ -131,7 +136,12 @@ func init() {
 	// Report any authz provider problems in external configs.
 	conf.ContributeWarning(func(cfg conf.Unified) (problems conf.Problems) {
 		_, _, seriousProblems, warnings :=
-			eauthz.ProvidersFromConfig(context.Background(), &cfg, database.GlobalExternalServices)
+			eauthz.ProvidersFromConfig(
+				context.Background(),
+				&cfg,
+				database.GlobalExternalServices,
+				database.GlobalUserEmails,
+			)
 		problems = append(problems, conf.NewExternalServiceProblems(seriousProblems...)...)
 		problems = append(problems, conf.NewExternalServiceProblems(warnings...)...)
 		return problems

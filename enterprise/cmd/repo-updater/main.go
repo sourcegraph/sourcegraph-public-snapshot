@@ -21,7 +21,6 @@ import (
 	ossAuthz "github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	ossDB "github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -53,8 +52,6 @@ func enterpriseInit(
 
 	campaigns.InitBackgroundJobs(ctx, db, cf, server)
 
-	// TODO(jchen): This is an unfortunate compromise to not rewrite ossDB.ExternalServices for now.
-	dbconn.Global = db
 	permsStore := edb.Perms(db, timeutil.Now)
 	permsSyncer := authz.NewPermsSyncer(repoStore, permsStore, timeutil.Now, ratelimit.DefaultRegistry)
 	go startBackgroundPermsSync(ctx, permsSyncer, db)
@@ -73,7 +70,12 @@ func startBackgroundPermsSync(ctx context.Context, syncer *authz.PermsSyncer, db
 		t := time.NewTicker(5 * time.Second)
 		for range t.C {
 			allowAccessByDefault, authzProviders, _, _ :=
-				frontendAuthz.ProvidersFromConfig(ctx, conf.Get(), ossDB.GlobalExternalServices)
+				frontendAuthz.ProvidersFromConfig(
+					ctx,
+					conf.Get(),
+					ossDB.ExternalServices(db),
+					ossDB.UserEmails(db),
+				)
 			ossAuthz.SetProviders(allowAccessByDefault, authzProviders)
 		}
 	}()
