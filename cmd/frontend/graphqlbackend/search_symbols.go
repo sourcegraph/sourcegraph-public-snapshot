@@ -124,18 +124,18 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 		defer run.Release()
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
-		for event := range indexed.Search(ctx) {
+		c := make(chan SearchEvent)
+		e := make(chan error, 1)
+		go func() {
+			defer close(c)
+			e <- indexed.doSearch(ctx, c)
+		}()
+		for event := range c {
 			func() {
 				mu.Lock()
 				defer mu.Unlock()
 				common.Update(&event.Stats)
-				tr.LogFields(otlog.Object("searchErr", event.Error), otlog.Error(err), otlog.Bool("overLimitCanceled", overLimitCanceled))
-				if event.Error != nil && err == nil && !overLimitCanceled {
-					err = event.Error
-					tr.LazyPrintf("cancel indexed symbol search due to error: %v", err)
-					cancel()
 
-				}
 				fms := make([]*FileMatchResolver, 0, len(event.Results))
 				for _, match := range event.Results {
 					fms = append(fms, match.(*FileMatchResolver))
@@ -144,6 +144,16 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 			}()
 		}
 
+		if lErr := <-e; lErr != nil {
+			tr.LogFields(otlog.Error(lErr))
+			mu.Lock()
+			if err == nil && !overLimitCanceled {
+				err = lErr
+				tr.LazyPrintf("cancel indexed symbol search due to error: %v", err)
+				cancel()
+			}
+			mu.Unlock()
+		}
 	})
 
 	for _, repoRevs := range searcherRepos {
