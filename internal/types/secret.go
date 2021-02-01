@@ -27,9 +27,9 @@ import (
 // RedactedSecret is used as a placeholder for secret fields when reading external service config
 const RedactedSecret = "REDACTED"
 
-// RedactConfig replaces any secret fields in the Config field with RedactedSecret, be sure to call
+// RedactConfigSecrets replaces any secret fields in the Config field with RedactedSecret, be sure to call
 // UnRedactExternalServiceConfig before writing back to the database, otherwise validation will throw errors.
-func (e *ExternalService) RedactConfig() error {
+func (e *ExternalService) RedactConfigSecrets() error {
 	if e.Config == "" {
 		return nil
 	}
