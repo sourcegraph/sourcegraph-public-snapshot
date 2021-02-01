@@ -236,7 +236,6 @@ func TestAddExternalService(t *testing.T) {
 				"addExternalService": {
 					"kind": "GITHUB",
 					"displayName": "GITHUB #1",
-					"config": "{\"url\": \"https://github.com\", \"repositoryQuery\": [\"none\"], \"token\": \"abc\"}",
 					"config":"{\n  \"url\": \"https://github.com\",\n  \"repositoryQuery\": [\n    \"none\"\n  ],\n  \"token\": \"` + types.RedactedSecret + `\"\n}",
 					"namespace": null
 				}
