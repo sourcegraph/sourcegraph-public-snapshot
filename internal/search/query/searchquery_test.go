@@ -4,7 +4,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/search/query/types"
 )
 
@@ -130,67 +129,6 @@ func TestQuery_StringValues(t *testing.T) {
 			query.StringValues("r")
 		})
 	})
-}
-
-func TestQuery_Validate(t *testing.T) {
-	cases := []struct {
-		Name       string
-		Query      string
-		SearchType SearchType
-		Want       string
-	}{
-		{
-			Name:       `Structural search validates`,
-			Query:      `patterntype:structural ":[_]"`,
-			SearchType: SearchTypeStructural,
-			Want:       `the parameter "case:" is not valid for structural search`,
-		},
-		{
-			Name:       `Structural search incompatible with "case:"`,
-			Query:      `patterntype:structural case:yes ":[_]"`,
-			SearchType: SearchTypeStructural,
-			Want:       `the parameter "case:" is not valid for structural search, matching is always case-sensitive`,
-		},
-		{
-			Name:       `Structural search incompatible with "type:" on non-empty pattern`,
-			Query:      `patterntype:structural type:repo ":[_]"`,
-			SearchType: SearchTypeStructural,
-			Want:       `the parameter "type:" is not valid for structural search, search is always performed on file content`,
-		},
-		{
-			Name:       `Structural search validates with "type:" on empty pattern`,
-			Query:      `patterntype:structural type:repo"`,
-			SearchType: SearchTypeStructural,
-			Want:       "",
-		},
-	}
-	for _, tt := range cases {
-		t.Run(tt.Name, func(t *testing.T) {
-			q, _ := ParseAndCheck(tt.Query)
-			if got := Validate(q, tt.SearchType); got != nil {
-				if diff := cmp.Diff(got.Error(), tt.Want); diff != "" {
-					t.Error(diff)
-				}
-			}
-		})
-	}
-}
-
-func TestQuery_CaseInsensitiveFields(t *testing.T) {
-	query, err := ParseAndCheck("repoHasFile:foo")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	values, _ := query.RegexpPatterns(FieldRepoHasFile)
-	if len(values) != 1 || values[0] != "foo" {
-		t.Errorf("unexpected values: want {\"foo\"}, got %v", values)
-	}
-
-	fields := types.Fields(query.Fields())
-	if got, want := fields.String(), `repohasfile~"foo"`; got != want {
-		t.Errorf("unexpected parsed query:\ngot:  %s\nwant: %s", got, want)
-	}
 }
 
 func checkPanic(t *testing.T, msg string, f func()) {
