@@ -72,6 +72,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	progress := progressAggregator{
 		Start: time.Now(),
+		Limit: search.Inputs().MaxResults(),
 	}
 
 	sendProgress := func() {
@@ -218,7 +219,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 type searchResolver interface {
 	Results(context.Context) (*graphqlbackend.SearchResultsResolver, error)
 	SetStream(c graphqlbackend.SearchStream)
-	Inputs() *graphqlbackend.SearchInputs
+	Inputs() graphqlbackend.SearchInputs
 }
 
 func defaultNewSearchResolver(ctx context.Context, args *graphqlbackend.SearchArgs) (searchResolver, error) {

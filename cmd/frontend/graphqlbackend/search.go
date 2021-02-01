@@ -51,7 +51,7 @@ type SearchImplementer interface {
 	Stats(context.Context) (*searchResultsStats, error)
 
 	SetStream(c SearchStream)
-	Inputs() *SearchInputs
+	Inputs() SearchInputs
 }
 
 // NewSearchImplementer returns a SearchImplementer that provides search results and suggestions.
@@ -332,8 +332,8 @@ func (r *searchResolver) SetStream(c SearchStream) {
 	r.resultChannel = c
 }
 
-func (r *searchResolver) Inputs() *SearchInputs {
-	return r.SearchInputs
+func (r *searchResolver) Inputs() SearchInputs {
+	return *r.SearchInputs
 }
 
 // rawQuery returns the original query string input.
@@ -350,25 +350,30 @@ func (r *searchResolver) countIsSet() bool {
 const defaultMaxSearchResults = 30
 const maxSearchResultsPerPaginatedRequest = 5000
 
-func (r *searchResolver) maxResults() int32 {
-	if r.Pagination != nil {
+// MaxResults computes the limit for the query.
+func (inputs SearchInputs) MaxResults() int {
+	if inputs.Pagination != nil {
 		// Paginated search requests always consume an entire result set for a
 		// given repository, so we do not want any limit here. See
 		// search_pagination.go for details on why this is necessary .
 		return math.MaxInt32
 	}
-	count, _ := r.Query.StringValues(query.FieldCount)
+
+	if inputs.Query == nil {
+		return 0
+	}
+	count, _ := inputs.Query.StringValues(query.FieldCount)
 	if len(count) > 0 {
 		n, _ := strconv.Atoi(count[0])
 		if n > 0 {
-			return int32(n)
+			return n
 		}
 	}
-	max, _ := r.Query.StringValues(query.FieldMax)
+	max, _ := inputs.Query.StringValues(query.FieldMax)
 	if len(max) > 0 {
 		n, _ := strconv.Atoi(max[0])
 		if n > 0 {
-			return int32(n)
+			return n
 		}
 	}
 	return defaultMaxSearchResults
