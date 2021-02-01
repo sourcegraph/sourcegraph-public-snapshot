@@ -79,7 +79,6 @@ func (r *externalServiceResolver) DisplayName() string {
 }
 
 func (r *externalServiceResolver) Config() (JSONCString, error) {
-	// redact any secret fields in the config
 	err := r.externalService.RedactConfigSecrets()
 	if err != nil {
 		return "", err
