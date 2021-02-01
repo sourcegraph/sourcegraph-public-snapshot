@@ -7,9 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/url"
-	"strconv"
 	"strings"
-	"time"
 
 	jsoniter "github.com/json-iterator/go"
 	otlog "github.com/opentracing/opentracing-go/log"
