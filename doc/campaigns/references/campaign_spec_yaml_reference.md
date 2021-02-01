@@ -739,6 +739,21 @@ The full name of the file that sits at the root of one or more workspaces in a g
 
 Sourcegraph code search is used to find the location of files with this name in the repositories returned by [`on`](#on).
 
+For example, in a repository with the following files:
+
+- `packages/sourcegraph-ui/package.json`
+- `packages/sourcegraph-test-helper/package.json`
+
+the workspace configuration
+
+```yaml
+workspaces:
+  - rootAtLocationOf: package.json
+    in: "*"
+```
+
+would create _two changesets_ in the repository, one in `packages/sourcegraph-ui` and one in `packages/sourcegraph-test-helper`.
+
 ## [`workspaces.in`](#workspaces-in)
 
 The repositories in which the workspace should be discovered.
