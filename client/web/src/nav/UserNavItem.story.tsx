@@ -73,7 +73,7 @@ add(
                     testIsOpen={true}
                     authenticatedUser={{
                         username: 'alice',
-                        avatarURL: 'https://i.pravatar.cc/300',
+                        avatarURL: 'https://picsum.photos/seed/user/300/300',
                         session: { canSignOut: true },
                         settingsURL: '#',
                         siteAdmin: true,
