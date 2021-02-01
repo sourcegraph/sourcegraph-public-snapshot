@@ -52,6 +52,7 @@ func TestExecutor_Integration(t *testing.T) {
 	}
 
 	changesetTemplateBranch := "my-branch"
+	defaultTemplate := &ChangesetTemplate{Branch: changesetTemplateBranch}
 
 	type filesByBranch map[string][]string
 	type filesByRepository map[string]filesByBranch
@@ -59,11 +60,14 @@ func TestExecutor_Integration(t *testing.T) {
 	tests := []struct {
 		name string
 
-		repos     []*graphql.Repository
-		archives  []mockRepoArchive
-		template  *ChangesetTemplate
-		steps     []Step
+		archives []mockRepoArchive
+
+		// We define the steps only once per test case so there's less duplication
+		steps []Step
+		// Same goes for transformChanges
 		transform *TransformChanges
+
+		tasks []*Task
 
 		executorTimeout time.Duration
 
@@ -77,8 +81,7 @@ func TestExecutor_Integration(t *testing.T) {
 		wantErrInclude string
 	}{
 		{
-			name:  "success",
-			repos: []*graphql.Repository{srcCLIRepo, sourcegraphRepo},
+			name: "success",
 			archives: []mockRepoArchive{
 				{repo: srcCLIRepo, files: map[string]string{
 					"README.md": "# Welcome to the README\n",
@@ -92,6 +95,10 @@ func TestExecutor_Integration(t *testing.T) {
 				{Run: `echo -e "foobar\n" >> README.md`, Container: "alpine:13"},
 				{Run: `[[ -f "main.go" ]] && go fmt main.go || exit 0`, Container: "doesntmatter:13"},
 			},
+			tasks: []*Task{
+				{Repository: srcCLIRepo},
+				{Repository: sourcegraphRepo},
+			},
 			wantFilesChanged: filesByRepository{
 				srcCLIRepo.ID: filesByBranch{
 					changesetTemplateBranch: []string{"README.md", "main.go"},
@@ -102,8 +109,7 @@ func TestExecutor_Integration(t *testing.T) {
 			},
 		},
 		{
-			name:  "timeout",
-			repos: []*graphql.Repository{srcCLIRepo},
+			name: "timeout",
 			archives: []mockRepoArchive{
 				{repo: srcCLIRepo, files: map[string]string{"README.md": "line 1"}},
 			},
@@ -115,12 +121,14 @@ func TestExecutor_Integration(t *testing.T) {
 				// Instead we take short powernaps.
 				{Run: `while true; do echo "zZzzZ" && sleep 0.05; done`, Container: "alpine:13"},
 			},
+			tasks: []*Task{
+				{Repository: srcCLIRepo},
+			},
 			executorTimeout: 100 * time.Millisecond,
 			wantErrInclude:  "execution in github.com/sourcegraph/src-cli failed: Timeout reached. Execution took longer than 100ms.",
 		},
 		{
-			name:  "templated",
-			repos: []*graphql.Repository{srcCLIRepo},
+			name: "templated",
 			archives: []mockRepoArchive{
 				{repo: srcCLIRepo, files: map[string]string{
 					"README.md": "# Welcome to the README\n",
@@ -133,6 +141,9 @@ func TestExecutor_Integration(t *testing.T) {
 				{Run: `touch added-${{ join previous_step.added_files " " }}`, Container: "alpine:13"},
 			},
 
+			tasks: []*Task{
+				{Repository: srcCLIRepo},
+			},
 			wantFilesChanged: filesByRepository{
 				srcCLIRepo.ID: filesByBranch{
 					changesetTemplateBranch: []string{"main.go", "modified-main.go.md", "added-modified-main.go.md"},
@@ -140,8 +151,7 @@ func TestExecutor_Integration(t *testing.T) {
 			},
 		},
 		{
-			name:  "empty",
-			repos: []*graphql.Repository{srcCLIRepo},
+			name: "empty",
 			archives: []mockRepoArchive{
 				{repo: srcCLIRepo, files: map[string]string{
 					"README.md": "# Welcome to the README\n",
@@ -151,12 +161,15 @@ func TestExecutor_Integration(t *testing.T) {
 			steps: []Step{
 				{Run: `true`, Container: "doesntmatter:13"},
 			},
+
+			tasks: []*Task{
+				{Repository: srcCLIRepo},
+			},
 			// No changesets should be generated.
 			wantFilesChanged: filesByRepository{},
 		},
 		{
-			name:  "transform group",
-			repos: []*graphql.Repository{srcCLIRepo, sourcegraphRepo},
+			name: "transform group",
 			archives: []mockRepoArchive{
 				{repo: srcCLIRepo, files: map[string]string{
 					"README.md":  "# Welcome to the README\n",
@@ -171,6 +184,11 @@ func TestExecutor_Integration(t *testing.T) {
 					"a/b/c/c.go": "package c",
 				}},
 			},
+
+			tasks: []*Task{
+				{Repository: srcCLIRepo},
+				{Repository: sourcegraphRepo},
+			},
 			steps: []Step{
 				{Run: `echo 'var a = 1' >> a/a.go`, Container: "doesntmatter:13"},
 				{Run: `echo 'var b = 2' >> a/b/b.go`, Container: "doesntmatter:13"},
@@ -182,6 +200,7 @@ func TestExecutor_Integration(t *testing.T) {
 					{Directory: "a/b", Branch: "in-directory-b", Repository: sourcegraphRepo.Name},
 				},
 			},
+
 			wantFilesChanged: filesByRepository{
 				srcCLIRepo.ID: filesByBranch{
 					changesetTemplateBranch: []string{
@@ -204,8 +223,7 @@ func TestExecutor_Integration(t *testing.T) {
 			},
 		},
 		{
-			name:  "templated changesetTemplate",
-			repos: []*graphql.Repository{srcCLIRepo},
+			name: "templated changesetTemplate",
 			archives: []mockRepoArchive{
 				{repo: srcCLIRepo, files: map[string]string{
 					"README.md": "# Welcome to the README\n",
@@ -236,20 +254,25 @@ func TestExecutor_Integration(t *testing.T) {
 					},
 				},
 			},
-			template: &ChangesetTemplate{
-				Title: "myOutputName1=${{ outputs.myOutputName1}}",
-				Body: `myOutputName1=${{ outputs.myOutputName1}},myOutputName2=${{ outputs.myOutputName2.thisStepStdout }}
+			tasks: []*Task{
+				{
+					Repository: srcCLIRepo,
+					Template: &ChangesetTemplate{
+						Title: "myOutputName1=${{ outputs.myOutputName1}}",
+						Body: `myOutputName1=${{ outputs.myOutputName1}},myOutputName2=${{ outputs.myOutputName2.thisStepStdout }}
 modified_files=${{ steps.modified_files }}
 added_files=${{ steps.added_files }}
 deleted_files=${{ steps.deleted_files }}
 renamed_files=${{ steps.renamed_files }}
 repository_name=${{ repository.name }}`,
-				Branch: "templated-branch-${{ outputs.myOutputName3 }}",
-				Commit: ExpandedGitCommitDescription{
-					Message: "myOutputName1=${{ outputs.myOutputName1}},myOutputName2=${{ outputs.myOutputName2.thisStepStdout }}",
-					Author: &GitCommitAuthor{
-						Name:  "myOutputName1=${{ outputs.myOutputName1}}",
-						Email: "myOutputName1=${{ outputs.myOutputName1}}",
+						Branch: "templated-branch-${{ outputs.myOutputName3 }}",
+						Commit: ExpandedGitCommitDescription{
+							Message: "myOutputName1=${{ outputs.myOutputName1}},myOutputName2=${{ outputs.myOutputName2.thisStepStdout }}",
+							Author: &GitCommitAuthor{
+								Name:  "myOutputName1=${{ outputs.myOutputName1}}",
+								Email: "myOutputName1=${{ outputs.myOutputName1}}",
+							},
+						},
 					},
 				},
 			},
@@ -269,6 +292,55 @@ repository_name=github.com/sourcegraph/src-cli`,
 			wantCommitMessage: "myOutputName1=main.go,myOutputName2=Hello World!",
 			wantAuthorName:    "myOutputName1=main.go",
 			wantAuthorEmail:   "myOutputName1=main.go",
+		},
+
+		{
+			name: "workspaces",
+			archives: []mockRepoArchive{
+				{repo: srcCLIRepo, files: map[string]string{
+					"message.txt":     "root-dir",
+					"a/message.txt":   "a-dir",
+					"a/b/message.txt": "b-dir",
+				}},
+			},
+			steps: []Step{
+				{
+					Run:       "cat message.txt && echo 'Hello' > hello.txt",
+					Container: "doesntmatter:13",
+					Outputs: Outputs{
+						"message": Output{
+							Value: "${{ step.stdout }}",
+						},
+					},
+				},
+			},
+			tasks: []*Task{
+				{
+					Repository: srcCLIRepo,
+					Path:       "",
+					Template:   &ChangesetTemplate{Branch: "workspace-${{ outputs.message }}"},
+				},
+
+				{
+					Repository: srcCLIRepo,
+					Path:       "a",
+					Template:   &ChangesetTemplate{Branch: "workspace-${{ outputs.message }}"},
+				},
+
+				{
+					Repository: srcCLIRepo,
+					Path:       "a/b",
+					Template:   &ChangesetTemplate{Branch: "workspace-${{ outputs.message }}"},
+				},
+			},
+
+			wantFilesChanged: filesByRepository{
+				srcCLIRepo.ID: filesByBranch{
+					"workspace-root-dir": []string{"hello.txt"},
+					"workspace-a-dir":    []string{"a/hello.txt"},
+					"workspace-b-dir":    []string{"a/b/hello.txt"},
+				},
+			},
 		},
 	}
 
@@ -306,22 +378,24 @@ repository_name=github.com/sourcegraph/src-cli`,
 			// execute contains the actual logic running the tasks on an
 			// executor. We'll run this multiple times to cover both the cache
 			// and non-cache code paths.
-			execute := func() {
+			execute := func(t *testing.T) {
 				executor := newExecutor(opts, client, featuresAllEnabled())
-
-				template := &ChangesetTemplate{Branch: changesetTemplateBranch}
-				if tc.template != nil {
-					template = tc.template
-				}
 
 				for i := range tc.steps {
 					tc.steps[i].image = &mockImage{
 						digest: tc.steps[i].Container,
 					}
 				}
+				for _, task := range tc.tasks {
+					if task.Template == nil {
+						task.Template = defaultTemplate
+					}
+					if tc.transform != nil {
+						task.TransformChanges = tc.transform
+					}
 
-				for _, r := range tc.repos {
-					executor.AddTask(r, tc.steps, tc.transform, template)
+					task.Steps = tc.steps
+					executor.AddTask(task)
 				}
 
 				executor.Start(context.Background())
@@ -337,8 +411,13 @@ repository_name=github.com/sourcegraph/src-cli`,
 				}
 
 				wantSpecs := 0
-				for _, byBranch := range tc.wantFilesChanged {
+				specsFound := map[string]map[string]bool{}
+				for repo, byBranch := range tc.wantFilesChanged {
 					wantSpecs += len(byBranch)
+					specsFound[repo] = map[string]bool{}
+					for branch := range byBranch {
+						specsFound[repo][branch] = false
+					}
 				}
 				if have, want := len(specs), wantSpecs; have != want {
 					t.Fatalf("wrong number of changeset specs. want=%d, have=%d", want, have)
@@ -368,6 +447,8 @@ repository_name=github.com/sourcegraph/src-cli`,
 					}
 
 					branch := strings.ReplaceAll(spec.HeadRef, "refs/heads/", "")
+					specsFound[spec.BaseRepository][branch] = true
+
 					wantFilesInBranch, ok := wantFiles[branch]
 					if !ok {
 						t.Fatalf("spec for repo %q and branch %q but no files expected in that branch", spec.BaseRepository, branch)
@@ -397,10 +478,18 @@ repository_name=github.com/sourcegraph/src-cli`,
 						}
 					}
 				}
+
+				for repo, branches := range specsFound {
+					for branch, found := range branches {
+						for !found {
+							t.Fatalf("expected spec to be created in branch %s of repo %s, but was not", branch, repo)
+						}
+					}
+				}
 			}
 
-			verifyCache := func() {
-				want := len(tc.repos)
+			verifyCache := func(t *testing.T) {
+				want := len(tc.tasks)
 				if tc.wantErrInclude != "" {
 					want = 0
 				}
@@ -419,14 +508,14 @@ repository_name=github.com/sourcegraph/src-cli`,
 
 			// Run with a cold cache.
 			t.Run("cold cache", func(t *testing.T) {
-				execute()
-				verifyCache()
+				execute(t)
+				verifyCache(t)
 			})
 
 			// Run with a warm cache.
 			t.Run("warm cache", func(t *testing.T) {
-				execute()
-				verifyCache()
+				execute(t)
+				verifyCache(t)
 			})
 		})
 	}
@@ -644,13 +733,13 @@ func newZipArchivesMux(t *testing.T, callback http.HandlerFunc, archives ...mock
 
 // inMemoryExecutionCache provides an in-memory cache for testing purposes.
 type inMemoryExecutionCache struct {
-	cache map[string]ExecutionResult
+	cache map[string]executionResult
 	mu    sync.RWMutex
 }
 
 func newInMemoryExecutionCache() *inMemoryExecutionCache {
 	return &inMemoryExecutionCache{
-		cache: make(map[string]ExecutionResult),
+		cache: make(map[string]executionResult),
 	}
 }
 
@@ -661,10 +750,10 @@ func (c *inMemoryExecutionCache) size() int {
 	return len(c.cache)
 }
 
-func (c *inMemoryExecutionCache) Get(ctx context.Context, key ExecutionCacheKey) (ExecutionResult, bool, error) {
+func (c *inMemoryExecutionCache) Get(ctx context.Context, key ExecutionCacheKey) (executionResult, bool, error) {
 	k, err := key.Key()
 	if err != nil {
-		return ExecutionResult{}, false, err
+		return executionResult{}, false, err
 	}
 
 	c.mu.RLock()
@@ -673,10 +762,10 @@ func (c *inMemoryExecutionCache) Get(ctx context.Context, key ExecutionCacheKey)
 	if res, ok := c.cache[k]; ok {
 		return res, true, nil
 	}
-	return ExecutionResult{}, false, nil
+	return executionResult{}, false, nil
 }
 
-func (c *inMemoryExecutionCache) Set(ctx context.Context, key ExecutionCacheKey, result ExecutionResult) error {
+func (c *inMemoryExecutionCache) Set(ctx context.Context, key ExecutionCacheKey, result executionResult) error {
 	k, err := key.Key()
 	if err != nil {
 		return err

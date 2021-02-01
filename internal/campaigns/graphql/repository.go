@@ -78,7 +78,7 @@ func (r *Repository) Rev() string {
 }
 
 func (r *Repository) Slug() string {
-	return strings.ReplaceAll(r.Name, "/", "-")
+	return strings.ReplaceAll(r.Name, "/", "-") + "-" + r.Rev()
 }
 
 func (r *Repository) SearchResultPaths() (list fileMatchPathList) {

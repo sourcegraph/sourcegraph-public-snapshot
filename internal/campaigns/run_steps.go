@@ -19,7 +19,7 @@ import (
 	yamlv3 "gopkg.in/yaml.v3"
 )
 
-type ExecutionResult struct {
+type executionResult struct {
 	// Diff is the produced by executing all steps.
 	Diff string `json:"diff"`
 
@@ -28,32 +28,53 @@ type ExecutionResult struct {
 
 	// Outputs are the outputs produced by all steps.
 	Outputs map[string]interface{} `json:"outputs"`
+
+	// Path relative to the repository's root directory in which the steps
+	// have been executed.
+	// No leading slashes. Root directory is blank string.
+	Path string
 }
 
-func runSteps(ctx context.Context, rf RepoFetcher, wc WorkspaceCreator, repo *graphql.Repository, steps []Step, logger *TaskLogger, tempDir string, reportProgress func(string)) (result ExecutionResult, err error) {
-	reportProgress("Downloading archive")
-	zip, err := rf.Fetch(ctx, repo)
+type executionOpts struct {
+	fetcher RepoFetcher
+
+	wc   WorkspaceCreator
+	path string
+
+	repo  *graphql.Repository
+	steps []Step
+
+	tempDir string
+
+	logger         *TaskLogger
+	reportProgress func(string)
+}
+
+func runSteps(ctx context.Context, opts *executionOpts) (result executionResult, err error) {
+	opts.reportProgress("Downloading archive")
+	zip, err := opts.fetcher.Fetch(ctx, opts.repo)
 	if err != nil {
-		return ExecutionResult{}, errors.Wrap(err, "fetching repo")
+		return executionResult{}, errors.Wrap(err, "fetching repo")
 	}
 	defer zip.Close()
 
-	reportProgress("Initializing workspace")
-	workspace, err := wc.Create(ctx, repo, steps, zip.Path())
+	opts.reportProgress("Initializing workspace")
+	workspace, err := opts.wc.Create(ctx, opts.repo, opts.steps, zip.Path())
 	if err != nil {
-		return ExecutionResult{}, errors.Wrap(err, "creating workspace")
+		return executionResult{}, errors.Wrap(err, "creating workspace")
 	}
 	defer workspace.Close(ctx)
 
-	execResult := ExecutionResult{
+	execResult := executionResult{
 		Outputs: make(map[string]interface{}),
+		Path:    opts.path,
 	}
-	results := make([]StepResult, len(steps))
+	results := make([]StepResult, len(opts.steps))
 
-	for i, step := range steps {
-		reportProgress(fmt.Sprintf("Preparing step %d", i+1))
+	for i, step := range opts.steps {
+		opts.reportProgress(fmt.Sprintf("Preparing step %d", i+1))
 
-		stepContext := StepContext{Repository: *repo, Outputs: execResult.Outputs}
+		stepContext := StepContext{Repository: *opts.repo, Outputs: execResult.Outputs}
 		if i > 0 {
 			stepContext.PreviousStep = results[i-1]
 		}
@@ -61,7 +82,7 @@ func runSteps(ctx context.Context, rf RepoFetcher, wc WorkspaceCreator, repo *gr
 		// Find a location that we can use for a cidfile, which will contain the
 		// container ID that is used below. We can then use this to remove the
 		// container on a successful run, rather than leaving it dangling.
-		cidFile, err := ioutil.TempFile(tempDir, repo.Slug()+"-container-id")
+		cidFile, err := ioutil.TempFile(opts.tempDir, opts.repo.Slug()+"-container-id")
 		if err != nil {
 			return execResult, errors.Wrap(err, "Creating a CID file failed")
 		}
@@ -100,7 +121,7 @@ func runSteps(ctx context.Context, rf RepoFetcher, wc WorkspaceCreator, repo *gr
 
 		// Set up a temporary file on the host filesystem to contain the
 		// script.
-		runScriptFile, err := ioutil.TempFile(tempDir, "")
+		runScriptFile, err := ioutil.TempFile(opts.tempDir, "")
 		if err != nil {
 			return execResult, errors.Wrap(err, "creating temporary file")
 		}
@@ -141,7 +162,7 @@ func runSteps(ctx context.Context, rf RepoFetcher, wc WorkspaceCreator, repo *gr
 		// can mount them into the container.
 		filesToMount := make(map[string]*os.File, len(files))
 		for name, content := range files {
-			fp, err := ioutil.TempFile(tempDir, "")
+			fp, err := ioutil.TempFile(opts.tempDir, "")
 			if err != nil {
 				return execResult, errors.Wrap(err, "creating temporary file")
 			}
@@ -170,18 +191,25 @@ func runSteps(ctx context.Context, rf RepoFetcher, wc WorkspaceCreator, repo *gr
 			return execResult, errors.Wrap(err, "parsing step environment")
 		}
 
-		reportProgress(runScript.String())
+		opts.reportProgress(runScript.String())
 		const workDir = "/work"
 		workspaceOpts, err := workspace.DockerRunOpts(ctx, workDir)
 		if err != nil {
 			return execResult, errors.Wrap(err, "getting Docker options for workspace")
 		}
+
+		// Where should we execute the steps.run script?
+		scriptWorkDir := workDir
+		if opts.path != "" {
+			scriptWorkDir = workDir + "/" + opts.path
+		}
+
 		args := append([]string{
 			"run",
 			"--rm",
 			"--init",
 			"--cidfile", cidFile.Name(),
-			"--workdir", workDir,
+			"--workdir", scriptWorkDir,
 			"--mount", fmt.Sprintf("type=bind,source=%s,target=%s,ro", runScriptFile.Name(), containerTemp),
 		}, workspaceOpts...)
 		for target, source := range filesToMount {
@@ -201,17 +229,17 @@ func runSteps(ctx context.Context, rf RepoFetcher, wc WorkspaceCreator, repo *gr
 		}
 
 		var stdoutBuffer, stderrBuffer bytes.Buffer
-		cmd.Stdout = io.MultiWriter(&stdoutBuffer, logger.PrefixWriter("stdout"))
-		cmd.Stderr = io.MultiWriter(&stderrBuffer, logger.PrefixWriter("stderr"))
+		cmd.Stdout = io.MultiWriter(&stdoutBuffer, opts.logger.PrefixWriter("stdout"))
+		cmd.Stderr = io.MultiWriter(&stderrBuffer, opts.logger.PrefixWriter("stderr"))
 
-		logger.Logf("[Step %d] run: %q, container: %q", i+1, step.Run, step.Container)
-		logger.Logf("[Step %d] full command: %q", i+1, strings.Join(cmd.Args, " "))
+		opts.logger.Logf("[Step %d] run: %q, container: %q", i+1, step.Run, step.Container)
+		opts.logger.Logf("[Step %d] full command: %q", i+1, strings.Join(cmd.Args, " "))
 
 		t0 := time.Now()
 		err = cmd.Run()
 		elapsed := time.Since(t0).Round(time.Millisecond)
 		if err != nil {
-			logger.Logf("[Step %d] took %s; error running Docker container: %+v", i+1, elapsed, err)
+			opts.logger.Logf("[Step %d] took %s; error running Docker container: %+v", i+1, elapsed, err)
 
 			return execResult, stepFailedErr{
 				Err:         err,
@@ -224,7 +252,7 @@ func runSteps(ctx context.Context, rf RepoFetcher, wc WorkspaceCreator, repo *gr
 			}
 		}
 
-		logger.Logf("[Step %d] complete in %s", i+1, elapsed)
+		opts.logger.Logf("[Step %d] complete in %s", i+1, elapsed)
 
 		changes, err := workspace.Changes(ctx)
 		if err != nil {
@@ -241,7 +269,7 @@ func runSteps(ctx context.Context, rf RepoFetcher, wc WorkspaceCreator, repo *gr
 
 	}
 
-	reportProgress("Calculating diff")
+	opts.reportProgress("Calculating diff")
 	diffOut, err := workspace.Diff(ctx)
 	if err != nil {
 		return execResult, errors.Wrap(err, "git diff failed")

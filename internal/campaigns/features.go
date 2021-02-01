@@ -12,6 +12,7 @@ type featureFlags struct {
 	includeAutoAuthorDetails bool
 	useGzipCompression       bool
 	allowtransformChanges    bool
+	allowWorkspaces          bool
 }
 
 func (ff *featureFlags) setFromVersion(version string) error {
@@ -24,6 +25,7 @@ func (ff *featureFlags) setFromVersion(version string) error {
 		{&ff.includeAutoAuthorDetails, ">= 3.20.0", "2020-09-10"},
 		{&ff.useGzipCompression, ">= 3.21.0", "2020-10-12"},
 		{&ff.allowtransformChanges, ">= 3.23.0", "2020-12-11"},
+		{&ff.allowWorkspaces, ">= 3.25.0", "2021-01-29"},
 	} {
 		value, err := api.CheckSourcegraphVersion(version, feature.constraint, feature.minDate)
 		if err != nil {

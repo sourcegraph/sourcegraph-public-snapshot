@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"path"
 	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/gobwas/glob"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/src-cli/internal/api"
@@ -189,23 +191,6 @@ func (svc *Service) NewExecutionCache(dir string) ExecutionCache {
 	return &ExecutionDiskCache{dir}
 }
 
-type ExecutorOpts struct {
-	Cache       ExecutionCache
-	Creator     WorkspaceCreator
-	Parallelism int
-	RepoFetcher RepoFetcher
-	Timeout     time.Duration
-
-	ClearCache bool
-	KeepLogs   bool
-	TempDir    string
-	CacheDir   string
-}
-
-func (svc *Service) NewExecutor(opts ExecutorOpts) Executor {
-	return newExecutor(opts, svc.client, svc.features)
-}
-
 func (svc *Service) NewRepoFetcher(dir string, cleanArchives bool) RepoFetcher {
 	return &repoFetcher{
 		client:     svc.client,
@@ -260,9 +245,97 @@ func (svc *Service) SetDockerImages(ctx context.Context, spec *CampaignSpec, pro
 	return nil
 }
 
-func (svc *Service) ExecuteCampaignSpec(ctx context.Context, repos []*graphql.Repository, x Executor, spec *CampaignSpec, progress func([]*TaskStatus), skipErrors bool) ([]*ChangesetSpec, error) {
+func (svc *Service) BuildTasks(ctx context.Context, repos []*graphql.Repository, spec *CampaignSpec) ([]*Task, error) {
+	workspaceConfigs := []WorkspaceConfiguration{}
+	for _, conf := range spec.Workspaces {
+		g, err := glob.Compile(conf.In)
+		if err != nil {
+			return nil, err
+		}
+		conf.glob = g
+		workspaceConfigs = append(workspaceConfigs, conf)
+	}
+
+	// rootWorkspace contains all the repositories that didn't match a
+	// `workspaces` configuration.
+	rootWorkspace := map[*graphql.Repository]struct{}{}
+	// fileLocationWorkspace maps filenames to repositories in which the
+	// workspaces should be at the location of the files.
+	fileLocationWorkspace := make(map[string][]*graphql.Repository, 0)
+
 	for _, repo := range repos {
-		x.AddTask(repo, spec.Steps, spec.TransformChanges, spec.ChangesetTemplate)
+		matched := false
+
+		for _, conf := range workspaceConfigs {
+			if !conf.glob.Match(repo.Name) {
+				continue
+			}
+
+			if matched {
+				return nil, fmt.Errorf("repository %s matches multiple workspaces.in globs in campaign spec. glob: %q", repo.Name, conf.In)
+			}
+
+			if rs, ok := fileLocationWorkspace[conf.RootAtLocationOf]; ok {
+				fileLocationWorkspace[conf.RootAtLocationOf] = append(rs, repo)
+			} else {
+				fileLocationWorkspace[conf.RootAtLocationOf] = []*graphql.Repository{repo}
+			}
+			matched = true
+		}
+
+		if !matched {
+			rootWorkspace[repo] = struct{}{}
+		}
+	}
+
+	var tasks []*Task
+
+	for fileName, repos := range fileLocationWorkspace {
+		repoDirs, err := svc.FindDirectoriesInRepos(ctx, fileName, repos...)
+		if err != nil {
+			return nil, err
+		}
+
+		for repo, dirs := range repoDirs {
+			for _, d := range dirs {
+				// Directory is root.
+				if d == "." {
+					// This shouldn't happen, but sanity check:
+					if _, ok := rootWorkspace[repo]; ok {
+						continue
+					} else {
+						d = ""
+					}
+				}
+
+				tasks = append(tasks, &Task{
+					Repository:       repo,
+					Path:             d,
+					Steps:            spec.Steps,
+					TransformChanges: spec.TransformChanges,
+					Template:         spec.ChangesetTemplate,
+				})
+			}
+		}
+	}
+
+	for r := range rootWorkspace {
+		tasks = append(tasks, &Task{
+			Repository:       r,
+			Path:             "",
+			Steps:            spec.Steps,
+			TransformChanges: spec.TransformChanges,
+			Template:         spec.ChangesetTemplate,
+		})
+	}
+
+	return tasks, nil
+}
+
+func (svc *Service) ExecuteCampaignSpec(ctx context.Context, opts ExecutorOpts, tasks []*Task, spec *CampaignSpec, progress func([]*TaskStatus), skipErrors bool) ([]*ChangesetSpec, []string, error) {
+	x := newExecutor(opts, svc.client, svc.features)
+	for _, t := range tasks {
+		x.AddTask(t)
 	}
 
 	done := make(chan struct{})
@@ -297,7 +370,7 @@ func (svc *Service) ExecuteCampaignSpec(ctx context.Context, repos []*graphql.Re
 		if skipErrors {
 			errs = multierror.Append(errs, err)
 		} else {
-			return nil, err
+			return nil, nil, err
 		}
 	}
 
@@ -310,7 +383,7 @@ func (svc *Service) ExecuteCampaignSpec(ctx context.Context, repos []*graphql.Re
 				errs = multierror.Append(errs, wrapped)
 				continue
 			} else {
-				return nil, wrapped
+				return nil, nil, wrapped
 			}
 		}
 
@@ -329,7 +402,7 @@ func (svc *Service) ExecuteCampaignSpec(ctx context.Context, repos []*graphql.Re
 			case float64:
 				sid = strconv.FormatFloat(tid, 'f', -1, 64)
 			default:
-				return nil, errors.Errorf("cannot convert value of type %T into a valid external ID: expected string or int", id)
+				return nil, nil, errors.Errorf("cannot convert value of type %T into a valid external ID: expected string or int", id)
 			}
 
 			specs = append(specs, &ChangesetSpec{
@@ -339,7 +412,7 @@ func (svc *Service) ExecuteCampaignSpec(ctx context.Context, repos []*graphql.Re
 		}
 	}
 
-	return specs, errs.ErrorOrNil()
+	return specs, x.LogFiles(), errs.ErrorOrNil()
 }
 
 func (svc *Service) ParseCampaignSpec(in io.Reader) (*CampaignSpec, string, error) {
@@ -592,6 +665,125 @@ func (svc *Service) resolveRepositorySearch(ctx context.Context, query string) (
 		}
 	}
 	return repos, nil
+}
+
+const findDirectoryQuery = `
+query DirectoriesContainingFile($query: String!) {
+    search(query: $query, version: V2) {
+        results {
+            results {
+                __typename
+                ... on FileMatch {
+                    file { path }
+                }
+            }
+        }
+    }
+}
+`
+
+// findDirectoriesResult maps the name of the GraphQL query to its results. The
+// name is the repository's ID.
+type findDirectoriesResult map[string]struct {
+	Results struct{ Results []searchResult }
+}
+
+// FindDirectoriesInRepos returns a map of repositories and the locations of
+// files matching the given file name in the repository.
+// The locations are paths relative to the root of the directory.
+// No "/" at the beginning.
+// An empty path ("") represents the root directory.
+func (svc *Service) FindDirectoriesInRepos(ctx context.Context, fileName string, repos ...*graphql.Repository) (map[*graphql.Repository][]string, error) {
+	const batchSize = 50
+
+	// Build up unique identifiers that are safe to use as GraphQL query aliases.
+	reposByQueryID := map[string]*graphql.Repository{}
+	queryIDByRepo := map[*graphql.Repository]string{}
+	for i, repo := range repos {
+		queryID := fmt.Sprintf("repo_%d", i)
+		reposByQueryID[queryID] = repo
+		queryIDByRepo[repo] = queryID
+	}
+
+	findInBatch := func(batch []*graphql.Repository, results map[*graphql.Repository][]string) error {
+		const searchQueryTmpl = `%s: search(query: %q, version: V2) {
+        results {
+            results {
+                __typename
+                ... on FileMatch {
+                    file { path }
+                }
+            }
+        }
+	}
+`
+
+		var a strings.Builder
+		a.WriteString("query DirectoriesContainingFile() {\n")
+
+		for _, repo := range batch {
+			query := fmt.Sprintf(`file:(^|/)%s$ repo:^%s$ type:path count:99999`, regexp.QuoteMeta(fileName), regexp.QuoteMeta(repo.Name))
+
+			a.WriteString(fmt.Sprintf(searchQueryTmpl, queryIDByRepo[repo], query))
+		}
+
+		a.WriteString("}")
+
+		var result findDirectoriesResult
+		if ok, err := svc.client.NewQuery(a.String()).Do(ctx, &result); err != nil || !ok {
+			return err
+		}
+
+		for queryID, search := range result {
+			repo, ok := reposByQueryID[queryID]
+			if !ok {
+				return fmt.Errorf("result for query %q did not match any repository", queryID)
+			}
+
+			files := map[string]struct{}{}
+
+			for _, r := range search.Results.Results {
+				for file := range r.FileMatches {
+					files[file] = struct{}{}
+				}
+			}
+
+			var dirs []string
+			for f := range files {
+				// We use path.Dir and not filepath.Dir here, because while
+				// src-cli might be executed on Windows, we need the paths to
+				// be Unix paths, since they will be used inside Docker
+				// containers.
+				dirs = append(dirs, path.Dir(f))
+			}
+
+			results[repo] = dirs
+		}
+
+		return nil
+	}
+
+	results := make(map[*graphql.Repository][]string)
+
+	for start := 0; start < len(repos); start += batchSize {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+
+		end := start + batchSize
+		if end > len(repos) {
+			end = len(repos)
+		}
+
+		batch := repos[start:end]
+
+		err := findInBatch(batch, results)
+		if err != nil {
+			return results, err
+		}
+	}
+
+	return results, nil
 }
 
 var defaultQueryCountRegex = regexp.MustCompile(`\bcount:\d+\b`)

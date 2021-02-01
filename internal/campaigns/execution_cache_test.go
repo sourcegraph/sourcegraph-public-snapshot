@@ -131,7 +131,7 @@ func TestExecutionDiskCache(t *testing.T) {
 		},
 	}}
 
-	value := ExecutionResult{
+	value := executionResult{
 		Diff: testDiff,
 		ChangedFiles: &StepChanges{
 			Added: []string{"README.md"},
@@ -139,7 +139,7 @@ func TestExecutionDiskCache(t *testing.T) {
 		Outputs: map[string]interface{}{},
 	}
 
-	onlyDiff := ExecutionResult{
+	onlyDiff := executionResult{
 		Diff:         testDiff,
 		ChangedFiles: &StepChanges{},
 		Outputs:      map[string]interface{}{},
@@ -331,7 +331,7 @@ func writeV2CacheFile(t *testing.T, c ExecutionDiskCache, k ExecutionCacheKey, d
 	return path
 }
 
-func assertCacheHit(t *testing.T, c ExecutionDiskCache, k ExecutionCacheKey, want ExecutionResult) {
+func assertCacheHit(t *testing.T, c ExecutionDiskCache, k ExecutionCacheKey, want executionResult) {
 	t.Helper()
 
 	have, found, err := c.Get(context.Background(), k)

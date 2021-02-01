@@ -42,7 +42,7 @@ func (e TaskExecutionErr) StatusText() string {
 }
 
 type Executor interface {
-	AddTask(repo *graphql.Repository, steps []Step, transform *TransformChanges, template *ChangesetTemplate)
+	AddTask(*Task)
 	LogFiles() []string
 	Start(ctx context.Context)
 	Wait(ctx context.Context) ([]*ChangesetSpec, error)
@@ -56,8 +56,10 @@ type Executor interface {
 
 type Task struct {
 	Repository *graphql.Repository
-	Steps      []Step
-	Outputs    map[string]interface{}
+	Path       string
+
+	Steps   []Step
+	Outputs map[string]interface{}
 
 	Template         *ChangesetTemplate `json:"-"`
 	TransformChanges *TransformChanges  `json:"-"`
@@ -69,6 +71,7 @@ func (t *Task) cacheKey() ExecutionCacheKey {
 
 type TaskStatus struct {
 	RepoName string
+	Path     string
 
 	Cached bool
 
@@ -90,6 +93,13 @@ type TaskStatus struct {
 	fileDiffs     []*diff.FileDiff
 	fileDiffsErr  error
 	fileDiffsOnce sync.Once
+}
+
+func (ts *TaskStatus) DisplayName() string {
+	if ts.Path != "" {
+		return ts.RepoName + ":" + ts.Path
+	}
+	return ts.RepoName
 }
 
 func (ts *TaskStatus) IsRunning() bool {
@@ -132,6 +142,18 @@ func (ts *TaskStatus) FileDiffs() ([]*diff.FileDiff, bool, error) {
 	return ts.fileDiffs, len(ts.fileDiffs) != 0, ts.fileDiffsErr
 }
 
+type ExecutorOpts struct {
+	Cache       ExecutionCache
+	Creator     WorkspaceCreator
+	Parallelism int
+	RepoFetcher RepoFetcher
+	Timeout     time.Duration
+
+	ClearCache bool
+	KeepLogs   bool
+	TempDir    string
+}
+
 type executor struct {
 	ExecutorOpts
 
@@ -172,18 +194,11 @@ func newExecutor(opts ExecutorOpts, client api.Client, features featureFlags) *e
 	}
 }
 
-func (x *executor) AddTask(repo *graphql.Repository, steps []Step, transform *TransformChanges, template *ChangesetTemplate) {
-	task := &Task{
-		Repository:       repo,
-		Steps:            steps,
-		Template:         template,
-		TransformChanges: transform,
-	}
-
+func (x *executor) AddTask(task *Task) {
 	x.tasks = append(x.tasks, task)
 
 	x.statusesMu.Lock()
-	x.statuses[task] = &TaskStatus{RepoName: repo.Name, EnqueuedAt: time.Now()}
+	x.statuses[task] = &TaskStatus{RepoName: task.Repository.Name, Path: task.Path, EnqueuedAt: time.Now()}
 	x.statusesMu.Unlock()
 }
 
@@ -265,7 +280,7 @@ func (x *executor) do(ctx context.Context, task *Task) (err error) {
 		}
 	} else {
 		var (
-			result ExecutionResult
+			result executionResult
 			found  bool
 		)
 
@@ -333,12 +348,21 @@ func (x *executor) do(ctx context.Context, task *Task) (err error) {
 	defer cancel()
 
 	// Actually execute the steps.
-	result, err := runSteps(runCtx, x.fetcher, x.creator, task.Repository, task.Steps, log, x.tempDir, func(currentlyExecuting string) {
-		x.updateTaskStatus(task, func(status *TaskStatus) {
-			status.CurrentlyExecuting = currentlyExecuting
-		})
-
-	})
+	opts := &executionOpts{
+		fetcher: x.fetcher,
+		wc:      x.creator,
+		repo:    task.Repository,
+		path:    task.Path,
+		steps:   task.Steps,
+		logger:  log,
+		tempDir: x.tempDir,
+		reportProgress: func(currentlyExecuting string) {
+			x.updateTaskStatus(task, func(status *TaskStatus) {
+				status.CurrentlyExecuting = currentlyExecuting
+			})
+		},
+	}
+	result, err := runSteps(runCtx, opts)
 	if err != nil {
 		if reachedTimeout(runCtx, err) {
 			err = &errTimeoutReached{timeout: x.Timeout}
@@ -413,11 +437,14 @@ func reachedTimeout(cmdCtx context.Context, err error) bool {
 	return errors.Is(errors.Cause(err), context.DeadlineExceeded)
 }
 
-func createChangesetSpecs(task *Task, result ExecutionResult, features featureFlags) ([]*ChangesetSpec, error) {
+func createChangesetSpecs(task *Task, result executionResult, features featureFlags) ([]*ChangesetSpec, error) {
 	repo := task.Repository.Name
 
 	tmplCtx := &ChangesetTemplateContext{
-		Steps:      result.ChangedFiles,
+		Steps: StepsContext{
+			Changes: result.ChangedFiles,
+			Path:    result.Path,
+		},
 		Outputs:    result.Outputs,
 		Repository: *task.Repository,
 	}

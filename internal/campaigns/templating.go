@@ -88,8 +88,18 @@ func (stepCtx *StepContext) ToFuncMap() template.FuncMap {
 	}
 
 	return template.FuncMap{
-		"join":  strings.Join,
-		"split": strings.Split,
+		"join":    strings.Join,
+		"split":   strings.Split,
+		"replace": strings.ReplaceAll,
+		"join_if": func(sep string, elems ...string) string {
+			var nonBlank []string
+			for _, e := range elems {
+				if e != "" {
+					nonBlank = append(nonBlank, e)
+				}
+			}
+			return strings.Join(nonBlank, sep)
+		},
 		"previous_step": func() map[string]interface{} {
 			return newStepResult(&stepCtx.PreviousStep)
 		},
@@ -159,11 +169,19 @@ func (r StepResult) RenamedFiles() []string {
 	return []string{}
 }
 
+type StepsContext struct {
+	// Changes that have been made by executing all steps.
+	Changes *StepChanges
+	// Path is the relative-to-root directory in which the steps have been
+	// executed. Default is "". No leading "/".
+	Path string
+}
+
 // ChangesetTemplateContext represents the contextual information available
 // when rendering a field of the ChangesetTemplate as a template.
 type ChangesetTemplateContext struct {
 	// Steps are the changes made by all steps that were executed.
-	Steps *StepChanges
+	Steps StepsContext
 
 	// Outputs are the outputs defined and initialized by the steps.
 	Outputs map[string]interface{}
@@ -176,8 +194,18 @@ type ChangesetTemplateContext struct {
 // text/template.
 func (tmplCtx *ChangesetTemplateContext) ToFuncMap() template.FuncMap {
 	return template.FuncMap{
-		"join":  strings.Join,
-		"split": strings.Split,
+		"join":    strings.Join,
+		"split":   strings.Split,
+		"replace": strings.ReplaceAll,
+		"join_if": func(sep string, elems ...string) string {
+			var nonBlank []string
+			for _, e := range elems {
+				if e != "" {
+					nonBlank = append(nonBlank, e)
+				}
+			}
+			return strings.Join(nonBlank, sep)
+		},
 		"repository": func() map[string]interface{} {
 			return map[string]interface{}{
 				"search_result_paths": tmplCtx.Repository.SearchResultPaths(),
@@ -190,13 +218,14 @@ func (tmplCtx *ChangesetTemplateContext) ToFuncMap() template.FuncMap {
 		"steps": func() map[string]interface{} {
 			// Wrap the *StepChanges in a StepResult so we can use nil-safe
 			// methods.
-			res := StepResult{files: tmplCtx.Steps}
+			res := StepResult{files: tmplCtx.Steps.Changes}
 
 			return map[string]interface{}{
 				"modified_files": res.ModifiedFiles(),
 				"added_files":    res.AddedFiles(),
 				"deleted_files":  res.DeletedFiles(),
 				"renamed_files":  res.RenamedFiles(),
+				"path":           tmplCtx.Steps.Path,
 			}
 		},
 	}
@@ -214,7 +243,7 @@ func renderChangesetTemplateField(name, tmpl string, tmplCtx *ChangesetTemplateC
 		return "", err
 	}
 
-	return out.String(), nil
+	return strings.TrimSpace(out.String()), nil
 }
 
 func parseGitStatus(out []byte) (StepChanges, error) {

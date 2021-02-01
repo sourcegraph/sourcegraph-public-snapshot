@@ -209,11 +209,14 @@ func TestRenderChangesetTemplateField(t *testing.T) {
 				"main.go":   true,
 			},
 		},
-		Steps: &StepChanges{
-			Modified: []string{"modified-file.txt"},
-			Added:    []string{"added-file.txt"},
-			Deleted:  []string{"deleted-file.txt"},
-			Renamed:  []string{"renamed-file.txt"},
+		Steps: StepsContext{
+			Changes: &StepChanges{
+				Modified: []string{"modified-file.txt"},
+				Added:    []string{"added-file.txt"},
+				Deleted:  []string{"deleted-file.txt"},
+				Renamed:  []string{"renamed-file.txt"},
+			},
+			Path: "infrastructure/sub-project",
 		},
 	}
 
@@ -234,6 +237,7 @@ ${{ steps.modified_files }}
 ${{ steps.added_files }}
 ${{ steps.deleted_files }}
 ${{ steps.renamed_files }}
+${{ steps.path }}
 `,
 			want: `README.md main.go
 github.com/sourcegraph/src-cli
@@ -243,7 +247,7 @@ CGO_ENABLED=0
 [added-file.txt]
 [deleted-file.txt]
 [renamed-file.txt]
-`,
+infrastructure/sub-project`,
 		},
 		{
 			name:    "empty context",
@@ -257,15 +261,12 @@ ${{ steps.added_files }}
 ${{ steps.deleted_files }}
 ${{ steps.renamed_files }}
 `,
-			want: `
-
-<no value>
+			want: `<no value>
 <no value>
 []
 []
 []
-[]
-`,
+[]`,
 		},
 	}
 

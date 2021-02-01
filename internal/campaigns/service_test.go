@@ -3,11 +3,16 @@ package campaigns
 import (
 	"bytes"
 	"context"
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/src-cli/internal/api"
+	"github.com/sourcegraph/src-cli/internal/campaigns/graphql"
 )
 
 func TestSetDefaultQueryCount(t *testing.T) {
@@ -208,3 +213,245 @@ const testResolveRepositoriesUnsupported = `{
   }
 }
 `
+
+func TestService_FindDirectoriesInRepos(t *testing.T) {
+	client, done := mockGraphQLClient(testFindDirectoriesInRepos)
+	defer done()
+
+	fileName := "package.json"
+	repos := []*graphql.Repository{
+		{ID: "repo-id-0", Name: "github.com/sourcegraph/automation-testing"},
+		{ID: "repo-id-1", Name: "github.com/sourcegraph/sourcegraph"},
+	}
+
+	svc := &Service{client: client}
+
+	results, err := svc.FindDirectoriesInRepos(context.Background(), fileName, repos...)
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+	if len(results) != len(repos) {
+		t.Fatalf("wrong number of repos. want=%d, have=%d", 4, len(repos))
+	}
+
+	want := map[*graphql.Repository][]string{
+		repos[0]: []string{"examples/project3", "project1", "project2"},
+		repos[1]: []string{"docs/client1", ".", "docs/client2/examples"},
+	}
+
+	if !cmp.Equal(want, results, cmpopts.SortSlices(sortStrings)) {
+		t.Errorf("wrong tasks built (-want +got):\n%s", cmp.Diff(want, results))
+	}
+}
+
+func sortStrings(a, b string) bool { return a < b }
+
+const testFindDirectoriesInRepos = `{
+    "data": {
+        "repo_0": {
+            "results": {
+                "results": [
+                    {
+                        "__typename": "FileMatch",
+                        "file": {
+                            "path": "examples/project3/package.json"
+                        }
+                    },
+                    {
+                        "__typename": "FileMatch",
+                        "file": {
+                            "path": "project1/package.json"
+                        }
+                    },
+                    {
+                        "__typename": "FileMatch",
+                        "file": {
+                            "path": "project2/package.json"
+                        }
+                    }
+                ]
+            }
+        },
+        "repo_1": {
+            "results": {
+                "results": [
+                    {
+                        "__typename": "FileMatch",
+                        "file": {
+                            "path": "docs/client1/package.json"
+                        }
+                    },
+                    {
+                        "__typename": "FileMatch",
+                        "file": {
+                            "path": "package.json"
+                        }
+                    },
+                    {
+                        "__typename": "FileMatch",
+                        "file": {
+                            "path": "docs/client2/examples/package.json"
+                        }
+                    }
+                ]
+            }
+        }
+    }
+}
+`
+
+func TestService_BuildTasks(t *testing.T) {
+	repos := []*graphql.Repository{
+		{ID: "repo-id-0", Name: "github.com/sourcegraph/automation-testing"},
+		{ID: "repo-id-1", Name: "github.com/sourcegraph/sourcegraph"},
+		{ID: "repo-id-2", Name: "bitbucket.sgdev.org/SOUR/automation-testing"},
+	}
+
+	tests := map[string]struct {
+		spec  *CampaignSpec
+		repos []*graphql.Repository
+
+		searchResults filesInRepos
+
+		wantNumTasks int
+
+		// tasks per repository ID and in which path they are executed
+		wantTasks map[string][]string
+	}{
+		"no workspace configuration": {
+			spec:          &CampaignSpec{},
+			repos:         repos,
+			searchResults: filesInRepos{},
+			wantNumTasks:  len(repos),
+			wantTasks: map[string][]string{
+				repos[0].ID: []string{""},
+				repos[1].ID: []string{""},
+				repos[2].ID: []string{""},
+			},
+		},
+
+		"workspace configuration matching no repos": {
+			spec: &CampaignSpec{
+				Workspaces: []WorkspaceConfiguration{
+					{In: "this-does-not-match", RootAtLocationOf: "package.json"},
+				},
+			},
+			searchResults: filesInRepos{},
+			repos:         repos,
+			wantNumTasks:  len(repos),
+			wantTasks: map[string][]string{
+				repos[0].ID: []string{""},
+				repos[1].ID: []string{""},
+				repos[2].ID: []string{""},
+			},
+		},
+
+		"workspace configuration matching 2 repos with no results": {
+			spec: &CampaignSpec{
+				Workspaces: []WorkspaceConfiguration{
+					{In: "*automation-testing", RootAtLocationOf: "package.json"},
+				},
+			},
+			searchResults: filesInRepos{
+				[]string{},
+				[]string{},
+			},
+			repos:        repos,
+			wantNumTasks: 1,
+			wantTasks: map[string][]string{
+				repos[1].ID: []string{""},
+			},
+		},
+
+		"workspace configuration matching 2 repos with 3 results each": {
+			spec: &CampaignSpec{
+				Workspaces: []WorkspaceConfiguration{
+					{In: "*automation-testing", RootAtLocationOf: "package.json"},
+				},
+			},
+			searchResults: filesInRepos{
+				[]string{
+					"a/b/package.json",
+					"a/b/c/package.json.json",
+					"d/e/f/package.json",
+				},
+				[]string{
+					"a/b/package.json",
+					"a/b/c/package.json.json",
+					"d/e/f/package.json",
+				},
+			},
+			repos:        repos,
+			wantNumTasks: 7,
+			wantTasks: map[string][]string{
+				repos[0].ID: []string{"a/b", "a/b/c", "d/e/f"},
+				repos[1].ID: []string{""},
+				repos[2].ID: []string{"a/b", "a/b/c", "d/e/f"},
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			client, done := mockDirectoriesInReposResults(t, tt.searchResults)
+			defer done()
+
+			svc := &Service{client: client}
+
+			tasks, err := svc.BuildTasks(context.Background(), tt.repos, tt.spec)
+			if err != nil {
+				t.Fatalf("unexpected err: %s", err)
+			}
+
+			if have := len(tasks); have != tt.wantNumTasks {
+				t.Fatalf("wrong number of tasks. want=%d, got=%d", tt.wantNumTasks, have)
+			}
+
+			haveTasks := map[string][]string{}
+			for _, task := range tasks {
+				haveTasks[task.Repository.ID] = append(haveTasks[task.Repository.ID], task.Path)
+			}
+
+			if !cmp.Equal(tt.wantTasks, haveTasks, cmpopts.SortSlices(sortStrings)) {
+				t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(tt.wantTasks, haveTasks))
+			}
+		})
+	}
+}
+
+// Ordered list of files that are returned for each GraphQL query.
+type filesInRepos [][]string
+
+func mockDirectoriesInReposResults(t *testing.T, filesPerRepo filesInRepos) (client api.Client, done func()) {
+	t.Helper()
+
+	response := struct {
+		Data map[string]interface{}
+	}{
+		Data: map[string]interface{}{},
+	}
+
+	for i, files := range filesPerRepo {
+		fileResults := []map[string]interface{}{}
+
+		for _, f := range files {
+			fileResults = append(fileResults, map[string]interface{}{
+				"__typename": "FileMatch",
+				"file":       map[string]interface{}{"path": f},
+			})
+		}
+
+		response.Data[fmt.Sprintf("repo_%d", i)] = map[string]interface{}{
+			"results": map[string]interface{}{
+				"results": fileResults,
+			},
+		}
+	}
+
+	rawRes, err := json.Marshal(response)
+	if err != nil {
+		t.Fatalf("failed to marshal search results to JSON: %s", err)
+	}
+
+	return mockGraphQLClient(string(rawRes))
+}

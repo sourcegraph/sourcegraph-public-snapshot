@@ -61,6 +61,29 @@ const CampaignSpecJSON = `{
         ]
       }
     },
+    "workspaces": {
+      "type": "array",
+      "description": "Individual workspace configurations for one or more repositories that define which workspaces to use for the execution of steps in the repositories.",
+      "items": {
+        "title": "WorkspaceConfiguration",
+        "type": "object",
+        "description": "Configuration for how to setup workspaces in repositories",
+        "additionalProperties": false,
+        "required": ["rootAtLocationOf"],
+        "properties": {
+          "rootAtLocationOf": {
+            "type": "string",
+            "description": "The name of the file that sits at the root of the desired workspace.",
+            "examples": ["package.json", "go.mod", "Gemfile", "Cargo.toml", "README.md"]
+          },
+          "in": {
+            "type": "string",
+            "description": "The repositories in which to apply the workspace configuration. Supports globbing.",
+            "examples": ["github.com/sourcegraph/src-cli", "github.com/sourcegraph/*"]
+          }
+        }
+      }
+    },
     "steps": {
       "type": "array",
       "description": "The sequence of commands to run (for each repository branch matched in the ` + "`" + `on` + "`" + ` property) to produce the campaign's changes.",
@@ -90,7 +113,7 @@ const CampaignSpecJSON = `{
                 "value": {
                   "type": "string",
                   "description": "The value of the output, which can be a template string.",
-                  "examples": ["hello world", "${{ step.stdout }}", "${{ repository.name }}" ]
+                  "examples": ["hello world", "${{ step.stdout }}", "${{ repository.name }}"]
                 },
                 "format": {
                   "type": "string",
@@ -133,7 +156,7 @@ const CampaignSpecJSON = `{
           "files": {
             "type": "object",
             "description": "Files that should be mounted into or be created inside the Docker container.",
-            "additionalProperties": {"type": "string"}
+            "additionalProperties": { "type": "string" }
           }
         }
       }
@@ -248,7 +271,9 @@ const CampaignSpecJSON = `{
               "items": {
                 "type": "object",
                 "description": "An object with one field: the key is the glob pattern to match against repository names; the value will be used as the published flag for matching repositories.",
-                "additionalProperties": { "oneOf": [{ "type": "boolean" }, { "type": "string", "pattern": "^draft$" }] },
+                "additionalProperties": {
+                  "oneOf": [{ "type": "boolean" }, { "type": "string", "pattern": "^draft$" }]
+                },
                 "minProperties": 1,
                 "maxProperties": 1
               }

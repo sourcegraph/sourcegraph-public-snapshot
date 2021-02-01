@@ -3,6 +3,7 @@ package campaigns
 import (
 	"fmt"
 
+	"github.com/gobwas/glob"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/campaignutils/env"
@@ -29,13 +30,14 @@ import (
 //    pointers, which is ugly and inefficient.
 
 type CampaignSpec struct {
-	Name              string                `json:"name,omitempty" yaml:"name"`
-	Description       string                `json:"description,omitempty" yaml:"description"`
-	On                []OnQueryOrRepository `json:"on,omitempty" yaml:"on"`
-	Steps             []Step                `json:"steps,omitempty" yaml:"steps"`
-	TransformChanges  *TransformChanges     `json:"transformChanges,omitempty" yaml:"transformChanges,omitempty"`
-	ImportChangesets  []ImportChangeset     `json:"importChangesets,omitempty" yaml:"importChangesets"`
-	ChangesetTemplate *ChangesetTemplate    `json:"changesetTemplate,omitempty" yaml:"changesetTemplate"`
+	Name              string                   `json:"name,omitempty" yaml:"name"`
+	Description       string                   `json:"description,omitempty" yaml:"description"`
+	On                []OnQueryOrRepository    `json:"on,omitempty" yaml:"on"`
+	Workspaces        []WorkspaceConfiguration `json:"workspaces,omitempty"  yaml:"workspaces"`
+	Steps             []Step                   `json:"steps,omitempty" yaml:"steps"`
+	TransformChanges  *TransformChanges        `json:"transformChanges,omitempty" yaml:"transformChanges,omitempty"`
+	ImportChangesets  []ImportChangeset        `json:"importChangesets,omitempty" yaml:"importChangesets"`
+	ChangesetTemplate *ChangesetTemplate       `json:"changesetTemplate,omitempty" yaml:"changesetTemplate"`
 }
 
 type ChangesetTemplate struct {
@@ -59,6 +61,13 @@ type ExpandedGitCommitDescription struct {
 type ImportChangeset struct {
 	Repository  string        `json:"repository" yaml:"repository"`
 	ExternalIDs []interface{} `json:"externalIDs" yaml:"externalIDs"`
+}
+
+type WorkspaceConfiguration struct {
+	RootAtLocationOf string `json:"rootAtLocationOf,omitempty" yaml:"rootAtLocationOf"`
+	In               string `json:"in,omitempty" yaml:"in"`
+
+	glob glob.Glob
 }
 
 type OnQueryOrRepository struct {
@@ -116,6 +125,10 @@ func ParseCampaignSpec(data []byte, features featureFlags) (*CampaignSpec, error
 
 	if spec.TransformChanges != nil && !features.allowtransformChanges {
 		errs = multierror.Append(errs, errors.New("campaign spec includes transformChanges, which is not supported in this Sourcegraph version"))
+	}
+
+	if len(spec.Workspaces) != 0 && !features.allowtransformChanges {
+		errs = multierror.Append(errs, errors.New("campaign spec includes workspaces, which is not supported in this Sourcegraph version"))
 	}
 
 	return &spec, errs.ErrorOrNil()

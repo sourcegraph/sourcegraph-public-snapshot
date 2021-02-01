@@ -13,6 +13,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Added
 
+- Experimental: [`workspaces` in campaign specs](https://docs.sourcegraph.com/campaigns/references/campaign_spec_yaml_reference#workspaces) is now available to allow users to define multiple workspaces in a single repository. [#442](https://github.com/sourcegraph/src-cli/pull/442)
+
 ### Changed
 
 ### Fixed

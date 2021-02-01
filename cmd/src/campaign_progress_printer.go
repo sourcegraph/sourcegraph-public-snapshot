@@ -114,8 +114,8 @@ func (p *campaignProgressPrinter) PrintStatuses(statuses []*campaigns.TaskStatus
 	errored := 0
 
 	for _, ts := range statuses {
-		if len(ts.RepoName) > p.maxRepoName {
-			p.maxRepoName = len(ts.RepoName)
+		if len(ts.DisplayName()) > p.maxRepoName {
+			p.maxRepoName = len(ts.DisplayName())
 		}
 
 		if ts.IsCompleted() {
@@ -123,16 +123,16 @@ func (p *campaignProgressPrinter) PrintStatuses(statuses []*campaigns.TaskStatus
 				errored += 1
 			}
 
-			if !p.completedTasks[ts.RepoName] {
-				p.completedTasks[ts.RepoName] = true
+			if !p.completedTasks[ts.DisplayName()] {
+				p.completedTasks[ts.DisplayName()] = true
 				newlyCompleted = append(newlyCompleted, ts)
 			}
 
-			if _, ok := p.runningTasks[ts.RepoName]; ok {
-				delete(p.runningTasks, ts.RepoName)
+			if _, ok := p.runningTasks[ts.DisplayName()]; ok {
+				delete(p.runningTasks, ts.DisplayName())
 
 				// Free slot
-				idx := p.repoStatusBar[ts.RepoName]
+				idx := p.repoStatusBar[ts.DisplayName()]
 				delete(p.statusBarRepo, idx)
 			}
 		}
@@ -148,14 +148,14 @@ func (p *campaignProgressPrinter) PrintStatuses(statuses []*campaigns.TaskStatus
 	newlyStarted := map[string]*campaigns.TaskStatus{}
 	statusBarIndex := 0
 	for _, ts := range currentlyRunning {
-		if _, ok := p.runningTasks[ts.RepoName]; ok {
+		if _, ok := p.runningTasks[ts.DisplayName()]; ok {
 			// Update the status
-			p.runningTasks[ts.RepoName] = ts
+			p.runningTasks[ts.DisplayName()] = ts
 			continue
 		}
 
-		p.runningTasks[ts.RepoName] = ts
-		newlyStarted[ts.RepoName] = ts
+		p.runningTasks[ts.DisplayName()] = ts
+		newlyStarted[ts.DisplayName()] = ts
 
 		// Find free status bar slot
 		_, ok := p.statusBarRepo[statusBarIndex]
@@ -172,26 +172,26 @@ func (p *campaignProgressPrinter) PrintStatuses(statuses []*campaigns.TaskStatus
 			break
 		}
 
-		p.statusBarRepo[statusBarIndex] = ts.RepoName
-		p.repoStatusBar[ts.RepoName] = statusBarIndex
+		p.statusBarRepo[statusBarIndex] = ts.DisplayName()
+		p.repoStatusBar[ts.DisplayName()] = statusBarIndex
 	}
 
 	for _, ts := range newlyCompleted {
 		fileDiffs, hasDiffs, err := ts.FileDiffs()
 		if err != nil {
-			p.progress.Verbosef("%-*s failed to display status: %s", p.maxRepoName, ts.RepoName, err)
+			p.progress.Verbosef("%-*s failed to display status: %s", p.maxRepoName, ts.DisplayName(), err)
 			continue
 		}
 
 		if p.verbose {
-			p.progress.WriteLine(output.Linef("", output.StylePending, "%s", ts.RepoName))
+			p.progress.WriteLine(output.Linef("", output.StylePending, "%s", ts.DisplayName()))
 
 			if !hasDiffs {
 				p.progress.Verbosef("  No changes")
 			} else {
 				lines, err := verboseDiffSummary(fileDiffs)
 				if err != nil {
-					p.progress.Verbosef("%-*s failed to display status: %s", p.maxRepoName, ts.RepoName, err)
+					p.progress.Verbosef("%-*s failed to display status: %s", p.maxRepoName, ts.DisplayName(), err)
 					continue
 				}
 
@@ -207,13 +207,13 @@ func (p *campaignProgressPrinter) PrintStatuses(statuses []*campaigns.TaskStatus
 			p.progress.Verbose("")
 		}
 
-		if idx, ok := p.repoStatusBar[ts.RepoName]; ok {
+		if idx, ok := p.repoStatusBar[ts.DisplayName()]; ok {
 			// Log that this task completed, but only if there is no
 			// currently executing one in this bar, to avoid flicker.
 			if _, ok := p.statusBarRepo[idx]; !ok {
 				statusText, err := taskStatusBarText(ts)
 				if err != nil {
-					p.progress.Verbosef("%-*s failed to display status: %s", p.maxRepoName, ts.RepoName, err)
+					p.progress.Verbosef("%-*s failed to display status: %s", p.maxRepoName, ts.DisplayName(), err)
 					continue
 				}
 
@@ -223,7 +223,7 @@ func (p *campaignProgressPrinter) PrintStatuses(statuses []*campaigns.TaskStatus
 					p.progress.StatusBarCompletef(idx, statusText)
 				}
 			}
-			delete(p.repoStatusBar, ts.RepoName)
+			delete(p.repoStatusBar, ts.DisplayName())
 		}
 	}
 
@@ -236,12 +236,12 @@ func (p *campaignProgressPrinter) PrintStatuses(statuses []*campaigns.TaskStatus
 
 		statusText, err := taskStatusBarText(ts)
 		if err != nil {
-			p.progress.Verbosef("%-*s failed to display status: %s", p.maxRepoName, ts.RepoName, err)
+			p.progress.Verbosef("%-*s failed to display status: %s", p.maxRepoName, ts.DisplayName(), err)
 			continue
 		}
 
 		if _, ok := newlyStarted[repo]; ok {
-			p.progress.StatusBarResetf(statusBar, ts.RepoName, statusText)
+			p.progress.StatusBarResetf(statusBar, ts.DisplayName(), statusText)
 		} else {
 			p.progress.StatusBarUpdatef(statusBar, statusText)
 		}

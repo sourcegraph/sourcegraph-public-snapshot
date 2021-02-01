@@ -85,8 +85,8 @@ func newCampaignsApplyFlags(flagSet *flag.FlagSet, cacheDir, tempDir string) *ca
 	flagSet.StringVar(&caf.namespace, "n", "", "Alias for -namespace.")
 
 	flagSet.IntVar(
-		&caf.parallelism, "j", 0,
-		"The maximum number of parallel jobs. (Default: GOMAXPROCS.)",
+		&caf.parallelism, "j", runtime.GOMAXPROCS(0),
+		"The maximum number of parallel jobs. Default is GOMAXPROCS.",
 	)
 	flagSet.DurationVar(
 		&caf.timeout, "timeout", 60*time.Minute,
@@ -220,8 +220,15 @@ func campaignsExecute(ctx context.Context, out *output.Output, svc *campaigns.Se
 			return "", "", errors.Wrap(err, "resolving repositories")
 		}
 	} else {
-		campaignsCompletePending(pending, "Resolved repositories")
+		campaignsCompletePending(pending, fmt.Sprintf("Resolved %d repositories", len(repos)))
 	}
+
+	pending = campaignsCreatePending(out, "Determining workspaces")
+	tasks, err := svc.BuildTasks(ctx, repos, campaignSpec)
+	if err != nil {
+		return "", "", errors.Wrap(err, "Calculating execution plan")
+	}
+	campaignsCompletePending(pending, fmt.Sprintf("Found %d workspaces", len(tasks)))
 
 	pending = campaignsCreatePending(out, "Preparing workspaces")
 	workspaceCreator := svc.NewWorkspaceCreator(ctx, flags.cacheDir, flags.tempDir, campaignSpec.Steps)
@@ -236,16 +243,11 @@ func campaignsExecute(ctx context.Context, out *output.Output, svc *campaigns.Se
 		KeepLogs:    flags.keepLogs,
 		Timeout:     flags.timeout,
 		TempDir:     flags.tempDir,
-	}
-	if flags.parallelism <= 0 {
-		opts.Parallelism = runtime.GOMAXPROCS(0)
-	} else {
-		opts.Parallelism = flags.parallelism
+		Parallelism: flags.parallelism,
 	}
 
-	executor := svc.NewExecutor(opts)
-	p := newCampaignProgressPrinter(out, *verbose, opts.Parallelism)
-	specs, err := svc.ExecuteCampaignSpec(ctx, repos, executor, campaignSpec, p.PrintStatuses, flags.skipErrors)
+	p := newCampaignProgressPrinter(out, *verbose, flags.parallelism)
+	specs, logFiles, err := svc.ExecuteCampaignSpec(ctx, opts, tasks, campaignSpec, p.PrintStatuses, flags.skipErrors)
 	if err != nil && !flags.skipErrors {
 		return "", "", err
 	}
@@ -255,7 +257,7 @@ func campaignsExecute(ctx context.Context, out *output.Output, svc *campaigns.Se
 		out.WriteLine(output.Line(output.EmojiWarning, output.StyleWarning, "Skipping errors because -skip-errors was used."))
 	}
 
-	if logFiles := executor.LogFiles(); len(logFiles) > 0 && flags.keepLogs {
+	if len(logFiles) > 0 && flags.keepLogs {
 		func() {
 			block := out.Block(output.Line("", campaignsSuccessColor, "Preserving log files:"))
 			defer block.Close()

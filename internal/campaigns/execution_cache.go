@@ -63,8 +63,8 @@ func (key ExecutionCacheKey) Key() (string, error) {
 }
 
 type ExecutionCache interface {
-	Get(ctx context.Context, key ExecutionCacheKey) (result ExecutionResult, found bool, err error)
-	Set(ctx context.Context, key ExecutionCacheKey, result ExecutionResult) error
+	Get(ctx context.Context, key ExecutionCacheKey) (result executionResult, found bool, err error)
+	Set(ctx context.Context, key ExecutionCacheKey, result executionResult) error
 	Clear(ctx context.Context, key ExecutionCacheKey) error
 }
 
@@ -83,8 +83,8 @@ func (c ExecutionDiskCache) cacheFilePath(key ExecutionCacheKey) (string, error)
 	return filepath.Join(c.Dir, keyString+cacheFileExt), nil
 }
 
-func (c ExecutionDiskCache) Get(ctx context.Context, key ExecutionCacheKey) (ExecutionResult, bool, error) {
-	var result ExecutionResult
+func (c ExecutionDiskCache) Get(ctx context.Context, key ExecutionCacheKey) (executionResult, bool, error) {
+	var result executionResult
 
 	path, err := c.cacheFilePath(key)
 	if err != nil {
@@ -172,7 +172,7 @@ func sortCacheFiles(paths []string) {
 
 func isOldCacheFile(path string) bool { return !strings.HasSuffix(path, cacheFileExt) }
 
-func (c ExecutionDiskCache) readCacheFile(path string, result *ExecutionResult) error {
+func (c ExecutionDiskCache) readCacheFile(path string, result *executionResult) error {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		return err
@@ -224,7 +224,7 @@ func (c ExecutionDiskCache) readCacheFile(path string, result *ExecutionResult) 
 	return fmt.Errorf("unknown file format for cache file %q", path)
 }
 
-func (c ExecutionDiskCache) Set(ctx context.Context, key ExecutionCacheKey, result ExecutionResult) error {
+func (c ExecutionDiskCache) Set(ctx context.Context, key ExecutionCacheKey, result executionResult) error {
 	path, err := c.cacheFilePath(key)
 	if err != nil {
 		return err
@@ -259,11 +259,11 @@ func (c ExecutionDiskCache) Clear(ctx context.Context, key ExecutionCacheKey) er
 // retrieve cache entries.
 type ExecutionNoOpCache struct{}
 
-func (ExecutionNoOpCache) Get(ctx context.Context, key ExecutionCacheKey) (result ExecutionResult, found bool, err error) {
-	return ExecutionResult{}, false, nil
+func (ExecutionNoOpCache) Get(ctx context.Context, key ExecutionCacheKey) (result executionResult, found bool, err error) {
+	return executionResult{}, false, nil
 }
 
-func (ExecutionNoOpCache) Set(ctx context.Context, key ExecutionCacheKey, result ExecutionResult) error {
+func (ExecutionNoOpCache) Set(ctx context.Context, key ExecutionCacheKey, result executionResult) error {
 	return nil
 }
 

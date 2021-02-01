@@ -127,10 +127,6 @@ func unzipToTempDir(ctx context.Context, zipFile, tempDir, tempFilePrefix string
 	return volumeDir, unzip(zipFile, volumeDir)
 }
 
-func localRepositoryZipArchivePath(dir string, repo *graphql.Repository) string {
-	return filepath.Join(dir, fmt.Sprintf("%s-%s.zip", repo.Slug(), repo.Rev()))
-}
-
 func unzip(zipFile, dest string) error {
 	r, err := zip.OpenReader(zipFile)
 	if err != nil {

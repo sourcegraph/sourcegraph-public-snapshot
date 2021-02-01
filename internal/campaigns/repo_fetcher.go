@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sync"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/src-cli/internal/api"
@@ -29,6 +30,9 @@ type repoFetcher struct {
 	client     api.Client
 	dir        string
 	deleteZips bool
+
+	zipsMu sync.Mutex
+	zips   map[string]*repoZip
 }
 
 var _ RepoFetcher = &repoFetcher{}
@@ -48,14 +52,43 @@ type RepoZip interface {
 type repoZip struct {
 	path    string
 	fetcher *repoFetcher
+
+	mu         sync.Mutex
+	references int
 }
 
 var _ RepoZip = &repoZip{}
 
-func (rf *repoFetcher) Fetch(ctx context.Context, repo *graphql.Repository) (RepoZip, error) {
-	path := localRepositoryZipArchivePath(rf.dir, repo)
+func (rf *repoFetcher) zipFor(path string) *repoZip {
+	rf.zipsMu.Lock()
+	defer rf.zipsMu.Unlock()
 
-	exists, err := fileExists(path)
+	if rf.zips == nil {
+		rf.zips = make(map[string]*repoZip)
+	}
+
+	zip, ok := rf.zips[path]
+	if !ok {
+		zip = &repoZip{path: path, fetcher: rf}
+		rf.zips[path] = zip
+	}
+	return zip
+}
+
+func (rf *repoFetcher) Fetch(ctx context.Context, repo *graphql.Repository) (RepoZip, error) {
+	path := filepath.Join(rf.dir, repo.Slug()+".zip")
+
+	zip := rf.zipFor(path)
+	zip.mu.Lock()
+	defer zip.mu.Unlock()
+
+	// Someone already fetched it
+	if zip.references > 0 {
+		zip.references += 1
+		return zip, nil
+	}
+
+	exists, err := fileExists(zip.path)
 	if err != nil {
 		return nil, err
 	}
@@ -80,16 +113,19 @@ func (rf *repoFetcher) Fetch(ctx context.Context, repo *graphql.Repository) (Rep
 		}
 	}
 
-	return &repoZip{
-		path:    path,
-		fetcher: rf,
-	}, nil
+	zip.references += 1
+	return zip, nil
 }
 
 func (rz *repoZip) Close() error {
-	if rz.fetcher.deleteZips {
+	rz.mu.Lock()
+	defer rz.mu.Unlock()
+
+	rz.references -= 1
+	if rz.references == 0 && rz.fetcher.deleteZips {
 		return os.Remove(rz.path)
 	}
+
 	return nil
 }
 

@@ -63,7 +63,7 @@ func TestRepoFetcher_Fetch(t *testing.T) {
 			t.Errorf("unexpected error: %s", err)
 		}
 
-		wantZipFile := "github.com-sourcegraph-src-cli-d34db33f.zip"
+		wantZipFile := repo.Slug() + ".zip"
 		ok, err := dirContains(rf.dir, wantZipFile)
 		if err != nil {
 			t.Fatal(err)
@@ -149,7 +149,7 @@ func TestRepoFetcher_Fetch(t *testing.T) {
 			t.Error("error is nil")
 		}
 
-		zipFile := "github.com-sourcegraph-src-cli-d34db33f.zip"
+		zipFile := repo.Slug() + ".zip"
 		ok, err := dirContains(rf.dir, zipFile)
 		if err != nil {
 			t.Error(err)
@@ -189,7 +189,7 @@ func TestRepoFetcher_Fetch(t *testing.T) {
 			t.Fatalf("unexpected error: %s", err)
 		}
 
-		wantZipFile := "github.com-sourcegraph-src-cli-" + otherBranchOID + ".zip"
+		wantZipFile := repo.Slug() + ".zip"
 		ok, err := dirContains(rf.dir, wantZipFile)
 		if err != nil {
 			t.Fatal(err)
