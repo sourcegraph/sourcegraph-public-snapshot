@@ -28,6 +28,7 @@ type IndexabilityUpdater struct {
 	minimumSearchCount  int
 	minimumSearchRatio  float64
 	minimumPreciseCount int
+	skipManualInterval  time.Duration
 	enableIndexingCNCF  bool
 	limiter             *rate.Limiter
 }
@@ -40,6 +41,7 @@ func NewIndexabilityUpdater(
 	minimumSearchCount int,
 	minimumSearchRatio float64,
 	minimumPreciseCount int,
+	skipManualInterval time.Duration,
 	interval time.Duration,
 	observationContext *observation.Context,
 ) goroutine.BackgroundRoutine {
@@ -50,6 +52,7 @@ func NewIndexabilityUpdater(
 		minimumSearchCount:  minimumSearchCount,
 		minimumSearchRatio:  minimumSearchRatio,
 		minimumPreciseCount: minimumPreciseCount,
+		skipManualInterval:  skipManualInterval,
 		enableIndexingCNCF:  os.Getenv("DISABLE_CNCF") == "",
 		limiter:             rate.NewLimiter(MaxGitserverRequestsPerSecond, 1),
 	}
@@ -121,7 +124,7 @@ func (u *IndexabilityUpdater) queueRepository(ctx context.Context, repoUsageStat
 	})
 	defer endObservation(1, observation.Args{})
 
-	oneDayAgo := time.Now().Add(time.Hour * 24)
+	oneDayAgo := time.Now().Add(-1 * u.skipManualInterval)
 	uploads, count, err := u.dbStore.GetUploads(ctx, store.GetUploadsOptions{
 		RepositoryID:  repoUsageStatistics.RepositoryID,
 		VisibleAtTip:  true,
