@@ -320,6 +320,29 @@ func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 	return &EmptyResponse{}, nil
 }
 
+func (r *schemaResolver) CreatePassword(ctx context.Context, args *struct {
+	NewPassword string
+}) (*EmptyResponse, error) {
+	// 🚨 SECURITY: A user can only create their own password.
+	user, err := database.GlobalUsers.GetByCurrentAuthUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, errors.New("no authenticated user")
+	}
+	if err := database.GlobalUsers.CreatePassword(ctx, user.ID, args.NewPassword); err != nil {
+		return nil, err
+	}
+
+	if conf.CanSendEmail() {
+		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, user.ID, "created a password"); err != nil {
+			log15.Warn("Failed to send email to inform user of password creation", "error", err)
+		}
+	}
+	return &EmptyResponse{}, nil
+}
+
 // ViewerCanChangeUsername returns if the current user can change the username of the user.
 func (r *UserResolver) ViewerCanChangeUsername(ctx context.Context) bool {
 	return viewerCanChangeUsername(ctx, r.user.ID)
