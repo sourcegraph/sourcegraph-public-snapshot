@@ -84,7 +84,7 @@ func (r lsifTscJobRecognizer) InferIndexJobs(paths []string, gitserver Gitserver
 		}
 
 		indexes = append(indexes, config.IndexJob{
-			DockerSteps: dockerSteps,
+			Steps:       dockerSteps,
 			LocalSteps:  localSteps,
 			Root:        dirWithoutDot(path),
 			Indexer:     lsifTscImage,
