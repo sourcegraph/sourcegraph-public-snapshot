@@ -926,9 +926,6 @@ func (u *UserStore) SetPassword(ctx context.Context, id int32, resetCode, newPas
 	if err := CheckPasswordLength(newPassword); err != nil {
 		return false, err
 	}
-	if err := CheckPasswordLength(newPassword); err != nil {
-		return false, err
-	}
 
 	resetLinkExpiryDuration := conf.AuthPasswordResetLinkExpiry()
 
