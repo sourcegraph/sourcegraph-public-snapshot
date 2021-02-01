@@ -24,9 +24,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// redacted strings are zero width spaces, so we can detect any redacted fields when validating on the way back in to
-// the database
-const RedactedSecret = string('\u200B')
+// RedactedSecret is used as a placeholder for secret fields when reading external service config
+const RedactedSecret = "REDACTED"
 
 // RedactConfig replaces any secret fields in the Config field with RedactedSecret, be sure to call
 // UnRedactExternalServiceConfig before writing back to the database, otherwise validation will throw errors.
