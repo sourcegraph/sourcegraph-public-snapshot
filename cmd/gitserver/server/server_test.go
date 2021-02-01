@@ -18,6 +18,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 )
@@ -136,6 +137,82 @@ func TestRequest(t *testing.T) {
 			return 42, nil
 		case "testerror":
 			return 0, errors.New("testerror")
+		}
+		return 0, nil
+	}
+	defer func() { runCommandMock = nil }()
+
+	for _, test := range tests {
+		t.Run(test.Name, func(t *testing.T) {
+			w := httptest.ResponseRecorder{Body: new(bytes.Buffer)}
+			h.ServeHTTP(&w, test.Request)
+
+			res := w.Result()
+			if res.StatusCode != test.ExpectedCode {
+				t.Errorf("wrong status: expected %d, got %d", test.ExpectedCode, w.Code)
+			}
+
+			body, err := ioutil.ReadAll(res.Body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if strings.TrimSpace(string(body)) != test.ExpectedBody {
+				t.Errorf("wrong body: expected %q, got %q", test.ExpectedBody, string(body))
+			}
+
+			for k, v := range test.ExpectedTrailers {
+				if got := res.Trailer.Get(k); got != v[0] {
+					t.Errorf("wrong trailer %q: expected %q, got %q", k, v[0], got)
+				}
+			}
+		})
+	}
+}
+
+func TestServer_handleP4Exec(t *testing.T) {
+	tests := []Test{
+		{
+			Name:         "Command",
+			Request:      httptest.NewRequest("POST", "/p4-exec", strings.NewReader(`{"args": ["users"]}`)),
+			ExpectedCode: http.StatusOK,
+			ExpectedBody: "admin <admin@joe-perforce-server> (admin) accessed 2021/01/31",
+			ExpectedTrailers: http.Header{
+				"X-Exec-Error":       {""},
+				"X-Exec-Exit-Status": {"42"},
+				"X-Exec-Stderr":      {"teststderr"},
+			},
+		},
+		{
+			Name:         "Error",
+			Request:      httptest.NewRequest("POST", "/p4-exec", strings.NewReader(`{"args": ["bad_command"]}`)),
+			ExpectedCode: http.StatusBadRequest,
+			ExpectedBody: "subcommand \"bad_command\" is not allowed",
+		},
+		{
+			Name:         "EmptyBody",
+			Request:      httptest.NewRequest("POST", "/p4-exec", nil),
+			ExpectedCode: http.StatusBadRequest,
+			ExpectedBody: `EOF`,
+		},
+		{
+			Name:         "EmptyInput",
+			Request:      httptest.NewRequest("POST", "/p4-exec", strings.NewReader("{}")),
+			ExpectedCode: http.StatusBadRequest,
+			ExpectedBody: `args must be greater than or equal to 1`,
+		},
+	}
+
+	s := &Server{
+		skipCloneForTests: true,
+	}
+	h := s.Handler()
+
+	runCommandMock = func(ctx context.Context, cmd *exec.Cmd) (int, error) {
+		switch cmd.Args[1] {
+		case "users":
+			_, _ = cmd.Stdout.Write([]byte("admin <admin@joe-perforce-server> (admin) accessed 2021/01/31"))
+			_, _ = cmd.Stderr.Write([]byte("teststderr"))
+			return 42, nil
 		}
 		return 0, nil
 	}
