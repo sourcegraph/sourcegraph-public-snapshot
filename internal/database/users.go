@@ -198,6 +198,9 @@ const maxPasswordRunes = 256
 
 // CheckPasswordLength returns an error if the length of the password is not in the required range.
 func CheckPasswordLength(pw string) error {
+	if pw == "" {
+		return errors.New("password empty")
+	}
 	pwLen := utf8.RuneCountInString(pw)
 	minPasswordRunes := conf.AuthMinPasswordLength()
 	if pwLen < minPasswordRunes ||
@@ -902,9 +905,6 @@ func (u *UserStore) SetPassword(ctx context.Context, id int32, resetCode, newPas
 	u.ensureStore()
 
 	// 🚨 SECURITY: no empty passwords
-	if newPassword == "" {
-		return false, errors.New("new password was empty")
-	}
 	if err := CheckPasswordLength(newPassword); err != nil {
 		return false, err
 	}
@@ -983,9 +983,6 @@ func (u *UserStore) CreatePassword(ctx context.Context, id int32, password strin
 	u.ensureStore()
 
 	// 🚨 SECURITY: Check min and max password length
-	if password == "" {
-		return errors.New("new password was empty")
-	}
 	if err := CheckPasswordLength(password); err != nil {
 		return err
 	}
