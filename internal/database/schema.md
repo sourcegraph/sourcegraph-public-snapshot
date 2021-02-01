@@ -568,11 +568,12 @@ Indexes:
 
 # Table "public.lsif_dirty_repositories"
 ```
-    Column     |  Type   | Modifiers 
----------------+---------+-----------
- repository_id | integer | not null
- dirty_token   | integer | not null
- update_token  | integer | not null
+    Column     |           Type           | Modifiers 
+---------------+--------------------------+-----------
+ repository_id | integer                  | not null
+ dirty_token   | integer                  | not null
+ update_token  | integer                  | not null
+ updated_at    | timestamp with time zone | 
 Indexes:
     "lsif_dirty_repositories_pkey" PRIMARY KEY, btree (repository_id)
 
@@ -583,6 +584,8 @@ Stores whether or not the nearest upload data for a repository is out of date (w
 **dirty_token**: Set to the value of update_token visible to the transaction that updates the commit graph. Updates of dirty_token during this time will cause a second update.
 
 **update_token**: This value is incremented on each request to update the commit graph for the repository.
+
+**updated_at**: The time the update_token value was last updated.
 
 # Table "public.lsif_index_configuration"
 ```

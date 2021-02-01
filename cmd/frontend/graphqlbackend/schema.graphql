@@ -229,6 +229,11 @@ type Mutation {
     """
     updatePassword(oldPassword: String!, newPassword: String!): EmptyResponse
     """
+    Creates a password for the current user. It is only permitted if the user does not have a password and
+    they don't have any login connections.
+    """
+    createPassword(newPassword: String!): EmptyResponse
+    """
     Creates an access token that grants the privileges of the specified user (referred to as the access token's
     "subject" user after token creation). The result is the access token value, which the caller is responsible
     for storing (it is not accessible by Sourcegraph after creation).
@@ -4545,6 +4550,12 @@ type Repository implements Node & GenericSearchResultInterface {
     indexConfiguration: IndexConfiguration
 
     """
+    Information and status related to the commit graph of this repository calculated
+    for use by code intelligence features.
+    """
+    codeIntelligenceCommitGraph: CodeIntelligenceCommitGraph!
+
+    """
     A list of authorized users to access this repository with the given permission.
     This API currently only returns permissions from the Sourcegraph provider, i.e.
     "permissions.userMapping" in site configuration.
@@ -4569,6 +4580,22 @@ type Repository implements Node & GenericSearchResultInterface {
     It is null when there is no permissions data stored for the repository.
     """
     permissionsInfo: PermissionsInfo
+}
+
+"""
+Information and status related to the commit graph of this repository calculated
+for use by code intelligence features.
+"""
+type CodeIntelligenceCommitGraph {
+    """
+    Whether or not the commit graph needs to be updated.
+    """
+    stale: Boolean!
+
+    """
+    When, if ever, the commit graph was last refreshed.
+    """
+    updatedAt: DateTime
 }
 
 """

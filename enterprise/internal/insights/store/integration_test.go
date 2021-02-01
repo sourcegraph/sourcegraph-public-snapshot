@@ -22,6 +22,9 @@ func TestIntegration(t *testing.T) {
 
 	getTimescaleDB := func(t testing.TB) *sql.DB {
 		// Setup TimescaleDB for testing.
+		if os.Getenv("CODEINSIGHTS_PGDATASOURCE") == "" {
+			os.Setenv("CODEINSIGHTS_PGDATASOURCE", "postgres://postgres:password@127.0.0.1:5435/postgres")
+		}
 		username := ""
 		if user, err := user.Current(); err == nil {
 			username = user.Username
@@ -33,11 +36,15 @@ func TestIntegration(t *testing.T) {
 			t.Log("README: To run these tests you need to have the codeinsights TimescaleDB running:")
 			t.Log("")
 			t.Log("$ ./dev/codeinsights-db.sh &")
-			t.Log("$ export CODEINSIGHTS_PGDATASOURCE=postgres://postgres:password@127.0.0.1:5435/postgres")
 			t.Log("")
 			t.Log("Or skip them with 'go test -short'")
 			t.Log("")
-			t.Fatalf("Failed to connect to codeinsights database: %s", err)
+			t.Logf("Failed to connect to codeinsights database: %s", err)
+			if os.Getenv("CI") == "" {
+				t.Skip()
+			} else {
+				t.Fail()
+			}
 		}
 		if err := dbconn.MigrateDB(db, dbconn.CodeInsights); err != nil {
 			t.Fatalf("Failed to perform codeinsights database migration: %s", err)
