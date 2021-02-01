@@ -13,6 +13,9 @@ package types
 
 import (
 	"fmt"
+	"strings"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/fatih/structs"
 	jsoniter "github.com/json-iterator/go"
@@ -21,11 +24,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-const RedactedSecret = "SRCGRAPH_REDACTED"
+// redacted strings are zero width spaces, so we can detect any redacted fields when validating on the way back in to
+// the database
+const RedactedSecret = string('\u200B')
 
 // RedactConfig replaces any secret fields in the Config field with RedactedSecret, be sure to call
 // UnRedactExternalServiceConfig before writing back to the database, otherwise validation will throw errors.
 func (e *ExternalService) RedactConfig() error {
+	if e.Config == "" {
+		return nil
+	}
 	var (
 		newCfg string
 		err    error
@@ -36,25 +44,25 @@ func (e *ExternalService) RedactConfig() error {
 	}
 	switch cfg := cfg.(type) {
 	case *schema.GitHubConnection:
-		newCfg, err = redactField(e.Config, &cfg, &cfg.Token)
+		newCfg, err = redactField(e.Config, &cfg, "token")
 	case *schema.GitLabConnection:
-		newCfg, err = redactField(e.Config, &cfg, &cfg.Token)
+		newCfg, err = redactField(e.Config, &cfg, "token")
 	case *schema.BitbucketServerConnection:
-		newCfg, err = redactField(e.Config, &cfg, &cfg.Token, &cfg.Password)
+		newCfg, err = redactField(e.Config, &cfg, "token", "password")
 	case *schema.BitbucketCloudConnection:
-		newCfg, err = redactField(e.Config, &cfg, &cfg.AppPassword)
+		newCfg, err = redactField(e.Config, &cfg, "appPassword")
 	case *schema.AWSCodeCommitConnection:
-		newCfg, err = redactField(e.Config, &cfg, &cfg.SecretAccessKey)
+		newCfg, err = redactField(e.Config, &cfg, "secretAccessKey")
 	case *schema.PhabricatorConnection:
-		newCfg, err = redactField(e.Config, &cfg, &cfg.Token)
+		newCfg, err = redactField(e.Config, &cfg, "token")
 	case *schema.PerforceConnection:
-		newCfg, err = redactField(e.Config, &cfg, &cfg.P4Passwd)
+		newCfg, err = redactField(e.Config, &cfg, "p4.passwd")
 	case *schema.GitoliteConnection:
 		// no secret fields?
 		err = nil
 	case *schema.OtherExternalServiceConnection:
 		// no secret fields?
-		err = nil
+		newCfg, err = redactField(e.Config, &cfg, "url")
 	default:
 		// return an error here, it's safer to fail than to incorrectly return unsafe data.
 		err = fmt.Errorf("RedactExternalServiceConfig: kind %q not implemented", e.Kind)
@@ -69,24 +77,28 @@ func (e *ExternalService) RedactConfig() error {
 // redactField will unmarshal the passed JSON string into the passed value, and then replace the pointer fields you pass
 // with RedactedSecret, see RedactExternalServiceConfig for usage examples.
 // who needs generics anyway?
-func redactField(buf string, v interface{}, fields ...*string) (string, error) {
+func redactField(buf string, v interface{}, fields ...string) (string, error) {
 	err := unmarshalConfig(buf, v)
 	if err != nil {
 		return "", err
 	}
+
 	for _, field := range fields {
-		if *field != "" {
-			*field = RedactedSecret
+		buf, err = jsonc.Edit(buf, RedactedSecret, field)
+		if err != nil {
+			return buf, err
 		}
 	}
-	out, err := jsoniter.Marshal(v)
-	return string(out), err
+	return buf, nil
 }
 
 // UnredactConfig will replace redacted fields with their undredacted form from the 'old' ExternalService.
 // You should call this when accepting updated config from a user that may have been
 // previously redacted, and pass in the unredacted form directly from the DB as the 'old' parameter
 func (e *ExternalService) UnredactConfig(old *ExternalService) error {
+	if e == nil || old == nil || e.Config == "" || old.Config == "" {
+		return nil
+	}
 	if old.Kind != e.Kind {
 		return fmt.Errorf(
 			"UnRedactExternalServiceConfig: unmatched external service kinds, old: %q, e: %q",
@@ -104,24 +116,26 @@ func (e *ExternalService) UnredactConfig(old *ExternalService) error {
 	}
 	switch cfg := cfg.(type) {
 	case *schema.GitHubConnection:
-		unredacted, err = unredactField(old.Config, e.Config, &cfg, &cfg.Token)
+		unredacted, err = unredactField(old.Config, e.Config, &cfg, jsonStringField{"token", &cfg.Token})
 	case *schema.GitLabConnection:
-		unredacted, err = unredactField(old.Config, e.Config, &cfg, &cfg.Token)
+		unredacted, err = unredactField(old.Config, e.Config, &cfg, jsonStringField{"token", &cfg.Token})
 	case *schema.BitbucketServerConnection:
-		unredacted, err = unredactField(old.Config, e.Config, &cfg, &cfg.Token, &cfg.Password)
+		unredacted, err = unredactField(old.Config, e.Config, &cfg,
+			jsonStringField{"token", &cfg.Token},
+			jsonStringField{"password", &cfg.Password})
 	case *schema.BitbucketCloudConnection:
-		unredacted, err = unredactField(old.Config, e.Config, &cfg, &cfg.AppPassword)
+		unredacted, err = unredactField(old.Config, e.Config, &cfg, jsonStringField{"appPassword", &cfg.AppPassword})
 	case *schema.AWSCodeCommitConnection:
-		unredacted, err = unredactField(old.Config, e.Config, &cfg, &cfg.SecretAccessKey)
+		unredacted, err = unredactField(old.Config, e.Config, &cfg, jsonStringField{"secretAccessKey", &cfg.SecretAccessKey})
 	case *schema.PhabricatorConnection:
-		unredacted, err = unredactField(old.Config, e.Config, &cfg, &cfg.Token)
+		unredacted, err = unredactField(old.Config, e.Config, &cfg, jsonStringField{"token", &cfg.Token})
 	case *schema.PerforceConnection:
-		unredacted, err = unredactField(old.Config, e.Config, &cfg, &cfg.P4Passwd)
+		unredacted, err = unredactField(old.Config, e.Config, &cfg, jsonStringField{"p4.passwd", &cfg.P4Passwd})
 	case *schema.GitoliteConnection:
 		// no secret fields?
 		err = nil
 	case *schema.OtherExternalServiceConnection:
-		unredacted, err = unredactField(old.Config, e.Config, &cfg, &cfg.Url)
+		unredacted, err = unredactField(old.Config, e.Config, &cfg, jsonStringField{"url", &cfg.Url})
 	default:
 		// return an error here, it's safer to fail than to incorrectly return unsafe data.
 		err = fmt.Errorf("UnRedactExternalServiceConfig: kind %q not implemented", e.Kind)
@@ -133,7 +147,12 @@ func (e *ExternalService) UnredactConfig(old *ExternalService) error {
 	return nil
 }
 
-func unredactField(old, new string, cfg interface{}, fields ...*string) (string, error) {
+type jsonStringField struct {
+	path string
+	ptr  *string
+}
+
+func unredactField(old, new string, cfg interface{}, fields ...jsonStringField) (string, error) {
 	// first we zero the fields on cfg, as they will contain data we don't need from the e.Configuration() call
 	// we just want an empty struct of the correct type for marshaling into
 	if err := zeroFields(cfg); err != nil {
@@ -145,27 +164,36 @@ func unredactField(old, new string, cfg interface{}, fields ...*string) (string,
 	// now take copies of the unredacted fields from the old JSON
 	oldSecrets := []string{}
 	for _, field := range fields {
-		oldSecrets = append(oldSecrets, *field)
+		oldSecrets = append(oldSecrets, *field.ptr)
 	}
-	// zero the fields of our config in case we are deleting any fields, the unmarshaler might preserve
-	// fields from the old JSON otherwise.
-	if err := zeroFields(cfg); err != nil {
-		return "", err
-	}
-	// now we unmarshal the new JSON that contains redacted fields
-	if err := unmarshalConfig(new, cfg); err != nil {
-		return "", err
-	}
-	for i, field := range fields {
-		// only replace fields that are RedactedSecret, so the user can still update their config
-		if *field == RedactedSecret {
-			*field = oldSecrets[i]
+
+	// and apply edits to update those fields in the new config
+	var err error
+	for _, field := range fields {
+		v, err := jsonc.ReadProperty(new, field.path)
+		if err != nil {
+			return new, err
+		}
+		stringValue, ok := v.(string)
+		if !ok {
+			return new, errors.Errorf("invalid type %T for field %s", v, field.path)
+		}
+		if stringValue != RedactedSecret {
+			// using unicode zero width space might mean the user includes it when editing still, we strip that out here
+			new, err = jsonc.Edit(new, strings.Replace(stringValue, RedactedSecret, "", -1), field.path)
+			if err != nil {
+				return new, err
+			}
+			// if the field has been edited we should skip unredaction to allow edits
+			continue
+		}
+		new, err = jsonc.Edit(new, *field.ptr, field.path)
+		if err != nil {
+			return new, err
 		}
 	}
 
-	// marshal the output, now containing the new json with redacted fields replaced with fields from the old JSON
-	out, err := jsoniter.Marshal(cfg)
-	return string(out), err
+	return new, err
 }
 
 // zeroFields zeroes the fields of a struct

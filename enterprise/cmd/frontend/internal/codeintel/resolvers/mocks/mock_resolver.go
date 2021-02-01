@@ -15,6 +15,9 @@ import (
 // github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers)
 // used for unit testing.
 type MockResolver struct {
+	// CommitGraphFunc is an instance of a mock function object controlling
+	// the behavior of the method CommitGraph.
+	CommitGraphFunc *ResolverCommitGraphFunc
 	// DeleteIndexByIDFunc is an instance of a mock function object
 	// controlling the behavior of the method DeleteIndexByID.
 	DeleteIndexByIDFunc *ResolverDeleteIndexByIDFunc
@@ -52,6 +55,11 @@ type MockResolver struct {
 // return zero values for all results, unless overwritten.
 func NewMockResolver() *MockResolver {
 	return &MockResolver{
+		CommitGraphFunc: &ResolverCommitGraphFunc{
+			defaultHook: func(context.Context, int) (graphqlbackend.CodeIntelligenceCommitGraphResolver, error) {
+				return nil, nil
+			},
+		},
 		DeleteIndexByIDFunc: &ResolverDeleteIndexByIDFunc{
 			defaultHook: func(context.Context, int) error {
 				return nil
@@ -109,6 +117,9 @@ func NewMockResolver() *MockResolver {
 // methods delegate to the given implementation, unless overwritten.
 func NewMockResolverFrom(i resolvers.Resolver) *MockResolver {
 	return &MockResolver{
+		CommitGraphFunc: &ResolverCommitGraphFunc{
+			defaultHook: i.CommitGraph,
+		},
 		DeleteIndexByIDFunc: &ResolverDeleteIndexByIDFunc{
 			defaultHook: i.DeleteIndexByID,
 		},
@@ -140,6 +151,115 @@ func NewMockResolverFrom(i resolvers.Resolver) *MockResolver {
 			defaultHook: i.UploadConnectionResolver,
 		},
 	}
+}
+
+// ResolverCommitGraphFunc describes the behavior when the CommitGraph
+// method of the parent MockResolver instance is invoked.
+type ResolverCommitGraphFunc struct {
+	defaultHook func(context.Context, int) (graphqlbackend.CodeIntelligenceCommitGraphResolver, error)
+	hooks       []func(context.Context, int) (graphqlbackend.CodeIntelligenceCommitGraphResolver, error)
+	history     []ResolverCommitGraphFuncCall
+	mutex       sync.Mutex
+}
+
+// CommitGraph delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockResolver) CommitGraph(v0 context.Context, v1 int) (graphqlbackend.CodeIntelligenceCommitGraphResolver, error) {
+	r0, r1 := m.CommitGraphFunc.nextHook()(v0, v1)
+	m.CommitGraphFunc.appendCall(ResolverCommitGraphFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the CommitGraph method
+// of the parent MockResolver instance is invoked and the hook queue is
+// empty.
+func (f *ResolverCommitGraphFunc) SetDefaultHook(hook func(context.Context, int) (graphqlbackend.CodeIntelligenceCommitGraphResolver, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CommitGraph method of the parent MockResolver instance inovkes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *ResolverCommitGraphFunc) PushHook(hook func(context.Context, int) (graphqlbackend.CodeIntelligenceCommitGraphResolver, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *ResolverCommitGraphFunc) SetDefaultReturn(r0 graphqlbackend.CodeIntelligenceCommitGraphResolver, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) (graphqlbackend.CodeIntelligenceCommitGraphResolver, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *ResolverCommitGraphFunc) PushReturn(r0 graphqlbackend.CodeIntelligenceCommitGraphResolver, r1 error) {
+	f.PushHook(func(context.Context, int) (graphqlbackend.CodeIntelligenceCommitGraphResolver, error) {
+		return r0, r1
+	})
+}
+
+func (f *ResolverCommitGraphFunc) nextHook() func(context.Context, int) (graphqlbackend.CodeIntelligenceCommitGraphResolver, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ResolverCommitGraphFunc) appendCall(r0 ResolverCommitGraphFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ResolverCommitGraphFuncCall objects
+// describing the invocations of this function.
+func (f *ResolverCommitGraphFunc) History() []ResolverCommitGraphFuncCall {
+	f.mutex.Lock()
+	history := make([]ResolverCommitGraphFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ResolverCommitGraphFuncCall is an object that describes an invocation of
+// method CommitGraph on an instance of MockResolver.
+type ResolverCommitGraphFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 graphqlbackend.CodeIntelligenceCommitGraphResolver
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ResolverCommitGraphFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ResolverCommitGraphFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // ResolverDeleteIndexByIDFunc describes the behavior when the

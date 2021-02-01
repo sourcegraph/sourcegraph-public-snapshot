@@ -170,14 +170,13 @@ func ScanBools(rows *sql.Rows, queryErr error) (_ []bool, err error) {
 
 // ScanFirstBool reads bool values from the given row object and returns the first one.
 // If no rows match the query, a false-valued flag is returned.
-func ScanFirstBool(rows *sql.Rows, queryErr error) (_ bool, _ bool, err error) {
+func ScanFirstBool(rows *sql.Rows, queryErr error) (value bool, exists bool, err error) {
 	if queryErr != nil {
 		return false, false, queryErr
 	}
 	defer func() { err = CloseRows(rows, err) }()
 
 	if rows.Next() {
-		var value bool
 		if err := rows.Scan(&value); err != nil {
 			return false, false, err
 		}

@@ -272,7 +272,6 @@ func getNewestCampaignSpecQuery(opts *GetNewestCampaignSpecOpts) *sqlf.Query {
 		sqlf.Join(campaignSpecColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
-
 }
 
 // ListCampaignSpecsOpts captures the query options needed for

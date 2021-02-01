@@ -190,10 +190,15 @@ func (e *ExternalServiceStore) ValidateConfig(ctx context.Context, opt ValidateE
 		return nil, errors.Wrapf(err, "unable to normalize JSON")
 	}
 
+	// Check for any redacted secrets, in graphqlbackend/external_service.go:externalServiceByID() we call
+	// svc.RedactConfig() replacing any secret fields in the JSON with types.RedactedSecret, this is to
+	// prevent us leaking tokens that users add. Here we check that the config we've been passed doesn't
+	// contain any redacted secrets in order to avoid breaking configs by writing the redacted version to
+	// the database. we should have called svc.UnredactConfig(oldSvc) before this point, eg in the Update
+	// method of the ExternalServiceStore. talk to @arussellsaw or the cloud team if you have any questions
 	if bytes.Contains(normalized, []byte(types.RedactedSecret)) {
 		return nil, errors.Errorf(
-			"found unexpected Redacted string: %q, has ExternalService.UnredactConfig been called before attempting to write?",
-			types.RedactedSecret,
+			"unable to write external service config as it contains redacted fields, this is likely a bug rather than a problem with your config",
 		)
 	}
 
@@ -666,6 +671,15 @@ func (e *ExternalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 		if err != nil {
 			return err
 		}
+		newSvc := types.ExternalService{
+			Kind:   externalService.Kind,
+			Config: *update.Config,
+		}
+		err = newSvc.UnredactConfig(externalService)
+		if err != nil {
+			return errors.Wrapf(err, "error unredacting config")
+		}
+		update.Config = &newSvc.Config
 
 		normalized, err = e.ValidateConfig(ctx, ValidateExternalServiceConfigOptions{
 			ExternalServiceID: id,

@@ -3,31 +3,19 @@ package lsifstore
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sort"
 	"strings"
 
-	"github.com/inconshreveable/log15"
+	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
-	pkgerrors "github.com/pkg/errors"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // ErrNotFound occurs when data does not exist for a requested bundle.
 var ErrNotFound = errors.New("data does not exist")
-
-func newRange(startLine, startCharacter, endLine, endCharacter int) Range {
-	return Range{
-		Start: Position{
-			Line:      startLine,
-			Character: startCharacter,
-		},
-		End: Position{
-			Line:      endLine,
-			Character: endCharacter,
-		},
-	}
-}
 
 // Exists determines if the path exists in the database.
 func (s *Store) Exists(ctx context.Context, bundleID int, path string) (_ bool, err error) {
@@ -37,9 +25,14 @@ func (s *Store) Exists(ctx context.Context, bundleID int, path string) (_ bool, 
 	}})
 	defer endObservation(1, observation.Args{})
 
-	_, exists, err := s.getDocumentData(ctx, bundleID, path)
-	return exists, pkgerrors.Wrap(err, "s.getDocumentData")
+	_, exists, err := basestore.ScanFirstString(s.Store.Query(ctx, sqlf.Sprintf(existsQuery, bundleID, path)))
+	return exists, err
 }
+
+const existsQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/bundle.go:Exists
+SELECT path FROM lsif_data_documents WHERE dump_id = %s AND path = %s LIMIT 1
+`
 
 // Ranges returns definition, reference, and hover data for each range within the given span of lines.
 func (s *Store) Ranges(ctx context.Context, bundleID int, path string, startLine, endLine int) (_ []CodeIntelligenceRange, err error) {
@@ -51,30 +44,30 @@ func (s *Store) Ranges(ctx context.Context, bundleID int, path string, startLine
 	}})
 	defer endObservation(1, observation.Args{})
 
-	documentData, exists, err := s.getDocumentData(ctx, bundleID, path)
+	documentData, exists, err := s.scanFirstDocumentData(s.Store.Query(ctx, sqlf.Sprintf(documentQuery, bundleID, path)))
 	if err != nil || !exists {
-		return nil, pkgerrors.Wrap(err, "s.getDocumentData")
+		return nil, err
 	}
 
-	var rangeIDs []ID
-	for id, r := range documentData.Ranges {
+	ranges := map[ID]RangeData{}
+	for id, r := range documentData.Document.Ranges {
 		if RangeIntersectsSpan(r, startLine, endLine) {
-			rangeIDs = append(rangeIDs, id)
+			ranges[id] = r
 		}
 	}
 
-	resultIDSet := map[ID]struct{}{}
-	for _, rangeID := range rangeIDs {
-		r := documentData.Ranges[rangeID]
-		resultIDSet[r.DefinitionResultID] = struct{}{}
-		resultIDSet[r.ReferenceResultID] = struct{}{}
+	resultIDMap := make(map[ID]struct{}, 2*len(ranges))
+	for _, r := range ranges {
+		if r.DefinitionResultID != "" {
+			resultIDMap[r.DefinitionResultID] = struct{}{}
+		}
+		if r.ReferenceResultID != "" {
+			resultIDMap[r.ReferenceResultID] = struct{}{}
+		}
 	}
 
-	// Remove empty results
-	delete(resultIDSet, "")
-
-	var resultIDs []ID
-	for id := range resultIDSet {
+	resultIDs := make([]ID, 0, len(resultIDMap))
+	for id := range resultIDMap {
 		resultIDs = append(resultIDs, id)
 	}
 
@@ -84,12 +77,12 @@ func (s *Store) Ranges(ctx context.Context, bundleID int, path string, startLine
 	}
 
 	var codeintelRanges []CodeIntelligenceRange
-	for _, rangeID := range rangeIDs {
-		r := documentData.Ranges[rangeID]
-
-		hoverText, _, err := s.hover(ctx, bundleID, path, documentData, r)
-		if err != nil {
-			return nil, err
+	for _, r := range ranges {
+		var hoverText string
+		if r.HoverResultID != "" {
+			if text, exists := documentData.Document.HoverResults[r.HoverResultID]; exists {
+				hoverText = text
+			}
 		}
 
 		// Return only references that are in the same file. Otherwise this set
@@ -118,6 +111,11 @@ func (s *Store) Ranges(ctx context.Context, bundleID int, path string, startLine
 	return codeintelRanges, nil
 }
 
+const documentQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/bundle.go:{Ranges,Definitions,References,Hover,MonikersByPosition}
+SELECT dump_id, path, data FROM lsif_data_documents WHERE dump_id = %s AND path = %s LIMIT 1
+`
+
 // Definitions returns the set of locations defining the symbol at the given position.
 func (s *Store) Definitions(ctx context.Context, bundleID int, path string, line, character int) (_ []Location, err error) {
 	ctx, endObservation := s.operations.definitions.With(ctx, &err, observation.Args{LogFields: []log.Field{
@@ -128,25 +126,25 @@ func (s *Store) Definitions(ctx context.Context, bundleID int, path string, line
 	}})
 	defer endObservation(1, observation.Args{})
 
-	_, ranges, exists, err := s.getRangeByPosition(ctx, bundleID, path, line, character)
+	documentData, exists, err := s.scanFirstDocumentData(s.Store.Query(ctx, sqlf.Sprintf(documentQuery, bundleID, path)))
 	if err != nil || !exists {
-		return nil, pkgerrors.Wrap(err, "s.getRangeByPosition")
+		return nil, err
 	}
 
-	for _, r := range ranges {
-		if r.DefinitionResultID == "" {
-			continue
-		}
-
-		locations, err := s.locations(ctx, bundleID, []ID{r.DefinitionResultID})
-		if err != nil {
-			return nil, err
-		}
-
-		return locations[r.DefinitionResultID], nil
+	ranges := FindRanges(documentData.Document.Ranges, line, character)
+	orderedResultIDs := extractResultIDs(ranges, func(r RangeData) ID { return r.DefinitionResultID })
+	locationsMap, err := s.locations(ctx, bundleID, orderedResultIDs)
+	if err != nil {
+		return nil, err
 	}
 
-	return []Location{}, nil
+	for _, resultID := range orderedResultIDs {
+		if locations := locationsMap[resultID]; len(locations) > 0 {
+			return locations, nil
+		}
+	}
+
+	return nil, nil
 }
 
 // References returns the set of locations referencing the symbol at the given position.
@@ -159,23 +157,21 @@ func (s *Store) References(ctx context.Context, bundleID int, path string, line,
 	}})
 	defer endObservation(1, observation.Args{})
 
-	_, ranges, exists, err := s.getRangeByPosition(ctx, bundleID, path, line, character)
+	documentData, exists, err := s.scanFirstDocumentData(s.Store.Query(ctx, sqlf.Sprintf(documentQuery, bundleID, path)))
 	if err != nil || !exists {
-		return nil, pkgerrors.Wrap(err, "s.getRangeByPosition")
+		return nil, err
+	}
+
+	ranges := FindRanges(documentData.Document.Ranges, line, character)
+	orderedResultIDs := extractResultIDs(ranges, func(r RangeData) ID { return r.ReferenceResultID })
+	locationsMap, err := s.locations(ctx, bundleID, orderedResultIDs)
+	if err != nil {
+		return nil, err
 	}
 
 	var allLocations []Location
-	for _, r := range ranges {
-		if r.ReferenceResultID == "" {
-			continue
-		}
-
-		locations, err := s.locations(ctx, bundleID, []ID{r.ReferenceResultID})
-		if err != nil {
-			return nil, err
-		}
-
-		allLocations = append(allLocations, locations[r.ReferenceResultID]...)
+	for _, resultID := range orderedResultIDs {
+		allLocations = append(allLocations, locationsMap[resultID]...)
 	}
 
 	return allLocations, nil
@@ -191,21 +187,15 @@ func (s *Store) Hover(ctx context.Context, bundleID int, path string, line, char
 	}})
 	defer endObservation(1, observation.Args{})
 
-	documentData, ranges, exists, err := s.getRangeByPosition(ctx, bundleID, path, line, character)
+	documentData, exists, err := s.scanFirstDocumentData(s.Store.Query(ctx, sqlf.Sprintf(documentQuery, bundleID, path)))
 	if err != nil || !exists {
-		return "", Range{}, false, pkgerrors.Wrap(err, "s.getRangeByPosition")
+		return "", Range{}, false, err
 	}
 
-	for _, r := range ranges {
-		text, exists, err := s.hover(ctx, bundleID, path, documentData, r)
-		if err != nil {
-			return "", Range{}, false, err
+	for _, r := range FindRanges(documentData.Document.Ranges, line, character) {
+		if text, ok := documentData.Document.HoverResults[r.HoverResultID]; ok {
+			return text, newRange(r.StartLine, r.StartCharacter, r.EndLine, r.EndCharacter), true, nil
 		}
-		if !exists {
-			continue
-		}
-
-		return text, newRange(r.StartLine, r.StartCharacter, r.EndLine, r.EndCharacter), true, nil
 	}
 
 	return "", Range{}, false, nil
@@ -222,44 +212,28 @@ func (s *Store) Diagnostics(ctx context.Context, bundleID int, prefix string, sk
 	}})
 	defer endObservation(1, observation.Args{})
 
-	paths, err := s.getPathsWithPrefix(ctx, bundleID, prefix)
+	documentData, err := s.scanDocumentData(s.Store.Query(ctx, sqlf.Sprintf(diagnosticsQuery, bundleID, prefix+"%")))
 	if err != nil {
-		return nil, 0, pkgerrors.Wrap(err, "s.getPathsWithPrefix")
+		return nil, 0, err
 	}
 
-	// TODO(efritz) - we may need to store the diagnostic count outside of the
-	// document so that we can efficiently skip over results that we've already
-	// encountered.
-
+	// TODO(efritz) - this is inefficient for large documents. We need to store the total number of diagnostics
+	// along-side the document so that we can determine which documents to skip and how many to retrieve. Right
+	// now we pull back every matching document, which can be large in large indexes.
 	totalCount := 0
-	var diagnostics []Diagnostic
-	for _, path := range paths {
-		documentData, exists, err := s.getDocumentData(ctx, bundleID, path)
-		if err != nil {
-			return nil, 0, pkgerrors.Wrap(err, "s.getDocumentData")
-		}
-		if !exists {
-			return nil, 0, nil
-		}
 
-		totalCount += len(documentData.Diagnostics)
+	diagnostics := make([]Diagnostic, 0, take)
+	for _, documentData := range documentData {
+		totalCount += len(documentData.Document.Diagnostics)
 
-		for _, diagnostic := range documentData.Diagnostics {
+		for _, diagnostic := range documentData.Document.Diagnostics {
 			skip--
+
 			if skip < 0 && len(diagnostics) < take {
 				diagnostics = append(diagnostics, Diagnostic{
-					DumpID: bundleID,
-					Path:   path,
-					DiagnosticData: DiagnosticData{
-						Severity:       diagnostic.Severity,
-						Code:           diagnostic.Code,
-						Message:        diagnostic.Message,
-						Source:         diagnostic.Source,
-						StartLine:      diagnostic.StartLine,
-						StartCharacter: diagnostic.StartCharacter,
-						EndLine:        diagnostic.EndLine,
-						EndCharacter:   diagnostic.EndCharacter,
-					},
+					DumpID:         bundleID,
+					Path:           documentData.Path,
+					DiagnosticData: diagnostic,
 				})
 			}
 		}
@@ -267,6 +241,11 @@ func (s *Store) Diagnostics(ctx context.Context, bundleID int, prefix string, sk
 
 	return diagnostics, totalCount, nil
 }
+
+const diagnosticsQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/bundle.go:Diagnostics
+SELECT dump_id, path, data FROM lsif_data_documents WHERE dump_id = %s AND path LIKE %s ORDER BY path
+`
 
 // MonikersByPosition returns all monikers attached ranges containing the given position. If multiple
 // ranges contain the position, then this method will return multiple sets of monikers. Each slice
@@ -281,22 +260,18 @@ func (s *Store) MonikersByPosition(ctx context.Context, bundleID int, path strin
 	}})
 	defer endObservation(1, observation.Args{})
 
-	documentData, ranges, exists, err := s.getRangeByPosition(ctx, bundleID, path, line, character)
+	documentData, exists, err := s.scanFirstDocumentData(s.Store.Query(ctx, sqlf.Sprintf(documentQuery, bundleID, path)))
 	if err != nil || !exists {
-		return nil, pkgerrors.Wrap(err, "s.getRangeByPosition")
+		return nil, err
 	}
 
 	var monikerData [][]MonikerData
-	for _, r := range ranges {
+	for _, r := range FindRanges(documentData.Document.Ranges, line, character) {
 		var batch []MonikerData
 		for _, monikerID := range r.MonikerIDs {
-			moniker, exists := documentData.Monikers[monikerID]
-			if !exists {
-				log15.Warn("malformed bundle: unknown moniker", "bundleID", bundleID, "path", path, "id", monikerID)
-				continue
+			if moniker, exists := documentData.Document.Monikers[monikerID]; exists {
+				batch = append(batch, moniker)
 			}
-
-			batch = append(batch, moniker)
 		}
 
 		monikerData = append(monikerData, batch)
@@ -318,23 +293,35 @@ func (s *Store) MonikerResults(ctx context.Context, bundleID int, tableName, sch
 	}})
 	defer endObservation(1, observation.Args{})
 
-	var rows []LocationData
-	var totalCount int
-	if tableName == "definitions" {
-		if rows, totalCount, err = s.readDefinitions(ctx, bundleID, scheme, identifier, skip, take); err != nil {
-			err = pkgerrors.Wrap(err, "store.ReadDefinitions")
-		}
-	} else if tableName == "references" {
-		if rows, totalCount, err = s.readReferences(ctx, bundleID, scheme, identifier, skip, take); err != nil {
-			err = pkgerrors.Wrap(err, "store.ReadReferences")
-		}
-	}
-
-	if err != nil {
+	locationData, exists, err := s.scanFirstLocations(s.Store.Query(ctx, sqlf.Sprintf(
+		monikerResultsQuery,
+		sqlf.Sprintf(fmt.Sprintf("lsif_data_%s", tableName)),
+		bundleID,
+		scheme,
+		identifier,
+	)))
+	if err != nil || !exists {
 		return nil, 0, err
 	}
 
-	var locations []Location
+	rows := locationData.Locations
+	totalCount := len(locationData.Locations)
+
+	if skip != 0 || take != 0 {
+		if lo := skip; lo >= len(rows) {
+			// Skip lands past result set, return nothing
+			rows = nil
+		} else {
+			hi := skip + take
+			if hi >= len(rows) {
+				hi = len(rows)
+			}
+
+			rows = rows[lo:hi]
+		}
+	}
+
+	locations := make([]Location, 0, len(rows))
 	for _, row := range rows {
 		locations = append(locations, Location{
 			DumpID: bundleID,
@@ -346,6 +333,11 @@ func (s *Store) MonikerResults(ctx context.Context, bundleID int, tableName, sch
 	return locations, totalCount, nil
 }
 
+const monikerResultsQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/bundles.go:MonikerResults
+SELECT scheme, identifier, data FROM %s WHERE dump_id = %s AND scheme = %s AND identifier = %s
+`
+
 // PackageInformation looks up package information data by identifier.
 func (s *Store) PackageInformation(ctx context.Context, bundleID int, path, packageInformationID string) (_ PackageInformationData, _ bool, err error) {
 	ctx, endObservation := s.operations.packageInformation.With(ctx, &err, observation.Args{LogFields: []log.Field{
@@ -355,210 +347,115 @@ func (s *Store) PackageInformation(ctx context.Context, bundleID int, path, pack
 	}})
 	defer endObservation(1, observation.Args{})
 
-	documentData, exists, err := s.getDocumentData(ctx, bundleID, path)
-	if err != nil {
-		return PackageInformationData{}, false, pkgerrors.Wrap(err, "s.getDocumentData")
-	}
-	if !exists {
-		return PackageInformationData{}, false, nil
+	documentData, exists, err := s.scanFirstDocumentData(s.Store.Query(ctx, sqlf.Sprintf(packageInformationQuery, bundleID, path)))
+	if err != nil || !exists {
+		return PackageInformationData{}, false, err
 	}
 
-	packageInformationData, exists := documentData.PackageInformation[ID(packageInformationID)]
-	if exists {
-		return PackageInformationData{
-			Name:    packageInformationData.Name,
-			Version: packageInformationData.Version,
-		}, true, nil
-	}
-
-	return PackageInformationData{}, false, nil
+	packageInformationData, exists := documentData.Document.PackageInformation[ID(packageInformationID)]
+	return packageInformationData, exists, nil
 }
 
-// hover returns the hover text locations for the given range.
-func (s *Store) hover(ctx context.Context, bundleID int, path string, documentData DocumentData, r RangeData) (string, bool, error) {
-	if r.HoverResultID == "" {
-		return "", false, nil
-	}
+const packageInformationQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/bundle.go:PackageInformation
+SELECT dump_id, path, data FROM lsif_data_documents WHERE dump_id = %s AND path = %s LIMIT 1
+`
 
-	text, exists := documentData.HoverResults[r.HoverResultID]
-	if !exists {
-		log15.Warn("malformed bundle: unknown hover result", "bundleID", bundleID, "path", path, "id", r.HoverResultID)
-		return "", false, nil
-	}
-
-	return text, true, nil
-}
-
-func (s *Store) getPathsWithPrefix(ctx context.Context, bundleID int, prefix string) (_ []string, err error) {
-	return s.pathsWithPrefix(ctx, bundleID, prefix)
-}
-
-// getDocumentData fetches and unmarshals the document data or the given path.
-func (s *Store) getDocumentData(ctx context.Context, bundleID int, path string) (_ DocumentData, _ bool, err error) {
-	documentData, ok, err := s.readDocument(ctx, bundleID, path)
-	if err != nil {
-		return DocumentData{}, false, pkgerrors.Wrap(err, "store.ReadDocument")
-	}
-	return documentData, ok, nil
-}
-
-// getRangeByPosition returns the ranges the given position. The order of the output slice is "outside-in",
-// so that earlier ranges properly enclose later ranges.
-func (s *Store) getRangeByPosition(ctx context.Context, bundleID int, path string, line, character int) (DocumentData, []RangeData, bool, error) {
-	documentData, exists, err := s.getDocumentData(ctx, bundleID, path)
-	if err != nil {
-		return DocumentData{}, nil, false, pkgerrors.Wrap(err, "s.getDocumentData")
-	}
-	if !exists {
-		return DocumentData{}, nil, false, nil
-	}
-
-	return documentData, FindRanges(documentData.Ranges, line, character), true, nil
-}
+var ErrNoMetadata = errors.New("no rows in meta table")
 
 // locations returns the locations for the given definition or reference identifiers.
 func (s *Store) locations(ctx context.Context, bundleID int, ids []ID) (map[ID][]Location, error) {
-	results, err := s.getResultsByIDs(ctx, bundleID, ids)
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	numResultChunks, exists, err := basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(locationsMetaQuery, bundleID)))
 	if err != nil {
-		return nil, pkgerrors.Wrap(err, "s.getResultByID")
+		return nil, err
+	}
+	if !exists {
+		return nil, ErrNoMetadata
 	}
 
-	locationWrapper, err := s.convertRangesToLocations(ctx, bundleID, results)
+	resultChunkIndexMap := map[int]struct{}{}
+	for _, id := range ids {
+		resultChunkIndexMap[HashKey(id, numResultChunks)] = struct{}{}
+	}
+
+	indexes := make([]*sqlf.Query, 0, len(resultChunkIndexMap))
+	for index := range resultChunkIndexMap {
+		indexes = append(indexes, sqlf.Sprintf("%s", index))
+	}
+
+	resultChunkData, err := s.scanQualifiedResultChunkData(s.Store.Query(ctx, sqlf.Sprintf(locationsResultChunkQuery, bundleID, sqlf.Join(indexes, ","))))
 	if err != nil {
-		return nil, pkgerrors.Wrap(err, "s.convertRangesToLocations")
+		return nil, err
 	}
 
-	return locationWrapper, nil
-}
+	resultChunksByIndex := map[int]ResultChunkData{}
+	for _, resultChunkData := range resultChunkData {
+		resultChunksByIndex[resultChunkData.Index] = resultChunkData.ResultChunk
+	}
 
-// getResultsByIDs fetches and unmarshals a definition or reference results for the given identifiers.
-func (s *Store) getResultsByIDs(ctx context.Context, bundleID int, ids []ID) (map[ID][]DocumentPathRangeID, error) {
-	xids := map[int]struct{}{}
+	locationsByResultID := map[ID]map[string][]ID{}
 	for _, id := range ids {
-		index, err := s.resultChunkID(ctx, bundleID, id)
-		if err != nil {
-			return nil, err
-		}
-
-		xids[index] = struct{}{}
-	}
-
-	resultChunks := map[int]ResultChunkData{}
-	for index := range xids {
-		resultChunkData, exists, err := s.getResultChunkByID(ctx, bundleID, index)
-		if err != nil {
-			return nil, pkgerrors.Wrap(err, "s.getResultChunkByID")
-		}
-		if !exists {
-			log15.Warn("malformed bundle: unknown result chunk", "bundleID", bundleID, "index", index)
-			continue
-		}
-
-		resultChunks[index] = resultChunkData
-	}
-
-	data := map[ID][]DocumentPathRangeID{}
-
-	for _, id := range ids {
-		index, err := s.resultChunkID(ctx, bundleID, id)
-		if err != nil {
-			return nil, err
-		}
-
-		resultChunkData := resultChunks[index]
+		resultChunkData := resultChunksByIndex[HashKey(id, numResultChunks)]
 
 		documentIDRangeIDs, exists := resultChunkData.DocumentIDRangeIDs[id]
 		if !exists {
-			log15.Warn("malformed bundle: unknown result", "bundleID", bundleID, "index", index, "id", id)
 			continue
 		}
 
-		var resultData []DocumentPathRangeID
+		resultData := map[string][]ID{}
 		for _, documentIDRangeID := range documentIDRangeIDs {
 			path, ok := resultChunkData.DocumentPaths[documentIDRangeID.DocumentID]
 			if !ok {
-				log15.Warn("malformed bundle: unknown document path", "bundleID", bundleID, "index", index, "id", documentIDRangeID.DocumentID)
 				continue
 			}
 
-			resultData = append(resultData, DocumentPathRangeID{
-				Path:    path,
-				RangeID: documentIDRangeID.RangeID,
-			})
+			resultData[path] = append(resultData[path], documentIDRangeID.RangeID)
 		}
 
-		data[id] = resultData
+		locationsByResultID[id] = resultData
 	}
 
-	return data, nil
-}
+	var paths []*sqlf.Query
+	for _, locations := range locationsByResultID {
+		for path := range locations {
+			paths = append(paths, sqlf.Sprintf("%s", path))
+		}
+	}
 
-// getResultChunkByID fetches and unmarshals the result chunk data with the given identifier.
-func (s *Store) getResultChunkByID(ctx context.Context, bundleID int, id int) (_ ResultChunkData, _ bool, err error) {
-	resultChunkData, ok, err := s.readResultChunk(ctx, bundleID, id)
+	if len(paths) == 0 {
+		return nil, nil
+	}
+
+	documentData, err := s.scanDocumentData(s.Store.Query(ctx, sqlf.Sprintf(locationsDocumentQuery, bundleID, sqlf.Join(paths, ","))))
 	if err != nil {
-		return ResultChunkData{}, false, pkgerrors.Wrap(err, "store.ReadResultChunk")
-	}
-	return resultChunkData, ok, nil
-}
-
-// resultChunkID returns the identifier of the result chunk that contains the given identifier.
-func (s *Store) resultChunkID(ctx context.Context, bundleID int, id ID) (int, error) {
-	// TODO(efritz) - keep a cache
-	meta, err := s.readMeta(ctx, bundleID)
-	if err != nil {
-		return 0, pkgerrors.Wrap(err, "store.ReadMeta")
+		return nil, err
 	}
 
-	return HashKey(id, meta.NumResultChunks), nil
-}
-
-// convertRangesToLocations converts pairs of document paths and range identifiers to a list of locations.
-func (s *Store) convertRangesToLocations(ctx context.Context, bundleID int, pairs map[ID][]DocumentPathRangeID) (map[ID][]Location, error) {
-	// We potentially have to open a lot of documents. Reduce possible pressure on the
-	// cache by ordering our queries so we only have to read and unmarshal each document
-	// once.
-
-	groupedResults := map[string][]ID{}
-	for _, resultData := range pairs {
-		for _, documentPathRangeID := range resultData {
-			groupedResults[documentPathRangeID.Path] = append(groupedResults[documentPathRangeID.Path], documentPathRangeID.RangeID)
-		}
-	}
-
-	documents := map[string]DocumentData{}
-	for path := range groupedResults {
-		documentData, exists, err := s.getDocumentData(ctx, bundleID, path)
-		if err != nil {
-			return nil, pkgerrors.Wrap(err, "s.getDocumentData")
-		}
-
-		if !exists {
-			log15.Warn("malformed bundle: unknown document", "bundleID", bundleID, "path", path)
-			continue
-		}
-
-		documents[path] = documentData
+	documentsByPath := make(map[string]DocumentData, len(documentData))
+	for _, documentData := range documentData {
+		documentsByPath[documentData.Path] = documentData.Document
 	}
 
 	locationsByID := map[ID][]Location{}
-	for id, resultData := range pairs {
+	for _, id := range ids {
 		var locations []Location
-		for _, documentPathRangeID := range resultData {
-			path := documentPathRangeID.Path
-			rangeID := documentPathRangeID.RangeID
+		for path, rangeIDs := range locationsByResultID[id] {
+			for _, rangeID := range rangeIDs {
+				r, exists := documentsByPath[path].Ranges[rangeID]
+				if !exists {
+					continue
+				}
 
-			r, exists := documents[path].Ranges[rangeID]
-			if !exists {
-				log15.Warn("malformed bundle: unknown range", "bundleID", bundleID, "path", path, "id", id)
-				continue
+				locations = append(locations, Location{
+					DumpID: bundleID,
+					Path:   path,
+					Range:  newRange(r.StartLine, r.StartCharacter, r.EndLine, r.EndCharacter),
+				})
 			}
-
-			locations = append(locations, Location{
-				DumpID: bundleID,
-				Path:   path,
-				Range:  newRange(r.StartLine, r.StartCharacter, r.EndLine, r.EndCharacter),
-			})
 		}
 
 		sort.Slice(locations, func(i, j int) bool {
@@ -575,6 +472,21 @@ func (s *Store) convertRangesToLocations(ctx context.Context, bundleID int, pair
 	return locationsByID, nil
 }
 
+const locationsMetaQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/bundle.go:locations
+SELECT num_result_chunks FROM lsif_data_metadata WHERE dump_id = %s
+`
+
+const locationsResultChunkQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/bundle.go:locations
+SELECT dump_id, idx, data FROM lsif_data_result_chunks WHERE dump_id = %s AND idx IN (%s)
+`
+
+const locationsDocumentQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/bundle.go:locations
+SELECT dump_id, path, data FROM lsif_data_documents WHERE dump_id = %s AND path IN (%s)
+`
+
 // compareBundleRanges returns true if r1's start position occurs before r2's start position.
 func compareBundleRanges(r1, r2 Range) bool {
 	cmp := r1.Start.Line - r2.Start.Line
@@ -583,4 +495,35 @@ func compareBundleRanges(r1, r2 Range) bool {
 	}
 
 	return cmp < 0
+}
+
+func newRange(startLine, startCharacter, endLine, endCharacter int) Range {
+	return Range{
+		Start: Position{
+			Line:      startLine,
+			Character: startCharacter,
+		},
+		End: Position{
+			Line:      endLine,
+			Character: endCharacter,
+		},
+	}
+}
+
+// extractResultIDs extracts result identifiers from each range in the given list.
+// The output list is relative to the input range list, but with duplicates removed.
+func extractResultIDs(ranges []RangeData, fn func(r RangeData) ID) []ID {
+	resultIDs := make([]ID, 0, len(ranges))
+	resultIDMap := make(map[ID]struct{}, len(ranges))
+
+	for _, r := range ranges {
+		resultID := fn(r)
+
+		if _, ok := resultIDMap[resultID]; !ok && resultID != "" {
+			resultIDs = append(resultIDs, resultID)
+			resultIDMap[resultID] = struct{}{}
+		}
+	}
+
+	return resultIDs
 }

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -68,8 +69,14 @@ func (s PerforceSource) makeRepo(depot string) *types.Repo {
 	cloneURL := composePerforceCloneURL(s.config.P4User, s.config.P4Passwd, s.config.P4Port, depot)
 
 	return &types.Repo{
-		Name: api.RepoName(name),
-		URI:  name,
+		Name: reposource.PerforceRepoName(
+			s.config.RepositoryPathPattern,
+			name,
+		),
+		URI: string(reposource.PerforceRepoName(
+			"",
+			name,
+		)),
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          depot,
 			ServiceType: extsvc.TypePerforce,

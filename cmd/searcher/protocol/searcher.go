@@ -22,6 +22,10 @@ type Request struct {
 	// "599cba5e7b6137d46ddf58fb1765f5d928e69604"
 	Commit api.CommitID
 
+	// Branch is used for structural search as an alternative to Commit
+	// because Zoekt only takes branch names
+	Branch string
+
 	PatternInfo
 
 	// The amount of time to wait for a repo archive to fetch.

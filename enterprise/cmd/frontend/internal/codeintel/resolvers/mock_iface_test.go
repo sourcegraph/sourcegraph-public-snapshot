@@ -9,6 +9,7 @@ import (
 	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	lsifstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"sync"
+	"time"
 )
 
 // MockCodeIntelAPI is a mock implementation of the CodeIntelAPI interface
@@ -829,6 +830,9 @@ func (c CodeIntelAPIReferencesFuncCall) Results() []interface{} {
 // github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers)
 // used for unit testing.
 type MockDBStore struct {
+	// CommitGraphMetadataFunc is an instance of a mock function object
+	// controlling the behavior of the method CommitGraphMetadata.
+	CommitGraphMetadataFunc *DBStoreCommitGraphMetadataFunc
 	// DeleteIndexByIDFunc is an instance of a mock function object
 	// controlling the behavior of the method DeleteIndexByID.
 	DeleteIndexByIDFunc *DBStoreDeleteIndexByIDFunc
@@ -892,6 +896,11 @@ type MockDBStore struct {
 // return zero values for all results, unless overwritten.
 func NewMockDBStore() *MockDBStore {
 	return &MockDBStore{
+		CommitGraphMetadataFunc: &DBStoreCommitGraphMetadataFunc{
+			defaultHook: func(context.Context, int) (bool, *time.Time, error) {
+				return false, nil, nil
+			},
+		},
 		DeleteIndexByIDFunc: &DBStoreDeleteIndexByIDFunc{
 			defaultHook: func(context.Context, int) (bool, error) {
 				return false, nil
@@ -989,6 +998,9 @@ func NewMockDBStore() *MockDBStore {
 // methods delegate to the given implementation, unless overwritten.
 func NewMockDBStoreFrom(i DBStore) *MockDBStore {
 	return &MockDBStore{
+		CommitGraphMetadataFunc: &DBStoreCommitGraphMetadataFunc{
+			defaultHook: i.CommitGraphMetadata,
+		},
 		DeleteIndexByIDFunc: &DBStoreDeleteIndexByIDFunc{
 			defaultHook: i.DeleteIndexByID,
 		},
@@ -1044,6 +1056,118 @@ func NewMockDBStoreFrom(i DBStore) *MockDBStore {
 			defaultHook: i.UpdateIndexConfigurationByRepositoryID,
 		},
 	}
+}
+
+// DBStoreCommitGraphMetadataFunc describes the behavior when the
+// CommitGraphMetadata method of the parent MockDBStore instance is invoked.
+type DBStoreCommitGraphMetadataFunc struct {
+	defaultHook func(context.Context, int) (bool, *time.Time, error)
+	hooks       []func(context.Context, int) (bool, *time.Time, error)
+	history     []DBStoreCommitGraphMetadataFuncCall
+	mutex       sync.Mutex
+}
+
+// CommitGraphMetadata delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockDBStore) CommitGraphMetadata(v0 context.Context, v1 int) (bool, *time.Time, error) {
+	r0, r1, r2 := m.CommitGraphMetadataFunc.nextHook()(v0, v1)
+	m.CommitGraphMetadataFunc.appendCall(DBStoreCommitGraphMetadataFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the CommitGraphMetadata
+// method of the parent MockDBStore instance is invoked and the hook queue
+// is empty.
+func (f *DBStoreCommitGraphMetadataFunc) SetDefaultHook(hook func(context.Context, int) (bool, *time.Time, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CommitGraphMetadata method of the parent MockDBStore instance inovkes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *DBStoreCommitGraphMetadataFunc) PushHook(hook func(context.Context, int) (bool, *time.Time, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBStoreCommitGraphMetadataFunc) SetDefaultReturn(r0 bool, r1 *time.Time, r2 error) {
+	f.SetDefaultHook(func(context.Context, int) (bool, *time.Time, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBStoreCommitGraphMetadataFunc) PushReturn(r0 bool, r1 *time.Time, r2 error) {
+	f.PushHook(func(context.Context, int) (bool, *time.Time, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *DBStoreCommitGraphMetadataFunc) nextHook() func(context.Context, int) (bool, *time.Time, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBStoreCommitGraphMetadataFunc) appendCall(r0 DBStoreCommitGraphMetadataFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBStoreCommitGraphMetadataFuncCall objects
+// describing the invocations of this function.
+func (f *DBStoreCommitGraphMetadataFunc) History() []DBStoreCommitGraphMetadataFuncCall {
+	f.mutex.Lock()
+	history := make([]DBStoreCommitGraphMetadataFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBStoreCommitGraphMetadataFuncCall is an object that describes an
+// invocation of method CommitGraphMetadata on an instance of MockDBStore.
+type DBStoreCommitGraphMetadataFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 bool
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 *time.Time
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBStoreCommitGraphMetadataFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBStoreCommitGraphMetadataFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // DBStoreDeleteIndexByIDFunc describes the behavior when the
