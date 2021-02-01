@@ -1,6 +1,7 @@
 package resolvers
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"time"
@@ -92,16 +93,24 @@ func (r *resolver) IndexConfiguration(ctx context.Context, repositoryID int) ([]
 		return nil, err
 	}
 
-	if !exists {
-		maybeConfig, err := r.indexEnqueuer.InferIndexConfiguration(ctx, repositoryID)
-		if err != nil || maybeConfig == nil {
-			return nil, err
-		}
-
-		return json.Marshal(*maybeConfig)
+	if exists {
+		return configuration.Data, nil
 	}
 
-	return configuration.Data, nil
+	// nothing in DB, prepopulate with a best guess from the inference engine
+	maybeConfig, err := r.indexEnqueuer.InferIndexConfiguration(ctx, repositoryID)
+	if err != nil || maybeConfig == nil {
+		return nil, err
+	}
+
+	marshaled, err := config.MarshalJSON(*maybeConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	var indented bytes.Buffer
+	json.Indent(&indented, marshaled, "", "\t")
+	return indented.Bytes(), nil
 }
 
 func (r *resolver) UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, configuration string) error {
