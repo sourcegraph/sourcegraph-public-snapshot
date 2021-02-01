@@ -1,5 +1,5 @@
 import React from 'react'
-import { LinkWithIconOnlyTooltip } from '../../../../components/LinkWithIconOnlyTooltip'
+import { LinkWithIcon } from '../../../../components/LinkWithIcon'
 import { CampaignsIconNav } from '../../icons'
 import classNames from 'classnames'
 
@@ -11,7 +11,7 @@ interface Props {
  * An item in {@link GlobalNavbar} that links to the campaigns area.
  */
 export const CampaignsNavItem: React.FunctionComponent<Props> = ({ className }) => (
-    <LinkWithIconOnlyTooltip
+    <LinkWithIcon
         to="/campaigns"
         text="Campaigns"
         icon={CampaignsIconNav}
