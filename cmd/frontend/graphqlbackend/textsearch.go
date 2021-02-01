@@ -584,10 +584,20 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 		go func() {
 			// TODO limitHit, handleRepoSearchResult
 			defer wg.Done()
-			for event := range indexed.Search(ctx) {
-				tr.LogFields(otlog.Int("matches.len", len(event.Results)), otlog.Error(event.Error))
-				send(event.SearchEvent)
-				setError(ctx, stringerFunc("indexed"), event.Error)
+			c := make(chan SearchEvent)
+			e := make(chan error, 1)
+			go func() {
+				defer close(c)
+				e <- indexed.doSearch(ctx, c)
+			}()
+			for event := range c {
+				tr.LogFields(otlog.Int("matches.len", len(event.Results)))
+				send(event)
+			}
+			err := <-e
+			if err != nil {
+				setError(ctx, stringerFunc("indexed"), err)
+				tr.LogFields(otlog.Error(err))
 			}
 		}()
 	}
