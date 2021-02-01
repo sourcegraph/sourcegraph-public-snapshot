@@ -343,7 +343,6 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 
 		mu                sync.Mutex
 		searchErr         error
-		resultCount       int
 		overLimitCanceled bool // canceled because we were over the limit
 	)
 	if mockSearchFilesInRepos != nil {
@@ -461,28 +460,6 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 		}
 	}
 
-	// send assumes the caller does not hold mu.
-	send := func(event SearchEvent) {
-		stream <- event
-
-		// Stop searching if we have found enough results.
-		mu.Lock()
-		resultCount += len(event.Results)
-		if limit := int(args.PatternInfo.FileMatchLimit); resultCount > limit && !overLimitCanceled {
-			cancel()
-			tr.LazyPrintf("cancel due to result size: %d > %d", resultCount, limit)
-			overLimitCanceled = true
-
-			// Inform stream we have found more than limit results
-			stream <- SearchEvent{
-				Stats: streaming.Stats{
-					IsLimitHit: true,
-				},
-			}
-		}
-		mu.Unlock()
-	}
-
 	// callSearcherOverRepos calls searcher on a set of repos.
 	// searcherReposFilteredFiles is an optional map of {repo name => file list}
 	// that forces the searcher to only include the file list in the
@@ -563,10 +540,10 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 					}
 					// non-diff search reports timeout through err, so pass false for timedOut
 					repoCommon, fatalErr := handleRepoSearchResult(repoRev, repoLimitHit, false, err)
-					send(SearchEvent{
+					stream <- SearchEvent{
 						Results: fileMatchResultsToSearchResults(matches),
 						Stats:   repoCommon,
-					})
+					}
 					setError(ctx, repoRev, fatalErr)
 				}(limitCtx, limitDone) // ends the Go routine for a call to searcher for a repo
 			} // ends the for loop iterating over repo's revs
@@ -584,11 +561,8 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 		go func() {
 			// TODO limitHit, handleRepoSearchResult
 			defer wg.Done()
-			for event := range indexed.Search(ctx) {
-				tr.LogFields(otlog.Int("matches.len", len(event.Results)), otlog.Error(event.Error))
-				send(event.SearchEvent)
-				setError(ctx, stringerFunc("indexed"), event.Error)
-			}
+			err := indexed.doSearch(ctx, stream)
+			setError(ctx, stringerFunc("indexed"), err)
 		}()
 	}
 
@@ -614,9 +588,9 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 			source := stringerFunc("structural-indexed")
 			for event := range indexed.Search(ctx) {
 				tr.LogFields(otlog.Int("matches.len", len(event.Results)), otlog.Error(event.Error))
-				send(SearchEvent{
+				stream <- SearchEvent{
 					Stats: event.Stats,
-				})
+				}
 				setError(ctx, source, event.Error)
 
 				// For structural search, we run callSearcherOverRepos

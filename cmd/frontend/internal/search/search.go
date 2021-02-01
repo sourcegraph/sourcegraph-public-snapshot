@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -69,10 +70,10 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	resultsStream, resultsStreamDone := newResultsStream(ctx, search)
-
+	limit := search.Inputs().MaxResults()
 	progress := progressAggregator{
 		Start: time.Now(),
-		Limit: search.Inputs().MaxResults(),
+		Limit: limit,
 	}
 
 	sendProgress := func() {
@@ -105,6 +106,8 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	first := true
 
+	var resultCount int
+	var overLimitCanceled bool
 	for {
 		var event graphqlbackend.SearchEvent
 		var ok bool
@@ -125,6 +128,17 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		progress.Update(event)
 		filters.Update(event)
 
+		resultCount += len(event.Results)
+		if resultCount > limit && !overLimitCanceled {
+			progress.Update(graphqlbackend.SearchEvent{
+				Stats: streaming.Stats{
+					IsLimitHit: true,
+				},
+			})
+			cancel()
+			overLimitCanceled = true
+			tr.LazyPrintf("cancel due to result size: %d > %d", resultCount, limit)
+		}
 		for _, result := range event.Results {
 			if fm, ok := result.ToFileMatch(); ok {
 				if syms := fm.Symbols(); len(syms) > 0 {
