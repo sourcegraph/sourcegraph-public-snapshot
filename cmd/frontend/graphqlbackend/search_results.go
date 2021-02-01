@@ -25,6 +25,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -676,16 +677,11 @@ func (r *searchResolver) evaluateAndStream(ctx context.Context, scopeParameters 
 	if r.resultChannel == nil {
 		return r.evaluateAnd(ctx, scopeParameters, operands)
 	}
-	// For streaming search we want to run the evaluation of AND expressions in batch
-	// mode. We copy r to r2 and replace the result channel with a sink.
+	// For streaming search we rely on batch evaluation of
+	// results. Implementing true streaming on AND expressions will require
+	// support in backends (eg directly using Zoekt) or ANDing per repo.
 	r2 := *r
-	sink := make(chan SearchEvent)
-	defer close(sink)
-	go func() {
-		for range sink {
-		}
-	}()
-	r2.resultChannel = sink
+	r2.resultChannel = nil
 
 	result, err := r2.evaluateAnd(ctx, scopeParameters, operands)
 	r.resultChannel <- SearchEvent{
@@ -1189,7 +1185,7 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Te
 	}
 
 	if opts.fileMatchLimit == 0 {
-		opts.fileMatchLimit = int32(r.Limit)
+		opts.fileMatchLimit = r.maxResults()
 	}
 
 	return getPatternInfo(r.Query, opts)
@@ -1650,13 +1646,16 @@ func statsDeref(s *streaming.Stats) streaming.Stats {
 }
 
 // isGlobalSearch returns true if the query does not contain repo, repogroup, or
-// repohasfile filters. For structural queries and queries with version context
-// isGlobalSearch always return false.
+// repohasfile filters. For structural queries, queries with version context
+// isGlobalSearch, and queries with non-global search context always return false.
 func (r *searchResolver) isGlobalSearch() bool {
 	if r.PatternType == query.SearchTypeStructural {
 		return false
 	}
 	if r.VersionContext != nil && *r.VersionContext != "" {
+		return false
+	}
+	if envvar.SourcegraphDotComMode() && r.SearchContextSpec != nil && !searchcontexts.IsGlobalSearchContextSpec(*r.SearchContextSpec) {
 		return false
 	}
 	return len(r.Query.Values(query.FieldRepo)) == 0 && len(r.Query.Values(query.FieldRepoGroup)) == 0 && len(r.Query.Values(query.FieldRepoHasFile)) == 0
@@ -1825,14 +1824,14 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
-				agg.doRepoSearch(ctx, &args, int32(r.Limit))
+				agg.doRepoSearch(ctx, &args, r.maxResults())
 			})
 		case "symbol":
 			wg := waitGroup(len(resultTypes) == 1)
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
-				agg.doSymbolSearch(ctx, &args, r.Limit)
+				agg.doSymbolSearch(ctx, &args, int(r.maxResults()))
 			})
 		case "file", "path":
 			if searchedFileContentsOrPaths || args.Mode == search.NoFilePath {
@@ -1891,7 +1890,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		start:         start,
 		Stats:         common,
 		SearchResults: results,
-		limit:         r.Limit,
+		limit:         int(r.maxResults()),
 		alert:         alert,
 	}
 	return &resultsResolver, err

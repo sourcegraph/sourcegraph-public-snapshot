@@ -14,54 +14,52 @@ const { add } = storiesOf('web/codeintel/list/CodeIntelIndexesPage', module)
         },
     })
 
-add('Page', () => (
-    <EnterpriseWebStory>
-        {props => (
-            <CodeIntelIndexesPage
-                {...props}
-                now={now}
-                fetchLsifIndexes={fetch(
-                    {
-                        id: '1',
-                        state: LSIFIndexState.QUEUED,
-                        queuedAt: '2020-06-15T12:20:30+00:00',
-                        startedAt: null,
-                        finishedAt: null,
-                        placeInQueue: 3,
-                        failure: null,
-                    },
-                    {
-                        id: '2',
-                        state: LSIFIndexState.PROCESSING,
-                        queuedAt: '2020-06-15T12:20:30+00:00',
-                        startedAt: '2020-06-15T12:25:30+00:00',
-                        finishedAt: null,
-                        failure: null,
-                        placeInQueue: null,
-                    },
-                    {
-                        id: '3',
-                        state: LSIFIndexState.COMPLETED,
-                        queuedAt: '2020-06-15T12:20:30+00:00',
-                        startedAt: '2020-06-15T12:25:30+00:00',
-                        finishedAt: '2020-06-15T12:30:30+00:00',
-                        failure: null,
-                        placeInQueue: null,
-                    },
-                    {
-                        id: '4',
-                        state: LSIFIndexState.ERRORED,
-                        queuedAt: '2020-06-15T12:20:30+00:00',
-                        startedAt: '2020-06-15T12:25:30+00:00',
-                        finishedAt: '2020-06-15T12:30:30+00:00',
-                        failure: 'Whoops! The server encountered a boo-boo handling this input.',
-                        placeInQueue: null,
-                    }
-                )}
-            />
-        )}
-    </EnterpriseWebStory>
-))
+add('Page', () => {
+    const fetchLsifIndexes = fetch(
+        {
+            id: '1',
+            state: LSIFIndexState.QUEUED,
+            queuedAt: '2020-06-15T12:20:30+00:00',
+            startedAt: null,
+            finishedAt: null,
+            placeInQueue: 3,
+            failure: null,
+        },
+        {
+            id: '2',
+            state: LSIFIndexState.PROCESSING,
+            queuedAt: '2020-06-15T12:20:30+00:00',
+            startedAt: '2020-06-15T12:25:30+00:00',
+            finishedAt: null,
+            failure: null,
+            placeInQueue: null,
+        },
+        {
+            id: '3',
+            state: LSIFIndexState.COMPLETED,
+            queuedAt: '2020-06-15T12:20:30+00:00',
+            startedAt: '2020-06-15T12:25:30+00:00',
+            finishedAt: '2020-06-15T12:30:30+00:00',
+            failure: null,
+            placeInQueue: null,
+        },
+        {
+            id: '4',
+            state: LSIFIndexState.ERRORED,
+            queuedAt: '2020-06-15T12:20:30+00:00',
+            startedAt: '2020-06-15T12:25:30+00:00',
+            finishedAt: '2020-06-15T12:30:30+00:00',
+            failure: 'Whoops! The server encountered a boo-boo handling this input.',
+            placeInQueue: null,
+        }
+    )
+
+    return (
+        <EnterpriseWebStory>
+            {props => <CodeIntelIndexesPage {...props} now={now} fetchLsifIndexes={fetchLsifIndexes} />}
+        </EnterpriseWebStory>
+    )
+})
 
 const fetch = (
     ...indexes: Omit<

@@ -11,9 +11,8 @@ import (
 const globalSearchContextName = "global"
 
 func ResolveSearchContextSpec(ctx context.Context, searchContextSpec string) (*types.SearchContext, error) {
-	// Empty search context spec resolves to global search context
-	if searchContextSpec == "" || searchContextSpec == globalSearchContextName {
-		return GetGlobalSearchContext(), nil
+	if IsGlobalSearchContextSpec(searchContextSpec) {
+		return &types.SearchContext{Name: globalSearchContextName}, nil
 	} else if len(searchContextSpec) > 0 && searchContextSpec[:1] == "@" {
 		name := searchContextSpec[1:]
 		namespace, err := database.GlobalNamespaces.GetByName(ctx, name)
@@ -26,6 +25,11 @@ func ResolveSearchContextSpec(ctx context.Context, searchContextSpec string) (*t
 		return &types.SearchContext{Name: name, UserID: &namespace.User}, nil
 	}
 	return nil, errors.New("search context spec does not have the correct format")
+}
+
+func IsGlobalSearchContextSpec(searchContextSpec string) bool {
+	// Empty search context spec resolves to global search context
+	return searchContextSpec == "" || searchContextSpec == globalSearchContextName
 }
 
 func GetGlobalSearchContext() *types.SearchContext {
