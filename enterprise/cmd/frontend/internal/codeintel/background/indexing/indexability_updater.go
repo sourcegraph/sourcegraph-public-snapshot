@@ -123,12 +123,12 @@ func (u *IndexabilityUpdater) queueRepository(ctx context.Context, repoUsageStat
 
 	oneDayAgo := time.Now().Add(time.Hour * 24)
 	uploads, count, err := u.dbStore.GetUploads(ctx, store.GetUploadsOptions{
-		RepositoryID:   repoUsageStatistics.RepositoryID,
-		VisibleAtTip:   true,
-		OldestFirst:    false,
-		Limit:          1,
-		Offset:         0,
-		UploadedAfter:  &oneDayAgo,
+		RepositoryID:  repoUsageStatistics.RepositoryID,
+		VisibleAtTip:  true,
+		OldestFirst:   false,
+		Limit:         1,
+		Offset:        0,
+		UploadedAfter: &oneDayAgo,
 	})
 	if err != nil {
 		return errors.Wrap(err, "dbstore.GetUploads")
