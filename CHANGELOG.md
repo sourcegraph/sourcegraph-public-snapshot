@@ -18,8 +18,7 @@ All notable changes to Sourcegraph are documented in this file.
 - New site config option `"log": { "sentry": { "backendDSN": "<REDACTED>" } }` to use a separate Sentry project for backend errors. [#17363](https://github.com/sourcegraph/sourcegraph/pull/17363)
 
 ### Changed
-
--
+- Secrets (such as access tokens and passwords) will now appear as REDACTED when editing external service config, and in graphql API responses. [#17261](https://github.com/sourcegraph/sourcegraph/issues/17261)
 
 ### Fixed
 
