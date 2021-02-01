@@ -55,7 +55,7 @@ export const CampaignStatsCard: React.FunctionComponent<CampaignStatsCardProps> 
                         {percentComplete}% complete
                     </span>
                 </div>
-                <div className="campaign-stats-card__divider mx-4" />
+                <div className="campaign-stats-card__divider d-none d-sm-block mx-4" />
                 <DiffStat {...diff} expandedCounts={true} separateLines={true} />
                 <div className="d-flex flex-wrap justify-content-end flex-grow-1">
                     <CampaignStatsTotalAction count={stats.total} />
