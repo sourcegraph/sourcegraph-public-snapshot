@@ -39,7 +39,7 @@ export function updatePassword(args: UpdatePasswordVariables): Observable<void> 
     )
 }
 
-export function createPassword(args: { newPassword: string }): Observable<void> {
+export function createPassword(args: CreatePasswordVariables): Observable<void> {
     return requestGraphQL<CreatePasswordResult, CreatePasswordVariables>(
         gql`
             mutation CreatePassword($newPassword: String!) {

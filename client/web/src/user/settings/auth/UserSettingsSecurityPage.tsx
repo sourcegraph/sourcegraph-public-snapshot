@@ -137,11 +137,11 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                             tap(() => this.setState({ loading: true })),
                             mergeMap(() =>
                                 (this.shouldShowOldPasswordInput()
-                                    ? createPassword({
+                                    ? updatePassword({
+                                          oldPassword: this.state.oldPassword,
                                           newPassword: this.state.newPassword,
                                       })
-                                    : updatePassword({
-                                          oldPassword: this.state.oldPassword,
+                                    : createPassword({
                                           newPassword: this.state.newPassword,
                                       })
                                 ).pipe(
