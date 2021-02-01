@@ -642,7 +642,7 @@ For each repository that's yielded by [`on`](#on) and matched by a [`workspaces.
 
 ### [Examples](#workspaces-examples)
 
-Defining JavaScript projects live in a monorepo by using the location of the `package.json` file as the root for each project:
+Defining JavaScript projects that live in a monorepo by using the location of the `package.json` file as the root for each project:
 
 ```yaml
 on:
