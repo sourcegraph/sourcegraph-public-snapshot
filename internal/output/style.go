@@ -25,11 +25,12 @@ type style struct{ code string }
 func (s *style) String() string { return s.code }
 
 var (
-	StyleReset   = &style{"\033[0m"}
-	StyleLogo    = Fg256Color(57)
-	StylePending = Fg256Color(4)
-	StyleWarning = Fg256Color(124)
-	StyleSuccess = Fg256Color(2)
+	StyleReset      = &style{"\033[0m"}
+	StyleLogo       = Fg256Color(57)
+	StylePending    = Fg256Color(4)
+	StyleWarning    = Fg256Color(124)
+	StyleSuccess    = Fg256Color(2)
+	StyleSuggestion = Fg256Color(244)
 
 	StyleBold      = &style{"\033[1m"}
 	StyleItalic    = &style{"\033[3m"}

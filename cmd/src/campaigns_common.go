@@ -380,6 +380,8 @@ func printExecutionError(out *output.Output, err error) {
 		writeErrs([]error{err})
 	}
 
+	out.Write("")
+	out.WriteLine(output.Line(output.EmojiLightbulb, output.StyleSuggestion, "The troubleshooting documentation can help to narrow down the cause of the errors: https://docs.sourcegraph.com/campaigns/references/troubleshooting"))
 }
 
 func flattenErrs(err error) (result []error) {
