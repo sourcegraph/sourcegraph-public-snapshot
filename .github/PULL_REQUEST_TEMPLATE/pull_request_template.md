@@ -10,7 +10,7 @@ Insert description here...
 
 
 <!-- Update the implementation steps that should be completed to implement the feature/bug fix/tech debt cleanup -->
-## Implementation
+## Progress
 - [ ] Implementation progress milestones
   - [ ] Milestone X
     - [ ] Task 1
