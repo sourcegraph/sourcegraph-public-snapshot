@@ -267,7 +267,7 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
             class="align-items-center d-flex"
           >
             <svg
-              class="mdi-icon user-avatar"
+              class="mdi-icon user-avatar icon-inline"
               fill="currentColor"
               height="24"
               id="target-user-avatar"
@@ -728,7 +728,7 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
             class="align-items-center d-flex"
           >
             <svg
-              class="mdi-icon user-avatar"
+              class="mdi-icon user-avatar icon-inline"
               fill="currentColor"
               height="24"
               id="target-user-avatar"
@@ -1199,7 +1199,7 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
             class="align-items-center d-flex"
           >
             <svg
-              class="mdi-icon user-avatar"
+              class="mdi-icon user-avatar icon-inline"
               fill="currentColor"
               height="24"
               id="target-user-avatar"
@@ -1641,7 +1641,7 @@ exports[`NavLinks authed self-hosted /search 1`] = `
             class="align-items-center d-flex"
           >
             <svg
-              class="mdi-icon user-avatar"
+              class="mdi-icon user-avatar icon-inline"
               fill="currentColor"
               height="24"
               id="target-user-avatar"

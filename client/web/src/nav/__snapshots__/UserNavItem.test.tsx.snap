@@ -90,6 +90,7 @@ exports[`UserNavItem simple 1`] = `
                           className="align-items-center d-flex"
                         >
                           <UserAvatar
+                            className="icon-inline"
                             size={48}
                             targetID="target-user-avatar"
                             user={
@@ -123,7 +124,7 @@ exports[`UserNavItem simple 1`] = `
                             }
                           >
                             <Memo(AccountCircleIcon)
-                              className="user-avatar"
+                              className="user-avatar icon-inline"
                               id="target-user-avatar"
                             />
                           </UserAvatar>
