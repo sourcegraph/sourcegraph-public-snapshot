@@ -78,8 +78,12 @@ func (r *externalServiceResolver) DisplayName() string {
 	return r.externalService.DisplayName
 }
 
-func (r *externalServiceResolver) Config() JSONCString {
-	return JSONCString(r.externalService.Config)
+func (r *externalServiceResolver) Config() (JSONCString, error) {
+	err := r.externalService.RedactConfigSecrets()
+	if err != nil {
+		return "", err
+	}
+	return JSONCString(r.externalService.Config), nil
 }
 
 func (r *externalServiceResolver) CreatedAt() DateTime {

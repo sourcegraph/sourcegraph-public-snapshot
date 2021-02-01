@@ -1,9 +1,9 @@
 import React from 'react'
-import { LinkWithIconOnlyTooltip } from '../components/LinkWithIconOnlyTooltip'
+import { LinkWithIcon } from '../components/LinkWithIcon'
 import { InsightsIcon } from './icon'
 
 export const InsightsNavItem: React.FunctionComponent = () => (
-    <LinkWithIconOnlyTooltip
+    <LinkWithIcon
         to="/insights"
         text="Insights"
         icon={InsightsIcon}

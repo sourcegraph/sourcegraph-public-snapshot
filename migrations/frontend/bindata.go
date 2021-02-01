@@ -94,6 +94,8 @@
 // 1528395778_add_syncer_error.up.sql (84B)
 // 1528395779_dirty_repositories_updated_at.down.sql (77B)
 // 1528395779_dirty_repositories_updated_at.up.sql (210B)
+// 1528395780_drop_secrets_sql.down.sql (404B)
+// 1528395780_drop_secrets_sql.up.sql (102B)
 
 package migrations
 
@@ -2042,6 +2044,46 @@ func _1528395779_dirty_repositories_updated_atUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395780_drop_secrets_sqlDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x74\x8e\xc1\x6e\xc2\x30\x10\x44\xef\xfe\x8a\x39\x82\x54\x10\x1c\x7a\xca\xc9\xa4\xab\x12\x29\x71\xd4\x60\x4a\x7b\x8a\xdc\x64\x01\xab\x90\x80\x6d\x50\xf9\xfb\x0a\x0a\x41\x95\xda\xe3\x3e\xed\xcc\xbc\x09\x3d\x27\x2a\x12\x62\x30\x40\xdc\xee\x2c\xd7\x30\x7e\x60\x3d\x96\xae\xdd\x22\xac\x19\x7e\x7f\x30\x7e\xcd\x35\xb6\x76\xe5\x4c\xb0\x6d\x83\xa5\xdd\xf0\x50\xc4\x05\x49\x4d\xd0\x72\x92\x12\x3c\x57\x8e\x83\x47\x4f\x00\x80\xad\xf1\x61\x57\xb6\x09\x50\xb9\x86\x9a\xa7\xe9\xc3\x85\xfb\xf6\xe0\x2a\x2e\xc3\x69\xc7\xa8\xd6\xc6\x99\x2a\xb0\xc3\xd1\xb8\x93\x6d\x56\xbd\xc7\x51\xff\xd7\x5b\xd7\xf2\x43\x3f\xf9\x54\x36\x66\xfb\x57\x72\x3c\xba\x45\x8f\x66\x73\x60\x04\xfe\xba\x4f\x8b\x7e\x24\x6e\xb2\x33\x7a\x99\x93\x8a\x3b\xdf\xd2\xd6\xa5\xe7\xfd\x25\x3a\xd3\xb2\xd0\x58\x24\x7a\x8a\xf1\x05\x24\x2a\x2e\x28\x23\xa5\x31\x79\xbf\x22\x95\x23\x4b\xd4\xab\x4c\xe7\xd4\xdd\xf2\xed\x7e\xc7\x32\x9e\x12\xc6\x91\x10\x32\xd5\x54\xfc\xb7\x87\x7c\xa1\xe8\xe9\x5c\x7b\xe5\x43\x5b\x9f\x25\xf3\x2c\x4b\x74\x24\xbe\x03\x00\x00\xff\xff\xc4\x72\x75\xeb\x94\x01\x00\x00")
+
+func _1528395780_drop_secrets_sqlDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395780_drop_secrets_sqlDownSql,
+		"1528395780_drop_secrets_sql.down.sql",
+	)
+}
+
+func _1528395780_drop_secrets_sqlDownSql() (*asset, error) {
+	bytes, err := _1528395780_drop_secrets_sqlDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395780_drop_secrets_sql.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xc9, 0xb1, 0x6, 0x2c, 0xda, 0x61, 0x47, 0x42, 0x39, 0x4e, 0xfc, 0xb9, 0x91, 0x9a, 0x1b, 0xea, 0xd5, 0x7c, 0x60, 0x23, 0xc4, 0xe2, 0xd, 0x83, 0x6a, 0xda, 0x70, 0x8, 0x5f, 0x3c, 0xdc, 0x7f}}
+	return a, nil
+}
+
+var __1528395780_drop_secrets_sqlUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\xd2\xd5\x55\x08\xc9\x48\x55\x48\x28\x4e\x4d\x2e\x4a\x2d\x29\x4e\x50\x28\x49\x4c\xca\x49\x55\xc8\x2c\x56\xc8\xcb\x2f\x51\x28\x2d\x4e\x4d\x51\x48\xcc\x4b\x51\xc8\x48\x04\x09\x28\x14\xa5\x26\xe7\x17\xa5\x14\xeb\x71\xb9\x04\xf9\x07\x28\x84\x38\x3a\xf9\xb8\x2a\x78\xba\x29\xb8\x46\x78\x06\x87\x04\x2b\x40\xcd\xb0\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x5b\x3d\xcf\x71\x66\x00\x00\x00")
+
+func _1528395780_drop_secrets_sqlUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395780_drop_secrets_sqlUpSql,
+		"1528395780_drop_secrets_sql.up.sql",
+	)
+}
+
+func _1528395780_drop_secrets_sqlUpSql() (*asset, error) {
+	bytes, err := _1528395780_drop_secrets_sqlUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395780_drop_secrets_sql.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x4c, 0x86, 0x82, 0xb4, 0x46, 0x7, 0x23, 0xab, 0xd, 0x8a, 0x11, 0xc2, 0x37, 0x2b, 0x1b, 0x16, 0x78, 0xad, 0xe3, 0xd0, 0xfe, 0xf6, 0x5c, 0x2a, 0x11, 0x11, 0x2d, 0xd8, 0x8c, 0xff, 0x45, 0x2e}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2227,6 +2269,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395778_add_syncer_error.up.sql":                                                     _1528395778_add_syncer_errorUpSql,
 	"1528395779_dirty_repositories_updated_at.down.sql":                                      _1528395779_dirty_repositories_updated_atDownSql,
 	"1528395779_dirty_repositories_updated_at.up.sql":                                        _1528395779_dirty_repositories_updated_atUpSql,
+	"1528395780_drop_secrets_sql.down.sql":                                                   _1528395780_drop_secrets_sqlDownSql,
+	"1528395780_drop_secrets_sql.up.sql":                                                     _1528395780_drop_secrets_sqlUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2367,6 +2411,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395778_add_syncer_error.up.sql":                                                     {_1528395778_add_syncer_errorUpSql, map[string]*bintree{}},
 	"1528395779_dirty_repositories_updated_at.down.sql":                                      {_1528395779_dirty_repositories_updated_atDownSql, map[string]*bintree{}},
 	"1528395779_dirty_repositories_updated_at.up.sql":                                        {_1528395779_dirty_repositories_updated_atUpSql, map[string]*bintree{}},
+	"1528395780_drop_secrets_sql.down.sql":                                                   {_1528395780_drop_secrets_sqlDownSql, map[string]*bintree{}},
+	"1528395780_drop_secrets_sql.up.sql":                                                     {_1528395780_drop_secrets_sqlUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

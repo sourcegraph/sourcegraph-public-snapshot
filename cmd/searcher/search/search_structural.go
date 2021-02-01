@@ -263,7 +263,7 @@ func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request) (matche
 	defer zipFile.Close()
 	defer os.Remove(zipFile.Name())
 
-	if err = writeZip(zipFile, zoektMatches); err != nil {
+	if err = writeZip(ctx, zipFile, zoektMatches); err != nil {
 		return nil, false, false, err
 	}
 

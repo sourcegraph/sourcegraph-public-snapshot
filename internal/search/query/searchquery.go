@@ -123,27 +123,6 @@ func Check(parseTree syntax.ParseTree) (QueryInfo, error) {
 	return &OrdinaryQuery{Query: query}, nil
 }
 
-// ParseAndCheck parses and typechecks a search query using the default
-// query type configuration.
-func ParseAndCheck(input string) (QueryInfo, error) {
-	parseTree, err := Parse(input)
-	if err != nil {
-		return nil, err
-	}
-
-	checkedQuery, err := Check(parseTree)
-	if err != nil {
-		return nil, err
-	}
-
-	ordinaryQuery, ok := checkedQuery.(*OrdinaryQuery)
-	if !ok {
-		return nil, errors.New("Check failed: Expected OrdinaryQuery")
-	}
-	ordinaryQuery.parseTree = parseTree
-	return ordinaryQuery, err
-}
-
 func processSearchPattern(q QueryInfo) string {
 	var pieces []string
 	for _, v := range q.Values(FieldDefault) {

@@ -313,10 +313,10 @@ func TestProcessSearchPattern(t *testing.T) {
 			Want:    "search me",
 		},
 		{
-			Name:    "Regexp with content field ignores default pattern",
-			Pattern: `content:"search me" ignored`,
+			Name:    "Regexp with content field sequences non-content pattern",
+			Pattern: `content:"search me" pattern`,
 			Opts:    &getPatternInfoOptions{},
-			Want:    "search me",
+			Want:    "(search me).*?(pattern)",
 		},
 		{
 			Name:    "Literal with quoted content field means double quotes are not part of the pattern",
@@ -333,7 +333,7 @@ func TestProcessSearchPattern(t *testing.T) {
 	}
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
-			q, _ := query.ParseAndCheck(tt.Pattern)
+			q, _ := query.ParseRegexp(tt.Pattern)
 			got, _, _, _ := processSearchPattern(q, tt.Opts)
 			if got != tt.Want {
 				t.Fatalf("got %s\nwant %s", got, tt.Want)
@@ -833,7 +833,6 @@ func TestSearchResultsHydration(t *testing.T) {
 		SearchInputs: &SearchInputs{
 			Query:        q,
 			UserSettings: &schema.Settings{},
-			Limit:        defaultMaxSearchResults,
 		},
 		zoekt:    z,
 		reposMu:  &sync.Mutex{},
@@ -1269,7 +1268,7 @@ func TestEvaluateAnd(t *testing.T) {
 				t.Fatal(err)
 			}
 			resolver := &searchResolver{
-				SearchInputs: &SearchInputs{Query: q, UserSettings: &schema.Settings{}, Limit: 100},
+				SearchInputs: &SearchInputs{Query: q, UserSettings: &schema.Settings{}},
 				zoekt:        z,
 				reposMu:      &sync.Mutex{},
 				resolved:     &searchrepos.Resolved{},
