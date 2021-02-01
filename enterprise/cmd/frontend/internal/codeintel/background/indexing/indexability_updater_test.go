@@ -96,10 +96,10 @@ func TestSkipManualUploads(t *testing.T) {
 		{RepositoryID: 1, SearchCount: 200, PreciseCount: 50},
 	}, nil)
 	mockDBStore.GetUploadsFunc.SetDefaultReturn([]store.Upload{
-		store.Upload{AssociatedIndexID: nil},
+		{AssociatedIndexID: nil},
 	}, 1, nil)
 	mockDBStore.UpdateIndexableRepositoryFunc.SetDefaultHook(func(_ context.Context, _ dbstore.UpdateableIndexableRepository, _ time.Time) error {
-		t.Fatal("should skip manual uploads")
+		t.Fatal("IndexabilityUpdater tried to queue index for repo with recent manual upload")
 		return nil
 	})
 	mockGitserverClient := NewMockGitserverClient()
