@@ -73,6 +73,8 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
         this.subscriptions.add(
             componentUpdates.pipe(distinctUntilKeyChanged('jsonSchema')).subscribe(props => {
                 if (this.monaco) {
+                    registerRedactedHover(this.monaco)
+
                     setDiagnosticsOptions(this.monaco, props.jsonSchema)
                 }
             })
@@ -291,6 +293,24 @@ function toMonacoEdits(
         forceMoveMarkers: true,
         text: edit.content,
     }))
+}
+
+function registerRedactedHover(editor: typeof monaco): void {
+    editor.languages.registerHoverProvider('json', {
+        provideHover(model, position, token): monaco.languages.ProviderResult<monaco.languages.Hover> {
+            if (model.getWordAtPosition(position)?.word === 'REDACTED') {
+                return {
+                    contents: [
+                        {
+                            value:
+                                "**This field is redacted.** To update, replace with a new value, otherwise don't modify this field.",
+                        },
+                    ],
+                }
+            }
+            return { contents: [] }
+        },
+    })
 }
 
 /**
