@@ -200,32 +200,6 @@ func (s *indexedSearchRequest) Repos() map[string]*search.RepositoryRevisions {
 	return s.repos.repoRevs
 }
 
-// Temporary type to help with the transition away from storing Error in event.
-type searchEventWithError struct {
-	SearchEvent
-	Error error
-}
-
-// Search returns a search event stream. Ensure you drain the stream.
-func (s *indexedSearchRequest) Search(ctx context.Context) <-chan searchEventWithError {
-	c := make(chan SearchEvent)
-	cWithErr := make(chan searchEventWithError)
-	go func() {
-		defer close(c)
-		err := s.doSearch(ctx, c)
-		if err != nil {
-			cWithErr <- searchEventWithError{Error: err}
-		}
-	}()
-	go func() {
-		defer close(cWithErr)
-		for event := range c {
-			cWithErr <- searchEventWithError{event, nil}
-		}
-	}()
-	return cWithErr
-}
-
 func (s *indexedSearchRequest) doSearch(ctx context.Context, c chan<- SearchEvent) error {
 	if s.args == nil {
 		return nil
