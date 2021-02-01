@@ -6,10 +6,12 @@ import (
 	"regexp"
 	"sort"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/time/rate"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -85,5 +87,33 @@ func TestIndexabilityUpdater(t *testing.T) {
 
 	if len(mockDBStore.ResetIndexableRepositoriesFunc.History()) != 1 {
 		t.Errorf("unexpected number of calls to ResetIndexableRepositories. want=%d have=%d", 2, len(mockDBStore.ResetIndexableRepositoriesFunc.History()))
+	}
+}
+
+func TestSkipManualUploads(t *testing.T) {
+	mockDBStore := NewMockDBStore()
+	mockDBStore.RepoUsageStatisticsFunc.SetDefaultReturn([]store.RepoUsageStatistics{
+		{RepositoryID: 1, SearchCount: 200, PreciseCount: 50},
+	}, nil)
+	mockDBStore.GetUploadsFunc.SetDefaultReturn([]store.Upload{
+		store.Upload{AssociatedIndexID: nil},
+	}, 1, nil)
+	mockDBStore.UpdateIndexableRepositoryFunc.SetDefaultHook(func(_ context.Context, _ dbstore.UpdateableIndexableRepository, _ time.Time) error {
+		t.Fatal("should skip manual uploads")
+		return nil
+	})
+	mockGitserverClient := NewMockGitserverClient()
+
+	updater := &IndexabilityUpdater{
+		dbStore:            mockDBStore,
+		gitserverClient:    mockGitserverClient,
+		operations:         newOperations(&observation.TestContext),
+		limiter:            rate.NewLimiter(MaxGitserverRequestsPerSecond, 1),
+		enableIndexingCNCF: false,
+	}
+
+	err := updater.Handle(context.Background())
+	if err != nil {
+		t.Fatal(err)
 	}
 }

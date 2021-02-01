@@ -121,6 +121,24 @@ func (u *IndexabilityUpdater) queueRepository(ctx context.Context, repoUsageStat
 	})
 	defer endObservation(1, observation.Args{})
 
+	oneDayAgo := time.Now().Add(time.Hour * 24)
+	uploads, count, err := u.dbStore.GetUploads(ctx, store.GetUploadsOptions{
+		RepositoryID:   repoUsageStatistics.RepositoryID,
+		VisibleAtTip:   true,
+		OldestFirst:    false,
+		Limit:          1,
+		Offset:         0,
+		UploadedAfter:  &oneDayAgo,
+	})
+	if err != nil {
+		return errors.Wrap(err, "dbstore.GetUploads")
+	}
+
+	if count > 0 && uploads[0].AssociatedIndexID == nil {
+		traceLog(log.Event("recent manual upload, not queueing for autoindexer"))
+		return nil
+	}
+
 	if err := u.limiter.Wait(ctx); err != nil {
 		return err
 	}
