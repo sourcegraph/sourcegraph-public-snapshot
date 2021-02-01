@@ -12,7 +12,7 @@ const globalSearchContextName = "global"
 
 func ResolveSearchContextSpec(ctx context.Context, searchContextSpec string) (*types.SearchContext, error) {
 	if IsGlobalSearchContextSpec(searchContextSpec) {
-		return &types.SearchContext{Name: globalSearchContextName}, nil
+		return GetGlobalSearchContext(), nil
 	} else if len(searchContextSpec) > 0 && searchContextSpec[:1] == "@" {
 		name := searchContextSpec[1:]
 		namespace, err := database.GlobalNamespaces.GetByName(ctx, name)
