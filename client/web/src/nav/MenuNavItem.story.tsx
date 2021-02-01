@@ -24,8 +24,7 @@ add(
     {
         design: {
             type: 'figma',
-            url:
-                'https://www.figma.com/file/QSEhj2Nt4MSYLTjqVa2mOO/%2316567-Navigation-short-term-updates?node-id=12%3A299',
+            url: 'https://www.figma.com/file/SFhXbl23TJ2j5tOF51NDtF/%F0%9F%93%9AWeb?node-id=1108%3A872',
         },
     }
 )
