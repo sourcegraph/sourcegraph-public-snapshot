@@ -112,8 +112,10 @@ They are evaluated after the execution of all entries in `steps`.
 
 ## Template helper functions
 
-- `${{ join repository.search_result_paths "\n" }}`
-- `${{ split repository.name "/" }}`
+- `${{ join repository.search_result_paths "\n" }}` - joins the list of strings given as first argument with the separator as last argument.
+- `${{ join_if "---" "a" "b" "" "d" }}` - uses the first argument as separator to join the remaining arguments, ignoring blank strings.
+- `${{ replace "a/b/c/d" "/" "-" }}` - replaces occurrences of second argument in the first one with the last one.
+- `${{ split repository.name "/" }}` - splits the first argument into a list of strings at each occurrence of the last argument.
 
 The features of Go's [`text/template`](https://golang.org/pkg/text/template/) package are also available, including conditionals and loops, since it is the underlying templating engine.
 
