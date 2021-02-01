@@ -282,7 +282,7 @@ func TestIndexedSearch(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			q, err := query.ParseAndCheck(tt.args.query)
+			q, err := query.ParseLiteral(tt.args.query)
 			if err != nil {
 				t.Fatal(err)
 			}

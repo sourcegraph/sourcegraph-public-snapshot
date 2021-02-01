@@ -538,14 +538,14 @@ func TestVersionContext(t *testing.T) {
 	}}
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
-			qinfo, err := query.ParseAndCheck(tc.searchQuery)
+			q, err := query.ParseLiteral(tc.searchQuery)
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			resolver := searchResolver{
 				SearchInputs: &SearchInputs{
-					Query:          qinfo,
+					Query:          q,
 					VersionContext: &tc.versionContext,
 					UserSettings:   &schema.Settings{},
 				},
