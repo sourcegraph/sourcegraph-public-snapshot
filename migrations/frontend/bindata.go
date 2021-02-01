@@ -96,6 +96,8 @@
 // 1528395779_dirty_repositories_updated_at.up.sql (210B)
 // 1528395780_drop_secrets_sql.down.sql (404B)
 // 1528395780_drop_secrets_sql.up.sql (102B)
+// 1528395781_remove_user_repos_table.down.sql (385B)
+// 1528395781_remove_user_repos_table.up.sql (57B)
 
 package migrations
 
@@ -2084,6 +2086,46 @@ func _1528395780_drop_secrets_sqlUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395781_remove_user_repos_tableDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\x90\x41\x4b\xc4\x30\x14\x84\xef\xf9\x15\xef\xd8\xc2\xfe\x83\x3d\x65\xb3\xd3\x25\xd8\xbe\x60\xf2\x0a\x7a\x2a\xa8\x51\x8a\xa2\xa5\xb5\xff\x5f\xd2\xb4\x7a\x28\x05\xe7\x38\x33\x79\xdf\x90\x0b\x6e\x96\xcf\x4a\x19\x0f\x2d\x20\xd1\x97\x1a\x64\x2b\x62\x27\x84\x07\x1b\x24\xd0\x3c\xc5\xb1\x1b\xe6\xa7\x8f\xfe\xb9\x1b\xe3\xf0\x35\x51\xa1\x28\x69\x09\xfa\x17\xea\x3f\xbf\xe3\x5b\x1c\x4f\xd9\x4d\x95\xbd\xdb\xb2\xbd\x6f\x41\xc5\xfa\xe6\xb4\xd5\xca\x35\x37\x8e\x83\x78\x6d\x59\xf2\xd9\xd7\xf7\xec\x27\x55\xce\xc3\xde\x98\xee\xf0\xf8\x7b\xa0\xfc\x8b\x93\x3c\x2a\x78\xb0\x41\x9e\x3b\x51\xb1\xab\x38\xa6\x2b\x6a\x08\xc8\xe8\x60\xf4\x15\x7b\xf2\xb2\xe9\x90\xbc\x2d\x3e\x24\xa7\xc2\x7f\xc0\xaa\x4c\x1f\xee\x9a\xc6\xca\x59\xfd\x04\x00\x00\xff\xff\xb2\xd9\x23\x35\x81\x01\x00\x00")
+
+func _1528395781_remove_user_repos_tableDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395781_remove_user_repos_tableDownSql,
+		"1528395781_remove_user_repos_table.down.sql",
+	)
+}
+
+func _1528395781_remove_user_repos_tableDownSql() (*asset, error) {
+	bytes, err := _1528395781_remove_user_repos_tableDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395781_remove_user_repos_table.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x8c, 0xf7, 0xf4, 0x61, 0x27, 0xc6, 0xce, 0x4d, 0xb5, 0x3b, 0x14, 0xb, 0xf1, 0xf2, 0x5e, 0x64, 0x2f, 0x85, 0x9b, 0x3, 0x40, 0x65, 0xa3, 0xf0, 0x1c, 0x55, 0x1e, 0xfb, 0xc9, 0x2, 0x10, 0x46}}
+	return a, nil
+}
+
+var __1528395781_remove_user_repos_tableUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\x2d\x4e\x2d\x8a\x2f\x28\x4d\xca\xc9\x4c\x8e\x2f\x4a\x2d\xc8\x2f\xb6\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x7b\x56\x0c\x79\x39\x00\x00\x00")
+
+func _1528395781_remove_user_repos_tableUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395781_remove_user_repos_tableUpSql,
+		"1528395781_remove_user_repos_table.up.sql",
+	)
+}
+
+func _1528395781_remove_user_repos_tableUpSql() (*asset, error) {
+	bytes, err := _1528395781_remove_user_repos_tableUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395781_remove_user_repos_table.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x38, 0x14, 0x37, 0x23, 0x3, 0xc0, 0x9, 0x8, 0xd7, 0xe0, 0x9c, 0xb9, 0x24, 0x2c, 0xc2, 0x79, 0x21, 0xa1, 0xaa, 0x3c, 0x54, 0x7b, 0x45, 0x8d, 0x6a, 0xb, 0xd5, 0x59, 0x72, 0xb7, 0x30, 0x4d}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2271,6 +2313,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395779_dirty_repositories_updated_at.up.sql":                                        _1528395779_dirty_repositories_updated_atUpSql,
 	"1528395780_drop_secrets_sql.down.sql":                                                   _1528395780_drop_secrets_sqlDownSql,
 	"1528395780_drop_secrets_sql.up.sql":                                                     _1528395780_drop_secrets_sqlUpSql,
+	"1528395781_remove_user_repos_table.down.sql":                                            _1528395781_remove_user_repos_tableDownSql,
+	"1528395781_remove_user_repos_table.up.sql":                                              _1528395781_remove_user_repos_tableUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2413,6 +2457,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395779_dirty_repositories_updated_at.up.sql":                                        {_1528395779_dirty_repositories_updated_atUpSql, map[string]*bintree{}},
 	"1528395780_drop_secrets_sql.down.sql":                                                   {_1528395780_drop_secrets_sqlDownSql, map[string]*bintree{}},
 	"1528395780_drop_secrets_sql.up.sql":                                                     {_1528395780_drop_secrets_sqlUpSql, map[string]*bintree{}},
+	"1528395781_remove_user_repos_table.down.sql":                                            {_1528395781_remove_user_repos_tableDownSql, map[string]*bintree{}},
+	"1528395781_remove_user_repos_table.up.sql":                                              {_1528395781_remove_user_repos_tableUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
