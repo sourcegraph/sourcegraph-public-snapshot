@@ -128,7 +128,7 @@ func TestRoundTripRedactExternalServiceConfig(t *testing.T) {
 				Kind:   c.kind,
 				Config: old,
 			}
-			if err := svc.RedactConfig(); err != nil {
+			if err := svc.RedactConfigSecrets(); err != nil {
 				t.Fatalf("unexpected error: %s", err)
 			}
 
