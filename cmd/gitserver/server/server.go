@@ -619,7 +619,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 				ev.AddField("ensure_revision", req.EnsureRevision)
 				ev.AddField("ensure_revision_status", ensureRevisionStatus)
 				ev.AddField("client", r.UserAgent())
-				ev.AddField("duration_ms", duration.Seconds()*1000)
+				ev.AddField("duration_ms", duration.Milliseconds())
 				ev.AddField("stdout_size", stdoutN)
 				ev.AddField("stderr_size", stderrN)
 				ev.AddField("exit_status", exitStatus)
@@ -628,8 +628,8 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 					ev.AddField("error", execErr.Error())
 				}
 				if !cmdStart.IsZero() {
-					ev.AddField("cmd_duration_ms", cmdDuration.Seconds()*1000)
-					ev.AddField("fetch_duration_ms", fetchDuration.Seconds()*1000)
+					ev.AddField("cmd_duration_ms", cmdDuration.Milliseconds())
+					ev.AddField("fetch_duration_ms", fetchDuration.Milliseconds())
 				}
 				if span := opentracing.SpanFromContext(ctx); span != nil {
 					spanURL := trace.SpanURL(span)
@@ -844,7 +844,7 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 				ev.AddField("args", args)
 				ev.AddField("actor", r.Header.Get("X-Sourcegraph-Actor"))
 				ev.AddField("client", r.UserAgent())
-				ev.AddField("duration_ms", duration.Seconds()*1000)
+				ev.AddField("duration_ms", duration.Milliseconds())
 				ev.AddField("stdout_size", stdoutN)
 				ev.AddField("stderr_size", stderrN)
 				ev.AddField("exit_status", exitStatus)
@@ -853,7 +853,7 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 					ev.AddField("error", execErr.Error())
 				}
 				if !cmdStart.IsZero() {
-					ev.AddField("cmd_duration_ms", cmdDuration.Seconds()*1000)
+					ev.AddField("cmd_duration_ms", cmdDuration.Milliseconds())
 				}
 				if span := opentracing.SpanFromContext(ctx); span != nil {
 					spanURL := trace.SpanURL(span)
