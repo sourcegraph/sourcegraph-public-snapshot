@@ -64,6 +64,14 @@ func WithLimit(ctx context.Context, stream Streamer, limit int) (context.Context
 	return ctx, newLimitStream, cancel
 }
 
+// StreamFunc is a convenience function to create a stream receiver from a
+// function.
+type StreamFunc func(SearchEvent)
+
+func (f StreamFunc) Send(event SearchEvent) {
+	f(event)
+}
+
 // collectStream is a helper for batch interfaces calling stream based
 // functions. It returns a context, stream and cleanup/get function. The
 // cleanup/get function will return the aggregated event and must be called

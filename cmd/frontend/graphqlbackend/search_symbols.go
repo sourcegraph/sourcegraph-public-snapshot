@@ -120,27 +120,19 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 	run.Acquire()
 	goroutine.Go(func() {
 		defer run.Release()
-		c := make(chan SearchEvent)
-		e := make(chan error, 1)
-		go func() {
-			defer close(c)
-			e <- indexed.Search(ctx, SearchStream(c))
-		}()
-		for event := range c {
-			func() {
-				fms := make([]*FileMatchResolver, 0, len(event.Results))
-				for _, match := range event.Results {
-					fms = append(fms, match.(*FileMatchResolver))
-				}
+		err := indexed.Search(ctx, StreamFunc(func(event SearchEvent) {
+			fms := make([]*FileMatchResolver, 0, len(event.Results))
+			for _, match := range event.Results {
+				fms = append(fms, match.(*FileMatchResolver))
+			}
 
-				mu.Lock()
-				defer mu.Unlock()
-				common.Update(&event.Stats)
-				addMatches(fms)
-			}()
-		}
+			mu.Lock()
+			defer mu.Unlock()
+			common.Update(&event.Stats)
+			addMatches(fms)
+		}))
 
-		if err := <-e; err != nil {
+		if err != nil {
 			tr.LogFields(otlog.Error(err))
 			if ctx.Err() == nil || errors.Cause(err) != ctx.Err() {
 				// Only record error if it's not directly caused by a context error.

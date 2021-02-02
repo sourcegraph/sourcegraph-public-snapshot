@@ -587,17 +587,15 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 		go func() {
 			defer wg.Done()
 			source := stringerFunc("structural-indexed")
-			c := make(chan SearchEvent)
-			e := make(chan error, 1)
-			go func() {
-				defer close(c)
-				e <- indexed.Search(ctx, SearchStream(c))
-			}()
-			for event := range c {
+			err := indexed.Search(ctx, StreamFunc(func(event SearchEvent) {
 				tr.LogFields(otlog.Int("matches.len", len(event.Results)))
 				stream.Send(SearchEvent{
 					Stats: event.Stats,
 				})
+
+				if len(event.Results) == 0 {
+					return
+				}
 
 				// For structural search, we run callSearcherOverRepos
 				// over the set of repos and files known to contain
@@ -630,8 +628,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 				if err != nil {
 					setError(ctx, source, err)
 				}
-			}
-			err := <-e
+			}))
 			if err != nil {
 				setError(ctx, source, err)
 				tr.LogFields(otlog.Error(err))
