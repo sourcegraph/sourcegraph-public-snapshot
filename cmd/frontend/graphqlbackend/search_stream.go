@@ -28,7 +28,7 @@ func (s SearchStream) Send(event SearchEvent) {
 
 type limitStream struct {
 	s         Streamer
-	cancel    func()
+	cancel    context.CancelFunc
 	remaining atomic.Int64
 }
 
@@ -57,14 +57,11 @@ func (s *limitStream) Send(event SearchEvent) {
 // WithLimit returns a Streamer and a context. The Streamer is limited to `limit`
 // results. Once more than `limit` results have been sent on the stream, the
 // returned context is canceled.
-func WithLimit(ctx context.Context, stream Streamer, limit int) (Streamer, context.Context, func()) {
-	cancelContext, cancel := context.WithCancel(ctx)
-	cleanup := func() {
-		cancel()
-	}
+func WithLimit(ctx context.Context, stream Streamer, limit int) (context.Context, Streamer, context.CancelFunc) {
+	ctx, cancel := context.WithCancel(ctx)
 	newLimitStream := &limitStream{cancel: cancel, s: stream}
 	newLimitStream.remaining.Store(int64(limit))
-	return newLimitStream, cancelContext, cleanup
+	return ctx, newLimitStream, cancel
 }
 
 // collectStream is a helper for batch interfaces calling stream based

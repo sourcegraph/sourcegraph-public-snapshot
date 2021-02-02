@@ -353,7 +353,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 		return err
 	}
 
-	limitStream, ctx, cleanup := WithLimit(ctx, stream, int(args.PatternInfo.FileMatchLimit))
+	ctx, limitStream, cleanup := WithLimit(ctx, stream, int(args.PatternInfo.FileMatchLimit))
 	defer cleanup()
 
 	tr, ctx := trace.New(ctx, "searchFilesInRepos", fmt.Sprintf("query: %s", args.PatternInfo.Pattern))
