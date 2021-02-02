@@ -342,10 +342,10 @@ func TestLSIFTscNodeVersionInferrence(t *testing.T) {
 		},
 	}
 
-	expectedJobs := [][]IndexJob{
+	expectedJobs := [][]config.IndexJob{
 		{
 			{
-				DockerSteps: []DockerStep{
+				Steps: []config.DockerStep{
 					{
 						Root:     "",
 						Image:    lsifTscImage,
@@ -363,7 +363,7 @@ func TestLSIFTscNodeVersionInferrence(t *testing.T) {
 		},
 		{
 			{
-				DockerSteps: []DockerStep{
+				Steps: []config.DockerStep{
 					{
 						Root:     "",
 						Image:    lsifTscImage,
