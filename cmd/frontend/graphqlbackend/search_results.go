@@ -762,8 +762,11 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 		if err != nil {
 			return nil, err
 		}
-		if result == nil {
-			return nil, nil
+		// We have to guard against result = nil because evaluatePatternExpression can
+		// return nil, nil via evaluateOperator.
+		if result == nil || len(result.SearchResults) == 0 {
+			// We return result instead of nil because result might contain an alert.
+			return result, nil
 		}
 		exhausted = !result.IsLimitHit
 		for _, term := range operands[1:] {
@@ -780,10 +783,11 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 			if err != nil {
 				return nil, err
 			}
-			if termResult != nil {
-				exhausted = exhausted && !termResult.IsLimitHit
-				result = intersect(result, termResult)
+			if termResult == nil || len(termResult.SearchResults) == 0 {
+				return termResult, nil
 			}
+			exhausted = exhausted && !termResult.IsLimitHit
+			result = intersect(result, termResult)
 		}
 		if exhausted {
 			break
