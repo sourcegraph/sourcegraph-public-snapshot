@@ -19,7 +19,7 @@ const defaultProps: MonacoQueryInputProps = {
     },
     isLightTheme: false,
     globbing: false,
-    queryState: { query: '' },
+    queryState: { query: 'hello repo:test' },
     enableSmartQuery: false,
     patternType: SearchPatternType.literal,
     setPatternType: () => {},

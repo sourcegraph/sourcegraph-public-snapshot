@@ -1,0 +1,30 @@
+.search-context-dropdown {
+    &__button {
+        font-size: 0.75rem;
+        color: var(--theme-color-plain);
+        margin-left: 0.25rem;
+        padding: 0.125rem 0.25rem;
+
+        &:hover,
+        &:active,
+        &:focus {
+            text-decoration: none;
+        }
+
+        &:hover,
+        &:focus {
+            background-color: var(--color-bg-2);
+
+            + .search-context-dropdown__separator {
+                visibility: hidden;
+            }
+        }
+    }
+
+    &__separator {
+        // stylelint-disable-next-line declaration-property-unit-whitelist
+        width: 1px;
+        height: 1.25rem;
+        background-color: var(--border-color);
+    }
+}
