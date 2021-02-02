@@ -71,7 +71,7 @@ func (h *mockSearchResolver) SetStream(c graphqlbackend.Streamer) {
 }
 
 func (h *mockSearchResolver) Send(r []graphqlbackend.SearchResultResolver) {
-	h.c <- graphqlbackend.SearchEvent{Results: r}
+	h.c.Send(graphqlbackend.SearchEvent{Results: r})
 }
 
 func (h *mockSearchResolver) Close() {
