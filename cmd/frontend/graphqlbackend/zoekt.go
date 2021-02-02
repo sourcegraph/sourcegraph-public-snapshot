@@ -200,7 +200,7 @@ func (s *indexedSearchRequest) Repos() map[string]*search.RepositoryRevisions {
 	return s.repos.repoRevs
 }
 
-func (s *indexedSearchRequest) doSearch(ctx context.Context, c chan<- SearchEvent) error {
+func (s *indexedSearchRequest) doSearch(ctx context.Context, c SearchStream) error {
 	if s.args == nil {
 		return nil
 	}
@@ -213,7 +213,7 @@ func (s *indexedSearchRequest) doSearch(ctx context.Context, c chan<- SearchEven
 		since = s.since
 	}
 
-	var zoektStream func(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration, c chan<- SearchEvent) error
+	var zoektStream func(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration, c SearchStream) error
 	switch s.typ {
 	case textRequest, symbolRequest:
 		zoektStream = zoektSearch
@@ -233,7 +233,7 @@ func (s *indexedSearchRequest) doSearch(ctx context.Context, c chan<- SearchEven
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration, c chan<- SearchEvent) error {
+func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration, c SearchStream) error {
 	if args == nil {
 		return nil
 	}
