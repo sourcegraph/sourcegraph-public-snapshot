@@ -401,13 +401,18 @@ repository_name=github.com/sourcegraph/src-cli`,
 
 				executor.Start(context.Background())
 				specs, err := executor.Wait(context.Background())
-				if tc.wantErrInclude == "" && err != nil {
-					t.Fatalf("execution failed: %s", err)
-				}
-				if err != nil && !strings.Contains(err.Error(), tc.wantErrInclude) {
-					t.Errorf("wrong error. have=%q want included=%q", err, tc.wantErrInclude)
-				}
-				if tc.wantErrInclude != "" {
+				if tc.wantErrInclude == "" {
+					if err != nil {
+						t.Fatalf("execution failed: %s", err)
+					}
+				} else {
+					if err == nil {
+						t.Fatalf("expected error to include %q, but got no error", tc.wantErrInclude)
+					} else {
+						if !strings.Contains(err.Error(), tc.wantErrInclude) {
+							t.Errorf("wrong error. have=%q want included=%q", err, tc.wantErrInclude)
+						}
+					}
 					return
 				}
 

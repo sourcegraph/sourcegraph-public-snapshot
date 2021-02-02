@@ -272,6 +272,11 @@ func campaignsExecute(ctx context.Context, out *output.Output, svc *campaigns.Se
 		}()
 	}
 
+	err = svc.ValidateChangesetSpecs(repos, specs)
+	if err != nil {
+		return "", "", err
+	}
+
 	ids := make([]campaigns.ChangesetSpecID, len(specs))
 
 	if len(specs) > 0 {
@@ -366,7 +371,7 @@ func printExecutionError(out *output.Output, err error) {
 				if err == context.Canceled {
 					block.Writef("%sAborting", output.StyleBold)
 				} else {
-					block.Writef("%s%s=%+v)", output.StyleBold, e.Error())
+					block.Writef("%s%s", output.StyleBold, e.Error())
 				}
 			}
 		}

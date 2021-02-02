@@ -415,6 +415,66 @@ func (svc *Service) ExecuteCampaignSpec(ctx context.Context, opts ExecutorOpts, 
 	return specs, x.LogFiles(), errs.ErrorOrNil()
 }
 
+func (svc *Service) ValidateChangesetSpecs(repos []*graphql.Repository, specs []*ChangesetSpec) error {
+	repoByID := make(map[string]*graphql.Repository, len(repos))
+	for _, repo := range repos {
+		repoByID[repo.ID] = repo
+	}
+
+	byRepoAndBranch := make(map[string]map[string][]*ChangesetSpec)
+	for _, spec := range specs {
+		_, ok := byRepoAndBranch[spec.HeadRepository]
+		if !ok {
+			byRepoAndBranch[spec.HeadRepository] = make(map[string][]*ChangesetSpec)
+		}
+
+		byRepoAndBranch[spec.HeadRepository][spec.HeadRef] = append(byRepoAndBranch[spec.HeadRepository][spec.HeadRef], spec)
+	}
+
+	duplicates := make(map[*graphql.Repository]map[string]int)
+	for repoID, specsByBranch := range byRepoAndBranch {
+		for branch, specs := range specsByBranch {
+			if len(specs) < 2 {
+				continue
+			}
+
+			r := repoByID[repoID]
+			if _, ok := duplicates[r]; !ok {
+				duplicates[r] = make(map[string]int)
+			}
+
+			duplicates[r][branch] = len(specs)
+		}
+	}
+
+	if len(duplicates) > 0 {
+		return &duplicateBranchesErr{duplicates: duplicates}
+	}
+
+	return nil
+}
+
+type duplicateBranchesErr struct {
+	duplicates map[*graphql.Repository]map[string]int
+}
+
+func (e *duplicateBranchesErr) Error() string {
+	var out strings.Builder
+
+	fmt.Fprintf(&out, "Multiple changeset specs have the same branch:\n\n")
+
+	for repo, branches := range e.duplicates {
+		for branch, duplicates := range branches {
+			branch = strings.TrimPrefix(branch, "refs/heads/")
+			fmt.Fprintf(&out, "\t* %s: %d changeset specs have the branch %q\n", repo.Name, duplicates, branch)
+		}
+	}
+
+	fmt.Fprint(&out, "\nMake sure that the changesetTemplate.branch field in the campaign spec produces unique values for each changeset in a single repository and rerun this command.")
+
+	return out.String()
+}
+
 func (svc *Service) ParseCampaignSpec(in io.Reader) (*CampaignSpec, string, error) {
 	data, err := ioutil.ReadAll(in)
 	if err != nil {

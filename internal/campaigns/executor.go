@@ -315,9 +315,9 @@ func (x *executor) do(ctx context.Context, task *Task) (err error) {
 			})
 
 			// Add the spec to the executor's list of completed specs.
-			x.specsMu.Lock()
-			x.specs = append(x.specs, specs...)
-			x.specsMu.Unlock()
+			if err := x.addCompletedSpecs(task.Repository, specs); err != nil {
+				return err
+			}
 
 			return
 		}
@@ -391,10 +391,10 @@ func (x *executor) do(ctx context.Context, task *Task) (err error) {
 		status.ChangesetSpecs = specs
 	})
 
-	// Add the spec to the executor's list of completed specs.
-	x.specsMu.Lock()
-	x.specs = append(x.specs, specs...)
-	x.specsMu.Unlock()
+	if err := x.addCompletedSpecs(task.Repository, specs); err != nil {
+		return err
+	}
+
 	return
 }
 
@@ -406,6 +406,14 @@ func (x *executor) updateTaskStatus(task *Task, update func(status *TaskStatus))
 	if ok {
 		update(status)
 	}
+}
+
+func (x *executor) addCompletedSpecs(repository *graphql.Repository, specs []*ChangesetSpec) error {
+	x.specsMu.Lock()
+	defer x.specsMu.Unlock()
+
+	x.specs = append(x.specs, specs...)
+	return nil
 }
 
 func (x *executor) LockedTaskStatuses(callback func([]*TaskStatus)) {

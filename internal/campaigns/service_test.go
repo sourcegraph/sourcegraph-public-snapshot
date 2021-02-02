@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -454,4 +455,73 @@ func mockDirectoriesInReposResults(t *testing.T, filesPerRepo filesInRepos) (cli
 	}
 
 	return mockGraphQLClient(string(rawRes))
+}
+
+func TestService_ValidateChangesetSpecs(t *testing.T) {
+	repo1 := &graphql.Repository{ID: "repo-graphql-id-1", Name: "github.com/sourcegraph/src-cli"}
+	repo2 := &graphql.Repository{ID: "repo-graphql-id-2", Name: "github.com/sourcegraph/sourcegraph"}
+
+	tests := map[string]struct {
+		repos []*graphql.Repository
+		specs []*ChangesetSpec
+
+		wantErrInclude string
+	}{
+		"no errors": {
+			repos: []*graphql.Repository{repo1, repo2},
+			specs: []*ChangesetSpec{
+				{CreatedChangeset: &CreatedChangeset{
+					HeadRepository: repo1.ID, HeadRef: "refs/heads/branch-1"},
+				},
+				{CreatedChangeset: &CreatedChangeset{
+					HeadRepository: repo1.ID, HeadRef: "refs/heads/branch-2"},
+				},
+				{CreatedChangeset: &CreatedChangeset{
+					HeadRepository: repo2.ID, HeadRef: "refs/heads/branch-1"},
+				},
+				{CreatedChangeset: &CreatedChangeset{
+					HeadRepository: repo2.ID, HeadRef: "refs/heads/branch-2"},
+				},
+			},
+		},
+
+		"duplicate branches": {
+			repos: []*graphql.Repository{repo1, repo2},
+			specs: []*ChangesetSpec{
+				{CreatedChangeset: &CreatedChangeset{
+					HeadRepository: repo1.ID, HeadRef: "refs/heads/branch-1"},
+				},
+				{CreatedChangeset: &CreatedChangeset{
+					HeadRepository: repo1.ID, HeadRef: "refs/heads/branch-2"},
+				},
+				{CreatedChangeset: &CreatedChangeset{
+					HeadRepository: repo2.ID, HeadRef: "refs/heads/branch-1"},
+				},
+				{CreatedChangeset: &CreatedChangeset{
+					HeadRepository: repo2.ID, HeadRef: "refs/heads/branch-1"},
+				},
+			},
+			wantErrInclude: `github.com/sourcegraph/sourcegraph: 2 changeset specs have the branch "branch-1"`,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			svc := &Service{}
+			haveErr := svc.ValidateChangesetSpecs(tt.repos, tt.specs)
+			if tt.wantErrInclude != "" {
+				if haveErr == nil {
+					t.Fatalf("expected %q to be included in error, but got none", tt.wantErrInclude)
+				} else {
+					if !strings.Contains(haveErr.Error(), tt.wantErrInclude) {
+						t.Fatalf("expected %q to be included in error, but was not. error=%q", tt.wantErrInclude, haveErr.Error())
+					}
+				}
+			} else {
+				if haveErr != nil {
+					t.Fatalf("unexpected error: %s", haveErr)
+				}
+			}
+		})
+	}
 }
