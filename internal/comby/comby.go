@@ -64,6 +64,10 @@ func rawArgs(args Args) (rawArgs []string) {
 		panic("unreachable")
 	}
 
+	if args.Ripgrep {
+		rawArgs = append(rawArgs, "-rg", "")
+	}
+
 	return rawArgs
 }
 
@@ -119,6 +123,9 @@ func PipeTo(ctx context.Context, args Args, w io.Writer) (err error) {
 	cmd := exec.Command(combyPath, rawArgs...)
 	// Ensure forked child processes are killed
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	if dir, ok := args.Input.(DirPath); ok {
+		cmd.Dir = string(dir)
+	}
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {

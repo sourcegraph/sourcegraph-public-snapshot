@@ -1,14 +1,17 @@
 package search
 
 import (
+	"archive/zip"
 	"context"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/google/zoekt"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
@@ -16,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 // The Sourcegraph frontend and interface only allow LineMatches (matches on a
@@ -194,7 +198,8 @@ func languageMetric(matcher string, includePatterns *[]string) string {
 	return "inferred:.generic"
 }
 
-func structuralSearch(ctx context.Context, zipPath, pattern, rule, extension string, languages, includePatterns []string, repo api.RepoName) (matches []protocol.FileMatch, limitHit bool, err error) {
+// TODO (@camdencheek): remove this once backcompat code path is removed
+func structuralSearchBackcompat(ctx context.Context, zipPath, pattern, rule, extension string, languages, includePatterns []string, repo api.RepoName) (matches []protocol.FileMatch, limitHit bool, err error) {
 	log15.Info("structural search", "repo", string(repo))
 
 	// Cap the number of forked processes to limit the size of zip contents being mapped to memory. Resolving #7133 could help to lift this restriction.
@@ -237,6 +242,72 @@ func structuralSearch(ctx context.Context, zipPath, pattern, rule, extension str
 	return matches, false, err
 }
 
+func structuralSearchZip(ctx context.Context, zipPath, pattern, rule, extension string, languages, includePatterns []string, excludePattern string, repo api.RepoName) (matches []protocol.FileMatch, limitHit bool, err error) {
+	fileFilter, err := newFileFilter(includePatterns, excludePattern)
+	if err != nil {
+		return nil, false, err
+	}
+
+	dirPath, err := extract(ctx, zipPath, fileFilter)
+	if err != nil {
+		return nil, false, err
+	}
+	defer os.RemoveAll(dirPath)
+
+	return structuralSearchDir(ctx, dirPath, pattern, rule, extension, languages, repo, true)
+}
+
+func structuralSearchDir(ctx context.Context, dirPath, pattern, rule, extension string, languages []string, repo api.RepoName, filterWithRipgrep bool) (matches []protocol.FileMatch, limitHit bool, err error) {
+	log15.Info("structural search", "repo", string(repo))
+
+	// Cap the number of forked processes to limit the size of zip contents being mapped to memory. Resolving #7133 could help to lift this restriction.
+	numWorkers := 4
+
+	var matcher string
+	if extension != "" {
+		matcher = extensionToMatcher(extension)
+	}
+
+	if len(languages) > 0 {
+		// Pick the first language, there is no support for applying
+		// multiple language matchers in a single search query.
+		matcher = lookupMatcher(languages[0])
+		log15.Debug("structural search", "language", languages[0], "matcher", matcher)
+	}
+
+	args := comby.Args{
+		Input:         comby.DirPath(dirPath),
+		Matcher:       matcher,
+		MatchTemplate: pattern,
+		MatchOnly:     true,
+		Rule:          rule,
+		NumWorkers:    numWorkers,
+		Ripgrep:       filterWithRipgrep,
+	}
+
+	combyMatches, err := comby.Matches(ctx, args)
+	if err != nil {
+		return nil, false, err
+	}
+
+	// Comby returns results with absolute paths when searching a directory rather than a zip.
+	// We can't just trim the prefix because on mac, the /tmp is symlinked to /private/tmp, which is
+	// the prefix returned by Comby, so instead, we find the first instance of the dirPath and trim to
+	// the end of it.
+	for i, match := range combyMatches {
+		if j := strings.Index(match.URI, dirPath); j >= 0 {
+			match.URI = match.URI[j+len(dirPath)+1:]
+			combyMatches[i] = match
+		}
+	}
+
+	matches = ToFileMatch(combyMatches)
+	if err != nil {
+		return nil, false, err
+	}
+	return matches, false, err
+}
+
 func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request) (matches []protocol.FileMatch, limitHit, deadlineHit bool, err error) {
 	// Since we are returning file content, limit the number of file matches
 	// until streaming from Zoekt is implemented
@@ -270,16 +341,11 @@ func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request) (matche
 		return nil, false, false, err
 	}
 
-	zipFile, err := ioutil.TempFile("", "*.zip")
+	contentDir, err := writeMatches(ctx, zoektMatches)
 	if err != nil {
 		return nil, false, false, err
 	}
-	defer zipFile.Close()
-	defer os.Remove(zipFile.Name())
-
-	if err = writeZip(ctx, zipFile, zoektMatches); err != nil {
-		return nil, false, false, err
-	}
+	defer os.RemoveAll(contentDir)
 
 	var extension string
 	if len(zoektMatches) > 0 {
@@ -287,7 +353,7 @@ func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request) (matche
 		extension = filepath.Ext(filename)
 	}
 
-	matches, limitHit, err = structuralSearch(ctx, zipFile.Name(), p.Pattern, p.CombyRule, extension, p.Languages, []string{}, p.Repo)
+	matches, limitHit, err = structuralSearchDir(ctx, contentDir, p.Pattern, p.CombyRule, extension, p.Languages, p.Repo, false)
 	return matches, limitHit, false, err
 }
 
@@ -298,4 +364,95 @@ var requestTotalStructuralSearch = prometheus.NewCounterVec(prometheus.CounterOp
 
 func init() {
 	prometheus.MustRegister(requestTotalStructuralSearch)
+}
+
+func unzip(src string, dest string, filter *fileFilter) error {
+	r, err := zip.OpenReader(src)
+	if err != nil {
+		return err
+	}
+	defer r.Close()
+
+	for _, f := range r.File {
+		if !filter.Match(f.Name) {
+			continue
+		}
+
+		// Store filename/path for returning and using later on
+		fpath := filepath.Join(dest, f.Name)
+
+		// Check for ZipSlip. More Info: http://bit.ly/2MsjAWE
+		if !strings.HasPrefix(fpath, filepath.Clean(dest)+string(os.PathSeparator)) {
+			return fmt.Errorf("%s: illegal file path", fpath)
+		}
+
+		if f.FileInfo().IsDir() {
+			// Make Folder
+			os.MkdirAll(fpath, os.ModePerm)
+			continue
+		}
+
+		// Make File
+		if err = os.MkdirAll(filepath.Dir(fpath), os.ModePerm); err != nil {
+			return err
+		}
+
+		outFile, err := os.OpenFile(fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+		if err != nil {
+			return err
+		}
+
+		rc, err := f.Open()
+		if err != nil {
+			return err
+		}
+
+		_, err = io.Copy(outFile, rc)
+
+		// Close the file without defer to close before next iteration of loop
+		outFile.Close()
+		rc.Close()
+
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func extract(ctx context.Context, zipPath string, filter *fileFilter) (string, error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "extract")
+	defer span.Finish()
+
+	extractDir, err := ioutil.TempDir("", "extracted-structural")
+	if err != nil {
+		return "", err
+	}
+
+	if err = unzip(zipPath, extractDir, filter); err != nil {
+		return "", err
+	}
+	return extractDir, nil
+}
+
+func writeMatches(ctx context.Context, matches []zoekt.FileMatch) (string, error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "writeContents")
+	defer span.Finish()
+
+	dir, err := ioutil.TempDir("", "")
+	if err != nil {
+		return "", err
+	}
+
+	for _, fm := range matches {
+		path := filepath.Join(dir, fm.FileName)
+		fileDir := filepath.Dir(path)
+		if err := os.MkdirAll(fileDir, 0755); err != nil {
+			return "", fmt.Errorf("failed to make dir: %s", err)
+		}
+		if err := ioutil.WriteFile(path, fm.Content, 0755); err != nil {
+			return "", err
+		}
+	}
+	return dir, nil
 }

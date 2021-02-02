@@ -34,6 +34,9 @@ type Args struct {
 
 	// NumWorkers is the number of worker processes to fork in parallel
 	NumWorkers int
+
+	// Use ripgrep to pre-filter to a set of files
+	Ripgrep bool
 }
 
 // Location is the location in a file

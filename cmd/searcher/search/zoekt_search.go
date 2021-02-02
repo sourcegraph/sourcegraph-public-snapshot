@@ -1,10 +1,8 @@
 package search
 
 import (
-	"archive/zip"
 	"context"
 	"errors"
-	"io"
 	"regexp/syntax"
 	"time"
 
@@ -18,12 +16,10 @@ import (
 
 	zoektquery "github.com/google/zoekt/query"
 	zoektrpc "github.com/google/zoekt/rpc"
-	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -239,33 +235,6 @@ func zoektSearch(ctx context.Context, args *search.TextPatternInfo, repoBranches
 	}
 
 	return resp.Files, limitHit, partial, nil
-}
-
-func writeZip(ctx context.Context, w io.Writer, fileMatches []zoekt.FileMatch) (err error) {
-	bytesWritten := 0
-	span, ctx := ot.StartSpanFromContext(ctx, "WriteZip")
-	defer func() {
-		span.LogFields(log.Int("bytes_written", bytesWritten))
-		span.Finish()
-	}()
-
-	zw := zip.NewWriter(w)
-	defer zw.Close()
-
-	for _, match := range fileMatches {
-		mw, err := zw.Create(match.FileName)
-		if err != nil {
-			return err
-		}
-
-		n, err := mw.Write(match.Content)
-		if err != nil {
-			return err
-		}
-		bytesWritten += n
-	}
-
-	return nil
 }
 
 var errNoResultsInTimeout = errors.New("no results found in specified timeout")

@@ -70,7 +70,7 @@ func foo(go string) {}
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
 			p.Languages = tt.Languages
-			matches, _, err := structuralSearch(context.Background(), zf, p.Pattern, p.CombyRule, "", p.Languages, p.IncludePatterns, "repo_foo")
+			matches, _, err := structuralSearchBackcompat(context.Background(), zf, p.Pattern, p.CombyRule, "", p.Languages, p.IncludePatterns, "repo_foo")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -126,7 +126,7 @@ func foo(go.txt) {}
 		}
 
 		extension := filepath.Ext(filename)
-		matches, _, err := structuralSearch(context.Background(), zf, "foo(:[args])", "", extension, languages, []string{}, "repo_foo")
+		matches, _, err := structuralSearchBackcompat(context.Background(), zf, "foo(:[args])", "", extension, languages, []string{}, "repo_foo")
 		if err != nil {
 			return "ERROR"
 		}
@@ -180,7 +180,7 @@ func foo(real string) {}
 		Pattern:         pattern,
 		IncludePatterns: includePatterns,
 	}
-	m, _, err := structuralSearch(context.Background(), zf, p.Pattern, p.CombyRule, "", p.Languages, p.IncludePatterns, "foo")
+	m, _, err := structuralSearchBackcompat(context.Background(), zf, p.Pattern, p.CombyRule, "", p.Languages, p.IncludePatterns, "foo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -280,7 +280,7 @@ func TestIncludePatterns(t *testing.T) {
 		Pattern:         "",
 		IncludePatterns: includePatterns,
 	}
-	fileMatches, _, err := structuralSearch(context.Background(), zf, p.Pattern, p.CombyRule, "", p.Languages, p.IncludePatterns, "foo")
+	fileMatches, _, err := structuralSearchBackcompat(context.Background(), zf, p.Pattern, p.CombyRule, "", p.Languages, p.IncludePatterns, "foo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -321,7 +321,7 @@ func TestRule(t *testing.T) {
 		CombyRule:       `where :[args] == "success"`,
 	}
 
-	got, _, err := structuralSearch(context.Background(), zf, p.Pattern, p.CombyRule, "", p.Languages, p.IncludePatterns, "repo")
+	got, _, err := structuralSearchBackcompat(context.Background(), zf, p.Pattern, p.CombyRule, "", p.Languages, p.IncludePatterns, "repo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -475,7 +475,7 @@ func bar() {
 	defer cleanup()
 
 	t.Run("Strutural search match count", func(t *testing.T) {
-		matches, _, err := structuralSearch(context.Background(), zf, p.Pattern, p.CombyRule, "", p.Languages, p.IncludePatterns, "repo_foo")
+		matches, _, err := structuralSearchBackcompat(context.Background(), zf, p.Pattern, p.CombyRule, "", p.Languages, p.IncludePatterns, "repo_foo")
 		if err != nil {
 			t.Fatal(err)
 		}

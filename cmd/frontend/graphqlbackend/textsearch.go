@@ -173,7 +173,7 @@ func (lm *lineMatch) LimitHit() bool {
 
 var mockSearchFilesInRepo func(ctx context.Context, repo *types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error)
 
-func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo *types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) ([]*FileMatchResolver, bool, error) {
+func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo *types.RepoName, gitserverRepo api.RepoName, rev string, indexed bool, info *search.TextPatternInfo, fetchTimeout time.Duration) ([]*FileMatchResolver, bool, error) {
 	if mockSearchFilesInRepo != nil {
 		return mockSearchFilesInRepo(ctx, repo, gitserverRepo, rev, info, fetchTimeout)
 	}
@@ -205,7 +205,7 @@ func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo *ty
 			return nil, false, err
 		}
 	}
-	matches, limitHit, err := searcher.Search(ctx, searcherURLs, gitserverRepo, rev, commit, info, fetchTimeout, indexerEndpoints)
+	matches, limitHit, err := searcher.Search(ctx, searcherURLs, gitserverRepo, rev, commit, indexed, info, fetchTimeout, indexerEndpoints)
 	if err != nil {
 		return nil, false, err
 	}
@@ -272,7 +272,7 @@ func repoShouldBeSearched(ctx context.Context, searcherURLs *endpoint.Map, searc
 func repoHasFilesWithNamesMatching(ctx context.Context, searcherURLs *endpoint.Map, include bool, repoHasFileFlag []string, gitserverRepo api.RepoName, commit api.CommitID, fetchTimeout time.Duration) (bool, error) {
 	for _, pattern := range repoHasFileFlag {
 		p := search.TextPatternInfo{IsRegExp: true, FileMatchLimit: 1, IncludePatterns: []string{pattern}, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
-		matches, _, err := searcher.Search(ctx, searcherURLs, gitserverRepo, "", commit, &p, fetchTimeout, []string{})
+		matches, _, err := searcher.Search(ctx, searcherURLs, gitserverRepo, "", commit, false, &p, fetchTimeout, []string{})
 		if err != nil {
 			return false, err
 		}
@@ -393,12 +393,6 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 		}
 	}
 
-	// if there are no indexed repos and this is a structural search
-	// query, there will be no results. Raise a friendly alert.
-	if args.PatternInfo.IsStructuralPat && len(indexed.Repos()) == 0 {
-		return errors.New("no indexed repositories for structural search")
-	}
-
 	if args.PatternInfo.IsEmpty() {
 		// Empty query isn't an error, but it has no results.
 		return nil
@@ -490,6 +484,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 	callSearcherOverRepos := func(
 		searcherRepos []*search.RepositoryRevisions,
 		searcherReposFilteredFiles map[string][]string,
+		indexed bool,
 	) error {
 		var fetchTimeout time.Duration
 		if len(searcherRepos) == 1 || args.UseFullDeadline {
@@ -556,7 +551,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 					defer wg.Done()
 					defer done()
 
-					matches, repoLimitHit, err := searchFilesInRepo(ctx, args.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), repoRev.RevSpecs()[0], args.PatternInfo, fetchTimeout)
+					matches, repoLimitHit, err := searchFilesInRepo(ctx, args.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), repoRev.RevSpecs()[0], indexed, args.PatternInfo, fetchTimeout)
 					if err != nil {
 						tr.LogFields(otlog.String("repo", string(repoRev.Repo.Name)), otlog.Error(err), otlog.Bool("timeout", errcode.IsTimeout(err)), otlog.Bool("temporary", errcode.IsTemporary(err)))
 						log15.Warn("searchFilesInRepo failed", "error", err, "repo", repoRev.Repo.Name)
@@ -612,8 +607,11 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 				repos = append(repos, repo)
 			}
 
-			err := callSearcherOverRepos(repos, nil)
-			if err != nil {
+			if err := callSearcherOverRepos(repos, nil, true); err != nil {
+				setError(ctx, stringerFunc("structural-zoekt"), err)
+			}
+
+			if err := callSearcherOverRepos(indexed.Unindexed, nil, false); err != nil {
 				setError(ctx, stringerFunc("structural-zoekt"), err)
 			}
 		}()
@@ -661,7 +659,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 					}
 				}
 
-				err := callSearcherOverRepos(repos, partition)
+				err := callSearcherOverRepos(repos, partition, true)
 				if err != nil {
 					setError(ctx, source, err)
 				}
@@ -678,7 +676,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 	// - unindexed structural search
 	// - unindexed search of negated content
 	if !args.PatternInfo.IsStructuralPat {
-		if err := callSearcherOverRepos(searcherRepos, nil); err != nil {
+		if err := callSearcherOverRepos(searcherRepos, nil, false); err != nil {
 			setError(ctx, stringerFunc("searcher"), err)
 		}
 	}
