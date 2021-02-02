@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/grafana-tools/sdk"
+
 	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
