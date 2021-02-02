@@ -965,7 +965,6 @@ type User struct {
 	UpdatedAt             time.Time
 	SiteAdmin             bool
 	BuiltinAuth           bool
-	IsPasswordSet         bool
 	Tags                  []string
 	InvalidatedSessionsAt time.Time
 }

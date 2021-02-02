@@ -119,7 +119,7 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
          * 1. user has a password set
          * 2. user doesn't have external accounts
          */
-        this.props.user.isPasswordSet && this.state.accounts.fetched?.length === 0
+        this.props.user.builtinAuth && this.state.accounts.fetched?.length === 0
 
     private fetchAccounts = (): void => {
         fetchUserExternalAccountsByType(this.props.user.id)

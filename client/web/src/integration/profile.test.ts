@@ -34,7 +34,6 @@ describe('User profile page', () => {
             viewerCanAdminister: true,
             viewerCanChangeUsername: true,
             siteAdmin: true,
-            isPasswordSet: true,
             builtinAuth: true,
             createdAt: '2020-04-10T21:11:42Z',
             emails: [{ email: 'test@example.com', verified: true }],
