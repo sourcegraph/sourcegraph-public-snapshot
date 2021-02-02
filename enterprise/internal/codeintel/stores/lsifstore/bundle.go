@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	logg "log"
 	"sort"
 	"strings"
 
@@ -109,6 +110,34 @@ func (s *Store) Ranges(ctx context.Context, bundleID int, path string, startLine
 	})
 
 	return codeintelRanges, nil
+}
+
+const documentsQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/bundle.go:{Symbols}
+select dump_id, path, data FROM lsif_data_documents WHERE dump_id = %s AND path ILIKE (%s || '%%%%') LIMIT %d
+`
+
+// TODO(beyang): introduce migration for key on dump_id column
+
+// Symbols returns all LSIF document symbols in documents prefixed by path.
+func (s *Store) Symbols(ctx context.Context, bundleID int, path string) ([]DocumentSymbolData, error) {
+	logg.Printf("# bundleID: %v, path: %v", bundleID, path)
+	const limit = 10000
+	scannedDocumentData, err := s.scanDocumentData(s.Store.Query(ctx, sqlf.Sprintf(documentsQuery, bundleID, path, limit)))
+	if err != nil || len(scannedDocumentData) == 0 {
+		return nil, err
+	}
+
+	numSymbols := 0
+	for _, docData := range scannedDocumentData {
+		numSymbols += len(docData.Document.Symbols)
+	}
+	documentData := make([]DocumentSymbolData, 0, numSymbols)
+	for _, docData := range scannedDocumentData {
+		documentData = append(documentData, docData.Document.Symbols...)
+	}
+
+	return documentData, nil
 }
 
 const documentQuery = `

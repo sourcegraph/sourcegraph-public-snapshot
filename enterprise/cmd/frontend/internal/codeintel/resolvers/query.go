@@ -42,14 +42,23 @@ type AdjustedCodeIntelligenceRange struct {
 	HoverText   string
 }
 
+type AdjustedSymbol struct {
+	// Dump           store.Dump
+	// Path           string
+	// AdjustedCommit string
+	// AdjustedRange  lsifstore.Range
+	Dump store.Dump
+}
+
 // QueryResolver is the main interface to bundle-related operations exposed to the GraphQL API. This
 // resolver consolidates the logic for bundle operations and is not itself concerned with GraphQL/API
-// specifics (auth, validation, marshaling, etc.). This resolver is wrapped by a symmetrics resolver
+// specifics (auth, validation, marshaling, etc.). This resolver is wrapped by a symmetrical resolver
 // in this package's graphql subpackage, which is exposed directly by the API.
 type QueryResolver interface {
 	Ranges(ctx context.Context, startLine, endLine int) ([]AdjustedCodeIntelligenceRange, error)
 	Definitions(ctx context.Context, line, character int) ([]AdjustedLocation, error)
 	References(ctx context.Context, line, character, limit int, rawCursor string) ([]AdjustedLocation, string, error)
+	Symbols(ctx context.Context, path string) ([]AdjustedSymbol, error)
 	Hover(ctx context.Context, line, character int) (string, lsifstore.Range, bool, error)
 	Diagnostics(ctx context.Context, limit int) ([]AdjustedDiagnostic, int, error)
 }
@@ -200,6 +209,30 @@ func (r *queryResolver) Definitions(ctx context.Context, line, character int) (_
 }
 
 const slowReferencesRequestThreshold = time.Second
+
+func (r *queryResolver) Symbols(ctx context.Context, path string) ([]AdjustedSymbol, error) {
+	// MARK
+	for i := range r.uploads {
+		symbols, err := r.codeIntelAPI.Symbols(ctx, path, r.uploads[i].ID)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(symbols) == 0 {
+			continue
+		}
+
+		adjustedSymbols := make([]AdjustedSymbol, len(symbols))
+		for j := range symbols {
+			adjustedSymbols[j] = AdjustedSymbol{
+				// TODO
+			}
+		}
+		return adjustedSymbols, nil
+	}
+
+	return nil, nil
+}
 
 // References returns the list of source locations that reference the symbol at the given position.
 // This may include references from other dumps and repositories. If there are multiple bundles

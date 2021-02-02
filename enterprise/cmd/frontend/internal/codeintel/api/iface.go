@@ -55,6 +55,7 @@ type LSIFStore interface {
 	Exists(ctx context.Context, bundleID int, path string) (bool, error)
 	Ranges(ctx context.Context, bundleID int, path string, startLine, endLine int) ([]lsifstore.CodeIntelligenceRange, error)
 	Definitions(ctx context.Context, bundleID int, path string, line, character int) ([]lsifstore.Location, error)
+	Symbols(ctx context.Context, bundleID int, path string) ([]lsifstore.DocumentSymbolData, error)
 	References(ctx context.Context, bundleID int, path string, line, character int) ([]lsifstore.Location, error)
 	Hover(ctx context.Context, bundleID int, path string, line, character int) (string, lsifstore.Range, bool, error)
 	Diagnostics(ctx context.Context, bundleID int, prefix string, skip, take int) ([]lsifstore.Diagnostic, int, error)

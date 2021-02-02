@@ -15,6 +15,7 @@ import (
 type CodeIntelAPI interface {
 	FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) ([]store.Dump, error)
 	Ranges(ctx context.Context, file string, startLine, endLine, uploadID int) ([]api.ResolvedCodeIntelligenceRange, error)
+	Symbols(ctx context.Context, path string, uploadID int) ([]api.ResolvedSymbol, error)
 	Definitions(ctx context.Context, file string, line, character, uploadID int) ([]api.ResolvedLocation, error)
 	References(ctx context.Context, repositoryID int, commit string, limit int, cursor api.Cursor) ([]api.ResolvedLocation, api.Cursor, bool, error)
 	Hover(ctx context.Context, file string, line, character, uploadID int) (string, lsifstore.Range, bool, error)

@@ -11,6 +11,13 @@ type QualifiedDocumentData struct {
 	KeyedDocumentData
 }
 
+// func (s *Store) scanAllDocumentData(rows *sql.Rows, path string, queryErr error) (map[string][]QualifiedDocumentData, error) {
+// 	if queryErr != nil {
+// 		return nil, queryErr
+// 	}
+// 	defer func() { err = basestore.CloseRows(rows, err) }()
+// }
+
 // scanDocumentData reads qualified document data from the given row object.
 func (s *Store) scanDocumentData(rows *sql.Rows, queryErr error) (_ []QualifiedDocumentData, err error) {
 	if queryErr != nil {
