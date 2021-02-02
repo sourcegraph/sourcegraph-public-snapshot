@@ -9,12 +9,9 @@
 
 ## Overview
 
-Large repositories often contain multiple projects.
+Large repositories often contain multiple projects and it can make sense to run the campaign spec [`steps`][steps] separately in each project and create one changeset per project.
 
-It often makes sense to run the campaign spec [`steps`][steps] in them separately and create one changeset per project.
-
-That can be done by using [`workspaces`][workspaces] in the campaign specs in
-two steps:
+That can be done by using [`workspaces`][workspaces] in the campaign specs in two steps:
 
 1. Define the project locations with the `workspaces` property
 2. Produce unique `changesetTemplate.branch` names
