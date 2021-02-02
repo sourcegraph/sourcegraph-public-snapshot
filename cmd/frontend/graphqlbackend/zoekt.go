@@ -221,9 +221,7 @@ func (s *indexedSearchRequest) Search(ctx context.Context, c SearchStream) error
 	case fileRequest:
 		zoektStream = zoektSearchHEADOnlyFiles
 	default:
-		err := fmt.Errorf("unexpected indexedSearchRequest type: %q", s.typ)
-		c <- SearchEvent{Stats: streaming.Stats{}, Results: nil}
-		return err
+		return fmt.Errorf("unexpected indexedSearchRequest type: %q", s.typ)
 	}
 
 	return zoektStream(ctx, s.args, s.repos, s.typ, since, c)
