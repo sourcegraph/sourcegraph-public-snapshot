@@ -103,8 +103,7 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 		run = parallel.NewRun(conf.SearchSymbolsParallelism())
 		mu  sync.Mutex
 
-		aggMatches        []*FileMatchResolver
-		overLimitCanceled bool
+		aggMatches []*FileMatchResolver
 	)
 
 	addMatches := func(matches []*FileMatchResolver) {
@@ -112,7 +111,6 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 			aggMatches = append(aggMatches, matches...)
 			if len(aggMatches) > int(args.PatternInfo.FileMatchLimit) {
 				tr.LazyPrintf("cancel due to result size: %d > %d", len(aggMatches), args.PatternInfo.FileMatchLimit)
-				overLimitCanceled = true
 				common.IsLimitHit = true
 				cancelAll()
 			}
@@ -122,28 +120,33 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 	run.Acquire()
 	goroutine.Go(func() {
 		defer run.Release()
-		ctx, cancel := context.WithCancel(ctx)
-		defer cancel()
-		for event := range indexed.Search(ctx) {
+		c := make(chan SearchEvent)
+		e := make(chan error, 1)
+		go func() {
+			defer close(c)
+			e <- indexed.Search(ctx, c)
+		}()
+		for event := range c {
 			func() {
-				mu.Lock()
-				defer mu.Unlock()
-				common.Update(&event.Stats)
-				tr.LogFields(otlog.Object("searchErr", event.Error), otlog.Error(err), otlog.Bool("overLimitCanceled", overLimitCanceled))
-				if event.Error != nil && err == nil && !overLimitCanceled {
-					err = event.Error
-					tr.LazyPrintf("cancel indexed symbol search due to error: %v", err)
-					cancel()
-
-				}
 				fms := make([]*FileMatchResolver, 0, len(event.Results))
 				for _, match := range event.Results {
 					fms = append(fms, match.(*FileMatchResolver))
 				}
+
+				mu.Lock()
+				defer mu.Unlock()
+				common.Update(&event.Stats)
 				addMatches(fms)
 			}()
 		}
 
+		if err := <-e; err != nil {
+			tr.LogFields(otlog.Error(err))
+			if ctx.Err() == nil || errors.Cause(err) != ctx.Err() {
+				// Only record error if it's not directly caused by a context error.
+				run.Error(err)
+			}
+		}
 	})
 
 	for _, repoRevs := range searcherRepos {

@@ -276,7 +276,6 @@ type searchResolver struct {
 type SearchEvent struct {
 	Results []SearchResultResolver
 	Stats   streaming.Stats
-	Error   error
 }
 
 // SearchStream is a send only channel of SearchEvent. All streaming search
@@ -288,9 +287,6 @@ type SearchStream chan<- SearchEvent
 // functions. It returns a context, stream and cleanup/get function. The
 // cleanup/get function will return the aggregated event and must be called
 // once you have stopped sending to stream.
-//
-// For collecting errors we only collect the first error reported and
-// afterwards cancel the context.
 func collectStream(ctx context.Context) (context.Context, SearchStream, func() SearchEvent) {
 	var agg SearchEvent
 
@@ -303,11 +299,6 @@ func collectStream(ctx context.Context) (context.Context, SearchStream, func() S
 		for event := range stream {
 			agg.Results = append(agg.Results, event.Results...)
 			agg.Stats.Update(&event.Stats)
-			// Only collect first error
-			if event.Error != nil && agg.Error == nil {
-				cancel()
-				agg.Error = event.Error
-			}
 		}
 	}()
 
