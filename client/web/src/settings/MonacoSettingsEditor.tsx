@@ -73,8 +73,6 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
         this.subscriptions.add(
             componentUpdates.pipe(distinctUntilKeyChanged('jsonSchema')).subscribe(props => {
                 if (this.monaco) {
-                    registerRedactedHover(this.monaco)
-
                     setDiagnosticsOptions(this.monaco, props.jsonSchema)
                 }
             })
@@ -144,6 +142,8 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
                 }
             })
         }
+
+        this.disposables.push(registerRedactedHover(monaco))
 
         setDiagnosticsOptions(monaco, this.props)
 
@@ -295,8 +295,8 @@ function toMonacoEdits(
     }))
 }
 
-function registerRedactedHover(editor: typeof monaco): void {
-    editor.languages.registerHoverProvider('json', {
+function registerRedactedHover(editor: typeof monaco): monaco.IDisposable {
+    return editor.languages.registerHoverProvider('json', {
         provideHover(model, position, token): monaco.languages.ProviderResult<monaco.languages.Hover> {
             if (model.getWordAtPosition(position)?.word === 'REDACTED') {
                 return {
