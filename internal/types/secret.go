@@ -24,13 +24,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// redacted strings are zero width spaces, so we can detect any redacted fields when validating on the way back in to
-// the database
-const RedactedSecret = string('\u200B')
+// RedactedSecret is used as a placeholder for secret fields when reading external service config
+const RedactedSecret = "REDACTED"
 
-// RedactConfig replaces any secret fields in the Config field with RedactedSecret, be sure to call
+// RedactConfigSecrets replaces any secret fields in the Config field with RedactedSecret, be sure to call
 // UnRedactExternalServiceConfig before writing back to the database, otherwise validation will throw errors.
-func (e *ExternalService) RedactConfig() error {
+func (e *ExternalService) RedactConfigSecrets() error {
 	if e.Config == "" {
 		return nil
 	}
@@ -42,27 +41,27 @@ func (e *ExternalService) RedactConfig() error {
 	if err != nil {
 		return err
 	}
-	switch cfg := cfg.(type) {
+	switch cfg.(type) {
 	case *schema.GitHubConnection:
-		newCfg, err = redactField(e.Config, &cfg, "token")
+		newCfg, err = redactField(e.Config, "token")
 	case *schema.GitLabConnection:
-		newCfg, err = redactField(e.Config, &cfg, "token")
+		newCfg, err = redactField(e.Config, "token")
 	case *schema.BitbucketServerConnection:
-		newCfg, err = redactField(e.Config, &cfg, "token", "password")
+		newCfg, err = redactField(e.Config, "token", "password")
 	case *schema.BitbucketCloudConnection:
-		newCfg, err = redactField(e.Config, &cfg, "appPassword")
+		newCfg, err = redactField(e.Config, "appPassword")
 	case *schema.AWSCodeCommitConnection:
-		newCfg, err = redactField(e.Config, &cfg, "secretAccessKey")
+		newCfg, err = redactField(e.Config, "secretAccessKey")
 	case *schema.PhabricatorConnection:
-		newCfg, err = redactField(e.Config, &cfg, "token")
+		newCfg, err = redactField(e.Config, "token")
 	case *schema.PerforceConnection:
-		newCfg, err = redactField(e.Config, &cfg, "p4.passwd")
+		newCfg, err = redactField(e.Config, "p4.passwd")
 	case *schema.GitoliteConnection:
 		// no secret fields?
 		err = nil
 	case *schema.OtherExternalServiceConnection:
 		// no secret fields?
-		newCfg, err = redactField(e.Config, &cfg, "url")
+		newCfg, err = redactField(e.Config, "url")
 	default:
 		// return an error here, it's safer to fail than to incorrectly return unsafe data.
 		err = fmt.Errorf("RedactExternalServiceConfig: kind %q not implemented", e.Kind)
@@ -77,12 +76,8 @@ func (e *ExternalService) RedactConfig() error {
 // redactField will unmarshal the passed JSON string into the passed value, and then replace the pointer fields you pass
 // with RedactedSecret, see RedactExternalServiceConfig for usage examples.
 // who needs generics anyway?
-func redactField(buf string, v interface{}, fields ...string) (string, error) {
-	err := unmarshalConfig(buf, v)
-	if err != nil {
-		return "", err
-	}
-
+func redactField(buf string, fields ...string) (string, error) {
+	var err error
 	for _, field := range fields {
 		buf, err = jsonc.Edit(buf, RedactedSecret, field)
 		if err != nil {

@@ -11,6 +11,7 @@ import {
     CopyQueryButtonProps,
     OnboardingTourProps,
     ParsedSearchQueryProps,
+    SearchContextProps,
 } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { showDotComMarketing } from '../util/features'
@@ -43,6 +44,7 @@ interface Props
         CaseSensitivityProps,
         CopyQueryButtonProps,
         VersionContextProps,
+        SearchContextProps,
         OnboardingTourProps {
     history: H.History
     location: H.Location<{ query: string }>

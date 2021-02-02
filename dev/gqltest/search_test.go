@@ -534,7 +534,7 @@ func TestSearch(t *testing.T) {
 				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ file:^README\.md "basic :[_] access :[_]" patterntype:structural`,
 			},
 			{
-				name:       `Alert to activate structural search mode`,
+				name:       `Alert to activate structural search mode for :[...] syntax`,
 				query:      `repo:^github\.com/sgtest/go-diff$ patterntype:literal i can't :[believe] it's not butter`,
 				zeroResult: true,
 				wantAlert: &gqltestutil.SearchAlert{
@@ -544,6 +544,21 @@ func TestSearch(t *testing.T) {
 						{
 							Description: "Activate structural search",
 							Query:       `repo:^github\.com/sgtest/go-diff$ patterntype:literal i can't :[believe] it's not butter patternType:structural`,
+						},
+					},
+				},
+			},
+			{
+				name:       `Alert to activate structural search mode for ... syntax`,
+				query:      `no results for { ... } raises alert repo:^github\.com/sgtest/go-diff$`,
+				zeroResult: true,
+				wantAlert: &gqltestutil.SearchAlert{
+					Title:       "No results",
+					Description: "It looks like you may have meant to run a structural search, but it is not toggled.",
+					ProposedQueries: []gqltestutil.ProposedQuery{
+						{
+							Description: "Activate structural search",
+							Query:       `no results for { ... } raises alert repo:^github\.com/sgtest/go-diff$ patternType:structural`,
 						},
 					},
 				},

@@ -186,6 +186,7 @@ main.go:7:}
 			IncludePatterns: []string{"file++.plus"},
 			IsStructuralPat: true,
 			IsRegExp:        true, // To test for a regression, imply that IsStructuralPat takes precedence.
+			CombyRule:       `where "backcompat" == "backcompat"`,
 		}, `
 file++.plus:1:filename contains regex metachars
 `},
@@ -406,6 +407,7 @@ func doSearch(u string, p *protocol.Request) ([]protocol.FileMatch, error) {
 		"FetchTimeout":    []string{p.FetchTimeout},
 		"IncludePatterns": p.IncludePatterns,
 		"ExcludePattern":  []string{p.ExcludePattern},
+		"CombyRule":       []string{p.CombyRule},
 	}
 	if p.IsRegExp {
 		form.Set("IsRegExp", "true")

@@ -14,12 +14,14 @@ func splitOnHolesPattern() string {
 	word := `\w+`
 	whitespaceAndOptionalWord := `[ ]+(` + word + `)?`
 	holeAnything := `:\[` + word + `\]`
+	holeEllipses := `\.\.\.`
 	holeAlphanum := `:\[\[` + word + `\]\]`
 	holeWithPunctuation := `:\[` + word + `\.\]`
 	holeWithNewline := `:\[` + word + `\\n\]`
 	holeWhitespace := `:\[` + whitespaceAndOptionalWord + `\]`
 	return strings.Join([]string{
 		holeAnything,
+		holeEllipses,
 		holeAlphanum,
 		holeWithPunctuation,
 		holeWithNewline,

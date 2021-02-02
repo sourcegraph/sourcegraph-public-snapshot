@@ -686,7 +686,6 @@ func (r *searchResolver) evaluateAndStream(ctx context.Context, scopeParameters 
 	r.resultChannel <- SearchEvent{
 		Results: result.SearchResults,
 		Stats:   result.Stats,
-		Error:   err,
 	}
 	return result, err
 }
@@ -1184,7 +1183,7 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Te
 	}
 
 	if opts.fileMatchLimit == 0 {
-		opts.fileMatchLimit = r.maxResults()
+		opts.fileMatchLimit = int32(r.MaxResults())
 	}
 
 	return getPatternInfo(r.Query, opts)
@@ -1483,11 +1482,6 @@ func newAggregator(ctx context.Context, stream SearchStream, inputs *SearchInput
 	go func() {
 		defer close(agg.done)
 		for event := range childStream {
-			// Timeouts are reported through Stats so don't report an error for them
-			if event.Error != nil && isContextError(ctx, event.Error) {
-				event.Error = nil
-			}
-
 			// Do not aggregate results if we are streaming.
 			if stream == nil {
 				agg.results = append(agg.results, event.Results...)
@@ -1529,20 +1523,34 @@ func (a *aggregator) send(event SearchEvent) {
 	a.stream <- event
 }
 
-func (a *aggregator) doRepoSearch(ctx context.Context, args *search.TextParameters, limit int32) {
+func (a *aggregator) error(ctx context.Context, err error) {
+	a.alert.Error(ctx, err)
+}
+
+func (a *aggregator) doRepoSearch(ctx context.Context, args *search.TextParameters, limit int32) (err error) {
 	tr, ctx := trace.New(ctx, "doRepoSearch", "")
-	defer tr.Finish()
+	defer func() {
+		a.error(ctx, err)
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	results, stats, err := searchRepositories(ctx, args, limit)
 	a.send(SearchEvent{
 		Results: results,
 		Stats:   statsDeref(stats),
-		Error:   errors.Wrap(err, "repository search failed"),
 	})
+
+	return errors.Wrap(err, "repository search failed")
 }
 
-func (a *aggregator) doSymbolSearch(ctx context.Context, args *search.TextParameters, limit int) {
+func (a *aggregator) doSymbolSearch(ctx context.Context, args *search.TextParameters, limit int) (err error) {
 	tr, ctx := trace.New(ctx, "doSymbolSearch", "")
-	defer tr.Finish()
+	defer func() {
+		a.error(ctx, err)
+		tr.SetError(err)
+		tr.Finish()
+	}()
 
 	symbolFileMatches, stats, err := searchSymbols(ctx, args, limit)
 
@@ -1554,20 +1562,22 @@ func (a *aggregator) doSymbolSearch(ctx context.Context, args *search.TextParame
 	a.send(SearchEvent{
 		Results: results,
 		Stats:   statsDeref(stats),
-		Error:   errors.Wrap(err, "symbol search failed"),
 	})
+	return errors.Wrap(err, "symbol search failed")
 }
 
-func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextParameters) {
+func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextParameters) (err error) {
 	tr, ctx := trace.New(ctx, "doFilePathSearch", "")
-
-	defer tr.Finish()
+	defer func() {
+		a.error(ctx, err)
+		tr.SetError(err)
+		tr.Finish()
+	}()
 
 	isDefaultStructuralSearch := args.PatternInfo.IsStructuralPat && args.PatternInfo.FileMatchLimit == defaultMaxSearchResults
 
 	if !isDefaultStructuralSearch {
-		searchFilesInRepos(ctx, args, a.stream)
-		return
+		return searchFilesInRepos(ctx, args, a.stream)
 	}
 
 	// For structural search with default limits we retry if we get no results.
@@ -1595,46 +1605,50 @@ func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextPara
 	a.send(SearchEvent{
 		Results: fileMatchResultsToSearchResults(fileResults),
 		Stats:   stats,
-		Error:   err,
 	})
+	return err
 }
 
-func (a *aggregator) doDiffSearch(ctx context.Context, tp *search.TextParameters) {
-	err := checkDiffCommitSearchLimits(ctx, tp, "diff")
-	if err != nil {
-		a.send(SearchEvent{Error: err})
-		return
-	}
-
+func (a *aggregator) doDiffSearch(ctx context.Context, tp *search.TextParameters) (err error) {
 	tr, ctx := trace.New(ctx, "doDiffSearch", "")
-	defer tr.Finish()
+	defer func() {
+		a.error(ctx, err)
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	if err := checkDiffCommitSearchLimits(ctx, tp, "diff"); err != nil {
+		return err
+	}
 
 	args, err := resolveCommitParameters(ctx, tp)
 	if err != nil {
 		log15.Warn("doDiffSearch: error while resolving commit parameters", "error", err)
-		return
+		return nil
 	}
 
-	searchCommitDiffsInRepos(ctx, args, a.stream)
+	return searchCommitDiffsInRepos(ctx, args, a.stream)
 }
 
-func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParameters) {
-	err := checkDiffCommitSearchLimits(ctx, tp, "commit")
-	if err != nil {
-		a.send(SearchEvent{Error: err})
-		return
-	}
-
+func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParameters) (err error) {
 	tr, ctx := trace.New(ctx, "doCommitSearch", "")
-	defer tr.Finish()
+	defer func() {
+		a.error(ctx, err)
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	if err := checkDiffCommitSearchLimits(ctx, tp, "commit"); err != nil {
+		return err
+	}
 
 	args, err := resolveCommitParameters(ctx, tp)
 	if err != nil {
 		log15.Warn("doCommitSearch: error while resolving commit parameters", "error", err)
-		return
+		return nil
 	}
 
-	searchCommitLogInRepos(ctx, args, a.stream)
+	return searchCommitLogInRepos(ctx, args, a.stream)
 }
 
 func statsDeref(s *streaming.Stats) streaming.Stats {
@@ -1679,6 +1693,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	defer cancel()
 
 	options := &getPatternInfoOptions{}
+	limit := r.MaxResults()
+	options.fileMatchLimit = int32(limit)
 	if r.PatternType == query.SearchTypeStructural {
 		options = &getPatternInfoOptions{performStructuralSearch: true}
 		forceOnlyResultType = "file"
@@ -1783,7 +1799,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		return alertResult, nil
 	}
 	if len(resolved.MissingRepoRevs) > 0 {
-		agg.send(SearchEvent{Error: &missingRepoRevsError{Missing: resolved.MissingRepoRevs}})
+		agg.error(ctx, &missingRepoRevsError{Missing: resolved.MissingRepoRevs})
 	}
 
 	// Send down our first bit of progress.
@@ -1820,14 +1836,14 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
-				agg.doRepoSearch(ctx, &args, r.maxResults())
+				agg.doRepoSearch(ctx, &args, int32(limit))
 			})
 		case "symbol":
 			wg := waitGroup(len(resultTypes) == 1)
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
-				agg.doSymbolSearch(ctx, &args, int(r.maxResults()))
+				agg.doSymbolSearch(ctx, &args, limit)
 			})
 		case "file", "path":
 			if searchedFileContentsOrPaths || args.Mode == search.NoFilePath {
@@ -1886,7 +1902,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		start:         start,
 		Stats:         common,
 		SearchResults: results,
-		limit:         int(r.maxResults()),
+		limit:         limit,
 		alert:         alert,
 	}
 	return &resultsResolver, err
