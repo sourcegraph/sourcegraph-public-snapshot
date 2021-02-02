@@ -2,7 +2,7 @@
 # that we use to run curl, git, and unzip against a Docker volume when using
 # the volume workspace.
 
-FROM alpine:3.12.3@sha256:074d3636ebda6dd446d0d00304c4454f468237fdacf08fb0eeac90bdbfa1bac7
+FROM alpine:3.13.1@sha256:08d6ca16c60fe7490c03d10dc339d9fd8ea67c6466dea8d558526b1330a85930
 
 # Note that we have to configure git's user.email and user.name settings to
 # avoid issues when committing changes. These values are not used when creating
