@@ -683,10 +683,10 @@ func (r *searchResolver) evaluateAndStream(ctx context.Context, scopeParameters 
 	r2.resultChannel = nil
 
 	result, err := r2.evaluateAnd(ctx, scopeParameters, operands)
-	r.resultChannel <- SearchEvent{
+	r.resultChannel.Send(SearchEvent{
 		Results: result.SearchResults,
 		Stats:   result.Stats,
-	}
+	})
 	return result, err
 }
 
@@ -1470,7 +1470,7 @@ func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameter
 }
 
 func newAggregator(ctx context.Context, stream SearchStream, inputs *SearchInputs) *aggregator {
-	childStream := make(chan SearchEvent, cap(stream))
+	childStream := make(chan SearchEvent)
 	agg := &aggregator{
 		stream: childStream,
 		done:   make(chan struct{}),
@@ -1490,7 +1490,7 @@ func newAggregator(ctx context.Context, stream SearchStream, inputs *SearchInput
 			agg.alert.Update(event)
 			agg.stats.Update(&event.Stats)
 			if stream != nil {
-				stream <- event
+				stream.Send(event)
 			}
 		}
 	}()
@@ -1499,7 +1499,7 @@ func newAggregator(ctx context.Context, stream SearchStream, inputs *SearchInput
 }
 
 type aggregator struct {
-	stream SearchStream
+	stream chan<- SearchEvent
 
 	done chan struct{}
 
@@ -1577,7 +1577,7 @@ func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextPara
 	isDefaultStructuralSearch := args.PatternInfo.IsStructuralPat && args.PatternInfo.FileMatchLimit == defaultMaxSearchResults
 
 	if !isDefaultStructuralSearch {
-		return searchFilesInRepos(ctx, args, a.stream)
+		return searchFilesInRepos(ctx, args, searchStreamChan(a.stream))
 	}
 
 	// For structural search with default limits we retry if we get no results.
@@ -1627,7 +1627,7 @@ func (a *aggregator) doDiffSearch(ctx context.Context, tp *search.TextParameters
 		return nil
 	}
 
-	return searchCommitDiffsInRepos(ctx, args, a.stream)
+	return searchCommitDiffsInRepos(ctx, args, searchStreamChan(a.stream))
 }
 
 func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParameters) (err error) {
@@ -1648,7 +1648,7 @@ func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParamete
 		return nil
 	}
 
-	return searchCommitLogInRepos(ctx, args, a.stream)
+	return searchCommitLogInRepos(ctx, args, searchStreamChan(a.stream))
 }
 
 func statsDeref(s *streaming.Stats) streaming.Stats {

@@ -281,7 +281,15 @@ type SearchEvent struct {
 // SearchStream is a send only channel of SearchEvent. All streaming search
 // backends write to a SearchStream which is then streamed out by the HTTP
 // layer.
-type SearchStream chan<- SearchEvent
+type SearchStream interface {
+	Send(SearchEvent)
+}
+
+type searchStreamChan chan<- SearchEvent
+
+func (s searchStreamChan) Send(event SearchEvent) {
+	s <- event
+}
 
 // collectStream is a helper for batch interfaces calling stream based
 // functions. It returns a context, stream and cleanup/get function. The
@@ -302,7 +310,7 @@ func collectStream(ctx context.Context) (context.Context, SearchStream, func() S
 		}
 	}()
 
-	return ctx, stream, func() SearchEvent {
+	return ctx, searchStreamChan(stream), func() SearchEvent {
 		cancel()
 		close(stream)
 		<-done

@@ -552,10 +552,10 @@ func searchCommitsInRepos(ctx context.Context, args *search.TextParametersForCom
 				// Only write if we have something to report back
 				if len(event.Results) > 0 || status != 0 {
 					stats.Status = search.RepoStatusSingleton(repoRev.Repo.ID, status)
-					params.ResultChannel <- SearchEvent{
+					params.ResultChannel.Send(SearchEvent{
 						Results: commitSearchResultsToSearchResults(event.Results),
 						Stats:   stats,
-					}
+					})
 				}
 			}
 
@@ -600,9 +600,9 @@ func searchCommitsInRepos(ctx context.Context, args *search.TextParametersForCom
 				err = errors.Wrapf(searchErr, "failed to search commit %s %s", params.ErrorName, repoRev.String())
 				cancel()
 			}
-			params.ResultChannel <- SearchEvent{
+			params.ResultChannel.Send(SearchEvent{
 				Stats: repoCommon,
-			}
+			})
 		}(repoRev)
 	}
 	wg.Wait()

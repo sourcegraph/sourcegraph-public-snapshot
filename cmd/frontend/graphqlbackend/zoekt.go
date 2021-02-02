@@ -305,9 +305,9 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 		limitHit := event.SearchResult.FilesSkipped+event.SearchResult.ShardsSkipped > 0
 
 		if len(files) == 0 {
-			c <- SearchEvent{
+			c.Send(SearchEvent{
 				Stats: streaming.Stats{IsLimitHit: limitHit},
-			}
+			})
 			continue
 		}
 
@@ -412,13 +412,13 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 			}
 		}
 
-		c <- SearchEvent{
+		c.Send(SearchEvent{
 			Results: matches,
 			Stats: streaming.Stats{
 				Status:     statusMap,
 				IsLimitHit: limitHit,
 			},
-		}
+		})
 	}
 	mkStatusMap := func(mask search.RepoStatus) search.RepoStatusMap {
 		var statusMap search.RepoStatusMap
@@ -429,10 +429,10 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 	}
 
 	if !foundResults && since(t0) >= searchOpts.MaxWallTime {
-		c <- SearchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusTimedout | search.RepoStatusIndexed)}}
+		c.Send(SearchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusTimedout | search.RepoStatusIndexed)}})
 		return nil
 	}
-	c <- SearchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusSearched | search.RepoStatusIndexed)}}
+	c.Send(SearchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusSearched | search.RepoStatusIndexed)}})
 	return nil
 }
 

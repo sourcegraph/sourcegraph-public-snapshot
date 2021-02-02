@@ -124,7 +124,7 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 		e := make(chan error, 1)
 		go func() {
 			defer close(c)
-			e <- indexed.Search(ctx, c)
+			e <- indexed.Search(ctx, searchStreamChan(c))
 		}()
 		for event := range c {
 			func() {
