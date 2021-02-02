@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 )
 
@@ -84,6 +85,15 @@ func ToFileMatch(combyMatches []comby.FileMatch) (matches []protocol.FileMatch) 
 			})
 	}
 	return matches
+}
+
+var isValidMatcher = lazyregexp.New(`\.(s|sh|bib|c|cs|css|dart|clj|elm|erl|ex|f|fsx|go|html|hs|java|js|json|jl|kt|tex|lisp|nim|md|ml|org|pas|php|py|re|rb|rs|rst|scala|sql|swift|tex|txt|ts)$`)
+
+func extensionToMatcher(extension string) string {
+	if isValidMatcher.MatchString(extension) {
+		return extension
+	}
+	return ".generic"
 }
 
 // lookupMatcher looks up a key for specifying -matcher in comby. Comby accepts
@@ -184,13 +194,17 @@ func languageMetric(matcher string, includePatterns *[]string) string {
 	return "inferred:.generic"
 }
 
-func structuralSearch(ctx context.Context, zipPath, pattern, rule string, languages, includePatterns []string, repo api.RepoName) (matches []protocol.FileMatch, limitHit bool, err error) {
+func structuralSearch(ctx context.Context, zipPath, pattern, rule, extension string, languages, includePatterns []string, repo api.RepoName) (matches []protocol.FileMatch, limitHit bool, err error) {
 	log15.Info("structural search", "repo", string(repo))
 
 	// Cap the number of forked processes to limit the size of zip contents being mapped to memory. Resolving #7133 could help to lift this restriction.
 	numWorkers := 4
 
 	var matcher string
+	if extension != "" {
+		matcher = extensionToMatcher(extension)
+	}
+
 	if len(languages) > 0 {
 		// Pick the first language, there is no support for applying
 		// multiple language matchers in a single search query.
@@ -267,12 +281,13 @@ func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request) (matche
 		return nil, false, false, err
 	}
 
-	includePatterns := make([]string, len(zoektMatches))
-	for i, match := range zoektMatches {
-		includePatterns[i] = match.FileName
+	var extension string
+	if len(zoektMatches) > 0 {
+		filename := zoektMatches[0].FileName
+		extension = filepath.Ext(filename)
 	}
 
-	matches, limitHit, err = structuralSearch(ctx, zipFile.Name(), p.Pattern, p.CombyRule, p.Languages, includePatterns, p.Repo)
+	matches, limitHit, err = structuralSearch(ctx, zipFile.Name(), p.Pattern, p.CombyRule, extension, p.Languages, []string{}, p.Repo)
 	return matches, limitHit, false, err
 }
 
