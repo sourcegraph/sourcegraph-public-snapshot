@@ -221,6 +221,7 @@ type QueueAutoIndexJobArgs struct {
 
 type GitTreeLSIFDataResolver interface {
 	Diagnostics(ctx context.Context, args *LSIFDiagnosticsArgs) (DiagnosticConnectionResolver, error)
+	// Symbols(ctx context.Context, args *LSIFSymbolArgs) (
 }
 
 type CodeIntelligenceCommitGraphResolver interface {
@@ -236,6 +237,7 @@ type GitBlobLSIFDataResolver interface {
 	Ranges(ctx context.Context, args *LSIFRangesArgs) (CodeIntelligenceRangeConnectionResolver, error)
 	Definitions(ctx context.Context, args *LSIFQueryPositionArgs) (LocationConnectionResolver, error)
 	References(ctx context.Context, args *LSIFPagedQueryPositionArgs) (LocationConnectionResolver, error)
+	Symbols(ctx context.Context, args *LSIFSymbolsArgs) (DocSymbolConnectionResolver, error)
 	Hover(ctx context.Context, args *LSIFQueryPositionArgs) (HoverResolver, error)
 }
 
@@ -261,6 +263,11 @@ type LSIFPagedQueryPositionArgs struct {
 	LSIFQueryPositionArgs
 	graphqlutil.ConnectionArgs
 	After *string
+}
+
+type LSIFSymbolsArgs struct {
+	graphqlutil.ConnectionArgs
+	Path string
 }
 
 type LSIFDiagnosticsArgs struct {
