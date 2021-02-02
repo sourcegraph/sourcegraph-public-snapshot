@@ -1186,6 +1186,51 @@ Indexes:
 
 ```
 
+# Table "public.security_event_logs"
+```
+      Column       |           Type           |                            Modifiers                             
+-------------------+--------------------------+------------------------------------------------------------------
+ id                | bigint                   | not null default nextval('security_event_logs_id_seq'::regclass)
+ name              | text                     | not null
+ url               | text                     | not null
+ user_id           | integer                  | not null
+ anonymous_user_id | text                     | not null
+ source            | text                     | not null
+ argument          | jsonb                    | not null
+ version           | text                     | not null
+ timestamp         | timestamp with time zone | not null
+Indexes:
+    "security_event_logs_pkey" PRIMARY KEY, btree (id)
+    "security_event_logs_anonymous_user_id" btree (anonymous_user_id)
+    "security_event_logs_name" btree (name)
+    "security_event_logs_source" btree (source)
+    "security_event_logs_timestamp" btree ("timestamp")
+    "security_event_logs_timestamp_at_utc" btree (date(timezone('UTC'::text, "timestamp")))
+    "security_event_logs_user_id" btree (user_id)
+Check constraints:
+    "security_event_logs_check_has_user" CHECK (user_id = 0 AND anonymous_user_id <> ''::text OR user_id <> 0 AND anonymous_user_id = ''::text OR user_id <> 0 AND anonymous_user_id <> ''::text)
+    "security_event_logs_check_name_not_empty" CHECK (name <> ''::text)
+    "security_event_logs_check_source_not_empty" CHECK (source <> ''::text)
+    "security_event_logs_check_version_not_empty" CHECK (version <> ''::text)
+
+```
+
+Contains security-relevant events with a long time horizon for storage.
+
+**anonymous_user_id**: The UUID of the actor associated with the event.
+
+**argument**: An arbitrary JSON blob containing event data.
+
+**name**: The event name as a CAPITALIZED_SNAKE_CASE string.
+
+**source**: The site section (WEB, BACKEND, etc.) that generated the event.
+
+**url**: The URL within the Sourcegraph app which generated the event.
+
+**user_id**: The ID of the actor associated with the event.
+
+**version**: The version of Sourcegraph which generated the event.
+
 # Table "public.settings"
 ```
      Column     |           Type           |                       Modifiers                       
@@ -1237,6 +1282,54 @@ Foreign-key constraints:
     "survey_responses_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
 
 ```
+
+# Table "public.totp_recovery_codes"
+```
+        Column        |           Type           |                            Modifiers                             
+----------------------+--------------------------+------------------------------------------------------------------
+ id                   | bigint                   | not null default nextval('totp_recovery_codes_id_seq'::regclass)
+ user_id              | integer                  | not null
+ hashed_recovery_code | character varying(64)    | not null
+ created_at           | timestamp with time zone | not null default now()
+ updated_at           | timestamp with time zone | not null default now()
+Indexes:
+    "totp_recovery_codes_pkey" PRIMARY KEY, btree (id)
+    "totp_recovery_codes_user_id_key" UNIQUE CONSTRAINT, btree (user_id)
+    "totp_recovery_codes_user_id" btree (user_id)
+Foreign-key constraints:
+    "totp_recovery_codes_user_id_fk" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+
+```
+
+Contains hashed TOTP recovery codes.
+
+**hashed_recovery_code**: The associated TOTP recovery code, hashed.
+
+**user_id**: The ID of the user that owns the recovery code.
+
+# Table "public.totp_secrets"
+```
+        Column        |           Type           |                         Modifiers                         
+----------------------+--------------------------+-----------------------------------------------------------
+ id                   | bigint                   | not null default nextval('totp_secrets_id_seq'::regclass)
+ user_id              | integer                  | not null
+ encrypted_secret_key | character varying(64)    | not null
+ created_at           | timestamp with time zone | not null default now()
+ updated_at           | timestamp with time zone | not null default now()
+Indexes:
+    "totp_secrets_pkey" PRIMARY KEY, btree (id)
+    "totp_secrets_user_id_key" UNIQUE CONSTRAINT, btree (user_id)
+    "totp_secrets_user_id" btree (user_id)
+Foreign-key constraints:
+    "totp_secrets_user_id_fk" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+
+```
+
+Contains encrypted TOTP secrets.
+
+**encrypted_secret_key**: The associated TOTP secret key, encrypted.
+
+**user_id**: The ID of the user that owns the secret key.
 
 # Table "public.user_credentials"
 ```
@@ -1399,6 +1492,8 @@ Referenced by:
     TABLE "settings" CONSTRAINT "settings_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "settings" CONSTRAINT "settings_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "survey_responses" CONSTRAINT "survey_responses_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
+    TABLE "totp_recovery_codes" CONSTRAINT "totp_recovery_codes_user_id_fk" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    TABLE "totp_secrets" CONSTRAINT "totp_secrets_user_id_fk" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "user_credentials" CONSTRAINT "user_credentials_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "user_emails" CONSTRAINT "user_emails_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "user_external_accounts" CONSTRAINT "user_external_accounts_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
