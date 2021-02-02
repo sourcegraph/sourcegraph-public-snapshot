@@ -103,8 +103,7 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 		run = parallel.NewRun(conf.SearchSymbolsParallelism())
 		mu  sync.Mutex
 
-		aggMatches        []*FileMatchResolver
-		overLimitCanceled bool
+		aggMatches []*FileMatchResolver
 	)
 
 	addMatches := func(matches []*FileMatchResolver) {
@@ -112,7 +111,6 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 			aggMatches = append(aggMatches, matches...)
 			if len(aggMatches) > int(args.PatternInfo.FileMatchLimit) {
 				tr.LazyPrintf("cancel due to result size: %d > %d", len(aggMatches), args.PatternInfo.FileMatchLimit)
-				overLimitCanceled = true
 				common.IsLimitHit = true
 				cancelAll()
 			}
