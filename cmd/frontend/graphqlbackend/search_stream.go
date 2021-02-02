@@ -41,9 +41,13 @@ func (s *limitStream) Send(event SearchEvent) {
 	s.s.Send(event)
 
 	s.mu.Lock()
+	oldCount := s.count
 	s.count += len(event.Results)
+	newCount := s.count
 	s.mu.Unlock()
-	if s.count > s.limit {
+
+	// Only send IsLimitHit once
+	if newCount > s.limit && oldCount <= s.limit {
 		s.s.Send(SearchEvent{Stats: streaming.Stats{IsLimitHit: true}})
 		s.cancel()
 	}
