@@ -11,9 +11,10 @@ $changeset-backdrop: #f3faff;
         }
     }
     &__bg-expanded {
+        background-color: $changeset-backdrop;
         @include media-breakpoint-up(sm) {
             border-top: 1px solid var(--border-color-2);
-            background-color: $changeset-backdrop;
+            padding: 1.5rem;
         }
     }
     &__status-cell {

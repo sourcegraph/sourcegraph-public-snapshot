@@ -37,7 +37,7 @@ export const CampaignPreviewStatsBar: React.FunctionComponent<CampaignPreviewSta
             <PreviewStatsRemoved count={campaignSpec.applyPreview.stats.removed} />
             <PreviewStatsModified count={campaignSpec.applyPreview.stats.modified} />
         </div>
-        <div className="campaign-preview-stats-bar__horizontal-divider d-block d-sm-none my-3" />
+        <div className="campaign-preview-stats-bar__horizontal-divider d-block d-md-none my-3" />
         <div className="campaign-preview-stats-bar__divider d-none d-md-block ml-3 mr-2" />
         <div className="campaign-preview-stats-bar__states d-flex justify-content-end">
             <PreviewActionReopen

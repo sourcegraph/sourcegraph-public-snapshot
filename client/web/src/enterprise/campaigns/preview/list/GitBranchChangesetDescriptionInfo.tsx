@@ -42,7 +42,7 @@ export const GitBranchChangesetDescriptionInfo: React.FunctionComponent<Props> =
                                     user={previousCommit.author}
                                     data-tooltip={formatPersonName(previousCommit.author)}
                                 />{' '}
-                                <PersonLink person={previousCommit.author} className="font-weight-bold" />
+                                <PersonLink person={previousCommit.author} className="font-weight-bold text-nowrap" />
                             </div>
                         </DeletedEntry>
                         <div className="text-muted">
@@ -57,15 +57,15 @@ export const GitBranchChangesetDescriptionInfo: React.FunctionComponent<Props> =
                         </div>
                     </>
                 )}
-            <div className="d-flex flex-column align-items-center mr-3 text-muted">
+            <div className="d-flex flex-column align-items-center mr-3">
                 <UserAvatar
-                    className="icon-inline mb-1 text-muted"
+                    className="icon-inline mb-1"
                     user={commit.author}
                     data-tooltip={formatPersonName(commit.author)}
                 />{' '}
-                <PersonLink person={commit.author} className="font-weight-bold" />
+                <PersonLink person={commit.author} className="font-weight-bold text-nowrap" />
             </div>
-            <div className="text-muted">
+            <div>
                 <h3>{commit.subject}</h3>
                 {commit.body && <pre className="text-wrap">{commit.body}</pre>}
             </div>

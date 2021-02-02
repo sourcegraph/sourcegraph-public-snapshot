@@ -128,8 +128,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
             </button>
             {isExpanded && (
                 <>
-                    {/* <div className="visible-changeset-apply-preview-node__bg-expanded align-self-stretch" /> */}
-                    <div className="visible-changeset-apply-preview-node__expanded-section visible-changeset-apply-preview-node__bg-expanded p-4">
+                    <div className="visible-changeset-apply-preview-node__expanded-section visible-changeset-apply-preview-node__bg-expanded pt-4">
                         <ExpandedSection
                             node={node}
                             history={history}
