@@ -34,13 +34,12 @@ import (
 var mockResolveRepositories func(effectiveRepoFieldValues []string) (resolved searchrepos.Resolved, err error)
 
 type SearchArgs struct {
-	Version           string
-	PatternType       *string
-	Query             string
-	After             *string
-	First             *int32
-	SearchContextSpec *string
-	VersionContext    *string
+	Version        string
+	PatternType    *string
+	Query          string
+	After          *string
+	First          *int32
+	VersionContext *string
 
 	// For tests
 	Settings *schema.Settings
@@ -115,13 +114,12 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (_ SearchImplem
 
 	return &searchResolver{
 		SearchInputs: &SearchInputs{
-			Query:             queryInfo,
-			OriginalQuery:     args.Query,
-			VersionContext:    args.VersionContext,
-			SearchContextSpec: args.SearchContextSpec,
-			UserSettings:      settings,
-			Pagination:        pagination,
-			PatternType:       searchType,
+			Query:          queryInfo,
+			OriginalQuery:  args.Query,
+			VersionContext: args.VersionContext,
+			UserSettings:   settings,
+			Pagination:     pagination,
+			PatternType:    searchType,
 		},
 		zoekt:        search.Indexed(),
 		searcherURLs: search.SearcherURLs(),
@@ -246,13 +244,12 @@ func getBoolPtr(b *bool, def bool) bool {
 
 // SearchInputs contains fields we set before kicking off search.
 type SearchInputs struct {
-	Query             query.QueryInfo       // the query, either containing and/or expressions or otherwise ordinary
-	OriginalQuery     string                // the raw string of the original search query
-	Pagination        *searchPaginationInfo // pagination information, or nil if the request is not paginated.
-	PatternType       query.SearchType
-	VersionContext    *string
-	SearchContextSpec *string
-	UserSettings      *schema.Settings
+	Query          query.QueryInfo       // the query, either containing and/or expressions or otherwise ordinary
+	OriginalQuery  string                // the raw string of the original search query
+	Pagination     *searchPaginationInfo // pagination information, or nil if the request is not paginated.
+	PatternType    query.SearchType
+	VersionContext *string
+	UserSettings   *schema.Settings
 }
 
 // searchResolver is a resolver for the GraphQL type `Search`
@@ -469,17 +466,12 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 	if r.VersionContext != nil {
 		versionContextName = *r.VersionContext
 	}
-	var searchContextSpec string
-	if r.SearchContextSpec != nil {
-		searchContextSpec = *r.SearchContextSpec
-	}
 
 	tr.LazyPrintf("resolveRepositories - start")
 	options := searchrepos.Options{
 		RepoFilters:        repoFilters,
 		MinusRepoFilters:   minusRepoFilters,
 		RepoGroupFilters:   repoGroupFilters,
-		SearchContextSpec:  searchContextSpec,
 		VersionContextName: versionContextName,
 		UserSettings:       r.UserSettings,
 		OnlyForks:          fork == searchrepos.Only,

@@ -1654,9 +1654,6 @@ func (r *searchResolver) isGlobalSearch() bool {
 	if r.VersionContext != nil && *r.VersionContext != "" {
 		return false
 	}
-	if envvar.SourcegraphDotComMode() && r.SearchContextSpec != nil && !searchrepos.IsGlobalSearchContextSpec(*r.SearchContextSpec) {
-		return false
-	}
 	return len(r.Query.Values(query.FieldRepo)) == 0 && len(r.Query.Values(query.FieldRepoGroup)) == 0 && len(r.Query.Values(query.FieldRepoHasFile)) == 0
 }
 
