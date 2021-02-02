@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { Link, NavLink } from 'react-router-dom'
+import { PageHeader } from '../../components/PageHeader'
 import { orgURL } from '../../org'
 import { OrgAvatar } from '../../org/OrgAvatar'
 import { NavItemWithIconDescriptor } from '../../util/contributions'
@@ -25,17 +26,25 @@ export const UserAreaHeader: React.FunctionComponent<Props> = ({ url, navItems, 
         <div className="container">
             {props.user && (
                 <>
-                    <h2 className="user-area-header__title">
-                        {props.user.avatarURL && <UserAvatar className="user-area-header__avatar" user={props.user} />}
-                        {props.user.displayName ? (
-                            <div>
-                                <div className="user-area-header__title-subtitle">{props.user.username}</div>
-                                <span className="test-user-area-header__display-name">{props.user.displayName} </span>
-                            </div>
-                        ) : (
-                            props.user.username
-                        )}
-                    </h2>
+                    <PageHeader
+                        path={[
+                            {
+                                text: (
+                                    <span className="align-middle">
+                                        {props.user.displayName ? (
+                                            <>
+                                                {props.user.displayName} ({props.user.username})
+                                            </>
+                                        ) : (
+                                            props.user.username
+                                        )}
+                                    </span>
+                                ),
+                                icon: () => <UserAvatar className="user-area-header__avatar" user={props.user} />,
+                            },
+                        ]}
+                        className="mb-3"
+                    />
                     <div className="d-flex align-items-end justify-content-between">
                         <ul className="nav nav-tabs border-bottom-0">
                             {navItems.map(
