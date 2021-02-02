@@ -137,6 +137,8 @@ func (s *Store) Symbols(ctx context.Context, bundleID int, path string) ([]Docum
 		documentData = append(documentData, docData.Document.Symbols...)
 	}
 
+	// NEXT: convert to []Symbol (instead of []DocumentSymbolData)
+	// Need to iterate over monikers in documentData (where are moniker edges located, perhaps need to correlate them?)
 	for _, docData := range scannedDocumentData {
 		docData.Document.Monikers
 	}

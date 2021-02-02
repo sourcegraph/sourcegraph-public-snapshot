@@ -411,6 +411,7 @@ func correlateTextDocumentDocumentSymbolEdge(state *wrappedState, id int, edge l
 }
 
 func correlateMonikerEdge(state *wrappedState, id int, edge lsif.Edge) error {
+	// MARK: where does this ultimately get written?
 	if _, ok := state.MonikerData[edge.InV]; !ok {
 		return malformedDump(id, edge.InV, "moniker")
 	}
