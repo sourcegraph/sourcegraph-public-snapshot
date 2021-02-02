@@ -122,8 +122,6 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 	run.Acquire()
 	goroutine.Go(func() {
 		defer run.Release()
-		ctx, cancel := context.WithCancel(ctx)
-		defer cancel()
 		c := make(chan SearchEvent)
 		e := make(chan error, 1)
 		go func() {
@@ -144,15 +142,9 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 			}()
 		}
 
-		if lErr := <-e; lErr != nil {
-			tr.LogFields(otlog.Error(lErr))
-			mu.Lock()
-			if err == nil && !overLimitCanceled {
-				err = lErr
-				tr.LazyPrintf("cancel indexed symbol search due to error: %v", err)
-				cancel()
-			}
-			mu.Unlock()
+		if err := <-e; err != nil {
+			tr.LogFields(otlog.Error(err))
+			run.Error(err)
 		}
 	})
 
