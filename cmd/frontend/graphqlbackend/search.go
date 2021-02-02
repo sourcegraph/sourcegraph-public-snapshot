@@ -119,7 +119,6 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (_ SearchImplem
 			UserSettings:   settings,
 			Pagination:     pagination,
 			PatternType:    searchType,
-			Limit:          maxResults(args, queryInfo),
 		},
 		zoekt:        search.Indexed(),
 		searcherURLs: search.SearcherURLs(),
@@ -250,9 +249,6 @@ type SearchInputs struct {
 	PatternType    query.SearchType
 	VersionContext *string
 	UserSettings   *schema.Settings
-
-	// Limit is the maximum number of SearchResults to send back to the user.
-	Limit int
 }
 
 // searchResolver is a resolver for the GraphQL type `Search`
@@ -354,23 +350,26 @@ func (r *searchResolver) countIsSet() bool {
 const defaultMaxSearchResults = 30
 const maxSearchResultsPerPaginatedRequest = 5000
 
-// maxResults computes the limit for the query.
-func maxResults(args *SearchArgs, queryInfo query.QueryInfo) int {
-	if args.First != nil {
+// MaxResults computes the limit for the query.
+func (inputs SearchInputs) MaxResults() int {
+	if inputs.Pagination != nil {
 		// Paginated search requests always consume an entire result set for a
 		// given repository, so we do not want any limit here. See
 		// search_pagination.go for details on why this is necessary .
 		return math.MaxInt32
 	}
 
-	count, _ := queryInfo.StringValues(query.FieldCount)
+	if inputs.Query == nil {
+		return 0
+	}
+	count, _ := inputs.Query.StringValues(query.FieldCount)
 	if len(count) > 0 {
 		n, _ := strconv.Atoi(count[0])
 		if n > 0 {
 			return n
 		}
 	}
-	max, _ := queryInfo.StringValues(query.FieldMax)
+	max, _ := inputs.Query.StringValues(query.FieldMax)
 	if len(max) > 0 {
 		n, _ := strconv.Atoi(max[0])
 		if n > 0 {

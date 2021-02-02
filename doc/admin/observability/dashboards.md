@@ -730,6 +730,46 @@ This panel indicates percentage pods available.
 
 <p class="subtitle">Stores, manages, and operates Git repositories.</p>
 
+#### gitserver: memory_working_set
+
+This panel indicates memory working set.
+
+
+
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+
+<br />
+
+#### gitserver: go_routines
+
+This panel indicates go routines.
+
+
+
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+
+<br />
+
+#### gitserver: cpu_throttling_time
+
+This panel indicates container CPU throttling time %.
+
+
+
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+
+<br />
+
+#### gitserver: cpu_usage_seconds
+
+This panel indicates cpu usage seconds.
+
+
+
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+
+<br />
+
 #### gitserver: disk_space_remaining
 
 This panel indicates disk space remaining by instance.
@@ -740,9 +780,69 @@ This panel indicates disk space remaining by instance.
 
 <br />
 
+#### gitserver: io_reads_total
+
+This panel indicates i/o reads total.
+
+
+
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+
+<br />
+
+#### gitserver: io_writes_total
+
+This panel indicates i/o writes total.
+
+
+
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+
+<br />
+
+#### gitserver: io_reads
+
+This panel indicates i/o reads.
+
+
+
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+
+<br />
+
+#### gitserver: io_writes
+
+This panel indicates i/o writes.
+
+
+
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+
+<br />
+
+#### gitserver: io_read_througput
+
+This panel indicates i/o read throughput.
+
+
+
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+
+<br />
+
+#### gitserver: io_write_throughput
+
+This panel indicates i/o write throughput.
+
+
+
+<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+
+<br />
+
 #### gitserver: running_git_commands
 
-This panel indicates running git commands.
+This panel indicates git commands sent to each gitserver instance.
 
 A high value signals load.
 

@@ -191,7 +191,7 @@ func (e *ExternalServiceStore) ValidateConfig(ctx context.Context, opt ValidateE
 	}
 
 	// Check for any redacted secrets, in graphqlbackend/external_service.go:externalServiceByID() we call
-	// svc.RedactConfig() replacing any secret fields in the JSON with types.RedactedSecret, this is to
+	// svc.RedactConfigSecrets() replacing any secret fields in the JSON with types.RedactedSecret, this is to
 	// prevent us leaking tokens that users add. Here we check that the config we've been passed doesn't
 	// contain any redacted secrets in order to avoid breaking configs by writing the redacted version to
 	// the database. we should have called svc.UnredactConfig(oldSvc) before this point, eg in the Update
