@@ -9,7 +9,7 @@ export interface CampaignsDotComPageProps {
 
 export const CampaignsDotComPage: React.FunctionComponent<CampaignsDotComPageProps> = () => (
     <>
-        <section className="mt-3 mb-5">
+        <section className="mb-5">
             <PageHeader path={[{ icon: CampaignsIcon, text: 'Campaigns' }]} className="mb-3" />
             <h2 className="mb-5">Make and track large-scale changes across all code</h2>
 
