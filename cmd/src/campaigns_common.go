@@ -385,7 +385,10 @@ func printExecutionError(out *output.Output, err error) {
 	}
 
 	out.Write("")
-	out.WriteLine(output.Line(output.EmojiLightbulb, output.StyleSuggestion, "The troubleshooting documentation can help to narrow down the cause of the errors: https://docs.sourcegraph.com/campaigns/references/troubleshooting"))
+
+	block := out.Block(output.Line(output.EmojiLightbulb, output.StyleSuggestion, "The troubleshooting documentation can help to narrow down the cause of the errors:"))
+	block.WriteLine(output.Line("", output.StyleSuggestion, "https://docs.sourcegraph.com/campaigns/references/troubleshooting"))
+	block.Close()
 }
 
 func flattenErrs(err error) (result []error) {
