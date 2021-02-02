@@ -278,6 +278,8 @@ type SearchEvent struct {
 	Stats   streaming.Stats
 }
 
+// Streamer is the interface that wraps the basic Send method. Send must not
+// mutate the event.
 type Streamer interface {
 	Send(SearchEvent)
 }
@@ -313,8 +315,8 @@ func (s *limitStream) Send(event SearchEvent) {
 }
 
 // WithLimit returns a Streamer and a context. The Streamer is limited to `limit`
-// results. The returned context is canceled, once more than `limit` results have
-// been sent on the stream,
+// results. Once more than `limit` results have been sent on the stream, the
+// returned context is canceled.
 func WithLimit(ctx context.Context, stream Streamer, limit int) (Streamer, context.Context, func()) {
 	cancelContext, cancel := context.WithCancel(ctx)
 	cleanup := func() {
