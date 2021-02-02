@@ -292,7 +292,6 @@ func (s SearchStream) Send(event SearchEvent) {
 
 type limitStream struct {
 	s      Streamer
-	ctx    context.Context
 	cancel func()
 
 	mu    sync.Mutex
@@ -307,11 +306,11 @@ func (s *limitStream) Send(event SearchEvent) {
 
 	s.mu.Lock()
 	s.count += len(event.Results)
+	s.mu.Unlock()
 	if s.count > s.limit {
 		s.s.Send(SearchEvent{Stats: streaming.Stats{IsLimitHit: true}})
 		s.cancel()
 	}
-	s.mu.Unlock()
 }
 
 // WithLimit returns a Streamer and a context. The Streamer is limited to `limit`
@@ -322,7 +321,7 @@ func WithLimit(ctx context.Context, stream Streamer, limit int) (Streamer, conte
 	cleanup := func() {
 		cancel()
 	}
-	newLimitStream := &limitStream{ctx: cancelContext, cancel: cancel, s: stream, limit: limit}
+	newLimitStream := &limitStream{cancel: cancel, s: stream, limit: limit}
 	return newLimitStream, cancelContext, cleanup
 }
 
