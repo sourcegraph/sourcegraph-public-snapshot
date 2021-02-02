@@ -142,7 +142,10 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 
 		if err := <-e; err != nil {
 			tr.LogFields(otlog.Error(err))
-			run.Error(err)
+			if ctx.Err() == nil || errors.Cause(err) != ctx.Err() {
+				// Only record error if it's not directly caused by a context error.
+				run.Error(err)
+			}
 		}
 	})
 
