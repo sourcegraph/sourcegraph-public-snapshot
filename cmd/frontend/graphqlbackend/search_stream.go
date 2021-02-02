@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"go.uber.org/atomic"
@@ -72,29 +73,21 @@ func (f StreamFunc) Send(event SearchEvent) {
 	f(event)
 }
 
-// collectStream is a helper for batch interfaces calling stream based
-// functions. It returns a context, stream and cleanup/get function. The
-// cleanup/get function will return the aggregated event and must be called
-// once you have stopped sending to stream.
-func collectStream(ctx context.Context) (context.Context, Streamer, func() SearchEvent) {
-	var agg SearchEvent
+// collectStream will call search and aggregates all events it sends. It then
+// returns the aggregate event and any error it returns.
+func collectStream(search func(Streamer) error) ([]SearchResultResolver, streaming.Stats, error) {
+	var (
+		mu      sync.Mutex
+		results []SearchResultResolver
+		stats   streaming.Stats
+	)
 
-	ctx, cancel := context.WithCancel(ctx)
+	err := search(StreamFunc(func(event SearchEvent) {
+		mu.Lock()
+		results = append(results, event.Results...)
+		stats.Update(&event.Stats)
+		mu.Unlock()
+	}))
 
-	done := make(chan struct{})
-	stream := make(chan SearchEvent)
-	go func() {
-		defer close(done)
-		for event := range stream {
-			agg.Results = append(agg.Results, event.Results...)
-			agg.Stats.Update(&event.Stats)
-		}
-	}()
-
-	return ctx, SearchStream(stream), func() SearchEvent {
-		cancel()
-		close(stream)
-		<-done
-		return agg
-	}
+	return results, stats, err
 }

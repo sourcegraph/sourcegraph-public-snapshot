@@ -326,14 +326,14 @@ func searchResultsToFileMatchResults(results []SearchResultResolver) ([]*FileMat
 // searchFilesInRepoBatch is a convenience function around searchFilesInRepos
 // which collects the results from the stream.
 func searchFilesInReposBatch(ctx context.Context, args *search.TextParameters) ([]*FileMatchResolver, streaming.Stats, error) {
-	ctx, stream, done := collectStream(ctx)
-	searchErr := searchFilesInRepos(ctx, args, stream)
-	agg := done()
-	results, err := searchResultsToFileMatchResults(agg.Results)
-	if err != nil && searchErr == nil {
-		searchErr = errors.Wrap(err, "searchFilesInReposBatch failed to convert results")
+	results, stats, err := collectStream(func(stream Streamer) error {
+		return searchFilesInRepos(ctx, args, stream)
+	})
+	fms, fmErr := searchResultsToFileMatchResults(results)
+	if fmErr != nil && err == nil {
+		err = errors.Wrap(fmErr, "searchFilesInReposBatch failed to convert results")
 	}
-	return results, agg.Stats, searchErr
+	return fms, stats, err
 }
 
 // searchFilesInRepos searches a set of repos for a pattern.
