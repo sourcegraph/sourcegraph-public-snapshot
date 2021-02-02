@@ -20,8 +20,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-func TestRevisionValidation(t *testing.T) {
+type mockNamespaceStore struct {
+	GetByNameMock func(ctx context.Context, name string) (*database.Namespace, error)
+}
 
+func (ns *mockNamespaceStore) GetByName(ctx context.Context, name string) (*database.Namespace, error) {
+	return ns.GetByNameMock(ctx, name)
+}
+
+func TestRevisionValidation(t *testing.T) {
 	// mocks a repo repoFoo with revisions revBar and revBas
 	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
 		// trigger errors
@@ -156,7 +163,7 @@ func TestRevisionValidation(t *testing.T) {
 		t.Run(tt.repoFilters[0], func(t *testing.T) {
 
 			op := Options{RepoFilters: tt.repoFilters}
-			repositoryResolver := Resolver{}
+			repositoryResolver := &Resolver{NamespaceStore: &mockNamespaceStore{}}
 			resolved, err := repositoryResolver.Resolve(context.Background(), op)
 
 			if diff := cmp.Diff(tt.wantRepoRevs, resolved.RepoRevs); diff != "" {
@@ -471,14 +478,6 @@ func TestResolvingInvalidSearchContextSpecs(t *testing.T) {
 			}
 		})
 	}
-}
-
-type mockNamespaceStore struct {
-	GetByNameMock func(ctx context.Context, name string) (*database.Namespace, error)
-}
-
-func (ns *mockNamespaceStore) GetByName(ctx context.Context, name string) (*database.Namespace, error) {
-	return ns.GetByNameMock(ctx, name)
 }
 
 func TestUseDefaultReposIfMissingOrGlobalSearchContext(t *testing.T) {
