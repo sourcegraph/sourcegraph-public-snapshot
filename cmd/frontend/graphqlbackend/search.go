@@ -50,7 +50,7 @@ type SearchImplementer interface {
 	//lint:ignore U1000 is used by graphql via reflection
 	Stats(context.Context) (*searchResultsStats, error)
 
-	SetStream(c SearchStream)
+	SetStream(c Streamer)
 	Inputs() SearchInputs
 }
 
@@ -258,7 +258,7 @@ type searchResolver struct {
 
 	// resultChannel if non-nil will send all results we receive down it. See
 	// searchResolver.SetResultChannel
-	resultChannel SearchStream
+	resultChannel Streamer
 
 	// Cached resolveRepositories results. We use a pointer to the mutex so that we
 	// can copy the resolver, while sharing the mutex. If we didn't use a pointer,
@@ -278,24 +278,57 @@ type SearchEvent struct {
 	Stats   streaming.Stats
 }
 
-// SearchStream is a send only channel of SearchEvent. All streaming search
-// backends write to a SearchStream which is then streamed out by the HTTP
-// layer.
-type SearchStream interface {
+type Streamer interface {
 	Send(SearchEvent)
 }
 
-type searchStreamChan chan<- SearchEvent
+type SearchStream chan<- SearchEvent
 
-func (s searchStreamChan) Send(event SearchEvent) {
+func (s SearchStream) Send(event SearchEvent) {
 	s <- event
+}
+
+type limitStream struct {
+	s      Streamer
+	ctx    context.Context
+	cancel func()
+
+	mu    sync.Mutex
+	limit int
+	count int
+}
+
+// Send sends an event on the stream. If the limit is reached, a final event with
+// IsLimitHit = true is sent.
+func (s *limitStream) Send(event SearchEvent) {
+	s.s.Send(event)
+
+	s.mu.Lock()
+	s.count += len(event.Results)
+	if s.count > s.limit {
+		s.s.Send(SearchEvent{Stats: streaming.Stats{IsLimitHit: true}})
+		s.cancel()
+	}
+	s.mu.Unlock()
+}
+
+// WithLimit returns a Streamer and a context. The Streamer is limited to `limit`
+// results. The returned context is canceled, once more than `limit` results have
+// been sent on the stream,
+func WithLimit(ctx context.Context, stream Streamer, limit int) (Streamer, context.Context, func()) {
+	cancelContext, cancel := context.WithCancel(ctx)
+	cleanup := func() {
+		cancel()
+	}
+	newLimitStream := &limitStream{ctx: cancelContext, cancel: cancel, s: stream, limit: limit}
+	return newLimitStream, cancelContext, cleanup
 }
 
 // collectStream is a helper for batch interfaces calling stream based
 // functions. It returns a context, stream and cleanup/get function. The
 // cleanup/get function will return the aggregated event and must be called
 // once you have stopped sending to stream.
-func collectStream(ctx context.Context) (context.Context, SearchStream, func() SearchEvent) {
+func collectStream(ctx context.Context) (context.Context, Streamer, func() SearchEvent) {
 	var agg SearchEvent
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -310,7 +343,7 @@ func collectStream(ctx context.Context) (context.Context, SearchStream, func() S
 		}
 	}()
 
-	return ctx, searchStreamChan(stream), func() SearchEvent {
+	return ctx, SearchStream(stream), func() SearchEvent {
 		cancel()
 		close(stream)
 		<-done
@@ -327,7 +360,7 @@ func collectStream(ctx context.Context) (context.Context, SearchStream, func() S
 // us to stream out things like dynamic filters or take into account
 // AND/OR. However, streaming is behind a feature flag for now, so this is to
 // make it visible in the browser.
-func (r *searchResolver) SetStream(c SearchStream) {
+func (r *searchResolver) SetStream(c Streamer) {
 	r.resultChannel = c
 }
 

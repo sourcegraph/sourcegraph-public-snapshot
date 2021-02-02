@@ -43,7 +43,7 @@ func buildQuery(args *search.TextParameters, repos *indexedRepoRevs, filePathPat
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, _ indexedRequestType, since func(t time.Time) time.Duration, c SearchStream) error {
+func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, _ indexedRequestType, since func(t time.Time) time.Duration, c Streamer) error {
 	var (
 		err       error
 		limitHit  bool

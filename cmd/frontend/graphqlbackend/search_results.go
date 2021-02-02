@@ -1469,7 +1469,7 @@ func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameter
 	return nil
 }
 
-func newAggregator(ctx context.Context, stream SearchStream, inputs *SearchInputs) *aggregator {
+func newAggregator(ctx context.Context, stream Streamer, inputs *SearchInputs) *aggregator {
 	childStream := make(chan SearchEvent)
 	agg := &aggregator{
 		stream: childStream,
@@ -1577,7 +1577,7 @@ func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextPara
 	isDefaultStructuralSearch := args.PatternInfo.IsStructuralPat && args.PatternInfo.FileMatchLimit == defaultMaxSearchResults
 
 	if !isDefaultStructuralSearch {
-		return searchFilesInRepos(ctx, args, searchStreamChan(a.stream))
+		return searchFilesInRepos(ctx, args, SearchStream(a.stream))
 	}
 
 	// For structural search with default limits we retry if we get no results.
@@ -1627,7 +1627,7 @@ func (a *aggregator) doDiffSearch(ctx context.Context, tp *search.TextParameters
 		return nil
 	}
 
-	return searchCommitDiffsInRepos(ctx, args, searchStreamChan(a.stream))
+	return searchCommitDiffsInRepos(ctx, args, SearchStream(a.stream))
 }
 
 func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParameters) (err error) {
@@ -1648,7 +1648,7 @@ func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParamete
 		return nil
 	}
 
-	return searchCommitLogInRepos(ctx, args, searchStreamChan(a.stream))
+	return searchCommitLogInRepos(ctx, args, SearchStream(a.stream))
 }
 
 func statsDeref(s *streaming.Stats) streaming.Stats {

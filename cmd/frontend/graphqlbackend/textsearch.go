@@ -337,7 +337,7 @@ func searchFilesInReposBatch(ctx context.Context, args *search.TextParameters) (
 }
 
 // searchFilesInRepos searches a set of repos for a pattern.
-func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream SearchStream) (finalErr error) {
+func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream Streamer) (finalErr error) {
 	var (
 		wg sync.WaitGroup
 
@@ -588,7 +588,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 			e := make(chan error, 1)
 			go func() {
 				defer close(c)
-				e <- indexed.Search(ctx, searchStreamChan(c))
+				e <- indexed.Search(ctx, SearchStream(c))
 			}()
 			for event := range c {
 				tr.LogFields(otlog.Int("matches.len", len(event.Results)))
@@ -626,7 +626,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 			e := make(chan error, 1)
 			go func() {
 				defer close(c)
-				e <- indexed.Search(ctx, searchStreamChan(c))
+				e <- indexed.Search(ctx, SearchStream(c))
 			}()
 			for event := range c {
 				tr.LogFields(otlog.Int("matches.len", len(event.Results)))
