@@ -693,7 +693,7 @@ func TestSearch(t *testing.T) {
 				zeroResult: true,
 				wantAlert: &gqltestutil.SearchAlert{
 					Title:       "Unable To Process Query",
-					Description: "Unbalanced expression: unmatched closing parenthesis )",
+					Description: "Unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses",
 				},
 			},
 			{
@@ -702,7 +702,7 @@ func TestSearch(t *testing.T) {
 				zeroResult: true,
 				wantAlert: &gqltestutil.SearchAlert{
 					Title:       "Unable To Process Query",
-					Description: "Unbalanced expression: unmatched closing parenthesis )",
+					Description: "Unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses",
 				},
 			},
 			{
@@ -711,7 +711,7 @@ func TestSearch(t *testing.T) {
 				zeroResult: true,
 				wantAlert: &gqltestutil.SearchAlert{
 					Title:       "Unable To Process Query",
-					Description: "Unbalanced expression: unmatched closing parenthesis )",
+					Description: "Unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses",
 				},
 			},
 			{
@@ -720,7 +720,7 @@ func TestSearch(t *testing.T) {
 				zeroResult: true,
 				wantAlert: &gqltestutil.SearchAlert{
 					Title:       "Unable To Process Query",
-					Description: "Unbalanced expression: unmatched closing parenthesis )",
+					Description: "Unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses",
 				},
 			},
 			{
