@@ -257,7 +257,9 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                                         value={this.state.oldPassword}
                                         onChange={this.onOldPasswordFieldChange}
                                         disabled={this.state.loading}
+                                        id="oldPassword"
                                         name="oldPassword"
+                                        aria-label="old password"
                                         placeholder=" "
                                         autoComplete="current-password"
                                     />
@@ -270,7 +272,9 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                                     value={this.state.newPassword}
                                     onChange={this.onNewPasswordFieldChange}
                                     disabled={this.state.loading}
+                                    id="newPassword"
                                     name="newPassword"
+                                    aria-label="new password"
                                     placeholder=" "
                                     autoComplete="new-password"
                                 />
@@ -282,7 +286,9 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                                     value={this.state.newPasswordConfirmation}
                                     onChange={this.onNewPasswordConfirmationFieldChange}
                                     disabled={this.state.loading}
+                                    id="newPasswordConfirmation"
                                     name="newPasswordConfirmation"
+                                    aria-label="new password confirmation"
                                     placeholder=" "
                                     inputRef={this.setNewPasswordConfirmationField}
                                     autoComplete="new-password"

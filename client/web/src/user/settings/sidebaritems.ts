@@ -16,8 +16,8 @@ export const userSettingsSideBarItems: UserSettingsSidebarItems = {
             label: 'Account security',
             to: '/security',
             exact: true,
-            // Only the builtin auth provider has a password.
-            condition: ({ user }) => user.builtinAuth,
+            // Only for authenticated users
+            condition: ({ user, authenticatedUser }) => user.id === authenticatedUser.id,
         },
         {
             label: 'Emails',
