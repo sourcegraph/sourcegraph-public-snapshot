@@ -13,10 +13,14 @@
         display: flex;
         align-items: center;
         flex: 1 1 auto;
-        padding-left: 0.25rem;
+        // stylelint-disable-next-line declaration-property-unit-whitelist
+        margin: -1px; // To compensate for the border
         border: 1px solid transparent;
         // Match padding from the regular query input.
         padding-left: 0.75rem;
+        &:not(:first-child) {
+            padding-left: 0.5rem; // smaller padding if the search context selector is visible
+        }
 
         &:focus-within {
             border: 1px solid $input-focus-border-color;
