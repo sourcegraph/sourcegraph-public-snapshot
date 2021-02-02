@@ -128,14 +128,14 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 		}()
 		for event := range c {
 			func() {
-				mu.Lock()
-				defer mu.Unlock()
-				common.Update(&event.Stats)
-
 				fms := make([]*FileMatchResolver, 0, len(event.Results))
 				for _, match := range event.Results {
 					fms = append(fms, match.(*FileMatchResolver))
 				}
+
+				mu.Lock()
+				defer mu.Unlock()
+				common.Update(&event.Stats)
 				addMatches(fms)
 			}()
 		}
