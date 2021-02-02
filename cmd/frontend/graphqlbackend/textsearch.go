@@ -341,10 +341,8 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 	var (
 		wg sync.WaitGroup
 
-		mu                sync.Mutex
-		searchErr         error
-		resultCount       int
-		overLimitCanceled bool // canceled because we were over the limit
+		mu        sync.Mutex
+		searchErr error
 	)
 	if mockSearchFilesInRepos != nil {
 		results, mockStats, err := mockSearchFilesInRepos(args)
@@ -354,6 +352,9 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 		})
 		return err
 	}
+
+	limitStream, ctx, cleanup := WithLimit(ctx, stream, int(args.PatternInfo.FileMatchLimit))
+	defer cleanup()
 
 	tr, ctx := trace.New(ctx, "searchFilesInRepos", fmt.Sprintf("query: %s", args.PatternInfo.Pattern))
 	defer func() {
@@ -365,9 +366,6 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 		trace.Stringer("query", &fields),
 		trace.Stringer("info", args.PatternInfo),
 	)
-
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
 
 	indexedTyp := textRequest
 	if args.PatternInfo.IsStructuralPat {
@@ -413,7 +411,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 		for _, r := range indexed.Unindexed {
 			status.Update(r.Repo.ID, search.RepoStatusMissing)
 		}
-		stream.Send(SearchEvent{
+		limitStream.Send(SearchEvent{
 			Stats: streaming.Stats{
 				Status: status,
 			},
@@ -430,7 +428,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 			for _, r := range missing {
 				status.Update(r.ID, search.RepoStatusMissing)
 			}
-			stream.Send(SearchEvent{
+			limitStream.Send(SearchEvent{
 				Stats: streaming.Stats{
 					Status: status,
 				},
@@ -454,33 +452,11 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 		defer mu.Unlock()
 
 		// Check if we are the first error found.
-		if searchErr == nil && !overLimitCanceled {
+		if searchErr == nil {
 			searchErr = errors.Wrapf(err, "failed to search %s", source.String())
 			tr.LazyPrintf("cancel due to error: %v", searchErr)
-			cancel()
+			cleanup()
 		}
-	}
-
-	// send assumes the caller does not hold mu.
-	send := func(event SearchEvent) {
-		stream.Send(event)
-
-		// Stop searching if we have found enough results.
-		mu.Lock()
-		resultCount += len(event.Results)
-		if limit := int(args.PatternInfo.FileMatchLimit); resultCount > limit && !overLimitCanceled {
-			cancel()
-			tr.LazyPrintf("cancel due to result size: %d > %d", resultCount, limit)
-			overLimitCanceled = true
-
-			// Inform stream we have found more than limit results
-			stream.Send(SearchEvent{
-				Stats: streaming.Stats{
-					IsLimitHit: true,
-				},
-			})
-		}
-		mu.Unlock()
 	}
 
 	// callSearcherOverRepos calls searcher on a set of repos.
@@ -563,7 +539,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 					}
 					// non-diff search reports timeout through err, so pass false for timedOut
 					repoCommon, fatalErr := handleRepoSearchResult(repoRev, repoLimitHit, false, err)
-					send(SearchEvent{
+					limitStream.Send(SearchEvent{
 						Results: fileMatchResultsToSearchResults(matches),
 						Stats:   repoCommon,
 					})
@@ -582,19 +558,8 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 	if isIndexedTextSearch {
 		wg.Add(1)
 		go func() {
-			// TODO limitHit, handleRepoSearchResult
 			defer wg.Done()
-			c := make(chan SearchEvent)
-			e := make(chan error, 1)
-			go func() {
-				defer close(c)
-				e <- indexed.Search(ctx, SearchStream(c))
-			}()
-			for event := range c {
-				tr.LogFields(otlog.Int("matches.len", len(event.Results)))
-				send(event)
-			}
-			err := <-e
+			err := indexed.Search(ctx, limitStream)
 			if err != nil {
 				setError(ctx, stringerFunc("indexed"), err)
 				tr.LogFields(otlog.Error(err))
@@ -630,7 +595,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 			}()
 			for event := range c {
 				tr.LogFields(otlog.Int("matches.len", len(event.Results)))
-				stream.Send(SearchEvent{
+				limitStream.Send(SearchEvent{
 					Stats: event.Stats,
 				})
 
