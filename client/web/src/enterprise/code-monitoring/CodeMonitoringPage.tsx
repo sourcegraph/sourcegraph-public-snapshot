@@ -74,7 +74,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
         <div className="code-monitoring-page container mt-5">
             <PageTitle title="Code Monitoring" />
             <PageHeader
-                annotation={<StatusBadge status="prototype" />}
+                annotation={<StatusBadge status="prototype" feedback={{ mailto: 'support@sourcegraph.com' }} />}
                 path={[
                     {
                         icon: CodeMonitoringLogo,

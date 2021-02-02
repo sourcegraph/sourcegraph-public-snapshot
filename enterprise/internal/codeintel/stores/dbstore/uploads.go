@@ -180,6 +180,7 @@ type GetUploadsOptions struct {
 	Term           string
 	VisibleAtTip   bool
 	UploadedBefore *time.Time
+	UploadedAfter  *time.Time
 	OldestFirst    bool
 	Limit          int
 	Offset         int
@@ -243,6 +244,9 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 	}
 	if opts.UploadedBefore != nil {
 		conds = append(conds, sqlf.Sprintf("u.uploaded_at < %s", *opts.UploadedBefore))
+	}
+	if opts.UploadedAfter != nil {
+		conds = append(conds, sqlf.Sprintf("u.uploaded_at > %s", *opts.UploadedAfter))
 	}
 
 	count, _, err := basestore.ScanFirstInt(tx.Store.Query(

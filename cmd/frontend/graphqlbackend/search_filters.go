@@ -53,6 +53,18 @@ var commonFileFilters = []struct {
 		regexFilter: `-file:(^|/)node_modules/`,
 		globFilter:  `-file:node_modules/** -file:**/node_modules/**`,
 	},
+	// Exclude minified javascript
+	{
+		regexp:      lazyregexp.New(`\.min\.js$`),
+		regexFilter: `-file:\.min\.js$`,
+		globFilter:  `-file:**.min.js`,
+	},
+	// Exclude javascript maps
+	{
+		regexp:      lazyregexp.New(`\.js\.map$`),
+		regexFilter: `-file:\.js\.map$`,
+		globFilter:  `-file:**.js.map`,
+	},
 }
 
 // Update internal state for the results in event.

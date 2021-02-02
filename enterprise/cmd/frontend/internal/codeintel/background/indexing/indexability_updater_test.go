@@ -87,3 +87,31 @@ func TestIndexabilityUpdater(t *testing.T) {
 		t.Errorf("unexpected number of calls to ResetIndexableRepositories. want=%d have=%d", 2, len(mockDBStore.ResetIndexableRepositoriesFunc.History()))
 	}
 }
+
+func TestSkipManualUploads(t *testing.T) {
+	mockDBStore := NewMockDBStore()
+	mockDBStore.RepoUsageStatisticsFunc.SetDefaultReturn([]store.RepoUsageStatistics{
+		{RepositoryID: 1, SearchCount: 200, PreciseCount: 50},
+	}, nil)
+	mockDBStore.GetUploadsFunc.SetDefaultReturn([]store.Upload{
+		{AssociatedIndexID: nil},
+	}, 1, nil)
+	mockGitserverClient := NewMockGitserverClient()
+
+	updater := &IndexabilityUpdater{
+		dbStore:            mockDBStore,
+		gitserverClient:    mockGitserverClient,
+		operations:         newOperations(&observation.TestContext),
+		limiter:            rate.NewLimiter(MaxGitserverRequestsPerSecond, 1),
+		enableIndexingCNCF: false,
+	}
+
+	err := updater.Handle(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(mockDBStore.UpdateIndexableRepositoryFunc.history) > 0 {
+		t.Fatal("IndexabilityUpdater tried to queue index for repo with recent manual upload")
+	}
+}
