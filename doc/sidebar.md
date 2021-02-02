@@ -23,6 +23,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [How-to guides](code_intelligence/how-to/index.md)
   - [Explanations](code_intelligence/explanations/index.md)
   - [Reference](code_intelligence/references/index.md)
+- [Code insights](code_insights/index.md)
 - [Campaigns](campaigns/index.md)
   - [Quickstart](campaigns/quickstart.md)
   - [Explanations](campaigns/explanations/index.md)
