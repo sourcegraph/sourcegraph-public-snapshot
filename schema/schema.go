@@ -1189,6 +1189,8 @@ type SettingsExperimentalFeatures struct {
 	ShowQueryBuilder *bool `json:"showQueryBuilder,omitempty"`
 	// ShowRepogroupHomepage description: Enables the repository group homepage
 	ShowRepogroupHomepage *bool `json:"showRepogroupHomepage,omitempty"`
+	// ShowSearchContext description: Enables the search context dropdown.
+	ShowSearchContext *bool `json:"showSearchContext,omitempty"`
 }
 
 // SiteConfiguration description: Configuration for a Sourcegraph site.

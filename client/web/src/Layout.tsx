@@ -41,6 +41,7 @@ import {
     ParsedSearchQueryProps,
     MutableVersionContextProps,
     parseSearchURL,
+    SearchContextProps,
 } from './search'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
@@ -84,6 +85,7 @@ export interface LayoutProps
         MutableVersionContextProps,
         RepogroupHomepageProps,
         OnboardingTourProps,
+        SearchContextProps,
         HomePanelsProps,
         SearchStreamingProps,
         CodeMonitoringProps {
