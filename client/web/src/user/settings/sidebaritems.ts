@@ -47,5 +47,12 @@ export const userSettingsSideBarItems: UserSettingsSidebarItems = {
                     props.authenticatedUser.tags.includes('AllowUserExternalServicePublic')) ||
                 props.user.tags?.includes('AllowExternalServicePublic'),
         },
+        {
+            label: 'Product research',
+            to: '/product-research',
+            condition: () =>
+                // TODO: Gate correctly and allow admins to disable
+                true,
+        },
     ],
 }

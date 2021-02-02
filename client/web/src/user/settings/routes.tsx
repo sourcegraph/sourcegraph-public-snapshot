@@ -135,4 +135,12 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
                 props.authenticatedUser.tags.includes('AllowUserExternalServicePublic')) ||
             props.user.tags?.includes('AllowUserExternalServicePublic'),
     },
+    {
+        path: '/product-research',
+        exact: true,
+        render: lazyComponent(() => import('./feedback/ProductFeedback'), 'ProductFeedbackPage'),
+        condition: () =>
+            // TODO: Gate correctly and allow admins to disable
+            true,
+    },
 ]
