@@ -80,18 +80,15 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<SiteAdminAreaProps> = 
                         <Switch>
                             {props.routes.map(
                                 /* eslint-disable react/jsx-no-bind */
-                                ({ render, path, exact, condition = () => true }) =>
-                                    condition(context) && (
-                                        <Route
-                                            // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                            key="hardcoded-key"
-                                            path={props.match.url + path}
-                                            exact={exact}
-                                            render={routeComponentProps =>
-                                                render({ ...context, ...routeComponentProps })
-                                            }
-                                        />
-                                    )
+                                ({ render, path, exact, condition = () => true }) => (
+                                    <Route
+                                        // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                        key="hardcoded-key"
+                                        path={props.match.url + path}
+                                        exact={exact}
+                                        render={routeComponentProps => render({ ...context, ...routeComponentProps })}
+                                    />
+                                )
                                 /* eslint-enable react/jsx-no-bind */
                             )}
                             <Route component={NotFoundPage} />

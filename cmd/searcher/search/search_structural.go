@@ -249,7 +249,7 @@ func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request) (matche
 			Languages:                    p.Languages,
 		}
 
-	repoBranches := map[string][]string{string(p.Repo): {"HEAD"}}
+	repoBranches := map[string][]string{string(p.Repo): {string(p.Branch)}}
 	useFullDeadline := false
 	zoektMatches, limitHit, _, err := zoektSearch(ctx, patternInfo, repoBranches, time.Since, p.IndexerEndpoints, useFullDeadline, nil)
 	if err != nil {
@@ -263,7 +263,7 @@ func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request) (matche
 	defer zipFile.Close()
 	defer os.Remove(zipFile.Name())
 
-	if err = writeZip(zipFile, zoektMatches); err != nil {
+	if err = writeZip(ctx, zipFile, zoektMatches); err != nil {
 		return nil, false, false, err
 	}
 

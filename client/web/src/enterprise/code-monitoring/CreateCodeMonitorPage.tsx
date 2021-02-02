@@ -1,33 +1,19 @@
 import * as H from 'history'
-import React, { useCallback, useMemo } from 'react'
+import React, { useCallback } from 'react'
 import { Observable } from 'rxjs'
 import { CodeMonitoringProps } from '.'
 import { AuthenticatedUser } from '../../auth'
-import { BreadcrumbSetters, BreadcrumbsProps } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
 import { CodeMonitorFields, MonitorEmailPriority } from '../../graphql-operations'
 import { CodeMonitorForm } from './components/CodeMonitorForm'
 
-export interface CreateCodeMonitorPageProps
-    extends BreadcrumbsProps,
-        BreadcrumbSetters,
-        Pick<CodeMonitoringProps, 'createCodeMonitor'> {
+export interface CreateCodeMonitorPageProps extends Pick<CodeMonitoringProps, 'createCodeMonitor'> {
     location: H.Location
     history: H.History
     authenticatedUser: AuthenticatedUser
 }
 
 export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPageProps> = props => {
-    props.useBreadcrumb(
-        useMemo(
-            () => ({
-                key: 'Create Code Monitor',
-                element: <>Create new code monitor</>,
-            }),
-            []
-        )
-    )
-
     const { authenticatedUser, createCodeMonitor } = props
     const createMonitorRequest = useCallback(
         (codeMonitor: CodeMonitorFields): Observable<Partial<CodeMonitorFields>> =>

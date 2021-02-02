@@ -42,6 +42,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 
 	t.Run("campaignSpec without changesetSpecs", func(t *testing.T) {
 		t.Run("new campaign", func(t *testing.T) {
+			ct.TruncateTables(t, dbconn.Global, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
 			campaignSpec := ct.CreateCampaignSpec(t, ctx, store, "campaign1", admin.ID)
 			campaign, err := svc.ApplyCampaign(adminCtx, ApplyCampaignOpts{
 				CampaignSpecRandID: campaignSpec.RandID,
@@ -75,6 +76,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 		})
 
 		t.Run("existing campaign", func(t *testing.T) {
+			ct.TruncateTables(t, dbconn.Global, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
 			campaignSpec := ct.CreateCampaignSpec(t, ctx, store, "campaign2", admin.ID)
 			campaign := ct.CreateCampaign(t, ctx, store, "campaign2", admin.ID, campaignSpec.ID)
 
@@ -202,6 +204,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 	// covered in the tests above.
 	t.Run("campaignSpec with changesetSpecs", func(t *testing.T) {
 		t.Run("new campaign", func(t *testing.T) {
+			ct.TruncateTables(t, dbconn.Global, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
 			campaignSpec := ct.CreateCampaignSpec(t, ctx, store, "campaign3", admin.ID)
 
 			spec1 := ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
@@ -230,6 +233,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				ExternalID:       "1234",
 				ReconcilerState:  campaigns.ReconcilerStateQueued,
 				PublicationState: campaigns.ChangesetPublicationStateUnpublished,
+				AttachedTo:       []int64{campaign.ID},
 			})
 
 			c2 := cs.Find(campaigns.WithCurrentSpecID(spec2.ID))
@@ -240,10 +244,12 @@ func TestServiceApplyCampaign(t *testing.T) {
 				ReconcilerState:  campaigns.ReconcilerStateQueued,
 				PublicationState: campaigns.ChangesetPublicationStateUnpublished,
 				DiffStat:         ct.TestChangsetSpecDiffStat,
+				AttachedTo:       []int64{campaign.ID},
 			})
 		})
 
 		t.Run("campaign with changesets", func(t *testing.T) {
+			ct.TruncateTables(t, dbconn.Global, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
 			// First we create a campaignSpec and apply it, so that we have
 			// changesets and changesetSpecs in the database, wired up
 			// correctly.
@@ -278,7 +284,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			})
 
 			// Apply and expect 4 changesets
-			_, oldChangesets := applyAndListChangesets(adminCtx, t, svc, campaignSpec1.RandID, 4)
+			oldCampaign, oldChangesets := applyAndListChangesets(adminCtx, t, svc, campaignSpec1.RandID, 4)
 
 			// Now we create another campaign spec with the same campaign name
 			// and namespace.
@@ -336,6 +342,10 @@ func TestServiceApplyCampaign(t *testing.T) {
 			// Apply and expect 6 changesets
 			campaign, cs := applyAndListChangesets(adminCtx, t, svc, campaignSpec2.RandID, 6)
 
+			if oldCampaign.ID != campaign.ID {
+				t.Fatal("expected to update campaign, but got a new one")
+			}
+
 			// This changeset we want marked as "to be closed"
 			ct.ReloadAndAssertChangeset(t, ctx, store, wantClosed, ct.ChangesetAssertions{
 				Repo:         repos[2].ID,
@@ -361,6 +371,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				ExternalID:       "1234",
 				ReconcilerState:  campaigns.ReconcilerStateQueued,
 				PublicationState: campaigns.ChangesetPublicationStateUnpublished,
+				AttachedTo:       []int64{campaign.ID},
 			})
 
 			c2 := cs.Find(campaigns.WithExternalID(spec2.Spec.ExternalID))
@@ -371,6 +382,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				ExternalID:       "5678",
 				ReconcilerState:  campaigns.ReconcilerStateQueued,
 				PublicationState: campaigns.ChangesetPublicationStateUnpublished,
+				AttachedTo:       []int64{campaign.ID},
 			})
 
 			c3 := cs.Find(campaigns.WithCurrentSpecID(spec3.ID))
@@ -386,6 +398,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				ReconcilerState:  campaigns.ReconcilerStateQueued,
 				PublicationState: campaigns.ChangesetPublicationStatePublished,
 				DiffStat:         ct.TestChangsetSpecDiffStat,
+				AttachedTo:       []int64{campaign.ID},
 			})
 
 			c4 := cs.Find(campaigns.WithCurrentSpecID(spec4.ID))
@@ -396,6 +409,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				ReconcilerState:  campaigns.ReconcilerStateQueued,
 				PublicationState: campaigns.ChangesetPublicationStateUnpublished,
 				DiffStat:         ct.TestChangsetSpecDiffStat,
+				AttachedTo:       []int64{campaign.ID},
 			})
 
 			c5 := cs.Find(campaigns.WithCurrentSpecID(spec5.ID))
@@ -406,10 +420,12 @@ func TestServiceApplyCampaign(t *testing.T) {
 				ReconcilerState:  campaigns.ReconcilerStateQueued,
 				PublicationState: campaigns.ChangesetPublicationStateUnpublished,
 				DiffStat:         ct.TestChangsetSpecDiffStat,
+				AttachedTo:       []int64{campaign.ID},
 			})
 		})
 
 		t.Run("campaign tracking changesets owned by another campaign", func(t *testing.T) {
+			ct.TruncateTables(t, dbconn.Global, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
 			campaignSpec1 := ct.CreateCampaignSpec(t, ctx, store, "owner-campaign", admin.ID)
 
 			oldSpec1 := ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
@@ -435,7 +451,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				ExternalID:   c.ExternalID,
 			})
 
-			_, trackedChangesets := applyAndListChangesets(adminCtx, t, svc, campaignSpec2.RandID, 1)
+			trackingCampaign, trackedChangesets := applyAndListChangesets(adminCtx, t, svc, campaignSpec2.RandID, 1)
 			// This should still point to the owner campaign
 			c2 := trackedChangesets[0]
 			trackedChangesetAssertions := ct.ChangesetAssertions{
@@ -448,6 +464,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				ReconcilerState:  campaigns.ReconcilerStateCompleted,
 				PublicationState: campaigns.ChangesetPublicationStatePublished,
 				DiffStat:         ct.TestChangsetSpecDiffStat,
+				AttachedTo:       []int64{ownerCampaign.ID, trackingCampaign.ID},
 			}
 			ct.AssertChangeset(t, c2, trackedChangesetAssertions)
 
@@ -467,6 +484,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			trackedChangesetAssertions.Closing = false
 			trackedChangesetAssertions.ReconcilerState = campaigns.ReconcilerStateQueued
 			trackedChangesetAssertions.DetachFrom = []int64{trackingCampaign.ID}
+			trackedChangesetAssertions.AttachedTo = []int64{ownerCampaign.ID}
 			ct.ReloadAndAssertChangeset(t, ctx, store, c2, trackedChangesetAssertions)
 
 			// But we do want to have a new changeset record that is going to create a new changeset on the code host.
@@ -477,10 +495,12 @@ func TestServiceApplyCampaign(t *testing.T) {
 				ReconcilerState:  campaigns.ReconcilerStateQueued,
 				PublicationState: campaigns.ChangesetPublicationStateUnpublished,
 				DiffStat:         ct.TestChangsetSpecDiffStat,
+				AttachedTo:       []int64{trackingCampaign.ID},
 			})
 		})
 
 		t.Run("campaign with changeset that is unpublished", func(t *testing.T) {
+			ct.TruncateTables(t, dbconn.Global, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
 			campaignSpec1 := ct.CreateCampaignSpec(t, ctx, store, "unpublished-changesets", admin.ID)
 
 			ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
@@ -503,6 +523,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 		})
 
 		t.Run("campaign with changeset that wasn't processed before reapply", func(t *testing.T) {
+			ct.TruncateTables(t, dbconn.Global, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
 			campaignSpec1 := ct.CreateCampaignSpec(t, ctx, store, "queued-changesets", admin.ID)
 
 			specOpts := ct.TestSpecOpts{
@@ -531,6 +552,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				CurrentSpec:      spec1.ID,
 				OwnedByCampaign:  campaign.ID,
 				DiffStat:         ct.TestChangsetSpecDiffStat,
+				AttachedTo:       []int64{campaign.ID},
 			})
 
 			// Apply again so that an update to the changeset is pending.
@@ -555,6 +577,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				PreviousSpec:    spec1.ID,
 				OwnedByCampaign: campaign.ID,
 				DiffStat:        ct.TestChangsetSpecDiffStat,
+				AttachedTo:      []int64{campaign.ID},
 			})
 
 			// Make sure the reconciler wants to update this changeset.
@@ -593,6 +616,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				PreviousSpec:    spec1.ID,
 				OwnedByCampaign: campaign.ID,
 				DiffStat:        ct.TestChangsetSpecDiffStat,
+				AttachedTo:      []int64{campaign.ID},
 			})
 
 			// Make sure the reconciler would still update this changeset.
@@ -633,6 +657,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				PreviousSpec:    spec1.ID,
 				OwnedByCampaign: campaign.ID,
 				DiffStat:        ct.TestChangsetSpecDiffStat,
+				AttachedTo:      []int64{campaign.ID},
 			})
 
 			// Make sure the reconciler would still update this changeset.
@@ -652,6 +677,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 		})
 
 		t.Run("missing repository permissions", func(t *testing.T) {
+			ct.TruncateTables(t, dbconn.Global, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
 			ct.MockRepoPermissions(t, user.ID, repos[0].ID, repos[2].ID, repos[3].ID)
 
 			// NOTE: We cannot use a context that has authz bypassed.
@@ -687,6 +713,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 		})
 
 		t.Run("campaign with errored changeset", func(t *testing.T) {
+			ct.TruncateTables(t, dbconn.Global, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
 			campaignSpec1 := ct.CreateCampaignSpec(t, ctx, store, "errored-changeset-campaign", admin.ID)
 
 			spec1Opts := ct.TestSpecOpts{
@@ -729,6 +756,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				Repo:             spec1Opts.Repo,
 				ExternalID:       "1234",
 				PublicationState: campaigns.ChangesetPublicationStateUnpublished,
+				AttachedTo:       []int64{campaign.ID},
 
 				ReconcilerState: campaigns.ReconcilerStateQueued,
 				FailureMessage:  nil,
@@ -744,6 +772,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				OwnedByCampaign:  campaign.ID,
 				PublicationState: campaigns.ChangesetPublicationStateUnpublished,
 				DiffStat:         ct.TestChangsetSpecDiffStat,
+				AttachedTo:       []int64{campaign.ID},
 
 				ReconcilerState: campaigns.ReconcilerStateQueued,
 				FailureMessage:  nil,
@@ -767,6 +796,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 		})
 
 		t.Run("closed and detached changeset not re-enqueued for close", func(t *testing.T) {
+			ct.TruncateTables(t, dbconn.Global, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
 			campaignSpec1 := ct.CreateCampaignSpec(t, ctx, store, "detached-closed-changeset", admin.ID)
 
 			specOpts := ct.TestSpecOpts{
@@ -795,6 +825,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				ReconcilerState:  campaigns.ReconcilerStateCompleted,
 				PublicationState: campaigns.ChangesetPublicationStatePublished,
 				DiffStat:         ct.TestChangsetSpecDiffStat,
+				AttachedTo:       []int64{campaign.ID},
 			}
 			c = ct.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
 
@@ -809,6 +840,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			// And the previous spec is recorded, because the previous run finished with reconcilerState completed.
 			assertions.PreviousSpec = spec1.ID
 			assertions.DetachFrom = []int64{campaign.ID}
+			assertions.AttachedTo = []int64{}
 			c = ct.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
 
 			// Now we update the changeset to make it look closed.
@@ -830,6 +862,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 
 		t.Run("campaign with changeset that is detached and reattached", func(t *testing.T) {
 			t.Run("changeset has been closed before re-attaching", func(t *testing.T) {
+				ct.TruncateTables(t, dbconn.Global, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
 				campaignSpec1 := ct.CreateCampaignSpec(t, ctx, store, "detach-reattach-changeset", admin.ID)
 
 				specOpts := ct.TestSpecOpts{
@@ -858,6 +891,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 					ReconcilerState:  campaigns.ReconcilerStateCompleted,
 					PublicationState: campaigns.ChangesetPublicationStatePublished,
 					DiffStat:         ct.TestChangsetSpecDiffStat,
+					AttachedTo:       []int64{campaign.ID},
 				}
 				ct.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
 
@@ -868,6 +902,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				// Our previously published changeset should be marked as "to be closed"
 				assertions.Closing = true
 				assertions.DetachFrom = []int64{campaign.ID}
+				assertions.AttachedTo = []int64{}
 				assertions.ReconcilerState = campaigns.ReconcilerStateQueued
 				// And the previous spec is recorded.
 				assertions.PreviousSpec = spec1.ID
@@ -901,10 +936,12 @@ func TestServiceApplyCampaign(t *testing.T) {
 				// Assert that the previous spec is still spec 1
 				assertions.PreviousSpec = spec1.ID
 				assertions.ReconcilerState = campaigns.ReconcilerStateQueued
+				assertions.AttachedTo = []int64{campaign.ID}
 				ct.AssertChangeset(t, attachedChangeset, assertions)
 			})
 
 			t.Run("changeset has failed closing before re-attaching", func(t *testing.T) {
+				ct.TruncateTables(t, dbconn.Global, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
 				campaignSpec1 := ct.CreateCampaignSpec(t, ctx, store, "detach-reattach-failed-changeset", admin.ID)
 
 				specOpts := ct.TestSpecOpts{
@@ -933,6 +970,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 					ReconcilerState:  campaigns.ReconcilerStateCompleted,
 					PublicationState: campaigns.ChangesetPublicationStatePublished,
 					DiffStat:         ct.TestChangsetSpecDiffStat,
+					AttachedTo:       []int64{campaign.ID},
 				}
 				ct.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
 
@@ -943,6 +981,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				// Our previously published changeset should be marked as "to be closed"
 				assertions.Closing = true
 				assertions.DetachFrom = []int64{campaign.ID}
+				assertions.AttachedTo = []int64{}
 				assertions.ReconcilerState = campaigns.ReconcilerStateQueued
 				// And the previous spec is recorded.
 				assertions.PreviousSpec = spec1.ID
@@ -986,10 +1025,12 @@ func TestServiceApplyCampaign(t *testing.T) {
 				assertions.FailureMessage = nil
 				assertions.NumFailures = 0
 				assertions.DetachFrom = []int64{}
+				assertions.AttachedTo = []int64{campaign.ID}
 				ct.AssertChangeset(t, attachedChangeset, assertions)
 			})
 
 			t.Run("changeset has not been closed before re-attaching", func(t *testing.T) {
+				ct.TruncateTables(t, dbconn.Global, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
 				// The difference to the previous test: we DON'T update the
 				// changeset to make it look closed. We want to make sure that
 				// we also pick up enqueued-to-be-closed changesets.
@@ -1020,6 +1061,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 					ReconcilerState:  campaigns.ReconcilerStateCompleted,
 					PublicationState: campaigns.ChangesetPublicationStatePublished,
 					DiffStat:         ct.TestChangsetSpecDiffStat,
+					AttachedTo:       []int64{campaign.ID},
 				}
 				ct.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
 
@@ -1030,6 +1072,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				// Our previously published changeset should be marked as "to be closed"
 				assertions.Closing = true
 				assertions.DetachFrom = []int64{campaign.ID}
+				assertions.AttachedTo = []int64{}
 				assertions.ReconcilerState = campaigns.ReconcilerStateQueued
 				// And the previous spec is recorded.
 				assertions.PreviousSpec = spec1.ID
@@ -1056,12 +1099,14 @@ func TestServiceApplyCampaign(t *testing.T) {
 				assertions.PreviousSpec = spec1.ID
 				assertions.ReconcilerState = campaigns.ReconcilerStateQueued
 				assertions.DetachFrom = []int64{}
+				assertions.AttachedTo = []int64{campaign.ID}
 				ct.AssertChangeset(t, attachedChangeset, assertions)
 			})
 		})
 	})
 
 	t.Run("applying to closed campaign", func(t *testing.T) {
+		ct.TruncateTables(t, dbconn.Global, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
 		campaignSpec := ct.CreateCampaignSpec(t, ctx, store, "closed-campaign", admin.ID)
 		campaign := ct.CreateCampaign(t, ctx, store, "closed-campaign", admin.ID, campaignSpec.ID)
 

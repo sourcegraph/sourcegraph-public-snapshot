@@ -1,27 +1,35 @@
-import React, { FunctionComponent, useCallback, useEffect } from 'react'
+import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
+import { of } from 'rxjs'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
+import { useObservable } from '../../../../../shared/src/util/useObservable'
 import {
     FilteredConnection,
     FilteredConnectionFilter,
     FilteredConnectionQueryArguments,
 } from '../../../components/FilteredConnection'
+import { PageHeader } from '../../../components/PageHeader'
 import { PageTitle } from '../../../components/PageTitle'
-import { LsifUploadFields, LSIFUploadState, SettingsAreaRepositoryFields } from '../../../graphql-operations'
-import { fetchLsifUploads as defaultFetchLsifUploads } from './backend'
+import { LsifUploadFields, LSIFUploadState } from '../../../graphql-operations'
+import {
+    fetchLsifUploads as defaultFetchLsifUploads,
+    fetchCommitGraphMetadata as defaultFetchCommitGraphMetadata,
+} from './backend'
+import { CommitGraphMetadata } from './CommitGraphMetadata'
 import { CodeIntelUploadNode, CodeIntelUploadNodeProps } from './CodeIntelUploadNode'
 
 export interface CodeIntelUploadsPageProps extends RouteComponentProps<{}>, TelemetryProps {
-    repo?: SettingsAreaRepositoryFields
+    repo?: { id: string }
     fetchLsifUploads?: typeof defaultFetchLsifUploads
+    fetchCommitGraphMetadata?: typeof defaultFetchCommitGraphMetadata
     now?: () => Date
 }
 
 const filters: FilteredConnectionFilter[] = [
     {
-        id: 'filter',
-        type: 'radio',
-        label: 'Filter',
+        id: 'filters',
+        label: 'Upload state',
+        type: 'select',
         values: [
             {
                 label: 'All',
@@ -60,6 +68,7 @@ const filters: FilteredConnectionFilter[] = [
 export const CodeIntelUploadsPage: FunctionComponent<CodeIntelUploadsPageProps> = ({
     repo,
     fetchLsifUploads = defaultFetchLsifUploads,
+    fetchCommitGraphMetadata = defaultFetchCommitGraphMetadata,
     now,
     telemetryService,
     ...props
@@ -71,31 +80,50 @@ export const CodeIntelUploadsPage: FunctionComponent<CodeIntelUploadsPageProps> 
         [repo?.id, fetchLsifUploads]
     )
 
+    const commitGraphMetadata = useObservable(
+        useMemo(() => (repo ? fetchCommitGraphMetadata({ repository: repo?.id }) : of(undefined)), [
+            repo,
+            fetchCommitGraphMetadata,
+        ])
+    )
+
     return (
         <div className="code-intel-uploads web-content">
             <PageTitle title="Precise code intelligence uploads" />
-            <h2>Precise code intelligence uploads</h2>
-            <p>
-                Enable precise code intelligence by{' '}
-                <a
-                    href="https://docs.sourcegraph.com/code_intelligence/precise_code_intelligence"
-                    target="_blank"
-                    rel="noreferrer noopener"
-                >
-                    uploading LSIF data
-                </a>
-                .
-            </p>
+            <PageHeader
+                path={[{ text: 'Precise code intelligence upload' }]}
+                byline={
+                    <>
+                        <p>
+                            Enable precise code intelligence by{' '}
+                            <a
+                                href="https://docs.sourcegraph.com/code_intelligence/explanations/precise_code_intelligence"
+                                target="_blank"
+                                rel="noreferrer noopener"
+                            >
+                                uploading LSIF data
+                            </a>
+                            .
+                        </p>
+                        <p>
+                            Current uploads provide code intelligence for the latest commit on the default branch and
+                            are used in cross-repository <em>Find References</em> requests. Non-current uploads may
+                            still provide code intelligence for historic and branch commits.
+                        </p>
+                    </>
+                }
+            />
 
-            <p>
-                Current uploads provide code intelligence for the latest commit on the default branch and are used in
-                cross-repository <em>Find References</em> requests. Non-current uploads may still provide code
-                intelligence for historic and branch commits.
-            </p>
+            {repo && commitGraphMetadata && (
+                <CommitGraphMetadata
+                    stale={commitGraphMetadata.stale}
+                    updatedAt={commitGraphMetadata.updatedAt}
+                    now={now}
+                />
+            )}
 
             <div className="list-group position-relative">
                 <FilteredConnection<LsifUploadFields, Omit<CodeIntelUploadNodeProps, 'node'>>
-                    className="mt-2"
                     listComponent="div"
                     listClassName="codeintel-uploads__grid mb-3"
                     noun="upload"

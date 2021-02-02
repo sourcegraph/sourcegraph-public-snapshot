@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
+import { PageHeader } from '../../components/PageHeader'
 import { NavItemWithIconDescriptor } from '../../util/contributions'
 import { OrgAvatar } from '../OrgAvatar'
 import { OrgAreaPageProps } from './OrgArea'
@@ -28,10 +29,15 @@ export const OrgHeader: React.FunctionComponent<Props> = ({
         <div className="container">
             {org && (
                 <>
-                    <h2 className="org-header__title">
-                        <OrgAvatar org={org.name} />{' '}
-                        <span className="org-header__title-text">{org.displayName || org.name}</span>
-                    </h2>
+                    <PageHeader
+                        path={[
+                            {
+                                icon: () => <OrgAvatar org={org.name} size="lg" className="mr-3" />,
+                                text: <span className="align-middle">{org.displayName || org.name}</span>,
+                            },
+                        ]}
+                        className="mb-3"
+                    />
                     <div className="d-flex align-items-end justify-content-between">
                         <ul className="nav nav-tabs border-bottom-0">
                             {navItems.map(

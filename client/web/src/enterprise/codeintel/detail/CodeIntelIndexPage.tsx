@@ -1,7 +1,7 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import DeleteIcon from 'mdi-react/DeleteIcon'
-import React, { FunctionComponent, ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
+import React, { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { SchedulerLike, timer } from 'rxjs'
 import { catchError, concatMap, delay, repeatWhen, takeWhile } from 'rxjs/operators'
@@ -95,10 +95,23 @@ export const CodeIntelIndexPage: FunctionComponent<CodeIntelIndexPageProps> = ({
                 <LoadingSpinner className="icon-inline" />
             ) : (
                 <>
-                    <CodeIntelIndexPageTitle
-                        index={indexOrError}
+                    <PageHeader
+                        path={[
+                            {
+                                text: (
+                                    <>
+                                        <span className="text-muted">Auto-index record for commit</span>
+                                        <span className="ml-2">
+                                            {indexOrError.projectRoot
+                                                ? indexOrError.projectRoot.commit.abbreviatedOID
+                                                : indexOrError.inputCommit.slice(0, 7)}
+                                        </span>
+                                    </>
+                                ),
+                            },
+                        ]}
                         actions={<CodeIntelDeleteIndex deleteIndex={deleteIndex} deletionOrError={deletionOrError} />}
-                        className="mb-2"
+                        className="mb-3"
                     />
                     <CodeIntelStateBanner
                         state={indexOrError.state}
@@ -126,27 +139,6 @@ const terminalStates = new Set([LSIFIndexState.COMPLETED, LSIFIndexState.ERRORED
 function shouldReload(index: LsifIndexFields | ErrorLike | null | undefined): boolean {
     return !isErrorLike(index) && !(index && terminalStates.has(index.state))
 }
-
-interface CodeIntelIndexPageTitleProps {
-    index: LsifIndexFields
-    actions?: ReactNode
-    className?: string
-}
-
-const CodeIntelIndexPageTitle: FunctionComponent<CodeIntelIndexPageTitleProps> = ({ index, actions, className }) => (
-    <PageHeader
-        title={
-            <>
-                <span className="text-muted">Auto-index record for commit</span>
-                <span className="ml-2">
-                    {index.projectRoot ? index.projectRoot.commit.abbreviatedOID : index.inputCommit.slice(0, 7)}
-                </span>
-            </>
-        }
-        actions={actions}
-        className={className}
-    />
-)
 
 interface CodeIntelDeleteIndexProps {
     deleteIndex: () => Promise<void>

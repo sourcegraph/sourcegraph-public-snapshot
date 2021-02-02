@@ -9,6 +9,7 @@ import (
 	rxsyntax "regexp/syntax"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 	"unicode"
 
@@ -619,8 +620,8 @@ func (searchAlert) Suggestions(context.Context, *searchSuggestionsArgs) ([]*sear
 }
 func (searchAlert) Stats(context.Context) (*searchResultsStats, error) { return nil, nil }
 func (searchAlert) SetStream(c SearchStream)                           {}
-func (searchAlert) Inputs() *SearchInputs {
-	return nil
+func (searchAlert) Inputs() SearchInputs {
+	return SearchInputs{}
 }
 
 func alertForError(err error, inputs *SearchInputs) *searchAlert {
@@ -683,10 +684,13 @@ type alertObserver struct {
 	// Inputs are used to generate alert messages based on the query.
 	Inputs *SearchInputs
 
-	// alert is the current alert to show.
-	alert      *searchAlert
-	err        error
+	// Update state.
 	hasResults bool
+
+	// Error state. Can be called concurrently.
+	mu    sync.Mutex
+	alert *searchAlert
+	err   error
 }
 
 // Update AlertObserver's state based on event.
@@ -694,19 +698,28 @@ func (o *alertObserver) Update(event SearchEvent) {
 	if len(event.Results) > 0 {
 		o.hasResults = true
 	}
+}
 
-	if event.Error == nil {
+func (o *alertObserver) Error(ctx context.Context, err error) {
+	// Timeouts are reported through Stats so don't report an error for them.
+	if err == nil || isContextError(ctx, err) {
 		return
 	}
 
+	// We can compute the alert outside of the critical section.
+	alert := alertForError(err, o.Inputs)
+
+	o.mu.Lock()
+	defer o.mu.Unlock()
+
 	// The error can be converted into an alert.
-	if alert := alertForError(event.Error, o.Inputs); alert != nil {
+	if alert != nil {
 		o.update(alert)
 		return
 	}
 
 	// Track the unexpected error for reporting when calling Done.
-	o.err = multierror.Append(o.err, event.Error)
+	o.err = multierror.Append(o.err, err)
 }
 
 // update to alert if it is more important than our current alert.

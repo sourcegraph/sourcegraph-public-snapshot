@@ -195,7 +195,7 @@ func reposToAdd(ctx context.Context, args *search.TextParameters, repos []*searc
 	if len(args.PatternInfo.FilePatternsReposMustExclude) > 0 {
 		for _, pattern := range args.PatternInfo.FilePatternsReposMustExclude {
 			p := search.TextPatternInfo{IsRegExp: true, FileMatchLimit: math.MaxInt32, IncludePatterns: []string{pattern}, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
-			q, err := query.ParseAndCheck("file:" + pattern)
+			q, err := query.ParseLiteral("file:" + pattern)
 			if err != nil {
 				return nil, err
 			}

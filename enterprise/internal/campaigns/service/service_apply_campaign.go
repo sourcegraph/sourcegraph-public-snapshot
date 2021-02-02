@@ -125,8 +125,7 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 	}
 
 	// And execute the mapping.
-	rewirer := rewirer.New(mappings, campaign.ID)
-	changesets, err := rewirer.Rewire()
+	changesets, err := rewirer.New(mappings, campaign.ID).Rewire()
 	if err != nil {
 		return nil, err
 	}
@@ -156,11 +155,11 @@ func (s *Service) ReconcileCampaign(ctx context.Context, campaignSpec *campaigns
 	campaign.NamespaceOrgID = campaignSpec.NamespaceOrgID
 	campaign.NamespaceUserID = campaignSpec.NamespaceUserID
 	campaign.Name = campaignSpec.Spec.Name
-	actor := actor.FromContext(ctx)
+	a := actor.FromContext(ctx)
 	if campaign.InitialApplierID == 0 {
-		campaign.InitialApplierID = actor.UID
+		campaign.InitialApplierID = a.UID
 	}
-	campaign.LastApplierID = actor.UID
+	campaign.LastApplierID = a.UID
 	campaign.LastAppliedAt = s.clock()
 	campaign.Description = campaignSpec.Spec.Description
 	return campaign, previousSpecID, nil

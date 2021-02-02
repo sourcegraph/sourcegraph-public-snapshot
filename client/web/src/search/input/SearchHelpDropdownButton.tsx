@@ -20,7 +20,7 @@ export const SearchHelpDropdownButton: React.FunctionComponent = () => {
                 aria-label="Quick help for search"
             >
                 <HelpCircleOutlineIcon
-                    className="test-search-help-dropdown-button-icon icon-inline small"
+                    className="test-search-help-dropdown-button-icon icon-inline"
                     aria-hidden="true"
                 />
             </DropdownToggle>

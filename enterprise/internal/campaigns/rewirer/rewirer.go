@@ -1,7 +1,7 @@
 package rewirer
 
 import (
-	"github.com/pkg/errors"
+	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -31,7 +31,7 @@ func (r *ChangesetRewirer) Rewire() (changesets []*campaigns.Changeset, err erro
 
 	for _, m := range r.mappings {
 		// If a Changeset that's currently attached to the campaign wasn't matched to a ChangesetSpec, it needs to be closed/detached.
-		if m.ChangesetSpecID == 0 {
+		if m.ChangesetSpec == nil {
 			changeset := m.Changeset
 
 			// If we don't have access to a repository, we don't detach nor close the changeset.
@@ -67,7 +67,7 @@ func (r *ChangesetRewirer) Rewire() (changesets []*campaigns.Changeset, err erro
 
 		var changeset *campaigns.Changeset
 
-		if m.ChangesetID != 0 {
+		if m.Changeset != nil {
 			changeset = m.Changeset
 			if spec.Spec.IsImportingExisting() {
 				r.attachTrackingChangeset(changeset)
@@ -114,7 +114,7 @@ func (r *ChangesetRewirer) updateChangesetToNewSpec(c *campaigns.Changeset, spec
 	c.CurrentSpecID = spec.ID
 
 	// Ensure that the changeset is attached to the campaign
-	c.Campaigns = append(c.Campaigns, campaigns.CampaignAssoc{CampaignID: r.campaignID})
+	c.Attach(r.campaignID)
 
 	// We need to enqueue it for the changeset reconciler, so the
 	// reconciler wakes up, compares old and new spec and, if
@@ -143,7 +143,7 @@ func (r *ChangesetRewirer) createTrackingChangeset(repo *types.Repo, externalID 
 func (r *ChangesetRewirer) attachTrackingChangeset(changeset *campaigns.Changeset) {
 	// We already have a changeset with the given repoID and
 	// externalID, so we can track it.
-	changeset.Campaigns = append(changeset.Campaigns, campaigns.CampaignAssoc{CampaignID: r.campaignID})
+	changeset.Attach(r.campaignID)
 
 	// If it's errored and not created by another campaign, we re-enqueue it.
 	if changeset.OwnedByCampaignID == 0 && (changeset.ReconcilerState == campaigns.ReconcilerStateErrored || changeset.ReconcilerState == campaigns.ReconcilerStateFailed) {
@@ -187,17 +187,31 @@ func (r *ChangesetRewirer) closeChangeset(changeset *campaigns.Changeset) {
 	}
 
 	// Disassociate the changeset with the campaign.
-	for i := range changeset.Campaigns {
-		if changeset.Campaigns[i].CampaignID == r.campaignID && !changeset.Campaigns[i].Detach {
-			changeset.Campaigns[i].Detach = true
-			reset = true
-			break
-		}
+	if wasAttached := changeset.Detach(r.campaignID); wasAttached {
+		reset = true
 	}
+
 	if reset {
 		changeset.ResetQueued()
 	}
 }
+
+// ErrRepoNotSupported is thrown by the rewirer when it encounters a mapping
+// targetting a repo on a code host that's not supported by campaigns.
+type ErrRepoNotSupported struct {
+	ServiceType string
+	RepoName    string
+}
+
+func (e ErrRepoNotSupported) Error() string {
+	return fmt.Sprintf(
+		"Code host type %s of repository %q is currently not supported for use with campaigns",
+		e.ServiceType,
+		e.RepoName,
+	)
+}
+
+var _ error = ErrRepoNotSupported{}
 
 // checkRepoSupported checks whether the given repository is supported by campaigns
 // and if not it returns an error.
@@ -206,9 +220,8 @@ func checkRepoSupported(repo *types.Repo) error {
 		return nil
 	}
 
-	return errors.Errorf(
-		"External service type %s of repository %q is currently not supported for use with campaigns",
-		repo.ExternalRepo.ServiceType,
-		repo.Name,
-	)
+	return &ErrRepoNotSupported{
+		ServiceType: repo.ExternalRepo.ServiceType,
+		RepoName:    string(repo.Name),
+	}
 }

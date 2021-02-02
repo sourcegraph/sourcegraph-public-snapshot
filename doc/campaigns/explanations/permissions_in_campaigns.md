@@ -24,7 +24,7 @@ View burndown chart (aggregate changeset statuses over time) | ⬤ | ⬤
 View list of patches and changesets | ⬤ | ⬤
 View diffstat (aggregate count of added/changed/deleted lines) | ⬤ | ⬤
 View error messages (related to creating or syncing changesets) |  | ⬤
-Edit campaign name, description, and branch name | ⬤ | ⬤
+Edit campaign name, description, and branch name |  | ⬤
 Update campaign patches (and changesets on code hosts) |  | ⬤
 Publish changesets to code host |  | ⬤
 Add/remove existing changesets to/from campaign |  | ⬤

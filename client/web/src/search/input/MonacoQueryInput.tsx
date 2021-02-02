@@ -9,7 +9,7 @@ import { Subscription, Observable, Unsubscribable, ReplaySubject } from 'rxjs'
 import { fetchSuggestions } from '../backend'
 import { Omit } from 'utility-types'
 import { ThemeProps } from '../../../../shared/src/theme'
-import { CaseSensitivityProps, PatternTypeProps, CopyQueryButtonProps } from '..'
+import { CaseSensitivityProps, PatternTypeProps, CopyQueryButtonProps, SearchContextProps } from '..'
 import { Toggles, TogglesProps } from './toggles/Toggles'
 import { hasProperty } from '../../../../shared/src/util/types'
 import { KeyboardShortcut } from '../../../../shared/src/keyboardShortcuts'
@@ -22,6 +22,7 @@ export interface MonacoQueryInputProps
         ThemeProps,
         CaseSensitivityProps,
         PatternTypeProps,
+        SearchContextProps,
         CopyQueryButtonProps {
     location: H.Location
     history: H.History
@@ -346,6 +347,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     return (
         <>
             <div ref={setContainer} className="monaco-query-input-container">
+                {props.showSearchContext && <span>context:global</span>}
                 <div className="flex-grow-1 flex-shrink-past-contents" onFocus={onFocus}>
                     <MonacoEditor
                         id="monaco-query-input"

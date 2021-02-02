@@ -1,3 +1,4 @@
+import { parseISO } from 'date-fns'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
@@ -14,6 +15,8 @@ import {
     LsifUploadsForRepoVariables,
     LsifUploadsResult,
     LsifUploadsVariables,
+    CodeIntelligenceCommitGraphMetadataResult,
+    CodeIntelligenceCommitGraphMetadataVariables,
 } from '../../../graphql-operations'
 import { lsifIndexFieldsFragment, lsifUploadFieldsFragment } from '../shared/backend'
 
@@ -127,6 +130,54 @@ export function fetchLsifUploads({
     return requestGraphQL<LsifUploadsResult, LsifUploadsVariables>(gqlQuery, vars).pipe(
         map(dataOrThrowErrors),
         map(({ lsifUploads }) => lsifUploads)
+    )
+}
+
+/** Return the code intelligence commit graph for the given repository. */
+export function fetchCommitGraphMetadata({
+    repository,
+}: {
+    repository: string
+}): Observable<{ stale: boolean; updatedAt: Date | null }> {
+    const gqlQuery = gql`
+        query CodeIntelligenceCommitGraphMetadata($repository: ID!) {
+            node(id: $repository) {
+                __typename
+                ... on Repository {
+                    codeIntelligenceCommitGraph {
+                        stale
+                        updatedAt
+                    }
+                }
+            }
+        }
+    `
+
+    return requestGraphQL<CodeIntelligenceCommitGraphMetadataResult, CodeIntelligenceCommitGraphMetadataVariables>(
+        gqlQuery,
+        {
+            repository,
+        }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(({ node }) => {
+            if (!node) {
+                throw new Error('Invalid repository')
+            }
+            if (node.__typename !== 'Repository') {
+                throw new Error(`The given ID is ${node.__typename}, not Repository`)
+            }
+            if (!node.codeIntelligenceCommitGraph) {
+                throw new Error('Missing code intelligence commit graph value')
+            }
+
+            return {
+                stale: node.codeIntelligenceCommitGraph.stale,
+                updatedAt: node.codeIntelligenceCommitGraph.updatedAt
+                    ? parseISO(node.codeIntelligenceCommitGraph.updatedAt)
+                    : null,
+            }
+        })
     )
 }
 

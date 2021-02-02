@@ -51,7 +51,7 @@ type SearchImplementer interface {
 	Stats(context.Context) (*searchResultsStats, error)
 
 	SetStream(c SearchStream)
-	Inputs() *SearchInputs
+	Inputs() SearchInputs
 }
 
 // NewSearchImplementer returns a SearchImplementer that provides search results and suggestions.
@@ -276,7 +276,6 @@ type searchResolver struct {
 type SearchEvent struct {
 	Results []SearchResultResolver
 	Stats   streaming.Stats
-	Error   error
 }
 
 // SearchStream is a send only channel of SearchEvent. All streaming search
@@ -288,9 +287,6 @@ type SearchStream chan<- SearchEvent
 // functions. It returns a context, stream and cleanup/get function. The
 // cleanup/get function will return the aggregated event and must be called
 // once you have stopped sending to stream.
-//
-// For collecting errors we only collect the first error reported and
-// afterwards cancel the context.
 func collectStream(ctx context.Context) (context.Context, SearchStream, func() SearchEvent) {
 	var agg SearchEvent
 
@@ -303,11 +299,6 @@ func collectStream(ctx context.Context) (context.Context, SearchStream, func() S
 		for event := range stream {
 			agg.Results = append(agg.Results, event.Results...)
 			agg.Stats.Update(&event.Stats)
-			// Only collect first error
-			if event.Error != nil && agg.Error == nil {
-				cancel()
-				agg.Error = event.Error
-			}
 		}
 	}()
 
@@ -332,8 +323,8 @@ func (r *searchResolver) SetStream(c SearchStream) {
 	r.resultChannel = c
 }
 
-func (r *searchResolver) Inputs() *SearchInputs {
-	return r.SearchInputs
+func (r *searchResolver) Inputs() SearchInputs {
+	return *r.SearchInputs
 }
 
 // rawQuery returns the original query string input.
@@ -350,25 +341,30 @@ func (r *searchResolver) countIsSet() bool {
 const defaultMaxSearchResults = 30
 const maxSearchResultsPerPaginatedRequest = 5000
 
-func (r *searchResolver) maxResults() int32 {
-	if r.Pagination != nil {
+// MaxResults computes the limit for the query.
+func (inputs SearchInputs) MaxResults() int {
+	if inputs.Pagination != nil {
 		// Paginated search requests always consume an entire result set for a
 		// given repository, so we do not want any limit here. See
 		// search_pagination.go for details on why this is necessary .
 		return math.MaxInt32
 	}
-	count, _ := r.Query.StringValues(query.FieldCount)
+
+	if inputs.Query == nil {
+		return 0
+	}
+	count, _ := inputs.Query.StringValues(query.FieldCount)
 	if len(count) > 0 {
 		n, _ := strconv.Atoi(count[0])
 		if n > 0 {
-			return int32(n)
+			return n
 		}
 	}
-	max, _ := r.Query.StringValues(query.FieldMax)
+	max, _ := inputs.Query.StringValues(query.FieldMax)
 	if len(max) > 0 {
 		n, _ := strconv.Atoi(max[0])
 		if n > 0 {
-			return int32(n)
+			return n
 		}
 	}
 	return defaultMaxSearchResults

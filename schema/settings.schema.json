@@ -84,6 +84,14 @@
             "pointer": true
           }
         },
+        "showSearchContext": {
+          "description": "Enables the search context dropdown.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
         "showEnterpriseHomePanels": {
           "description": "Enabled the homepage panels in the Enterprise homepage",
           "type": "boolean",
@@ -321,9 +329,61 @@
       "!go": {
         "pointer": true
       }
+    },
+    "insights": {
+      "description": "EXPERIMENTAL: Code Insights",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Insight"
+      }
     }
   },
   "definitions": {
+    "Insight": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "description", "series"],
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "The short title of this insight"
+        },
+        "description": {
+          "type": "string",
+          "description": "The description of this insight"
+        },
+        "series": {
+          "type": "array",
+          "description": "Series of data to show for this insight",
+          "items": {
+            "$ref": "#/definitions/InsightSeries"
+          }
+        }
+      }
+    },
+    "InsightSeries": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["label"],
+      "properties": {
+        "label": {
+          "type": "string",
+          "description": "The label to use for the series in the graph."
+        },
+        "repositoriesList": {
+          "type": "array",
+          "description": "Performs a search query and shows the number of results returned."
+        },
+        "search": {
+          "type": "string",
+          "description": "Performs a search query and shows the number of results returned."
+        },
+        "webhook": {
+          "type": "string",
+          "description": "(not yet supported) Fetch data from a webhook URL."
+        }
+      }
+    },
     "SearchScope": {
       "type": "object",
       "additionalProperties": false,

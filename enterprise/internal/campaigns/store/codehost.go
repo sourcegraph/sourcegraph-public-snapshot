@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/keegancsmith/sqlf"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"

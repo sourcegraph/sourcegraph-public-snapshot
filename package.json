@@ -40,6 +40,7 @@
     "not dead",
     "not <0.25%",
     "last 1 Chrome versions",
+    "last 2 Safari major versions",
     "not IE > 0"
   ],
   "nyc": {
@@ -199,6 +200,7 @@
     "gulp": "^4.0.2",
     "identity-obj-proxy": "^3.0.0",
     "jest": "^25.5.4",
+    "jest-canvas-mock": "^2.3.0",
     "jsdom": "^15.2.1",
     "json-schema-ref-parser": "^9.0.6",
     "json-schema-to-typescript": "^9.1.1",

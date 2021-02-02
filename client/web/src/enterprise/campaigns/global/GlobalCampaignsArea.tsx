@@ -69,7 +69,7 @@ interface AuthenticatedProps extends Props {
 }
 
 export const AuthenticatedCampaignsArea = withAuthenticatedUser<AuthenticatedProps>(({ match, ...outerProps }) => (
-    <div className="container web-content mt-3">
+    <div className="container web-content mt-4">
         {/* eslint-disable react/jsx-no-bind */}
         <Switch>
             <Route render={props => <CampaignListPage {...outerProps} {...props} />} path={match.url} exact={true} />
@@ -90,7 +90,7 @@ export interface NamespaceCampaignsAreaProps extends Props {
 export const NamespaceCampaignsArea = withAuthenticatedUser<
     NamespaceCampaignsAreaProps & { authenticatedUser: AuthenticatedUser }
 >(({ match, namespaceID, ...outerProps }) => (
-    <div className="container web-content mt-3">
+    <div className="container web-content mt-4">
         {/* eslint-disable react/jsx-no-bind */}
         <Switch>
             <Route

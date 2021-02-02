@@ -631,6 +631,33 @@ func (c *Changeset) AttachedTo(campaignID int64) bool {
 	return false
 }
 
+// Attach attaches the campaign with the given ID to the changeset.
+// If the campaign is already attached, this is a noop.
+// If the campaign is still attached but is marked as to be detached,
+// the detach flag is removed.
+func (c *Changeset) Attach(campaignID int64) {
+	for i := range c.Campaigns {
+		if c.Campaigns[i].CampaignID == campaignID {
+			c.Campaigns[i].Detach = false
+			return
+		}
+	}
+	c.Campaigns = append(c.Campaigns, CampaignAssoc{CampaignID: campaignID})
+}
+
+// Detach marks the given campaign as to-be-detached. Returns true, if the
+// campaign currently is attached to the campaign. This function is a noop,
+// if the given campaign was not attached to the changeset.
+func (c *Changeset) Detach(campaignID int64) bool {
+	for i := range c.Campaigns {
+		if c.Campaigns[i].CampaignID == campaignID {
+			c.Campaigns[i].Detach = true
+			return true
+		}
+	}
+	return false
+}
+
 // SupportsLabels returns whether the code host on which the changeset is
 // hosted supports labels and whether it's safe to call the
 // (*Changeset).Labels() method.
