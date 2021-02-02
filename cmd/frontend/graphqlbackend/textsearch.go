@@ -588,7 +588,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 			e := make(chan error, 1)
 			go func() {
 				defer close(c)
-				e <- indexed.doSearch(ctx, c)
+				e <- indexed.Search(ctx, c)
 			}()
 			for event := range c {
 				tr.LogFields(otlog.Int("matches.len", len(event.Results)))
@@ -626,7 +626,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 			e := make(chan error, 1)
 			go func() {
 				defer close(c)
-				e <- indexed.doSearch(ctx, c)
+				e <- indexed.Search(ctx, c)
 			}()
 			for event := range c {
 				tr.LogFields(otlog.Int("matches.len", len(event.Results)))

@@ -200,7 +200,8 @@ func (s *indexedSearchRequest) Repos() map[string]*search.RepositoryRevisions {
 	return s.repos.repoRevs
 }
 
-func (s *indexedSearchRequest) doSearch(ctx context.Context, c SearchStream) error {
+// Search streams 0 or more events to c.
+func (s *indexedSearchRequest) Search(ctx context.Context, c SearchStream) error {
 	if s.args == nil {
 		return nil
 	}

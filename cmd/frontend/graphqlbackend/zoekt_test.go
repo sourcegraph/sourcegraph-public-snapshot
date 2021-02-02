@@ -320,7 +320,7 @@ func TestIndexedSearch(t *testing.T) {
 				gotFm     []*FileMatchResolver
 			)
 			ctx, stream, done := collectStream(tt.args.ctx)
-			err = indexed.doSearch(ctx, stream)
+			err = indexed.Search(ctx, stream)
 			agg := done()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("zoektSearchHEAD() error = %v, wantErr = %v", err, tt.wantErr)
