@@ -1338,6 +1338,6 @@ type Secret struct {
 type SearchContext struct {
 	ID     int32
 	Name   string
-	UserID *int32 // if non-nil, the owner is this user. UserID/OrgID are mutually exclusive.
-	OrgID  *int32 // if non-nil, the owner is this organization. UserID/OrgID are mutually exclusive.
+	UserID int32 // if non-zero, the owner is this user. UserID/OrgID are mutually exclusive.
+	OrgID  int32 // if non-zero, the owner is this organization. UserID/OrgID are mutually exclusive.
 }

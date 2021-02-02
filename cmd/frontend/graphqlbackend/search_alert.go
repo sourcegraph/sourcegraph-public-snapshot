@@ -138,9 +138,8 @@ func alertForStalePermissions() *searchAlert {
 // query does not contain any repos to search.
 func (r *searchResolver) reposExist(ctx context.Context, options searchrepos.Options) bool {
 	options.UserSettings = r.UserSettings
-	options.Zoekt = r.zoekt
-	options.DefaultReposFunc = database.GlobalDefaultRepos.List
-	resolved, err := searchrepos.ResolveRepositories(ctx, options)
+	repositoryResolver := &searchrepos.Resolver{Zoekt: r.zoekt, DefaultReposFunc: database.GlobalDefaultRepos.List, NamespaceStore: database.GlobalNamespaces}
+	resolved, err := repositoryResolver.Resolve(ctx, options)
 	return err == nil && len(resolved.RepoRevs) > 0
 }
 

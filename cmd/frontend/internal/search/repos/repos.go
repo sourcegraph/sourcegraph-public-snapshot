@@ -39,7 +39,15 @@ type Resolved struct {
 	OverLimit       bool
 }
 
-func ResolveRepositories(ctx context.Context, op Options) (Resolved, error) {
+type Resolver struct {
+	Zoekt            *searchbackend.Zoekt
+	DefaultReposFunc defaultReposFunc
+	NamespaceStore   interface {
+		GetByName(context.Context, string) (*database.Namespace, error)
+	}
+}
+
+func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 	var err error
 	tr, ctx := trace.New(ctx, "resolveRepositories", op.String())
 	defer func() {
@@ -99,20 +107,16 @@ func ResolveRepositories(ctx context.Context, op Options) (Resolved, error) {
 		}
 	}
 
-	var searchContext *types.SearchContext
-	if envvar.SourcegraphDotComMode() {
-		searchContext, err = resolveSearchContextSpec(ctx, op.SearchContextSpec)
-		if err != nil {
-			return Resolved{}, err
-		}
+	searchContext, err := resolveSearchContextSpec(ctx, op.SearchContextSpec, r.NamespaceStore.GetByName)
+	if err != nil {
+		return Resolved{}, err
 	}
-	missingOrGlobalSearchContext := searchContext == nil || isGlobalSearchContext(searchContext)
 
 	var defaultRepos []*types.RepoName
 
-	if envvar.SourcegraphDotComMode() && len(includePatterns) == 0 && !hasTypeRepo(op.Query) && missingOrGlobalSearchContext {
+	if envvar.SourcegraphDotComMode() && len(includePatterns) == 0 && !hasTypeRepo(op.Query) && isGlobalSearchContext(searchContext) {
 		start := time.Now()
-		defaultRepos, err = defaultRepositories(ctx, op.DefaultReposFunc, op.Zoekt, excludePatterns)
+		defaultRepos, err = defaultRepositories(ctx, r.DefaultReposFunc, r.Zoekt, excludePatterns)
 		if err != nil {
 			return Resolved{}, errors.Wrap(err, "getting list of default repos")
 		}
@@ -147,8 +151,8 @@ func ResolveRepositories(ctx context.Context, op Options) (Resolved, error) {
 			OnlyPrivate:  op.OnlyPrivate,
 		}
 
-		if searchContext != nil && searchContext.UserID != nil {
-			options.UserID = *searchContext.UserID
+		if searchContext != nil && searchContext.UserID != 0 {
+			options.UserID = searchContext.UserID
 		}
 
 		// PERF: We Query concurrently since Count and List call can be slow
@@ -286,8 +290,6 @@ type Options struct {
 	OnlyPrivate        bool
 	OnlyPublic         bool
 	Query              query.QueryInfo
-	DefaultReposFunc   defaultReposFunc
-	Zoekt              *searchbackend.Zoekt
 }
 
 func (op *Options) String() string {
@@ -418,24 +420,30 @@ func resolveVersionContext(versionContext string) (*schema.VersionContext, error
 
 const globalSearchContextName = "global"
 
-func resolveSearchContextSpec(ctx context.Context, searchContextSpec string) (*types.SearchContext, error) {
-	if IsGlobalSearchContextSpec(searchContextSpec) {
+type getNamespaceByNameFunc func(ctx context.Context, name string) (*database.Namespace, error)
+
+func resolveSearchContextSpec(ctx context.Context, searchContextSpec string, getNamespaceByName getNamespaceByNameFunc) (*types.SearchContext, error) {
+	if !envvar.SourcegraphDotComMode() {
+		return nil, nil
+	}
+
+	if isGlobalSearchContextSpec(searchContextSpec) {
 		return &types.SearchContext{Name: globalSearchContextName}, nil
 	} else if len(searchContextSpec) > 0 && searchContextSpec[:1] == "@" {
 		name := searchContextSpec[1:]
-		namespace, err := database.GlobalNamespaces.GetByName(ctx, name)
+		namespace, err := getNamespaceByName(ctx, name)
 		if err != nil {
 			return nil, err
 		}
 		if namespace.User == 0 {
-			return nil, errors.New("search context not found")
+			return nil, errors.Errorf("search context '%s' not found", searchContextSpec)
 		}
-		return &types.SearchContext{Name: name, UserID: &namespace.User}, nil
+		return &types.SearchContext{Name: name, UserID: namespace.User}, nil
 	}
-	return nil, errors.New("search context spec does not have the correct format")
+	return nil, errors.Errorf("search context '%s' does not have the correct format (global or @username)", searchContextSpec)
 }
 
-func IsGlobalSearchContextSpec(searchContextSpec string) bool {
+func isGlobalSearchContextSpec(searchContextSpec string) bool {
 	// Empty search context spec resolves to global search context
 	return searchContextSpec == "" || searchContextSpec == globalSearchContextName
 }

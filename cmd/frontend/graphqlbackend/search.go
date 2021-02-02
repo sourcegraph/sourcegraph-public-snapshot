@@ -482,10 +482,9 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		OnlyPublic:         visibility == query.Public,
 		CommitAfter:        commitAfter,
 		Query:              r.Query,
-		DefaultReposFunc:   database.GlobalDefaultRepos.List,
-		Zoekt:              r.zoekt,
 	}
-	resolved, err := searchrepos.ResolveRepositories(ctx, options)
+	repositoryResolver := &searchrepos.Resolver{Zoekt: r.zoekt, DefaultReposFunc: database.GlobalDefaultRepos.List, NamespaceStore: database.GlobalNamespaces}
+	resolved, err := repositoryResolver.Resolve(ctx, options)
 	tr.LazyPrintf("resolveRepositories - done")
 	if effectiveRepoFieldValues == nil {
 		r.resolved = &resolved

@@ -156,7 +156,8 @@ func TestRevisionValidation(t *testing.T) {
 		t.Run(tt.repoFilters[0], func(t *testing.T) {
 
 			op := Options{RepoFilters: tt.repoFilters}
-			resolved, err := ResolveRepositories(context.Background(), op)
+			repositoryResolver := Resolver{}
+			resolved, err := repositoryResolver.Resolve(context.Background(), op)
 
 			if diff := cmp.Diff(tt.wantRepoRevs, resolved.RepoRevs); diff != "" {
 				t.Error(diff)
@@ -413,6 +414,10 @@ func TestHasTypeRepo(t *testing.T) {
 }
 
 func TestResolvingValidSearchContextSpecs(t *testing.T) {
+	orig := envvar.SourcegraphDotComMode()
+	envvar.MockSourcegraphDotComMode(true)
+	defer envvar.MockSourcegraphDotComMode(orig)
+
 	tests := []struct {
 		name                  string
 		searchContextSpec     string
@@ -423,14 +428,12 @@ func TestResolvingValidSearchContextSpecs(t *testing.T) {
 		{name: "resolve empty search context as global", searchContextSpec: "", wantSearchContextName: "global"},
 	}
 
-	database.Mocks.Namespaces.GetByName = func(ctx context.Context, name string) (*database.Namespace, error) {
+	getNamespaceByName := func(ctx context.Context, name string) (*database.Namespace, error) {
 		return &database.Namespace{Name: name, User: 1}, nil
 	}
-	defer func() { database.Mocks.Namespaces.GetByName = nil }()
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			searchContext, err := resolveSearchContextSpec(context.Background(), tt.searchContextSpec)
+			searchContext, err := resolveSearchContextSpec(context.Background(), tt.searchContextSpec, getNamespaceByName)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -442,24 +445,24 @@ func TestResolvingValidSearchContextSpecs(t *testing.T) {
 }
 
 func TestResolvingInvalidSearchContextSpecs(t *testing.T) {
+	orig := envvar.SourcegraphDotComMode()
+	envvar.MockSourcegraphDotComMode(true)
+	defer envvar.MockSourcegraphDotComMode(orig)
+
 	tests := []struct {
 		name              string
 		searchContextSpec string
 		wantErr           string
 	}{
-		{name: "invalid format", searchContextSpec: "+user", wantErr: "search context spec does not have the correct format"},
-		{name: "user not found", searchContextSpec: "@user", wantErr: "search context not found"},
-		{name: "empty user not found", searchContextSpec: "@", wantErr: "search context not found"},
+		{name: "invalid format", searchContextSpec: "+user", wantErr: "search context '+user' does not have the correct format (global or @username)"},
+		{name: "user not found", searchContextSpec: "@user", wantErr: "search context '@user' not found"},
+		{name: "empty user not found", searchContextSpec: "@", wantErr: "search context '@' not found"},
 	}
 
-	database.Mocks.Namespaces.GetByName = func(ctx context.Context, name string) (*database.Namespace, error) {
-		return &database.Namespace{}, nil
-	}
-	defer func() { database.Mocks.Namespaces.GetByName = nil }()
-
+	getNamespaceByName := func(ctx context.Context, name string) (*database.Namespace, error) { return &database.Namespace{}, nil }
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := resolveSearchContextSpec(context.Background(), tt.searchContextSpec)
+			_, err := resolveSearchContextSpec(context.Background(), tt.searchContextSpec, getNamespaceByName)
 			if err == nil {
 				t.Error("Expected error, but there was none")
 			}
@@ -468,6 +471,14 @@ func TestResolvingInvalidSearchContextSpecs(t *testing.T) {
 			}
 		})
 	}
+}
+
+type mockNamespaceStore struct {
+	GetByNameMock func(ctx context.Context, name string) (*database.Namespace, error)
+}
+
+func (ns *mockNamespaceStore) GetByName(ctx context.Context, name string) (*database.Namespace, error) {
+	return ns.GetByNameMock(ctx, name)
 }
 
 func TestUseDefaultReposIfMissingOrGlobalSearchContext(t *testing.T) {
@@ -519,15 +530,14 @@ func TestUseDefaultReposIfMissingOrGlobalSearchContext(t *testing.T) {
 			op := Options{
 				SearchContextSpec: tt.searchContextSpec,
 				Query:             queryInfo,
-				DefaultReposFunc:  mockDefaultReposFunc,
-				Zoekt:             mockZoekt,
 			}
-			repos, err := ResolveRepositories(context.Background(), op)
+			repositoryResolver := &Resolver{Zoekt: mockZoekt, DefaultReposFunc: mockDefaultReposFunc, NamespaceStore: &mockNamespaceStore{}}
+			resolved, err := repositoryResolver.Resolve(context.Background(), op)
 			if err != nil {
 				t.Fatal(err)
 			}
 			var repoNames []string
-			for _, repoRev := range repos.RepoRevs {
+			for _, repoRev := range resolved.RepoRevs {
 				repoNames = append(repoNames, string(repoRev.Repo.Name))
 			}
 			if !reflect.DeepEqual(repoNames, wantDefaultRepoNames) {
@@ -558,23 +568,25 @@ func TestResolveRepositoriesWithUserSearchContext(t *testing.T) {
 		return []*types.RepoName{}, nil
 	}
 	database.Mocks.Repos.Count = func(ctx context.Context, op database.ReposListOptions) (int, error) { return 0, nil }
-	database.Mocks.Namespaces.GetByName = func(ctx context.Context, name string) (*database.Namespace, error) {
+	defer func() {
+		database.Mocks.Repos.ListRepoNames = nil
+		database.Mocks.Repos.Count = nil
+	}()
+
+	getNamespaceByName := func(ctx context.Context, name string) (*database.Namespace, error) {
 		if name != wantName {
 			t.Errorf("got %q, want %q", name, wantName)
 		}
 		return &database.Namespace{Name: wantName, User: wantUserID}, nil
 	}
-	defer func() {
-		database.Mocks.Repos.ListRepoNames = nil
-		database.Mocks.Repos.Count = nil
-		database.Mocks.Namespaces.GetByName = nil
-	}()
+	namespaceStore := &mockNamespaceStore{GetByNameMock: getNamespaceByName}
 
 	op := Options{
 		Query:             queryInfo,
 		SearchContextSpec: "@" + wantName,
 	}
-	_, err = ResolveRepositories(context.Background(), op)
+	repositoryResolver := &Resolver{NamespaceStore: namespaceStore}
+	_, err = repositoryResolver.Resolve(context.Background(), op)
 	if err != nil {
 		t.Fatal(err)
 	}
