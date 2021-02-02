@@ -1,14 +1,19 @@
 package lsifstore
 
-// type Symbol struct {
-// 	Text   string
-// 	Detail string
-// 	Kind   protocol.SymbolKind
+import (
+	protocol "github.com/sourcegraph/lsif-protocol"
+)
 
-// 	Tags      []lsp.SymbolTag
-// 	Monikers  []lsp.Moniker
-// 	Locations []SymbolLocation
+// Symbol roughly follows the structure of LSP SymbolInformation
+type Symbol struct {
+	Text   string
+	Detail string
+	Kind   protocol.SymbolKind
 
-// 	SymbolData []DocumentSymbolData
-// 	Children   []*Symbol
-// }
+	Tags      []lsp.SymbolTag
+	Monikers  []lsp.Moniker
+	Locations []SymbolLocation
+
+	SymbolData []DocumentSymbolData
+	Children   []*Symbol
+}

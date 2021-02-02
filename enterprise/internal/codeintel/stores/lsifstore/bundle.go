@@ -137,6 +137,11 @@ func (s *Store) Symbols(ctx context.Context, bundleID int, path string) ([]Docum
 		documentData = append(documentData, docData.Document.Symbols...)
 	}
 
+	for _, docData := range scannedDocumentData {
+		docData.Document.Monikers
+	}
+
+	logg.Printf("# documentData: %+v", documentData)
 	return documentData, nil
 }
 

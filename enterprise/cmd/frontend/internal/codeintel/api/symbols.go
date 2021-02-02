@@ -39,17 +39,13 @@ func (api *CodeIntelAPI) Symbols(ctx context.Context, path string, uploadID int)
 	if err != nil || len(rawSymbolData) == 0 {
 		return nil, err
 	}
-	log.Printf("# rawSymbolData: %v", rawSymbolData)
-
-	// NEXT: fetch monikers
 
 	// Coalesce and combine into symbols
 	symbols := make([]ResolvedSymbol, 0, len(rawSymbolData))
-	for _, rawSymbol := range rawSymbolData {
-		log.Printf("# rawSymbol: %v", rawSymbol)
-		// symbols[i] = ResolvedSymbol{
-		// }
-	}
+	// for _, rawSymbol := range rawSymbolData {
+	// 	// symbols[i] = ResolvedSymbol{
+	// 	// }
+	// }
 
 	log.Printf("# symbols: %+v", symbols)
 	return nil, nil
