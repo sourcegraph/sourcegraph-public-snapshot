@@ -25,6 +25,8 @@ type Container struct {
 	// is responsible for, so that the impact of issues in it is clear.
 	Description string
 
+	Templates []sdk.TemplateVar
+
 	// Groups of observable information about the container.
 	Groups []Group
 
@@ -67,22 +69,22 @@ func (c *Container) renderDashboard() *sdk.Board {
 	board.SharedCrosshair = true
 	board.Editable = false
 	board.AddTags("builtin")
-	board.Templating.List = []sdk.TemplateVar{
-		{
-			Label:      "Filter alert level",
-			Name:       "alert_level",
-			AllValue:   ".*",
-			Current:    sdk.Current{Text: "all", Value: "$__all"},
-			IncludeAll: true,
-			Options: []sdk.Option{
-				{Text: "all", Value: "$__all", Selected: true},
-				{Text: "critical", Value: "critical"},
-				{Text: "warning", Value: "warning"},
-			},
-			Query: "critical,warning",
-			Type:  "custom",
+	board.Templating.List = c.Templates
+	board.Templating.List = append(board.Templating.List, sdk.TemplateVar{
+		Label:      "Filter alert level",
+		Name:       "alert_level",
+		AllValue:   ".*",
+		Current:    sdk.Current{Text: "all", Value: "$__all"},
+		IncludeAll: true,
+		Options: []sdk.Option{
+			{Text: "all", Value: "$__all", Selected: true},
+			{Text: "critical", Value: "critical"},
+			{Text: "warning", Value: "warning"},
 		},
-	}
+		Query: "critical,warning",
+		Type:  "custom",
+	},
+	)
 	board.Annotations.List = []sdk.Annotation{
 		{
 			Name:       "Alert events",

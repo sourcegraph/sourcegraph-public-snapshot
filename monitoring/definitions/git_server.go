@@ -3,6 +3,7 @@ package definitions
 import (
 	"time"
 
+	"github.com/grafana-tools/sdk"
 	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
@@ -12,6 +13,17 @@ func GitServer() *monitoring.Container {
 		Name:        "gitserver",
 		Title:       "Git Server",
 		Description: "Stores, manages, and operates Git repositories.",
+		Templates: []sdk.TemplateVar{
+			{
+				Label:      "Shard",
+				Name:       "shard",
+				Type:       "query",
+				Query:      "label_values(src_gitserver_exec_running, instance)",
+				IncludeAll: true,
+				AllValue:   ".*",
+				Current:    sdk.Current{Text: "all", Value: "$__all"},
+			},
+		},
 		Groups: []monitoring.Group{
 			{
 				Title: "General",
