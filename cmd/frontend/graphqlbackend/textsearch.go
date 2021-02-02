@@ -353,7 +353,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 		return err
 	}
 
-	ctx, limitStream, cleanup := WithLimit(ctx, stream, int(args.PatternInfo.FileMatchLimit))
+	ctx, stream, cleanup := WithLimit(ctx, stream, int(args.PatternInfo.FileMatchLimit))
 	defer cleanup()
 
 	tr, ctx := trace.New(ctx, "searchFilesInRepos", fmt.Sprintf("query: %s", args.PatternInfo.Pattern))
@@ -411,7 +411,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 		for _, r := range indexed.Unindexed {
 			status.Update(r.Repo.ID, search.RepoStatusMissing)
 		}
-		limitStream.Send(SearchEvent{
+		stream.Send(SearchEvent{
 			Stats: streaming.Stats{
 				Status: status,
 			},
@@ -428,7 +428,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 			for _, r := range missing {
 				status.Update(r.ID, search.RepoStatusMissing)
 			}
-			limitStream.Send(SearchEvent{
+			stream.Send(SearchEvent{
 				Stats: streaming.Stats{
 					Status: status,
 				},
@@ -539,7 +539,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 					}
 					// non-diff search reports timeout through err, so pass false for timedOut
 					repoCommon, fatalErr := handleRepoSearchResult(repoRev, repoLimitHit, false, err)
-					limitStream.Send(SearchEvent{
+					stream.Send(SearchEvent{
 						Results: fileMatchResultsToSearchResults(matches),
 						Stats:   repoCommon,
 					})
@@ -559,7 +559,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			err := indexed.Search(ctx, limitStream)
+			err := indexed.Search(ctx, stream)
 			if err != nil {
 				setError(ctx, stringerFunc("indexed"), err)
 				tr.LogFields(otlog.Error(err))
@@ -595,7 +595,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 			}()
 			for event := range c {
 				tr.LogFields(otlog.Int("matches.len", len(event.Results)))
-				limitStream.Send(SearchEvent{
+				stream.Send(SearchEvent{
 					Stats: event.Stats,
 				})
 
