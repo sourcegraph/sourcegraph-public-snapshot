@@ -303,7 +303,7 @@ function registerRedactedHover(editor: typeof monaco): monaco.IDisposable {
                     contents: [
                         {
                             value:
-                                "**This field is redacted.** To update, replace with a new value, otherwise don't modify this field.",
+                                "**This field is redacted.** To update, replace with a new value. Otherwise, don't modify this field.",
                         },
                     ],
                 }
