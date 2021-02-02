@@ -40,6 +40,11 @@ type limitStream struct {
 func (s *limitStream) Send(event SearchEvent) {
 	s.s.Send(event)
 
+	// Avoid limit checks if no change to result count.
+	if len(event.Results) == 0 {
+		return
+	}
+
 	s.mu.Lock()
 	oldCount := s.count
 	s.count += len(event.Results)
