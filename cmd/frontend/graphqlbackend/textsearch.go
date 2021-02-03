@@ -452,7 +452,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 		defer mu.Unlock()
 
 		// Check if we are the first error found.
-		if searchErr == nil {
+		if searchErr == nil && ctx.Err() == nil {
 			searchErr = errors.Wrapf(err, "failed to search %s", source.String())
 			tr.LazyPrintf("cancel due to error: %v", searchErr)
 			cleanup()
