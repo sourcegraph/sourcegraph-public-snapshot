@@ -13,6 +13,7 @@ import (
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -306,15 +307,8 @@ func (c *Client) ExcludeRepo(ctx context.Context, id api.RepoID) (*protocol.Excl
 	return &res, nil
 }
 
-// MockStatusMessages mocks (*Client).StatusMessages for tests.
-var MockStatusMessages func(context.Context) (*protocol.StatusMessagesResponse, error)
-
 // StatusMessages returns an array of status messages
 func (c *Client) StatusMessages(ctx context.Context) (*protocol.StatusMessagesResponse, error) {
-	if MockStatusMessages != nil {
-		return MockStatusMessages(ctx)
-	}
-
 	resp, err := c.httpGet(ctx, "status-messages")
 	if err != nil {
 		return nil, err
