@@ -13,7 +13,7 @@
   "scripts": {
     "prettier": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --write --list-different --config prettier.config.js",
     "prettier-check": "yarn -s run prettier --write=false",
-    "all:eslint": "dev/foreach-ts-project.sh yarn -s run eslint --quiet",
+    "all:eslint": "DOCSITE_LIST=\"$(./dev/docsite.sh -config doc/docsite.json ls)\" dev/foreach-ts-project.sh yarn -s run eslint --quiet",
     "all:stylelint": "yarn --cwd client/web run stylelint && yarn --cwd client/shared run stylelint && yarn --cwd client/branded run stylelint && yarn --cwd client/browser run stylelint",
     "all:tsgql": "yarn --cwd client/web run tsgql validate -p . --exitOnWarn && yarn --cwd client/shared run tsgql validate -p . --exitOnWarn && yarn --cwd client/browser run tsgql validate -p . --exitOnWarn",
     "build-ts": "tsc -b tsconfig.all.json",
@@ -95,6 +95,7 @@
     "@slack/web-api": "^5.10.0",
     "@sourcegraph/babel-plugin-transform-react-hot-loader-wrapper": "^1.0.0",
     "@sourcegraph/eslint-config": "^0.20.19",
+    "@sourcegraph/eslint-plugin-sourcegraph": "link:client/packages/@sourcegraph/eslint-plugin-sourcegraph",
     "@sourcegraph/prettierrc": "^3.0.3",
     "@sourcegraph/stylelint-config": "^1.1.9",
     "@sourcegraph/tsconfig": "^4.0.1",
