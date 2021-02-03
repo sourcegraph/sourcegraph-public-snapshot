@@ -19,6 +19,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Structural search now supports searching indexed branches other than default. [#17726](https://github.com/sourcegraph/sourcegraph/pull/17726)
 - Pings now contain Sourcegraph extension activation statistics. [#16421](https://github.com/sourcegraph/sourcegraph/pull/16421)
 - Pings now contain aggregate Sourcegraph extension activation statistics: the number of users and number of activations per (public) extension per week, and the number of total extension users per week and average extensions activated per user. [#16421](https://github.com/sourcegraph/sourcegraph/pull/16421)
+- Pings now contain aggregate code insights usage data: totals insight views, interactions, edits, creations, and removals, and the count of unique users that view and create insights. [#16421](https://github.com/sourcegraph/sourcegraph/pull/17805)
 
 ### Changed
 

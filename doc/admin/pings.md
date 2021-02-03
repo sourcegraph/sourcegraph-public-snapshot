@@ -83,3 +83,11 @@ By default, Sourcegraph also aggregates usage and performance metrics for some p
   - Average number of activations for users that use a given non-default Sourcegraph extension
   - Total number of users that use non-default Sourcegraph extensions
   - Average number of non-default extensions enabled for users that use non-default Sourcegraph extensions
+- Code insights usage data
+  - Total count of page views on the insights page
+  - Count of unique viewers on the insights page
+  - Total counts of hovers, clicks, and drags of insights by type (e.g. search, code stats)
+  - Total counts of edits, additions, and removals of insights by type
+  - Total count of clicks on the "Add more insights" and "Configure insights" buttons on the insights page
+  - Weekly count of users that have created an insight, and count of users that have created their first insight this week
+                        
