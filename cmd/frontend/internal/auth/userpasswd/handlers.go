@@ -30,6 +30,7 @@ type credentials struct {
 	Username        string `json:"username"`
 	Password        string `json:"password"`
 	AnonymousUserID string `json:"anonymousUserId"`
+	FirstSourceUrl  string `json:"firstSourceUrl"`
 }
 
 // HandleSignUp handles submission of the user signup form.
@@ -188,7 +189,7 @@ func handleSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInit
 
 	// Track user data
 	if r.UserAgent() != "Sourcegraph e2etest-bot" {
-		go tracking.SyncUser(creds.Email, hubspotutil.SignupEventID, &hubspot.ContactProperties{AnonymousUserID: creds.AnonymousUserID})
+		go tracking.SyncUser(creds.Email, hubspotutil.SignupEventID, &hubspot.ContactProperties{AnonymousUserID: creds.AnonymousUserID, FirstSourceUrl: creds.FirstSourceUrl})
 	}
 }
 
