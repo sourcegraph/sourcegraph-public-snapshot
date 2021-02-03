@@ -1,5 +1,5 @@
 import React from 'react'
-import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
+import { ButtonDropdown, DropdownToggle } from 'reactstrap'
 
 interface SearchContextDropdownProps {}
 
