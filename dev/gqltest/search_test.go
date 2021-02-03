@@ -650,10 +650,6 @@ func TestSearch(t *testing.T) {
 				name:       `Mixed regexp and quoted literal`,
 				query:      `repo:^github\.com/sgtest/go-diff$ "*" and cert.*Load count:1 stable:yes type:file`,
 				zeroResult: true,
-				wantAlert: &gqltestutil.SearchAlert{
-					Title:       "Too many files to search for and-expression",
-					Description: "One and-expression in the query requires a lot of work! Try using the 'repo:' or 'file:' filters to narrow your search. We're working on improving this experience in https://github.com/sourcegraph/sourcegraph/issues/9824",
-				},
 			},
 			{
 				name:  `Escape sequences`,
