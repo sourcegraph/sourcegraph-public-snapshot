@@ -7,7 +7,11 @@ import { MonacoQueryInput, MonacoQueryInputProps } from './MonacoQueryInput'
 
 const { add } = storiesOf('web/search/input/MonacoQueryInput', module)
     .addParameters({ chromatic: { viewports: [400] } })
-    .addDecorator(story => <div className="p-4">{story()}</div>)
+    .addDecorator(story => (
+        <div className="p-3" style={{ height: 'calc(34px + 1rem + 1rem)', display: 'flex' }}>
+            {story()}
+        </div>
+    ))
 
 const history = createMemoryHistory()
 const defaultProps: MonacoQueryInputProps = {
