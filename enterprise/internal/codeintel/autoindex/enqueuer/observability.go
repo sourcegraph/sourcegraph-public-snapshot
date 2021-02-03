@@ -8,7 +8,8 @@ import (
 )
 
 type operations struct {
-	QueueIndex *observation.Operation
+	QueueIndex              *observation.Operation
+	InferIndexConfiguration *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -28,6 +29,7 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	return &operations{
-		QueueIndex: op("QueueIndex"),
+		QueueIndex:              op("QueueIndex"),
+		InferIndexConfiguration: op("InferIndexConfiguration"),
 	}
 }

@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"path/filepath"
 	"regexp"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/config"
 )
 
 const (
@@ -36,7 +38,7 @@ func (r lsifTscJobRecognizer) CanIndex(paths []string, gitserver GitserverClient
 	return false
 }
 
-func (r lsifTscJobRecognizer) InferIndexJobs(paths []string, gitserver GitserverClientWrapper) (indexes []IndexJob) {
+func (r lsifTscJobRecognizer) InferIndexJobs(paths []string, gitserver GitserverClientWrapper) (indexes []config.IndexJob) {
 	for _, path := range paths {
 		if !r.canIndexPath(path) {
 			continue
@@ -45,7 +47,7 @@ func (r lsifTscJobRecognizer) InferIndexJobs(paths []string, gitserver Gitserver
 		// check first if anywhere along the ancestor path there is a lerna.json
 		isYarn := checkLernaFile(path, paths, gitserver)
 
-		var dockerSteps []DockerStep
+		var dockerSteps []config.DockerStep
 
 		for _, dir := range ancestorDirs(path) {
 			if !contains(paths, filepath.Join(dir, "package.json")) {
@@ -59,7 +61,7 @@ func (r lsifTscJobRecognizer) InferIndexJobs(paths []string, gitserver Gitserver
 				commands = append(commands, "npm install")
 			}
 
-			dockerSteps = append(dockerSteps, DockerStep{
+			dockerSteps = append(dockerSteps, config.DockerStep{
 				Root:     dir,
 				Image:    lsifTscImage,
 				Commands: commands,
@@ -81,8 +83,8 @@ func (r lsifTscJobRecognizer) InferIndexJobs(paths []string, gitserver Gitserver
 			dockerSteps[i], dockerSteps[n-i-1] = dockerSteps[n-i-1], dockerSteps[i]
 		}
 
-		indexes = append(indexes, IndexJob{
-			DockerSteps: dockerSteps,
+		indexes = append(indexes, config.IndexJob{
+			Steps:       dockerSteps,
 			LocalSteps:  localSteps,
 			Root:        dirWithoutDot(path),
 			Indexer:     lsifTscImage,

@@ -66,7 +66,7 @@ func TestUnmarshalJSON(t *testing.T) {
 				IndexerArgs: []string{"--no-animation"},
 			},
 			{
-				Steps:       []DockerStep{},
+				Steps:       nil,
 				Root:        "web/",
 				Indexer:     "lsif-tsc",
 				IndexerArgs: []string{"-p", "."},

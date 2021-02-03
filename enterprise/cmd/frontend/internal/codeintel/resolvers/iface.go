@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/api"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
@@ -71,4 +72,5 @@ type LSIFStore interface {
 
 type IndexEnqueuer interface {
 	ForceQueueIndex(ctx context.Context, repositoryID int) error
+	InferIndexConfiguration(ctx context.Context, repositoryID int) (*config.IndexConfiguration, error)
 }
