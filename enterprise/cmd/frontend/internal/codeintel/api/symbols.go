@@ -47,6 +47,6 @@ func (api *CodeIntelAPI) Symbols(ctx context.Context, path string, uploadID int)
 	// 	// }
 	// }
 
-	log.Printf("# symbols: %+v", symbols)
+	log.Printf("# CodeIntelAPI.Symbols: %+v", symbols)
 	return nil, nil
 }

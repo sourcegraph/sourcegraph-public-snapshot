@@ -119,8 +119,38 @@ select dump_id, path, data FROM lsif_data_documents WHERE dump_id = %s AND path 
 
 // TODO(beyang): introduce migration for key on dump_id column
 
+func symbolDataToSymbol(path string, ranges map[ID]RangeData, d DocumentSymbolData) (*Symbol, error) {
+	rng, ok := ranges[d.RangeID]
+	if !ok {
+		return nil, fmt.Errorf("range %v not found", d.RangeID)
+	}
+	if rng.Tag == nil {
+		logg.Printf("# rng tag not found, skipping")
+		return nil, nil
+	}
+	children := make([]*Symbol, len(d.Children))
+	for i, child := range d.Children {
+		childSymbol, err := symbolDataToSymbol(path, ranges, child)
+		if err != nil {
+			return nil, err
+		}
+		children[i] = childSymbol
+	}
+	return &Symbol{
+		Text:   rng.Tag.Text,
+		Detail: rng.Tag.Detail,
+		Kind:   rng.Tag.Kind,
+		Tags:   rng.Tag.Tags,
+		Locations: []SymbolLocation{{Path: path, Range: Range{
+			Start: Position{Line: rng.StartLine, Character: rng.StartCharacter},
+			End:   Position{Line: rng.EndLine, Character: rng.EndCharacter},
+		}}},
+		Children: children,
+	}, nil
+}
+
 // Symbols returns all LSIF document symbols in documents prefixed by path.
-func (s *Store) Symbols(ctx context.Context, bundleID int, path string) ([]DocumentSymbolData, error) {
+func (s *Store) Symbols(ctx context.Context, bundleID int, path string) ([]*Symbol, error) {
 	logg.Printf("# bundleID: %v, path: %v", bundleID, path)
 	const limit = 10000
 	scannedDocumentData, err := s.scanDocumentData(s.Store.Query(ctx, sqlf.Sprintf(documentsQuery, bundleID, path, limit)))
@@ -132,19 +162,22 @@ func (s *Store) Symbols(ctx context.Context, bundleID int, path string) ([]Docum
 	for _, docData := range scannedDocumentData {
 		numSymbols += len(docData.Document.Symbols)
 	}
-	documentData := make([]DocumentSymbolData, 0, numSymbols)
+
+	// Convert to symbols
+	symbols := make([]*Symbol, 0, numSymbols)
 	for _, docData := range scannedDocumentData {
-		documentData = append(documentData, docData.Document.Symbols...)
+		for _, symData := range docData.Document.Symbols {
+			symbol, err := symbolDataToSymbol(path, docData.Document.Ranges, symData)
+			if err != nil {
+				return nil, err
+			}
+			symbols = append(symbols, symbol)
+		}
 	}
 
-	// NEXT: convert to []Symbol (instead of []DocumentSymbolData)
-	// Need to iterate over monikers in documentData (where are moniker edges located, perhaps need to correlate them?)
-	for _, docData := range scannedDocumentData {
-		docData.Document.Monikers
-	}
+	// TODO: associate with monikers (based on ranges), coalesce by moniker
 
-	logg.Printf("# documentData: %+v", documentData)
-	return documentData, nil
+	return symbols, nil
 }
 
 const documentQuery = `

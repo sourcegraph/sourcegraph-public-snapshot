@@ -139,10 +139,11 @@ func serializeDocument(state *State, documentID int) lsifstore.DocumentData {
 		})
 
 		document.Ranges[toID(rangeID)] = lsifstore.RangeData{
-			StartLine:          rangeData.StartLine,
-			StartCharacter:     rangeData.StartCharacter,
-			EndLine:            rangeData.EndLine,
-			EndCharacter:       rangeData.EndCharacter,
+			StartLine:          rangeData.Start.Line,
+			StartCharacter:     rangeData.Start.Character,
+			EndLine:            rangeData.End.Line,
+			EndCharacter:       rangeData.End.Character,
+			Tag:                rangeData.Tag,
 			DefinitionResultID: toID(rangeData.DefinitionResultID),
 			ReferenceResultID:  toID(rangeData.ReferenceResultID),
 			HoverResultID:      toID(rangeData.HoverResultID),
@@ -310,10 +311,10 @@ func gatherMonikersLocations(ctx context.Context, state *State, data map[int]*da
 
 							locations = append(locations, lsifstore.LocationData{
 								URI:            uri,
-								StartLine:      r.StartLine,
-								StartCharacter: r.StartCharacter,
-								EndLine:        r.EndLine,
-								EndCharacter:   r.EndCharacter,
+								StartLine:      r.Start.Line,
+								StartCharacter: r.Start.Character,
+								EndLine:        r.End.Line,
+								EndCharacter:   r.End.Character,
 							})
 						})
 					})

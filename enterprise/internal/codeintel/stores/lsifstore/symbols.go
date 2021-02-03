@@ -1,8 +1,6 @@
 package lsifstore
 
-import (
-	protocol "github.com/sourcegraph/lsif-protocol"
-)
+import protocol "github.com/sourcegraph/lsif-protocol"
 
 // Symbol roughly follows the structure of LSP SymbolInformation
 type Symbol struct {
@@ -10,10 +8,14 @@ type Symbol struct {
 	Detail string
 	Kind   protocol.SymbolKind
 
-	Tags      []lsp.SymbolTag
-	Monikers  []lsp.Moniker
+	Tags      []protocol.SymbolTag
 	Locations []SymbolLocation
+	// Monikers  []protocol.Moniker
 
-	SymbolData []DocumentSymbolData
-	Children   []*Symbol
+	Children []*Symbol
+}
+
+type SymbolLocation struct {
+	Path  string
+	Range Range
 }
