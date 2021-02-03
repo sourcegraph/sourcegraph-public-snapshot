@@ -96,7 +96,7 @@ export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps
                 <hr className="mt-4" />
                 <p className="text-muted">
                     Want more help? See{' '}
-                    <a href="/help/user/campaigns" rel="noopener noreferrer" target="_blank">
+                    <a href="/help/campaigns" rel="noopener noreferrer" target="_blank">
                         campaigns documentation
                     </a>
                     .

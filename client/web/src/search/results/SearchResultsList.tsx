@@ -466,7 +466,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
 
                     <div className="pb-4" />
                     {this.props.resultsOrError !== undefined && (
-                        <Link className="mb-4 p-3" to="/help/user/search">
+                        <Link className="mb-4 p-3" to="/help/code_search">
                             Learn more about our search syntax.
                         </Link>
                     )}
