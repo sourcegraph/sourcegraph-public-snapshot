@@ -527,10 +527,8 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 
 				// Filter Zoekt repos that didn't contain matches
 				for _, repo := range indexed.Repos() {
-					for key := range partition {
-						if string(repo.Repo.Name) == key {
-							repos = append(repos, repo)
-						}
+					if _, ok := partition[string(repo.Repo.Name)]; ok {
+						repos = append(repos, repo)
 					}
 				}
 
