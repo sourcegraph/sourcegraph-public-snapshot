@@ -1321,7 +1321,7 @@ type SearchOnboarding struct {
 // Weekly usage statistics for the extensions platform
 type ExtensionsUsageStatistics struct {
 	WeekStart                  time.Time
-	UsageStatisticsByExtension map[string]*ExtensionUsageStatistics
+	UsageStatisticsByExtension *[]*ExtensionUsageStatistics
 	// Average number of non-default extensions used by users
 	// that have used at least one non-default extension
 	AverageNonDefaultExtensions *float64
@@ -1337,6 +1337,7 @@ type ExtensionUsageStatistics struct {
 	// The average number of activations for users that have
 	// used this extension at least once
 	AverageActivations *float64
+	ExtensionID        *string
 }
 
 type CodeInsightsUsageStatistics struct {

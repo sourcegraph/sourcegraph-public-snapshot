@@ -10,7 +10,8 @@ import (
 
 func GetExtensionsUsageStatistics(ctx context.Context) (*types.ExtensionsUsageStatistics, error) {
 	stats := types.ExtensionsUsageStatistics{}
-	stats.UsageStatisticsByExtension = map[string]*types.ExtensionUsageStatistics{}
+	usageStatisticsByExtension := []*types.ExtensionUsageStatistics{}
+	stats.UsageStatisticsByExtension = &usageStatisticsByExtension
 
 	// Query for evaluating success of individual extensions
 	extensionsQuery := `
@@ -48,8 +49,9 @@ func GetExtensionsUsageStatistics(ctx context.Context) (*types.ExtensionsUsageSt
 			WeekStart:          weekStart,
 			UserCount:          &userCount,
 			AverageActivations: &averageActivations,
+			ExtensionID:        &extensionID,
 		}
-		stats.UsageStatisticsByExtension[extensionID] = &extensionUsageStatistics
+		usageStatisticsByExtension = append(usageStatisticsByExtension, &extensionUsageStatistics)
 	}
 
 	if err := rows.Err(); err != nil {
