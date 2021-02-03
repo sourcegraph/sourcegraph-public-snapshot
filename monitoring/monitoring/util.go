@@ -19,8 +19,8 @@ func withPeriod(s string) string {
 	return s
 }
 
-// stringPtr converts a string value to a pointer, useful for setting fields in some APIs.
-func stringPtr(s string) *string { return &s }
+// StringPtr converts a string value to a pointer, useful for setting fields in some APIs.
+func StringPtr(s string) *string { return &s }
 
 // boolPtr converts a boolean value to a pointer, useful for setting fields in some APIs.
 func boolPtr(b bool) *bool { return &b }

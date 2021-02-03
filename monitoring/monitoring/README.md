@@ -15,6 +15,7 @@ To learn more about the generator\, see the top\-level program: https://github.c
 ## Index
 
 - [func Generate(logger log15.Logger, opts GenerateOptions, containers ...*Container) error](<#func-generate>)
+- [func StringPtr(s string) *string](<#func-stringptr>)
 - [type Container](<#type-container>)
 - [type GenerateOptions](<#type-generateoptions>)
 - [type Group](<#type-group>)
@@ -50,7 +51,15 @@ func Generate(logger log15.Logger, opts GenerateOptions, containers ...*Containe
 
 Generate is the main Sourcegraph monitoring generator entrypoint\.
 
-## type [Container](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L17-L37>)
+## func [StringPtr](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/util.go#L23>)
+
+```go
+func StringPtr(s string) *string
+```
+
+StringPtr converts a string value to a pointer\, useful for setting fields in some APIs\.
+
+## type [Container](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L17-L43>)
 
 Container describes a Docker container to be observed\.
 
@@ -67,6 +76,12 @@ type Container struct {
     // Description of the Docker container. It should describe what the container
     // is responsible for, so that the impact of issues in it is clear.
     Description string
+
+    // List of Annotations to apply to the dashboard.
+    Annotations []sdk.Annotation
+
+    // List of Template Variables to apply to the dashboard
+    Templates []sdk.TemplateVar
 
     // Groups of observable information about the container.
     Groups []Group
@@ -100,7 +115,7 @@ type GenerateOptions struct {
 }
 ```
 
-## type [Group](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L381-L396>)
+## type [Group](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L387-L402>)
 
 Group describes a group of observable information about a container\.
 
@@ -125,7 +140,7 @@ type Group struct {
 }
 ```
 
-## type [Observable](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L459-L574>)
+## type [Observable](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L465-L580>)
 
 Observable describes a metric about a container that can be observed\. For example\, memory usage\.
 
@@ -250,7 +265,7 @@ type Observable struct {
 }
 ```
 
-## type [ObservableAlertDefinition](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L638-L644>)
+## type [ObservableAlertDefinition](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L644-L650>)
 
 ObservableAlertDefinition defines when an alert would be considered firing\.
 
@@ -260,7 +275,7 @@ type ObservableAlertDefinition struct {
 }
 ```
 
-### func [Alert](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L633>)
+### func [Alert](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L639>)
 
 ```go
 func Alert() *ObservableAlertDefinition
@@ -268,7 +283,7 @@ func Alert() *ObservableAlertDefinition
 
 Alert provides a builder for defining alerting on an Observable\.
 
-### func \(\*ObservableAlertDefinition\) [For](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L676>)
+### func \(\*ObservableAlertDefinition\) [For](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L682>)
 
 ```go
 func (a *ObservableAlertDefinition) For(d time.Duration) *ObservableAlertDefinition
@@ -276,7 +291,7 @@ func (a *ObservableAlertDefinition) For(d time.Duration) *ObservableAlertDefinit
 
 For indicates how long the given thresholds must be exceeded for this alert to be considered firing\. Defaults to 0s \(immediately alerts when threshold is exceeded\)\.
 
-### func \(\*ObservableAlertDefinition\) [Greater](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L661>)
+### func \(\*ObservableAlertDefinition\) [Greater](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L667>)
 
 ```go
 func (a *ObservableAlertDefinition) Greater(f float64) *ObservableAlertDefinition
@@ -284,7 +299,7 @@ func (a *ObservableAlertDefinition) Greater(f float64) *ObservableAlertDefinitio
 
 Greater indicates the alert should fire when strictly greater to this value\.
 
-### func \(\*ObservableAlertDefinition\) [GreaterOrEqual](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L647>)
+### func \(\*ObservableAlertDefinition\) [GreaterOrEqual](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L653>)
 
 ```go
 func (a *ObservableAlertDefinition) GreaterOrEqual(f float64) *ObservableAlertDefinition
@@ -292,7 +307,7 @@ func (a *ObservableAlertDefinition) GreaterOrEqual(f float64) *ObservableAlertDe
 
 GreaterOrEqual indicates the alert should fire when greater or equal the given value\.
 
-### func \(\*ObservableAlertDefinition\) [Less](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L668>)
+### func \(\*ObservableAlertDefinition\) [Less](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L674>)
 
 ```go
 func (a *ObservableAlertDefinition) Less(f float64) *ObservableAlertDefinition
@@ -300,7 +315,7 @@ func (a *ObservableAlertDefinition) Less(f float64) *ObservableAlertDefinition
 
 Less indicates the alert should fire when strictly less than this value\.
 
-### func \(\*ObservableAlertDefinition\) [LessOrEqual](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L654>)
+### func \(\*ObservableAlertDefinition\) [LessOrEqual](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L660>)
 
 ```go
 func (a *ObservableAlertDefinition) LessOrEqual(f float64) *ObservableAlertDefinition
@@ -308,7 +323,7 @@ func (a *ObservableAlertDefinition) LessOrEqual(f float64) *ObservableAlertDefin
 
 LessOrEqual indicates the alert should fire when less than or equal to the given value\.
 
-## type [ObservableOwner](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L429>)
+## type [ObservableOwner](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L435>)
 
 ObservableOwner denotes a team that owns an Observable\. The current teams are described in the handbook: https://about.sourcegraph.com/company/team/org_chart#engineering
 
@@ -450,7 +465,7 @@ Using a shared prefix helps with discoverability of available options\.
 type ObservablePanelOption func(Observable, *sdk.GraphPanel)
 ```
 
-## type [Row](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L413>)
+## type [Row](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L419>)
 
 Row of observable metrics\.
 
