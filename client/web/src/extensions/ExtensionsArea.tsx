@@ -13,6 +13,7 @@ import { ThemeProps } from '../../../shared/src/theme'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 import { AuthenticatedUser } from '../auth'
 import { useBreadcrumbs, BreadcrumbSetters } from '../components/Breadcrumbs'
+import { Page } from '../components/Page'
 
 const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
@@ -78,7 +79,7 @@ export const ExtensionsArea: React.FunctionComponent<ExtensionsAreaProps> = prop
     }
 
     return (
-        <div className="extensions-area web-content mt-4">
+        <Page className="extensions-area">
             <ExtensionsAreaHeader
                 {...props}
                 {...context}
@@ -101,6 +102,6 @@ export const ExtensionsArea: React.FunctionComponent<ExtensionsAreaProps> = prop
                 )}
                 <Route key="hardcoded-key" component={NotFoundPage} />
             </Switch>
-        </div>
+        </Page>
     )
 }
