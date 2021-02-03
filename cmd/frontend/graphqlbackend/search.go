@@ -457,6 +457,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 	visibility := query.ParseVisibility(visibilityStr)
 
 	commitAfter, _ := r.Query.StringValue(query.FieldRepoHasCommitAfter)
+	searchContextSpec, _ := r.Query.StringValue(query.FieldContext)
 
 	var versionContextName string
 	if r.VersionContext != nil {
@@ -469,6 +470,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		MinusRepoFilters:   minusRepoFilters,
 		RepoGroupFilters:   repoGroupFilters,
 		VersionContextName: versionContextName,
+		SearchContextSpec:  searchContextSpec,
 		UserSettings:       r.UserSettings,
 		OnlyForks:          fork == searchrepos.Only,
 		NoForks:            fork == searchrepos.No,
