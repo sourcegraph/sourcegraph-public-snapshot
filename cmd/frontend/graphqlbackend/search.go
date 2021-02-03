@@ -256,9 +256,9 @@ type searchResolver struct {
 	*SearchInputs
 	invalidateRepoCache bool // if true, invalidates the repo cache when evaluating search subexpressions.
 
-	// resultChannel if non-nil will send all results we receive down it. See
-	// searchResolver.SetResultChannel
-	resultChannel Streamer
+	// stream if non-nil will send all results we receive down it. See
+	// searchResolver.SetStream
+	stream Streamer
 
 	// Cached resolveRepositories results. We use a pointer to the mutex so that we
 	// can copy the resolver, while sharing the mutex. If we didn't use a pointer,
@@ -281,7 +281,7 @@ type searchResolver struct {
 // AND/OR. However, streaming is behind a feature flag for now, so this is to
 // make it visible in the browser.
 func (r *searchResolver) SetStream(c Streamer) {
-	r.resultChannel = c
+	r.stream = c
 }
 
 func (r *searchResolver) Inputs() SearchInputs {

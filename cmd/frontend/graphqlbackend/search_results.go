@@ -673,17 +673,17 @@ func intersect(left, right *SearchResultsResolver) *SearchResultsResolver {
 // r.resultChannel.
 func (r *searchResolver) evaluateAndStream(ctx context.Context, scopeParameters []query.Node, operands []query.Node) (*SearchResultsResolver, error) {
 	// Streaming disabled.
-	if r.resultChannel == nil {
+	if r.stream == nil {
 		return r.evaluateAnd(ctx, scopeParameters, operands)
 	}
 	// For streaming search we rely on batch evaluation of
 	// results. Implementing true streaming on AND expressions will require
 	// support in backends (eg directly using Zoekt) or ANDing per repo.
 	r2 := *r
-	r2.resultChannel = nil
+	r2.stream = nil
 
 	result, err := r2.evaluateAnd(ctx, scopeParameters, operands)
-	r.resultChannel.Send(SearchEvent{
+	r.stream.Send(SearchEvent{
 		Results: result.SearchResults,
 		Stats:   result.Stats,
 	})
@@ -1737,7 +1737,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		return &optionalWg
 	}
 
-	agg := newAggregator(r.resultChannel, r.SearchInputs)
+	agg := newAggregator(r.stream, r.SearchInputs)
 
 	// This ensures we properly cleanup in the case of an early return. In
 	// particular we want to cancel global searches before returning early.
