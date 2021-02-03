@@ -429,7 +429,7 @@ func resolveSearchContextSpec(ctx context.Context, searchContextSpec string, get
 
 	if isGlobalSearchContextSpec(searchContextSpec) {
 		return &types.SearchContext{Name: globalSearchContextName}, nil
-	} else if len(searchContextSpec) > 0 && searchContextSpec[:1] == "@" {
+	} else if strings.HasPrefix(searchContextSpec, "@") {
 		name := searchContextSpec[1:]
 		namespace, err := getNamespaceByName(ctx, name)
 		if err != nil {

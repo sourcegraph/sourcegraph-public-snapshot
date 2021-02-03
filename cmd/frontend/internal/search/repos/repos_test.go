@@ -485,7 +485,7 @@ func TestUseDefaultReposIfMissingOrGlobalSearchContext(t *testing.T) {
 	envvar.MockSourcegraphDotComMode(true)
 	defer envvar.MockSourcegraphDotComMode(orig)
 
-	queryInfo, err := query.ParseAndCheck("foo")
+	queryInfo, err := query.ParseLiteral("foo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -555,7 +555,7 @@ func TestResolveRepositoriesWithUserSearchContext(t *testing.T) {
 		wantName   = "alice"
 		wantUserID = 123
 	)
-	queryInfo, err := query.ParseAndCheck("foo")
+	queryInfo, err := query.ParseLiteral("foo")
 	if err != nil {
 		t.Fatal(err)
 	}
