@@ -22,7 +22,7 @@ func GitServer() *monitoring.Container {
 				Datasource: monitoring.StringPtr("Prometheus"),
 				Query:      "label_values(src_gitserver_exec_running, instance)",
 				Multi:      true,
-				Refresh:    sdk.BoolInt{Flag: true, Value: monitoring.Int64Ptr(2)},
+				Refresh:    sdk.BoolInt{Flag: true, Value: monitoring.Int64Ptr(2)}, // Refresh on time range change
 				Sort:       3,
 				IncludeAll: true,
 				AllValue:   ".*",
