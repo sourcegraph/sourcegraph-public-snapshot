@@ -4,22 +4,18 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"sort"
 	"strings"
-	"sync"
 	"unicode/utf8"
 
 	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-lsp"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gituri"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -49,14 +45,19 @@ var mockSearchSymbols func(ctx context.Context, args *search.TextParameters, lim
 // it can be used for both search suggestions and search results
 //
 // May return partial results and an error
-func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, stats *streaming.Stats, err error) {
+func searchSymbols(ctx context.Context, args *search.TextParameters, limit int, stream Streamer) (err error) {
 	if mockSearchSymbols != nil {
-		return mockSearchSymbols(ctx, args, limit)
+		results, stats, err := mockSearchSymbols(ctx, args, limit)
+		stream.Send(SearchEvent{
+			Results: fileMatchResultsToSearchResults(results),
+			Stats:   statsDeref(stats),
+		})
+		return err
 	}
 
 	repos, err := getRepos(ctx, args.RepoPromise)
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
 
 	tr, ctx := trace.New(ctx, "Search symbols", fmt.Sprintf("query: %+v, numRepoRevs: %d", args.PatternInfo, len(repos)))
@@ -66,25 +67,29 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 	}()
 
 	if args.PatternInfo.Pattern == "" {
-		return nil, nil, nil
+		return nil
 	}
 
-	ctx, cancelAll := context.WithCancel(ctx)
-	defer cancelAll()
-
-	stats = &streaming.Stats{}
+	ctx, stream, cancel := WithLimit(ctx, stream, limit)
+	defer cancel()
 
 	indexed, err := newIndexedSearchRequest(ctx, args, symbolRequest)
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
 
 	var searcherRepos []*search.RepositoryRevisions
 	if indexed.DisableUnindexedSearch {
 		tr.LazyPrintf("disabling unindexed search")
+		var status search.RepoStatusMap
 		for _, r := range indexed.Unindexed {
-			stats.Status.Update(r.Repo.ID, search.RepoStatusMissing)
+			status.Update(r.Repo.ID, search.RepoStatusMissing)
 		}
+		stream.Send(SearchEvent{
+			Stats: streaming.Stats{
+				Status: status,
+			},
+		})
 	} else {
 		// Limit the number of unindexed repositories searched for a single
 		// query. Searching more than this will merely flood the system and
@@ -93,49 +98,30 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 		searcherRepos, missing = limitSearcherRepos(indexed.Unindexed, maxUnindexedRepoRevSearchesPerQuery)
 		if len(missing) > 0 {
 			tr.LazyPrintf("limiting unindexed repos searched to %d", maxUnindexedRepoRevSearchesPerQuery)
+			var status search.RepoStatusMap
 			for _, r := range missing {
-				stats.Status.Update(r.ID, search.RepoStatusMissing)
+				status.Update(r.ID, search.RepoStatusMissing)
 			}
+			stream.Send(SearchEvent{
+				Stats: streaming.Stats{
+					Status: status,
+				},
+			})
 		}
 	}
 
-	var (
-		run = parallel.NewRun(conf.SearchSymbolsParallelism())
-		mu  sync.Mutex
-
-		aggMatches []*FileMatchResolver
-	)
-
-	addMatches := func(matches []*FileMatchResolver) {
-		if len(matches) > 0 {
-			aggMatches = append(aggMatches, matches...)
-			if len(aggMatches) > int(args.PatternInfo.FileMatchLimit) {
-				tr.LazyPrintf("cancel due to result size: %d > %d", len(aggMatches), args.PatternInfo.FileMatchLimit)
-				stats.IsLimitHit = true
-				cancelAll()
-			}
-		}
-	}
+	run := parallel.NewRun(conf.SearchSymbolsParallelism())
 
 	run.Acquire()
 	goroutine.Go(func() {
 		defer run.Release()
-		err := indexed.Search(ctx, StreamFunc(func(event SearchEvent) {
-			fms := make([]*FileMatchResolver, 0, len(event.Results))
-			for _, match := range event.Results {
-				fms = append(fms, match.(*FileMatchResolver))
-			}
 
-			mu.Lock()
-			defer mu.Unlock()
-			stats.Update(&event.Stats)
-			addMatches(fms)
-		}))
-
+		err := indexed.Search(ctx, stream)
 		if err != nil {
 			tr.LogFields(otlog.Error(err))
-			if ctx.Err() == nil || errors.Cause(err) != ctx.Err() {
-				// Only record error if it's not directly caused by a context error.
+			// Only record error if we haven't timed out.
+			if ctx.Err() == nil {
+				cancel()
 				run.Error(err)
 			}
 		}
@@ -152,36 +138,25 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 		run.Acquire()
 		goroutine.Go(func() {
 			defer run.Release()
-			repoSymbols, repoErr := searchSymbolsInRepo(ctx, repoRevs, args.PatternInfo, limit)
-			if repoErr != nil {
-				tr.LogFields(otlog.String("repo", string(repoRevs.Repo.Name)), otlog.String("repoErr", repoErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(repoErr)), otlog.Bool("temporary", errcode.IsTemporary(repoErr)))
-			}
-			mu.Lock()
-			defer mu.Unlock()
-			repoStats, fatalErr := handleRepoSearchResult(repoRevs, len(repoSymbols) > limit, false, repoErr)
-			if fatalErr != nil {
-				if ctx.Err() == nil || errors.Cause(repoErr) != ctx.Err() {
-					// Only record error if it's not directly caused by a context error.
-					run.Error(repoErr)
+
+			matches, err := searchSymbolsInRepo(ctx, repoRevs, args.PatternInfo, limit)
+			stats, err := handleRepoSearchResult(repoRevs, len(matches) > limit, false, err)
+			stream.Send(SearchEvent{
+				Results: fileMatchResultsToSearchResults(matches),
+				Stats:   stats,
+			})
+			if err != nil {
+				tr.LogFields(otlog.String("repo", string(repoRevs.Repo.Name)), otlog.Error(err))
+				// Only record error if we haven't timed out.
+				if ctx.Err() == nil {
+					cancel()
+					run.Error(err)
 				}
-			}
-			stats.Update(&repoStats)
-			if repoSymbols != nil {
-				addMatches(repoSymbols)
 			}
 		})
 	}
-	err = run.Wait()
-	sort.Slice(aggMatches, func(i, j int) bool {
-		a, b := aggMatches[i].uri, aggMatches[j].uri
-		return a < b
-	})
-	if limit := int(args.PatternInfo.FileMatchLimit); limit < len(aggMatches) {
-		aggMatches = aggMatches[:limit]
-	}
-	res2 := limitSymbolResults(aggMatches, limit)
-	stats.IsLimitHit = symbolCount(res2) < symbolCount(res)
-	return res2, stats, err
+
+	return run.Wait()
 }
 
 // limitSymbolResults returns a new version of res containing no more than limit symbol matches.

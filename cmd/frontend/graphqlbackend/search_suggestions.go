@@ -216,19 +216,25 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
 		defer cancel()
 
-		fileMatches, _, err := searchSymbols(ctx, &search.TextParameters{
-			PatternInfo:  p,
-			RepoPromise:  (&search.Promise{}).Resolve(resolved.RepoRevs),
-			Query:        r.Query,
-			Zoekt:        r.zoekt,
-			SearcherURLs: r.searcherURLs,
-		}, 7)
+		fileMatches, _, err := collectStream(func(stream Streamer) error {
+			return searchSymbols(ctx, &search.TextParameters{
+				PatternInfo:  p,
+				RepoPromise:  (&search.Promise{}).Resolve(resolved.RepoRevs),
+				Query:        r.Query,
+				Zoekt:        r.zoekt,
+				SearcherURLs: r.searcherURLs,
+			}, 7, stream)
+		})
 		if err != nil {
 			return nil, err
 		}
 
 		results = make([]*searchSuggestionResolver, 0)
-		for _, fileMatch := range fileMatches {
+		for _, match := range fileMatches {
+			fileMatch, ok := match.ToFileMatch()
+			if !ok {
+				continue
+			}
 			for _, sr := range fileMatch.symbols {
 				score := 20
 				if sr.symbol.Parent == "" {
