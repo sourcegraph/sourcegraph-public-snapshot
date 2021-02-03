@@ -658,9 +658,9 @@ changesetTemplate:
   # Since a changeset is uniquely identified by its repository and its
   # branch we need to ensure that each changesets has a unique branch name.
 
-  # We can use templating and helper functions for to use the `path` in which
+  # We can use templating and helper functions get the `path` in which
   # the `steps` executed and turn that into a branch name:
-  branch: ${{ join "-" "my-multi-workspace-campaign" (replace steps.path "/" "-") }}
+  branch: my-multi-workspace-campaign-${{ replace steps.path "/" "-" }}
 ```
 
 Using templating to produce a unique branch name in repositories _with_ workspaces and repositories without workspaces:
@@ -682,7 +682,6 @@ changesetTemplate:
   # if it's a blank string:
   branch: ${{ join_if "-" "my-multi-workspace-campaign" (replace steps.path "/" "-") }}
 ```
-
 
 Defining where Go, JavaScript, and Rust projects live in multiple repositories:
 
