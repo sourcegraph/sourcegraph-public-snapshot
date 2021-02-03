@@ -19,7 +19,11 @@ func GitServer() *monitoring.Container {
 				Label:      "Shard",
 				Name:       "shard",
 				Type:       "query",
+				Datasource: monitoring.StringPtr("Prometheus"),
 				Query:      "label_values(src_gitserver_exec_running, instance)",
+				Multi:      true,
+				Refresh:    sdk.BoolInt{Flag: true, Value: monitoring.Int64Ptr(2)}, // Refresh on time range change
+				Sort:       3,
 				IncludeAll: true,
 				AllValue:   ".*",
 				Current:    sdk.Current{Text: "all", Value: "$__all"},

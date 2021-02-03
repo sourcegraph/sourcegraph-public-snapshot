@@ -15,6 +15,7 @@ To learn more about the generator\, see the top\-level program: https://github.c
 ## Index
 
 - [func Generate(logger log15.Logger, opts GenerateOptions, containers ...*Container) error](<#func-generate>)
+- [func Int64Ptr(i int64) *int64](<#func-int64ptr>)
 - [func StringPtr(s string) *string](<#func-stringptr>)
 - [type Container](<#type-container>)
 - [type GenerateOptions](<#type-generateoptions>)
@@ -50,6 +51,14 @@ func Generate(logger log15.Logger, opts GenerateOptions, containers ...*Containe
 ```
 
 Generate is the main Sourcegraph monitoring generator entrypoint\.
+
+## func [Int64Ptr](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/util.go#L29>)
+
+```go
+func Int64Ptr(i int64) *int64
+```
+
+IntPtr converts an int64 value to a pointer\, useful for setting fields in some APIs\.
 
 ## func [StringPtr](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/util.go#L23>)
 
