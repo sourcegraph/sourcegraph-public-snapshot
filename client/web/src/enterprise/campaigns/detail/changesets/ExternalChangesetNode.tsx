@@ -80,7 +80,7 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
             </button>
             <ChangesetStatusCell
                 state={node.state}
-                className="p-2 align-self-stretch external-changeset-node__state d-block d-sm-flex"
+                className="p-2 align-self-stretch text-muted external-changeset-node__state d-block d-sm-flex"
             />
             <ExternalChangesetInfoCell
                 node={node}
