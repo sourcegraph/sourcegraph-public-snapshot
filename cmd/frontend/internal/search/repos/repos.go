@@ -39,7 +39,15 @@ type Resolved struct {
 	OverLimit       bool
 }
 
-func ResolveRepositories(ctx context.Context, op Options) (Resolved, error) {
+type Resolver struct {
+	Zoekt            *searchbackend.Zoekt
+	DefaultReposFunc defaultReposFunc
+	NamespaceStore   interface {
+		GetByName(context.Context, string) (*database.Namespace, error)
+	}
+}
+
+func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 	var err error
 	tr, ctx := trace.New(ctx, "resolveRepositories", op.String())
 	defer func() {
@@ -99,11 +107,16 @@ func ResolveRepositories(ctx context.Context, op Options) (Resolved, error) {
 		}
 	}
 
+	searchContext, err := resolveSearchContextSpec(ctx, op.SearchContextSpec, r.NamespaceStore.GetByName)
+	if err != nil {
+		return Resolved{}, err
+	}
+
 	var defaultRepos []*types.RepoName
 
-	if envvar.SourcegraphDotComMode() && len(includePatterns) == 0 && !hasTypeRepo(op.Query) {
+	if envvar.SourcegraphDotComMode() && len(includePatterns) == 0 && !hasTypeRepo(op.Query) && isGlobalSearchContext(searchContext) {
 		start := time.Now()
-		defaultRepos, err = defaultRepositories(ctx, database.GlobalDefaultRepos.List, search.Indexed(), excludePatterns)
+		defaultRepos, err = defaultRepositories(ctx, r.DefaultReposFunc, r.Zoekt, excludePatterns)
 		if err != nil {
 			return Resolved{}, errors.Wrap(err, "getting list of default repos")
 		}
@@ -136,6 +149,10 @@ func ResolveRepositories(ctx context.Context, op Options) (Resolved, error) {
 			OnlyArchived: op.OnlyArchived,
 			NoPrivate:    op.OnlyPublic,
 			OnlyPrivate:  op.OnlyPrivate,
+		}
+
+		if searchContext != nil && searchContext.UserID != 0 {
+			options.UserID = searchContext.UserID
 		}
 
 		// PERF: We Query concurrently since Count and List call can be slow
@@ -262,6 +279,7 @@ type Options struct {
 	RepoFilters        []string
 	MinusRepoFilters   []string
 	RepoGroupFilters   []string
+	SearchContextSpec  string
 	VersionContextName string
 	UserSettings       *schema.Settings
 	NoForks            bool
@@ -398,6 +416,40 @@ func resolveVersionContext(versionContext string) (*schema.VersionContext, error
 	}
 
 	return nil, errors.New("version context not found")
+}
+
+const globalSearchContextName = "global"
+
+type getNamespaceByNameFunc func(ctx context.Context, name string) (*database.Namespace, error)
+
+func resolveSearchContextSpec(ctx context.Context, searchContextSpec string, getNamespaceByName getNamespaceByNameFunc) (*types.SearchContext, error) {
+	if !envvar.SourcegraphDotComMode() {
+		return nil, nil
+	}
+
+	if isGlobalSearchContextSpec(searchContextSpec) {
+		return &types.SearchContext{Name: globalSearchContextName}, nil
+	} else if strings.HasPrefix(searchContextSpec, "@") {
+		name := searchContextSpec[1:]
+		namespace, err := getNamespaceByName(ctx, name)
+		if err != nil {
+			return nil, err
+		}
+		if namespace.User == 0 {
+			return nil, errors.Errorf("search context '%s' not found", searchContextSpec)
+		}
+		return &types.SearchContext{Name: name, UserID: namespace.User}, nil
+	}
+	return nil, errors.Errorf("search context '%s' does not have the correct format (global or @username)", searchContextSpec)
+}
+
+func isGlobalSearchContextSpec(searchContextSpec string) bool {
+	// Empty search context spec resolves to global search context
+	return searchContextSpec == "" || searchContextSpec == globalSearchContextName
+}
+
+func isGlobalSearchContext(searchContext *types.SearchContext) bool {
+	return searchContext != nil && searchContext.Name == globalSearchContextName
 }
 
 // Cf. golang/go/src/regexp/syntax/parse.go.
