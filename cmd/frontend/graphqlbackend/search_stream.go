@@ -21,12 +21,6 @@ type Streamer interface {
 	Send(SearchEvent)
 }
 
-type SearchStream chan<- SearchEvent
-
-func (s SearchStream) Send(event SearchEvent) {
-	s <- event
-}
-
 type limitStream struct {
 	s         Streamer
 	cancel    context.CancelFunc

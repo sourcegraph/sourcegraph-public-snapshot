@@ -295,7 +295,9 @@ func newResultsStream(ctx context.Context, search searchResolver) (results <-cha
 		defer close(finalC)
 		defer close(resultsC)
 
-		search.SetStream(graphqlbackend.SearchStream(resultsC))
+		search.SetStream(graphqlbackend.StreamFunc(func(event graphqlbackend.SearchEvent) {
+			resultsC <- event
+		}))
 
 		r, err := search.Results(ctx)
 		finalC <- finalResult{resultsResolver: r, err: err}
