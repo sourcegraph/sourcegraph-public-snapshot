@@ -326,34 +326,35 @@ func searchResultsToFileMatchResults(results []SearchResultResolver) ([]*FileMat
 // searchFilesInRepoBatch is a convenience function around searchFilesInRepos
 // which collects the results from the stream.
 func searchFilesInReposBatch(ctx context.Context, args *search.TextParameters) ([]*FileMatchResolver, streaming.Stats, error) {
-	ctx, stream, done := collectStream(ctx)
-	searchErr := searchFilesInRepos(ctx, args, stream)
-	agg := done()
-	results, err := searchResultsToFileMatchResults(agg.Results)
-	if err != nil && searchErr == nil {
-		searchErr = errors.Wrap(err, "searchFilesInReposBatch failed to convert results")
+	results, stats, err := collectStream(func(stream Streamer) error {
+		return searchFilesInRepos(ctx, args, stream)
+	})
+	fms, fmErr := searchResultsToFileMatchResults(results)
+	if fmErr != nil && err == nil {
+		err = errors.Wrap(fmErr, "searchFilesInReposBatch failed to convert results")
 	}
-	return results, agg.Stats, searchErr
+	return fms, stats, err
 }
 
 // searchFilesInRepos searches a set of repos for a pattern.
-func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream SearchStream) (finalErr error) {
+func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream Streamer) (finalErr error) {
 	var (
 		wg sync.WaitGroup
 
-		mu                sync.Mutex
-		searchErr         error
-		resultCount       int
-		overLimitCanceled bool // canceled because we were over the limit
+		mu        sync.Mutex
+		searchErr error
 	)
 	if mockSearchFilesInRepos != nil {
 		results, mockStats, err := mockSearchFilesInRepos(args)
-		stream <- SearchEvent{
+		stream.Send(SearchEvent{
 			Results: fileMatchResultsToSearchResults(results),
 			Stats:   statsDeref(mockStats),
-		}
+		})
 		return err
 	}
+
+	ctx, stream, cleanup := WithLimit(ctx, stream, int(args.PatternInfo.FileMatchLimit))
+	defer cleanup()
 
 	tr, ctx := trace.New(ctx, "searchFilesInRepos", fmt.Sprintf("query: %s", args.PatternInfo.Pattern))
 	defer func() {
@@ -365,9 +366,6 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 		trace.Stringer("query", &fields),
 		trace.Stringer("info", args.PatternInfo),
 	)
-
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
 
 	indexedTyp := textRequest
 	if args.PatternInfo.IsStructuralPat {
@@ -413,11 +411,11 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 		for _, r := range indexed.Unindexed {
 			status.Update(r.Repo.ID, search.RepoStatusMissing)
 		}
-		stream <- SearchEvent{
+		stream.Send(SearchEvent{
 			Stats: streaming.Stats{
 				Status: status,
 			},
-		}
+		})
 	} else {
 		// Limit the number of unindexed repositories searched for a single
 		// query. Searching more than this will merely flood the system and
@@ -430,11 +428,11 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 			for _, r := range missing {
 				status.Update(r.ID, search.RepoStatusMissing)
 			}
-			stream <- SearchEvent{
+			stream.Send(SearchEvent{
 				Stats: streaming.Stats{
 					Status: status,
 				},
-			}
+			})
 		}
 	}
 
@@ -454,33 +452,11 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 		defer mu.Unlock()
 
 		// Check if we are the first error found.
-		if searchErr == nil && !overLimitCanceled {
+		if searchErr == nil && ctx.Err() == nil {
 			searchErr = errors.Wrapf(err, "failed to search %s", source.String())
 			tr.LazyPrintf("cancel due to error: %v", searchErr)
-			cancel()
+			cleanup()
 		}
-	}
-
-	// send assumes the caller does not hold mu.
-	send := func(event SearchEvent) {
-		stream <- event
-
-		// Stop searching if we have found enough results.
-		mu.Lock()
-		resultCount += len(event.Results)
-		if limit := int(args.PatternInfo.FileMatchLimit); resultCount > limit && !overLimitCanceled {
-			cancel()
-			tr.LazyPrintf("cancel due to result size: %d > %d", resultCount, limit)
-			overLimitCanceled = true
-
-			// Inform stream we have found more than limit results
-			stream <- SearchEvent{
-				Stats: streaming.Stats{
-					IsLimitHit: true,
-				},
-			}
-		}
-		mu.Unlock()
 	}
 
 	// callSearcherOverRepos calls searcher on a set of repos.
@@ -563,7 +539,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 					}
 					// non-diff search reports timeout through err, so pass false for timedOut
 					repoCommon, fatalErr := handleRepoSearchResult(repoRev, repoLimitHit, false, err)
-					send(SearchEvent{
+					stream.Send(SearchEvent{
 						Results: fileMatchResultsToSearchResults(matches),
 						Stats:   repoCommon,
 					})
@@ -582,19 +558,8 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 	if isIndexedTextSearch {
 		wg.Add(1)
 		go func() {
-			// TODO limitHit, handleRepoSearchResult
 			defer wg.Done()
-			c := make(chan SearchEvent)
-			e := make(chan error, 1)
-			go func() {
-				defer close(c)
-				e <- indexed.Search(ctx, c)
-			}()
-			for event := range c {
-				tr.LogFields(otlog.Int("matches.len", len(event.Results)))
-				send(event)
-			}
-			err := <-e
+			err := indexed.Search(ctx, stream)
 			if err != nil {
 				setError(ctx, stringerFunc("indexed"), err)
 				tr.LogFields(otlog.Error(err))
@@ -622,16 +587,14 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 		go func() {
 			defer wg.Done()
 			source := stringerFunc("structural-indexed")
-			c := make(chan SearchEvent)
-			e := make(chan error, 1)
-			go func() {
-				defer close(c)
-				e <- indexed.Search(ctx, c)
-			}()
-			for event := range c {
+			err := indexed.Search(ctx, StreamFunc(func(event SearchEvent) {
 				tr.LogFields(otlog.Int("matches.len", len(event.Results)))
-				stream <- SearchEvent{
+				stream.Send(SearchEvent{
 					Stats: event.Stats,
+				})
+
+				if len(event.Results) == 0 {
+					return
 				}
 
 				// For structural search, we run callSearcherOverRepos
@@ -665,8 +628,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 				if err != nil {
 					setError(ctx, source, err)
 				}
-			}
-			err := <-e
+			}))
 			if err != nil {
 				setError(ctx, source, err)
 				tr.LogFields(otlog.Error(err))

@@ -315,23 +315,17 @@ func TestIndexedSearch(t *testing.T) {
 			// This is a quick fix which will break once we enable the zoekt client for true streaming.
 			// Once we return more than one event we have to account for the proper order of results
 			// in the tests.
-			var (
-				gotCommon streaming.Stats
-				gotFm     []*FileMatchResolver
-			)
-			ctx, stream, done := collectStream(tt.args.ctx)
-			err = indexed.Search(ctx, stream)
-			agg := done()
+			gotResults, gotCommon, err := collectStream(func(stream Streamer) error {
+				return indexed.Search(tt.args.ctx, stream)
+			})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("zoektSearchHEAD() error = %v, wantErr = %v", err, tt.wantErr)
 				return
 			}
-			gotCommon.Update(&agg.Stats)
-			fms, err := searchResultsToFileMatchResults(agg.Results)
+			gotFm, err := searchResultsToFileMatchResults(gotResults)
 			if err != nil {
 				t.Fatal(err)
 			}
-			gotFm = append(gotFm, fms...)
 
 			if diff := cmp.Diff(&tt.wantCommon, &gotCommon, cmpopts.EquateEmpty()); diff != "" {
 				t.Errorf("common mismatch (-want +got):\n%s", diff)

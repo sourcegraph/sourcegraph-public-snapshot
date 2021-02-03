@@ -216,7 +216,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 type searchResolver interface {
 	Results(context.Context) (*graphqlbackend.SearchResultsResolver, error)
-	SetStream(c graphqlbackend.SearchStream)
+	SetStream(c graphqlbackend.Streamer)
 	Inputs() graphqlbackend.SearchInputs
 }
 
@@ -295,7 +295,9 @@ func newResultsStream(ctx context.Context, search searchResolver) (results <-cha
 		defer close(finalC)
 		defer close(resultsC)
 
-		search.SetStream(resultsC)
+		search.SetStream(graphqlbackend.StreamFunc(func(event graphqlbackend.SearchEvent) {
+			resultsC <- event
+		}))
 
 		r, err := search.Results(ctx)
 		finalC <- finalResult{resultsResolver: r, err: err}

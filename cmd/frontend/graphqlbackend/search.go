@@ -51,7 +51,7 @@ type SearchImplementer interface {
 	//lint:ignore U1000 is used by graphql via reflection
 	Stats(context.Context) (*searchResultsStats, error)
 
-	SetStream(c SearchStream)
+	SetStream(c Streamer)
 	Inputs() SearchInputs
 }
 
@@ -257,9 +257,9 @@ type searchResolver struct {
 	*SearchInputs
 	invalidateRepoCache bool // if true, invalidates the repo cache when evaluating search subexpressions.
 
-	// resultChannel if non-nil will send all results we receive down it. See
-	// searchResolver.SetResultChannel
-	resultChannel SearchStream
+	// stream if non-nil will send all results we receive down it. See
+	// searchResolver.SetStream
+	stream Streamer
 
 	// Cached resolveRepositories results. We use a pointer to the mutex so that we
 	// can copy the resolver, while sharing the mutex. If we didn't use a pointer,
@@ -272,45 +272,6 @@ type searchResolver struct {
 	searcherURLs *endpoint.Map
 }
 
-// SearchEvent is an event on a search stream. It contains fields which can be
-// aggregated up into a final result.
-type SearchEvent struct {
-	Results []SearchResultResolver
-	Stats   streaming.Stats
-}
-
-// SearchStream is a send only channel of SearchEvent. All streaming search
-// backends write to a SearchStream which is then streamed out by the HTTP
-// layer.
-type SearchStream chan<- SearchEvent
-
-// collectStream is a helper for batch interfaces calling stream based
-// functions. It returns a context, stream and cleanup/get function. The
-// cleanup/get function will return the aggregated event and must be called
-// once you have stopped sending to stream.
-func collectStream(ctx context.Context) (context.Context, SearchStream, func() SearchEvent) {
-	var agg SearchEvent
-
-	ctx, cancel := context.WithCancel(ctx)
-
-	done := make(chan struct{})
-	stream := make(chan SearchEvent)
-	go func() {
-		defer close(done)
-		for event := range stream {
-			agg.Results = append(agg.Results, event.Results...)
-			agg.Stats.Update(&event.Stats)
-		}
-	}()
-
-	return ctx, stream, func() SearchEvent {
-		cancel()
-		close(stream)
-		<-done
-		return agg
-	}
-}
-
 // SetStream will send all results down c.
 //
 // This is how our streaming and our batch interface co-exist. When this is
@@ -320,8 +281,8 @@ func collectStream(ctx context.Context) (context.Context, SearchStream, func() S
 // us to stream out things like dynamic filters or take into account
 // AND/OR. However, streaming is behind a feature flag for now, so this is to
 // make it visible in the browser.
-func (r *searchResolver) SetStream(c SearchStream) {
-	r.resultChannel = c
+func (r *searchResolver) SetStream(c Streamer) {
+	r.stream = c
 }
 
 func (r *searchResolver) Inputs() SearchInputs {

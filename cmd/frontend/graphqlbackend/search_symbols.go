@@ -43,13 +43,13 @@ func (s *searchSymbolResult) uri() *gituri.URI {
 	return s.baseURI.WithFilePath(s.symbol.Path)
 }
 
-var mockSearchSymbols func(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, common *streaming.Stats, err error)
+var mockSearchSymbols func(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, stats *streaming.Stats, err error)
 
 // searchSymbols searches the given repos in parallel for symbols matching the given search query
 // it can be used for both search suggestions and search results
 //
 // May return partial results and an error
-func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, common *streaming.Stats, err error) {
+func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, stats *streaming.Stats, err error) {
 	if mockSearchSymbols != nil {
 		return mockSearchSymbols(ctx, args, limit)
 	}
@@ -72,7 +72,7 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 	ctx, cancelAll := context.WithCancel(ctx)
 	defer cancelAll()
 
-	common = &streaming.Stats{}
+	stats = &streaming.Stats{}
 
 	indexed, err := newIndexedSearchRequest(ctx, args, symbolRequest)
 	if err != nil {
@@ -83,7 +83,7 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 	if indexed.DisableUnindexedSearch {
 		tr.LazyPrintf("disabling unindexed search")
 		for _, r := range indexed.Unindexed {
-			common.Status.Update(r.Repo.ID, search.RepoStatusMissing)
+			stats.Status.Update(r.Repo.ID, search.RepoStatusMissing)
 		}
 	} else {
 		// Limit the number of unindexed repositories searched for a single
@@ -94,7 +94,7 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 		if len(missing) > 0 {
 			tr.LazyPrintf("limiting unindexed repos searched to %d", maxUnindexedRepoRevSearchesPerQuery)
 			for _, r := range missing {
-				common.Status.Update(r.ID, search.RepoStatusMissing)
+				stats.Status.Update(r.ID, search.RepoStatusMissing)
 			}
 		}
 	}
@@ -111,7 +111,7 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 			aggMatches = append(aggMatches, matches...)
 			if len(aggMatches) > int(args.PatternInfo.FileMatchLimit) {
 				tr.LazyPrintf("cancel due to result size: %d > %d", len(aggMatches), args.PatternInfo.FileMatchLimit)
-				common.IsLimitHit = true
+				stats.IsLimitHit = true
 				cancelAll()
 			}
 		}
@@ -120,27 +120,19 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 	run.Acquire()
 	goroutine.Go(func() {
 		defer run.Release()
-		c := make(chan SearchEvent)
-		e := make(chan error, 1)
-		go func() {
-			defer close(c)
-			e <- indexed.Search(ctx, c)
-		}()
-		for event := range c {
-			func() {
-				fms := make([]*FileMatchResolver, 0, len(event.Results))
-				for _, match := range event.Results {
-					fms = append(fms, match.(*FileMatchResolver))
-				}
+		err := indexed.Search(ctx, StreamFunc(func(event SearchEvent) {
+			fms := make([]*FileMatchResolver, 0, len(event.Results))
+			for _, match := range event.Results {
+				fms = append(fms, match.(*FileMatchResolver))
+			}
 
-				mu.Lock()
-				defer mu.Unlock()
-				common.Update(&event.Stats)
-				addMatches(fms)
-			}()
-		}
+			mu.Lock()
+			defer mu.Unlock()
+			stats.Update(&event.Stats)
+			addMatches(fms)
+		}))
 
-		if err := <-e; err != nil {
+		if err != nil {
 			tr.LogFields(otlog.Error(err))
 			if ctx.Err() == nil || errors.Cause(err) != ctx.Err() {
 				// Only record error if it's not directly caused by a context error.
@@ -166,14 +158,14 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 			}
 			mu.Lock()
 			defer mu.Unlock()
-			repoCommon, fatalErr := handleRepoSearchResult(repoRevs, len(repoSymbols) > limit, false, repoErr)
+			repoStats, fatalErr := handleRepoSearchResult(repoRevs, len(repoSymbols) > limit, false, repoErr)
 			if fatalErr != nil {
 				if ctx.Err() == nil || errors.Cause(repoErr) != ctx.Err() {
 					// Only record error if it's not directly caused by a context error.
 					run.Error(repoErr)
 				}
 			}
-			common.Update(&repoCommon)
+			stats.Update(&repoStats)
 			if repoSymbols != nil {
 				addMatches(repoSymbols)
 			}
@@ -188,8 +180,8 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 		aggMatches = aggMatches[:limit]
 	}
 	res2 := limitSymbolResults(aggMatches, limit)
-	common.IsLimitHit = symbolCount(res2) < symbolCount(res)
-	return res2, common, err
+	stats.IsLimitHit = symbolCount(res2) < symbolCount(res)
+	return res2, stats, err
 }
 
 // limitSymbolResults returns a new version of res containing no more than limit symbol matches.
