@@ -294,6 +294,29 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 		}
 	)
 
+	var getRepoInputRev zoektutil.RepoRevFunc
+	if args.Mode == search.ZoektGlobalSearch {
+		repos, err := getRepos(ctx, args.RepoPromise)
+		if err != nil {
+			return err
+		}
+		repoRevMap := make(map[string]*search.RepositoryRevisions, len(repos))
+		for _, r := range repos {
+			repoRevMap[string(r.Repo.Name)] = r
+		}
+		getRepoInputRev = func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool) {
+			if repoRev, ok := repoRevMap[file.Repository]; ok {
+				return repoRev.Repo, repoRev.RevSpecs(), true
+			}
+			return nil, nil, false
+		}
+	} else {
+		getRepoInputRev = func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool) {
+			repo, inputRevs := repos.GetRepoInputRev(file)
+			return repo, inputRevs, true
+		}
+	}
+
 	for event := range events {
 		if event.Error != nil {
 			return event.Error
@@ -313,38 +336,6 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 
 		maxLineMatches := 25 + k
 		maxLineFragmentMatches := 3 + k
-
-		var getRepoInputRev zoektutil.RepoRevFunc
-
-		if args.Mode == search.ZoektGlobalSearch {
-			m := map[string]*search.RepositoryRevisions{}
-			for _, file := range files {
-				m[file.Repository] = nil
-			}
-			repos, err := getRepos(ctx, args.RepoPromise)
-			if err != nil {
-				return err
-			}
-
-			for _, repo := range repos {
-				if _, ok := m[string(repo.Repo.Name)]; !ok {
-					continue
-				}
-				m[string(repo.Repo.Name)] = repo
-			}
-			getRepoInputRev = func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool) {
-				repoRev := m[file.Repository]
-				if repoRev == nil {
-					return nil, nil, false
-				}
-				return repoRev.Repo, repoRev.RevSpecs(), true
-			}
-		} else {
-			getRepoInputRev = func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool) {
-				repo, inputRevs := repos.GetRepoInputRev(file)
-				return repo, inputRevs, true
-			}
-		}
 
 		partial, files := matchLimiter.Slice(files, getRepoInputRev)
 		// Partial is populated with repositories we may have not fully
