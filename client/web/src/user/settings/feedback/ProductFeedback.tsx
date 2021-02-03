@@ -10,14 +10,13 @@ export const ProductFeedbackPage: React.FunctionComponent<Props> = ({ telemetryS
 
     return (
         <>
-            <h2>Product research and feedback</h2>
+            <h2 className="mb-3">Product research and feedback</h2>
             <div>
                 Our product team conducts occasional research to learn about how you use Sourcegraph and ask for
                 feedback about upcoming ideas. Sign up to participate in our research and help us shape the future of
                 our product!Î
             </div>
-            {/* TODO: Add button icon */}
-            <a href="/somewhere" className="btn btn-primary">
+            <a href="/somewhere" className="btn btn-primary mt-4">
                 Sign up now
             </a>
         </>
