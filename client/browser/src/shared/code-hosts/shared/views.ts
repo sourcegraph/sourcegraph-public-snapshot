@@ -86,17 +86,17 @@ export function trackViews<V extends View>(
                         mergeMap(addedElement =>
                             from(viewResolvers).pipe(
                                 mergeMap(({ selector, resolveView }) =>
-                                    [...queryWithSelector(addedElement, selector)].map((element): ViewWithSubscriptions<
-                                        V
-                                    > | null => {
-                                        const view = resolveView(element)
-                                        return (
-                                            view && {
-                                                ...view,
-                                                subscriptions: new Subscription(),
-                                            }
-                                        )
-                                    })
+                                    [...queryWithSelector(addedElement, selector)].map(
+                                        (element): ViewWithSubscriptions<V> | null => {
+                                            const view = resolveView(element)
+                                            return (
+                                                view && {
+                                                    ...view,
+                                                    subscriptions: new Subscription(),
+                                                }
+                                            )
+                                        }
+                                    )
                                 ),
                                 filter(isDefined),
                                 filter(view => !viewStates.has(view.element)),
