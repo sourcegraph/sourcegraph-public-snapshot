@@ -20,8 +20,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-func TestRevisionValidation(t *testing.T) {
+type mockNamespaceStore struct {
+	GetByNameMock func(ctx context.Context, name string) (*database.Namespace, error)
+}
 
+func (ns *mockNamespaceStore) GetByName(ctx context.Context, name string) (*database.Namespace, error) {
+	return ns.GetByNameMock(ctx, name)
+}
+
+func TestRevisionValidation(t *testing.T) {
 	// mocks a repo repoFoo with revisions revBar and revBas
 	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
 		// trigger errors
@@ -156,7 +163,8 @@ func TestRevisionValidation(t *testing.T) {
 		t.Run(tt.repoFilters[0], func(t *testing.T) {
 
 			op := Options{RepoFilters: tt.repoFilters}
-			resolved, err := ResolveRepositories(context.Background(), op)
+			repositoryResolver := &Resolver{NamespaceStore: &mockNamespaceStore{}}
+			resolved, err := repositoryResolver.Resolve(context.Background(), op)
 
 			if diff := cmp.Diff(tt.wantRepoRevs, resolved.RepoRevs); diff != "" {
 				t.Error(diff)
@@ -417,7 +425,7 @@ func TestUseDefaultReposIfMissingOrGlobalSearchContext(t *testing.T) {
 	envvar.MockSourcegraphDotComMode(true)
 	defer envvar.MockSourcegraphDotComMode(orig)
 
-	queryInfo, err := query.ParseAndCheck("foo")
+	queryInfo, err := query.ParseLiteral("foo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -461,15 +469,14 @@ func TestUseDefaultReposIfMissingOrGlobalSearchContext(t *testing.T) {
 			op := Options{
 				SearchContextSpec: tt.searchContextSpec,
 				Query:             queryInfo,
-				DefaultReposFunc:  mockDefaultReposFunc,
-				Zoekt:             mockZoekt,
 			}
-			repos, err := ResolveRepositories(context.Background(), op)
+			repositoryResolver := &Resolver{Zoekt: mockZoekt, DefaultReposFunc: mockDefaultReposFunc, NamespaceStore: &mockNamespaceStore{}}
+			resolved, err := repositoryResolver.Resolve(context.Background(), op)
 			if err != nil {
 				t.Fatal(err)
 			}
 			var repoNames []string
-			for _, repoRev := range repos.RepoRevs {
+			for _, repoRev := range resolved.RepoRevs {
 				repoNames = append(repoNames, string(repoRev.Repo.Name))
 			}
 			if !reflect.DeepEqual(repoNames, wantDefaultRepoNames) {
@@ -488,7 +495,7 @@ func TestResolveRepositoriesWithUserSearchContext(t *testing.T) {
 		wantName   = "alice"
 		wantUserID = 123
 	)
-	queryInfo, err := query.ParseAndCheck("foo")
+	queryInfo, err := query.ParseLiteral("foo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -500,23 +507,25 @@ func TestResolveRepositoriesWithUserSearchContext(t *testing.T) {
 		return []*types.RepoName{}, nil
 	}
 	database.Mocks.Repos.Count = func(ctx context.Context, op database.ReposListOptions) (int, error) { return 0, nil }
-	database.Mocks.Namespaces.GetByName = func(ctx context.Context, name string) (*database.Namespace, error) {
+	defer func() {
+		database.Mocks.Repos.ListRepoNames = nil
+		database.Mocks.Repos.Count = nil
+	}()
+
+	getNamespaceByName := func(ctx context.Context, name string) (*database.Namespace, error) {
 		if name != wantName {
 			t.Errorf("got %q, want %q", name, wantName)
 		}
 		return &database.Namespace{Name: wantName, User: wantUserID}, nil
 	}
-	defer func() {
-		database.Mocks.Repos.ListRepoNames = nil
-		database.Mocks.Repos.Count = nil
-		database.Mocks.Namespaces.GetByName = nil
-	}()
+	namespaceStore := &mockNamespaceStore{GetByNameMock: getNamespaceByName}
 
 	op := Options{
 		Query:             queryInfo,
 		SearchContextSpec: "@" + wantName,
 	}
-	_, err = ResolveRepositories(context.Background(), op)
+	repositoryResolver := &Resolver{NamespaceStore: namespaceStore}
+	_, err = repositoryResolver.Resolve(context.Background(), op)
 	if err != nil {
 		t.Fatal(err)
 	}

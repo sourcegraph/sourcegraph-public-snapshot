@@ -40,7 +40,15 @@ type Resolved struct {
 	OverLimit       bool
 }
 
-func ResolveRepositories(ctx context.Context, op Options) (Resolved, error) {
+type Resolver struct {
+	Zoekt            *searchbackend.Zoekt
+	DefaultReposFunc defaultReposFunc
+	NamespaceStore   interface {
+		GetByName(context.Context, string) (*database.Namespace, error)
+	}
+}
+
+func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 	var err error
 	tr, ctx := trace.New(ctx, "resolveRepositories", op.String())
 	defer func() {
@@ -100,20 +108,16 @@ func ResolveRepositories(ctx context.Context, op Options) (Resolved, error) {
 		}
 	}
 
-	var searchContext *types.SearchContext
-	if envvar.SourcegraphDotComMode() {
-		searchContext, err = searchcontexts.ResolveSearchContextSpec(ctx, op.SearchContextSpec)
-		if err != nil {
-			return Resolved{}, err
-		}
+	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, op.SearchContextSpec, r.NamespaceStore.GetByName)
+	if err != nil {
+		return Resolved{}, err
 	}
-	missingOrGlobalSearchContext := searchContext == nil || searchcontexts.IsGlobalSearchContext(searchContext)
 
 	var defaultRepos []*types.RepoName
 
-	if envvar.SourcegraphDotComMode() && len(includePatterns) == 0 && !hasTypeRepo(op.Query) && missingOrGlobalSearchContext {
+	if envvar.SourcegraphDotComMode() && len(includePatterns) == 0 && !hasTypeRepo(op.Query) && searchcontexts.IsGlobalSearchContext(searchContext) {
 		start := time.Now()
-		defaultRepos, err = defaultRepositories(ctx, op.DefaultReposFunc, op.Zoekt, excludePatterns)
+		defaultRepos, err = defaultRepositories(ctx, r.DefaultReposFunc, r.Zoekt, excludePatterns)
 		if err != nil {
 			return Resolved{}, errors.Wrap(err, "getting list of default repos")
 		}
@@ -148,8 +152,8 @@ func ResolveRepositories(ctx context.Context, op Options) (Resolved, error) {
 			OnlyPrivate:  op.OnlyPrivate,
 		}
 
-		if searchContext != nil && searchContext.UserID != nil {
-			options.UserID = *searchContext.UserID
+		if searchContext != nil && searchContext.UserID != 0 {
+			options.UserID = searchContext.UserID
 		}
 
 		// PERF: We Query concurrently since Count and List call can be slow
@@ -287,8 +291,6 @@ type Options struct {
 	OnlyPrivate        bool
 	OnlyPublic         bool
 	Query              query.QueryInfo
-	DefaultReposFunc   defaultReposFunc
-	Zoekt              *searchbackend.Zoekt
 }
 
 func (op *Options) String() string {

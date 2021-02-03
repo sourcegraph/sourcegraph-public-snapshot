@@ -5,6 +5,7 @@ import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { QueryBuilder } from './QueryBuilder'
 import { PageTitle } from '../../components/PageTitle'
 import { VersionContextProps } from '../../../../shared/src/search/util'
+import { PageHeader } from '../../components/PageHeader'
 
 interface Props extends Pick<PatternTypeProps, 'patternType'>, VersionContextProps {}
 
@@ -19,6 +20,7 @@ export const QueryBuilderPage: React.FunctionComponent<Props> = ({ versionContex
     return (
         <div className="container mt-4">
             <PageTitle title="Query builder" />
+            <PageHeader path={[{ text: 'Query builder' }]} className="mb-3" />
             <div className="form form-inline mt-3">
                 <input
                     type="text"

@@ -627,3 +627,155 @@ The branch that should be used for this additional changeset. This **overwrites 
 ## [`transformChanges.group.repository`](#transformchanges-repository)
 
 Optional: the file diffs matching the given directory will only be grouped in a repository with that name, as configured on your Sourcegraph instance.
+
+## [`workspaces`](#workspaces)
+
+<aside class="experimental">
+<span class="badge badge-experimental">Experimental</span> <code>workspaces</code> is an experimental feature in Sourcegraph 3.25 and <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.25. It's a <b>preview</b> of functionality we're currently exploring to make managing large changes in large repositories easier. If you have any feedback, please let us know!
+</aside>
+
+The optional `workspaces` property allows users to define where projects are located in repositories and cause the [`steps`](#steps) to be executed for each project, instead of once per repository. That allows easier creation of multiple changesets in large repositories.
+
+For each repository that's yielded by [`on`](#on) and matched by a [`workspaces.in`](#workspaces-in) property, Sourcegraph search is used to get the locations of the `rootAtLocationOf` file. Each location then serves as a workspace for the execution of the `steps`, instead of the root of the repository.
+
+**Important**: Since multiple workspaces in the same repository can produce multiple changesets, it's **required** to use templating to produce a unique [`changesetTemplate.branch`](#changesettemplate-branch) for each produced changeset. See the [examples](#workspaces-examples) below.
+
+### [Examples](#workspaces-examples)
+
+Defining JavaScript projects that live in a monorepo by using the location of the `package.json` file as the root for each project:
+
+```yaml
+on:
+  - repository: github.com/sourcegraph/sourcegraph
+
+workspaces:
+  - rootAtLocationOf: package.json
+    in: github.com/sourcegraph/sourcegraph
+
+changesetTemplate:
+  # [...]
+
+  # Since a changeset is uniquely identified by its repository and its
+  # branch we need to ensure that each changesets has a unique branch name.
+
+  # We can use templating and helper functions for to use the `path` in which
+  # the `steps` executed and turn that into a branch name:
+  branch: ${{ join "-" "my-multi-workspace-campaign" (replace steps.path "/" "-") }}
+```
+
+Using templating to produce a unique branch name in repositories _with_ workspaces and repositories without workspaces:
+
+```yaml
+on:
+  - repository: github.com/sourcegraph/sourcegraph
+  - repository: github.com/sourcegraph/src-cli
+
+workspaces:
+  - rootAtLocationOf: package.json
+    in: github.com/sourcegraph/sourcegraph
+
+changesetTemplate:
+  # [...]
+
+  # Since the steps in `github.com/sourcegraph/src-cli` are executed in the
+  # root, where path is "", we can use `join_if` to drop it from the branch name
+  # if it's a blank string:
+  branch: ${{ join_if "-" "my-multi-workspace-campaign" (replace steps.path "/" "-") }}
+```
+
+
+Defining where Go, JavaScript, and Rust projects live in multiple repositories:
+
+```yaml
+workspaces:
+  - rootAtLocationOf: go.mod
+    in: github.com/sourcegraph/go-*
+  - rootAtLocationOf: package.json
+    in: github.com/sourcegraph/*-js
+  - rootAtLocationOf: Cargo.toml
+    in: github.com/rusty-org/*
+
+changesetTemplate:
+  # [...]
+
+  branch: ${{ join_if "-" "my-multi-workspace-campaign" (replace steps.path "/" "-") }}
+```
+
+Using [`steps.outputs`](#steps-outputs) to dynamically create unique branch names:
+
+```yaml
+# [...]
+on:
+  # Find all repositories with a package.json file
+  - repositoriesMatchingQuery: repohasfile:package.json
+
+workspaces:
+  # Define that workspaces have their root folder at the location of the
+  # package.json files
+  - rootAtLocationOf: package.json
+    in: "*"
+
+steps:
+  # [... steps that produce changes ...]
+
+  # Run `jq` to extract the "name" from the package.json
+  - run:  jq -j .name package.json
+    container: jiapantw/jq-alpine:latest
+    outputs:
+      # Set outputs.packageName to stdout of this step's `run` command.
+      packageName:
+        value: ${{ step.stdout }}
+
+changesetTemplate:
+  # [...]
+
+  # Use `outputs` variables to create a unique branch name per changeset:
+  branch: my-campaign-${{ outputs.projectName }}
+```
+
+## [`workspaces.rootAtLocationOf`](#workspaces-rootatlocationof)
+
+The full name of the file that sits at the root of one or more workspaces in a given repository.
+
+Sourcegraph code search is used to find the location of files with this name in the repositories returned by [`on`](#on).
+
+For example, in a repository with the following files:
+
+- `packages/sourcegraph-ui/package.json`
+- `packages/sourcegraph-test-helper/package.json`
+
+the workspace configuration
+
+```yaml
+workspaces:
+  - rootAtLocationOf: package.json
+    in: "*"
+```
+
+would create _two changesets_ in the repository, one in `packages/sourcegraph-ui` and one in `packages/sourcegraph-test-helper`.
+
+## [`workspaces.in`](#workspaces-in)
+
+The repositories in which the workspace should be discovered.
+
+This field supports **globbing** by using [glob](https://godoc.org/github.com/gobwas/glob#Compile) syntax. See "[Publishing only specific changesets](#publishing-only-specific-changesets)" for more information on globbing.
+
+A repository matching multiple entries results in an error.
+
+### Examples
+
+Match all repository names that begin with `github.com/`:
+
+```yaml
+workspaces:
+  - rootAtLocationOf: go.mod
+    in: github.com/*
+```
+
+Match all repository names that begin with `gitlab.com/my-javascript-org/` and end with `-plugin`:
+
+```yaml
+workspaces:
+  - rootAtLocationOf: package.json
+    in: gitlab.com/my-javascript-org/*-plugin
+```

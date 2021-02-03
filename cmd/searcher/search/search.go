@@ -191,7 +191,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 		}
 	}(time.Now())
 
-	if p.IsStructuralPat && p.CombyRule == `where "zoekt" == "zoekt"` {
+	if p.IsStructuralPat && p.CombyRule != `where "backcompat" == "backcompat"` {
 		// Execute the new structural search path that directly calls Zoekt.
 		return structuralSearchWithZoekt(ctx, p)
 	}
@@ -240,7 +240,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 	archiveSize.Observe(float64(bytes))
 
 	if p.IsStructuralPat {
-		matches, limitHit, err = structuralSearch(ctx, zipPath, p.Pattern, p.CombyRule, p.Languages, p.IncludePatterns, p.Repo)
+		matches, limitHit, err = structuralSearch(ctx, zipPath, p.Pattern, p.CombyRule, "", p.Languages, p.IncludePatterns, p.Repo)
 	} else {
 		matches, limitHit, err = regexSearch(ctx, rg, zf, p.FileMatchLimit, p.PatternMatchesContent, p.PatternMatchesPath, p.IsNegated)
 	}

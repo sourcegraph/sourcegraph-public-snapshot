@@ -34,13 +34,12 @@ import (
 var mockResolveRepositories func(effectiveRepoFieldValues []string) (resolved searchrepos.Resolved, err error)
 
 type SearchArgs struct {
-	Version           string
-	PatternType       *string
-	Query             string
-	After             *string
-	First             *int32
-	SearchContextSpec *string
-	VersionContext    *string
+	Version        string
+	PatternType    *string
+	Query          string
+	After          *string
+	First          *int32
+	VersionContext *string
 
 	// For tests
 	Settings *schema.Settings
@@ -53,7 +52,7 @@ type SearchImplementer interface {
 	Stats(context.Context) (*searchResultsStats, error)
 
 	SetStream(c SearchStream)
-	Inputs() *SearchInputs
+	Inputs() SearchInputs
 }
 
 // NewSearchImplementer returns a SearchImplementer that provides search results and suggestions.
@@ -115,13 +114,12 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (_ SearchImplem
 
 	return &searchResolver{
 		SearchInputs: &SearchInputs{
-			Query:             queryInfo,
-			OriginalQuery:     args.Query,
-			VersionContext:    args.VersionContext,
-			SearchContextSpec: args.SearchContextSpec,
-			UserSettings:      settings,
-			Pagination:        pagination,
-			PatternType:       searchType,
+			Query:          queryInfo,
+			OriginalQuery:  args.Query,
+			VersionContext: args.VersionContext,
+			UserSettings:   settings,
+			Pagination:     pagination,
+			PatternType:    searchType,
 		},
 		zoekt:        search.Indexed(),
 		searcherURLs: search.SearcherURLs(),
@@ -246,13 +244,12 @@ func getBoolPtr(b *bool, def bool) bool {
 
 // SearchInputs contains fields we set before kicking off search.
 type SearchInputs struct {
-	Query             query.QueryInfo       // the query, either containing and/or expressions or otherwise ordinary
-	OriginalQuery     string                // the raw string of the original search query
-	Pagination        *searchPaginationInfo // pagination information, or nil if the request is not paginated.
-	PatternType       query.SearchType
-	VersionContext    *string
-	SearchContextSpec *string
-	UserSettings      *schema.Settings
+	Query          query.QueryInfo       // the query, either containing and/or expressions or otherwise ordinary
+	OriginalQuery  string                // the raw string of the original search query
+	Pagination     *searchPaginationInfo // pagination information, or nil if the request is not paginated.
+	PatternType    query.SearchType
+	VersionContext *string
+	UserSettings   *schema.Settings
 }
 
 // searchResolver is a resolver for the GraphQL type `Search`
@@ -280,7 +277,6 @@ type searchResolver struct {
 type SearchEvent struct {
 	Results []SearchResultResolver
 	Stats   streaming.Stats
-	Error   error
 }
 
 // SearchStream is a send only channel of SearchEvent. All streaming search
@@ -292,9 +288,6 @@ type SearchStream chan<- SearchEvent
 // functions. It returns a context, stream and cleanup/get function. The
 // cleanup/get function will return the aggregated event and must be called
 // once you have stopped sending to stream.
-//
-// For collecting errors we only collect the first error reported and
-// afterwards cancel the context.
 func collectStream(ctx context.Context) (context.Context, SearchStream, func() SearchEvent) {
 	var agg SearchEvent
 
@@ -307,11 +300,6 @@ func collectStream(ctx context.Context) (context.Context, SearchStream, func() S
 		for event := range stream {
 			agg.Results = append(agg.Results, event.Results...)
 			agg.Stats.Update(&event.Stats)
-			// Only collect first error
-			if event.Error != nil && agg.Error == nil {
-				cancel()
-				agg.Error = event.Error
-			}
 		}
 	}()
 
@@ -336,8 +324,8 @@ func (r *searchResolver) SetStream(c SearchStream) {
 	r.resultChannel = c
 }
 
-func (r *searchResolver) Inputs() *SearchInputs {
-	return r.SearchInputs
+func (r *searchResolver) Inputs() SearchInputs {
+	return *r.SearchInputs
 }
 
 // rawQuery returns the original query string input.
@@ -354,25 +342,30 @@ func (r *searchResolver) countIsSet() bool {
 const defaultMaxSearchResults = 30
 const maxSearchResultsPerPaginatedRequest = 5000
 
-func (r *searchResolver) maxResults() int32 {
-	if r.Pagination != nil {
+// MaxResults computes the limit for the query.
+func (inputs SearchInputs) MaxResults() int {
+	if inputs.Pagination != nil {
 		// Paginated search requests always consume an entire result set for a
 		// given repository, so we do not want any limit here. See
 		// search_pagination.go for details on why this is necessary .
 		return math.MaxInt32
 	}
-	count, _ := r.Query.StringValues(query.FieldCount)
+
+	if inputs.Query == nil {
+		return 0
+	}
+	count, _ := inputs.Query.StringValues(query.FieldCount)
 	if len(count) > 0 {
 		n, _ := strconv.Atoi(count[0])
 		if n > 0 {
-			return int32(n)
+			return n
 		}
 	}
-	max, _ := r.Query.StringValues(query.FieldMax)
+	max, _ := inputs.Query.StringValues(query.FieldMax)
 	if len(max) > 0 {
 		n, _ := strconv.Atoi(max[0])
 		if n > 0 {
-			return int32(n)
+			return n
 		}
 	}
 	return defaultMaxSearchResults
@@ -469,17 +462,12 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 	if r.VersionContext != nil {
 		versionContextName = *r.VersionContext
 	}
-	var searchContextSpec string
-	if r.SearchContextSpec != nil {
-		searchContextSpec = *r.SearchContextSpec
-	}
 
 	tr.LazyPrintf("resolveRepositories - start")
 	options := searchrepos.Options{
 		RepoFilters:        repoFilters,
 		MinusRepoFilters:   minusRepoFilters,
 		RepoGroupFilters:   repoGroupFilters,
-		SearchContextSpec:  searchContextSpec,
 		VersionContextName: versionContextName,
 		UserSettings:       r.UserSettings,
 		OnlyForks:          fork == searchrepos.Only,
@@ -490,10 +478,9 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		OnlyPublic:         visibility == query.Public,
 		CommitAfter:        commitAfter,
 		Query:              r.Query,
-		DefaultReposFunc:   database.GlobalDefaultRepos.List,
-		Zoekt:              r.zoekt,
 	}
-	resolved, err := searchrepos.ResolveRepositories(ctx, options)
+	repositoryResolver := &searchrepos.Resolver{Zoekt: r.zoekt, DefaultReposFunc: database.GlobalDefaultRepos.List, NamespaceStore: database.GlobalNamespaces}
+	resolved, err := repositoryResolver.Resolve(ctx, options)
 	tr.LazyPrintf("resolveRepositories - done")
 	if effectiveRepoFieldValues == nil {
 		r.resolved = &resolved

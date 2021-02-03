@@ -72,10 +72,11 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	progress := progressAggregator{
 		Start: time.Now(),
+		Limit: search.Inputs().MaxResults(),
 	}
 
 	sendProgress := func() {
-		_ = eventWriter.Event("progress", progress.Build())
+		_ = eventWriter.Event("progress", progress.Current())
 	}
 
 	filters := &graphqlbackend.SearchFilters{
@@ -210,15 +211,13 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	pr := progress.Build()
-	pr.Done = true
-	_ = eventWriter.Event("progress", pr)
+	_ = eventWriter.Event("progress", progress.Final())
 }
 
 type searchResolver interface {
 	Results(context.Context) (*graphqlbackend.SearchResultsResolver, error)
 	SetStream(c graphqlbackend.SearchStream)
-	Inputs() *graphqlbackend.SearchInputs
+	Inputs() graphqlbackend.SearchInputs
 }
 
 func defaultNewSearchResolver(ctx context.Context, args *graphqlbackend.SearchArgs) (searchResolver, error) {

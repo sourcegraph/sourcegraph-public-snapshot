@@ -32,7 +32,7 @@ func TestSearchContexts(t *testing.T) {
 	}
 	want := []*searchContextResolver{
 		{sc: types.SearchContext{Name: "global"}},
-		{sc: types.SearchContext{Name: username, UserID: &key}},
+		{sc: types.SearchContext{Name: username, UserID: key}},
 	}
 	if !reflect.DeepEqual(searchContexts, want) {
 		t.Errorf("got %v+, want %v+", searchContexts, want)

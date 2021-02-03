@@ -741,6 +741,24 @@ type ImportChangesets struct {
 	// Repository description: The repository name as configured on your Sourcegraph instance.
 	Repository string `json:"repository"`
 }
+type Insight struct {
+	// Description description: The description of this insight
+	Description string `json:"description"`
+	// Series description: Series of data to show for this insight
+	Series []*InsightSeries `json:"series"`
+	// Title description: The short title of this insight
+	Title string `json:"title"`
+}
+type InsightSeries struct {
+	// Label description: The label to use for the series in the graph.
+	Label string `json:"label"`
+	// RepositoriesList description: Performs a search query and shows the number of results returned.
+	RepositoriesList []interface{} `json:"repositoriesList,omitempty"`
+	// Search description: Performs a search query and shows the number of results returned.
+	Search string `json:"search,omitempty"`
+	// Webhook description: (not yet supported) Fetch data from a webhook URL.
+	Webhook string `json:"webhook,omitempty"`
+}
 
 // Log description: Configuration for logging and alerting, including to external services.
 type Log struct {
@@ -1099,6 +1117,8 @@ type Settings struct {
 	ExperimentalFeatures *SettingsExperimentalFeatures `json:"experimentalFeatures,omitempty"`
 	// Extensions description: The Sourcegraph extensions to use. Enable an extension by adding a property `"my/extension": true` (where `my/extension` is the extension ID). Override a previously enabled extension and disable it by setting its value to `false`.
 	Extensions map[string]bool `json:"extensions,omitempty"`
+	// Insights description: EXPERIMENTAL: Code Insights
+	Insights []*Insight `json:"insights,omitempty"`
 	// Motd description: DEPRECATED: Use `notices` instead.
 	//
 	// An array (often with just one element) of messages to display at the top of all pages, including for unauthenticated users. Users may dismiss a message (and any message with the same string value will remain dismissed for the user).
@@ -1169,6 +1189,8 @@ type SettingsExperimentalFeatures struct {
 	ShowQueryBuilder *bool `json:"showQueryBuilder,omitempty"`
 	// ShowRepogroupHomepage description: Enables the repository group homepage
 	ShowRepogroupHomepage *bool `json:"showRepogroupHomepage,omitempty"`
+	// ShowSearchContext description: Enables the search context dropdown.
+	ShowSearchContext *bool `json:"showSearchContext,omitempty"`
 }
 
 // SiteConfiguration description: Configuration for a Sourcegraph site.

@@ -176,7 +176,7 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 	// We do not support non-head searches for the old structural search code path.
 	// Once the new code path (triggered by the CombyRule below) is default, this can be removed.
 	// https://github.com/sourcegraph/sourcegraph/issues/17616
-	if typ == fileRequest && indexed.NotHEADOnlySearch && args.PatternInfo.CombyRule != `where "zoekt" == "zoekt"` {
+	if typ == fileRequest && indexed.NotHEADOnlySearch && args.PatternInfo.CombyRule == `where "backcompat" == "backcompat"` {
 		return nil, errors.New("structural search only supports searching the default branch https://github.com/sourcegraph/sourcegraph/issues/11906")
 	}
 
@@ -200,25 +200,13 @@ func (s *indexedSearchRequest) Repos() map[string]*search.RepositoryRevisions {
 	return s.repos.repoRevs
 }
 
-type streamFunc func(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration, c SearchStream)
-
-// Search returns a search event stream. Ensure you drain the stream.
-func (s *indexedSearchRequest) Search(ctx context.Context) <-chan SearchEvent {
-	c := make(chan SearchEvent)
-	go func() {
-		defer close(c)
-		s.doSearch(ctx, c)
-	}()
-
-	return c
-}
-
-func (s *indexedSearchRequest) doSearch(ctx context.Context, c SearchStream) {
+// Search streams 0 or more events to c.
+func (s *indexedSearchRequest) Search(ctx context.Context, c SearchStream) error {
 	if s.args == nil {
-		return
+		return nil
 	}
 	if len(s.Repos()) == 0 && s.args.Mode != search.ZoektGlobalSearch {
-		return
+		return nil
 	}
 
 	since := time.Since
@@ -226,20 +214,17 @@ func (s *indexedSearchRequest) doSearch(ctx context.Context, c SearchStream) {
 		since = s.since
 	}
 
-	var zoektStream streamFunc
+	var zoektStream func(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration, c SearchStream) error
 	switch s.typ {
 	case textRequest, symbolRequest:
 		zoektStream = zoektSearch
 	case fileRequest:
-		// TODO (stefan): call zoektSearchHEADOnlyFiles, can send searchEvents directly from there.s
 		zoektStream = zoektSearchHEADOnlyFiles
 	default:
-		err := fmt.Errorf("unexpected indexedSearchRequest type: %q", s.typ)
-		c <- SearchEvent{Stats: streaming.Stats{}, Results: nil, Error: err}
-		return
+		return fmt.Errorf("unexpected indexedSearchRequest type: %q", s.typ)
 	}
 
-	zoektStream(ctx, s.args, s.repos, s.typ, since, c)
+	return zoektStream(ctx, s.args, s.repos, s.typ, since, c)
 }
 
 // zoektSearch searches repositories using zoekt.
@@ -247,20 +232,17 @@ func (s *indexedSearchRequest) doSearch(ctx context.Context, c SearchStream) {
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration, c SearchStream) {
+func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration, c SearchStream) error {
 	if args == nil {
-		return
+		return nil
 	}
 	if len(repos.repoRevs) == 0 && args.Mode != search.ZoektGlobalSearch {
-		return
+		return nil
 	}
 
 	queryExceptRepos, err := queryToZoektQuery(args.PatternInfo, typ)
 	if err != nil {
-		c <- SearchEvent{
-			Error: err,
-		}
-		return
+		return err
 	}
 	// Performance optimization: For queries without repo: filters, it is not
 	// necessary to send the list of all repoBranches to zoekt. Zoekt can simply
@@ -314,10 +296,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 
 	for event := range events {
 		if event.Error != nil {
-			c <- SearchEvent{
-				Error: err,
-			}
-			return
+			return event.Error
 		}
 
 		foundResults = foundResults || event.SearchResult.FileCount != 0 || event.SearchResult.MatchCount != 0
@@ -344,10 +323,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 			}
 			repos, err := getRepos(ctx, args.RepoPromise)
 			if err != nil {
-				c <- SearchEvent{
-					Error: err,
-				}
-				return
+				return err
 			}
 
 			for _, repo := range repos {
@@ -454,9 +430,10 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 
 	if !foundResults && since(t0) >= searchOpts.MaxWallTime {
 		c <- SearchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusTimedout | search.RepoStatusIndexed)}}
-		return
+		return nil
 	}
 	c <- SearchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusSearched | search.RepoStatusIndexed)}}
+	return nil
 }
 
 func zoektFileMatchToLineMatches(maxLineFragmentMatches int, file *zoekt.FileMatch) ([]*lineMatch, int) {

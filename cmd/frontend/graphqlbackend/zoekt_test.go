@@ -282,7 +282,7 @@ func TestIndexedSearch(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			q, err := query.ParseAndCheck(tt.args.query)
+			q, err := query.ParseLiteral(tt.args.query)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -319,18 +319,19 @@ func TestIndexedSearch(t *testing.T) {
 				gotCommon streaming.Stats
 				gotFm     []*FileMatchResolver
 			)
-			for event := range indexed.Search(tt.args.ctx) {
-				if (event.Error != nil) != tt.wantErr {
-					t.Errorf("zoektSearchHEAD() error = %v, wantErr = %v", err, tt.wantErr)
-					return
-				}
-				gotCommon.Update(&event.Stats)
-				fms := make([]*FileMatchResolver, 0, len(event.Results))
-				for _, r := range event.Results {
-					fms = append(fms, r.(*FileMatchResolver))
-				}
-				gotFm = append(gotFm, fms...)
+			ctx, stream, done := collectStream(tt.args.ctx)
+			err = indexed.Search(ctx, stream)
+			agg := done()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("zoektSearchHEAD() error = %v, wantErr = %v", err, tt.wantErr)
+				return
 			}
+			gotCommon.Update(&agg.Stats)
+			fms, err := searchResultsToFileMatchResults(agg.Results)
+			if err != nil {
+				t.Fatal(err)
+			}
+			gotFm = append(gotFm, fms...)
 
 			if diff := cmp.Diff(&tt.wantCommon, &gotCommon, cmpopts.EquateEmpty()); diff != "" {
 				t.Errorf("common mismatch (-want +got):\n%s", diff)

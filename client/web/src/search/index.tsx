@@ -175,6 +175,10 @@ export interface OnboardingTourProps {
     showOnboardingTour: boolean
 }
 
+export interface SearchContextProps {
+    showSearchContext: boolean
+}
+
 export interface ShowQueryBuilderProps {
     showQueryBuilder: boolean
 }

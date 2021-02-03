@@ -113,9 +113,9 @@ type PatternInfo struct {
 
 	// CombyRule is a rule that constrains matching for structural search.
 	// It only applies when IsStructuralPat is true.
-	// As a temporary measure, the expression `where "zoekt" == "zoekt"` acts as
-	// a flag to activate a new structural search path to directly query
-	// Zoekt for file contents.
+	// As a temporary measure, the expression `where "backcompat" == "backcompat"` acts as
+	// a flag to activate the old structural search path, which queries zoekt for the
+	// file list in the frontend and passes it to searcher.
 	CombyRule string
 }
 

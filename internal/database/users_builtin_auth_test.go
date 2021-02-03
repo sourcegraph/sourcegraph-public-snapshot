@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -200,6 +201,71 @@ func TestUsers_UpdatePassword(t *testing.T) {
 	}
 	if isPassword, err := Users(db).IsPassword(ctx, usr.ID, "right-password"); err == nil && isPassword {
 		t.Fatal("accepted wrong (old) password")
+	}
+}
+
+func TestUsers_CreatePassword(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	db := dbtesting.GetDB(t)
+	ctx := context.Background()
+
+	// User without a password
+	usr1, err := Users(db).Create(ctx, NewUser{
+		Email:                 "usr1@bar.com",
+		Username:              "usr1",
+		Password:              "",
+		EmailVerificationCode: "c",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Allowed since the user has no password or external accounts
+	if err := Users(db).CreatePassword(ctx, usr1.ID, "the-new-password"); err != nil {
+		t.Fatal(err)
+	}
+
+	// User with an existing password
+	usr2, err := Users(db).Create(ctx, NewUser{
+		Email:                 "usr2@bar.com",
+		Username:              "usr2",
+		Password:              "has-a-password",
+		EmailVerificationCode: "c",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := Users(db).CreatePassword(ctx, usr2.ID, "the-new-password"); err == nil {
+		t.Fatal("Should fail, password already exists")
+	}
+
+	// A new user with an external account can't create a password
+	newID, err := ExternalAccounts(db).CreateUserAndSave(ctx, NewUser{
+		Email:                 "usr3@bar.com",
+		Username:              "usr3",
+		Password:              "",
+		EmailVerificationCode: "c",
+	},
+		extsvc.AccountSpec{
+			ServiceType: extsvc.TypeGitHub,
+			ServiceID:   "123",
+			ClientID:    "456",
+			AccountID:   "789",
+		},
+		extsvc.AccountData{
+			AuthData: nil,
+			Data:     nil,
+		},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := Users(db).CreatePassword(ctx, newID, "the-new-password"); err == nil {
+		t.Fatal("Should fail, user has external account")
 	}
 }
 

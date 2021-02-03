@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"strings"
 	"time"
 
@@ -139,7 +138,6 @@ func exportPrometheusSearchLatencies(event string, payload json.RawMessage) erro
 	if err := json.Unmarshal([]byte(payload), &v); err != nil {
 		return err
 	}
-	fmt.Println(event, v.DurationMS)
 	if event == "search.latencies.frontend.code-load" {
 		searchLatenciesFrontendCodeLoad.WithLabelValues().Observe(v.DurationMS / 1000.0)
 	}

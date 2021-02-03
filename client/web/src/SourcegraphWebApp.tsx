@@ -159,6 +159,8 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
 
     showEnterpriseHomePanels: boolean
 
+    showSearchContext: boolean
+
     /**
      * Whether globbing is enabled for filters.
      */
@@ -260,6 +262,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             previousVersionContext,
             showRepogroupHomepage: false,
             showOnboardingTour: false,
+            showSearchContext: false,
             showEnterpriseHomePanels: false,
             globbing: false,
             showMultilineSearchConsole: false,
@@ -413,6 +416,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     isSourcegraphDotCom={window.context.sourcegraphDotComMode}
                                     showRepogroupHomepage={this.state.showRepogroupHomepage}
                                     showOnboardingTour={this.state.showOnboardingTour}
+                                    showSearchContext={this.state.showSearchContext}
                                     showEnterpriseHomePanels={this.state.showEnterpriseHomePanels}
                                     globbing={this.state.globbing}
                                     showMultilineSearchConsole={this.state.showMultilineSearchConsole}

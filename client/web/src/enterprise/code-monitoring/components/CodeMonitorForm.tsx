@@ -221,7 +221,9 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                         </div>
                         <div className="flex-column">
                             <div>Active</div>
-                            <div className="text-muted">We will watch for the trigger and run actions in response</div>
+                            <div className="text-muted">
+                                Code monitor will watch for the trigger and run actions in response
+                            </div>
                         </div>
                     </div>
                     <div className="d-flex justify-content-between my-4">

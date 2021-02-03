@@ -94,6 +94,10 @@
 // 1528395778_add_syncer_error.up.sql (84B)
 // 1528395779_dirty_repositories_updated_at.down.sql (77B)
 // 1528395779_dirty_repositories_updated_at.up.sql (210B)
+// 1528395780_drop_secrets_sql.down.sql (470B)
+// 1528395780_drop_secrets_sql.up.sql (102B)
+// 1528395781_remove_user_repos_table.down.sql (385B)
+// 1528395781_remove_user_repos_table.up.sql (57B)
 
 package migrations
 
@@ -2042,6 +2046,86 @@ func _1528395779_dirty_repositories_updated_atUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395780_drop_secrets_sqlDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x74\x8e\x4f\x8f\xa2\x40\x10\xc5\xef\xfd\x29\xde\x51\x93\xd5\xe8\x61\x4f\x9c\x90\xed\x5d\x49\xa0\xc9\x42\x3b\x3a\x27\xd2\x03\x8d\x54\x46\x40\xbb\x5b\x67\xf8\xf6\x13\x19\xff\xc4\xc4\x39\xd6\xaf\xaa\xde\xef\x2d\xf8\xbf\x50\x78\x8c\x4d\x26\x08\xba\x3d\xe9\x12\xa3\x0f\x72\x35\x1a\x6a\x3b\x03\xab\x2a\xed\x7a\x34\x5d\x49\x15\x15\xca\x51\xd7\xda\x31\x2a\xd3\x35\x70\xb5\x86\x3d\x1c\x95\xad\x75\x89\x86\xb6\x66\xd8\xa2\xa2\x9d\x9e\xb2\x20\xe5\xbe\xe4\x90\xfe\x22\xe2\x08\xff\x42\x24\x12\x7c\x13\x66\x32\x83\xd5\x85\xd1\xce\x62\xc4\x00\x80\x4a\xbc\xd1\x96\x5a\x37\x9c\x88\x55\x14\xfd\x1a\xb8\xed\x8e\xa6\xd0\xb9\xeb\xf7\x1a\x45\xad\x8c\x2a\x9c\x36\x38\x29\xd3\x53\xbb\x1d\xfd\x9e\x8d\x1f\xce\x6e\x29\xdf\xf4\x5d\xf7\x79\xab\x9a\x67\x9f\xf3\xd9\xf5\xf5\xa4\x76\x47\x0d\xa7\x3f\xef\x6a\x36\xf6\xd8\xb5\x7a\xc6\xff\xaf\xb8\x08\x7e\x68\x9f\x53\x99\x5b\x7d\x18\x82\x32\xe9\xa7\x12\xeb\x50\x2e\x31\x1f\x40\x28\x82\x94\xc7\x5c\x48\x2c\x5e\x2f\x48\x24\x88\x43\xf1\xe2\x47\x2b\x7e\x9b\xfd\xcd\x7d\x0e\xfc\x60\xc9\x31\xf7\x18\xf3\x23\xc9\xd3\x07\xfb\x53\x33\x92\xb5\xe0\x7f\xce\x82\x0b\x9f\x52\x79\x2e\x9f\xc4\x71\x28\x3d\xf6\x15\x00\x00\xff\xff\xd3\x7b\xdb\x9b\xd6\x01\x00\x00")
+
+func _1528395780_drop_secrets_sqlDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395780_drop_secrets_sqlDownSql,
+		"1528395780_drop_secrets_sql.down.sql",
+	)
+}
+
+func _1528395780_drop_secrets_sqlDownSql() (*asset, error) {
+	bytes, err := _1528395780_drop_secrets_sqlDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395780_drop_secrets_sql.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x59, 0x1a, 0x51, 0x8d, 0x3d, 0xae, 0x40, 0x95, 0xed, 0xfa, 0xce, 0xa5, 0xaf, 0xf9, 0x19, 0xba, 0xc3, 0xb4, 0xf7, 0xde, 0x10, 0x23, 0x8c, 0x9, 0x81, 0xb, 0x59, 0x53, 0x9, 0xeb, 0xd7, 0x5d}}
+	return a, nil
+}
+
+var __1528395780_drop_secrets_sqlUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\xd2\xd5\x55\x08\xc9\x48\x55\x48\x28\x4e\x4d\x2e\x4a\x2d\x29\x4e\x50\x28\x49\x4c\xca\x49\x55\xc8\x2c\x56\xc8\xcb\x2f\x51\x28\x2d\x4e\x4d\x51\x48\xcc\x4b\x51\xc8\x48\x04\x09\x28\x14\xa5\x26\xe7\x17\xa5\x14\xeb\x71\xb9\x04\xf9\x07\x28\x84\x38\x3a\xf9\xb8\x2a\x78\xba\x29\xb8\x46\x78\x06\x87\x04\x2b\x40\xcd\xb0\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x5b\x3d\xcf\x71\x66\x00\x00\x00")
+
+func _1528395780_drop_secrets_sqlUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395780_drop_secrets_sqlUpSql,
+		"1528395780_drop_secrets_sql.up.sql",
+	)
+}
+
+func _1528395780_drop_secrets_sqlUpSql() (*asset, error) {
+	bytes, err := _1528395780_drop_secrets_sqlUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395780_drop_secrets_sql.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x4c, 0x86, 0x82, 0xb4, 0x46, 0x7, 0x23, 0xab, 0xd, 0x8a, 0x11, 0xc2, 0x37, 0x2b, 0x1b, 0x16, 0x78, 0xad, 0xe3, 0xd0, 0xfe, 0xf6, 0x5c, 0x2a, 0x11, 0x11, 0x2d, 0xd8, 0x8c, 0xff, 0x45, 0x2e}}
+	return a, nil
+}
+
+var __1528395781_remove_user_repos_tableDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\x90\x41\x4b\xc4\x30\x14\x84\xef\xf9\x15\xef\xd8\xc2\xfe\x83\x3d\x65\xb3\xd3\x25\xd8\xbe\x60\xf2\x0a\x7a\x2a\xa8\x51\x8a\xa2\xa5\xb5\xff\x5f\xd2\xb4\x7a\x28\x05\xe7\x38\x33\x79\xdf\x90\x0b\x6e\x96\xcf\x4a\x19\x0f\x2d\x20\xd1\x97\x1a\x64\x2b\x62\x27\x84\x07\x1b\x24\xd0\x3c\xc5\xb1\x1b\xe6\xa7\x8f\xfe\xb9\x1b\xe3\xf0\x35\x51\xa1\x28\x69\x09\xfa\x17\xea\x3f\xbf\xe3\x5b\x1c\x4f\xd9\x4d\x95\xbd\xdb\xb2\xbd\x6f\x41\xc5\xfa\xe6\xb4\xd5\xca\x35\x37\x8e\x83\x78\x6d\x59\xf2\xd9\xd7\xf7\xec\x27\x55\xce\xc3\xde\x98\xee\xf0\xf8\x7b\xa0\xfc\x8b\x93\x3c\x2a\x78\xb0\x41\x9e\x3b\x51\xb1\xab\x38\xa6\x2b\x6a\x08\xc8\xe8\x60\xf4\x15\x7b\xf2\xb2\xe9\x90\xbc\x2d\x3e\x24\xa7\xc2\x7f\xc0\xaa\x4c\x1f\xee\x9a\xc6\xca\x59\xfd\x04\x00\x00\xff\xff\xb2\xd9\x23\x35\x81\x01\x00\x00")
+
+func _1528395781_remove_user_repos_tableDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395781_remove_user_repos_tableDownSql,
+		"1528395781_remove_user_repos_table.down.sql",
+	)
+}
+
+func _1528395781_remove_user_repos_tableDownSql() (*asset, error) {
+	bytes, err := _1528395781_remove_user_repos_tableDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395781_remove_user_repos_table.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x8c, 0xf7, 0xf4, 0x61, 0x27, 0xc6, 0xce, 0x4d, 0xb5, 0x3b, 0x14, 0xb, 0xf1, 0xf2, 0x5e, 0x64, 0x2f, 0x85, 0x9b, 0x3, 0x40, 0x65, 0xa3, 0xf0, 0x1c, 0x55, 0x1e, 0xfb, 0xc9, 0x2, 0x10, 0x46}}
+	return a, nil
+}
+
+var __1528395781_remove_user_repos_tableUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\x2d\x4e\x2d\x8a\x2f\x28\x4d\xca\xc9\x4c\x8e\x2f\x4a\x2d\xc8\x2f\xb6\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x7b\x56\x0c\x79\x39\x00\x00\x00")
+
+func _1528395781_remove_user_repos_tableUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395781_remove_user_repos_tableUpSql,
+		"1528395781_remove_user_repos_table.up.sql",
+	)
+}
+
+func _1528395781_remove_user_repos_tableUpSql() (*asset, error) {
+	bytes, err := _1528395781_remove_user_repos_tableUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395781_remove_user_repos_table.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x38, 0x14, 0x37, 0x23, 0x3, 0xc0, 0x9, 0x8, 0xd7, 0xe0, 0x9c, 0xb9, 0x24, 0x2c, 0xc2, 0x79, 0x21, 0xa1, 0xaa, 0x3c, 0x54, 0x7b, 0x45, 0x8d, 0x6a, 0xb, 0xd5, 0x59, 0x72, 0xb7, 0x30, 0x4d}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2227,6 +2311,10 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395778_add_syncer_error.up.sql":                                                     _1528395778_add_syncer_errorUpSql,
 	"1528395779_dirty_repositories_updated_at.down.sql":                                      _1528395779_dirty_repositories_updated_atDownSql,
 	"1528395779_dirty_repositories_updated_at.up.sql":                                        _1528395779_dirty_repositories_updated_atUpSql,
+	"1528395780_drop_secrets_sql.down.sql":                                                   _1528395780_drop_secrets_sqlDownSql,
+	"1528395780_drop_secrets_sql.up.sql":                                                     _1528395780_drop_secrets_sqlUpSql,
+	"1528395781_remove_user_repos_table.down.sql":                                            _1528395781_remove_user_repos_tableDownSql,
+	"1528395781_remove_user_repos_table.up.sql":                                              _1528395781_remove_user_repos_tableUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2367,6 +2455,10 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395778_add_syncer_error.up.sql":                                                     {_1528395778_add_syncer_errorUpSql, map[string]*bintree{}},
 	"1528395779_dirty_repositories_updated_at.down.sql":                                      {_1528395779_dirty_repositories_updated_atDownSql, map[string]*bintree{}},
 	"1528395779_dirty_repositories_updated_at.up.sql":                                        {_1528395779_dirty_repositories_updated_atUpSql, map[string]*bintree{}},
+	"1528395780_drop_secrets_sql.down.sql":                                                   {_1528395780_drop_secrets_sqlDownSql, map[string]*bintree{}},
+	"1528395780_drop_secrets_sql.up.sql":                                                     {_1528395780_drop_secrets_sqlUpSql, map[string]*bintree{}},
+	"1528395781_remove_user_repos_table.down.sql":                                            {_1528395781_remove_user_repos_tableDownSql, map[string]*bintree{}},
+	"1528395781_remove_user_repos_table.up.sql":                                              {_1528395781_remove_user_repos_tableUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

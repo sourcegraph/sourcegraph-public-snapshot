@@ -7,6 +7,16 @@ exports[`QueryBuilderPage simple 1`] = `
   <PageTitle
     title="Query builder"
   />
+  <PageHeader
+    className="mb-3"
+    path={
+      Array [
+        Object {
+          "text": "Query builder",
+        },
+      ]
+    }
+  />
   <div
     className="form form-inline mt-3"
   >

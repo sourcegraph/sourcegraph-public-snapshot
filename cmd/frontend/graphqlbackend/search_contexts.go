@@ -35,15 +35,15 @@ func (r searchContextResolver) Name() string {
 }
 
 func (r searchContextResolver) Namespace(ctx context.Context) (*NamespaceResolver, error) {
-	if r.sc.OrgID != nil {
-		n, err := NamespaceByID(ctx, MarshalOrgID(*r.sc.OrgID))
+	if r.sc.OrgID != 0 {
+		n, err := NamespaceByID(ctx, MarshalOrgID(r.sc.OrgID))
 		if err != nil {
 			return nil, err
 		}
 		return &NamespaceResolver{n}, nil
 	}
-	if r.sc.UserID != nil {
-		n, err := NamespaceByID(ctx, MarshalUserID(*r.sc.UserID))
+	if r.sc.UserID != 0 {
+		n, err := NamespaceByID(ctx, MarshalUserID(r.sc.UserID))
 		if err != nil {
 			return nil, err
 		}
@@ -68,7 +68,7 @@ func (r *schemaResolver) SearchContexts(ctx context.Context) ([]*searchContextRe
 		if err != nil {
 			return nil, err
 		}
-		searchContext := types.SearchContext{Name: user.Username, UserID: &a.UID}
+		searchContext := types.SearchContext{Name: user.Username, UserID: a.UID}
 		searchContextResolvers = append(searchContextResolvers, &searchContextResolver{sc: searchContext})
 	}
 	return searchContextResolvers, nil

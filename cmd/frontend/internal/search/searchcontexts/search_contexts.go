@@ -2,29 +2,37 @@ package searchcontexts
 
 import (
 	"context"
-	"errors"
+	"fmt"
+	"strings"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 const globalSearchContextName = "global"
 
-func ResolveSearchContextSpec(ctx context.Context, searchContextSpec string) (*types.SearchContext, error) {
+type getNamespaceByNameFunc func(ctx context.Context, name string) (*database.Namespace, error)
+
+func ResolveSearchContextSpec(ctx context.Context, searchContextSpec string, getNamespaceByName getNamespaceByNameFunc) (*types.SearchContext, error) {
+	if !envvar.SourcegraphDotComMode() {
+		return nil, nil
+	}
+
 	if IsGlobalSearchContextSpec(searchContextSpec) {
 		return GetGlobalSearchContext(), nil
-	} else if len(searchContextSpec) > 0 && searchContextSpec[:1] == "@" {
+	} else if strings.HasPrefix(searchContextSpec, "@") {
 		name := searchContextSpec[1:]
-		namespace, err := database.GlobalNamespaces.GetByName(ctx, name)
+		namespace, err := getNamespaceByName(ctx, name)
 		if err != nil {
 			return nil, err
 		}
 		if namespace.User == 0 {
-			return nil, errors.New("search context not found")
+			return nil, fmt.Errorf("search context '%s' not found", searchContextSpec)
 		}
-		return &types.SearchContext{Name: name, UserID: &namespace.User}, nil
+		return &types.SearchContext{Name: name, UserID: namespace.User}, nil
 	}
-	return nil, errors.New("search context spec does not have the correct format")
+	return nil, fmt.Errorf("search context '%s' does not have the correct format (global or @username)", searchContextSpec)
 }
 
 func IsGlobalSearchContextSpec(searchContextSpec string) bool {
@@ -36,6 +44,6 @@ func GetGlobalSearchContext() *types.SearchContext {
 	return &types.SearchContext{Name: globalSearchContextName}
 }
 
-func IsGlobalSearchContext(sc *types.SearchContext) bool {
-	return sc != nil && sc.Name == globalSearchContextName
+func IsGlobalSearchContext(searchContext *types.SearchContext) bool {
+	return searchContext != nil && searchContext.Name == globalSearchContextName
 }

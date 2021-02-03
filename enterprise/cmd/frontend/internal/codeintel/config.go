@@ -10,18 +10,19 @@ import (
 type Config struct {
 	env.BaseConfig
 
-	UploadStoreConfig             *uploadstore.Config
-	CommitGraphUpdateTaskInterval time.Duration
-	CleanupTaskInterval           time.Duration
-	AutoIndexingTaskInterval      time.Duration
-	HunkCacheSize                 int
-	DataTTL                       time.Duration
-	UploadTimeout                 time.Duration
-	IndexBatchSize                int
-	MinimumTimeSinceLastEnqueue   time.Duration
-	MinimumSearchCount            int
-	MinimumSearchRatio            int
-	MinimumPreciseCount           int
+	UploadStoreConfig              *uploadstore.Config
+	CommitGraphUpdateTaskInterval  time.Duration
+	CleanupTaskInterval            time.Duration
+	AutoIndexingTaskInterval       time.Duration
+	AutoIndexingSkipManualInterval time.Duration
+	HunkCacheSize                  int
+	DataTTL                        time.Duration
+	UploadTimeout                  time.Duration
+	IndexBatchSize                 int
+	MinimumTimeSinceLastEnqueue    time.Duration
+	MinimumSearchCount             int
+	MinimumSearchRatio             int
+	MinimumPreciseCount            int
 }
 
 var config = &Config{}
@@ -37,6 +38,7 @@ func init() {
 	config.CommitGraphUpdateTaskInterval = config.GetInterval("PRECISE_CODE_INTEL_COMMIT_GRAPH_UPDATE_TASK_INTERVAL", "10s", "The frequency with which to run periodic codeintel commit graph update tasks.")
 	config.CleanupTaskInterval = config.GetInterval("PRECISE_CODE_INTEL_CLEANUP_TASK_INTERVAL", "1m", "The frequency with which to run periodic codeintel cleanup tasks.")
 	config.AutoIndexingTaskInterval = config.GetInterval("PRECISE_CODE_INTEL_AUTO_INDEXING_TASK_INTERVAL", "10m", "The frequency with which to run periodic codeintel auto-indexing tasks.")
+	config.AutoIndexingSkipManualInterval = config.GetInterval("PRECISE_CODE_INTEL_AUTO_INDEXING_SKIP_MANUAL", "24h", "The duration the auto-indexer will wait after a manual upload to a repository before it starts auto-indexing again. Manually queueing an auto-index run will cancel this waiting period.")
 	config.IndexBatchSize = config.GetInt("PRECISE_CODE_INTEL_INDEX_BATCH_SIZE", "100", "The number of indexable repositories to schedule at a time.")
 	config.MinimumTimeSinceLastEnqueue = config.GetInterval("PRECISE_CODE_INTEL_MINIMUM_TIME_SINCE_LAST_ENQUEUE", "24h", "The minimum time between auto-index enqueues for the same repository.")
 	config.MinimumSearchCount = config.GetInt("PRECISE_CODE_INTEL_MINIMUM_SEARCH_COUNT", "50", "The minimum number of search-based code intel events that triggers auto-indexing on a repository.")

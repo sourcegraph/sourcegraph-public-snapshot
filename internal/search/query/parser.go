@@ -810,7 +810,7 @@ loop:
 			nodes = append(nodes, result...)
 		case p.expect(RPAREN) && !isSet(p.heuristics, allowDanglingParens):
 			if p.balanced <= 0 {
-				return nil, errors.New("unbalanced expression: unmatched closing parenthesis )")
+				return nil, errors.New("unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses")
 			}
 			p.balanced--
 			p.heuristics |= disambiguated
@@ -834,6 +834,9 @@ loop:
 			err := p.skipSpaces()
 			if err != nil {
 				return nil, err
+			}
+			if p.match(LPAREN) {
+				return nil, errors.New("it looks like you tried to use an expression after NOT. The NOT operator can only be used with simple search patterns or filters, and is not supported for expressions or subqueries")
 			}
 			if parameter, ok, _ := p.ParseParameter(); ok {
 				// we don't support NOT -field:value

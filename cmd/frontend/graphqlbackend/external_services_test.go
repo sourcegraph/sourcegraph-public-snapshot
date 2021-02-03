@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -235,7 +236,7 @@ func TestAddExternalService(t *testing.T) {
 				"addExternalService": {
 					"kind": "GITHUB",
 					"displayName": "GITHUB #1",
-					"config": "{\"url\": \"https://github.com\", \"repositoryQuery\": [\"none\"], \"token\": \"abc\"}",
+					"config":"{\n  \"url\": \"https://github.com\",\n  \"repositoryQuery\": [\n    \"none\"\n  ],\n  \"token\": \"` + types.RedactedSecret + `\"\n}",
 					"namespace": null
 				}
 			}
@@ -383,10 +384,12 @@ func TestUpdateExternalService(t *testing.T) {
 			return &types.ExternalService{
 				ID:              id,
 				NamespaceUserID: userID,
+				Kind:            extsvc.KindGitHub,
 			}, nil
 		}
 		return &types.ExternalService{
 			ID:              id,
+			Kind:            extsvc.KindGitHub,
 			DisplayName:     *cachedUpdate.DisplayName,
 			Config:          *cachedUpdate.Config,
 			NamespaceUserID: userID,
@@ -416,7 +419,8 @@ func TestUpdateExternalService(t *testing.T) {
 			{
 				"updateExternalService": {
 				  "displayName": "GITHUB #2",
-				  "config": "{\"url\": \"https://github.com\", \"repositoryQuery\": [\"none\"], \"token\": \"def\"}"
+				  "config":"{\n  \"url\": \"https://github.com\",\n  \"repositoryQuery\": [\n    \"none\"\n  ],\n  \"token\": \"` + types.RedactedSecret + `\"\n}"
+
 				}
 			}
 		`,

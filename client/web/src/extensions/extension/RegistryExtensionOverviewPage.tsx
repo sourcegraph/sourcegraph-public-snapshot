@@ -2,10 +2,11 @@ import { parseISO } from 'date-fns'
 import maxDate from 'date-fns/max'
 import { isObject } from 'lodash'
 import GithubIcon from 'mdi-react/GithubIcon'
-import * as React from 'react'
+import React, { useMemo, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import * as H from 'history'
 import { LinkOrSpan } from '../../../../shared/src/components/LinkOrSpan'
-import { ExtensionCategory } from '../../../../shared/src/schema/extensionSchema'
+import { ExtensionCategory, ExtensionManifest } from '../../../../shared/src/schema/extensionSchema'
 import { isErrorLike } from '../../../../shared/src/util/errors'
 import { isDefined } from '../../../../shared/src/util/types'
 import { PageTitle } from '../../components/PageTitle'
@@ -13,190 +14,219 @@ import { Timestamp } from '../../components/time/Timestamp'
 import { extensionIDPrefix, extensionsQuery, urlToExtensionsQuery, validCategories } from './extension'
 import { ExtensionAreaRouteContext } from './ExtensionArea'
 import { ExtensionReadme } from './RegistryExtensionReadme'
-import * as H from 'history'
+import { isEncodedImage } from '../../../../shared/src/util/icon'
+import { DefaultIcon } from '../icons'
 
-interface Props extends Pick<ExtensionAreaRouteContext, 'extension' | 'telemetryService'> {
+interface Props extends Pick<ExtensionAreaRouteContext, 'extension' | 'telemetryService' | 'isLightTheme'> {
     history: H.History
 }
 
-/** A page that displays overview information about a registry extension. */
-export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {
-    public componentDidMount(): void {
-        this.props.telemetryService.logViewEvent('RegistryExtension')
-    }
+const RegistryExtensionOverviewIcon: React.FunctionComponent<Pick<Props, 'extension' | 'isLightTheme'>> = ({
+    extension,
+    isLightTheme,
+}) => {
+    const manifest: ExtensionManifest | undefined =
+        extension.manifest && !isErrorLike(extension.manifest) ? extension.manifest : undefined
 
-    public render(): JSX.Element | null {
-        let repositoryURL: URL | undefined
+    const iconURL = useMemo(() => {
+        let iconURL: URL | undefined
+
         try {
-            if (
-                this.props.extension.manifest &&
-                !isErrorLike(this.props.extension.manifest) &&
-                this.props.extension.manifest.repository &&
-                isObject(this.props.extension.manifest.repository) &&
-                typeof this.props.extension.manifest.repository.url === 'string'
-            ) {
-                repositoryURL = new URL(this.props.extension.manifest.repository.url)
+            if (isLightTheme) {
+                if (manifest?.icon && isEncodedImage(manifest.icon)) {
+                    iconURL = new URL(manifest.icon)
+                }
+            } else if (manifest?.iconDark && isEncodedImage(manifest.iconDark)) {
+                iconURL = new URL(manifest.iconDark)
+            } else if (manifest?.icon && isEncodedImage(manifest.icon)) {
+                // fallback: show default icon on dark theme if dark icon isn't specified
+                iconURL = new URL(manifest.icon)
             }
         } catch {
             // noop
         }
 
-        let categories: ExtensionCategory[] | undefined
-        if (
-            this.props.extension.manifest &&
-            !isErrorLike(this.props.extension.manifest) &&
-            this.props.extension.manifest.categories
-        ) {
-            const validatedCategories = validCategories(this.props.extension.manifest.categories)
-            if (validatedCategories && validatedCategories.length > 0) {
-                categories = validatedCategories
-            }
-        }
+        return iconURL
+    }, [manifest?.icon, manifest?.iconDark, isLightTheme])
 
-        return (
-            <div className="registry-extension-overview-page d-flex flex-wrap">
-                <PageTitle title={this.props.extension.id} />
-                <div className="registry-extension-overview-page__readme mr-3">
-                    <ExtensionReadme extension={this.props.extension} history={this.props.history} />
-                </div>
-                <aside className="registry-extension-overview-page__sidebar">
-                    {categories && (
+    if (iconURL) {
+        return <img className="registry-extension-overview-page__icon mb-3" src={iconURL.href} aria-hidden="true" />
+    }
+
+    if (manifest?.publisher === 'sourcegraph') {
+        return <DefaultIcon className="registry-extension-overview-page__icon mb-3" />
+    }
+
+    return null
+}
+
+/** A page that displays overview information about a registry extension. */
+export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
+    telemetryService,
+    extension,
+    history,
+    isLightTheme,
+}) => {
+    let repositoryURL: URL | undefined
+    let categories: ExtensionCategory[] | undefined
+
+    useEffect(() => {
+        telemetryService.logViewEvent('AddExternalService')
+    }, [telemetryService])
+
+    try {
+        if (
+            extension.manifest &&
+            !isErrorLike(extension.manifest) &&
+            extension.manifest.repository &&
+            isObject(extension.manifest.repository) &&
+            typeof extension.manifest.repository.url === 'string'
+        ) {
+            repositoryURL = new URL(extension.manifest.repository.url)
+        }
+    } catch {
+        // noop
+    }
+
+    if (extension.manifest && !isErrorLike(extension.manifest) && extension.manifest.categories) {
+        const validatedCategories = validCategories(extension.manifest.categories)
+        if (validatedCategories && validatedCategories.length > 0) {
+            categories = validatedCategories
+        }
+    }
+
+    return (
+        <div className="registry-extension-overview-page d-flex flex-wrap">
+            <PageTitle title={extension.id} />
+            <div className="registry-extension-overview-page__readme mr-3">
+                <ExtensionReadme extension={extension} history={history} />
+            </div>
+            <aside className="registry-extension-overview-page__sidebar">
+                {categories && (
+                    <div className="mb-3">
+                        <RegistryExtensionOverviewIcon extension={extension} isLightTheme={isLightTheme} />
+                        <h3>Categories</h3>
+                        <ul className="list-inline test-registry-extension-categories">
+                            {categories.map(category => (
+                                <li key={category} className="list-inline-item mb-2">
+                                    <Link
+                                        to={urlToExtensionsQuery(extensionsQuery({ category }))}
+                                        className="btn btn-outline-secondary btn-sm"
+                                    >
+                                        {category}
+                                    </Link>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+                {extension.manifest &&
+                    !isErrorLike(extension.manifest) &&
+                    extension.manifest.tags &&
+                    extension.manifest.tags.length > 0 && (
                         <div className="mb-3">
-                            <h3>Categories</h3>
-                            <ul className="list-inline test-registry-extension-categories">
-                                {categories.map(category => (
-                                    <li key={category} className="list-inline-item mb-2">
+                            <h3>Tags</h3>
+                            <ul className="list-inline">
+                                {extension.manifest.tags.map(tag => (
+                                    <li key={tag} className="list-inline-item mb-2">
                                         <Link
-                                            to={urlToExtensionsQuery(extensionsQuery({ category }))}
-                                            className="btn btn-outline-secondary btn-sm"
+                                            to={urlToExtensionsQuery(extensionsQuery({ tag }))}
+                                            className="btn btn-outline-secondary btn-sm registry-extension-overview-page__tag"
                                         >
-                                            {category}
+                                            {tag}
                                         </Link>
                                     </li>
                                 ))}
                             </ul>
                         </div>
                     )}
-                    {this.props.extension.manifest &&
-                        !isErrorLike(this.props.extension.manifest) &&
-                        this.props.extension.manifest.tags &&
-                        this.props.extension.manifest.tags.length > 0 && (
-                            <div className="mb-3">
-                                <h3>Tags</h3>
-                                <ul className="list-inline">
-                                    {this.props.extension.manifest.tags.map(tag => (
-                                        <li key={tag} className="list-inline-item mb-2">
-                                            <Link
-                                                to={urlToExtensionsQuery(extensionsQuery({ tag }))}
-                                                className="btn btn-outline-secondary btn-sm registry-extension-overview-page__tag"
-                                            >
-                                                {tag}
-                                            </Link>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
+                <small className="text-muted">
+                    <dl className="border-top pt-2">
+                        {extension.registryExtension?.publisher && (
+                            <>
+                                <dt>Publisher</dt>
+                                <dd>
+                                    {extension.registryExtension.publisher ? (
+                                        <Link to={extension.registryExtension.publisher.url}>
+                                            {extensionIDPrefix(extension.registryExtension.publisher)}
+                                        </Link>
+                                    ) : (
+                                        'Unavailable'
+                                    )}
+                                </dd>
+                            </>
                         )}
-                    <small className="text-muted">
-                        <dl className="border-top pt-2">
-                            {this.props.extension.registryExtension?.publisher && (
-                                <>
-                                    <dt>Publisher</dt>
-                                    <dd>
-                                        {this.props.extension.registryExtension.publisher ? (
-                                            <Link to={this.props.extension.registryExtension.publisher.url}>
-                                                {extensionIDPrefix(this.props.extension.registryExtension.publisher)}
-                                            </Link>
-                                        ) : (
-                                            'Unavailable'
-                                        )}
-                                    </dd>
-                                </>
-                            )}
-                            {this.props.extension.registryExtension?.registryName && (
-                                <>
-                                    <dt
-                                        className={
-                                            this.props.extension.registryExtension.publisher ? 'border-top pt-2' : ''
-                                        }
+                        {extension.registryExtension?.registryName && (
+                            <>
+                                <dt className={extension.registryExtension.publisher ? 'border-top pt-2' : ''}>
+                                    Published on
+                                </dt>
+                                <dd>
+                                    <LinkOrSpan
+                                        to={extension.registryExtension.remoteURL}
+                                        target={extension.registryExtension.isLocal ? undefined : '_self'}
                                     >
-                                        Published on
-                                    </dt>
+                                        {extension.registryExtension.registryName}
+                                    </LinkOrSpan>
+                                </dd>
+                            </>
+                        )}
+                        <dt className="border-top pt-2">Extension ID</dt>
+                        <dd>{extension.id}</dd>
+                        {extension.registryExtension &&
+                            (extension.registryExtension.updatedAt || extension.registryExtension.publishedAt) && (
+                                <>
+                                    <dt className="border-top pt-2">Last updated</dt>
                                     <dd>
-                                        <LinkOrSpan
-                                            to={this.props.extension.registryExtension.remoteURL}
-                                            target={
-                                                this.props.extension.registryExtension.isLocal ? undefined : '_self'
-                                            }
-                                        >
-                                            {this.props.extension.registryExtension.registryName}
-                                        </LinkOrSpan>
+                                        <Timestamp
+                                            date={maxDate(
+                                                [
+                                                    extension.registryExtension.updatedAt,
+                                                    extension.registryExtension.publishedAt,
+                                                ]
+                                                    .filter(isDefined)
+                                                    .map(date => parseISO(date))
+                                            )}
+                                        />
                                     </dd>
                                 </>
                             )}
-                            <dt className="border-top pt-2">Extension ID</dt>
-                            <dd>{this.props.extension.id}</dd>
-                            {this.props.extension.registryExtension &&
-                                (this.props.extension.registryExtension.updatedAt ||
-                                    this.props.extension.registryExtension.publishedAt) && (
-                                    <>
-                                        <dt className="border-top pt-2">Last updated</dt>
-                                        <dd>
-                                            <Timestamp
-                                                date={maxDate(
-                                                    [
-                                                        this.props.extension.registryExtension.updatedAt,
-                                                        this.props.extension.registryExtension.publishedAt,
-                                                    ]
-                                                        .filter(isDefined)
-                                                        .map(date => parseISO(date))
-                                                )}
-                                            />
-                                        </dd>
-                                    </>
-                                )}
-                            <dt className="border-top pt-2">Resources</dt>
-                            <dd className="border-bottom pb-2">
-                                {this.props.extension.registryExtension && (
-                                    <Link
-                                        to={`${this.props.extension.registryExtension.url}/-/manifest`}
+                        <dt className="border-top pt-2">Resources</dt>
+                        <dd className="border-bottom pb-2">
+                            {extension.registryExtension && (
+                                <Link to={`${extension.registryExtension.url}/-/manifest`} className="d-block">
+                                    Manifest (package.json)
+                                </Link>
+                            )}
+                            {extension.manifest && !isErrorLike(extension.manifest) && extension.manifest.url && (
+                                <a
+                                    href={extension.manifest.url}
+                                    target="_blank"
+                                    rel="nofollow noopener noreferrer"
+                                    className="d-block"
+                                >
+                                    Source code (JavaScript)
+                                </a>
+                            )}
+                            {repositoryURL && (
+                                <div className="d-flex">
+                                    {repositoryURL.hostname === 'github.com' && (
+                                        <GithubIcon className="icon-inline mr-1" />
+                                    )}
+                                    <a
+                                        href={repositoryURL.href}
+                                        rel="nofollow noreferrer noopener"
+                                        target="_blank"
                                         className="d-block"
                                     >
-                                        Manifest (package.json)
-                                    </Link>
-                                )}
-                                {this.props.extension.manifest &&
-                                    !isErrorLike(this.props.extension.manifest) &&
-                                    this.props.extension.manifest.url && (
-                                        <a
-                                            href={this.props.extension.manifest.url}
-                                            target="_blank"
-                                            rel="nofollow noopener noreferrer"
-                                            className="d-block"
-                                        >
-                                            Source code (JavaScript)
-                                        </a>
-                                    )}
-                                {repositoryURL && (
-                                    <div className="d-flex">
-                                        {repositoryURL.hostname === 'github.com' && (
-                                            <GithubIcon className="icon-inline mr-1" />
-                                        )}
-                                        <a
-                                            href={repositoryURL.href}
-                                            rel="nofollow noreferrer noopener"
-                                            target="_blank"
-                                            className="d-block"
-                                        >
-                                            Repository
-                                        </a>
-                                    </div>
-                                )}
-                            </dd>
-                        </dl>
-                    </small>
-                </aside>
-            </div>
-        )
-    }
+                                        Repository
+                                    </a>
+                                </div>
+                            )}
+                        </dd>
+                    </dl>
+                </small>
+            </aside>
+        </div>
+    )
 }
