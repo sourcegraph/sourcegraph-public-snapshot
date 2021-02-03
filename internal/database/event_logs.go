@@ -735,7 +735,7 @@ func (l *EventLogStore) codeIntelligenceWeeklyUsersCount(ctx context.Context, ev
 }
 
 var codeIntelWeeklyUsersQuery = `
--- source: internal/database/event_logs.go:codeIntelligenceWAU
+-- source: internal/database/event_logs.go:codeIntelligenceWeeklyUsersCount
 SELECT COUNT(DISTINCT ` + userIDQueryFragment + `)
 FROM event_logs
 WHERE
