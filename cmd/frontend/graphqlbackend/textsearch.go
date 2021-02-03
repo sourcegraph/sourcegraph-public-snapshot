@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"reflect"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -338,13 +337,7 @@ func searchFilesInReposBatch(ctx context.Context, args *search.TextParameters) (
 }
 
 // searchFilesInRepos searches a set of repos for a pattern.
-func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream Streamer) (finalErr error) {
-	var (
-		wg sync.WaitGroup
-
-		mu        sync.Mutex
-		searchErr error
-	)
+func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream Streamer) (err error) {
 	if mockSearchFilesInRepos != nil {
 		results, mockStats, err := mockSearchFilesInRepos(args)
 		stream.Send(SearchEvent{
@@ -359,7 +352,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 
 	tr, ctx := trace.New(ctx, "searchFilesInRepos", fmt.Sprintf("query: %s", args.PatternInfo.Pattern))
 	defer func() {
-		tr.SetError(finalErr)
+		tr.SetError(err)
 		tr.Finish()
 	}()
 	fields := querytypes.Fields(args.Query.Fields())
@@ -385,7 +378,6 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 			repos: &indexedRepoRevs{},
 		}
 	} else {
-		var err error
 		indexed, err = newIndexedSearchRequest(ctx, args, indexedTyp)
 		if err != nil {
 			return err
@@ -437,84 +429,44 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 		}
 	}
 
-	setError := func(ctx context.Context, source fmt.Stringer, err error) {
-		if err == nil {
-			return
-		}
-
-		if ctx.Err() == context.Canceled {
-			// Our request has been canceled (another backend had a fatal
-			// error, or otherwise), so we can just ignore these
-			// results.
-			return
-		}
-
-		mu.Lock()
-		defer mu.Unlock()
-
-		// Check if we are the first error found.
-		if searchErr == nil && ctx.Err() == nil {
-			searchErr = errors.Wrapf(err, "failed to search %s", source.String())
-			tr.LazyPrintf("cancel due to error: %v", searchErr)
-			cleanup()
-		}
-	}
-
 	// Indexed regex and literal search go via zoekt
 	isIndexedTextSearch := args.Mode != search.SearcherOnly && !args.PatternInfo.IsStructuralPat
 	// Structural search goes via zoekt then searcher.
 	isStructuralSearch := args.Mode != search.SearcherOnly && args.PatternInfo.IsStructuralPat
 
+	g, ctx := errgroup.WithContext(ctx)
+
 	if isIndexedTextSearch {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			err := indexed.Search(ctx, stream)
-			if err != nil {
-				setError(ctx, stringerFunc("indexed"), err)
-				tr.LogFields(otlog.Error(err))
-			}
-		}()
+		g.Go(func() error {
+			return indexed.Search(ctx, stream)
+		})
 	}
 
 	if isStructuralSearch && args.PatternInfo.CombyRule != `where "backcompat" == "backcompat"` {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-
+		g.Go(func() error {
 			repos := make([]*search.RepositoryRevisions, 0, len(indexed.Repos()))
 			for _, repo := range indexed.Repos() {
 				repos = append(repos, repo)
 			}
 
-			err := callSearcherOverRepos(ctx, args, stream, repos, nil)
-			if err != nil {
-				setError(ctx, stringerFunc("structural-zoekt"), err)
-			}
-		}()
+			return callSearcherOverRepos(ctx, args, stream, repos, nil)
+		})
 	} else if isStructuralSearch {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			err := structuralSearchBackcompt(ctx, args, stream, indexed)
-			if err != nil {
-				setError(ctx, stringerFunc("structural-indexed"), err)
-			}
-		}()
+		g.Go(func() error {
+			return structuralSearchBackcompt(ctx, args, stream, indexed)
+		})
 	}
 
 	// This guard disables
 	// - unindexed structural search
 	// - unindexed search of negated content
 	if !args.PatternInfo.IsStructuralPat {
-		if err := callSearcherOverRepos(ctx, args, stream, searcherRepos, nil); err != nil {
-			setError(ctx, stringerFunc("searcher"), err)
-		}
+		g.Go(func() error {
+			return callSearcherOverRepos(ctx, args, stream, searcherRepos, nil)
+		})
 	}
 
-	wg.Wait()
-
-	return searchErr
+	return g.Wait()
 }
 
 // callSearcherOverRepos calls searcher on searcherRepos.
