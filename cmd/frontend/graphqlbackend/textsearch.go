@@ -496,50 +496,9 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			source := stringerFunc("structural-indexed")
-			err := indexed.Search(ctx, StreamFunc(func(event SearchEvent) {
-				tr.LogFields(otlog.Int("matches.len", len(event.Results)))
-				stream.Send(SearchEvent{
-					Stats: event.Stats,
-				})
-
-				if len(event.Results) == 0 {
-					return
-				}
-
-				// For structural search, we run callSearcherOverRepos
-				// over the set of repos and files known to contain
-				// parts of the pattern as determined by Zoekt.
-
-				// A partition of {repo name => file list} that we will build from Zoekt matches
-				partition := make(map[string][]string)
-				var repos []*search.RepositoryRevisions
-
-				for _, m := range event.Results {
-					fm, ok := m.ToFileMatch()
-					if !ok {
-						setError(ctx, source, fmt.Errorf("structual search: Events from indexed.Search could not be converted to FileMatch"))
-						continue
-					}
-					name := string(fm.Repo.Name)
-					partition[name] = append(partition[name], fm.JPath)
-				}
-
-				// Filter Zoekt repos that didn't contain matches
-				for _, repo := range indexed.Repos() {
-					if _, ok := partition[string(repo.Repo.Name)]; ok {
-						repos = append(repos, repo)
-					}
-				}
-
-				err := callSearcherOverRepos(ctx, args, stream, repos, partition)
-				if err != nil {
-					setError(ctx, source, err)
-				}
-			}))
+			err := structuralSearchBackcompt(ctx, args, stream, indexed)
 			if err != nil {
-				setError(ctx, source, err)
-				tr.LogFields(otlog.Error(err))
+				setError(ctx, stringerFunc("structural-indexed"), err)
 			}
 		}()
 	}
@@ -657,6 +616,63 @@ func callSearcherOverRepos(
 	})
 
 	return g.Wait()
+}
+
+// structuralSearchBackcompt is the old way we did structural search. It runs
+// a query through zoekt first to get back a list of filepaths to search. Then
+// calls searcher limiting it to just those files.
+func structuralSearchBackcompt(ctx context.Context, args *search.TextParameters, stream Streamer, indexed *indexedSearchRequest) (err error) {
+	tr, ctx := trace.New(ctx, "structuralSearchBackcompt", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	g, ctx := errgroup.WithContext(ctx)
+
+	err = indexed.Search(ctx, StreamFunc(func(event SearchEvent) {
+		g.Go(func() error {
+			tr.LogFields(otlog.Int("matches.len", len(event.Results)))
+			stream.Send(SearchEvent{
+				Stats: event.Stats,
+			})
+
+			if len(event.Results) == 0 {
+				return nil
+			}
+
+			// For structural search, we run callSearcherOverRepos
+			// over the set of repos and files known to contain
+			// parts of the pattern as determined by Zoekt.
+
+			// A partition of {repo name => file list} that we will build from Zoekt matches
+			partition := make(map[string][]string)
+			var repos []*search.RepositoryRevisions
+
+			for _, m := range event.Results {
+				fm, ok := m.ToFileMatch()
+				if !ok {
+					return errors.New("structual search: Events from indexed.Search could not be converted to FileMatch")
+				}
+				name := string(fm.Repo.Name)
+				partition[name] = append(partition[name], fm.JPath)
+			}
+
+			// Filter Zoekt repos that didn't contain matches
+			for _, repo := range indexed.Repos() {
+				if _, ok := partition[string(repo.Repo.Name)]; ok {
+					repos = append(repos, repo)
+				}
+			}
+
+			return callSearcherOverRepos(ctx, args, stream, repos, partition)
+		})
+	}))
+
+	if gErr := g.Wait(); gErr != nil {
+		err = gErr
+	}
+	return err
 }
 
 // limitSearcherRepos limits the number of repo@revs searched by the unindexed searcher codepath.
