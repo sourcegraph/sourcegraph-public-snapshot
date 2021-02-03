@@ -1,5 +1,5 @@
 import React from 'react'
-import { ButtonDropdown, DropdownToggle } from 'reactstrap'
+import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 interface SearchContextDropdownProps {}
 
@@ -8,7 +8,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
     return (
         <>
             <ButtonDropdown>
-                <DropdownToggle className="btn btn-link text-monospace search-context-dropdown__button">
+                <DropdownToggle className="text-monospace search-context-dropdown__button" color="link">
                     <span className="search-filter-keyword">context:</span>
                     {context}
                 </DropdownToggle>
