@@ -119,8 +119,8 @@ select dump_id, path, data FROM lsif_data_documents WHERE dump_id = %s AND path 
 
 // TODO(beyang): introduce migration for key on dump_id column
 
-func symbolDataToSymbol(path string, ranges map[ID]RangeData, d DocumentSymbolData) (*Symbol, error) {
-	rng, ok := ranges[d.RangeID]
+func symbolDataToSymbol(path string, docData DocumentData, d DocumentSymbolData) (*Symbol, error) {
+	rng, ok := docData.Ranges[d.RangeID]
 	if !ok {
 		return nil, fmt.Errorf("range %v not found", d.RangeID)
 	}
@@ -130,12 +130,13 @@ func symbolDataToSymbol(path string, ranges map[ID]RangeData, d DocumentSymbolDa
 	}
 	children := make([]*Symbol, len(d.Children))
 	for i, child := range d.Children {
-		childSymbol, err := symbolDataToSymbol(path, ranges, child)
+		childSymbol, err := symbolDataToSymbol(path, docData, child)
 		if err != nil {
 			return nil, err
 		}
 		children[i] = childSymbol
 	}
+
 	return &Symbol{
 		Text:   rng.Tag.Text,
 		Detail: rng.Tag.Detail,
@@ -164,17 +165,24 @@ func (s *Store) Symbols(ctx context.Context, bundleID int, path string) ([]*Symb
 	}
 
 	// Convert to symbols
-	symbols := make([]*Symbol, 0, numSymbols)
+	symbols := make([]struct {
+		symbol  *Symbol
+		docData *QualifiedDocumentData
+	}, 0, numSymbols)
 	for _, docData := range scannedDocumentData {
 		for _, symData := range docData.Document.Symbols {
-			symbol, err := symbolDataToSymbol(path, docData.Document.Ranges, symData)
+			symbol, err := symbolDataToSymbol(path, docData.Document, symData)
 			if err != nil {
 				return nil, err
 			}
-			symbols = append(symbols, symbol)
+			symbols = append(symbols, struct {
+				symbol  *Symbol
+				docData *QualifiedDocumentData
+			}{symbol: symbol, docData: &docData})
 		}
 	}
 
+	// NEXT:
 	// TODO: associate with monikers (based on ranges), coalesce by moniker
 
 	return symbols, nil
