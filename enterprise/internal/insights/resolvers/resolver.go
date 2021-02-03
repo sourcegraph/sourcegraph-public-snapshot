@@ -5,21 +5,21 @@ import (
 	"errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 // Resolver is the GraphQL resolver of all things related to Insights.
 type Resolver struct {
-	store        *store.Store
+	Store        *store.Store
 	settingStore *database.SettingStore
 }
 
 // New returns a new Resolver whose store uses the given Timescale and Postgres DBs.
-func New(timescale, postgres dbutil.DB) graphqlbackend.InsightsResolver {
+func New(timescale, postgres dbutil.DB) *Resolver {
 	return &Resolver{
-		store:        store.New(timescale),
+		Store:        store.New(timescale),
 		settingStore: database.Settings(postgres),
 	}
 }
