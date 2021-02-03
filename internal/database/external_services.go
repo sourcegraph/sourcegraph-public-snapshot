@@ -801,13 +801,47 @@ func (e *ExternalServiceStore) GetLastSyncError(ctx context.Context, id int64) (
 	q := sqlf.Sprintf(`
 SELECT failure_message from external_service_sync_jobs
 WHERE external_service_id = %d
-AND state IN ('completed','errored')
+AND state IN ('completed','errored','failed')
 ORDER BY finished_at DESC
 LIMIT 1
 `, id)
 
 	lastError, _, err := basestore.ScanFirstNullString(e.Query(ctx, q))
 	return lastError, err
+}
+
+// ListSyncErrors returns the most recent failure message for each external
+// service. If the latest run did not have an error, it will be excluded from the
+// map.
+func (e *ExternalServiceStore) ListSyncErrors(ctx context.Context) (map[int64]string, error) {
+	q := `SELECT DISTINCT ON(external_service_id) external_service_id, failure_message 
+FROM external_service_sync_jobs
+WHERE state IN ('completed','errored','failed')
+AND finished_at IS NOT NULL
+ORDER BY external_service_id, finished_at DESC`
+
+	rows, err := e.Query(ctx, sqlf.Sprintf(q))
+	if err != nil {
+		return nil, err
+	}
+
+	messages := make(map[int64]string)
+
+	for rows.Next() {
+		var svcID int64
+		var message sql.NullString
+		if err := rows.Scan(&svcID, &message); err != nil {
+			return nil, err
+		}
+		if message.Valid {
+			messages[svcID] = message.String
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return messages, nil
 }
 
 // List returns external services under given namespace.
