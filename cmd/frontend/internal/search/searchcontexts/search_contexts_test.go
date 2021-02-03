@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestResolvingValidSearchContextSpecs(t *testing.T) {
@@ -63,6 +64,26 @@ func TestResolvingInvalidSearchContextSpecs(t *testing.T) {
 			}
 			if err.Error() != tt.wantErr {
 				t.Fatalf("err: got %q, expected %q", err.Error(), tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestConstructingSearchContextSpecs(t *testing.T) {
+	tests := []struct {
+		name                  string
+		searchContext         *types.SearchContext
+		wantSearchContextSpec string
+	}{
+		{name: "global search context", searchContext: GetGlobalSearchContext(), wantSearchContextSpec: "global"},
+		{name: "user search context", searchContext: &types.SearchContext{Name: "user"}, wantSearchContextSpec: "@user"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			searchContextSpec := GetSearchContextSpec(tt.searchContext)
+			if searchContextSpec != tt.wantSearchContextSpec {
+				t.Fatalf("got %q, expected %q", searchContextSpec, tt.wantSearchContextSpec)
 			}
 		})
 	}

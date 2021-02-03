@@ -4833,6 +4833,11 @@ type SearchContext {
     """
     id: ID!
     """
+    Fully-qualified search context spec for use when querying.
+    Examples: global, @username, @username/ctx, and @org/ctx.
+    """
+    spec: String!
+    """
     The name of the search context. The "username" part in @username, or
     the "searchContext" part in @username/searchContext.
     """

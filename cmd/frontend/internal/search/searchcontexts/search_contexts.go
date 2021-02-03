@@ -10,7 +10,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-const globalSearchContextName = "global"
+const (
+	globalSearchContextName = "global"
+	searchContextSpecPrefix = "@"
+)
 
 type getNamespaceByNameFunc func(ctx context.Context, name string) (*database.Namespace, error)
 
@@ -21,7 +24,7 @@ func ResolveSearchContextSpec(ctx context.Context, searchContextSpec string, get
 
 	if IsGlobalSearchContextSpec(searchContextSpec) {
 		return GetGlobalSearchContext(), nil
-	} else if strings.HasPrefix(searchContextSpec, "@") {
+	} else if strings.HasPrefix(searchContextSpec, searchContextSpecPrefix) {
 		name := searchContextSpec[1:]
 		namespace, err := getNamespaceByName(ctx, name)
 		if err != nil {
@@ -40,10 +43,17 @@ func IsGlobalSearchContextSpec(searchContextSpec string) bool {
 	return searchContextSpec == "" || searchContextSpec == globalSearchContextName
 }
 
+func IsGlobalSearchContext(searchContext *types.SearchContext) bool {
+	return searchContext != nil && searchContext.Name == globalSearchContextName
+}
+
 func GetGlobalSearchContext() *types.SearchContext {
 	return &types.SearchContext{Name: globalSearchContextName}
 }
 
-func IsGlobalSearchContext(searchContext *types.SearchContext) bool {
-	return searchContext != nil && searchContext.Name == globalSearchContextName
+func GetSearchContextSpec(searchContext *types.SearchContext) string {
+	if IsGlobalSearchContext(searchContext) {
+		return searchContext.Name
+	}
+	return searchContextSpecPrefix + searchContext.Name
 }

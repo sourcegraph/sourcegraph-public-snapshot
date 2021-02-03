@@ -56,6 +56,10 @@ func (r searchContextResolver) AutoDefined(ctx context.Context) bool {
 	return r.sc.ID == 0
 }
 
+func (r searchContextResolver) Spec(ctx context.Context) string {
+	return searchcontexts.GetSearchContextSpec(&r.sc)
+}
+
 func (r *schemaResolver) SearchContexts(ctx context.Context) ([]*searchContextResolver, error) {
 	if !envvar.SourcegraphDotComMode() {
 		return []*searchContextResolver{}, nil
