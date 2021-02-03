@@ -349,7 +349,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
         <>
             <div ref={setContainer} className="monaco-query-input-container">
                 {props.showSearchContext && <SearchContextDropdown />}
-                <div className="monaco-query-input-container__focus-container">
+                <div className="monaco-query-input-container__focus-container flex-shrink-past-contents">
                     <div className="flex-grow-1 flex-shrink-past-contents" onFocus={onFocus}>
                         <MonacoEditor
                             id="monaco-query-input"
