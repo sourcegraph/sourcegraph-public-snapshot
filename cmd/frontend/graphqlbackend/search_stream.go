@@ -27,8 +27,6 @@ type limitStream struct {
 	remaining atomic.Int64
 }
 
-// Send sends an event on the stream. If the limit is reached, a final event with
-// IsLimitHit = true is sent.
 func (s *limitStream) Send(event SearchEvent) {
 	s.s.Send(event)
 
@@ -49,14 +47,19 @@ func (s *limitStream) Send(event SearchEvent) {
 	}
 }
 
-// WithLimit returns a Streamer and a context. The Streamer is limited to `limit`
-// results. Once more than `limit` results have been sent on the stream, the
-// returned context is canceled.
-func WithLimit(ctx context.Context, stream Streamer, limit int) (context.Context, Streamer, context.CancelFunc) {
+// WithLimit returns a child Stream of parent as well as a child Context of
+// ctx. The child stream passes on all events to parent. Once more than limit
+// results are sent on the child stream the context is canceled and an
+// IsLimitHit event is sent.
+//
+// Canceling this context releases resources associated with it, so code
+// should call cancel as soon as the operations running in this Context and
+// Stream are complete.
+func WithLimit(ctx context.Context, parent Streamer, limit int) (context.Context, Streamer, context.CancelFunc) {
 	ctx, cancel := context.WithCancel(ctx)
-	newLimitStream := &limitStream{cancel: cancel, s: stream}
-	newLimitStream.remaining.Store(int64(limit))
-	return ctx, newLimitStream, cancel
+	stream := &limitStream{cancel: cancel, s: parent}
+	stream.remaining.Store(int64(limit))
+	return ctx, stream, cancel
 }
 
 // StreamFunc is a convenience function to create a stream receiver from a
