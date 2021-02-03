@@ -594,7 +594,7 @@ func (s *Server) handleStatusMessages(w http.ResponseWriter, r *http.Request) {
 		Messages: []protocol.StatusMessage{},
 	}
 
-	notCloned, err := s.Store.CountNotClonedRepos(r.Context())
+	notCloned, err := s.RepoStore.Count(r.Context(), database.ReposListOptions{NoCloned: true})
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
 		return
