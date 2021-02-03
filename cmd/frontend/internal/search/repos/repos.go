@@ -474,8 +474,8 @@ func computeExcludedRepositories(ctx context.Context, q query.QueryInfo, op data
 	var numExcludedForks, numExcludedArchived int
 
 	forkStr, _ := q.StringValue(query.FieldFork)
-	fork := ParseYesNoOnly(forkStr)
-	if fork == Invalid && !ExactlyOneRepo(op.IncludePatterns) {
+	fork := query.ParseYesNoOnly(forkStr)
+	if fork == query.Invalid && !ExactlyOneRepo(op.IncludePatterns) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -493,8 +493,8 @@ func computeExcludedRepositories(ctx context.Context, q query.QueryInfo, op data
 	}
 
 	archivedStr, _ := q.StringValue(query.FieldArchived)
-	archived := ParseYesNoOnly(archivedStr)
-	if archived == Invalid && !ExactlyOneRepo(op.IncludePatterns) {
+	archived := query.ParseYesNoOnly(archivedStr)
+	if archived == query.Invalid && !ExactlyOneRepo(op.IncludePatterns) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
