@@ -1,4 +1,4 @@
-# Creating multiple changesets in large repositories
+# Creating changesets per project in monorepos
 
 <style>
 .markdown-body h2 { margin-top: 50px; }
@@ -9,7 +9,7 @@
 
 ## Overview
 
-Large repositories often contain multiple projects and it can make sense to run the campaign spec [`steps`][steps] separately in each project and create one changeset per project.
+Large repositories often contain multiple projects, making them so-called monorepos. It can make sense to run the campaign spec [`steps`][steps] separately in each project and create one changeset per project.
 
 That can be done by using [`workspaces`][workspaces] in the campaign specs in two steps:
 
