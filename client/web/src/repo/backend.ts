@@ -210,9 +210,9 @@ export const fetchHighlightedFileLineRanges = memoizeObservable(
         ),
     context =>
         makeRepoURI(context) +
-        `?disableTimeout=${String(context.disableTimeout)}&isLightTheme=${String(context.isLightTheme)}&ranges=${String(
-            context.ranges
-        )}`
+        `?disableTimeout=${String(context.disableTimeout)}&isLightTheme=${String(
+            context.isLightTheme
+        )}&ranges=${context.ranges.map(range => `${range.startLine}:${range.endLine}`).join(',')}`
 )
 
 export const fetchFileExternalLinks = memoizeObservable(
