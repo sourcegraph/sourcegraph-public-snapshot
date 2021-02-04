@@ -24,7 +24,6 @@ import (
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 var zoektOnce sync.Once
@@ -219,16 +218,6 @@ func zoektSearch(ctx context.Context, args *search.TextPatternInfo, repoBranches
 	if len(resp.Files) == 0 {
 		return nil, false, nil, nil
 	}
-
-	matchLimiter := zoektutil.MatchLimiter{Limit: int(args.FileMatchLimit)}
-	repoRevFunc := func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool) {
-		return repo, revs, false
-	}
-
-	var files []zoekt.FileMatch
-	partial, files = matchLimiter.Slice(resp.Files, repoRevFunc)
-	limitHit = limitHit || len(partial) > 0
-	resp.Files = files
 
 	maxLineMatches := 25 + k
 	for _, file := range resp.Files {

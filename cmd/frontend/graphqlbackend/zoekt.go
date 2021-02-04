@@ -291,12 +291,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 		}
 	}()
 
-	var (
-		foundResults bool
-		matchLimiter = zoektutil.MatchLimiter{
-			Limit: int(args.PatternInfo.FileMatchLimit),
-		}
-	)
+	foundResults := false
 
 	for event := range events {
 		if event.Error != nil {
@@ -318,7 +313,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 		maxLineMatches := 25 + k
 		maxLineFragmentMatches := 3 + k
 
-		var getRepoInputRev zoektutil.RepoRevFunc
+		var getRepoInputRev func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool)
 
 		if args.Mode == search.ZoektGlobalSearch {
 			m := map[string]*search.RepositoryRevisions{}
@@ -350,18 +345,9 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 			}
 		}
 
-		partial, files := matchLimiter.Slice(files, getRepoInputRev)
-		// Partial is populated with repositories we may have not fully
-		// searched due to limits.
-
 		var statusMap search.RepoStatusMap
-		for r := range partial {
-			statusMap.Update(r, search.RepoStatusLimitHit)
-		}
-
-		limitHit = limitHit || len(partial) > 0
-
 		lastID := api.RepoID(-1) // PERF: avoid Update call if we have the same repository
+
 		matches := make([]SearchResultResolver, 0, len(files))
 		repoResolvers := make(RepositoryResolverCache)
 		for _, file := range files {
