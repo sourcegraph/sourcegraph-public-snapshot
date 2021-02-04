@@ -252,7 +252,7 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                             />
                             {this.shouldShowOldPasswordInput() && (
                                 <div className="form-group">
-                                    <label>Old password</label>
+                                    <label htmlFor="oldPassword">Old password</label>
                                     <PasswordInput
                                         value={this.state.oldPassword}
                                         onChange={this.onOldPasswordFieldChange}
@@ -267,7 +267,7 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                             )}
 
                             <div className="form-group">
-                                <label>New password</label>
+                                <label htmlFor="newPassword">New password</label>
                                 <PasswordInput
                                     value={this.state.newPassword}
                                     onChange={this.onNewPasswordFieldChange}
@@ -281,7 +281,7 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                                 <small className="form-help text-muted">At least 12 characters</small>
                             </div>
                             <div className="form-group">
-                                <label>Confirm new password</label>
+                                <label htmlFor="newPasswordConfirmation">Confirm new password</label>
                                 <PasswordInput
                                     value={this.state.newPasswordConfirmation}
                                     onChange={this.onNewPasswordConfirmationFieldChange}
