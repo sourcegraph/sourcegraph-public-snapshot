@@ -60,7 +60,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	env.HandleHelpFlag()
 
 	if err := profiler.Init(); err != nil {
-		log.Printf("failed to start profiler: %v", err)
+		log.Fatalf("failed to start profiler: %v", err)
 	}
 
 	logging.Init()
@@ -180,7 +180,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		}
 
 		if server.GitLabDotComSource == nil {
-			log.Printf("No gitlab.com external service configured with a token")
+			log.Fatalf("No gitlab.com external service configured with a token")
 		}
 	}
 
