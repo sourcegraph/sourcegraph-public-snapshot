@@ -4834,25 +4834,20 @@ type VersionContext {
 """
 (experimental) A search context. Specifies a set of repositories to be searched.
 """
-type SearchContext {
+type SearchContext implements Node {
     """
-    The search context ID.
+    The unique id of the search context.
     """
     id: ID!
+    """
+    The description of the search context.
+    """
+    description: String!
     """
     Fully-qualified search context spec for use when querying.
     Examples: global, @username, @username/ctx, and @org/ctx.
     """
     spec: String!
-    """
-    The name of the search context. The "username" part in @username, or
-    the "searchContext" part in @username/searchContext.
-    """
-    name: String!
-    """
-    The namespace of the search context. Not present for global search context.
-    """
-    namespace: Namespace
     """
     Whether the search context is autodefined by Sourcegraph. Current examples include:
     global search context ("global"), default user search context ("@user"), and
