@@ -577,7 +577,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 			}
 
 			if err := callSearcherOverRepos(indexed.Unindexed, nil, false); err != nil {
-				setError(ctx, stringerFunc("structural-zoekt"), err)
+				setError(ctx, stringerFunc("structural-unindexed"), err)
 			}
 		}()
 	} else if isStructuralSearch {
