@@ -125,7 +125,13 @@ func (s *Serve) Repos() ([]Repo, error) {
 	var repos []Repo
 	var reposRootIsRepo bool
 
-	err := filepath.Walk(s.Root, func(path string, fi os.FileInfo, fileErr error) error {
+	root, err := filepath.EvalSymlinks(s.Root)
+	if err != nil {
+		s.Info.Printf("WARN: ignoring error searching %s: %v", root, err)
+		return nil, nil
+	}
+
+	err = filepath.Walk(root, func(path string, fi os.FileInfo, fileErr error) error {
 		if fileErr != nil {
 			s.Info.Printf("WARN: ignoring error searching %s: %v", path, fileErr)
 			return nil
@@ -150,11 +156,11 @@ func (s *Serve) Repos() ([]Repo, error) {
 			return nil
 		}
 
-		subpath, err := filepath.Rel(s.Root, path)
+		subpath, err := filepath.Rel(root, path)
 		if err != nil {
 			// According to WalkFunc docs, path is always filepath.Join(root,
 			// subpath). So Rel should always work.
-			s.Info.Fatalf("filepath.Walk returned %s which is not relative to %s: %v", path, s.Root, err)
+			s.Info.Fatalf("filepath.Walk returned %s which is not relative to %s: %v", path, root, err)
 		}
 
 		name := filepath.ToSlash(subpath)
@@ -190,7 +196,7 @@ func (s *Serve) Repos() ([]Repo, error) {
 
 	// Update all names to be relative to the parent of reposRoot. This is to
 	// give a better name than "." for repos root
-	abs, err := filepath.Abs(s.Root)
+	abs, err := filepath.Abs(root)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get the absolute path of reposRoot: %w", err)
 	}

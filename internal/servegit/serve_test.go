@@ -80,6 +80,39 @@ func TestReposHandler(t *testing.T) {
 			}
 			testReposHandler(t, h, want)
 		})
+
+		// Ensure everything still works if root is a symlink
+		t.Run("rooted-"+tc.name, func(t *testing.T) {
+			root := gitInitRepos(t, tc.repos...)
+
+			// This is the difference, we create a symlink for root
+			{
+				tmp, err := ioutil.TempDir("", "")
+				if err != nil {
+					t.Fatal(err)
+				}
+				t.Cleanup(func() { os.RemoveAll(tmp) })
+
+				symlink := filepath.Join(tmp, "symlink-root")
+				if err := os.Symlink(root, symlink); err != nil {
+					t.Fatal(err)
+				}
+				root = symlink
+			}
+
+			h := (&Serve{
+				Info:  testLogger(t),
+				Debug: discardLogger,
+				Addr:  testAddress,
+				Root:  root,
+			}).handler()
+
+			var want []Repo
+			for _, name := range tc.repos {
+				want = append(want, Repo{Name: name, URI: path.Join("/repos", name)})
+			}
+			testReposHandler(t, h, want)
+		})
 	}
 }
 
