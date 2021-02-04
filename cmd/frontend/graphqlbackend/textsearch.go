@@ -384,12 +384,6 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 		}
 	}
 
-	// if there are no indexed repos and this is a structural search
-	// query, there will be no results. Raise a friendly alert.
-	if args.PatternInfo.IsStructuralPat && len(indexed.Repos()) == 0 {
-		return errors.New("no indexed repositories for structural search")
-	}
-
 	if args.PatternInfo.IsEmpty() {
 		// Empty query isn't an error, but it has no results.
 		return nil
@@ -432,7 +426,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 	// - unindexed search of negated content
 	if !args.PatternInfo.IsStructuralPat {
 		g.Go(func() error {
-      return callSearcherOverRepos(ctx, args, stream, indexed.Unindexed, nil, false)
+			return callSearcherOverRepos(ctx, args, stream, indexed.Unindexed, nil, false)
 		})
 	}
 
