@@ -457,7 +457,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 		})
 	} else if isStructuralSearch {
 		g.Go(func() error {
-			return structuralSearchBackcompt(ctx, args, stream, indexed)
+			return structuralSearchBackcompat(ctx, args, stream, indexed)
 		})
 	}
 
@@ -575,10 +575,10 @@ func callSearcherOverRepos(
 	return g.Wait()
 }
 
-// structuralSearchBackcompt is the old way we did structural search. It runs
+// structuralSearchBackcompat is the old way we did structural search. It runs
 // a query through zoekt first to get back a list of filepaths to search. Then
 // calls searcher limiting it to just those files.
-func structuralSearchBackcompt(ctx context.Context, args *search.TextParameters, stream Streamer, indexed *indexedSearchRequest) (err error) {
+func structuralSearchBackcompat(ctx context.Context, args *search.TextParameters, stream Streamer, indexed *indexedSearchRequest) (err error) {
 	tr, ctx := trace.New(ctx, "structuralSearchBackcompt", "")
 	defer func() {
 		tr.SetError(err)
