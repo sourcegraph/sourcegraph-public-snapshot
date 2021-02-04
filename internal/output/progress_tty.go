@@ -30,8 +30,8 @@ type progressTTY struct {
 func (p *progressTTY) Complete() {
 	p.spinner.stop()
 
-	p.o.lock.Lock()
-	defer p.o.lock.Unlock()
+	p.o.Lock()
+	defer p.o.Unlock()
 
 	for _, bar := range p.bars {
 		bar.Value = bar.Max
@@ -44,8 +44,8 @@ func (p *progressTTY) Close() { p.Destroy() }
 func (p *progressTTY) Destroy() {
 	p.spinner.stop()
 
-	p.o.lock.Lock()
-	defer p.o.lock.Unlock()
+	p.o.Lock()
+	defer p.o.Unlock()
 
 	p.moveToOrigin()
 	for i := 0; i < len(p.bars); i += 1 {
@@ -57,8 +57,8 @@ func (p *progressTTY) Destroy() {
 }
 
 func (p *progressTTY) SetLabel(i int, label string) {
-	p.o.lock.Lock()
-	defer p.o.lock.Unlock()
+	p.o.Lock()
+	defer p.o.Unlock()
 
 	p.bars[i].Label = label
 	p.bars[i].labelWidth = runewidth.StringWidth(label)
@@ -66,8 +66,8 @@ func (p *progressTTY) SetLabel(i int, label string) {
 }
 
 func (p *progressTTY) SetLabelAndRecalc(i int, label string) {
-	p.o.lock.Lock()
-	defer p.o.lock.Unlock()
+	p.o.Lock()
+	defer p.o.Unlock()
 
 	p.bars[i].Label = label
 	p.bars[i].labelWidth = runewidth.StringWidth(label)
@@ -77,8 +77,8 @@ func (p *progressTTY) SetLabelAndRecalc(i int, label string) {
 }
 
 func (p *progressTTY) SetValue(i int, v float64) {
-	p.o.lock.Lock()
-	defer p.o.lock.Unlock()
+	p.o.Lock()
+	defer p.o.Unlock()
 
 	p.bars[i].Value = v
 	p.drawInSitu()
@@ -103,8 +103,8 @@ func (p *progressTTY) VerboseLine(line FancyLine) {
 }
 
 func (p *progressTTY) Write(s string) {
-	p.o.lock.Lock()
-	defer p.o.lock.Unlock()
+	p.o.Lock()
+	defer p.o.Unlock()
 
 	p.moveToOrigin()
 	p.o.clearCurrentLine()
@@ -113,8 +113,8 @@ func (p *progressTTY) Write(s string) {
 }
 
 func (p *progressTTY) Writef(format string, args ...interface{}) {
-	p.o.lock.Lock()
-	defer p.o.lock.Unlock()
+	p.o.Lock()
+	defer p.o.Unlock()
 
 	p.moveToOrigin()
 	p.o.clearCurrentLine()
@@ -124,8 +124,8 @@ func (p *progressTTY) Writef(format string, args ...interface{}) {
 }
 
 func (p *progressTTY) WriteLine(line FancyLine) {
-	p.o.lock.Lock()
-	defer p.o.lock.Unlock()
+	p.o.Lock()
+	defer p.o.Unlock()
 
 	p.moveToOrigin()
 	p.o.clearCurrentLine()
@@ -151,8 +151,8 @@ func newProgressTTY(bars []*ProgressBar, o *Output, opts *ProgressOpts) *progres
 	p.determineEmojiWidth()
 	p.determineLabelWidth()
 
-	p.o.lock.Lock()
-	defer p.o.lock.Unlock()
+	p.o.Lock()
+	defer p.o.Unlock()
 
 	p.draw()
 
@@ -165,8 +165,8 @@ func newProgressTTY(bars []*ProgressBar, o *Output, opts *ProgressOpts) *progres
 			func() {
 				p.pendingEmoji = s
 
-				p.o.lock.Lock()
-				defer p.o.lock.Unlock()
+				p.o.Lock()
+				defer p.o.Unlock()
 
 				p.moveToOrigin()
 				p.draw()

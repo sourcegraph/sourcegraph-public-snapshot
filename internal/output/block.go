@@ -34,8 +34,8 @@ func newBlock(indent int, o *Output) *Block {
 }
 
 func (b *Block) Close() {
-	b.unwrapped.lock.Lock()
-	defer b.unwrapped.lock.Unlock()
+	b.unwrapped.Lock()
+	defer b.unwrapped.Unlock()
 
 	// This is a little tricky: output from Writer methods includes a trailing
 	// newline, so we need to trim that so we don't output extra blank lines.

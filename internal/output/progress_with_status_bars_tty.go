@@ -29,8 +29,8 @@ func newProgressWithStatusBarsTTY(bars []*ProgressBar, statusBars []*StatusBar, 
 	p.determineLabelWidth()
 	p.determineStatusBarLabelWidth()
 
-	p.o.lock.Lock()
-	defer p.o.lock.Unlock()
+	p.o.Lock()
+	defer p.o.Unlock()
 
 	p.draw()
 
@@ -43,8 +43,8 @@ func newProgressWithStatusBarsTTY(bars []*ProgressBar, statusBars []*StatusBar, 
 			func() {
 				p.pendingEmoji = s
 
-				p.o.lock.Lock()
-				defer p.o.lock.Unlock()
+				p.o.Lock()
+				defer p.o.Unlock()
 
 				p.moveToOrigin()
 				p.draw()
@@ -68,8 +68,8 @@ func (p *progressWithStatusBarsTTY) Close() { p.Destroy() }
 func (p *progressWithStatusBarsTTY) Destroy() {
 	p.spinner.stop()
 
-	p.o.lock.Lock()
-	defer p.o.lock.Unlock()
+	p.o.Lock()
+	defer p.o.Unlock()
 
 	p.moveToOrigin()
 
@@ -84,8 +84,8 @@ func (p *progressWithStatusBarsTTY) Destroy() {
 func (p *progressWithStatusBarsTTY) Complete() {
 	p.spinner.stop()
 
-	p.o.lock.Lock()
-	defer p.o.lock.Unlock()
+	p.o.Lock()
+	defer p.o.Unlock()
 
 	// +1 because of the line between progress and status bars
 	for i := 0; i < p.numPrintedStatusBars+1; i += 1 {
@@ -107,8 +107,8 @@ func (p *progressWithStatusBarsTTY) lines() int {
 }
 
 func (p *progressWithStatusBarsTTY) SetLabel(i int, label string) {
-	p.o.lock.Lock()
-	defer p.o.lock.Unlock()
+	p.o.Lock()
+	defer p.o.Unlock()
 
 	p.bars[i].Label = label
 	p.bars[i].labelWidth = runewidth.StringWidth(label)
@@ -116,16 +116,16 @@ func (p *progressWithStatusBarsTTY) SetLabel(i int, label string) {
 }
 
 func (p *progressWithStatusBarsTTY) SetValue(i int, v float64) {
-	p.o.lock.Lock()
-	defer p.o.lock.Unlock()
+	p.o.Lock()
+	defer p.o.Unlock()
 
 	p.bars[i].Value = v
 	p.drawInSitu()
 }
 
 func (p *progressWithStatusBarsTTY) StatusBarResetf(i int, label, format string, args ...interface{}) {
-	p.o.lock.Lock()
-	defer p.o.lock.Unlock()
+	p.o.Lock()
+	defer p.o.Unlock()
 
 	if p.statusBars[i] != nil {
 		p.statusBars[i].Resetf(label, format, args...)
@@ -136,8 +136,8 @@ func (p *progressWithStatusBarsTTY) StatusBarResetf(i int, label, format string,
 }
 
 func (p *progressWithStatusBarsTTY) StatusBarUpdatef(i int, format string, args ...interface{}) {
-	p.o.lock.Lock()
-	defer p.o.lock.Unlock()
+	p.o.Lock()
+	defer p.o.Unlock()
 
 	if p.statusBars[i] != nil {
 		p.statusBars[i].Updatef(format, args...)
@@ -147,8 +147,8 @@ func (p *progressWithStatusBarsTTY) StatusBarUpdatef(i int, format string, args 
 }
 
 func (p *progressWithStatusBarsTTY) StatusBarCompletef(i int, format string, args ...interface{}) {
-	p.o.lock.Lock()
-	defer p.o.lock.Unlock()
+	p.o.Lock()
+	defer p.o.Unlock()
 
 	if p.statusBars[i] != nil {
 		p.statusBars[i].Completef(format, args...)
@@ -158,8 +158,8 @@ func (p *progressWithStatusBarsTTY) StatusBarCompletef(i int, format string, arg
 }
 
 func (p *progressWithStatusBarsTTY) StatusBarFailf(i int, format string, args ...interface{}) {
-	p.o.lock.Lock()
-	defer p.o.lock.Unlock()
+	p.o.Lock()
+	defer p.o.Unlock()
 
 	if p.statusBars[i] != nil {
 		p.statusBars[i].Failf(format, args...)
@@ -273,8 +273,8 @@ func (p *progressWithStatusBarsTTY) VerboseLine(line FancyLine) {
 }
 
 func (p *progressWithStatusBarsTTY) Write(s string) {
-	p.o.lock.Lock()
-	defer p.o.lock.Unlock()
+	p.o.Lock()
+	defer p.o.Unlock()
 
 	p.moveToOrigin()
 	p.o.clearCurrentLine()
@@ -283,8 +283,8 @@ func (p *progressWithStatusBarsTTY) Write(s string) {
 }
 
 func (p *progressWithStatusBarsTTY) Writef(format string, args ...interface{}) {
-	p.o.lock.Lock()
-	defer p.o.lock.Unlock()
+	p.o.Lock()
+	defer p.o.Unlock()
 
 	p.moveToOrigin()
 	p.o.clearCurrentLine()
@@ -294,8 +294,8 @@ func (p *progressWithStatusBarsTTY) Writef(format string, args ...interface{}) {
 }
 
 func (p *progressWithStatusBarsTTY) WriteLine(line FancyLine) {
-	p.o.lock.Lock()
-	defer p.o.lock.Unlock()
+	p.o.Lock()
+	defer p.o.Unlock()
 
 	p.moveToOrigin()
 	p.o.clearCurrentLine()

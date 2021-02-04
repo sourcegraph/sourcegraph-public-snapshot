@@ -33,8 +33,8 @@ func (p *pendingTTY) VerboseLine(line FancyLine) {
 }
 
 func (p *pendingTTY) Write(s string) {
-	p.o.lock.Lock()
-	defer p.o.lock.Unlock()
+	p.o.Lock()
+	defer p.o.Unlock()
 
 	p.o.moveUp(1)
 	p.o.clearCurrentLine()
@@ -43,8 +43,8 @@ func (p *pendingTTY) Write(s string) {
 }
 
 func (p *pendingTTY) Writef(format string, args ...interface{}) {
-	p.o.lock.Lock()
-	defer p.o.lock.Unlock()
+	p.o.Lock()
+	defer p.o.Unlock()
 
 	p.o.moveUp(1)
 	p.o.clearCurrentLine()
@@ -54,8 +54,8 @@ func (p *pendingTTY) Writef(format string, args ...interface{}) {
 }
 
 func (p *pendingTTY) WriteLine(line FancyLine) {
-	p.o.lock.Lock()
-	defer p.o.lock.Unlock()
+	p.o.Lock()
+	defer p.o.Unlock()
 
 	p.o.moveUp(1)
 	p.o.clearCurrentLine()
@@ -64,8 +64,8 @@ func (p *pendingTTY) WriteLine(line FancyLine) {
 }
 
 func (p *pendingTTY) Update(s string) {
-	p.o.lock.Lock()
-	defer p.o.lock.Unlock()
+	p.o.Lock()
+	defer p.o.Unlock()
 
 	p.line.format = "%s"
 	p.line.args = []interface{}{s}
@@ -76,8 +76,8 @@ func (p *pendingTTY) Update(s string) {
 }
 
 func (p *pendingTTY) Updatef(format string, args ...interface{}) {
-	p.o.lock.Lock()
-	defer p.o.lock.Unlock()
+	p.o.Lock()
+	defer p.o.Unlock()
 
 	p.line.format = format
 	p.line.args = args
@@ -90,8 +90,8 @@ func (p *pendingTTY) Updatef(format string, args ...interface{}) {
 func (p *pendingTTY) Complete(message FancyLine) {
 	p.spinner.stop()
 
-	p.o.lock.Lock()
-	defer p.o.lock.Unlock()
+	p.o.Lock()
+	defer p.o.Unlock()
 
 	p.o.moveUp(1)
 	p.o.clearCurrentLine()
@@ -103,8 +103,8 @@ func (p *pendingTTY) Close() { p.Destroy() }
 func (p *pendingTTY) Destroy() {
 	p.spinner.stop()
 
-	p.o.lock.Lock()
-	defer p.o.lock.Unlock()
+	p.o.Lock()
+	defer p.o.Unlock()
 
 	p.o.moveUp(1)
 	p.o.clearCurrentLine()
@@ -122,8 +122,8 @@ func newPendingTTY(message FancyLine, o *Output) *pendingTTY {
 	go func() {
 		for s := range p.spinner.C {
 			func() {
-				p.o.lock.Lock()
-				defer p.o.lock.Unlock()
+				p.o.Lock()
+				defer p.o.Unlock()
 
 				p.updateEmoji(s)
 

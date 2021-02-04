@@ -47,6 +47,8 @@ type Output struct {
 	lock sync.Mutex
 }
 
+var _ sync.Locker = &Output{}
+
 type OutputOpts struct {
 	// ForceColor ignores all terminal detection and enabled coloured output.
 	ForceColor bool
@@ -90,6 +92,23 @@ func NewOutput(w io.Writer, opts OutputOpts) *Output {
 	return o
 }
 
+func (o *Output) Lock() {
+	o.lock.Lock()
+
+	// Hide the cursor while we update: this reduces the jitteriness of the
+	// whole thing, and some terminals are smart enough to make the update we're
+	// about to render atomic if the cursor is hidden for a short length of
+	// time.
+	o.w.Write([]byte("\033[?25l"))
+}
+
+func (o *Output) Unlock() {
+	// Show the cursor once more.
+	o.w.Write([]byte("\033[?25h"))
+
+	o.lock.Unlock()
+}
+
 func (o *Output) Verbose(s string) {
 	if o.opts.Verbose {
 		o.Write(s)
@@ -109,21 +128,21 @@ func (o *Output) VerboseLine(line FancyLine) {
 }
 
 func (o *Output) Write(s string) {
-	o.lock.Lock()
-	defer o.lock.Unlock()
+	o.Lock()
+	defer o.Unlock()
 	fmt.Fprintln(o.w, s)
 }
 
 func (o *Output) Writef(format string, args ...interface{}) {
-	o.lock.Lock()
-	defer o.lock.Unlock()
+	o.Lock()
+	defer o.Unlock()
 	fmt.Fprintf(o.w, format, o.caps.formatArgs(args)...)
 	fmt.Fprint(o.w, "\n")
 }
 
 func (o *Output) WriteLine(line FancyLine) {
-	o.lock.Lock()
-	defer o.lock.Unlock()
+	o.Lock()
+	defer o.Unlock()
 	line.write(o.w, o.caps)
 }
 
