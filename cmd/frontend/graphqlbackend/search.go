@@ -122,6 +122,11 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (_ SearchImplem
 		}
 	}
 
+	defaultLimit := defaultMaxSearchResults
+	if args.Stream != nil {
+		defaultLimit = defaultMaxSearchResultsStreaming
+	}
+
 	return &searchResolver{
 		SearchInputs: &SearchInputs{
 			Query:          queryInfo,
@@ -130,6 +135,7 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (_ SearchImplem
 			UserSettings:   settings,
 			Pagination:     pagination,
 			PatternType:    searchType,
+			DefaultLimit:   defaultLimit,
 		},
 
 		stream: args.Stream,
@@ -263,6 +269,9 @@ type SearchInputs struct {
 	PatternType    query.SearchType
 	VersionContext *string
 	UserSettings   *schema.Settings
+
+	// DefaultLimit is the default limit to use if not specified in query.
+	DefaultLimit int
 }
 
 // searchResolver is a resolver for the GraphQL type `Search`
@@ -300,6 +309,7 @@ func (r *searchResolver) countIsSet() bool {
 }
 
 const defaultMaxSearchResults = 30
+const defaultMaxSearchResultsStreaming = 500
 const maxSearchResultsPerPaginatedRequest = 5000
 
 // MaxResults computes the limit for the query.
@@ -328,6 +338,11 @@ func (inputs SearchInputs) MaxResults() int {
 			return n
 		}
 	}
+
+	if inputs.DefaultLimit != 0 {
+		return inputs.DefaultLimit
+	}
+
 	return defaultMaxSearchResults
 }
 
