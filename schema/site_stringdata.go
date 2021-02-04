@@ -1035,6 +1035,11 @@ const SiteSchemaJSON = `{
           "description": "Whether the Service Provider should (insecurely) accept assertions from the Identity Provider without a valid signature.",
           "type": "boolean",
           "default": false
+        },
+        "allowSignup": {
+          "description": "Allows new visitors to sign up for accounts via SAML authentication. If false, users signing in via SAML must have an existing Sourcegraph account, which will be linked to their SAML identity after sign-in.",
+          "type": "boolean",
+          "!go": { "pointer": true }
         }
       }
     },
