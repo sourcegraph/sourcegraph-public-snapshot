@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -31,8 +32,8 @@ func TestSearchContexts(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := []*searchContextResolver{
-		{sc: types.SearchContext{Name: "global"}},
-		{sc: types.SearchContext{Name: username, UserID: key}},
+		{sc: *searchcontexts.GetGlobalSearchContext()},
+		{sc: *searchcontexts.GetUserSearchContext(username, key)},
 	}
 	if !reflect.DeepEqual(searchContexts, want) {
 		t.Errorf("got %v+, want %v+", searchContexts, want)
