@@ -341,6 +341,8 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
         fixedOverflowWidgets: true,
         contextmenu: false,
         links: false,
+        // Match our monospace/code style from code.scss
+        fontFamily: 'sfmono-regular, consolas, menlo, dejavu sans mono, monospace',
         // Display the cursor as a 1px line.
         cursorStyle: 'line',
         cursorWidth: 1,

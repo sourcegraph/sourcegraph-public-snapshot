@@ -7,7 +7,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
     const context = 'global'
     return (
         <>
-            <ButtonDropdown>
+            <ButtonDropdown className="search-context-dropdown__toggler">
                 <DropdownToggle className="text-monospace search-context-dropdown__button" color="link">
                     <span className="search-filter-keyword">context:</span>
                     {context}
