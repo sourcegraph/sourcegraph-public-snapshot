@@ -578,6 +578,19 @@ func TestUsers_Delete(t *testing.T) {
 				t.Fatal(err)
 			}
 
+			// Create an event log
+			err = EventLogs(db).Insert(ctx, &Event{
+				Name:            "something",
+				URL:             "http://example.com",
+				UserID:          uint32(user.ID),
+				AnonymousUserID: "",
+				Source:          "Test",
+				Timestamp:       time.Now(),
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
 			if hard {
 				// Hard delete user.
 				if err := Users(db).HardDelete(ctx, user.ID); err != nil {
@@ -632,6 +645,33 @@ func TestUsers_Delete(t *testing.T) {
 			err = Users(db).Delete(ctx, user.ID)
 			if !errcode.IsNotFound(err) {
 				t.Errorf("got error %v, want ErrUserNotFound", err)
+			}
+
+			// Check event logs
+			eventLogs, err := EventLogs(db).ListAll(ctx, EventLogsListOptions{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(eventLogs) != 1 {
+				t.Fatal("Expected 1 event log")
+			}
+			eventLog := eventLogs[0]
+			if hard {
+				// Event logs should now be anonymous
+				if *eventLog.UserID != 0 {
+					t.Error("After hard delete user id should be 0")
+				}
+				if len(eventLog.AnonymousUserID) == 0 {
+					t.Error("After hard anonymous user id should not be blank")
+				}
+			} else {
+				// Event logs are unchanged
+				if *eventLog.UserID != user.ID {
+					t.Error("After soft delete user id should be non zero")
+				}
+				if len(eventLog.AnonymousUserID) != 0 {
+					t.Error("After soft delete anonymous user id should be blank")
+				}
 			}
 		})
 	}
