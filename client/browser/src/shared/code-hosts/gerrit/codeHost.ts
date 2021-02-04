@@ -460,11 +460,10 @@ const toolbarStyles = `
 `
 
 const codeViewStyles = `
-.selection-highlight {
-    background-color: var(--mark-bg);
-}
-
 .sourcegraph-document-highlight {
     background-color: var(--secondary);
+}
+.selection-highlight {
+    background-color: var(--mark-bg);
 }
 `
