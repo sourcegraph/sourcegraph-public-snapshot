@@ -971,6 +971,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 			ReconcilerState: campaigns.ReconcilerStateFailed,
 			OwnedByCampaign: campaignID,
 			FailureMessage:  &CanceledChangesetFailureMessage,
+			AttachedTo:      []int64{campaignID},
 		})
 
 		ct.ReloadAndAssertChangeset(t, ctx, s, c2, ct.ChangesetAssertions{
@@ -979,18 +980,21 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 			OwnedByCampaign: campaignID,
 			FailureMessage:  &CanceledChangesetFailureMessage,
 			NumFailures:     1,
+			AttachedTo:      []int64{campaignID},
 		})
 
 		ct.ReloadAndAssertChangeset(t, ctx, s, c3, ct.ChangesetAssertions{
 			Repo:            repo.ID,
 			ReconcilerState: campaigns.ReconcilerStateCompleted,
 			OwnedByCampaign: campaignID,
+			AttachedTo:      []int64{campaignID},
 		})
 
 		ct.ReloadAndAssertChangeset(t, ctx, s, c4, ct.ChangesetAssertions{
 			Repo:             repo.ID,
 			ReconcilerState:  campaigns.ReconcilerStateQueued,
 			PublicationState: campaigns.ChangesetPublicationStateUnpublished,
+			AttachedTo:       []int64{campaignID},
 		})
 
 		ct.ReloadAndAssertChangeset(t, ctx, s, c5, ct.ChangesetAssertions{
@@ -998,6 +1002,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 			ReconcilerState: campaigns.ReconcilerStateFailed,
 			FailureMessage:  &CanceledChangesetFailureMessage,
 			OwnedByCampaign: campaignID,
+			AttachedTo:      []int64{campaignID},
 		})
 	})
 
@@ -1096,6 +1101,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		for changeset, want := range changesets {
 			want.Repo = repo.ID
 			want.OwnedByCampaign = campaignID
+			want.AttachedTo = []int64{campaignID}
 			ct.ReloadAndAssertChangeset(t, ctx, s, changeset, want)
 		}
 	})

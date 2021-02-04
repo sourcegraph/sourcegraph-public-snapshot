@@ -19,11 +19,14 @@ func withPeriod(s string) string {
 	return s
 }
 
-// stringPtr converts a string value to a pointer, useful for setting fields in some APIs.
-func stringPtr(s string) *string { return &s }
+// StringPtr converts a string value to a pointer, useful for setting fields in some APIs.
+func StringPtr(s string) *string { return &s }
 
 // boolPtr converts a boolean value to a pointer, useful for setting fields in some APIs.
 func boolPtr(b bool) *bool { return &b }
+
+// IntPtr converts an int64 value to a pointer, useful for setting fields in some APIs.
+func Int64Ptr(i int64) *int64 { return &i }
 
 // toMarkdown converts a Go string to Markdown, and optionally converts it to a list item if requested by forceList.
 func toMarkdown(m string, forceList bool) (string, error) {

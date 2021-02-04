@@ -35,17 +35,13 @@ func TestSearchFilesInRepos(t *testing.T) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo/one":
-			return []*FileMatchResolver{
-				{
-					uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
-				},
-			}, false, nil
+			return []*FileMatchResolver{mkFileMatchResolver(FileMatch{
+				uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
+			})}, false, nil
 		case "foo/two":
-			return []*FileMatchResolver{
-				{
-					uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
-				},
-			}, false, nil
+			return []*FileMatchResolver{mkFileMatchResolver(FileMatch{
+				uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
+			})}, false, nil
 		case "foo/empty":
 			return nil, false, nil
 		case "foo/cloning":
@@ -130,23 +126,17 @@ func TestSearchFilesInReposStream(t *testing.T) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo/one":
-			return []*FileMatchResolver{
-				{
-					uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
-				},
-			}, false, nil
+			return []*FileMatchResolver{mkFileMatchResolver(FileMatch{
+				uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
+			})}, false, nil
 		case "foo/two":
-			return []*FileMatchResolver{
-				{
-					uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
-				},
-			}, false, nil
+			return []*FileMatchResolver{mkFileMatchResolver(FileMatch{
+				uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
+			})}, false, nil
 		case "foo/three":
-			return []*FileMatchResolver{
-				{
-					uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
-				},
-			}, false, nil
+			return []*FileMatchResolver{mkFileMatchResolver(FileMatch{
+				uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
+			})}, false, nil
 		default:
 			return nil, false, errors.New("Unexpected repo")
 		}
@@ -208,11 +198,9 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo":
-			return []*FileMatchResolver{
-				{
-					uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
-				},
-			}, false, nil
+			return []*FileMatchResolver{mkFileMatchResolver(FileMatch{
+				uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
+			})}, false, nil
 		default:
 			panic("unexpected repo")
 		}

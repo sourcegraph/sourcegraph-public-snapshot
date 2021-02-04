@@ -19,7 +19,7 @@ import {
 import PlusIcon from 'mdi-react/PlusIcon'
 import { Link } from '../../../../../shared/src/components/Link'
 import { PageHeader } from '../../../components/PageHeader'
-import { CampaignsIconFlushLeft } from '../icons'
+import { CampaignsIcon } from '../icons'
 import { CampaignsListEmpty } from './CampaignsListEmpty'
 import { CampaignListIntro } from './CampaignListIntro'
 import { filter, map, tap, withLatestFrom } from 'rxjs/operators'
@@ -117,14 +117,11 @@ export const CampaignListPage: React.FunctionComponent<CampaignListPageProps> = 
     return (
         <>
             <PageHeader
-                icon={CampaignsIconFlushLeft}
-                title="Campaigns"
-                className="justify-content-end test-campaign-list-page"
+                path={[{ icon: CampaignsIcon, text: 'Campaigns' }]}
+                className="test-campaign-list-page mb-3"
                 actions={<NewCampaignButton location={location} />}
+                byline="Run custom code over hundreds of repositories and manage the resulting changesets"
             />
-            <p className="text-muted">
-                Run custom code over hundreds of repositories and manage the resulting changesets
-            </p>
             <CampaignListIntro licensed={licensed} />
             <CampaignListTabHeader selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
             {selectedTab === 'gettingStarted' && <CampaignsListEmpty />}

@@ -10,6 +10,11 @@ echo "--- build libsqlite"
 echo "--- comby install"
 ./dev/comby-install-or-upgrade.sh
 
+# For code insights test
+./dev/codeinsights-db.sh &
+export CODEINSIGHTS_PGDATASOURCE=postgres://postgres:password@127.0.0.1:5435/postgres
+export DB_STARTUP_TIMEOUT=30s # codeinsights-db needs more time to start in some instances.
+
 # Separate out time for go mod from go test
 echo "--- go mod download"
 go mod download

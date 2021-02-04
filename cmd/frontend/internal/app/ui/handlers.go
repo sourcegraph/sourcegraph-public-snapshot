@@ -370,11 +370,13 @@ func serveRepoOrBlob(routeName string, title func(c *Common, r *http.Request) st
 
 // searchBadgeHandler serves the search readme badges from the search-badger service
 // https://github.com/sourcegraph/search-badger
-var searchBadgeHandler = &httputil.ReverseProxy{
-	Director: func(r *http.Request) {
-		r.URL.Scheme = "http"
-		r.URL.Host = "search-badger"
-		r.URL.Path = "/"
-	},
-	ErrorLog: log.New(env.DebugOut, "search-badger proxy: ", log.LstdFlags),
+func searchBadgeHandler() *httputil.ReverseProxy {
+	return &httputil.ReverseProxy{
+		Director: func(r *http.Request) {
+			r.URL.Scheme = "http"
+			r.URL.Host = "search-badger"
+			r.URL.Path = "/"
+		},
+		ErrorLog: log.New(env.DebugOut, "search-badger proxy: ", log.LstdFlags),
+	}
 }

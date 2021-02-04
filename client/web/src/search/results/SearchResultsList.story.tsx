@@ -49,6 +49,7 @@ const defaultProps: SearchResultsListProps = {
     extensionsController: { executeCommand: sinon.spy(), services: extensionsController.services },
     platformContext: { forceUpdateTooltip: sinon.spy(), settings: NEVER },
     telemetryService: NOOP_TELEMETRY_SERVICE,
+    parsedSearchQuery: 'r:golang/oauth2 test f:travis',
     patternType: SearchPatternType.regexp,
     setPatternType: sinon.spy(),
     caseSensitive: false,

@@ -17,7 +17,7 @@ if curl --output /dev/null --silent --head --fail $URL; then
 fi
 
 echo "--- Running a daemonized $IMAGE as the test subject..."
-CONTAINER="$(docker container run -d -e DEPLOY_TYPE=dev "$IMAGE")"
+CONTAINER="$(docker container run -d "$IMAGE")"
 trap 'kill $(jobs -p -r)'" ; docker logs --timestamps $CONTAINER ; docker container rm -f $CONTAINER ; docker image rm -f $IMAGE" EXIT
 
 docker exec "$CONTAINER" apk add --no-cache socat

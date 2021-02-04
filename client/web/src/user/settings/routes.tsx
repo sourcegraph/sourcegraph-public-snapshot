@@ -5,6 +5,7 @@ import { UserSettingsAreaRoute, UserSettingsAreaRouteContext } from './UserSetti
 import { Scalars } from '../../graphql-operations'
 import { RouteComponentProps } from 'react-router'
 import type { UserAddCodeHostsPageContainerProps } from './UserAddCodeHostsPageContainer'
+import { showPasswordsPage, showAccountSecurityPage, allowUserExternalServicePublic } from './cloud-ga'
 
 const SettingsArea = lazyComponent(() => import('../../settings/SettingsArea'), 'SettingsArea')
 
@@ -25,6 +26,11 @@ const UserAddCodeHostsPageContainer = lazyComponent<
 const ExternalServicePage = lazyComponent(
     () => import('../../components/externalServices/ExternalServicePage'),
     'ExternalServicePage'
+)
+
+const UserSettingsSecurityPage = lazyComponent(
+    () => import('./auth/UserSettingsSecurityPage'),
+    'UserSettingsSecurityPage'
 )
 
 export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
@@ -58,6 +64,7 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         path: '/password',
         exact: true,
         render: lazyComponent(() => import('./auth/UserSettingsPasswordPage'), 'UserSettingsPasswordPage'),
+        condition: showPasswordsPage,
     },
     {
         path: '/emails',
@@ -69,6 +76,13 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         render: lazyComponent(() => import('./accessTokens/UserSettingsTokensArea'), 'UserSettingsTokensArea'),
         condition: () => window.context.accessTokensAllow !== 'none',
     },
+    // future GA Cloud routes
+    {
+        path: '/security',
+        exact: true,
+        render: props => <UserSettingsSecurityPage {...props} context={window.context} />,
+        condition: showAccountSecurityPage,
+    },
     {
         path: '/repositories',
         render: props => (
@@ -79,11 +93,7 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
             />
         ),
         exact: true,
-        condition: props =>
-            window.context.externalServicesUserModeEnabled ||
-            (props.user.id === props.authenticatedUser.id &&
-                props.authenticatedUser.tags.includes('AllowUserExternalServicePublic')) ||
-            props.user.tags?.includes('AllowUserExternalServicePublic'),
+        condition: allowUserExternalServicePublic,
     },
     {
         path: '/repositories/manage',
@@ -95,11 +105,7 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
             />
         ),
         exact: true,
-        condition: props =>
-            window.context.externalServicesUserModeEnabled ||
-            (props.user.id === props.authenticatedUser.id &&
-                props.authenticatedUser.tags.includes('AllowUserExternalServicePublic')) ||
-            props.user.tags?.includes('AllowUserExternalServicePublic'),
+        condition: allowUserExternalServicePublic,
     },
     {
         path: '/code-hosts',
@@ -113,11 +119,7 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
             />
         ),
         exact: true,
-        condition: props =>
-            window.context.externalServicesUserModeEnabled ||
-            (props.user.id === props.authenticatedUser.id &&
-                props.authenticatedUser.tags.includes('AllowUserExternalServicePublic')) ||
-            props.user.tags?.includes('AllowUserExternalServicePublic'),
+        condition: allowUserExternalServicePublic,
     },
     {
         path: '/external-services/:id',
@@ -129,10 +131,6 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
             />
         ),
         exact: true,
-        condition: props =>
-            window.context.externalServicesUserModeEnabled ||
-            (props.user.id === props.authenticatedUser.id &&
-                props.authenticatedUser.tags.includes('AllowUserExternalServicePublic')) ||
-            props.user.tags?.includes('AllowUserExternalServicePublic'),
+        condition: allowUserExternalServicePublic,
     },
 ]

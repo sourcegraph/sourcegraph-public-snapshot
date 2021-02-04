@@ -243,7 +243,7 @@ const getRepoByQueryFmtstr = `
 SELECT %s
 FROM %%s
 WHERE
-	deleted_at IS NULL
+	repo.deleted_at IS NULL
 AND %%s   -- Populates "queryConds"
 AND (%%s) -- Populates "authzConds"
 %%s       -- Populates "querySuffix"
@@ -457,11 +457,16 @@ type ReposListOptions struct {
 	// IDs of repos to list. When zero-valued, this is omitted from the predicate set.
 	IDs []api.RepoID
 
+	// UserID, if non zero, will limit the set of results to repositories added by the user
+	// through external services. Mutually exclusive with the ExternalServiceIDs option.
+	UserID int32
+
 	// ServiceTypes of repos to list. When zero-valued, this is omitted from the predicate set.
 	ServiceTypes []string
 
 	// ExternalServiceIDs, if non empty, will only return repos added by the given external services.
 	// The id is that of the external_services table NOT the external_service_id in the repo table
+	// Mutually exclusive with the UserID option.
 	ExternalServiceIDs []int64
 
 	// ExternalRepos of repos to list. When zero-valued, this is omitted from the predicate set.
@@ -621,6 +626,10 @@ func (s *RepoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (re
 }
 
 func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, minimal bool, opt ReposListOptions, scanRepo func(rows *sql.Rows) error) error {
+	if len(opt.ExternalServiceIDs) != 0 && opt.UserID != 0 {
+		return errors.New("options ExternalServiceIDs and UserID are mutually exclusive")
+	}
+
 	conds, err := s.listSQL(opt)
 	if err != nil {
 		return err
@@ -633,6 +642,13 @@ func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, minimal bool, opt
 			serviceIDQuery = append(serviceIDQuery, sqlf.Sprintf("%s", id))
 		}
 		fromClause = sqlf.Sprintf("repo JOIN external_service_repos e ON (repo.id = e.repo_id AND e.external_service_id IN (%s))", sqlf.Join(serviceIDQuery, ","))
+	} else if opt.UserID != 0 {
+		fromClause = sqlf.Sprintf(`
+			repo
+				JOIN external_service_repos esr ON repo.id = esr.repo_id
+				JOIN external_services es ON esr.external_service_id = es.id
+		`)
+		conds = append(conds, sqlf.Sprintf("es.namespace_user_id = %d AND es.deleted_at IS NULL", opt.UserID))
 	}
 
 	queryConds := sqlf.Sprintf("TRUE")
@@ -1201,54 +1217,6 @@ func (*RepoStore) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error)
 	}
 
 	return conds, nil
-}
-
-// GetUserAddedRepoNames returns name of all repositories added by the given user.
-func (s *RepoStore) GetUserAddedRepoNames(ctx context.Context, userID int32) ([]api.RepoName, error) {
-	s.ensureStore()
-
-	authzConds, err := AuthzQueryConds(ctx, s.Handle().DB())
-	if err != nil {
-		return nil, err
-	}
-
-	const fmtString = `
-SELECT DISTINCT(repo.name) FROM repo
-JOIN external_service_repos esr ON repo.id = esr.repo_id
-WHERE
-	esr.external_service_id IN (
-		SELECT id from external_services
-		WHERE namespace_user_id = %s
-		AND deleted_at IS NULL
-	)
-AND (%s) -- Populates "authzConds"
-AND repo.deleted_at IS NULL
-`
-	q := sqlf.Sprintf(
-		fmtString,
-		userID,
-		authzConds, // 🚨 SECURITY: Enforce repository permissions
-	)
-
-	rows, err := s.Query(ctx, q)
-	if err != nil {
-		return nil, errors.Wrap(err, "getting user repos")
-	}
-	defer rows.Close()
-
-	var repoNames []api.RepoName
-	for rows.Next() {
-		var name api.RepoName
-		if err := rows.Scan(&name); err != nil {
-			return nil, err
-		}
-		repoNames = append(repoNames, name)
-	}
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return repoNames, nil
 }
 
 // parseCursorConds checks whether the query is using cursor-based pagination, and

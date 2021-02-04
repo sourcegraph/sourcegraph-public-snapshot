@@ -313,10 +313,10 @@ func TestProcessSearchPattern(t *testing.T) {
 			Want:    "search me",
 		},
 		{
-			Name:    "Regexp with content field ignores default pattern",
-			Pattern: `content:"search me" ignored`,
+			Name:    "Regexp with content field sequences non-content pattern",
+			Pattern: `content:"search me" pattern`,
 			Opts:    &getPatternInfoOptions{},
-			Want:    "search me",
+			Want:    "(search me).*?(pattern)",
 		},
 		{
 			Name:    "Literal with quoted content field means double quotes are not part of the pattern",
@@ -333,7 +333,7 @@ func TestProcessSearchPattern(t *testing.T) {
 	}
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
-			q, _ := query.ParseAndCheck(tt.Pattern)
+			q, _ := query.ParseRegexp(tt.Pattern)
 			got, _, _, _ := processSearchPattern(q, tt.Opts)
 			if got != tt.Want {
 				t.Fatalf("got %s\nwant %s", got, tt.Want)
@@ -521,7 +521,7 @@ func TestSearchResolver_getPatternInfo(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			sr := searchResolver{query: query}
+			sr := searchResolver{SearchInputs: &SearchInputs{Query: query}}
 			p, err := sr.getPatternInfo(nil)
 			if err != nil {
 				t.Fatal(err)
@@ -657,6 +657,27 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 				`repo:testRepo`:    {},
 				`-file:**_test.go`: {},
 				`lang:go`:          {},
+			},
+		},
+
+		{
+			descr: "javascript filters",
+			searchResults: []SearchResultResolver{
+				fileMatch("/jsrender.min.js.map"),
+				fileMatch("playground/react/lib/app.js.map"),
+				fileMatch("assets/javascripts/bootstrap.min.js"),
+			},
+			expectedDynamicFilterStrsRegexp: map[string]struct{}{
+				`repo:^testRepo$`:  {},
+				`-file:\.min\.js$`: {},
+				`-file:\.js\.map$`: {},
+				`lang:javascript`:  {},
+			},
+			expectedDynamicFilterStrsGlobbing: map[string]struct{}{
+				`repo:testRepo`:   {},
+				`-file:**.min.js`: {},
+				`-file:**.js.map`: {},
+				`lang:javascript`: {},
 			},
 		},
 
@@ -829,7 +850,15 @@ func TestSearchResultsHydration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	resolver := &searchResolver{query: q, zoekt: z, userSettings: &schema.Settings{}, reposMu: &sync.Mutex{}, resolved: &searchrepos.Resolved{}}
+	resolver := &searchResolver{
+		SearchInputs: &SearchInputs{
+			Query:        q,
+			UserSettings: &schema.Settings{},
+		},
+		zoekt:    z,
+		reposMu:  &sync.Mutex{},
+		resolved: &searchrepos.Resolved{},
+	}
 	results, err := resolver.Results(ctx)
 	if err != nil {
 		t.Fatal("Results:", err)
@@ -863,20 +892,20 @@ func TestCheckDiffCommitSearchLimits(t *testing.T) {
 			name:        "diff_search_warns_on_repos_greater_than_search_limit",
 			resultType:  "diff",
 			numRepoRevs: 51,
-			wantError:   RepoLimitErr{ResultType: "diff", Max: 50},
+			wantError:   &RepoLimitError{ResultType: "diff", Max: 50},
 		},
 		{
 			name:        "commit_search_warns_on_repos_greater_than_search_limit",
 			resultType:  "commit",
 			numRepoRevs: 51,
-			wantError:   RepoLimitErr{ResultType: "commit", Max: 50},
+			wantError:   &RepoLimitError{ResultType: "commit", Max: 50},
 		},
 		{
 			name:        "commit_search_warns_on_repos_greater_than_search_limit_with_time_filter",
 			fields:      []query.Node{query.Parameter{Field: "after"}},
 			resultType:  "commit",
 			numRepoRevs: 20000,
-			wantError:   TimeLimitErr{ResultType: "commit", Max: 10000},
+			wantError:   &TimeLimitError{ResultType: "commit", Max: 10000},
 		},
 		{
 			name:        "no_warning_when_commit_search_within_search_limit",
@@ -962,11 +991,13 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 			fields: fields{
 				results: []SearchResultResolver{
 					&FileMatchResolver{
-						symbols: []*searchSymbolResult{
-							// 1
-							{},
-							// 2
-							{},
+						FileMatch: FileMatch{
+							symbols: []*searchSymbolResult{
+								// 1
+								{},
+								// 2
+								{},
+							},
 						},
 					},
 				},
@@ -979,11 +1010,13 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 			fields: fields{
 				results: []SearchResultResolver{
 					&FileMatchResolver{
-						symbols: []*searchSymbolResult{
-							// 1
-							{},
-							// 2
-							{},
+						FileMatch: FileMatch{
+							symbols: []*searchSymbolResult{
+								// 1
+								{},
+								// 2
+								{},
+							},
 						},
 					},
 				},
@@ -1055,7 +1088,7 @@ func TestGetExactFilePatterns(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			r := searchResolver{query: q, originalQuery: tt.in}
+			r := searchResolver{SearchInputs: &SearchInputs{Query: q, OriginalQuery: tt.in}}
 			if got := r.getExactFilePatterns(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("getExactFilePatterns() = %v, want %v", got, tt.want)
 			}
@@ -1065,10 +1098,10 @@ func TestGetExactFilePatterns(t *testing.T) {
 
 func TestCompareSearchResults(t *testing.T) {
 	makeResult := func(repo, file string) *FileMatchResolver {
-		return &FileMatchResolver{
-			Repo:  &RepositoryResolver{innerRepo: &types.Repo{Name: api.RepoName(repo)}},
+		return mkFileMatchResolver(FileMatch{
+			Repo:  &types.RepoName{Name: api.RepoName(repo)},
 			JPath: file,
-		}
+		})
 	}
 
 	tests := []struct {
@@ -1255,7 +1288,12 @@ func TestEvaluateAnd(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			resolver := &searchResolver{query: q, zoekt: z, userSettings: &schema.Settings{}, reposMu: &sync.Mutex{}, resolved: &searchrepos.Resolved{}}
+			resolver := &searchResolver{
+				SearchInputs: &SearchInputs{Query: q, UserSettings: &schema.Settings{}},
+				zoekt:        z,
+				reposMu:      &sync.Mutex{},
+				resolved:     &searchrepos.Resolved{},
+			}
 			results, err := resolver.Results(ctx)
 			if err != nil {
 				t.Fatal("Results:", err)

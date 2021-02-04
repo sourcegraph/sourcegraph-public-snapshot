@@ -3,6 +3,8 @@ package inference
 import (
 	"path/filepath"
 	"regexp"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/config"
 )
 
 const lsifGoImage = "sourcegraph/lsif-go:latest"
@@ -21,7 +23,7 @@ func (r lsifGoJobRecognizer) CanIndex(paths []string, gitserver GitserverClientW
 	return false
 }
 
-func (r lsifGoJobRecognizer) InferIndexJobs(paths []string, gitserver GitserverClientWrapper) (indexes []IndexJob) {
+func (r lsifGoJobRecognizer) InferIndexJobs(paths []string, gitserver GitserverClientWrapper) (indexes []config.IndexJob) {
 	for _, path := range paths {
 		if !r.canIndexPath(path) {
 			continue
@@ -29,7 +31,7 @@ func (r lsifGoJobRecognizer) InferIndexJobs(paths []string, gitserver GitserverC
 
 		root := dirWithoutDot(path)
 
-		dockerSteps := []DockerStep{
+		dockerSteps := []config.DockerStep{
 			{
 				Root:     root,
 				Image:    lsifGoImage,
@@ -37,8 +39,8 @@ func (r lsifGoJobRecognizer) InferIndexJobs(paths []string, gitserver GitserverC
 			},
 		}
 
-		indexes = append(indexes, IndexJob{
-			DockerSteps: dockerSteps,
+		indexes = append(indexes, config.IndexJob{
+			Steps:       dockerSteps,
 			Root:        root,
 			Indexer:     lsifGoImage,
 			IndexerArgs: []string{"lsif-go", "--no-animation"},

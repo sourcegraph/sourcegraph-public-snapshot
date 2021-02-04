@@ -28,7 +28,6 @@ import {
 
 describe('StreamingSearchResults', () => {
     const history = createBrowserHistory()
-    history.replace({ search: 'q=r:golang/oauth2+test+f:travis' })
 
     const streamingSearchResult: AggregateStreamingSearchResults = {
         state: 'complete',
@@ -42,12 +41,10 @@ describe('StreamingSearchResults', () => {
     }
 
     const defaultProps: StreamingSearchResultsProps = {
+        parsedSearchQuery: 'r:golang/oauth2 test f:travis',
         caseSensitive: false,
-        setCaseSensitivity: sinon.spy(),
         patternType: SearchPatternType.literal,
-        setPatternType: sinon.spy(),
         versionContext: undefined,
-        setVersionContext: sinon.spy(),
         availableVersionContexts: [],
         previousVersionContext: null,
 
@@ -74,17 +71,16 @@ describe('StreamingSearchResults', () => {
     }
 
     it('should call streaming search API with the right parameters from URL', () => {
-        const history = createBrowserHistory()
-        history.replace({ search: 'q=r:golang/oauth2+test+f:travis+case:yes&patternType=regexp&c=test' })
-
         const searchSpy = sinon.spy(defaultProps.streamSearch)
 
         const element = mount(
             <BrowserRouter>
                 <StreamingSearchResults
                     {...defaultProps}
-                    history={history}
-                    location={history.location}
+                    parsedSearchQuery="r:golang/oauth2 test f:travis"
+                    patternType={SearchPatternType.regexp}
+                    caseSensitive={true}
+                    versionContext="test"
                     streamSearch={searchSpy}
                     availableVersionContexts={[{ name: 'test', revisions: [] }]}
                 />
@@ -93,9 +89,10 @@ describe('StreamingSearchResults', () => {
 
         sinon.assert.calledOnce(searchSpy)
         sinon.assert.calledWith(searchSpy, {
-            query: 'r:golang/oauth2 test f:travis  case:yes',
+            query: 'r:golang/oauth2 test f:travis',
             version: 'V2',
             patternType: SearchPatternType.regexp,
+            caseSensitive: true,
             versionContext: 'test',
             trace: undefined,
         })
@@ -113,8 +110,10 @@ describe('StreamingSearchResults', () => {
             <BrowserRouter>
                 <StreamingSearchResults
                     {...defaultProps}
-                    history={history}
-                    location={history.location}
+                    parsedSearchQuery="r:golang/oauth2 test f:travis"
+                    patternType={SearchPatternType.regexp}
+                    caseSensitive={false}
+                    versionContext="test"
                     streamSearch={searchSpy}
                     availableVersionContexts={[{ name: 'something', revisions: [] }]}
                 />
@@ -123,238 +122,13 @@ describe('StreamingSearchResults', () => {
 
         sinon.assert.calledOnce(searchSpy)
         sinon.assert.calledWith(searchSpy, {
-            query: 'r:golang/oauth2 test f:travis  case:yes',
+            query: 'r:golang/oauth2 test f:travis',
             version: 'V2',
             patternType: SearchPatternType.regexp,
+            caseSensitive: false,
             versionContext: undefined,
             trace: undefined,
         })
-
-        element.unmount()
-    })
-
-    it('should update patternType if different between URL and context', () => {
-        const history = createBrowserHistory()
-        history.replace({ search: 'q=r:golang/oauth2+test+f:travis&patternType=regexp' })
-
-        const setPatternTypeSpy = sinon.spy()
-
-        const element = mount(
-            <BrowserRouter>
-                <StreamingSearchResults
-                    {...defaultProps}
-                    history={history}
-                    location={history.location}
-                    patternType={SearchPatternType.literal}
-                    setPatternType={setPatternTypeSpy}
-                />
-            </BrowserRouter>
-        )
-
-        sinon.assert.calledOnce(setPatternTypeSpy)
-        sinon.assert.calledWith(setPatternTypeSpy, SearchPatternType.regexp)
-
-        element.unmount()
-    })
-
-    it('should not update patternType if URL and context are the same', () => {
-        const history = createBrowserHistory()
-        history.replace({ search: 'q=r:golang/oauth2+test+f:travis&patternType=regexp' })
-
-        const setPatternTypeSpy = sinon.spy()
-
-        const element = mount(
-            <BrowserRouter>
-                <StreamingSearchResults
-                    {...defaultProps}
-                    history={history}
-                    location={history.location}
-                    patternType={SearchPatternType.regexp}
-                    setPatternType={setPatternTypeSpy}
-                />
-            </BrowserRouter>
-        )
-
-        sinon.assert.notCalled(setPatternTypeSpy)
-
-        element.unmount()
-    })
-
-    it('should update caseSensitive if different between URL and context', () => {
-        const history = createBrowserHistory()
-        history.replace({ search: 'q=r:golang/oauth2+test+f:travis case:yes' })
-
-        const setCaseSensitivitySpy = sinon.spy()
-
-        const element = mount(
-            <BrowserRouter>
-                <StreamingSearchResults
-                    {...defaultProps}
-                    history={history}
-                    location={history.location}
-                    caseSensitive={false}
-                    setCaseSensitivity={setCaseSensitivitySpy}
-                />
-            </BrowserRouter>
-        )
-
-        sinon.assert.calledOnce(setCaseSensitivitySpy)
-        sinon.assert.calledWith(setCaseSensitivitySpy, true)
-
-        element.unmount()
-    })
-
-    it('should not update caseSensitive if URL and context are the same', () => {
-        const history = createBrowserHistory()
-        history.replace({ search: 'q=r:golang/oauth2+test+f:travis+case:yes' })
-
-        const setCaseSensitivitySpy = sinon.spy()
-
-        const element = mount(
-            <BrowserRouter>
-                <StreamingSearchResults
-                    {...defaultProps}
-                    history={history}
-                    location={history.location}
-                    caseSensitive={true}
-                    setCaseSensitivity={setCaseSensitivitySpy}
-                />
-            </BrowserRouter>
-        )
-
-        sinon.assert.notCalled(setCaseSensitivitySpy)
-
-        element.unmount()
-    })
-
-    it('should update versionContext if different between URL and context', () => {
-        const history = createBrowserHistory()
-        history.replace({ search: 'q=r:golang/oauth2+test+f:travis&c=test' })
-
-        const setVersionContextSpy = sinon.spy()
-
-        const element = mount(
-            <BrowserRouter>
-                <StreamingSearchResults
-                    {...defaultProps}
-                    history={history}
-                    location={history.location}
-                    versionContext="other"
-                    setVersionContext={setVersionContextSpy}
-                    availableVersionContexts={[
-                        { name: 'test', revisions: [] },
-                        { name: 'other', revisions: [] },
-                    ]}
-                />
-            </BrowserRouter>
-        )
-
-        sinon.assert.calledOnce(setVersionContextSpy)
-        sinon.assert.calledWith(setVersionContextSpy, 'test')
-
-        element.unmount()
-    })
-
-    it('should not update versionContext if same between URL and context', () => {
-        const history = createBrowserHistory()
-        history.replace({ search: 'q=r:golang/oauth2+test+f:travis&c=test' })
-
-        const setVersionContextSpy = sinon.spy()
-
-        const element = mount(
-            <BrowserRouter>
-                <StreamingSearchResults
-                    {...defaultProps}
-                    history={history}
-                    location={history.location}
-                    versionContext="test"
-                    setVersionContext={setVersionContextSpy}
-                    availableVersionContexts={[
-                        { name: 'test', revisions: [] },
-                        { name: 'other', revisions: [] },
-                    ]}
-                />
-            </BrowserRouter>
-        )
-
-        sinon.assert.notCalled(setVersionContextSpy)
-
-        element.unmount()
-    })
-
-    it('should clear versionContext if updating to clear', () => {
-        const history = createBrowserHistory()
-        history.replace({ search: 'q=r:golang/oauth2+test+f:travis' })
-
-        const setVersionContextSpy = sinon.spy()
-
-        const element = mount(
-            <BrowserRouter>
-                <StreamingSearchResults
-                    {...defaultProps}
-                    history={history}
-                    location={history.location}
-                    versionContext="test"
-                    setVersionContext={setVersionContextSpy}
-                    availableVersionContexts={[
-                        { name: 'test', revisions: [] },
-                        { name: 'other', revisions: [] },
-                    ]}
-                />
-            </BrowserRouter>
-        )
-
-        sinon.assert.calledOnce(setVersionContextSpy)
-        sinon.assert.calledWith(setVersionContextSpy, undefined)
-
-        element.unmount()
-    })
-
-    it('should clear versionContext if updating to invalid one', () => {
-        const history = createBrowserHistory()
-        history.replace({ search: 'q=r:golang/oauth2+test+f:travis&c=test' })
-
-        const setVersionContextSpy = sinon.spy()
-
-        const element = mount(
-            <BrowserRouter>
-                <StreamingSearchResults
-                    {...defaultProps}
-                    history={history}
-                    location={history.location}
-                    versionContext="other"
-                    setVersionContext={setVersionContextSpy}
-                    availableVersionContexts={[{ name: 'other', revisions: [] }]}
-                />
-            </BrowserRouter>
-        )
-
-        sinon.assert.calledOnce(setVersionContextSpy)
-        sinon.assert.calledWith(setVersionContextSpy, undefined)
-
-        element.unmount()
-    })
-
-    it('should retain clear versionContext if updating to invalid one', () => {
-        const history = createBrowserHistory()
-        history.replace({ search: 'q=r:golang/oauth2+test+f:travis&c=test' })
-
-        const setVersionContextSpy = sinon.spy()
-
-        const element = mount(
-            <BrowserRouter>
-                <StreamingSearchResults
-                    {...defaultProps}
-                    history={history}
-                    location={history.location}
-                    versionContext={undefined}
-                    setVersionContext={setVersionContextSpy}
-                    availableVersionContexts={[{ name: 'other', revisions: [] }]}
-                />
-            </BrowserRouter>
-        )
-
-        sinon.assert.notCalled(setVersionContextSpy)
 
         element.unmount()
     })

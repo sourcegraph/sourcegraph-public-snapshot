@@ -7,64 +7,45 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 )
 
-type jsonIndexConfiguration struct {
-	SharedSteps []jsonDockerStep `json:"shared_steps"`
-	IndexJobs   []jsonIndexJob   `json:"index_jobs"`
-}
+// default json behaviour is to render nil slices as "null", so we manually
+// set all nil slices in the struct to empty slice
+func MarshalJSON(config IndexConfiguration) ([]byte, error) {
+	nonNil := config
+	if nonNil.IndexJobs == nil {
+		nonNil.IndexJobs = []IndexJob{}
+	}
+	if nonNil.SharedSteps == nil {
+		nonNil.SharedSteps = []DockerStep{}
+	}
+	for idx := range nonNil.SharedSteps {
+		if nonNil.SharedSteps[idx].Commands == nil {
+			nonNil.SharedSteps[idx].Commands = []string{}
+		}
+	}
+	for idx := range nonNil.IndexJobs {
+		if nonNil.IndexJobs[idx].IndexerArgs == nil {
+			nonNil.IndexJobs[idx].IndexerArgs = []string{}
+		}
+		if nonNil.IndexJobs[idx].LocalSteps == nil {
+			nonNil.IndexJobs[idx].LocalSteps = []string{}
+		}
+		if nonNil.IndexJobs[idx].Steps == nil {
+			nonNil.IndexJobs[idx].Steps = []DockerStep{}
+		}
+		for stepIdx := range nonNil.IndexJobs[idx].Steps {
+			if nonNil.IndexJobs[idx].Steps[stepIdx].Commands == nil {
+				nonNil.IndexJobs[idx].Steps[stepIdx].Commands = []string{}
+			}
+		}
+	}
 
-type jsonIndexJob struct {
-	Steps       []jsonDockerStep `json:"steps"`
-	LocalSteps  []string         `json:"local_steps"`
-	Root        string           `json:"root"`
-	Indexer     string           `json:"indexer"`
-	IndexerArgs []string         `json:"indexer_args"`
-	Outfile     string           `json:"outfile"`
-}
-
-type jsonDockerStep struct {
-	Root     string   `json:"root"`
-	Image    string   `json:"image"`
-	Commands []string `json:"commands"`
+	return json.MarshalIndent(nonNil, "", "    ")
 }
 
 func UnmarshalJSON(data []byte) (IndexConfiguration, error) {
-	jsonData, err := jsonc.Parse(string(data))
-	if err != nil {
+	configuration := IndexConfiguration{}
+	if err := jsonc.Unmarshal(string(data), &configuration); err != nil {
 		return IndexConfiguration{}, fmt.Errorf("invalid JSON: %v", err)
 	}
-
-	configuration := jsonIndexConfiguration{}
-	if err := json.Unmarshal(jsonData, &configuration); err != nil {
-		return IndexConfiguration{}, fmt.Errorf("invalid JSON: %v", err)
-	}
-
-	var indexJobs []IndexJob
-	for _, value := range configuration.IndexJobs {
-		indexJobs = append(indexJobs, IndexJob{
-			Steps:       convertJSONDockerSteps(value.Steps),
-			LocalSteps:  value.LocalSteps,
-			Root:        value.Root,
-			Indexer:     value.Indexer,
-			IndexerArgs: value.IndexerArgs,
-			Outfile:     value.Outfile,
-		})
-	}
-
-	return IndexConfiguration{
-		SharedSteps: convertJSONDockerSteps(configuration.SharedSteps),
-		IndexJobs:   indexJobs,
-	}, nil
-}
-
-func convertJSONDockerSteps(raw []jsonDockerStep) []DockerStep {
-	steps := []DockerStep{}
-	for _, val := range raw {
-		steps = append(steps, DockerStep{
-			Root:     val.Root,
-			Image:    val.Image,
-			Commands: val.Commands,
-		})
-	}
-
-	return steps
+	return configuration, nil
 }

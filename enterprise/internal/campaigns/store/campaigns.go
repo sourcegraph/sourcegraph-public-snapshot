@@ -49,10 +49,7 @@ var campaignInsertColumns = []*sqlf.Query{
 
 // CreateCampaign creates the given Campaign.
 func (s *Store) CreateCampaign(ctx context.Context, c *campaigns.Campaign) error {
-	q, err := s.createCampaignQuery(c)
-	if err != nil {
-		return err
-	}
+	q := s.createCampaignQuery(c)
 
 	return s.query(ctx, q, func(sc scanner) (err error) {
 		return scanCampaign(c, sc)
@@ -66,7 +63,7 @@ VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING %s
 `
 
-func (s *Store) createCampaignQuery(c *campaigns.Campaign) (*sqlf.Query, error) {
+func (s *Store) createCampaignQuery(c *campaigns.Campaign) *sqlf.Query {
 	if c.CreatedAt.IsZero() {
 		c.CreatedAt = s.now()
 	}
@@ -90,15 +87,12 @@ func (s *Store) createCampaignQuery(c *campaigns.Campaign) (*sqlf.Query, error) 
 		nullTimeColumn(c.ClosedAt),
 		c.CampaignSpecID,
 		sqlf.Join(campaignColumns, ", "),
-	), nil
+	)
 }
 
 // UpdateCampaign updates the given Campaign.
 func (s *Store) UpdateCampaign(ctx context.Context, c *campaigns.Campaign) error {
-	q, err := s.updateCampaignQuery(c)
-	if err != nil {
-		return err
-	}
+	q := s.updateCampaignQuery(c)
 
 	return s.query(ctx, q, func(sc scanner) (err error) { return scanCampaign(c, sc) })
 }
@@ -111,7 +105,7 @@ WHERE id = %s
 RETURNING %s
 `
 
-func (s *Store) updateCampaignQuery(c *campaigns.Campaign) (*sqlf.Query, error) {
+func (s *Store) updateCampaignQuery(c *campaigns.Campaign) *sqlf.Query {
 	c.UpdatedAt = s.now()
 
 	return sqlf.Sprintf(
@@ -130,7 +124,7 @@ func (s *Store) updateCampaignQuery(c *campaigns.Campaign) (*sqlf.Query, error) 
 		c.CampaignSpecID,
 		c.ID,
 		sqlf.Join(campaignColumns, ", "),
-	), nil
+	)
 }
 
 // DeleteCampaign deletes the Campaign with the given ID.
@@ -260,7 +254,6 @@ func getCampaignQuery(opts *GetCampaignOpts) *sqlf.Query {
 
 	if opts.Name != "" {
 		preds = append(preds, sqlf.Sprintf("campaigns.name = %s", opts.Name))
-
 	}
 
 	if len(preds) == 0 {

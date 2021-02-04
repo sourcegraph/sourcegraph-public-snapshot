@@ -99,9 +99,8 @@ func (m *RepoStatusMap) Update(id api.RepoID, status RepoStatus) {
 // Union is a fast path for calling m.Update on all entries in o.
 func (m *RepoStatusMap) Union(o *RepoStatusMap) {
 	m.status |= o.status
-	if m.m == nil {
-		m.m = o.m
-		return
+	if m.m == nil && len(o.m) > 0 {
+		m.m = make(map[api.RepoID]RepoStatus, len(o.m))
 	}
 	for id, status := range o.m {
 		m.m[id] |= status

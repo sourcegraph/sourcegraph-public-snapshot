@@ -91,28 +91,28 @@ func (r *SearchResultsResolver) PageInfo() *graphqlutil.PageInfo {
 //
 func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchResultsResolver, err error) {
 	start := time.Now()
-	if r.pagination == nil {
+	if r.Pagination == nil {
 		panic("never here: this method should never be called in this state")
 	}
 
 	tr, ctx := trace.New(ctx, "graphql.SearchResults.paginatedResults", r.rawQuery())
-	if r.pagination.cursor != nil {
+	if r.Pagination.cursor != nil {
 		tr.LogFields(
-			otlog.Int("Cursor.RepositoryOffset", int(r.pagination.cursor.RepositoryOffset)),
-			otlog.Int("Cursor.ResultOffset", int(r.pagination.cursor.ResultOffset)),
-			otlog.Bool("Cursor.Finished", r.pagination.cursor.Finished),
+			otlog.Int("Cursor.RepositoryOffset", int(r.Pagination.cursor.RepositoryOffset)),
+			otlog.Int("Cursor.ResultOffset", int(r.Pagination.cursor.ResultOffset)),
+			otlog.Bool("Cursor.Finished", r.Pagination.cursor.Finished),
 		)
 		log15.Info("paginated search continue request",
 			"query", fmt.Sprintf("%q", r.rawQuery()),
-			"RepositoryOffset", int(r.pagination.cursor.RepositoryOffset),
-			"ResultOffset", int(r.pagination.cursor.ResultOffset),
-			"Finished", r.pagination.cursor.Finished,
+			"RepositoryOffset", int(r.Pagination.cursor.RepositoryOffset),
+			"ResultOffset", int(r.Pagination.cursor.ResultOffset),
+			"Finished", r.Pagination.cursor.Finished,
 		)
 	} else {
 		tr.LogFields(otlog.String("Cursor", "nil"))
 		log15.Info("paginated search begin request", "query", fmt.Sprintf("%q", r.rawQuery()))
 	}
-	tr.LogFields(otlog.Int("Limit", int(r.pagination.limit)))
+	tr.LogFields(otlog.Int("Limit", int(r.Pagination.limit)))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -149,7 +149,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 	args := search.TextParameters{
 		PatternInfo:     p,
 		RepoPromise:     (&search.Promise{}).Resolve(resolved.RepoRevs),
-		Query:           r.query,
+		Query:           r.Query,
 		UseFullDeadline: false,
 		Zoekt:           r.zoekt,
 		SearcherURLs:    r.searcherURLs,
@@ -177,7 +177,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 	})
 
 	common := streaming.Stats{}
-	cursor, results, fileCommon, err := paginatedSearchFilesInRepos(ctx, &args, r.pagination)
+	cursor, results, fileCommon, err := paginatedSearchFilesInRepos(ctx, &args, r.Pagination)
 	if err != nil {
 		return nil, err
 	}
@@ -189,7 +189,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 	var alert *searchAlert
 
 	if len(resolved.MissingRepoRevs) > 0 {
-		alert = alertForMissingRepoRevs(r.patternType, resolved.MissingRepoRevs)
+		alert = alertForMissingRepoRevs(r.PatternType, resolved.MissingRepoRevs)
 	}
 
 	log15.Info("next cursor for paginated search request",
@@ -316,7 +316,7 @@ func repoOfResult(result SearchResultResolver) string {
 	case *RepositoryResolver:
 		return string(r.Name())
 	case *FileMatchResolver:
-		return r.Repo.Name()
+		return string(r.Repo.Name)
 	case *CommitSearchResultResolver:
 		// Pagination does not support commit searches at the
 		// moment. Ideally we want to return the repo associated

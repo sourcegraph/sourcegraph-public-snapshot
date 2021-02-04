@@ -7,6 +7,7 @@ const exportedConfig = {
   ...config,
   displayName: 'web',
   rootDir: __dirname,
+  setupFiles: [...config.setupFiles, 'jest-canvas-mock'], // mocking canvas is required for Monaco editor to work in unit tests
 }
 
 module.exports = exportedConfig

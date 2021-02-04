@@ -229,19 +229,13 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			name:    "1 errors - GitHub.com",
 			kind:    extsvc.KindGitHub,
 			config:  `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "` + types.RedactedSecret + `"}`,
-			wantErr: "found unexpected Redacted string: \"" + types.RedactedSecret + "\", has ExternalService.UnredactConfig been called before attempting to write?",
+			wantErr: "unable to write external service config as it contains redacted fields, this is likely a bug rather than a problem with your config",
 		},
 		{
 			name:    "1 errors - GitLab.com",
 			kind:    extsvc.KindGitLab,
 			config:  `{"url": "https://github.com", "projectQuery": ["none"], "token": "` + types.RedactedSecret + `"}`,
-			wantErr: "found unexpected Redacted string: \"" + types.RedactedSecret + "\", has ExternalService.UnredactConfig been called before attempting to write?",
-		},
-		{
-			name:    "0 errors - potentially redacted string",
-			kind:    extsvc.KindGitHub,
-			config:  `{"url": "https://github.com", "repositoryQuery": ["github.com/srcgraph_redacted"], "token": "abc"}`,
-			wantErr: "<nil>",
+			wantErr: "unable to write external service config as it contains redacted fields, this is likely a bug rather than a problem with your config",
 		},
 	}
 	for _, test := range tests {
@@ -657,6 +651,108 @@ func TestExternalServicesStore_GetByID(t *testing.T) {
 	wantErr := fmt.Sprintf("external service not found: %v", es.ID)
 	if gotErr != wantErr {
 		t.Errorf("error: want %q but got %q", wantErr, gotErr)
+	}
+}
+
+func TestListSyncErrors(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	db := dbtesting.GetDB(t)
+	ctx := context.Background()
+
+	// Create a new external service
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+
+	svc1 := &types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "GITHUB #1",
+		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+	}
+	err := ExternalServices(db).Create(ctx, confGet, svc1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	svc2 := &types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "GITHUB #2",
+		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+	}
+	err = ExternalServices(db).Create(ctx, confGet, svc2)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Listing errors now should return an empty map
+	failures, err := ExternalServices(db).ListSyncErrors(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(failures) > 0 {
+		t.Fatal("Expected zero errors")
+	}
+
+	// Add failure
+	expectedFailure := "oops"
+	_, err = db.Exec(`
+INSERT INTO external_service_sync_jobs (external_service_id, state, finished_at, failure_message)
+VALUES ($1,'errored', now(), $2)
+`, svc1.ID, expectedFailure)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	failures, err = ExternalServices(db).ListSyncErrors(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(failures) != 1 {
+		t.Fatal("Expected 1 failure")
+	}
+	failure := failures[svc1.ID]
+	if failure != expectedFailure {
+		t.Fatalf("Want %q, got %q", expectedFailure, failure)
+	}
+
+	// Add a later failure, we should get that instead
+	expectedFailure2 := "oops again"
+	_, err = db.Exec(`
+INSERT INTO external_service_sync_jobs (external_service_id, state, finished_at, failure_message)
+VALUES ($1,'errored', now(), $2)
+`, svc1.ID, expectedFailure2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	failures, err = ExternalServices(db).ListSyncErrors(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(failures) != 1 {
+		t.Fatal("Expected 1 failure")
+	}
+	failure = failures[svc1.ID]
+	if failure != expectedFailure2 {
+		t.Fatalf("Want %q, got %q", expectedFailure2, failure)
+	}
+
+	// Adding a second failing service
+	_, err = db.Exec(`
+INSERT INTO external_service_sync_jobs (external_service_id, state, finished_at, failure_message)
+VALUES ($1,'errored', now(), $2)
+`, svc2.ID, expectedFailure)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	failures, err = ExternalServices(db).ListSyncErrors(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(failures) != 2 {
+		t.Fatal("Expected 2 failure")
 	}
 }
 

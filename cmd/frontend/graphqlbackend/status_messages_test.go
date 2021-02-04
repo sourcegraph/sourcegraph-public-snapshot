@@ -8,8 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -70,11 +69,10 @@ func TestStatusMessages(t *testing.T) {
 		}
 		defer func() { database.Mocks.Users.GetByCurrentAuthUser = nil }()
 
-		repoupdater.MockStatusMessages = func(_ context.Context) (*protocol.StatusMessagesResponse, error) {
-			res := &protocol.StatusMessagesResponse{Messages: []protocol.StatusMessage{}}
-			return res, nil
+		repos.MockStatusMessages = func(_ context.Context) ([]repos.StatusMessage, error) {
+			return []repos.StatusMessage{}, nil
 		}
-		defer func() { repoupdater.MockStatusMessages = nil }()
+		defer func() { repos.MockStatusMessages = nil }()
 
 		gqltesting.RunTests(t, []*gqltesting.Test{
 			{
@@ -100,28 +98,28 @@ func TestStatusMessages(t *testing.T) {
 		}
 		defer func() { database.Mocks.ExternalServices.GetByID = nil }()
 
-		repoupdater.MockStatusMessages = func(_ context.Context) (*protocol.StatusMessagesResponse, error) {
-			res := &protocol.StatusMessagesResponse{Messages: []protocol.StatusMessage{
+		repos.MockStatusMessages = func(_ context.Context) ([]repos.StatusMessage, error) {
+			res := []repos.StatusMessage{
 				{
-					Cloning: &protocol.CloningProgress{
+					Cloning: &repos.CloningProgress{
 						Message: "Currently cloning 5 repositories in parallel...",
 					},
 				},
 				{
-					ExternalServiceSyncError: &protocol.ExternalServiceSyncError{
+					ExternalServiceSyncError: &repos.ExternalServiceSyncError{
 						Message:           "Authentication failed. Please check credentials.",
 						ExternalServiceId: 1,
 					},
 				},
 				{
-					SyncError: &protocol.SyncError{
+					SyncError: &repos.SyncError{
 						Message: "Could not save to database",
 					},
 				},
-			}}
+			}
 			return res, nil
 		}
-		defer func() { repoupdater.MockStatusMessages = nil }()
+		defer func() { repos.MockStatusMessages = nil }()
 
 		gqltesting.RunTests(t, []*gqltesting.Test{
 			{

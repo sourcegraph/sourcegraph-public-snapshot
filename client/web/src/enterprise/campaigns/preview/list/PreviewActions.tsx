@@ -32,8 +32,13 @@ const PreviewActionsContent: React.FunctionComponent<Pick<PreviewActionsProps, '
     }
     return (
         <>
-            {node.operations.map(operation => (
-                <PreviewAction operation={operation} operations={node.operations} key={operation} />
+            {node.operations.map((operation, index) => (
+                <PreviewAction
+                    operation={operation}
+                    operations={node.operations}
+                    key={operation}
+                    className={classNames(index !== node.operations.length - 1 && 'mb-1')}
+                />
             ))}
         </>
     )

@@ -512,6 +512,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			assertions := tc.wantChangeset
 			assertions.Repo = rs[0].ID
 			assertions.OwnedByCampaign = changesetOpts.OwnedByCampaign
+			assertions.AttachedTo = []int64{campaign.ID}
 			if changesetSpec != nil {
 				assertions.CurrentSpec = changesetSpec.ID
 			}

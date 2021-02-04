@@ -262,6 +262,10 @@ export const NOOP_SETTINGS_CASCADE = {
 const services = {
     contribution: {
         getContributions: () => of({}),
+        registerContributions: () => {},
+    },
+    commands: {
+        registerCommand: () => {},
     },
 }
 

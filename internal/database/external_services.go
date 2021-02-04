@@ -190,10 +190,15 @@ func (e *ExternalServiceStore) ValidateConfig(ctx context.Context, opt ValidateE
 		return nil, errors.Wrapf(err, "unable to normalize JSON")
 	}
 
+	// Check for any redacted secrets, in graphqlbackend/external_service.go:externalServiceByID() we call
+	// svc.RedactConfigSecrets() replacing any secret fields in the JSON with types.RedactedSecret, this is to
+	// prevent us leaking tokens that users add. Here we check that the config we've been passed doesn't
+	// contain any redacted secrets in order to avoid breaking configs by writing the redacted version to
+	// the database. we should have called svc.UnredactConfig(oldSvc) before this point, eg in the Update
+	// method of the ExternalServiceStore. talk to @arussellsaw or the cloud team if you have any questions
 	if bytes.Contains(normalized, []byte(types.RedactedSecret)) {
 		return nil, errors.Errorf(
-			"found unexpected Redacted string: %q, has ExternalService.UnredactConfig been called before attempting to write?",
-			types.RedactedSecret,
+			"unable to write external service config as it contains redacted fields, this is likely a bug rather than a problem with your config",
 		)
 	}
 
@@ -666,6 +671,15 @@ func (e *ExternalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 		if err != nil {
 			return err
 		}
+		newSvc := types.ExternalService{
+			Kind:   externalService.Kind,
+			Config: *update.Config,
+		}
+		err = newSvc.UnredactConfig(externalService)
+		if err != nil {
+			return errors.Wrapf(err, "error unredacting config")
+		}
+		update.Config = &newSvc.Config
 
 		normalized, err = e.ValidateConfig(ctx, ValidateExternalServiceConfigOptions{
 			ExternalServiceID: id,
@@ -787,13 +801,50 @@ func (e *ExternalServiceStore) GetLastSyncError(ctx context.Context, id int64) (
 	q := sqlf.Sprintf(`
 SELECT failure_message from external_service_sync_jobs
 WHERE external_service_id = %d
-AND state IN ('completed','errored')
+AND state IN ('completed','errored','failed')
 ORDER BY finished_at DESC
 LIMIT 1
 `, id)
 
 	lastError, _, err := basestore.ScanFirstNullString(e.Query(ctx, q))
 	return lastError, err
+}
+
+// ListSyncErrors returns the most recent failure message for each external
+// service. If the latest run did not have an error, it will be excluded from the
+// map.
+func (e *ExternalServiceStore) ListSyncErrors(ctx context.Context) (map[int64]string, error) {
+	if Mocks.ExternalServices.ListSyncErrors != nil {
+		return Mocks.ExternalServices.ListSyncErrors(ctx)
+	}
+	q := `SELECT DISTINCT ON(external_service_id) external_service_id, failure_message 
+FROM external_service_sync_jobs
+WHERE state IN ('completed','errored','failed')
+AND finished_at IS NOT NULL
+ORDER BY external_service_id, finished_at DESC`
+
+	rows, err := e.Query(ctx, sqlf.Sprintf(q))
+	if err != nil {
+		return nil, err
+	}
+
+	messages := make(map[int64]string)
+
+	for rows.Next() {
+		var svcID int64
+		var message sql.NullString
+		if err := rows.Scan(&svcID, &message); err != nil {
+			return nil, err
+		}
+		if message.Valid {
+			messages[svcID] = message.String
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return messages, nil
 }
 
 // List returns external services under given namespace.
@@ -928,6 +979,7 @@ type MockExternalServices struct {
 	Delete           func(ctx context.Context, id int64) error
 	GetByID          func(id int64) (*types.ExternalService, error)
 	GetLastSyncError func(id int64) (string, error)
+	ListSyncErrors   func(ctx context.Context) (map[int64]string, error)
 	List             func(opt ExternalServicesListOptions) ([]*types.ExternalService, error)
 	Update           func(ctx context.Context, ps []schema.AuthProviders, id int64, update *ExternalServiceUpdate) error
 	Count            func(ctx context.Context, opt ExternalServicesListOptions) (int, error)

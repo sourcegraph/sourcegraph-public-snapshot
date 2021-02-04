@@ -2,10 +2,12 @@ package inference
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/config"
 )
 
 func TestLSIFTscJobRecognizerCanIndex(t *testing.T) {
@@ -38,9 +40,9 @@ func TestLsifTscJobRecognizerInferIndexJobsTsConfigRoot(t *testing.T) {
 		"tsconfig.json",
 	}
 
-	expectedIndexJobs := []IndexJob{
+	expectedIndexJobs := []config.IndexJob{
 		{
-			DockerSteps: nil,
+			Steps:       nil,
 			Root:        "",
 			Indexer:     lsifTscImage,
 			IndexerArgs: []string{"lsif-tsc", "-p", "."},
@@ -60,23 +62,23 @@ func TestLsifTscJobRecognizerInferIndexJobsTsConfigSubdirs(t *testing.T) {
 		"c/tsconfig.json",
 	}
 
-	expectedIndexJobs := []IndexJob{
+	expectedIndexJobs := []config.IndexJob{
 		{
-			DockerSteps: nil,
+			Steps:       nil,
 			Root:        "a",
 			Indexer:     lsifTscImage,
 			IndexerArgs: []string{"lsif-tsc", "-p", "."},
 			Outfile:     "",
 		},
 		{
-			DockerSteps: nil,
+			Steps:       nil,
 			Root:        "b",
 			Indexer:     lsifTscImage,
 			IndexerArgs: []string{"lsif-tsc", "-p", "."},
 			Outfile:     "",
 		},
 		{
-			DockerSteps: nil,
+			Steps:       nil,
 			Root:        "c",
 			Indexer:     lsifTscImage,
 			IndexerArgs: []string{"lsif-tsc", "-p", "."},
@@ -101,12 +103,12 @@ func TestLsifTscJobRecognizerInferIndexJobsInstallSteps(t *testing.T) {
 		"foo/bar/yarn.lock",
 	}
 
-	expectedIndexJobs := []IndexJob{
+	expectedIndexJobs := []config.IndexJob{
 		{
-			DockerSteps: []DockerStep{
+			Steps: []config.DockerStep{
 				{
 					Root:     "",
-					Image:    nodeInstallImage,
+					Image:    lsifTscImage,
 					Commands: []string{"npm install"},
 				},
 			},
@@ -116,10 +118,10 @@ func TestLsifTscJobRecognizerInferIndexJobsInstallSteps(t *testing.T) {
 			Outfile:     "",
 		},
 		{
-			DockerSteps: []DockerStep{
+			Steps: []config.DockerStep{
 				{
 					Root:     "",
-					Image:    nodeInstallImage,
+					Image:    lsifTscImage,
 					Commands: []string{"npm install"},
 				},
 			},
@@ -129,15 +131,15 @@ func TestLsifTscJobRecognizerInferIndexJobsInstallSteps(t *testing.T) {
 			Outfile:     "",
 		},
 		{
-			DockerSteps: []DockerStep{
+			Steps: []config.DockerStep{
 				{
 					Root:     "",
-					Image:    nodeInstallImage,
+					Image:    lsifTscImage,
 					Commands: []string{"npm install"},
 				},
 				{
 					Root:     "foo/bar",
-					Image:    nodeInstallImage,
+					Image:    lsifTscImage,
 					Commands: []string{"yarn --ignore-engines"},
 				},
 			},
@@ -147,20 +149,20 @@ func TestLsifTscJobRecognizerInferIndexJobsInstallSteps(t *testing.T) {
 			Outfile:     "",
 		},
 		{
-			DockerSteps: []DockerStep{
+			Steps: []config.DockerStep{
 				{
 					Root:     "",
-					Image:    nodeInstallImage,
+					Image:    lsifTscImage,
 					Commands: []string{"npm install"},
 				},
 				{
 					Root:     "foo/bar",
-					Image:    nodeInstallImage,
+					Image:    lsifTscImage,
 					Commands: []string{"yarn --ignore-engines"},
 				},
 				{
 					Root:     "foo/bar/bonk",
-					Image:    nodeInstallImage,
+					Image:    lsifTscImage,
 					Commands: []string{"npm install"},
 				},
 			},
@@ -199,9 +201,20 @@ func TestLSIFTscJobRecognizerPatterns(t *testing.T) {
 
 func TestLSIFTscLernaConfig(t *testing.T) {
 	mockGit := NewMockGitserverClientWrapper()
-	mockGit.RawContentsFunc.PushReturn([]byte(`{"npmClient": "yarn"}`), nil)
-	mockGit.RawContentsFunc.PushReturn([]byte(`{"npmClient": "npm"}`), nil)
-	mockGit.RawContentsFunc.PushReturn([]byte(`{"npmClient": "yarn"}`), nil)
+	// this is kinda tied to the order in which the impl calls them :(
+	{
+		mockGit.RawContentsFunc.PushReturn([]byte(`{"npmClient": "yarn"}`), nil)
+		mockGit.RawContentsFunc.PushReturn([]byte(`{}`), nil)
+	}
+	{
+		mockGit.RawContentsFunc.PushReturn([]byte(`{}`), nil)
+		mockGit.RawContentsFunc.PushReturn([]byte(`{"npmClient": "npm"}`), nil)
+		mockGit.RawContentsFunc.PushReturn([]byte(`{}`), nil)
+	}
+	{
+		mockGit.RawContentsFunc.PushReturn([]byte(`{"npmClient": "yarn"}`), nil)
+		mockGit.RawContentsFunc.PushReturn([]byte(`{}`), nil)
+	}
 
 	recognizer := lsifTscJobRecognizer{}
 
@@ -229,13 +242,13 @@ func TestLSIFTscLernaConfig(t *testing.T) {
 		},
 	}
 
-	expectedJobs := [][]IndexJob{
+	expectedJobs := [][]config.IndexJob{
 		{
 			{
-				DockerSteps: []DockerStep{
+				Steps: []config.DockerStep{
 					{
 						Root:     "",
-						Image:    "node:alpine3.12",
+						Image:    lsifTscImage,
 						Commands: []string{"yarn --ignore-engines"},
 					},
 				},
@@ -248,10 +261,10 @@ func TestLSIFTscLernaConfig(t *testing.T) {
 		},
 		{
 			{
-				DockerSteps: []DockerStep{
+				Steps: []config.DockerStep{
 					{
 						Root:     "",
-						Image:    "node:alpine3.12",
+						Image:    lsifTscImage,
 						Commands: []string{"npm install"},
 					},
 				},
@@ -264,10 +277,10 @@ func TestLSIFTscLernaConfig(t *testing.T) {
 		},
 		{
 			{
-				DockerSteps: []DockerStep{
+				Steps: []config.DockerStep{
 					{
 						Root:     "",
-						Image:    "node:alpine3.12",
+						Image:    lsifTscImage,
 						Commands: []string{"npm install"},
 					},
 				},
@@ -280,20 +293,87 @@ func TestLSIFTscLernaConfig(t *testing.T) {
 		},
 		{
 			{
-				DockerSteps: []DockerStep{
+				Steps: []config.DockerStep{
 					{
 						Root:     "",
-						Image:    "node:alpine3.12",
+						Image:    lsifTscImage,
 						Commands: []string{"yarn --ignore-engines"},
 					},
 					{
 						Root:     "foo",
-						Image:    "node:alpine3.12",
+						Image:    lsifTscImage,
 						Commands: []string{"yarn --ignore-engines"},
 					},
 				},
 				LocalSteps:  nil,
 				Root:        "foo/bar",
+				Indexer:     lsifTscImage,
+				IndexerArgs: []string{"lsif-tsc", "-p", "."},
+				Outfile:     "",
+			},
+		},
+	}
+
+	for i, paths := range paths {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			if diff := cmp.Diff(expectedJobs[i], recognizer.InferIndexJobs(paths, mockGit)); diff != "" {
+				t.Errorf("unexpected index jobs (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestLSIFTscNodeVersionInferrence(t *testing.T) {
+	mockGit := NewMockGitserverClientWrapper()
+	mockGit.RawContentsFunc.PushReturn([]byte(""), nil)
+	mockGit.RawContentsFunc.PushReturn([]byte(`{"engines":{"node":"420"}}`), nil)
+
+	recognizer := lsifTscJobRecognizer{}
+
+	paths := [][]string{
+		{
+			"package.json",
+			"tsconfig.json",
+			".nvmrc",
+		},
+		{
+			"tsconfig.json",
+			"package.json",
+		},
+	}
+
+	expectedJobs := [][]config.IndexJob{
+		{
+			{
+				Steps: []config.DockerStep{
+					{
+						Root:     "",
+						Image:    lsifTscImage,
+						Commands: []string{nMuslCommand, "npm install"},
+					},
+				},
+				LocalSteps: []string{
+					nMuslCommand,
+				},
+				Root:        "",
+				Indexer:     lsifTscImage,
+				IndexerArgs: []string{"lsif-tsc", "-p", "."},
+				Outfile:     "",
+			},
+		},
+		{
+			{
+				Steps: []config.DockerStep{
+					{
+						Root:     "",
+						Image:    lsifTscImage,
+						Commands: []string{nMuslCommand, "npm install"},
+					},
+				},
+				LocalSteps: []string{
+					nMuslCommand,
+				},
+				Root:        "",
 				Indexer:     lsifTscImage,
 				IndexerArgs: []string{"lsif-tsc", "-p", "."},
 				Outfile:     "",

@@ -13,6 +13,8 @@ import {
     CopyQueryButtonProps,
     OnboardingTourProps,
     ShowQueryBuilderProps,
+    ParsedSearchQueryProps,
+    SearchContextProps,
 } from '../search'
 import { eventLogger } from '../tracking/eventLogger'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
@@ -38,6 +40,7 @@ export interface RepogroupPageProps
         ThemePreferenceProps,
         ActivationProps,
         TelemetryProps,
+        Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
         PatternTypeProps,
         CaseSensitivityProps,
         KeyboardShortcutsProps,
@@ -45,6 +48,7 @@ export interface RepogroupPageProps
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
         CopyQueryButtonProps,
         VersionContextProps,
+        SearchContextProps,
         OnboardingTourProps,
         ShowQueryBuilderProps {
     authenticatedUser: AuthenticatedUser | null

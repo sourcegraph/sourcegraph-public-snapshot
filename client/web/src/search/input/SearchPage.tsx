@@ -8,6 +8,8 @@ import {
     OnboardingTourProps,
     HomePanelsProps,
     ShowQueryBuilderProps,
+    ParsedSearchQueryProps,
+    SearchContextProps,
 } from '..'
 import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
@@ -42,6 +44,7 @@ export interface SearchPageProps
         ThemeProps,
         ThemePreferenceProps,
         ActivationProps,
+        Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
         PatternTypeProps,
         CaseSensitivityProps,
         KeyboardShortcutsProps,
@@ -50,6 +53,7 @@ export interface SearchPageProps
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
         CopyQueryButtonProps,
         VersionContextProps,
+        SearchContextProps,
         RepogroupHomepageProps,
         OnboardingTourProps,
         HomePanelsProps,

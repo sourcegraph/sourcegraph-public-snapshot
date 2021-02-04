@@ -451,13 +451,11 @@ func TestSearch(t *testing.T) {
 				name:  "diff search, nonzero result",
 				query: `repo:^github\.com/sgtest/go-diff$ type:diff main count:1`,
 			},
-			// LG 2021-01-27 disabled failing test. The value of repohascommmitafter: should be set dynamically here,
-			// or this test will fail again in the future.
 			// Repohascommitafter
-			// {
-			// 	name:  `Repohascommitafter, nonzero result`,
-			// 	query: `repo:^github\.com/sgtest/go-diff$ repohascommitafter:"8 months ago" test patterntype:literal count:1`,
-			// },
+			{
+				name:  `Repohascommitafter, nonzero result`,
+				query: `repo:^github\.com/sgtest/go-diff$ repohascommitafter:"2019-01-01" test patterntype:literal count:1`,
+			},
 			// Regex text search
 			{
 				name:  `regex, unindexed, nonzero result`,
@@ -536,7 +534,7 @@ func TestSearch(t *testing.T) {
 				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ file:^README\.md "basic :[_] access :[_]" patterntype:structural`,
 			},
 			{
-				name:       `Alert to activate structural search mode`,
+				name:       `Alert to activate structural search mode for :[...] syntax`,
 				query:      `repo:^github\.com/sgtest/go-diff$ patterntype:literal i can't :[believe] it's not butter`,
 				zeroResult: true,
 				wantAlert: &gqltestutil.SearchAlert{
@@ -546,6 +544,21 @@ func TestSearch(t *testing.T) {
 						{
 							Description: "Activate structural search",
 							Query:       `repo:^github\.com/sgtest/go-diff$ patterntype:literal i can't :[believe] it's not butter patternType:structural`,
+						},
+					},
+				},
+			},
+			{
+				name:       `Alert to activate structural search mode for ... syntax`,
+				query:      `no results for { ... } raises alert repo:^github\.com/sgtest/go-diff$`,
+				zeroResult: true,
+				wantAlert: &gqltestutil.SearchAlert{
+					Title:       "No results",
+					Description: "It looks like you may have meant to run a structural search, but it is not toggled.",
+					ProposedQueries: []gqltestutil.ProposedQuery{
+						{
+							Description: "Activate structural search",
+							Query:       `no results for { ... } raises alert repo:^github\.com/sgtest/go-diff$ patternType:structural`,
 						},
 					},
 				},
@@ -637,10 +650,6 @@ func TestSearch(t *testing.T) {
 				name:       `Mixed regexp and quoted literal`,
 				query:      `repo:^github\.com/sgtest/go-diff$ "*" and cert.*Load count:1 stable:yes type:file`,
 				zeroResult: true,
-				wantAlert: &gqltestutil.SearchAlert{
-					Title:       "Too many files to search for and-expression",
-					Description: "One and-expression in the query requires a lot of work! Try using the 'repo:' or 'file:' filters to narrow your search. We're working on improving this experience in https://github.com/sourcegraph/sourcegraph/issues/9824",
-				},
 			},
 			{
 				name:  `Escape sequences`,
@@ -680,7 +689,7 @@ func TestSearch(t *testing.T) {
 				zeroResult: true,
 				wantAlert: &gqltestutil.SearchAlert{
 					Title:       "Unable To Process Query",
-					Description: "Unbalanced expression: unmatched closing parenthesis )",
+					Description: "Unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses",
 				},
 			},
 			{
@@ -689,7 +698,7 @@ func TestSearch(t *testing.T) {
 				zeroResult: true,
 				wantAlert: &gqltestutil.SearchAlert{
 					Title:       "Unable To Process Query",
-					Description: "Unbalanced expression: unmatched closing parenthesis )",
+					Description: "Unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses",
 				},
 			},
 			{
@@ -698,7 +707,7 @@ func TestSearch(t *testing.T) {
 				zeroResult: true,
 				wantAlert: &gqltestutil.SearchAlert{
 					Title:       "Unable To Process Query",
-					Description: "Unbalanced expression: unmatched closing parenthesis )",
+					Description: "Unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses",
 				},
 			},
 			{
@@ -707,7 +716,7 @@ func TestSearch(t *testing.T) {
 				zeroResult: true,
 				wantAlert: &gqltestutil.SearchAlert{
 					Title:       "Unable To Process Query",
-					Description: "Unbalanced expression: unmatched closing parenthesis )",
+					Description: "Unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses",
 				},
 			},
 			{

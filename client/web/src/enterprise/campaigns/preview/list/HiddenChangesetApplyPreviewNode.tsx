@@ -57,7 +57,7 @@ const HiddenChangesetApplyPreviewNodeStatusCell: React.FunctionComponent<
     HiddenChangesetApplyPreviewNodeProps & { className?: string }
 > = ({ node, className }) => {
     if (node.targets.__typename === 'HiddenApplyPreviewTargetsAttach') {
-        return <ChangesetStatusCell changeset={{ state: ChangesetState.UNPUBLISHED }} className={className} />
+        return <ChangesetStatusCell state={ChangesetState.UNPUBLISHED} className={className} />
     }
-    return <ChangesetStatusCell changeset={{ state: node.targets.changeset.state }} className={className} />
+    return <ChangesetStatusCell state={node.targets.changeset.state} className={className} />
 }

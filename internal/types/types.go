@@ -36,16 +36,7 @@ type SourceInfo struct {
 // ExternalServiceID returns the ID of the external service this
 // SourceInfo refers to.
 func (i SourceInfo) ExternalServiceID() int64 {
-	ps := strings.SplitN(i.ID, ":", 3)
-	if len(ps) != 3 {
-		return -1
-	}
-
-	id, err := strconv.ParseInt(ps[2], 10, 64)
-	if err != nil {
-		return -1
-	}
-
+	_, id := extsvc.DecodeURN(i.ID)
 	return id
 }
 
@@ -1342,4 +1333,11 @@ type Secret struct {
 
 	// Value contains the encrypted string
 	Value string
+}
+
+type SearchContext struct {
+	ID     int32
+	Name   string
+	UserID int32 // if non-zero, the owner is this user. UserID/OrgID are mutually exclusive.
+	OrgID  int32 // if non-zero, the owner is this organization. UserID/OrgID are mutually exclusive.
 }

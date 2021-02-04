@@ -12,6 +12,7 @@ import (
 )
 
 type TestSpecOpts struct {
+	ID           int64
 	User         int32
 	Repo         api.RepoID
 	CampaignSpec int64
@@ -54,6 +55,7 @@ func BuildChangesetSpec(t *testing.T, opts TestSpecOpts) *campaigns.ChangesetSpe
 	}
 
 	spec := &campaigns.ChangesetSpec{
+		ID:             opts.ID,
 		UserID:         opts.User,
 		RepoID:         opts.Repo,
 		CampaignSpecID: opts.CampaignSpec,

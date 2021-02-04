@@ -53,7 +53,7 @@ export const UsageChart: React.FunctionComponent<UsageChartPageProps> = (props: 
                 ),
                 yValues: {
                     Registered: usagePeriod.registeredUserCount,
-                    Anonymous: usagePeriod.anonymousUserCount,
+                    'Deleted or anonymous': usagePeriod.anonymousUserCount,
                 },
             }))}
         />

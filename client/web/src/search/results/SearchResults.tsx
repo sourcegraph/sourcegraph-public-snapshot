@@ -10,6 +10,8 @@ import {
     CaseSensitivityProps,
     parseSearchURL,
     resolveVersionContext,
+    MutableVersionContextProps,
+    ParsedSearchQueryProps,
 } from '..'
 import { Contributions, Evaluated } from '../../../../shared/src/api/protocol'
 import { FetchFileParameters } from '../../../../shared/src/components/CodeExcerpt'
@@ -28,8 +30,6 @@ import { queryTelemetryData } from '../queryTelemetry'
 import { DynamicSearchFilter, SearchResultsFilterBars } from './SearchResultsFilterBars'
 import { SearchResultsList } from './SearchResultsList'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
-import { VersionContextProps } from '../../../../shared/src/search/util'
-import { VersionContext } from '../../schema/site.schema'
 import { Remote } from 'comlink'
 import { FlatExtensionHostAPI } from '../../../../shared/src/api/contract'
 import { DeployType } from '../../jscontext'
@@ -45,9 +45,10 @@ export interface SearchResultsProps
         SettingsCascadeProps,
         TelemetryProps,
         ThemeProps,
+        Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
         PatternTypeProps,
         CaseSensitivityProps,
-        VersionContextProps,
+        MutableVersionContextProps,
         Pick<CodeMonitoringProps, 'enableCodeMonitoring'> {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
@@ -64,9 +65,6 @@ export interface SearchResultsProps
     ) => Observable<GQL.ISearchResults | ErrorLike>
     isSourcegraphDotCom: boolean
     deployType: DeployType
-    setVersionContext: (versionContext: string | undefined) => void
-    availableVersionContexts: VersionContext[] | undefined
-    previousVersionContext: string | null
 }
 
 interface SearchResultsState {
@@ -134,7 +132,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
             this.componentUpdates
                 .pipe(
                     startWith(this.props),
-                    map(props => parseSearchURL(props.location.search)),
+                    map(props => parseSearchURL(props.location.search, { appendCaseFilter: true })),
                     // Search when a new search query was specified in the URL
                     distinctUntilChanged((a, b) => isEqual(a, b)),
                     filter(

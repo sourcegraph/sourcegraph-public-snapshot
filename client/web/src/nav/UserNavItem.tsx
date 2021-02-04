@@ -1,16 +1,18 @@
 import { Shortcut } from '@slimsag/react-shortcuts'
+import classNames from 'classnames'
 import * as H from 'history'
+import MenuDownIcon from 'mdi-react/MenuDownIcon'
+import MenuUpIcon from 'mdi-react/MenuUpIcon'
+import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle, Tooltip } from 'reactstrap'
 import { KeyboardShortcut } from '../../../shared/src/keyboardShortcuts'
 import { ThemeProps } from '../../../shared/src/theme'
-import { UserAvatar } from '../user/UserAvatar'
-import { ThemePreferenceProps, ThemePreference } from '../theme'
-import { AuthenticatedUser } from '../auth'
-import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import { useTimeoutManager } from '../../../shared/src/util/useTimeoutManager'
-import classNames from 'classnames'
+import { AuthenticatedUser } from '../auth'
+import { ThemePreference, ThemePreferenceProps } from '../theme'
+import { UserAvatar } from '../user/UserAvatar'
 export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps, ExtensionAlertAnimationProps {
     location: H.Location
     authenticatedUser: Pick<
@@ -99,18 +101,16 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
 
     return (
         <ButtonDropdown isOpen={isOpen} toggle={toggleIsOpen} className="py-0">
-            <DropdownToggle
-                caret={true}
-                className="bg-transparent d-flex align-items-center test-user-nav-item-toggle"
-                nav={true}
-            >
+            <DropdownToggle className="bg-transparent d-flex align-items-center test-user-nav-item-toggle" nav={true}>
                 <div className="position-relative">
                     <div
-                        className={classNames({
+                        className={classNames('align-items-center d-flex', {
                             'user-nav-item__avatar-background': isExtensionAlertAnimating,
                         })}
-                    />
-                    <UserAvatar user={props.authenticatedUser} size={48} className="icon-inline" targetID={targetID} />
+                    >
+                        <UserAvatar user={props.authenticatedUser} targetID={targetID} className="icon-inline" />
+                        {isOpen ? <MenuUpIcon className="icon-inline" /> : <MenuDownIcon className="icon-inline" />}
+                    </div>
                 </div>
                 {isExtensionAlertAnimating && (
                     <Tooltip

@@ -18,7 +18,8 @@ import {
     CaseSensitivityProps,
     CopyQueryButtonProps,
     OnboardingTourProps,
-    parseSearchURLQuery,
+    ParsedSearchQueryProps,
+    SearchContextProps,
 } from '..'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
@@ -39,11 +40,13 @@ interface Props
         CaseSensitivityProps,
         KeyboardShortcutsProps,
         TelemetryProps,
+        Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
         ExtensionsControllerProps<'executeCommand' | 'services'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
         CopyQueryButtonProps,
         Pick<SubmitSearchParameters, 'source'>,
         VersionContextProps,
+        SearchContextProps,
         OnboardingTourProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
@@ -81,10 +84,10 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
 
     // This component is also used on the RepogroupPage.
     // The search onboarding tour should only be shown on the homepage.
-    const isHomepage = useMemo(
-        () => props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search),
-        [props.location.pathname, props.location.search]
-    )
+    const isHomepage = useMemo(() => props.location.pathname === '/search' && !props.parsedSearchQuery, [
+        props.location.pathname,
+        props.parsedSearchQuery,
+    ])
     const showOnboardingTour = props.showOnboardingTour && isHomepage
 
     const {

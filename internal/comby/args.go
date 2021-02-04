@@ -12,9 +12,13 @@ func (args Args) String() string {
 	s := []string{
 		args.MatchTemplate,
 		args.RewriteTemplate,
-		fmt.Sprintf("-f (%d file patterns)", len(args.FilePatterns)),
 		"-json-lines",
 	}
+
+	if len(args.FilePatterns) > 0 {
+		s = append(s, fmt.Sprintf("-f (%d file patterns)", len(args.FilePatterns)))
+	}
+
 	if args.MatchOnly {
 		s = append(s, "-match-only")
 	} else {

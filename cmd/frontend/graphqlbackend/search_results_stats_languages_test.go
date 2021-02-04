@@ -60,12 +60,12 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 		for _, n := range lineNumbers {
 			lines = append(lines, &lineMatch{JLineNumber: n})
 		}
-		return &FileMatchResolver{
+		return mkFileMatchResolver(FileMatch{
 			JPath:        path,
 			JLineMatches: lines,
-			Repo:         &RepositoryResolver{innerRepo: &types.Repo{Name: "r"}},
+			Repo:         &types.RepoName{Name: "r"},
 			CommitID:     wantCommitID,
-		}
+		})
 	}
 
 	tests := map[string]struct {

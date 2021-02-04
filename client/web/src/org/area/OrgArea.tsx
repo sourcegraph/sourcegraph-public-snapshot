@@ -25,6 +25,7 @@ import { AuthenticatedUser } from '../../auth'
 import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { OrganizationResult, OrganizationVariables, OrgAreaOrganizationFields } from '../../graphql-operations'
 import { requestGraphQL } from '../../backend/graphql'
+import { Page } from '../../components/Page'
 
 function queryOrganization(args: { name: string }): Observable<OrgAreaOrganizationFields> {
     return requestGraphQL<OrganizationResult, OrganizationVariables>(
@@ -244,12 +245,12 @@ export class OrgArea extends React.Component<Props> {
         }
 
         return (
-            <div className="org-area w-100">
+            <Page className="org-area">
                 <OrgHeader
                     {...this.props}
                     {...context}
                     navItems={this.props.orgAreaHeaderNavItems}
-                    className="border-bottom mt-4"
+                    className="border-bottom"
                 />
                 <div className="container mt-3">
                     <ErrorBoundary location={this.props.location}>
@@ -275,7 +276,7 @@ export class OrgArea extends React.Component<Props> {
                         </React.Suspense>
                     </ErrorBoundary>
                 </div>
-            </div>
+            </Page>
         )
     }
 

@@ -3,7 +3,6 @@ package repos_test
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -30,105 +29,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-func testSyncerSyncWithErrors(t *testing.T, store *repos.Store) func(t *testing.T) {
-	return func(t *testing.T) {
-		ctx := context.Background()
-
-		githubService := types.ExternalService{
-			Kind:   extsvc.KindGitHub,
-			Config: `{}`,
-		}
-
-		if err := store.ExternalServiceStore.Upsert(ctx, &githubService); err != nil {
-			t.Fatal(err)
-		}
-
-		for _, tc := range []struct {
-			name     string
-			sourcer  repos.Sourcer
-			store    *repos.Store
-			err      string
-			teardown func()
-		}{
-			{
-				name:    "sourcer error aborts sync",
-				sourcer: repos.NewFakeSourcer(errors.New("boom")),
-				store:   store,
-				err:     "syncer.sync.sourced: 1 error occurred:\n\t* boom\n\n",
-			},
-			{
-				name:    "store list error aborts sync",
-				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(&githubService, nil)),
-				store: func() *repos.Store {
-					database.Mocks.Repos.List = func(v0 context.Context, v1 database.ReposListOptions) ([]*types.Repo, error) {
-						return nil, errors.New("boom")
-					}
-					return store
-				}(),
-				teardown: func() {
-					database.Mocks.Repos = database.MockRepos{}
-				},
-				err: "syncer.sync.store.list-repos: boom",
-			},
-			{
-				name:    "store upsert error aborts sync",
-				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(&githubService, nil)),
-				store: func() *repos.Store {
-					cp := *store
-					cp.Mocks.UpsertRepos = func(ctx context.Context, repos ...*types.Repo) (err error) {
-						return errors.New("booya")
-					}
-
-					return &cp
-				}(),
-				err: "syncer.sync.store.upsert-repos: booya",
-			},
-		} {
-			tc := tc
-			t.Run(tc.name, func(t *testing.T) {
-				clock := timeutil.NewFakeClock(time.Now(), time.Second)
-				now := clock.Now
-				ctx := context.Background()
-
-				if tc.teardown != nil {
-					defer tc.teardown()
-				}
-				syncer := &repos.Syncer{
-					Sourcer: tc.sourcer,
-					Store:   store,
-					Now:     now,
-				}
-				err := syncer.SyncExternalService(ctx, tc.store, githubService.ID, time.Millisecond)
-
-				if have, want := err.Error(), tc.err; have != want {
-					t.Errorf("have error %q, want %q", have, want)
-				}
-
-				if len(syncer.SyncErrors()) != 1 {
-					t.Fatal("expected 1 error")
-				}
-
-				if have, want := syncer.SyncErrors(), tc.err; have[0].Error() != want {
-					t.Errorf("have SyncErrors %q, want %q", have, want)
-				}
-			})
-		}
-	}
-}
-
-type repoListerWithErrors struct {
-	*database.RepoStore
-
-	ListReposErr error
-}
-
-func (s *repoListerWithErrors) List(ctx context.Context, args database.ReposListOptions) ([]*types.Repo, error) {
-	if s.ListReposErr != nil {
-		return nil, s.ListReposErr
-	}
-	return s.RepoStore.List(ctx, args)
-}
 
 func testSyncerSync(t *testing.T, s *repos.Store) func(*testing.T) {
 	servicesPerKind := createExternalServices(t, s)

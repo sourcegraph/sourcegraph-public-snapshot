@@ -1,5 +1,5 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import React, { Suspense, useCallback } from 'react'
+import React, { Suspense, useCallback, useEffect, useMemo } from 'react'
 import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-router'
 import { Observable } from 'rxjs'
 import { ActivationProps } from '../../shared/src/components/activation/Activation'
@@ -38,6 +38,10 @@ import {
     OnboardingTourProps,
     HomePanelsProps,
     SearchStreamingProps,
+    ParsedSearchQueryProps,
+    MutableVersionContextProps,
+    parseSearchURL,
+    SearchContextProps,
 } from './search'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
@@ -52,8 +56,6 @@ import { ThemePreferenceProps } from './theme'
 import { KeyboardShortcutsProps, KEYBOARD_SHORTCUT_SHOW_HELP } from './keyboardShortcuts/keyboardShortcuts'
 import { QueryState } from './search/helpers'
 import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
-import { VersionContextProps } from '../../shared/src/search/util'
-import { VersionContext } from './schema/site.schema'
 import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { Settings } from './schema/settings.schema'
 import { Remote } from 'comlink'
@@ -76,12 +78,14 @@ export interface LayoutProps
         TelemetryProps,
         ThemePreferenceProps,
         ActivationProps,
+        ParsedSearchQueryProps,
         PatternTypeProps,
         CaseSensitivityProps,
         CopyQueryButtonProps,
-        VersionContextProps,
+        MutableVersionContextProps,
         RepogroupHomepageProps,
         OnboardingTourProps,
+        SearchContextProps,
         HomePanelsProps,
         SearchStreamingProps,
         CodeMonitoringProps {
@@ -124,9 +128,7 @@ export interface LayoutProps
         versionContext: string | undefined,
         extensionHostPromise: Promise<Remote<FlatExtensionHostAPI>>
     ) => Observable<GQL.ISearchResults | ErrorLike>
-    setVersionContext: (versionContext: string | undefined) => void
-    availableVersionContexts: VersionContext[] | undefined
-    previousVersionContext: string | null
+
     globbing: boolean
     showMultilineSearchConsole: boolean
     showQueryBuilder: boolean
@@ -143,6 +145,55 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const minimalNavLinks = routeMatch === '/cncf'
     const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
 
+    // Update parsedSearchQuery, patternType, caseSensitivity and versionContext based on current URL
+    const {
+        parsedSearchQuery: currentQuery,
+        patternType: currentPatternType,
+        caseSensitive: currentCaseSensitive,
+        versionContext: currentVersionContext,
+        location,
+        setParsedSearchQuery,
+        setPatternType,
+        setCaseSensitivity,
+        setVersionContext,
+    } = props
+    const { query = '', patternType, caseSensitive, versionContext } = useMemo(() => parseSearchURL(location.search), [
+        location.search,
+    ])
+    useEffect(() => {
+        if (query !== currentQuery) {
+            setParsedSearchQuery(query)
+        }
+
+        // Only override filters from URL if there is a search query
+        if (query) {
+            if (patternType && patternType !== currentPatternType) {
+                setPatternType(patternType)
+            }
+
+            if (caseSensitive !== currentCaseSensitive) {
+                setCaseSensitivity(caseSensitive)
+            }
+
+            if (versionContext !== currentVersionContext) {
+                setVersionContext(versionContext)
+            }
+        }
+    }, [
+        caseSensitive,
+        currentCaseSensitive,
+        currentPatternType,
+        currentQuery,
+        currentVersionContext,
+        patternType,
+        query,
+        setCaseSensitivity,
+        setParsedSearchQuery,
+        setPatternType,
+        setVersionContext,
+        versionContext,
+    ])
+
     // Hack! Hardcode these routes into cmd/frontend/internal/app/ui/router.go
     const repogroupPages = [
         '/refactor-python2-to-3',
@@ -157,7 +208,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
 
     // TODO add a component layer as the parent of the Layout component rendering "top-level" routes that do not render the navbar,
     // so that Layout can always render the navbar.
-    const needsSiteInit = window.context.needsSiteInit
+    const needsSiteInit = window.context?.needsSiteInit
     const isSiteInit = props.location.pathname === '/site-admin/init'
     const isSignInOrUp =
         props.location.pathname === '/sign-in' ||
