@@ -46,19 +46,22 @@ export interface CodeViewToolbarProps
     buttonProps?: ButtonProps
     onSignInClose: () => void
     location: H.Location
+    hideActions?: boolean
 }
 
 export const CodeViewToolbar: React.FunctionComponent<CodeViewToolbarProps> = props => (
     <ul className={classNames('code-view-toolbar', props.className)}>
-        <ActionsNavItems
-            {...props}
-            listItemClass={classNames('code-view-toolbar__item', props.listItemClass)}
-            menu={ContributableMenu.EditorTitle}
-            extensionsController={props.extensionsController}
-            platformContext={props.platformContext}
-            location={props.location}
-            scope={props.scope}
-        />{' '}
+        {!props.hideActions && (
+            <ActionsNavItems
+                {...props}
+                listItemClass={classNames('code-view-toolbar__item', props.listItemClass)}
+                menu={ContributableMenu.EditorTitle}
+                extensionsController={props.extensionsController}
+                platformContext={props.platformContext}
+                location={props.location}
+                scope={props.scope}
+            />
+        )}{' '}
         {isErrorLike(props.fileInfoOrError) ? (
             isHTTPAuthError(props.fileInfoOrError) ? (
                 <SignInButton
