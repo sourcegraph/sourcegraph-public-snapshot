@@ -3,6 +3,7 @@ import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
 import { Observable, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
+import classNames from 'classnames'
 import {
     PanelViewWithComponent,
     PanelViewProviderRegistrationOptions,
@@ -62,6 +63,33 @@ interface PanelItem extends Tab<string> {
     hasLocations?: boolean
 }
 
+interface PanelActionsProps extends Props {
+    activePanel?: PanelItem
+    className?: string
+}
+
+const PanelActions: React.FunctionComponent<PanelActionsProps> = ({ activePanel, className, ...props }) => (
+    <ActionsNavItems
+        {...props}
+        // TODO remove references to Bootstrap from shared, get class name from prop
+        // This is okay for now because the Panel is currently only used in the webapp
+        listClass={classNames('nav', className)}
+        actionItemClass="nav-link panel__tabs__action"
+        actionItemIconClass="icon-inline"
+        menu={ContributableMenu.PanelToolbar}
+        scope={
+            activePanel !== undefined
+                ? {
+                      type: 'panelView',
+                      id: activePanel.id,
+                      hasLocations: Boolean(activePanel.hasLocations),
+                  }
+                : undefined
+        }
+        wrapInList={true}
+    />
+)
+
 /**
  * The panel, which is a tabbed component with contextual information. Components rendering the panel should
  * generally use ResizablePanel, not Panel.
@@ -113,10 +141,15 @@ class Panel extends React.PureComponent<Props, State> {
                         tabBarEndFragment={
                             <>
                                 <Spacer />
+                                <PanelActions
+                                    {...this.props}
+                                    activePanel={activePanelView}
+                                    className="d-none d-md-flex"
+                                />
                                 <button
                                     type="button"
                                     onClick={this.onDismiss}
-                                    className="btn btn-icon tab-bar__end-fragment-other-element"
+                                    className="btn btn-icon tab-bar__end-fragment-other-element pr-2 pl-1"
                                     data-tooltip="Close"
                                 >
                                     <CloseIcon className="icon-inline" />
@@ -124,25 +157,7 @@ class Panel extends React.PureComponent<Props, State> {
                             </>
                         }
                         toolbarFragment={
-                            <ActionsNavItems
-                                {...this.props}
-                                // TODO remove references to Bootstrap from shared, get class name from prop
-                                // This is okay for now because the Panel is currently only used in the webapp
-                                listClass="nav w-100 justify-content-end"
-                                actionItemClass="nav-link"
-                                actionItemIconClass="icon-inline"
-                                menu={ContributableMenu.PanelToolbar}
-                                scope={
-                                    activePanelViewID !== undefined
-                                        ? {
-                                              type: 'panelView',
-                                              id: activePanelViewID,
-                                              hasLocations: Boolean(activePanelView?.hasLocations),
-                                          }
-                                        : undefined
-                                }
-                                wrapInList={true}
-                            />
+                            <PanelActions {...this.props} activePanel={activePanelView} className="d-md-none" />
                         }
                         className="panel__tabs"
                         tabClassName="tab-bar__tab--h5like"

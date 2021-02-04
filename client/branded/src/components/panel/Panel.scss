@@ -50,4 +50,11 @@
             }
         }
     }
+
+    &__tabs &__tabs__action {
+        max-width: none;
+        border-bottom: 3px solid var(--border-color);
+        opacity: 0.6;
+        padding: 0.25rem 0.75rem;
+    }
 }
