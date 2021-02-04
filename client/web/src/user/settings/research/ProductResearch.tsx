@@ -17,7 +17,7 @@ export const ProductResearchPage: React.FunctionComponent<Props> = props => {
                 feedback about upcoming ideas. Sign up to participate in our research and help us shape the future of
                 our product!
             </div>
-            <a href="/somewhere" className="btn btn-primary mt-4">
+            <a href="/somewhere" className="btn btn-primary mt-4" target="_blank" rel="noopener noreferrer">
                 Sign up now <OpenInNew className="icon-inline" />
             </a>
         </>
