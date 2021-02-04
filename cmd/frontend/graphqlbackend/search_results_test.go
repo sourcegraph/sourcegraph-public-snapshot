@@ -461,59 +461,76 @@ func TestSearchResolver_getPatternInfo(t *testing.T) {
 		"p": {
 			Pattern:  "p",
 			IsRegExp: true,
+			Index:    query.Yes,
 		},
 		"p1 p2": {
 			Pattern:  "(p1).*?(p2)",
 			IsRegExp: true,
+			Index:    query.Yes,
 		},
 		"p case:yes": {
 			Pattern:                      "p",
 			IsRegExp:                     true,
 			IsCaseSensitive:              true,
 			PathPatternsAreCaseSensitive: true,
+			Index:                        query.Yes,
 		},
 		"p file:f": {
 			Pattern:         "p",
 			IsRegExp:        true,
 			IncludePatterns: []string{"f"},
+			Index:           query.Yes,
 		},
 		"p file:f1 file:f2": {
 			Pattern:         "p",
 			IsRegExp:        true,
 			IncludePatterns: []string{"f1", "f2"},
+			Index:           query.Yes,
 		},
 		"p -file:f": {
 			Pattern:        "p",
 			IsRegExp:       true,
 			ExcludePattern: "f",
+			Index:          query.Yes,
+		},
+		"p -file:f index:no": {
+			Pattern:        "p",
+			IsRegExp:       true,
+			ExcludePattern: "f",
+			Index:          query.No,
 		},
 		"p -file:f1 -file:f2": {
 			Pattern:        "p",
 			IsRegExp:       true,
 			ExcludePattern: "f1|f2",
+			Index:          query.Yes,
 		},
 		"p lang:graphql": {
 			Pattern:         "p",
 			IsRegExp:        true,
 			IncludePatterns: []string{`\.graphql$|\.gql$|\.graphqls$`},
 			Languages:       []string{"graphql"},
+			Index:           query.Yes,
 		},
 		"p lang:graphql file:f": {
 			Pattern:         "p",
 			IsRegExp:        true,
 			IncludePatterns: []string{"f", `\.graphql$|\.gql$|\.graphqls$`},
 			Languages:       []string{"graphql"},
+			Index:           query.Yes,
 		},
 		"p -lang:graphql file:f": {
 			Pattern:         "p",
 			IsRegExp:        true,
 			IncludePatterns: []string{"f"},
 			ExcludePattern:  `\.graphql$|\.gql$|\.graphqls$`,
+			Index:           query.Yes,
 		},
 		"p -lang:graphql -file:f": {
 			Pattern:        "p",
 			IsRegExp:       true,
 			ExcludePattern: `f|(\.graphql$|\.gql$|\.graphqls$)`,
+			Index:          query.Yes,
 		},
 	}
 	for queryStr, want := range tests {
