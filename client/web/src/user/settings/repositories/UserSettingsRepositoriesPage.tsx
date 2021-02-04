@@ -82,7 +82,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                             const services: FilterValue[] = [
                                 {
                                     value: 'all',
-                                    label: 'All',
+                                    label: 'All repositories',
                                     args: {},
                                 },
                                 ...result.nodes.map(node => ({
@@ -102,7 +102,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                                     values: [
                                         {
                                             value: 'all',
-                                            label: 'All',
+                                            label: 'All repositories',
                                             args: {},
                                         },
                                         {

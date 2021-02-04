@@ -35,7 +35,16 @@ export const UserAvatar: React.FunctionComponent<Props> = ({
         } catch {
             // noop
         }
-        return <img className={classNames('user-avatar', className)} src={url} id={targetID} {...otherProps} />
+        return (
+            <img
+                className={classNames('user-avatar', className)}
+                src={url}
+                id={targetID}
+                alt=""
+                role="presentation"
+                {...otherProps}
+            />
+        )
     }
     return <AccountCircleIcon className={classNames('user-avatar', className)} id={targetID} {...otherProps} />
 }

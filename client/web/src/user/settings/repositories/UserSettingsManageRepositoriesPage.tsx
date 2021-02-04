@@ -189,24 +189,30 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         if (page === 1) {
             pages.push(
                 (page !== currentPage && (
-                    <a
+                    <button
+                        type="button"
                         key="prev"
-                        className="btn px-0 text-primary user-settings-repos__pageend"
+                        className="btn btn-link px-0 text-primary user-settings-repos__pageend"
                         onClick={() => setPage(currentPage - 1)}
                     >
                         <ChevronLeftIcon className="icon-inline fill-primary" />
                         Previous
-                    </a>
+                    </button>
                 )) || (
-                    <span key="prev" className="px-0 text-muted user-settings-repos__pageend">
+                    <button
+                        type="button"
+                        key="prev"
+                        className="btn btn-link px-0 text-muted user-settings-repos__pageend"
+                    >
                         <ChevronLeftIcon className="icon-inline fill-border-color-2" />
                         Previous
-                    </span>
+                    </button>
                 )
             )
         }
         pages.push(
-            <a
+            <button
+                type="button"
                 key={page}
                 className={classNames({
                     'btn user-settings-repos__page': true,
@@ -223,24 +229,29 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 >
                     {page}
                 </p>
-            </a>
+            </button>
         )
         if (page === Math.ceil(filteredRepos.length / PER_PAGE)) {
             pages.push(
                 (page !== currentPage && (
-                    <a
+                    <button
+                        type="button"
                         key="next"
-                        className="btn px-0 text-primary user-settings-repos__pageend"
+                        className="btn btn-link px-0 text-primary user-settings-repos__pageend"
                         onClick={() => setPage(currentPage + 1)}
                     >
                         Next
                         <ChevronRightIcon className="icon-inline fill-primary" />
-                    </a>
+                    </button>
                 )) || (
-                    <span key="next" className="px-0 text-muted user-settings-repos__pageend">
+                    <button
+                        type="button"
+                        key="next"
+                        className="btn btn-link px-0 text-muted user-settings-repos__pageend"
+                    >
                         Next
                         <ChevronRightIcon className="icon-inline user-settings-repos__chevron--inactive" />
-                    </span>
+                    </button>
                 )
             )
         }
@@ -349,7 +360,8 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 <select
                     className="form-control"
                     name="code-host"
-                    onChange={event => {
+                    aria-label="select code host type"
+                    onBlur={event => {
                         setCodeHostFilter(event.target.value)
                     }}
                 >
@@ -411,24 +423,28 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         <tbody>
             <tr className="align-items-baseline d-flex" key="header">
                 <td
+                    role="gridcell"
                     onClick={selectAll}
                     className="user-settings-repos__repositorynode p-2 w-100 d-flex align-items-center border-top-0 border-bottom"
                 >
                     <input
+                        id="select-all-repos"
                         className="mr-3"
                         type="checkbox"
                         checked={selectionState.repos.size !== 0 && selectionState.repos.size === filteredRepos.length}
                         onChange={selectAll}
                     />
-                    <span
-                        className={
-                            ((selectionState.repos.size !== 0 && 'text-body') || 'text-muted') + ' repositories-header'
-                        }
+                    <label
+                        htmlFor="select-all-repos"
+                        className={classNames({
+                            'text-muted': selectionState.repos.size === 0,
+                            'text-body': selectionState.repos.size !== 0,
+                            'repositories-header': true,
+                        })}
                     >
-                        {(selectionState.repos.size > 0 &&
-                            String(selectionState.repos.size) + ' repositories selected') ||
+                        {(selectionState.repos.size > 0 && `${selectionState.repos.size} repositories selected`) ||
                             'Select all'}
-                    </span>
+                    </label>
                 </td>
             </tr>
             {filteredRepos.map((repo, index) => {
@@ -450,17 +466,17 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     )
 
     const loadingAnimation: JSX.Element = (
-        <div className="container">
-            <div className="mt-2 align-items-baseline row">
+        <tbody className="container">
+            <tr className="mt-2 align-items-baseline row">
                 <td className="user-settings-repos__shimmer p-3 border-top-0 col-sm-9" />
-            </div>
-            <div className="mt-2 align-items-baseline row">
+            </tr>
+            <tr className="mt-2 align-items-baseline row">
                 <td className="user-settings-repos__shimmer p-3 border-top-0 col-sm-4" />
-            </div>
-            <div className="mt-2 align-items-baseline row">
+            </tr>
+            <tr className="mt-2 align-items-baseline row">
                 <td className="user-settings-repos__shimmer p-3 border-top-0 col-sm-7" />
-            </div>
-        </div>
+            </tr>
+        </tbody>
     )
     return (
         <div className="p-2">
@@ -489,7 +505,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                                 <div className="ml-4">
                                     {filterControls}
                                     {repoState.error !== '' && <ErrorAlert error={repoState.error} history={history} />}
-                                    <table className="table">
+                                    <table role="grid" className="table">
                                         {
                                             // if we're selecting repos, and the repos are still loading, display the loading animation
                                             selectionState.radio === 'selected' &&
