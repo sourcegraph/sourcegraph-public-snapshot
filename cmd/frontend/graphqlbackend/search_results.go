@@ -1530,12 +1530,7 @@ func (a *aggregator) doRepoSearch(ctx context.Context, args *search.TextParamete
 		tr.Finish()
 	}()
 
-	results, stats, err := searchRepositories(ctx, args, limit)
-	a.Send(SearchEvent{
-		Results: results,
-		Stats:   statsDeref(stats),
-	})
-
+	err = searchRepositories(ctx, args, limit, a)
 	return errors.Wrap(err, "repository search failed")
 }
 
