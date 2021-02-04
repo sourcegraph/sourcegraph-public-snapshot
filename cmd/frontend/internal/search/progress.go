@@ -16,20 +16,26 @@ type progressAggregator struct {
 	MatchCount int
 	Stats      streaming.Stats
 	Limit      int
+
+	// Dirty is true if p has changed since the last call to Current.
+	Dirty bool
 }
 
 func (p *progressAggregator) Update(event graphqlbackend.SearchEvent) {
-	// TODO implement Update such that we update api.ProgressStats to avoid
-	// re-reading the whole of stats.
+	if len(event.Results) == 0 && p.Stats.Zero() {
+		return
+	}
 
+	p.Dirty = true
 	p.Stats.Update(&event.Stats)
-
 	for _, result := range event.Results {
 		p.MatchCount += int(result.ResultCount())
 	}
 }
 
 func (p *progressAggregator) currentStats() api.ProgressStats {
+	p.Dirty = false
+
 	// Suggest the next 1000 after rounding off.
 	suggestedLimit := (p.Limit + 1500) / 1000 * 1000
 
