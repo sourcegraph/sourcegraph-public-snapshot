@@ -708,7 +708,7 @@ func testServerStatusMessages(t *testing.T, store *repos.Store) func(t *testing.
 					Messages: []protocol.StatusMessage{
 						{
 							ExternalServiceSyncError: &protocol.ExternalServiceSyncError{
-								Message:           "github is down",
+								Message:           "fetching from code host: 1 error occurred:\n\t* github is down\n\n",
 								ExternalServiceId: githubService.ID,
 							},
 						},
@@ -721,8 +721,9 @@ func testServerStatusMessages(t *testing.T, store *repos.Store) func(t *testing.
 				res: &protocol.StatusMessagesResponse{
 					Messages: []protocol.StatusMessage{
 						{
-							SyncError: &protocol.SyncError{
-								Message: "syncer.sync.store.list-repos: could not connect to database",
+							ExternalServiceSyncError: &protocol.ExternalServiceSyncError{
+								Message:           "syncer.sync.store.list-repos: could not connect to database",
+								ExternalServiceId: githubService.ID,
 							},
 						},
 					},
@@ -787,7 +788,21 @@ func testServerStatusMessages(t *testing.T, store *repos.Store) func(t *testing.
 					sourcer := repos.NewFakeSourcer(tc.sourcerErr, repos.NewFakeSource(githubService, nil))
 					// Run Sync so that possibly `LastSyncErrors` is set
 					syncer.Sourcer = sourcer
-					_ = syncer.SyncExternalService(ctx, store, githubService.ID, time.Millisecond)
+
+					err = syncer.SyncExternalService(ctx, store, githubService.ID, time.Millisecond)
+
+					// In prod, SyncExternalService is kicked off by a worker queue. Any error
+					// returned will be stored in the external_service_sync_jobs table so we fake
+					// that here.
+					if err != nil {
+						defer func() { database.Mocks.ExternalServices = database.MockExternalServices{} }()
+						database.Mocks.ExternalServices.ListSyncErrors = func(ctx context.Context) (map[int64]string, error) {
+							return map[int64]string{
+								githubService.ID: err.Error(),
+							}, nil
+						}
+					}
+
 				}
 
 				s := &Server{

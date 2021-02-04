@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
@@ -608,27 +607,19 @@ func (s *Server) handleStatusMessages(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	for _, e := range s.Syncer.SyncErrors() {
-		if multiErr, ok := errors.Cause(e).(*multierror.Error); ok {
-			for _, e := range multiErr.Errors {
-				if sourceErr, ok := e.(*repos.SourceError); ok {
-					resp.Messages = append(resp.Messages, protocol.StatusMessage{
-						ExternalServiceSyncError: &protocol.ExternalServiceSyncError{
-							Message:           sourceErr.Err.Error(),
-							ExternalServiceId: sourceErr.ExtSvc.ID,
-						},
-					})
-				} else {
-					resp.Messages = append(resp.Messages, protocol.StatusMessage{
-						SyncError: &protocol.SyncError{Message: e.Error()},
-					})
-				}
-			}
-		} else {
-			resp.Messages = append(resp.Messages, protocol.StatusMessage{
-				SyncError: &protocol.SyncError{Message: e.Error()},
-			})
-		}
+	syncErrors, err := database.ExternalServicesWith(s.Store).ListSyncErrors(r.Context())
+	if err != nil {
+		respond(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	for id, failure := range syncErrors {
+		resp.Messages = append(resp.Messages, protocol.StatusMessage{
+			ExternalServiceSyncError: &protocol.ExternalServiceSyncError{
+				Message:           failure,
+				ExternalServiceId: id,
+			},
+		})
 	}
 
 	messagesSummary := func() string {
