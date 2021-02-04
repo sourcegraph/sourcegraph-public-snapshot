@@ -262,6 +262,29 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 	k := zoektutil.ResultCountFactor(len(repos.repoBranches), args.PatternInfo.FileMatchLimit, args.Mode == search.ZoektGlobalSearch)
 	searchOpts := zoektutil.SearchOpts(ctx, k, args.PatternInfo)
 
+	var getRepoInputRev zoektutil.RepoRevFunc
+	if args.Mode == search.ZoektGlobalSearch {
+		repos, err := getRepos(ctx, args.RepoPromise)
+		if err != nil {
+			return err
+		}
+		repoRevMap := make(map[string]*search.RepositoryRevisions, len(repos))
+		for _, r := range repos {
+			repoRevMap[string(r.Repo.Name)] = r
+		}
+		getRepoInputRev = func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool) {
+			if repoRev, ok := repoRevMap[file.Repository]; ok {
+				return repoRev.Repo, repoRev.RevSpecs(), true
+			}
+			return nil, nil, false
+		}
+	} else {
+		getRepoInputRev = func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool) {
+			repo, inputRevs := repos.GetRepoInputRev(file)
+			return repo, inputRevs, true
+		}
+	}
+
 	if deadline, ok := ctx.Deadline(); ok {
 		// If the user manually specified a timeout, allow zoekt to use all of the remaining timeout.
 		searchOpts.MaxWallTime = time.Until(deadline)
@@ -299,29 +322,6 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 			Limit: int(args.PatternInfo.FileMatchLimit),
 		}
 	)
-
-	var getRepoInputRev zoektutil.RepoRevFunc
-	if args.Mode == search.ZoektGlobalSearch {
-		repos, err := getRepos(ctx, args.RepoPromise)
-		if err != nil {
-			return err
-		}
-		repoRevMap := make(map[string]*search.RepositoryRevisions, len(repos))
-		for _, r := range repos {
-			repoRevMap[string(r.Repo.Name)] = r
-		}
-		getRepoInputRev = func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool) {
-			if repoRev, ok := repoRevMap[file.Repository]; ok {
-				return repoRev.Repo, repoRev.RevSpecs(), true
-			}
-			return nil, nil, false
-		}
-	} else {
-		getRepoInputRev = func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool) {
-			repo, inputRevs := repos.GetRepoInputRev(file)
-			return repo, inputRevs, true
-		}
-	}
 
 	for event := range events {
 		if event.Error != nil {
