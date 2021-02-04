@@ -23,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -73,41 +72,9 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int, 
 	ctx, stream, cancel := WithLimit(ctx, stream, limit)
 	defer cancel()
 
-	indexed, err := newIndexedSearchRequest(ctx, args, symbolRequest)
+	indexed, err := newIndexedSearchRequest(ctx, args, symbolRequest, stream)
 	if err != nil {
 		return err
-	}
-
-	var searcherRepos []*search.RepositoryRevisions
-	if indexed.DisableUnindexedSearch {
-		tr.LazyPrintf("disabling unindexed search")
-		var status search.RepoStatusMap
-		for _, r := range indexed.Unindexed {
-			status.Update(r.Repo.ID, search.RepoStatusMissing)
-		}
-		stream.Send(SearchEvent{
-			Stats: streaming.Stats{
-				Status: status,
-			},
-		})
-	} else {
-		// Limit the number of unindexed repositories searched for a single
-		// query. Searching more than this will merely flood the system and
-		// network with requests that will timeout.
-		var missing []*types.RepoName
-		searcherRepos, missing = limitSearcherRepos(indexed.Unindexed, maxUnindexedRepoRevSearchesPerQuery)
-		if len(missing) > 0 {
-			tr.LazyPrintf("limiting unindexed repos searched to %d", maxUnindexedRepoRevSearchesPerQuery)
-			var status search.RepoStatusMap
-			for _, r := range missing {
-				status.Update(r.ID, search.RepoStatusMissing)
-			}
-			stream.Send(SearchEvent{
-				Stats: streaming.Stats{
-					Status: status,
-				},
-			})
-		}
 	}
 
 	run := parallel.NewRun(conf.SearchSymbolsParallelism())
@@ -127,7 +94,7 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int, 
 		}
 	})
 
-	for _, repoRevs := range searcherRepos {
+	for _, repoRevs := range indexed.Unindexed {
 		repoRevs := repoRevs
 		if ctx.Err() != nil {
 			break

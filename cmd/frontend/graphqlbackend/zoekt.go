@@ -84,7 +84,7 @@ func containsRefGlobs(q query.QueryInfo) bool {
 	return containsRefGlobs
 }
 
-func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, typ indexedRequestType) (_ *indexedSearchRequest, err error) {
+func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, typ indexedRequestType, stream Streamer) (_ *indexedSearchRequest, err error) {
 	tr, ctx := trace.New(ctx, "newIndexedSearchRequest", string(typ))
 	defer func() {
 		tr.SetError(err)
@@ -112,7 +112,7 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		}
 
 		return &indexedSearchRequest{
-			Unindexed:        repos,
+			Unindexed:        limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, stream),
 			IndexUnavailable: true,
 		}, nil
 	}
@@ -123,14 +123,14 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 			return nil, fmt.Errorf("invalid index:%q (revsions with glob pattern cannot be resolved for indexed searches)", indexParam)
 		}
 		return &indexedSearchRequest{
-			Unindexed: repos,
+			Unindexed: limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, stream),
 		}, nil
 	}
 
 	// Fallback to Unindexed if index:no
 	if indexParam == query.No {
 		return &indexedSearchRequest{
-			Unindexed: repos,
+			Unindexed: limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, stream),
 		}, nil
 	}
 
@@ -157,7 +157,7 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		}
 
 		return &indexedSearchRequest{
-			Unindexed:        repos,
+			Unindexed:        limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, stream),
 			IndexUnavailable: true,
 		}, ctx.Err()
 	}
@@ -179,11 +179,16 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		return nil, errors.New("structural search only supports searching the default branch https://github.com/sourcegraph/sourcegraph/issues/11906")
 	}
 
+	// Disable unindexed search
+	if indexParam == query.Only {
+		searcherRepos = limitUnindexedRepos(searcherRepos, 0, stream)
+	}
+
 	return &indexedSearchRequest{
 		args: args,
 		typ:  typ,
 
-		Unindexed: searcherRepos,
+		Unindexed: limitUnindexedRepos(searcherRepos, maxUnindexedRepoRevSearchesPerQuery, stream),
 		repos:     indexed,
 
 		DisableUnindexedSearch: indexParam == query.Only,
@@ -257,10 +262,35 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 	k := zoektutil.ResultCountFactor(len(repos.repoBranches), args.PatternInfo.FileMatchLimit, args.Mode == search.ZoektGlobalSearch)
 	searchOpts := zoektutil.SearchOpts(ctx, k, args.PatternInfo)
 
+	var getRepoInputRev zoektutil.RepoRevFunc
+	if args.Mode == search.ZoektGlobalSearch {
+		repos, err := getRepos(ctx, args.RepoPromise)
+		if err != nil {
+			return err
+		}
+		repoRevMap := make(map[string]*search.RepositoryRevisions, len(repos))
+		for _, r := range repos {
+			repoRevMap[string(r.Repo.Name)] = r
+		}
+		getRepoInputRev = func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool) {
+			if repoRev, ok := repoRevMap[file.Repository]; ok {
+				return repoRev.Repo, repoRev.RevSpecs(), true
+			}
+			return nil, nil, false
+		}
+	} else {
+		getRepoInputRev = func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool) {
+			repo, inputRevs := repos.GetRepoInputRev(file)
+			return repo, inputRevs, true
+		}
+	}
+
 	if deadline, ok := ctx.Deadline(); ok {
 		// If the user manually specified a timeout, allow zoekt to use all of the remaining timeout.
 		searchOpts.MaxWallTime = time.Until(deadline)
-
+		if searchOpts.MaxWallTime < 0 {
+			return ctx.Err()
+		}
 		// We don't want our context's deadline to cut off zoekt so that we can get the results
 		// found before the deadline.
 		//
@@ -312,38 +342,6 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 
 		maxLineMatches := 25 + k
 		maxLineFragmentMatches := 3 + k
-
-		var getRepoInputRev zoektutil.RepoRevFunc
-
-		if args.Mode == search.ZoektGlobalSearch {
-			m := map[string]*search.RepositoryRevisions{}
-			for _, file := range files {
-				m[file.Repository] = nil
-			}
-			repos, err := getRepos(ctx, args.RepoPromise)
-			if err != nil {
-				return err
-			}
-
-			for _, repo := range repos {
-				if _, ok := m[string(repo.Repo.Name)]; !ok {
-					continue
-				}
-				m[string(repo.Repo.Name)] = repo
-			}
-			getRepoInputRev = func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool) {
-				repoRev := m[file.Repository]
-				if repoRev == nil {
-					return nil, nil, false
-				}
-				return repoRev.Repo, repoRev.RevSpecs(), true
-			}
-		} else {
-			getRepoInputRev = func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool) {
-				repo, inputRevs := repos.GetRepoInputRev(file)
-				return repo, inputRevs, true
-			}
-		}
 
 		partial, files := matchLimiter.Slice(files, getRepoInputRev)
 		// Partial is populated with repositories we may have not fully
@@ -796,4 +794,41 @@ func (rb *indexedRepoRevs) GetRepoInputRev(file *zoekt.FileMatch) (repo *types.R
 	}
 
 	return repoRev.Repo, inputRevs
+}
+
+// limitUnindexedRepos limits the number of repo@revs searched by the
+// unindexed searcher codepath.  Sending many requests to searcher would
+// otherwise cause a flood of system and network requests that result in
+// timeouts or long delays.
+//
+// It returns the new repositories destined for the unindexed searcher code
+// path, and sends an event to stream for any repositories that are limited /
+// excluded.
+//
+// A slice to the input list is returned, it is not copied.
+func limitUnindexedRepos(unindexed []*search.RepositoryRevisions, limit int, stream Streamer) []*search.RepositoryRevisions {
+	var missing []*search.RepositoryRevisions
+
+	for i, repoRevs := range unindexed {
+		limit -= len(repoRevs.Revs)
+		if limit < 0 {
+			missing = unindexed[i:]
+			unindexed = unindexed[:i]
+			break
+		}
+	}
+
+	if len(missing) > 0 {
+		var status search.RepoStatusMap
+		for _, r := range missing {
+			status.Update(r.Repo.ID, search.RepoStatusMissing)
+		}
+		stream.Send(SearchEvent{
+			Stats: streaming.Stats{
+				Status: status,
+			},
+		})
+	}
+
+	return unindexed
 }
