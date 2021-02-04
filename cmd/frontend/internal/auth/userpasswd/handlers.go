@@ -189,7 +189,7 @@ func handleSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInit
 
 	// Track user data
 	if r.UserAgent() != "Sourcegraph e2etest-bot" {
-		go tracking.SyncUser(creds.Email, hubspotutil.SignupEventID, &hubspot.ContactProperties{AnonymousUserID: creds.AnonymousUserID, FirstSourceUrl: creds.FirstSourceUrl})
+		go tracking.SyncUser(creds.Email, hubspotutil.SignupEventID, &hubspot.ContactProperties{AnonymousUserID: creds.AnonymousUserID, FirstSourceURL: creds.FirstSourceUrl})
 	}
 }
 

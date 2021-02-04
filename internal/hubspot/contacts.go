@@ -41,7 +41,7 @@ type ContactProperties struct {
 	IsServerAdmin   bool   `json:"is_server_admin"`
 	LatestPing      int64  `json:"latest_ping"`
 	AnonymousUserID string `json:"anonymous_user_id"`
-	FirstSourceUrl  string `json:"first_source_url"`
+	FirstSourceURL  string `json:"first_source_url"`
 }
 
 // ContactResponse represents HubSpot user properties returned
@@ -59,7 +59,7 @@ func newAPIValues(h *ContactProperties) *apiProperties {
 	apiProps.set("is_server_admin", h.IsServerAdmin)
 	apiProps.set("latest_ping", h.LatestPing)
 	apiProps.set("anonymous_user_id", h.AnonymousUserID)
-	apiProps.set("first_source_url", h.FirstSourceUrl)
+	apiProps.set("first_source_url", h.FirstSourceURL)
 	return apiProps
 }
 
