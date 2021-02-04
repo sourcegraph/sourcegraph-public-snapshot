@@ -307,28 +307,6 @@ func (c *Client) ExcludeRepo(ctx context.Context, id api.RepoID) (*protocol.Excl
 	return &res, nil
 }
 
-// StatusMessages returns an array of status messages
-func (c *Client) StatusMessages(ctx context.Context) (*protocol.StatusMessagesResponse, error) {
-	resp, err := c.httpGet(ctx, "status-messages")
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	bs, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to read response body")
-	}
-
-	var res protocol.StatusMessagesResponse
-	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		return nil, errors.New(string(bs))
-	} else if err = json.Unmarshal(bs, &res); err != nil {
-		return nil, err
-	}
-	return &res, nil
-}
-
 func (c *Client) httpPost(ctx context.Context, method string, payload interface{}) (resp *http.Response, err error) {
 	reqBody, err := json.Marshal(payload)
 	if err != nil {

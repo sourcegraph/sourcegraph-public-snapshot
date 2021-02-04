@@ -2,81 +2,35 @@ package graphqlbackend
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 )
 
 func (r *schemaResolver) StatusMessages(ctx context.Context) ([]*statusMessageResolver, error) {
-	var messages []*statusMessageResolver
-
 	// 🚨 SECURITY: Only site admins can see status messages.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 
-	result, err := fetchStatusMessages(ctx, r.db)
+	messages, err := repos.FetchStatusMessages(ctx, r.db)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, m := range result.Messages {
-		messages = append(messages, &statusMessageResolver{message: m})
+	var messageResolvers []*statusMessageResolver
+	for _, m := range messages {
+		messageResolvers = append(messageResolvers, &statusMessageResolver{message: m})
 	}
 
-	return messages, nil
-}
-
-var MockStatusMessages func(context.Context) (*protocol.StatusMessagesResponse, error)
-
-// TODO: Move this somewhere better
-// TODO: No need for protocol.StatusMessageResponse
-func fetchStatusMessages(ctx context.Context, db dbutil.DB) (*protocol.StatusMessagesResponse, error) {
-	if MockStatusMessages != nil {
-		return MockStatusMessages(ctx)
-	}
-
-	resp := protocol.StatusMessagesResponse{
-		Messages: []protocol.StatusMessage{},
-	}
-
-	notCloned, err := database.Repos(db).Count(ctx, database.ReposListOptions{NoCloned: true})
-	if err != nil {
-		return nil, errors.Wrap(err, "counting uncloned repos")
-	}
-
-	if notCloned != 0 {
-		resp.Messages = append(resp.Messages, protocol.StatusMessage{
-			Cloning: &protocol.CloningProgress{
-				Message: fmt.Sprintf("%d repositories enqueued for cloning...", notCloned),
-			},
-		})
-	}
-
-	syncErrors, err := database.ExternalServices(db).ListSyncErrors(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "fetching sync errors")
-	}
-
-	for id, failure := range syncErrors {
-		resp.Messages = append(resp.Messages, protocol.StatusMessage{
-			ExternalServiceSyncError: &protocol.ExternalServiceSyncError{
-				Message:           failure,
-				ExternalServiceId: id,
-			},
-		})
-	}
-
-	return &resp, nil
+	return messageResolvers, nil
 }
 
 type statusMessageResolver struct {
-	message protocol.StatusMessage
+	message repos.StatusMessage
 }
 
 func (r *statusMessageResolver) ToCloningProgress() (*statusMessageResolver, bool) {
