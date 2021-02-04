@@ -1,7 +1,7 @@
 .search-context-dropdown {
     &__button {
         font-size: $code-font-size;
-        color: var(--theme-color-plain);
+        color: var(--search-query-text-color);
         margin-left: 0.25rem;
         padding: 0.125rem 0.375rem;
         border-radius: 0.25rem;

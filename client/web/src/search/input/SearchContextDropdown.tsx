@@ -9,8 +9,10 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         <>
             <ButtonDropdown className="search-context-dropdown__toggler">
                 <DropdownToggle className="text-monospace search-context-dropdown__button" color="link">
-                    <span className="search-filter-keyword">context:</span>
-                    {context}
+                    <code>
+                        <span className="search-filter-keyword">context:</span>
+                        {context}
+                    </code>
                 </DropdownToggle>
             </ButtonDropdown>
             <div className="search-context-dropdown__separator" />
