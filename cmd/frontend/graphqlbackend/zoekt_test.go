@@ -301,7 +301,7 @@ func TestIndexedSearch(t *testing.T) {
 				},
 			}
 
-			indexed, err := newIndexedSearchRequest(context.Background(), args, textRequest)
+			indexed, err := newIndexedSearchRequest(context.Background(), args, textRequest, StreamFunc(func(SearchEvent) {}))
 			if err != nil {
 				t.Fatal(err)
 			}

@@ -378,7 +378,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 			repos: &indexedRepoRevs{},
 		}
 	} else {
-		indexed, err = newIndexedSearchRequest(ctx, args, indexedTyp)
+		indexed, err = newIndexedSearchRequest(ctx, args, indexedTyp, stream)
 		if err != nil {
 			return err
 		}
@@ -393,40 +393,6 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 	if args.PatternInfo.IsEmpty() {
 		// Empty query isn't an error, but it has no results.
 		return nil
-	}
-
-	tr.LazyPrintf("%d indexed repos, %d unindexed repos", len(indexed.Repos()), len(indexed.Unindexed))
-
-	var searcherRepos []*search.RepositoryRevisions
-	if indexed.DisableUnindexedSearch {
-		tr.LazyPrintf("disabling unindexed search")
-		var status search.RepoStatusMap
-		for _, r := range indexed.Unindexed {
-			status.Update(r.Repo.ID, search.RepoStatusMissing)
-		}
-		stream.Send(SearchEvent{
-			Stats: streaming.Stats{
-				Status: status,
-			},
-		})
-	} else {
-		// Limit the number of unindexed repositories searched for a single
-		// query. Searching more than this will merely flood the system and
-		// network with requests that will timeout.
-		var missing []*types.RepoName
-		searcherRepos, missing = limitSearcherRepos(indexed.Unindexed, maxUnindexedRepoRevSearchesPerQuery)
-		if len(missing) > 0 {
-			tr.LazyPrintf("limiting unindexed repos searched to %d", maxUnindexedRepoRevSearchesPerQuery)
-			var status search.RepoStatusMap
-			for _, r := range missing {
-				status.Update(r.ID, search.RepoStatusMissing)
-			}
-			stream.Send(SearchEvent{
-				Stats: streaming.Stats{
-					Status: status,
-				},
-			})
-		}
 	}
 
 	// Indexed regex and literal search go via zoekt
@@ -462,7 +428,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 	// - unindexed search of negated content
 	if !args.PatternInfo.IsStructuralPat {
 		g.Go(func() error {
-			return callSearcherOverRepos(ctx, args, stream, searcherRepos, nil)
+			return callSearcherOverRepos(ctx, args, stream, indexed.Unindexed, nil)
 		})
 	}
 
@@ -647,10 +613,4 @@ func limitSearcherRepos(unindexed []*search.RepositoryRevisions, limit int) (sea
 	}
 	searcherRepos = unindexed[:len(unindexed)-limitedRepos]
 	return
-}
-
-type stringerFunc string
-
-func (s stringerFunc) String() string {
-	return string(s)
 }
