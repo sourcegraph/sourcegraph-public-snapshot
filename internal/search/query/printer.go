@@ -40,8 +40,7 @@ func stringHumanPattern(nodes []Node) string {
 func stringHumanParameters(nodes []Node) string {
 	var result []string
 	for _, node := range nodes {
-		switch n := node.(type) {
-		case Parameter:
+		if n, ok := node.(Parameter); ok {
 			v := n.Value
 			if n.Annotation.Labels.isSet(Quoted) {
 				v = strconv.Quote(v)
