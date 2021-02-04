@@ -16,6 +16,7 @@ import GitlabIcon from 'mdi-react/GitlabIcon'
 import { eventLogger } from '../../tracking/eventLogger'
 import { InstallBrowserExtensionPopover } from './InstallBrowserExtensionPopover'
 import { useLocalStorage } from '../../util/useLocalStorage'
+import { RepoHeaderContext } from '../RepoHeader'
 
 interface GoToCodeHostPopoverProps {
     /**
@@ -40,6 +41,8 @@ interface Props extends RevisionSpec, Partial<FileSpec>, GoToCodeHostPopoverProp
     externalLinks?: ExternalLinkFields[]
 
     fetchFileExternalLinks: typeof fetchFileExternalLinks
+
+    actionType?: 'nav' | 'dropdown'
 }
 
 const HAS_PERMANENTLY_DISMISSED_POPUP_KEY = 'has-dismissed-browser-ext-popup'
@@ -47,7 +50,7 @@ const HAS_PERMANENTLY_DISMISSED_POPUP_KEY = 'has-dismissed-browser-ext-popup'
 /**
  * A repository header action that goes to the corresponding URL on an external code host.
  */
-export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
+export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderContext> = props => {
     const [showPopover, setShowPopover] = useState(false)
 
     const { onPopoverDismissed, repo, revision, filePath } = props
@@ -57,7 +60,8 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
         false
     )
 
-    const hijackLink = !hasPermanentlyDismissedPopup && props.canShowPopover
+    // Popover won't work with dropdown
+    const hijackLink = !hasPermanentlyDismissedPopup && props.canShowPopover && !(props.actionType === 'dropdown')
 
     /**
      * The external links for the current file/dir, or undefined while loading, null while not

@@ -5,25 +5,28 @@ import { fromEvent, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 import { ButtonLink } from '../../../../shared/src/components/LinkOrButton'
 import { replaceRevisionInURL } from '../../util/url'
+import { RepoHeaderContext } from '../RepoHeader'
 
 /**
  * A repository header action that replaces the revision in the URL with the canonical 40-character
  * Git commit SHA.
  */
-export class GoToPermalinkAction extends React.PureComponent<{
-    /**
-     * The current (possibly undefined or non-full-SHA) Git revision.
-     */
-    revision?: string
+export class GoToPermalinkAction extends React.PureComponent<
+    {
+        /**
+         * The current (possibly undefined or non-full-SHA) Git revision.
+         */
+        revision?: string
 
-    /**
-     * The commit SHA for the revision in the current location (URL).
-     */
-    commitID: string
+        /**
+         * The commit SHA for the revision in the current location (URL).
+         */
+        commitID: string
 
-    location: H.Location
-    history: H.History
-}> {
+        location: H.Location
+        history: H.History
+    } & RepoHeaderContext
+> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
@@ -55,6 +58,15 @@ export class GoToPermalinkAction extends React.PureComponent<{
     public render(): JSX.Element | null {
         if (this.props.revision === this.props.commitID) {
             return null // already at the permalink destination
+        }
+
+        if (this.props.actionType === 'dropdown') {
+            return (
+                <ButtonLink className="btn" to={this.permalinkURL}>
+                    <LinkIcon className="icon-inline" />
+                    Permalink (with full Git commit SHA)
+                </ButtonLink>
+            )
         }
 
         return (

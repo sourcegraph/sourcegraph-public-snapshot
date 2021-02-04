@@ -495,6 +495,11 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     // Passed to HoverOverlay
     const hoverState = useObservable(hoverifier.hoverStateUpdates) || {}
 
+    // const getStatusBarItems = useMemo(
+    //     () => extensionsController.services.statusBar.getStatusBarItems.bind(extensionsController.services.statusBar),
+    //     [extensionsController]
+    // )
+
     return (
         <div className={`blob ${props.className}`} ref={nextBlobElement}>
             <code
@@ -502,6 +507,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 ref={nextCodeViewElement}
                 dangerouslySetInnerHTML={{ __html: blobInfo.html }}
             />
+            )
             {hoverState.hoverOverlayProps && (
                 <WebHoverOverlay
                     {...props}
@@ -545,3 +551,5 @@ function getLSPTextDocumentPositionParameters(
         position,
     }
 }
+
+// <StatusBar {...props.blobInfo} getStatusBarItems={getStatusBarItems} />

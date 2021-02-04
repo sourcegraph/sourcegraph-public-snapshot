@@ -35,7 +35,13 @@ interface Props extends Pick<AnchorHTMLAttributes<never>, 'target' | 'rel'> {
 
     disabled?: boolean
 
+    disabledClassName?: string
+
     id?: string
+
+    buttonLinkRef?: React.Ref<HTMLAnchorElement>
+
+    ['data-content']?: string
 }
 
 /**
@@ -50,32 +56,36 @@ export const ButtonLink: React.FunctionComponent<Props> = ({
     target,
     rel,
     disabled,
+    disabledClassName,
     pressed,
     'data-tooltip': tooltip,
     onSelect = noop,
     children,
     id,
+    buttonLinkRef = null,
+    'data-content': dataContent,
 }) => {
     // We need to set up a keypress listener because <a onclick> doesn't get
     // triggered by enter.
     const onAnchorKeyPress: React.KeyboardEventHandler<HTMLAnchorElement> = useCallback(
         event => {
-            if (isSelectKeyPress(event)) {
+            if (!disabled && isSelectKeyPress(event)) {
                 onSelect(event)
             }
         },
-        [onSelect]
+        [onSelect, disabled]
     )
 
     const commonProps: React.AnchorHTMLAttributes<HTMLAnchorElement> & {
         'data-tooltip': string | undefined
     } = {
-        className: classNames(className, disabled && 'disabled'),
+        // `.disabled` will only be selected if the `.btn` class is applied as well
+        className: classNames(className, disabled && ['disabled', disabledClassName]),
         'data-tooltip': tooltip,
         'aria-label': tooltip,
         role: typeof pressed === 'boolean' ? 'button' : undefined,
         'aria-pressed': pressed,
-        tabIndex: 0,
+        tabIndex: disabled ? -1 : 0,
         onClick: onSelect,
         onKeyPress: onAnchorKeyPress,
         id,
@@ -85,23 +95,35 @@ export const ButtonLink: React.FunctionComponent<Props> = ({
         event => {
             // Prevent default action of reloading page because of empty href
             event.preventDefault()
-            onSelect(event)
+
+            if (disabled) {
+                return false
+            }
+
+            return onSelect(event)
         },
-        [onSelect]
+        [onSelect, disabled]
     )
 
-    if (!to) {
+    if (!to || disabled) {
         return (
             // Need empty href for styling reasons
             // Use onAuxClick so that middle-clicks are caught.
-            <a href="" {...commonProps} onClick={onClickPreventDefault} onAuxClick={onClickPreventDefault}>
+            <a
+                href=""
+                {...commonProps}
+                onClick={onClickPreventDefault}
+                onAuxClick={onClickPreventDefault}
+                ref={buttonLinkRef}
+                data-content={dataContent}
+            >
                 {children}
             </a>
         )
     }
 
     return (
-        <Link {...commonProps} to={to} target={target} rel={rel}>
+        <Link {...commonProps} to={to} target={target} rel={rel} ref={buttonLinkRef} data-content={dataContent}>
             {children}
         </Link>
     )

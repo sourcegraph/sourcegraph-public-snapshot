@@ -70,7 +70,7 @@ export const ActionsNavItems: React.FunctionComponent<ActionsNavItemsProps> = pr
             () =>
                 combineLatest([scopeChanges, extraContextChanges, from(extensionsController.extHostAPI)]).pipe(
                     switchMap(([scope, extraContext, extensionHostAPI]) =>
-                        wrapRemoteObservable(extensionHostAPI.getContributions(scope, extraContext))
+                        wrapRemoteObservable(extensionHostAPI.getContributions({ scope, extraContext }))
                     )
                 ),
             [scopeChanges, extraContextChanges, extensionsController]

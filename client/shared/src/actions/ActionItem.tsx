@@ -27,6 +27,9 @@ export interface ActionItemAction {
      * {@link module:sourcegraph.module/protocol.MenuItemContribution#alt} property.
      */
     altAction?: Evaluated<ActionContribution>
+
+    /** Whether the action item is active in the given context */
+    active: boolean
 }
 
 export interface ActionItemComponentProps
@@ -40,12 +43,19 @@ export interface ActionItemComponentProps
 export interface ActionItemProps extends ActionItemAction, ActionItemComponentProps, TelemetryProps {
     variant?: 'actionItem'
 
+    hideLabel?: boolean
+
     className?: string
 
     /**
      * Added _in addition_ to `className` if the action item is a toggle in the "pressed" state.
      */
     pressedClassName?: string
+
+    /**
+     * Added _in addition_ to `className` if the action item is not active in the given context
+     */
+    inactiveClassName?: string
 
     /** Called after executing the action (for both success and failure). */
     onDidExecute?: (actionID: string) => void
@@ -76,6 +86,8 @@ export interface ActionItemProps extends ActionItemAction, ActionItemComponentPr
 
     /** Instead of showing the icon and/or title, show this element. */
     title?: JSX.Element | null
+
+    dataContent?: string
 }
 
 const LOADING = 'loading' as const
@@ -155,8 +167,10 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                             alt={this.props.action.actionItem.iconDescription}
                             className={this.props.iconClassName}
                         />
-                    )}{' '}
-                    {this.props.action.actionItem.label}
+                    )}
+                    {!this.props.hideLabel &&
+                        this.props.action.actionItem.label &&
+                        ` ${this.props.action.actionItem.label}`}
                 </>
             )
             tooltip = this.props.action.actionItem.description
@@ -180,6 +194,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
             return (
                 <span
                     data-tooltip={tooltip}
+                    data-content={this.props.dataContent}
                     className={`action-item ${this.props.className || ''} ${variantClassName}`}
                 >
                     {content}
@@ -212,10 +227,13 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                         ? `Error: ${this.state.actionOrError.message}`
                         : tooltip
                 }
+                data-content={this.props.dataContent}
                 disabled={
-                    (this.props.disabledDuringExecution || this.props.showLoadingSpinnerDuringExecution) &&
-                    this.state.actionOrError === LOADING
+                    !this.props.active ||
+                    ((this.props.disabledDuringExecution || this.props.showLoadingSpinnerDuringExecution) &&
+                        this.state.actionOrError === LOADING)
                 }
+                disabledClassName={this.props.inactiveClassName}
                 className={classNames(
                     'action-item',
                     'test-action-item',

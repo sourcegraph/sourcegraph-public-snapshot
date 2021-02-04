@@ -323,6 +323,7 @@
     "shepherd.js": "^8.0.2",
     "sourcegraph": "link:client/packages/sourcegraph-extension-api",
     "string-score": "^1.0.1",
+    "tabbable": "^5.1.5",
     "tagged-template-noop": "^2.1.1",
     "textarea-caret": "^3.1.0",
     "ts-key-enum": "^2.0.7",

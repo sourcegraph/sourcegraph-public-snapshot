@@ -20,13 +20,14 @@ export function getContributedActionItems(
     const allItems: ActionItemAction[] = []
     const menuItems = contributions.menus?.[menu]
     if (menuItems) {
-        for (const { action: actionID, alt: altActionID } of sortBy(menuItems, MENU_ITEMS_PROP_SORT_ORDER)) {
+        for (const { action: actionID, alt: altActionID, when } of sortBy(menuItems, MENU_ITEMS_PROP_SORT_ORDER)) {
             const action = contributions.actions.find(a => a.id === actionID)
             const altAction = contributions.actions.find(a => a.id === altActionID)
             if (action) {
-                allItems.push({ action, altAction })
+                allItems.push({ action, altAction, active: !!when })
             }
         }
     }
+
     return allItems
 }

@@ -75,6 +75,9 @@ export class Tooltip extends React.PureComponent<Props, State> {
                     flip: {
                         enabled: false,
                     },
+                    preventOverflow: {
+                        boundariesElement: 'window',
+                    },
                 }}
             >
                 {this.state.content}

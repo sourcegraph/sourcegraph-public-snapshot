@@ -76,6 +76,13 @@ export class ExtensionCodeEditor implements sourcegraph.CodeEditor, ProxyMarked 
     }
 
     // TODO(tj): Add status bar items
+    // public setStatusBarItem(
+    //     statusBarItemType: sourcegraph.StatusBarItemType,
+    //     statusBarItem: sourcegraph.StatusBarItem
+    // ): void {
+    //     // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    //     this.proxy.$setStatusBarItem(this.resource, { ...statusBarItem, ...statusBarItemType })
+    // }
 
     public update(data: Pick<CodeEditorData, 'selections'>): void {
         const newSelections = data.selections.map(selection => Selection.fromPlain(selection))
@@ -96,3 +103,31 @@ function fromTextDocumentDecoration(decoration: sourcegraph.TextDocumentDecorati
         range: (decoration.range as Range).toJSON(),
     }
 }
+
+// interface PreviousStatusBarItems {
+//     [resource: string]: {
+//         [decorationType: string]: StatusBarItemWithKey
+//     }
+// }
+// export type StatusBarItemWithKey = StatusBarItem & StatusBarItemType
+
+// private getStatusBarItemsSubject(
+//     resource: string,
+//     statusBarItem?: StatusBarItemWithKey
+// ): BehaviorSubject<StatusBarItemWithKey[]> {
+//     let subject = this.statusBarItems.get(resource)
+//     if (!subject) {
+//         subject = new BehaviorSubject<StatusBarItemWithKey[]>(statusBarItem ? [statusBarItem] : [])
+//         this.statusBarItems.set(resource, subject)
+//         this.previousStatusBarItems[resource] = {}
+//     }
+//     if (statusBarItem !== undefined) {
+//         // Replace previous status bar item for this resource + statusBarItemType
+//         this.previousStatusBarItems[resource][statusBarItem.key] = statusBarItem
+
+//         // Emit all status bar items for this resource
+//         const nextStatusBarItems = Object.values(this.previousStatusBarItems[resource])
+//         subject.next(nextStatusBarItems)
+//     }
+//     return subject
+// }

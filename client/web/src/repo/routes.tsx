@@ -3,6 +3,7 @@ import { Redirect, RouteComponentProps } from 'react-router'
 import { getModeFromPath } from '../../../shared/src/languages'
 import { isLegacyFragment, parseHash, toRepoURL } from '../../../shared/src/util/url'
 import { ErrorBoundary } from '../components/ErrorBoundary'
+import { ActionItemsBar } from '../extensions/components/ActionItemsBar'
 import { lazyComponent } from '../util/lazyComponent'
 import { formatHash } from '../util/url'
 import { RepoContainerRoute } from './RepoContainer'
@@ -173,6 +174,13 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                             </ErrorBoundary>
                         </div>
                     )}
+                    <ActionItemsBar
+                        useActionItemsBar={context.useActionItemsBar}
+                        location={context.location}
+                        extensionsController={context.extensionsController}
+                        platformContext={context.platformContext}
+                        telemetryService={context.telemetryService}
+                    />
                 </>
             )
         },

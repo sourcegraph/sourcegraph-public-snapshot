@@ -26,7 +26,7 @@ interface Props extends ActionsProps, TelemetryProps {
      * Called with the array of contributed items to produce the rendered component. If not set, uses a default
      * render function that renders a <ActionItem> for each item.
      */
-    render?: (items: ActionItemAction[]) => JSX.Element | null
+    children?: (items: ActionItemAction[]) => JSX.Element | null
 
     /**
      * If set, it is rendered when there are no contributed items for this menu. Use null to render nothing when
@@ -44,7 +44,7 @@ export const ActionsContainer: React.FunctionComponent<Props> = props => {
             () =>
                 from(extensionsController.extHostAPI).pipe(
                     switchMap(extensionHostAPI =>
-                        wrapRemoteObservable(extensionHostAPI.getContributions(scope, extraContext))
+                        wrapRemoteObservable(extensionHostAPI.getContributions({ scope, extraContext }))
                     )
                 ),
             [scope, extraContext, extensionsController.extHostAPI]

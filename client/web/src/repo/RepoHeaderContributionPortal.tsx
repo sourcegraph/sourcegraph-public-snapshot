@@ -1,4 +1,3 @@
-import { isEqual } from 'lodash'
 import * as React from 'react'
 import { RepoHeaderContribution, RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 
@@ -24,22 +23,20 @@ export class RepoHeaderContributionPortal extends React.Component<Props> {
     }
 
     public shouldComponentUpdate(nextProps: Props): boolean {
-        // This "smart" comparison lets us skip ~75% of the updates that extending React.PureComponent (and not
-        // implementing shouldComponentUpdate) or always returning true here would yield.
         return (
             this.props.repoHeaderContributionsLifecycleProps !== nextProps.repoHeaderContributionsLifecycleProps ||
             this.props.position !== nextProps.position ||
             this.props.priority !== nextProps.priority ||
-            !isEqual(this.props.element.props, nextProps.element.props)
+            this.props.render !== nextProps.render
         )
     }
 
     public componentWillUnmount(): void {
-        const key = this.props.element.key as string // enforced in RepoHeaderContributionStore
+        const id = this.props.id as string // enforced in RepoHeaderContributionStore
         if (this.props.repoHeaderContributionsLifecycleProps) {
             // Don't need to worry about being unable to remove this because once
             // this.props.repoHeaderContributionsLifecycleProps is set (from RepoHeader), it is never unset.
-            this.props.repoHeaderContributionsLifecycleProps.onRepoHeaderContributionRemove(key)
+            this.props.repoHeaderContributionsLifecycleProps.onRepoHeaderContributionRemove(id)
         }
     }
 

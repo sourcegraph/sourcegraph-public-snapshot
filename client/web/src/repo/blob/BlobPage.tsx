@@ -220,25 +220,37 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
             <RepoHeaderContributionPortal
                 position="right"
                 priority={20}
-                element={
-                    <ToggleHistoryPanel key="toggle-blob-panel" location={props.location} history={props.history} />
-                }
+                id="toggle-blob-panel"
+                render={context => (
+                    <ToggleHistoryPanel
+                        key="toggle-blob-panel"
+                        location={props.location}
+                        history={props.history}
+                        {...context}
+                    />
+                )}
                 repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
             />
             {renderMode === 'code' && (
                 <RepoHeaderContributionPortal
                     position="right"
                     priority={99}
-                    element={<ToggleLineWrap key="toggle-line-wrap" onDidUpdate={setWrapCode} />}
+                    id="toggle-line-wrap"
+                    // element={<ToggleLineWrap key="toggle-line-wrap" onDidUpdate={setWrapCode} />}
+                    render={() => <ToggleLineWrap key="toggle-line-wrap" onDidUpdate={setWrapCode} />}
                     repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
                 />
             )}
             <RepoHeaderContributionPortal
                 position="right"
                 priority={30}
-                element={
+                id="raw-action"
+                // element={
+                //     <GoToRawAction key="raw-action" repoName={repoName} revision={props.revision} filePath={filePath} />
+                // }
+                render={() => (
                     <GoToRawAction key="raw-action" repoName={repoName} revision={props.revision} filePath={filePath} />
-                }
+                )}
                 repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
             />
         </>
@@ -272,13 +284,14 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                 <RepoHeaderContributionPortal
                     position="right"
                     priority={100}
-                    element={
+                    id="toggle-rendered-file-mode"
+                    render={() => (
                         <ToggleRenderedFileMode
                             key="toggle-rendered-file-mode"
                             mode={renderMode || 'rendered'}
                             location={props.location}
                         />
-                    }
+                    )}
                     repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
                 />
             )}

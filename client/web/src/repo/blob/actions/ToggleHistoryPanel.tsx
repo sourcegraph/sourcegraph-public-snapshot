@@ -13,14 +13,17 @@ import {
 import { Tooltip } from '../../../../../branded/src/components/tooltip/Tooltip'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { BlobPanelTabID } from '../panel/BlobPanel'
+import { RepoHeaderContext } from '../../RepoHeader'
 
 /**
  * A repository header action that toggles the visibility of the history panel.
  */
-export class ToggleHistoryPanel extends React.PureComponent<{
-    location: H.Location
-    history: H.History
-}> {
+export class ToggleHistoryPanel extends React.PureComponent<
+    {
+        location: H.Location
+        history: H.History
+    } & RepoHeaderContext
+> {
     private toggles = new Subject<boolean>()
     private subscriptions = new Subscription()
 
@@ -72,6 +75,16 @@ export class ToggleHistoryPanel extends React.PureComponent<{
 
     public render(): JSX.Element | null {
         const visible = ToggleHistoryPanel.isVisible(this.props.location)
+
+        if (this.props.actionType === 'dropdown') {
+            return (
+                // TODO(tj): file dropdown action class w/ width
+                <ButtonLink className="btn d-block" style={{ width: 250 }} onSelect={this.onClick}>
+                    <HistoryIcon className="icon-inline" />
+                    <span>{visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)</span>
+                </ButtonLink>
+            )
+        }
         return (
             <ButtonLink onSelect={this.onClick} data-tooltip={`${visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)`}>
                 <HistoryIcon className="icon-inline" />

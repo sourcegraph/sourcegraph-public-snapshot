@@ -1,0 +1,31 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`StatusBar renders correctly 1`] = `
+<body>
+  <div>
+    <div
+      class="status-bar w-100 border-top px-2 d-flex"
+    >
+      <div
+        class="status-bar__item h-100 d-flex align-items-center px-1"
+      >
+        <small
+          class="status-bar__text"
+        >
+          Coverage: 96%
+        </small>
+      </div>
+      <div
+        class="status-bar__item h-100 d-flex align-items-center px-1 status-bar__item--tooltipped"
+        data-tooltip="Code owners: @felixbecker, @beyang"
+      >
+        <small
+          class="status-bar__text"
+        >
+          2 code owners
+        </small>
+      </div>
+    </div>
+  </div>
+</body>
+`;
