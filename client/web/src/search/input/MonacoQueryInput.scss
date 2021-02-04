@@ -26,8 +26,8 @@
         // Match padding from the regular query input.
         padding-left: 0.75rem;
         &:not(:first-child) {
-            padding-left: 0.325rem; // smaller padding if the search context selector is visible
-            margin-left: 0.1875rem;
+            padding-left: 0.5rem; // smaller padding if the search context selector is visible
+            margin-left: 0.0625rem;
             border-top-left-radius: 0.25rem;
             border-bottom-left-radius: 0.25rem;
         }
