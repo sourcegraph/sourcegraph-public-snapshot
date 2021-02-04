@@ -1336,7 +1336,7 @@ func TestSearchContext(t *testing.T) {
 
 	for _, tt := range tts {
 		t.Run(tt.name, func(t *testing.T) {
-			qinfo, err := query.ProcessAndOr(tt.searchQuery, query.ParserOptions{})
+			qinfo, err := query.ParseLiteral(tt.searchQuery)
 			if err != nil {
 				t.Fatal(err)
 			}
