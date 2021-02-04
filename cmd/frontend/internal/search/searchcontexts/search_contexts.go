@@ -33,7 +33,7 @@ func ResolveSearchContextSpec(ctx context.Context, searchContextSpec string, get
 		if namespace.User == 0 {
 			return nil, fmt.Errorf("search context '%s' not found", searchContextSpec)
 		}
-		return &types.SearchContext{Name: name, UserID: namespace.User}, nil
+		return GetUserSearchContext(name, namespace.User), nil
 	}
 	return nil, fmt.Errorf("search context '%s' does not have the correct format (global or @username)", searchContextSpec)
 }
@@ -47,8 +47,12 @@ func IsGlobalSearchContext(searchContext *types.SearchContext) bool {
 	return searchContext != nil && searchContext.Name == globalSearchContextName
 }
 
+func GetUserSearchContext(name string, userID int32) *types.SearchContext {
+	return &types.SearchContext{Name: name, Description: "Your repositories on Sourcegraph", UserID: userID}
+}
+
 func GetGlobalSearchContext() *types.SearchContext {
-	return &types.SearchContext{Name: globalSearchContextName}
+	return &types.SearchContext{Name: globalSearchContextName, Description: "All repositories on Sourcegraph"}
 }
 
 func GetSearchContextSpec(searchContext *types.SearchContext) string {

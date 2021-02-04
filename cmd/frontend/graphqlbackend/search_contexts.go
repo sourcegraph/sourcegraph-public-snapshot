@@ -17,39 +17,16 @@ type searchContextResolver struct {
 	sc types.SearchContext
 }
 
-func marshalSearchContextID(searchContextID int32) graphql.ID {
-	return relay.MarshalID("SearchContext", searchContextID)
-}
-
-func unmarshalSearchContextID(id graphql.ID) (searchContextID int32, err error) {
-	err = relay.UnmarshalSpec(id, &searchContextID)
-	return
+func marshalSearchContextID(searchContextSpec string) graphql.ID {
+	return relay.MarshalID("SearchContext", searchContextSpec)
 }
 
 func (r searchContextResolver) ID() graphql.ID {
-	return marshalSearchContextID(r.sc.ID)
+	return marshalSearchContextID(searchcontexts.GetSearchContextSpec(&r.sc))
 }
 
-func (r searchContextResolver) Name() string {
-	return r.sc.Name
-}
-
-func (r searchContextResolver) Namespace(ctx context.Context) (*NamespaceResolver, error) {
-	if r.sc.OrgID != 0 {
-		n, err := NamespaceByID(ctx, MarshalOrgID(r.sc.OrgID))
-		if err != nil {
-			return nil, err
-		}
-		return &NamespaceResolver{n}, nil
-	}
-	if r.sc.UserID != 0 {
-		n, err := NamespaceByID(ctx, MarshalUserID(r.sc.UserID))
-		if err != nil {
-			return nil, err
-		}
-		return &NamespaceResolver{n}, nil
-	}
-	return nil, nil
+func (r searchContextResolver) Description(ctx context.Context) string {
+	return r.sc.Description
 }
 
 func (r searchContextResolver) AutoDefined(ctx context.Context) bool {
@@ -72,8 +49,8 @@ func (r *schemaResolver) SearchContexts(ctx context.Context) ([]*searchContextRe
 		if err != nil {
 			return nil, err
 		}
-		searchContext := types.SearchContext{Name: user.Username, UserID: a.UID}
-		searchContextResolvers = append(searchContextResolvers, &searchContextResolver{sc: searchContext})
+		searchContext := searchcontexts.GetUserSearchContext(user.Username, a.UID)
+		searchContextResolvers = append(searchContextResolvers, &searchContextResolver{sc: *searchContext})
 	}
 	return searchContextResolvers, nil
 }
