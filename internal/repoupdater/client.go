@@ -321,15 +321,6 @@ func (c *Client) httpPost(ctx context.Context, method string, payload interface{
 	return c.do(ctx, req)
 }
 
-func (c *Client) httpGet(ctx context.Context, method string) (*http.Response, error) {
-	req, err := http.NewRequest("GET", c.URL+"/"+method, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return c.do(ctx, req)
-}
-
 func (c *Client) do(ctx context.Context, req *http.Request) (_ *http.Response, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Client.do")
 	defer func() {
