@@ -15,6 +15,7 @@
     }
 
     &__focus-container {
+        // stylelint-disable-next-line declaration-property-unit-whitelist
         height: calc(100% + 2px); // add 2 pixels for border
         display: flex;
         align-items: center;
