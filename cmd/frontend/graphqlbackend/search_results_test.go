@@ -1310,6 +1310,49 @@ func TestEvaluateAnd(t *testing.T) {
 	}
 }
 
+func TestIndexValue(t *testing.T) {
+	cases := []struct {
+		name    string
+		pattern string
+		want    query.YesNoOnly
+	}{
+		{
+			name:    "yes",
+			pattern: "foo index:yes",
+			want:    query.Yes,
+		},
+		{
+			name:    "no",
+			pattern: "foo index:no",
+			want:    query.No,
+		},
+		{
+			name:    "only",
+			pattern: "foo index:only",
+			want:    query.Only,
+		},
+		{
+			name:    "default",
+			pattern: "foo",
+			want:    query.Yes,
+		},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			q, err := query.ProcessAndOr(tt.pattern,
+				query.ParserOptions{SearchType: query.SearchTypeLiteral, Globbing: false})
+			if err != nil {
+				t.Fatalf(err.Error())
+			}
+			got := indexValue(q)
+			if got != tt.want {
+				t.Fatalf("got %s\nwant %s", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestSearchContext(t *testing.T) {
 	orig := envvar.SourcegraphDotComMode()
 	envvar.MockSourcegraphDotComMode(true)
