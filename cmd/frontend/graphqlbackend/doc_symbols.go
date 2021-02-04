@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
@@ -12,9 +11,7 @@ type docSymbolsArgs struct {
 	First *int
 }
 
-func (r *GitTreeEntryResolver) DocSymbols(ctx context.Context, args *docSymbolsArgs) (*DocSymbolConnectionResolver, error) {
-	// MARK
-
+func (r *GitTreeEntryResolver) DocSymbols(ctx context.Context, args *docSymbolsArgs) (DocSymbolConnectionResolver, error) {
 	lsifResolver, err := r.LSIF(ctx, &struct{ ToolName *string }{})
 	if err != nil {
 		return nil, err
@@ -23,29 +20,15 @@ func (r *GitTreeEntryResolver) DocSymbols(ctx context.Context, args *docSymbolsA
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("# symbolsConnection %T", symbolsConnection)
-	return nil, nil
+	return symbolsConnection, nil
 }
 
-type DocSymbolConnectionResolver struct {
-	first   *int32
-	symbols []*docSymbolResolver
+type DocSymbolConnectionResolver interface {
+	Nodes(ctx context.Context) ([]DocSymbolResolver, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
-func (r *DocSymbolConnectionResolver) Nodes(ctx context.Context) ([]*docSymbolResolver, error) {
-	return nil, nil
-}
-
-func (r *DocSymbolConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	return nil, nil
-}
-
-type docSymbolResolver struct{}
-
-func (r *docSymbolResolver) Name(ctx context.Context) (string, error) {
-	return "", nil
-}
-
-func (r *docSymbolResolver) Children(ctx context.Context) ([]*docSymbolResolver, error) {
-	return nil, nil
+type DocSymbolResolver interface {
+	Name(ctx context.Context) (string, error)
+	Children(ctx context.Context) ([]DocSymbolResolver, error)
 }

@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"log"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -12,19 +11,10 @@ import (
 
 type ResolvedSymbol struct {
 	Dump store.Dump
-}
-
-type SymbolLocation struct {
-	Path  string
-	Range lsifstore.Range
+	*lsifstore.Symbol
 }
 
 func (api *CodeIntelAPI) Symbols(ctx context.Context, path string, uploadID int) ([]ResolvedSymbol, error) {
-	// MARK
-	api.dbStore.GetDumpByID(ctx, uploadID)
-	// log.Printf("### uploadID: %v", uploadID)
-	// debug.PrintStack()
-
 	dump, exists, err := api.dbStore.GetDumpByID(ctx, uploadID)
 	if err != nil {
 		return nil, errors.Wrap(err, "store.GetDumpByID")
@@ -35,18 +25,14 @@ func (api *CodeIntelAPI) Symbols(ctx context.Context, path string, uploadID int)
 
 	pathInBundle := strings.TrimPrefix(path, dump.Root)
 
-	rawSymbolData, err := api.lsifStore.Symbols(ctx, uploadID, pathInBundle)
-	if err != nil || len(rawSymbolData) == 0 {
+	symbols, err := api.lsifStore.Symbols(ctx, uploadID, pathInBundle)
+	if err != nil || len(symbols) == 0 {
 		return nil, err
 	}
 
-	// Coalesce and combine into symbols
-	symbols := make([]ResolvedSymbol, 0, len(rawSymbolData))
-	// for _, rawSymbol := range rawSymbolData {
-	// 	// symbols[i] = ResolvedSymbol{
-	// 	// }
-	// }
-
-	log.Printf("# CodeIntelAPI.Symbols: %+v", symbols)
-	return nil, nil
+	resolvedSymbols := make([]ResolvedSymbol, len(symbols))
+	for i, symbol := range symbols {
+		resolvedSymbols[i] = ResolvedSymbol{Dump: dump, Symbol: symbol}
+	}
+	return resolvedSymbols, nil
 }

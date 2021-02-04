@@ -9,6 +9,7 @@ import (
 
 	"github.com/opentracing/opentracing-go/log"
 
+	protocol "github.com/sourcegraph/lsif-protocol"
 	codeintelapi "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/api"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
@@ -43,11 +44,19 @@ type AdjustedCodeIntelligenceRange struct {
 }
 
 type AdjustedSymbol struct {
-	// Dump           store.Dump
-	// Path           string
-	// AdjustedCommit string
-	// AdjustedRange  lsifstore.Range
-	Dump store.Dump
+	Text              string
+	Detail            string
+	Kind              protocol.SymbolKind
+	Tags              []protocol.SymbolTag
+	AdjustedLocations []AdjustedSymbolLocation
+	Children          []*AdjustedSymbol
+}
+
+// TODO(beyang): should merge with AdjustedLocation?
+type AdjustedSymbolLocation struct {
+	Path           string
+	AdjustedCommit string
+	AdjustedRange  lsifstore.Range
 }
 
 // QueryResolver is the main interface to bundle-related operations exposed to the GraphQL API. This
@@ -58,7 +67,7 @@ type QueryResolver interface {
 	Ranges(ctx context.Context, startLine, endLine int) ([]AdjustedCodeIntelligenceRange, error)
 	Definitions(ctx context.Context, line, character int) ([]AdjustedLocation, error)
 	References(ctx context.Context, line, character, limit int, rawCursor string) ([]AdjustedLocation, string, error)
-	Symbols(ctx context.Context, path string) ([]AdjustedSymbol, error)
+	Symbols(ctx context.Context, path string) ([]*AdjustedSymbol, error)
 	Hover(ctx context.Context, line, character int) (string, lsifstore.Range, bool, error)
 	Diagnostics(ctx context.Context, limit int) ([]AdjustedDiagnostic, int, error)
 }
@@ -210,8 +219,7 @@ func (r *queryResolver) Definitions(ctx context.Context, line, character int) (_
 
 const slowReferencesRequestThreshold = time.Second
 
-func (r *queryResolver) Symbols(ctx context.Context, path string) ([]AdjustedSymbol, error) {
-	// MARK
+func (r *queryResolver) Symbols(ctx context.Context, path string) ([]*AdjustedSymbol, error) {
 	for i := range r.uploads {
 		symbols, err := r.codeIntelAPI.Symbols(ctx, path, r.uploads[i].ID)
 		if err != nil {
@@ -222,15 +230,16 @@ func (r *queryResolver) Symbols(ctx context.Context, path string) ([]AdjustedSym
 			continue
 		}
 
-		adjustedSymbols := make([]AdjustedSymbol, len(symbols))
-		for j := range symbols {
-			adjustedSymbols[j] = AdjustedSymbol{
-				// TODO
+		adjustedSymbols := make([]*AdjustedSymbol, len(symbols))
+		for i, symbol := range symbols {
+			adjustedSymbol, err := r.adjustSymbol(ctx, symbol.Dump, symbol.Symbol)
+			if err != nil {
+				return nil, err
 			}
+			adjustedSymbols[i] = adjustedSymbol
 		}
 		return adjustedSymbols, nil
 	}
-
 	return nil, nil
 }
 
@@ -462,6 +471,48 @@ func (r *queryResolver) adjustLocations(ctx context.Context, locations []codeint
 		})
 	}
 
+	return adjustedLocations, nil
+}
+
+func (r *queryResolver) adjustSymbol(ctx context.Context, dump store.Dump, symbol *lsifstore.Symbol) (*AdjustedSymbol, error) {
+	adjustedLocations, err := r.adjustSymbolLocations(ctx, dump, symbol.Locations)
+	if err != nil {
+		return nil, err
+	}
+	var adjustedChildren []*AdjustedSymbol
+	if len(symbol.Children) > 0 {
+		adjustedChildren = make([]*AdjustedSymbol, len(symbol.Children))
+	}
+	for i, child := range symbol.Children {
+		adjustedChild, err := r.adjustSymbol(ctx, dump, child)
+		if err != nil {
+			return nil, err
+		}
+		adjustedChildren[i] = adjustedChild
+	}
+	return &AdjustedSymbol{
+		Text:              symbol.Text,
+		Detail:            symbol.Detail,
+		Kind:              symbol.Kind,
+		Tags:              symbol.Tags,
+		AdjustedLocations: adjustedLocations,
+		Children:          adjustedChildren,
+	}, nil
+}
+
+func (r *queryResolver) adjustSymbolLocations(ctx context.Context, dump store.Dump, locations []lsifstore.SymbolLocation) ([]AdjustedSymbolLocation, error) {
+	adjustedLocations := make([]AdjustedSymbolLocation, len(locations))
+	for i := range locations {
+		adjustedCommit, adjustedRange, err := r.adjustRange(ctx, dump.RepositoryID, dump.Commit, locations[i].Path, locations[i].Range)
+		if err != nil {
+			return nil, err
+		}
+		adjustedLocations[i] = AdjustedSymbolLocation{
+			Path:           locations[i].Path,
+			AdjustedCommit: adjustedCommit,
+			AdjustedRange:  adjustedRange,
+		}
+	}
 	return adjustedLocations, nil
 }
 

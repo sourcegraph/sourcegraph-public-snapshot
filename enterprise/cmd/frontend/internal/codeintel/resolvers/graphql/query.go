@@ -2,7 +2,6 @@ package graphql
 
 import (
 	"context"
-	"log"
 
 	"github.com/pkg/errors"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -60,15 +59,11 @@ func (r *QueryResolver) Ranges(ctx context.Context, args *gql.LSIFRangesArgs) (g
 }
 
 func (r *QueryResolver) Symbols(ctx context.Context, args *gql.LSIFSymbolsArgs) (gql.DocSymbolConnectionResolver, error) {
-	// TODO(beyang)
-	// log.Printf("# QueryResolver.Symbols")
-	// debug.PrintStack()
-	log.Printf("# r.resolver: %T", r.resolver)
-
-	r.resolver.Symbols(ctx, args.Path)
-
-	// r.resolver.Symbols
-	return gql.DocSymbolConnectionResolver{}, nil
+	symbols, err := r.resolver.Symbols(ctx, args.Path)
+	if err != nil {
+		return nil, err
+	}
+	return NewDocSymbolConnectionResolver(symbols), nil
 }
 
 func (r *QueryResolver) Definitions(ctx context.Context, args *gql.LSIFQueryPositionArgs) (gql.LocationConnectionResolver, error) {

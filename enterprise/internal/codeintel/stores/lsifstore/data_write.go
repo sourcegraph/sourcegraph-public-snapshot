@@ -98,6 +98,7 @@ func (s *Store) WriteReferences(ctx context.Context, bundleID int, monikerLocati
 func (s *Store) writeDefinitionReferences(ctx context.Context, bundleID int, tableName string, monikerLocations chan MonikerLocations) error {
 	inserter := func(inserter *batch.BatchInserter) error {
 		for v := range monikerLocations {
+			// logg.Printf("# monikerLocation: %+v", v)
 			data, err := s.serializer.MarshalLocations(v.Locations)
 			if err != nil {
 				return err

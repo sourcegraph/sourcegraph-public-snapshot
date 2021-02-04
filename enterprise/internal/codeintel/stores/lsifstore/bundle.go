@@ -11,6 +11,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 
+	protocol "github.com/sourcegraph/lsif-protocol"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -136,6 +137,9 @@ func symbolDataToSymbol(path string, docData DocumentData, d DocumentSymbolData)
 		}
 		children[i] = childSymbol
 	}
+	// for _, moniker := range docData.Monikers {
+	// 	moniker.
+	// }
 
 	return &Symbol{
 		Text:   rng.Tag.Text,
@@ -152,7 +156,6 @@ func symbolDataToSymbol(path string, docData DocumentData, d DocumentSymbolData)
 
 // Symbols returns all LSIF document symbols in documents prefixed by path.
 func (s *Store) Symbols(ctx context.Context, bundleID int, path string) ([]*Symbol, error) {
-	logg.Printf("# bundleID: %v, path: %v", bundleID, path)
 	const limit = 10000
 	scannedDocumentData, err := s.scanDocumentData(s.Store.Query(ctx, sqlf.Sprintf(documentsQuery, bundleID, path, limit)))
 	if err != nil || len(scannedDocumentData) == 0 {
@@ -165,27 +168,48 @@ func (s *Store) Symbols(ctx context.Context, bundleID int, path string) ([]*Symb
 	}
 
 	// Convert to symbols
-	symbols := make([]struct {
-		symbol  *Symbol
-		docData *QualifiedDocumentData
-	}, 0, numSymbols)
+	symbols := make([]*Symbol, 0, numSymbols)
 	for _, docData := range scannedDocumentData {
 		for _, symData := range docData.Document.Symbols {
 			symbol, err := symbolDataToSymbol(path, docData.Document, symData)
 			if err != nil {
 				return nil, err
 			}
-			symbols = append(symbols, struct {
-				symbol  *Symbol
-				docData *QualifiedDocumentData
-			}{symbol: symbol, docData: &docData})
+			symbols = append(symbols, symbol)
 		}
 	}
 
-	// NEXT:
-	// TODO: associate with monikers (based on ranges), coalesce by moniker
+	// TODO(beyang): coalesce using monikers, rather than symbol text
+	type symbolKey struct {
+		id   string
+		kind protocol.SymbolKind
+	}
+	coalescedSymbols := make(map[symbolKey]*Symbol)
+	for _, symbol := range symbols {
+		existing, ok := coalescedSymbols[symbolKey{symbol.Text, symbol.Kind}]
+		if ok {
+			existing.Locations = append(existing.Locations, symbol.Locations...)
+			existing.Children = append(existing.Children, symbol.Children...)
+			// TODO(beyang): union tags
+			details := make([]string, 0, 2)
+			if existing.Detail != "" {
+				details = append(details, existing.Detail)
+			}
+			if symbol.Detail != "" {
+				details = append(details, symbol.Detail)
+			}
+			existing.Detail = strings.Join(details, "\n\n")
+		} else {
+			coalescedSymbols[symbolKey{symbol.Text, symbol.Kind}] = symbol
+		}
+	}
 
-	return symbols, nil
+	coalescedSymbolSlice := make([]*Symbol, 0, len(coalescedSymbols))
+	for _, symbol := range coalescedSymbols {
+		coalescedSymbolSlice = append(coalescedSymbolSlice, symbol)
+	}
+
+	return coalescedSymbolSlice, nil
 }
 
 const documentQuery = `
