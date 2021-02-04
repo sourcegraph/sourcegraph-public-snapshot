@@ -16,6 +16,10 @@ func TestAndOrQuery_Validation(t *testing.T) {
 		want       string
 	}{
 		{
+			input: "index:foo",
+			want:  `invalid value "foo" for field "index". Valid values are: yes, only, no`,
+		},
+		{
 			input: "case:yes case:no",
 			want:  `field "case" may not be used more than once`,
 		},

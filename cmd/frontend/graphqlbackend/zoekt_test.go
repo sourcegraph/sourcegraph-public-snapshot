@@ -113,12 +113,7 @@ func TestIndexedSearch(t *testing.T) {
 				useFullDeadline: true,
 				since:           func(time.Time) time.Duration { return 0 },
 			},
-			wantCommon: streaming.Stats{
-				Status: mkStatusMap(map[string]search.RepoStatus{
-					"foo/bar":    search.RepoStatusIndexed | search.RepoStatusTimedout,
-					"foo/foobar": search.RepoStatusIndexed | search.RepoStatusTimedout,
-				}),
-			},
+			wantErr: true,
 		},
 		{
 			name: "results",
@@ -301,7 +296,7 @@ func TestIndexedSearch(t *testing.T) {
 				},
 			}
 
-			indexed, err := newIndexedSearchRequest(context.Background(), args, textRequest)
+			indexed, err := newIndexedSearchRequest(context.Background(), args, textRequest, StreamFunc(func(SearchEvent) {}))
 			if err != nil {
 				t.Fatal(err)
 			}

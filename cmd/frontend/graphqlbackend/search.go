@@ -397,21 +397,21 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 	}
 
 	forkStr, _ := r.Query.StringValue(query.FieldFork)
-	fork := searchrepos.ParseYesNoOnly(forkStr)
-	if fork == searchrepos.Invalid && !searchrepos.ExactlyOneRepo(repoFilters) && !settingForks {
+	fork := query.ParseYesNoOnly(forkStr)
+	if fork == query.Invalid && !searchrepos.ExactlyOneRepo(repoFilters) && !settingForks {
 		// fork defaults to No unless either of:
 		// (1) exactly one repo is being searched, or
 		// (2) user/org/global setting includes forks
-		fork = searchrepos.No
+		fork = query.No
 	}
 
 	archivedStr, _ := r.Query.StringValue(query.FieldArchived)
-	archived := searchrepos.ParseYesNoOnly(archivedStr)
-	if archived == searchrepos.Invalid && !searchrepos.ExactlyOneRepo(repoFilters) && !settingArchived {
+	archived := query.ParseYesNoOnly(archivedStr)
+	if archived == query.Invalid && !searchrepos.ExactlyOneRepo(repoFilters) && !settingArchived {
 		// archived defaults to No unless either of:
 		// (1) exactly one repo is being searched, or
 		// (2) user/org/global setting includes archives in all searches
-		archived = searchrepos.No
+		archived = query.No
 	}
 
 	visibilityStr, _ := r.Query.StringValue(query.FieldVisibility)
@@ -431,10 +431,10 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		RepoGroupFilters:   repoGroupFilters,
 		VersionContextName: versionContextName,
 		UserSettings:       r.UserSettings,
-		OnlyForks:          fork == searchrepos.Only,
-		NoForks:            fork == searchrepos.No,
-		OnlyArchived:       archived == searchrepos.Only,
-		NoArchived:         archived == searchrepos.No,
+		OnlyForks:          fork == query.Only,
+		NoForks:            fork == query.No,
+		OnlyArchived:       archived == query.Only,
+		NoArchived:         archived == query.No,
 		OnlyPrivate:        visibility == query.Private,
 		OnlyPublic:         visibility == query.Public,
 		CommitAfter:        commitAfter,

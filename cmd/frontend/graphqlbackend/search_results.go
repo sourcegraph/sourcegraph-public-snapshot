@@ -1530,12 +1530,7 @@ func (a *aggregator) doRepoSearch(ctx context.Context, args *search.TextParamete
 		tr.Finish()
 	}()
 
-	results, stats, err := searchRepositories(ctx, args, limit)
-	a.Send(SearchEvent{
-		Results: results,
-		Stats:   statsDeref(stats),
-	})
-
+	err = searchRepositories(ctx, args, limit, a)
 	return errors.Wrap(err, "repository search failed")
 }
 
@@ -1547,17 +1542,7 @@ func (a *aggregator) doSymbolSearch(ctx context.Context, args *search.TextParame
 		tr.Finish()
 	}()
 
-	symbolFileMatches, stats, err := searchSymbols(ctx, args, limit)
-
-	results := make([]SearchResultResolver, len(symbolFileMatches))
-	for i := range symbolFileMatches {
-		results[i] = symbolFileMatches[i]
-	}
-
-	a.Send(SearchEvent{
-		Results: results,
-		Stats:   statsDeref(stats),
-	})
+	err = searchSymbols(ctx, args, limit, a)
 	return errors.Wrap(err, "symbol search failed")
 }
 

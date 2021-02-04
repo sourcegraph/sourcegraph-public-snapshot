@@ -51,7 +51,7 @@ func GitServer() *monitoring.Container {
 							Description: "go routines",
 							Query:       "go_goroutines{app=\"gitserver\", instance=~\"${shard:regex}\"}",
 							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").With(func(o monitoring.Observable, g *sdk.GraphPanel) {
+							Panel: monitoring.Panel().LegendFormat("{{instance}}").With(func(o monitoring.Observable, g *sdk.GraphPanel) {
 								g.Legend.RightSide = true
 							}),
 							Owner: monitoring.ObservableOwnerCloud,
