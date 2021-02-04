@@ -8,8 +8,14 @@
     flex: 1 1 auto;
     min-width: 12rem;
 
+    &:focus-within {
+        .search-context-dropdown__separator {
+            visibility: hidden;
+        }
+    }
+
     &__focus-container {
-        height: 100%;
+        height: calc(100% + 2px); // add 2 pixels for border
         display: flex;
         align-items: center;
         flex: 1 1 auto;
@@ -19,7 +25,10 @@
         // Match padding from the regular query input.
         padding-left: 0.75rem;
         &:not(:first-child) {
-            padding-left: 0.5rem; // smaller padding if the search context selector is visible
+            padding-left: 0.325rem; // smaller padding if the search context selector is visible
+            margin-left: 0.1875rem;
+            border-top-left-radius: 0.25rem;
+            border-bottom-left-radius: 0.25rem;
         }
 
         &:focus-within {
