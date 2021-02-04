@@ -3,10 +3,10 @@ import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetrySer
 
 interface Props extends TelemetryProps {}
 
-export const ProductFeedbackPage: React.FunctionComponent<Props> = ({ telemetryService }) => {
+export const ProductResearchPage: React.FunctionComponent<Props> = props => {
     useEffect(() => {
-        telemetryService.logViewEvent('UserSettingsRepositories')
-    }, [telemetryService])
+        props.telemetryService.logViewEvent('UserSettingsRepositories')
+    }, [props.telemetryService])
 
     return (
         <>
@@ -14,7 +14,7 @@ export const ProductFeedbackPage: React.FunctionComponent<Props> = ({ telemetryS
             <div>
                 Our product team conducts occasional research to learn about how you use Sourcegraph and ask for
                 feedback about upcoming ideas. Sign up to participate in our research and help us shape the future of
-                our product!Î
+                our product!
             </div>
             <a href="/somewhere" className="btn btn-primary mt-4">
                 Sign up now
