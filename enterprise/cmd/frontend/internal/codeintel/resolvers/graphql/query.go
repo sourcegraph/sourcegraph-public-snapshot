@@ -63,7 +63,7 @@ func (r *QueryResolver) Symbols(ctx context.Context, args *gql.LSIFSymbolsArgs) 
 	if err != nil {
 		return nil, err
 	}
-	return NewDocSymbolConnectionResolver(symbols), nil
+	return NewDocSymbolConnectionResolver(symbols, r.locationResolver), nil
 }
 
 func (r *QueryResolver) Definitions(ctx context.Context, args *gql.LSIFQueryPositionArgs) (gql.LocationConnectionResolver, error) {

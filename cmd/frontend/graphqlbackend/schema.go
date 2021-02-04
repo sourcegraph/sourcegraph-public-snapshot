@@ -5258,7 +5258,13 @@ type DocSymbol {
     """
     The name of the symbol.
     """
-    name: String!
+    text: String!
+
+    detail: String!
+
+    kind: SymbolKind!
+
+    Locations: DocSymbolLocation![]!
 
     children: [DocSymbol!]!
 }

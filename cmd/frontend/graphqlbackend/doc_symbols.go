@@ -29,6 +29,10 @@ type DocSymbolConnectionResolver interface {
 }
 
 type DocSymbolResolver interface {
-	Name(ctx context.Context) (string, error)
+	Text(ctx context.Context) (string, error)
+	Detail(ctx context.Context) (string, error)
+	Kind(ctx context.Context) (string, error)   /* enum SymbolKind */
+	Tags(ctx context.Context) ([]string, error) /* enum SymbolTag */
+	Definitions(ctx context.Context) (LocationConnectionResolver, error)
 	Children(ctx context.Context) ([]DocSymbolResolver, error)
 }

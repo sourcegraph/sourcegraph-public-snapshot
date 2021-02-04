@@ -44,6 +44,8 @@ type AdjustedCodeIntelligenceRange struct {
 }
 
 type AdjustedSymbol struct {
+	Dump store.Dump
+
 	Text              string
 	Detail            string
 	Kind              protocol.SymbolKind
@@ -491,6 +493,7 @@ func (r *queryResolver) adjustSymbol(ctx context.Context, dump store.Dump, symbo
 		adjustedChildren[i] = adjustedChild
 	}
 	return &AdjustedSymbol{
+		Dump:              dump,
 		Text:              symbol.Text,
 		Detail:            symbol.Detail,
 		Kind:              symbol.Kind,
