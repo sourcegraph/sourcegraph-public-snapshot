@@ -99,7 +99,7 @@ func TestSearchRepositories(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			results, _, err := searchRepositories(context.Background(), &search.TextParameters{
+			results, _, err := searchRepositoriesBatch(context.Background(), &search.TextParameters{
 				PatternInfo: pattern,
 				RepoPromise: (&search.Promise{}).Resolve(repositories),
 				Query:       q,
@@ -124,6 +124,12 @@ func TestSearchRepositories(t *testing.T) {
 			}
 		})
 	}
+}
+
+func searchRepositoriesBatch(ctx context.Context, args *search.TextParameters, limit int32) ([]SearchResultResolver, streaming.Stats, error) {
+	return collectStream(func(stream Streamer) error {
+		return searchRepositories(ctx, args, limit, stream)
+	})
 }
 
 func TestRepoShouldBeAdded(t *testing.T) {
@@ -241,7 +247,15 @@ func TestMatchRepos(t *testing.T) {
 	in := append(want, makeRepositoryRevisions("beef/bam", "qux/bas")...)
 	pattern := regexp.MustCompile("foo")
 
-	repos := matchRepos(pattern, in)
+	results := make(chan []*search.RepositoryRevisions)
+	go func() {
+		defer close(results)
+		matchRepos(pattern, in, results)
+	}()
+	var repos []*search.RepositoryRevisions
+	for matched := range results {
+		repos = append(repos, matched...)
+	}
 
 	// because of the concurrency we cannot rely on the order of "repos" to be the
 	// same as "want". Hence we create map of repo names and compare those.
@@ -280,7 +294,7 @@ func BenchmarkSearchRepositories(b *testing.B) {
 		Query:       queryInfo,
 	}
 	for i := 0; i < b.N; i++ {
-		_, _, err = searchRepositories(context.Background(), &tp, options.fileMatchLimit)
+		_, _, err = searchRepositoriesBatch(context.Background(), &tp, options.fileMatchLimit)
 		if err != nil {
 			b.Fatal(err)
 		}
