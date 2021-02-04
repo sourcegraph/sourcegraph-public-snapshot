@@ -214,6 +214,10 @@ func (h *streamHandler) startSearch(ctx context.Context, a *args) (events <-chan
 		Version:        a.Version,
 		PatternType:    strPtr(a.PatternType),
 		VersionContext: strPtr(a.VersionContext),
+
+		Stream: graphqlbackend.StreamFunc(func(event graphqlbackend.SearchEvent) {
+			eventsC <- event
+		}),
 	})
 	if err != nil {
 		close(eventsC)
@@ -231,10 +235,6 @@ func (h *streamHandler) startSearch(ctx context.Context, a *args) (events <-chan
 		defer close(final)
 		defer close(eventsC)
 
-		search.SetStream(graphqlbackend.StreamFunc(func(event graphqlbackend.SearchEvent) {
-			eventsC <- event
-		}))
-
 		r, err := search.Results(ctx)
 		final <- finalResult{resultsResolver: r, err: err}
 	}()
@@ -247,7 +247,6 @@ func (h *streamHandler) startSearch(ctx context.Context, a *args) (events <-chan
 
 type searchResolver interface {
 	Results(context.Context) (*graphqlbackend.SearchResultsResolver, error)
-	SetStream(c graphqlbackend.Streamer)
 	Inputs() graphqlbackend.SearchInputs
 }
 
