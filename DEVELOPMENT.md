@@ -39,6 +39,30 @@ If a new feature is added to a new `3.91.6` release of src-cli and this change r
 
 Note that if instead the recommended src-cli version for Sourcegraph `3.99` was `3.90.4` in the example above, there is no additional step required, and the new patch version of src-cli will be available to both Sourcegraph versions.
 
+## `src-cli` Docker image
+
+Each release of `src` results in a new tag of the [`sourcegraph/src-cli` Docker image](https://hub.docker.com/r/sourcegraph/src-cli) being pushed to Docker Hub. This is handled by [goreleaser's Docker support](https://goreleaser.com/customization/docker/).
+
+The main gotcha here is that the way goreleaser builds the Docker image is fairly difficult to replicate from the desktop: it builds a `src` binary without any runtime libc dependencies that can be installed in a `scratch` image, but unless you work on Alpine, your desktop is _not_ configured to build Go binaries like that.
+
+As a result, there are two Dockerfiles in this project. goreleaser uses `Dockerfile.release`, which is replicated in a multi-stage `Dockerfile` that builds `src` in a builder container to ensure it's built in a way that can be tested.
+
+### Testing
+
+If you need to test a change to the Dockerfile (for example, due to a Renovate PR bumping the base image), you should pull that change, then build a local image with something like:
+
+```bash
+docker build -t local-src-cli .
+```
+
+After which you should be able to run:
+
+```bash
+docker run --rm local-src-cli
+```
+
+and get the normal help output from `src`.
+
 ## Dependent Docker images
 
 `src campaign apply` and `src campaign preview` use a Docker image published as `sourcegraph/src-campaign-volume-workspace` for utility purposes when the volume workspace is selected, which is the default on macOS. This [Docker image](./docker/campaign-volume-workspace/Dockerfile) is built by [a Python script](./docker/campaign-volume-workspace/push.py) invoked by the GitHub Action workflow described in [`docker.yml`](.github/workflows/docker.yml).

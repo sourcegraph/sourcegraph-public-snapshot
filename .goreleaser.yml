@@ -38,6 +38,7 @@ brews:
     # Default is the root folder.
     folder: Formula
 dockers:
+  - dockerfile: Dockerfile.release
   - image_templates:
     - "sourcegraph/src-cli:{{ .Tag }}"
     - "sourcegraph/src-cli:{{ .Major }}"

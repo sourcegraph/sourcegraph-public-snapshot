@@ -1,0 +1,13 @@
+# Anything Git or VSCode related is definitely irrelevant for a build.
+.git*
+.vscode
+
+# The docker directory contains other Docker images.
+docker
+
+# The release directory is created by goreleaser and isn't required here.
+release
+
+# Documentation and examples aren't needed.
+*.md
+*.{yaml,yml}
