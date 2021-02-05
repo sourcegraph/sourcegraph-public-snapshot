@@ -2719,10 +2719,10 @@
   resolved "https://registry.npmjs.org/@sourcegraph/react-loading-spinner/-/react-loading-spinner-0.0.7.tgz#e1d0bb1c13e6e8051cf3e0471c6aee0ca24dec45"
   integrity sha512-F4GMp+8XhlRQzEngc+CwbalT8zy8vXMxMrUjhm2cslTjWgWuSft0vSNCmCJDVPshpG/B+Ehb/OzpLLAzsG2JKg==
 
-"@sourcegraph/stylelint-config@^1.1.9":
-  version "1.1.9"
-  resolved "https://registry.npmjs.org/@sourcegraph/stylelint-config/-/stylelint-config-1.1.9.tgz#12c7d6476a6074c170a5e945e3bdf43f7b0711cf"
-  integrity sha512-g+NZstXoNO6XT3041gVB9shmaIOD74hgZ67Vr05APcID0vmdQ9eiefvwvNz1OGH1vVV5su9QuYLu0gynUpAaMg==
+"@sourcegraph/stylelint-config@^1.2.0":
+  version "1.2.0"
+  resolved "https://registry.npmjs.org/@sourcegraph/stylelint-config/-/stylelint-config-1.2.0.tgz#b2b8c5091c4104de82842f30f34b50954b4bf5bf"
+  integrity sha512-0AZSnuY4nzRolTO6QYb4xlMwwkg/1WgpHm15a9gsk4i6yA8wVHakFdyP05Y2gXBkkI4LazzsKeGxGyieu0Q/Qw==
   dependencies:
     stylelint-config-prettier "^8.0.1"
     stylelint-config-standard "^20.0.0"

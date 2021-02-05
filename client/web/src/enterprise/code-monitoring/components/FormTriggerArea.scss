@@ -5,7 +5,7 @@
 
         &-preview-link {
             white-space: nowrap;
-            font-size: 12px;
+            font-size: 0.75rem;
             background-color: var(--color-bg-2);
             border: 1px solid var(--input-border-color);
             border-top-right-radius: 2px;
@@ -14,7 +14,7 @@
             &-text {
                 display: flex;
                 align-items: center;
-                line-height: 1rem;
+                line-height: (1/0.75);
                 height: 1rem;
             }
 
@@ -25,7 +25,7 @@
         }
 
         &-error-message {
-            font-size: 12px;
+            font-size: 0.75rem;
         }
 
         &-field {
