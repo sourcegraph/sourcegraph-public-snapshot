@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/hexops/autogold"
 )
 
 func toJSON(node Node) interface{} {
@@ -1012,4 +1013,14 @@ func TestConcatRevFiltersTopLevelAnd(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestOmitQueryField(t *testing.T) {
+	test := func(input, field string) string {
+		q, _ := ParseLiteral(input)
+		return OmitQueryField(q, field)
+	}
+
+	autogold.Want("omit repo", "pattern").Equal(t, test("repo:stuff pattern", "repo"))
+	autogold.Want("omit repo alias", "alias-pattern").Equal(t, test("r:stuff alias-pattern", "repo"))
 }
