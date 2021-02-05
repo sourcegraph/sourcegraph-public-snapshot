@@ -18,7 +18,9 @@ func TestIntegration(t *testing.T) {
 	t.Run("Integration", func(t *testing.T) {
 		ctx := context.Background()
 		clock := timeutil.Now
-		store := NewWithClock(dbtesting.TimescaleDB(t), clock)
+		timescale, cleanup := dbtesting.TimescaleDB(t)
+		defer cleanup()
+		store := NewWithClock(timescale, clock)
 		t.Run("Insights", func(t *testing.T) { testInsights(t, ctx, store, clock) })
 	})
 }
