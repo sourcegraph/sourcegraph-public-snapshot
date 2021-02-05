@@ -289,7 +289,11 @@ func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request) (matche
 			Languages:                    p.Languages,
 		}
 
-	repoBranches := map[string][]string{string(p.Repo): {string(p.Branch)}}
+	branch := p.Branch
+	if branch == "" {
+		branch = "HEAD"
+	}
+	repoBranches := map[string][]string{string(p.Repo): {branch}}
 	useFullDeadline := false
 	zoektMatches, limitHit, _, err := zoektSearch(ctx, patternInfo, repoBranches, time.Since, p.IndexerEndpoints, useFullDeadline, nil)
 	if err != nil {
