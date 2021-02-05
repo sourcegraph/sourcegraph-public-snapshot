@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	querytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
@@ -156,7 +155,8 @@ func queryForStableResults(args *SearchArgs, queryInfo query.QueryInfo) (*Search
 		// raise an error otherwise. If stable is explicitly set, this
 		// is implied. So, force this query to only return file content
 		// results.
-		queryInfo.Fields()["type"] = []*querytypes.Value{{String: &fileValue}}
+		nodes := queryInfo.(*query.AndOrQuery).Query
+		queryInfo.(*query.AndOrQuery).Query = query.OverrideField(nodes, "type", fileValue)
 	}
 	return args, queryInfo, nil
 }
