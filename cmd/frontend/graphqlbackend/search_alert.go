@@ -490,7 +490,7 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 			// add it to the user's query, but be smart. For example, if the user's
 			// query was "repo:foo" and the parent is "foobar/", then propose "repo:foobar/"
 			// not "repo:foo repo:foobar/" (which are equivalent, but shorter is better).
-			newExpr := query.AddRegexpField(r.Query.ParseTree(), query.FieldRepo, repoParentPattern)
+			newExpr := query.AddRegexpField(r.Query, query.FieldRepo, repoParentPattern)
 			proposedQueries = append(proposedQueries, &searchQueryDescription{
 				description: fmt.Sprintf("in repositories under %s %s", repoParent, more),
 				query:       newExpr,
@@ -509,7 +509,7 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 				if i >= maxReposToPropose {
 					break
 				}
-				newExpr := query.AddRegexpField(r.Query.ParseTree(), query.FieldRepo, "^"+regexp.QuoteMeta(pathToPropose)+"$")
+				newExpr := query.AddRegexpField(r.Query, query.FieldRepo, "^"+regexp.QuoteMeta(pathToPropose)+"$")
 				proposedQueries = append(proposedQueries, &searchQueryDescription{
 					description: fmt.Sprintf("in the repository %s", strings.TrimPrefix(pathToPropose, "github.com/")),
 					query:       newExpr,
