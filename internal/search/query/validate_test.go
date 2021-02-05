@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/internal/search/query/types"
 )
 
 func TestAndOrQuery_Validation(t *testing.T) {
@@ -176,8 +175,7 @@ func TestAndOrQuery_CaseInsensitiveFields(t *testing.T) {
 		t.Errorf("unexpected values: want {\"foo\"}, got %v", values)
 	}
 
-	fields := types.Fields(query.Fields())
-	if got, want := fields.String(), `repohasfile~"foo"`; got != want {
+	if got, want := query.String(), "repohasfile:foo"; got != want {
 		t.Errorf("unexpected parsed query:\ngot:  %s\nwant: %s", got, want)
 	}
 }
