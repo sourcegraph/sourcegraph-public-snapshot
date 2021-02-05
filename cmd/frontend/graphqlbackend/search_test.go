@@ -349,7 +349,7 @@ func TestQuoteSuggestions(t *testing.T) {
 	})
 }
 
-func TestEueryForStableResults(t *testing.T) {
+func TestQueryForStableResults(t *testing.T) {
 	cases := []struct {
 		query           string
 		wantStableCount int32
@@ -370,7 +370,7 @@ func TestEueryForStableResults(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run("query for stable results", func(t *testing.T) {
-			queryInfo, _ := query.Process(c.query, query.SearchTypeLiteral)
+			queryInfo, _ := query.ParseLiteral(c.query)
 			args, queryInfo, err := queryForStableResults(&SearchArgs{}, queryInfo)
 			if err != nil {
 				if !reflect.DeepEqual(err, c.wantError) {
