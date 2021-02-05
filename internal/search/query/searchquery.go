@@ -10,40 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query/types"
 )
 
-// All field names.
-const (
-	FieldDefault            = ""
-	FieldCase               = "case"
-	FieldRepo               = "repo"
-	FieldRepoGroup          = "repogroup"
-	FieldFile               = "file"
-	FieldFork               = "fork"
-	FieldArchived           = "archived"
-	FieldLang               = "lang"
-	FieldType               = "type"
-	FieldRepoHasFile        = "repohasfile"
-	FieldRepoHasCommitAfter = "repohascommitafter"
-	FieldPatternType        = "patterntype"
-	FieldContent            = "content"
-	FieldVisibility         = "visibility"
-	FieldRev                = "rev"
-
-	// For diff and commit search only:
-	FieldBefore    = "before"
-	FieldAfter     = "after"
-	FieldAuthor    = "author"
-	FieldCommitter = "committer"
-	FieldMessage   = "message"
-
-	// Temporary experimental fields:
-	FieldIndex     = "index"
-	FieldCount     = "count"  // Searches that specify `count:` will fetch at least that number of results, or the full result set
-	FieldStable    = "stable" // Forces search to return a stable result ordering (currently limited to file content matches).
-	FieldMax       = "max"    // Deprecated alias for count
-	FieldTimeout   = "timeout"
-	FieldCombyRule = "rule"
-)
-
 var (
 	regexpNegatableFieldType = types.FieldType{Literal: types.RegexpType, Quoted: types.RegexpType, Negatable: true}
 	stringFieldType          = types.FieldType{Literal: types.StringType, Quoted: types.StringType}
