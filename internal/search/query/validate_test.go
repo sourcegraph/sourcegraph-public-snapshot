@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/internal/search/query/types"
 )
 
@@ -84,6 +85,14 @@ func TestAndOrQuery_Validation(t *testing.T) {
 		{
 			input: "repohasfile:README type:symbol yolo",
 			want:  "repohasfile is not compatible for type:symbol. Subscribe to https://github.com/sourcegraph/sourcegraph/issues/4610 for updates",
+		},
+		{
+			input: "foo context:a context:b",
+			want:  `field "context" may not be used more than once`,
+		},
+		{
+			input: "-context:a",
+			want:  `field "context" does not support negation`,
 		},
 	}
 	for _, c := range cases {

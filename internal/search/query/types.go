@@ -218,7 +218,8 @@ func (q AndOrQuery) valueToTypedValue(field, value string, label labels) []*type
 		return []*types.Value{{Regexp: parseRegexpOrPanic(field, value)}}
 
 	case
-		FieldRepoGroup, "g":
+		FieldRepoGroup, "g",
+		FieldContext:
 		return []*types.Value{{String: &value}}
 
 	case
