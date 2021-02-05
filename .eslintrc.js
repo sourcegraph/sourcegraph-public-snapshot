@@ -1,8 +1,7 @@
 // @ts-check
 
 const config = {
-  plugins: ['jsx-a11y'],
-  extends: ['@sourcegraph/eslint-config', 'plugin:jsx-a11y/recommended'],
+  extends: '@sourcegraph/eslint-config',
   env: {
     browser: true,
     node: true,
