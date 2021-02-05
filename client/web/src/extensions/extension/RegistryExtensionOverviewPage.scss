@@ -11,4 +11,10 @@
         overflow: hidden;
         text-overflow: ellipsis;
     }
+    &__icon {
+        display: block;
+        width: 4.5rem;
+        height: 4.5rem;
+        object-fit: contain;
+    }
 }

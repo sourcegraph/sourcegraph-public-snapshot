@@ -143,6 +143,8 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
             })
         }
 
+        this.disposables.push(registerRedactedHover(monaco))
+
         setDiagnosticsOptions(monaco, this.props)
 
         // Only listen to 1 event each to avoid receiving events from other Monaco editors on the
@@ -291,6 +293,24 @@ function toMonacoEdits(
         forceMoveMarkers: true,
         text: edit.content,
     }))
+}
+
+function registerRedactedHover(editor: typeof monaco): monaco.IDisposable {
+    return editor.languages.registerHoverProvider('json', {
+        provideHover(model, position, token): monaco.languages.ProviderResult<monaco.languages.Hover> {
+            if (model.getWordAtPosition(position)?.word === 'REDACTED') {
+                return {
+                    contents: [
+                        {
+                            value:
+                                "**This field is redacted.** To update, replace with a new value. Otherwise, don't modify this field.",
+                        },
+                    ],
+                }
+            }
+            return { contents: [] }
+        },
+    })
 }
 
 /**

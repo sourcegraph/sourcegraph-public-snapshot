@@ -4,7 +4,13 @@ import { ActivationProps } from '../../../../shared/src/components/activation/Ac
 import { Form } from '../../../../branded/src/components/Form'
 import { submitSearch, QueryState } from '../helpers'
 import { SearchButton } from './SearchButton'
-import { PatternTypeProps, CaseSensitivityProps, CopyQueryButtonProps, OnboardingTourProps } from '..'
+import {
+    PatternTypeProps,
+    CaseSensitivityProps,
+    CopyQueryButtonProps,
+    OnboardingTourProps,
+    SearchContextProps,
+} from '..'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { VersionContextProps } from '../../../../shared/src/search/util'
@@ -18,6 +24,7 @@ interface Props
         SettingsCascadeProps,
         ThemeProps,
         CopyQueryButtonProps,
+        SearchContextProps,
         VersionContextProps,
         OnboardingTourProps {
     location: H.Location

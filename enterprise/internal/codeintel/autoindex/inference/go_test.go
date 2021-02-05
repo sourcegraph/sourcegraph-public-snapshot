@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/config"
 )
 
 func TestLSIFGoJobRecognizerCanIndex(t *testing.T) {
@@ -38,9 +39,9 @@ func TestLsifGoJobRecognizerInferIndexJobsGoModRoot(t *testing.T) {
 		"go.mod",
 	}
 
-	expectedIndexJobs := []IndexJob{
+	expectedIndexJobs := []config.IndexJob{
 		{
-			DockerSteps: []DockerStep{
+			Steps: []config.DockerStep{
 				{
 					Root:     "",
 					Image:    lsifGoImage,
@@ -66,9 +67,9 @@ func TestLsifGoJobRecognizerInferIndexJobsGoModSubdirs(t *testing.T) {
 		"c/go.mod",
 	}
 
-	expectedIndexJobs := []IndexJob{
+	expectedIndexJobs := []config.IndexJob{
 		{
-			DockerSteps: []DockerStep{
+			Steps: []config.DockerStep{
 				{
 					Root:     "a",
 					Image:    lsifGoImage,
@@ -81,7 +82,7 @@ func TestLsifGoJobRecognizerInferIndexJobsGoModSubdirs(t *testing.T) {
 			Outfile:     "",
 		},
 		{
-			DockerSteps: []DockerStep{
+			Steps: []config.DockerStep{
 				{
 					Root:     "b",
 					Image:    lsifGoImage,
@@ -94,7 +95,7 @@ func TestLsifGoJobRecognizerInferIndexJobsGoModSubdirs(t *testing.T) {
 			Outfile:     "",
 		},
 		{
-			DockerSteps: []DockerStep{
+			Steps: []config.DockerStep{
 				{
 					Root:     "c",
 					Image:    lsifGoImage,

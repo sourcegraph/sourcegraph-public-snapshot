@@ -12,7 +12,7 @@ export const HiddenExternalChangesetNode: React.FunctionComponent<HiddenExternal
         <span className="d-none d-sm-block" />
         <ChangesetStatusCell
             state={node.state}
-            className="p-2 hidden-external-changeset-node__status d-block d-sm-flex"
+            className="p-2 hidden-external-changeset-node__status text-muted d-block d-sm-flex"
         />
         <HiddenExternalChangesetInfoCell node={node} className="p-2 hidden-external-changeset-node__information" />
         <span className="d-none d-sm-block" />

@@ -660,6 +660,27 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 			},
 		},
 
+		{
+			descr: "javascript filters",
+			searchResults: []SearchResultResolver{
+				fileMatch("/jsrender.min.js.map"),
+				fileMatch("playground/react/lib/app.js.map"),
+				fileMatch("assets/javascripts/bootstrap.min.js"),
+			},
+			expectedDynamicFilterStrsRegexp: map[string]struct{}{
+				`repo:^testRepo$`:  {},
+				`-file:\.min\.js$`: {},
+				`-file:\.js\.map$`: {},
+				`lang:javascript`:  {},
+			},
+			expectedDynamicFilterStrsGlobbing: map[string]struct{}{
+				`repo:testRepo`:   {},
+				`-file:**.min.js`: {},
+				`-file:**.js.map`: {},
+				`lang:javascript`: {},
+			},
+		},
+
 		// If there are no search results, no filters should be displayed.
 		{
 			descr:                             "no results",

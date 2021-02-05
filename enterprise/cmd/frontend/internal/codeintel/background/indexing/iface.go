@@ -14,6 +14,7 @@ type DBStore interface {
 	RepoUsageStatistics(ctx context.Context) ([]dbstore.RepoUsageStatistics, error)
 	ResetIndexableRepositories(ctx context.Context, lastUpdatedBefore time.Time) error
 	UpdateIndexableRepository(ctx context.Context, indexableRepository dbstore.UpdateableIndexableRepository, now time.Time) error
+	GetUploads(ctx context.Context, opts dbstore.GetUploadsOptions) ([]dbstore.Upload, int, error)
 }
 
 type GitserverClient interface {

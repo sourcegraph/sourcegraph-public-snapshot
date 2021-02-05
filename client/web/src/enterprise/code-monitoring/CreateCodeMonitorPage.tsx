@@ -38,7 +38,7 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
     )
 
     return (
-        <div className="container col-8 mt-5">
+        <div className="container col-8">
             <PageTitle title="Create new code monitor" />
             <div className="page-header d-flex flex-wrap align-items-center">
                 <h2 className="flex-grow-1">Create code monitor</h2>

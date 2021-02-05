@@ -1,7 +1,9 @@
 import React from 'react'
 import { ChangesetApplyPreviewFields } from '../../../../graphql-operations'
+import { ChangesetAddedIcon, ChangesetModifiedIcon, ChangesetRemovedIcon } from '../icons'
 
-const containerClassName = 'd-none d-sm-flex flex-column align-items-center justify-content-center align-self-stretch'
+const containerClassName =
+    'preview-node-indicator__container d-none d-sm-flex flex-column align-items-center justify-content-center align-self-stretch'
 
 export interface PreviewNodeIndicatorProps {
     node: ChangesetApplyPreviewFields
@@ -13,9 +15,11 @@ export const PreviewNodeIndicator: React.FunctionComponent<PreviewNodeIndicatorP
         case 'VisibleApplyPreviewTargetsAttach':
             return (
                 <div className={containerClassName}>
-                    <span className="preview-node-indicator__attach-dot">&nbsp;</span>
-                    <span className="preview-node-indicator__attach-icon">+</span>
-                    <span className="preview-node-indicator__attach-dot">&nbsp;</span>
+                    <span className="preview-node-indicator__attach-bar">&nbsp;</span>
+                    <span className="preview-node-indicator__attach-icon d-flex justify-content-center align-items-center">
+                        <ChangesetAddedIcon />
+                    </span>
+                    <span className="preview-node-indicator__attach-bar">&nbsp;</span>
                 </div>
             )
         case 'HiddenApplyPreviewTargetsUpdate':
@@ -26,18 +30,22 @@ export const PreviewNodeIndicator: React.FunctionComponent<PreviewNodeIndicatorP
             }
             return (
                 <div className={containerClassName}>
-                    <span className="preview-node-indicator__update-dot">&nbsp;</span>
-                    <span className="preview-node-indicator__update-icon">&bull;</span>
-                    <span className="preview-node-indicator__update-dot">&nbsp;</span>
+                    <span className="preview-node-indicator__update-bar">&nbsp;</span>
+                    <span className="preview-node-indicator__update-icon d-flex justify-content-center align-items-center">
+                        <ChangesetModifiedIcon />
+                    </span>
+                    <span className="preview-node-indicator__update-bar">&nbsp;</span>
                 </div>
             )
         case 'HiddenApplyPreviewTargetsDetach':
         case 'VisibleApplyPreviewTargetsDetach':
             return (
                 <div className={containerClassName}>
-                    <span className="preview-node-indicator__detach-dot">&nbsp;</span>
-                    <span className="preview-node-indicator__detach-icon">-</span>
-                    <span className="preview-node-indicator__detach-dot">&nbsp;</span>
+                    <span className="preview-node-indicator__detach-bar">&nbsp;</span>
+                    <span className="preview-node-indicator__detach-icon d-flex justify-content-center align-items-center">
+                        <ChangesetRemovedIcon />
+                    </span>
+                    <span className="preview-node-indicator__detach-bar">&nbsp;</span>
                 </div>
             )
     }

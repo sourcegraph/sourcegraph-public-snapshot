@@ -8,14 +8,15 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-// A Sourcer converts the given ExternalServices to Sources
-// whose yielded Repos should be synced.
+// A Sourcer converts the given ExternalServices to Sources whose yielded Repos
+// should be synced.
 type Sourcer func(...*types.ExternalService) (Sources, error)
 
 // NewSourcer returns a Sourcer that converts the given ExternalServices

@@ -25,6 +25,7 @@ import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumb
 import { useObservable } from '../../../../shared/src/util/useObservable'
 import { requestGraphQL } from '../../backend/graphql'
 import { EditUserProfilePageGQLFragment } from '../settings/profile/UserSettingsProfilePage'
+import { Page } from '../../components/Page'
 
 /** GraphQL fragment for the User fields needed by UserArea. */
 export const UserAreaGQLFragment = gql`
@@ -204,13 +205,8 @@ export const UserArea: React.FunctionComponent<UserAreaProps> = ({
     }
 
     return (
-        <div className="user-area w-100">
-            <UserAreaHeader
-                {...props}
-                {...context}
-                navItems={props.userAreaHeaderNavItems}
-                className="border-bottom mt-4"
-            />
+        <Page className="user-area">
+            <UserAreaHeader {...props} {...context} navItems={props.userAreaHeaderNavItems} className="border-bottom" />
             <div className="container mt-3">
                 <ErrorBoundary location={props.location}>
                     <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
@@ -240,6 +236,6 @@ export const UserArea: React.FunctionComponent<UserAreaProps> = ({
                     </React.Suspense>
                 </ErrorBoundary>
             </div>
-        </div>
+        </Page>
     )
 }

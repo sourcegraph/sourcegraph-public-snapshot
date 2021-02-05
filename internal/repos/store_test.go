@@ -331,7 +331,7 @@ func testStoreUpsertRepos(t *testing.T, store *repos.Store) func(*testing.T) {
 				t.Fatalf("UpsertRepos error: %s", err)
 			}
 
-			count, err := tx.CountNotClonedRepos(ctx)
+			count, err := tx.RepoStore.Count(ctx, database.ReposListOptions{NoCloned: true})
 			if err != nil {
 				t.Fatalf("CountNotClonedRepos error: %s", err)
 			}
@@ -349,7 +349,7 @@ func testStoreUpsertRepos(t *testing.T, store *repos.Store) func(*testing.T) {
 				t.Fatalf("UpsertRepos error: %s", err)
 			}
 
-			count, err = tx.CountNotClonedRepos(ctx)
+			count, err = tx.RepoStore.Count(ctx, database.ReposListOptions{NoCloned: true})
 			if err != nil {
 				t.Fatalf("CountNotClonedRepos error: %s", err)
 			}
@@ -705,11 +705,11 @@ func testStoreCountNotClonedRepos(t *testing.T, store *repos.Store) func(*testin
 		ctx := context.Background()
 
 		t.Run("no cloned repos", func(t *testing.T) {
-			count, err := store.CountNotClonedRepos(ctx)
+			count, err := store.RepoStore.Count(ctx, database.ReposListOptions{NoCloned: true})
 			if err != nil {
 				t.Fatalf("CountNotClonedRepos error: %s", err)
 			}
-			if diff := cmp.Diff(count, uint64(0)); diff != "" {
+			if diff := cmp.Diff(count, 0); diff != "" {
 				t.Fatalf("CountNotClonedRepos:\n%s", diff)
 			}
 		})
@@ -730,11 +730,11 @@ func testStoreCountNotClonedRepos(t *testing.T, store *repos.Store) func(*testin
 
 			sort.Strings(cloned)
 
-			count, err := tx.CountNotClonedRepos(ctx)
+			count, err := tx.RepoStore.Count(ctx, database.ReposListOptions{NoCloned: true})
 			if err != nil {
 				t.Fatalf("CountNotClonedRepos error: %s", err)
 			}
-			if diff := cmp.Diff(count, uint64(7)); diff != "" {
+			if diff := cmp.Diff(count, 7); diff != "" {
 				t.Fatalf("CountNotClonedRepos:\n%s", diff)
 			}
 		}))
@@ -760,11 +760,11 @@ func testStoreCountNotClonedRepos(t *testing.T, store *repos.Store) func(*testin
 				t.Fatalf("UpsertRepos error: %s", err)
 			}
 
-			count, err := tx.CountNotClonedRepos(ctx)
+			count, err := tx.RepoStore.Count(ctx, database.ReposListOptions{NoCloned: true})
 			if err != nil {
 				t.Fatalf("CountNotClonedRepos error: %s", err)
 			}
-			if diff := cmp.Diff(count, uint64(5)); diff != "" {
+			if diff := cmp.Diff(count, 5); diff != "" {
 				t.Fatalf("CountNotClonedRepos:\n%s", diff)
 			}
 		}))

@@ -55,6 +55,7 @@ $theme-colors-light: (
 @import './shared/code-hosts/gitlab/style.scss';
 @import './shared/code-hosts/github/style.scss';
 @import './shared/code-hosts/phabricator/style.scss';
+@import './shared/code-hosts/gerrit/style.scss';
 @import './shared/code-hosts/shared/HoverOverlay.scss';
 @import './shared/code-hosts/shared/ViewOnSourcegraphButton';
 @import './shared/code-hosts/shared/nativeTooltips';

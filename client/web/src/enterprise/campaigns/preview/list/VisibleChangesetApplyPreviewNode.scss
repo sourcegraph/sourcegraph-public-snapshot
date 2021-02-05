@@ -1,3 +1,5 @@
+$changeset-backdrop: #f3faff;
+
 .visible-changeset-apply-preview-node {
     &__current-state,
     &__action,
@@ -9,11 +11,14 @@
         }
     }
     &__bg-expanded {
+        background-color: $changeset-backdrop;
         @include media-breakpoint-up(sm) {
-            background-color: rgba($oc-blue-0, 0.5);
+            border-top: 1px solid var(--border-color-2);
+            padding: 1.5rem;
         }
     }
     &__status-cell {
+        color: $gray-11;
         @include media-breakpoint-up(sm) {
             background-color: var(--oc-blue-0);
         }
@@ -28,27 +33,40 @@
         }
     }
     &__expanded-section {
-        // Make it full width in the current row.
-        grid-column: 2 / -1;
-        @include media-breakpoint-down(xs) {
-            // Make it full width in the current row.
-            grid-column: 1 / -1;
-        }
+        grid-column: 1 / -1;
     }
     &__commit-change-entry {
         color: $gray-10;
+    }
+    &__tab-link {
+        &--active {
+            background-color: $changeset-backdrop !important;
+            border-bottom: 1px solid $changeset-backdrop !important;
+        }
+    }
+    &__change-indicator {
+        width: 0.5rem !important;
+        height: 0.5rem !important;
+        vertical-align: middle;
     }
 }
 
 .theme-dark {
     .visible-changeset-apply-preview-node {
         &__status-cell {
+            color: var(--body-color);
             @include media-breakpoint-up(sm) {
                 background-color: var(--oc-gray-7);
             }
         }
         &__bg-expanded {
-            background-color: rgba($oc-gray-7, 0.5);
+            background-color: var(--oc-gray-7);
+        }
+        &__tab-link {
+            &--active {
+                background-color: var(--oc-gray-7) !important;
+                border-bottom: 1px solid var(--oc-gray-7) !important;
+            }
         }
     }
 }

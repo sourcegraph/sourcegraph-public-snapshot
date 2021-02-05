@@ -86,6 +86,7 @@ const commonProps = () =>
         isSourcegraphDotCom: true,
         setVersionContext: action('setVersionContext'),
         availableVersionContexts: [],
+        showSearchContext: false,
         authRequired: false,
         showCampaigns: false,
         authenticatedUser: authUser,

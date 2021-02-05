@@ -91,7 +91,6 @@ exports[`UserNavItem simple 1`] = `
                         >
                           <UserAvatar
                             className="icon-inline"
-                            size={48}
                             targetID="target-user-avatar"
                             user={
                               Object {

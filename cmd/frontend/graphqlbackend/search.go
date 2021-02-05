@@ -14,6 +14,7 @@ import (
 
 	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -50,7 +51,7 @@ type SearchImplementer interface {
 	//lint:ignore U1000 is used by graphql via reflection
 	Stats(context.Context) (*searchResultsStats, error)
 
-	SetStream(c SearchStream)
+	SetStream(c Streamer)
 	Inputs() SearchInputs
 }
 
@@ -256,9 +257,9 @@ type searchResolver struct {
 	*SearchInputs
 	invalidateRepoCache bool // if true, invalidates the repo cache when evaluating search subexpressions.
 
-	// resultChannel if non-nil will send all results we receive down it. See
-	// searchResolver.SetResultChannel
-	resultChannel SearchStream
+	// stream if non-nil will send all results we receive down it. See
+	// searchResolver.SetStream
+	stream Streamer
 
 	// Cached resolveRepositories results. We use a pointer to the mutex so that we
 	// can copy the resolver, while sharing the mutex. If we didn't use a pointer,
@@ -271,54 +272,6 @@ type searchResolver struct {
 	searcherURLs *endpoint.Map
 }
 
-// SearchEvent is an event on a search stream. It contains fields which can be
-// aggregated up into a final result.
-type SearchEvent struct {
-	Results []SearchResultResolver
-	Stats   streaming.Stats
-	Error   error
-}
-
-// SearchStream is a send only channel of SearchEvent. All streaming search
-// backends write to a SearchStream which is then streamed out by the HTTP
-// layer.
-type SearchStream chan<- SearchEvent
-
-// collectStream is a helper for batch interfaces calling stream based
-// functions. It returns a context, stream and cleanup/get function. The
-// cleanup/get function will return the aggregated event and must be called
-// once you have stopped sending to stream.
-//
-// For collecting errors we only collect the first error reported and
-// afterwards cancel the context.
-func collectStream(ctx context.Context) (context.Context, SearchStream, func() SearchEvent) {
-	var agg SearchEvent
-
-	ctx, cancel := context.WithCancel(ctx)
-
-	done := make(chan struct{})
-	stream := make(chan SearchEvent)
-	go func() {
-		defer close(done)
-		for event := range stream {
-			agg.Results = append(agg.Results, event.Results...)
-			agg.Stats.Update(&event.Stats)
-			// Only collect first error
-			if event.Error != nil && agg.Error == nil {
-				cancel()
-				agg.Error = event.Error
-			}
-		}
-	}()
-
-	return ctx, stream, func() SearchEvent {
-		cancel()
-		close(stream)
-		<-done
-		return agg
-	}
-}
-
 // SetStream will send all results down c.
 //
 // This is how our streaming and our batch interface co-exist. When this is
@@ -328,8 +281,8 @@ func collectStream(ctx context.Context) (context.Context, SearchStream, func() S
 // us to stream out things like dynamic filters or take into account
 // AND/OR. However, streaming is behind a feature flag for now, so this is to
 // make it visible in the browser.
-func (r *searchResolver) SetStream(c SearchStream) {
-	r.resultChannel = c
+func (r *searchResolver) SetStream(c Streamer) {
+	r.stream = c
 }
 
 func (r *searchResolver) Inputs() SearchInputs {
@@ -444,21 +397,21 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 	}
 
 	forkStr, _ := r.Query.StringValue(query.FieldFork)
-	fork := searchrepos.ParseYesNoOnly(forkStr)
-	if fork == searchrepos.Invalid && !searchrepos.ExactlyOneRepo(repoFilters) && !settingForks {
+	fork := query.ParseYesNoOnly(forkStr)
+	if fork == query.Invalid && !searchrepos.ExactlyOneRepo(repoFilters) && !settingForks {
 		// fork defaults to No unless either of:
 		// (1) exactly one repo is being searched, or
 		// (2) user/org/global setting includes forks
-		fork = searchrepos.No
+		fork = query.No
 	}
 
 	archivedStr, _ := r.Query.StringValue(query.FieldArchived)
-	archived := searchrepos.ParseYesNoOnly(archivedStr)
-	if archived == searchrepos.Invalid && !searchrepos.ExactlyOneRepo(repoFilters) && !settingArchived {
+	archived := query.ParseYesNoOnly(archivedStr)
+	if archived == query.Invalid && !searchrepos.ExactlyOneRepo(repoFilters) && !settingArchived {
 		// archived defaults to No unless either of:
 		// (1) exactly one repo is being searched, or
 		// (2) user/org/global setting includes archives in all searches
-		archived = searchrepos.No
+		archived = query.No
 	}
 
 	visibilityStr, _ := r.Query.StringValue(query.FieldVisibility)
@@ -478,16 +431,17 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		RepoGroupFilters:   repoGroupFilters,
 		VersionContextName: versionContextName,
 		UserSettings:       r.UserSettings,
-		OnlyForks:          fork == searchrepos.Only,
-		NoForks:            fork == searchrepos.No,
-		OnlyArchived:       archived == searchrepos.Only,
-		NoArchived:         archived == searchrepos.No,
+		OnlyForks:          fork == query.Only,
+		NoForks:            fork == query.No,
+		OnlyArchived:       archived == query.Only,
+		NoArchived:         archived == query.No,
 		OnlyPrivate:        visibility == query.Private,
 		OnlyPublic:         visibility == query.Public,
 		CommitAfter:        commitAfter,
 		Query:              r.Query,
 	}
-	resolved, err := searchrepos.ResolveRepositories(ctx, options)
+	repositoryResolver := &searchrepos.Resolver{Zoekt: r.zoekt, DefaultReposFunc: database.GlobalDefaultRepos.List, NamespaceStore: database.GlobalNamespaces}
+	resolved, err := repositoryResolver.Resolve(ctx, options)
 	tr.LazyPrintf("resolveRepositories - done")
 	if effectiveRepoFieldValues == nil {
 		r.resolved = &resolved
