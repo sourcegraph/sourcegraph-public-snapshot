@@ -7,6 +7,7 @@ var allFields = map[string]struct{}{
 	FieldRepo:               empty,
 	"r":                     empty,
 	FieldRepoGroup:          empty,
+	FieldContext:            empty,
 	"g":                     empty,
 	FieldFile:               empty,
 	"f":                     empty,
