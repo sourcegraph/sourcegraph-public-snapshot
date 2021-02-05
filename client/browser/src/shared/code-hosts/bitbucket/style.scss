@@ -1,7 +1,6 @@
 // Command palette
 .command-palette-button--bitbucket-server {
     z-index: 3000;
-    // stylelint-disable-next-line declaration-property-unit-whitelist
     font-size: 13px;
     svg {
         // The icon we use is taller than the other items' font size, so make it a bit shorter.
@@ -100,7 +99,6 @@
     background: transparent !important;
     border: none !important;
     height: 16px !important;
-    // stylelint-disable-next-line declaration-property-unit-whitelist
     line-height: 16px !important;
 
     &:hover {
@@ -121,7 +119,6 @@
         font-weight: normal;
         font-style: normal;
         content: '\f15b';
-        // stylelint-disable-next-line declaration-property-unit-whitelist
         font-size: 16px;
         height: 16px;
         line-height: 1;
