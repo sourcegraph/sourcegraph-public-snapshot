@@ -698,6 +698,10 @@ func ellipsesForHoles(nodes []Node) []Node {
 	})
 }
 
+func AddField(nodes []Node, field, value string) []Node {
+	return newOperator(append(nodes, Parameter{Field: field, Value: value}), And)
+}
+
 // OmitQueryField removes all fields `field` from a query. The `field` string
 // should be the canonical name and not an alias ("repo", not "r").
 func OmitQueryField(q QueryInfo, field string) string {
