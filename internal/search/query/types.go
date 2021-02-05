@@ -46,7 +46,6 @@ type QueryInfo interface {
 	Fields() map[string][]*types.Value
 	BoolValue(field string) bool
 	IsCaseSensitive() bool
-	ParseTree() syntax.ParseTree
 }
 
 // An ordinary query (not containing and/or expressions).
