@@ -57,7 +57,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 
 	args.applyDefaultsAndConstraints()
 
-	if len(r.Query.ParseTree()) == 0 {
+	if len(r.Query.(*query.AndOrQuery).Query) == 0 {
 		return nil, nil
 	}
 
