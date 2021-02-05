@@ -27,6 +27,8 @@ import { MenuNavItem } from './MenuNavItem'
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { ExtensionAlertAnimationProps, UserNavItem } from './UserNavItem'
 import { Feedback } from '../components/Feedback'
+import { Button } from 'reactstrap'
+import MessageDrawIcon from 'mdi-react/MessageDrawIcon'
 interface Props
     extends SettingsCascadeProps<Settings>,
         KeyboardShortcutsProps,
@@ -104,7 +106,10 @@ export class NavLinks extends React.PureComponent<Props> {
                     </>
                 )}
                 <li className="nav-item">
-                    <Feedback />
+                    <Button className="border" aria-label="Feedback" color="link">
+                        <MessageDrawIcon className="d-lg-none icon-inline" />
+                        <span className="d-none d-lg-block">Feedback</span>
+                    </Button>
                 </li>
                 {!this.props.authenticatedUser && (
                     <>
