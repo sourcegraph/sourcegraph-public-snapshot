@@ -27,6 +27,11 @@
             border-color: var(--color-border-active);
             box-shadow: none;
         }
+
+        &::after {
+            // Hide chevron usually shown by dropdown buttons
+            display: none;
+        }
     }
 
     &__separator {
