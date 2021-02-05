@@ -59,7 +59,11 @@ func MigrateDB(db *sql.DB, database *Database) error {
 	if err != nil {
 		return err
 	}
-	defer m.Close()
+	defer func() {
+		if err := m.Close(); err != nil {
+			log15.Error("MigrateDB closing", "err", err, "database", database.Name)
+		}
+	}()
 	if err := DoMigrate(m); err != nil {
 		return errors.Wrap(err, "Failed to migrate the DB. Please contact support@sourcegraph.com for further assistance")
 	}
