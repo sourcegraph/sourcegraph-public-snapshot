@@ -1,7 +1,9 @@
 package resolvers
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/opentracing/opentracing-go/log"
@@ -24,7 +26,7 @@ type Resolver interface {
 	IndexConnectionResolver(opts store.GetIndexesOptions) *IndexesResolver
 	DeleteUploadByID(ctx context.Context, uploadID int) error
 	DeleteIndexByID(ctx context.Context, id int) error
-	IndexConfiguration(ctx context.Context, repositoryID int) (store.IndexConfiguration, error)
+	IndexConfiguration(ctx context.Context, repositoryID int) ([]byte, error)
 	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, configuration string) error
 	CommitGraph(ctx context.Context, repositoryID int) (gql.CodeIntelligenceCommitGraphResolver, error)
 	QueueAutoIndexJobForRepo(ctx context.Context, repositoryID int) error
@@ -85,13 +87,30 @@ func (r *resolver) DeleteIndexByID(ctx context.Context, id int) error {
 	return err
 }
 
-func (r *resolver) IndexConfiguration(ctx context.Context, repositoryID int) (store.IndexConfiguration, error) {
-	configuration, ok, err := r.dbStore.GetIndexConfigurationByRepositoryID(ctx, repositoryID)
-	if err != nil || !ok {
-		return store.IndexConfiguration{}, err
+func (r *resolver) IndexConfiguration(ctx context.Context, repositoryID int) ([]byte, error) {
+	configuration, exists, err := r.dbStore.GetIndexConfigurationByRepositoryID(ctx, repositoryID)
+	if err != nil {
+		return nil, err
 	}
 
-	return configuration, nil
+	if exists {
+		return configuration.Data, nil
+	}
+
+	// nothing in DB, prepopulate with a best guess from the inference engine
+	maybeConfig, err := r.indexEnqueuer.InferIndexConfiguration(ctx, repositoryID)
+	if err != nil || maybeConfig == nil {
+		return nil, err
+	}
+
+	marshaled, err := config.MarshalJSON(*maybeConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	var indented bytes.Buffer
+	json.Indent(&indented, marshaled, "", "\t")
+	return indented.Bytes(), nil
 }
 
 func (r *resolver) UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, configuration string) error {

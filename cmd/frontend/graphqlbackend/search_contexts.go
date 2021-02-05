@@ -8,8 +8,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/searchcontexts"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -42,15 +40,14 @@ func (r *schemaResolver) SearchContexts(ctx context.Context) ([]*searchContextRe
 		return []*searchContextResolver{}, nil
 	}
 
-	searchContextResolvers := []*searchContextResolver{{sc: *searchcontexts.GetGlobalSearchContext()}}
-	a := actor.FromContext(ctx)
-	if a.IsAuthenticated() {
-		user, err := database.GlobalUsers.GetByID(ctx, a.UID)
-		if err != nil {
-			return nil, err
-		}
-		searchContext := searchcontexts.GetUserSearchContext(user.Username, a.UID)
-		searchContextResolvers = append(searchContextResolvers, &searchContextResolver{sc: *searchContext})
+	searchContexts, err := searchcontexts.GetUsersSearchContexts(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	searchContextResolvers := make([]*searchContextResolver, len(searchContexts))
+	for idx, searchContext := range searchContexts {
+		searchContextResolvers[idx] = &searchContextResolver{sc: *searchContext}
 	}
 	return searchContextResolvers, nil
 }

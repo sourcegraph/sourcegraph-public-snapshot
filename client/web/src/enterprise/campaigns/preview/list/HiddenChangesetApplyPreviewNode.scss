@@ -16,4 +16,21 @@
             grid-column: 1 / -1;
         }
     }
+    &__current-state {
+        color: $gray-11;
+        @include media-breakpoint-up(sm) {
+            background-color: var(--oc-blue-0);
+        }
+    }
+}
+
+.theme-dark {
+    .hidden-changeset-apply-preview-node {
+        &__current-state {
+            color: var(--body-color);
+            @include media-breakpoint-up(sm) {
+                background-color: var(--oc-gray-7);
+            }
+        }
+    }
 }

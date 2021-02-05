@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/store"
 )
 
 // The Sourcegraph frontend and interface only allow LineMatches (matches on a
@@ -192,6 +193,31 @@ func languageMetric(matcher string, includePatterns *[]string) string {
 		}
 	}
 	return "inferred:.generic"
+}
+
+// filteredStructuralSearch filters the list of files with a regex search before passing the zip to comby
+func filteredStructuralSearch(ctx context.Context, zipPath string, zipFile *store.ZipFile, p *protocol.PatternInfo, repo api.RepoName) (matches []protocol.FileMatch, limitHit bool, err error) {
+	// Make a copy of the pattern info to modify it to work for a regex search
+	rp := *p
+	rp.Pattern = comby.StructuralPatToRegexpQuery(p.Pattern, false)
+	rp.IsStructuralPat = false
+	rp.IsRegExp = true
+	rg, err := compile(&rp)
+	if err != nil {
+		return nil, false, err
+	}
+
+	fileMatches, _, err := regexSearch(ctx, rg, zipFile, p.FileMatchLimit, true, false, false)
+	if err != nil {
+		return nil, false, err
+	}
+
+	matchedPaths := make([]string, 0, len(fileMatches))
+	for _, fm := range fileMatches {
+		matchedPaths = append(matchedPaths, fm.Path)
+	}
+
+	return structuralSearch(ctx, zipPath, p.Pattern, p.CombyRule, "", p.Languages, matchedPaths, repo)
 }
 
 func structuralSearch(ctx context.Context, zipPath, pattern, rule, extension string, languages, includePatterns []string, repo api.RepoName) (matches []protocol.FileMatch, limitHit bool, err error) {

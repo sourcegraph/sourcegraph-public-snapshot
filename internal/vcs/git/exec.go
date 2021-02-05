@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -74,31 +73,21 @@ func ExecReader(ctx context.Context, repo api.RepoName, args []string) (io.ReadC
 	return gitserver.StdoutReader(ctx, cmd)
 }
 
-func readUntilTimeout(ctx context.Context, cmd *gitserver.Cmd) (data []byte, complete bool, err error) {
-	sr, err := gitserver.StdoutReader(ctx, cmd)
-	if errors.Is(err, context.DeadlineExceeded) {
-		// Continue; the gitserver call exceeded our deadline before the command
-		// produced any output.
-	} else if err != nil {
-		return nil, false, err
-	}
-
-	if sr != nil {
-		defer sr.Close()
-		var err error
-		data, err = ioutil.ReadAll(sr)
-		if err == nil {
-			complete = true
-		} else if err != context.DeadlineExceeded {
-			data = bytes.TrimSpace(data)
-			if len(data) > 100 {
-				data = append(data[:100], []byte("... (truncated)")...)
-			}
-			return nil, true, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args, data))
+func readUntilTimeout(ctx context.Context, cmd *gitserver.Cmd) ([]byte, bool, error) {
+	stdout, err := cmd.Output(ctx)
+	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			return stdout, false, nil
 		}
+
+		stdout = bytes.TrimSpace(stdout)
+		if len(stdout) > 100 {
+			stdout = append(stdout[:100], []byte("... (truncated)")...)
+		}
+		return nil, false, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args, stdout))
 	}
 
-	return data, complete, nil
+	return stdout, true, nil
 }
 
 var (

@@ -113,12 +113,7 @@ func TestIndexedSearch(t *testing.T) {
 				useFullDeadline: true,
 				since:           func(time.Time) time.Duration { return 0 },
 			},
-			wantCommon: streaming.Stats{
-				Status: mkStatusMap(map[string]search.RepoStatus{
-					"foo/bar":    search.RepoStatusIndexed | search.RepoStatusTimedout,
-					"foo/foobar": search.RepoStatusIndexed | search.RepoStatusTimedout,
-				}),
-			},
+			wantErr: true,
 		},
 		{
 			name: "results",
@@ -301,7 +296,7 @@ func TestIndexedSearch(t *testing.T) {
 				},
 			}
 
-			indexed, err := newIndexedSearchRequest(context.Background(), args, textRequest)
+			indexed, err := newIndexedSearchRequest(context.Background(), args, textRequest, StreamFunc(func(SearchEvent) {}))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -315,23 +310,17 @@ func TestIndexedSearch(t *testing.T) {
 			// This is a quick fix which will break once we enable the zoekt client for true streaming.
 			// Once we return more than one event we have to account for the proper order of results
 			// in the tests.
-			var (
-				gotCommon streaming.Stats
-				gotFm     []*FileMatchResolver
-			)
-			ctx, stream, done := collectStream(tt.args.ctx)
-			err = indexed.Search(ctx, stream)
-			agg := done()
+			gotResults, gotCommon, err := collectStream(func(stream Streamer) error {
+				return indexed.Search(tt.args.ctx, stream)
+			})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("zoektSearchHEAD() error = %v, wantErr = %v", err, tt.wantErr)
 				return
 			}
-			gotCommon.Update(&agg.Stats)
-			fms, err := searchResultsToFileMatchResults(agg.Results)
+			gotFm, err := searchResultsToFileMatchResults(gotResults)
 			if err != nil {
 				t.Fatal(err)
 			}
-			gotFm = append(gotFm, fms...)
 
 			if diff := cmp.Diff(&tt.wantCommon, &gotCommon, cmpopts.EquateEmpty()); diff != "" {
 				t.Errorf("common mismatch (-want +got):\n%s", diff)

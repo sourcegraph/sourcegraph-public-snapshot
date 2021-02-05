@@ -1336,7 +1336,14 @@ type Secret struct {
 }
 
 type SearchContext struct {
-	ID          int32
+	ID int32
+	// Name contains the non-prefixed part of the search context spec.
+	// The name is a substring of the spec and it should NOT be used as the spec itself.
+	// The spec contains additional information (such as the @ prefix and the context namespace)
+	// that helps differentiate between different search contexts.
+	// Example mappings from context spec to context name:
+	// global -> global, @user -> user, @org -> org,
+	// @user/ctx1 -> ctx1, @org/ctx2 -> ctx2.
 	Name        string
 	Description string
 	UserID      int32 // if non-zero, the owner is this user. UserID/OrgID are mutually exclusive.

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -36,6 +37,19 @@ func ResolveSearchContextSpec(ctx context.Context, searchContextSpec string, get
 		return GetUserSearchContext(name, namespace.User), nil
 	}
 	return nil, fmt.Errorf("search context '%s' does not have the correct format (global or @username)", searchContextSpec)
+}
+
+func GetUsersSearchContexts(ctx context.Context) ([]*types.SearchContext, error) {
+	searchContexts := []*types.SearchContext{GetGlobalSearchContext()}
+	a := actor.FromContext(ctx)
+	if a.IsAuthenticated() {
+		user, err := database.GlobalUsers.GetByID(ctx, a.UID)
+		if err != nil {
+			return nil, err
+		}
+		searchContexts = append(searchContexts, GetUserSearchContext(user.Username, a.UID))
+	}
+	return searchContexts, nil
 }
 
 func IsGlobalSearchContextSpec(searchContextSpec string) bool {

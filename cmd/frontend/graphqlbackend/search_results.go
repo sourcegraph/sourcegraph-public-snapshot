@@ -674,20 +674,20 @@ func intersect(left, right *SearchResultsResolver) *SearchResultsResolver {
 // r.resultChannel.
 func (r *searchResolver) evaluateAndStream(ctx context.Context, scopeParameters []query.Node, operands []query.Node) (*SearchResultsResolver, error) {
 	// Streaming disabled.
-	if r.resultChannel == nil {
+	if r.stream == nil {
 		return r.evaluateAnd(ctx, scopeParameters, operands)
 	}
 	// For streaming search we rely on batch evaluation of
 	// results. Implementing true streaming on AND expressions will require
 	// support in backends (eg directly using Zoekt) or ANDing per repo.
 	r2 := *r
-	r2.resultChannel = nil
+	r2.stream = nil
 
 	result, err := r2.evaluateAnd(ctx, scopeParameters, operands)
-	r.resultChannel <- SearchEvent{
+	r.stream.Send(SearchEvent{
 		Results: result.SearchResults,
 		Stats:   result.Stats,
-	}
+	})
 	return result, err
 }
 
@@ -763,8 +763,11 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 		if err != nil {
 			return nil, err
 		}
-		if result == nil {
-			return nil, nil
+		// We have to guard against result = nil because evaluatePatternExpression can
+		// return nil, nil via evaluateOperator.
+		if result == nil || len(result.SearchResults) == 0 {
+			// We return result instead of nil because result might contain an alert.
+			return result, nil
 		}
 		exhausted = !result.IsLimitHit
 		for _, term := range operands[1:] {
@@ -781,10 +784,11 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 			if err != nil {
 				return nil, err
 			}
-			if termResult != nil {
-				exhausted = exhausted && !termResult.IsLimitHit
-				result = intersect(result, termResult)
+			if termResult == nil || len(termResult.SearchResults) == 0 {
+				return termResult, nil
 			}
+			exhausted = exhausted && !termResult.IsLimitHit
+			result = intersect(result, termResult)
 		}
 		if exhausted {
 			break
@@ -1473,40 +1477,19 @@ func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameter
 	return nil
 }
 
-func newAggregator(ctx context.Context, stream SearchStream, inputs *SearchInputs) *aggregator {
-	childStream := make(chan SearchEvent, cap(stream))
-	agg := &aggregator{
-		stream: childStream,
-		done:   make(chan struct{}),
+func newAggregator(stream Streamer, inputs *SearchInputs) *aggregator {
+	return &aggregator{
+		parentStream: stream,
 		alert: alertObserver{
 			Inputs: inputs,
 		},
 	}
-
-	go func() {
-		defer close(agg.done)
-		for event := range childStream {
-			// Do not aggregate results if we are streaming.
-			if stream == nil {
-				agg.results = append(agg.results, event.Results...)
-			}
-
-			agg.alert.Update(event)
-			agg.stats.Update(&event.Stats)
-			if stream != nil {
-				stream <- event
-			}
-		}
-	}()
-
-	return agg
 }
 
 type aggregator struct {
-	stream SearchStream
+	parentStream Streamer
 
-	done chan struct{}
-
+	mu      sync.Mutex
 	results []SearchResultResolver
 	stats   streaming.Stats
 	alert   alertObserver
@@ -1516,15 +1499,27 @@ type aggregator struct {
 // result. It should only be called once each do* function is finished
 // running.
 func (a *aggregator) get() ([]SearchResultResolver, streaming.Stats, *searchAlert, error) {
-	close(a.stream)
-	<-a.done
-
+	a.mu.Lock()
+	defer a.mu.Unlock()
 	alert, err := a.alert.Done(&a.stats)
 	return a.results, a.stats, alert, err
 }
 
-func (a *aggregator) send(event SearchEvent) {
-	a.stream <- event
+func (a *aggregator) Send(event SearchEvent) {
+	if a.parentStream != nil {
+		a.parentStream.Send(event)
+	}
+
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	// Do not aggregate results if we are streaming.
+	if a.parentStream == nil {
+		a.results = append(a.results, event.Results...)
+	}
+
+	a.alert.Update(event)
+	a.stats.Update(&event.Stats)
 }
 
 func (a *aggregator) error(ctx context.Context, err error) {
@@ -1539,12 +1534,7 @@ func (a *aggregator) doRepoSearch(ctx context.Context, args *search.TextParamete
 		tr.Finish()
 	}()
 
-	results, stats, err := searchRepositories(ctx, args, limit)
-	a.send(SearchEvent{
-		Results: results,
-		Stats:   statsDeref(stats),
-	})
-
+	err = searchRepositories(ctx, args, limit, a)
 	return errors.Wrap(err, "repository search failed")
 }
 
@@ -1556,17 +1546,7 @@ func (a *aggregator) doSymbolSearch(ctx context.Context, args *search.TextParame
 		tr.Finish()
 	}()
 
-	symbolFileMatches, stats, err := searchSymbols(ctx, args, limit)
-
-	results := make([]SearchResultResolver, len(symbolFileMatches))
-	for i := range symbolFileMatches {
-		results[i] = symbolFileMatches[i]
-	}
-
-	a.send(SearchEvent{
-		Results: results,
-		Stats:   statsDeref(stats),
-	})
+	err = searchSymbols(ctx, args, limit, a)
 	return errors.Wrap(err, "symbol search failed")
 }
 
@@ -1581,7 +1561,7 @@ func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextPara
 	isDefaultStructuralSearch := args.PatternInfo.IsStructuralPat && args.PatternInfo.FileMatchLimit == defaultMaxSearchResults
 
 	if !isDefaultStructuralSearch {
-		return searchFilesInRepos(ctx, args, a.stream)
+		return searchFilesInRepos(ctx, args, a)
 	}
 
 	// For structural search with default limits we retry if we get no results.
@@ -1606,7 +1586,7 @@ func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextPara
 		}
 	}
 
-	a.send(SearchEvent{
+	a.Send(SearchEvent{
 		Results: fileMatchResultsToSearchResults(fileResults),
 		Stats:   stats,
 	})
@@ -1631,7 +1611,7 @@ func (a *aggregator) doDiffSearch(ctx context.Context, tp *search.TextParameters
 		return nil
 	}
 
-	return searchCommitDiffsInRepos(ctx, args, a.stream)
+	return searchCommitDiffsInRepos(ctx, args, a)
 }
 
 func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParameters) (err error) {
@@ -1652,7 +1632,7 @@ func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParamete
 		return nil
 	}
 
-	return searchCommitLogInRepos(ctx, args, a.stream)
+	return searchCommitLogInRepos(ctx, args, a)
 }
 
 func statsDeref(s *streaming.Stats) streaming.Stats {
@@ -1724,12 +1704,15 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 
 	args := search.TextParameters{
-		PatternInfo:     p,
-		Query:           r.Query,
-		UseFullDeadline: r.searchTimeoutFieldSet(),
-		Zoekt:           r.zoekt,
-		SearcherURLs:    r.searcherURLs,
-		RepoPromise:     &search.Promise{},
+		PatternInfo: p,
+		Query:       r.Query,
+
+		// UseFullDeadline if timeout: set or we are streaming.
+		UseFullDeadline: r.searchTimeoutFieldSet() || r.stream != nil,
+
+		Zoekt:        r.zoekt,
+		SearcherURLs: r.searcherURLs,
+		RepoPromise:  &search.Promise{},
 	}
 	if err := args.PatternInfo.Validate(); err != nil {
 		return nil, &badRequestError{err}
@@ -1754,7 +1737,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		return &optionalWg
 	}
 
-	agg := newAggregator(ctx, r.resultChannel, r.SearchInputs)
+	agg := newAggregator(r.stream, r.SearchInputs)
 
 	// This ensures we properly cleanup in the case of an early return. In
 	// particular we want to cancel global searches before returning early.
@@ -1817,7 +1800,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			repos[repoRev.Repo.ID] = repoRev.Repo
 		}
 
-		agg.send(SearchEvent{
+		agg.Send(SearchEvent{
 			Stats: streaming.Stats{
 				Repos:            repos,
 				ExcludedForks:    resolved.ExcludedRepos.Forks,

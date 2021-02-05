@@ -1,4 +1,5 @@
 import { UserSettingsSidebarItems } from './UserSettingsSidebar'
+import { showAccountSecurityPage, showPasswordsPage, allowUserExternalServicePublic } from './cloud-ga'
 
 export const userSettingsSideBarItems: UserSettingsSidebarItems = {
     account: [
@@ -17,7 +18,7 @@ export const userSettingsSideBarItems: UserSettingsSidebarItems = {
             to: '/password',
             exact: true,
             // Only the builtin auth provider has a password.
-            condition: ({ user }) => user.builtinAuth,
+            condition: showPasswordsPage,
         },
         {
             label: 'Emails',
@@ -29,23 +30,22 @@ export const userSettingsSideBarItems: UserSettingsSidebarItems = {
             to: '/tokens',
             condition: () => window.context.accessTokensAllow !== 'none',
         },
+        //  future GA Cloud nav items
+        {
+            label: 'Account security',
+            to: '/security',
+            exact: true,
+            condition: showAccountSecurityPage,
+        },
         {
             label: 'Code host connections',
             to: '/code-hosts',
-            condition: props =>
-                window.context.externalServicesUserModeEnabled ||
-                (props.user.id === props.authenticatedUser.id &&
-                    props.authenticatedUser.tags.includes('AllowUserExternalServicePublic')) ||
-                props.user.tags?.includes('AllowUserExternalServicePublic'),
+            condition: allowUserExternalServicePublic,
         },
         {
             label: 'Repositories',
             to: '/repositories',
-            condition: props =>
-                window.context.externalServicesUserModeEnabled ||
-                (props.user.id === props.authenticatedUser.id &&
-                    props.authenticatedUser.tags.includes('AllowUserExternalServicePublic')) ||
-                props.user.tags?.includes('AllowExternalServicePublic'),
+            condition: allowUserExternalServicePublic,
         },
     ],
 }
