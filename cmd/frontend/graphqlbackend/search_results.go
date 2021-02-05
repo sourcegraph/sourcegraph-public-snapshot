@@ -951,8 +951,6 @@ func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolve
 		tr.Finish()
 	}()
 	switch q := r.Query.(type) {
-	case *query.OrdinaryQuery:
-		srr, err = r.evaluateLeaf(ctx)
 	case *query.AndOrQuery:
 		var countStr string
 		wantCount := defaultMaxSearchResults
