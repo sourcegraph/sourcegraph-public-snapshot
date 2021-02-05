@@ -13,7 +13,7 @@ import { getPlatformName } from '../../shared/util/context'
 
 // Safari does not support the search shortcut. So don't show the feature.
 const isSafari = getPlatformName() === 'safari-extension'
-const showSearchShortcut = !isSafari;
+const showSearchShortcut = !isSafari
 
 const Video: React.FunctionComponent<
     { name: string } & Pick<VideoHTMLAttributes<HTMLVideoElement>, 'width' | 'height'> & ThemeProps
@@ -70,7 +70,7 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                             Sourcegraph browser extension adds code intelligence to files and diffs on GitHub, GitHub
                             Enterprise, GitLab, Phabricator, Bitbucket Server, and Gerrit.
                         </p>
-                        <Video {...props} name="CodeIntelligenceOnCodeHost" />
+                        <Video {...props} name="CodeIntelligenceOnCodeHost" width={1760} height={1060} />
                     </div>
                     {showSearchShortcut && (
                         <div className="col-md-6 mt-4 mt-md-0">
@@ -80,7 +80,7 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                                 <kbd>space</kbd> in the address bar of your browser to search for queries on
                                 Sourcegraph.
                             </p>
-                            <Video {...props} name="BrowserShortcut" />
+                            <Video {...props} name="BrowserShortcut" width={1196} height={720} />
                         </div>
                     )}
                 </div>
