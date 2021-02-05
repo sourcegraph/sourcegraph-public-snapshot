@@ -80,12 +80,6 @@ func alertForQuery(queryString string, err error) *searchAlert {
 			description:     "Quoting the query may help if you want a literal match.",
 			proposedQueries: toSearchQueryDescription(query.ProposedQuotedQueries(queryString)),
 		}
-	case *query.ValidationError:
-		return &searchAlert{
-			prometheusType: "validation_error",
-			title:          "Invalid Query",
-			description:    capFirst(e.Msg),
-		}
 	case *querytypes.TypeError:
 		switch e := e.Err.(type) {
 		case *rxsyntax.Error:
