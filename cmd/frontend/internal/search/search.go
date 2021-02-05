@@ -92,7 +92,9 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			matchesBuf = matchesBuf[:0]
+		}
 
+		if progress.Dirty {
 			sendProgress()
 		}
 	}
