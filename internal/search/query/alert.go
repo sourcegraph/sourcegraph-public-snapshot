@@ -8,33 +8,35 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
 )
 
-// addRegexpField adds a new expr to the query with the given field
-// and pattern value. The field is assumed to be a regexp.
+// addRegexpField adds a new expr to the query with the given field and pattern
+// value. The nonnegated field is assumed to associate with a regexp value. The
+// pattern value is assumed to be unquoted.
 //
 // It tries to remove redundancy in the result. For example, given
 // a query like "x:foo", if given a field "x" with pattern "foobar" to add,
 // it will return a query "x:foobar" instead of "x:foo x:foobar". It is not
 // guaranteed to always return the simplest query.
-func AddRegexpField(p syntax.ParseTree, field, pattern string) string {
-	var added bool
-	addRegexpField := func(e syntax.Expr) *syntax.Expr {
-		if e.Field == field && strings.Contains(pattern, e.Value) {
-			e.Value = pattern
-			added = true
-			return &e
+func AddRegexpField(q QueryInfo, field, pattern string) string {
+	var modified bool
+	nodes := q.(*AndOrQuery).Query
+	nodes = MapParameter(nodes, func(gotField, value string, negated bool, annotation Annotation) Node {
+		if field == gotField && strings.Contains(pattern, value) {
+			value = pattern
+			modified = true
 		}
-		return &e
+		return Parameter{
+			Field:      gotField,
+			Value:      value,
+			Negated:    negated,
+			Annotation: annotation,
+		}
+	})
+
+	if !modified {
+		// use newOperator to reduce And nodes when adding a parameter to the query toplevel.
+		nodes = newOperator(append(nodes, Parameter{Field: field, Value: pattern}), And)
 	}
-	modified := syntax.Map(p, addRegexpField)
-	if !added {
-		p = append(p, &syntax.Expr{
-			Field:     field,
-			Value:     pattern,
-			ValueType: syntax.TokenLiteral,
-		})
-		return p.String()
-	}
-	return modified.String()
+	return StringHuman(nodes)
 }
 
 type ProposedQuery struct {
