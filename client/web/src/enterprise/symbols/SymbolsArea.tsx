@@ -9,6 +9,7 @@ import { RepoHeaderContributionsLifecycleProps } from '../../repo/RepoHeader'
 import { RepoHeaderContributionPortal } from '../../repo/RepoHeaderContributionPortal'
 import { RepoRevisionContainerContext } from '../../repo/RepoRevisionContainer'
 import { SymbolPage, SymbolRouteProps } from './SymbolPage'
+import { SymbolsPage } from './SymbolsPage'
 // import { SymbolsPage } from './SymbolsPage'
 import { SymbolsSidebar, SymbolsSidebarOptions } from './SymbolsSidebar'
 import { SymbolsExternalsViewOptionToggle, SymbolsInternalsViewOptionToggle } from './SymbolsViewOptionsButtons'
@@ -46,7 +47,11 @@ export const SymbolsArea: React.FunctionComponent<Props> = ({
                     }
                 />
             )}
-            <div>I am the main area</div>
+            <div>
+                <Switch>
+                    <Route path={match.url} exact={true} render={(routeProps: any) => <SymbolsPage />} />
+                </Switch>
+            </div>
         </>
     )
 }
