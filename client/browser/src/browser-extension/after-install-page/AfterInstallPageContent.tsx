@@ -9,6 +9,11 @@ import BookOpenPageVariantIcon from 'mdi-react/BookOpenPageVariantIcon'
 import { PhabricatorIcon } from '../../../../shared/src/components/icons'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { SourcegraphLogo } from '../../../../branded/src/components/SourcegraphLogo'
+import { getPlatformName } from '../../shared/util/context'
+
+// Safari does not support the search shortcut. So don't show the feature.
+const isSafari = getPlatformName() === 'safari-extension'
+const showSearchShortcut = !isSafari;
 
 const Video: React.FunctionComponent<
     { name: string } & Pick<VideoHTMLAttributes<HTMLVideoElement>, 'width' | 'height'> & ThemeProps
@@ -63,18 +68,21 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                         <h3>Code intelligence on your code host</h3>
                         <p>
                             Sourcegraph browser extension adds code intelligence to files and diffs on GitHub, GitHub
-                            Enterprise, GitLab, Phabricator, and Bitbucket Server.
+                            Enterprise, GitLab, Phabricator, Bitbucket Server, and Gerrit.
                         </p>
-                        <Video {...props} name="CodeIntelligenceOnCodeHost" width={1760} height={1060} />
+                        <Video {...props} name="CodeIntelligenceOnCodeHost" />
                     </div>
-                    <div className="col-md-6 mt-4 mt-md-0">
-                        <h3>Search shortcut in the URL location bar</h3>
-                        <p>
-                            Type <code>src</code>
-                            <kbd>space</kbd> in the address bar of your browser to search for queries on Sourcegraph.
-                        </p>
-                        <Video {...props} name="BrowserShortcut" width={1196} height={720} />
-                    </div>
+                    {showSearchShortcut && (
+                        <div className="col-md-6 mt-4 mt-md-0">
+                            <h3>Search shortcut in the URL location bar</h3>
+                            <p>
+                                Type <code>src</code>
+                                <kbd>space</kbd> in the address bar of your browser to search for queries on
+                                Sourcegraph.
+                            </p>
+                            <Video {...props} name="BrowserShortcut" />
+                        </div>
+                    )}
                 </div>
             </div>
         </section>
@@ -84,7 +92,7 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                 <div className="row">
                     <div className="col-md-6 d-flex flex-column">
                         <h2 className="mb-4">Make it work on your codehost</h2>
-                        <div className="bg-2 rounded p-3 mb-3 flex-grow-1 d-flex flex-column justify-content-center">
+                        <div className="bg-2 rounded p-3 mb-3 x-flex-grow-1 d-flex flex-column justify-content-center">
                             <h3 className="mb-3 after-install-page-content__code-host-titles">
                                 <GithubIcon className="icon-inline after-install-page-content__code-host-logo" />{' '}
                                 github.com
@@ -94,7 +102,7 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                                 default.
                             </p>
                         </div>
-                        <div className="bg-2 rounded p-3 flex-grow-1 d-flex flex-column justify-content-center">
+                        <div className="bg-2 rounded p-3 x-flex-grow-1 d-flex flex-column justify-content-center">
                             <h3 className="d-flex flex-wrap after-install-page-content__code-host-titles">
                                 <div className="mr-5 mb-3">
                                     <GithubIcon className="icon-inline after-install-page-content__code-host-logo" />{' '}
@@ -133,7 +141,7 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                             </ol>
                         </div>
                     </div>
-                    <div className="col-md-6 mt-4 mt-md-0 d-flex">
+                    <div className="col-md-6 mt-4 mt-md-0">
                         <Video {...props} name="GrantPermissions" width={1762} height={1384} />
                     </div>
                 </div>
@@ -146,18 +154,18 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                     <div className="col-md-6 d-flex flex-column">
                         <h2 className="mb-4">Make it work for private code</h2>
                         <p>By default, the browser extension works only for public code.</p>
-                        <div className="flex-grow-1 d-flex align-items-center">
+                        <div className="x-flex-grow-1 d-flex align-items-center">
                             <div className="bg-3 rounded-circle p-2">
                                 <LockIcon className="icon-inline" />
                             </div>
-                            <p className="flex-grow-1 m-0 ml-3">
+                            <p className="x-flex-grow-1 m-0 ml-3">
                                 To use the browser extension with your private repositories, you need to set up a{' '}
                                 <strong>private Sourcegraph instance</strong> and connect the extension to it.
                             </p>
                         </div>
-                        <div className="flex-grow-1 bg-2 rounded p-3 mt-4 d-flex flex-column justify-content-around">
+                        <div className="x-flex-grow-1 bg-2 rounded p-3 mt-4 d-flex flex-column justify-content-around">
                             <p>Follow these instructions:</p>
-                            <ol className="m-0 flex-grow-1 d-flex flex-column justify-content-around">
+                            <ol className="m-0 x-flex-grow-1 d-flex flex-column justify-content-around">
                                 <li>
                                     <strong>Install Sourcegraph</strong> (
                                     <a href="https://docs.sourcegraph.com/admin/install" target="_blank" rel="noopener">
@@ -180,7 +188,7 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                             </ol>
                         </div>
                     </div>
-                    <div className="col-md-6 mt-4 mt-md-0 d-flex">
+                    <div className="col-md-6 mt-4 mt-md-0">
                         <Video {...props} name="PrivateInstance" width={1764} height={1390} />
                     </div>
                 </div>
@@ -194,7 +202,7 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                     <div className="bg-3 rounded-circle p-2">
                         <BookOpenPageVariantIcon className="icon-inline" />
                     </div>
-                    <p className="flex-grow-1 m-0 ml-3">
+                    <p className="x-flex-grow-1 m-0 ml-3">
                         Read the{' '}
                         <a
                             href="https://docs.sourcegraph.com/integration/browser_extension"
