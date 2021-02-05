@@ -11,7 +11,7 @@
         @include media-breakpoint-down(sm) {
             // Emulate h4 on sm and xs devices.
             font-size: 0.875rem;
-            line-height: 20px;
+            line-height: 1.4285714286;
             font-weight: 600;
         }
     }

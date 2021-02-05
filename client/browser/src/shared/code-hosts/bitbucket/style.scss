@@ -100,6 +100,7 @@
     background: transparent !important;
     border: none !important;
     height: 16px !important;
+    // stylelint-disable-next-line declaration-property-unit-whitelist
     line-height: 16px !important;
 
     &:hover {
