@@ -74,6 +74,18 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     const [codeHosts, setCodeHosts] = useState(initialCodeHostState)
     const [fetchingRepos, setFetchingRepos] = useState(initialFetchingReposState)
 
+    interface GitHubConfig {
+        repos: string[]
+        token: 'REDACTED'
+        url: string
+    }
+    interface GitLabConfig {
+        projectQuery: string[]
+        projects: { name: string }[]
+        token: 'REDACTED'
+        url: string
+    }
+
     useCallback(() => {
         // first we should load code hosts
         if (!codeHosts.loaded) {
@@ -84,20 +96,25 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             }).subscribe(result => {
                 const selected: string[] = []
                 for (const host of result.nodes) {
-                    const cfg = JSON.parse(host.config)
+                    const cfg = JSON.parse(host.config) as GitHubConfig | GitLabConfig
                     switch (host.kind) {
-                        case ExternalServiceKind.GITLAB:
-                            if (cfg.projects !== undefined) {
-                                cfg.projects.map((project: any) => {
+                        case ExternalServiceKind.GITLAB: {
+                            const gitLabCfg = cfg as GitLabConfig
+                            if (gitLabCfg.projects !== undefined) {
+                                gitLabCfg.projects.map(project => {
                                     selected.push(project.name)
                                 })
                             }
                             break
-                        case ExternalServiceKind.GITHUB:
-                            if (cfg.repos !== undefined) {
-                                selected.push(...cfg.repos)
+                        }
+
+                        case ExternalServiceKind.GITHUB: {
+                            const gitHubCfg = cfg as GitHubConfig
+                            if (gitHubCfg.repos !== undefined) {
+                                selected.push(...gitHubCfg.repos)
                             }
                             break
+                        }
                     }
                 }
                 setCodeHosts({
@@ -156,9 +173,13 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     // code host config.
     if (repoState.loaded && codeHosts.loaded && !selectionState.loaded) {
         const selectedRepos = new Map<string, Repo>()
-        codeHosts.configuredRepos.map(repo => {
-            selectedRepos.set(repo, repoState.repos.find(fullRepo => fullRepo.name === repo)!)
-        })
+
+        for (const repo of codeHosts.configuredRepos) {
+            const foundInState = repoState.repos.find(fullRepo => fullRepo.name === repo)
+            if (foundInState) {
+                selectedRepos.set(repo, foundInState)
+            }
+        }
 
         let radioState = selectionState.radio
         if (selectionState.radio === 'all' && selectedRepos.size > 0) {
@@ -177,7 +198,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         if (!repo.name.toLowerCase().includes(query)) {
             continue
         }
-        if (codeHostFilter !== '' && repo.codeHost!.id !== codeHostFilter) {
+        if (codeHostFilter !== '' && repo.codeHost?.id !== codeHostFilter) {
             continue
         }
         filteredRepos.push(repo)
@@ -266,7 +287,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 const repos: string[] = []
                 syncTimes.set(host.id, host.lastSyncAt)
                 for (const repo of selectionState.repos.values()) {
-                    if (repo.codeHost!.id !== host.id) {
+                    if (repo.codeHost?.id !== host.id) {
                         continue
                     }
                     repos.push(repo.name)

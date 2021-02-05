@@ -38,7 +38,7 @@ export const RemoveCodeHostConnectionModal: React.FunctionComponent<{
     onDidRemove: () => void
     onDidCancel: () => void
     onDidError: (error: ErrorLike) => void
-}> = ({ id, name, kind, repoCount, onDidRemove, onDidCancel, onDidError }) => {
+}> = ({ id, name, repoCount, onDidRemove, onDidCancel, onDidError }) => {
     const [isLoading, setIsLoading] = useState(false)
 
     const onConnectionRemove = useCallback<React.FormEventHandler<HTMLFormElement>>(

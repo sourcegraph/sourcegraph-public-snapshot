@@ -28,7 +28,7 @@ export const UpdateCodeHostConnectionModal: React.FunctionComponent<{
     onDidError: (error: ErrorLike) => void
 
     hintFragment?: React.ReactFragment
-}> = ({ serviceId, serviceConfig, name, kind, hintFragment, onDidUpdate, onDidCancel, onDidError }) => {
+}> = ({ serviceId, serviceConfig, name, hintFragment, onDidUpdate, onDidCancel, onDidError }) => {
     const [token, setToken] = useState<string>('')
     const [isLoading, setIsLoading] = useState(false)
 
