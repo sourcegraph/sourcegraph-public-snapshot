@@ -5254,6 +5254,12 @@ type RepositoryContributor {
     ): GitCommitConnection!
 }
 
+enum SymbolTag {
+    DEPRECATED
+    EXPORTED
+    UNEXPORTED
+}
+
 type DocSymbol {
     """
     The name of the symbol.
@@ -5264,7 +5270,9 @@ type DocSymbol {
 
     kind: SymbolKind!
 
-    Locations: DocSymbolLocation![]!
+    tags: [SymbolTag!]!
+
+    definitions: LocationConnection!
 
     children: [DocSymbol!]!
 }
