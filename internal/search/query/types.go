@@ -3,9 +3,9 @@ package query
 import (
 	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
-	"github.com/sourcegraph/sourcegraph/internal/search/query/types"
 )
 
 type ExpectedOperand struct {
@@ -24,9 +24,6 @@ func (e *UnsupportedError) Error() string {
 	return e.Msg
 }
 
-// LegacyParseError aliases to the parse error type for the legacy parser.
-type LegacyParseError = syntax.ParseError
-
 type SearchType int
 
 const (
@@ -41,14 +38,22 @@ type QueryInfo interface {
 	RegexpPatterns(field string) (values, negatedValues []string)
 	StringValues(field string) (values, negatedValues []string)
 	StringValue(field string) (value, negatedValue string)
-	Values(field string) []*types.Value
-	Fields() map[string][]*types.Value
+	Values(field string) []*Value
+	Fields() map[string][]*Value
 	BoolValue(field string) bool
 	IsCaseSensitive() bool
 }
 
 // A query is a tree of Nodes.
 type Query []Node
+
+func (q Query) String() string {
+	var v []string
+	for _, node := range q {
+		v = append(v, node.String())
+	}
+	return strings.Join(v, " ")
+}
 
 // Query satisfies the interface for QueryInfo close to that of OrdinaryQuery.
 func (q Query) RegexpPatterns(field string) (values, negatedValues []string) {
@@ -84,8 +89,8 @@ func (q Query) StringValue(field string) (value, negatedValue string) {
 	return value, negatedValue
 }
 
-func (q Query) Values(field string) []*types.Value {
-	var values []*types.Value
+func (q Query) Values(field string) []*Value {
+	var values []*Value
 	if field == "" {
 		VisitPattern(q, func(value string, _ bool, annotation Annotation) {
 			values = append(values, q.valueToTypedValue(field, value, annotation.Labels)...)
@@ -98,8 +103,8 @@ func (q Query) Values(field string) []*types.Value {
 	return values
 }
 
-func (q Query) Fields() map[string][]*types.Value {
-	fields := make(map[string][]*types.Value)
+func (q Query) Fields() map[string][]*Value {
+	fields := make(map[string][]*Value)
 	VisitPattern(q, func(value string, _ bool, _ Annotation) {
 		fields[""] = q.Values("")
 	})
@@ -156,40 +161,40 @@ func parseRegexpOrPanic(field, value string) *regexp.Regexp {
 // valueToTypedValue approximately preserves the field validation for
 // OrdinaryQuery processing. It does not check the validity of field negation or
 // if the same field is specified more than once.
-func (q Query) valueToTypedValue(field, value string, label labels) []*types.Value {
+func (q Query) valueToTypedValue(field, value string, label labels) []*Value {
 	switch field {
 	case
 		FieldDefault:
 		if label.isSet(Literal) {
-			return []*types.Value{{String: &value}}
+			return []*Value{{String: &value}}
 		}
 		if label.isSet(Regexp) {
 			regexp, err := regexp.Compile(value)
 			if err != nil {
 				panic(fmt.Sprintf("Invariant broken: value must have been checked to be valid regexp. Error: %s", err))
 			}
-			return []*types.Value{{Regexp: regexp}}
+			return []*Value{{Regexp: regexp}}
 		}
 		// All patterns should have a label after parsing, but if not, treat the pattern as a string literal.
-		return []*types.Value{{String: &value}}
+		return []*Value{{String: &value}}
 
 	case
 		FieldCase:
 		b, _ := parseBool(value)
-		return []*types.Value{{Bool: &b}}
+		return []*Value{{Bool: &b}}
 
 	case
 		FieldRepo, "r":
-		return []*types.Value{{Regexp: parseRegexpOrPanic(field, value)}}
+		return []*Value{{Regexp: parseRegexpOrPanic(field, value)}}
 
 	case
 		FieldRepoGroup, "g",
 		FieldContext:
-		return []*types.Value{{String: &value}}
+		return []*Value{{String: &value}}
 
 	case
 		FieldFile, "f":
-		return []*types.Value{{Regexp: parseRegexpOrPanic(field, value)}}
+		return []*Value{{Regexp: parseRegexpOrPanic(field, value)}}
 
 	case
 		FieldFork,
@@ -198,22 +203,22 @@ func (q Query) valueToTypedValue(field, value string, label labels) []*types.Val
 		FieldType,
 		FieldPatternType,
 		FieldContent:
-		return []*types.Value{{String: &value}}
+		return []*Value{{String: &value}}
 
 	case FieldRepoHasFile:
-		return []*types.Value{{Regexp: parseRegexpOrPanic(field, value)}}
+		return []*Value{{Regexp: parseRegexpOrPanic(field, value)}}
 
 	case
 		FieldRepoHasCommitAfter,
 		FieldBefore, "until",
 		FieldAfter, "since":
-		return []*types.Value{{String: &value}}
+		return []*Value{{String: &value}}
 
 	case
 		FieldAuthor,
 		FieldCommitter,
 		FieldMessage, "m", "msg":
-		return []*types.Value{{Regexp: parseRegexpOrPanic(field, value)}}
+		return []*Value{{Regexp: parseRegexpOrPanic(field, value)}}
 
 	case
 		FieldIndex,
@@ -221,7 +226,7 @@ func (q Query) valueToTypedValue(field, value string, label labels) []*types.Val
 		FieldMax,
 		FieldTimeout,
 		FieldCombyRule:
-		return []*types.Value{{String: &value}}
+		return []*Value{{String: &value}}
 	}
-	return []*types.Value{{String: &value}}
+	return []*Value{{String: &value}}
 }

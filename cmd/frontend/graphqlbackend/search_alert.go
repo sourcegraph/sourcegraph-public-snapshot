@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"path"
 	"regexp"
-	rxsyntax "regexp/syntax"
 	"sort"
 	"strings"
 	"sync"
@@ -23,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	querytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
 
@@ -60,36 +58,9 @@ func alertForCappedAndExpression() *searchAlert {
 	}
 }
 
-func toSearchQueryDescription(proposed []*query.ProposedQuery) (result []*searchQueryDescription) {
-	for _, p := range proposed {
-		result = append(result, &searchQueryDescription{
-			description: p.Description,
-			query:       p.Query,
-		})
-	}
-	return result
-}
-
 // alertForQuery converts errors in the query to search alerts.
 func alertForQuery(queryString string, err error) *searchAlert {
-	switch e := err.(type) {
-	case *query.LegacyParseError:
-		return &searchAlert{
-			prometheusType:  "parse_syntax_error",
-			title:           capFirst(e.Msg),
-			description:     "Quoting the query may help if you want a literal match.",
-			proposedQueries: toSearchQueryDescription(query.ProposedQuotedQueries(queryString)),
-		}
-	case *querytypes.TypeError:
-		switch e := e.Err.(type) {
-		case *rxsyntax.Error:
-			return &searchAlert{
-				prometheusType:  "typecheck_regex_syntax_error",
-				title:           capFirst(e.Error()),
-				description:     "Quoting the query may help if you want a literal match instead of a regular expression match.",
-				proposedQueries: toSearchQueryDescription(query.ProposedQuotedQueries(queryString)),
-			}
-		}
+	switch err.(type) {
 	case *query.UnsupportedError, *query.ExpectedOperand:
 		return &searchAlert{
 			prometheusType: "unsupported_and_or_query",

@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	querytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -383,7 +382,7 @@ func TestQueryForStableResults(t *testing.T) {
 			}
 			// Ensure type:file is set.
 			fileValue := "file"
-			wantTypeValue := querytypes.Value{String: &fileValue}
+			wantTypeValue := query.Value{String: &fileValue}
 			gotTypeValues := queryInfo.Fields()["type"]
 			if len(gotTypeValues) != 1 && *gotTypeValues[0] != wantTypeValue {
 				t.Errorf("Query %s sets stable:yes but is not transformed with type:file.", c.query)
