@@ -17,6 +17,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - New site config option `"log": { "sentry": { "backendDSN": "<REDACTED>" } }` to use a separate Sentry project for backend errors. [#17363](https://github.com/sourcegraph/sourcegraph/pull/17363)
 - Structural search now supports searching indexed branches other than default. [#17726](https://github.com/sourcegraph/sourcegraph/pull/17726)
+- A product research sign-up page is now enabled by default, this can be accessed by all users in their user settings. A new site configuration property `productResearchPage.enabled` can be used to disable access to this page.
 
 ### Changed
 

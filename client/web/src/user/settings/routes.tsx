@@ -139,8 +139,6 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         path: '/product-research',
         exact: true,
         render: lazyComponent(() => import('./research/ProductResearch'), 'ProductResearchPage'),
-        condition: () =>
-            // TODO: Gate correctly and allow admins to disable
-            true,
+        condition: () => window.context.productResearchPageEnabled,
     },
 ]

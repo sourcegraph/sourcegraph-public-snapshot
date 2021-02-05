@@ -50,9 +50,7 @@ export const userSettingsSideBarItems: UserSettingsSidebarItems = {
         {
             label: 'Product research',
             to: '/product-research',
-            condition: () =>
-                // TODO: Gate correctly and allow admins to disable
-                true,
+            condition: () => window.context.productResearchPageEnabled,
         },
     ],
 }

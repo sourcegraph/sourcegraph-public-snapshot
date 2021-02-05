@@ -192,6 +192,8 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 		CodeIntelAutoIndexingEnabled: conf.CodeIntelAutoIndexingEnabled(),
 
+		ProductResearchPageEnabled: conf.ProductResearchPageEnabled()
+
 		ExperimentalFeatures: conf.ExperimentalFeatures(),
 	}
 }
