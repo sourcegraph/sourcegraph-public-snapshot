@@ -170,7 +170,7 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 	}
 
 	// Disable unindexed search
-	if indexParam == query.Only {
+	if args.PatternInfo.Index == query.Only {
 		searcherRepos = limitUnindexedRepos(searcherRepos, 0, stream)
 	}
 
