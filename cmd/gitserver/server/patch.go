@@ -15,6 +15,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 )
 
@@ -59,7 +60,12 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		remoteURL string
 		err       error
 	)
-	if req.Push != nil && req.Push.RemoteURL != "" {
+	if req.Push != nil {
+		if req.Push.RemoteURL == "" {
+			log15.Error("Got no remote URL", "ref", ref, "err", err)
+			resp.SetError(repo, "", "", errors.Wrap(err, "remoteURLEmpty"))
+			return http.StatusInternalServerError, resp
+		}
 		remoteURL = req.Push.RemoteURL
 	} else {
 		remoteURL, err = s.getRemoteURL(ctx, req.Repo)
