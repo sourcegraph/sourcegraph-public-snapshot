@@ -697,3 +697,11 @@ func ellipsesForHoles(nodes []Node) []Node {
 		}
 	})
 }
+
+// OmitQueryField removes all fields `field` from a query. The `field` string
+// should be the canonical name and not an alias ("repo", not "r").
+func OmitQueryField(q QueryInfo, field string) string {
+	return StringHuman(MapField(q.(*AndOrQuery).Query, field, func(_ string, _ bool) Node {
+		return nil
+	}))
+}

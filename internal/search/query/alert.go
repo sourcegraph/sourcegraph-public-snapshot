@@ -8,16 +8,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
 )
 
-func OmitQueryField(p syntax.ParseTree, field string) string {
-	omitField := func(e syntax.Expr) *syntax.Expr {
-		if e.Field == field {
-			return nil
-		}
-		return &e
-	}
-	return syntax.Map(p, omitField).String()
-}
-
 // addRegexpField adds a new expr to the query with the given field
 // and pattern value. The field is assumed to be a regexp.
 //
