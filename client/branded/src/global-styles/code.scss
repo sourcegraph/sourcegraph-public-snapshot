@@ -24,7 +24,7 @@ code,
 kbd {
     font-family: SFMono-Regular, Consolas, Menlo, DejaVu Sans Mono, monospace;
     display: inline-block;
-    line-height: 1.25;
+    line-height: (16/12);
     height: 1.125rem;
     font-size: $code-font-size;
     padding: 0 0.25rem;
