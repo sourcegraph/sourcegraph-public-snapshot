@@ -1060,7 +1060,7 @@ type ParserOptions struct {
 }
 
 // ProcessAndOr query parses and validates an and/or query for a given search type.
-func ProcessAndOr(in string, options ParserOptions) (QueryInfo, error) {
+func ProcessAndOr(in string, options ParserOptions) (Query, error) {
 	var query []Node
 	var err error
 
@@ -1092,13 +1092,13 @@ func ProcessAndOr(in string, options ParserOptions) (QueryInfo, error) {
 			return nil, err
 		}
 	}
-	return &AndOrQuery{Query: query}, nil
+	return query, nil
 }
 
-func ParseLiteral(in string) (QueryInfo, error) {
+func ParseLiteral(in string) (Query, error) {
 	return ProcessAndOr(in, ParserOptions{SearchType: SearchTypeLiteral})
 }
 
-func ParseRegexp(in string) (QueryInfo, error) {
+func ParseRegexp(in string) (Query, error) {
 	return ProcessAndOr(in, ParserOptions{SearchType: SearchTypeRegex})
 }

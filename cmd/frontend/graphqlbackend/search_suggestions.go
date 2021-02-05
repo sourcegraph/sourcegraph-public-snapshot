@@ -51,13 +51,13 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 	if getBoolPtr(r.UserSettings.SearchGlobbing, false) {
 		globbing = true
 	}
-	if AndOrQuery, isAndOr := r.Query.(*query.AndOrQuery); globbing && isAndOr {
-		AndOrQuery.Query = query.FuzzifyRegexPatterns(AndOrQuery.Query)
+	if globbing {
+		r.Query = query.FuzzifyRegexPatterns(r.Query)
 	}
 
 	args.applyDefaultsAndConstraints()
 
-	if len(r.Query.(*query.AndOrQuery).Query) == 0 {
+	if len(r.Query) == 0 {
 		return nil, nil
 	}
 
