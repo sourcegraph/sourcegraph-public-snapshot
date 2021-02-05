@@ -48,40 +48,9 @@ type QueryInfo interface {
 	IsCaseSensitive() bool
 }
 
-// An ordinary query (not containing and/or expressions).
-type OrdinaryQuery struct {
-	Query     *Query           // the validated search query
-	parseTree syntax.ParseTree // the parsed search query
-}
-
 // A query containing and/or expressions.
 type AndOrQuery struct {
 	Query []Node
-}
-
-func (q OrdinaryQuery) RegexpPatterns(field string) (values, negatedValues []string) {
-	return q.Query.RegexpPatterns(field)
-}
-func (q OrdinaryQuery) StringValues(field string) (values, negatedValues []string) {
-	return q.Query.StringValues(field)
-}
-func (q OrdinaryQuery) StringValue(field string) (value, negatedValue string) {
-	return q.Query.StringValue(field)
-}
-func (q OrdinaryQuery) Values(field string) []*types.Value {
-	return q.Query.Values(field)
-}
-func (q OrdinaryQuery) Fields() map[string][]*types.Value {
-	return q.Query.Fields
-}
-func (q OrdinaryQuery) ParseTree() syntax.ParseTree {
-	return q.parseTree
-}
-func (q OrdinaryQuery) BoolValue(field string) bool {
-	return q.Query.BoolValue(field)
-}
-func (q OrdinaryQuery) IsCaseSensitive() bool {
-	return q.Query.IsCaseSensitive()
 }
 
 // AndOrQuery satisfies the interface for QueryInfo close to that of OrdinaryQuery.
