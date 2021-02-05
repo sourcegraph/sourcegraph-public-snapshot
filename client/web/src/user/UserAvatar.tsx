@@ -10,6 +10,7 @@ interface Props {
     className?: string
     ['data-tooltip']?: string
     targetID?: string
+    alt?: string
 }
 
 /**
