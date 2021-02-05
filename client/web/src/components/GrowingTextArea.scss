@@ -1,0 +1,43 @@
+.growing-textarea {
+    display: inline-grid;
+    vertical-align: top;
+    align-items: center;
+    position: relative;
+    border: solid 1px;
+    margin: 5px;
+
+    &.stacked {
+        align-items: stretch;
+
+        &::after,
+        input,
+        textarea {
+            grid-area: 2 / 1;
+        }
+    }
+
+    &::after,
+    input,
+    textarea {
+        width: auto;
+        min-width: 1em;
+        grid-area: 1 / 2;
+        font: inherit;
+        padding: 0.25em;
+        margin: 0;
+        resize: none;
+        background: none;
+        appearance: none;
+        border: none;
+    }
+
+    span {
+        padding: 0.25em;
+    }
+
+    &::after {
+        content: attr(data-value) ' ';
+        visibility: hidden;
+        white-space: pre-wrap;
+    }
+}
