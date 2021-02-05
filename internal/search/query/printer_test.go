@@ -9,7 +9,7 @@ import (
 func TestStringHuman(t *testing.T) {
 	test := func(input string) string {
 		q, _ := ParseLiteral(input)
-		return StringHuman(q.(*AndOrQuery).Query)
+		return StringHuman(q)
 	}
 
 	autogold.Want("00", "a b c").Equal(t, test("a b c"))

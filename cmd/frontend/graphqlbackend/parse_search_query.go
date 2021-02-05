@@ -98,7 +98,7 @@ func (*schemaResolver) ParseSearchQuery(ctx context.Context, args *struct {
 	}
 
 	var jsons []interface{}
-	for _, node := range q.(*query.AndOrQuery).Query {
+	for _, node := range q {
 		jsons = append(jsons, toJSON(node))
 	}
 	json, err := json.Marshal(jsons)

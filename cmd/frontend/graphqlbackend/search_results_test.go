@@ -379,7 +379,7 @@ func TestIsPatternNegated(t *testing.T) {
 			if err != nil {
 				t.Fatalf(err.Error())
 			}
-			got := isPatternNegated(q.(*query.AndOrQuery).Query)
+			got := isPatternNegated(q)
 			if got != tt.want {
 				t.Fatalf("got %t\nwant %t", got, tt.want)
 			}
@@ -960,7 +960,7 @@ func TestCheckDiffCommitSearchLimits(t *testing.T) {
 			context.Background(),
 			&search.TextParameters{
 				RepoPromise: (&search.Promise{}).Resolve(repoRevs),
-				Query:       &query.AndOrQuery{Query: test.fields},
+				Query:       test.fields,
 			},
 			test.resultType)
 
@@ -1062,8 +1062,7 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 func TestSearchResolver_evaluateWarning(t *testing.T) {
 	q, _ := query.ProcessAndOr("file:foo or file:bar", query.ParserOptions{SearchType: query.SearchTypeRegex, Globbing: false})
 	wantPrefix := "I'm having trouble understanding that query."
-	andOrQuery, _ := q.(*query.AndOrQuery)
-	got, _ := (&searchResolver{}).evaluate(context.Background(), andOrQuery.Query)
+	got, _ := (&searchResolver{}).evaluate(context.Background(), q)
 	t.Run("warn for unsupported and/or query", func(t *testing.T) {
 		if !strings.HasPrefix(got.alert.description, wantPrefix) {
 			t.Fatalf("got alert description %s, want %s", got.alert.description, wantPrefix)

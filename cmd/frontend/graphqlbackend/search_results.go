@@ -884,7 +884,7 @@ func (r *searchResolver) setQuery(q []query.Node) {
 		r.resolved.MissingRepoRevs = nil
 		r.repoErr = nil
 	}
-	r.Query.(*query.AndOrQuery).Query = q
+	r.Query = q
 }
 
 // evaluatePatternExpression evaluates a search pattern containing and/or expressions.
@@ -909,7 +909,7 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, scopePar
 }
 
 // evaluate evaluates all expressions of a search query.
-func (r *searchResolver) evaluate(ctx context.Context, q []query.Node) (*SearchResultsResolver, error) {
+func (r *searchResolver) evaluate(ctx context.Context, q query.Query) (*SearchResultsResolver, error) {
 	scopeParameters, pattern, err := query.PartitionSearchPattern(q)
 	if err != nil {
 		return alertForQuery("", err).wrap(), nil
@@ -954,42 +954,36 @@ func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolve
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	switch q := r.Query.(type) {
-	case *query.AndOrQuery:
-		var countStr string
-		wantCount := defaultMaxSearchResults
-		query.VisitField(q.Query, "count", func(value string, _ bool, _ query.Annotation) {
-			countStr = value
-		})
-		if countStr != "" {
-			wantCount, _ = strconv.Atoi(countStr) // Invariant: count is validated.
-		}
+	var countStr string
+	wantCount := defaultMaxSearchResults
+	query.VisitField(r.Query, "count", func(value string, _ bool, _ query.Annotation) {
+		countStr = value
+	})
+	if countStr != "" {
+		wantCount, _ = strconv.Atoi(countStr) // Invariant: count is validated.
+	}
 
-		if invalidateRepoCache(q.Query) {
-			r.invalidateRepoCache = true
+	if invalidateRepoCache(r.Query) {
+		r.invalidateRepoCache = true
+	}
+	for _, disjunct := range query.Dnf(r.Query) {
+		disjunct = query.ConcatRevFilters(disjunct)
+		newResult, err := r.evaluate(ctx, disjunct)
+		if err != nil {
+			// Fail if any subquery fails.
+			return nil, err
 		}
-		for _, disjunct := range query.Dnf(q.Query) {
-			disjunct = query.ConcatRevFilters(disjunct)
-			newResult, err := r.evaluate(ctx, disjunct)
-			if err != nil {
-				// Fail if any subquery fails.
-				return nil, err
+		if newResult != nil {
+			srr = union(srr, newResult)
+			if len(srr.SearchResults) > wantCount {
+				srr.SearchResults = srr.SearchResults[:wantCount]
+				break
 			}
-			if newResult != nil {
-				srr = union(srr, newResult)
-				if len(srr.SearchResults) > wantCount {
-					srr.SearchResults = srr.SearchResults[:wantCount]
-					break
-				}
 
-			}
 		}
-		if srr != nil {
-			r.sortResults(ctx, srr.SearchResults)
-		}
-	default:
-		// Unreachable.
-		return nil, fmt.Errorf("unrecognized type %T in searchResolver Results", r.Query)
+	}
+	if srr != nil {
+		r.sortResults(ctx, srr.SearchResults)
 	}
 	// copy userSettings from searchResolver to SearchResultsResolver
 	if srr != nil {
@@ -1215,7 +1209,7 @@ func isPatternNegated(q []query.Node) bool {
 
 // processSearchPattern processes the search pattern for a query. It handles the interpretation of search patterns
 // as literal, regex, or structural patterns, and applies fuzzy regex matching if applicable.
-func processSearchPattern(q query.QueryInfo, opts *getPatternInfoOptions) (string, bool, bool, bool) {
+func processSearchPattern(q query.Query, opts *getPatternInfoOptions) (string, bool, bool, bool) {
 	var pattern string
 	var pieces []string
 	var contentFieldSet bool
@@ -1223,11 +1217,7 @@ func processSearchPattern(q query.QueryInfo, opts *getPatternInfoOptions) (strin
 	isStructuralPat := false
 
 	patternValues := q.Values(query.FieldDefault)
-
-	isNegated := false
-	if andOrQuery, ok := q.(*query.AndOrQuery); ok {
-		isNegated = isPatternNegated(andOrQuery.Query)
-	}
+	isNegated := isPatternNegated(q)
 
 	if overridePattern := q.Values(query.FieldContent); len(overridePattern) > 0 {
 		patternValues = overridePattern
@@ -1278,7 +1268,7 @@ func processSearchPattern(q query.QueryInfo, opts *getPatternInfoOptions) (strin
 }
 
 // getPatternInfo gets the search pattern info for q
-func getPatternInfo(q query.QueryInfo, opts *getPatternInfoOptions) (*search.TextPatternInfo, error) {
+func getPatternInfo(q query.Query, opts *getPatternInfoOptions) (*search.TextPatternInfo, error) {
 	pattern, isRegExp, isStructuralPat, isNegated := processSearchPattern(q, opts)
 
 	// Handle file: and -file: filters.
@@ -2008,7 +1998,7 @@ func (r *searchResolver) sortResults(ctx context.Context, results []SearchResult
 func (r *searchResolver) getExactFilePatterns() map[string]struct{} {
 	m := map[string]struct{}{}
 	query.VisitField(
-		r.Query.(*query.AndOrQuery).Query,
+		r.Query,
 		query.FieldFile,
 		func(value string, negated bool, annotation query.Annotation) {
 			originalValue := r.OriginalQuery[annotation.Range.Start.Column+len(query.FieldFile)+1 : annotation.Range.End.Column]
