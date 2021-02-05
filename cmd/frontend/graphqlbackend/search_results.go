@@ -1696,12 +1696,15 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 
 	args := search.TextParameters{
-		PatternInfo:     p,
-		Query:           r.Query,
-		UseFullDeadline: r.searchTimeoutFieldSet(),
-		Zoekt:           r.zoekt,
-		SearcherURLs:    r.searcherURLs,
-		RepoPromise:     &search.Promise{},
+		PatternInfo: p,
+		Query:       r.Query,
+
+		// UseFullDeadline if timeout: set or we are streaming.
+		UseFullDeadline: r.searchTimeoutFieldSet() || r.stream != nil,
+
+		Zoekt:        r.zoekt,
+		SearcherURLs: r.searcherURLs,
+		RepoPromise:  &search.Promise{},
 	}
 	if err := args.PatternInfo.Validate(); err != nil {
 		return nil, &badRequestError{err}
