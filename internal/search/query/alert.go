@@ -16,10 +16,9 @@ import (
 // a query like "x:foo", if given a field "x" with pattern "foobar" to add,
 // it will return a query "x:foobar" instead of "x:foo x:foobar". It is not
 // guaranteed to always return the simplest query.
-func AddRegexpField(q QueryInfo, field, pattern string) string {
+func AddRegexpField(q Query, field, pattern string) string {
 	var modified bool
-	nodes := q.(*AndOrQuery).Query
-	nodes = MapParameter(nodes, func(gotField, value string, negated bool, annotation Annotation) Node {
+	q = MapParameter(q, func(gotField, value string, negated bool, annotation Annotation) Node {
 		if field == gotField && strings.Contains(pattern, value) {
 			value = pattern
 			modified = true
@@ -34,9 +33,9 @@ func AddRegexpField(q QueryInfo, field, pattern string) string {
 
 	if !modified {
 		// use newOperator to reduce And nodes when adding a parameter to the query toplevel.
-		nodes = newOperator(append(nodes, Parameter{Field: field, Value: pattern}), And)
+		q = newOperator(append(q, Parameter{Field: field, Value: pattern}), And)
 	}
-	return StringHuman(nodes)
+	return StringHuman(q)
 }
 
 type ProposedQuery struct {
