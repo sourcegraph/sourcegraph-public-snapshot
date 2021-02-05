@@ -618,17 +618,17 @@ func (p *parser) TryParseDelimiter() (string, rune, bool) {
 	return "", 0, false
 }
 
-// ParseFieldValue parses a value after a field like "repo:". If the value
-// starts with a recognized quoting delimiter but does not close it, an error is
-// returned.
-func (p *parser) ParseFieldValue() (string, error) {
-	delimited := func(delimiter rune) (string, error) {
+// ParseFieldValue parses a value after a field like "repo:". It returns the
+// parsed value and whether it was quoted. If the value starts with a recognized
+// quoting delimiter but does not close it, an error is returned.
+func (p *parser) ParseFieldValue() (string, bool, error) {
+	delimited := func(delimiter rune) (string, bool, error) {
 		value, advance, err := ScanDelimited(p.buf[p.pos:], true, delimiter)
 		if err != nil {
-			return "", err
+			return "", false, err
 		}
 		p.pos += advance
-		return value, nil
+		return value, true, nil
 	}
 	if p.match(SQUOTE) {
 		return delimited('\'')
@@ -644,7 +644,7 @@ func (p *parser) ParseFieldValue() (string, error) {
 		value, advance = ScanValue(p.buf[p.pos:], false)
 	}
 	p.pos += advance
-	return value, nil
+	return value, false, nil
 }
 
 // Try parse a delimited pattern, quoted as "...", '...', or /.../.
@@ -728,15 +728,19 @@ func (p *parser) ParseParameter() (Parameter, bool, error) {
 	}
 
 	p.pos += advance
-	value, err := p.ParseFieldValue()
+	value, quoted, err := p.ParseFieldValue()
 	if err != nil {
 		return Parameter{}, false, err
+	}
+	var labels labels
+	if quoted {
+		labels.set(Quoted)
 	}
 	return Parameter{
 		Field:      field,
 		Value:      value,
 		Negated:    negated,
-		Annotation: Annotation{Range: newRange(start, p.pos)},
+		Annotation: Annotation{Range: newRange(start, p.pos), Labels: labels},
 	}, true, nil
 }
 
