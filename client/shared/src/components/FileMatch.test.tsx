@@ -31,7 +31,7 @@ describe('FileMatch', () => {
 
     it('renders one result container', () => {
         const { container } = render(<FileMatch {...defaultProps} />)
-        expect(getByTestId(container, 'result-container')).toBeTruthy()
+        expect(getByTestId(container, 'result-container')).toBeVisible()
         expect(getAllByTestId(container, 'result-container').length).toBe(1)
     })
 })

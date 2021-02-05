@@ -268,7 +268,7 @@ describe('codeHost', () => {
                     type: 'CodeEditor',
                 },
             ])
-            expect(codeView.classList.contains('sg-mounted')).toBe(true)
+            expect(codeView).toHaveClass('sg-mounted')
             const toolbar = elementRenderedAtMount(toolbarMount)
             expect(toolbar).not.toBeUndefined()
         })
@@ -347,7 +347,7 @@ describe('codeHost', () => {
                 ])
                 await decorated()
                 expect(line.querySelectorAll('.line-decoration-attachment')).toHaveLength(1)
-                expect(line.querySelector('.line-decoration-attachment')!.textContent).toEqual('test decoration')
+                expect(line.querySelector('.line-decoration-attachment')!).toHaveTextContent('test decoration')
 
                 // Decorate the code view again, and verify that previous decorations
                 // are cleaned up and replaced by the new decorations.
@@ -372,7 +372,7 @@ describe('codeHost', () => {
                     )
                     .toPromise()
                 expect(line.querySelectorAll('.line-decoration-attachment').length).toBe(1)
-                expect(line.querySelector('.line-decoration-attachment')!.textContent).toEqual('test decoration 2')
+                expect(line.querySelector('.line-decoration-attachment')!).toHaveTextContent('test decoration 2')
             })
 
             it('decorates a diff code view', async () => {
@@ -785,7 +785,7 @@ describe('codeHost', () => {
             expect(services.viewer.viewers.size).toEqual(1)
             codeView.dispatchEvent(new MouseEvent('mouseover'))
             sinon.assert.called(dom.getCodeElementFromTarget)
-            expect(nativeTooltip.classList.contains('native-tooltip--hidden')).toBe(true)
+            expect(nativeTooltip).toHaveClass('native-tooltip--hidden')
         })
 
         test('gracefully handles viewing private repos on a public Sourcegraph instance', async () => {

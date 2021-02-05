@@ -1,13 +1,19 @@
 import React, { useEffect } from 'react'
-import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 import OpenInNew from 'mdi-react/OpenInNewIcon'
+import { TelemetryService } from '../../../../../shared/src/telemetry/telemetryService'
+import { AuthenticatedUser } from '../../../auth'
 
-interface Props extends TelemetryProps {}
+interface Props {
+    telemetryService: TelemetryService
+    authenticatedUser: AuthenticatedUser
+}
 
-export const ProductResearchPage: React.FunctionComponent<Props> = props => {
+const PRODUCT_RESEARCH_SIGNUP_FORM = 'https://share.hsforms.com/1tkScUc65Tm-Yu98zUZcLGw1n7ku'
+
+export const ProductResearchPage: React.FunctionComponent<Props> = ({ telemetryService, authenticatedUser }) => {
     useEffect(() => {
-        props.telemetryService.logViewEvent('UserSettingsProductResearch')
-    }, [props.telemetryService])
+        telemetryService.logViewEvent('UserSettingsProductResearch')
+    }, [telemetryService])
 
     return (
         <>
@@ -17,7 +23,12 @@ export const ProductResearchPage: React.FunctionComponent<Props> = props => {
                 feedback about upcoming ideas. Sign up to participate in our research and help us shape the future of
                 our product!
             </div>
-            <a href="/somewhere" className="btn btn-primary mt-4" target="_blank" rel="noopener noreferrer">
+            <a
+                href={`${PRODUCT_RESEARCH_SIGNUP_FORM}?email=${authenticatedUser.email}`}
+                className="btn btn-primary mt-4"
+                target="_blank"
+                rel="noopener noreferrer"
+            >
                 Sign up now <OpenInNew className="icon-inline" />
             </a>
         </>
