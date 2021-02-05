@@ -34,8 +34,6 @@ func (p *progressAggregator) Update(event graphqlbackend.SearchEvent) {
 }
 
 func (p *progressAggregator) currentStats() api.ProgressStats {
-	p.Dirty = false
-
 	// Suggest the next 1000 after rounding off.
 	suggestedLimit := (p.Limit + 1500) / 1000 * 1000
 
@@ -54,12 +52,16 @@ func (p *progressAggregator) currentStats() api.ProgressStats {
 
 // Current returns the current progress event.
 func (p *progressAggregator) Current() api.Progress {
+	p.Dirty = false
+
 	return api.BuildProgressEvent(p.currentStats())
 }
 
 // Final returns the current progress event, but with final fields set to
 // indicate it is the last progress event.
 func (p *progressAggregator) Final() api.Progress {
+	p.Dirty = false
+
 	s := p.currentStats()
 
 	// We only send RepositoriesCount at the end because the number is
