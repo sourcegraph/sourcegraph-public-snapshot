@@ -95,20 +95,10 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		return nil, err
 	}
 
-	// Parse index:yes (default), index:only, and index:no in search query.
-	indexParam := query.Yes
-	if index, _ := args.Query.StringValues(query.FieldIndex); len(index) > 0 {
-		index := index[len(index)-1]
-		indexParam = query.ParseYesNoOnly(index)
-		if indexParam == query.Invalid {
-			return nil, fmt.Errorf("invalid index:%q (valid values are: yes, only, no)", index)
-		}
-	}
-
 	// If Zoekt is disabled just fallback to Unindexed.
 	if !args.Zoekt.Enabled() {
-		if indexParam == query.Only {
-			return nil, fmt.Errorf("invalid index:%q (indexed search is not enabled)", indexParam)
+		if args.PatternInfo.Index == query.Only {
+			return nil, fmt.Errorf("invalid index:%q (indexed search is not enabled)", args.PatternInfo.Index)
 		}
 
 		return &indexedSearchRequest{
@@ -119,8 +109,8 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 
 	// Fallback to Unindexed if the query contains ref-globs
 	if containsRefGlobs(args.Query) {
-		if indexParam == query.Only {
-			return nil, fmt.Errorf("invalid index:%q (revsions with glob pattern cannot be resolved for indexed searches)", indexParam)
+		if args.PatternInfo.Index == query.Only {
+			return nil, fmt.Errorf("invalid index:%q (revsions with glob pattern cannot be resolved for indexed searches)", args.PatternInfo.Index)
 		}
 		return &indexedSearchRequest{
 			Unindexed: limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, stream),
@@ -128,7 +118,7 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 	}
 
 	// Fallback to Unindexed if index:no
-	if indexParam == query.No {
+	if args.PatternInfo.Index == query.No {
 		return &indexedSearchRequest{
 			Unindexed: limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, stream),
 		}, nil
@@ -149,7 +139,7 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 	if err != nil {
 		if ctx.Err() == nil {
 			// Only hard fail if the user specified index:only
-			if indexParam == query.Only {
+			if args.PatternInfo.Index == query.Only {
 				return nil, errors.New("index:only failed since indexed search is not available yet")
 			}
 
@@ -180,7 +170,7 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 	}
 
 	// Disable unindexed search
-	if indexParam == query.Only {
+	if args.PatternInfo.Index == query.Only {
 		searcherRepos = limitUnindexedRepos(searcherRepos, 0, stream)
 	}
 
@@ -191,7 +181,7 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		Unindexed: limitUnindexedRepos(searcherRepos, maxUnindexedRepoRevSearchesPerQuery, stream),
 		repos:     indexed,
 
-		DisableUnindexedSearch: indexParam == query.Only,
+		DisableUnindexedSearch: args.PatternInfo.Index == query.Only,
 	}, nil
 }
 

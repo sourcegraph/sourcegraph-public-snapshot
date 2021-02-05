@@ -1321,11 +1321,22 @@ func getPatternInfo(q query.QueryInfo, opts *getPatternInfoOptions) (*search.Tex
 		Languages:                    languages,
 		PathPatternsAreCaseSensitive: q.IsCaseSensitive(),
 		CombyRule:                    strings.Join(combyRule, ""),
+		Index:                        indexValue(q),
 	}
 	if len(excludePatterns) > 0 {
 		patternInfo.ExcludePattern = searchrepos.UnionRegExps(excludePatterns)
 	}
 	return patternInfo, nil
+}
+
+// indexValue converts the query index field to one of yes (default), only, or no
+// enum values.
+func indexValue(q query.QueryInfo) query.YesNoOnly {
+	indexParam := query.Yes
+	if index := q.Values(query.FieldIndex); len(index) > 0 {
+		indexParam = query.ParseYesNoOnly(index[0].ToString())
+	}
+	return indexParam
 }
 
 // langIncludeExcludePatterns returns regexps for the include/exclude path patterns given the lang:
