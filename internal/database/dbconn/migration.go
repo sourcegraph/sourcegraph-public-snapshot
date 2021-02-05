@@ -60,8 +60,8 @@ func MigrateDB(db *sql.DB, database *Database) error {
 		return err
 	}
 	defer func() {
-		if err := m.Close(); err != nil {
-			log15.Error("MigrateDB closing", "err", err, "database", database.Name)
+		if srcErr, dbErr := m.Close(); srcErr != nil || dbErr != nil {
+			log15.Error("MigrateDB closing", "srcErr", srcErr, "dbErr", dbErr, "database", database.Name)
 		}
 	}()
 	if err := DoMigrate(m); err != nil {
