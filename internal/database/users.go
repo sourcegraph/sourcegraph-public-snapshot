@@ -10,6 +10,7 @@ import (
 	"sync"
 	"unicode/utf8"
 
+	"github.com/google/uuid"
 	"github.com/inconshreveable/log15"
 	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
@@ -538,7 +539,10 @@ func (u *UserStore) HardDelete(ctx context.Context, id int32) (err error) {
 	if err := tx.Exec(ctx, sqlf.Sprintf("DELETE FROM saved_searches WHERE user_id=%s", id)); err != nil {
 		return err
 	}
-
+	// Anonymize all entries for the deleted user
+	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE event_logs SET user_id=0, anonymous_user_id=%s WHERE user_id = %s", uuid.New().String(), id)); err != nil {
+		return err
+	}
 	// Settings that were merely authored by this user should not be deleted. They may be global or
 	// org settings that apply to other users, too. There is currently no way to hard-delete
 	// settings for an org or globally, but we can handle those rare cases manually.

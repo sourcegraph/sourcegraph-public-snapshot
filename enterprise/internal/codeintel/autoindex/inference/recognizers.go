@@ -2,6 +2,8 @@ package inference
 
 import (
 	"regexp"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/config"
 )
 
 // IndexJobRecognizer infers index jobs from repository structure.
@@ -14,26 +16,11 @@ type IndexJobRecognizer interface {
 	// correct given the list of file paths that describe a repository.
 	// The given file paths should be all of the file path matches in the
 	// repository that matches any pattern returned from Patterns.
-	InferIndexJobs(paths []string, gitserver GitserverClientWrapper) []IndexJob
+	InferIndexJobs(paths []string, gitserver GitserverClientWrapper) []config.IndexJob
 
 	// Patterns returns a set of regular expressions that match file paths
 	// which are of interest to InferIndexJobs.
 	Patterns() []*regexp.Regexp
-}
-
-type IndexJob struct {
-	DockerSteps []DockerStep
-	LocalSteps  []string
-	Root        string
-	Indexer     string
-	IndexerArgs []string
-	Outfile     string
-}
-
-type DockerStep struct {
-	Root     string
-	Image    string
-	Commands []string
 }
 
 // Recognizers is a list of registered index job recognizers.

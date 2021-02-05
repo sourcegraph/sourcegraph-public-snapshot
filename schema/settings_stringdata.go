@@ -89,6 +89,14 @@ const SettingsSchemaJSON = `{
             "pointer": true
           }
         },
+        "showSearchContext": {
+          "description": "Enables the search context dropdown.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
         "showEnterpriseHomePanels": {
           "description": "Enabled the homepage panels in the Enterprise homepage",
           "type": "boolean",

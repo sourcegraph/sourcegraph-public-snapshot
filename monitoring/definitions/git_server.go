@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/grafana-tools/sdk"
+
 	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
@@ -13,6 +14,21 @@ func GitServer() *monitoring.Container {
 		Name:        "gitserver",
 		Title:       "Git Server",
 		Description: "Stores, manages, and operates Git repositories.",
+		Templates: []sdk.TemplateVar{
+			{
+				Label:      "Shard",
+				Name:       "shard",
+				Type:       "query",
+				Datasource: monitoring.StringPtr("Prometheus"),
+				Query:      "label_values(src_gitserver_exec_running, instance)",
+				Multi:      true,
+				Refresh:    sdk.BoolInt{Flag: true, Value: monitoring.Int64Ptr(2)}, // Refresh on time range change
+				Sort:       3,
+				IncludeAll: true,
+				AllValue:   ".*",
+				Current:    sdk.Current{Text: "all", Value: "$__all"},
+			},
+		},
 		Groups: []monitoring.Group{
 			{
 				Title: "General",
@@ -35,7 +51,7 @@ func GitServer() *monitoring.Container {
 							Description: "go routines",
 							Query:       "go_goroutines{app=\"gitserver\", instance=~\"${shard:regex}\"}",
 							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").With(func(o monitoring.Observable, g *sdk.GraphPanel) {
+							Panel: monitoring.Panel().LegendFormat("{{instance}}").With(func(o monitoring.Observable, g *sdk.GraphPanel) {
 								g.Legend.RightSide = true
 							}),
 							Owner: monitoring.ObservableOwnerCloud,

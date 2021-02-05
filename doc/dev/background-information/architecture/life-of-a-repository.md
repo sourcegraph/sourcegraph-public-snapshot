@@ -26,7 +26,7 @@ Our guiding principle is to ensure all repositories configured by a site adminis
 
 ## Discovery
 
-Before we can clone a repository, we first must discover that is exists. This is configured by a site administrator setting code host configuration. Typically a code host will have an API as well as git endpoints. A code host configuration typically will specify how to communicate with the API and which repositories to ask the API for. For example:
+Before we can clone a repository, we first must discover that it exists. This is configured by a site administrator setting code host configuration. Typically a code host will have an API as well as git endpoints. A code host configuration typically will specify how to communicate with the API and which repositories to ask the API for. For example:
 
 ``` json
 {

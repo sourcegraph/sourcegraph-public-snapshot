@@ -12,8 +12,10 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
+	"github.com/hexops/autogold"
 	"go.uber.org/atomic"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -460,59 +462,76 @@ func TestSearchResolver_getPatternInfo(t *testing.T) {
 		"p": {
 			Pattern:  "p",
 			IsRegExp: true,
+			Index:    query.Yes,
 		},
 		"p1 p2": {
 			Pattern:  "(p1).*?(p2)",
 			IsRegExp: true,
+			Index:    query.Yes,
 		},
 		"p case:yes": {
 			Pattern:                      "p",
 			IsRegExp:                     true,
 			IsCaseSensitive:              true,
 			PathPatternsAreCaseSensitive: true,
+			Index:                        query.Yes,
 		},
 		"p file:f": {
 			Pattern:         "p",
 			IsRegExp:        true,
 			IncludePatterns: []string{"f"},
+			Index:           query.Yes,
 		},
 		"p file:f1 file:f2": {
 			Pattern:         "p",
 			IsRegExp:        true,
 			IncludePatterns: []string{"f1", "f2"},
+			Index:           query.Yes,
 		},
 		"p -file:f": {
 			Pattern:        "p",
 			IsRegExp:       true,
 			ExcludePattern: "f",
+			Index:          query.Yes,
+		},
+		"p -file:f index:no": {
+			Pattern:        "p",
+			IsRegExp:       true,
+			ExcludePattern: "f",
+			Index:          query.No,
 		},
 		"p -file:f1 -file:f2": {
 			Pattern:        "p",
 			IsRegExp:       true,
 			ExcludePattern: "f1|f2",
+			Index:          query.Yes,
 		},
 		"p lang:graphql": {
 			Pattern:         "p",
 			IsRegExp:        true,
 			IncludePatterns: []string{`\.graphql$|\.gql$|\.graphqls$`},
 			Languages:       []string{"graphql"},
+			Index:           query.Yes,
 		},
 		"p lang:graphql file:f": {
 			Pattern:         "p",
 			IsRegExp:        true,
 			IncludePatterns: []string{"f", `\.graphql$|\.gql$|\.graphqls$`},
 			Languages:       []string{"graphql"},
+			Index:           query.Yes,
 		},
 		"p -lang:graphql file:f": {
 			Pattern:         "p",
 			IsRegExp:        true,
 			IncludePatterns: []string{"f"},
 			ExcludePattern:  `\.graphql$|\.gql$|\.graphqls$`,
+			Index:           query.Yes,
 		},
 		"p -lang:graphql -file:f": {
 			Pattern:        "p",
 			IsRegExp:       true,
 			ExcludePattern: `f|(\.graphql$|\.gql$|\.graphqls$)`,
+			Index:          query.Yes,
 		},
 	}
 	for queryStr, want := range tests {
@@ -1304,6 +1323,88 @@ func TestEvaluateAnd(t *testing.T) {
 				}
 			} else if int(results.MatchCount()) != len(zoektFileMatches) {
 				t.Errorf("wrong results length. want=%d, have=%d\n", len(zoektFileMatches), results.MatchCount())
+			}
+		})
+	}
+}
+
+func TestIndexValue(t *testing.T) {
+	test := func(input string) query.YesNoOnly {
+		q, _ := query.ParseLiteral(input)
+		return indexValue(q)
+	}
+	autogold.Want("yes", query.YesNoOnly("yes")).Equal(t, test("foo index:yes"))
+	autogold.Want("no", query.YesNoOnly("no")).Equal(t, test("foo index:no"))
+	autogold.Want("only", query.YesNoOnly("only")).Equal(t, test("foo index:only"))
+	autogold.Want("default", query.YesNoOnly("yes")).Equal(t, test("foo"))
+}
+
+func TestSearchContext(t *testing.T) {
+	orig := envvar.SourcegraphDotComMode()
+	envvar.MockSourcegraphDotComMode(true)
+	defer envvar.MockSourcegraphDotComMode(orig)
+
+	tts := []struct {
+		name        string
+		searchQuery string
+		numContexts int
+	}{
+		{name: "single search context", searchQuery: "foo context:@userA", numContexts: 1},
+		{name: "multiple search contexts", searchQuery: "foo (context:@userA or context:@userB)", numContexts: 2},
+	}
+
+	users := map[string]int32{
+		"userA": 1,
+		"userB": 2,
+	}
+
+	mockZoekt := &searchbackend.Zoekt{
+		Client:       &searchbackend.FakeSearcher{Repos: []*zoekt.RepoListEntry{}},
+		DisableCache: true,
+	}
+
+	for _, tt := range tts {
+		t.Run(tt.name, func(t *testing.T) {
+			qinfo, err := query.ParseLiteral(tt.searchQuery)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			resolver := searchResolver{
+				SearchInputs: &SearchInputs{
+					Query:        qinfo,
+					UserSettings: &schema.Settings{},
+				},
+				reposMu:  &sync.Mutex{},
+				resolved: &searchrepos.Resolved{},
+				zoekt:    mockZoekt,
+			}
+
+			numGetByNameCalls := 0
+			database.Mocks.Repos.ListRepoNames = func(ctx context.Context, opts database.ReposListOptions) ([]*types.RepoName, error) {
+				return []*types.RepoName{}, nil
+			}
+			database.Mocks.Repos.Count = func(ctx context.Context, op database.ReposListOptions) (int, error) { return 0, nil }
+			database.Mocks.Namespaces.GetByName = func(ctx context.Context, name string) (*database.Namespace, error) {
+				userID, ok := users[name]
+				if !ok {
+					t.Errorf("User with ID %d not found", userID)
+				}
+				numGetByNameCalls += 1
+				return &database.Namespace{Name: name, User: userID}, nil
+			}
+			defer func() {
+				database.Mocks.Repos.ListRepoNames = nil
+				database.Mocks.Repos.Count = nil
+				database.Mocks.Namespaces.GetByName = nil
+			}()
+
+			_, err = resolver.Results(context.Background())
+			if err != nil {
+				t.Fatal(err)
+			}
+			if numGetByNameCalls != tt.numContexts {
+				t.Fatalf("got %d, want %d", numGetByNameCalls, tt.numContexts)
 			}
 		})
 	}

@@ -379,33 +379,6 @@ SET cloned = true
 WHERE repo.id IN (SELECT id FROM cloned_repos) AND NOT cloned
 `
 
-// CountNotClonedRepos returns the number of repos whose cloned column is true.
-func (s *Store) CountNotClonedRepos(ctx context.Context) (count uint64, err error) {
-	tr, ctx := s.trace(ctx, "Store.CountNotClonedRepos")
-
-	defer func(began time.Time) {
-		secs := time.Since(began).Seconds()
-
-		s.Metrics.CountNotClonedRepos.Observe(secs, float64(count), &err)
-		logging.Log(s.Log, "store.count-not-cloned-repos", &err, "count", count)
-
-		tr.SetError(err)
-		tr.Finish()
-	}(time.Now())
-
-	q := sqlf.Sprintf(CountNotClonedReposQueryFmtstr)
-	c, ok, err := basestore.ScanFirstInt(s.Query(ctx, q))
-	if err != nil || !ok {
-		return 0, err
-	}
-	return uint64(c), nil
-}
-
-const CountNotClonedReposQueryFmtstr = `
--- source: internal/repos/store.go:DBStore.CountNotClonedRepos
-SELECT COUNT(*) FROM repo WHERE deleted_at IS NULL AND NOT cloned
-`
-
 // CountUserAddedRepos counts the total number of repos that have been added
 // by user owned external services.
 func (s *Store) CountUserAddedRepos(ctx context.Context) (count uint64, err error) {

@@ -6,6 +6,7 @@ import { QueryBuilder } from './QueryBuilder'
 import { PageTitle } from '../../components/PageTitle'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 import { PageHeader } from '../../components/PageHeader'
+import { Page } from '../../components/Page'
 
 interface Props extends Pick<PatternTypeProps, 'patternType'>, VersionContextProps {}
 
@@ -18,7 +19,7 @@ export const QueryBuilderPage: React.FunctionComponent<Props> = ({ versionContex
     const helpText = 'Use the fields below to build your query'
 
     return (
-        <div className="container mt-4">
+        <Page>
             <PageTitle title="Query builder" />
             <PageHeader path={[{ text: 'Query builder' }]} className="mb-3" />
             <div className="form form-inline mt-3">
@@ -42,6 +43,6 @@ export const QueryBuilderPage: React.FunctionComponent<Props> = ({ versionContex
                 isSourcegraphDotCom={window.context?.sourcegraphDotComMode}
                 patternType={patternType}
             />
-        </div>
+        </Page>
     )
 }

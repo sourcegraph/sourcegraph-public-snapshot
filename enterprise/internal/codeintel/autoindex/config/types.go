@@ -1,21 +1,21 @@
 package config
 
 type IndexConfiguration struct {
-	SharedSteps []DockerStep
-	IndexJobs   []IndexJob
+	SharedSteps []DockerStep `json:"shared_steps" yaml:"shared_steps"`
+	IndexJobs   []IndexJob   `json:"index_jobs" yaml:"index_jobs"`
 }
 
 type IndexJob struct {
-	Steps       []DockerStep
-	LocalSteps  []string
-	Root        string
-	Indexer     string
-	IndexerArgs []string
-	Outfile     string
+	Steps       []DockerStep `json:"steps" yaml:"steps"`
+	LocalSteps  []string     `json:"local_steps" yaml:"local_steps"`
+	Root        string       `json:"root" yaml:"root"`
+	Indexer     string       `json:"indexer" yaml:"indexer"`
+	IndexerArgs []string     `json:"indexer_args" yaml:"indexer_args"`
+	Outfile     string       `json:"outfile" yaml:"outfile"`
 }
 
 type DockerStep struct {
-	Root     string
-	Image    string
-	Commands []string
+	Root     string   `json:"root" yaml:"root"`
+	Image    string   `json:"image" yaml:"image"`
+	Commands []string `json:"commands" yaml:"commands"`
 }

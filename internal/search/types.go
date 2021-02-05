@@ -140,6 +140,7 @@ type TextPatternInfo struct {
 	IsWordMatch     bool
 	IsCaseSensitive bool
 	FileMatchLimit  int32
+	Index           query.YesNoOnly
 
 	// We do not support IsMultiline
 	// IsMultiline     bool

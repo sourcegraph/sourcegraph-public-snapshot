@@ -48,6 +48,7 @@ describe('SearchPage', () => {
         keyboardShortcuts: [],
         copyQueryButton: false,
         versionContext: undefined,
+        showSearchContext: false,
         showRepogroupHomepage: false,
         showEnterpriseHomePanels: false,
         showOnboardingTour: false,

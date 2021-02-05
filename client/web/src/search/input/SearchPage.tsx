@@ -9,6 +9,7 @@ import {
     HomePanelsProps,
     ShowQueryBuilderProps,
     ParsedSearchQueryProps,
+    SearchContextProps,
 } from '..'
 import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
@@ -52,6 +53,7 @@ export interface SearchPageProps
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
         CopyQueryButtonProps,
         VersionContextProps,
+        SearchContextProps,
         RepogroupHomepageProps,
         OnboardingTourProps,
         HomePanelsProps,

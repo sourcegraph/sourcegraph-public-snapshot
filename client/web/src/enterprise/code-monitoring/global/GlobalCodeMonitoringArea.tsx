@@ -8,6 +8,7 @@ import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetrySer
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
+import { Page } from '../../../components/Page'
 import { lazyComponent } from '../../../util/lazyComponent'
 import { CodeMonitoringPageProps } from '../CodeMonitoringPage'
 import { CreateCodeMonitorPageProps } from '../CreateCodeMonitorPage'
@@ -57,7 +58,7 @@ export const AuthenticatedCodeMonitoringArea = withAuthenticatedUser<Authenticat
 
     return (
         <div className="w-100">
-            <div className="container web-content">
+            <Page>
                 {/* eslint-disable react/jsx-no-bind */}
                 <Switch>
                     <Route
@@ -76,7 +77,7 @@ export const AuthenticatedCodeMonitoringArea = withAuthenticatedUser<Authenticat
                         exact={true}
                     />
                 </Switch>
-            </div>
+            </Page>
         </div>
     )
 })

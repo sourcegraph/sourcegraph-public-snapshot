@@ -12,6 +12,7 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { PageHeader } from '../components/PageHeader'
 import { BreadcrumbsProps, BreadcrumbSetters } from '../components/Breadcrumbs'
 import { StatusBadge } from '../components/StatusBadge'
+import { Page } from '../components/Page'
 
 interface InsightsPageProps
     extends ExtensionsControllerProps,
@@ -41,7 +42,7 @@ export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props =>
     )
     return (
         <div className="w-100">
-            <div className="container mt-4 web-content">
+            <Page>
                 <PageHeader
                     annotation={<StatusBadge status="prototype" feedback={{ mailto: 'support@sourcegraph.com' }} />}
                     path={[{ icon: InsightsIcon, text: 'Code insights' }]}
@@ -64,7 +65,7 @@ export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props =>
                 ) : (
                     <ViewGrid {...props} views={views} />
                 )}
-            </div>
+            </Page>
         </div>
     )
 }

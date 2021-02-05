@@ -79,7 +79,7 @@ export const CampaignPreviewPage: React.FunctionComponent<CampaignPreviewPagePro
     }
 
     return (
-        <>
+        <div className="pb-5">
             <PageTitle title="Apply campaign spec" />
             <PageHeader
                 path={[
@@ -117,6 +117,6 @@ export const CampaignPreviewPage: React.FunctionComponent<CampaignPreviewPagePro
                 queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
                 expandChangesetDescriptions={expandChangesetDescriptions}
             />
-        </>
+        </div>
     )
 }

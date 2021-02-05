@@ -39,6 +39,7 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     versionContext: undefined,
     setVersionContext: () => undefined,
     availableVersionContexts: [],
+    showSearchContext: false,
     variant: 'default',
     globbing: false,
     enableSmartQuery: false,

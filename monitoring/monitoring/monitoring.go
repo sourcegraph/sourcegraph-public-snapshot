@@ -25,6 +25,12 @@ type Container struct {
 	// is responsible for, so that the impact of issues in it is clear.
 	Description string
 
+	// List of Annotations to apply to the dashboard.
+	Annotations []sdk.Annotation
+
+	// List of Template Variables to apply to the dashboard
+	Templates []sdk.TemplateVar
+
 	// Groups of observable information about the container.
 	Groups []Group
 
@@ -67,42 +73,42 @@ func (c *Container) renderDashboard() *sdk.Board {
 	board.SharedCrosshair = true
 	board.Editable = false
 	board.AddTags("builtin")
-	board.Templating.List = []sdk.TemplateVar{
-		{
-			Label:      "Filter alert level",
-			Name:       "alert_level",
-			AllValue:   ".*",
-			Current:    sdk.Current{Text: "all", Value: "$__all"},
-			IncludeAll: true,
-			Options: []sdk.Option{
-				{Text: "all", Value: "$__all", Selected: true},
-				{Text: "critical", Value: "critical"},
-				{Text: "warning", Value: "warning"},
-			},
-			Query: "critical,warning",
-			Type:  "custom",
+	board.Templating.List = c.Templates
+	board.Templating.List = append(board.Templating.List, sdk.TemplateVar{
+		Label:      "Filter alert level",
+		Name:       "alert_level",
+		AllValue:   ".*",
+		Current:    sdk.Current{Text: "all", Value: "$__all"},
+		IncludeAll: true,
+		Options: []sdk.Option{
+			{Text: "all", Value: "$__all", Selected: true},
+			{Text: "critical", Value: "critical"},
+			{Text: "warning", Value: "warning"},
 		},
-	}
-	board.Annotations.List = []sdk.Annotation{
-		{
-			Name:       "Alert events",
-			Datasource: stringPtr("Prometheus"),
-			// Show alerts matching the selected alert_level (see template variable above)
-			Expr:        fmt.Sprintf(`ALERTS{service_name=%q,level=~"$alert_level",alertstate="firing"}`, c.Name),
-			Step:        "60s",
-			TitleFormat: "{{ description }} ({{ name }})",
-			TagKeys:     "level,owner",
-			IconColor:   "rgba(255, 96, 96, 1)",
-			Enable:      false, // disable by default for now
-			Type:        "tags",
-		},
-	}
+		Query: "critical,warning",
+		Type:  "custom",
+	},
+	)
+	board.Annotations.List = c.Annotations
+	board.Annotations.List = append(board.Annotations.List, sdk.Annotation{
+		Name:       "Alert events",
+		Datasource: StringPtr("Prometheus"),
+		// Show alerts matching the selected alert_level (see template variable above)
+		Expr:        fmt.Sprintf(`ALERTS{service_name=%q,level=~"$alert_level",alertstate="firing"}`, c.Name),
+		Step:        "60s",
+		TitleFormat: "{{ description }} ({{ name }})",
+		TagKeys:     "level,owner",
+		IconColor:   "rgba(255, 96, 96, 1)",
+		Enable:      false, // disable by default for now
+		Type:        "tags",
+	},
+	)
 	// Annotation layers that require a service to export information required by the
 	// Sourcegraph debug server - see the `NoSourcegraphDebugServer` docstring.
 	if !c.NoSourcegraphDebugServer {
 		board.Annotations.List = append(board.Annotations.List, sdk.Annotation{
 			Name:       "Version changes",
-			Datasource: stringPtr("Prometheus"),
+			Datasource: StringPtr("Prometheus"),
 			// Per version, instance generate an annotation whenever labels change
 			// inspired by https://github.com/grafana/grafana/issues/11948#issuecomment-403841249
 			// We use `job=~.*SERVICE` because of frontend being called sourcegraph-frontend in certain environments
@@ -143,12 +149,12 @@ func (c *Container) renderDashboard() *sdk.Board {
 		},
 		{
 			Pattern: "_01_level",
-			Alias:   stringPtr("level"),
+			Alias:   StringPtr("level"),
 		},
 		{
 			Pattern:     "Value",
-			Alias:       stringPtr("firing?"),
-			ColorMode:   stringPtr("row"),
+			Alias:       StringPtr("firing?"),
+			ColorMode:   StringPtr("row"),
 			Colors:      &[]string{"rgba(50, 172, 45, 0.97)", "rgba(237, 129, 40, 0.89)", "rgba(245, 54, 54, 0.9)"},
 			Thresholds:  &[]string{"0.99999", "1"},
 			Type:        "string",
@@ -232,13 +238,13 @@ func (c *Container) renderDashboard() *sdk.Board {
 				// Add reference links
 				panel.Links = []sdk.Link{{
 					Title:       "Panel reference",
-					URL:         stringPtr(fmt.Sprintf("%s#%s", canonicalDashboardsDocsURL, observableDocAnchor(c, o))),
+					URL:         StringPtr(fmt.Sprintf("%s#%s", canonicalDashboardsDocsURL, observableDocAnchor(c, o))),
 					TargetBlank: boolPtr(true),
 				}}
 				if !o.NoAlert {
 					panel.Links = append(panel.Links, sdk.Link{
 						Title:       "Alerts reference",
-						URL:         stringPtr(fmt.Sprintf("%s#%s", canonicalAlertSolutionsURL, observableDocAnchor(c, o))),
+						URL:         StringPtr(fmt.Sprintf("%s#%s", canonicalAlertSolutionsURL, observableDocAnchor(c, o))),
 						TargetBlank: boolPtr(true),
 					})
 				}
