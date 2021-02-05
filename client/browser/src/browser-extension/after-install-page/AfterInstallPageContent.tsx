@@ -92,7 +92,7 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                 <div className="row">
                     <div className="col-md-6 d-flex flex-column">
                         <h2 className="mb-4">Make it work on your codehost</h2>
-                        <div className="bg-2 rounded p-3 mb-3 x-flex-grow-1 d-flex flex-column justify-content-center">
+                        <div className="bg-2 rounded p-3 mb-3 d-flex flex-column justify-content-center">
                             <h3 className="mb-3 after-install-page-content__code-host-titles">
                                 <GithubIcon className="icon-inline after-install-page-content__code-host-logo" />{' '}
                                 github.com
@@ -102,7 +102,7 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                                 default.
                             </p>
                         </div>
-                        <div className="bg-2 rounded p-3 x-flex-grow-1 d-flex flex-column justify-content-center">
+                        <div className="bg-2 rounded p-3 d-flex flex-column justify-content-center">
                             <h3 className="d-flex flex-wrap after-install-page-content__code-host-titles">
                                 <div className="mr-5 mb-3">
                                     <GithubIcon className="icon-inline after-install-page-content__code-host-logo" />{' '}
@@ -154,18 +154,18 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                     <div className="col-md-6 d-flex flex-column">
                         <h2 className="mb-4">Make it work for private code</h2>
                         <p>By default, the browser extension works only for public code.</p>
-                        <div className="x-flex-grow-1 d-flex align-items-center">
+                        <div className="d-flex align-items-center">
                             <div className="bg-3 rounded-circle p-2">
                                 <LockIcon className="icon-inline" />
                             </div>
-                            <p className="x-flex-grow-1 m-0 ml-3">
+                            <p className="m-0 ml-3">
                                 To use the browser extension with your private repositories, you need to set up a{' '}
                                 <strong>private Sourcegraph instance</strong> and connect the extension to it.
                             </p>
                         </div>
-                        <div className="x-flex-grow-1 bg-2 rounded p-3 mt-4 d-flex flex-column justify-content-around">
+                        <div className="bg-2 rounded p-3 mt-4 d-flex flex-column justify-content-around">
                             <p>Follow these instructions:</p>
-                            <ol className="m-0 x-flex-grow-1 d-flex flex-column justify-content-around">
+                            <ol className="m-0 d-flex flex-column justify-content-around">
                                 <li>
                                     <strong>Install Sourcegraph</strong> (
                                     <a href="https://docs.sourcegraph.com/admin/install" target="_blank" rel="noopener">
@@ -202,7 +202,7 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                     <div className="bg-3 rounded-circle p-2">
                         <BookOpenPageVariantIcon className="icon-inline" />
                     </div>
-                    <p className="x-flex-grow-1 m-0 ml-3">
+                    <p className="m-0 ml-3">
                         Read the{' '}
                         <a
                             href="https://docs.sourcegraph.com/integration/browser_extension"
