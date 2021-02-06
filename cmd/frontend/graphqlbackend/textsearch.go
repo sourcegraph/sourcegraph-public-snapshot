@@ -23,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	querytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -355,9 +354,8 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	fields := querytypes.Fields(args.Query.Fields())
 	tr.LogFields(
-		trace.Stringer("query", &fields),
+		trace.Stringer("query", args.Query),
 		trace.Stringer("info", args.PatternInfo),
 	)
 

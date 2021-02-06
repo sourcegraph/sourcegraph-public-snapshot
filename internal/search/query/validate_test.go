@@ -6,8 +6,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-
-	"github.com/sourcegraph/sourcegraph/internal/search/query/types"
 )
 
 func TestAndOrQuery_Validation(t *testing.T) {
@@ -176,23 +174,6 @@ func TestAndOrQuery_RegexpPatterns(t *testing.T) {
 			t.Error(diff)
 		}
 	})
-}
-
-func TestAndOrQuery_CaseInsensitiveFields(t *testing.T) {
-	query, err := ProcessAndOr("repoHasFile:foo", ParserOptions{SearchTypeRegex, false})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	values, _ := query.RegexpPatterns(FieldRepoHasFile)
-	if len(values) != 1 || values[0] != "foo" {
-		t.Errorf("unexpected values: want {\"foo\"}, got %v", values)
-	}
-
-	fields := types.Fields(query.Fields())
-	if got, want := fields.String(), `repohasfile~"foo"`; got != want {
-		t.Errorf("unexpected parsed query:\ngot:  %s\nwant: %s", got, want)
-	}
 }
 
 func TestPartitionSearchPattern(t *testing.T) {
