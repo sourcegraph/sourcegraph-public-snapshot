@@ -380,7 +380,9 @@ func scanUserCredential(cred *UserCredential, s interface {
 const (
 	credTypeOAuthClient                        = "OAuthClient"
 	credTypeBasicAuth                          = "BasicAuth"
+	credTypeBasicAuthWithSSH                   = "BasicAuthWithSSH"
 	credTypeOAuthBearerToken                   = "OAuthBearerToken"
+	credTypeOAuthBearerTokenWithSSH            = "OAuthBearerTokenWithSSH"
 	credTypeBitbucketServerSudoableOAuthClient = "BitbucketSudoableOAuthClient"
 	credTypeGitLabSudoableToken                = "GitLabSudoableToken"
 )
@@ -393,8 +395,12 @@ func marshalCredential(a auth.Authenticator) (string, error) {
 		t = credTypeOAuthClient
 	case *auth.BasicAuth:
 		t = credTypeBasicAuth
+	case *auth.BasicAuthWithSSH:
+		t = credTypeBasicAuthWithSSH
 	case *auth.OAuthBearerToken:
 		t = credTypeOAuthBearerToken
+	case *auth.OAuthBearerTokenWithSSH:
+		t = credTypeOAuthBearerTokenWithSSH
 	case *bitbucketserver.SudoableOAuthClient:
 		t = credTypeBitbucketServerSudoableOAuthClient
 	case *gitlab.SudoableToken:
@@ -435,8 +441,12 @@ func unmarshalCredential(raw string) (auth.Authenticator, error) {
 		a = &auth.OAuthClient{}
 	case credTypeBasicAuth:
 		a = &auth.BasicAuth{}
+	case credTypeBasicAuthWithSSH:
+		a = &auth.BasicAuthWithSSH{}
 	case credTypeOAuthBearerToken:
 		a = &auth.OAuthBearerToken{}
+	case credTypeOAuthBearerTokenWithSSH:
+		a = &auth.OAuthBearerTokenWithSSH{}
 	case credTypeBitbucketServerSudoableOAuthClient:
 		a = &bitbucketserver.SudoableOAuthClient{}
 	case credTypeGitLabSudoableToken:

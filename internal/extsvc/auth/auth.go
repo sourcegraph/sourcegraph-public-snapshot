@@ -24,3 +24,9 @@ type Authenticator interface {
 	// This value must use a cryptographic hash (for example, SHA-256).
 	Hash() string
 }
+
+type AuthenticatorWithSSH interface {
+	Authenticator
+
+	SSHCredential() string
+}

@@ -45,12 +45,8 @@ func (c *campaignsCredentialResolver) CreatedAt() graphqlbackend.DateTime {
 }
 
 func (c *campaignsCredentialResolver) HasSSHKey() bool {
-	has := false
-	switch a := c.credential.Credential.(type) {
-	case *auth.OAuthBearerToken:
-		has = a.SSHKey != ""
-	case *auth.BasicAuth:
-		has = a.SSHKey != ""
+	if _, ok := c.credential.Credential.(auth.AuthenticatorWithSSH); ok {
+		return true
 	}
-	return has
+	return false
 }
