@@ -141,6 +141,7 @@ Some core features of Sourcegraph, like displaying code intelligence hover toolt
 If you want to learn more about our extension API:
 
 - [Sourcegraph extension architecture](sourcegraph-extensions.md)
+- [Repository list of Sourcegraph-maintained extensions](https://docs.google.com/document/d/1zxrDabs9bEgGENuDPF8Zb6zYvxNASxnKnUKOfk_Yv1o/edit?usp=sharing)
 
 ## src-cli
 
