@@ -28,7 +28,7 @@ Mozilla’s main objection to our execution model is the fact that extensions up
 
 ## What can I do?
 
-If you use Firefox but your code host is GitLab or Bitbucket Server, you can enable the [Bitbucket Server plugin](bitbucket_server.md#sourcegraph-bitbucket-server-plugin) or [GitLab native integration](gitlab.md#gitlab-ui-native-integration), which bring Sourcegraph functionality including extensions to your code host directly. Otherwise, to get Sourcegraph extensions on your code host via the browser extension, you must use either our Safari or Chrome [browser extension](browser_extension.md). 
+If you use Bitbucket Server, you can enable the [Bitbucket Server plugin](bitbucket_server.md#sourcegraph-bitbucket-server-plugin) to bring Sourcegraph functionality including extensions to your code host directly. Otherwise, to get Sourcegraph extensions on your code host via the browser extension, you must use either our Safari or Chrome [browser extension](browser_extension.md). 
 
 ## What are Sourcegraph extensions, and who can author them?
 
