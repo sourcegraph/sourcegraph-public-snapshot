@@ -222,7 +222,7 @@ func (s *Store) CalculateVisibleUploads(ctx context.Context, repositoryID int, c
 	// Update the set of uploads that are visible from each commit for a given repository.
 	nearestUploadsInserter := batch.NewBatchInserter(
 		ctx,
-		s.Store.Handle().DB(),
+		tx.Handle().DB(),
 		"lsif_nearest_uploads",
 		"repository_id",
 		"commit_bytea",
@@ -235,7 +235,7 @@ func (s *Store) CalculateVisibleUploads(ctx context.Context, repositoryID int, c
 	// graph AND the number of unique roots.
 	nearestUploadsLinksInserter := batch.NewBatchInserter(
 		ctx,
-		s.Store.Handle().DB(),
+		tx.Handle().DB(),
 		"lsif_nearest_uploads_links",
 		"repository_id",
 		"commit_bytea",
@@ -291,7 +291,7 @@ func (s *Store) CalculateVisibleUploads(ctx context.Context, repositoryID int, c
 	// find references query.
 	uploadsVisibleAtTipInserter := batch.NewBatchInserter(
 		ctx,
-		s.Store.Handle().DB(),
+		tx.Handle().DB(),
 		"lsif_uploads_visible_at_tip",
 		"repository_id",
 		"upload_id",

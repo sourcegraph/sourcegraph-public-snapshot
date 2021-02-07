@@ -63,6 +63,21 @@ func (c *Stats) Update(other *Stats) {
 	c.ExcludedArchived = c.ExcludedArchived + other.ExcludedArchived
 }
 
+// Zero returns true if stats is empty. IE calling Update will result in no
+// change.
+func (c *Stats) Zero() bool {
+	if c == nil {
+		return true
+	}
+
+	return !(c.IsLimitHit ||
+		len(c.Repos) > 0 ||
+		c.Status.Len() > 0 ||
+		c.ExcludedForks > 0 ||
+		c.ExcludedArchived > 0 ||
+		c.IsIndexUnavailable)
+}
+
 func (c *Stats) String() string {
 	if c == nil {
 		return "Stats{}"

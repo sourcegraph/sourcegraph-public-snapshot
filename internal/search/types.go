@@ -104,7 +104,7 @@ type TextParameters struct {
 	// Query is the parsed query from the user. You should be using Pattern
 	// instead, but Query is useful for checking extra fields that are set and
 	// ignored by Pattern, such as index:no
-	Query query.QueryInfo
+	Query query.Query
 
 	// UseFullDeadline indicates that the search should try do as much work as
 	// it can within context.Deadline. If false the search should try and be
@@ -140,6 +140,7 @@ type TextPatternInfo struct {
 	IsWordMatch     bool
 	IsCaseSensitive bool
 	FileMatchLimit  int32
+	Index           query.YesNoOnly
 
 	// We do not support IsMultiline
 	// IsMultiline     bool

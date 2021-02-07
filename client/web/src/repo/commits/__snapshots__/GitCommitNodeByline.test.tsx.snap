@@ -5,8 +5,10 @@ exports[`GitCommitNodeByline author (compact) 1`] = `
   className="git-commit-node-byline git-commit-node-byline--no-committer "
 >
   <img
+    alt=""
     className="user-avatar icon-inline mr-1"
     data-tooltip="Alice Zhao"
+    role="presentation"
     src="http://example.com/alice.png"
   />
    
@@ -32,8 +34,10 @@ exports[`GitCommitNodeByline author 1`] = `
   className="git-commit-node-byline git-commit-node-byline--no-committer "
 >
   <img
+    alt=""
     className="user-avatar icon-inline mr-1"
     data-tooltip="Alice Zhao"
+    role="presentation"
     src="http://example.com/alice.png"
   />
    
@@ -59,14 +63,18 @@ exports[`GitCommitNodeByline different author and committer (compact) 1`] = `
   className="git-commit-node-byline git-commit-node-byline--has-committer "
 >
   <img
+    alt=""
     className="user-avatar icon-inline"
     data-tooltip="Alice Zhao (author)"
+    role="presentation"
     src="http://example.com/alice.png"
   />
    
   <img
+    alt=""
     className="user-avatar icon-inline mr-1"
     data-tooltip="bYang (committer)"
+    role="presentation"
     src="http://example.com/bob.png"
   />
    
@@ -103,14 +111,18 @@ exports[`GitCommitNodeByline different author and committer 1`] = `
   className="git-commit-node-byline git-commit-node-byline--has-committer "
 >
   <img
+    alt=""
     className="user-avatar icon-inline"
     data-tooltip="Alice Zhao (author)"
+    role="presentation"
     src="http://example.com/alice.png"
   />
    
   <img
+    alt=""
     className="user-avatar icon-inline mr-1"
     data-tooltip="bYang (committer)"
+    role="presentation"
     src="http://example.com/bob.png"
   />
    
@@ -147,8 +159,10 @@ exports[`GitCommitNodeByline omit GitHub committer 1`] = `
   className="git-commit-node-byline git-commit-node-byline--no-committer "
 >
   <img
+    alt=""
     className="user-avatar icon-inline mr-1"
     data-tooltip="Alice Zhao"
+    role="presentation"
     src="http://example.com/alice.png"
   />
    
@@ -174,8 +188,10 @@ exports[`GitCommitNodeByline same author and committer 1`] = `
   className="git-commit-node-byline git-commit-node-byline--no-committer "
 >
   <img
+    alt=""
     className="user-avatar icon-inline mr-1"
     data-tooltip="Alice Zhao"
+    role="presentation"
     src="http://example.com/alice.png"
   />
    

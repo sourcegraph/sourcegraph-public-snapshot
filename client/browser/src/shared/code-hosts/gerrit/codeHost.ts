@@ -89,6 +89,8 @@ const resolveFileListCodeView: ViewResolver<CodeView> = {
         const gerritChangeString = buildGerritChangeString(gerritChange)
         const parentCommit = getParentCommit() || ''
 
+        injectCodeViewStyle(diffTableElement)
+
         return {
             element: diffTableElement,
             dom: diffTableDomFunctions,
@@ -193,6 +195,8 @@ const resolveFilePageCodeView: ViewResolver<CodeView> = {
         if (!parent) {
             parent = gerritChangeString + '^'
         }
+
+        injectCodeViewStyle(element)
 
         return {
             element,
@@ -432,6 +436,14 @@ function createStyleElement(styles: string): HTMLStyleElement {
     return styleElement
 }
 
+function injectCodeViewStyle(element: HTMLElement): void {
+    if (!element.querySelector('style.sourcegraph-injected-style')) {
+        const styleElement = createStyleElement(codeViewStyles)
+        styleElement.classList.add('sourcegraph-injected-style')
+        element.append(styleElement)
+    }
+}
+
 const toolbarStyles = `
 .icon--gerrit {
     height: 1.3rem;
@@ -444,5 +456,14 @@ const toolbarStyles = `
 }
 .open-on-sourcegraph--gerrit {
     text-decoration: none;
+}
+`
+
+const codeViewStyles = `
+.sourcegraph-document-highlight {
+    background-color: var(--secondary);
+}
+.selection-highlight {
+    background-color: var(--mark-bg);
 }
 `

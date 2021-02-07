@@ -49,6 +49,10 @@ type Request struct {
 	// Endpoint(s) for reaching Zoekt. See description in
 	// endpoint.go:Static(...)
 	IndexerEndpoints []string
+
+	// Whether the revision to be searched is indexed or unindexed. This matters for
+	// structural search because it will query Zoekt for indexed structural search.
+	Indexed bool
 }
 
 // PatternInfo describes a search request on a repo. Most of the fields

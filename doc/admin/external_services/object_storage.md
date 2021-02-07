@@ -1,6 +1,18 @@
 # Using a managed object storage service (S3 or GCS)
 
-By default, Sourcegraph will use a MinIO server bundled with the instance to store precise code intelligence indexes uploaded by users. MinIO shouldn’t be accessible outside of the cluster/docker-compose network so it shouldn’t need anything other than the default credentials. You can alternatively configure your instance to instead store this data in an S3 or GCS bucket. Doing so may decrease your hosting costs as persistent volumes are often more expensive than the same storage space in an object store service.
+By default, Sourcegraph will use a MinIO server bundled with the instance to store precise code intelligence indexes uploaded by users. MinIO shouldn’t be accessible outside of the cluster/docker-compose network so it shouldn’t need anything other than the default credentials. However, if you do want to change the default credentials, you can supply the following environment variables to the MinIO container in your deployment:
+
+- `MINIO_ACCESS_KEY=<access key>`
+- `MINIO_SECRET_KEY=<secret key>`
+
+Note that the access and secret keys are expected to be 20 and 40 characters in length, respectively, to match the format of AWS-generated keys.
+
+If you assign these environment variables, you will need to ensure that you set the following environment variables on the `frontend` and `precise-code-intel-worker` containers (as described [below](#using-s3)), otherwise they will be unable to authenticate.
+
+- `PRECISE_CODE_INTEL_UPLOAD_AWS_ACCESS_KEY_ID`
+- `PRECISE_CODE_INTEL_UPLOAD_AWS_SECRET_ACCESS_KEY`
+
+You can alternatively configure your instance to instead store this data in an S3 or GCS bucket. Doing so may decrease your hosting costs as persistent volumes are often more expensive than the same storage space in an object store service.
 
 To target a managed object storage service, you will need to set a handful of environment variables for configuration and authentication to the target service. If you are running a sourcegraph/server deployment, set the environment variables on the server container. Otherwise, if running via Docker or Kubernetes, set the environment variables on the `frontend` and `precise-code-intel-worker` containers.
 

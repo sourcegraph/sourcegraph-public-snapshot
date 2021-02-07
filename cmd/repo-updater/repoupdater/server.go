@@ -77,7 +77,6 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/enqueue-repo-update", s.handleEnqueueRepoUpdate)
 	mux.HandleFunc("/exclude-repo", s.handleExcludeRepo)
 	mux.HandleFunc("/sync-external-service", s.handleExternalServiceSync)
-	mux.HandleFunc("/status-messages", s.handleStatusMessages)
 	mux.HandleFunc("/enqueue-changeset-sync", s.handleEnqueueChangesetSync)
 	mux.HandleFunc("/schedule-perms-sync", s.handleSchedulePermsSync)
 	return mux
@@ -586,58 +585,6 @@ func (s *Server) remoteRepoSync(ctx context.Context, codehost *extsvc.CodeHost, 
 	return &protocol.RepoLookupResult{
 		Repo: repoInfo,
 	}, nil
-}
-
-func (s *Server) handleStatusMessages(w http.ResponseWriter, r *http.Request) {
-	resp := protocol.StatusMessagesResponse{
-		Messages: []protocol.StatusMessage{},
-	}
-
-	notCloned, err := s.RepoStore.Count(r.Context(), database.ReposListOptions{NoCloned: true})
-	if err != nil {
-		respond(w, http.StatusInternalServerError, err)
-		return
-	}
-
-	if notCloned != 0 {
-		resp.Messages = append(resp.Messages, protocol.StatusMessage{
-			Cloning: &protocol.CloningProgress{
-				Message: fmt.Sprintf("%d repositories enqueued for cloning...", notCloned),
-			},
-		})
-	}
-
-	syncErrors, err := database.ExternalServicesWith(s.Store).ListSyncErrors(r.Context())
-	if err != nil {
-		respond(w, http.StatusInternalServerError, err)
-		return
-	}
-
-	for id, failure := range syncErrors {
-		resp.Messages = append(resp.Messages, protocol.StatusMessage{
-			ExternalServiceSyncError: &protocol.ExternalServiceSyncError{
-				Message:           failure,
-				ExternalServiceId: id,
-			},
-		})
-	}
-
-	messagesSummary := func() string {
-		cappedMsg := resp.Messages
-		if len(cappedMsg) > 10 {
-			cappedMsg = cappedMsg[:10]
-		}
-
-		jMsg, err := json.MarshalIndent(cappedMsg, "", " ")
-		if err != nil {
-			return "error summarizing messages for logging"
-		}
-		return string(jMsg)
-	}
-
-	log15.Debug("TRACE handleStatusMessages", "messages", log15.Lazy{Fn: messagesSummary})
-
-	respond(w, http.StatusOK, resp)
 }
 
 func (s *Server) handleEnqueueChangesetSync(w http.ResponseWriter, r *http.Request) {
