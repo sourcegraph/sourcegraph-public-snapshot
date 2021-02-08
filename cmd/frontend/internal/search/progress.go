@@ -66,7 +66,7 @@ func (p *progressAggregator) Final() api.Progress {
 
 	// We only send RepositoriesCount at the end because the number is
 	// confusing to users to see while searching.
-	s.RepositoriesCount = len(p.Stats.Repos)
+	s.RepositoriesCount = intPtr(len(p.Stats.Repos))
 
 	event := api.BuildProgressEvent(s)
 	event.Done = true
@@ -89,4 +89,8 @@ func getNames(stats streaming.Stats, status searchshared.RepoStatus) []api.Namer
 		}
 	})
 	return names
+}
+
+func intPtr(i int) *int {
+	return &i
 }
