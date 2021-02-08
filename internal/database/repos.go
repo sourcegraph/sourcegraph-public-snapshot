@@ -678,7 +678,7 @@ type ListDefaultReposOptions struct {
 // repos in our default_repos table and repos owned by users.
 // It may perform multiple queries, fetching repos in batches.
 func (s *RepoStore) ListAllDefaultRepos(ctx context.Context) (results []*types.RepoName, err error) {
-	return s.listAllDefaultRepos(ctx, 10_000)
+	return s.listAllDefaultRepos(ctx, 40_000)
 }
 
 func (s *RepoStore) listAllDefaultRepos(ctx context.Context, batchSize int) (results []*types.RepoName, err error) {
@@ -753,7 +753,7 @@ UNION
 	ORDER BY id ASC
 	LIMIT %s`, opts.AfterID, cloneClause, opts.AfterID, cloneClause, opts.Limit)
 
-	var repos []*types.RepoName
+	results = make([]*types.RepoName, 0, opts.Limit)
 
 	rows, err := s.Query(ctx, q)
 	if err != nil {
@@ -765,13 +765,13 @@ UNION
 		if err := rows.Scan(&r.ID, &r.Name); err != nil {
 			return nil, errors.Wrap(err, "scanning row from default_repos table")
 		}
-		repos = append(repos, &r)
+		results = append(results, &r)
 	}
 	if err = rows.Err(); err != nil {
 		return nil, errors.Wrap(err, "scanning rows for default repos")
 	}
 
-	return repos, nil
+	return results, nil
 }
 
 // Create inserts repos and their sources, respectively in the repo and external_service_repos table.
