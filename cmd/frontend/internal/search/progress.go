@@ -22,7 +22,7 @@ type progressAggregator struct {
 }
 
 func (p *progressAggregator) Update(event graphqlbackend.SearchEvent) {
-	if len(event.Results) == 0 && p.Stats.Zero() {
+	if len(event.Results) == 0 && event.Stats.Zero() {
 		return
 	}
 
