@@ -12,9 +12,10 @@ import (
 
 // Symbol roughly follows the structure of LSP SymbolInformation
 type Symbol struct {
-	Text   string
-	Detail string
-	Kind   protocol.SymbolKind
+	Identifier string
+	Text       string
+	Detail     string
+	Kind       protocol.SymbolKind
 
 	Tags      []protocol.SymbolTag
 	Locations []SymbolLocation
@@ -96,6 +97,12 @@ func (s *Store) Symbols(ctx context.Context, bundleID int, path string) ([]*Symb
 
 	return coalescedSymbolSlice, nil
 }
+
+// NEXT
+// - See if ranges in moniker data match up with ranges in symbol data (examine actual data)
+// - Factor this out into a separate type
+// - Determine how to handle if a moniker is not found for a symbol. Synthetic moniker?
+//   -> just need to derive a stable identifier for each symbol (distinct but possibly derived from moniker)
 
 var getPosKey = func(startLine, startCharacter, endLine, endCharacter int) string {
 	// return fmt.Sprintf("%d:%d:%d:%d", startLine, startCharacter, endLine, endCharacter)
