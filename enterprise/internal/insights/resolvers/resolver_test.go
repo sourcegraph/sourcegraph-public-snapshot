@@ -20,7 +20,7 @@ func TestResolver_Insights(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	//t.Parallel() // TODO: dbtesting.GetDB is not parallel-safe, yuck.
 
 	ctx := backend.WithAuthzBypass(context.Background())
 	now := time.Now().UTC().Truncate(time.Microsecond)
