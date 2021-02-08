@@ -2,8 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"errors"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
@@ -50,6 +48,3 @@ func (i insightsDataPointResolver) DateTime() graphqlbackend.DateTime {
 }
 
 func (i insightsDataPointResolver) Value() float64 { return i.p.Value }
-	// TODO(slimsag): future: use r.store to query insights data points
-	return nil, errors.New("not yet implemented")
-}
