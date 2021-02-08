@@ -33,9 +33,6 @@ const maxUnindexedRepoRevSearchesPerQuery = 200
 // A global limiter on number of concurrent searcher searches.
 var textSearchLimiter = mutablelimiter.New(32)
 
-// A light wrapper around the search service. We implement the service here so
-// that we can unmarshal the result directly into graphql resolvers.
-
 type FileMatch struct {
 	JPath        string       `json:"Path"`
 	JLineMatches []*lineMatch `json:"LineMatches"`
