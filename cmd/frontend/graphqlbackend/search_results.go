@@ -1736,6 +1736,16 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		return &optionalWg
 	}
 
+	// For streaming search we want to limit based on all results, not just
+	// per backend. This works better than batch based since we have higher
+	// defaults.
+	stream := r.stream
+	if stream != nil {
+		var cancel2 context.CancelFunc
+		ctx, stream, cancel2 = WithLimit(ctx, stream, limit)
+		defer cancel2()
+	}
+
 	agg := newAggregator(r.stream, r.SearchInputs)
 
 	// This ensures we properly cleanup in the case of an early return. In
