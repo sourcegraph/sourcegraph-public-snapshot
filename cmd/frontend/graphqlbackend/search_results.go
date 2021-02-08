@@ -1760,9 +1760,11 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		return false
 	}
 
+	isIndexedSearch := args.PatternInfo.Index != query.No
+
 	// performance optimization: call zoekt early, resolve repos concurrently, filter
 	// search results with resolved repos.
-	if r.isGlobalSearch() && isFileOrPath() {
+	if r.isGlobalSearch() && isIndexedSearch && isFileOrPath() {
 		argsIndexed := args
 		argsIndexed.Mode = search.ZoektGlobalSearch
 		wg := waitGroup(true)
