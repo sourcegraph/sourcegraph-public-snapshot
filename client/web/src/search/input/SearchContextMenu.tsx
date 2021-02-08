@@ -22,7 +22,7 @@ export const SearchContextMenu: React.FunctionComponent<{}> = () => (
     <div className="search-context-menu">
         <div className="search-context-menu__header d-flex">
             <span aria-hidden="true" className="search-context-menu__header-prompt">
-                <ChevronRightIcon />
+                <ChevronRightIcon className="icon-inline" />
             </span>
             <input type="search" placeholder="Find a context" className="search-context-menu__header-input" />
         </div>
