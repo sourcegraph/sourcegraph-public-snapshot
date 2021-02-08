@@ -909,7 +909,7 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, scopePar
 }
 
 // evaluate evaluates all expressions of a search query.
-func (r *searchResolver) evaluate(ctx context.Context, q query.Query) (*SearchResultsResolver, error) {
+func (r *searchResolver) evaluate(ctx context.Context, q query.Q) (*SearchResultsResolver, error) {
 	scopeParameters, pattern, err := query.PartitionSearchPattern(q)
 	if err != nil {
 		return alertForQuery("", err).wrap(), nil
@@ -1209,7 +1209,7 @@ func isPatternNegated(q []query.Node) bool {
 
 // processSearchPattern processes the search pattern for a query. It handles the interpretation of search patterns
 // as literal, regex, or structural patterns, and applies fuzzy regex matching if applicable.
-func processSearchPattern(q query.Query, opts *getPatternInfoOptions) (string, bool, bool, bool) {
+func processSearchPattern(q query.Q, opts *getPatternInfoOptions) (string, bool, bool, bool) {
 	var pattern string
 	var pieces []string
 	var contentFieldSet bool
@@ -1268,7 +1268,7 @@ func processSearchPattern(q query.Query, opts *getPatternInfoOptions) (string, b
 }
 
 // getPatternInfo gets the search pattern info for q
-func getPatternInfo(q query.Query, opts *getPatternInfoOptions) (*search.TextPatternInfo, error) {
+func getPatternInfo(q query.Q, opts *getPatternInfoOptions) (*search.TextPatternInfo, error) {
 	pattern, isRegExp, isStructuralPat, isNegated := processSearchPattern(q, opts)
 
 	// Handle file: and -file: filters.

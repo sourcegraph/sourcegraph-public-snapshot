@@ -44,10 +44,10 @@ type QueryInfo interface {
 	IsCaseSensitive() bool
 }
 
-// A query is a tree of Nodes.
-type Query []Node
+// A query is a tree of Nodes. We choose the type name Q so that external uses like query.Q do not stutter.
+type Q []Node
 
-func (q Query) String() string {
+func (q Q) String() string {
 	var v []string
 	for _, node := range q {
 		v = append(v, node.String())
@@ -55,8 +55,7 @@ func (q Query) String() string {
 	return strings.Join(v, " ")
 }
 
-// Query satisfies the interface for QueryInfo close to that of OrdinaryQuery.
-func (q Query) RegexpPatterns(field string) (values, negatedValues []string) {
+func (q Q) RegexpPatterns(field string) (values, negatedValues []string) {
 	VisitField(q, field, func(visitedValue string, negated bool, _ Annotation) {
 		if negated {
 			negatedValues = append(negatedValues, visitedValue)
@@ -67,7 +66,7 @@ func (q Query) RegexpPatterns(field string) (values, negatedValues []string) {
 	return values, negatedValues
 }
 
-func (q Query) StringValues(field string) (values, negatedValues []string) {
+func (q Q) StringValues(field string) (values, negatedValues []string) {
 	VisitField(q, field, func(visitedValue string, negated bool, _ Annotation) {
 		if negated {
 			negatedValues = append(negatedValues, visitedValue)
@@ -78,7 +77,7 @@ func (q Query) StringValues(field string) (values, negatedValues []string) {
 	return values, negatedValues
 }
 
-func (q Query) StringValue(field string) (value, negatedValue string) {
+func (q Q) StringValue(field string) (value, negatedValue string) {
 	VisitField(q, field, func(visitedValue string, negated bool, _ Annotation) {
 		if negated {
 			negatedValue = visitedValue
@@ -89,7 +88,7 @@ func (q Query) StringValue(field string) (value, negatedValue string) {
 	return value, negatedValue
 }
 
-func (q Query) Values(field string) []*Value {
+func (q Q) Values(field string) []*Value {
 	var values []*Value
 	if field == "" {
 		VisitPattern(q, func(value string, _ bool, annotation Annotation) {
@@ -103,7 +102,7 @@ func (q Query) Values(field string) []*Value {
 	return values
 }
 
-func (q Query) Fields() map[string][]*Value {
+func (q Q) Fields() map[string][]*Value {
 	fields := make(map[string][]*Value)
 	VisitPattern(q, func(value string, _ bool, _ Annotation) {
 		fields[""] = q.Values("")
@@ -114,10 +113,7 @@ func (q Query) Fields() map[string][]*Value {
 	return fields
 }
 
-// ParseTree returns a flat, mock-like parse tree of an and/or query. The parse
-// tree values are currently only significant in alerts. Whether it is empty or
-// not is significant for surfacing suggestions.
-func (q Query) ParseTree() syntax.ParseTree {
+func (q Q) ParseTree() syntax.ParseTree {
 	var tree syntax.ParseTree
 	VisitPattern(q, func(value string, negated bool, _ Annotation) {
 		expr := &syntax.Expr{
@@ -138,7 +134,7 @@ func (q Query) ParseTree() syntax.ParseTree {
 	return tree
 }
 
-func (q Query) BoolValue(field string) bool {
+func (q Q) BoolValue(field string) bool {
 	result := false
 	VisitField(q, field, func(value string, _ bool, _ Annotation) {
 		result, _ = parseBool(value) // err was checked during parsing and validation.
@@ -146,7 +142,7 @@ func (q Query) BoolValue(field string) bool {
 	return result
 }
 
-func (q Query) IsCaseSensitive() bool {
+func (q Q) IsCaseSensitive() bool {
 	return q.BoolValue("case")
 }
 
@@ -158,10 +154,11 @@ func parseRegexpOrPanic(field, value string) *regexp.Regexp {
 	return r
 }
 
-// valueToTypedValue approximately preserves the field validation for
-// OrdinaryQuery processing. It does not check the validity of field negation or
-// if the same field is specified more than once.
-func (q Query) valueToTypedValue(field, value string, label labels) []*Value {
+// valueToTypedValue approximately preserves the field validation of our
+// previous query processing. It does not check the validity of field negation
+// or if the same field is specified more than once. This role is now performed
+// by validate.go.
+func (q Q) valueToTypedValue(field, value string, label labels) []*Value {
 	switch field {
 	case
 		FieldDefault:

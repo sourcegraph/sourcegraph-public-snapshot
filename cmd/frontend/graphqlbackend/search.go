@@ -91,7 +91,7 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (_ SearchImplem
 		return nil, errors.New("Structural search is disabled in the site configuration.")
 	}
 
-	var q query.Query
+	var q query.Q
 	globbing := getBoolPtr(settings.SearchGlobbing, false)
 	tr.LogFields(otlog.Bool("globbing", globbing))
 	q, err = query.ProcessAndOr(args.Query, query.ParserOptions{SearchType: searchType, Globbing: globbing})
@@ -151,7 +151,7 @@ func (r *schemaResolver) Search(ctx context.Context, args *SearchArgs) (SearchIm
 
 // queryForStableResults transforms a query that returns a stable result
 // ordering. The transformed query uses pagination underneath the hood.
-func queryForStableResults(args *SearchArgs, q query.Query) (*SearchArgs, query.Query, error) {
+func queryForStableResults(args *SearchArgs, q query.Q) (*SearchArgs, query.Q, error) {
 	if q.BoolValue(query.FieldStable) {
 		var stableResultCount int32
 		if _, countPresent := q.Fields()["count"]; countPresent {
@@ -261,7 +261,7 @@ func getBoolPtr(b *bool, def bool) bool {
 
 // SearchInputs contains fields we set before kicking off search.
 type SearchInputs struct {
-	Query          query.Query           // the query
+	Query          query.Q               // the query
 	OriginalQuery  string                // the raw string of the original search query
 	Pagination     *searchPaginationInfo // pagination information, or nil if the request is not paginated.
 	PatternType    query.SearchType
