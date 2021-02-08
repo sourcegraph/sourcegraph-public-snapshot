@@ -1,7 +1,7 @@
 .search-context-menu {
     &__header {
         display: flex;
-        padding: 0.5rem 1rem 0.75rem 0;
+        padding: 0.25rem 1rem 0.5rem 0;
         border: 1px solid transparent;
         border-bottom: 1px solid var(--border-color-2);
 
@@ -14,6 +14,7 @@
             flex-grow: 1;
             background-color: transparent;
             border: none;
+            font-size: 0.8125rem;
         }
     }
 
@@ -24,10 +25,11 @@
 
     &__item {
         display: flex;
+        align-items: center;
         padding: 0.25rem 1rem;
 
         &-name {
-            width: 8.75rem;
+            width: 10rem;
             margin-right: 0.25rem;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -38,6 +40,7 @@
             overflow: hidden;
             text-overflow: ellipsis;
             flex-grow: 1;
+            font-size: 0.75rem;
         }
 
         &-default {
@@ -59,7 +62,7 @@
     &__footer {
         display: flex;
         border-top: 1px solid var(--border-color-2);
-        padding: 0.75rem 1rem;
+        padding: 0.5rem 1rem 0.25rem;
 
         &-button {
             color: var(--web-content-link-color);
