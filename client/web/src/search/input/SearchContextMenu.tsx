@@ -36,11 +36,11 @@ export const SearchContextMenu: React.FunctionComponent<{}> = () => (
             <SearchContextMenuItem spec="@username/contextwithveryverylongname" description="Another test context" />
         </div>
         <div className="search-context-menu__footer">
-            <button type="button" className="btn btn-link search-context-menu__footer-button">
+            <button type="button" className="btn btn-link btn-sm search-context-menu__footer-button">
                 Reset
             </button>
             <span className="flex-grow-1" />
-            <button type="button" className="btn btn-link search-context-menu__footer-button">
+            <button type="button" className="btn btn-link btn-sm search-context-menu__footer-button">
                 Manage contexts
             </button>
         </div>
