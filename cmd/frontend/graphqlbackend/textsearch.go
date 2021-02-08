@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	searchresults "github.com/sourcegraph/sourcegraph/internal/search/results"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -37,10 +38,10 @@ var textSearchLimiter = mutablelimiter.New(32)
 // that we can unmarshal the result directly into graphql resolvers.
 
 type FileMatch struct {
-	JPath        string       `json:"Path"`
-	JLineMatches []*lineMatch `json:"LineMatches"`
-	JLimitHit    bool         `json:"LimitHit"`
-	MatchCount   int          // Number of matches. Different from len(JLineMatches), as multiple lines may correspond to one logical match.
+	JPath        string                     `json:"Path"`
+	JLineMatches []*searchresults.LineMatch `json:"LineMatches"`
+	JLimitHit    bool                       `json:"LimitHit"`
+	MatchCount   int                        // Number of matches. Different from len(JLineMatches), as multiple lines may correspond to one logical match.
 	symbols      []*searchSymbolResult
 	uri          string
 	Repo         *types.RepoName
@@ -105,8 +106,12 @@ func (fm *FileMatchResolver) Symbols() []*symbolResolver {
 	return symbols
 }
 
-func (fm *FileMatchResolver) LineMatches() []*lineMatch {
-	return fm.JLineMatches
+func (fm *FileMatchResolver) LineMatches() []*LineMatchResolver {
+	r := make([]*LineMatchResolver, 0, len(fm.JLineMatches))
+	for _, lm := range fm.JLineMatches {
+		r = append(r, &LineMatchResolver{*lm})
+	}
+	return r
 }
 
 func (fm *FileMatchResolver) LimitHit() bool {
@@ -142,32 +147,29 @@ func (fm *FileMatchResolver) ResultCount() int32 {
 	return 1 // 1 to count "empty" results like type:path results
 }
 
-// lineMatch is the struct used by vscode to receive search results for a line
-type lineMatch struct {
-	JPreview          string     `json:"Preview"`
-	JOffsetAndLengths [][2]int32 `json:"OffsetAndLengths"`
-	JLineNumber       int32      `json:"LineNumber"`
-	JLimitHit         bool       `json:"LimitHit"`
+// LineMatchResolver is the struct used by vscode to receive search results for a line
+type LineMatchResolver struct {
+	lineMatch searchresults.LineMatch
 }
 
-func (lm *lineMatch) Preview() string {
-	return lm.JPreview
+func (r *LineMatchResolver) Preview() string {
+	return r.lineMatch.Preview
 }
 
-func (lm *lineMatch) LineNumber() int32 {
-	return lm.JLineNumber
+func (r *LineMatchResolver) LineNumber() int32 {
+	return r.lineMatch.LineNumber
 }
 
-func (lm *lineMatch) OffsetAndLengths() [][]int32 {
-	r := make([][]int32, len(lm.JOffsetAndLengths))
-	for i := range lm.JOffsetAndLengths {
-		r[i] = lm.JOffsetAndLengths[i][:]
+func (r *LineMatchResolver) OffsetAndLengths() [][]int32 {
+	res := make([][]int32, len(r.lineMatch.OffsetAndLengths))
+	for i := range r.lineMatch.OffsetAndLengths {
+		res[i] = r.lineMatch.OffsetAndLengths[i][:]
 	}
-	return r
+	return res
 }
 
-func (lm *lineMatch) LimitHit() bool {
-	return lm.JLimitHit
+func (r *LineMatchResolver) LimitHit() bool {
+	return r.lineMatch.LimitHit
 }
 
 var mockSearchFilesInRepo func(ctx context.Context, repo *types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error)
@@ -213,17 +215,17 @@ func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo *ty
 	repoResolver := &RepositoryResolver{innerRepo: repo.ToRepo()}
 	resolvers := make([]*FileMatchResolver, 0, len(matches))
 	for _, fm := range matches {
-		lineMatches := make([]*lineMatch, 0, len(fm.LineMatches))
+		lineMatches := make([]*searchresults.LineMatch, 0, len(fm.LineMatches))
 		for _, lm := range fm.LineMatches {
 			ranges := make([][2]int32, 0, len(lm.OffsetAndLengths))
 			for _, ol := range lm.OffsetAndLengths {
 				ranges = append(ranges, [2]int32{int32(ol[0]), int32(ol[1])})
 			}
-			lineMatches = append(lineMatches, &lineMatch{
-				JPreview:          lm.Preview,
-				JOffsetAndLengths: ranges,
-				JLineNumber:       int32(lm.LineNumber),
-				JLimitHit:         lm.LimitHit,
+			lineMatches = append(lineMatches, &searchresults.LineMatch{
+				Preview:          lm.Preview,
+				OffsetAndLengths: ranges,
+				LineNumber:       int32(lm.LineNumber),
+				LimitHit:         lm.LimitHit,
 			})
 		}
 

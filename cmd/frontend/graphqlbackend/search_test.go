@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	searchresults "github.com/sourcegraph/sourcegraph/internal/search/results"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -548,9 +549,9 @@ func mkFileMatch(repo *types.RepoName, path string, lineNumbers ...int32) *FileM
 			Name: "repo",
 		}
 	}
-	var lines []*lineMatch
+	var lines []*searchresults.LineMatch
 	for _, n := range lineNumbers {
-		lines = append(lines, &lineMatch{JLineNumber: n})
+		lines = append(lines, &searchresults.LineMatch{LineNumber: n})
 	}
 	return mkFileMatchResolver(FileMatch{
 		uri:          fileMatchURI(repo.Name, "", path),

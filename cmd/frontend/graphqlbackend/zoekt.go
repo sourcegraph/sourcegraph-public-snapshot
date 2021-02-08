@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gituri"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	searchresults "github.com/sourcegraph/sourcegraph/internal/search/results"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
@@ -364,7 +365,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 				repoResolvers[repo.Name] = repoResolver
 			}
 
-			var lines []*lineMatch
+			var lines []*searchresults.LineMatch
 			var matchCount int
 			if typ != symbolRequest {
 				lines, matchCount = zoektFileMatchToLineMatches(maxLineFragmentMatches, &file)
@@ -423,9 +424,9 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 	return nil
 }
 
-func zoektFileMatchToLineMatches(maxLineFragmentMatches int, file *zoekt.FileMatch) ([]*lineMatch, int) {
+func zoektFileMatchToLineMatches(maxLineFragmentMatches int, file *zoekt.FileMatch) ([]*searchresults.LineMatch, int) {
 	var matchCount int
-	lines := make([]*lineMatch, 0, len(file.LineMatches))
+	lines := make([]*searchresults.LineMatch, 0, len(file.LineMatches))
 
 	for _, l := range file.LineMatches {
 		if l.FileName {
@@ -442,10 +443,10 @@ func zoektFileMatchToLineMatches(maxLineFragmentMatches int, file *zoekt.FileMat
 			offsets[k] = [2]int32{int32(offset), int32(length)}
 		}
 		matchCount += len(offsets)
-		lines = append(lines, &lineMatch{
-			JPreview:          string(l.Line),
-			JLineNumber:       int32(l.LineNumber - 1),
-			JOffsetAndLengths: offsets,
+		lines = append(lines, &searchresults.LineMatch{
+			Preview:          string(l.Line),
+			LineNumber:       int32(l.LineNumber - 1),
+			OffsetAndLengths: offsets,
 		})
 	}
 

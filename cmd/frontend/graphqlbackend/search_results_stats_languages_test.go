@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	searchresults "github.com/sourcegraph/sourcegraph/internal/search/results"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -56,9 +57,9 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 	defer git.ResetMocks()
 
 	fileMatch := func(path string, lineNumbers ...int32) *FileMatchResolver {
-		var lines []*lineMatch
+		var lines []*searchresults.LineMatch
 		for _, n := range lineNumbers {
-			lines = append(lines, &lineMatch{JLineNumber: n})
+			lines = append(lines, &searchresults.LineMatch{LineNumber: n})
 		}
 		return mkFileMatchResolver(FileMatch{
 			JPath:        path,

@@ -58,7 +58,7 @@ func TestSearchResults(t *testing.T) {
 			case *RepositoryResolver:
 				resultDescriptions[i] = fmt.Sprintf("repo:%s", m.innerRepo.Name)
 			case *FileMatchResolver:
-				resultDescriptions[i] = fmt.Sprintf("%s:%d", m.JPath, m.JLineMatches[0].JLineNumber)
+				resultDescriptions[i] = fmt.Sprintf("%s:%d", m.JPath, m.JLineMatches[0].LineNumber)
 			default:
 				t.Fatal("unexpected result type", result)
 			}

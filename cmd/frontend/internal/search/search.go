@@ -304,9 +304,9 @@ func fromFileMatch(fm *graphqlbackend.FileMatchResolver) eventFileMatch {
 	lineMatches := make([]eventLineMatch, 0, len(fm.JLineMatches))
 	for _, lm := range fm.JLineMatches {
 		lineMatches = append(lineMatches, eventLineMatch{
-			Line:             lm.JPreview,
-			LineNumber:       lm.JLineNumber,
-			OffsetAndLengths: lm.JOffsetAndLengths,
+			Line:             lm.Preview,
+			LineNumber:       lm.LineNumber,
+			OffsetAndLengths: lm.OffsetAndLengths,
 		})
 	}
 
