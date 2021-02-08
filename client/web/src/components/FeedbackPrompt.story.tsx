@@ -2,9 +2,9 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 
 import webStyles from '../SourcegraphWebApp.scss'
-import { GrowingTextArea } from './GrowingTextArea'
+import { FeedbackPrompt } from './FeedbackPrompt'
 
-const { add } = storiesOf('web/GrowingTextArea', module).addDecorator(story => (
+const { add } = storiesOf('web/FeedbackPrompt', module).addDecorator(story => (
     <>
         <style>{webStyles}</style>
         <div className="layout__app-router-container">
@@ -13,4 +13,4 @@ const { add } = storiesOf('web/GrowingTextArea', module).addDecorator(story => (
     </>
 ))
 
-add('Basic', () => <GrowingTextArea placeholder="Beans" />)
+add('Basic', () => <FeedbackPrompt placeholder="Beans" />)
