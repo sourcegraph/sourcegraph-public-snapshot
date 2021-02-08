@@ -1,35 +1,32 @@
 import React, { useEffect } from 'react'
-import OpenInNew from 'mdi-react/OpenInNewIcon'
+import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import { TelemetryService } from '../../../../../shared/src/telemetry/telemetryService'
 import { AuthenticatedUser } from '../../../auth'
 
 interface Props {
     telemetryService: TelemetryService
-    authenticatedUser: AuthenticatedUser
+    authenticatedUser: Pick<AuthenticatedUser, 'email'>
 }
 
-const PRODUCT_RESEARCH_SIGNUP_FORM = 'https://share.hsforms.com/1tkScUc65Tm-Yu98zUZcLGw1n7ku'
+const signUpForm = new URL('https://share.hsforms.com/1tkScUc65Tm-Yu98zUZcLGw1n7ku')
 
-export const ProductResearchPage: React.FunctionComponent<Props> = ({ telemetryService, authenticatedUser }) => {
+export const ProductResearchArea: React.FunctionComponent<Props> = ({ telemetryService, authenticatedUser }) => {
     useEffect(() => {
         telemetryService.logViewEvent('UserSettingsProductResearch')
     }, [telemetryService])
 
+    signUpForm.searchParams.set('email', authenticatedUser.email)
+
     return (
         <>
             <h2 className="mb-3">Product research and feedback</h2>
-            <div>
+            <p>
                 Our product team conducts occasional research to learn about how you use Sourcegraph and ask for
                 feedback about upcoming ideas. Sign up to participate in our research and help us shape the future of
                 our product!
-            </div>
-            <a
-                href={`${PRODUCT_RESEARCH_SIGNUP_FORM}?email=${authenticatedUser.email}`}
-                className="btn btn-primary mt-4"
-                target="_blank"
-                rel="noopener noreferrer"
-            >
-                Sign up now <OpenInNew className="icon-inline" />
+            </p>
+            <a href={signUpForm.href} className="btn btn-primary mt-2" target="_blank" rel="noopener noreferrer">
+                Sign up now <OpenInNewIcon className="icon-inline" />
             </a>
         </>
     )

@@ -136,7 +136,7 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     {
         path: '/product-research',
         exact: true,
-        render: lazyComponent(() => import('./research/ProductResearch'), 'ProductResearchPage'),
-        condition: () => window.context.productResearchPageEnabled,
+        render: lazyComponent(() => import('./research/ProductResearch'), 'ProductResearchArea'),
+        condition: () => window.context.productResearchAreaEnabled,
     },
 ]
