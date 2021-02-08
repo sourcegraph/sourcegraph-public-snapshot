@@ -1,0 +1,22 @@
+{
+  "name": "eslint-plugin-sourcegraph",
+  "version": "0.0.0",
+  "description": "Custom ESLint rules for Sourcegraph",
+  "keywords": ["eslint", "eslintplugin", "eslint-plugin"],
+  "main": "lib/index.js",
+  "scripts": {
+    "eslint": "../../../../node_modules/.bin/eslint",
+    "test": "mocha tests --recursive"
+  },
+  "dependencies": {
+    "requireindex": "~1.1.0"
+  },
+  "devDependencies": {
+    "eslint": "^7.1.0",
+    "mocha": "^7.2.0"
+  },
+  "engines": {
+    "node": ">=0.10.0"
+  },
+  "license": "Apache-2.0"
+}

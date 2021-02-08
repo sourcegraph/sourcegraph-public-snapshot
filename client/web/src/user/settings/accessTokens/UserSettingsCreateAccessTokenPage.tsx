@@ -140,9 +140,7 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<Props> =
                     <small className="form-help text-muted">What's this token for?</small>
                 </div>
                 <div className="form-group">
-                    <label className="mb-1" htmlFor="user-settings-create-access-token-page__note">
-                        Token scope
-                    </label>
+                    <div className="mb-1">Token scope</div>
                     <div>
                         <small className="form-help text-muted">
                             Tokens with limited user scopes are not yet supported.

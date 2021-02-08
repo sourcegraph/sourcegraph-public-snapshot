@@ -48,6 +48,7 @@ const defaultProps = (
     keyboardShortcuts: [],
     copyQueryButton: false,
     versionContext: undefined,
+    showSearchContext: false,
     showOnboardingTour: false,
     isLightTheme: props.isLightTheme,
     navbarSearchQueryState: { query: '' },

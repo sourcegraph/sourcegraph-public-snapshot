@@ -15,6 +15,7 @@ import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import CardTextOutlineIcon from 'mdi-react/CardTextOutlineIcon'
 import FileDocumentEditOutlineIcon from 'mdi-react/FileDocumentEditOutlineIcon'
 import AccountEditIcon from 'mdi-react/AccountEditIcon'
+import CheckboxBlankCircleIcon from 'mdi-react/CheckboxBlankCircleIcon'
 import { FileDiffConnection } from '../../../../components/diff/FileDiffConnection'
 import { FileDiffNode } from '../../../../components/diff/FileDiffNode'
 import { FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
@@ -61,7 +62,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
         <>
             <button
                 type="button"
-                className="btn btn-icon test-campaigns-expand-preview d-none d-sm-block"
+                className="btn btn-icon test-campaigns-expand-preview d-none d-sm-block mx-1"
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
             >
@@ -127,8 +128,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
             </button>
             {isExpanded && (
                 <>
-                    <div className="visible-changeset-apply-preview-node__bg-expanded align-self-stretch" />
-                    <div className="visible-changeset-apply-preview-node__expanded-section visible-changeset-apply-preview-node__bg-expanded p-2">
+                    <div className="visible-changeset-apply-preview-node__expanded-section visible-changeset-apply-preview-node__bg-expanded pt-4">
                         <ExpandedSection
                             node={node}
                             history={history}
@@ -188,18 +188,22 @@ const ExpandedSection: React.FunctionComponent<
     }
     return (
         <>
-            <div className="overflow-auto mb-2">
+            <div className="overflow-auto mb-4">
                 <ul className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap">
                     <li className="nav-item">
                         <a
                             href=""
                             onClick={onSelectDiff}
-                            className={classNames('nav-link', selectedTab === 'diff' && 'active')}
+                            className={classNames(
+                                'nav-link',
+                                selectedTab === 'diff' &&
+                                    'active visible-changeset-apply-preview-node__tab-link--active'
+                            )}
                         >
                             Changed files
                             {node.delta.diffChanged && (
                                 <small className="text-warning ml-2" data-tooltip="Changes in this tab">
-                                    &#11044;
+                                    <CheckboxBlankCircleIcon className="icon-inline visible-changeset-apply-preview-node__change-indicator" />
                                 </small>
                             )}
                         </a>
@@ -208,12 +212,16 @@ const ExpandedSection: React.FunctionComponent<
                         <a
                             href=""
                             onClick={onSelectDescription}
-                            className={classNames('nav-link', selectedTab === 'description' && 'active')}
+                            className={classNames(
+                                'nav-link',
+                                selectedTab === 'description' &&
+                                    'active visible-changeset-apply-preview-node__tab-link--active'
+                            )}
                         >
                             Description
                             {(node.delta.titleChanged || node.delta.bodyChanged) && (
                                 <small className="text-warning ml-2" data-tooltip="Changes in this tab">
-                                    &#11044;
+                                    <CheckboxBlankCircleIcon className="icon-inline visible-changeset-apply-preview-node__change-indicator" />
                                 </small>
                             )}
                         </a>
@@ -222,14 +230,18 @@ const ExpandedSection: React.FunctionComponent<
                         <a
                             href=""
                             onClick={onSelectCommits}
-                            className={classNames('nav-link', selectedTab === 'commits' && 'active')}
+                            className={classNames(
+                                'nav-link',
+                                selectedTab === 'commits' &&
+                                    'active visible-changeset-apply-preview-node__tab-link--active'
+                            )}
                         >
                             Commits
                             {(node.delta.authorEmailChanged ||
                                 node.delta.authorNameChanged ||
                                 node.delta.commitMessageChanged) && (
                                 <small className="text-warning ml-2" data-tooltip="Changes in this tab">
-                                    &#11044;
+                                    <CheckboxBlankCircleIcon className="icon-inline visible-changeset-apply-preview-node__change-indicator" />
                                 </small>
                             )}
                         </a>
@@ -260,10 +272,10 @@ const ExpandedSection: React.FunctionComponent<
                         node.targets.changeset.currentSpec?.description.__typename ===
                             'GitBranchChangesetDescription' && (
                             <>
-                                <h3>
+                                <h3 className="text-muted">
                                     <del>{node.targets.changeset.currentSpec.description.title}</del>
                                 </h3>
-                                <del>
+                                <del className="text-muted">
                                     <Description
                                         history={history}
                                         description={node.targets.changeset.currentSpec.description.body}

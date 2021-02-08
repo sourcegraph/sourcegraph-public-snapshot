@@ -1,17 +1,33 @@
 import React from 'react'
 
-type Status = 'beta' | 'prototype'
+type Status = 'beta' | 'prototype' | 'wip'
 
 const statusStyleMapping: Record<Status, string> = {
     prototype: 'badge-warning',
+    wip: 'badge-warning',
     beta: 'badge-info',
 }
 
-export const StatusBadge: React.FunctionComponent<{ status: Status }> = ({ status }) => (
+interface Props {
+    status: Status
+    /** Render a mailto href to share feedback */
+    feedback?: {
+        mailto: string
+        /** Defaults to 'Share feedback' */
+        text?: string
+    }
+    tooltip?: string
+}
+
+export const StatusBadge: React.FunctionComponent<Props> = ({ status, feedback, tooltip }) => (
     <div className="d-flex align-items-center">
-        <span className={`badge ${statusStyleMapping[status]} text-uppercase mr-2`}>{status}</span>
-        <a href="mailto:support@sourcegraph.com" target="_blank" rel="noopener noreferrer">
-            Share feedback
-        </a>
+        <span className={`badge ${statusStyleMapping[status]} text-uppercase mr-2`} data-tooltip={tooltip}>
+            {status}
+        </span>
+        {feedback && (
+            <a href={`mailto:${feedback.mailto}`} target="_blank" rel="noopener noreferrer">
+                {feedback.text || 'Share feedback'}
+            </a>
+        )}
     </div>
 )

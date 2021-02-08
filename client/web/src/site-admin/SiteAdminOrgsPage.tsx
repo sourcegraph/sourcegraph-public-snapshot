@@ -121,7 +121,7 @@ export const SiteAdminOrgsPage: React.FunctionComponent<Props> = ({ telemetrySer
             </div>
             <p>
                 An organization is a set of users with associated configuration. See{' '}
-                <Link to="/help/user/organizations">Sourcegraph documentation</Link> for information about configuring
+                <Link to="/help/admin/organizations">Sourcegraph documentation</Link> for information about configuring
                 organizations.
             </p>
             <FilteredConnection<OrganizationFields, Omit<OrgNodeProps, 'node'>>

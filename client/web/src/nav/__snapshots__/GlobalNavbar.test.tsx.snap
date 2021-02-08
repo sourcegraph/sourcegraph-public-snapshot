@@ -89,6 +89,7 @@ exports[`GlobalNavbar default 1`] = `
       }
       showCampaigns={false}
       showOnboardingTour={false}
+      showSearchContext={false}
       telemetryService={Object {}}
       themePreference="light"
     />

@@ -138,7 +138,8 @@ func samlSPHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		actor, safeErrMsg, err := getOrCreateUser(r.Context(), info)
+		allowSignup := p.config.AllowSignup == nil || *p.config.AllowSignup
+		actor, safeErrMsg, err := getOrCreateUser(r.Context(), allowSignup, info)
 		if err != nil {
 			log15.Error("Error looking up SAML-authenticated user.", "err", err, "userErr", safeErrMsg)
 			http.Error(w, safeErrMsg, http.StatusInternalServerError)

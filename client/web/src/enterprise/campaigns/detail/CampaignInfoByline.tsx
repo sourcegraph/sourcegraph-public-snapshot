@@ -15,15 +15,15 @@ export const CampaignInfoByline: React.FunctionComponent<Props> = ({
     lastApplier,
 }) => (
     <>
-        {initialApplier ? <Link to={initialApplier.url}>{initialApplier.username}</Link> : 'A deleted user'}{' '}
-        <Timestamp date={createdAt} />
+        Created <Timestamp date={createdAt} /> by{' '}
+        {initialApplier ? <Link to={initialApplier.url}>{initialApplier.username}</Link> : 'a deleted user'}
         {lastAppliedAt !== createdAt && (
             <>
-                <span className="mx-2">•</span>
+                <span className="mx-2">|</span>
+                Updated <Timestamp date={lastAppliedAt} />
                 {lastApplier?.username !== initialApplier?.username && (
-                    <>{lastApplier ? <Link to={lastApplier.url}>{lastApplier.username}</Link> : 'A deleted user'} </>
+                    <> by {lastApplier ? <Link to={lastApplier.url}>{lastApplier.username}</Link> : 'a deleted user'}</>
                 )}
-                updated <Timestamp date={lastAppliedAt} />
             </>
         )}
     </>

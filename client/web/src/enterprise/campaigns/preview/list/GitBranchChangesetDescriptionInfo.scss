@@ -1,0 +1,7 @@
+.git-branch-changeset-description-info {
+    &__grid {
+        display: grid;
+        grid-template-columns: [author] min-content [description] minmax(auto, 1fr);
+        row-gap: 1rem;
+    }
+}

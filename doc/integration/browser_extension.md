@@ -132,7 +132,7 @@ If that still doesn't work, viewing the console and network activity of the exte
 
 ### Viewing browser extension console and network activity in Chrome
 
-If still experiencing issues, the next step is to inspect the browser extension console output and network activity, often revealing subtle configuration errors.
+If you are still experiencing issues, the next step is to inspect the browser extension console output and network activity, often revealing subtle configuration errors.
 
 ![Chrome extension console and network activity](https://sourcegraphstatic.com/ChromeExtensionConsoleNetworkActivity.gif)
 

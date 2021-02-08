@@ -2,7 +2,7 @@ import { Omit } from 'utility-types'
 import { CodeHost } from '../shared/codeHost'
 import { CodeView } from '../shared/codeViews'
 import { getSelectionsFromHash, observeSelectionsFromHash } from '../shared/util/selections'
-import { ViewResolver } from '../shared/views'
+import { queryWithSelector, ViewResolver } from '../shared/views'
 import { diffDOMFunctions, singleFileDOMFunctions } from './domFunctions'
 import { getCommandPaletteMount } from './extensions'
 import { resolveCommitFileInfo, resolveDiffFileInfo, resolveFileInfo } from './fileInfo'
@@ -155,7 +155,7 @@ export const gitlabCodeHost = subtypeOf<CodeHost>()({
         // TODO to be entirely correct, this would need to compare the revision of the code view with the target revision.
         const currentPage = getPageInfo()
         if (currentPage.rawRepoName === target.rawRepoName && context.part !== undefined) {
-            const codeViews = document.querySelectorAll<HTMLElement>(codeViewResolver.selector)
+            const codeViews = queryWithSelector(document.body, codeViewResolver.selector)
             for (const codeView of codeViews) {
                 const { headFilePath, baseFilePath } = getFilePathsFromCodeView(codeView)
                 if (headFilePath !== target.filePath && baseFilePath !== target.filePath) {
