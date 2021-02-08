@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-
-	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
 )
 
 type ExpectedOperand struct {
@@ -111,27 +109,6 @@ func (q Q) Fields() map[string][]*Value {
 		fields[field] = q.Values(field)
 	})
 	return fields
-}
-
-func (q Q) ParseTree() syntax.ParseTree {
-	var tree syntax.ParseTree
-	VisitPattern(q, func(value string, negated bool, _ Annotation) {
-		expr := &syntax.Expr{
-			Field: "",
-			Value: value,
-			Not:   negated,
-		}
-		tree = append(tree, expr)
-	})
-	VisitParameter(q, func(field, value string, negated bool, _ Annotation) {
-		expr := &syntax.Expr{
-			Field: field,
-			Value: value,
-			Not:   negated,
-		}
-		tree = append(tree, expr)
-	})
-	return tree
 }
 
 func (q Q) BoolValue(field string) bool {
