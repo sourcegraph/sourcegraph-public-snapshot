@@ -442,7 +442,7 @@ func logOnelineBatchScanner(scan func() (*onelineCommit, error), maxBatchSize in
 
 // logOnelineScanner parses the commits from the reader of:
 //
-//   git log --oneline -z --source --no-patch
+//   git log --pretty='format:%H %S' -z --source --no-patch
 //
 // Once it returns an error the scanner should be disregarded. io.EOF is
 // returned when there is no more data to read.
@@ -493,16 +493,15 @@ func logOnelineScanner(r io.Reader) func() (*onelineCommit, error) {
 
 		e := scanner.Bytes()
 
-		// Format: (40-char SHA) \t (source ref)? 'log size '
-		if len(e) <= 40 {
+		// Format: (40-char SHA) (source ref)
+		if len(e) <= 42 {
 			return nil, fmt.Errorf("parsing git oneline commit: short entry: %q", e)
 		}
 		sha1 := e[:40]
-		i := bytes.Index(e, []byte{' '})
-		if i == -1 {
+		if e[40] != ' ' {
 			return nil, fmt.Errorf("parsing git oneline commit: no ' ': %q", e)
 		}
-		sourceRef := e[41:i]
+		sourceRef := e[41:]
 		return &onelineCommit{
 			sha1:      string(sha1),
 			sourceRef: string(sourceRef),
