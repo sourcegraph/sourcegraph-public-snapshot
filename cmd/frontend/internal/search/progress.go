@@ -31,6 +31,11 @@ func (p *progressAggregator) Update(event graphqlbackend.SearchEvent) {
 	for _, result := range event.Results {
 		p.MatchCount += int(result.ResultCount())
 	}
+
+	if p.MatchCount > p.Limit {
+		p.MatchCount = p.Limit
+		p.Stats.IsLimitHit = true
+	}
 }
 
 func (p *progressAggregator) currentStats() api.ProgressStats {
