@@ -41,7 +41,7 @@ type SearchArgs struct {
 	First          *int32
 	VersionContext *string
 
-	// Stream if non-nil will send all results down c.
+	// Stream if non-nil will stream all SearchEvents.
 	//
 	// This is how our streaming and our batch interface co-exist. When this
 	// is set, it exposes a way to stream out results as we collect them.
