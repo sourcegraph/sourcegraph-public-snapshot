@@ -11,12 +11,17 @@ import (
 )
 
 func (r *schemaResolver) StatusMessages(ctx context.Context) ([]*statusMessageResolver, error) {
-	// 🚨 SECURITY: Only site admins can see status messages.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	currentUser, err := backend.CurrentUser(ctx)
+	if err != nil {
 		return nil, err
 	}
+	if currentUser == nil {
+		return nil, backend.ErrNotAuthenticated
+	}
 
-	messages, err := repos.FetchStatusMessages(ctx, r.db)
+	// 🚨 SECURITY: Users will fetch status messages for any external services they
+	// own. In addition, site admins will also fetch site level external services.
+	messages, err := repos.FetchStatusMessages(ctx, r.db, currentUser)
 	if err != nil {
 		return nil, err
 	}

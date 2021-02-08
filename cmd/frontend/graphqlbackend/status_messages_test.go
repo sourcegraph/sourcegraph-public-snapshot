@@ -48,28 +48,13 @@ func TestStatusMessages(t *testing.T) {
 		}
 	})
 
-	t.Run("authenticated as non-site-admin", func(t *testing.T) {
-		database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
-			return &types.User{ID: 1, SiteAdmin: false}, nil
-		}
-		defer func() { database.Mocks.Users.GetByCurrentAuthUser = nil }()
-
-		result, err := (&schemaResolver{}).StatusMessages(context.Background())
-		if want := backend.ErrMustBeSiteAdmin; err != want {
-			t.Errorf("got err %v, want %v", err, want)
-		}
-		if result != nil {
-			t.Errorf("got result %v, want nil", result)
-		}
-	})
-
 	t.Run("no messages", func(t *testing.T) {
 		database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
 			return &types.User{ID: 1, SiteAdmin: true}, nil
 		}
 		defer func() { database.Mocks.Users.GetByCurrentAuthUser = nil }()
 
-		repos.MockStatusMessages = func(_ context.Context) ([]repos.StatusMessage, error) {
+		repos.MockStatusMessages = func(_ context.Context, _ *types.User) ([]repos.StatusMessage, error) {
 			return []repos.StatusMessage{}, nil
 		}
 		defer func() { repos.MockStatusMessages = nil }()
@@ -98,7 +83,7 @@ func TestStatusMessages(t *testing.T) {
 		}
 		defer func() { database.Mocks.ExternalServices.GetByID = nil }()
 
-		repos.MockStatusMessages = func(_ context.Context) ([]repos.StatusMessage, error) {
+		repos.MockStatusMessages = func(_ context.Context, _ *types.User) ([]repos.StatusMessage, error) {
 			res := []repos.StatusMessage{
 				{
 					Cloning: &repos.CloningProgress{

@@ -810,20 +810,28 @@ LIMIT 1
 	return lastError, err
 }
 
-// ListSyncErrors returns the most recent failure message for each external
-// service. If the latest run did not have an error, it will be excluded from the
-// map.
-func (e *ExternalServiceStore) ListSyncErrors(ctx context.Context) (map[int64]string, error) {
+// GetAffiliatedSyncErrors returns the most recent failure message for each
+// external service. If the latest run did not have an error, it will be excluded
+// from the map. We fetch external services owned by the supplied user and if
+// they are a site admin we also return site level external services.
+func (e *ExternalServiceStore) GetAffiliatedSyncErrors(ctx context.Context, u *types.User) (map[int64]string, error) {
 	if Mocks.ExternalServices.ListSyncErrors != nil {
 		return Mocks.ExternalServices.ListSyncErrors(ctx)
 	}
-	q := `SELECT DISTINCT ON(external_service_id) external_service_id, failure_message 
-FROM external_service_sync_jobs
-WHERE state IN ('completed','errored','failed')
-AND finished_at IS NOT NULL
-ORDER BY external_service_id, finished_at DESC`
+	if u == nil {
+		return nil, errors.New("nil user")
+	}
+	q := sqlf.Sprintf(`SELECT DISTINCT ON(external_service_id) external_service_id, failure_message
+FROM external_service_sync_jobs sj
+JOIN external_services es ON sj.external_service_id = es.id
+WHERE
+  state IN ('completed','errored','failed')
+  AND finished_at IS NOT NULL
+  AND ((es.namespace_user_id = %s) OR (%s AND es.namespace_user_id IS NULL))
+ORDER BY external_service_id, finished_at DESC
+`, u.ID, u.SiteAdmin)
 
-	rows, err := e.Query(ctx, sqlf.Sprintf(q))
+	rows, err := e.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}
