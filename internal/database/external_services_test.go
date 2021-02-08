@@ -654,7 +654,7 @@ func TestExternalServicesStore_GetByID(t *testing.T) {
 	}
 }
 
-func TestListSyncErrors(t *testing.T) {
+func TestGetAffiliatedSyncErrors(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -666,28 +666,48 @@ func TestListSyncErrors(t *testing.T) {
 		return &conf.Unified{}
 	}
 
-	svc1 := &types.ExternalService{
-		Kind:        extsvc.KindGitHub,
-		DisplayName: "GITHUB #1",
-		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+	// Initial user always gets created as an admin
+	admin, err := Users(db).Create(ctx, NewUser{
+		Email:                 "a1@example.com",
+		Username:              "u1",
+		Password:              "p",
+		EmailVerificationCode: "c",
+	})
+	if err != nil {
+		t.Fatal(err)
 	}
-	err := ExternalServices(db).Create(ctx, confGet, svc1)
+	user2, err := Users(db).Create(ctx, NewUser{
+		Email:                 "u2@example.com",
+		Username:              "u2",
+		Password:              "p",
+		EmailVerificationCode: "c",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	svc2 := &types.ExternalService{
-		Kind:        extsvc.KindGitHub,
-		DisplayName: "GITHUB #2",
-		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
-	}
-	err = ExternalServices(db).Create(ctx, confGet, svc2)
-	if err != nil {
-		t.Fatal(err)
+	createService := func(u *types.User, name string) *types.ExternalService {
+		svc := &types.ExternalService{
+			Kind:        extsvc.KindGitHub,
+			DisplayName: name,
+			Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+		}
+		if u != nil {
+			svc.NamespaceUserID = u.ID
+		}
+		err = ExternalServices(db).Create(ctx, confGet, svc)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return svc
 	}
 
-	// Listing errors now should return an empty map
-	failures, err := ExternalServices(db).ListSyncErrors(ctx)
+	siteLevel := createService(nil, "GITHUB #1")
+	adminOwned := createService(admin, "GITHUB #2")
+	userOwned := createService(user2, "GITHUB #3")
+
+	// Listing errors now should return an empty map as none have been added yet
+	failures, err := ExternalServices(db).GetAffiliatedSyncErrors(ctx, admin)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -695,64 +715,84 @@ func TestListSyncErrors(t *testing.T) {
 		t.Fatal("Expected zero errors")
 	}
 
-	// Add failure
-	expectedFailure := "oops"
+	// Add two failures
+	failure1 := "oops"
 	_, err = db.Exec(`
 INSERT INTO external_service_sync_jobs (external_service_id, state, finished_at, failure_message)
 VALUES ($1,'errored', now(), $2)
-`, svc1.ID, expectedFailure)
+`, siteLevel.ID, failure1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	failure2 := "oops again"
+	_, err = db.Exec(`
+INSERT INTO external_service_sync_jobs (external_service_id, state, finished_at, failure_message)
+VALUES ($1,'errored', now(), $2)
+`, siteLevel.ID, failure2)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	failures, err = ExternalServices(db).ListSyncErrors(ctx)
+	// We should get the latest failure
+	failures, err = ExternalServices(db).GetAffiliatedSyncErrors(ctx, admin)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(failures) != 1 {
 		t.Fatal("Expected 1 failure")
 	}
-	failure := failures[svc1.ID]
-	if failure != expectedFailure {
-		t.Fatalf("Want %q, got %q", expectedFailure, failure)
-	}
-
-	// Add a later failure, we should get that instead
-	expectedFailure2 := "oops again"
-	_, err = db.Exec(`
-INSERT INTO external_service_sync_jobs (external_service_id, state, finished_at, failure_message)
-VALUES ($1,'errored', now(), $2)
-`, svc1.ID, expectedFailure2)
-	if err != nil {
-		t.Fatal(err)
-	}
-	failures, err = ExternalServices(db).ListSyncErrors(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(failures) != 1 {
-		t.Fatal("Expected 1 failure")
-	}
-	failure = failures[svc1.ID]
-	if failure != expectedFailure2 {
-		t.Fatalf("Want %q, got %q", expectedFailure2, failure)
+	failure := failures[siteLevel.ID]
+	if failure != failure2 {
+		t.Fatalf("Want %q, got %q", failure2, failure)
 	}
 
 	// Adding a second failing service
 	_, err = db.Exec(`
 INSERT INTO external_service_sync_jobs (external_service_id, state, finished_at, failure_message)
 VALUES ($1,'errored', now(), $2)
-`, svc2.ID, expectedFailure)
+`, adminOwned.ID, failure1)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	failures, err = ExternalServices(db).ListSyncErrors(ctx)
+	failures, err = ExternalServices(db).GetAffiliatedSyncErrors(ctx, admin)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(failures) != 2 {
 		t.Fatal("Expected 2 failure")
+	}
+
+	// User should not see any failures as they don't own any services
+	failures, err = ExternalServices(db).GetAffiliatedSyncErrors(ctx, user2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(failures) != 0 {
+		t.Fatal("Expected 0 failure")
+	}
+
+	// Add a failure to user service
+	failure3 := "user failure"
+	_, err = db.Exec(`
+INSERT INTO external_service_sync_jobs (external_service_id, state, finished_at, failure_message)
+VALUES ($1,'errored', now(), $2)
+`, userOwned.ID, failure3)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// We should get the latest failure
+	failures, err = ExternalServices(db).GetAffiliatedSyncErrors(ctx, user2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(failures) != 1 {
+		t.Fatal("Expected 1 failure")
+	}
+	failure = failures[userOwned.ID]
+	if failure != failure3 {
+		t.Fatalf("Want %q, got %q", failure3, failure)
 	}
 }
 
