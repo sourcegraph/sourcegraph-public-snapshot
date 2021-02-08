@@ -17,7 +17,7 @@ func BuildProgressEvent(stats ProgressStats) Progress {
 	}
 
 	return Progress{
-		RepositoriesCount: intPtr(stats.RepositoriesCount),
+		RepositoriesCount: stats.RepositoriesCount,
 		MatchCount:        stats.MatchCount,
 		DurationMs:        stats.ElapsedMilliseconds,
 		Skipped:           skipped,
@@ -31,7 +31,7 @@ type Namer interface {
 type ProgressStats struct {
 	MatchCount          int
 	ElapsedMilliseconds int
-	RepositoriesCount   int
+	RepositoriesCount   *int
 	ExcludedArchived    int
 	ExcludedForks       int
 
@@ -172,10 +172,6 @@ var skippedHandlers = []func(stats ProgressStats) (Skipped, bool){
 	shardTimeoutHandler,
 	excludedForkHandler,
 	excludedArchiveHandler,
-}
-
-func intPtr(i int) *int {
-	return &i
 }
 
 func number(i int) string {

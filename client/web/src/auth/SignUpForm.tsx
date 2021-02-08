@@ -1,7 +1,7 @@
 import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 import { asError } from '../../../shared/src/util/errors'
-import { eventLogger } from '../tracking/eventLogger'
+import { ANONYMOUS_USER_ID_KEY, eventLogger, FIRST_SOURCE_URL_KEY } from '../tracking/eventLogger'
 import { enterpriseTrial, signupTerms } from '../util/features'
 import { EmailInput, PasswordInput, UsernameInput } from './SignInSignUpCommon'
 import { ErrorAlert } from '../components/alerts'
@@ -21,12 +21,14 @@ import {
     deriveInputClassName,
 } from '../../../shared/src/util/useInputValidation'
 import { SourcegraphContext } from '../jscontext'
-
+import cookies from 'js-cookie'
 export interface SignUpArguments {
     email: string
     username: string
     password: string
     requestedTrial: boolean
+    anonymousUserId?: string
+    firstSourceUrl?: string
 }
 
 interface SignUpFormProps {
@@ -100,6 +102,8 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                 username: usernameState.value,
                 password: passwordState.value,
                 requestedTrial,
+                anonymousUserId: cookies.get(ANONYMOUS_USER_ID_KEY),
+                firstSourceUrl: cookies.get(FIRST_SOURCE_URL_KEY),
             }).catch(error => {
                 setError(asError(error))
                 setLoading(false)

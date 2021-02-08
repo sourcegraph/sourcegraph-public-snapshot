@@ -85,70 +85,70 @@ func TestAddQueryRegexpField(t *testing.T) {
 			query:      "foo",
 			addField:   "repo",
 			addPattern: "p",
-			want:       "foo repo:p",
+			want:       "repo:p foo",
+		},
+		{
+			query:      "foo repo:p",
+			addField:   "repo",
+			addPattern: "p",
+			want:       "repo:p foo",
 		},
 		{
 			query:      "foo repo:q",
 			addField:   "repo",
 			addPattern: "p",
-			want:       "foo repo:q repo:p",
-		},
-		{
-			query:      "foo repo:p",
-			addField:   "repo",
-			addPattern: "p",
-			want:       "foo repo:p",
+			want:       "repo:q repo:p foo",
 		},
 		{
 			query:      "foo repo:p",
 			addField:   "repo",
 			addPattern: "pp",
-			want:       "foo repo:pp",
+			want:       "repo:pp foo",
 		},
 		{
 			query:      "foo repo:p",
 			addField:   "repo",
 			addPattern: "^p",
-			want:       "foo repo:^p",
+			want:       "repo:^p foo",
 		},
 		{
 			query:      "foo repo:p",
 			addField:   "repo",
 			addPattern: "p$",
-			want:       "foo repo:p$",
+			want:       "repo:p$ foo",
 		},
 		{
 			query:      "foo repo:^p",
 			addField:   "repo",
 			addPattern: "^pq",
-			want:       "foo repo:^pq",
+			want:       "repo:^pq foo",
 		},
 		{
 			query:      "foo repo:p$",
 			addField:   "repo",
 			addPattern: "qp$",
-			want:       "foo repo:qp$",
+			want:       "repo:qp$ foo",
 		},
 		{
 			query:      "foo repo:^p",
 			addField:   "repo",
 			addPattern: "x$",
-			want:       "foo repo:^p repo:x$",
+			want:       "repo:^p repo:x$ foo",
 		},
 		{
 			query:      "foo repo:p|q",
 			addField:   "repo",
 			addPattern: "pq",
-			want:       "foo repo:p|q repo:pq",
+			want:       "repo:p|q repo:pq foo",
 		},
 	}
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("%s, add %s:%s", test.query, test.addField, test.addPattern), func(t *testing.T) {
-			parseTree, err := query.Parse(test.query)
+			q, err := query.ParseLiteral(test.query)
 			if err != nil {
 				t.Fatal(err)
 			}
-			got := query.AddRegexpField(parseTree, test.addField, test.addPattern)
+			got := query.AddRegexpField(q, test.addField, test.addPattern)
 			if got != test.want {
 				t.Errorf("got %q, want %q", got, test.want)
 			}
@@ -289,7 +289,7 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 				proposedQueries: []*searchQueryDescription{
 					{
 						"in the repository a/repoName0",
-						"foo repo:^a/repoName0$",
+						"repo:^a/repoName0$ foo",
 						query.SearchType(0),
 					},
 				},
@@ -320,7 +320,7 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 				proposedQueries: []*searchQueryDescription{
 					{
 						"in repositories under a (further filtering required)",
-						"foo repo:^a/",
+						"repo:^a/ foo",
 						query.SearchType(0),
 					},
 				},

@@ -20,6 +20,10 @@ type insightConnectionResolver struct {
 	store        *store.Store
 	settingStore *database.SettingStore
 
+	// We use our own mock here because database.Mocks.Settings.GetLatest is a global which means
+	// we could not run our tests in parallel.
+	mocksSettingsGetLatest func(ctx context.Context, subject api.SettingsSubject) (*api.Settings, error)
+
 	// cache results because they are used by multiple fields
 	once     sync.Once
 	insights []*schema.Insight
@@ -57,11 +61,16 @@ func (r *insightConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.
 
 func (r *insightConnectionResolver) compute(ctx context.Context) ([]*schema.Insight, int64, error) {
 	r.once.Do(func() {
+		settingsGetLatest := r.settingStore.GetLatest
+		if r.mocksSettingsGetLatest != nil {
+			settingsGetLatest = r.mocksSettingsGetLatest
+		}
+
 		// Get latest Global user settings.
 		//
 		// FUTURE: include user/org settings.
 		subject := api.SettingsSubject{Site: true}
-		globalSettingsRaw, err := r.settingStore.GetLatest(ctx, subject)
+		globalSettingsRaw, err := settingsGetLatest(ctx, subject)
 		if err != nil {
 			r.err = err
 			return
@@ -82,4 +91,26 @@ func parseUserSettings(settings *api.Settings) (*schema.Settings, error) {
 		return nil, err
 	}
 	return &v, nil
+}
+
+// InsightResolver is also defined here as it is covered by the same tests.
+
+var _ graphqlbackend.InsightResolver = &insightResolver{}
+
+type insightResolver struct {
+	store   *store.Store
+	insight *schema.Insight
+}
+
+func (r *insightResolver) Title() string { return r.insight.Title }
+
+func (r *insightResolver) Description() string { return r.insight.Description }
+
+func (r *insightResolver) Series() []graphqlbackend.InsightSeriesResolver {
+	series := r.insight.Series
+	resolvers := make([]graphqlbackend.InsightSeriesResolver, 0, len(series))
+	for _, series := range series {
+		resolvers = append(resolvers, &insightSeriesResolver{store: r.store, series: series})
+	}
+	return resolvers
 }

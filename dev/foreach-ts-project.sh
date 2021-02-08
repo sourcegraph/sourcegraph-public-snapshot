@@ -16,6 +16,7 @@ DIRS=(
   client/branded
   client/browser
   client/packages/sourcegraph-extension-api
+  client/packages/@sourcegraph/eslint-plugin-sourcegraph
   client/packages/@sourcegraph/extension-api-types
   dev/release
   dev/ts-morph

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"path"
 	"regexp"
-	rxsyntax "regexp/syntax"
 	"sort"
 	"strings"
 	"sync"
@@ -23,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	querytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
 
@@ -60,42 +58,9 @@ func alertForCappedAndExpression() *searchAlert {
 	}
 }
 
-func toSearchQueryDescription(proposed []*query.ProposedQuery) (result []*searchQueryDescription) {
-	for _, p := range proposed {
-		result = append(result, &searchQueryDescription{
-			description: p.Description,
-			query:       p.Query,
-		})
-	}
-	return result
-}
-
 // alertForQuery converts errors in the query to search alerts.
 func alertForQuery(queryString string, err error) *searchAlert {
-	switch e := err.(type) {
-	case *query.LegacyParseError:
-		return &searchAlert{
-			prometheusType:  "parse_syntax_error",
-			title:           capFirst(e.Msg),
-			description:     "Quoting the query may help if you want a literal match.",
-			proposedQueries: toSearchQueryDescription(query.ProposedQuotedQueries(queryString)),
-		}
-	case *query.ValidationError:
-		return &searchAlert{
-			prometheusType: "validation_error",
-			title:          "Invalid Query",
-			description:    capFirst(e.Msg),
-		}
-	case *querytypes.TypeError:
-		switch e := e.Err.(type) {
-		case *rxsyntax.Error:
-			return &searchAlert{
-				prometheusType:  "typecheck_regex_syntax_error",
-				title:           capFirst(e.Error()),
-				description:     "Quoting the query may help if you want a literal match instead of a regular expression match.",
-				proposedQueries: toSearchQueryDescription(query.ProposedQuotedQueries(queryString)),
-			}
-		}
+	switch err.(type) {
 	case *query.UnsupportedError, *query.ExpectedOperand:
 		return &searchAlert{
 			prometheusType: "unsupported_and_or_query",
@@ -118,7 +83,7 @@ func alertForTimeout(usedTime time.Duration, suggestTime time.Duration, r *searc
 		proposedQueries: []*searchQueryDescription{
 			{
 				description: "query with longer timeout",
-				query:       fmt.Sprintf("timeout:%v %s", suggestTime, query.OmitQueryField(r.Query.ParseTree(), query.FieldTimeout)),
+				query:       fmt.Sprintf("timeout:%v %s", suggestTime, query.OmitQueryField(r.Query, query.FieldTimeout)),
 				patternType: r.PatternType,
 			},
 		},
@@ -180,7 +145,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 
 	// TODO(sqs): handle -repo:foo fields.
 
-	withoutRepoFields := query.OmitQueryField(r.Query.ParseTree(), query.FieldRepo)
+	withoutRepoFields := query.OmitQueryField(r.Query, query.FieldRepo)
 
 	switch {
 	case len(repoGroupFilters) > 1:
@@ -210,7 +175,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			proposedQueries = []*searchQueryDescription{
 				{
 					description: fmt.Sprintf("include repositories outside of repogroup:%s", repoGroupFilters[0]),
-					query:       query.OmitQueryField(r.Query.ParseTree(), query.FieldRepoGroup),
+					query:       query.OmitQueryField(r.Query, query.FieldRepoGroup),
 					patternType: r.PatternType,
 				},
 			}
@@ -265,7 +230,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			proposedQueries = []*searchQueryDescription{
 				{
 					description: fmt.Sprintf("include repositories outside of repogroup:%s", repoGroupFilters[0]),
-					query:       query.OmitQueryField(r.Query.ParseTree(), query.FieldRepoGroup),
+					query:       query.OmitQueryField(r.Query, query.FieldRepoGroup),
 					patternType: r.PatternType,
 				},
 			}
@@ -490,7 +455,7 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 			// add it to the user's query, but be smart. For example, if the user's
 			// query was "repo:foo" and the parent is "foobar/", then propose "repo:foobar/"
 			// not "repo:foo repo:foobar/" (which are equivalent, but shorter is better).
-			newExpr := query.AddRegexpField(r.Query.ParseTree(), query.FieldRepo, repoParentPattern)
+			newExpr := query.AddRegexpField(r.Query, query.FieldRepo, repoParentPattern)
 			proposedQueries = append(proposedQueries, &searchQueryDescription{
 				description: fmt.Sprintf("in repositories under %s %s", repoParent, more),
 				query:       newExpr,
@@ -509,7 +474,7 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 				if i >= maxReposToPropose {
 					break
 				}
-				newExpr := query.AddRegexpField(r.Query.ParseTree(), query.FieldRepo, "^"+regexp.QuoteMeta(pathToPropose)+"$")
+				newExpr := query.AddRegexpField(r.Query, query.FieldRepo, "^"+regexp.QuoteMeta(pathToPropose)+"$")
 				proposedQueries = append(proposedQueries, &searchQueryDescription{
 					description: fmt.Sprintf("in the repository %s", strings.TrimPrefix(pathToPropose, "github.com/")),
 					query:       newExpr,
@@ -621,7 +586,6 @@ func (searchAlert) Suggestions(context.Context, *searchSuggestionsArgs) ([]*sear
 	return nil, nil
 }
 func (searchAlert) Stats(context.Context) (*searchResultsStats, error) { return nil, nil }
-func (searchAlert) SetStream(c Streamer)                               {}
 func (searchAlert) Inputs() SearchInputs {
 	return SearchInputs{}
 }

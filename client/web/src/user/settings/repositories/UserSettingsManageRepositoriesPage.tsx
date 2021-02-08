@@ -74,6 +74,18 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     const [codeHosts, setCodeHosts] = useState(initialCodeHostState)
     const [fetchingRepos, setFetchingRepos] = useState(initialFetchingReposState)
 
+    interface GitHubConfig {
+        repos: string[]
+        token: 'REDACTED'
+        url: string
+    }
+    interface GitLabConfig {
+        projectQuery: string[]
+        projects: { name: string }[]
+        token: 'REDACTED'
+        url: string
+    }
+
     useCallback(() => {
         // first we should load code hosts
         if (!codeHosts.loaded) {
@@ -84,20 +96,25 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             }).subscribe(result => {
                 const selected: string[] = []
                 for (const host of result.nodes) {
-                    const cfg = JSON.parse(host.config)
+                    const cfg = JSON.parse(host.config) as GitHubConfig | GitLabConfig
                     switch (host.kind) {
-                        case ExternalServiceKind.GITLAB:
-                            if (cfg.projects !== undefined) {
-                                cfg.projects.map((project: any) => {
+                        case ExternalServiceKind.GITLAB: {
+                            const gitLabCfg = cfg as GitLabConfig
+                            if (gitLabCfg.projects !== undefined) {
+                                gitLabCfg.projects.map(project => {
                                     selected.push(project.name)
                                 })
                             }
                             break
-                        case ExternalServiceKind.GITHUB:
-                            if (cfg.repos !== undefined) {
-                                selected.push(...cfg.repos)
+                        }
+
+                        case ExternalServiceKind.GITHUB: {
+                            const gitHubCfg = cfg as GitHubConfig
+                            if (gitHubCfg.repos !== undefined) {
+                                selected.push(...gitHubCfg.repos)
                             }
                             break
+                        }
                     }
                 }
                 setCodeHosts({
@@ -156,9 +173,13 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     // code host config.
     if (repoState.loaded && codeHosts.loaded && !selectionState.loaded) {
         const selectedRepos = new Map<string, Repo>()
-        codeHosts.configuredRepos.map(repo => {
-            selectedRepos.set(repo, repoState.repos.find(fullRepo => fullRepo.name === repo)!)
-        })
+
+        for (const repo of codeHosts.configuredRepos) {
+            const foundInState = repoState.repos.find(fullRepo => fullRepo.name === repo)
+            if (foundInState) {
+                selectedRepos.set(repo, foundInState)
+            }
+        }
 
         let radioState = selectionState.radio
         if (selectionState.radio === 'all' && selectedRepos.size > 0) {
@@ -177,7 +198,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         if (!repo.name.toLowerCase().includes(query)) {
             continue
         }
-        if (codeHostFilter !== '' && repo.codeHost!.id !== codeHostFilter) {
+        if (codeHostFilter !== '' && repo.codeHost?.id !== codeHostFilter) {
             continue
         }
         filteredRepos.push(repo)
@@ -189,24 +210,30 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         if (page === 1) {
             pages.push(
                 (page !== currentPage && (
-                    <a
+                    <button
+                        type="button"
                         key="prev"
-                        className="btn px-0 text-primary user-settings-repos__pageend"
+                        className="btn btn-link px-0 text-primary user-settings-repos__pageend"
                         onClick={() => setPage(currentPage - 1)}
                     >
                         <ChevronLeftIcon className="icon-inline fill-primary" />
                         Previous
-                    </a>
+                    </button>
                 )) || (
-                    <span key="prev" className="px-0 text-muted user-settings-repos__pageend">
+                    <button
+                        type="button"
+                        key="prev"
+                        className="btn btn-link px-0 text-muted user-settings-repos__pageend"
+                    >
                         <ChevronLeftIcon className="icon-inline fill-border-color-2" />
                         Previous
-                    </span>
+                    </button>
                 )
             )
         }
         pages.push(
-            <a
+            <button
+                type="button"
                 key={page}
                 className={classNames({
                     'btn user-settings-repos__page': true,
@@ -223,24 +250,29 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 >
                     {page}
                 </p>
-            </a>
+            </button>
         )
         if (page === Math.ceil(filteredRepos.length / PER_PAGE)) {
             pages.push(
                 (page !== currentPage && (
-                    <a
+                    <button
+                        type="button"
                         key="next"
-                        className="btn px-0 text-primary user-settings-repos__pageend"
+                        className="btn btn-link px-0 text-primary user-settings-repos__pageend"
                         onClick={() => setPage(currentPage + 1)}
                     >
                         Next
                         <ChevronRightIcon className="icon-inline fill-primary" />
-                    </a>
+                    </button>
                 )) || (
-                    <span key="next" className="px-0 text-muted user-settings-repos__pageend">
+                    <button
+                        type="button"
+                        key="next"
+                        className="btn btn-link px-0 text-muted user-settings-repos__pageend"
+                    >
                         Next
                         <ChevronRightIcon className="icon-inline user-settings-repos__chevron--inactive" />
-                    </span>
+                    </button>
                 )
             )
         }
@@ -255,7 +287,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 const repos: string[] = []
                 syncTimes.set(host.id, host.lastSyncAt)
                 for (const repo of selectionState.repos.values()) {
-                    if (repo.codeHost!.id !== host.id) {
+                    if (repo.codeHost?.id !== host.id) {
                         continue
                     }
                     repos.push(repo.name)
@@ -349,7 +381,8 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 <select
                     className="form-control"
                     name="code-host"
-                    onChange={event => {
+                    aria-label="select code host type"
+                    onBlur={event => {
                         setCodeHostFilter(event.target.value)
                     }}
                 >
@@ -411,24 +444,28 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         <tbody>
             <tr className="align-items-baseline d-flex" key="header">
                 <td
+                    role="gridcell"
                     onClick={selectAll}
                     className="user-settings-repos__repositorynode p-2 w-100 d-flex align-items-center border-top-0 border-bottom"
                 >
                     <input
+                        id="select-all-repos"
                         className="mr-3"
                         type="checkbox"
                         checked={selectionState.repos.size !== 0 && selectionState.repos.size === filteredRepos.length}
                         onChange={selectAll}
                     />
-                    <span
-                        className={
-                            ((selectionState.repos.size !== 0 && 'text-body') || 'text-muted') + ' repositories-header'
-                        }
+                    <label
+                        htmlFor="select-all-repos"
+                        className={classNames({
+                            'text-muted': selectionState.repos.size === 0,
+                            'text-body': selectionState.repos.size !== 0,
+                            'repositories-header': true,
+                        })}
                     >
-                        {(selectionState.repos.size > 0 &&
-                            String(selectionState.repos.size) + ' repositories selected') ||
+                        {(selectionState.repos.size > 0 && `${selectionState.repos.size} repositories selected`) ||
                             'Select all'}
-                    </span>
+                    </label>
                 </td>
             </tr>
             {filteredRepos.map((repo, index) => {
@@ -450,17 +487,17 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     )
 
     const loadingAnimation: JSX.Element = (
-        <div className="container">
-            <div className="mt-2 align-items-baseline row">
+        <tbody className="container">
+            <tr className="mt-2 align-items-baseline row">
                 <td className="user-settings-repos__shimmer p-3 border-top-0 col-sm-9" />
-            </div>
-            <div className="mt-2 align-items-baseline row">
+            </tr>
+            <tr className="mt-2 align-items-baseline row">
                 <td className="user-settings-repos__shimmer p-3 border-top-0 col-sm-4" />
-            </div>
-            <div className="mt-2 align-items-baseline row">
+            </tr>
+            <tr className="mt-2 align-items-baseline row">
                 <td className="user-settings-repos__shimmer p-3 border-top-0 col-sm-7" />
-            </div>
-        </div>
+            </tr>
+        </tbody>
     )
     return (
         <div className="p-2">
@@ -489,7 +526,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                                 <div className="ml-4">
                                     {filterControls}
                                     {repoState.error !== '' && <ErrorAlert error={repoState.error} history={history} />}
-                                    <table className="table">
+                                    <table role="grid" className="table">
                                         {
                                             // if we're selecting repos, and the repos are still loading, display the loading animation
                                             selectionState.radio === 'selected' &&

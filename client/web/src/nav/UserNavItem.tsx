@@ -100,7 +100,7 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
     const targetID = 'target-user-avatar'
 
     return (
-        <ButtonDropdown isOpen={isOpen} toggle={toggleIsOpen} className="py-0">
+        <ButtonDropdown isOpen={isOpen} toggle={toggleIsOpen} className="py-0" aria-label="User. Open menu">
             <DropdownToggle className="bg-transparent d-flex align-items-center test-user-nav-item-toggle" nav={true}>
                 <div className="position-relative">
                     <div

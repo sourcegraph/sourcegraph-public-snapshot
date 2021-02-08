@@ -16,7 +16,9 @@ exports[`UserAvatar no avatar URL 1`] = `
 
 exports[`UserAvatar with avatar URL 1`] = `
 <img
+  alt=""
   className="user-avatar"
+  role="presentation"
   src="u"
 />
 `;

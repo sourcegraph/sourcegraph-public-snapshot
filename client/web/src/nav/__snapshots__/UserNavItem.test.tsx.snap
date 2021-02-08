@@ -44,6 +44,7 @@ exports[`UserNavItem simple 1`] = `
       themePreference="light"
     >
       <ButtonDropdown
+        aria-label="User. Open menu"
         className="py-0"
         isOpen={false}
         toggle={[Function]}
@@ -52,6 +53,7 @@ exports[`UserNavItem simple 1`] = `
           a11y={true}
           active={false}
           addonType={false}
+          aria-label="User. Open menu"
           className="py-0"
           direction="down"
           group={true}
@@ -63,6 +65,7 @@ exports[`UserNavItem simple 1`] = `
         >
           <Manager>
             <div
+              aria-label="User. Open menu"
               className="py-0 btn-group"
               onKeyDown={[Function]}
             >
