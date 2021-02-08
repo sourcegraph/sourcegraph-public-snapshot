@@ -1,0 +1,10 @@
+.feedback-prompt {
+    &__menu {
+        text-align: center;
+        width: 22rem;
+    }
+    &__textarea {
+        resize: none;
+        margin: 1rem 0;
+    }
+}
