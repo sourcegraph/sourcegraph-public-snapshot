@@ -41,7 +41,9 @@ func (s *limitStream) Send(event SearchEvent) {
 	// Only send IsLimitHit once. Can race with other sends and be sent
 	// multiple times, but this is fine. Want to avoid lots of noop events
 	// after the first IsLimitHit.
-	if old >= 0 && s.remaining.Load() < 0 {
+	//
+	// We send after -1 to ensure we have passed the limit.
+	if old >= 0 && s.remaining.Load() < -1 {
 		s.s.Send(SearchEvent{Stats: streaming.Stats{IsLimitHit: true}})
 		s.cancel()
 	}
