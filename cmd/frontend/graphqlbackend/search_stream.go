@@ -30,13 +30,18 @@ type limitStream struct {
 func (s *limitStream) Send(event SearchEvent) {
 	s.s.Send(event)
 
+	var count int64
+	for _, r := range event.Results {
+		count += int64(r.ResultCount())
+	}
+
 	// Avoid limit checks if no change to result count.
-	if len(event.Results) == 0 {
+	if count == 0 {
 		return
 	}
 
 	old := s.remaining.Load()
-	s.remaining.Sub(int64(len(event.Results)))
+	s.remaining.Sub(count)
 
 	// Only send IsLimitHit once. Can race with other sends and be sent
 	// multiple times, but this is fine. Want to avoid lots of noop events
@@ -49,7 +54,7 @@ func (s *limitStream) Send(event SearchEvent) {
 
 // WithLimit returns a child Stream of parent as well as a child Context of
 // ctx. The child stream passes on all events to parent. Once more than limit
-// results are sent on the child stream the context is canceled and an
+// ResultCount are sent on the child stream the context is canceled and an
 // IsLimitHit event is sent.
 //
 // Canceling this context releases resources associated with it, so code
