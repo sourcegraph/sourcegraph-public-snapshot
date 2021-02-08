@@ -1,6 +1,6 @@
 # Managed Sourcegraph instances
 
-Managed instances are provision and managed by the Sourcegraph team, making them a simple choice for customers to deploy Sourcegraph without having to worry about managing it.
+Managed instances are provisioned and managed by the Sourcegraph team, making them a simple choice for customers to deploy Sourcegraph without having to worry about managing it.
 
 Sourcegraph provisions your instance in a completely isolated and secure cloud infrastructure. It will be restricted to only your organization through your enterprise VPN and/or SSO provider of choice.
 
