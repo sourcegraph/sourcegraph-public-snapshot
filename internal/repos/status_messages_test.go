@@ -40,6 +40,16 @@ func TestStatusMessages(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	user1, err := database.Users(db).Create(ctx, database.NewUser{
+		Email:                 "a1@example.com",
+		Username:              "u1",
+		Password:              "p",
+		EmailVerificationCode: "c",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	testCases := []struct {
 		name            string
 		stored          types.Repos
@@ -211,7 +221,7 @@ func TestStatusMessages(t *testing.T) {
 				tc.err = "<nil>"
 			}
 
-			res, err := FetchStatusMessages(ctx, db)
+			res, err := FetchStatusMessages(ctx, db, user1)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("have err: %q, want: %q", have, want)
 			}

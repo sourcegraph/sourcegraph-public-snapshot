@@ -25,6 +25,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -883,7 +884,7 @@ func (r *searchResolver) setQuery(q []query.Node) {
 		r.resolved.MissingRepoRevs = nil
 		r.repoErr = nil
 	}
-	r.Query.(*query.AndOrQuery).Query = q
+	r.Query = q
 }
 
 // evaluatePatternExpression evaluates a search pattern containing and/or expressions.
@@ -908,7 +909,7 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, scopePar
 }
 
 // evaluate evaluates all expressions of a search query.
-func (r *searchResolver) evaluate(ctx context.Context, q []query.Node) (*SearchResultsResolver, error) {
+func (r *searchResolver) evaluate(ctx context.Context, q query.Query) (*SearchResultsResolver, error) {
 	scopeParameters, pattern, err := query.PartitionSearchPattern(q)
 	if err != nil {
 		return alertForQuery("", err).wrap(), nil
@@ -931,7 +932,7 @@ func (r *searchResolver) evaluate(ctx context.Context, q []query.Node) (*SearchR
 // repos, revisions, or repogroups imply that different repos may need to be
 // resolved.
 func invalidateRepoCache(q []query.Node) bool {
-	var seenRepo, seenRevision, seenRepoGroup int
+	var seenRepo, seenRevision, seenRepoGroup, seenContext int
 	query.VisitField(q, "repo", func(_ string, _ bool, _ query.Annotation) {
 		seenRepo += 1
 	})
@@ -941,7 +942,10 @@ func invalidateRepoCache(q []query.Node) bool {
 	query.VisitField(q, "repogroup", func(_ string, _ bool, _ query.Annotation) {
 		seenRepoGroup += 1
 	})
-	return seenRepo+seenRepoGroup > 1 || seenRevision > 1
+	query.VisitField(q, "context", func(_ string, _ bool, _ query.Annotation) {
+		seenContext += 1
+	})
+	return seenRepo+seenRepoGroup > 1 || seenRevision > 1 || seenContext > 1
 }
 
 func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolver, err error) {
@@ -950,44 +954,36 @@ func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolve
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	switch q := r.Query.(type) {
-	case *query.OrdinaryQuery:
-		srr, err = r.evaluateLeaf(ctx)
-	case *query.AndOrQuery:
-		var countStr string
-		wantCount := defaultMaxSearchResults
-		query.VisitField(q.Query, "count", func(value string, _ bool, _ query.Annotation) {
-			countStr = value
-		})
-		if countStr != "" {
-			wantCount, _ = strconv.Atoi(countStr) // Invariant: count is validated.
-		}
+	var countStr string
+	wantCount := defaultMaxSearchResults
+	query.VisitField(r.Query, "count", func(value string, _ bool, _ query.Annotation) {
+		countStr = value
+	})
+	if countStr != "" {
+		wantCount, _ = strconv.Atoi(countStr) // Invariant: count is validated.
+	}
 
-		if invalidateRepoCache(q.Query) {
-			r.invalidateRepoCache = true
+	if invalidateRepoCache(r.Query) {
+		r.invalidateRepoCache = true
+	}
+	for _, disjunct := range query.Dnf(r.Query) {
+		disjunct = query.ConcatRevFilters(disjunct)
+		newResult, err := r.evaluate(ctx, disjunct)
+		if err != nil {
+			// Fail if any subquery fails.
+			return nil, err
 		}
-		for _, disjunct := range query.Dnf(q.Query) {
-			disjunct = query.ConcatRevFilters(disjunct)
-			newResult, err := r.evaluate(ctx, disjunct)
-			if err != nil {
-				// Fail if any subquery fails.
-				return nil, err
+		if newResult != nil {
+			srr = union(srr, newResult)
+			if len(srr.SearchResults) > wantCount {
+				srr.SearchResults = srr.SearchResults[:wantCount]
+				break
 			}
-			if newResult != nil {
-				srr = union(srr, newResult)
-				if len(srr.SearchResults) > wantCount {
-					srr.SearchResults = srr.SearchResults[:wantCount]
-					break
-				}
 
-			}
 		}
-		if srr != nil {
-			r.sortResults(ctx, srr.SearchResults)
-		}
-	default:
-		// Unreachable.
-		return nil, fmt.Errorf("unrecognized type %T in searchResolver Results", r.Query)
+	}
+	if srr != nil {
+		r.sortResults(ctx, srr.SearchResults)
 	}
 	// copy userSettings from searchResolver to SearchResultsResolver
 	if srr != nil {
@@ -1213,7 +1209,7 @@ func isPatternNegated(q []query.Node) bool {
 
 // processSearchPattern processes the search pattern for a query. It handles the interpretation of search patterns
 // as literal, regex, or structural patterns, and applies fuzzy regex matching if applicable.
-func processSearchPattern(q query.QueryInfo, opts *getPatternInfoOptions) (string, bool, bool, bool) {
+func processSearchPattern(q query.Query, opts *getPatternInfoOptions) (string, bool, bool, bool) {
 	var pattern string
 	var pieces []string
 	var contentFieldSet bool
@@ -1221,11 +1217,7 @@ func processSearchPattern(q query.QueryInfo, opts *getPatternInfoOptions) (strin
 	isStructuralPat := false
 
 	patternValues := q.Values(query.FieldDefault)
-
-	isNegated := false
-	if andOrQuery, ok := q.(*query.AndOrQuery); ok {
-		isNegated = isPatternNegated(andOrQuery.Query)
-	}
+	isNegated := isPatternNegated(q)
 
 	if overridePattern := q.Values(query.FieldContent); len(overridePattern) > 0 {
 		patternValues = overridePattern
@@ -1276,7 +1268,7 @@ func processSearchPattern(q query.QueryInfo, opts *getPatternInfoOptions) (strin
 }
 
 // getPatternInfo gets the search pattern info for q
-func getPatternInfo(q query.QueryInfo, opts *getPatternInfoOptions) (*search.TextPatternInfo, error) {
+func getPatternInfo(q query.Query, opts *getPatternInfoOptions) (*search.TextPatternInfo, error) {
 	pattern, isRegExp, isStructuralPat, isNegated := processSearchPattern(q, opts)
 
 	// Handle file: and -file: filters.
@@ -1317,11 +1309,22 @@ func getPatternInfo(q query.QueryInfo, opts *getPatternInfoOptions) (*search.Tex
 		Languages:                    languages,
 		PathPatternsAreCaseSensitive: q.IsCaseSensitive(),
 		CombyRule:                    strings.Join(combyRule, ""),
+		Index:                        indexValue(q),
 	}
 	if len(excludePatterns) > 0 {
 		patternInfo.ExcludePattern = searchrepos.UnionRegExps(excludePatterns)
 	}
 	return patternInfo, nil
+}
+
+// indexValue converts the query index field to one of yes (default), only, or no
+// enum values.
+func indexValue(q query.QueryInfo) query.YesNoOnly {
+	indexParam := query.Yes
+	if index := q.Values(query.FieldIndex); len(index) > 0 {
+		indexParam = query.ParseYesNoOnly(index[0].ToString())
+	}
+	return indexParam
 }
 
 // langIncludeExcludePatterns returns regexps for the include/exclude path patterns given the lang:
@@ -1639,13 +1642,17 @@ func statsDeref(s *streaming.Stats) streaming.Stats {
 }
 
 // isGlobalSearch returns true if the query does not contain repo, repogroup, or
-// repohasfile filters. For structural queries and queries with version context
-// isGlobalSearch always return false.
+// repohasfile filters. For structural queries, queries with version context,
+// and queries with non-global search context, isGlobalSearch always return false.
 func (r *searchResolver) isGlobalSearch() bool {
 	if r.PatternType == query.SearchTypeStructural {
 		return false
 	}
 	if r.VersionContext != nil && *r.VersionContext != "" {
+		return false
+	}
+	querySearchContextSpec, _ := r.Query.StringValue(query.FieldContext)
+	if envvar.SourcegraphDotComMode() && searchcontexts.IsGlobalSearchContextSpec(querySearchContextSpec) {
 		return false
 	}
 	return len(r.Query.Values(query.FieldRepo)) == 0 && len(r.Query.Values(query.FieldRepoGroup)) == 0 && len(r.Query.Values(query.FieldRepoHasFile)) == 0
@@ -1696,12 +1703,15 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 
 	args := search.TextParameters{
-		PatternInfo:     p,
-		Query:           r.Query,
-		UseFullDeadline: r.searchTimeoutFieldSet(),
-		Zoekt:           r.zoekt,
-		SearcherURLs:    r.searcherURLs,
-		RepoPromise:     &search.Promise{},
+		PatternInfo: p,
+		Query:       r.Query,
+
+		// UseFullDeadline if timeout: set or we are streaming.
+		UseFullDeadline: r.searchTimeoutFieldSet() || r.stream != nil,
+
+		Zoekt:        r.zoekt,
+		SearcherURLs: r.searcherURLs,
+		RepoPromise:  &search.Promise{},
 	}
 	if err := args.PatternInfo.Validate(); err != nil {
 		return nil, &badRequestError{err}
@@ -1750,9 +1760,11 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		return false
 	}
 
+	isIndexedSearch := args.PatternInfo.Index != query.No
+
 	// performance optimization: call zoekt early, resolve repos concurrently, filter
 	// search results with resolved repos.
-	if r.isGlobalSearch() && isFileOrPath() {
+	if r.isGlobalSearch() && isIndexedSearch && isFileOrPath() {
 		argsIndexed := args
 		argsIndexed.Mode = search.ZoektGlobalSearch
 		wg := waitGroup(true)
@@ -1988,7 +2000,7 @@ func (r *searchResolver) sortResults(ctx context.Context, results []SearchResult
 func (r *searchResolver) getExactFilePatterns() map[string]struct{} {
 	m := map[string]struct{}{}
 	query.VisitField(
-		r.Query.(*query.AndOrQuery).Query,
+		r.Query,
 		query.FieldFile,
 		func(value string, negated bool, annotation query.Annotation) {
 			originalValue := r.OriginalQuery[annotation.Range.Start.Column+len(query.FieldFile)+1 : annotation.Range.End.Column]

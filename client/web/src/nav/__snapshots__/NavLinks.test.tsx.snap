@@ -252,6 +252,7 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
     class="nav-item"
   >
     <div
+      aria-label="User. Open menu"
       class="py-0 btn-group"
     >
       <a
@@ -713,6 +714,7 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
     class="nav-item"
   >
     <div
+      aria-label="User. Open menu"
       class="py-0 btn-group"
     >
       <a
@@ -1184,6 +1186,7 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
     class="nav-item"
   >
     <div
+      aria-label="User. Open menu"
       class="py-0 btn-group"
     >
       <a
@@ -1626,6 +1629,7 @@ exports[`NavLinks authed self-hosted /search 1`] = `
     class="nav-item"
   >
     <div
+      aria-label="User. Open menu"
       class="py-0 btn-group"
     >
       <a

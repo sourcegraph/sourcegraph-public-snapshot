@@ -602,6 +602,7 @@ export interface HandleCodeHostOptions extends CodeIntelligenceProps {
     sourcegraphURL: string
     render: typeof reactDOMRender
     minimalUI: boolean
+    hideActions?: boolean
     background: Pick<BackgroundPageApi, 'notifyPrivateRepository' | 'openOptionsPage'>
 }
 
@@ -615,6 +616,7 @@ export function handleCodeHost({
     telemetryService,
     render,
     minimalUI,
+    hideActions,
     background,
 }: HandleCodeHostOptions): Subscription {
     const history = H.createBrowserHistory()
@@ -1075,6 +1077,7 @@ export function handleCodeHost({
                 render(
                     <CodeViewToolbar
                         {...codeHost.codeViewToolbarClassProps}
+                        hideActions={hideActions}
                         fileInfoOrError={diffOrBlobInfo}
                         sourcegraphURL={sourcegraphURL}
                         telemetryService={telemetryService}
@@ -1172,6 +1175,8 @@ export function injectCodeIntelligenceToCodeHost(
     const minimalUIStorageFlag = localStorage.getItem('sourcegraphMinimalUI')
     const minimalUI =
         minimalUIStorageFlag !== null ? minimalUIStorageFlag === 'true' : codeHost.type === 'gitlab' && !isExtension
+    // Flag to hide the actions in the code view toolbar (hide ActionNavItems) leaving only the "Open on Sourcegraph" button in the toolbar.
+    const hideActions = codeHost.type === 'gerrit'
     subscriptions.add(
         extensionDisabled.subscribe(disableExtension => {
             if (disableExtension) {
@@ -1191,6 +1196,7 @@ export function injectCodeIntelligenceToCodeHost(
                     telemetryService,
                     render: reactDOMRender,
                     minimalUI,
+                    hideActions,
                     background,
                 })
                 subscriptions.add(codeHostSubscription)

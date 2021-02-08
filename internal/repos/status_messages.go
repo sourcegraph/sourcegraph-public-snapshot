@@ -8,13 +8,18 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-var MockStatusMessages func(context.Context) ([]StatusMessage, error)
+var MockStatusMessages func(context.Context, *types.User) ([]StatusMessage, error)
 
-func FetchStatusMessages(ctx context.Context, db dbutil.DB) ([]StatusMessage, error) {
+// FetchStatusMessages fetches repo related status messages. When fetching
+// external service sync errors we'll fetch any external services owned by the
+// user. In addition, if the user is a site admin we'll also fetch site level
+// external services.
+func FetchStatusMessages(ctx context.Context, db dbutil.DB, u *types.User) ([]StatusMessage, error) {
 	if MockStatusMessages != nil {
-		return MockStatusMessages(ctx)
+		return MockStatusMessages(ctx, u)
 	}
 
 	var messages []StatusMessage
@@ -32,7 +37,7 @@ func FetchStatusMessages(ctx context.Context, db dbutil.DB) ([]StatusMessage, er
 		})
 	}
 
-	syncErrors, err := database.ExternalServices(db).ListSyncErrors(ctx)
+	syncErrors, err := database.ExternalServices(db).GetAffiliatedSyncErrors(ctx, u)
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching sync errors")
 	}
