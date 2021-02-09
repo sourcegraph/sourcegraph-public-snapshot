@@ -2,12 +2,11 @@ import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import classnames from 'classnames'
 import React, { useState, useCallback, useMemo } from 'react'
 import { Link } from '../../../../../shared/src/components/Link'
-import { FilterType } from '../../../../../shared/src/search/query/util'
 import { buildSearchURLQuery } from '../../../../../shared/src/util/url'
 import { useInputValidation, deriveInputClassName } from '../../../../../shared/src/util/useInputValidation'
 import { SearchPatternType } from '../../../graphql-operations'
 import { scanSearchQuery } from '../../../../../shared/src/search/query/scanner'
-import { resolveFilter, validateFilter } from '../../../../../shared/src/search/query/filters'
+import { resolveFilter, validateFilter, FilterType } from '../../../../../shared/src/search/query/filters'
 
 interface TriggerAreaProps {
     query: string
