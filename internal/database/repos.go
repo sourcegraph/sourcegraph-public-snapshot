@@ -719,39 +719,21 @@ func (s *RepoStore) ListDefaultRepos(ctx context.Context, opts ListDefaultReposO
 
 	q := sqlf.Sprintf(`
 -- source: internal/database/repos.go:RepoStore.ListDefaultRepos
-SELECT
-    id,
-    name
-FROM
-    repo r
-WHERE
-    r.id > %s
-    AND EXISTS (
-        SELECT
-        FROM
-            external_service_repos sr
-            INNER JOIN external_services s ON s.id = sr.external_service_id
-        WHERE
-			s.cloud_default = false
-			AND s.deleted_at IS NULL
-			AND r.id = sr.repo_id
-            AND r.deleted_at IS NULL
-            AND %s
-    )
-UNION
-    SELECT
-        r.id,
-        r.name
-    FROM
-        default_repos
-		JOIN repo r ON default_repos.repo_id = r.id
-	WHERE
-		r.deleted_at IS NULL
-		AND r.id > %s
-		AND %s
-
-	ORDER BY id ASC
-	LIMIT %s`, opts.AfterID, cloneClause, opts.AfterID, cloneClause, opts.Limit)
+SELECT DISTINCT ON (r.id)
+  r.id,
+  r.name
+  FROM repo r
+  JOIN external_service_repos sr ON sr.repo_id = r.id
+  JOIN external_services s ON s.id = sr.external_service_id
+  LEFT JOIN default_repos dr ON dr.repo_id = r.id
+  WHERE (NOT s.cloud_default OR dr.repo_id IS NOT NULL)
+    AND s.deleted_at IS NULL
+    AND r.deleted_at IS NULL
+    AND r.id > %s
+    AND %s
+  ORDER BY id ASC
+  LIMIT %s
+`, opts.AfterID, cloneClause, opts.Limit)
 
 	results = make([]*types.RepoName, 0, opts.Limit)
 
@@ -779,6 +761,7 @@ UNION
 func (s *RepoStore) Create(ctx context.Context, repos ...*types.Repo) (err error) {
 	tr, ctx := trace.New(ctx, "repos.Create", "")
 	defer func() {
+
 		tr.SetError(err)
 		tr.Finish()
 	}()
