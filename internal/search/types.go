@@ -84,7 +84,7 @@ type SymbolsParameters struct {
 
 type GlobalSearchMode int
 
-// keep the order in sync with func (m GlobalSearchMode) String() string
+// Keep the order in sync with func (m GlobalSearchMode) String() string.
 const (
 	ZoektGlobalSearch GlobalSearchMode = iota + 1
 	SearcherOnly
