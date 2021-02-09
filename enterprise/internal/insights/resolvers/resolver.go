@@ -15,7 +15,7 @@ var _ graphqlbackend.InsightsResolver = &Resolver{}
 
 // Resolver is the GraphQL resolver of all things related to Insights.
 type Resolver struct {
-	store        *store.Store
+	store        store.Interface
 	settingStore *database.SettingStore
 }
 
@@ -26,7 +26,7 @@ func New(timescale, postgres dbutil.DB) graphqlbackend.InsightsResolver {
 
 // newWithClock returns a new Resolver whose store uses the given Timescale and Postgres DBs, and the given
 // clock for timestamps.
-func newWithClock(timescale, postgres dbutil.DB, clock func() time.Time) graphqlbackend.InsightsResolver {
+func newWithClock(timescale, postgres dbutil.DB, clock func() time.Time) *Resolver {
 	return &Resolver{
 		store:        store.NewWithClock(timescale, clock),
 		settingStore: database.Settings(postgres),

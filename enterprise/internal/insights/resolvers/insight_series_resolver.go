@@ -13,7 +13,7 @@ import (
 var _ graphqlbackend.InsightSeriesResolver = &insightSeriesResolver{}
 
 type insightSeriesResolver struct {
-	store  *store.Store
+	store  store.Interface
 	series *schema.InsightSeries
 }
 
