@@ -24,6 +24,7 @@ export enum FilterType {
     context = 'context',
     // eslint-disable-next-line unicorn/prevent-abbreviations
     rev = 'rev',
+    context = 'context',
 }
 
 /* eslint-disable unicorn/prevent-abbreviations */
