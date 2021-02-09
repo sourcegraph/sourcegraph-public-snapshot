@@ -11,11 +11,9 @@ This tutorial shows you how to deploy Sourcegraph via [Docker Compose](https://d
 * [Open your Google Cloud console](https://console.cloud.google.com/compute/instances) to create a new VM instance and click **Create Instance**
 * Choose an appropriate machine type (use the [resource estimator](../resource_estimator.md) to find a good starting point for your deployment).
 * Under the "Boot Disk" options, select the following:
-  
   * **Operating System**: Ubuntu
   * **Version**: Ubuntu 18.04 LTS
   * **Boot disk type**: SSD persistent disk
-
 * Check the boxes for **Allow HTTP traffic** and **Allow HTTPS traffic** in the **Firewall** section
 * Open the **Management, disks, networking, and SSH keys** dropdown section
 * Under the **Management** section, add the following in the **Startup script** field:
@@ -113,7 +111,7 @@ docker-compose up -d
 * Create your VM, then navigate to its public IP address.
 * If you have configured a DNS entry for the IP, configure `externalURL` to reflect that.
 * You may have to wait a minute or two for the instance to finish initializing before Sourcegraph becomes accessible. You can monitor the status by SSHing into the instance and running the following diagnostic commands:
-  
+
 ```bash
 # Follow the status of the user data script you provided earlier
 tail -c +0 -f /var/log/syslog | grep startup-script
