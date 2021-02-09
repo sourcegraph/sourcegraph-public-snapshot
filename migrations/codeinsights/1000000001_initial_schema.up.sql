@@ -26,7 +26,7 @@ CREATE INDEX repo_names_name_trgm ON repo_names USING gin (lower((name)::text) g
 -- Records arbitrary metadata about events. Stored in a separate table as it is often repeated
 -- for multiple events.
 CREATE TABLE metadata (
-    -- The repository _name_ ID.
+    -- The metadata ID.
     id bigserial NOT NULL PRIMARY KEY,
 
     -- Metadata about this event, this can be any arbitrary JSON metadata which will be returned
