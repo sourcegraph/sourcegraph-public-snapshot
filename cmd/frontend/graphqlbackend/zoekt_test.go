@@ -199,6 +199,7 @@ func TestIndexedSearch(t *testing.T) {
 				},
 				since: func(time.Time) time.Duration { return 0 },
 			},
+			wantMatchCount: 3,
 			wantCommon: streaming.Stats{
 				Status: mkStatusMap(map[string]search.RepoStatus{
 					"foo/bar": search.RepoStatusSearched | search.RepoStatusIndexed,
@@ -243,6 +244,7 @@ func TestIndexedSearch(t *testing.T) {
 			wantMatchURLs: []string{
 				"git://foo/bar?HEAD#baz.go",
 			},
+			wantMatchCount:     1,
 			wantMatchInputRevs: []string{"HEAD"},
 		},
 		{
@@ -330,7 +332,7 @@ func TestIndexedSearch(t *testing.T) {
 			var gotMatchURLs []string
 			var gotMatchInputRevs []string
 			for _, m := range gotFm {
-				gotMatchCount += m.MatchCount
+				gotMatchCount += int(m.ResultCount())
 				gotMatchURLs = append(gotMatchURLs, m.Resource())
 				if m.InputRev != nil {
 					gotMatchInputRevs = append(gotMatchInputRevs, *m.InputRev)

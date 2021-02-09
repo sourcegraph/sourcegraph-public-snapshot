@@ -37,7 +37,6 @@ type FileMatch struct {
 	JPath        string       `json:"Path"`
 	JLineMatches []*lineMatch `json:"LineMatches"`
 	JLimitHit    bool         `json:"LimitHit"`
-	MatchCount   int          // Number of matches. Different from len(JLineMatches), as multiple lines may correspond to one logical match.
 	symbols      []*searchSymbolResult
 	uri          string
 	Repo         *types.RepoName
@@ -127,16 +126,18 @@ func (fm *FileMatchResolver) path() string {
 func (fm *FileMatchResolver) appendMatches(src *FileMatchResolver) {
 	fm.JLineMatches = append(fm.JLineMatches, src.JLineMatches...)
 	fm.symbols = append(fm.symbols, src.symbols...)
-	fm.MatchCount += src.MatchCount
 	fm.JLimitHit = fm.JLimitHit || src.JLimitHit
 }
 
 func (fm *FileMatchResolver) ResultCount() int32 {
-	rc := len(fm.symbols) + fm.MatchCount
-	if rc > 0 {
-		return int32(rc)
+	rc := len(fm.symbols)
+	for _, m := range fm.JLineMatches {
+		rc += len(m.JOffsetAndLengths)
 	}
-	return 1 // 1 to count "empty" results like type:path results
+	if rc == 0 {
+		return 1 // 1 to count "empty" results like type:path results
+	}
+	return int32(rc)
 }
 
 // lineMatch is the struct used by vscode to receive search results for a line
@@ -229,7 +230,6 @@ func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo *ty
 				JPath:        fm.Path,
 				JLineMatches: lineMatches,
 				JLimitHit:    fm.LimitHit,
-				MatchCount:   fm.MatchCount,
 				Repo:         repo,
 				uri:          workspace + fm.Path,
 				CommitID:     commit,
