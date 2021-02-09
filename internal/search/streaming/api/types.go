@@ -7,7 +7,7 @@ type Progress struct {
 
 	// RepositoriesCount is the number of repositories being searched. It is
 	// non-nil once the set of repositories has been resolved.
-	RepositoriesCount *int `json:"repositoriesCount"`
+	RepositoriesCount *int `json:"repositoriesCount,omitempty"`
 
 	// MatchCount is number of non-overlapping matches. If skipped is
 	// non-empty, then this is a lower bound.

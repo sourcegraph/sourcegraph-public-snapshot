@@ -143,11 +143,6 @@ $hr-margin-y: 0.25rem;
     box-sizing: border-box;
 }
 
-html {
-    // Base for layout rem values
-    font-size: 16px;
-}
-
 // Our simple popovers only need these styles. We don't want the caret or special font sizes from
 // Bootstrap's popover CSS.
 .popover-inner {

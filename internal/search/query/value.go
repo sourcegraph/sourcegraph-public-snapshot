@@ -1,37 +1,11 @@
-package types
+package query
 
 import (
-	"fmt"
 	"regexp"
-	"sort"
 	"strconv"
-	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
 )
-
-// Map of field name -> values
-type Fields map[string][]*Value
-
-func (f *Fields) String() string {
-	fields := []string{}
-	for key, values := range *f {
-		for _, v := range values {
-			switch s := v.Value().(type) {
-			case string:
-				fields = append(fields, fmt.Sprintf("%s:%q", key, s))
-			case *regexp.Regexp:
-				fields = append(fields, fmt.Sprintf("%s~%q", key, s))
-			case bool:
-				fields = append(fields, fmt.Sprintf("%s:%v", key, s))
-			default:
-				fields = append(fields, fmt.Sprintf("(UNKNOWN TYPE %s:%v)", key, s))
-			}
-		}
-	}
-	sort.Strings(fields)
-	return strings.Join(fields, " ")
-}
 
 // ValueType is the set of types of values in queries.
 type ValueType int

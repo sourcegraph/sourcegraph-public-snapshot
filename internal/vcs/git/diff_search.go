@@ -296,18 +296,18 @@ func rawLogSearchCmd(ctx context.Context, repo api.RepoName, opt RawLogDiffSearc
 		return nil, fmt.Errorf("command failed: %q is not a allowed git command", args)
 	}
 
-	// We need to get `git log --source` (the ref by which we reached each commit), but
-	// there is no `git log --format=format:...` string that emits the source info; see
-	// https://stackoverflow.com/questions/12712775/git-get-source-information-in-format.
-	// So we first must run `git log --oneline --source ...` (which does have that info),
-	// and then later we will go look up each commit's patch and other info.
+	// TODO(keegan 2021-02-04) Now that git log directly supports a format
+	// string which includes '%S' (--source) we may be able to directly call
+	// log, instead of piping log into show.
 	onelineArgs := append([]string{}, args...)
 	onelineArgs = append(onelineArgs,
 		"-z",
-		"--no-abbrev-commit",
-		"--format=oneline",
+		// %H :: commit hash
+		// %S :: ref name given on the command line by which the commit was
+		//       reached (like git log --source), only works with git
+		//       log. Since Git 2.21 (Q1 2019)
+		"--format=%H %S",
 		"--no-color",
-		"--source",
 		"--no-patch",
 		"--no-merges",
 	)

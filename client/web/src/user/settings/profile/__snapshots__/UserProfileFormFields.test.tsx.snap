@@ -105,7 +105,9 @@ exports[`UserProfileFormFields simple 1`] = `
         }
       >
         <img
+          alt=""
           className="user-avatar user-profile-form-fields__avatar ml-2"
+          role="presentation"
           src="https://example.com/image.jpg"
         />
       </UserAvatar>

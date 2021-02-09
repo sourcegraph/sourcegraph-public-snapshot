@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	querytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
@@ -41,6 +40,17 @@ type SearchArgs struct {
 	First          *int32
 	VersionContext *string
 
+	// Stream if non-nil will stream all SearchEvents.
+	//
+	// This is how our streaming and our batch interface co-exist. When this
+	// is set, it exposes a way to stream out results as we collect them.
+	//
+	// TODO(keegan) This is not our final design. For example this doesn't
+	// allow us to stream out things like dynamic filters or take into account
+	// AND/OR. However, streaming is behind a feature flag for now, so this is
+	// to make it visible in the browser.
+	Stream Streamer
+
 	// For tests
 	Settings *schema.Settings
 }
@@ -51,7 +61,6 @@ type SearchImplementer interface {
 	//lint:ignore U1000 is used by graphql via reflection
 	Stats(context.Context) (*searchResultsStats, error)
 
-	SetStream(c Streamer)
 	Inputs() SearchInputs
 }
 
@@ -82,22 +91,21 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (_ SearchImplem
 		return nil, errors.New("Structural search is disabled in the site configuration.")
 	}
 
-	var queryInfo query.QueryInfo
+	var q query.Q
 	globbing := getBoolPtr(settings.SearchGlobbing, false)
 	tr.LogFields(otlog.Bool("globbing", globbing))
-	queryInfo, err = query.ProcessAndOr(args.Query, query.ParserOptions{SearchType: searchType, Globbing: globbing})
+	q, err = query.ProcessAndOr(args.Query, query.ParserOptions{SearchType: searchType, Globbing: globbing})
 	if err != nil {
 		return alertForQuery(args.Query, err), nil
 	}
 	if getBoolPtr(settings.SearchUppercase, false) {
-		q := queryInfo.(*query.AndOrQuery)
-		q.Query = query.SearchUppercase(q.Query)
+		q = query.SearchUppercase(q)
 	}
 	tr.LazyPrintf("parsing done")
 
 	// If stable:truthy is specified, make the query return a stable result ordering.
-	if queryInfo.BoolValue(query.FieldStable) {
-		args, queryInfo, err = queryForStableResults(args, queryInfo)
+	if q.BoolValue(query.FieldStable) {
+		args, q, err = queryForStableResults(args, q)
 		if err != nil {
 			return alertForQuery(args.Query, err), nil
 		}
@@ -106,21 +114,30 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (_ SearchImplem
 	// If the request is a paginated one, decode those arguments now.
 	var pagination *searchPaginationInfo
 	if args.First != nil {
-		pagination, err = processPaginationRequest(args, queryInfo)
+		pagination, err = processPaginationRequest(args, q)
 		if err != nil {
 			return nil, err
 		}
 	}
 
+	defaultLimit := defaultMaxSearchResults
+	if args.Stream != nil {
+		defaultLimit = defaultMaxSearchResultsStreaming
+	}
+
 	return &searchResolver{
 		SearchInputs: &SearchInputs{
-			Query:          queryInfo,
+			Query:          q,
 			OriginalQuery:  args.Query,
 			VersionContext: args.VersionContext,
 			UserSettings:   settings,
 			Pagination:     pagination,
 			PatternType:    searchType,
+			DefaultLimit:   defaultLimit,
 		},
+
+		stream: args.Stream,
+
 		zoekt:        search.Indexed(),
 		searcherURLs: search.SearcherURLs(),
 		reposMu:      &sync.Mutex{},
@@ -134,11 +151,11 @@ func (r *schemaResolver) Search(ctx context.Context, args *SearchArgs) (SearchIm
 
 // queryForStableResults transforms a query that returns a stable result
 // ordering. The transformed query uses pagination underneath the hood.
-func queryForStableResults(args *SearchArgs, queryInfo query.QueryInfo) (*SearchArgs, query.QueryInfo, error) {
-	if queryInfo.BoolValue(query.FieldStable) {
+func queryForStableResults(args *SearchArgs, q query.Q) (*SearchArgs, query.Q, error) {
+	if q.BoolValue(query.FieldStable) {
 		var stableResultCount int32
-		if _, countPresent := queryInfo.Fields()["count"]; countPresent {
-			count, _ := queryInfo.StringValue(query.FieldCount)
+		if _, countPresent := q.Fields()["count"]; countPresent {
+			count, _ := q.StringValue(query.FieldCount)
 			count64, err := strconv.ParseInt(count, 10, 32)
 			if err != nil {
 				return nil, nil, err
@@ -156,9 +173,9 @@ func queryForStableResults(args *SearchArgs, queryInfo query.QueryInfo) (*Search
 		// raise an error otherwise. If stable is explicitly set, this
 		// is implied. So, force this query to only return file content
 		// results.
-		queryInfo.Fields()["type"] = []*querytypes.Value{{String: &fileValue}}
+		q = query.OverrideField(q, "type", fileValue)
 	}
-	return args, queryInfo, nil
+	return args, q, nil
 }
 
 func processPaginationRequest(args *SearchArgs, queryInfo query.QueryInfo) (*searchPaginationInfo, error) {
@@ -244,12 +261,15 @@ func getBoolPtr(b *bool, def bool) bool {
 
 // SearchInputs contains fields we set before kicking off search.
 type SearchInputs struct {
-	Query          query.QueryInfo       // the query, either containing and/or expressions or otherwise ordinary
+	Query          query.Q               // the query
 	OriginalQuery  string                // the raw string of the original search query
 	Pagination     *searchPaginationInfo // pagination information, or nil if the request is not paginated.
 	PatternType    query.SearchType
 	VersionContext *string
 	UserSettings   *schema.Settings
+
+	// DefaultLimit is the default limit to use if not specified in query.
+	DefaultLimit int
 }
 
 // searchResolver is a resolver for the GraphQL type `Search`
@@ -257,8 +277,7 @@ type searchResolver struct {
 	*SearchInputs
 	invalidateRepoCache bool // if true, invalidates the repo cache when evaluating search subexpressions.
 
-	// stream if non-nil will send all results we receive down it. See
-	// searchResolver.SetStream
+	// stream if non-nil will send all search events we receive down it.
 	stream Streamer
 
 	// Cached resolveRepositories results. We use a pointer to the mutex so that we
@@ -270,19 +289,6 @@ type searchResolver struct {
 
 	zoekt        *searchbackend.Zoekt
 	searcherURLs *endpoint.Map
-}
-
-// SetStream will send all results down c.
-//
-// This is how our streaming and our batch interface co-exist. When this is
-// set, it exposes a way to stream out results as we collect them.
-//
-// TODO(keegan) This is not our final design. For example this doesn't allow
-// us to stream out things like dynamic filters or take into account
-// AND/OR. However, streaming is behind a feature flag for now, so this is to
-// make it visible in the browser.
-func (r *searchResolver) SetStream(c Streamer) {
-	r.stream = c
 }
 
 func (r *searchResolver) Inputs() SearchInputs {
@@ -301,6 +307,7 @@ func (r *searchResolver) countIsSet() bool {
 }
 
 const defaultMaxSearchResults = 30
+const defaultMaxSearchResultsStreaming = 500
 const maxSearchResultsPerPaginatedRequest = 5000
 
 // MaxResults computes the limit for the query.
@@ -329,6 +336,11 @@ func (inputs SearchInputs) MaxResults() int {
 			return n
 		}
 	}
+
+	if inputs.DefaultLimit != 0 {
+		return inputs.DefaultLimit
+	}
+
 	return defaultMaxSearchResults
 }
 

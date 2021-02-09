@@ -12,6 +12,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
+	"github.com/hexops/autogold"
 	"go.uber.org/atomic"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -378,7 +379,7 @@ func TestIsPatternNegated(t *testing.T) {
 			if err != nil {
 				t.Fatalf(err.Error())
 			}
-			got := isPatternNegated(q.(*query.AndOrQuery).Query)
+			got := isPatternNegated(q)
 			if got != tt.want {
 				t.Fatalf("got %t\nwant %t", got, tt.want)
 			}
@@ -461,59 +462,76 @@ func TestSearchResolver_getPatternInfo(t *testing.T) {
 		"p": {
 			Pattern:  "p",
 			IsRegExp: true,
+			Index:    query.Yes,
 		},
 		"p1 p2": {
 			Pattern:  "(p1).*?(p2)",
 			IsRegExp: true,
+			Index:    query.Yes,
 		},
 		"p case:yes": {
 			Pattern:                      "p",
 			IsRegExp:                     true,
 			IsCaseSensitive:              true,
 			PathPatternsAreCaseSensitive: true,
+			Index:                        query.Yes,
 		},
 		"p file:f": {
 			Pattern:         "p",
 			IsRegExp:        true,
 			IncludePatterns: []string{"f"},
+			Index:           query.Yes,
 		},
 		"p file:f1 file:f2": {
 			Pattern:         "p",
 			IsRegExp:        true,
 			IncludePatterns: []string{"f1", "f2"},
+			Index:           query.Yes,
 		},
 		"p -file:f": {
 			Pattern:        "p",
 			IsRegExp:       true,
 			ExcludePattern: "f",
+			Index:          query.Yes,
+		},
+		"p -file:f index:no": {
+			Pattern:        "p",
+			IsRegExp:       true,
+			ExcludePattern: "f",
+			Index:          query.No,
 		},
 		"p -file:f1 -file:f2": {
 			Pattern:        "p",
 			IsRegExp:       true,
 			ExcludePattern: "f1|f2",
+			Index:          query.Yes,
 		},
 		"p lang:graphql": {
 			Pattern:         "p",
 			IsRegExp:        true,
 			IncludePatterns: []string{`\.graphql$|\.gql$|\.graphqls$`},
 			Languages:       []string{"graphql"},
+			Index:           query.Yes,
 		},
 		"p lang:graphql file:f": {
 			Pattern:         "p",
 			IsRegExp:        true,
 			IncludePatterns: []string{"f", `\.graphql$|\.gql$|\.graphqls$`},
 			Languages:       []string{"graphql"},
+			Index:           query.Yes,
 		},
 		"p -lang:graphql file:f": {
 			Pattern:         "p",
 			IsRegExp:        true,
 			IncludePatterns: []string{"f"},
 			ExcludePattern:  `\.graphql$|\.gql$|\.graphqls$`,
+			Index:           query.Yes,
 		},
 		"p -lang:graphql -file:f": {
 			Pattern:        "p",
 			IsRegExp:       true,
 			ExcludePattern: `f|(\.graphql$|\.gql$|\.graphqls$)`,
+			Index:          query.Yes,
 		},
 	}
 	for queryStr, want := range tests {
@@ -942,7 +960,7 @@ func TestCheckDiffCommitSearchLimits(t *testing.T) {
 			context.Background(),
 			&search.TextParameters{
 				RepoPromise: (&search.Promise{}).Resolve(repoRevs),
-				Query:       &query.AndOrQuery{Query: test.fields},
+				Query:       test.fields,
 			},
 			test.resultType)
 
@@ -1044,8 +1062,7 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 func TestSearchResolver_evaluateWarning(t *testing.T) {
 	q, _ := query.ProcessAndOr("file:foo or file:bar", query.ParserOptions{SearchType: query.SearchTypeRegex, Globbing: false})
 	wantPrefix := "I'm having trouble understanding that query."
-	andOrQuery, _ := q.(*query.AndOrQuery)
-	got, _ := (&searchResolver{}).evaluate(context.Background(), andOrQuery.Query)
+	got, _ := (&searchResolver{}).evaluate(context.Background(), q)
 	t.Run("warn for unsupported and/or query", func(t *testing.T) {
 		if !strings.HasPrefix(got.alert.description, wantPrefix) {
 			t.Fatalf("got alert description %s, want %s", got.alert.description, wantPrefix)
@@ -1308,6 +1325,17 @@ func TestEvaluateAnd(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestIndexValue(t *testing.T) {
+	test := func(input string) query.YesNoOnly {
+		q, _ := query.ParseLiteral(input)
+		return indexValue(q)
+	}
+	autogold.Want("yes", query.YesNoOnly("yes")).Equal(t, test("foo index:yes"))
+	autogold.Want("no", query.YesNoOnly("no")).Equal(t, test("foo index:no"))
+	autogold.Want("only", query.YesNoOnly("only")).Equal(t, test("foo index:only"))
+	autogold.Want("default", query.YesNoOnly("yes")).Equal(t, test("foo"))
 }
 
 func TestSearchContext(t *testing.T) {
