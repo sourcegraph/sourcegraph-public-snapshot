@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/hexops/autogold"
 )
 
 func toJSON(node Node) interface{} {
@@ -108,7 +109,7 @@ func TestSubstituteAliases(t *testing.T) {
 	for _, c := range cases {
 		t.Run("substitute alises", func(t *testing.T) {
 			query, _ := ProcessAndOr(c.input, ParserOptions{SearchType: c.searchType})
-			if diff := cmp.Diff(nodesToJSON(query.(*AndOrQuery).Query), c.want); diff != "" {
+			if diff := cmp.Diff(nodesToJSON(query), c.want); diff != "" {
 				t.Fatal(diff)
 			}
 		})
@@ -382,7 +383,7 @@ func TestEllipsesForHoles(t *testing.T) {
 	want := `"if :[_] { :[_] }"`
 	t.Run("Ellipses for holes", func(t *testing.T) {
 		query, _ := ProcessAndOr(input, ParserOptions{SearchType: SearchTypeStructural})
-		got := prettyPrint(query.(*AndOrQuery).Query)
+		got := prettyPrint(query)
 		if diff := cmp.Diff(want, got); diff != "" {
 			t.Fatal(diff)
 		}
@@ -1012,4 +1013,14 @@ func TestConcatRevFiltersTopLevelAnd(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestOmitQueryField(t *testing.T) {
+	test := func(input, field string) string {
+		q, _ := ParseLiteral(input)
+		return OmitQueryField(q, field)
+	}
+
+	autogold.Want("omit repo", "pattern").Equal(t, test("repo:stuff pattern", "repo"))
+	autogold.Want("omit repo alias", "alias-pattern").Equal(t, test("r:stuff alias-pattern", "repo"))
 }

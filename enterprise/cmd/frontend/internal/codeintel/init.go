@@ -140,6 +140,7 @@ func newIndexingRoutines(observationContext *observation.Context) []goroutine.Ba
 			config.MinimumSearchCount,
 			float64(config.MinimumSearchRatio)/100,
 			config.MinimumPreciseCount,
+			config.AutoIndexingSkipManualInterval,
 			config.AutoIndexingTaskInterval,
 			observationContext,
 		),

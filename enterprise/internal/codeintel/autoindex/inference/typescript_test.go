@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/config"
 )
 
 func TestLSIFTscJobRecognizerCanIndex(t *testing.T) {
@@ -39,9 +40,9 @@ func TestLsifTscJobRecognizerInferIndexJobsTsConfigRoot(t *testing.T) {
 		"tsconfig.json",
 	}
 
-	expectedIndexJobs := []IndexJob{
+	expectedIndexJobs := []config.IndexJob{
 		{
-			DockerSteps: nil,
+			Steps:       nil,
 			Root:        "",
 			Indexer:     lsifTscImage,
 			IndexerArgs: []string{"lsif-tsc", "-p", "."},
@@ -61,23 +62,23 @@ func TestLsifTscJobRecognizerInferIndexJobsTsConfigSubdirs(t *testing.T) {
 		"c/tsconfig.json",
 	}
 
-	expectedIndexJobs := []IndexJob{
+	expectedIndexJobs := []config.IndexJob{
 		{
-			DockerSteps: nil,
+			Steps:       nil,
 			Root:        "a",
 			Indexer:     lsifTscImage,
 			IndexerArgs: []string{"lsif-tsc", "-p", "."},
 			Outfile:     "",
 		},
 		{
-			DockerSteps: nil,
+			Steps:       nil,
 			Root:        "b",
 			Indexer:     lsifTscImage,
 			IndexerArgs: []string{"lsif-tsc", "-p", "."},
 			Outfile:     "",
 		},
 		{
-			DockerSteps: nil,
+			Steps:       nil,
 			Root:        "c",
 			Indexer:     lsifTscImage,
 			IndexerArgs: []string{"lsif-tsc", "-p", "."},
@@ -102,9 +103,9 @@ func TestLsifTscJobRecognizerInferIndexJobsInstallSteps(t *testing.T) {
 		"foo/bar/yarn.lock",
 	}
 
-	expectedIndexJobs := []IndexJob{
+	expectedIndexJobs := []config.IndexJob{
 		{
-			DockerSteps: []DockerStep{
+			Steps: []config.DockerStep{
 				{
 					Root:     "",
 					Image:    lsifTscImage,
@@ -117,7 +118,7 @@ func TestLsifTscJobRecognizerInferIndexJobsInstallSteps(t *testing.T) {
 			Outfile:     "",
 		},
 		{
-			DockerSteps: []DockerStep{
+			Steps: []config.DockerStep{
 				{
 					Root:     "",
 					Image:    lsifTscImage,
@@ -130,7 +131,7 @@ func TestLsifTscJobRecognizerInferIndexJobsInstallSteps(t *testing.T) {
 			Outfile:     "",
 		},
 		{
-			DockerSteps: []DockerStep{
+			Steps: []config.DockerStep{
 				{
 					Root:     "",
 					Image:    lsifTscImage,
@@ -148,7 +149,7 @@ func TestLsifTscJobRecognizerInferIndexJobsInstallSteps(t *testing.T) {
 			Outfile:     "",
 		},
 		{
-			DockerSteps: []DockerStep{
+			Steps: []config.DockerStep{
 				{
 					Root:     "",
 					Image:    lsifTscImage,
@@ -241,10 +242,10 @@ func TestLSIFTscLernaConfig(t *testing.T) {
 		},
 	}
 
-	expectedJobs := [][]IndexJob{
+	expectedJobs := [][]config.IndexJob{
 		{
 			{
-				DockerSteps: []DockerStep{
+				Steps: []config.DockerStep{
 					{
 						Root:     "",
 						Image:    lsifTscImage,
@@ -260,7 +261,7 @@ func TestLSIFTscLernaConfig(t *testing.T) {
 		},
 		{
 			{
-				DockerSteps: []DockerStep{
+				Steps: []config.DockerStep{
 					{
 						Root:     "",
 						Image:    lsifTscImage,
@@ -276,7 +277,7 @@ func TestLSIFTscLernaConfig(t *testing.T) {
 		},
 		{
 			{
-				DockerSteps: []DockerStep{
+				Steps: []config.DockerStep{
 					{
 						Root:     "",
 						Image:    lsifTscImage,
@@ -292,7 +293,7 @@ func TestLSIFTscLernaConfig(t *testing.T) {
 		},
 		{
 			{
-				DockerSteps: []DockerStep{
+				Steps: []config.DockerStep{
 					{
 						Root:     "",
 						Image:    lsifTscImage,
@@ -341,10 +342,10 @@ func TestLSIFTscNodeVersionInferrence(t *testing.T) {
 		},
 	}
 
-	expectedJobs := [][]IndexJob{
+	expectedJobs := [][]config.IndexJob{
 		{
 			{
-				DockerSteps: []DockerStep{
+				Steps: []config.DockerStep{
 					{
 						Root:     "",
 						Image:    lsifTscImage,
@@ -362,7 +363,7 @@ func TestLSIFTscNodeVersionInferrence(t *testing.T) {
 		},
 		{
 			{
-				DockerSteps: []DockerStep{
+				Steps: []config.DockerStep{
 					{
 						Root:     "",
 						Image:    lsifTscImage,

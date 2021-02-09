@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react'
 import { PageTitle } from '../../../components/PageTitle'
 import { PageHeader } from '../../../components/PageHeader'
-import { CampaignsIconFlushLeft } from '../icons'
+import { CampaignsIcon } from '../icons'
 import helloWorldSample from './samples/empty.campaign.yaml'
 import combySample from './samples/comby.campaign.yaml'
 import goImportsSample from './samples/go-imports.campaign.yaml'
@@ -53,7 +53,7 @@ export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps
     return (
         <>
             <PageTitle title="Create campaign" />
-            <PageHeader icon={CampaignsIconFlushLeft} title="Create campaign" />
+            <PageHeader path={[{ icon: CampaignsIcon, text: 'Create campaign' }]} />
             <div className="pt-3">
                 <h2>1. Write a campaign spec YAML file</h2>
                 <p>
@@ -96,7 +96,7 @@ export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps
                 <hr className="mt-4" />
                 <p className="text-muted">
                     Want more help? See{' '}
-                    <a href="/help/user/campaigns" rel="noopener noreferrer" target="_blank">
+                    <a href="/help/campaigns" rel="noopener noreferrer" target="_blank">
                         campaigns documentation
                     </a>
                     .

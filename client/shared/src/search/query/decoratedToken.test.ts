@@ -1106,4 +1106,23 @@ describe('getMonacoTokens()', () => {
             ]
         `)
     })
+
+    test('decorate search context value', () => {
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('context:@user')), true)).toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 8,
+                "scopes": "metaContextPrefix"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "identifier"
+              }
+            ]
+        `)
+    })
 })

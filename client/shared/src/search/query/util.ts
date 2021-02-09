@@ -21,6 +21,7 @@ export enum FilterType {
     patterntype = 'patterntype',
     index = 'index',
     stable = 'stable',
+    context = 'context',
     // eslint-disable-next-line unicorn/prevent-abbreviations
     rev = 'rev',
 }

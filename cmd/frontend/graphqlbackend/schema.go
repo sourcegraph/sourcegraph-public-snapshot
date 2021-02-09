@@ -236,6 +236,11 @@ type Mutation {
     """
     updatePassword(oldPassword: String!, newPassword: String!): EmptyResponse
     """
+    Creates a password for the current user. It is only permitted if the user does not have a password and
+    they don't have any login connections.
+    """
+    createPassword(newPassword: String!): EmptyResponse
+    """
     Creates an access token that grants the privileges of the specified user (referred to as the access token's
     "subject" user after token creation). The result is the access token value, which the caller is responsible
     for storing (it is not accessible by Sourcegraph after creation).
@@ -2426,9 +2431,54 @@ type ChangesetEventConnection {
 }
 
 """
-Insights about code.
+A list of insights.
 """
-type Insights {
+type InsightConnection {
+    """
+    A list of insights.
+    """
+    nodes: [Insight!]!
+
+    """
+    The total number of insights in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+An insight about code.
+"""
+type Insight {
+    """
+    The short title of the insight.
+    """
+    title: String!
+
+    """
+    The description of the insight.
+    """
+    description: String!
+
+    """
+    Data points over a time range (inclusive)
+    """
+    series: [InsightsSeries!]!
+}
+
+"""
+A series of data about a code insight.
+"""
+type InsightsSeries {
+    """
+    The label used to describe this series of data points.
+    """
+    label: String!
+
     """
     Data points over a time range (inclusive)
     """
@@ -2767,7 +2817,7 @@ type Query {
     """
     EXPERIMENTAL: Queries code insights
     """
-    insights: Insights
+    insights: InsightConnection
 
     """
     Looks up a repository by either name or cloneURL.
@@ -3030,6 +3080,10 @@ type Query {
     (experimental) All version contexts.
     """
     versionContexts: [VersionContext!]!
+    """
+    (experimental) All search contexts.
+    """
+    searchContexts: [SearchContext!]!
     """
     (experimental) Return the parse tree of a search query.
     """
@@ -4552,6 +4606,12 @@ type Repository implements Node & GenericSearchResultInterface {
     indexConfiguration: IndexConfiguration
 
     """
+    Information and status related to the commit graph of this repository calculated
+    for use by code intelligence features.
+    """
+    codeIntelligenceCommitGraph: CodeIntelligenceCommitGraph!
+
+    """
     A list of authorized users to access this repository with the given permission.
     This API currently only returns permissions from the Sourcegraph provider, i.e.
     "permissions.userMapping" in site configuration.
@@ -4576,6 +4636,22 @@ type Repository implements Node & GenericSearchResultInterface {
     It is null when there is no permissions data stored for the repository.
     """
     permissionsInfo: PermissionsInfo
+}
+
+"""
+Information and status related to the commit graph of this repository calculated
+for use by code intelligence features.
+"""
+type CodeIntelligenceCommitGraph {
+    """
+    Whether or not the commit graph needs to be updated.
+    """
+    stale: Boolean!
+
+    """
+    When, if ever, the commit graph was last refreshed.
+    """
+    updatedAt: DateTime
 }
 
 """
@@ -4753,6 +4829,31 @@ type VersionContext {
     The description of the version context.
     """
     description: String!
+}
+
+"""
+(experimental) A search context. Specifies a set of repositories to be searched.
+"""
+type SearchContext implements Node {
+    """
+    The unique id of the search context.
+    """
+    id: ID!
+    """
+    The description of the search context.
+    """
+    description: String!
+    """
+    Fully-qualified search context spec for use when querying.
+    Examples: global, @username, @username/ctx, and @org/ctx.
+    """
+    spec: String!
+    """
+    Whether the search context is autodefined by Sourcegraph. Current examples include:
+    global search context ("global"), default user search context ("@user"), and
+    default organization search context ("@org").
+    """
+    autoDefined: Boolean!
 }
 
 """

@@ -46,6 +46,10 @@ func (c *Stats) Update(other *Stats) {
 	c.IsIndexUnavailable = c.IsIndexUnavailable || other.IsIndexUnavailable
 
 	if c.Repos == nil {
+		// PERF: use other's map assuming it will never be concurrently
+		// written/read to in the future. This is the sort of assumption that
+		// will break, but we are doing it for now since this map is very
+		// large.
 		c.Repos = other.Repos
 	} else {
 		for id, r := range other.Repos {
@@ -57,6 +61,21 @@ func (c *Stats) Update(other *Stats) {
 
 	c.ExcludedForks = c.ExcludedForks + other.ExcludedForks
 	c.ExcludedArchived = c.ExcludedArchived + other.ExcludedArchived
+}
+
+// Zero returns true if stats is empty. IE calling Update will result in no
+// change.
+func (c *Stats) Zero() bool {
+	if c == nil {
+		return true
+	}
+
+	return !(c.IsLimitHit ||
+		len(c.Repos) > 0 ||
+		c.Status.Len() > 0 ||
+		c.ExcludedForks > 0 ||
+		c.ExcludedArchived > 0 ||
+		c.IsIndexUnavailable)
 }
 
 func (c *Stats) String() string {

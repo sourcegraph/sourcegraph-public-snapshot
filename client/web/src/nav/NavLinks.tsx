@@ -8,23 +8,24 @@ import { Link } from '../../../shared/src/components/Link'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
-import { WebActionsNavItems, WebCommandListPopoverButton } from '../components/shared'
+import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 import { ThemeProps } from '../../../shared/src/theme'
-import { StatusMessagesNavItem } from './StatusMessagesNavItem'
-import { ExtensionAlertAnimationProps, UserNavItem } from './UserNavItem'
+import { isErrorLike } from '../../../shared/src/util/errors'
+import { AuthenticatedUser } from '../auth'
+import { WebActionsNavItems, WebCommandListPopoverButton } from '../components/shared'
 import { CampaignsNavItem } from '../enterprise/campaigns/global/nav/CampaignsNavItem'
-import { ThemePreferenceProps } from '../theme'
+import { CodeMonitoringNavItem } from '../enterprise/code-monitoring/CodeMonitoringNavItem'
+import { InsightsNavItem } from '../insights/InsightsNavLink'
 import {
     KeyboardShortcutsProps,
     KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE,
     KEYBOARD_SHORTCUT_SWITCH_THEME,
 } from '../keyboardShortcuts/keyboardShortcuts'
-import { isErrorLike } from '../../../shared/src/util/errors'
 import { Settings } from '../schema/settings.schema'
-import { InsightsNavItem } from '../insights/InsightsNavLink'
-import { CodeMonitoringNavItem } from '../enterprise/code-monitoring/CodeMonitoringNavItem'
-import { AuthenticatedUser } from '../auth'
-import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
+import { ThemePreferenceProps } from '../theme'
+import { MenuNavItem } from './MenuNavItem'
+import { StatusMessagesNavItem } from './StatusMessagesNavItem'
+import { ExtensionAlertAnimationProps, UserNavItem } from './UserNavItem'
 interface Props
     extends SettingsCascadeProps<Settings>,
         KeyboardShortcutsProps,
@@ -47,6 +48,21 @@ interface Props
 export class NavLinks extends React.PureComponent<Props> {
     private subscriptions = new Subscription()
 
+    private navItems(): JSX.Element[] {
+        const items = []
+        if (!isErrorLike(this.props.settingsCascade.final)) {
+            if (this.props.settingsCascade.final?.experimentalFeatures?.codeInsights) {
+                items.push(<InsightsNavItem />)
+            }
+            if (this.props.settingsCascade.final?.experimentalFeatures?.codeMonitoring) {
+                items.push(<CodeMonitoringNavItem />)
+            }
+        }
+        return items
+    }
+
+    private items = this.navItems()
+
     public componentWillUnmount(): void {
         this.subscriptions.unsubscribe()
     }
@@ -68,25 +84,26 @@ export class NavLinks extends React.PureComponent<Props> {
                         <ActivationDropdown activation={this.props.activation} history={this.props.history} />
                     </li>
                 )}
-                {!isErrorLike(this.props.settingsCascade.final) &&
-                    this.props.settingsCascade.final?.experimentalFeatures?.codeInsights &&
-                    !this.props.minimalNavLinks && (
-                        <li className="nav-item">
-                            <InsightsNavItem />
-                        </li>
-                    )}
-                {!isErrorLike(this.props.settingsCascade.final) &&
-                    this.props.settingsCascade.final?.experimentalFeatures?.codeMonitoring &&
-                    !this.props.minimalNavLinks && (
-                        <li className="nav-item">
-                            <CodeMonitoringNavItem />
-                        </li>
-                    )}
-                {!this.props.minimalNavLinks && this.props.showCampaigns && (
-                    <li className="nav-item">
-                        <CampaignsNavItem />
-                    </li>
+                {!this.props.minimalNavLinks && (
+                    <>
+                        {React.Children.map(this.items, item => (
+                            <li className="nav-item d-none d-lg-block">{item}</li>
+                        ))}
+                        {this.props.showCampaigns && (
+                            <li className="nav-item d-none d-lg-block">
+                                <CampaignsNavItem />
+                            </li>
+                        )}
+                    </>
                 )}
+                <li className="nav-item d-lg-none">
+                    {!this.props.minimalNavLinks && (
+                        <MenuNavItem>
+                            {this.items}
+                            {this.props.showCampaigns && <CampaignsNavItem />}
+                        </MenuNavItem>
+                    )}
+                </li>
                 {!this.props.authenticatedUser && (
                     <>
                         {this.props.location.pathname !== '/sign-in' && (

@@ -14,8 +14,8 @@
         width: 1%;
         min-width: 2.5rem;
         padding: 0 0.75rem;
-        font-size: 12px;
-        line-height: 1.25rem;
+        font-size: 0.75rem;
+        line-height: (20/12);
         white-space: nowrap;
         text-align: right;
         user-select: none;
@@ -37,7 +37,7 @@
         padding-right: 0.5rem;
         font-family: $code-font-family;
         white-space: pre;
-        font-size: 12px;
+        font-size: 0.75rem;
         &::before {
             padding-right: 0.5rem;
             content: attr(data-diff-marker);

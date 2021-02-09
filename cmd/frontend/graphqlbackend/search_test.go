@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	querytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -338,56 +337,18 @@ func TestExactlyOneRepo(t *testing.T) {
 func TestQuoteSuggestions(t *testing.T) {
 	t.Run("regex error", func(t *testing.T) {
 		raw := "*"
-		_, err := query.Process(raw, query.SearchTypeRegex)
+		_, err := query.ParseRegexp(raw)
 		if err == nil {
-			t.Fatalf("error returned from query.Process(%q) is nil", raw)
+			t.Fatalf("error returned from query.ParseRegexp(%q) is nil", raw)
 		}
 		alert := alertForQuery(raw, err)
-		if !strings.Contains(strings.ToLower(alert.title), "regexp") {
-			t.Errorf("title is '%s', want it to contain 'regexp'", alert.title)
-		}
-		if !strings.Contains(alert.description, "regular expression") {
-			t.Errorf("description is '%s', want it to contain 'regular expression'", alert.description)
-		}
-	})
-
-	t.Run("type error that is not a regex error should show a suggestion", func(t *testing.T) {
-		raw := "-foobar"
-		_, alert := query.Process(raw, query.SearchTypeRegex)
-		if alert == nil {
-			t.Fatalf("alert returned from query.Process(%q) is nil", raw)
-		}
-	})
-
-	t.Run("query parse error", func(t *testing.T) {
-		raw := ":"
-		_, err := query.Process(raw, query.SearchTypeRegex)
-		if err == nil {
-			t.Fatalf("error returned from query.Process(%q) is nil", raw)
-		}
-		alert := alertForQuery(raw, err)
-		if strings.Contains(strings.ToLower(alert.title), "regexp") {
-			t.Errorf("title is '%s', want it not to contain 'regexp'", alert.title)
-		}
-		if strings.Contains(alert.description, "regular expression") {
-			t.Errorf("description is '%s', want it not to contain 'regular expression'", alert.description)
-		}
-	})
-
-	t.Run("negated file field with an invalid regex", func(t *testing.T) {
-		raw := "-f:(a"
-		_, err := query.Process(raw, query.SearchTypeRegex)
-		if err == nil {
-			t.Fatal("query.Process failed to detect the invalid regex in the f: field")
-		}
-		alert := alertForQuery(raw, err)
-		if len(alert.proposedQueries) != 1 {
-			t.Fatalf("got %d proposed queries (%v), want exactly 1", len(alert.proposedQueries), alert.proposedQueries)
+		if !strings.Contains(alert.description, "regexp") {
+			t.Errorf("description is '%s', want it to contain 'regexp'", alert.description)
 		}
 	})
 }
 
-func TestEueryForStableResults(t *testing.T) {
+func TestQueryForStableResults(t *testing.T) {
 	cases := []struct {
 		query           string
 		wantStableCount int32
@@ -408,7 +369,7 @@ func TestEueryForStableResults(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run("query for stable results", func(t *testing.T) {
-			queryInfo, _ := query.Process(c.query, query.SearchTypeLiteral)
+			queryInfo, _ := query.ParseLiteral(c.query)
 			args, queryInfo, err := queryForStableResults(&SearchArgs{}, queryInfo)
 			if err != nil {
 				if !reflect.DeepEqual(err, c.wantError) {
@@ -421,7 +382,7 @@ func TestEueryForStableResults(t *testing.T) {
 			}
 			// Ensure type:file is set.
 			fileValue := "file"
-			wantTypeValue := querytypes.Value{String: &fileValue}
+			wantTypeValue := query.Value{String: &fileValue}
 			gotTypeValues := queryInfo.Fields()["type"]
 			if len(gotTypeValues) != 1 && *gotTypeValues[0] != wantTypeValue {
 				t.Errorf("Query %s sets stable:yes but is not transformed with type:file.", c.query)
@@ -538,14 +499,14 @@ func TestVersionContext(t *testing.T) {
 	}}
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
-			qinfo, err := query.ParseAndCheck(tc.searchQuery)
+			q, err := query.ParseLiteral(tc.searchQuery)
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			resolver := searchResolver{
 				SearchInputs: &SearchInputs{
-					Query:          qinfo,
+					Query:          q,
 					VersionContext: &tc.versionContext,
 					UserSettings:   &schema.Settings{},
 				},

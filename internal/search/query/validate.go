@@ -199,6 +199,14 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 		return nil
 	}
 
+	isYesNoOnly := func() error {
+		v := ParseYesNoOnly(value)
+		if v == Invalid {
+			return fmt.Errorf("invalid value %q for field %q. Valid values are: yes, only, no", value, field)
+		}
+		return nil
+	}
+
 	isUnrecognizedField := func() error {
 		return fmt.Errorf("unrecognized field %q", field)
 	}
@@ -223,7 +231,8 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 		FieldRepo:
 		return satisfies(isValidRegexp)
 	case
-		FieldRepoGroup:
+		FieldRepoGroup,
+		FieldContext:
 		return satisfies(isSingular, isNotNegated)
 	case
 		FieldFile:
@@ -260,7 +269,7 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 		return satisfies(isValidRegexp)
 	case
 		FieldIndex:
-		return satisfies(isSingular, isNotNegated)
+		return satisfies(isSingular, isNotNegated, isYesNoOnly)
 	case
 		FieldCount:
 		return satisfies(isSingular, isNumber, isNotNegated)
@@ -413,4 +422,33 @@ func validate(nodes []Node) error {
 		validateRepoHasFile,
 		validateCommitParameters,
 	)
+}
+
+type YesNoOnly string
+
+const (
+	Yes     YesNoOnly = "yes"
+	No      YesNoOnly = "no"
+	Only    YesNoOnly = "only"
+	Invalid YesNoOnly = "invalid"
+)
+
+func ParseYesNoOnly(s string) YesNoOnly {
+	switch s {
+	case "y", "Y", "yes", "YES", "Yes":
+		return Yes
+	case "n", "N", "no", "NO", "No":
+		return No
+	case "o", "only", "ONLY", "Only":
+		return Only
+	default:
+		if b, err := strconv.ParseBool(s); err == nil {
+			if b {
+				return Yes
+			} else {
+				return No
+			}
+		}
+		return Invalid
+	}
 }

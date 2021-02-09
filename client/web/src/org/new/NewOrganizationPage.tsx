@@ -57,7 +57,7 @@ export const NewOrganizationPage: React.FunctionComponent<Props> = ({ history })
                 <h1>Create a new organization</h1>
                 <p>
                     An organization is a set of users with associated configuration. See{' '}
-                    <Link to="/help/user/organizations">Sourcegraph documentation</Link> for information about
+                    <Link to="/help/admin/organizations">Sourcegraph documentation</Link> for information about
                     configuring organizations.
                 </p>
                 {isErrorLike(loading) && <ErrorAlert className="mb-3" error={loading} history={history} />}

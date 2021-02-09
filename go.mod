@@ -108,7 +108,6 @@ require (
 	github.com/klauspost/compress v1.11.0 // indirect
 	github.com/kr/text v0.2.0
 	github.com/kylelemons/godebug v1.1.0
-	github.com/leanovate/gopter v0.2.8
 	github.com/lib/pq v1.8.0
 	github.com/machinebox/graphql v0.2.2
 	github.com/mailru/easyjson v0.7.6 // indirect

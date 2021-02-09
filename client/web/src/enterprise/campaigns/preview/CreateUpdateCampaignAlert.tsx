@@ -43,21 +43,24 @@ export const CreateUpdateCampaignAlert: React.FunctionComponent<CreateUpdateCamp
     return (
         <>
             <div className="alert alert-info p-3 mb-3 d-block d-md-flex align-items-center body-lead">
-                <InfoCircleOutlineIcon className="icon-inline mr-2" />
-                {!campaign && (
-                    <p className="mb-0 flex-grow-1 mr-3 create-update-campaign-alert__copy">
-                        Review the proposed changesets below. Click 'Apply spec' or run <code>src campaigns apply</code>{' '}
-                        against your campaign spec to create the campaign and perform the indicated action on each
-                        changeset.
-                    </p>
-                )}
-                {campaign && (
-                    <p className="mb-0 flex-grow-1 mr-3 create-update-campaign-alert__copy">
-                        This operation will update the existing campaign <Link to={campaign.url}>{campaign.name}</Link>.
-                        Click 'Apply spec' or run <code>src campaigns apply</code> against your campaign spec to update
-                        the campaign and perform the indicated action on each changeset.
-                    </p>
-                )}
+                <div className="flex-grow-1 mr-3 create-update-campaign-alert__copy">
+                    <InfoCircleOutlineIcon className="icon-inline mr-2" />
+                    {!campaign && (
+                        <>
+                            Review the proposed changesets below. Click 'Apply spec' or run{' '}
+                            <code>src campaigns apply</code> against your campaign spec to create the campaign and
+                            perform the indicated action on each changeset.
+                        </>
+                    )}
+                    {campaign && (
+                        <>
+                            This operation will update the existing campaign{' '}
+                            <Link to={campaign.url}>{campaign.name}</Link>. Click 'Apply spec' or run{' '}
+                            <code>src campaigns apply</code> against your campaign spec to update the campaign and
+                            perform the indicated action on each changeset.
+                        </>
+                    )}
+                </div>
                 <div className="create-update-campaign-alert__btn">
                     <button
                         type="button"

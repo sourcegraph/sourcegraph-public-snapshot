@@ -72,11 +72,13 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<{
     return (
         <Dialog
             className="modal-body modal-body--top-third p-4 rounded border"
-            aria-labelledby={`label--add-${kind}-token`}
+            aria-labelledby={`heading--connect-with-${name}`}
             onDismiss={onDidCancel}
         >
             <div className="web-content">
-                <h3 className="mb-4">Connect with {name}</h3>
+                <h3 id={`heading--connect-with-${name}`} className="mb-4">
+                    Connect with {name}
+                </h3>
                 <Form onSubmit={onTokenSubmit}>
                     <div className="form-group mb-4">
                         <label htmlFor="code-host-token">Personal access token</label>

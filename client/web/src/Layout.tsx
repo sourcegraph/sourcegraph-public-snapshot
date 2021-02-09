@@ -41,6 +41,7 @@ import {
     ParsedSearchQueryProps,
     MutableVersionContextProps,
     parseSearchURL,
+    SearchContextProps,
 } from './search'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
@@ -84,6 +85,7 @@ export interface LayoutProps
         MutableVersionContextProps,
         RepogroupHomepageProps,
         OnboardingTourProps,
+        SearchContextProps,
         HomePanelsProps,
         SearchStreamingProps,
         CodeMonitoringProps {
@@ -206,7 +208,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
 
     // TODO add a component layer as the parent of the Layout component rendering "top-level" routes that do not render the navbar,
     // so that Layout can always render the navbar.
-    const needsSiteInit = window.context.needsSiteInit
+    const needsSiteInit = window.context?.needsSiteInit
     const isSiteInit = props.location.pathname === '/site-admin/init'
     const isSignInOrUp =
         props.location.pathname === '/sign-in' ||

@@ -523,11 +523,10 @@ type searchCommitsInReposParameters struct {
 	// with the RepoRevs field set.
 	CommitParams search.CommitParameters
 
-	ResultChannel SearchStream
+	ResultChannel Streamer
 }
 
-func searchCommitsInRepos(ctx context.Context, args *search.TextParametersForCommitParameters, params searchCommitsInReposParameters) {
-	var err error
+func searchCommitsInRepos(ctx context.Context, args *search.TextParametersForCommitParameters, params searchCommitsInReposParameters) (err error) {
 	tr, ctx := trace.New(ctx, params.TraceName, fmt.Sprintf("query: %+v, numRepoRevs: %d", args.PatternInfo, len(args.Repos)))
 	defer func() {
 		tr.SetError(err)
@@ -553,10 +552,10 @@ func searchCommitsInRepos(ctx context.Context, args *search.TextParametersForCom
 				// Only write if we have something to report back
 				if len(event.Results) > 0 || status != 0 {
 					stats.Status = search.RepoStatusSingleton(repoRev.Repo.ID, status)
-					params.ResultChannel <- SearchEvent{
+					params.ResultChannel.Send(SearchEvent{
 						Results: commitSearchResultsToSearchResults(event.Results),
 						Stats:   stats,
-					}
+					})
 				}
 			}
 
@@ -601,23 +600,19 @@ func searchCommitsInRepos(ctx context.Context, args *search.TextParametersForCom
 				err = errors.Wrapf(searchErr, "failed to search commit %s %s", params.ErrorName, repoRev.String())
 				cancel()
 			}
-			params.ResultChannel <- SearchEvent{
+			params.ResultChannel.Send(SearchEvent{
 				Stats: repoCommon,
-			}
+			})
 		}(repoRev)
 	}
 	wg.Wait()
 
-	if err != nil {
-		params.ResultChannel <- SearchEvent{
-			Error: err,
-		}
-	}
+	return err
 }
 
 // searchCommitDiffsInRepos searches a set of repos for matching commit diffs.
-func searchCommitDiffsInRepos(ctx context.Context, args *search.TextParametersForCommitParameters, resultChannel SearchStream) {
-	searchCommitsInRepos(ctx, args, searchCommitsInReposParameters{
+func searchCommitDiffsInRepos(ctx context.Context, args *search.TextParametersForCommitParameters, resultChannel Streamer) error {
+	return searchCommitsInRepos(ctx, args, searchCommitsInReposParameters{
 		TraceName:     "searchCommitDiffsInRepos",
 		ErrorName:     "diffs",
 		ResultChannel: resultChannel,
@@ -630,13 +625,13 @@ func searchCommitDiffsInRepos(ctx context.Context, args *search.TextParametersFo
 }
 
 // searchCommitLogInRepos searches a set of repos for matching commits.
-func searchCommitLogInRepos(ctx context.Context, args *search.TextParametersForCommitParameters, resultChannel SearchStream) {
+func searchCommitLogInRepos(ctx context.Context, args *search.TextParametersForCommitParameters, resultChannel Streamer) error {
 	var terms []string
 	if args.PatternInfo.Pattern != "" {
 		terms = append(terms, args.PatternInfo.Pattern)
 	}
 
-	searchCommitsInRepos(ctx, args, searchCommitsInReposParameters{
+	return searchCommitsInRepos(ctx, args, searchCommitsInReposParameters{
 		TraceName:     "searchCommitLogsInRepos",
 		ErrorName:     "commits",
 		ResultChannel: resultChannel,

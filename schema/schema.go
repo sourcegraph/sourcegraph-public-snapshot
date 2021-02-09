@@ -325,6 +325,8 @@ type CampaignSpec struct {
 	Steps []*Step `json:"steps,omitempty"`
 	// TransformChanges description: Optional transformations to apply to the changes produced in each repository.
 	TransformChanges *TransformChanges `json:"transformChanges,omitempty"`
+	// Workspaces description: Individual workspace configurations for one or more repositories that define which workspaces to use for the execution of steps in the repositories.
+	Workspaces []*WorkspaceConfiguration `json:"workspaces,omitempty"`
 }
 
 // ChangesetTemplate description: A template describing how to create (and update) changesets with the file changes produced by the command steps.
@@ -739,6 +741,24 @@ type ImportChangesets struct {
 	// Repository description: The repository name as configured on your Sourcegraph instance.
 	Repository string `json:"repository"`
 }
+type Insight struct {
+	// Description description: The description of this insight
+	Description string `json:"description"`
+	// Series description: Series of data to show for this insight
+	Series []*InsightSeries `json:"series"`
+	// Title description: The short title of this insight
+	Title string `json:"title"`
+}
+type InsightSeries struct {
+	// Label description: The label to use for the series in the graph.
+	Label string `json:"label"`
+	// RepositoriesList description: Performs a search query and shows the number of results returned.
+	RepositoriesList []interface{} `json:"repositoriesList,omitempty"`
+	// Search description: Performs a search query and shows the number of results returned.
+	Search string `json:"search,omitempty"`
+	// Webhook description: (not yet supported) Fetch data from a webhook URL.
+	Webhook string `json:"webhook,omitempty"`
+}
 
 // Log description: Configuration for logging and alerting, including to external services.
 type Log struct {
@@ -943,6 +963,12 @@ type PerforceConnection struct {
 	P4Port string `json:"p4.port"`
 	// P4User description: The user to be authenticated for p4 CLI (P4USER).
 	P4User string `json:"p4.user"`
+	// RepositoryPathPattern description: The pattern used to generate the corresponding Sourcegraph repository name for a Perforce depot. In the pattern, the variable "{depot}" is replaced with the Perforce depot's path.
+	//
+	// For example, if your Perforce depot path is "//Sourcegraph/" and your Sourcegraph URL is https://src.example.com, then a repositoryPathPattern of "perforce/{depot}" would mean that the Perforce depot is available on Sourcegraph at https://src.example.com/perforce/Sourcegraph.
+	//
+	// It is important that the Sourcegraph repository name generated with this pattern be unique to this Perforce Server. If different Perforce Servers generate repository names that collide, Sourcegraph's behavior is undefined.
+	RepositoryPathPattern string `json:"repositoryPathPattern,omitempty"`
 }
 
 // PermissionsUserMapping description: Settings for Sourcegraph permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This setting cannot be enabled if repository permissions for any specific external service are enabled (i.e., when the external service's `authorization` field is set).
@@ -995,6 +1021,8 @@ type Responders struct {
 //
 // Note: if you are using IdP-initiated login, you must have *at most one* SAMLAuthProvider in the `auth.providers` array.
 type SAMLAuthProvider struct {
+	// AllowSignup description: Allows new visitors to sign up for accounts via SAML authentication. If false, users signing in via SAML must have an existing Sourcegraph account, which will be linked to their SAML identity after sign-in.
+	AllowSignup *bool `json:"allowSignup,omitempty"`
 	// ConfigID description: An identifier that can be used to reference this authentication provider in other parts of the config. For example, in configuration for a code host, you may want to designate this authentication provider as the identity provider for the code host.
 	ConfigID    string `json:"configID,omitempty"`
 	DisplayName string `json:"displayName,omitempty"`
@@ -1091,6 +1119,8 @@ type Settings struct {
 	ExperimentalFeatures *SettingsExperimentalFeatures `json:"experimentalFeatures,omitempty"`
 	// Extensions description: The Sourcegraph extensions to use. Enable an extension by adding a property `"my/extension": true` (where `my/extension` is the extension ID). Override a previously enabled extension and disable it by setting its value to `false`.
 	Extensions map[string]bool `json:"extensions,omitempty"`
+	// Insights description: EXPERIMENTAL: Code Insights
+	Insights []*Insight `json:"insights,omitempty"`
 	// Motd description: DEPRECATED: Use `notices` instead.
 	//
 	// An array (often with just one element) of messages to display at the top of all pages, including for unauthenticated users. Users may dismiss a message (and any message with the same string value will remain dismissed for the user).
@@ -1161,6 +1191,8 @@ type SettingsExperimentalFeatures struct {
 	ShowQueryBuilder *bool `json:"showQueryBuilder,omitempty"`
 	// ShowRepogroupHomepage description: Enables the repository group homepage
 	ShowRepogroupHomepage *bool `json:"showRepogroupHomepage,omitempty"`
+	// ShowSearchContext description: Enables the search context dropdown.
+	ShowSearchContext *bool `json:"showSearchContext,omitempty"`
 }
 
 // SiteConfiguration description: Configuration for a Sourcegraph site.
@@ -1357,4 +1389,12 @@ type VersionContextRevision struct {
 type Webhooks struct {
 	// Secret description: Secret for authenticating incoming webhook payloads
 	Secret string `json:"secret,omitempty"`
+}
+
+// WorkspaceConfiguration description: Configuration for how to setup workspaces in repositories
+type WorkspaceConfiguration struct {
+	// In description: The repositories in which to apply the workspace configuration. Supports globbing.
+	In string `json:"in,omitempty"`
+	// RootAtLocationOf description: The name of the file that sits at the root of the desired workspace.
+	RootAtLocationOf string `json:"rootAtLocationOf"`
 }

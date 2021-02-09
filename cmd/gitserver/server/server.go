@@ -243,6 +243,7 @@ func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/archive", s.handleArchive)
 	mux.HandleFunc("/exec", s.handleExec)
+	mux.HandleFunc("/p4-exec", s.handleP4Exec)
 	mux.HandleFunc("/list", s.handleList)
 	mux.HandleFunc("/list-gitolite", s.handleListGitolite)
 	mux.HandleFunc("/is-repo-cloneable", s.handleIsRepoCloneable)
@@ -618,7 +619,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 				ev.AddField("ensure_revision", req.EnsureRevision)
 				ev.AddField("ensure_revision_status", ensureRevisionStatus)
 				ev.AddField("client", r.UserAgent())
-				ev.AddField("duration_ms", duration.Seconds()*1000)
+				ev.AddField("duration_ms", duration.Milliseconds())
 				ev.AddField("stdout_size", stdoutN)
 				ev.AddField("stderr_size", stderrN)
 				ev.AddField("exit_status", exitStatus)
@@ -627,8 +628,8 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 					ev.AddField("error", execErr.Error())
 				}
 				if !cmdStart.IsZero() {
-					ev.AddField("cmd_duration_ms", cmdDuration.Seconds()*1000)
-					ev.AddField("fetch_duration_ms", fetchDuration.Seconds()*1000)
+					ev.AddField("cmd_duration_ms", cmdDuration.Milliseconds())
+					ev.AddField("fetch_duration_ms", fetchDuration.Milliseconds())
 				}
 				if span := opentracing.SpanFromContext(ctx); span != nil {
 					spanURL := trace.SpanURL(span)
@@ -740,6 +741,167 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 
 	stderr := stderrBuf.String()
 	checkMaybeCorruptRepo(req.Repo, dir, stderr)
+
+	// write trailer
+	w.Header().Set("X-Exec-Error", errorString(execErr))
+	w.Header().Set("X-Exec-Exit-Status", status)
+	w.Header().Set("X-Exec-Stderr", stderr)
+}
+
+func (s *Server) handleP4Exec(w http.ResponseWriter, r *http.Request) {
+	var req protocol.P4ExecRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if len(req.Args) < 1 {
+		http.Error(w, "args must be greater than or equal to 1", http.StatusBadRequest)
+		return
+	}
+
+	// Make sure the subcommand is explicitly allowed
+	allowlist := []string{"protects", "groups", "users"}
+	allowed := false
+	for _, arg := range allowlist {
+		if req.Args[0] == arg {
+			allowed = true
+			break
+		}
+	}
+	if !allowed {
+		http.Error(w, fmt.Sprintf("subcommand %q is not allowed", req.Args[0]), http.StatusBadRequest)
+		return
+	}
+
+	// Make sure credentials are valid before heavier operation
+	err := p4pingWithLogin(r.Context(), req.P4Port, req.P4User, req.P4Passwd)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	s.p4exec(w, r, &req)
+}
+
+func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4ExecRequest) {
+	// Flush writes more aggressively than standard net/http so that clients
+	// with a context deadline see as much partial response body as possible.
+	if fw := newFlushingResponseWriter(w); fw != nil {
+		w = fw
+		defer fw.Close()
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), time.Minute)
+	defer cancel()
+
+	start := time.Now()
+	var cmdStart time.Time // set once we have ensured commit
+	exitStatus := -10810   // sentinel value to indicate not set
+	var stdoutN, stderrN int64
+	var status string
+	var execErr error
+
+	// Instrumentation
+	{
+		cmd := ""
+		if len(req.Args) > 0 {
+			cmd = req.Args[0]
+		}
+		args := strings.Join(req.Args, " ")
+
+		var tr *trace.Trace
+		tr, ctx = trace.New(ctx, "p4exec."+cmd, req.P4Port)
+		tr.LogFields(
+			otlog.Object("args", args),
+		)
+
+		execRunning.WithLabelValues(cmd, req.P4Port).Inc()
+		defer func() {
+			tr.LogFields(
+				otlog.String("status", status),
+				otlog.Int64("stdout", stdoutN),
+				otlog.Int64("stderr", stderrN),
+			)
+			tr.SetError(execErr)
+			tr.Finish()
+
+			duration := time.Since(start)
+			execRunning.WithLabelValues(cmd, req.P4Port).Dec()
+			execDuration.WithLabelValues(cmd, req.P4Port, status).Observe(duration.Seconds())
+
+			var cmdDuration time.Duration
+			if !cmdStart.IsZero() {
+				cmdDuration = time.Since(cmdStart)
+			}
+
+			isSlow := cmdDuration > 30*time.Second
+			if honey.Enabled() || traceLogs || isSlow {
+				ev := honey.Event("gitserver-p4exec")
+				ev.SampleRate = honeySampleRate(cmd)
+				ev.AddField("p4port", req.P4Port)
+				ev.AddField("cmd", cmd)
+				ev.AddField("args", args)
+				ev.AddField("actor", r.Header.Get("X-Sourcegraph-Actor"))
+				ev.AddField("client", r.UserAgent())
+				ev.AddField("duration_ms", duration.Milliseconds())
+				ev.AddField("stdout_size", stdoutN)
+				ev.AddField("stderr_size", stderrN)
+				ev.AddField("exit_status", exitStatus)
+				ev.AddField("status", status)
+				if execErr != nil {
+					ev.AddField("error", execErr.Error())
+				}
+				if !cmdStart.IsZero() {
+					ev.AddField("cmd_duration_ms", cmdDuration.Milliseconds())
+				}
+				if span := opentracing.SpanFromContext(ctx); span != nil {
+					spanURL := trace.SpanURL(span)
+					// URLs starting with # don't have a trace. eg
+					// "#tracer-not-enabled"
+					if !strings.HasPrefix(spanURL, "#") {
+						ev.AddField("trace", spanURL)
+					}
+				}
+
+				if honey.Enabled() {
+					_ = ev.Send()
+				}
+				if traceLogs {
+					log15.Debug("TRACE gitserver p4exec", mapToLog15Ctx(ev.Fields())...)
+				}
+				if isSlow {
+					log15.Warn("Long p4exec request", mapToLog15Ctx(ev.Fields())...)
+				}
+			}
+		}()
+	}
+
+	w.Header().Set("Trailer", "X-Exec-Error")
+	w.Header().Add("Trailer", "X-Exec-Exit-Status")
+	w.Header().Add("Trailer", "X-Exec-Stderr")
+	w.WriteHeader(http.StatusOK)
+
+	var stderrBuf bytes.Buffer
+	stdoutW := &writeCounter{w: w}
+	stderrW := &writeCounter{w: &limitWriter{W: &stderrBuf, N: 1024}}
+
+	cmdStart = time.Now()
+	cmd := exec.CommandContext(ctx, "p4", req.Args...)
+	cmd.Env = append(os.Environ(),
+		"P4PORT="+req.P4Port,
+		"P4USER="+req.P4User,
+	)
+	cmd.Stdout = stdoutW
+	cmd.Stderr = stderrW
+
+	exitStatus, execErr = runCommand(ctx, cmd)
+
+	status = strconv.Itoa(exitStatus)
+	stdoutN = stdoutW.n
+	stderrN = stderrW.n
+
+	stderr := stderrBuf.String()
 
 	// write trailer
 	w.Header().Set("X-Exec-Error", errorString(execErr))

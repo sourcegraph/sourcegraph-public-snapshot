@@ -233,21 +233,23 @@ func TestParse(t *testing.T) {
 			for _, node := range nodes {
 				resultStr = append(resultStr, node.String())
 			}
-			return fmt.Sprintf("%s", strings.Join(resultStr, " "))
+			return strings.Join(resultStr, " ")
 		}
 
 		queryGrammar, err = parseAndOrGrammar(input) // Parse without heuristic.
 		if err != nil {
 			resultGrammar = err.Error()
+		} else {
+			resultGrammar = toString(queryGrammar)
 		}
-		resultGrammar = toString(queryGrammar)
 
 		queryHeuristic, err = ParseAndOr(input, SearchTypeRegex)
 		if err != nil {
 			resultHeuristic = err.Error()
+		} else {
+			resultHeuristic = toString(queryHeuristic)
 		}
 
-		resultHeuristic = toString(queryHeuristic)
 		if resultHeuristic == resultGrammar {
 			resultHeuristic = "Same"
 		}
@@ -315,7 +317,7 @@ func TestParse(t *testing.T) {
 		Heuristic: `(and "repo:foo" (concat "(a)" "(b)"))`,
 	}).Equal(t, test("(a) repo:foo (b)"))
 
-	autogold.Want("repo:foo func( or func(.*)", value{Heuristic: `(and "repo:foo" (or "func(" "func(.*)"))`}).Equal(t, test("repo:foo func( or func(.*)"))
+	autogold.Want("repo:foo func( or func(.*)", value{Grammar: "expected operand at 15", Heuristic: `(and "repo:foo" (or "func(" "func(.*)"))`}).Equal(t, test("repo:foo func( or func(.*)"))
 
 	autogold.Want("repo:foo main { and bar {", value{
 		Grammar:   `(and (and "repo:foo" (concat "main" "{")) (concat "bar" "{"))`,
@@ -362,8 +364,11 @@ func TestParse(t *testing.T) {
 	}).Equal(t, test("a repo:b repo:c (d repo:e repo:f e)"))
 
 	// Errors.
-	autogold.Want("Unbalanced", value{Heuristic: `(concat "(foo)" "(bar")`}).Equal(t, test("(foo) (bar"))
-	autogold.Want("Illegal expression on the right", value{Heuristic: "Same"}).Equal(t, test("a or or b"))
+	autogold.Want("Unbalanced", value{
+		Grammar:   "unbalanced expression: unmatched closing parenthesis )",
+		Heuristic: `(concat "(foo)" "(bar")`,
+	}).Equal(t, test("(foo) (bar"))
+	autogold.Want("Illegal expression on the right", value{Grammar: "expected operand at 5", Heuristic: "Same"}).Equal(t, test("a or or b"))
 	autogold.Want("Illegal expression on the right, mixed operators", value{Grammar: `(and "a" "OR")`, Heuristic: "Same"}).Equal(t, test("a and OR"))
 	autogold.Want("paren reduction with ands", value{Grammar: `(and "a" "b" "c" "d")`, Heuristic: "Same"}).Equal(t, test("(a and b) and (c and d)"))
 	autogold.Want("paren reduction with ors", value{Grammar: `(or "a" "b" "c" "d")`, Heuristic: "Same"}).Equal(t, test("(a or b) or (c or d)"))
@@ -372,7 +377,7 @@ func TestParse(t *testing.T) {
 	autogold.Want("right paren reduction with whitespace", value{Grammar: `(concat "a" "b" "c" "d")`, Heuristic: `(concat "a" "b" "(c d)")`}).Equal(t, test("a b (c d)"))
 	autogold.Want("grouped paren reduction with whitespace", value{Grammar: `(concat "a" "b" "c" "d")`, Heuristic: `(concat "(a b)" "(c d)")`}).Equal(t, test("(a b) (c d)"))
 
-	//Escaping
+	// Escaping.
 	autogold.Want("multiple grouped paren reduction with whitespace", value{Grammar: `(concat "a" "b" "c" "d" "e" "f")`, Heuristic: `(concat "(a b)" "(c d)" "(e f)")`}).Equal(t, test("(a b) (c d) (e f)"))
 
 	autogold.Want("interpolated grouped paren reduction", value{Grammar: `(concat "a" "b" "c" "d" "e" "f")`, Heuristic: `(concat "(a b)" "c" "d" "(e f)")`}).Equal(t, test("(a b) c d (e f)"))
@@ -411,11 +416,17 @@ func TestParse(t *testing.T) {
 	autogold.Want(`\  \ `, value{Grammar: `(concat "\\ " "\\ ")`, Heuristic: "Same"}).Equal(t, test(`\  \ `))
 
 	// Dangling parentheses heuristic.
-	autogold.Want(`(`, value{Heuristic: `"("`}).Equal(t, test(`(`))
-	autogold.Want(`)(())(`, value{Heuristic: "Same"}).Equal(t, test(`)(())(`))
-	autogold.Want(`foo( and bar(`, value{Heuristic: `(and "foo(" "bar(")`}).Equal(t, test(`foo( and bar(`))
-	autogold.Want(`repo:foo foo( or bar(`, value{Heuristic: `(and "repo:foo" (or "foo(" "bar("))`}).Equal(t, test(`repo:foo foo( or bar(`))
-	autogold.Want(`(a or (b and )) or d)`, value{Heuristic: "Same"}).Equal(t, test(`(a or (b and )) or d)`))
+	autogold.Want(`(`, value{Grammar: "expected operand at 1", Heuristic: `"("`}).Equal(t, test(`(`))
+	autogold.Want(`)(())(`, value{
+		Grammar:   "unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses",
+		Heuristic: "Same",
+	}).Equal(t, test(`)(())(`))
+	autogold.Want(`foo( and bar(`, value{Grammar: "expected operand at 5", Heuristic: `(and "foo(" "bar(")`}).Equal(t, test(`foo( and bar(`))
+	autogold.Want(`repo:foo foo( or bar(`, value{Grammar: "expected operand at 14", Heuristic: `(and "repo:foo" (or "foo(" "bar("))`}).Equal(t, test(`repo:foo foo( or bar(`))
+	autogold.Want(`(a or (b and )) or d)`, value{
+		Grammar:   "unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses",
+		Heuristic: "Same",
+	}).Equal(t, test(`(a or (b and )) or d)`))
 
 	// Quotes and escape sequences.
 	autogold.Want(`"`, value{Grammar: `"\""`, Heuristic: "Same"}).Equal(t, test(`"`))
@@ -452,7 +463,10 @@ func TestParse(t *testing.T) {
 	}).Equal(t, test(`(foo repohascommitafter:"7 days")`))
 
 	// Fringe tests cases at the boundary of heuristics and invalid syntax.
-	autogold.Want(`(0(F)(:())(:())(<0)0()`, value{Heuristic: `"(0(F)(:())(:())(<0)0()"`}).Equal(t, test(`(0(F)(:())(:())(<0)0()`))
+	autogold.Want(`(0(F)(:())(:())(<0)0()`, value{
+		Grammar:   "unbalanced expression: unmatched closing parenthesis )",
+		Heuristic: `"(0(F)(:())(:())(<0)0()"`,
+	}).Equal(t, test(`(0(F)(:())(:())(<0)0()`))
 
 	// The space-looking character below is U+00A0.
 	autogold.Want(`00 (000)`, value{Grammar: `(concat "00" "000")`, Heuristic: `(concat "00" "(000)")`}).Equal(t, test(`00 (000)`))
@@ -535,7 +549,7 @@ func TestParseAndOrLiteral(t *testing.T) {
 		for _, node := range result {
 			resultStr = append(resultStr, node.String())
 		}
-		want := fmt.Sprintf("%s", strings.Join(resultStr, " "))
+		want := strings.Join(resultStr, " ")
 		if wantLabels != "" {
 			return fmt.Sprintf("%s (%s)", want, wantLabels)
 		}
@@ -600,26 +614,27 @@ func TestParseAndOrLiteral(t *testing.T) {
 	// For implementation simplicity, behavior preserves whitespace inside parentheses.
 	autogold.Want("repo:foo (lisp    lisp)", `(and "repo:foo" "(lisp    lisp)") (HeuristicParensAsPatterns,Literal)`).Equal(t, test("repo:foo (lisp    lisp)"))
 	autogold.Want("repo:foo main( or (lisp    lisp)", `(and "repo:foo" (or "main(" "(lisp    lisp)")) (HeuristicHoisted,HeuristicParensAsPatterns,Literal)`).Equal(t, test("repo:foo main( or (lisp    lisp)"))
-	autogold.Want("repo:foo )foo(", "ERROR: unbalanced expression: unmatched closing parenthesis )").Equal(t, test("repo:foo )foo("))
-	autogold.Want("repo:foo )main( or (lisp    lisp)", "ERROR: unbalanced expression: unmatched closing parenthesis )").Equal(t, test("repo:foo )main( or (lisp    lisp)"))
-	autogold.Want("repo:foo ) main( or (lisp    lisp)", "ERROR: unbalanced expression: unmatched closing parenthesis )").Equal(t, test("repo:foo ) main( or (lisp    lisp)"))
-	autogold.Want("repo:foo )))) main( or (lisp    lisp) and )))", "ERROR: unbalanced expression: unmatched closing parenthesis )").Equal(t, test("repo:foo )))) main( or (lisp    lisp) and )))"))
-	autogold.Want(`repo:foo Args or main)`, "ERROR: unbalanced expression: unmatched closing parenthesis )").Equal(t, test(`repo:foo Args or main)`))
-	autogold.Want(`repo:foo Args) and main`, "ERROR: unbalanced expression: unmatched closing parenthesis )").Equal(t, test(`repo:foo Args) and main`))
-	autogold.Want(`repo:foo bar and baz)`, "ERROR: unbalanced expression: unmatched closing parenthesis )").Equal(t, test(`repo:foo bar and baz)`))
-	autogold.Want(`repo:foo bar)) and baz`, "ERROR: unbalanced expression: unmatched closing parenthesis )").Equal(t, test(`repo:foo bar)) and baz`))
-	autogold.Want(`repo:foo (bar and baz))`, "ERROR: unbalanced expression: unmatched closing parenthesis )").Equal(t, test(`repo:foo (bar and baz))`))
-	autogold.Want(`repo:foo (bar and (baz)))`, "ERROR: unbalanced expression: unmatched closing parenthesis )").Equal(t, test(`repo:foo (bar and (baz)))`))
+	autogold.Want("repo:foo )foo(", "ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses").Equal(t, test("repo:foo )foo("))
+	autogold.Want("repo:foo )main( or (lisp    lisp)", "ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses").Equal(t, test("repo:foo )main( or (lisp    lisp)"))
+	autogold.Want("repo:foo ) main( or (lisp    lisp)", "ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses").Equal(t, test("repo:foo ) main( or (lisp    lisp)"))
+	autogold.Want("repo:foo )))) main( or (lisp    lisp) and )))", "ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses").Equal(t, test("repo:foo )))) main( or (lisp    lisp) and )))"))
+	autogold.Want(`repo:foo Args or main)`, "ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses").Equal(t, test(`repo:foo Args or main)`))
+	autogold.Want(`repo:foo Args) and main`, "ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses").Equal(t, test(`repo:foo Args) and main`))
+	autogold.Want(`repo:foo bar and baz)`, "ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses").Equal(t, test(`repo:foo bar and baz)`))
+	autogold.Want(`repo:foo bar)) and baz`, "ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses").Equal(t, test(`repo:foo bar)) and baz`))
+	autogold.Want(`repo:foo (bar and baz))`, "ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses").Equal(t, test(`repo:foo (bar and baz))`))
+	autogold.Want(`repo:foo (bar and (baz)))`, "ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses").Equal(t, test(`repo:foo (bar and (baz)))`))
 	autogold.Want(`repo:foo (bar( and baz())`, `(and "repo:foo" "bar(" "baz()") (Literal)`).Equal(t, test(`repo:foo (bar( and baz())`))
 	autogold.Want(`"quoted"`, `"\"quoted\"" (Literal)`).Equal(t, test(`"quoted"`))
+	autogold.Want(`not (stocks or stonks)`, "ERROR: it looks like you tried to use an expression after NOT. The NOT operator can only be used with simple search patterns or filters, and is not supported for expressions or subqueries").Equal(t, test(`not (stocks or stonks)`))
 
 	// This test input should error because the single quote in 'after' is unclosed.
 	autogold.Want(`type:commit message:'a commit message' after:'10 days ago" test test2`, "ERROR: unterminated literal: expected '").Equal(t, test(`type:commit message:'a commit message' after:'10 days ago" test test2`))
 
 	// Fringe tests cases at the boundary of heuristics and invalid syntax.
-	autogold.Want(`)(0 )0`, "ERROR: unbalanced expression: unmatched closing parenthesis )").Equal(t, test(`)(0 )0`))
-	autogold.Want(`((R:)0))0`, "ERROR: unbalanced expression: unmatched closing parenthesis )").Equal(t, test(`((R:)0))0`))
-
+	autogold.Want(`x()(y or z)`, "ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses").Equal(t, test(`x()(y or z)`))
+	autogold.Want(`)(0 )0`, "ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses").Equal(t, test(`)(0 )0`))
+	autogold.Want(`((R:)0))0`, "ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses").Equal(t, test(`((R:)0))0`))
 }
 
 func TestScanBalancedPattern(t *testing.T) {

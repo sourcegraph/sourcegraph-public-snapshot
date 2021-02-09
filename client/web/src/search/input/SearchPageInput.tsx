@@ -19,6 +19,7 @@ import {
     CopyQueryButtonProps,
     OnboardingTourProps,
     ParsedSearchQueryProps,
+    SearchContextProps,
 } from '..'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
@@ -45,6 +46,7 @@ interface Props
         CopyQueryButtonProps,
         Pick<SubmitSearchParameters, 'source'>,
         VersionContextProps,
+        SearchContextProps,
         OnboardingTourProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location

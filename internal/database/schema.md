@@ -568,11 +568,12 @@ Indexes:
 
 # Table "public.lsif_dirty_repositories"
 ```
-    Column     |  Type   | Modifiers 
----------------+---------+-----------
- repository_id | integer | not null
- dirty_token   | integer | not null
- update_token  | integer | not null
+    Column     |           Type           | Modifiers 
+---------------+--------------------------+-----------
+ repository_id | integer                  | not null
+ dirty_token   | integer                  | not null
+ update_token  | integer                  | not null
+ updated_at    | timestamp with time zone | 
 Indexes:
     "lsif_dirty_repositories_pkey" PRIMARY KEY, btree (repository_id)
 
@@ -583,6 +584,8 @@ Stores whether or not the nearest upload data for a repository is out of date (w
 **dirty_token**: Set to the value of update_token visible to the transaction that updates the commit graph. Updates of dirty_token during this time will cause a second update.
 
 **update_token**: This value is incremented on each request to update the commit graph for the repository.
+
+**updated_at**: The time the update_token value was last updated.
 
 # Table "public.lsif_index_configuration"
 ```
@@ -1108,7 +1111,6 @@ Referenced by:
     TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "external_service_repos" CONSTRAINT "external_service_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "lsif_index_configuration" CONSTRAINT "lsif_index_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
-    TABLE "user_public_repos" CONSTRAINT "repo_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
 Triggers:
     trig_delete_repo_ref_on_external_service_repos AFTER UPDATE OF deleted_at ON repo FOR EACH ROW EXECUTE PROCEDURE delete_repo_ref_on_external_service_repos()
 
@@ -1175,22 +1177,6 @@ Foreign-key constraints:
  dirty   | boolean | not null
 Indexes:
     "schema_migrations_pkey" PRIMARY KEY, btree (version)
-
-```
-
-# Table "public.secrets"
-```
-   Column    |          Type          |                      Modifiers                       
--------------+------------------------+------------------------------------------------------
- id          | bigint                 | not null default nextval('secrets_id_seq'::regclass)
- source_type | character varying(50)  | 
- source_id   | bigint                 | 
- key_name    | character varying(100) | 
- value       | text                   | not null
-Indexes:
-    "secrets_pkey" PRIMARY KEY, btree (id)
-    "secret_key_idx" UNIQUE, btree (key_name)
-    "secret_sourcetype_idx" UNIQUE, btree (source_type, source_id)
 
 ```
 
@@ -1346,20 +1332,6 @@ Indexes:
 
 ```
 
-# Table "public.user_public_repos"
-```
- Column  |  Type   | Modifiers 
----------+---------+-----------
- user_id | integer | 
- repo_id | integer | 
-Indexes:
-    "user_public_repos_user_id_repo_id_key" UNIQUE CONSTRAINT, btree (user_id, repo_id)
-Foreign-key constraints:
-    "repo_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
-    "user_fk" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-
-```
-
 # Table "public.users"
 ```
          Column          |           Type           |                     Modifiers                      
@@ -1424,7 +1396,6 @@ Referenced by:
     TABLE "user_credentials" CONSTRAINT "user_credentials_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "user_emails" CONSTRAINT "user_emails_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "user_external_accounts" CONSTRAINT "user_external_accounts_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
-    TABLE "user_public_repos" CONSTRAINT "user_fk" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 Triggers:
     trig_invalidate_session_on_password_change BEFORE UPDATE OF passwd ON users FOR EACH ROW EXECUTE PROCEDURE invalidate_session_for_userid_on_password_change()
     trig_soft_delete_user_reference_on_external_service AFTER UPDATE OF deleted_at ON users FOR EACH ROW EXECUTE PROCEDURE soft_delete_user_reference_on_external_service()

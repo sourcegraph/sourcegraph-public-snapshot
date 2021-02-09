@@ -22,6 +22,7 @@ type CodeIntelResolver interface {
 	DeleteLSIFIndex(ctx context.Context, id graphql.ID) (*EmptyResponse, error)
 	IndexConfiguration(ctx context.Context, id graphql.ID) (IndexConfigurationResolver, error) // TODO - rename ...ForRepo
 	UpdateRepositoryIndexConfiguration(ctx context.Context, args *UpdateRepositoryIndexConfigurationArgs) (*EmptyResponse, error)
+	CommitGraph(ctx context.Context, id graphql.ID) (CodeIntelligenceCommitGraphResolver, error)
 	QueueAutoIndexJobForRepo(ctx context.Context, id graphql.ID) (*EmptyResponse, error)
 	GitBlobLSIFData(ctx context.Context, args *GitBlobLSIFDataArgs) (GitBlobLSIFDataResolver, error)
 }
@@ -69,6 +70,10 @@ func (defaultCodeIntelResolver) IndexConfiguration(ctx context.Context, id graph
 }
 
 func (defaultCodeIntelResolver) UpdateRepositoryIndexConfiguration(ctx context.Context, args *UpdateRepositoryIndexConfigurationArgs) (*EmptyResponse, error) {
+	return nil, errCodeIntelOnlyInEnterprise
+}
+
+func (defaultCodeIntelResolver) CommitGraph(ctx context.Context, id graphql.ID) (CodeIntelligenceCommitGraphResolver, error) {
 	return nil, errCodeIntelOnlyInEnterprise
 }
 
@@ -216,6 +221,11 @@ type QueueAutoIndexJobArgs struct {
 
 type GitTreeLSIFDataResolver interface {
 	Diagnostics(ctx context.Context, args *LSIFDiagnosticsArgs) (DiagnosticConnectionResolver, error)
+}
+
+type CodeIntelligenceCommitGraphResolver interface {
+	Stale(ctx context.Context) (bool, error)
+	UpdatedAt(ctx context.Context) (*DateTime, error)
 }
 
 type GitBlobLSIFDataResolver interface {

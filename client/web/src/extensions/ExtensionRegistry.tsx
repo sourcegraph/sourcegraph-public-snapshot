@@ -205,9 +205,6 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
 
                 <div className="pt-3">
                     <div className="mb-5">
-                        <p>
-                            Improve your workflow with code intelligence, test coverage, and other useful information.
-                        </p>
                         <Form onSubmit={preventDefault} className="form-inline">
                             <div className="shadow flex-grow-1 mb-2">
                                 <input

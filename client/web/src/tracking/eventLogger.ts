@@ -4,7 +4,8 @@ import { browserExtensionMessageReceived, handleQueryEvents, pageViewQueryParame
 import { serverAdmin } from './services/serverAdminWrapper'
 import cookies from 'js-cookie'
 
-const ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
+export const ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
+export const FIRST_SOURCE_URL_KEY = 'sourcegraphSourceUrl'
 
 export class EventLogger implements TelemetryService {
     private hasStrippedQueryParameters = false

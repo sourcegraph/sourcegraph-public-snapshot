@@ -9,15 +9,12 @@ import { Scalars } from '../../../../shared/src/graphql-operations'
 import { asError, isErrorLike } from '../../../../shared/src/util/errors'
 import { useObservable } from '../../../../shared/src/util/useObservable'
 import { AuthenticatedUser } from '../../auth'
-import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
 import { CodeMonitorFields, MonitorEmailPriority } from '../../graphql-operations'
 import { CodeMonitorForm } from './components/CodeMonitorForm'
 
 export interface ManageCodeMonitorPageProps
     extends RouteComponentProps<{ id: Scalars['ID'] }>,
-        BreadcrumbsProps,
-        BreadcrumbSetters,
         Pick<CodeMonitoringProps, 'updateCodeMonitor' | 'fetchCodeMonitor' | 'deleteCodeMonitor'> {
     authenticatedUser: AuthenticatedUser
     location: H.Location
@@ -25,16 +22,6 @@ export interface ManageCodeMonitorPageProps
 }
 
 export const ManageCodeMonitorPage: React.FunctionComponent<ManageCodeMonitorPageProps> = props => {
-    props.useBreadcrumb(
-        React.useMemo(
-            () => ({
-                key: 'Manage Code Monitor',
-                element: <>Manage code monitor</>,
-            }),
-            []
-        )
-    )
-
     const LOADING = 'loading' as const
 
     const { authenticatedUser, fetchCodeMonitor, updateCodeMonitor, match } = props
@@ -91,7 +78,7 @@ export const ManageCodeMonitorPage: React.FunctionComponent<ManageCodeMonitorPag
     )
 
     return (
-        <div className="container col-8 mt-5">
+        <div className="container col-8">
             <PageTitle title="Manage code monitor" />
             <div className="page-header d-flex flex-wrap align-items-center">
                 <h2 className="flex-grow-1">Manage code monitor</h2>

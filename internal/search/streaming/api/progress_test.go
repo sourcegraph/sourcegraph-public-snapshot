@@ -18,10 +18,13 @@ func TestSearchProgress(t *testing.T) {
 	}
 	cases := map[string]ProgressStats{
 		"empty": {},
+		"zeroresults": {
+			RepositoriesCount: intPtr(0),
+		},
 		"timedout100": {
 			MatchCount:          0,
 			ElapsedMilliseconds: 0,
-			RepositoriesCount:   100,
+			RepositoriesCount:   intPtr(100),
 			ExcludedArchived:    0,
 			ExcludedForks:       0,
 			Timedout:            timedout100,
@@ -32,7 +35,7 @@ func TestSearchProgress(t *testing.T) {
 		"all": {
 			MatchCount:          1,
 			ElapsedMilliseconds: 0,
-			RepositoriesCount:   5,
+			RepositoriesCount:   intPtr(5),
 			ExcludedArchived:    1,
 			ExcludedForks:       5,
 			Timedout:            []Namer{repo{"timedout-1"}},
@@ -58,4 +61,8 @@ type repo struct {
 
 func (r repo) Name() string {
 	return r.name
+}
+
+func intPtr(i int) *int {
+	return &i
 }
