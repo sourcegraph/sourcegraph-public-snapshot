@@ -4,7 +4,6 @@
         margin-left: 0.25rem;
         margin-right: 0.25rem;
         padding: 0.125rem 0.25rem;
-        line-height: (16/12);
         border-radius: 0.25rem;
         border: 2px solid transparent;
         box-sizing: border-box;
@@ -33,7 +32,9 @@
         }
 
         &-content {
+            display: block;
             font-size: 0.75rem;
+            line-height: 1rem;
         }
     }
 
