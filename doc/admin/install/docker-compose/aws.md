@@ -83,9 +83,6 @@ trap "rm -f ${tmp_config}" EXIT
 cat "${DOCKER_DAEMON_CONFIG_FILE}" | jq --arg DATA_ROOT "${DOCKER_DATA_ROOT}" '.["data-root"]=$DATA_ROOT' > "${tmp_config}"
 cat "${tmp_config}" > "${DOCKER_DAEMON_CONFIG_FILE}"
 
-# Configure inotify limits for indexed search.
-echo -e "\nfs.inotify.max_user_watches = 128000\n" >> /etc/sysctl.d/local.conf
-
 ## finally, restart Docker daemon to pick up our changes
 systemctl restart --now docker
 
@@ -103,7 +100,7 @@ docker-compose up -d
 * Click "Add New Volume" and add an additional volume (for storing Docker data) with the following settings:
 
   * **Volume Type** (left-most column): EBS
-  * **IMPORTANT: Device**: `/dev/sdb` 
+  * **IMPORTANT: Device**: `/dev/sdb`
   * **Size (GiB)**: `250` GB minimum *(As a rule of thumb, Sourcegraph needs at least as much space as all your repositories combined take up. Allocating as much disk space as you can upfront helps you avoid [resizing your volume](https://aws.amazon.com/premiumsupport/knowledge-center/expand-root-ebs-linux/) later on.)*
   * **Volume Type**: General Purpose SSD (gp2)
   * **Delete on Termination**: Leave this setting unchecked
