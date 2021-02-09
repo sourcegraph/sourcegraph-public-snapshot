@@ -4,11 +4,13 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/url"
 	"strings"
 
+	"github.com/inconshreveable/log15"
 	jsoniter "github.com/json-iterator/go"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
@@ -149,7 +151,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 
 	rc, _, err := gitserver.DefaultClient.P4Exec(ctx, p.host, p.user, p.password, "protects", "-u", user.Username)
 	if err != nil {
-		return nil, extsvc.RepoIDPrefix, errors.Wrap(err, "list depots")
+		return nil, extsvc.RepoIDPrefix, errors.Wrap(err, "list ACLs by user")
 	}
 	defer func() { _ = rc.Close() }()
 
@@ -165,7 +167,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 
 		// Rule that starts with a "-" in depot prefix means block access, thus skip
 		if strings.HasPrefix(depotPrefix, "-") {
-			continue
+			continue // TODO: Need to handle "no access" case
 		}
 
 		depotPrefixes = append(depotPrefixes, extsvc.RepoID(depotPrefix))
@@ -177,8 +179,52 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 	return depotPrefixes, extsvc.RepoIDPrefix, nil
 }
 
+// FetchRepoPerms returns a list of users that have access to the given
+// repository on the Perforce Server.
 func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) ([]extsvc.AccountID, error) {
-	// TODO: Fetch via "p4 protects -a //depot-alice/", "p4 users", "p4 groups"
+	// TODO: "p4 users", "p4 group -o Ops"
+	rc, _, err := gitserver.DefaultClient.P4Exec(ctx, p.host, p.user, p.password, "protects", "-a", repo.ID)
+	if err != nil {
+		return nil, errors.Wrap(err, "list ACLs by depot")
+	}
+	defer func() { _ = rc.Close() }()
+
+	var users, groups []string
+	scanner := bufio.NewScanner(rc)
+	for scanner.Scan() {
+		// e.g. write user alice * //Sourcegraph/...
+		fields := strings.Split(scanner.Text(), " ")
+		if len(fields) < 5 {
+			continue
+		}
+		typ := fields[1]                                 // e.g. user
+		username := fields[2]                            // e.g. alice
+		depotPrefix := strings.TrimRight(fields[4], ".") // e.g. //Sourcegraph/
+
+		// Rule that starts with a "-" in depot prefix means block access, thus skip
+		if strings.HasPrefix(depotPrefix, "-") {
+			continue
+		}
+
+		switch typ {
+		case "user":
+			users = append(users, username)
+		case "group":
+			groups = append(groups, username)
+		default:
+			log15.Warn("authz.perforce.Provider.FetchRepoPerms.unrecognizedType", "type", typ)
+		}
+	}
+	if err = scanner.Err(); err != nil {
+		return nil, errors.Wrap(err, "scanner.Err")
+	}
+
+	fmt.Println("users", users)
+	fmt.Println("groups", groups)
+
+	// TODO: Need to handle "no access" case
+	// TODO: Resolve group members
+	// TODO: Special handle * as username
 	return nil, nil
 }
 
