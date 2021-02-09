@@ -16,18 +16,27 @@
         &-ranking {
             height: 2.25rem;
             width: 2.25rem;
-            // fill #DEE2E6
-            &:hover {
-                transition: all 0.2s cubic-bezier(0.5, -1, 0.5, 2);
-                border-color: $gray-13 !important;
-                box-shadow: none;
-                transform: scale(1.12);
-            }
-            &:active,
             &:focus {
+                box-shadow: none;
+            }
+            &:hover:not(&--active),
+            &:focus:not(&--active) {
+                transition: all 0.2s cubic-bezier(0.5, -1, 0.5, 2);
+                border: 1px solid $gray-13 !important;
+                transform: scale(1.12);
+                filter: none;
+            }
+
+            &--active {
                 border: none !important;
                 transform: scale(1.6);
-                box-shadow: none;
+                // &:focus {
+                //     border: 1px solid $gray-13 !important;
+                // }
+            }
+            &--inactive {
+                filter: grayscale(1);
+                border: none !important;
             }
         }
     }

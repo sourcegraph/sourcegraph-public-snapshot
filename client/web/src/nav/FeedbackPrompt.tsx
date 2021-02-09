@@ -1,13 +1,48 @@
+import classNames from 'classnames'
 import MessageDrawIcon from 'mdi-react/MessageDrawIcon'
-import React, { useCallback, useState } from 'react'
-import { Alert, Button, ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
+import React, { useCallback, useEffect, useState } from 'react'
 import TextAreaAutosize from 'react-textarea-autosize'
+import { Alert, Button, ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
+import { Subscription } from 'rxjs'
+import { LoaderButton } from '../components/LoaderButton'
 
 interface Props {}
 
+const subscriptions = new Subscription()
+
 export const FeedbackPrompt: React.FunctionComponent<Props> = () => {
     const [isOpen, setIsOpen] = useState(false)
+    const [rate, setRate] = useState<string | null>(null)
+    const [text, setText] = useState('')
+    const [loading, setLoading] = useState(false)
+
     const toggleIsOpen = useCallback(() => setIsOpen(open => !open), [])
+    const ratePick = useCallback(value => setRate(value), [])
+    const updateText = useCallback(event => setText(event.target.value), [])
+    useEffect(() => () => subscriptions.unsubscribe(), [])
+
+    const onSubmit = useCallback(() => {
+        console.log('rate', rate)
+        console.log('text', text)
+        setLoading(true)
+        // subscriptions.add(
+        //     submitSurvey({
+        //         score: Number(rate),
+        //         email: 'test@test.com',
+        //         reason: text,
+        //     })
+        //         .pipe(
+        //             catchError(error => {
+        //                 console.log('error', error)
+        //                 return []
+        //             })
+        //         )
+        //         .subscribe(() => {
+        //             console.log('we did it!')
+        //         })
+        // )
+        console.log('Submitting', rate)
+    }, [rate, text])
 
     // I'm not sure which is the best approach here, maybe use twemoji package instead.
     const icons = {
@@ -96,40 +131,60 @@ export const FeedbackPrompt: React.FunctionComponent<Props> = () => {
             <DropdownMenu right={true} className="p-3 feedback-prompt__menu">
                 <h3 className="align-middle">What's on your mind?</h3>
                 <TextAreaAutosize
+                    onChange={updateText}
                     minRows={3}
                     maxRows={6}
                     placeholder="What's going well? What could be better?"
                     className="form-control feedback-prompt__textarea"
                 />
-                <Rate icons={icons} />
+                <Rate icons={icons} onSelect={ratePick} disabled={loading} />
 
                 <Alert className="my-4 feedback-prompt__alert" color="danger">
                     Something went wrong while sending your feedback. Please try again.
                 </Alert>
-                <Button className="w-100">Send</Button>
+                <LoaderButton
+                    className="w-100 btn btn-block btn-secondary"
+                    loading={loading}
+                    label="Send"
+                    onClick={onSubmit}
+                    disabled={!rate || !text}
+                />
             </DropdownMenu>
         </ButtonDropdown>
     )
 }
 interface RateProps {
     icons: { [key: string]: JSX.Element }
+    onSelect: (index: string | null) => void
+    disabled: boolean
 }
 
-// This component as an independent chunk of logic would be easier to handle
-const Rate: React.FunctionComponent<RateProps> = ({ icons }) => {
-    const [rate, setRate] = useState('0')
-    const ratePick = useCallback(() => setRate('1'), [])
+const Rate: React.FunctionComponent<RateProps> = ({ icons, onSelect, disabled }) => {
+    const [score, setScore] = useState<string | null>(null)
+    const toggleActive = useCallback(i => setScore(i), [])
+
+    useEffect(() => {
+        onSelect(score)
+    }, [score])
 
     return (
         <ul className="feedback-prompt__list d-flex justify-content-around m-auto p-0">
-            {Object.keys(icons).map(icon => (
-                <li key={icon} className="d-flex">
+            {Object.keys(icons).map(index => (
+                <li key={index} className="d-flex">
                     <Button
-                        onClick={ratePick}
-                        className="feedback-prompt__list-ranking rounded-circle border align-items-center justify-content-center p-0"
+                        role="button"
+                        disabled={disabled}
+                        onClick={() => toggleActive(index)}
+                        className={classNames(
+                            {
+                                'feedback-prompt__list-ranking--active': score === index,
+                                'feedback-prompt__list-ranking--inactive': score !== null && score !== index,
+                            },
+                            'feedback-prompt__list-ranking rounded-circle border align-items-center justify-content-center p-0'
+                        )}
                         color="link"
                     >
-                        {icons[icon]}
+                        {icons[index]}
                     </Button>
                 </li>
             ))}
