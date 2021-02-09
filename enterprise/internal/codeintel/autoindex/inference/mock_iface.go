@@ -79,7 +79,7 @@ func (f *GitserverClientWrapperFileExistsFunc) SetDefaultHook(hook func(context.
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
 // FileExists method of the parent MockGitserverClientWrapper instance
-// inovkes the hook at the front of the queue and discards it. After the
+// invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
 func (f *GitserverClientWrapperFileExistsFunc) PushHook(hook func(context.Context, string) (bool, error)) {
@@ -191,7 +191,7 @@ func (f *GitserverClientWrapperRawContentsFunc) SetDefaultHook(hook func(context
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
 // RawContents method of the parent MockGitserverClientWrapper instance
-// inovkes the hook at the front of the queue and discards it. After the
+// invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
 func (f *GitserverClientWrapperRawContentsFunc) PushHook(hook func(context.Context, string) ([]byte, error)) {

@@ -109,7 +109,7 @@ func (f *StoreComposeFunc) SetDefaultHook(hook func(context.Context, string, ...
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Compose method of the parent MockStore instance inovkes the hook at the
+// Compose method of the parent MockStore instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
 func (f *StoreComposeFunc) PushHook(hook func(context.Context, string, ...string) (int64, error)) {
@@ -227,7 +227,7 @@ func (f *StoreDeleteFunc) SetDefaultHook(hook func(context.Context, string) erro
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Delete method of the parent MockStore instance inovkes the hook at the
+// Delete method of the parent MockStore instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
 func (f *StoreDeleteFunc) PushHook(hook func(context.Context, string) error) {
@@ -332,7 +332,7 @@ func (f *StoreGetFunc) SetDefaultHook(hook func(context.Context, string) (io.Rea
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Get method of the parent MockStore instance inovkes the hook at the front
+// Get method of the parent MockStore instance invokes the hook at the front
 // of the queue and discards it. After the queue is empty, the default hook
 // function is invoked for any future action.
 func (f *StoreGetFunc) PushHook(hook func(context.Context, string) (io.ReadCloser, error)) {
@@ -440,7 +440,7 @@ func (f *StoreInitFunc) SetDefaultHook(hook func(context.Context) error) {
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Init method of the parent MockStore instance inovkes the hook at the
+// Init method of the parent MockStore instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
 func (f *StoreInitFunc) PushHook(hook func(context.Context) error) {
@@ -542,7 +542,7 @@ func (f *StoreUploadFunc) SetDefaultHook(hook func(context.Context, string, io.R
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Upload method of the parent MockStore instance inovkes the hook at the
+// Upload method of the parent MockStore instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
 func (f *StoreUploadFunc) PushHook(hook func(context.Context, string, io.Reader) (int64, error)) {

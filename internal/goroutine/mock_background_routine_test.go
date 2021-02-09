@@ -74,7 +74,7 @@ func (f *BackgroundRoutineStartFunc) SetDefaultHook(hook func()) {
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Start method of the parent MockBackgroundRoutine instance inovkes the
+// Start method of the parent MockBackgroundRoutine instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
 func (f *BackgroundRoutineStartFunc) PushHook(hook func()) {
@@ -170,7 +170,7 @@ func (f *BackgroundRoutineStopFunc) SetDefaultHook(hook func()) {
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Stop method of the parent MockBackgroundRoutine instance inovkes the hook
+// Stop method of the parent MockBackgroundRoutine instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
 func (f *BackgroundRoutineStopFunc) PushHook(hook func()) {

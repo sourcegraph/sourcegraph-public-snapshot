@@ -128,7 +128,7 @@ func (f *DBStoreGetRepositoriesWithIndexConfigurationFunc) SetDefaultHook(hook f
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
 // GetRepositoriesWithIndexConfiguration method of the parent MockDBStore
-// instance inovkes the hook at the front of the queue and discards it.
+// instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
 func (f *DBStoreGetRepositoriesWithIndexConfigurationFunc) PushHook(hook func(context.Context) ([]int, error)) {
@@ -235,7 +235,7 @@ func (f *DBStoreGetUploadsFunc) SetDefaultHook(hook func(context.Context, dbstor
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// GetUploads method of the parent MockDBStore instance inovkes the hook at
+// GetUploads method of the parent MockDBStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
 func (f *DBStoreGetUploadsFunc) PushHook(hook func(context.Context, dbstore.GetUploadsOptions) ([]dbstore.Upload, int, error)) {
@@ -348,7 +348,7 @@ func (f *DBStoreIndexableRepositoriesFunc) SetDefaultHook(hook func(context.Cont
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// IndexableRepositories method of the parent MockDBStore instance inovkes
+// IndexableRepositories method of the parent MockDBStore instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
 func (f *DBStoreIndexableRepositoriesFunc) PushHook(hook func(context.Context, dbstore.IndexableRepositoryQueryOptions) ([]dbstore.IndexableRepository, error)) {
@@ -457,7 +457,7 @@ func (f *DBStoreRepoUsageStatisticsFunc) SetDefaultHook(hook func(context.Contex
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// RepoUsageStatistics method of the parent MockDBStore instance inovkes the
+// RepoUsageStatistics method of the parent MockDBStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
 func (f *DBStoreRepoUsageStatisticsFunc) PushHook(hook func(context.Context) ([]dbstore.RepoUsageStatistics, error)) {
@@ -565,7 +565,7 @@ func (f *DBStoreResetIndexableRepositoriesFunc) SetDefaultHook(hook func(context
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
 // ResetIndexableRepositories method of the parent MockDBStore instance
-// inovkes the hook at the front of the queue and discards it. After the
+// invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
 func (f *DBStoreResetIndexableRepositoriesFunc) PushHook(hook func(context.Context, time.Time) error) {
@@ -674,7 +674,7 @@ func (f *DBStoreUpdateIndexableRepositoryFunc) SetDefaultHook(hook func(context.
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
 // UpdateIndexableRepository method of the parent MockDBStore instance
-// inovkes the hook at the front of the queue and discards it. After the
+// invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
 func (f *DBStoreUpdateIndexableRepositoryFunc) PushHook(hook func(context.Context, dbstore.UpdateableIndexableRepository, time.Time) error) {
@@ -851,7 +851,7 @@ func (f *GitserverClientFileExistsFunc) SetDefaultHook(hook func(context.Context
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// FileExists method of the parent MockGitserverClient instance inovkes the
+// FileExists method of the parent MockGitserverClient instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
 func (f *GitserverClientFileExistsFunc) PushHook(hook func(context.Context, int, string, string) (bool, error)) {
@@ -966,7 +966,7 @@ func (f *GitserverClientHeadFunc) SetDefaultHook(hook func(context.Context, int)
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Head method of the parent MockGitserverClient instance inovkes the hook
+// Head method of the parent MockGitserverClient instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
 func (f *GitserverClientHeadFunc) PushHook(hook func(context.Context, int) (string, error)) {
@@ -1075,7 +1075,7 @@ func (f *GitserverClientListFilesFunc) SetDefaultHook(hook func(context.Context,
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// ListFiles method of the parent MockGitserverClient instance inovkes the
+// ListFiles method of the parent MockGitserverClient instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
 func (f *GitserverClientListFilesFunc) PushHook(hook func(context.Context, int, string, *regexp.Regexp) ([]string, error)) {
@@ -1190,7 +1190,7 @@ func (f *GitserverClientRawContentsFunc) SetDefaultHook(hook func(context.Contex
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// RawContents method of the parent MockGitserverClient instance inovkes the
+// RawContents method of the parent MockGitserverClient instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
 func (f *GitserverClientRawContentsFunc) PushHook(hook func(context.Context, int, string, string) ([]byte, error)) {
@@ -1338,7 +1338,7 @@ func (f *IndexEnqueuerQueueIndexFunc) SetDefaultHook(hook func(context.Context, 
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// QueueIndex method of the parent MockIndexEnqueuer instance inovkes the
+// QueueIndex method of the parent MockIndexEnqueuer instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
 func (f *IndexEnqueuerQueueIndexFunc) PushHook(hook func(context.Context, int) error) {
