@@ -1,12 +1,50 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
 	amconfig "github.com/prometheus/alertmanager/config"
+
+	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+func TestAlertSolutionsURL(t *testing.T) {
+	defaultURL := fmt.Sprintf("%s/%s", docsURL, alertSolutionsPagePath)
+	tests := []struct {
+		name         string
+		mockVersion  string
+		wantIncludes string
+	}{
+		{
+			name:         "no version set",
+			mockVersion:  "",
+			wantIncludes: defaultURL,
+		}, {
+			name:         "dev version set",
+			mockVersion:  "0.0.0+dev",
+			wantIncludes: defaultURL,
+		}, {
+			name:         "not a semver",
+			mockVersion:  "85633_2021-01-28_f6a6fef",
+			wantIncludes: defaultURL,
+		}, {
+			name:         "semver",
+			mockVersion:  "3.24.1",
+			wantIncludes: "@v3.24.1",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			version.Mock(tt.mockVersion)
+			if got := alertSolutionsURL(); !strings.Contains(got, tt.wantIncludes) {
+				t.Errorf("alertSolutionsURL() = %q, should include %q", got, tt.wantIncludes)
+			}
+		})
+	}
+}
 
 func TestNewRoutesAndReceivers(t *testing.T) {
 	type args struct {
