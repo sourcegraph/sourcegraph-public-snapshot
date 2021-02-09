@@ -21,7 +21,7 @@ func RepoUpdater() *monitoring.Container {
 				Title: "General",
 				Rows: []monitoring.Row{
 					{
-						shared.FrontendInternalAPIErrorResponses("repo-updater", monitoring.ObservableOwnerCloud).Observable(),
+						shared.FrontendInternalAPIErrorResponses("repo-updater", monitoring.ObservableOwnerCoreApplication).Observable(),
 					},
 				},
 			},
@@ -35,7 +35,7 @@ func RepoUpdater() *monitoring.Container {
 							Query:       `max(timestamp(vector(time()))) - max(src_repoupdater_syncer_sync_last_time)`,
 							NoAlert:     true,
 							Panel:       monitoring.Panel().Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerCloud,
+							Owner:       monitoring.ObservableOwnerCoreApplication,
 							Interpretation: `
 								A high value here indicates issues synchronizing repository permissions.
 								If the value is persistently high, make sure all external services have valid tokens.
@@ -47,7 +47,7 @@ func RepoUpdater() *monitoring.Container {
 							Query:       `max(src_repoupdater_max_sync_backoff)`,
 							Critical:    monitoring.Alert().GreaterOrEqual(syncDurationThreshold.Seconds()).For(10 * time.Minute),
 							Panel:       monitoring.Panel().Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerCloud,
+							Owner:       monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: fmt.Sprintf(`
 								An alert here indicates that no code host connections have synced in at least %v. This indicates that there could be a configuration issue
 								with your code hosts connections or networking issues affecting communication with your code hosts.
@@ -64,7 +64,7 @@ func RepoUpdater() *monitoring.Container {
 							Query:       `sum by (family) (rate(src_repoupdater_syncer_sync_errors_total[5m]))`,
 							Critical:    monitoring.Alert().Greater(0).For(10 * time.Minute),
 							Panel:       monitoring.Panel().Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerCloud,
+							Owner:       monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: `
 								An alert here indicates errors syncing repo metadata with code hosts. This indicates that there could be a configuration issue
 								with your code hosts connections or networking issues affecting communication with your code hosts.
@@ -83,7 +83,7 @@ func RepoUpdater() *monitoring.Container {
 							Query:             `sum by (family) (rate(src_repoupdater_syncer_start_sync[5m]))`,
 							Warning:           monitoring.Alert().LessOrEqual(0).For(syncDurationThreshold),
 							Panel:             monitoring.Panel().LegendFormat("{{family}}").Unit(monitoring.Number),
-							Owner:             monitoring.ObservableOwnerCloud,
+							Owner:             monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: "Check repo-updater logs for errors.",
 						},
 						{
@@ -92,7 +92,7 @@ func RepoUpdater() *monitoring.Container {
 							Query:             `histogram_quantile(0.95, sum by (le, family, success) (rate(src_repoupdater_syncer_sync_duration_seconds_bucket[1m])))`,
 							Warning:           monitoring.Alert().GreaterOrEqual(30).For(5 * time.Minute),
 							Panel:             monitoring.Panel().LegendFormat("{{family}}-{{success}}").Unit(monitoring.Seconds),
-							Owner:             monitoring.ObservableOwnerCloud,
+							Owner:             monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: "Check the network latency is reasonable (<50ms) between the Sourcegraph and the code host",
 						},
 						{
@@ -101,7 +101,7 @@ func RepoUpdater() *monitoring.Container {
 							Query:             `histogram_quantile(0.95, sum by (le) (rate(src_repoupdater_source_duration_seconds_bucket[1m])))`,
 							Warning:           monitoring.Alert().GreaterOrEqual(30).For(5 * time.Minute),
 							Panel:             monitoring.Panel().Unit(monitoring.Seconds),
-							Owner:             monitoring.ObservableOwnerCloud,
+							Owner:             monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: "Check the network latency is reasonable (<50ms) between the Sourcegraph and the code host",
 						},
 					},
@@ -112,7 +112,7 @@ func RepoUpdater() *monitoring.Container {
 							Query:             `sum by (state) (rate(src_repoupdater_syncer_synced_repos_total[1m]))`,
 							Warning:           monitoring.Alert().LessOrEqual(0).For(syncDurationThreshold),
 							Panel:             monitoring.Panel().LegendFormat("{{state}}").Unit(monitoring.Number),
-							Owner:             monitoring.ObservableOwnerCloud,
+							Owner:             monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: "Check network connectivity to code hosts",
 						},
 						{
@@ -121,7 +121,7 @@ func RepoUpdater() *monitoring.Container {
 							Query:             `sum(rate(src_repoupdater_source_repos_total[1m]))`,
 							Warning:           monitoring.Alert().LessOrEqual(0).For(syncDurationThreshold),
 							Panel:             monitoring.Panel().Unit(monitoring.Number),
-							Owner:             monitoring.ObservableOwnerCloud,
+							Owner:             monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: "Check network connectivity to code hosts",
 						},
 						{
@@ -131,7 +131,7 @@ func RepoUpdater() *monitoring.Container {
 							// 90% of our enforced limit
 							Critical:          monitoring.Alert().GreaterOrEqual(200000 * 0.9).For(5 * time.Minute),
 							Panel:             monitoring.Panel().Unit(monitoring.Number),
-							Owner:             monitoring.ObservableOwnerCloud,
+							Owner:             monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: "Check for unusual spikes in user added repos. Each user is only allowed to add 2000",
 						},
 					},
@@ -142,7 +142,7 @@ func RepoUpdater() *monitoring.Container {
 							Query:             `sum(rate(src_repoupdater_purge_failed[1m]))`,
 							Warning:           monitoring.Alert().Greater(0).For(5 * time.Minute),
 							Panel:             monitoring.Panel().Unit(monitoring.Number),
-							Owner:             monitoring.ObservableOwnerCloud,
+							Owner:             monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: "Check repo-updater's connectivity with gitserver and gitserver logs",
 						},
 					},
@@ -153,7 +153,7 @@ func RepoUpdater() *monitoring.Container {
 							Query:             `sum(rate(src_repoupdater_sched_auto_fetch[1m]))`,
 							Warning:           monitoring.Alert().LessOrEqual(0).For(syncDurationThreshold),
 							Panel:             monitoring.Panel().Unit(monitoring.Number),
-							Owner:             monitoring.ObservableOwnerCloud,
+							Owner:             monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: "Check repo-updater logs. This is expected to fire if there are no user added code hosts",
 						},
 						{
@@ -162,7 +162,7 @@ func RepoUpdater() *monitoring.Container {
 							Query:       `sum(rate(src_repoupdater_sched_manual_fetch[1m]))`,
 							NoAlert:     true,
 							Panel:       monitoring.Panel().Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerCloud,
+							Owner:       monitoring.ObservableOwnerCoreApplication,
 							Interpretation: `
 								Check repo-updater logs if this value is persistently high.
 								This does not indicate anything if there are no user added code hosts.
@@ -176,7 +176,7 @@ func RepoUpdater() *monitoring.Container {
 							Query:             `sum(src_repoupdater_sched_known_repos)`,
 							Warning:           monitoring.Alert().LessOrEqual(0).For(10 * time.Minute),
 							Panel:             monitoring.Panel().Unit(monitoring.Number),
-							Owner:             monitoring.ObservableOwnerCloud,
+							Owner:             monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: "Check repo-updater logs. This is expected to fire if there are no user added code hosts",
 						},
 						{
@@ -186,7 +186,7 @@ func RepoUpdater() *monitoring.Container {
 							// Alert if the derivative is positive for longer than 30 minutes
 							Critical:          monitoring.Alert().Greater(0).For(120 * time.Minute),
 							Panel:             monitoring.Panel().Unit(monitoring.Number),
-							Owner:             monitoring.ObservableOwnerCloud,
+							Owner:             monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: "Check repo-updater logs for indications that the queue is not being processed. The queue length should trend downwards over time as items are sent to GitServer",
 						},
 						{
@@ -195,7 +195,7 @@ func RepoUpdater() *monitoring.Container {
 							Query:             `sum(rate(src_repoupdater_sched_loops[1m]))`,
 							Warning:           monitoring.Alert().LessOrEqual(0).For(syncDurationThreshold),
 							Panel:             monitoring.Panel().Unit(monitoring.Number),
-							Owner:             monitoring.ObservableOwnerCloud,
+							Owner:             monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: "Check repo-updater logs for errors. This is expected to fire if there are no user added code hosts",
 						},
 					},
@@ -206,7 +206,7 @@ func RepoUpdater() *monitoring.Container {
 							Query:             `sum(rate(src_repoupdater_sched_error[1m]))`,
 							Critical:          monitoring.Alert().GreaterOrEqual(1).For(time.Minute),
 							Panel:             monitoring.Panel().Unit(monitoring.Number),
-							Owner:             monitoring.ObservableOwnerCloud,
+							Owner:             monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: "Check repo-updater logs for errors",
 						},
 					},
@@ -223,7 +223,7 @@ func RepoUpdater() *monitoring.Container {
 							Query:             `sum by (type) (src_repoupdater_perms_syncer_perms_gap_seconds)`,
 							Warning:           monitoring.Alert().GreaterOrEqual((3 * 24 * time.Hour).Seconds()).For(5 * time.Minute), // 3 days
 							Panel:             monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Seconds),
-							Owner:             monitoring.ObservableOwnerCloud,
+							Owner:             monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: "Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).",
 						},
 						{
@@ -232,7 +232,7 @@ func RepoUpdater() *monitoring.Container {
 							Query:             `sum by (type) (src_repoupdater_perms_syncer_stale_perms)`,
 							Warning:           monitoring.Alert().GreaterOrEqual(100).For(5 * time.Minute),
 							Panel:             monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
-							Owner:             monitoring.ObservableOwnerCloud,
+							Owner:             monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: "Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).",
 						},
 						{
@@ -241,7 +241,7 @@ func RepoUpdater() *monitoring.Container {
 							Query:       `sum by (type) (src_repoupdater_perms_syncer_no_perms)`,
 							Warning:     monitoring.Alert().GreaterOrEqual(100).For(5 * time.Minute),
 							Panel:       monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerCloud,
+							Owner:       monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: `
 								- **Enabled permissions for the first time:** Wait for few minutes and see if the number goes down.
 								- **Otherwise:** Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
@@ -255,7 +255,7 @@ func RepoUpdater() *monitoring.Container {
 							Query:             `histogram_quantile(0.95, sum by (le, type) (rate(src_repoupdater_perms_syncer_sync_duration_seconds_bucket[1m])))`,
 							Warning:           monitoring.Alert().GreaterOrEqual(30).For(5 * time.Minute),
 							Panel:             monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Seconds),
-							Owner:             monitoring.ObservableOwnerCloud,
+							Owner:             monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: "Check the network latency is reasonable (<50ms) between the Sourcegraph and the code host.",
 						},
 						{
@@ -264,7 +264,7 @@ func RepoUpdater() *monitoring.Container {
 							Query:       `sum(src_repoupdater_perms_syncer_queue_size)`,
 							Warning:     monitoring.Alert().GreaterOrEqual(100).For(5 * time.Minute),
 							Panel:       monitoring.Panel().Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerCloud,
+							Owner:       monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: `
 								- **Enabled permissions for the first time:** Wait for few minutes and see if the number goes down.
 								- **Otherwise:** Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
@@ -278,7 +278,7 @@ func RepoUpdater() *monitoring.Container {
 							Query:       `sum by (type) (ceil(rate(src_repoupdater_perms_syncer_sync_errors_total[1m])))`,
 							Critical:    monitoring.Alert().GreaterOrEqual(1).For(time.Minute),
 							Panel:       monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerCloud,
+							Owner:       monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: `
 								- Check the network connectivity the Sourcegraph and the code host.
 								- Check if API rate limit quota is exhausted on the code host.
@@ -298,7 +298,7 @@ func RepoUpdater() *monitoring.Container {
 							Query:             `sum(src_repoupdater_external_services_total)`,
 							Critical:          monitoring.Alert().GreaterOrEqual(20000).For(1 * time.Hour),
 							Panel:             monitoring.Panel().Unit(monitoring.Number),
-							Owner:             monitoring.ObservableOwnerCloud,
+							Owner:             monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: "Check for spikes in external services, could be abuse",
 						},
 						{
@@ -307,7 +307,7 @@ func RepoUpdater() *monitoring.Container {
 							Query:             `sum(src_repoupdater_user_external_services_total)`,
 							Warning:           monitoring.Alert().GreaterOrEqual(20000).For(1 * time.Hour),
 							Panel:             monitoring.Panel().Unit(monitoring.Number),
-							Owner:             monitoring.ObservableOwnerCloud,
+							Owner:             monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: "Check for spikes in external services, could be abuse",
 						},
 					},
@@ -318,7 +318,7 @@ func RepoUpdater() *monitoring.Container {
 							Query:       `sum(src_repoupdater_queued_sync_jobs_total)`,
 							Warning:     monitoring.Alert().GreaterOrEqual(100).For(1 * time.Hour),
 							Panel:       monitoring.Panel().Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerCloud,
+							Owner:       monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: `
 								- **Check if jobs are failing to sync:** "SELECT * FROM external_service_sync_jobs WHERE state = 'errored'";
 								- **Increase the number of workers** using the 'repoConcurrentExternalServiceSyncers' site config.
@@ -330,7 +330,7 @@ func RepoUpdater() *monitoring.Container {
 							Query:             `sum(src_repoupdater_completed_sync_jobs_total)`,
 							Warning:           monitoring.Alert().GreaterOrEqual(100000).For(1 * time.Hour),
 							Panel:             monitoring.Panel().Unit(monitoring.Number),
-							Owner:             monitoring.ObservableOwnerCloud,
+							Owner:             monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: "Check repo-updater logs. Jobs older than 1 day should have been removed.",
 						},
 						{
@@ -339,7 +339,7 @@ func RepoUpdater() *monitoring.Container {
 							Query:             `sum(src_repoupdater_errored_sync_jobs_total)`,
 							Warning:           monitoring.Alert().GreaterOrEqual(100).For(1 * time.Hour),
 							Panel:             monitoring.Panel().Unit(monitoring.Number),
-							Owner:             monitoring.ObservableOwnerCloud,
+							Owner:             monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: "Check repo-updater logs. Check code host connectivity",
 						},
 					},
@@ -351,7 +351,7 @@ func RepoUpdater() *monitoring.Container {
 							// 5% of initial limit of 5000
 							Critical:          monitoring.Alert().LessOrEqual(250),
 							Panel:             monitoring.Panel().LegendFormat("{{name}}"),
-							Owner:             monitoring.ObservableOwnerCloud,
+							Owner:             monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: `Try restarting the pod to get a different public IP.`,
 						},
 						{
@@ -361,7 +361,7 @@ func RepoUpdater() *monitoring.Container {
 							// 5% of initial limit of 5000
 							Critical:          monitoring.Alert().LessOrEqual(250),
 							Panel:             monitoring.Panel().LegendFormat("{{name}}"),
-							Owner:             monitoring.ObservableOwnerCloud,
+							Owner:             monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: `Try restarting the pod to get a different public IP.`,
 						},
 						{
@@ -370,7 +370,7 @@ func RepoUpdater() *monitoring.Container {
 							Query:             `max by (name) (src_github_rate_limit_remaining_v2{resource="search"})`,
 							Critical:          monitoring.Alert().LessOrEqual(5),
 							Panel:             monitoring.Panel().LegendFormat("{{name}}"),
-							Owner:             monitoring.ObservableOwnerCloud,
+							Owner:             monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: `Try restarting the pod to get a different public IP.`,
 						},
 					},
@@ -380,7 +380,7 @@ func RepoUpdater() *monitoring.Container {
 							Description:    "time spent waiting for the GitHub graphql API rate limiter",
 							Query:          `sum by(name) (rate(src_github_rate_limit_wait_duration_seconds{resource="graphql"}[5m]))`,
 							Panel:          monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
-							Owner:          monitoring.ObservableOwnerCloud,
+							Owner:          monitoring.ObservableOwnerCoreApplication,
 							NoAlert:        true,
 							Interpretation: "Indicates how long we're waiting on the rate limit once it has been exceeded",
 						},
@@ -389,7 +389,7 @@ func RepoUpdater() *monitoring.Container {
 							Description:    "time spent waiting for the GitHub rest API rate limiter",
 							Query:          `sum by(name) (rate(src_github_rate_limit_wait_duration_seconds{resource="rest"}[5m]))`,
 							Panel:          monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
-							Owner:          monitoring.ObservableOwnerCloud,
+							Owner:          monitoring.ObservableOwnerCoreApplication,
 							NoAlert:        true,
 							Interpretation: "Indicates how long we're waiting on the rate limit once it has been exceeded",
 						},
@@ -398,7 +398,7 @@ func RepoUpdater() *monitoring.Container {
 							Description:    "time spent waiting for the GitHub search API rate limiter",
 							Query:          `sum by(name) (rate(src_github_rate_limit_wait_duration_seconds{resource="search"}[5m]))`,
 							Panel:          monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
-							Owner:          monitoring.ObservableOwnerCloud,
+							Owner:          monitoring.ObservableOwnerCoreApplication,
 							NoAlert:        true,
 							Interpretation: "Indicates how long we're waiting on the rate limit once it has been exceeded",
 						},
@@ -411,7 +411,7 @@ func RepoUpdater() *monitoring.Container {
 							// 5% of initial limit of 600
 							Critical:          monitoring.Alert().LessOrEqual(30),
 							Panel:             monitoring.Panel().LegendFormat("{{name}}"),
-							Owner:             monitoring.ObservableOwnerCloud,
+							Owner:             monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: `Try restarting the pod to get a different public IP.`,
 						},
 						{
@@ -419,7 +419,7 @@ func RepoUpdater() *monitoring.Container {
 							Description:    "time spent waiting for the GitLab rest API rate limiter",
 							Query:          `sum by(name) (rate(src_gitlab_rate_limit_wait_duration_seconds{resource="rest"}[5m]))`,
 							Panel:          monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
-							Owner:          monitoring.ObservableOwnerCloud,
+							Owner:          monitoring.ObservableOwnerCoreApplication,
 							NoAlert:        true,
 							Interpretation: "Indicates how long we're waiting on the rate limit once it has been exceeded",
 						},
@@ -431,14 +431,14 @@ func RepoUpdater() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.ContainerCPUUsage("repo-updater", monitoring.ObservableOwnerCloud).Observable(),
-						shared.ContainerMemoryUsage("repo-updater", monitoring.ObservableOwnerCloud).
+						shared.ContainerCPUUsage("repo-updater", monitoring.ObservableOwnerCoreApplication).Observable(),
+						shared.ContainerMemoryUsage("repo-updater", monitoring.ObservableOwnerCoreApplication).
 							WithWarning(nil).
 							WithCritical(monitoring.Alert().GreaterOrEqual(90)).
 							Observable(),
 					},
 					{
-						shared.ContainerMissing("repo-updater", monitoring.ObservableOwnerCloud).Observable(),
+						shared.ContainerMissing("repo-updater", monitoring.ObservableOwnerCoreApplication).Observable(),
 					},
 				},
 			},
@@ -447,12 +447,12 @@ func RepoUpdater() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.ProvisioningCPUUsageLongTerm("repo-updater", monitoring.ObservableOwnerCloud).Observable(),
-						shared.ProvisioningMemoryUsageLongTerm("repo-updater", monitoring.ObservableOwnerCloud).Observable(),
+						shared.ProvisioningCPUUsageLongTerm("repo-updater", monitoring.ObservableOwnerCoreApplication).Observable(),
+						shared.ProvisioningMemoryUsageLongTerm("repo-updater", monitoring.ObservableOwnerCoreApplication).Observable(),
 					},
 					{
-						shared.ProvisioningCPUUsageShortTerm("repo-updater", monitoring.ObservableOwnerCloud).Observable(),
-						shared.ProvisioningMemoryUsageShortTerm("repo-updater", monitoring.ObservableOwnerCloud).Observable(),
+						shared.ProvisioningCPUUsageShortTerm("repo-updater", monitoring.ObservableOwnerCoreApplication).Observable(),
+						shared.ProvisioningMemoryUsageShortTerm("repo-updater", monitoring.ObservableOwnerCoreApplication).Observable(),
 					},
 				},
 			},
@@ -461,8 +461,8 @@ func RepoUpdater() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.GoGoroutines("repo-updater", monitoring.ObservableOwnerCloud).Observable(),
-						shared.GoGcDuration("repo-updater", monitoring.ObservableOwnerCloud).Observable(),
+						shared.GoGoroutines("repo-updater", monitoring.ObservableOwnerCoreApplication).Observable(),
+						shared.GoGcDuration("repo-updater", monitoring.ObservableOwnerCoreApplication).Observable(),
 					},
 				},
 			},
@@ -471,7 +471,7 @@ func RepoUpdater() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.KubernetesPodsAvailable("repo-updater", monitoring.ObservableOwnerCloud).Observable(),
+						shared.KubernetesPodsAvailable("repo-updater", monitoring.ObservableOwnerCoreApplication).Observable(),
 					},
 				},
 			},

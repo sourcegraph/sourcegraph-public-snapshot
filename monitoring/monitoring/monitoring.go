@@ -435,13 +435,13 @@ func (r Row) validate() error {
 type ObservableOwner string
 
 const (
-	ObservableOwnerSearch       ObservableOwner = "search"
-	ObservableOwnerCampaigns    ObservableOwner = "campaigns"
-	ObservableOwnerCodeIntel    ObservableOwner = "code-intel"
-	ObservableOwnerDistribution ObservableOwner = "distribution"
-	ObservableOwnerSecurity     ObservableOwner = "security"
-	ObservableOwnerWeb          ObservableOwner = "web"
-	ObservableOwnerCloud        ObservableOwner = "cloud"
+	ObservableOwnerSearch          ObservableOwner = "search"
+	ObservableOwnerCampaigns       ObservableOwner = "campaigns"
+	ObservableOwnerCodeIntel       ObservableOwner = "code-intel"
+	ObservableOwnerDistribution    ObservableOwner = "distribution"
+	ObservableOwnerSecurity        ObservableOwner = "security"
+	ObservableOwnerWeb             ObservableOwner = "web"
+	ObservableOwnerCoreApplication ObservableOwner = "core application"
 )
 
 // toMarkdown returns a Markdown string that also links to the owner's team page
@@ -456,7 +456,9 @@ func (o ObservableOwner) toMarkdown() string {
 	default:
 		teamName = string(o)
 	}
-	return fmt.Sprintf("[Sourcegraph %s team](https://about.sourcegraph.com/handbook/engineering/%s)", upperFirst(teamName), teamName)
+
+	slug := strings.ReplaceAll(teamName, " ", "-")
+	return fmt.Sprintf("[Sourcegraph %s team](https://about.sourcegraph.com/handbook/engineering/%s)", upperFirst(teamName), slug)
 }
 
 // Observable describes a metric about a container that can be observed. For example, memory usage.

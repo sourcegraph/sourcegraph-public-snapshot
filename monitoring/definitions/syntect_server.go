@@ -21,7 +21,7 @@ func SyntectServer() *monitoring.Container {
 							Query:          `sum(increase(src_syntax_highlighting_requests{status="error"}[5m])) / sum(increase(src_syntax_highlighting_requests[5m])) * 100`,
 							NoAlert:        true,
 							Panel:          monitoring.Panel().LegendFormat("error").Unit(monitoring.Percentage),
-							Owner:          monitoring.ObservableOwnerCloud,
+							Owner:          monitoring.ObservableOwnerCoreApplication,
 							Interpretation: "none",
 						},
 						{
@@ -30,7 +30,7 @@ func SyntectServer() *monitoring.Container {
 							Query:          `sum(increase(src_syntax_highlighting_requests{status="timeout"}[5m])) / sum(increase(src_syntax_highlighting_requests[5m])) * 100`,
 							NoAlert:        true,
 							Panel:          monitoring.Panel().LegendFormat("timeout").Unit(monitoring.Percentage),
-							Owner:          monitoring.ObservableOwnerCloud,
+							Owner:          monitoring.ObservableOwnerCoreApplication,
 							Interpretation: "none",
 						},
 					},
@@ -41,7 +41,7 @@ func SyntectServer() *monitoring.Container {
 							Query:          `sum(increase(src_syntax_highlighting_requests{status="panic"}[5m]))`,
 							NoAlert:        true,
 							Panel:          monitoring.Panel().LegendFormat("panic"),
-							Owner:          monitoring.ObservableOwnerCloud,
+							Owner:          monitoring.ObservableOwnerCoreApplication,
 							Interpretation: "none",
 						},
 						{
@@ -50,7 +50,7 @@ func SyntectServer() *monitoring.Container {
 							Query:          `sum(increase(src_syntax_highlighting_requests{status="hss_worker_timeout"}[5m]))`,
 							NoAlert:        true,
 							Panel:          monitoring.Panel().LegendFormat("worker death"),
-							Owner:          monitoring.ObservableOwnerCloud,
+							Owner:          monitoring.ObservableOwnerCoreApplication,
 							Interpretation: "none",
 						},
 					},
@@ -61,11 +61,11 @@ func SyntectServer() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.ContainerCPUUsage("syntect-server", monitoring.ObservableOwnerCloud).Observable(),
-						shared.ContainerMemoryUsage("syntect-server", monitoring.ObservableOwnerCloud).Observable(),
+						shared.ContainerCPUUsage("syntect-server", monitoring.ObservableOwnerCoreApplication).Observable(),
+						shared.ContainerMemoryUsage("syntect-server", monitoring.ObservableOwnerCoreApplication).Observable(),
 					},
 					{
-						shared.ContainerMissing("syntect-server", monitoring.ObservableOwnerCloud).Observable(),
+						shared.ContainerMissing("syntect-server", monitoring.ObservableOwnerCoreApplication).Observable(),
 					},
 				},
 			},
@@ -74,12 +74,12 @@ func SyntectServer() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.ProvisioningCPUUsageLongTerm("syntect-server", monitoring.ObservableOwnerCloud).Observable(),
-						shared.ProvisioningMemoryUsageLongTerm("syntect-server", monitoring.ObservableOwnerCloud).Observable(),
+						shared.ProvisioningCPUUsageLongTerm("syntect-server", monitoring.ObservableOwnerCoreApplication).Observable(),
+						shared.ProvisioningMemoryUsageLongTerm("syntect-server", monitoring.ObservableOwnerCoreApplication).Observable(),
 					},
 					{
-						shared.ProvisioningCPUUsageShortTerm("syntect-server", monitoring.ObservableOwnerCloud).Observable(),
-						shared.ProvisioningMemoryUsageShortTerm("syntect-server", monitoring.ObservableOwnerCloud).Observable(),
+						shared.ProvisioningCPUUsageShortTerm("syntect-server", monitoring.ObservableOwnerCoreApplication).Observable(),
+						shared.ProvisioningMemoryUsageShortTerm("syntect-server", monitoring.ObservableOwnerCoreApplication).Observable(),
 					},
 				},
 			},
@@ -88,7 +88,7 @@ func SyntectServer() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.KubernetesPodsAvailable("syntect-server", monitoring.ObservableOwnerCloud).Observable(),
+						shared.KubernetesPodsAvailable("syntect-server", monitoring.ObservableOwnerCoreApplication).Observable(),
 					},
 				},
 			},

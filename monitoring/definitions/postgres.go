@@ -25,7 +25,7 @@ func Postgres() *monitoring.Container {
 					monitoring.Observable{
 						Name:              "connections",
 						Description:       "active connections",
-						Owner:             monitoring.ObservableOwnerCloud,
+						Owner:             monitoring.ObservableOwnerCoreApplication,
 						Query:             `sum by (datname) (pg_stat_activity_count{datname!~"template.*|postgres|cloudsqladmin"})`,
 						Panel:             monitoring.Panel().LegendFormat("{{datname}}"),
 						Warning:           monitoring.Alert().LessOrEqual(5).For(5 * time.Minute),
@@ -34,7 +34,7 @@ func Postgres() *monitoring.Container {
 					monitoring.Observable{
 						Name:              "transaction_durations",
 						Description:       "maximum transaction durations",
-						Owner:             monitoring.ObservableOwnerCloud,
+						Owner:             monitoring.ObservableOwnerCoreApplication,
 						Query:             `sum by (datname) (pg_stat_activity_max_tx_duration{datname!~"template.*|postgres|cloudsqladmin"})`,
 						Panel:             monitoring.Panel().LegendFormat("{{datname}}").Unit(monitoring.Milliseconds),
 						Warning:           monitoring.Alert().GreaterOrEqual(300).For(5 * time.Minute),
@@ -51,7 +51,7 @@ func Postgres() *monitoring.Container {
 						monitoring.Observable{
 							Name:              "postgres_up",
 							Description:       "database availability",
-							Owner:             monitoring.ObservableOwnerCloud,
+							Owner:             monitoring.ObservableOwnerCoreApplication,
 							Query:             "pg_up",
 							Panel:             monitoring.Panel().LegendFormat("{{app}}"),
 							Critical:          monitoring.Alert().LessOrEqual(0).For(5 * time.Minute),
@@ -61,7 +61,7 @@ func Postgres() *monitoring.Container {
 						monitoring.Observable{
 							Name:        "pg_exporter_err",
 							Description: "errors scraping postgres exporter",
-							Owner:       monitoring.ObservableOwnerCloud,
+							Owner:       monitoring.ObservableOwnerCoreApplication,
 							Query:       "pg_exporter_last_scrape_error",
 							Panel:       monitoring.Panel().LegendFormat("{{app}}"),
 							Warning:     monitoring.Alert().GreaterOrEqual(1).For(5 * time.Minute),
@@ -73,7 +73,7 @@ func Postgres() *monitoring.Container {
 						monitoring.Observable{
 							Name:           "migration_in_progress",
 							Description:    "active schema migration",
-							Owner:          monitoring.ObservableOwnerCloud,
+							Owner:          monitoring.ObservableOwnerCoreApplication,
 							Query:          "pg_sg_migration_status",
 							Panel:          monitoring.Panel().LegendFormat("{{app}}"),
 							Critical:       monitoring.Alert().GreaterOrEqual(1).For(5 * time.Minute),
@@ -87,7 +87,7 @@ func Postgres() *monitoring.Container {
 						// monitoring.Observable{
 						//	Name:            "cache_hit_ratio",
 						//	Description:     "ratio of cache hits over 5m",
-						//	Owner:           monitoring.ObservableOwnerCloud,
+						//	Owner:           monitoring.ObservableOwnerCoreApplication,
 						//	Query:           `avg(rate(pg_stat_database_blks_hit{datname!~"template.*|postgres|cloudsqladmin"}[5m]) / (rate(pg_stat_database_blks_hit{datname!~"template.*|postgres|cloudsqladmin"}[5m]) + rate(pg_stat_database_blks_read{datname!~"template.*|postgres|cloudsqladmin"}[5m]))) by (datname) * 100`,
 						//	DataMayNotExist: true,
 						//	Warning:         monitoring.Alert().LessOrEqual(0.98).For(5 * time.Minute),
@@ -103,12 +103,12 @@ func Postgres() *monitoring.Container {
 				// See docstring for databaseContainerNames
 				Rows: []monitoring.Row{
 					{
-						shared.ProvisioningCPUUsageLongTerm(databaseContainerNames, monitoring.ObservableOwnerCloud).Observable(),
-						shared.ProvisioningMemoryUsageLongTerm(databaseContainerNames, monitoring.ObservableOwnerCloud).Observable(),
+						shared.ProvisioningCPUUsageLongTerm(databaseContainerNames, monitoring.ObservableOwnerCoreApplication).Observable(),
+						shared.ProvisioningMemoryUsageLongTerm(databaseContainerNames, monitoring.ObservableOwnerCoreApplication).Observable(),
 					},
 					{
-						shared.ProvisioningCPUUsageShortTerm(databaseContainerNames, monitoring.ObservableOwnerCloud).Observable(),
-						shared.ProvisioningMemoryUsageShortTerm(databaseContainerNames, monitoring.ObservableOwnerCloud).Observable(),
+						shared.ProvisioningCPUUsageShortTerm(databaseContainerNames, monitoring.ObservableOwnerCoreApplication).Observable(),
+						shared.ProvisioningMemoryUsageShortTerm(databaseContainerNames, monitoring.ObservableOwnerCoreApplication).Observable(),
 					},
 				},
 			},
@@ -117,7 +117,7 @@ func Postgres() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.KubernetesPodsAvailable(databaseContainerNames, monitoring.ObservableOwnerCloud).Observable(),
+						shared.KubernetesPodsAvailable(databaseContainerNames, monitoring.ObservableOwnerCoreApplication).Observable(),
 					},
 				},
 			},

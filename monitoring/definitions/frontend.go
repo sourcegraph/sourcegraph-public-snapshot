@@ -105,7 +105,7 @@ func Frontend() *monitoring.Container {
 
 							Critical: monitoring.Alert().GreaterOrEqual(2),
 							Panel:    monitoring.Panel().LegendFormat("latency").Unit(monitoring.Seconds),
-							Owner:    monitoring.ObservableOwnerCloud,
+							Owner:    monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: `
 								- Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
 								- Trace a request to see what the slowest part is: https://docs.sourcegraph.com/admin/observability/tracing
@@ -117,7 +117,7 @@ func Frontend() *monitoring.Container {
 							Query:       `histogram_quantile(0.9, sum by(le) (rate(src_http_request_duration_seconds_bucket{route="blob"}[10m])))`,
 							Critical:    monitoring.Alert().GreaterOrEqual(5),
 							Panel:       monitoring.Panel().LegendFormat("latency").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerCloud,
+							Owner:       monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: `
 								- Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
 								- Trace a request to see what the slowest part is: https://docs.sourcegraph.com/admin/observability/tracing
@@ -671,7 +671,7 @@ func Frontend() *monitoring.Container {
 							Query:       `sum by(category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2.."}[5m])) / ignoring(code) group_left sum(increase(src_frontend_internal_request_duration_seconds_count[5m])) * 100`,
 							Warning:     monitoring.Alert().GreaterOrEqual(5).For(15 * time.Minute),
 							Panel:       monitoring.Panel().LegendFormat("{{category}}").Unit(monitoring.Percentage),
-							Owner:       monitoring.ObservableOwnerCloud,
+							Owner:       monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: `
 								- May not be a substantial issue, check the 'frontend' logs for potential causes.
 							`,
@@ -684,7 +684,7 @@ func Frontend() *monitoring.Container {
 							Query:             `histogram_quantile(0.99, sum by (le,category)(rate(src_gitserver_request_duration_seconds_bucket{job=~"(sourcegraph-)?frontend"}[5m])))`,
 							Warning:           monitoring.Alert().GreaterOrEqual(20),
 							Panel:             monitoring.Panel().LegendFormat("{{category}}").Unit(monitoring.Seconds),
-							Owner:             monitoring.ObservableOwnerCloud,
+							Owner:             monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: "none",
 						},
 						{
@@ -693,7 +693,7 @@ func Frontend() *monitoring.Container {
 							Query:             `sum by (category)(increase(src_gitserver_request_duration_seconds_count{job=~"(sourcegraph-)?frontend",code!~"2.."}[5m])) / ignoring(code) group_left sum by (category)(increase(src_gitserver_request_duration_seconds_count{job=~"(sourcegraph-)?frontend"}[5m])) * 100`,
 							Warning:           monitoring.Alert().GreaterOrEqual(5).For(15 * time.Minute),
 							Panel:             monitoring.Panel().LegendFormat("{{category}}").Unit(monitoring.Percentage),
-							Owner:             monitoring.ObservableOwnerCloud,
+							Owner:             monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: "none",
 						},
 					},
@@ -724,11 +724,11 @@ func Frontend() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.ContainerCPUUsage(containerName, monitoring.ObservableOwnerCloud).Observable(),
-						shared.ContainerMemoryUsage(containerName, monitoring.ObservableOwnerCloud).Observable(),
+						shared.ContainerCPUUsage(containerName, monitoring.ObservableOwnerCoreApplication).Observable(),
+						shared.ContainerMemoryUsage(containerName, monitoring.ObservableOwnerCoreApplication).Observable(),
 					},
 					{
-						shared.ContainerMissing(containerName, monitoring.ObservableOwnerCloud).Observable(),
+						shared.ContainerMissing(containerName, monitoring.ObservableOwnerCoreApplication).Observable(),
 					},
 				},
 			},
@@ -737,12 +737,12 @@ func Frontend() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.ProvisioningCPUUsageLongTerm(containerName, monitoring.ObservableOwnerCloud).Observable(),
-						shared.ProvisioningMemoryUsageLongTerm(containerName, monitoring.ObservableOwnerCloud).Observable(),
+						shared.ProvisioningCPUUsageLongTerm(containerName, monitoring.ObservableOwnerCoreApplication).Observable(),
+						shared.ProvisioningMemoryUsageLongTerm(containerName, monitoring.ObservableOwnerCoreApplication).Observable(),
 					},
 					{
-						shared.ProvisioningCPUUsageShortTerm(containerName, monitoring.ObservableOwnerCloud).Observable(),
-						shared.ProvisioningMemoryUsageShortTerm(containerName, monitoring.ObservableOwnerCloud).Observable(),
+						shared.ProvisioningCPUUsageShortTerm(containerName, monitoring.ObservableOwnerCoreApplication).Observable(),
+						shared.ProvisioningMemoryUsageShortTerm(containerName, monitoring.ObservableOwnerCoreApplication).Observable(),
 					},
 				},
 			},
@@ -751,8 +751,8 @@ func Frontend() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.GoGoroutines(containerName, monitoring.ObservableOwnerCloud).Observable(),
-						shared.GoGcDuration(containerName, monitoring.ObservableOwnerCloud).Observable(),
+						shared.GoGoroutines(containerName, monitoring.ObservableOwnerCoreApplication).Observable(),
+						shared.GoGcDuration(containerName, monitoring.ObservableOwnerCoreApplication).Observable(),
 					},
 				},
 			},
@@ -761,7 +761,7 @@ func Frontend() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.KubernetesPodsAvailable(containerName, monitoring.ObservableOwnerCloud).Observable(),
+						shared.KubernetesPodsAvailable(containerName, monitoring.ObservableOwnerCoreApplication).Observable(),
 					},
 				},
 			},

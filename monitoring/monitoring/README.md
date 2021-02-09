@@ -149,7 +149,7 @@ type Group struct {
 }
 ```
 
-## type [Observable](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L465-L580>)
+## type [Observable](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L467-L582>)
 
 Observable describes a metric about a container that can be observed\. For example\, memory usage\.
 
@@ -274,7 +274,7 @@ type Observable struct {
 }
 ```
 
-## type [ObservableAlertDefinition](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L644-L650>)
+## type [ObservableAlertDefinition](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L646-L652>)
 
 ObservableAlertDefinition defines when an alert would be considered firing\.
 
@@ -284,7 +284,7 @@ type ObservableAlertDefinition struct {
 }
 ```
 
-### func [Alert](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L639>)
+### func [Alert](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L641>)
 
 ```go
 func Alert() *ObservableAlertDefinition
@@ -292,7 +292,7 @@ func Alert() *ObservableAlertDefinition
 
 Alert provides a builder for defining alerting on an Observable\.
 
-### func \(\*ObservableAlertDefinition\) [For](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L682>)
+### func \(\*ObservableAlertDefinition\) [For](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L684>)
 
 ```go
 func (a *ObservableAlertDefinition) For(d time.Duration) *ObservableAlertDefinition
@@ -300,7 +300,7 @@ func (a *ObservableAlertDefinition) For(d time.Duration) *ObservableAlertDefinit
 
 For indicates how long the given thresholds must be exceeded for this alert to be considered firing\. Defaults to 0s \(immediately alerts when threshold is exceeded\)\.
 
-### func \(\*ObservableAlertDefinition\) [Greater](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L667>)
+### func \(\*ObservableAlertDefinition\) [Greater](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L669>)
 
 ```go
 func (a *ObservableAlertDefinition) Greater(f float64) *ObservableAlertDefinition
@@ -308,7 +308,7 @@ func (a *ObservableAlertDefinition) Greater(f float64) *ObservableAlertDefinitio
 
 Greater indicates the alert should fire when strictly greater to this value\.
 
-### func \(\*ObservableAlertDefinition\) [GreaterOrEqual](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L653>)
+### func \(\*ObservableAlertDefinition\) [GreaterOrEqual](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L655>)
 
 ```go
 func (a *ObservableAlertDefinition) GreaterOrEqual(f float64) *ObservableAlertDefinition
@@ -316,7 +316,7 @@ func (a *ObservableAlertDefinition) GreaterOrEqual(f float64) *ObservableAlertDe
 
 GreaterOrEqual indicates the alert should fire when greater or equal the given value\.
 
-### func \(\*ObservableAlertDefinition\) [Less](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L674>)
+### func \(\*ObservableAlertDefinition\) [Less](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L676>)
 
 ```go
 func (a *ObservableAlertDefinition) Less(f float64) *ObservableAlertDefinition
@@ -324,7 +324,7 @@ func (a *ObservableAlertDefinition) Less(f float64) *ObservableAlertDefinition
 
 Less indicates the alert should fire when strictly less than this value\.
 
-### func \(\*ObservableAlertDefinition\) [LessOrEqual](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L660>)
+### func \(\*ObservableAlertDefinition\) [LessOrEqual](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L662>)
 
 ```go
 func (a *ObservableAlertDefinition) LessOrEqual(f float64) *ObservableAlertDefinition
@@ -342,13 +342,13 @@ type ObservableOwner string
 
 ```go
 const (
-    ObservableOwnerSearch       ObservableOwner = "search"
-    ObservableOwnerCampaigns    ObservableOwner = "campaigns"
-    ObservableOwnerCodeIntel    ObservableOwner = "code-intel"
-    ObservableOwnerDistribution ObservableOwner = "distribution"
-    ObservableOwnerSecurity     ObservableOwner = "security"
-    ObservableOwnerWeb          ObservableOwner = "web"
-    ObservableOwnerCloud        ObservableOwner = "cloud"
+    ObservableOwnerSearch          ObservableOwner = "search"
+    ObservableOwnerCampaigns       ObservableOwner = "campaigns"
+    ObservableOwnerCodeIntel       ObservableOwner = "code-intel"
+    ObservableOwnerDistribution    ObservableOwner = "distribution"
+    ObservableOwnerSecurity        ObservableOwner = "security"
+    ObservableOwnerWeb             ObservableOwner = "web"
+    ObservableOwnerCoreApplication ObservableOwner = "core application"
 )
 ```
 
