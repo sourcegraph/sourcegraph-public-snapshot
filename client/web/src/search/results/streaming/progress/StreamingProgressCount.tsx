@@ -9,12 +9,12 @@ const abbreviateNumber = (number: number): string => {
         return number.toString()
     }
     if (number >= 1e3 && number < 1e6) {
-        return (number / 1e3).toFixed(1) + 'k+'
+        return (number / 1e3).toFixed(1) + 'k'
     }
     if (number >= 1e6 && number < 1e9) {
-        return (number / 1e6).toFixed(1) + 'm+'
+        return (number / 1e6).toFixed(1) + 'm'
     }
-    return (number / 1e9).toFixed(1) + 'b+'
+    return (number / 1e9).toFixed(1) + 'b'
 }
 
 export const StreamingProgressCount: React.FunctionComponent<Pick<StreamingProgressProps, 'progress' | 'state'>> = ({

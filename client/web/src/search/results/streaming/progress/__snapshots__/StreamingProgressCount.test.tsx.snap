@@ -148,7 +148,7 @@ exports[`StreamingProgressCount should render correctly for big numbers complete
     <Memo(CalculatorIcon)
       className="mr-2 icon-inline"
     />
-    1.2m+
+    1.2m
      
     results
      in
@@ -157,7 +157,7 @@ exports[`StreamingProgressCount should render correctly for big numbers complete
     s
      
     from 
-    8.9k+
+    8.9k
      
     repositories
   </div>
