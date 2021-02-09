@@ -53,13 +53,16 @@ export const RemoveExternalAccountModal: React.FunctionComponent<{
     return (
         <Dialog
             className="modal-body modal-body--top-third p-4 rounded border"
-            aria-labelledby={`label--remove-${name}-account-sign-in`}
+            aria-labelledby={`heading--disconnect-${name}`}
+            aria-describedby={`description--disconnect-${name}`}
             onDismiss={onDidCancel}
         >
             <div className="web-content">
-                <h3 className="text-danger mb-4">Disconnect {name}?</h3>
+                <h3 id={`heading--disconnect-${name}`} className="text-danger mb-4">
+                    Disconnect {name}?
+                </h3>
                 <Form onSubmit={onAccountRemove}>
-                    <div className="form-group mb-4">
+                    <div id={`description--disconnect-${name}`} className="form-group mb-4">
                         You are about to remove the sign in connection with {name}. After removing it, you won’t be able
                         to use {name} to sign in to Sourcegraph.
                     </div>

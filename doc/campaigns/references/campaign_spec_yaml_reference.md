@@ -522,6 +522,14 @@ published:
 
 > NOTE: The standalone `"*"` is quoted in the key to avoid ambiguity in the YAML document.
 
+By adding a `@<branch>` at the end of a match-rule, the rule is only matched against changesets with that branch:
+
+```yaml
+published:
+  - github.com/sourcegraph/src-*@my-branch: true
+  - github.com/sourcegraph/src-*@my-other-branch: true
+```
+
 ### Examples
 
 To publish all changesets created by a campaign:
@@ -564,6 +572,17 @@ changesetTemplate:
     - github.com/*: draft
 ```
 
+To publish only one of many changesets in a repository by addressing them with their branch name:
+
+```yaml
+changesetTemplate:
+  published:
+    - "*": true
+    - github.com/sourcegraph/*@my-branch-name-1: draft
+    - github.com/sourcegraph/*@my-branch-name-2: false
+```
+
+(Multiple changesets in a single repository can be produced, for example, [per project in a monorepo](../how-tos/creating_changesets_per_project_in_monorepos.md) or by [transforming large changes into multiple changesets](../how-tos/creating_multiple_changesets_in_large_repositories.md)).
 
 ## [`transformChanges`](#transformchanges)
 

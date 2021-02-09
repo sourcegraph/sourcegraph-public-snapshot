@@ -101,7 +101,8 @@ $text-muted: var(--text-muted);
     --border-color: #{$gray-04};
     --border-color-2: #{$gray-02};
     --sourcegraph-logo-text-color: #242427;
-    --search-filter-keyword-color: #1c7cd6;
+    --search-query-text-color: #2b3750;
+    --search-filter-keyword-color: #268bd2;
     --search-keyword-color: #{$oc-grape-7};
     --infobar-warning-color: #{$oc-red-8};
 }
@@ -128,7 +129,8 @@ $text-muted: var(--text-muted);
     --link-hover-color: #ffffff;
     --link-hover-background-color: #{$gray-18};
     --sourcegraph-logo-text-color: #ffffff;
-    --search-filter-keyword-color: #329af0;
+    --search-query-text-color: #f2f4f8;
+    --search-filter-keyword-color: #569cd6;
     --search-keyword-color: #{$oc-grape-4};
     --infobar-warning-color: #{$oc-red-6};
 }

@@ -22,7 +22,7 @@ type progressAggregator struct {
 }
 
 func (p *progressAggregator) Update(event graphqlbackend.SearchEvent) {
-	if len(event.Results) == 0 && p.Stats.Zero() {
+	if len(event.Results) == 0 && event.Stats.Zero() {
 		return
 	}
 
@@ -30,6 +30,11 @@ func (p *progressAggregator) Update(event graphqlbackend.SearchEvent) {
 	p.Stats.Update(&event.Stats)
 	for _, result := range event.Results {
 		p.MatchCount += int(result.ResultCount())
+	}
+
+	if p.MatchCount > p.Limit {
+		p.MatchCount = p.Limit
+		p.Stats.IsLimitHit = true
 	}
 }
 
@@ -66,7 +71,7 @@ func (p *progressAggregator) Final() api.Progress {
 
 	// We only send RepositoriesCount at the end because the number is
 	// confusing to users to see while searching.
-	s.RepositoriesCount = len(p.Stats.Repos)
+	s.RepositoriesCount = intPtr(len(p.Stats.Repos))
 
 	event := api.BuildProgressEvent(s)
 	event.Done = true
@@ -89,4 +94,8 @@ func getNames(stats streaming.Stats, status searchshared.RepoStatus) []api.Namer
 		}
 	})
 	return names
+}
+
+func intPtr(i int) *int {
+	return &i
 }

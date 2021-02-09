@@ -678,7 +678,7 @@ type ListDefaultReposOptions struct {
 // repos in our default_repos table and repos owned by users.
 // It may perform multiple queries, fetching repos in batches.
 func (s *RepoStore) ListAllDefaultRepos(ctx context.Context) (results []*types.RepoName, err error) {
-	return s.listAllDefaultRepos(ctx, 10_000)
+	return s.listAllDefaultRepos(ctx, 40_000)
 }
 
 func (s *RepoStore) listAllDefaultRepos(ctx context.Context, batchSize int) (results []*types.RepoName, err error) {
@@ -719,41 +719,23 @@ func (s *RepoStore) ListDefaultRepos(ctx context.Context, opts ListDefaultReposO
 
 	q := sqlf.Sprintf(`
 -- source: internal/database/repos.go:RepoStore.ListDefaultRepos
-SELECT
-    id,
-    name
-FROM
-    repo r
-WHERE
-    r.id > %s
-    AND EXISTS (
-        SELECT
-        FROM
-            external_service_repos sr
-            INNER JOIN external_services s ON s.id = sr.external_service_id
-        WHERE
-			s.cloud_default = false
-			AND s.deleted_at IS NULL
-			AND r.id = sr.repo_id
-            AND r.deleted_at IS NULL
-            AND %s
-    )
-UNION
-    SELECT
-        r.id,
-        r.name
-    FROM
-        default_repos
-		JOIN repo r ON default_repos.repo_id = r.id
-	WHERE
-		r.deleted_at IS NULL
-		AND r.id > %s
-		AND %s
+SELECT DISTINCT ON (r.id)
+  r.id,
+  r.name
+  FROM repo r
+  JOIN external_service_repos sr ON sr.repo_id = r.id
+  JOIN external_services s ON s.id = sr.external_service_id
+  LEFT JOIN default_repos dr ON dr.repo_id = r.id
+  WHERE (NOT s.cloud_default OR dr.repo_id IS NOT NULL)
+    AND s.deleted_at IS NULL
+    AND r.deleted_at IS NULL
+    AND r.id > %s
+    AND %s
+  ORDER BY id ASC
+  LIMIT %s
+`, opts.AfterID, cloneClause, opts.Limit)
 
-	ORDER BY id ASC
-	LIMIT %s`, opts.AfterID, cloneClause, opts.AfterID, cloneClause, opts.Limit)
-
-	var repos []*types.RepoName
+	results = make([]*types.RepoName, 0, opts.Limit)
 
 	rows, err := s.Query(ctx, q)
 	if err != nil {
@@ -765,13 +747,13 @@ UNION
 		if err := rows.Scan(&r.ID, &r.Name); err != nil {
 			return nil, errors.Wrap(err, "scanning row from default_repos table")
 		}
-		repos = append(repos, &r)
+		results = append(results, &r)
 	}
 	if err = rows.Err(); err != nil {
 		return nil, errors.Wrap(err, "scanning rows for default repos")
 	}
 
-	return repos, nil
+	return results, nil
 }
 
 // Create inserts repos and their sources, respectively in the repo and external_service_repos table.
@@ -779,6 +761,7 @@ UNION
 func (s *RepoStore) Create(ctx context.Context, repos ...*types.Repo) (err error) {
 	tr, ctx := trace.New(ctx, "repos.Create", "")
 	defer func() {
+
 		tr.SetError(err)
 		tr.Finish()
 	}()

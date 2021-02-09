@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	querytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -349,7 +348,7 @@ func TestQuoteSuggestions(t *testing.T) {
 	})
 }
 
-func TestEueryForStableResults(t *testing.T) {
+func TestQueryForStableResults(t *testing.T) {
 	cases := []struct {
 		query           string
 		wantStableCount int32
@@ -370,7 +369,7 @@ func TestEueryForStableResults(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run("query for stable results", func(t *testing.T) {
-			queryInfo, _ := query.Process(c.query, query.SearchTypeLiteral)
+			queryInfo, _ := query.ParseLiteral(c.query)
 			args, queryInfo, err := queryForStableResults(&SearchArgs{}, queryInfo)
 			if err != nil {
 				if !reflect.DeepEqual(err, c.wantError) {
@@ -383,7 +382,7 @@ func TestEueryForStableResults(t *testing.T) {
 			}
 			// Ensure type:file is set.
 			fileValue := "file"
-			wantTypeValue := querytypes.Value{String: &fileValue}
+			wantTypeValue := query.Value{String: &fileValue}
 			gotTypeValues := queryInfo.Fields()["type"]
 			if len(gotTypeValues) != 1 && *gotTypeValues[0] != wantTypeValue {
 				t.Errorf("Query %s sets stable:yes but is not transformed with type:file.", c.query)

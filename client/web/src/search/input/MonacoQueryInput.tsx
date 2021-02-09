@@ -16,6 +16,7 @@ import { KeyboardShortcut } from '../../../../shared/src/keyboardShortcuts'
 import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../keyboardShortcuts/keyboardShortcuts'
 import { observeResize } from '../../util/dom'
 import { SearchPatternType } from '../../graphql-operations'
+import { SearchContextDropdown } from './SearchContextDropdown'
 
 export interface MonacoQueryInputProps
     extends Omit<TogglesProps, 'navbarSearchQuery'>,
@@ -340,6 +341,8 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
         fixedOverflowWidgets: true,
         contextmenu: false,
         links: false,
+        // Match our monospace/code style from code.scss
+        fontFamily: 'sfmono-regular, consolas, menlo, dejavu sans mono, monospace',
         // Display the cursor as a 1px line.
         cursorStyle: 'line',
         cursorWidth: 1,
@@ -347,27 +350,29 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     return (
         <>
             <div ref={setContainer} className="monaco-query-input-container">
-                {props.showSearchContext && <span>context:global</span>}
-                <div className="flex-grow-1 flex-shrink-past-contents" onFocus={onFocus}>
-                    <MonacoEditor
-                        id="monaco-query-input"
-                        language={SOURCEGRAPH_SEARCH}
-                        value={queryState.query}
-                        height={17}
-                        isLightTheme={props.isLightTheme}
-                        editorWillMount={setMonacoInstance}
-                        onEditorCreated={setEditor}
-                        options={options}
-                        border={false}
-                        keyboardShortcutForFocus={KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR}
-                        className="test-query-input"
+                {props.showSearchContext && <SearchContextDropdown />}
+                <div className="monaco-query-input-container__focus-container flex-shrink-past-contents">
+                    <div className="flex-grow-1 flex-shrink-past-contents" onFocus={onFocus}>
+                        <MonacoEditor
+                            id="monaco-query-input"
+                            language={SOURCEGRAPH_SEARCH}
+                            value={queryState.query}
+                            height={17}
+                            isLightTheme={props.isLightTheme}
+                            editorWillMount={setMonacoInstance}
+                            onEditorCreated={setEditor}
+                            options={options}
+                            border={false}
+                            keyboardShortcutForFocus={KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR}
+                            className="test-query-input"
+                        />
+                    </div>
+                    <Toggles
+                        {...props}
+                        navbarSearchQuery={queryState.query}
+                        className="monaco-query-input-container__toggle-container"
                     />
                 </div>
-                <Toggles
-                    {...props}
-                    navbarSearchQuery={queryState.query}
-                    className="monaco-query-input-container__toggle-container"
-                />
             </div>
         </>
     )

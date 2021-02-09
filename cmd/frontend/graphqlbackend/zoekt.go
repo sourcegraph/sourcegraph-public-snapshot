@@ -365,9 +365,8 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 			}
 
 			var lines []*lineMatch
-			var matchCount int
 			if typ != symbolRequest {
-				lines, matchCount = zoektFileMatchToLineMatches(maxLineFragmentMatches, &file)
+				lines = zoektFileMatchToLineMatches(maxLineFragmentMatches, &file)
 			}
 
 			for _, inputRev := range inputRevs {
@@ -382,7 +381,6 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 						JPath:        file.FileName,
 						JLineMatches: lines,
 						JLimitHit:    fileLimitHit,
-						MatchCount:   matchCount, // We do not use resp.MatchCount because it counts the number of lines matched, not the number of fragments.
 						uri:          fileMatchURI(repo.Name, inputRev, file.FileName),
 						symbols:      symbols,
 						Repo:         repo,
@@ -423,8 +421,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 	return nil
 }
 
-func zoektFileMatchToLineMatches(maxLineFragmentMatches int, file *zoekt.FileMatch) ([]*lineMatch, int) {
-	var matchCount int
+func zoektFileMatchToLineMatches(maxLineFragmentMatches int, file *zoekt.FileMatch) []*lineMatch {
 	lines := make([]*lineMatch, 0, len(file.LineMatches))
 
 	for _, l := range file.LineMatches {
@@ -441,7 +438,6 @@ func zoektFileMatchToLineMatches(maxLineFragmentMatches int, file *zoekt.FileMat
 			length := utf8.RuneCount(l.Line[m.LineOffset : m.LineOffset+m.MatchLength])
 			offsets[k] = [2]int32{int32(offset), int32(length)}
 		}
-		matchCount += len(offsets)
 		lines = append(lines, &lineMatch{
 			JPreview:          string(l.Line),
 			JLineNumber:       int32(l.LineNumber - 1),
@@ -449,7 +445,7 @@ func zoektFileMatchToLineMatches(maxLineFragmentMatches int, file *zoekt.FileMat
 		})
 	}
 
-	return lines, matchCount
+	return lines
 }
 
 func escape(s string) string {

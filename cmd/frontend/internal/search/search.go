@@ -58,21 +58,11 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Log events to trace
 	eventWriter.StatHook = eventStreamOTHook(tr.LogFields)
 
-	search, err := h.newSearchResolver(ctx, &graphqlbackend.SearchArgs{
-		Query:          args.Query,
-		Version:        args.Version,
-		PatternType:    strPtr(args.PatternType),
-		VersionContext: strPtr(args.VersionContext),
-	})
-	if err != nil {
-		_ = eventWriter.Event("error", err.Error())
-		return
-	}
-	resultsStream, resultsStreamDone := newResultsStream(ctx, search)
+	events, inputs, results := h.startSearch(ctx, args)
 
 	progress := progressAggregator{
 		Start: time.Now(),
-		Limit: search.Inputs().MaxResults(),
+		Limit: inputs.MaxResults(),
 	}
 
 	sendProgress := func() {
@@ -111,7 +101,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		var event graphqlbackend.SearchEvent
 		var ok bool
 		select {
-		case event, ok = <-resultsStream:
+		case event, ok = <-events:
 		case <-flushTicker.C:
 			ok = true
 			flushMatchesBuf()
@@ -189,8 +179,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	final := <-resultsStreamDone
-	resultsResolver, err := final.resultsResolver, final.err
+	resultsResolver, err := results()
 	if err != nil {
 		_ = eventWriter.Event("error", err.Error())
 		return
@@ -216,22 +205,55 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	_ = eventWriter.Event("progress", progress.Final())
 }
 
+// startSearch will start a search. It returns the events channel which
+// streams out search events. Once events is closed you can call results which
+// will return the results resolver and error.
+func (h *streamHandler) startSearch(ctx context.Context, a *args) (events <-chan graphqlbackend.SearchEvent, inputs graphqlbackend.SearchInputs, results func() (*graphqlbackend.SearchResultsResolver, error)) {
+	eventsC := make(chan graphqlbackend.SearchEvent)
+
+	search, err := h.newSearchResolver(ctx, &graphqlbackend.SearchArgs{
+		Query:          a.Query,
+		Version:        a.Version,
+		PatternType:    strPtr(a.PatternType),
+		VersionContext: strPtr(a.VersionContext),
+
+		Stream: graphqlbackend.StreamFunc(func(event graphqlbackend.SearchEvent) {
+			eventsC <- event
+		}),
+	})
+	if err != nil {
+		close(eventsC)
+		return eventsC, graphqlbackend.SearchInputs{}, func() (*graphqlbackend.SearchResultsResolver, error) {
+			return nil, err
+		}
+	}
+
+	type finalResult struct {
+		resultsResolver *graphqlbackend.SearchResultsResolver
+		err             error
+	}
+	final := make(chan finalResult, 1)
+	go func() {
+		defer close(final)
+		defer close(eventsC)
+
+		r, err := search.Results(ctx)
+		final <- finalResult{resultsResolver: r, err: err}
+	}()
+
+	return eventsC, search.Inputs(), func() (*graphqlbackend.SearchResultsResolver, error) {
+		f := <-final
+		return f.resultsResolver, f.err
+	}
+}
+
 type searchResolver interface {
 	Results(context.Context) (*graphqlbackend.SearchResultsResolver, error)
-	SetStream(c graphqlbackend.Streamer)
 	Inputs() graphqlbackend.SearchInputs
 }
 
 func defaultNewSearchResolver(ctx context.Context, args *graphqlbackend.SearchArgs) (searchResolver, error) {
-	searchImpl, err := graphqlbackend.NewSearchImplementer(ctx, args)
-	if err != nil {
-		return nil, err
-	}
-	search, ok := searchImpl.(searchResolver)
-	if !ok {
-		return nil, errors.New("SearchImplementer does not support streaming")
-	}
-	return search, nil
+	return graphqlbackend.NewSearchImplementer(ctx, args)
 }
 
 type args struct {
@@ -276,35 +298,6 @@ func fromStrPtr(s *string) string {
 		return ""
 	}
 	return *s
-}
-
-type finalResult struct {
-	resultsResolver *graphqlbackend.SearchResultsResolver
-	err             error
-}
-
-// newResultsStream will return a channel which streams out the results found
-// by search.Results. Once done it will send the return value of
-// search.Results. Both channels need to be read until closed, otherwise
-// goroutines will be leaked.
-//
-//   - results is written to 0 or more times before closing.
-//   - final is written to once.
-func newResultsStream(ctx context.Context, search searchResolver) (results <-chan graphqlbackend.SearchEvent, final <-chan finalResult) {
-	resultsC := make(chan graphqlbackend.SearchEvent)
-	finalC := make(chan finalResult, 1)
-	go func() {
-		defer close(finalC)
-		defer close(resultsC)
-
-		search.SetStream(graphqlbackend.StreamFunc(func(event graphqlbackend.SearchEvent) {
-			resultsC <- event
-		}))
-
-		r, err := search.Results(ctx)
-		finalC <- finalResult{resultsResolver: r, err: err}
-	}()
-	return resultsC, finalC
 }
 
 func fromFileMatch(fm *graphqlbackend.FileMatchResolver) eventFileMatch {
