@@ -37,11 +37,15 @@
         &:hover:disabled,
         &:active:disabled,
         &:focus:disabled {
-            background-color: var(--color-bg-4);
+            background-color: var(--color-bg-3);
             color: var(--color-text-3);
             border-color: transparent;
             opacity: 1;
-            pointer-events: auto;
+            pointer-events: auto; // Required to show tooltip on hover
+
+            .theme-light & {
+                background-color: var(--color-bg-4);
+            }
 
             .search-filter-keyword {
                 color: var(--color-text-3);

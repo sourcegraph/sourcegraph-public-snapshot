@@ -41,11 +41,9 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                     })}
                     color="link"
                     disabled={isDisabled}
+                    data-tooltip={isDisabled ? 'Overridden by query' : ''}
                 >
-                    <code
-                        className="search-context-dropdown__button-content"
-                        data-tooltip={isDisabled ? 'Overridden by query' : ''}
-                    >
+                    <code className="search-context-dropdown__button-content">
                         <span className="search-filter-keyword">context:</span>
                         {context}
                     </code>
