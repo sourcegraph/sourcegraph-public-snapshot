@@ -1741,9 +1741,9 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	// defaults.
 	stream := r.stream
 	if stream != nil {
-		var cancel2 context.CancelFunc
-		ctx, stream, cancel2 = WithLimit(ctx, stream, limit)
-		defer cancel2()
+		var cancelOnLimit context.CancelFunc
+		ctx, stream, cancelOnLimit = WithLimit(ctx, stream, limit)
+		defer cancelOnLimit()
 	}
 
 	agg := newAggregator(stream, r.SearchInputs)
