@@ -368,7 +368,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			// equal.
 			k.file = s.Path()
 		case *searchSymbolResult:
-			k.repoName = s.commit.repoResolver.innerRepo.Name
+			k.repoName = api.RepoName(s.commit.Repository().Name())
 			k.symbol = s.symbol.Name + s.symbol.Parent
 		case *languageResolver:
 			k.lang = s.name

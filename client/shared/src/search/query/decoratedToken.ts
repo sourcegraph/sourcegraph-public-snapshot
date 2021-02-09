@@ -26,7 +26,13 @@ export type DecoratedToken = Token | MetaToken
 /**
  * A MetaToken defines a token that is associated with some language-specific metasyntax.
  */
-export type MetaToken = MetaRegexp | MetaStructural | MetaField | MetaRepoRevisionSeparator | MetaRevision
+export type MetaToken =
+    | MetaRegexp
+    | MetaStructural
+    | MetaField
+    | MetaRepoRevisionSeparator
+    | MetaRevision
+    | MetaContextPrefix
 
 /**
  * Defines common properties for meta tokens.
@@ -126,6 +132,13 @@ export enum MetaGitRevision {
  */
 export interface MetaRepoRevisionSeparator extends BaseMetaToken {
     type: 'metaRepoRevisionSeparator'
+}
+
+/**
+ * A token that denotes the context prefix in a search context value (the '@' in "context:@user").
+ */
+export interface MetaContextPrefix extends BaseMetaToken {
+    type: 'metaContextPrefix'
 }
 
 /**
@@ -662,6 +675,18 @@ const decorateRepoRevision = (token: Literal): DecoratedToken[] => {
     ]
 }
 
+const decorateContext = (token: Literal): DecoratedToken[] => {
+    if (!token.value.startsWith('@')) {
+        return [token]
+    }
+
+    const { start, end } = token.range
+    return [
+        { type: 'metaContextPrefix', range: { start, end: start + 1 }, value: '@' },
+        { type: 'literal', range: { start: start + 1, end }, value: token.value.slice(1) },
+    ]
+}
+
 export const decorate = (token: Token): DecoratedToken[] => {
     const decorated: DecoratedToken[] = []
     switch (token.type) {
@@ -713,6 +738,8 @@ export const decorate = (token: Token): DecoratedToken[] => {
                         range: token.value.range,
                     })
                 )
+            } else if (token.field.value === 'context' && token.value?.type === 'literal') {
+                decorated.push(...decorateContext(token.value))
             } else if (token.value) {
                 decorated.push(token.value)
             }
@@ -733,6 +760,7 @@ const decoratedToMonaco = (token: DecoratedToken): Monaco.languages.IToken => {
         case 'openingParen':
         case 'closingParen':
         case 'metaRepoRevisionSeparator':
+        case 'metaContextPrefix':
             return {
                 startIndex: token.range.start,
                 scopes: token.type,

@@ -152,9 +152,7 @@ func zoektSearch(ctx context.Context, args *search.TextPatternInfo, repoBranches
 		return nil, false, nil, nil
 	}
 
-	// TODO(@camdencheek) TODO(@rvantonder). repoBranches is currently
-	// hardcoded to HEAD. Choose sensible values for k when we generalize
-	// this.
+	// Choose sensible values for k when we generalize this.
 	k := zoektutil.ResultCountFactor(len(repoBranches), args.FileMatchLimit, false)
 	searchOpts := zoektutil.SearchOpts(ctx, k, args)
 	searchOpts.Whole = true

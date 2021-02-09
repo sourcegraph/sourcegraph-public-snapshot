@@ -199,6 +199,7 @@ func TestIndexedSearch(t *testing.T) {
 				},
 				since: func(time.Time) time.Duration { return 0 },
 			},
+			wantMatchCount: 3,
 			wantCommon: streaming.Stats{
 				Status: mkStatusMap(map[string]search.RepoStatus{
 					"foo/bar": search.RepoStatusSearched | search.RepoStatusIndexed,
@@ -243,6 +244,7 @@ func TestIndexedSearch(t *testing.T) {
 			wantMatchURLs: []string{
 				"git://foo/bar?HEAD#baz.go",
 			},
+			wantMatchCount:     1,
 			wantMatchInputRevs: []string{"HEAD"},
 		},
 		{
@@ -330,7 +332,7 @@ func TestIndexedSearch(t *testing.T) {
 			var gotMatchURLs []string
 			var gotMatchInputRevs []string
 			for _, m := range gotFm {
-				gotMatchCount += m.MatchCount
+				gotMatchCount += int(m.ResultCount())
 				gotMatchURLs = append(gotMatchURLs, m.Resource())
 				if m.InputRev != nil {
 					gotMatchInputRevs = append(gotMatchInputRevs, *m.InputRev)
@@ -1041,13 +1043,13 @@ func TestZoektFileMatchToSymbolResults(t *testing.T) {
 		if got, want := res.baseURI.URL.String(), "git://foo?master"; got != want {
 			t.Fatalf("baseURI: got %q want %q", got, want)
 		}
-		if got, want := string(res.commit.repoResolver.innerRepo.Name), "foo"; got != want {
+		if got, want := string(res.commit.Repository().Name()), "foo"; got != want {
 			t.Fatalf("reporesolver: got %q want %q", got, want)
 		}
-		if got, want := string(res.commit.oid), "deadbeef"; got != want {
+		if got, want := string(res.commit.OID()), "deadbeef"; got != want {
 			t.Fatalf("oid: got %q want %q", got, want)
 		}
-		if got, want := *res.commit.inputRev, "master"; got != want {
+		if got, want := *res.commit.InputRev(), "master"; got != want {
 			t.Fatalf("inputRev: got %q want %q", got, want)
 		}
 

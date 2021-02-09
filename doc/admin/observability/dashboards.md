@@ -78,7 +78,7 @@ This panel indicates 90th percentile page load latency over all routes over 10m.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-page-load-latency).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -88,7 +88,7 @@ This panel indicates 90th percentile blob load latency over 10m.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-blob-load-latency).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -564,7 +564,7 @@ This panel indicates internal API error responses every 5m by route.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-internal-api-error-responses).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -574,7 +574,7 @@ This panel indicates 99th percentile successful gitserver query duration over 5m
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-99th-percentile-gitserver-duration).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -584,7 +584,7 @@ This panel indicates gitserver error responses every 5m.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-gitserver-error-responses).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -616,7 +616,7 @@ This panel indicates container cpu usage total (1m average) across all cores by 
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-container-cpu-usage).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -626,7 +626,7 @@ This panel indicates container memory usage by instance.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-container-memory-usage).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -644,7 +644,7 @@ value change independent of deployment events (such as an upgrade), it could ind
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' (frontend|sourcegraph-frontend)` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the (frontend|sourcegraph-frontend) container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs (frontend|sourcegraph-frontend)` (note this will include logs from the previous and currently running container).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -656,7 +656,7 @@ This panel indicates container cpu usage total (90th percentile over 1d) across 
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-provisioning-container-cpu-usage-long-term).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -666,7 +666,7 @@ This panel indicates container memory usage (1d maximum) by instance.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-provisioning-container-memory-usage-long-term).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -676,7 +676,7 @@ This panel indicates container cpu usage total (5m maximum) across all cores by 
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-provisioning-container-cpu-usage-short-term).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -686,7 +686,7 @@ This panel indicates container memory usage (5m maximum) by instance.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-provisioning-container-memory-usage-short-term).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -700,7 +700,7 @@ A high value here indicates a possible goroutine leak.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-go-goroutines).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -710,7 +710,7 @@ This panel indicates maximum go garbage collection duration.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-go-gc-duration-seconds).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -722,7 +722,7 @@ This panel indicates percentage pods available.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-pods-available-percentage).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -736,7 +736,7 @@ This panel indicates memory working set.
 
 
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -746,7 +746,7 @@ This panel indicates go routines.
 
 
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -756,7 +756,7 @@ This panel indicates container CPU throttling time %.
 
 
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -766,7 +766,7 @@ This panel indicates cpu usage seconds.
 
 
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -776,7 +776,7 @@ This panel indicates disk space remaining by instance.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#gitserver-disk-space-remaining).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -786,7 +786,7 @@ This panel indicates i/o reads total.
 
 
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -796,7 +796,7 @@ This panel indicates i/o writes total.
 
 
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -806,7 +806,7 @@ This panel indicates i/o reads.
 
 
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -816,7 +816,7 @@ This panel indicates i/o writes.
 
 
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -826,7 +826,7 @@ This panel indicates i/o read throughput.
 
 
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -836,7 +836,7 @@ This panel indicates i/o write throughput.
 
 
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -848,7 +848,7 @@ A high value signals load.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#gitserver-running-git-commands).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -858,7 +858,7 @@ This panel indicates repository clone queue size.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#gitserver-repository-clone-queue-size).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -868,7 +868,7 @@ This panel indicates repository existence check queue size.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#gitserver-repository-existence-check-queue-size).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -884,7 +884,7 @@ If this value is consistently high, consider the following:
 - **Single container deployments:** Upgrade to a [Docker Compose deployment](../install/docker-compose/migrate.md) which offers better scalability and resource isolation.
 - **Kubernetes and Docker Compose:** Check that you are running a similar number of git server replicas and that their CPU/memory limits are allocated according to what is shown in the [Sourcegraph resource estimator](../install/resource_estimator.md).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -894,7 +894,7 @@ This panel indicates frontend-internal API error responses every 5m by route.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#gitserver-frontend-internal-api-error-responses).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -906,7 +906,7 @@ This panel indicates container cpu usage total (1m average) across all cores by 
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#gitserver-container-cpu-usage).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -916,7 +916,7 @@ This panel indicates container memory usage by instance.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#gitserver-container-memory-usage).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -934,7 +934,7 @@ value change independent of deployment events (such as an upgrade), it could ind
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' gitserver` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the gitserver container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs gitserver` (note this will include logs from the previous and currently running container).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -945,7 +945,7 @@ This panel indicates filesystem reads and writes rate by instance over 1h.
 This value indicates the number of filesystem read and write operations by containers of this service.
 When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself, especially if high values or spikes correlate with {{CONTAINER_NAME}} issues.
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -957,7 +957,7 @@ This panel indicates container cpu usage total (90th percentile over 1d) across 
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#gitserver-provisioning-container-cpu-usage-long-term).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -967,7 +967,7 @@ This panel indicates container memory usage (1d maximum) by instance.
 
 Git Server is expected to use up all the memory it is provided.
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -977,7 +977,7 @@ This panel indicates container cpu usage total (5m maximum) across all cores by 
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#gitserver-provisioning-container-cpu-usage-short-term).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -987,7 +987,7 @@ This panel indicates container memory usage (5m maximum) by instance.
 
 Git Server is expected to use up all the memory it is provided.
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1001,7 +1001,7 @@ A high value here indicates a possible goroutine leak.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#gitserver-go-goroutines).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1011,7 +1011,7 @@ This panel indicates maximum go garbage collection duration.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#gitserver-go-gc-duration-seconds).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1023,7 +1023,7 @@ This panel indicates percentage pods available.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#gitserver-pods-available-percentage).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1039,7 +1039,7 @@ This panel indicates number of requests waiting on the global mutex.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#github-proxy-github-proxy-waiting-requests).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1051,7 +1051,7 @@ This panel indicates container cpu usage total (1m average) across all cores by 
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#github-proxy-container-cpu-usage).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1061,7 +1061,7 @@ This panel indicates container memory usage by instance.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#github-proxy-container-memory-usage).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1079,7 +1079,7 @@ value change independent of deployment events (such as an upgrade), it could ind
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' github-proxy` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the github-proxy container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs github-proxy` (note this will include logs from the previous and currently running container).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1091,7 +1091,7 @@ This panel indicates container cpu usage total (90th percentile over 1d) across 
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#github-proxy-provisioning-container-cpu-usage-long-term).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1101,7 +1101,7 @@ This panel indicates container memory usage (1d maximum) by instance.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#github-proxy-provisioning-container-memory-usage-long-term).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1111,7 +1111,7 @@ This panel indicates container cpu usage total (5m maximum) across all cores by 
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#github-proxy-provisioning-container-cpu-usage-short-term).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1121,7 +1121,7 @@ This panel indicates container memory usage (5m maximum) by instance.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#github-proxy-provisioning-container-memory-usage-short-term).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1135,7 +1135,7 @@ A high value here indicates a possible goroutine leak.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#github-proxy-go-goroutines).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1145,7 +1145,7 @@ This panel indicates maximum go garbage collection duration.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#github-proxy-go-gc-duration-seconds).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1157,7 +1157,7 @@ This panel indicates percentage pods available.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#github-proxy-pods-available-percentage).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1171,7 +1171,7 @@ This panel indicates active connections.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#postgres-connections).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1181,7 +1181,7 @@ This panel indicates maximum transaction durations.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#postgres-transaction-durations).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1195,7 +1195,7 @@ A non-zero value indicates the database is online.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#postgres-postgres-up).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1207,7 +1207,7 @@ This value indicates issues retrieving metrics from postgres_exporter.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#postgres-pg-exporter-err).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1219,7 +1219,7 @@ A 0 value indicates that no migration is in progress.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#postgres-migration-in-progress).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1231,7 +1231,7 @@ This panel indicates container cpu usage total (90th percentile over 1d) across 
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#postgres-provisioning-container-cpu-usage-long-term).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1241,7 +1241,7 @@ This panel indicates container memory usage (1d maximum) by instance.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#postgres-provisioning-container-memory-usage-long-term).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1251,7 +1251,7 @@ This panel indicates container cpu usage total (5m maximum) across all cores by 
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#postgres-provisioning-container-cpu-usage-short-term).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1261,7 +1261,7 @@ This panel indicates container memory usage (5m maximum) by instance.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#postgres-provisioning-container-memory-usage-short-term).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1273,7 +1273,7 @@ This panel indicates percentage pods available.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#postgres-pods-available-percentage).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1713,7 +1713,7 @@ This panel indicates frontend-internal API error responses every 5m by route.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-frontend-internal-api-error-responses).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1726,7 +1726,7 @@ This panel indicates time since last sync.
 A high value here indicates issues synchronizing repository permissions.
 If the value is persistently high, make sure all external services have valid tokens.
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1736,7 +1736,7 @@ This panel indicates time since oldest sync.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-src-repoupdater-max-sync-backoff).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1746,7 +1746,7 @@ This panel indicates sync error rate.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-src-repoupdater-syncer-sync-errors-total).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1756,7 +1756,7 @@ This panel indicates sync was started.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-syncer-sync-start).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1766,7 +1766,7 @@ This panel indicates 95th repositories sync duration.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-syncer-sync-duration).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1776,7 +1776,7 @@ This panel indicates 95th repositories source duration.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-source-duration).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1786,7 +1786,7 @@ This panel indicates repositories synced.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-syncer-synced-repos).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1796,7 +1796,7 @@ This panel indicates repositories sourced.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-sourced-repos).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1806,7 +1806,7 @@ This panel indicates total number of user added repos.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-user-added-repos).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1816,7 +1816,7 @@ This panel indicates repositories purge failed.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-purge-failed).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1826,7 +1826,7 @@ This panel indicates repositories scheduled due to hitting a deadline.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-sched-auto-fetch).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1837,7 +1837,7 @@ This panel indicates repositories scheduled due to user traffic.
 Check repo-updater logs if this value is persistently high.
 This does not indicate anything if there are no user added code hosts.
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1847,7 +1847,7 @@ This panel indicates repositories managed by the scheduler.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-sched-known-repos).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1857,7 +1857,7 @@ This panel indicates rate of growth of update queue length over 5 minutes.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-sched-update-queue-length).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1867,7 +1867,7 @@ This panel indicates scheduler loops.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-sched-loops).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1877,7 +1877,7 @@ This panel indicates repositories schedule error rate.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-sched-error).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1889,7 +1889,7 @@ This panel indicates time gap between least and most up to date permissions.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-perms-syncer-perms).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1899,7 +1899,7 @@ This panel indicates number of entities with stale permissions.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-perms-syncer-stale-perms).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1909,7 +1909,7 @@ This panel indicates number of entities with no permissions.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-perms-syncer-no-perms).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1919,7 +1919,7 @@ This panel indicates 95th permissions sync duration.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-perms-syncer-sync-duration).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1929,7 +1929,7 @@ This panel indicates permissions sync queued items.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-perms-syncer-queue-size).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1939,7 +1939,7 @@ This panel indicates permissions sync error rate.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-perms-syncer-sync-errors).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1951,7 +1951,7 @@ This panel indicates the total number of external services.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-src-repoupdater-external-services-total).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1961,7 +1961,7 @@ This panel indicates the total number of user added external services.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-src-repoupdater-user-external-services-total).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1971,7 +1971,7 @@ This panel indicates the total number of queued sync jobs.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-repoupdater-queued-sync-jobs-total).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1981,7 +1981,7 @@ This panel indicates the total number of completed sync jobs.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-repoupdater-completed-sync-jobs-total).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1991,7 +1991,7 @@ This panel indicates the total number of errored sync jobs.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-repoupdater-errored-sync-jobs-total).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -2001,7 +2001,7 @@ This panel indicates remaining calls to GitHub graphql API before hitting the ra
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-github-graphql-rate-limit-remaining).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -2011,7 +2011,7 @@ This panel indicates remaining calls to GitHub rest API before hitting the rate 
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-github-rest-rate-limit-remaining).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -2021,7 +2021,7 @@ This panel indicates remaining calls to GitHub search API before hitting the rat
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-github-search-rate-limit-remaining).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -2031,7 +2031,7 @@ This panel indicates time spent waiting for the GitHub graphql API rate limiter.
 
 Indicates how long we`re waiting on the rate limit once it has been exceeded
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -2041,7 +2041,7 @@ This panel indicates time spent waiting for the GitHub rest API rate limiter.
 
 Indicates how long we`re waiting on the rate limit once it has been exceeded
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -2051,7 +2051,7 @@ This panel indicates time spent waiting for the GitHub search API rate limiter.
 
 Indicates how long we`re waiting on the rate limit once it has been exceeded
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -2061,7 +2061,7 @@ This panel indicates remaining calls to GitLab rest API before hitting the rate 
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-gitlab-rest-rate-limit-remaining).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -2071,7 +2071,7 @@ This panel indicates time spent waiting for the GitLab rest API rate limiter.
 
 Indicates how long we`re waiting on the rate limit once it has been exceeded
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -2083,7 +2083,7 @@ This panel indicates container cpu usage total (1m average) across all cores by 
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-container-cpu-usage).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -2093,7 +2093,7 @@ This panel indicates container memory usage by instance.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-container-memory-usage).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -2111,7 +2111,7 @@ value change independent of deployment events (such as an upgrade), it could ind
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' repo-updater` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the repo-updater container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs repo-updater` (note this will include logs from the previous and currently running container).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -2123,7 +2123,7 @@ This panel indicates container cpu usage total (90th percentile over 1d) across 
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-provisioning-container-cpu-usage-long-term).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -2133,7 +2133,7 @@ This panel indicates container memory usage (1d maximum) by instance.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-provisioning-container-memory-usage-long-term).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -2143,7 +2143,7 @@ This panel indicates container cpu usage total (5m maximum) across all cores by 
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-provisioning-container-cpu-usage-short-term).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -2153,7 +2153,7 @@ This panel indicates container memory usage (5m maximum) by instance.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-provisioning-container-memory-usage-short-term).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -2167,7 +2167,7 @@ A high value here indicates a possible goroutine leak.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-go-goroutines).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -2177,7 +2177,7 @@ This panel indicates maximum go garbage collection duration.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-go-gc-duration-seconds).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -2189,7 +2189,7 @@ This panel indicates percentage pods available.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-pods-available-percentage).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -2505,7 +2505,7 @@ This panel indicates percentage pods available.
 
 This panel indicates syntax highlighting errors every 5m.
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -2513,7 +2513,7 @@ This panel indicates syntax highlighting errors every 5m.
 
 This panel indicates syntax highlighting timeouts every 5m.
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -2521,7 +2521,7 @@ This panel indicates syntax highlighting timeouts every 5m.
 
 This panel indicates syntax highlighting panics every 5m.
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -2529,7 +2529,7 @@ This panel indicates syntax highlighting panics every 5m.
 
 This panel indicates syntax highlighter worker deaths every 5m.
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -2541,7 +2541,7 @@ This panel indicates container cpu usage total (1m average) across all cores by 
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#syntect-server-container-cpu-usage).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -2551,7 +2551,7 @@ This panel indicates container memory usage by instance.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#syntect-server-container-memory-usage).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -2569,7 +2569,7 @@ value change independent of deployment events (such as an upgrade), it could ind
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' syntect-server` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the syntect-server container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs syntect-server` (note this will include logs from the previous and currently running container).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -2581,7 +2581,7 @@ This panel indicates container cpu usage total (90th percentile over 1d) across 
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#syntect-server-provisioning-container-cpu-usage-long-term).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -2591,7 +2591,7 @@ This panel indicates container memory usage (1d maximum) by instance.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#syntect-server-provisioning-container-memory-usage-long-term).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -2601,7 +2601,7 @@ This panel indicates container cpu usage total (5m maximum) across all cores by 
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#syntect-server-provisioning-container-cpu-usage-short-term).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -2611,7 +2611,7 @@ This panel indicates container memory usage (5m maximum) by instance.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#syntect-server-provisioning-container-memory-usage-short-term).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -2623,7 +2623,7 @@ This panel indicates percentage pods available.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#syntect-server-pods-available-percentage).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -2688,7 +2688,7 @@ This panel indicates filesystem reads and writes rate by instance over 1h.
 This value indicates the number of filesystem read and write operations by containers of this service.
 When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself, especially if high values or spikes correlate with {{CONTAINER_NAME}} issues.
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -2807,7 +2807,7 @@ This panel indicates filesystem reads and writes rate by instance over 1h.
 This value indicates the number of filesystem read and write operations by containers of this service.
 When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself, especially if high values or spikes correlate with {{CONTAINER_NAME}} issues.
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 

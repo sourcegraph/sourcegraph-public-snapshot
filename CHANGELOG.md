@@ -19,9 +19,11 @@ All notable changes to Sourcegraph are documented in this file.
 - Structural search now supports searching indexed branches other than default. [#17726](https://github.com/sourcegraph/sourcegraph/pull/17726)
 - Structural search now supports searching unindexed revisions. [#17967](https://github.com/sourcegraph/sourcegraph/pull/17967)
 - New site config option `"allowSignup"` for SAML authentication to determine if automatically create new users is allowed. [#17989](https://github.com/sourcegraph/sourcegraph/pull/17989)
+- Experimental: The webapp can now stream search results to the client, improving search performance. To enable it, add `{ "experimentalFeatures": { "searchStreaming": true } }` in user settings. [#16097](https://github.com/sourcegraph/sourcegraph/pull/16097)
 
 ### Changed
 
+- Alert solutions links included in [monitoring alerts](https://docs.sourcegraph.com/admin/observability/alerting) now link to the relevant documentation version. [#17828](https://github.com/sourcegraph/sourcegraph/pull/17828)
 - Secrets (such as access tokens and passwords) will now appear as REDACTED when editing external service config, and in graphql API responses. [#17261](https://github.com/sourcegraph/sourcegraph/issues/17261)
 
 ### Fixed
@@ -30,6 +32,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixes an issue that caused some missing results for `type:commit` when a pattern was used instead of the `message` field. [#17490](https://github.com/sourcegraph/sourcegraph/pull/17490#issuecomment-764004758)
 - Fixes an issue where cAdvisor-based alerts would not fire correctly for services with multiple replicas. [#17600](https://github.com/sourcegraph/sourcegraph/pull/17600)
 - Significantly improved performance of structural search on monorepo deployments [#17846](https://github.com/sourcegraph/sourcegraph/pull/17846)
+- Fixes an issue where upgrades on Kubernetes may fail due to null environment variable lists in deployment manifests [#1781](https://github.com/sourcegraph/deploy-sourcegraph/pull/1781)
 
 ### Removed
 
