@@ -1,6 +1,5 @@
 .search-context-dropdown {
     &__button {
-        font-size: $code-font-size;
         color: var(--search-query-text-color);
         margin-left: 0.25rem;
         margin-right: 0.25rem;
@@ -31,6 +30,10 @@
         &::after {
             // Hide chevron usually shown by dropdown buttons
             display: none;
+        }
+
+        &-content {
+            font-size: 0.75rem;
         }
     }
 
