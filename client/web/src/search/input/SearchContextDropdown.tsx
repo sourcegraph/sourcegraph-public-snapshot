@@ -13,7 +13,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         <>
             <ButtonDropdown isOpen={isOpen} toggle={toggleOpen}>
                 <DropdownToggle className="search-context-dropdown__button dropdown-toggle" color="link">
-                    <code>
+                    <code className="search-context-dropdown__button-content">
                         <span className="search-filter-keyword">context:</span>
                         {context}
                     </code>
