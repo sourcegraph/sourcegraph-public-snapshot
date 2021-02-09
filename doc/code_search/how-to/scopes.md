@@ -38,3 +38,5 @@ For example, this JSON will create two search scopes:
 ```
 
 After editing and saving the configuration settings JSON in the profile page, your search scopes will be shown as suggested filters on search results pages.
+
+![Scopes are below the search bar](../img/view-scopes-in-filter.png)
