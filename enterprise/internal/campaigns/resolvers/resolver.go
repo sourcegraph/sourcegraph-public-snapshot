@@ -861,11 +861,11 @@ func (r *Resolver) CreateCampaignsCredential(ctx context.Context, args *graphqlb
 		if err != nil {
 			return nil, err
 		}
-		sshKey := ""
 		if args.SSHKey != nil {
-			sshKey = *args.SSHKey
+			a = &auth.BasicAuthWithSSH{Username: username, Password: args.Credential, SSHKey: *args.SSHKey}
+		} else {
+			a = &auth.BasicAuth{Username: username, Password: args.Credential}
 		}
-		a = &auth.BasicAuth{Username: username, Password: args.Credential, SSHKey: sshKey}
 	} else {
 		if args.SSHKey != nil {
 			a = &auth.OAuthBearerTokenWithSSH{Token: args.Credential, SSHKey: *args.SSHKey}

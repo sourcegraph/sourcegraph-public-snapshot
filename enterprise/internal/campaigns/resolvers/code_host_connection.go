@@ -2,23 +2,31 @@ package resolvers
 
 import (
 	"context"
+	"net/url"
 	"strconv"
 	"sync"
+
+	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type campaignsCodeHostConnectionResolver struct {
-	userID                int32
 	onlyWithoutCredential bool
-	opts                  store.ListCodeHostsOpts
-	limitOffset           database.LimitOffset
-	store                 *store.Store
+	repos                 []api.RepoID
+
+	userID      int32
+	opts        store.ListCodeHostsOpts
+	limitOffset database.LimitOffset
+	store       *store.Store
 
 	once          sync.Once
 	chs           []*campaigns.CodeHost
@@ -95,14 +103,51 @@ func (c *campaignsCodeHostConnectionResolver) compute(ctx context.Context) (all,
 		}
 
 		if c.onlyWithoutCredential {
+			repos, err := database.ReposWith(c.store).List(ctx, database.ReposListOptions{IDs: c.repos})
+			if err != nil {
+				c.chsErr = err
+				return
+			}
+
+			reposByServiceIDs := make(map[string][]*types.Repo)
+			for _, repo := range repos {
+				if _, ok := reposByServiceIDs[repo.ExternalRepo.ServiceID]; !ok {
+					reposByServiceIDs[repo.ExternalRepo.ServiceID] = make([]*types.Repo, 1)
+				}
+				reposByServiceIDs[repo.ExternalRepo.ServiceID] = append(reposByServiceIDs[repo.ExternalRepo.ServiceID], repo)
+			}
+
 			chs := make([]*campaigns.CodeHost, 0)
 			for _, ch := range c.chs {
 				t := idType{
 					externalServiceID:   ch.ExternalServiceID,
 					externalServiceType: ch.ExternalServiceType,
 				}
-				if _, ok := c.credsByIDType[t]; !ok {
+				isSSH := false
+				repos, ok := reposByServiceIDs[ch.ExternalServiceID]
+				if !ok {
+					c.chsErr = errors.New("no repos found")
+					return
+				}
+				for _, repo := range repos {
+					for _, u := range repo.CloneURLs() {
+						parsed, err := url.Parse(u)
+						if err != nil {
+							c.chsErr = err
+							return
+						}
+						if parsed.Scheme == "ssh" {
+							isSSH = true
+							break
+						}
+					}
+				}
+				if cred, ok := c.credsByIDType[t]; !ok {
 					chs = append(chs, ch)
+				} else if isSSH {
+					if _, ok := cred.Credential.(auth.AuthenticatorWithSSH); !ok {
+						chs = append(chs, ch)
+					}
 				}
 			}
 			c.chs = chs
@@ -134,20 +179,4 @@ func (c *campaignsCodeHostConnectionResolver) compute(ctx context.Context) (all,
 type idType struct {
 	externalServiceID   string
 	externalServiceType string
-}
-
-type emptyCampaignsCodeHostConnectionResolver struct{}
-
-var _ graphqlbackend.CampaignsCodeHostConnectionResolver = &emptyCampaignsCodeHostConnectionResolver{}
-
-func (c *emptyCampaignsCodeHostConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	return int32(0), nil
-}
-
-func (c *emptyCampaignsCodeHostConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	return graphqlutil.HasNextPage(false), nil
-}
-
-func (c emptyCampaignsCodeHostConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.CampaignsCodeHostResolver, error) {
-	return []graphqlbackend.CampaignsCodeHostResolver{}, nil
 }

@@ -77,7 +77,7 @@ export const campaignSpecFragment = gql`
         supersedingCampaignSpec {
             ...SupersedingCampaignSpecFields
         }
-        viewerCampaignsCodeHosts(onlyWithoutCredential: true) {
+        viewerCampaignsCodeHosts {
             ...ViewerCampaignsCodeHostsFields
         }
     }

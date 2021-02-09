@@ -296,14 +296,6 @@ query($campaignSpec: ID!) {
 		  }
 	  }
 
-	  onlyWithoutCredential: viewerCampaignsCodeHosts(onlyWithoutCredential: true) {
-		  totalCount
-		  nodes {
-			  externalServiceKind
-			  externalServiceURL
-		  }
-	  }
-
       changesetSpecs(first: 100) {
         totalCount
 

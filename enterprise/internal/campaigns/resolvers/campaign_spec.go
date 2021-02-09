@@ -278,16 +278,6 @@ func (r *campaignSpecResolver) ViewerCampaignsCodeHosts(ctx context.Context, arg
 		return nil, backend.ErrNotAuthenticated
 	}
 
-	// Short path for site-admins when OnlyWithoutCredential is true: It will always be an empty list.
-	if args.OnlyWithoutCredential {
-		if authErr := backend.CheckCurrentUserIsSiteAdmin(ctx); authErr == nil {
-			// For site-admins never return anything
-			return &emptyCampaignsCodeHostConnectionResolver{}, nil
-		} else if authErr != nil && authErr != backend.ErrMustBeSiteAdmin {
-			return nil, authErr
-		}
-	}
-
 	specs, _, err := r.store.ListChangesetSpecs(ctx, store.ListChangesetSpecsOpts{CampaignSpecID: r.campaignSpec.ID})
 	if err != nil {
 		return nil, err
@@ -303,7 +293,8 @@ func (r *campaignSpecResolver) ViewerCampaignsCodeHosts(ctx context.Context, arg
 
 	return &campaignsCodeHostConnectionResolver{
 		userID:                actor.UID,
-		onlyWithoutCredential: args.OnlyWithoutCredential,
+		onlyWithoutCredential: true,
+		repos:                 specs.RepoIDs(),
 		store:                 r.store,
 		opts: store.ListCodeHostsOpts{
 			RepoIDs: specs.RepoIDs(),

@@ -105,9 +105,8 @@ type ListCampaignsCodeHostsArgs struct {
 }
 
 type ListViewerCampaignsCodeHostsArgs struct {
-	First                 int32
-	After                 *string
-	OnlyWithoutCredential bool
+	First int32
+	After *string
 }
 
 type CampaignsResolver interface {

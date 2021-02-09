@@ -10,7 +10,6 @@ import (
 type BasicAuth struct {
 	Username string
 	Password string
-	SSHKey   string
 }
 
 var _ Authenticator = &BasicAuth{}

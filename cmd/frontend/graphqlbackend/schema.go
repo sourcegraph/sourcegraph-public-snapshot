@@ -1677,10 +1677,6 @@ type CampaignSpec implements Node {
         Opaque pagination cursor.
         """
         after: String
-        """
-        Only returns the code hosts for which the viewer doesn't have credentials.
-        """
-        onlyWithoutCredential: Boolean = false
     ): CampaignsCodeHostConnection!
 }
 
