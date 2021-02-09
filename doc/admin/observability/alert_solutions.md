@@ -172,7 +172,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -196,7 +196,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1151,7 +1151,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1173,7 +1173,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1195,7 +1195,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1265,7 +1265,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1289,7 +1289,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1313,7 +1313,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1337,7 +1337,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1361,7 +1361,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1385,7 +1385,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1409,7 +1409,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 > NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#frontend-go-goroutines).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1431,7 +1431,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1453,7 +1453,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1478,7 +1478,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1507,7 +1507,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 > NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#gitserver-running-git-commands).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1531,7 +1531,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1556,7 +1556,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1585,7 +1585,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1609,7 +1609,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1633,7 +1633,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1657,7 +1657,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1681,7 +1681,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1705,7 +1705,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 > NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#gitserver-go-goroutines).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1727,7 +1727,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1749,7 +1749,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1773,7 +1773,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1797,7 +1797,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1821,7 +1821,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1845,7 +1845,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1869,7 +1869,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1893,7 +1893,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1917,7 +1917,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1941,7 +1941,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 > NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#github-proxy-go-goroutines).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1963,7 +1963,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -1985,7 +1985,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -2007,7 +2007,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -2031,7 +2031,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -2055,7 +2055,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 > NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#postgres-postgres-up).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -2080,7 +2080,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 > NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#postgres-pg-exporter-err).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -2105,7 +2105,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 > NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#postgres-migration-in-progress).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -2129,7 +2129,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -2153,7 +2153,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -2177,7 +2177,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -2201,7 +2201,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -2223,7 +2223,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -3020,7 +3020,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -3049,7 +3049,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -3078,7 +3078,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -3101,7 +3101,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -3124,7 +3124,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -3147,7 +3147,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -3170,7 +3170,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -3193,7 +3193,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -3216,7 +3216,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -3239,7 +3239,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -3262,7 +3262,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -3285,7 +3285,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -3308,7 +3308,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -3331,7 +3331,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -3354,7 +3354,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -3377,7 +3377,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -3400,7 +3400,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -3424,7 +3424,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -3447,7 +3447,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -3471,7 +3471,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -3495,7 +3495,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -3518,7 +3518,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -3541,7 +3541,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -3565,7 +3565,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -3588,7 +3588,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -3611,7 +3611,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -3634,7 +3634,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -3657,7 +3657,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -3680,7 +3680,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -3703,7 +3703,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -3727,7 +3727,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -3751,7 +3751,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -3775,7 +3775,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -3799,7 +3799,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -3823,7 +3823,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -3847,7 +3847,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -3871,7 +3871,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 > NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#repo-updater-go-goroutines).
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -3893,7 +3893,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -3915,7 +3915,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -4509,7 +4509,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -4533,7 +4533,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -4557,7 +4557,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -4581,7 +4581,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -4605,7 +4605,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -4629,7 +4629,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
@@ -4651,7 +4651,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud team](https://about.sourcegraph.com/handbook/engineering/cloud).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
 <br />
 
