@@ -10,6 +10,8 @@ import (
 	"github.com/dghubble/gologin/github"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"golang.org/x/oauth2"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/oauth"
@@ -18,7 +20,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	esauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	githubsvc "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"golang.org/x/oauth2"
+	"github.com/sourcegraph/sourcegraph/internal/hubspot"
+	"github.com/sourcegraph/sourcegraph/internal/hubspot/hubspotutil"
 )
 
 type sessionIssuerHelper struct {
@@ -83,6 +86,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 			CreateIfNotExist:    s.allowSignup,
 		})
 		if err == nil {
+			hubspotutil.SyncUser(verifiedEmail, hubspotutil.SignupEventID, &hubspot.ContactProperties{})
 			return actor.FromUser(userID), "", nil // success
 		}
 		if i == 0 {
