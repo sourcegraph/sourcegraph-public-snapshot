@@ -10,7 +10,7 @@ Please [contact us](https://about.sourcegraph.com/contact/sales) to discuss [pri
 
 ## Scaling
 
-Managed instances support most small to large enterprises well. Please [contact us](https://about.sourcegraph.com/contact/sales) to discuss options.
+Managed instances can be used by most enterprises of any size. Please [contact us](https://about.sourcegraph.com/contact/sales) to discuss options.
 
 # Service
 
