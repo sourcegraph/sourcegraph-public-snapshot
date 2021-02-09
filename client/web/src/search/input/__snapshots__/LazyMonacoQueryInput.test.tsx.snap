@@ -5,7 +5,7 @@ exports[`PlainQueryInput empty 1`] = `
   className="query-input2 d-flex"
 >
   <input
-    className="form-control code lazy-monaco-query-input--intermediate-input"
+    className="form-control text-code lazy-monaco-query-input--intermediate-input"
     onChange={[Function]}
     spellCheck={false}
     type="text"
@@ -93,7 +93,7 @@ exports[`PlainQueryInput with query 1`] = `
   className="query-input2 d-flex"
 >
   <input
-    className="form-control code lazy-monaco-query-input--intermediate-input"
+    className="form-control text-code lazy-monaco-query-input--intermediate-input"
     onChange={[Function]}
     spellCheck={false}
     type="text"
