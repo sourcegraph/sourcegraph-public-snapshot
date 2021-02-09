@@ -11,7 +11,6 @@ import { hasProperty } from '../../../shared/src/util/types'
 import { isObject } from 'lodash'
 import { VersionContextProps } from '../../../shared/src/search/util'
 import { ChartViewContent } from './ChartViewContent'
-import { getInsightTypeFromSettingsKey } from '../insights/analytics'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 
 const isMarkupContent = (input: unknown): input is MarkupContent =>
@@ -55,7 +54,7 @@ export const ViewContent: React.FunctionComponent<ViewContentProps> = ({
             // view, as opposed to accidentally moving past it. If the mouse leaves
             // the view quickly, clear the timeout for logging the event
             timeoutID = window.setTimeout(() => {
-                props.telemetryService.log('InsightHover', { insightType: getInsightTypeFromSettingsKey(viewID) })
+                props.telemetryService.log('InsightHover', { insightType: viewID.split('.')[0] })
             }, 500)
 
             viewContentElement?.addEventListener('mouseleave', onMouseLeave)

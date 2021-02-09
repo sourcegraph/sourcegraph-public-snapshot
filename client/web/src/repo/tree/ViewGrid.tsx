@@ -8,7 +8,6 @@ import * as H from 'history'
 import { WidthProvider, Responsive, Layout as ReactGridLayout, Layouts as ReactGridLayouts } from 'react-grid-layout'
 import { ViewProviderResult } from '../../../../shared/src/api/client/services/viewService'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
-import { getInsightTypeFromSettingsKey } from '../../insights/analytics'
 
 // TODO use a method to get width that also triggers when file explorer is closed
 // (WidthProvider only listens to window resize events)
@@ -62,9 +61,7 @@ export const ViewGrid: React.FunctionComponent<ViewGridProps> = props => {
     const onResizeOrDragStart: ReactGridLayout.ItemCallback = useCallback(
         (_layout, item) => {
             try {
-                props.telemetryService.log('InsightUICustomization', {
-                    insightType: getInsightTypeFromSettingsKey(item.i),
-                })
+                props.telemetryService.log('InsightUICustomization', { insightType: item.i.split('.')[0] })
             } catch {
                 // noop
             }

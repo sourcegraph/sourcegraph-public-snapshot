@@ -2,9 +2,6 @@ import { isEqual } from 'lodash'
 import { isSettingsValid, Settings, SettingsCascadeOrError } from '../../../shared/src/settings/settings'
 import { TelemetryService } from '../../../shared/src/telemetry/telemetryService'
 
-const insightTypes = ['searchInsights', 'codeStatsInsights'] as const
-type InsightType = typeof insightTypes[number]
-
 export function logCodeInsightsChanges(
     oldSettingsCascade: SettingsCascadeOrError<Settings>,
     newSettingsCascade: SettingsCascadeOrError<Settings>,
@@ -26,7 +23,7 @@ export function logCodeInsightsChanges(
 
 interface InsightDiff {
     action: 'Addition' | 'Removal' | 'Edit'
-    insightType: InsightType
+    insightType: string
 }
 
 export function diffCodeInsightsSettings(oldSettings: Settings, newSettings: Settings): InsightDiff[] {
@@ -69,43 +66,22 @@ export function diffCodeInsightsSettings(oldSettings: Settings, newSettings: Set
     return insightDiffs
 }
 
-/**
- * Get the type of insight from a settings key. For example:
- * "searchInsights.searchInsights.insight.graphQLTypesMigration.insightsPage"
- * to "searchInsights"
- */
-export function getInsightTypeFromSettingsKey(key: string): InsightType | undefined {
-    return insightTypes.find(type => type === key.split('.')[0])
-}
-
 interface InsightData {
-    insightType: InsightType
+    insightType: string
     name: string
     configuration: any
 }
 
-function parseInsightSettingsKey(key: string): Omit<InsightData, 'configuration'> | undefined {
-    const insightType = getInsightTypeFromSettingsKey(key)
+export function parseInsightSettingsKey(key: string): Omit<InsightData, 'configuration'> | undefined {
+    const [insightType, maybeInsight, insightName] = key.split('.')
 
     if (!insightType) {
         return undefined
     }
 
     switch (insightType) {
-        case 'searchInsights': {
-            // example key: "searchInsights.insights.graphQLTypesMigration"
-            const parts = key.split('.')
-            if (parts[1] !== 'insight') {
-                return
-            }
-
-            return {
-                insightType,
-                name: parts[2] ?? insightType, // fallback to type
-            }
-        }
-
-        case 'codeStatsInsights':
+        // Exceptional extensions that don't adhere to the standard insight settings key format
+        case 'codeStatsInsights': {
             if (key.split('.')[1] !== 'query') {
                 return
             }
@@ -114,5 +90,20 @@ function parseInsightSettingsKey(key: string): Omit<InsightData, 'configuration'
                 insightType,
                 name: insightType,
             }
+        }
+
+        // Extensions that contribute insights should define settings
+        // keys with the format `$EXTENSION_NAME.insight` or `$EXTENSION_NAME.insight.$INSIGHT_NAME`
+        // example key: "searchInsights.insights.graphQLTypesMigration"
+        default: {
+            if (maybeInsight !== 'insight') {
+                return
+            }
+
+            return {
+                insightType,
+                name: insightName ?? insightType, // fallback to type
+            }
+        }
     }
 }
