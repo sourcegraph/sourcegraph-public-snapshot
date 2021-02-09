@@ -518,7 +518,7 @@ func createChangesetSpecs(task *Task, result executionResult, features featureFl
 						Diff:        diff,
 					},
 				},
-				Published: task.Template.Published.Value(repo),
+				Published: task.Template.Published.ValueWithSuffix(repo, branch),
 			},
 		}
 	}

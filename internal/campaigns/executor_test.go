@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -19,6 +20,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/campaignutils/overridable"
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/campaigns/graphql"
@@ -685,6 +687,151 @@ index 0000000..1bd79fb
 			t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(tc.want, have))
 		}
 	}
+}
+
+func TestCreateChangesetSpecs(t *testing.T) {
+	allFeatures := featureFlags{
+		allowArrayEnvironments:   true,
+		includeAutoAuthorDetails: true,
+		useGzipCompression:       true,
+		allowtransformChanges:    true,
+		allowWorkspaces:          true,
+	}
+
+	srcCLI := &graphql.Repository{
+		ID:            "src-cli",
+		Name:          "github.com/sourcegraph/src-cli",
+		DefaultBranch: &graphql.Branch{Name: "main", Target: graphql.Target{OID: "d34db33f"}},
+	}
+
+	defaultChangesetSpec := &ChangesetSpec{
+		BaseRepository: srcCLI.ID,
+		CreatedChangeset: &CreatedChangeset{
+			BaseRef:        srcCLI.DefaultBranch.Name,
+			BaseRev:        srcCLI.DefaultBranch.Target.OID,
+			HeadRepository: srcCLI.ID,
+			HeadRef:        "refs/heads/my-branch",
+			Title:          "The title",
+			Body:           "The body",
+			Commits: []GitCommitDescription{
+				{
+					Message:     "git commit message",
+					Diff:        "cool diff",
+					AuthorName:  "Sourcegraph",
+					AuthorEmail: "campaigns@sourcegraph.com",
+				},
+			},
+			Published: false,
+		},
+	}
+
+	specWith := func(s *ChangesetSpec, f func(s *ChangesetSpec)) *ChangesetSpec {
+		f(s)
+		return s
+	}
+
+	defaultTask := &Task{
+		Template: &ChangesetTemplate{
+			Title:  "The title",
+			Body:   "The body",
+			Branch: "my-branch",
+			Commit: ExpandedGitCommitDescription{
+				Message: "git commit message",
+			},
+			Published: parsePublishedFieldString(t, "false"),
+		},
+		Repository: srcCLI,
+	}
+
+	taskWith := func(t *Task, f func(t *Task)) *Task {
+		f(t)
+		return t
+	}
+
+	defaultResult := executionResult{
+		Diff: "cool diff",
+		ChangedFiles: &StepChanges{
+			Modified: []string{"README.md"},
+		},
+		Outputs: map[string]interface{}{},
+	}
+
+	tests := []struct {
+		name   string
+		task   *Task
+		result executionResult
+
+		want    []*ChangesetSpec
+		wantErr string
+	}{
+		{
+			name:   "success",
+			task:   defaultTask,
+			result: defaultResult,
+			want: []*ChangesetSpec{
+				defaultChangesetSpec,
+			},
+			wantErr: "",
+		},
+		{
+			name: "publish by branch",
+			task: taskWith(defaultTask, func(task *Task) {
+				published := `[{"github.com/sourcegraph/*@my-branch": true}]`
+				task.Template.Published = parsePublishedFieldString(t, published)
+			}),
+			result: defaultResult,
+			want: []*ChangesetSpec{
+				specWith(defaultChangesetSpec, func(s *ChangesetSpec) {
+					s.Published = true
+				}),
+			},
+			wantErr: "",
+		},
+		{
+			name: "publish by branch not matching",
+			task: taskWith(defaultTask, func(task *Task) {
+				published := `[{"github.com/sourcegraph/*@another-branch-name": true}]`
+				task.Template.Published = parsePublishedFieldString(t, published)
+			}),
+			result: defaultResult,
+			want: []*ChangesetSpec{
+				specWith(defaultChangesetSpec, func(s *ChangesetSpec) {
+					s.Published = false
+				}),
+			},
+			wantErr: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			have, err := createChangesetSpecs(tt.task, tt.result, allFeatures)
+			if err != nil {
+				if tt.wantErr != "" {
+					if err.Error() != tt.wantErr {
+						t.Fatalf("wrong error. want=%q, got=%q", tt.wantErr, err.Error())
+					}
+					return
+				} else {
+					t.Fatalf("unexpected error: %s", err)
+				}
+			}
+
+			if !cmp.Equal(tt.want, have) {
+				t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(tt.want, have))
+			}
+		})
+	}
+}
+
+func parsePublishedFieldString(t *testing.T, input string) overridable.BoolOrString {
+	t.Helper()
+
+	var result overridable.BoolOrString
+	if err := json.Unmarshal([]byte(input), &result); err != nil {
+		t.Fatalf("failed to parse %q as overridable.BoolOrString: %s", input, err)
+	}
+	return result
 }
 
 func addToPath(t *testing.T, relPath string) {

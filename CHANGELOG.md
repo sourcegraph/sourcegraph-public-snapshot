@@ -14,6 +14,7 @@ All notable changes to `src-cli` are documented in this file.
 ### Added
 
 - Experimental: [`workspaces` in campaign specs](https://docs.sourcegraph.com/campaigns/references/campaign_spec_yaml_reference#workspaces) is now available to allow users to define multiple workspaces in a single repository. [#442](https://github.com/sourcegraph/src-cli/pull/442)
+- The `changesetTemplate.published` field can now also be used to address a specific changeset in a repository by adding `@branch-of-changeset` at the end of the pattern. See [#461](https://github.com/sourcegraph/src-cli/pull/461) for an example and details.
 
 ### Changed
 
