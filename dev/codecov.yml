@@ -18,6 +18,16 @@ coverage:
           - internal/campaigns
           - enterprise/internal/campaigns
           - client/web/src/enterprise/campaigns
+      search:
+        informational: true
+        paths:
+          - client/shared/src/search
+          - client/web/src/enterprise/search
+          - client/web/src/search
+          - cmd/frontend/graphqlbackend/*search*
+          - cmd/frontend/internal/search
+          - cmd/searcher
+          - internal/search
       typescript:
         informational: true
         flags:
