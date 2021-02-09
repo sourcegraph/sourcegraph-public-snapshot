@@ -53,15 +53,17 @@
         }
 
         &.disabled {
-            background-color: var(--color-bg-3);
+            background-color: var(--color-bg-4);
+            color: var(--color-text-3);
             cursor: default;
+            opacity: 1;
 
             &:active {
                 border-color: transparent;
             }
 
             &:hover {
-                background-color: var(--color-bg-3);
+                background-color: var(--color-bg-4);
             }
         }
 

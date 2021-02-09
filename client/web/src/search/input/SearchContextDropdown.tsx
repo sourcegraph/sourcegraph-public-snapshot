@@ -1,5 +1,7 @@
+import classNames from 'classnames'
 import React, { useCallback, useEffect, useState } from 'react'
 import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
+import { Tooltip } from '../../../../branded/src/components/tooltip/Tooltip'
 import { scanSearchQuery } from '../../../../shared/src/search/query/scanner'
 import { FilterType } from '../../../../shared/src/search/query/util'
 import { SearchContextMenu } from './SearchContextMenu'
@@ -25,6 +27,8 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         } else {
             setIsDisabled(false)
         }
+
+        Tooltip.forceUpdate()
     }, [query])
 
     const context = 'global'
@@ -32,11 +36,16 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         <>
             <ButtonDropdown isOpen={isOpen} toggle={toggleOpen}>
                 <DropdownToggle
-                    className="search-context-dropdown__button dropdown-toggle"
+                    className={classNames('search-context-dropdown__button', 'dropdown-toggle', {
+                        'search-context-dropdown__button--open': isOpen,
+                    })}
                     color="link"
                     disabled={isDisabled}
                 >
-                    <code className="search-context-dropdown__button-content">
+                    <code
+                        className="search-context-dropdown__button-content"
+                        data-tooltip={isDisabled ? 'Overridden by query' : ''}
+                    >
                         <span className="search-filter-keyword">context:</span>
                         {context}
                     </code>
