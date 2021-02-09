@@ -441,7 +441,7 @@ const (
 	ObservableOwnerDistribution ObservableOwner = "distribution"
 	ObservableOwnerSecurity     ObservableOwner = "security"
 	ObservableOwnerWeb          ObservableOwner = "web"
-	ObservableOwnerCloud        ObservableOwner = "cloud"
+	ObservableOwnerCoreApp      ObservableOwner = "core-app"
 )
 
 // toMarkdown returns a Markdown string that also links to the owner's team page

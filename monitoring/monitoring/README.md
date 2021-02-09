@@ -348,7 +348,7 @@ const (
     ObservableOwnerDistribution ObservableOwner = "distribution"
     ObservableOwnerSecurity     ObservableOwner = "security"
     ObservableOwnerWeb          ObservableOwner = "web"
-    ObservableOwnerCloud        ObservableOwner = "cloud"
+    ObservableOwnerCoreApp        ObservableOwner = "cloud"
 )
 ```
 
