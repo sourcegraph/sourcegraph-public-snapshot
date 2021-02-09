@@ -19,7 +19,7 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
     campaignsEnabled: true,
     codeIntelAutoIndexingEnabled: true,
     externalServicesUserModeEnabled: false,
-    productResearchAreaEnabled: true,
+    productResearchPageEnabled: true,
     csrfToken: 'test-csrf-token',
     assetsRoot: new URL('/.assets', sourcegraphBaseUrl).href,
     deployType: 'dev',

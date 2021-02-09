@@ -233,8 +233,8 @@ func CodeIntelAutoIndexingEnabled() bool {
 	return false
 }
 
-func ProductResearchAreaEnabled() bool {
-	if enabled := Get().ProductResearchAreaEnabled; enabled != nil {
+func ProductResearchPageEnabled() bool {
+	if enabled := Get().ProductResearchPageEnabled; enabled != nil {
 		return *enabled
 	}
 	return true

@@ -891,8 +891,8 @@ const SiteSchemaJSON = `{
       "default": 2000,
       "group": "Misc."
     },
-    "productResearchArea.enabled": {
-      "description": "Enables users access to the product research area in their settings.",
+    "productResearchPage.enabled": {
+      "description": "Enables users access to the product research page in their settings.",
       "type": "boolean",
       "!go": { "pointer": true },
       "group": "Misc.",

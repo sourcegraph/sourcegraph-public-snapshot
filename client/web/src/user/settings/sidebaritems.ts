@@ -50,7 +50,7 @@ export const userSettingsSideBarItems: UserSettingsSidebarItems = {
         {
             label: 'Product research',
             to: '/product-research',
-            condition: () => window.context.productResearchAreaEnabled,
+            condition: () => window.context.productResearchPageEnabled,
         },
     ],
 }

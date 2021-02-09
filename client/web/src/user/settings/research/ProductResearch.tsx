@@ -10,7 +10,7 @@ interface Props {
 
 const signUpForm = new URL('https://share.hsforms.com/1tkScUc65Tm-Yu98zUZcLGw1n7ku')
 
-export const ProductResearchArea: React.FunctionComponent<Props> = ({ telemetryService, authenticatedUser }) => {
+export const ProductResearchPage: React.FunctionComponent<Props> = ({ telemetryService, authenticatedUser }) => {
     useEffect(() => {
         telemetryService.logViewEvent('UserSettingsProductResearch')
     }, [telemetryService])

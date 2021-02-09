@@ -1,14 +1,14 @@
 import React from 'react'
 import { render, RenderResult } from '@testing-library/react'
-import { ProductResearchArea } from './ProductResearch'
+import { ProductResearchPage } from './ProductResearch'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/telemetryService'
 
-describe('ProductResearchArea', () => {
+describe('ProductResearchPage', () => {
     let queries: RenderResult
 
     beforeEach(() => {
         queries = render(
-            <ProductResearchArea
+            <ProductResearchPage
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 authenticatedUser={{ email: 'test@sourcegraph.com' }}
             />
