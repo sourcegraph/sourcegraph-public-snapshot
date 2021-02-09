@@ -217,13 +217,11 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 		} else {
 			fileMatch := &FileMatchResolver{
 				FileMatch: FileMatch{
-					JPath:   symbolRes.symbol.Path,
-					symbols: []*searchSymbolResult{symbolRes},
-					uri:     uri,
-					Repo:    repoRevs.Repo,
-					// Don't get commit from GitCommitResolver.OID() because we don't want to
-					// slow search results down when they are coming from zoekt.
-					CommitID: api.CommitID(symbolRes.commit.oid),
+					JPath:    symbolRes.symbol.Path,
+					symbols:  []*searchSymbolResult{symbolRes},
+					uri:      uri,
+					Repo:     repoRevs.Repo,
+					CommitID: api.CommitID(symbolRes.commit.OID()),
 				},
 				RepoResolver: repoResolver,
 			}
@@ -237,7 +235,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 // makeFileMatchURIFromSymbol makes a git://repo?rev#path URI from a symbol
 // search result to use in a fileMatchResolver
 func makeFileMatchURIFromSymbol(symbolResult *searchSymbolResult, inputRev string) string {
-	uri := "git:/" + string(symbolResult.commit.repoResolver.URL())
+	uri := "git:/" + string(symbolResult.commit.Repository().URL())
 	if inputRev != "" {
 		uri += "?" + inputRev
 	}

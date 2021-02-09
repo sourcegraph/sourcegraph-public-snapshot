@@ -1043,13 +1043,13 @@ func TestZoektFileMatchToSymbolResults(t *testing.T) {
 		if got, want := res.baseURI.URL.String(), "git://foo?master"; got != want {
 			t.Fatalf("baseURI: got %q want %q", got, want)
 		}
-		if got, want := string(res.commit.repoResolver.innerRepo.Name), "foo"; got != want {
+		if got, want := string(res.commit.Repository().Name()), "foo"; got != want {
 			t.Fatalf("reporesolver: got %q want %q", got, want)
 		}
-		if got, want := string(res.commit.oid), "deadbeef"; got != want {
+		if got, want := string(res.commit.OID()), "deadbeef"; got != want {
 			t.Fatalf("oid: got %q want %q", got, want)
 		}
-		if got, want := *res.commit.inputRev, "master"; got != want {
+		if got, want := *res.commit.InputRev(), "master"; got != want {
 			t.Fatalf("inputRev: got %q want %q", got, want)
 		}
 

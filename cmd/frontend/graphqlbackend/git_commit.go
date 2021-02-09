@@ -97,6 +97,8 @@ func (r *GitCommitResolver) Repository() *RepositoryResolver { return r.repoReso
 
 func (r *GitCommitResolver) OID() GitObjectID { return r.oid }
 
+func (r *GitCommitResolver) InputRev() *string { return r.inputRev }
+
 func (r *GitCommitResolver) AbbreviatedOID() string {
 	return string(r.oid)[:7]
 }
