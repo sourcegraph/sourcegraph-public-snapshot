@@ -4,6 +4,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/authz/github"
 	"github.com/sourcegraph/sourcegraph/internal/authz/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/authz/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -21,6 +22,9 @@ func NewExternalServicesStore(d dbutil.DB) *database.ExternalServiceStore {
 	}
 	es.BitbucketServerValidators = []func(*schema.BitbucketServerConnection) error{
 		bitbucketserver.ValidateAuthz,
+	}
+	es.PerforceValidators = []func(connection *schema.PerforceConnection) error{
+		perforce.ValidateAuthz,
 	}
 
 	return es

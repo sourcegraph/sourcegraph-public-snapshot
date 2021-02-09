@@ -234,7 +234,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		accts = append(accts, acct)
 	}
 
-	var repoSpecs []api.ExternalRepoSpec
+	var repoSpecs, repoPrefixSpecs []api.ExternalRepoSpec
 	for _, acct := range accts {
 		provider := providers[acct.ServiceID]
 		if provider == nil {
@@ -246,7 +246,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 			return errors.Wrap(err, "wait for rate limiter")
 		}
 
-		extIDs, err := provider.FetchUserPerms(ctx, acct)
+		extIDs, extIDType, err := provider.FetchUserPerms(ctx, acct)
 		if err != nil {
 			// The "401 Unauthorized" is returned by code hosts when the token is no longer valid
 			unauthorized := errcode.IsUnauthorized(errors.Cause(err))
@@ -279,25 +279,51 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 			}
 		}
 
-		for i := range extIDs {
-			repoSpecs = append(repoSpecs, api.ExternalRepoSpec{
-				ID:          string(extIDs[i]),
-				ServiceType: provider.ServiceType(),
-				ServiceID:   provider.ServiceID(),
-			})
+		switch extIDType {
+		case extsvc.RepoIDExact:
+			for _, extID := range extIDs {
+				repoSpecs = append(repoSpecs, api.ExternalRepoSpec{
+					ID:          string(extID),
+					ServiceType: provider.ServiceType(),
+					ServiceID:   provider.ServiceID(),
+				})
+			}
+
+		case extsvc.RepoIDPrefix:
+			for _, extID := range extIDs {
+				repoPrefixSpecs = append(repoPrefixSpecs, api.ExternalRepoSpec{
+					ID:          string(extID),
+					ServiceType: provider.ServiceType(),
+					ServiceID:   provider.ServiceID(),
+				})
+			}
+
+		default:
+			return errors.Errorf("unrecognized extsvc.RepoIDType %q", extIDType)
 		}
 	}
 
-	var rs []*types.Repo
+	// Get corresponding internal database IDs
+	var repoNames []*types.RepoName
 	if len(repoSpecs) > 0 {
-		// Get corresponding internal database IDs
-		rs, err = s.reposStore.RepoStore.List(ctx, database.ReposListOptions{
+		rs, err := s.reposStore.RepoStore.ListRepoNames(ctx, database.ReposListOptions{
 			ExternalRepos: repoSpecs,
 			OnlyPrivate:   true,
 		})
 		if err != nil {
-			return errors.Wrap(err, "list external repositories")
+			return errors.Wrap(err, "list external repositories by exact matching")
 		}
+		repoNames = append(repoNames, rs...)
+	}
+	if len(repoPrefixSpecs) > 0 {
+		rs, err := s.reposStore.RepoStore.ListRepoNames(ctx, database.ReposListOptions{
+			ExternalRepoPrefixes: repoPrefixSpecs,
+			OnlyPrivate:          true,
+		})
+		if err != nil {
+			return errors.Wrap(err, "list external repositories by prefix matching")
+		}
+		repoNames = append(repoNames, rs...)
 	}
 
 	// Save permissions to database
@@ -307,8 +333,8 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		Type:   authz.PermRepos,
 		IDs:    roaring.NewBitmap(),
 	}
-	for i := range rs {
-		p.IDs.Add(uint32(rs[i].ID))
+	for i := range repoNames {
+		p.IDs.Add(uint32(repoNames[i].ID))
 	}
 
 	err = s.permsStore.SetUserPermissions(ctx, p)

@@ -57,6 +57,7 @@ func ProvidersFromConfig(
 			extsvc.KindGitHub,
 			extsvc.KindGitLab,
 			extsvc.KindBitbucketServer,
+			extsvc.KindPerforce,
 		},
 		LimitOffset: &database.LimitOffset{
 			Limit: 500, // The number is randomly chosen

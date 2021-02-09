@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -105,10 +106,12 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 		email := strings.Trim(fields[1], "<>") // e.g. alice@example.com
 
 		if _, ok := emailSet[email]; ok {
-			accountData, err := jsoniter.Marshal(map[string]string{
-				"username": username,
-				"email":    email,
-			})
+			accountData, err := jsoniter.Marshal(
+				perforce.AccountData{
+					Username: username,
+					Email:    email,
+				},
+			)
 			if err != nil {
 				return nil, err
 			}
@@ -136,14 +139,47 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 	return nil, nil
 }
 
-func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) ([]extsvc.RepoID, error) {
-	// TODO: Fetch via "p4 protects -u alice"
-	panic("implement me")
+// FetchUserPerms returns a list of depot prefixes that the given user has
+// access to on the Perforce Server.
+func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) ([]extsvc.RepoID, extsvc.RepoIDType, error) {
+	user, err := perforce.GetExternalAccountData(&account.AccountData)
+	if err != nil {
+		return nil, extsvc.RepoIDExact, errors.Wrap(err, "get external account data")
+	}
+
+	rc, _, err := gitserver.DefaultClient.P4Exec(ctx, p.host, p.user, p.password, "protects", "-u", user.Username)
+	if err != nil {
+		return nil, extsvc.RepoIDPrefix, errors.Wrap(err, "list depots")
+	}
+	defer func() { _ = rc.Close() }()
+
+	var depotPrefixes []extsvc.RepoID
+	scanner := bufio.NewScanner(rc)
+	for scanner.Scan() {
+		// e.g. read user alice * //Sourcegraph/...
+		fields := strings.Split(scanner.Text(), " ")
+		if len(fields) < 5 {
+			continue
+		}
+		depotPrefix := strings.TrimRight(fields[4], ".") // e.g. //Sourcegraph/
+
+		// Rule that starts with a "-" in depot prefix means block access, thus skip
+		if strings.HasPrefix(depotPrefix, "-") {
+			continue
+		}
+
+		depotPrefixes = append(depotPrefixes, extsvc.RepoID(depotPrefix))
+	}
+	if err = scanner.Err(); err != nil {
+		return nil, extsvc.RepoIDPrefix, errors.Wrap(err, "scanner.Err")
+	}
+
+	return depotPrefixes, extsvc.RepoIDPrefix, nil
 }
 
 func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) ([]extsvc.AccountID, error) {
 	// TODO: Fetch via "p4 protects -a //depot-alice/", "p4 users", "p4 groups"
-	panic("implement me")
+	return nil, nil
 }
 
 func (p *Provider) ServiceType() string {
@@ -160,5 +196,5 @@ func (p *Provider) URN() string {
 
 func (p *Provider) Validate() (problems []string) {
 	// TODO: Validate with "p4 protects -u <p.user>" to make sure this is a super user to fetch ACL
-	panic("implement me")
+	return nil
 }

@@ -298,7 +298,7 @@ func (c *Client) P4Exec(ctx context.Context, host, user, password string, args .
 		P4Passwd: password,
 		Args:     args,
 	}
-	resp, err := c.httpPost(ctx, "p4", "exec", req)
+	resp, err := c.httpPost(ctx, "", "p4-exec", req)
 	if err != nil {
 		return nil, nil, err
 	}
