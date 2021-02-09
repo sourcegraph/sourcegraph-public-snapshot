@@ -2,7 +2,8 @@
 
 This tutorial shows you how to deploy Sourcegraph to a single node running on DigitalOcean.
 
-> NOTE: Trying to decide how to deploy Sourcegraph? See [our recommendations](../index.md) for how to chose a deployment type that suits your needs.
+> NOTE: We *do not* recommend using this method for a production instance. If deploying a production instance, see [our recommendations](../index.md) for how to chose a deployment type that suits your needs. We recommend [Docker Compose](../docker-compose/digitalocean.md) for most initial production deployments.
+
 
 ---
 
