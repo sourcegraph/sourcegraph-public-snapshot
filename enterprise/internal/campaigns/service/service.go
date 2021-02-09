@@ -93,7 +93,7 @@ func (s *Service) CreateCampaignSpec(ctx context.Context, opts CreateCampaignSpe
 
 	// 🚨 SECURITY: database.Repos.GetRepoIDsSet uses the authzFilter under the hood and
 	// filters out repositories that the user doesn't have access to.
-	accessibleReposByID, err := database.GlobalRepos.GetReposSetByIDs(ctx, cs.RepoIDs()...)
+	accessibleReposByID, err := s.store.Repos().GetReposSetByIDs(ctx, cs.RepoIDs()...)
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +156,7 @@ func (s *Service) CreateChangesetSpec(ctx context.Context, rawSpec string, userI
 
 	// 🚨 SECURITY: We use database.Repos.Get to check whether the user has access to
 	// the repository or not.
-	if _, err = database.GlobalRepos.Get(ctx, spec.RepoID); err != nil {
+	if _, err = s.store.Repos().Get(ctx, spec.RepoID); err != nil {
 		return nil, err
 	}
 
@@ -382,7 +382,7 @@ func (s *Service) EnqueueChangesetSync(ctx context.Context, id int64) (err error
 
 	// 🚨 SECURITY: We use database.Repos.Get to check whether the user has access to
 	// the repository or not.
-	if _, err = database.GlobalRepos.Get(ctx, changeset.RepoID); err != nil {
+	if _, err = s.store.Repos().Get(ctx, changeset.RepoID); err != nil {
 		return err
 	}
 
@@ -436,7 +436,7 @@ func (s *Service) ReenqueueChangeset(ctx context.Context, id int64) (changeset *
 
 	// 🚨 SECURITY: We use database.Repos.Get to check whether the user has access to
 	// the repository or not.
-	repo, err = database.ReposWith(s.store).Get(ctx, changeset.RepoID)
+	repo, err = s.store.Repos().Get(ctx, changeset.RepoID)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -521,8 +521,7 @@ func (s *Service) FetchUsernameForBitbucketServerToken(ctx context.Context, exte
 		return "", err
 	}
 
-	esStore := database.ExternalServicesWith(s.store)
-	externalService, err := esStore.GetByID(ctx, extSvcID)
+	externalService, err := s.store.ExternalServices().GetByID(ctx, extSvcID)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return "", errors.New("no external service found for repo")

@@ -2,14 +2,13 @@ package campaigns
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/background"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/syncer"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	ossDB "github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
@@ -18,7 +17,7 @@ import (
 // repo-updater and in the future will be the main entry point for the campaigns worker.
 func InitBackgroundJobs(
 	ctx context.Context,
-	db *sql.DB,
+	db dbutil.DB,
 	cf *httpcli.Factory,
 	// TODO(eseliger): Remove this parameter as the sunset of repo-updater is approaching.
 	// We should switch to our own polling mechanism instead of using repo-updaters.
@@ -26,8 +25,8 @@ func InitBackgroundJobs(
 ) {
 	cstore := store.New(db)
 
-	repoStore := ossDB.ReposWith(cstore)
-	esStore := ossDB.ExternalServicesWith(cstore)
+	repoStore := cstore.Repos()
+	esStore := cstore.ExternalServices()
 
 	// We use an internal actor so that we can freely load dependencies from
 	// the database without repository permissions being enforced.
@@ -41,5 +40,5 @@ func InitBackgroundJobs(
 		server.ChangesetSyncRegistry = syncRegistry
 	}
 
-	go goroutine.MonitorBackgroundRoutines(ctx, background.Routines(ctx, db, cstore, cf)...)
+	go goroutine.MonitorBackgroundRoutines(ctx, background.Routines(ctx, cstore, cf)...)
 }
