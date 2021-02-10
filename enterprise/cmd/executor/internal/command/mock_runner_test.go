@@ -73,7 +73,7 @@ func (f *CommandRunnerRunCommandFunc) SetDefaultHook(hook func(context.Context, 
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// RunCommand method of the parent MockCommandRunner instance inovkes the
+// RunCommand method of the parent MockCommandRunner instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
 func (f *CommandRunnerRunCommandFunc) PushHook(hook func(context.Context, command, *Logger) error) {

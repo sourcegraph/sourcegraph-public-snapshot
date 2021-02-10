@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	insightsdbtesting "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/dbtesting"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
@@ -21,19 +22,24 @@ func TestResolver_InsightSeries(t *testing.T) {
 	}
 	t.Parallel()
 
-	testSetup := func(t *testing.T) (context.Context, [][]graphqlbackend.InsightSeriesResolver) {
+	testSetup := func(t *testing.T) (context.Context, [][]graphqlbackend.InsightSeriesResolver, *store.MockInterface, func()) {
 		// Setup the GraphQL resolver.
 		ctx := backend.WithAuthzBypass(context.Background())
 		now := time.Now().UTC().Truncate(time.Microsecond)
 		clock := func() time.Time { return now }
 		timescale, cleanup := insightsdbtesting.TimescaleDB(t)
-		defer cleanup()
 		postgres := dbtesting.GetDB(t)
 		resolver := newWithClock(timescale, postgres, clock)
+
+		// Create a mock store, delegating any un-mocked methods to the DB store.
+		dbStore := resolver.store
+		mockStore := store.NewMockInterfaceFrom(dbStore)
+		resolver.store = mockStore
 
 		// Create the insights connection resolver and query series.
 		conn, err := resolver.Insights(ctx)
 		if err != nil {
+			cleanup()
 			t.Fatal(err)
 		}
 		conn.(*insightConnectionResolver).mocksSettingsGetLatest = func(ctx context.Context, subject api.SettingsSubject) (*api.Settings, error) {
@@ -44,17 +50,19 @@ func TestResolver_InsightSeries(t *testing.T) {
 		}
 		nodes, err := conn.Nodes(ctx)
 		if err != nil {
+			cleanup()
 			t.Fatal(err)
 		}
 		var series [][]graphqlbackend.InsightSeriesResolver
 		for _, node := range nodes {
 			series = append(series, node.Series())
 		}
-		return ctx, series
+		return ctx, series, mockStore, cleanup
 	}
 
 	t.Run("metadata", func(t *testing.T) {
-		_, insights := testSetup(t)
+		_, insights, _, cleanup := testSetup(t)
+		defer cleanup()
 		autogold.Want("insights length", int(2)).Equal(t, len(insights))
 
 		autogold.Want("insights[0].length", int(2)).Equal(t, len(insights[0]))
@@ -66,5 +74,3 @@ func TestResolver_InsightSeries(t *testing.T) {
 		autogold.Want("insights[1].series[1].Label", "close").Equal(t, insights[1][1].Label())
 	})
 }
-
-// TODO(slimsag)
