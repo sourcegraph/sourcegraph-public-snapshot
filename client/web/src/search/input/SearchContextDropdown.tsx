@@ -17,16 +17,12 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
     // Disable the dropdown if the query contains a context filter
     useEffect(() => {
         const scannedQuery = scanSearchQuery(query)
-        if (
+        const isDisabled =
             scannedQuery.type === 'success' &&
             scannedQuery.term.some(
                 token => token.type === 'filter' && token.field.value.toLowerCase() === FilterType.context
             )
-        ) {
-            setIsDisabled(true)
-        } else {
-            setIsDisabled(false)
-        }
+        setIsDisabled(isDisabled)
     }, [query])
 
     const context = 'global'
