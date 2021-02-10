@@ -67,7 +67,7 @@
         border: 1px solid var(--input-border-color);
         border-right: none;
 
-        & + .lazy-monaco-query-input--intermediate-input {
+        + .lazy-monaco-query-input--intermediate-input {
             border-left: none;
         }
     }
