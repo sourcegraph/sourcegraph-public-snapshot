@@ -11,7 +11,6 @@ import (
 func GetExtensionsUsageStatistics(ctx context.Context) (*types.ExtensionsUsageStatistics, error) {
 	stats := types.ExtensionsUsageStatistics{}
 	usageStatisticsByExtension := []*types.ExtensionUsageStatistics{}
-	stats.UsageStatisticsByExtension = &usageStatisticsByExtension
 
 	// Query for evaluating success of individual extensions
 	extensionsQuery := `
@@ -53,6 +52,8 @@ func GetExtensionsUsageStatistics(ctx context.Context) (*types.ExtensionsUsageSt
 		}
 		usageStatisticsByExtension = append(usageStatisticsByExtension, &extensionUsageStatistics)
 	}
+
+	stats.UsageStatisticsByExtension = usageStatisticsByExtension
 
 	if err := rows.Err(); err != nil {
 		return nil, err

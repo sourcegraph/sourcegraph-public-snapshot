@@ -69,7 +69,7 @@ func TestExtensionsUsageStatistics(t *testing.T) {
 
 	want := &types.ExtensionsUsageStatistics{
 		WeekStart:                   weekStart,
-		UsageStatisticsByExtension:  &usageStatisticsByExtension,
+		UsageStatisticsByExtension:  usageStatisticsByExtension,
 		AverageNonDefaultExtensions: &oneAndAHalfFloat,
 		NonDefaultExtensionUsers:    &twoInt,
 	}
