@@ -118,7 +118,7 @@ func InitDB() (*sql.DB, error) {
 }
 
 // Main is the main entrypoint for the frontend server program.
-func Main(enterpriseSetupHook func() enterprise.Services) error {
+func Main(enterpriseSetupHook func(db dbutil.DB) enterprise.Services) error {
 	log.SetFlags(0)
 	log.SetPrefix("")
 
@@ -147,7 +147,7 @@ func Main(enterpriseSetupHook func() enterprise.Services) error {
 	trace.Init(true)
 
 	// Run enterprise setup hook
-	enterprise := enterpriseSetupHook()
+	enterprise := enterpriseSetupHook(db)
 
 	if len(os.Args) >= 2 {
 		switch os.Args[1] {

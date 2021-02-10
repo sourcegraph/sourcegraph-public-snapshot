@@ -18,13 +18,14 @@ import (
 	codeintelresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	codeintelgqlresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
-	if err := initServices(ctx); err != nil {
+func Init(ctx context.Context, db dbutil.DB, enterpriseServices *enterprise.Services) error {
+	if err := initServices(ctx, db); err != nil {
 		return err
 	}
 
@@ -39,7 +40,7 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 		return err
 	}
 
-	uploadHandler, err := newUploadHandler(ctx)
+	uploadHandler, err := newUploadHandler(ctx, db)
 	if err != nil {
 		return err
 	}
@@ -81,13 +82,13 @@ func newResolver(ctx context.Context, observationContext *observation.Context) (
 	return resolver, err
 }
 
-func newUploadHandler(ctx context.Context) (func(internal bool) http.Handler, error) {
-	internalHandler, err := NewCodeIntelUploadHandler(ctx, true)
+func newUploadHandler(ctx context.Context, db dbutil.DB) (func(internal bool) http.Handler, error) {
+	internalHandler, err := NewCodeIntelUploadHandler(ctx, db, true)
 	if err != nil {
 		return nil, err
 	}
 
-	externalHandler, err := NewCodeIntelUploadHandler(ctx, false)
+	externalHandler, err := NewCodeIntelUploadHandler(ctx, db, false)
 	if err != nil {
 		return nil, err
 	}
