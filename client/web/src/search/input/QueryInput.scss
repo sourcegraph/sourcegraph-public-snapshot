@@ -68,7 +68,10 @@
         border-right: none;
 
         + .lazy-monaco-query-input--intermediate-input {
-            border-left: none;
+            padding-left: 0.5rem; // smaller padding if the search context selector is visible
+            margin-left: 0.0625rem;
+            border-top-left-radius: 0.25rem;
+            border-bottom-left-radius: 0.25rem;
         }
     }
 
