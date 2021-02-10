@@ -103,3 +103,20 @@ add(
     ),
     {}
 )
+
+add(
+    'with search contexts, disabled based on query',
+    () => (
+        <WebStory>
+            {props => (
+                <MonacoQueryInput
+                    {...defaultProps}
+                    showSearchContext={true}
+                    isLightTheme={props.isLightTheme}
+                    queryState={{ query: 'hello context:global' }}
+                />
+            )}
+        </WebStory>
+    ),
+    {}
+)
