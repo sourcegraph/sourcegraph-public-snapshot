@@ -668,38 +668,8 @@ func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, minimal bool, opt
 }
 
 type ListDefaultReposOptions struct {
-	Limit   int
-	AfterID int32
 	// If true, will only include uncloned default repos
 	OnlyUncloned bool
-}
-
-// ListAllDefaultRepos returns a list of all default repos. Default repos are a union of
-// repos in our default_repos table and repos owned by users.
-// It may perform multiple queries, fetching repos in batches.
-func (s *RepoStore) ListAllDefaultRepos(ctx context.Context) (results []*types.RepoName, err error) {
-	return s.listAllDefaultRepos(ctx, 40_000)
-}
-
-func (s *RepoStore) listAllDefaultRepos(ctx context.Context, batchSize int) (results []*types.RepoName, err error) {
-	opts := ListDefaultReposOptions{
-		Limit:   batchSize,
-		AfterID: 0,
-	}
-
-	for {
-		repos, err := s.ListDefaultRepos(ctx, opts)
-		if err != nil {
-			return nil, err
-		}
-		results = append(results, repos...)
-		if len(repos) < batchSize {
-			break
-		}
-		opts.AfterID = int32(repos[len(repos)-1].ID)
-	}
-
-	return results, nil
 }
 
 // ListDefaultRepos returns a list of default repos. Default repos are a union of
@@ -714,28 +684,28 @@ func (s *RepoStore) ListDefaultRepos(ctx context.Context, opts ListDefaultReposO
 
 	cloneClause := sqlf.Sprintf("TRUE")
 	if opts.OnlyUncloned {
-		cloneClause = sqlf.Sprintf("NOT r.cloned")
+		cloneClause = sqlf.Sprintf("NOT repo.cloned")
 	}
 
 	q := sqlf.Sprintf(`
 -- source: internal/database/repos.go:RepoStore.ListDefaultRepos
-SELECT DISTINCT ON (r.id)
-  r.id,
-  r.name
-  FROM repo r
-  JOIN external_service_repos sr ON sr.repo_id = r.id
-  JOIN external_services s ON s.id = sr.external_service_id
-  LEFT JOIN default_repos dr ON dr.repo_id = r.id
-  WHERE (NOT s.cloud_default OR dr.repo_id IS NOT NULL)
-    AND s.deleted_at IS NULL
-    AND r.deleted_at IS NULL
-    AND r.id > %s
-    AND %s
-  ORDER BY id ASC
-  LIMIT %s
-`, opts.AfterID, cloneClause, opts.Limit)
+SELECT repo.id, repo.name FROM repo
+JOIN default_repos dr ON repo.id = dr.repo_id
+WHERE
+      repo.deleted_at IS NULL
+      AND %s
 
-	results = make([]*types.RepoName, 0, opts.Limit)
+UNION
+
+SELECT repo.id, repo.name FROM repo
+JOIN external_service_repos esr ON repo.id = esr.repo_id
+JOIN external_services es ON esr.external_service_id = es.id
+WHERE
+      NOT es.cloud_default
+      AND es.deleted_at IS NULL
+      AND repo.deleted_at IS NULL
+      AND %s
+`, cloneClause, cloneClause)
 
 	rows, err := s.Query(ctx, q)
 	if err != nil {
