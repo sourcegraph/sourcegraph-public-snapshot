@@ -61,9 +61,6 @@ func (s *Store) Symbols(ctx context.Context, bundleID int, path string) ([]*Symb
 	if err := associateMonikers(symbols, monikers); err != nil {
 		return nil, err
 	}
-	// for _, symbol := range symbols {
-	// 	log.Printf("# symbol monikers: %v", symbol.Monikers)
-	// }
 
 	// TODO(beyang): coalesce using monikers, rather than symbol text
 	type symbolKey struct {
