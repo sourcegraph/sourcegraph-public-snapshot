@@ -29,6 +29,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/hubspot"
+	"github.com/sourcegraph/sourcegraph/internal/hubspot/hubspotutil"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/routevar"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -379,4 +381,26 @@ func searchBadgeHandler() *httputil.ReverseProxy {
 		},
 		ErrorLog: log.New(env.DebugOut, "search-badger proxy: ", log.LstdFlags),
 	}
+}
+
+func servePingFromSelfHosted(w http.ResponseWriter, r *http.Request) error {
+	// CORS to allow request from anywhere
+	w.Header().Add("Access-Control-Allow-Origin", "*")
+	if r.Method == http.MethodOptions {
+		// CORS preflight request, respond 204 and allow origin header
+		w.WriteHeader(http.StatusNoContent)
+		return nil
+	}
+	hostname := r.URL.Query().Get("hostname")
+	email := r.URL.Query().Get("email")
+	cookie, err := r.Cookie("sourcegraphSourceUrl")
+	var sourceURL string
+	if err == nil && cookie != nil {
+		sourceURL = cookie.Value
+	}
+	hubspotutil.SyncUser(email, hubspotutil.SelfHostedSiteInitEventID, &hubspot.ContactProperties{
+		FirstSourceURL:       sourceURL,
+		InstallationHostname: hostname,
+	})
+	return nil
 }
