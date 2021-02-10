@@ -6,7 +6,7 @@ ALTER TABLE changeset_specs ADD COLUMN external_id text DEFAULT NULL;
 
 CREATE INDEX changeset_specs_external_id ON changeset_specs (external_id);
 CREATE INDEX changeset_specs_head_ref ON changeset_specs (head_ref);
-CREATE INDEX changeset_specs_title ON changeset_specs (external_id);
+CREATE INDEX changeset_specs_title ON changeset_specs (title);
 
 UPDATE changeset_specs SET head_ref = changeset_specs.spec->>'headRef'::text WHERE changeset_specs.spec->>'externalID'::text IS NULL;
 UPDATE changeset_specs SET title = changeset_specs.spec->>'title'::text;
