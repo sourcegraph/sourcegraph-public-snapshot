@@ -2,6 +2,7 @@
 
 exports[`BrandLogo renders dark custom branding logo 1`] = `
 <img
+  alt="Logo"
   className="brand-logo"
   src="l"
 />
@@ -9,6 +10,7 @@ exports[`BrandLogo renders dark custom branding logo 1`] = `
 
 exports[`BrandLogo renders dark custom branding symbol 1`] = `
 <img
+  alt="Logo"
   className="brand-logo brand-logo--spin"
   src="s"
 />
@@ -16,6 +18,7 @@ exports[`BrandLogo renders dark custom branding symbol 1`] = `
 
 exports[`BrandLogo renders dark sourcegraph logo 1`] = `
 <img
+  alt="Sourcegraph logo"
   className="brand-logo"
   src="/assets/img/sourcegraph-head-logo.svg?v2"
 />
@@ -23,6 +26,7 @@ exports[`BrandLogo renders dark sourcegraph logo 1`] = `
 
 exports[`BrandLogo renders dark sourcegraph symbol 1`] = `
 <img
+  alt="Sourcegraph logo"
   className="brand-logo brand-logo--spin"
   src="/assets/img/sourcegraph-mark.svg"
 />
@@ -30,6 +34,7 @@ exports[`BrandLogo renders dark sourcegraph symbol 1`] = `
 
 exports[`BrandLogo renders light custom branding logo 1`] = `
 <img
+  alt="Logo"
   className="brand-logo"
   src="l"
 />
@@ -37,6 +42,7 @@ exports[`BrandLogo renders light custom branding logo 1`] = `
 
 exports[`BrandLogo renders light custom branding symbol 1`] = `
 <img
+  alt="Logo"
   className="brand-logo brand-logo--spin"
   src="s"
 />
@@ -44,6 +50,7 @@ exports[`BrandLogo renders light custom branding symbol 1`] = `
 
 exports[`BrandLogo renders light sourcegraph logo 1`] = `
 <img
+  alt="Sourcegraph logo"
   className="brand-logo"
   src="/assets/img/sourcegraph-light-head-logo.svg?v2"
 />
@@ -51,6 +58,7 @@ exports[`BrandLogo renders light sourcegraph logo 1`] = `
 
 exports[`BrandLogo renders light sourcegraph symbol 1`] = `
 <img
+  alt="Sourcegraph logo"
   className="brand-logo brand-logo--spin"
   src="/assets/img/sourcegraph-mark.svg"
 />
