@@ -20,6 +20,8 @@ import {
     DeleteSavedSearchVariables,
     UpdateSavedSearchResult,
     UpdateSavedSearchVariables,
+    SearchContextsResult,
+    SearchContextsVariables,
     Scalars,
 } from '../graphql-operations'
 
@@ -223,9 +225,29 @@ const repogroupSuggestions = defer(() =>
     refCount()
 )
 
+const searchContextSuggestions = defer(() =>
+    requestGraphQL<SearchContextsResult, SearchContextsVariables>(gql`
+        query SearchContexts {
+            searchContexts {
+                __typename
+                id
+                spec
+                description
+                autoDefined
+            }
+        }
+    `)
+).pipe(
+    map(dataOrThrowErrors),
+    map(({ searchContexts }) => searchContexts),
+    publishReplay(1),
+    refCount()
+)
+
 export function fetchSuggestions(query: string): Observable<SearchSuggestion[]> {
     return combineLatest([
         repogroupSuggestions,
+        searchContextSuggestions,
         queryGraphQL(
             gql`
                 query SearchSuggestions($query: String!) {
@@ -271,7 +293,13 @@ export function fetchSuggestions(query: string): Observable<SearchSuggestion[]> 
                 return data.search.suggestions
             })
         ),
-    ]).pipe(map(([repogroups, dynamicSuggestions]) => [...repogroups, ...dynamicSuggestions]))
+    ]).pipe(
+        map(([repogroups, searchContexts, dynamicSuggestions]) => [
+            ...repogroups,
+            ...searchContexts,
+            ...dynamicSuggestions,
+        ])
+    )
 }
 
 export function fetchReposByQuery(query: string): Observable<{ name: string; url: string }[]> {

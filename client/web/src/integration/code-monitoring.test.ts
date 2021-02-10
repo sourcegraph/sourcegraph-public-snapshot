@@ -49,6 +49,9 @@ describe('Code monitoring', () => {
             RepoGroups: () => ({
                 repoGroups: [],
             }),
+            SearchContexts: () => ({
+                searchContexts: [],
+            }),
             ViewerSettings: () => ({
                 viewerSettings: {
                     subjects: [
