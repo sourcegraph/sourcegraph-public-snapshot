@@ -30,46 +30,45 @@ import (
 )
 
 const (
-	routeHome               = "home"
-	routeSearch             = "search"
-	routeSearchBadge        = "search-badge"
-	routeRepo               = "repo"
-	routeRepoSettings       = "repo-settings"
-	routeRepoCommit         = "repo-commit"
-	routeRepoBranches       = "repo-branches"
-	routeRepoCommits        = "repo-commits"
-	routeRepoTags           = "repo-tags"
-	routeRepoCompare        = "repo-compare"
-	routeRepoStats          = "repo-stats"
-	routeInsights           = "insights"
-	routeCampaigns          = "campaigns"
-	routeCodeMonitoring     = "code-monitoring"
-	routeThreads            = "threads"
-	routeTree               = "tree"
-	routeBlob               = "blob"
-	routeRaw                = "raw"
-	routeOrganizations      = "org"
-	routeSettings           = "settings"
-	routeSiteAdmin          = "site-admin"
-	routeAPIConsole         = "api-console"
-	routeUser               = "user"
-	routeUserSettings       = "user-settings"
-	routeUserRedirect       = "user-redirect"
-	routeAboutSubdomain     = "about-subdomain"
-	aboutRedirectScheme     = "https"
-	aboutRedirectHost       = "about.sourcegraph.com"
-	routeSurvey             = "survey"
-	routeSurveyScore        = "survey-score"
-	routeRegistry           = "registry"
-	routeExtensions         = "extensions"
-	routeHelp               = "help"
-	routeRepoGroups         = "repo-groups"
-	routeCncf               = "repo-groups.cncf"
-	routeSnippets           = "snippets"
-	routeSubscriptions      = "subscriptions"
-	routeStats              = "stats"
-	routeViews              = "views"
-	routePingFromSelfHosted = "ping-from-self-hosted"
+	routeHome           = "home"
+	routeSearch         = "search"
+	routeSearchBadge    = "search-badge"
+	routeRepo           = "repo"
+	routeRepoSettings   = "repo-settings"
+	routeRepoCommit     = "repo-commit"
+	routeRepoBranches   = "repo-branches"
+	routeRepoCommits    = "repo-commits"
+	routeRepoTags       = "repo-tags"
+	routeRepoCompare    = "repo-compare"
+	routeRepoStats      = "repo-stats"
+	routeInsights       = "insights"
+	routeCampaigns      = "campaigns"
+	routeCodeMonitoring = "code-monitoring"
+	routeThreads        = "threads"
+	routeTree           = "tree"
+	routeBlob           = "blob"
+	routeRaw            = "raw"
+	routeOrganizations  = "org"
+	routeSettings       = "settings"
+	routeSiteAdmin      = "site-admin"
+	routeAPIConsole     = "api-console"
+	routeUser           = "user"
+	routeUserSettings   = "user-settings"
+	routeUserRedirect   = "user-redirect"
+	routeAboutSubdomain = "about-subdomain"
+	aboutRedirectScheme = "https"
+	aboutRedirectHost   = "about.sourcegraph.com"
+	routeSurvey         = "survey"
+	routeSurveyScore    = "survey-score"
+	routeRegistry       = "registry"
+	routeExtensions     = "extensions"
+	routeHelp           = "help"
+	routeRepoGroups     = "repo-groups"
+	routeCncf           = "repo-groups.cncf"
+	routeSnippets       = "snippets"
+	routeSubscriptions  = "subscriptions"
+	routeStats          = "stats"
+	routeViews          = "views"
 
 	routeSearchQueryBuilder = "search.query-builder"
 	routeSearchStream       = "search.stream"
@@ -148,7 +147,7 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/subscriptions").Methods("GET").Name(routeSubscriptions)
 	r.PathPrefix("/stats").Methods("GET").Name(routeStats)
 	r.PathPrefix("/views").Methods("GET").Name(routeViews)
-	r.Path("/ping-from-self-hosted").Methods("GET", "OPTIONS").Name(routePingFromSelfHosted)
+	r.Path("/ping-from-self-hosted").Methods("GET", "OPTIONS").Name(uirouter.RoutePingFromSelfHosted)
 
 	// Repogroup pages. Must mirror web/src/Layout.tsx
 	if envvar.SourcegraphDotComMode() {
@@ -232,7 +231,7 @@ func initRouter(router *mux.Router) {
 	router.Get(routeSubscriptions).Handler(handler(serveBrandedPageString("Subscriptions", nil)))
 	router.Get(routeStats).Handler(handler(serveBrandedPageString("Stats", nil)))
 	router.Get(routeViews).Handler(handler(serveBrandedPageString("View", nil)))
-	router.Get(routePingFromSelfHosted).Handler(handler(servePingFromSelfHosted))
+	router.Get(uirouter.RoutePingFromSelfHosted).Handler(handler(servePingFromSelfHosted))
 
 	router.Get(routeUserSettings).Handler(handler(serveBrandedPageString("User settings", nil)))
 	router.Get(routeUserRedirect).Handler(handler(serveBrandedPageString("User", nil)))

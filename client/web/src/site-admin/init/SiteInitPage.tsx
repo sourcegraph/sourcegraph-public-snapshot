@@ -13,7 +13,7 @@ const initSite = async (args: SignUpArguments): Promise<void> => {
     pingUrl.searchParams.set('email', args.email)
     pingUrl.searchParams.set('hostname', window.location.hostname)
 
-    fetch(pingUrl.toString())
+    await fetch(pingUrl.toString())
         .then() // no op
         .catch((error): void => {
             console.error(error)
