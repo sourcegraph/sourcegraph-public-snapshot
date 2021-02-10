@@ -13,9 +13,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## Unreleased
 
-- Upgraded to Go 1.15
-
-  **IMPORTANT** This may break AWS RDS database connections with older x509 certificates. Please follow the Amazon [docs](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.SSL-certificate-rotation.html) to rotate your certificate.
+**IMPORTANT** Sourcegraph now uses Go 1.15. This may break AWS RDS database connections with older x509 certificates. Please follow the Amazon [docs](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.SSL-certificate-rotation.html) to rotate your certificate.
 
 ### Added
 
