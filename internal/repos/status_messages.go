@@ -38,10 +38,9 @@ func FetchStatusMessages(ctx context.Context, db dbutil.DB, u *types.User) ([]St
 	}
 
 	if notCloned != 0 {
-		text := fmt.Sprintf("%d repositories enqueued for cloning...", notCloned)
 		messages = append(messages, StatusMessage{
 			Cloning: &CloningProgress{
-				Message: text,
+				Message: fmt.Sprintf("%d repositories enqueued for cloning...", notCloned),
 			},
 		})
 	}
