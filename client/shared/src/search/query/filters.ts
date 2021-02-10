@@ -88,10 +88,6 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         negatable: true,
         singular: true,
     },
-    [FilterType.context]: {
-        description: 'The search context in which to search for results',
-        singular: true,
-    },
     [FilterType.count]: {
         description: 'Number of results to fetch (integer)',
         singular: true,
