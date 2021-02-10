@@ -86,7 +86,7 @@ func TestRepos_Add(t *testing.T) {
 	}
 	defer func() { repoupdater.MockRepoLookup = nil }()
 
-	if err := s.Add(ctx, repoName); err != nil {
+	if _, err := s.Add(ctx, repoName); err != nil {
 		t.Fatal(err)
 	}
 	if !calledRepoLookup {
