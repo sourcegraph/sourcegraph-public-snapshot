@@ -40,5 +40,5 @@ func (s Secret) Secret() string {
 // MarshalJSON overrides the default JSON marshaling implementation, obfuscating
 // the value in any marshaled JSON
 func (s Secret) MarshalJSON() ([]byte, error) {
-	return []byte("********"), nil
+	return []byte(s.String()), nil
 }
