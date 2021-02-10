@@ -21,18 +21,27 @@ func FetchStatusMessages(ctx context.Context, db dbutil.DB, u *types.User) ([]St
 	if MockStatusMessages != nil {
 		return MockStatusMessages(ctx, u)
 	}
+	if u == nil {
+		return nil, errors.New("nil user")
+	}
 
 	var messages []StatusMessage
-
-	notCloned, err := database.Repos(db).Count(ctx, database.ReposListOptions{NoCloned: true})
+	opts := database.ReposListOptions{
+		NoCloned: true,
+	}
+	if !u.SiteAdmin {
+		opts.UserID = u.ID
+	}
+	notCloned, err := database.Repos(db).Count(ctx, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "counting uncloned repos")
 	}
 
 	if notCloned != 0 {
+		text := fmt.Sprintf("%d repositories enqueued for cloning...", notCloned)
 		messages = append(messages, StatusMessage{
 			Cloning: &CloningProgress{
-				Message: fmt.Sprintf("%d repositories enqueued for cloning...", notCloned),
+				Message: text,
 			},
 		})
 	}
