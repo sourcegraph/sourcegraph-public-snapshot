@@ -31,30 +31,29 @@ type changesetApplyPreviewConnectionResolver struct {
 	err      error
 }
 
+// rewirerMappings wraps store.RewirerMappings to provide memoised pagination
+// and filtering functionality.
 type rewirerMappings struct {
 	All store.RewirerMappings
 
-	// Inputs from outside the resolver.
+	// Inputs from outside the resolver that we need to build other resolvers.
 	campaignSpecID int64
 	store          *store.Store
 
-	// Calculated within the type.
+	// Calculated within the type with the dry run.
 	campaign *campaigns.Campaign
 
+	// Cache of filtered pages.
 	pagesMu sync.Mutex
 	pages   map[rewirerMappingPageOpts]*rewirerMappingPage
 
-	// resolvers are stored without next sync times; these are annotated later
-	// by Nodes() if called
+	// Cache of rewirer mapping resolvers.
 	resolversMu sync.Mutex
 	resolvers   map[*store.RewirerMapping]*changesetApplyPreviewResolver
 }
 
-type rewirerMappingPage struct {
-	Mappings   store.RewirerMappings
-	TotalCount int
-}
-
+// newRewirerMappings creates a new rewirer mappings object, which includes dry
+// running the campaign reconciliation.
 func newRewirerMappings(ctx context.Context, s *store.Store, opts store.GetRewirerMappingsOpts, campaignSpecID int64) (*rewirerMappings, error) {
 	rm := &rewirerMappings{
 		campaignSpecID: campaignSpecID,
@@ -94,6 +93,15 @@ type rewirerMappingPageOpts struct {
 	Op *campaigns.ReconcilerOperation
 }
 
+type rewirerMappingPage struct {
+	Mappings store.RewirerMappings
+
+	// TotalCount represents the total count of filtered results, but not
+	// necessarily the full set of results.
+	TotalCount int
+}
+
+// Page applies the given filter, and paginates the results.
 func (rw *rewirerMappings) Page(ctx context.Context, opts rewirerMappingPageOpts) (*rewirerMappingPage, error) {
 	rw.pagesMu.Lock()
 	defer rw.pagesMu.Unlock()
@@ -128,10 +136,10 @@ func (rw *rewirerMappings) Page(ctx context.Context, opts rewirerMappingPageOpts
 
 	page := store.RewirerMappings{}
 	if limit, offset := opts.LimitOffset.Limit, opts.LimitOffset.Offset; limit <= 0 || offset < 0 || offset > len(filtered) {
-		// Nothing to do.
+		// The limit and/or offset are outside the possible bounds, so we have
+		// nothing to do here: the empty mappings slice is correct.
 	} else {
-		end := limit + offset
-		if end > len(filtered) {
+		if end := limit + offset; end > len(filtered) {
 			page = filtered[offset:]
 		} else {
 			page = filtered[offset:end]
@@ -153,6 +161,8 @@ func (rw *rewirerMappings) Resolver(mapping *store.RewirerMapping) *changesetApp
 		return resolver
 	}
 
+	// We build the resolver without a preloadedNextSync, since not all callers
+	// will have calculated that.
 	rw.resolvers[mapping] = &changesetApplyPreviewResolver{
 		store:             rw.store,
 		mapping:           mapping,
@@ -163,10 +173,13 @@ func (rw *rewirerMappings) Resolver(mapping *store.RewirerMapping) *changesetApp
 }
 
 func (rw *rewirerMappings) ResolverWithNextSync(mapping *store.RewirerMapping, nextSync time.Time) graphqlbackend.ChangesetApplyPreviewResolver {
-	resolver := rw.Resolver(mapping)
+	// As the apply target resolvers don't cache the preloaded next sync value
+	// when creating the changeset resolver, we can shallow copy and update the
+	// field rather than having to build a whole new resolver.
+	resolver := *rw.Resolver(mapping)
 	resolver.preloadedNextSync = nextSync
 
-	return resolver
+	return &resolver
 }
 
 func (r *changesetApplyPreviewConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
