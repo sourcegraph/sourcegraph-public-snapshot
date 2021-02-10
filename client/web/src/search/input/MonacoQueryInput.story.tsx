@@ -31,6 +31,7 @@ const defaultProps: MonacoQueryInputProps = {
     setCaseSensitivity: () => {},
     versionContext: undefined,
     showSearchContext: false,
+    searchContextSpec: 'global',
     copyQueryButton: false,
     onChange: () => {},
     onSubmit: () => {},

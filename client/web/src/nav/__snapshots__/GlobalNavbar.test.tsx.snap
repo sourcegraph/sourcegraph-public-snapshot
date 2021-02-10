@@ -79,6 +79,7 @@ exports[`GlobalNavbar default 1`] = `
       parsedSearchQuery="r:golang/oauth2 test f:travis"
       patternType="literal"
       platformContext={Object {}}
+      searchContextSpec="global"
       setCaseSensitivity={[Function]}
       setPatternType={[Function]}
       settingsCascade={

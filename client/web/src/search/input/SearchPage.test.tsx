@@ -49,6 +49,7 @@ describe('SearchPage', () => {
         copyQueryButton: false,
         versionContext: undefined,
         showSearchContext: false,
+        searchContextSpec: 'global',
         showRepogroupHomepage: false,
         showEnterpriseHomePanels: false,
         showOnboardingTour: false,

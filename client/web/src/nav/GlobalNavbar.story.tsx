@@ -49,6 +49,7 @@ const defaultProps = (
     copyQueryButton: false,
     versionContext: undefined,
     showSearchContext: false,
+    searchContextSpec: 'global',
     showOnboardingTour: false,
     isLightTheme: props.isLightTheme,
     navbarSearchQueryState: { query: '' },

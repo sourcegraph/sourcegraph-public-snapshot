@@ -87,6 +87,7 @@ const commonProps = () =>
         setVersionContext: action('setVersionContext'),
         availableVersionContexts: [],
         showSearchContext: false,
+        searchContextSpec: 'global',
         authRequired: false,
         showCampaigns: false,
         authenticatedUser: authUser,
