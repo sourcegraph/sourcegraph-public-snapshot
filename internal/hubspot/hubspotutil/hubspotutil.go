@@ -25,6 +25,9 @@ var TrialFormID = "0bbc9f90-3741-4c7a-b5f5-6c81f130ea9d"
 // https://app.hubspot.com/reports/2762526/events
 var SignupEventID = "000001776813"
 
+// SelfHostedSiteInitEventID is the Hubstpot Event ID for when a new site is created in /site-admin/sites
+var SelfHostedSiteInitEventID = "000010399089"
+
 var client *hubspot.Client
 
 // HasAPIKey returns true if a HubspotAPI key is present. A subset of requests require a HubSpot API key.
