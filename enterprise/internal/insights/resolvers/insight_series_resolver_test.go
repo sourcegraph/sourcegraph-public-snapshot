@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -72,5 +73,43 @@ func TestResolver_InsightSeries(t *testing.T) {
 		autogold.Want("insights[1].length", int(2)).Equal(t, len(insights[1]))
 		autogold.Want("insights[1].series[0].Label", "exec").Equal(t, insights[1][0].Label())
 		autogold.Want("insights[1].series[1].Label", "close").Equal(t, insights[1][1].Label())
+	})
+
+	t.Run("Points", func(t *testing.T) {
+		ctx, insights, mock, cleanup := testSetup(t)
+		defer cleanup()
+		autogold.Want("insights length", int(2)).Equal(t, len(insights))
+
+		autogold.Want("insights[0].length", int(2)).Equal(t, len(insights[0]))
+		autogold.Want("insights[1].length", int(2)).Equal(t, len(insights[1]))
+
+		args := &graphqlbackend.InsightsPointsArgs{
+			From: &graphqlbackend.DateTime{Time: time.Now().Add(-7 * 24 * time.Hour)},
+			To:   &graphqlbackend.DateTime{Time: time.Now()},
+		}
+
+		// Issue a query against the actual DB.
+		points, err := insights[0][0].Points(ctx, args)
+		if err != nil {
+			t.Fatal(err)
+		}
+		autogold.Want("insights[0][0].Points", []graphqlbackend.InsightsDataPointResolver{}).Equal(t, points)
+
+		// Mock the store and confirm args got passed through as expected.
+		args.From.Time, _ = time.Parse(time.RFC3339, "2006-01-02T15:04:05Z")
+		args.To.Time, _ = time.Parse(time.RFC3339, "2006-01-03T15:04:05Z")
+		mock.SeriesPointsFunc.SetDefaultHook(func(ctx context.Context, opts store.SeriesPointsOpts) ([]store.SeriesPoint, error) {
+			autogold.Want("insights[0][0].Points store opts", "{SeriesID:<nil> From:2006-01-02 15:04:05 +0000 UTC To:2006-01-03 15:04:05 +0000 UTC Limit:0}").Equal(t, fmt.Sprintf("%+v", opts))
+			return []store.SeriesPoint{
+				{Time: args.From.Time, Value: 1},
+				{Time: args.From.Time, Value: 2},
+				{Time: args.From.Time, Value: 3},
+			}, nil
+		})
+		points, err = insights[0][0].Points(ctx, args)
+		if err != nil {
+			t.Fatal(err)
+		}
+		autogold.Want("insights[0][0].Points mocked", "[{p:{Time:{wall:0 ext:63271811045 loc:<nil>} Value:1}} {p:{Time:{wall:0 ext:63271811045 loc:<nil>} Value:2}} {p:{Time:{wall:0 ext:63271811045 loc:<nil>} Value:3}}]").Equal(t, fmt.Sprintf("%+v", points))
 	})
 }
