@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"path/filepath"
 	"strings"
 
@@ -14,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/datastructures"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/existence"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/lsif"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 )
 
 // Correlate reads LSIF data from the given reader and returns a correlation state object with
@@ -28,12 +28,6 @@ func Correlate(ctx context.Context, r io.Reader, dumpID int, root string, getChi
 	// Remove duplicate elements, collapse linked elements
 	canonicalize(state)
 
-	symbols, err := deriveSymbols(state)
-	if err != nil {
-		return nil, err
-	}
-	log.Printf("## symbols: %+v", symbols)
-
 	// Remove elements we don't need to store
 	if err := prune(ctx, state, root, getChildren); err != nil {
 		return nil, err
@@ -46,6 +40,13 @@ func Correlate(ctx context.Context, r io.Reader, dumpID int, root string, getChi
 	}
 
 	return groupedBundleData, nil
+}
+
+func printSymbols(symbols []*lsifstore.Symbol, indent string) {
+	for _, symbol := range symbols {
+		fmt.Printf("%s%s\n", indent, symbol.Text)
+		printSymbols(symbol.Children, indent+"  ")
+	}
 }
 
 // correlateFromReader reads the given upload stream and returns a correlation state object.

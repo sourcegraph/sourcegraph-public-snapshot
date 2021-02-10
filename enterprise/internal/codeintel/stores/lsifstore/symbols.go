@@ -12,6 +12,7 @@ import (
 
 // Symbol roughly follows the structure of LSP SymbolInformation
 type Symbol struct {
+	// TODO(beyang): rename ID
 	Identifier string
 	Text       string
 	Detail     string

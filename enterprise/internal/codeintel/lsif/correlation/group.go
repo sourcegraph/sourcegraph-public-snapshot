@@ -24,6 +24,7 @@ type GroupedBundleDataChans struct {
 	ResultChunks      chan lsifstore.IndexedResultChunkData
 	Definitions       chan lsifstore.MonikerLocations
 	References        chan lsifstore.MonikerLocations
+	Symbols           []*lsifstore.Symbol
 	Packages          []lsifstore.Package
 	PackageReferences []lsifstore.PackageReference
 }
@@ -65,6 +66,10 @@ func groupBundleData(ctx context.Context, state *State, dumpID int) (*GroupedBun
 	if err != nil {
 		return nil, err
 	}
+	symbols, err := gatherSymbols(state)
+	if err != nil {
+		return nil, err
+	}
 
 	return &GroupedBundleDataChans{
 		Meta:              meta,
@@ -74,6 +79,7 @@ func groupBundleData(ctx context.Context, state *State, dumpID int) (*GroupedBun
 		References:        referenceRows,
 		Packages:          packages,
 		PackageReferences: packageReferences,
+		Symbols:           symbols,
 	}, nil
 }
 

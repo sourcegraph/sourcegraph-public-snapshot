@@ -95,6 +95,13 @@ func (s *Store) WriteReferences(ctx context.Context, bundleID int, monikerLocati
 	return s.writeDefinitionReferences(ctx, bundleID, "lsif_data_references", monikerLocations)
 }
 
+func (s *Store) WriteSymbol(ctx context.Context, bundleID int, symbols []*lsifstore.Symbols) (err error) {
+	// TODO(beyang): observability
+
+	// NEXT
+	return nil
+}
+
 func (s *Store) writeDefinitionReferences(ctx context.Context, bundleID int, tableName string, monikerLocations chan MonikerLocations) error {
 	inserter := func(inserter *batch.BatchInserter) error {
 		for v := range monikerLocations {
