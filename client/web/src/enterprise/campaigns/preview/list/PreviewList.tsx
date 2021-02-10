@@ -42,6 +42,7 @@ export const PreviewList: React.FunctionComponent<Props> = ({
     const [filters, setFilters] = useState<PreviewFilters>({
         search: null,
         currentState: null,
+        action: null,
     })
 
     const queryChangesetApplyPreviewConnection = useCallback(
@@ -52,6 +53,7 @@ export const PreviewList: React.FunctionComponent<Props> = ({
                 campaignSpec: campaignSpecID,
                 search: filters.search,
                 currentState: filters.currentState,
+                action: null,
             }),
         [campaignSpecID, filters.search, filters.currentState, queryChangesetApplyPreview]
     )
