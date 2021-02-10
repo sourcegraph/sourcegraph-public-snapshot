@@ -32,6 +32,13 @@ var changesetSpecInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("diff_stat_deleted"),
 	sqlf.Sprintf("created_at"),
 	sqlf.Sprintf("updated_at"),
+
+	// `external_id`, `head_ref`, `title` are (for now) write-only columns that
+	// contain normalized data from `spec` and are used for JOINs and WHERE
+	// conditions.
+	sqlf.Sprintf("external_id"),
+	sqlf.Sprintf("head_ref"),
+	sqlf.Sprintf("title"),
 }
 
 // changesetSpecColumns are used by the changeset spec related Store methods to
@@ -64,7 +71,7 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, c *campaigns.ChangesetS
 var createChangesetSpecQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store_changeset_specs.go:CreateChangesetSpec
 INSERT INTO changeset_specs (%s)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING %s`
 
 func (s *Store) createChangesetSpecQuery(c *campaigns.ChangesetSpec) (*sqlf.Query, error) {
@@ -79,6 +86,19 @@ func (s *Store) createChangesetSpecQuery(c *campaigns.ChangesetSpec) (*sqlf.Quer
 
 	if c.UpdatedAt.IsZero() {
 		c.UpdatedAt = c.CreatedAt
+	}
+
+	var externalID, headRef, title *string
+	if c.Spec != nil {
+		if c.Spec.ExternalID != "" {
+			externalID = &c.Spec.ExternalID
+		}
+		if c.Spec.HeadRef != "" {
+			headRef = &c.Spec.HeadRef
+		}
+		if c.Spec.Title != "" {
+			title = &c.Spec.Title
+		}
 	}
 
 	if c.RandID == "" {
@@ -101,6 +121,9 @@ func (s *Store) createChangesetSpecQuery(c *campaigns.ChangesetSpec) (*sqlf.Quer
 		c.DiffStatDeleted,
 		c.CreatedAt,
 		c.UpdatedAt,
+		&dbutil.NullString{S: externalID},
+		&dbutil.NullString{S: headRef},
+		&dbutil.NullString{S: title},
 		sqlf.Join(changesetSpecColumns, ", "),
 	), nil
 }
@@ -120,7 +143,7 @@ func (s *Store) UpdateChangesetSpec(ctx context.Context, c *campaigns.ChangesetS
 var updateChangesetSpecQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store_changeset_specs.go:UpdateChangesetSpec
 UPDATE changeset_specs
-SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING %s`
 
@@ -131,6 +154,19 @@ func (s *Store) updateChangesetSpecQuery(c *campaigns.ChangesetSpec) (*sqlf.Quer
 	}
 
 	c.UpdatedAt = s.now()
+
+	var externalID, headRef, title *string
+	if c.Spec != nil {
+		if c.Spec.ExternalID != "" {
+			externalID = &c.Spec.ExternalID
+		}
+		if c.Spec.HeadRef != "" {
+			headRef = &c.Spec.HeadRef
+		}
+		if c.Spec.Title != "" {
+			title = &c.Spec.Title
+		}
+	}
 
 	return sqlf.Sprintf(
 		updateChangesetSpecQueryFmtstr,
@@ -146,6 +182,9 @@ func (s *Store) updateChangesetSpecQuery(c *campaigns.ChangesetSpec) (*sqlf.Quer
 		c.DiffStatDeleted,
 		c.CreatedAt,
 		c.UpdatedAt,
+		&dbutil.NullString{S: externalID},
+		&dbutil.NullString{S: headRef},
+		&dbutil.NullString{S: title},
 		c.ID,
 		sqlf.Join(changesetSpecColumns, ", "),
 	), nil
@@ -605,7 +644,7 @@ func getRewirerMappingsQuery(opts GetRewirerMappingsOpts) *sqlf.Query {
 
 			viewSearches[i] = textSearchTermToClause(
 				term,
-				sqlf.Sprintf("changeset_name"),
+				sqlf.Sprintf("COALESCE(changeset_name, '')"),
 				sqlf.Sprintf("repo_name"),
 			)
 		}
