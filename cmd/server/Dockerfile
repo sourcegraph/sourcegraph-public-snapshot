@@ -52,6 +52,7 @@ RUN wget https://storage.googleapis.com/apktmp/postgres-11-5-for-alpine-3-12-4cc
 
 # Install p4 CLI, the tgz does not include a directory prefix so we make one up to clean up later
 # (keep this up to date with cmd/gitserver/Dockerfile)
+# hadolint ignore=DL3003
 RUN mkdir helix-core-server/ && \
     cd helix-core-server/ && \
     wget https://cdist2.perforce.com/perforce/r20.2/bin.linux26x86_64/helix-core-server.tgz && \
