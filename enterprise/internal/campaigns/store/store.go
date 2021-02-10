@@ -11,6 +11,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -72,6 +73,21 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 		return nil, err
 	}
 	return &Store{Store: txBase, now: s.now}, nil
+}
+
+// Repos returns a database.RepoStore using the same connection as this store.
+func (s *Store) Repos() *database.RepoStore {
+	return database.ReposWith(s)
+}
+
+// ExternalServices returns a database.ExternalServiceStore using the same connection as this store.
+func (s *Store) ExternalServices() *database.ExternalServiceStore {
+	return database.ExternalServicesWith(s)
+}
+
+// UserCredentials returns a database.UserCredentialsStore using the same connection as this store.
+func (s *Store) UserCredentials() *database.UserCredentialsStore {
+	return database.UserCredentialsWith(s)
 }
 
 func (s *Store) query(ctx context.Context, q *sqlf.Query, sc scanFunc) error {
