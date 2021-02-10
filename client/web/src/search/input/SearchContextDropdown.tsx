@@ -1,7 +1,6 @@
 import classNames from 'classnames'
 import React, { useCallback, useEffect, useState } from 'react'
 import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
-import { Tooltip } from '../../../../branded/src/components/tooltip/Tooltip'
 import { scanSearchQuery } from '../../../../shared/src/search/query/scanner'
 import { FilterType } from '../../../../shared/src/search/query/util'
 import { SearchContextMenu } from './SearchContextMenu'
@@ -18,17 +17,16 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
     // Disable the dropdown if the query contains a context filter
     useEffect(() => {
         const scannedQuery = scanSearchQuery(query)
-        console.log(scannedQuery)
         if (
             scannedQuery.type === 'success' &&
-            scannedQuery.term.some(token => token.type === 'filter' && token.field.value === FilterType.context)
+            scannedQuery.term.some(
+                token => token.type === 'filter' && token.field.value.toLowerCase() === FilterType.context
+            )
         ) {
             setIsDisabled(true)
         } else {
             setIsDisabled(false)
         }
-
-        Tooltip.forceUpdate()
     }, [query])
 
     const context = 'global'
