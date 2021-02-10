@@ -1,14 +1,13 @@
 import * as Monaco from 'monaco-editor'
 import { escapeRegExp, startCase } from 'lodash'
-import { FILTERS, resolveFilter } from './filters'
 import { Token } from './token'
 import { toMonacoRange } from './decoratedToken'
 import { Omit } from 'utility-types'
 import { Observable } from 'rxjs'
-import { IRepository, IFile, ISymbol, ILanguage, IRepoGroup } from '../../graphql/schema'
+import { IRepository, IFile, ISymbol, ILanguage, IRepoGroup, ISearchContext } from '../../graphql/schema'
 import { SearchSuggestion } from '../suggestions'
 import { isDefined } from '../../util/types'
-import { FilterType, isNegatableFilter } from './util'
+import { FilterType, isNegatableFilter, resolveFilter, FILTERS } from './filters'
 import { first } from 'rxjs/operators'
 import { SymbolKind } from '../../graphql-operations'
 
@@ -151,6 +150,14 @@ const repoGroupToCompletion = ({ name }: IRepoGroup): PartialCompletionItem => (
     filterText: name,
 })
 
+const searchContextToCompletion = ({ spec, description }: ISearchContext): PartialCompletionItem => ({
+    label: spec,
+    kind: repositoryCompletionItemKind,
+    insertText: spec + ' ',
+    filterText: spec,
+    detail: description,
+})
+
 const suggestionToCompletionItem = (
     suggestion: SearchSuggestion,
     options: { isFilterValue: boolean; globbing: boolean }
@@ -166,6 +173,8 @@ const suggestionToCompletionItem = (
             return languageToCompletion(suggestion)
         case 'RepoGroup':
             return repoGroupToCompletion(suggestion)
+        case 'SearchContext':
+            return searchContextToCompletion(suggestion)
     }
 }
 

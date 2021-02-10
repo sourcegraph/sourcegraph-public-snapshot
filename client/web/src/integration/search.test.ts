@@ -1,6 +1,12 @@
 import expect from 'expect'
 import { commonWebGraphQlResults } from './graphQlResults'
-import { RepoGroupsResult, SearchResult, SearchSuggestionsResult, WebGraphQlOperations } from '../graphql-operations'
+import {
+    RepoGroupsResult,
+    SearchResult,
+    SearchSuggestionsResult,
+    WebGraphQlOperations,
+    SearchContextsResult,
+} from '../graphql-operations'
 import { Driver, createDriverForTest } from '../../../shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
@@ -77,6 +83,9 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
     }),
     RepoGroups: (): RepoGroupsResult => ({
         repoGroups: [],
+    }),
+    SearchContexts: (): SearchContextsResult => ({
+        searchContexts: [],
     }),
 }
 

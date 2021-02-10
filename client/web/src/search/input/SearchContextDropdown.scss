@@ -1,11 +1,9 @@
 .search-context-dropdown {
     &__button {
-        font-size: $code-font-size;
         color: var(--search-query-text-color);
         margin-left: 0.25rem;
         margin-right: 0.25rem;
         padding: 0.125rem 0.25rem;
-        line-height: (16/12);
         border-radius: 0.25rem;
         border: 2px solid transparent;
         box-sizing: border-box;
@@ -26,6 +24,43 @@
         &:focus {
             border-color: var(--color-border-active);
             box-shadow: none;
+        }
+
+        &:active,
+        &--open,
+        &--open:hover,
+        &--open:focus {
+            background-color: var(--color-bg-4);
+        }
+
+        &:disabled,
+        &:hover:disabled,
+        &:active:disabled,
+        &:focus:disabled {
+            background-color: var(--color-bg-3);
+            color: var(--color-text-3);
+            border-color: transparent;
+            opacity: 1;
+            pointer-events: auto; // Required to show tooltip on hover
+
+            .theme-light & {
+                background-color: var(--color-bg-4);
+            }
+
+            .search-filter-keyword {
+                color: var(--color-text-3);
+            }
+        }
+
+        &::after {
+            // Hide chevron usually shown by dropdown buttons
+            display: none;
+        }
+
+        &-content {
+            display: block;
+            font-size: 0.75rem;
+            line-height: 1rem;
         }
     }
 

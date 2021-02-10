@@ -6,10 +6,10 @@
         color: var(--body-color);
 
         --body-color: #{$gray-06};
-        --link-color: #329af0;
+        --link-color: var(--web-content-link-color);
     }
     .theme-light & {
-        --link-color: #1c7cd6;
+        --link-color: var(--web-content-link-color);
     }
 
     h1,

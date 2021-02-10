@@ -84,11 +84,16 @@ type SymbolsParameters struct {
 
 type GlobalSearchMode int
 
+// Keep the order in sync with func (m GlobalSearchMode) String() string.
 const (
 	ZoektGlobalSearch GlobalSearchMode = iota + 1
 	SearcherOnly
 	NoFilePath
 )
+
+func (m GlobalSearchMode) String() string {
+	return []string{"None", "ZoektGlobalSearch", "SearcherOnly", "NoFilePath"}[m]
+}
 
 // TextParameters are the parameters passed to a search backend. It contains the Pattern
 // to search for, as well as the hydrated list of repository revisions to

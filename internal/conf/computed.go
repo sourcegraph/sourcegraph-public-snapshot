@@ -233,6 +233,13 @@ func CodeIntelAutoIndexingEnabled() bool {
 	return false
 }
 
+func ProductResearchPageEnabled() bool {
+	if enabled := Get().ProductResearchPageEnabled; enabled != nil {
+		return *enabled
+	}
+	return true
+}
+
 func ExternalURL() string {
 	return Get().ExternalURL
 }

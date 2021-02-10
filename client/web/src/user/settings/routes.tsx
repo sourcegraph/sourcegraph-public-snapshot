@@ -133,4 +133,10 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         exact: true,
         condition: allowUserExternalServicePublic,
     },
+    {
+        path: '/product-research',
+        exact: true,
+        render: lazyComponent(() => import('./research/ProductResearch'), 'ProductResearchPage'),
+        condition: () => window.context.productResearchPageEnabled,
+    },
 ]

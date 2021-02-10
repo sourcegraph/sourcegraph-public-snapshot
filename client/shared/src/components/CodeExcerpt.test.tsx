@@ -69,9 +69,9 @@ describe('CodeExcerpt', () => {
 
     it('renders the code portion of each row', () => {
         const { container } = render(<CodeExcerpt {...defaultProps} />)
-        expect(getByText(container, 'first of code')).toBeTruthy()
-        expect(getByText(container, 'second of code')).toBeTruthy()
-        expect(getByText(container, 'third of code')).toBeTruthy()
+        expect(getByText(container, 'first of code')).toBeVisible()
+        expect(getByText(container, 'second of code')).toBeVisible()
+        expect(getByText(container, 'third of code')).toBeVisible()
     })
 
     it('highlights matches correctly', () => {

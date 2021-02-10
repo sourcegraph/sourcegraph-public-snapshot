@@ -52,16 +52,19 @@
             border: 2px solid var(--color-border-active);
         }
 
-        &.disabled {
+        &.disabled,
+        &.disabled:hover {
             background-color: var(--color-bg-3);
+            color: var(--color-text-3);
             cursor: default;
+            opacity: 1;
+
+            .theme-light & {
+                background-color: var(--color-bg-4);
+            }
 
             &:active {
                 border-color: transparent;
-            }
-
-            &:hover {
-                background-color: var(--color-bg-3);
             }
         }
 

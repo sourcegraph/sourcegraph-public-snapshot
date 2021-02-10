@@ -113,6 +113,9 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
         brandName: string
     }
 
+    /** Whether the product research sign-up page is enabled on the site. */
+    productResearchPageEnabled: boolean
+
     /** The publishable key for the billing service (Stripe). */
     billingPublishableKey?: string
 }

@@ -12,10 +12,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 // Init initializes the given enterpriseServices to include the required resolvers for insights.
-func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
+func Init(ctx context.Context, postgres dbutil.DB, enterpriseServices *enterprise.Services) error {
 	if !conf.IsDev(conf.DeployType()) {
 		// Code Insights is not yet deployed to non-dev/testing instances. We don't yet have
 		// TimescaleDB in those deployments. https://github.com/sourcegraph/sourcegraph/issues/17218
@@ -34,7 +35,6 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 	if err != nil {
 		return err
 	}
-	postgres := dbconn.Global
 	enterpriseServices.InsightsResolver = resolvers.New(timescale, postgres)
 	return nil
 }

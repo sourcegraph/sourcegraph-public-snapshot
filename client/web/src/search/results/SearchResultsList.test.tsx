@@ -132,7 +132,7 @@ describe('SearchResultsList', () => {
             </BrowserRouter>
         )
 
-        expect(queryByTestId(container, 'loading-container')).toBeTruthy()
+        expect(queryByTestId(container, 'loading-container')).toBeVisible()
     })
 
     it('shows error message when the search GraphQL request returns an error', () => {
@@ -141,7 +141,7 @@ describe('SearchResultsList', () => {
                 <SearchResultsList {...defaultProps} resultsOrError={{ message: 'test error', name: 'TestError' }} />
             </BrowserRouter>
         )
-        expect(getByTestId(container, 'search-results-list-error')).toBeTruthy()
+        expect(getByTestId(container, 'search-results-list-error')).toBeVisible()
     })
 
     it('renders the search results info bar when there are results', () => {
@@ -150,7 +150,7 @@ describe('SearchResultsList', () => {
                 <SearchResultsList {...defaultProps} />
             </BrowserRouter>
         )
-        expect(getByTestId(container, 'results-info-bar')).toBeTruthy()
+        expect(getByTestId(container, 'results-info-bar')).toBeVisible()
     })
 
     it('renders one search result', () => {
@@ -159,7 +159,7 @@ describe('SearchResultsList', () => {
                 <SearchResultsList {...defaultProps} />
             </BrowserRouter>
         )
-        expect(getByTestId(container, 'result-container')).toBeTruthy()
+        expect(getByTestId(container, 'result-container')).toBeVisible()
         expect(getAllByTestId(container, 'result-container').length).toBe(1)
     })
 
@@ -169,8 +169,8 @@ describe('SearchResultsList', () => {
                 <SearchResultsList {...defaultProps} />
             </BrowserRouter>
         )
-        expect(queryByTestId(container, 'loading-container')).toBeFalsy()
-        expect(queryByTestId(container, 'search-results-list-error')).toBeFalsy()
+        expect(queryByTestId(container, 'loading-container')).not.toBeInTheDocument()
+        expect(queryByTestId(container, 'search-results-list-error')).not.toBeInTheDocument()
     })
 
     it('renders correct number of search results if there are multiple', () => {
@@ -199,7 +199,7 @@ describe('SearchResultsList', () => {
                 <SearchResultsList {...props} />
             </BrowserRouter>
         )
-        expect(getByTestId(container, 'search-show-more-button')).toBeTruthy()
+        expect(getByTestId(container, 'search-show-more-button')).toBeVisible()
     })
 
     it('does not display "Show More" if the limit isn\'t hit', () => {
@@ -265,7 +265,7 @@ describe('SearchResultsList', () => {
             </BrowserRouter>
         )
         scrollToBottom()
-        expect(getByTestId(container, 'search-show-more-button')).toBeTruthy()
+        expect(getByTestId(container, 'search-show-more-button')).toBeVisible()
     })
 
     it('does not add filters to query in search suggestions link', () => {
@@ -295,7 +295,7 @@ describe('SearchResultsList', () => {
         )
 
         const link = getByTestId(container, 'proposed-query-link') as HTMLAnchorElement
-        expect(link).toBeTruthy()
+        expect(link).toBeVisible()
         expect(link.href).toStrictEqual('http://localhost/search?q=repo:test1%7Ctest2&patternType=regexp')
     })
 
@@ -328,8 +328,8 @@ describe('SearchResultsList', () => {
         const link = getByTestId(container, 'proposed-query-link') as HTMLAnchorElement
         const result = getByTestId(container, 'result-container')
 
-        expect(link).toBeTruthy()
-        expect(result).toBeTruthy()
+        expect(link).toBeVisible()
+        expect(result).toBeVisible()
         expect(link.compareDocumentPosition(result)).toStrictEqual(link.DOCUMENT_POSITION_FOLLOWING)
     })
 })
