@@ -666,16 +666,19 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 		},
 		{
 			descr:         "file match which matches one of the common file filters",
-			searchResults: []SearchResultResolver{fileMatch("/foo_test.go")},
+			searchResults: []SearchResultResolver{
+				fileMatch("/foo_test.go"),
+				fileMatch("/foo.go"),
+			},
 			expectedDynamicFilterStrsRegexp: map[string]int{
-				`repo:^testRepo$`: 1,
+				`repo:^testRepo$`: 2,
 				`-file:_test\.go$`: 1,
-				`lang:go`: 1,
+				`lang:go`: 2,
 			},
 			expectedDynamicFilterStrsGlobbing: map[string]int{
-				`repo:testRepo`: 1,
+				`repo:testRepo`: 2,
 				`-file:**_test.go`: 1,
-				`lang:go`: 1,
+				`lang:go`: 2,
 			},
 		},
 
@@ -689,13 +692,13 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 			expectedDynamicFilterStrsRegexp: map[string]int{
 				`repo:^testRepo$`: 3,
 				`-file:\.min\.js$`: 1,
-				`-file:\.js\.map$`: 1,
+				`-file:\.js\.map$`: 2,
 				`lang:javascript`: 1,
 			},
 			expectedDynamicFilterStrsGlobbing: map[string]int{
 				`repo:testRepo`: 3,
 				`-file:**.min.js`: 1,
-				`-file:**.js.map`: 1,
+				`-file:**.js.map`: 2,
 				`lang:javascript`: 1,
 			},
 		},
