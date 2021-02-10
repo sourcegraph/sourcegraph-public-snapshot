@@ -58,7 +58,7 @@ running Sourcegraph 3.1 and want to upgrade to 3.3, you should upgrade to 3.2 an
 
 ### Core documentation
 
-- [Install](admin/install/index.md) or [update](admin/updates.md) Sourcegraph 
+- [Install](admin/install/index.md) or [update](admin/updates.md) Sourcegraph
 - [Using Sourcegraph](getting-started/index.md)
 - [Administration](admin/index.md)
 - [Extensions](extensions/index.md)
@@ -74,9 +74,10 @@ running Sourcegraph 3.1 and want to upgrade to 3.3, you should upgrade to 3.2 an
 
 ## Sourcegraph subscriptions
 
-You can use Sourcegraph in 2 ways:
+You can use Sourcegraph in 3 ways:
 
 - [Self-hosted](admin/install/index.md): Deploy and manage your own Sourcegraph instance.
+- [Managed instance](admin/install/managed.md): A private Sourcegraph deployment managed by Sourcegraph.
 - [Sourcegraph Cloud](https://sourcegraph.com/search): For public code only. No signup or installation required.
 
 For self-hosted Sourcegraph instances, you run a Docker image or Kubernetes cluster on-premises or on your preferred cloud provider. There are [3 tiers](https://about.sourcegraph.com/pricing): Core, Team, and Enterprise. Team and Enterprise features require a [Sourcegraph subscription](https://about.sourcegraph.com/contact/sales).
