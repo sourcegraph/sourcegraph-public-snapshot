@@ -1,11 +1,9 @@
 .search-context-dropdown {
     &__button {
-        font-size: $code-font-size;
         color: var(--search-query-text-color);
         margin-left: 0.25rem;
         margin-right: 0.25rem;
         padding: 0.125rem 0.25rem;
-        line-height: (16/12);
         border-radius: 0.25rem;
         border: 2px solid transparent;
         box-sizing: border-box;
@@ -26,6 +24,17 @@
         &:focus {
             border-color: var(--color-border-active);
             box-shadow: none;
+        }
+
+        &::after {
+            // Hide chevron usually shown by dropdown buttons
+            display: none;
+        }
+
+        &-content {
+            display: block;
+            font-size: 0.75rem;
+            line-height: 1rem;
         }
     }
 

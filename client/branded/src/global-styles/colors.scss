@@ -105,6 +105,7 @@ $text-muted: var(--text-muted);
     --search-filter-keyword-color: #268bd2;
     --search-keyword-color: #{$oc-grape-7};
     --infobar-warning-color: #{$oc-red-8};
+    --web-content-link-color: #1c7cd6;
 }
 .theme-dark {
     // Affects default browser styles
@@ -133,4 +134,5 @@ $text-muted: var(--text-muted);
     --search-filter-keyword-color: #569cd6;
     --search-keyword-color: #{$oc-grape-4};
     --infobar-warning-color: #{$oc-red-6};
+    --web-content-link-color: #329af0;
 }
