@@ -19,8 +19,10 @@ exports[`GlobalNavbar default 1`] = `
   >
     <SearchNavbarItem
       authenticatedUser={null}
+      availableSearchContexts={Array []}
       caseSensitive={false}
       copyQueryButton={false}
+      defaultSearchContextSpec=""
       enableSmartQuery={false}
       extensionsController={Object {}}
       globbing={false}
@@ -79,8 +81,10 @@ exports[`GlobalNavbar default 1`] = `
       parsedSearchQuery="r:golang/oauth2 test f:travis"
       patternType="literal"
       platformContext={Object {}}
+      selectedSearchContextSpec=""
       setCaseSensitivity={[Function]}
       setPatternType={[Function]}
+      setSelectedSearchContextSpec={[Function]}
       settingsCascade={
         Object {
           "final": null,
