@@ -26,7 +26,7 @@ import { ThemePreferenceProps } from '../theme'
 import { MenuNavItem } from './MenuNavItem'
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { ExtensionAlertAnimationProps, UserNavItem } from './UserNavItem'
-import { FeedbackPrompt } from './FeedbackPrompt'
+import { FeedbackPrompt } from './Feedback/FeedbackPrompt'
 interface Props
     extends SettingsCascadeProps<Settings>,
         KeyboardShortcutsProps,

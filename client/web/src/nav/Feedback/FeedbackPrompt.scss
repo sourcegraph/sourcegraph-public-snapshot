@@ -1,0 +1,31 @@
+.feedback-prompt {
+    &__menu {
+        text-align: center;
+        border-radius: 8px !important;
+        width: 22rem;
+    }
+    &__textarea {
+        resize: none;
+        margin: 1rem 0;
+    }
+    &__alert {
+        white-space: initial;
+    }
+    &__success {
+        white-space: normal;
+
+        &__tick {
+            background-color: $success;
+            color: $white;
+            border-radius: 50%;
+            width: (30/16) + rem;
+            height: auto;
+            padding: 0.125rem;
+            margin-bottom: 1rem;
+        }
+
+        p {
+            display: inline;
+        }
+    }
+}
