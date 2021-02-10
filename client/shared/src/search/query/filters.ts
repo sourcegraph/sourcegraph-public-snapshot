@@ -274,9 +274,3 @@ export const validateFilter = (
     }
     return { valid: true }
 }
-
-/** Whether a given filter type may only be used 0 or 1 times in a query. */
-export const isSingularFilter = (filter: string): boolean =>
-    Object.keys(FILTERS)
-        .filter(key => FILTERS[key as FilterType].singular)
-        .includes(filter)
