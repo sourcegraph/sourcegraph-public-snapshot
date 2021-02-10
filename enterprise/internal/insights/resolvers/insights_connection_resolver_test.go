@@ -1,3 +1,0 @@
-package resolvers
-
-// TODO(slimsag)

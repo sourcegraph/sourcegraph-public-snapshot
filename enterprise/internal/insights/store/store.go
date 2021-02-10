@@ -52,6 +52,8 @@ func (s *Store) With(other basestore.ShareableStore) *Store {
 	return &Store{Store: s.Store.With(other), now: s.now}
 }
 
+var _ Interface = &Store{}
+
 // SeriesPoint describes a single insights' series data point.
 type SeriesPoint struct {
 	Time  time.Time
