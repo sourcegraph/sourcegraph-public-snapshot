@@ -1,6 +1,9 @@
 package keyring
 
-import "context"
+import (
+	"context"
+	"fmt"
+)
 
 // Key combines the Encrypter & Decrypter interfaces.
 type Key interface {
@@ -40,5 +43,5 @@ func (s Secret) Secret() string {
 // MarshalJSON overrides the default JSON marshaling implementation, obfuscating
 // the value in any marshaled JSON
 func (s Secret) MarshalJSON() ([]byte, error) {
-	return []byte(s.String()), nil
+	return []byte(fmt.Sprintf("%q", s.String())), nil
 }
