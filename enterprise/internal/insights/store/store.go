@@ -13,6 +13,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
+// Interface is the interface describing a code insights store. See the Store struct
+// for actual API usage.
+type Interface interface {
+	SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]SeriesPoint, error)
+}
+
+var _ Interface = &Store{}
+
 // Store exposes methods to read and write code insights domain models from
 // persistent storage.
 type Store struct {
@@ -44,17 +52,25 @@ func (s *Store) With(other basestore.ShareableStore) *Store {
 	return &Store{Store: s.Store.With(other), now: s.now}
 }
 
-type SeriesPointsOpts struct {
-	SeriesID *int32
-	From, To *time.Time
-	Limit    int
-}
-
+// SeriesPoint describes a single insights' series data point.
 type SeriesPoint struct {
 	Time  time.Time
 	Value float64
 }
 
+// SeriesPointsOpts describes options for querying insights' series data points.
+type SeriesPointsOpts struct {
+	// SeriesID is the unique series ID to query, if non-nil.
+	SeriesID *int32
+
+	// Time ranges to query from/to, if non-nil.
+	From, To *time.Time
+
+	// Limit is the number of data points to query, if non-zero.
+	Limit int
+}
+
+// SeriesPoints queries data points over time for a specific insights' series.
 func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]SeriesPoint, error) {
 	points := make([]SeriesPoint, 0, opts.Limit)
 	err := s.query(ctx, seriesPointsQuery(opts), func(sc scanner) error {

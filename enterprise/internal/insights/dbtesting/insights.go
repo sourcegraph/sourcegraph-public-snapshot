@@ -93,6 +93,5 @@ func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
 		//	t.Fatal("dropping test database", err)
 		//}
 	}
-	cleanup()
 	return db, cleanup
 }

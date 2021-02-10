@@ -17,7 +17,7 @@ import (
 var _ graphqlbackend.InsightConnectionResolver = &insightConnectionResolver{}
 
 type insightConnectionResolver struct {
-	store        *store.Store
+	store        store.Interface
 	settingStore *database.SettingStore
 
 	// We use our own mock here because database.Mocks.Settings.GetLatest is a global which means
@@ -98,7 +98,7 @@ func parseUserSettings(settings *api.Settings) (*schema.Settings, error) {
 var _ graphqlbackend.InsightResolver = &insightResolver{}
 
 type insightResolver struct {
-	store   *store.Store
+	store   store.Interface
 	insight *schema.Insight
 }
 
