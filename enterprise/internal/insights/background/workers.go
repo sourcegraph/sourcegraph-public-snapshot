@@ -35,14 +35,14 @@ func newInsightEnqueuer(ctx context.Context, store *store.Store) goroutine.Backg
 //
 // TODO(slimsag): needs main app DB for settings discovery
 func newQueryRunner(ctx context.Context, insightsStore *store.Store, metrics *metrics) *workerutil.Worker {
-	store := createDBWorkerStoreForInsightsJobs(insightsStore) // TODO(slimsag): should not create in TimescaleDB
+	workerStore := createDBWorkerStoreForInsightsJobs(insightsStore) // TODO(slimsag): should not create in TimescaleDB
 	options := workerutil.WorkerOptions{
 		Name:        "insights_query_runner_worker",
 		NumHandlers: 1,
 		Interval:    5 * time.Second,
 		Metrics:     metrics.workerMetrics,
 	}
-	worker := dbworker.NewWorker(ctx, store, &queryRunner{
+	worker := dbworker.NewWorker(ctx, workerStore, &queryRunner{
 		workerStore:   insightsStore, // TODO(slimsag): should not create in TimescaleDB
 		insightsStore: insightsStore,
 	}, options)
@@ -52,13 +52,13 @@ func newQueryRunner(ctx context.Context, insightsStore *store.Store, metrics *me
 // newQueryRunnerResetter returns a worker that will reset pending query runner jobs if they take
 // too long to complete.
 func newQueryRunnerResetter(ctx context.Context, s *store.Store, metrics *metrics) *dbworker.Resetter {
-	store := createDBWorkerStoreForInsightsJobs(s) // TODO(slimsag): should not create in TimescaleDB
+	workerStore := createDBWorkerStoreForInsightsJobs(s) // TODO(slimsag): should not create in TimescaleDB
 	options := dbworker.ResetterOptions{
 		Name:     "code_insights_trigger_jobs_worker_resetter",
 		Interval: 1 * time.Minute,
 		Metrics:  metrics.resetterMetrics,
 	}
-	return dbworker.NewResetter(store, options)
+	return dbworker.NewResetter(workerStore, options)
 }
 
 func createDBWorkerStoreForInsightsJobs(s *store.Store) dbworkerstore.Store {
