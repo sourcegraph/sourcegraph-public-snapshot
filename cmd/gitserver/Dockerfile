@@ -19,6 +19,18 @@ RUN apk add --no-cache \
     # Gitserver requires Git protocol v2 https://github.com/sourcegraph/sourcegraph/issues/13168
     'git>=2.18' \
     openssh-client
+
+# Install p4 CLI, the tgz does not include a directory prefix so we make one up to clean up later
+# (keep this up to date with cmd/server/Dockerfile)
+RUN mkdir helix-core-server/ && \
+    cd helix-core-server/ && \
+    wget https://cdist2.perforce.com/perforce/r20.2/bin.linux26x86_64/helix-core-server.tgz && \
+    tar -xzf helix-core-server.tgz && \
+    chmod +x p4 && \
+    mv p4 /usr/local/bin/p4 && \
+    cd ../ && \
+    rm -rf helix-core-server/
+
 RUN mkdir -p /data/repos && chown -R sourcegraph:sourcegraph /data/repos
 USER sourcegraph
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/gitserver"]

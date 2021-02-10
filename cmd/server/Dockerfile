@@ -50,6 +50,17 @@ RUN wget https://storage.googleapis.com/apktmp/postgres-11-5-for-alpine-3-12-4cc
     cd ../../../ && \
     rm -rf target/
 
+# Install p4 CLI, the tgz does not include a directory prefix so we make one up to clean up later
+# (keep this up to date with cmd/gitserver/Dockerfile)
+RUN mkdir helix-core-server/ && \
+    cd helix-core-server/ && \
+    wget https://cdist2.perforce.com/perforce/r20.2/bin.linux26x86_64/helix-core-server.tgz && \
+    tar -xzf helix-core-server.tgz && \
+    chmod +x p4 && \
+    mv p4 /usr/local/bin/p4 && \
+    cd ../ && \
+    rm -rf helix-core-server/
+
 # install minio (keep this up to date with docker-images/minio/Dockerfile)
 ENV MINIO_VERSION=RELEASE.2020-10-18T21-54-12Z
 RUN wget "https://dl.min.io/server/minio/release/linux-amd64/archive/minio.$MINIO_VERSION" && \
