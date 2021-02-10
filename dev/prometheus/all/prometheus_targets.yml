@@ -1,6 +1,6 @@
 ---
 - labels:
-    job: frontend
+    job: sourcegraph-frontend
   targets:
     # frontend
     - host.docker.internal:6063
