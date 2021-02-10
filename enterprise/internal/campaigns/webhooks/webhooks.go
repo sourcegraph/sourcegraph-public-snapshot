@@ -64,7 +64,8 @@ func (h Webhook) getRepoForPR(
 	pr PR,
 	externalServiceID string,
 ) (*types.Repo, error) {
-	rs, err := tx.Repos().List(ctx, database.ReposListOptions{
+	reposTx := database.ReposWith(tx)
+	rs, err := reposTx.List(ctx, database.ReposListOptions{
 		ExternalRepos: []api.ExternalRepoSpec{
 			{
 				ID:          pr.RepoExternalID,
@@ -188,7 +189,7 @@ func (h Webhook) upsertChangesetEvent(
 	events, _, err := tx.ListChangesetEvents(ctx, store.ListChangesetEventsOpts{
 		ChangesetIDs: []int64{cs.ID},
 	})
-	state.SetDerivedState(ctx, tx.Repos(), cs, events)
+	state.SetDerivedState(ctx, cs, events)
 	if err := tx.UpdateChangeset(ctx, cs); err != nil {
 		return err
 	}
@@ -212,8 +213,8 @@ type BitbucketServerWebhook struct {
 	configCache map[int64]*schema.BitbucketServerConnection
 }
 
-func NewGitHubWebhook(store *store.Store) *GitHubWebhook {
-	return &GitHubWebhook{&Webhook{store, store.ExternalServices(), store.Clock(), extsvc.TypeGitHub}}
+func NewGitHubWebhook(store *store.Store, externalServices *database.ExternalServiceStore, now func() time.Time) *GitHubWebhook {
+	return &GitHubWebhook{&Webhook{store, externalServices, now, extsvc.TypeGitHub}}
 }
 
 // Register registers this webhook handler to handle events with the passed webhook router
@@ -768,9 +769,9 @@ func (*GitHubWebhook) checkRunEvent(cr *gh.CheckRun) *github.CheckRun {
 	}
 }
 
-func NewBitbucketServerWebhook(store *store.Store, name string) *BitbucketServerWebhook {
+func NewBitbucketServerWebhook(store *store.Store, externalServices *database.ExternalServiceStore, now func() time.Time, name string) *BitbucketServerWebhook {
 	return &BitbucketServerWebhook{
-		Webhook:     &Webhook{store, store.ExternalServices(), store.Clock(), extsvc.TypeBitbucketServer},
+		Webhook:     &Webhook{store, externalServices, now, extsvc.TypeBitbucketServer},
 		Name:        name,
 		configCache: make(map[int64]*schema.BitbucketServerConnection),
 	}

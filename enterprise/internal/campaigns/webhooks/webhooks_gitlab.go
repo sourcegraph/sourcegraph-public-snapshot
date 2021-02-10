@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
@@ -23,8 +24,8 @@ import (
 
 type GitLabWebhook struct{ *Webhook }
 
-func NewGitLabWebhook(store *store.Store) *GitLabWebhook {
-	return &GitLabWebhook{&Webhook{store, store.ExternalServices(), store.Clock(), extsvc.TypeGitLab}}
+func NewGitLabWebhook(store *store.Store, externalServices *database.ExternalServiceStore, now func() time.Time) *GitLabWebhook {
+	return &GitLabWebhook{&Webhook{store, externalServices, now, extsvc.TypeGitLab}}
 }
 
 // ServeHTTP implements the http.Handler interface.

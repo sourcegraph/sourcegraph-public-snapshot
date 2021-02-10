@@ -450,10 +450,6 @@ func (m MockSyncStore) Transact(ctx context.Context) (*store.Store, error) {
 	return m.transact(ctx)
 }
 
-func (m MockSyncStore) Repos() *database.RepoStore {
-	return database.GlobalRepos
-}
-
 type MockRepoStore struct {
 	get func(ctx context.Context, id api.RepoID) (*types.Repo, error)
 }

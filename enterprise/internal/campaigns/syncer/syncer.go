@@ -275,7 +275,6 @@ type SyncStore interface {
 	UpdateChangeset(ctx context.Context, cs *campaigns.Changeset) error
 	UpsertChangesetEvents(ctx context.Context, cs ...*campaigns.ChangesetEvent) error
 	Transact(context.Context) (*store.Store, error)
-	Repos() *database.RepoStore
 }
 
 // Run will start the process of changeset syncing. It is long running
@@ -468,7 +467,7 @@ func SyncChangeset(ctx context.Context, syncStore SyncStore, source repos.Change
 	}
 
 	events := c.Events()
-	state.SetDerivedState(ctx, syncStore.Repos(), c, events)
+	state.SetDerivedState(ctx, c, events)
 
 	tx, err := syncStore.Transact(ctx)
 	if err != nil {

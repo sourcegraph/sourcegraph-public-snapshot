@@ -141,7 +141,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		hook := NewGitHubWebhook(s)
+		hook := NewGitHubWebhook(s, esStore, clock)
 
 		fixtureFiles, err := filepath.Glob("testdata/fixtures/webhooks/github/*.json")
 		if err != nil {
@@ -328,7 +328,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			}
 		}
 
-		hook := NewBitbucketServerWebhook(s, "testhook")
+		hook := NewBitbucketServerWebhook(s, esStore, clock, "testhook")
 
 		fixtureFiles, err := filepath.Glob("testdata/fixtures/webhooks/bitbucketserver/*.json")
 		if err != nil {

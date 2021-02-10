@@ -7,8 +7,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/webhooks"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/globalstatedb"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 // InitFrontend initializes the given enterpriseServices to include the required resolvers for campaigns
@@ -19,15 +21,18 @@ func InitFrontend(ctx context.Context, enterpriseServices *enterprise.Services) 
 		return err
 	}
 
-	cstore := store.New(dbconn.Global)
+	cstore := store.NewWithClock(dbconn.Global, timeutil.Now)
+	esStore := database.ExternalServices(dbconn.Global)
 
-	enterpriseServices.CampaignsResolver = resolvers.New(cstore)
-	enterpriseServices.GitHubWebhook = webhooks.NewGitHubWebhook(cstore)
+	enterpriseServices.CampaignsResolver = resolvers.New(dbconn.Global)
+	enterpriseServices.GitHubWebhook = webhooks.NewGitHubWebhook(cstore, esStore, timeutil.Now)
 	enterpriseServices.BitbucketServerWebhook = webhooks.NewBitbucketServerWebhook(
 		cstore,
+		esStore,
+		timeutil.Now,
 		"sourcegraph-"+globalState.SiteID,
 	)
-	enterpriseServices.GitLabWebhook = webhooks.NewGitLabWebhook(cstore)
+	enterpriseServices.GitLabWebhook = webhooks.NewGitLabWebhook(cstore, esStore, timeutil.Now)
 
 	return nil
 }

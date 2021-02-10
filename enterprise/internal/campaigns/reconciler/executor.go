@@ -63,12 +63,14 @@ func (e *executor) Run(ctx context.Context, plan *Plan) (err error) {
 		return nil
 	}
 
-	e.repo, err = e.tx.Repos().Get(ctx, e.ch.RepoID)
+	reposStore := database.ReposWith(e.tx)
+
+	e.repo, err = reposStore.Get(ctx, e.ch.RepoID)
 	if err != nil {
 		return errors.Wrap(err, "failed to load repository")
 	}
 
-	esStore := e.tx.ExternalServices()
+	esStore := database.ExternalServicesWith(e.tx)
 
 	e.extSvc, err = loadExternalService(ctx, esStore, e.repo)
 	if err != nil {
@@ -132,7 +134,7 @@ func (e *executor) Run(ctx context.Context, plan *Plan) (err error) {
 	}
 
 	events := e.ch.Events()
-	state.SetDerivedState(ctx, e.tx.Repos(), e.ch, events)
+	state.SetDerivedState(ctx, e.ch, events)
 
 	if err := e.tx.UpsertChangesetEvents(ctx, events...); err != nil {
 		log15.Error("UpsertChangesetEvents", "err", err)
@@ -194,19 +196,14 @@ func (e *executor) loadAuthenticator(ctx context.Context) (auth.Authenticator, e
 		return nil, errors.Wrap(err, "failed to load owning campaign")
 	}
 
-	cred, err := e.tx.UserCredentials().GetByScope(ctx, database.UserCredentialScope{
-		Domain:              database.UserCredentialDomainCampaigns,
-		UserID:              campaign.LastApplierID,
-		ExternalServiceType: e.repo.ExternalRepo.ServiceType,
-		ExternalServiceID:   e.repo.ExternalRepo.ServiceID,
-	})
+	cred, err := loadUserCredential(ctx, campaign.LastApplierID, e.repo)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			// We need to check if the user is an admin: if they are, then
 			// we can use the nil return from loadUserCredential() to fall
 			// back to the global credentials used for the code host. If
 			// not, then we need to error out.
-			user, err := database.UsersWith(e.tx).GetByID(ctx, campaign.LastApplierID)
+			user, err := loadUser(ctx, campaign.LastApplierID)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to load user applying the campaign")
 			}
@@ -260,7 +257,7 @@ func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err erro
 
 	// Depending on the changeset, we may want to add to the body (for example,
 	// to add a backlink to Sourcegraph).
-	if err := decorateChangesetBody(ctx, e.tx, database.NamespacesWith(e.tx), cs); err != nil {
+	if err := decorateChangesetBody(ctx, e.tx, cs); err != nil {
 		return errors.Wrapf(err, "decorating body for changeset %d", e.ch.ID)
 	}
 
@@ -347,7 +344,7 @@ func (e *executor) updateChangeset(ctx context.Context) (err error) {
 
 	// Depending on the changeset, we may want to add to the body (for example,
 	// to add a backlink to Sourcegraph).
-	if err := decorateChangesetBody(ctx, e.tx, database.NamespacesWith(e.tx), &cs); err != nil {
+	if err := decorateChangesetBody(ctx, e.tx, &cs); err != nil {
 		return errors.Wrapf(err, "decorating body for changeset %d", e.ch.ID)
 	}
 
@@ -610,11 +607,20 @@ func loadCampaign(ctx context.Context, tx getCampaigner, id int64) (*campaigns.C
 	return campaign, nil
 }
 
-type getNamespacer interface {
-	GetByID(ctx context.Context, orgID, userID int32) (*database.Namespace, error)
+func loadUser(ctx context.Context, id int32) (*types.User, error) {
+	return database.GlobalUsers.GetByID(ctx, id)
 }
 
-func decorateChangesetBody(ctx context.Context, tx getCampaigner, nsStore getNamespacer, cs *repos.Changeset) error {
+func loadUserCredential(ctx context.Context, userID int32, repo *types.Repo) (*database.UserCredential, error) {
+	return database.GlobalUserCredentials.GetByScope(ctx, database.UserCredentialScope{
+		Domain:              database.UserCredentialDomainCampaigns,
+		UserID:              userID,
+		ExternalServiceType: repo.ExternalRepo.ServiceType,
+		ExternalServiceID:   repo.ExternalRepo.ServiceID,
+	})
+}
+
+func decorateChangesetBody(ctx context.Context, tx getCampaigner, cs *repos.Changeset) error {
 	campaign, err := loadCampaign(ctx, tx, cs.OwnedByCampaignID)
 	if err != nil {
 		return errors.Wrap(err, "failed to load campaign")
@@ -622,7 +628,7 @@ func decorateChangesetBody(ctx context.Context, tx getCampaigner, nsStore getNam
 
 	// We need to get the namespace, since external campaign URLs are
 	// namespaced.
-	ns, err := nsStore.GetByID(ctx, campaign.NamespaceOrgID, campaign.NamespaceUserID)
+	ns, err := database.GlobalNamespaces.GetByID(ctx, campaign.NamespaceOrgID, campaign.NamespaceUserID)
 	if err != nil {
 		return errors.Wrap(err, "retrieving namespace")
 	}

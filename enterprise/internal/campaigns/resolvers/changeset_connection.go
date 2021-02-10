@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/syncer"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -100,7 +101,7 @@ func (r *changesetsConnectionResolver) compute(ctx context.Context) (allChangese
 
 		// 🚨 SECURITY: database.Repos.GetRepoIDsSet uses the authzFilter under the hood and
 		// filters out repositories that the user doesn't have access to.
-		r.reposByID, err = r.store.Repos().GetReposSetByIDs(ctx, cs.RepoIDs()...)
+		r.reposByID, err = database.GlobalRepos.GetReposSetByIDs(ctx, cs.RepoIDs()...)
 		if err != nil {
 			r.err = err
 			return
