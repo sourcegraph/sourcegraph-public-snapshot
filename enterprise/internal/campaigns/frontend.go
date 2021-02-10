@@ -18,9 +18,7 @@ func InitFrontend(ctx context.Context, enterpriseServices *enterprise.Services) 
 	if err != nil {
 		return err
 	}
-
 	cstore := store.New(dbconn.Global)
-
 	enterpriseServices.CampaignsResolver = resolvers.New(cstore)
 	enterpriseServices.GitHubWebhook = webhooks.NewGitHubWebhook(cstore)
 	enterpriseServices.BitbucketServerWebhook = webhooks.NewBitbucketServerWebhook(
