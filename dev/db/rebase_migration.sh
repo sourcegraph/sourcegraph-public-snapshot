@@ -66,6 +66,13 @@ for migration; do
 done
 
 # Find the highest version, relying on ls's default sorting behaviour.
+#
+# Disable shellcheck: it doesn't like the ls | grep construction, and honestly
+# nor do I, but the alternatives (using a glob with ./, or find | sort) involve
+# more string munging due to including preceding path elements in the output.
+# (This is one of the exceptions noted in the relevant shellcheck page.)
+#
+# shellcheck disable=SC2010
 version="$(ls -1 | grep '\.sql$' | tail -1 | cut -d _ -f 1)"
 
 # Now we'll go through and rename the files.
