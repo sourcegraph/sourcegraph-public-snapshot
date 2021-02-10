@@ -12,7 +12,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -189,7 +188,7 @@ func handleSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInit
 
 	// Track user data
 	if r.UserAgent() != "Sourcegraph e2etest-bot" {
-		go tracking.SyncUser(creds.Email, hubspotutil.SignupEventID, &hubspot.ContactProperties{AnonymousUserID: creds.AnonymousUserID, FirstSourceURL: creds.FirstSourceURL})
+		go hubspotutil.SyncUser(creds.Email, hubspotutil.SignupEventID, &hubspot.ContactProperties{AnonymousUserID: creds.AnonymousUserID, FirstSourceURL: creds.FirstSourceURL})
 	}
 }
 
