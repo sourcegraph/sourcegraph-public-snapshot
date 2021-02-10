@@ -1,12 +1,13 @@
 /* eslint-disable react/jsx-no-bind */
 import MessageDrawIcon from 'mdi-react/MessageDrawIcon'
 import TickIcon from 'mdi-react/TickIcon'
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import TextAreaAutosize from 'react-textarea-autosize'
 import { Alert, ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import { LoaderButton } from '../../components/LoaderButton'
 import { SubmitSurveyResult, SubmitSurveyVariables } from '../../graphql-operations'
+import { useLocalStorage } from '../../hooks/useLocalStorage'
 import { useMutation } from '../../hooks/useMutation'
 import { IconRadioButtons } from '../IconRadioButtons'
 import { Happy, Sad, VeryHappy, VerySad } from './FeedbackIcons'
@@ -24,9 +25,9 @@ const SuccessMessage: React.FunctionComponent<{ showUserResearchLink: boolean; c
     className,
 }) => (
     <div className={className}>
-        <TickIcon className="feedback-prompt__success__tick" />
+        <TickIcon className="feedback-prompt__success--tick" />
         <h3>We've received your feedback!</h3>
-        <p>
+        <p className="d-inline">
             Thank you for your help.{' '}
             {showUserResearchLink && (
                 <>
@@ -43,8 +44,9 @@ interface Props {}
 
 export const FeedbackPrompt: React.FunctionComponent<Props> = () => {
     const [isOpen, setIsOpen] = useState(false)
-    const [text, setText] = useState('')
-    const [rating, setRating] = useState<number>()
+    const [text, setText] = useLocalStorage('text', '')
+    const [rating, setRating] = useLocalStorage('rating', undefined)
+    const [response, setResponse] = useState<SubmitSurveyResult | undefined>()
 
     const handleToggle = useCallback(() => setIsOpen(open => !open), [])
     const handleRateChange = useCallback(value => setRating(value), [])
@@ -57,9 +59,33 @@ export const FeedbackPrompt: React.FunctionComponent<Props> = () => {
         SUBMIT_FEEDBACK_QUERY
     )
 
+    /**
+     * The purpose of this effect is to reset data coming from the hook.
+     * The widget allows multiple feedback requests after a successful response.
+     */
+
+    useEffect(() => {
+        setResponse(data)
+    }, [data])
+
+    // Reset to initial state after a succesful response.
+    useEffect(() => {
+        if (response) {
+            const reset = setTimeout(() => {
+                setIsOpen(false)
+                setText('')
+                setRating(undefined)
+                setResponse(undefined)
+            }, 3000)
+
+            return () => clearInterval(reset)
+        }
+    }, [response])
+
     return (
         <ButtonDropdown isOpen={isOpen} toggle={handleToggle} className="border feedback-prompt">
             <DropdownToggle
+                disabled={loading} // Avoid the user close the widget while the request is processing.
                 caret={false}
                 className="btn btn-link text-decoration-none"
                 nav={true}
@@ -68,20 +94,20 @@ export const FeedbackPrompt: React.FunctionComponent<Props> = () => {
                 <MessageDrawIcon className="d-lg-none icon-inline" />
                 <span className="d-none d-lg-block">Feedback</span>
             </DropdownToggle>
-
             <DropdownMenu right={true} className="p-3 feedback-prompt__menu">
-                {data && (
+                {response && (
                     <SuccessMessage
                         className="feedback-prompt__success align-middle"
                         // TODO: Check if the product research page is enabled in admin settings
                         showUserResearchLink={true}
                     />
                 )}
-                {!data && (
+                {!response && (
                     <>
                         <h3 className="align-middle">What's on your mind?</h3>
                         <TextAreaAutosize
                             onChange={handleTextChange}
+                            value={text}
                             minRows={3}
                             maxRows={6}
                             placeholder="What's going well? What could be better?"

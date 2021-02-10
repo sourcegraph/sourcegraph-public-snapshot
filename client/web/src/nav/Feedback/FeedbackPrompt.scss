@@ -2,7 +2,7 @@
     &__menu {
         text-align: center;
         border-radius: 8px !important;
-        width: 22rem;
+        width: 20rem;
     }
     &__textarea {
         resize: none;
@@ -14,7 +14,11 @@
     &__success {
         white-space: normal;
 
-        &__tick {
+        &a {
+            color: $link-color;
+        }
+
+        &--tick {
             background-color: $success;
             color: $white;
             border-radius: 50%;
@@ -22,10 +26,6 @@
             height: auto;
             padding: 0.125rem;
             margin-bottom: 1rem;
-        }
-
-        p {
-            display: inline;
         }
     }
 }
