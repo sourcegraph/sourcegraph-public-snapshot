@@ -1340,7 +1340,7 @@ type ExtensionUsageStatistics struct {
 }
 
 type CodeInsightsUsageStatistics struct {
-	CreationStatisticsByInsight    []*InsightUsageStatistics
+	UsageStatisticsByInsight       []*InsightUsageStatistics
 	InsightsPageViews              *int32
 	InsightsUniquePageViews        *int32
 	InsightConfigureClick          *int32
@@ -1350,7 +1350,7 @@ type CodeInsightsUsageStatistics struct {
 	WeeklyFirstTimeInsightCreators *int32
 }
 
-// Creation statistics for a type of code insight
+// Usage statistics for a type of code insight
 type InsightUsageStatistics struct {
 	InsightType      *string
 	Additions        *int32

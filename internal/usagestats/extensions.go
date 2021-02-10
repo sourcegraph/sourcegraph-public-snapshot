@@ -9,7 +9,6 @@ import (
 
 func GetExtensionsUsageStatistics(ctx context.Context) (*types.ExtensionsUsageStatistics, error) {
 	stats := types.ExtensionsUsageStatistics{}
-	usageStatisticsByExtension := []*types.ExtensionUsageStatistics{}
 
 	// Query for evaluating success of individual extensions
 	extensionsQuery := `
@@ -24,6 +23,7 @@ func GetExtensionsUsageStatistics(ctx context.Context) (*types.ExtensionsUsageSt
 	GROUP BY extension_id;
 	`
 
+	usageStatisticsByExtension := []*types.ExtensionUsageStatistics{}
 	rows, err := dbconn.Global.QueryContext(ctx, extensionsQuery, timeNow())
 
 	if err != nil {
@@ -32,23 +32,18 @@ func GetExtensionsUsageStatistics(ctx context.Context) (*types.ExtensionsUsageSt
 	defer rows.Close()
 
 	for rows.Next() {
-		var extensionID string
-		var userCount int32
-		var averageActivations float64
+		extensionUsageStatistics := types.ExtensionUsageStatistics{}
 
-		err := rows.Scan(&extensionID, &userCount, &averageActivations)
-		if err != nil {
+		if err := rows.Scan(
+			&extensionUsageStatistics.ExtensionID,
+			&extensionUsageStatistics.UserCount,
+			&extensionUsageStatistics.AverageActivations,
+		); err != nil {
 			return nil, err
 		}
 
-		extensionUsageStatistics := types.ExtensionUsageStatistics{
-			UserCount:          &userCount,
-			AverageActivations: &averageActivations,
-			ExtensionID:        &extensionID,
-		}
 		usageStatisticsByExtension = append(usageStatisticsByExtension, &extensionUsageStatistics)
 	}
-
 	stats.UsageStatisticsByExtension = usageStatisticsByExtension
 
 	if err := rows.Err(); err != nil {

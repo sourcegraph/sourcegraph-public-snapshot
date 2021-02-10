@@ -10,69 +10,70 @@ import (
 func GetCodeInsightsUsageStatistics(ctx context.Context) (*types.CodeInsightsUsageStatistics, error) {
 	stats := types.CodeInsightsUsageStatistics{}
 
-	const viewingMetricsQuery = `
+	const platformQuery = `
 	SELECT
 		COUNT(*) FILTER (WHERE name = 'ViewInsights')                       AS insights_page_views,
 		COUNT(distinct user_id) FILTER (WHERE name = 'ViewInsights')        AS insights_unique_page_views,
-		COUNT(*) FILTER
-			(WHERE name = 'InsightHover'
-				AND argument ->> 'insightType'::text = 'searchInsights')    AS search_insights_hovers,
-		COUNT(*) FILTER
-			(WHERE name = 'InsightHover'
-				AND argument ->> 'insightType'::text = 'codeStatsInsights') AS code_stats_insights_hovers,
-		COUNT(*) FILTER (WHERE name = 'InsightUICustomization')             AS insights_ui_customizations,
-		COUNT(*) FILTER (WHERE name = 'InsightDataPointClick')              AS insights_data_point_clicks
+		COUNT(distinct anonymous_user_id)
+			FILTER (WHERE name = 'InsightAddition'
+				AND timestamp > DATE_TRUNC('week', $1::timestamp))			AS weekly_insight_creators,
+		COUNT(*) FILTER (WHERE name = 'InsightConfigureClick') 				AS insight_configure_click,
+		COUNT(*) FILTER (WHERE name = 'InsightAddMoreClick') 				AS insight_add_more_click
 	FROM event_logs
-	WHERE name in ('ViewInsights', 'InsightHover', 'InsightUICustomization', 'InsightDataPointClick');
+	WHERE name in ('ViewInsights', 'InsightAddition', 'InsightConfigureClick', 'InsightAddMoreClick');
 	`
 
-	if err := dbconn.Global.QueryRowContext(ctx, viewingMetricsQuery).Scan(
+	if err := dbconn.Global.QueryRowContext(ctx, platformQuery, timeNow()).Scan(
 		&stats.InsightsPageViews,
 		&stats.InsightsUniquePageViews,
-		&stats.SearchInsightsHovers,
-		&stats.CodeStatsInsightsHovers,
-		&stats.InsightsUICustomizations,
-		&stats.InsightsDataPointClicks,
-	); err != nil {
-		return nil, err
-	}
-
-	const creationMetricsQuery = `
-	SELECT
-		COUNT(*) FILTER (WHERE name = 'InsightEdit'
-			AND argument ->> 'insightType'::text = 'codeStatsInsights') AS code_stats_insights_edits,
-		COUNT(*) FILTER (WHERE name = 'InsightAddition'
-			AND argument ->> 'insightType'::text = 'codeStatsInsights') AS code_stats_insights_additions,
-		COUNT(*) FILTER (WHERE name = 'InsightRemoval'
-			AND argument ->> 'insightType'::text = 'codeStatsInsights') AS code_stats_insights_removals,
-
-		COUNT(*) FILTER (WHERE name = 'InsightEdit'
-			AND argument ->> 'insightType'::text = 'searchInsights') AS search_insights_edits,
-		COUNT(*) FILTER (WHERE name = 'InsightAddition'
-			AND argument ->> 'insightType'::text = 'searchInsights') AS search_insights_additions,
-		COUNT(*) FILTER (WHERE name = 'InsightRemoval'
-			AND argument ->> 'insightType'::text = 'searchInsights') AS search_insights_removals,
-
-		COUNT(distinct anonymous_user_id) FILTER (WHERE name = 'InsightAddition' AND timestamp > DATE_TRUNC('week', $1::timestamp))
-			AS weekly_insight_creators,
-
-		COUNT(*) FILTER (WHERE name = 'InsightConfigureClick') AS insight_configure_click,
-		COUNT(*) FILTER (WHERE name = 'InsightAddMoreClick') AS insight_add_more_click
-	FROM event_logs
-	WHERE name in ('InsightEdit', 'InsightAddition', 'InsightRemoval', 'InsightConfigureClick', 'InsightAddMoreClick');
-	`
-
-	if err := dbconn.Global.QueryRowContext(ctx, creationMetricsQuery, timeNow()).Scan(
-		&stats.CodeStatsInsightsEdits,
-		&stats.CodeStatsInsightsAdditions,
-		&stats.CodeStatsInsightsRemovals,
-		&stats.SearchInsightsEdits,
-		&stats.SearchInsightsAdditions,
-		&stats.SearchInsightsRemovals,
 		&stats.WeeklyInsightCreators,
 		&stats.InsightConfigureClick,
 		&stats.InsightAddMoreClick,
 	); err != nil {
+		return nil, err
+	}
+
+	const metricsByInsightQuery = `
+	SELECT argument ->> 'insightType'::text 					AS insight_type,
+        COUNT(*) FILTER (WHERE name = 'InsightAddition') 		AS additions,
+        COUNT(*) FILTER (WHERE name = 'InsightEdit') 			AS edits,
+        COUNT(*) FILTER (WHERE name = 'InsightRemoval') 		AS removals,
+		COUNT(*) FILTER (WHERE name = 'InsightHover') 			AS hovers,
+		COUNT(*) FILTER (WHERE name = 'InsightUICustomization') AS ui_customizations,
+		COUNT(*) FILTER (WHERE name = 'InsightDataPointClick') 	AS data_point_clicks
+	FROM event_logs
+	WHERE name in ('InsightAddition', 'InsightEdit', 'InsightRemoval', 'InsightHover', 'InsightUICustomization', 'InsightDataPointClick')
+	GROUP BY insight_type;
+	`
+
+	usageStatisticsByInsight := []*types.InsightUsageStatistics{}
+	rows, err := dbconn.Global.QueryContext(ctx, metricsByInsightQuery)
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		insightUsageStatistics := types.InsightUsageStatistics{}
+
+		if err := rows.Scan(
+			&insightUsageStatistics.InsightType,
+			&insightUsageStatistics.Additions,
+			&insightUsageStatistics.Edits,
+			&insightUsageStatistics.Removals,
+			&insightUsageStatistics.Hovers,
+			&insightUsageStatistics.UICustomizations,
+			&insightUsageStatistics.DataPointClicks,
+		); err != nil {
+			return nil, err
+		}
+
+		usageStatisticsByInsight = append(usageStatisticsByInsight, &insightUsageStatistics)
+	}
+	stats.UsageStatisticsByInsight = usageStatisticsByInsight
+
+	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 

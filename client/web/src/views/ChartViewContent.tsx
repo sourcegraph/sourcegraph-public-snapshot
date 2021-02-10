@@ -57,10 +57,10 @@ export const CartesianChartViewContent: React.FunctionComponent<{
     const linkHandler = useMemo(() => {
         const linkHandler = createLinkClickHandler(history)
         return (event: React.MouseEvent<unknown, MouseEvent>): void => {
-            eventLogger.log('InsightDataPointClick')
+            eventLogger.log('InsightDataPointClick', { insightType: viewID.split('.')[0] })
             linkHandler(event)
         }
-    }, [history])
+    }, [history, viewID])
 
     // Unwrap union type
     const series: typeof content.series[number][] = content.series
@@ -186,14 +186,15 @@ export const PieChartViewContent: React.FunctionComponent<{
     content: PieChartContent<any>
     animate?: boolean
     history: H.History
-}> = ({ content, history, animate }) => {
+    viewID: string
+}> = ({ content, history, animate, viewID }) => {
     const linkHandler = useMemo(() => {
         const linkHandler = createLinkClickHandler(history)
         return (event: React.MouseEvent<unknown, MouseEvent>): void => {
-            eventLogger.log('InsightDataPointClick')
+            eventLogger.log('InsightDataPointClick', { insightType: viewID.split('.')[0] })
             linkHandler(event)
         }
-    }, [history])
+    }, [history, viewID])
 
     // Track hovered element to wrap it with a link
     const [activeIndex, setActiveIndex] = useState<number>()
