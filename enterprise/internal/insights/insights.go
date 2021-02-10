@@ -9,7 +9,6 @@ import (
 	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
@@ -17,7 +16,7 @@ import (
 
 // Init initializes the given enterpriseServices to include the required resolvers for insights.
 func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
-	resolver, err := InitResolver(ctx)
+	resolver, err := InitResolver(ctx, dbconn.Global)
 	if err != nil {
 		return err
 	}
@@ -29,7 +28,7 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 }
 
 // InitResolver connects to and initializes TimescaleDB and returns an initialized resolver.
-func InitResolver(ctx context.Context) (graphqlbackend.InsightsResolver, error) {
+func InitResolver(ctx context.Context, postgresAppDB *sql.DB) (*resolvers.Resolver, error) {
 	if !conf.IsDev(conf.DeployType()) {
 		// Code Insights is not yet deployed to non-dev/testing instances. We don't yet have
 		// TimescaleDB in those deployments. https://github.com/sourcegraph/sourcegraph/issues/17218
@@ -48,8 +47,7 @@ func InitResolver(ctx context.Context) (graphqlbackend.InsightsResolver, error) 
 	if err != nil {
 		return nil, err
 	}
-	postgres := dbconn.Global
-	return resolvers.New(timescale, postgres), nil
+	return resolvers.New(timescale, postgresAppDB), nil
 }
 
 // initializeCodeInsightsDB connects to and initializes the Code Insights Timescale DB, running

@@ -1,17 +1,11 @@
 package background
 
-// TODO: likely worth extracting to shared package?
-
-/*
 import (
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/url"
-	"runtime"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 
@@ -28,80 +22,16 @@ type graphQLQuery struct {
 const gqlSearchQuery = `query Search(
 	$query: String!,
 ) {
-	search(query: $query) {
+	search(query: $query, ) {
 		results {
-			approximateResultCount
 			limitHit
 			cloning { name }
+			missing { name }
 			timedout { name }
-			results {
-				__typename
-				... on FileMatch {
-					resource
-					limitHit
-					lineMatches {
-						preview
-						lineNumber
-						offsetAndLengths
-					}
-				}
-				... on CommitSearchResult {
-					refs {
-						name
-						displayName
-						prefix
-						repository {
-							name
-						}
-					}
-					sourceRefs {
-						name
-						displayName
-						prefix
-						repository {
-							name
-						}
-					}
-					messagePreview {
-						value
-						highlights {
-							line
-							character
-							length
-						}
-					}
-					diffPreview {
-						value
-						highlights {
-							line
-							character
-							length
-						}
-					}
-					commit {
-						repository {
-							name
-						}
-						oid
-						abbreviatedOID
-						author {
-							person {
-								displayName
-								avatarURL
-							}
-							date
-						}
-						message
-					}
-				}
-			}
+			matchCount
 			alert {
 				title
 				description
-				proposedQueries {
-					description
-					query
-				}
 			}
 		}
 	}
@@ -115,10 +45,15 @@ type gqlSearchResponse struct {
 	Data struct {
 		Search struct {
 			Results struct {
-				ApproximateResultCount string
-				Cloning                []*api.Repo
-				Timedout               []*api.Repo
-				Results                []interface{}
+				LimitHit   bool
+				Cloning    []*api.Repo
+				Missing    []*api.Repo
+				Timedout   []*api.Repo
+				MatchCount int
+				Alert      struct {
+					Title       string
+					Description string
+				}
 			}
 		}
 	}
@@ -165,39 +100,3 @@ func gqlURL(queryName string) (string, error) {
 	u.RawQuery = queryName
 	return u.String(), nil
 }
-
-// extractTime extracts the time from the given search result.
-func extractTime(result interface{}) (t *time.Time, err error) {
-	// Use recover because we assume the data structure here a lot, for less
-	// error checking.
-	defer func() {
-		if r := recover(); r != nil {
-			// Same as net/http
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			log.Printf("failed to extract time from search result: %v\n%s", r, buf)
-			err = fmt.Errorf("failed to extract time from search result")
-		}
-	}()
-
-	m := result.(map[string]interface{})
-	typeName := m["__typename"].(string)
-	switch typeName {
-	case "CommitSearchResult":
-		commit := m["commit"].(map[string]interface{})
-		author := commit["author"].(map[string]interface{})
-		date := author["date"].(string)
-
-		// This relies on the date format that our API returns. It was previously broken
-		// and should be checked first in case date extraction stops working.
-		t, err := time.Parse(time.RFC3339, date)
-		if err != nil {
-			return nil, err
-		}
-		return &t, nil
-	default:
-		return nil, fmt.Errorf("unexpected result __typename %q", typeName)
-	}
-}
-*/

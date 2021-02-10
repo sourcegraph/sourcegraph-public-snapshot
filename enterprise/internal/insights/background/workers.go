@@ -2,112 +2,74 @@ package background
 
 import (
 	"context"
-	"fmt"
-	"strings"
+	"database/sql"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/email"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-const (
-	jobLogsRetentionInDays int = 7
-)
+// newInsightEnqueuer returns a background goroutine which will periodically find all of the search
+// and webhook insights across all user settings, and enqueue work for the query runner and webhook
+// runner workers to perform.
+func newInsightEnqueuer(ctx context.Context, store *store.Store) goroutine.BackgroundRoutine {
+	// TODO: 1 minute may be too slow? hmm
+	return goroutine.NewPeriodicGoroutine(ctx, 1*time.Minute, goroutine.NewHandlerWithErrorMessage(
+		"insights_enqueuer",
+		func(ctx context.Context) error {
+			// TODO: needs metrics
+			// TODO: similar to EnqueueTriggerQueries, actually enqueue work
+			return nil
+		},
+	))
+}
 
-func newTriggerQueryRunner(ctx context.Context, s *store.Store, metrics insightsMetrics) *workerutil.Worker {
+// newQueryRunner returns a worker that will execute search queries and insert information about
+// the results into the code insights database.
+func newQueryRunner(ctx context.Context, insightsStore *store.Store, resolver graphqlbackend.InsightsResolver, metrics *metrics) *workerutil.Worker {
+	store := createDBWorkerStoreForInsightsJobs(insightsStore) // TODO(slimsag): should not create in TimescaleDB
 	options := workerutil.WorkerOptions{
-		Name:        "code_insights_trigger_jobs_worker",
+		Name:        "insights_query_runner_worker",
 		NumHandlers: 1,
 		Interval:    5 * time.Second,
 		Metrics:     metrics.workerMetrics,
 	}
-	worker := dbworker.NewWorker(ctx, createDBWorkerStoreForTriggerJobs(s), &queryRunner{s}, options)
+	worker := dbworker.NewWorker(ctx, store, &queryRunner{
+		workerStore:   insightsStore, // TODO(slimsag): should not create in TimescaleDB
+		insightsStore: insightsStore,
+	}, options)
 	return worker
 }
 
-func newTriggerQueryEnqueuer(ctx context.Context, store *store.Store) goroutine.BackgroundRoutine {
-	enqueueActive := goroutine.NewHandlerWithErrorMessage(
-		"code_insights_trigger_query_enqueuer",
-		func(ctx context.Context) error {
-			return store.EnqueueTriggerQueries(ctx)
-		})
-	return goroutine.NewPeriodicGoroutine(ctx, 1*time.Minute, enqueueActive)
-}
-
-func newTriggerQueryResetter(ctx context.Context, s *store.Store, metrics insightsMetrics) *dbworker.Resetter {
-	workerStore := createDBWorkerStoreForTriggerJobs(s)
-
+// newQueryRunnerResetter returns a worker that will reset pending query runner jobs if they take
+// too long to complete.
+func newQueryRunnerResetter(ctx context.Context, s *store.Store, metrics *metrics) *dbworker.Resetter {
+	store := createDBWorkerStoreForInsightsJobs(s) // TODO(slimsag): should not create in TimescaleDB
 	options := dbworker.ResetterOptions{
 		Name:     "code_insights_trigger_jobs_worker_resetter",
 		Interval: 1 * time.Minute,
-		Metrics: dbworker.ResetterMetrics{
-			Errors:              metrics.errors,
-			RecordResetFailures: metrics.resetFailures,
-			RecordResets:        metrics.resets,
-		},
+		Metrics:  metrics.resetterMetrics,
 	}
-	return dbworker.NewResetter(workerStore, options)
+	return dbworker.NewResetter(store, options)
 }
 
-func newTriggerJobsLogDeleter(ctx context.Context, store *store.Store) goroutine.BackgroundRoutine {
-	deleteLogs := goroutine.NewHandlerWithErrorMessage(
-		"code_insights_trigger_jobs_log_deleter",
-		func(ctx context.Context) error {
-			// Delete obsolete logs.
-			err := store.DeleteObsoleteJobLogs(ctx)
-			if err != nil {
-				return err
-			}
-			// Delete old logs.
-			err = store.DeleteOldJobLogs(ctx, jobLogsRetentionInDays)
-			if err != nil {
-				return err
-			}
-			return nil
-		})
-	return goroutine.NewPeriodicGoroutine(ctx, 60*time.Minute, deleteLogs)
-}
-
-func newActionRunner(ctx context.Context, s *store.Store, metrics insightsMetrics) *workerutil.Worker {
-	options := workerutil.WorkerOptions{
-		Name:        "code_insights_action_jobs_worker",
-		NumHandlers: 1,
-		Interval:    5 * time.Second,
-		Metrics:     metrics.workerMetrics,
-	}
-	worker := dbworker.NewWorker(ctx, createDBWorkerStoreForActionJobs(s), &actionRunner{s}, options)
-	return worker
-}
-
-func newActionJobResetter(ctx context.Context, s *store.Store, metrics insightsMetrics) *dbworker.Resetter {
-	workerStore := createDBWorkerStoreForActionJobs(s)
-
-	options := dbworker.ResetterOptions{
-		Name:     "code_insights_action_jobs_worker_resetter",
-		Interval: 1 * time.Minute,
-		Metrics: dbworker.ResetterMetrics{
-			Errors:              metrics.errors,
-			RecordResetFailures: metrics.resetFailures,
-			RecordResets:        metrics.resets,
-		},
-	}
-	return dbworker.NewResetter(workerStore, options)
-}
-
-/*
-func createDBWorkerStoreForTriggerJobs(s *store.Store) dbworkerstore.Store {
+func createDBWorkerStoreForInsightsJobs(s *store.Store) dbworkerstore.Store {
 	return dbworkerstore.New(s.Handle(), dbworkerstore.Options{
-		Name:              "code_insights_trigger_jobs_worker_store",
-		TableName:         "cm_trigger_jobs",
-		ColumnExpressions: cm.TriggerJobsColumns,
-		Scan:              cm.ScanTriggerJobs,
+		Name:      "insights_trigger_jobs_worker_store",
+		TableName: "insights_trigger_jobs",
+		// TODO(slimsag): table names
+		ColumnExpressions: InsightsJobsColumns,
+		Scan:              ScanInsightsJobs,
+
+		// We will let a search query or webhook run for up to 60s. After that, it times out and
+		// retries in 10s. If 3 timeouts occur, it is not retried.
 		StalledMaxAge:     60 * time.Second,
 		RetryAfter:        10 * time.Second,
 		MaxNumRetries:     3,
@@ -115,175 +77,94 @@ func createDBWorkerStoreForTriggerJobs(s *store.Store) dbworkerstore.Store {
 	})
 }
 
-func createDBWorkerStoreForActionJobs(s *store.Store) dbworkerstore.Store {
-	return dbworkerstore.New(s.Handle(), dbworkerstore.Options{
-		Name:              "code_insights_action_jobs_worker_store",
-		TableName:         "cm_action_jobs",
-		ColumnExpressions: cm.ActionJobsColumns,
-		Scan:              cm.ScanActionJobs,
-		StalledMaxAge:     60 * time.Second,
-		RetryAfter:        10 * time.Second,
-		MaxNumRetries:     3,
-		OrderByExpression: sqlf.Sprintf("id"),
-	})
+// TODO(slimsag): move to a insights/dbworkerstore package?
+
+type InsightsJobs struct {
+	// TODO(slimsag): all these columns are wrong.
+	Id    int
+	Query int64
+
+	// The query we ran including after: filter.
+	QueryString *string
+
+	// Whether we got any results.
+	Results    *bool
+	NumResults *int
+
+	// Fields demanded for any dbworker.
+	State          string
+	FailureMessage *string
+	StartedAt      *time.Time
+	FinishedAt     *time.Time
+	ProcessAfter   *time.Time
+	NumResets      int32
+	NumFailures    int32
+	LogContents    *string
 }
 
-type queryRunner struct {
-	*store.Store
+func (r *InsightsJobs) RecordID() int {
+	return r.Id
 }
 
-func (r *queryRunner) Handle(ctx context.Context, workerStore dbworkerstore.Store, record workerutil.Record) (err error) {
-	defer func() {
-		if err != nil {
-			log15.Error("queryRunner.Handle", "error", err)
+func ScanInsightsJobs(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
+	records, err := scanInsightsJobs(rows, err)
+	if err != nil {
+		return &InsightsJobs{}, false, err
+	}
+	return records[0], true, nil
+}
+
+func scanInsightsJobs(rows *sql.Rows, err error) ([]*InsightsJobs, error) {
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+	var ms []*InsightsJobs
+	for rows.Next() {
+		m := &InsightsJobs{}
+		if err := rows.Scan(
+			// TODO(slimsag): all these columns are wrong.
+			&m.Id,
+			&m.Query,
+			&m.QueryString,
+			&m.Results,
+			&m.NumResults,
+			&m.State,
+			&m.FailureMessage,
+			&m.StartedAt,
+			&m.FinishedAt,
+			&m.ProcessAfter,
+			&m.NumResets,
+			&m.NumFailures,
+			&m.LogContents,
+		); err != nil {
+			return nil, err
 		}
-	}()
-
-	s := r.Store.With(workerStore)
-
-	var q *cm.MonitorQuery
-	q, err = s.GetQueryByRecordID(ctx, record.RecordID())
+		ms = append(ms, m)
+	}
 	if err != nil {
-		return err
+		return nil, err
 	}
-	newQuery := newQueryWithAfterFilter(q)
-
-	// Search.
-	var results *gqlSearchResponse
-	results, err = search(ctx, newQuery)
-	if err != nil {
-		return err
+	// Rows.Err will report the last error encountered by Rows.Scan.
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
-	var numResults int
-	if results != nil {
-		numResults = len(results.Data.Search.Results.Results)
-	}
-	if numResults > 0 {
-		err := s.EnqueueActionEmailsForQueryIDInt64(ctx, q.Id, record.RecordID())
-		if err != nil {
-			return fmt.Errorf("store.EnqueueActionEmailsForQueryIDInt64: %w", err)
-		}
-	}
-	// Log next_run and latest_result to table cm_queries.
-	newLatestResult := latestResultTime(q.LatestResult, results, err)
-	err = s.SetTriggerQueryNextRun(ctx, q.Id, s.Clock()().Add(5*time.Minute), newLatestResult.UTC())
-	if err != nil {
-		return err
-	}
-	// Log the actual query we ran and whether we got any new results.
-	err = s.LogSearch(ctx, newQuery, numResults, record.RecordID())
-	if err != nil {
-		return fmt.Errorf("LogSearch: %w", err)
-
-	}
-	return nil
+	return ms, nil
 }
 
-type actionRunner struct {
-	*store.Store
+var InsightsJobsColumns = []*sqlf.Query{
+	// TODO(slimsag): all these columns are wrong.
+	sqlf.Sprintf("cm_trigger_jobs.id"),
+	sqlf.Sprintf("cm_trigger_jobs.query"),
+	sqlf.Sprintf("cm_trigger_jobs.query_string"),
+	sqlf.Sprintf("cm_trigger_jobs.results"),
+	sqlf.Sprintf("cm_trigger_jobs.num_results"),
+	sqlf.Sprintf("cm_trigger_jobs.state"),
+	sqlf.Sprintf("cm_trigger_jobs.failure_message"),
+	sqlf.Sprintf("cm_trigger_jobs.started_at"),
+	sqlf.Sprintf("cm_trigger_jobs.finished_at"),
+	sqlf.Sprintf("cm_trigger_jobs.process_after"),
+	sqlf.Sprintf("cm_trigger_jobs.num_resets"),
+	sqlf.Sprintf("cm_trigger_jobs.num_failures"),
+	sqlf.Sprintf("cm_trigger_jobs.log_contents"),
 }
-
-func (r *actionRunner) Handle(ctx context.Context, workerStore dbworkerstore.Store, record workerutil.Record) (err error) {
-	log15.Info("actionRunner.Handle starting")
-	defer func() {
-		if err != nil {
-			log15.Error("actionRunner.Handle", "error", err)
-		}
-	}()
-
-	s := r.Store.With(workerStore)
-
-	var (
-		j    *cm.ActionJob
-		m    *cm.ActionJobMetadata
-		e    *cm.MonitorEmail
-		recs []*cm.Recipient
-		data *email.TemplateDataNewSearchResults
-	)
-
-	var ok bool
-	j, ok = record.(*cm.ActionJob)
-	if !ok {
-		return fmt.Errorf("type assertion failed")
-	}
-
-	m, err = s.GetActionJobMetadata(ctx, record.RecordID())
-	if err != nil {
-		return fmt.Errorf("store.GetActionJobMetadata: %w", err)
-	}
-
-	e, err = s.ActionEmailByIDInt64(ctx, j.Email)
-	if err != nil {
-		return fmt.Errorf("store.ActionEmailByIDInt64: %w", err)
-	}
-
-	recs, err = s.AllRecipientsForEmailIDInt64(ctx, j.Email)
-	if err != nil {
-		return fmt.Errorf("store.AllRecipientsForEmailIDInt64: %w", err)
-	}
-
-	data, err = email.NewTemplateDataForNewSearchResults(ctx, m.Description, m.Query, e, zeroOrVal(m.NumResults))
-	if err != nil {
-		return fmt.Errorf("email.NewTemplateDataForNewSearchResults: %w", err)
-	}
-	for _, rec := range recs {
-		if rec.NamespaceOrgID != nil {
-			// TODO (stefan): Send emails to org members.
-			continue
-		}
-		if rec.NamespaceUserID == nil {
-			return fmt.Errorf("nil recipient")
-		}
-		err = email.SendEmailForNewSearchResult(ctx, *rec.NamespaceUserID, data)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// newQueryWithAfterFilter constructs a new query which finds search results
-// introduced after the last time we queried.
-func newQueryWithAfterFilter(q *cm.MonitorQuery) string {
-	// For q.LatestResult = nil we return a query string without after: filter, which
-	// effectively triggers actions immediately provided the query returns any
-	// results.
-	if q.LatestResult == nil {
-		return q.QueryString
-	}
-	// ATTENTION: This is a stop gap. Add(time.Second) is necessary because currently
-	// the after: filter is implemented as "at OR after". If we didn't add a second
-	// here, we would send out emails for every run, always showing at least the last
-	// result. This means there is non-zero chance that we miss results whenever
-	// commits have a timestamp equal to the value of :after but arrive after this
-	// job has run.
-	afterTime := (*q.LatestResult).UTC().Add(time.Second).Format(time.RFC3339)
-	return strings.Join([]string{q.QueryString, fmt.Sprintf(`after:"%s"`, afterTime)}, " ")
-}
-
-func latestResultTime(previousLastResult *time.Time, v *gqlSearchResponse, searchErr error) time.Time {
-	if searchErr != nil || len(v.Data.Search.Results.Results) == 0 {
-		// Error performing the search, or there were no results. Assume the
-		// previous info's result time.
-		if previousLastResult != nil {
-			return *previousLastResult
-		}
-		return time.Now()
-	}
-
-	// Results are ordered chronologically, so first result is the latest.
-	t, err := extractTime(v.Data.Search.Results.Results[0])
-	if err != nil {
-		// Error already logged by extractTime.
-		return time.Now()
-	}
-	return *t
-}
-
-func zeroOrVal(i *int) int {
-	if i == nil {
-		return 0
-	}
-	return *i
-}
-*/
