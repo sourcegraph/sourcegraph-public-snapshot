@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"path/filepath"
 	"strings"
 
@@ -26,6 +27,12 @@ func Correlate(ctx context.Context, r io.Reader, dumpID int, root string, getChi
 
 	// Remove duplicate elements, collapse linked elements
 	canonicalize(state)
+
+	symbols, err := deriveSymbols(state)
+	if err != nil {
+		return nil, err
+	}
+	log.Printf("## symbols: %+v", symbols)
 
 	// Remove elements we don't need to store
 	if err := prune(ctx, state, root, getChildren); err != nil {
