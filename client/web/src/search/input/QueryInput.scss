@@ -60,6 +60,18 @@
         background-color: var(--color-bg-4);
     }
 
+    &__search-context-dropdown-container {
+        display: flex;
+        align-items: center;
+        background-color: var(--input-bg);
+        border: 1px solid var(--input-border-color);
+        border-right: none;
+
+        & + .lazy-monaco-query-input--intermediate-input {
+            border-left: none;
+        }
+    }
+
     &__toggle-container {
         position: absolute;
         right: 0.375rem;
