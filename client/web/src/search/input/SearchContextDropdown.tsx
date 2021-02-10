@@ -41,7 +41,14 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                 >
                     <code className="search-context-dropdown__button-content">
                         <span className="search-filter-keyword">context:</span>
-                        {selectedSearchContextSpec}
+                        {selectedSearchContextSpec.startsWith('@') ? (
+                            <>
+                                <span className="search-keyword">@</span>
+                                {selectedSearchContextSpec.slice(1)}
+                            </>
+                        ) : (
+                            selectedSearchContextSpec
+                        )}
                     </code>
                 </DropdownToggle>
                 <DropdownMenu>

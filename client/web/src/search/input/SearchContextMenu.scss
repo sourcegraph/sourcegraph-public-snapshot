@@ -66,6 +66,10 @@
                 border-color: transparent;
             }
         }
+
+        &--selected {
+            background-color: var(--color-bg-4);
+        }
     }
 
     &__footer {
