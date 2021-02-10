@@ -523,8 +523,7 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResultsReso
 // unionMerge performs a merge of file match results, merging line matches when
 // they occur in the same file, and taking care to update match counts.
 func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
-	var count int // count non-overlapping files when we merge.
-	var merged []SearchResultResolver
+	merged := make([]SearchResultResolver, 0, len(right.SearchResults))
 	rightFileMatches := make(map[string]*FileMatchResolver)
 	rightRepoMatches := make(map[string]*RepositoryResolver)
 	rightCommitMatches := make(map[string]*CommitSearchResultResolver)
@@ -557,7 +556,6 @@ func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 			if rightFileMatch == nil {
 				// no overlap with existing matches.
 				merged = append(merged, leftMatch)
-				count++
 				continue
 			}
 			// merge line matches with a file match that already exists.
@@ -571,7 +569,6 @@ func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 			if rightRepoMatch == nil {
 				// no overlap with existing matches.
 				merged = append(merged, leftMatch)
-				count++
 			}
 			continue
 		}
@@ -581,13 +578,11 @@ func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 				rightDiffMatch := rightDiffMatches[leftCommitMatch.URL()]
 				if rightDiffMatch == nil {
 					merged = append(merged, leftCommitMatch)
-					count++
 				}
 			} else {
 				rightCommitMatch := rightCommitMatches[leftCommitMatch.URL()]
 				if rightCommitMatch == nil {
 					merged = append(merged, leftCommitMatch)
-					count++
 				}
 			}
 			continue
