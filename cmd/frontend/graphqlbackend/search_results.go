@@ -1551,6 +1551,7 @@ func (a *aggregator) doSymbolSearch(ctx context.Context, args *search.TextParame
 
 func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextParameters) (err error) {
 	tr, ctx := trace.New(ctx, "doFilePathSearch", "")
+	tr.LogFields(trace.Stringer("global_search_mode", args.Mode))
 	defer func() {
 		a.error(ctx, err)
 		tr.SetError(err)

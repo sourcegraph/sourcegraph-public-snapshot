@@ -86,6 +86,7 @@ func containsRefGlobs(q query.QueryInfo) bool {
 
 func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, typ indexedRequestType, stream Streamer) (_ *indexedSearchRequest, err error) {
 	tr, ctx := trace.New(ctx, "newIndexedSearchRequest", string(typ))
+	tr.LogFields(trace.Stringer("global_search_mode", args.Mode))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
