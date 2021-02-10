@@ -86,7 +86,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 			CreateIfNotExist:    s.allowSignup,
 		})
 		if err == nil {
-			hubspotutil.SyncUser(verifiedEmail, hubspotutil.SignupEventID, &hubspot.ContactProperties{})
+			go hubspotutil.SyncUser(verifiedEmail, hubspotutil.SignupEventID, &hubspot.ContactProperties{})
 			return actor.FromUser(userID), "", nil // success
 		}
 		if i == 0 {
