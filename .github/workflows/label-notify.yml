@@ -13,7 +13,8 @@ jobs:
              recipients: |
                   team/extensibility=@joelkw @jeanduplessis @felixfbecker
                   team/frontend-platform=@jeanduplessis @alicjasuska @felixfbecker
-                  team/cloud=@tsenart
+                  team/core-application=@core-application
+                  team/backend-platform=@core-application
                   team/search=@lguychard
                   team/code-intelligence=@macraig
                   team/code-insights=@joelkw @felixfbecker
