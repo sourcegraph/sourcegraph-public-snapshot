@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import React, { useCallback, useEffect, useState } from 'react'
 import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { scanSearchQuery } from '../../../../shared/src/search/query/scanner'
-import { FilterType } from '../../../../shared/src/search/query/util'
+import { FilterType } from '../../../../shared/src/search/query/filters'
 import { SearchContextMenu } from './SearchContextMenu'
 
 interface SearchContextDropdownProps {
