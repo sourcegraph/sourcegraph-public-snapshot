@@ -16,43 +16,34 @@ import (
 
 // Init initializes the given enterpriseServices to include the required resolvers for insights.
 func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
-	resolver, err := InitResolver(ctx, dbconn.Global)
-	if err != nil {
-		return err
-	}
-	if resolver == nil {
-		return nil // e.g. code insights is disabled or not supported in this deployment type.
-	}
-	enterpriseServices.InsightsResolver = resolver
-	return nil
-}
-
-// InitResolver connects to and initializes TimescaleDB and returns an initialized resolver.
-func InitResolver(ctx context.Context, postgresAppDB *sql.DB) (*resolvers.Resolver, error) {
 	if !conf.IsDev(conf.DeployType()) {
 		// Code Insights is not yet deployed to non-dev/testing instances. We don't yet have
 		// TimescaleDB in those deployments. https://github.com/sourcegraph/sourcegraph/issues/17218
-		return nil, nil
+		return nil
 	}
 	if conf.IsDeployTypeSingleDockerContainer(conf.DeployType()) {
 		// Code insights is not supported in single-container Docker demo deployments.
-		return nil, nil
+		return nil
 	}
 	if v, _ := strconv.ParseBool(os.Getenv("DISABLE_CODE_INSIGHTS")); v {
 		// Dev option for disabling code insights. Helpful if e.g. you have issues running the
 		// codeinsights-db or don't want to spend resources on it.
-		return nil, nil
+		return nil
 	}
-	timescale, err := initializeCodeInsightsDB()
+	timescale, err := InitializeCodeInsightsDB()
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return resolvers.New(timescale, postgresAppDB), nil
+	postgres := dbconn.Global
+	enterpriseServices.InsightsResolver = resolvers.New(timescale, postgres)
+	return nil
 }
 
-// initializeCodeInsightsDB connects to and initializes the Code Insights Timescale DB, running
-// database migrations before returning.
-func initializeCodeInsightsDB() (*sql.DB, error) {
+// InitializeCodeInsightsDB connects to and initializes the Code Insights Timescale DB, running
+// database migrations before returning. It is safe to call from multiple services/containers (in
+// which case, one's migration will win and the other caller will receive an error and should exit
+// and restart until the other finishes.)
+func InitializeCodeInsightsDB() (*sql.DB, error) {
 	timescaleDSN := conf.Get().ServiceConnections.CodeInsightsTimescaleDSN
 	conf.Watch(func() {
 		if newDSN := conf.Get().ServiceConnections.CodeInsightsTimescaleDSN; timescaleDSN != newDSN {

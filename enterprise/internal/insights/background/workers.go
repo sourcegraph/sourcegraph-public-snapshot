@@ -7,7 +7,6 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -33,7 +32,9 @@ func newInsightEnqueuer(ctx context.Context, store *store.Store) goroutine.Backg
 
 // newQueryRunner returns a worker that will execute search queries and insert information about
 // the results into the code insights database.
-func newQueryRunner(ctx context.Context, insightsStore *store.Store, resolver graphqlbackend.InsightsResolver, metrics *metrics) *workerutil.Worker {
+//
+// TODO(slimsag): needs main app DB for settings discovery
+func newQueryRunner(ctx context.Context, insightsStore *store.Store, metrics *metrics) *workerutil.Worker {
 	store := createDBWorkerStoreForInsightsJobs(insightsStore) // TODO(slimsag): should not create in TimescaleDB
 	options := workerutil.WorkerOptions{
 		Name:        "insights_query_runner_worker",
