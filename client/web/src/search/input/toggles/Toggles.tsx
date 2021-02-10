@@ -3,7 +3,7 @@ import * as H from 'history'
 import RegexIcon from 'mdi-react/RegexIcon'
 import classNames from 'classnames'
 import FormatLetterCaseIcon from 'mdi-react/FormatLetterCaseIcon'
-import { PatternTypeProps, CaseSensitivityProps, CopyQueryButtonProps } from '../..'
+import { PatternTypeProps, CaseSensitivityProps, CopyQueryButtonProps, SearchContextProps } from '../..'
 import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
 import { submitSearch } from '../../helpers'
 import { QueryInputToggle } from './QueryInputToggle'
@@ -19,7 +19,8 @@ export interface TogglesProps
         CaseSensitivityProps,
         SettingsCascadeProps,
         CopyQueryButtonProps,
-        VersionContextProps {
+        VersionContextProps,
+        SearchContextProps {
     navbarSearchQuery: string
     history: H.History
     location: H.Location
@@ -43,6 +44,8 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
         settingsCascade,
         className,
         copyQueryButton,
+        showSearchContext,
+        searchContextSpec,
     } = props
 
     const structuralSearchDisabled = window.context?.experimentalFeatures?.structuralSearch === 'disabled'
@@ -102,7 +105,13 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
         submitOnToggle({ newPatternType })
     }, [patternType, setPatternType, settingsCascade.final, submitOnToggle])
 
-    const fullQuery = [navbarSearchQuery, `patternType:${patternType}`, caseSensitive ? 'case:yes' : '']
+    const fullQuery = [
+        // TODO: Do not include context if it is already present in the query
+        showSearchContext && searchContextSpec ? `context:${searchContextSpec}` : '',
+        navbarSearchQuery,
+        `patternType:${patternType}`,
+        caseSensitive ? 'case:yes' : '',
+    ]
         .filter(queryPart => !!queryPart)
         .join(' ')
 
