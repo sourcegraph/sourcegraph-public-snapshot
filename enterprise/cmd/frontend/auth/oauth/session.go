@@ -26,7 +26,7 @@ type SessionData struct {
 }
 
 type SessionIssuerHelper interface {
-	GetOrCreateUser(ctx context.Context, token *oauth2.Token) (actr *actor.Actor, safeErrMsg string, err error)
+	GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL string) (actr *actor.Actor, safeErrMsg string, err error)
 	DeleteStateCookie(w http.ResponseWriter)
 	SessionData(token *oauth2.Token) SessionData
 }
@@ -42,7 +42,15 @@ func SessionIssuer(s SessionIssuerHelper, sessionKey string) http.Handler {
 			return
 		}
 
-		actr, safeErrMsg, err := s.GetOrCreateUser(ctx, token)
+		getCookie := func(name string) string {
+			c, err := r.Cookie(name)
+			if err != nil {
+				return ""
+			}
+			return c.Value
+		}
+
+		actr, safeErrMsg, err := s.GetOrCreateUser(ctx, token, getCookie("sourcegraphAnonymousUid"), getCookie("sourcegraphSourceUrl"))
 		if err != nil {
 			log15.Error("OAuth failed: error looking up or creating user from OAuth token.", "error", err, "userErr", safeErrMsg)
 			http.Error(w, safeErrMsg, http.StatusInternalServerError)
