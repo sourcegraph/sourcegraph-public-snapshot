@@ -53,9 +53,9 @@ export const PreviewList: React.FunctionComponent<Props> = ({
                 campaignSpec: campaignSpecID,
                 search: filters.search,
                 currentState: filters.currentState,
-                action: null,
+                action: filters.action,
             }),
-        [campaignSpecID, filters.search, filters.currentState, queryChangesetApplyPreview]
+        [campaignSpecID, filters.search, filters.currentState, filters.action, queryChangesetApplyPreview]
     )
 
     return (
