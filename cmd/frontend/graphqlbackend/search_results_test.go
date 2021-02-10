@@ -1408,3 +1408,96 @@ func TestSearchContext(t *testing.T) {
 		})
 	}
 }
+
+func TestSearchResultDedupper(t *testing.T) {
+	commitResult := func(url string) *CommitSearchResultResolver {
+		return &CommitSearchResultResolver{
+			url: url,
+		}
+	}
+	diffResult := func(url string) *CommitSearchResultResolver {
+		return &CommitSearchResultResolver{
+			url:         url,
+			diffPreview: &highlightedString{},
+		}
+	}
+	repoResult := func(url string) *RepositoryResolver {
+		return &RepositoryResolver{
+			innerRepo: &types.Repo{
+				Name: api.RepoName(url),
+			},
+		}
+	}
+	fileResult := func(url string) *FileMatchResolver {
+		return &FileMatchResolver{
+			FileMatch: FileMatch{
+				uri: url,
+			},
+		}
+	}
+
+	cases := []struct {
+		input  []SearchResultResolver
+		output []SearchResultResolver
+	}{
+		{
+			[]SearchResultResolver{},
+			[]SearchResultResolver{},
+		},
+		{
+			[]SearchResultResolver{commitResult("a")},
+			[]SearchResultResolver{commitResult("a")},
+		},
+		{
+			[]SearchResultResolver{commitResult("a"), commitResult("a")},
+			[]SearchResultResolver{commitResult("a")},
+		},
+		{
+			[]SearchResultResolver{commitResult("a"), diffResult("a")},
+			[]SearchResultResolver{commitResult("a"), diffResult("a")},
+		},
+		{
+			[]SearchResultResolver{commitResult("a"), diffResult("b")},
+			[]SearchResultResolver{commitResult("a"), diffResult("b")},
+		},
+		{
+			[]SearchResultResolver{commitResult("a"), diffResult("a"), repoResult("a"), fileResult("a")},
+			[]SearchResultResolver{commitResult("a"), diffResult("a"), repoResult("a"), fileResult("a")},
+		},
+		{
+			[]SearchResultResolver{commitResult("a"), commitResult("b"), commitResult("a"), commitResult("b")},
+			[]SearchResultResolver{commitResult("a"), commitResult("b")},
+		},
+	}
+
+	slicesEqual := func(a, b []SearchResultResolver) bool {
+		if len(a) != len(b) {
+			return false
+		}
+
+		for i, ra := range a {
+			rb := b[i]
+			if !reflect.DeepEqual(ra, rb) {
+				return false
+			}
+		}
+
+		return true
+	}
+
+	for _, tc := range cases {
+		t.Run("", func(t *testing.T) {
+			var got []SearchResultResolver
+			var dedup searchResultDedupper
+			for _, r := range tc.input {
+				if seen := dedup.Seen(r); !seen {
+					got = append(got, r)
+				}
+			}
+
+			if !slicesEqual(got, tc.output) {
+				t.Fatalf("Expected: %v, Got: %v", tc.output, got)
+			}
+		})
+	}
+}
