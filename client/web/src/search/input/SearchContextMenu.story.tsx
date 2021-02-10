@@ -34,6 +34,13 @@ const defaultProps: Omit<SearchContextProps, 'showSearchContext'> = {
             autoDefined: true,
             description: 'Your repositories on Sourcegraph',
         },
+        {
+            __typename: 'SearchContext',
+            id: '2',
+            spec: '@username/test-version-1.5',
+            autoDefined: true,
+            description: 'Only code in version 1.5',
+        },
     ],
     defaultSearchContextSpec: 'global',
     selectedSearchContextSpec: 'global',
