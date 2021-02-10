@@ -47,5 +47,10 @@ export const userSettingsSideBarItems: UserSettingsSidebarItems = {
             to: '/repositories',
             condition: allowUserExternalServicePublic,
         },
+        {
+            label: 'Product research',
+            to: '/product-research',
+            condition: () => window.context.productResearchPageEnabled,
+        },
     ],
 }
