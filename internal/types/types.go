@@ -1331,7 +1331,6 @@ type ExtensionsUsageStatistics struct {
 
 // Weekly statistics for an individual extension
 type ExtensionUsageStatistics struct {
-	WeekStart time.Time
 	// The count of users that have activated this extension
 	UserCount *int32
 	// The average number of activations for users that have
@@ -1341,23 +1340,25 @@ type ExtensionUsageStatistics struct {
 }
 
 type CodeInsightsUsageStatistics struct {
+	CreationStatisticsByInsight    []*InsightUsageStatistics
 	InsightsPageViews              *int32
 	InsightsUniquePageViews        *int32
-	SearchInsightsHovers           *int32
-	CodeStatsInsightsHovers        *int32
-	InsightsUICustomizations       *int32
-	InsightsDataPointClicks        *int32
-	CodeStatsInsightsEdits         *int32
-	CodeStatsInsightsAdditions     *int32
-	CodeStatsInsightsRemovals      *int32
-	SearchInsightsEdits            *int32
-	SearchInsightsAdditions        *int32
-	SearchInsightsRemovals         *int32
 	InsightConfigureClick          *int32
 	InsightAddMoreClick            *int32
 	WeekStart                      time.Time
 	WeeklyInsightCreators          *int32
 	WeeklyFirstTimeInsightCreators *int32
+}
+
+// Creation statistics for a type of code insight
+type InsightUsageStatistics struct {
+	InsightType      *string
+	Additions        *int32
+	Edits            *int32
+	Removals         *int32
+	Hovers           *int32
+	UICustomizations *int32
+	DataPointClicks  *int32
 }
 
 // Secret represents the secrets table

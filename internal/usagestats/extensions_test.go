@@ -54,13 +54,11 @@ func TestExtensionsUsageStatistics(t *testing.T) {
 
 	usageStatisticsByExtension := []*types.ExtensionUsageStatistics{
 		{
-			WeekStart:          weekStart,
 			UserCount:          &oneInt,
 			AverageActivations: &oneFloat,
 			ExtensionID:        &codecovID,
 		},
 		{
-			WeekStart:          weekStart,
 			UserCount:          &twoInt,
 			AverageActivations: &oneAndAHalfFloat,
 			ExtensionID:        &lpeID,
