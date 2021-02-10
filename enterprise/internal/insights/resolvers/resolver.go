@@ -20,7 +20,7 @@ type Resolver struct {
 }
 
 // New returns a new Resolver whose store uses the given Timescale and Postgres DBs.
-func New(timescale, postgres dbutil.DB) *Resolver {
+func New(timescale, postgres dbutil.DB) graphqlbackend.InsightsResolver {
 	return newWithClock(timescale, postgres, timeutil.Now)
 }
 
