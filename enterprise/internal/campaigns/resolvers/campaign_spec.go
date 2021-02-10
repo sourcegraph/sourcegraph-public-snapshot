@@ -87,7 +87,6 @@ func (r *campaignSpecResolver) ApplyPreview(ctx context.Context, args *graphqlba
 			Limit: int(args.First),
 		},
 		CurrentState: args.CurrentState,
-		Action:       args.Action,
 	}
 	if args.After != nil {
 		id, err := strconv.Atoi(*args.After)
@@ -107,6 +106,7 @@ func (r *campaignSpecResolver) ApplyPreview(ctx context.Context, args *graphqlba
 	return &changesetApplyPreviewConnectionResolver{
 		store:          r.store,
 		opts:           opts,
+		action:         args.Action,
 		campaignSpecID: r.campaignSpec.ID,
 	}, nil
 }

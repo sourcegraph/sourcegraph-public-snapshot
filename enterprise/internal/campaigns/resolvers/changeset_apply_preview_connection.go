@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/syncer"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 var _ graphqlbackend.ChangesetApplyPreviewConnectionResolver = &changesetApplyPreviewConnectionResolver{}
@@ -22,46 +23,199 @@ type changesetApplyPreviewConnectionResolver struct {
 	store *store.Store
 
 	opts           store.GetRewirerMappingsOpts
+	action         *campaigns.ReconcilerOperation
 	campaignSpecID int64
 
-	once        sync.Once
-	mappings    store.RewirerMappings
-	allMappings store.RewirerMappings
-	campaign    *campaigns.Campaign
-	totalCount  int
-	err         error
+	once     sync.Once
+	mappings *rewirerMappings
+	err      error
+}
+
+type rewirerMappings struct {
+	All store.RewirerMappings
+
+	// Inputs from outside the resolver.
+	campaignSpecID int64
+	store          *store.Store
+
+	// Calculated within the type.
+	campaign *campaigns.Campaign
+
+	pagesMu sync.Mutex
+	pages   map[rewirerMappingPageOpts]*rewirerMappingPage
+
+	// resolvers are stored without next sync times; these are annotated later
+	// by Nodes() if called
+	resolversMu sync.Mutex
+	resolvers   map[*store.RewirerMapping]*changesetApplyPreviewResolver
+}
+
+type rewirerMappingPage struct {
+	Mappings   store.RewirerMappings
+	TotalCount int
+}
+
+func newRewirerMappings(ctx context.Context, s *store.Store, opts store.GetRewirerMappingsOpts, campaignSpecID int64) (*rewirerMappings, error) {
+	rm := &rewirerMappings{
+		campaignSpecID: campaignSpecID,
+		store:          s,
+		pages:          make(map[rewirerMappingPageOpts]*rewirerMappingPage),
+		resolvers:      make(map[*store.RewirerMapping]*changesetApplyPreviewResolver),
+	}
+
+	svc := service.New(rm.store)
+	campaignSpec, err := rm.store.GetCampaignSpec(ctx, store.GetCampaignSpecOpts{ID: campaignSpecID})
+	if err != nil {
+		return nil, err
+	}
+	// Dry-run reconcile the campaign with the new campaign spec.
+	if rm.campaign, _, err = svc.ReconcileCampaign(ctx, campaignSpec); err != nil {
+		return nil, err
+	}
+
+	opts = store.GetRewirerMappingsOpts{
+		CampaignSpecID: campaignSpecID,
+		CampaignID:     rm.campaign.ID,
+		TextSearch:     opts.TextSearch,
+		CurrentState:   opts.CurrentState,
+	}
+	if rm.All, err = rm.store.GetRewirerMappings(ctx, opts); err != nil {
+		return nil, err
+	}
+	if err := rm.All.Hydrate(ctx, rm.store); err != nil {
+		return nil, err
+	}
+
+	return rm, nil
+}
+
+type rewirerMappingPageOpts struct {
+	*database.LimitOffset
+	Op *campaigns.ReconcilerOperation
+}
+
+func (rw *rewirerMappings) Page(ctx context.Context, opts rewirerMappingPageOpts) (*rewirerMappingPage, error) {
+	rw.pagesMu.Lock()
+	defer rw.pagesMu.Unlock()
+
+	if page := rw.pages[opts]; page != nil {
+		return page, nil
+	}
+
+	var filtered store.RewirerMappings
+	if opts.Op != nil {
+		for _, mapping := range rw.All {
+			res, ok := rw.Resolver(mapping).ToVisibleChangesetApplyPreview()
+			if !ok {
+				continue
+			}
+
+			ops, err := res.Operations(ctx)
+			if err != nil {
+				return nil, err
+			}
+
+			for _, op := range ops {
+				if op == *opts.Op {
+					filtered = append(filtered, mapping)
+					break
+				}
+			}
+		}
+	} else {
+		filtered = rw.All
+	}
+
+	page := store.RewirerMappings{}
+	if limit, offset := opts.LimitOffset.Limit, opts.LimitOffset.Offset; limit <= 0 || offset < 0 || offset > len(filtered) {
+		// Nothing to do.
+	} else {
+		end := limit + offset
+		if end > len(filtered) {
+			page = filtered[offset:]
+		} else {
+			page = filtered[offset:end]
+		}
+	}
+
+	rw.pages[opts] = &rewirerMappingPage{
+		Mappings:   page,
+		TotalCount: len(filtered),
+	}
+	return rw.pages[opts], nil
+}
+
+func (rw *rewirerMappings) Resolver(mapping *store.RewirerMapping) *changesetApplyPreviewResolver {
+	rw.resolversMu.Lock()
+	defer rw.resolversMu.Unlock()
+
+	if resolver := rw.resolvers[mapping]; resolver != nil {
+		return resolver
+	}
+
+	rw.resolvers[mapping] = &changesetApplyPreviewResolver{
+		store:             rw.store,
+		mapping:           mapping,
+		preloadedCampaign: rw.campaign,
+		campaignSpecID:    rw.campaignSpecID,
+	}
+	return rw.resolvers[mapping]
+}
+
+func (rw *rewirerMappings) ResolverWithNextSync(mapping *store.RewirerMapping, nextSync time.Time) graphqlbackend.ChangesetApplyPreviewResolver {
+	resolver := rw.Resolver(mapping)
+	resolver.preloadedNextSync = nextSync
+
+	return resolver
 }
 
 func (r *changesetApplyPreviewConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	_, _, _, totalCount, err := r.compute(ctx)
+	mappings, err := r.compute(ctx)
 	if err != nil {
 		return 0, err
 	}
-	return int32(totalCount), nil
+
+	page, err := mappings.Page(ctx, rewirerMappingPageOpts{
+		LimitOffset: r.opts.LimitOffset,
+		Op:          r.action,
+	})
+	if err != nil {
+		return 0, err
+	}
+
+	return int32(page.TotalCount), nil
 }
 
 func (r *changesetApplyPreviewConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
 	if r.opts.LimitOffset == nil {
 		return graphqlutil.HasNextPage(false), nil
 	}
-	_, _, _, totalCount, err := r.compute(ctx)
+	mappings, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if (r.opts.LimitOffset.Limit + r.opts.LimitOffset.Offset) >= totalCount {
+	if (r.opts.LimitOffset.Limit + r.opts.LimitOffset.Offset) >= len(mappings.All) {
 		return graphqlutil.HasNextPage(false), nil
 	}
 	return graphqlutil.NextPageCursor(strconv.Itoa(r.opts.LimitOffset.Limit + r.opts.LimitOffset.Offset)), nil
 }
 
 func (r *changesetApplyPreviewConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ChangesetApplyPreviewResolver, error) {
-	mappings, campaign, _, _, err := r.compute(ctx)
+	mappings, err := r.compute(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	page, err := mappings.Page(ctx, rewirerMappingPageOpts{
+		LimitOffset: r.opts.LimitOffset,
+		Op:          r.action,
+	})
 	if err != nil {
 		return nil, err
 	}
 
 	scheduledSyncs := make(map[int64]time.Time)
-	changesetIDs := mappings.ChangesetIDs()
+	changesetIDs := page.Mappings.ChangesetIDs()
 	if len(changesetIDs) > 0 {
 		syncData, err := r.store.ListChangesetSyncData(ctx, store.ListChangesetSyncDataOpts{ChangesetIDs: changesetIDs})
 		if err != nil {
@@ -72,14 +226,9 @@ func (r *changesetApplyPreviewConnectionResolver) Nodes(ctx context.Context) ([]
 		}
 	}
 
-	resolvers := make([]graphqlbackend.ChangesetApplyPreviewResolver, 0, len(mappings))
-	for _, mapping := range mappings {
-		resolvers = append(resolvers, &changesetApplyPreviewResolver{
-			store:             r.store,
-			mapping:           mapping,
-			preloadedNextSync: scheduledSyncs[mapping.ChangesetID],
-			preloadedCampaign: campaign,
-		})
+	resolvers := make([]graphqlbackend.ChangesetApplyPreviewResolver, 0, len(page.Mappings))
+	for _, mapping := range page.Mappings {
+		resolvers = append(resolvers, mappings.ResolverWithNextSync(mapping, scheduledSyncs[mapping.ChangesetID]))
 	}
 
 	return resolvers, nil
@@ -150,19 +299,14 @@ func (r *changesetApplyPreviewConnectionStatsResolver) Removed() int32 {
 var _ graphqlbackend.ChangesetApplyPreviewConnectionStatsResolver = &changesetApplyPreviewConnectionStatsResolver{}
 
 func (r *changesetApplyPreviewConnectionResolver) Stats(ctx context.Context) (graphqlbackend.ChangesetApplyPreviewConnectionStatsResolver, error) {
-	_, campaign, mappings, _, err := r.compute(ctx)
+	mappings, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	stats := &changesetApplyPreviewConnectionStatsResolver{}
-	for _, mapping := range mappings {
-		res := &changesetApplyPreviewResolver{
-			store:             r.store,
-			mapping:           mapping,
-			preloadedCampaign: campaign,
-			campaignSpecID:    r.campaignSpecID,
-		}
+	for _, mapping := range mappings.All {
+		res := mappings.Resolver(mapping)
 		var ops []campaigns.ReconcilerOperation
 		if _, ok := res.ToHiddenChangesetApplyPreview(); ok {
 			// Hidden ones never perform operations.
@@ -220,49 +364,10 @@ func (r *changesetApplyPreviewConnectionResolver) Stats(ctx context.Context) (gr
 	return stats, nil
 }
 
-func (r *changesetApplyPreviewConnectionResolver) compute(ctx context.Context) (store.RewirerMappings, *campaigns.Campaign, store.RewirerMappings, int, error) {
+func (r *changesetApplyPreviewConnectionResolver) compute(ctx context.Context) (*rewirerMappings, error) {
 	r.once.Do(func() {
-		opts := r.opts
-		opts.CampaignSpecID = r.campaignSpecID
-
-		svc := service.New(r.store)
-		campaignSpec, err := r.store.GetCampaignSpec(ctx, store.GetCampaignSpecOpts{ID: r.campaignSpecID})
-		if err != nil {
-			r.err = err
-			return
-		}
-		// Dry-run reconcile the campaign with the new campaign spec.
-		r.campaign, _, r.err = svc.ReconcileCampaign(ctx, campaignSpec)
-		if r.err != nil {
-			return
-		}
-
-		opts.CampaignID = r.campaign.ID
-
-		r.mappings, r.err = r.store.GetRewirerMappings(ctx, opts)
-		if r.err != nil {
-			return
-		}
-		r.err = r.mappings.Hydrate(ctx, r.store)
-		if r.err != nil {
-			return
-		}
-
-		allOpts := store.GetRewirerMappingsOpts{
-			CampaignSpecID: opts.CampaignSpecID,
-			CampaignID:     opts.CampaignID,
-			TextSearch:     opts.TextSearch,
-		}
-		r.allMappings, r.err = r.store.GetRewirerMappings(ctx, allOpts)
-		if r.err != nil {
-			return
-		}
-		r.err = r.allMappings.Hydrate(ctx, r.store)
-		if r.err != nil {
-			return
-		}
-		r.totalCount = len(r.allMappings)
+		r.mappings, r.err = newRewirerMappings(ctx, r.store, r.opts, r.campaignSpecID)
 	})
 
-	return r.mappings, r.campaign, r.allMappings, r.totalCount, r.err
+	return r.mappings, r.err
 }

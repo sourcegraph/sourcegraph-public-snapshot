@@ -553,7 +553,6 @@ type GetRewirerMappingsOpts struct {
 	LimitOffset  *database.LimitOffset
 	TextSearch   []search.TextSearchTerm
 	CurrentState *campaigns.ChangesetState
-	Action       *campaigns.ReconcilerOperation
 }
 
 // GetRewirerMappings returns RewirerMappings between changeset specs and changesets.
@@ -635,8 +634,6 @@ func getRewirerMappingsQuery(opts GetRewirerMappingsOpts) (*sqlf.Query, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing current state option")
 	}
-
-	// TODO: support action filtering.
 
 	return sqlf.Sprintf(
 		getRewirerMappingsQueryFmtstr,
