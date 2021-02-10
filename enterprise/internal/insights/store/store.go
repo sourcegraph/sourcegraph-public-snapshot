@@ -11,6 +11,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
+// Interface is the interface describing a code insights store. See the Store struct
+// for actual API usage.
+type Interface interface {
+	SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]SeriesPoint, error)
+}
+
+var _ Interface = &Store{}
+
 // Store exposes methods to read and write code insights domain models from
 // persistent storage.
 type Store struct {
@@ -47,8 +55,6 @@ type SeriesPoint struct {
 	Time  time.Time
 	Value float64
 }
-
-var _ Interface = &Store{}
 
 // SeriesPointsOpts describes options for querying insights' series data points.
 type SeriesPointsOpts struct {
