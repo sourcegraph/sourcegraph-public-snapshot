@@ -21,6 +21,7 @@ import (
 	licensing "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/init"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/graphqlbackend"
@@ -31,7 +32,7 @@ func main() {
 	shared.Main(enterpriseSetupHook)
 }
 
-var initFunctions = map[string]func(ctx context.Context, enterpriseServices *enterprise.Services) error{
+var initFunctions = map[string]func(ctx context.Context, db dbutil.DB, enterpriseServices *enterprise.Services) error{
 	"authz":        authz.Init,
 	"licensing":    licensing.Init,
 	"executor":     executor.Init,
@@ -41,7 +42,7 @@ var initFunctions = map[string]func(ctx context.Context, enterpriseServices *ent
 	"codemonitors": codemonitors.Init,
 }
 
-func enterpriseSetupHook() enterprise.Services {
+func enterpriseSetupHook(db dbutil.DB) enterprise.Services {
 	debug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
 	if debug {
 		log.Println("enterprise edition")
@@ -51,7 +52,7 @@ func enterpriseSetupHook() enterprise.Services {
 	enterpriseServices := enterprise.DefaultServices()
 
 	for name, fn := range initFunctions {
-		if err := fn(ctx, &enterpriseServices); err != nil {
+		if err := fn(ctx, db, &enterpriseServices); err != nil {
 			log.Fatal(fmt.Sprintf("failed to initialize %s: %s", name, err))
 		}
 	}

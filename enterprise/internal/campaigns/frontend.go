@@ -7,19 +7,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/webhooks"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/database/globalstatedb"
 )
 
 // InitFrontend initializes the given enterpriseServices to include the required resolvers for campaigns
 // and sets up webhook handlers for changeset events.
-func InitFrontend(ctx context.Context, enterpriseServices *enterprise.Services) error {
+func InitFrontend(ctx context.Context, db dbutil.DB, enterpriseServices *enterprise.Services) error {
 	globalState, err := globalstatedb.Get(ctx)
 	if err != nil {
 		return err
 	}
 
-	cstore := store.New(dbconn.Global)
+	cstore := store.New(db)
 
 	enterpriseServices.CampaignsResolver = resolvers.New(cstore)
 	enterpriseServices.GitHubWebhook = webhooks.NewGitHubWebhook(cstore)
