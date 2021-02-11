@@ -75,9 +75,6 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
                     Reset
                 </button>
                 <span className="flex-grow-1" />
-                <button type="button" className="btn btn-link btn-sm search-context-menu__footer-button">
-                    Manage contexts
-                </button>
             </div>
         </div>
     )
