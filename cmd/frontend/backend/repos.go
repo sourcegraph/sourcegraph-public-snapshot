@@ -70,10 +70,11 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 		return nil, err
 	case envvar.SourcegraphDotComMode():
 		// Automatically add repositories on Sourcegraph.com.
-		if err := s.Add(ctx, name); err != nil {
+		newName, err := s.Add(ctx, name)
+		if err != nil {
 			return nil, err
 		}
-		return database.GlobalRepos.GetByName(ctx, name)
+		return database.GlobalRepos.GetByName(ctx, newName)
 	case shouldRedirect(name):
 		return nil, ErrRepoSeeOther{RedirectURL: (&url.URL{
 			Scheme:   "https",
@@ -97,8 +98,9 @@ var metricIsRepoCloneable = promauto.NewCounterVec(prometheus.CounterOpts{
 }, []string{"status"})
 
 // Add adds the repository with the given name to the database by calling
-// repo-updater when in sourcegraph.com mode.
-func (s *repos) Add(ctx context.Context, name api.RepoName) (err error) {
+// repo-updater when in sourcegraph.com mode. It's possible that the repo has
+// been renamed on the code host in which case a different name may be returned.
+func (s *repos) Add(ctx context.Context, name api.RepoName) (addedName api.RepoName, err error) {
 	ctx, done := trace(ctx, "Repos", "Add", name, &err)
 	defer done()
 
@@ -117,15 +119,18 @@ func (s *repos) Add(ctx context.Context, name api.RepoName) (err error) {
 			} else {
 				status = "fail"
 			}
-			return err
+			return "", err
 		}
 		status = "success"
 	}
 
 	// Looking up the repo in repo-updater makes it sync that repo to the
 	// database on sourcegraph.com if that repo is from github.com or gitlab.com
-	_, err = repoupdater.DefaultClient.RepoLookup(ctx, protocol.RepoLookupArgs{Repo: name})
-	return err
+	lookupResult, err := repoupdater.DefaultClient.RepoLookup(ctx, protocol.RepoLookupArgs{Repo: name})
+	if lookupResult != nil && lookupResult.Repo != nil {
+		return lookupResult.Repo.Name, err
+	}
+	return "", err
 }
 
 func (s *repos) List(ctx context.Context, opt database.ReposListOptions) (repos []*types.Repo, err error) {
