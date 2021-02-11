@@ -42,6 +42,9 @@ func gatherSymbols(state *State) ([]*lsifstore.Symbol, error) {
 	for _, symbol := range symbolByID {
 		symbols = append(symbols, symbol)
 	}
+
+	// log.Printf("# symbols (%d): %v", len(symbols), symbols)
+
 	return symbols, nil
 }
 

@@ -95,9 +95,18 @@ func (s *Store) WriteReferences(ctx context.Context, bundleID int, monikerLocati
 	return s.writeDefinitionReferences(ctx, bundleID, "lsif_data_references", monikerLocations)
 }
 
-func (s *Store) WriteSymbols(ctx context.Context, bundleID int, symbols []*Symbol) (err error) {
+func (s *Store) WriteSymbols(ctx context.Context, bundleID int, symbolSlice []*Symbol) (err error) {
+	// TODO(beyang): convert symbolSlice to channel (created in correlate)
+	symbols := make(chan *Symbol)
+	go func() {
+		for _, s := range symbolSlice {
+			symbols <- s
+		}
+		close(symbols)
+	}()
+
 	inserter := func(inserter *batch.BatchInserter) error {
-		for _, symbol := range symbols {
+		for symbol := range symbols {
 			data, err := s.serializer.MarshalSymbol(symbol)
 			if err != nil {
 				return err
