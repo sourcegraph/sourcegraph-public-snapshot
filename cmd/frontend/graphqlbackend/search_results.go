@@ -521,7 +521,6 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResultsReso
 	return rr, err
 }
 
-
 // unionMerge performs a merge of file match results, merging line matches when
 // they occur in the same file.
 func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
