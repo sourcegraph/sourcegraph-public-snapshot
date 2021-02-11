@@ -215,12 +215,16 @@ func (s *RepoStore) Count(ctx context.Context, opt ReposListOptions) (ct int, er
 	}
 
 	joins := []*sqlf.Query{}
+
 	if len(opt.ExternalServiceIDs) != 0 {
 		serviceIDQuery := []*sqlf.Query{}
 		for _, id := range opt.ExternalServiceIDs {
 			serviceIDQuery = append(serviceIDQuery, sqlf.Sprintf("%s", id))
 		}
 		joins = append(joins, sqlf.Sprintf("JOIN external_service_repos e ON (repo.id = e.repo_id AND e.external_service_id IN (%s))", sqlf.Join(serviceIDQuery, ",")))
+	} else if opt.UserID != 0 {
+		joins = append(joins, sqlf.Sprintf(`JOIN external_service_repos e ON (repo.id = e.repo_id)
+												   JOIN external_services es on es.id = e.external_service_id AND es.namespace_user_id = %s`, opt.UserID))
 	}
 
 	predQ := sqlf.Sprintf("TRUE")
@@ -228,7 +232,7 @@ func (s *RepoStore) Count(ctx context.Context, opt ReposListOptions) (ct int, er
 		predQ = sqlf.Sprintf("(%s)", sqlf.Join(conds, "AND"))
 	}
 
-	q := sqlf.Sprintf("SELECT COUNT(*) FROM repo %s WHERE deleted_at IS NULL AND %s", sqlf.Join(joins, " "), predQ)
+	q := sqlf.Sprintf("SELECT COUNT(*) FROM repo %s WHERE repo.deleted_at IS NULL AND %s", sqlf.Join(joins, " "), predQ)
 	tr.LazyPrintf("SQL: %v", q.Query(sqlf.PostgresBindVar))
 
 	var count int
