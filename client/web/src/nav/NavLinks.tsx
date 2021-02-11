@@ -104,7 +104,7 @@ export class NavLinks extends React.PureComponent<Props> {
                     </>
                 )}
                 <li className="nav-item">
-                    <FeedbackPrompt />
+                    {process.env.NODE_ENV === 'production' && <FeedbackPrompt user={this.props.authenticatedUser} />}
                 </li>
                 {!this.props.authenticatedUser && (
                     <>

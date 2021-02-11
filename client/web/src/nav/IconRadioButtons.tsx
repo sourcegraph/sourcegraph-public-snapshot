@@ -12,17 +12,25 @@ interface Props {
     disabled: boolean
     name: string
     selected?: number
+    role: string
     onChange: (value: number) => void
 }
 
-export const IconRadioButtons: React.FunctionComponent<Props> = ({ name, icons, selected, onChange, disabled }) => {
+export const IconRadioButtons: React.FunctionComponent<Props> = ({
+    name,
+    icons,
+    selected,
+    onChange,
+    disabled,
+    role,
+}) => {
     const handleChange = useCallback(
         (event: React.ChangeEvent<HTMLInputElement>) => onChange(Number(event.target.value)),
         [onChange]
     )
 
     return (
-        <ul className="icon-radio-buttons d-flex justify-content-around" role="menuitem">
+        <ul className="icon-radio-buttons d-flex justify-content-around" role={role}>
             {Object.values(icons).map(({ icon, name: iconName, value }) => (
                 <li key={iconName} className="d-flex">
                     <label

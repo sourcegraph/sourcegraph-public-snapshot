@@ -8,18 +8,14 @@
         cursor: pointer;
         margin: 0;
         border-radius: 50%;
-        border: 1px solid $gray-02;
+        border: 1px solid var(--color-bg-4);
 
         &:hover:not(&--active),
         &:focus {
-            transition: all 0.2s cubic-bezier(0.5, -1, 0.5, 2);
-            border: 1px solid $gray-13 !important;
+            border: 1px solid var(--color-bg-5);
+            transition: all 0.3s cubic-bezier(0.5, -1, 0.5, 2);
             transform: scale(1.12);
             filter: none;
-        }
-
-        &:focus {
-            box-shadow: none;
         }
 
         &--input {
@@ -33,7 +29,7 @@
         }
         &--inactive {
             filter: grayscale(1);
-            border: none !important;
+            border: none;
         }
     }
 }

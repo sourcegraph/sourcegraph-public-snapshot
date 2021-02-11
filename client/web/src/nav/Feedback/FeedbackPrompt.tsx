@@ -1,15 +1,20 @@
 import MessageDrawIcon from 'mdi-react/MessageDrawIcon'
 import TickIcon from 'mdi-react/TickIcon'
-import React, { useCallback, useState, useEffect } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import TextAreaAutosize from 'react-textarea-autosize'
 import { Alert, ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { gql } from '../../../../shared/src/graphql/graphql'
+import { AuthenticatedUser } from '../../auth'
 import { LoaderButton } from '../../components/LoaderButton'
 import { SubmitSurveyResult, SubmitSurveyVariables } from '../../graphql-operations'
 import { useLocalStorage } from '../../hooks/useLocalStorage'
 import { useMutation } from '../../hooks/useMutation'
 import { IconRadioButtons } from '../IconRadioButtons'
 import { Happy, Sad, VeryHappy, VerySad } from './FeedbackIcons'
+
+interface User {
+    user: Pick<AuthenticatedUser, 'username' | 'email' | 'organizations'> | null
+}
 
 const SUBMIT_FEEDBACK_QUERY = gql`
     mutation SubmitSurvey($input: SurveySubmissionInput!) {
@@ -19,7 +24,7 @@ const SUBMIT_FEEDBACK_QUERY = gql`
     }
 `
 
-const FeedbackPromptContent: React.FunctionComponent = () => {
+const FeedbackPromptContent: React.FunctionComponent<User> = ({ user }) => {
     const [rating, setRating] = useLocalStorage<number | undefined>('feedbackPromptRating', undefined)
     const [text, setText] = useLocalStorage<string>('feedbackPromptText', '')
     const handleRateChange = useCallback((value: number) => setRating(value), [setRating])
@@ -33,7 +38,9 @@ const FeedbackPromptContent: React.FunctionComponent = () => {
 
     const handleSubmit = useCallback((): void => {
         if (rating) {
-            return submitFeedback({ input: { score: rating, reason: text } })
+            console.log('feedback')
+            // TODO: Add user payload
+            // return submitFeedback({ input: { score: rating, reason: text } })
         }
     }, [rating, submitFeedback, text])
 
@@ -46,7 +53,7 @@ const FeedbackPromptContent: React.FunctionComponent = () => {
     }, [data, setRating, setText])
 
     return (
-        <DropdownMenu right={true} className="p-3 feedback-prompt__menu align-middle">
+        <>
             {data && (
                 <div className="feedback-prompt__success">
                     <TickIcon className="feedback-prompt__success--tick" />
@@ -68,6 +75,7 @@ const FeedbackPromptContent: React.FunctionComponent = () => {
                     <h3>What's on your mind?</h3>
                     <TextAreaAutosize
                         role="menuitem"
+                        tabIndex={0}
                         onChange={handleTextChange}
                         value={text}
                         minRows={3}
@@ -76,6 +84,7 @@ const FeedbackPromptContent: React.FunctionComponent = () => {
                         className="form-control feedback-prompt__textarea"
                     />
                     <IconRadioButtons
+                        role="menuitem"
                         name="emoji-selector"
                         icons={[
                             {
@@ -111,6 +120,7 @@ const FeedbackPromptContent: React.FunctionComponent = () => {
                     )}
                     <LoaderButton
                         role="menuitem"
+                        tabIndex={0}
                         className="w-100 btn btn-block btn-secondary mt-3"
                         loading={loading}
                         label="Send"
@@ -119,11 +129,11 @@ const FeedbackPromptContent: React.FunctionComponent = () => {
                     />
                 </>
             )}
-        </DropdownMenu>
+        </>
     )
 }
 
-export const FeedbackPrompt: React.FunctionComponent<{}> = () => {
+export const FeedbackPrompt: React.FunctionComponent<User> = ({ user }) => {
     const [isOpen, setIsOpen] = useState(false)
     const handleToggle = useCallback(() => setIsOpen(open => !open), [])
 
@@ -138,7 +148,9 @@ export const FeedbackPrompt: React.FunctionComponent<{}> = () => {
                 <MessageDrawIcon className="d-lg-none icon-inline" />
                 <span className="d-none d-lg-block">Feedback</span>
             </DropdownToggle>
-            {isOpen && <FeedbackPromptContent />}
+            <DropdownMenu right={true} className="p-3 feedback-prompt__menu align-middle">
+                {isOpen && <FeedbackPromptContent user={user} />}
+            </DropdownMenu>
         </ButtonDropdown>
     )
 }
