@@ -30,13 +30,17 @@ type SymbolLocation struct {
 	Range Range
 }
 
-func (s *Store) Symbols2(ctx context.Context, bundleID int, path string) ([]*Symbol, error) {
-	// NEXT
-	return nil, nil
+const symbolsQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/bundle.go:{Symbols}
+select dump_id, data FROM lsif_data_symbols WHERE dump_id = %d LIMIT %d
+`
+
+func (s *Store) Symbols(ctx context.Context, bundleID int, path string) ([]*Symbol, error) {
+	return s.scanSymbols(s.Store.Query(ctx, sqlf.Sprintf(symbolsQuery, bundleID, 1000)))
 }
 
 // Symbols returns all LSIF document symbols in documents prefixed by path.
-func (s *Store) Symbols(ctx context.Context, bundleID int, path string) ([]*Symbol, error) {
+func (s *Store) SymbolsOld(ctx context.Context, bundleID int, path string) ([]*Symbol, error) {
 	const limit = 10000
 	scannedDocumentData, err := s.scanDocumentData(s.Store.Query(ctx, sqlf.Sprintf(documentsQuery, bundleID, path, limit)))
 	if err != nil || len(scannedDocumentData) == 0 {

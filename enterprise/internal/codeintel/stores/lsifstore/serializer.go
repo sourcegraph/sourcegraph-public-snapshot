@@ -90,9 +90,13 @@ func (s *serializer) UnmarshalLocations(data []byte) (locations []LocationData, 
 }
 
 // UnmarshalSymbol is the inverse of MarshalSymbol.
-func (s *serializer) UnmarshalSymbol(data []byte) (symbols []*Symbol, err error) {
-	err = s.withDecoder(data, func(decoder *gob.Decoder) error { return decoder.Decode(&symbols) })
-	return symbols, err
+func (s *serializer) UnmarshalSymbol(data []byte) (*Symbol, error) {
+	var symbol Symbol
+	err := s.withDecoder(data, func(decoder *gob.Decoder) error { return decoder.Decode(&symbol) })
+	if err != nil {
+		return nil, err
+	}
+	return &symbol, nil
 }
 
 // withDecoder creates a gob decoder with the given encoded data and calls the given function with it.

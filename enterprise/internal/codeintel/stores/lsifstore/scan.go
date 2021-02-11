@@ -194,17 +194,11 @@ func (s *Store) scanSymbols(rows *sql.Rows, queryErr error) (_ []*Symbol, err er
 
 func (s *Store) scanSingleSymbol(rows *sql.Rows) (*Symbol, error) {
 	var rawData []byte
-	var record Symbol
-	if err := rows.Scan(&rawData); err != nil {
+	var bundleID int
+	if err := rows.Scan(&bundleID, &rawData); err != nil {
 		return nil, err
 	}
-
-	data, err := s.serializer.UnmarshalSymbol(rawData)
-	if err != nil {
-		return nil, err
-	}
-
-	return &record, nil
+	return s.serializer.UnmarshalSymbol(rawData)
 }
 
 // scanSingleMonikerLocationsObject populates a moniker locations value from the
