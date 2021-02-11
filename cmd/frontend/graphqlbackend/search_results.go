@@ -520,95 +520,98 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResultsReso
 	return rr, err
 }
 
+type searchResultDeduper struct {
+	seenFileMatches   map[string]*FileMatchResolver
+	seenRepoMatches   map[string]*RepositoryResolver
+	seenCommitMatches map[string]*CommitSearchResultResolver
+	seenDiffMatches   map[string]*CommitSearchResultResolver
+}
+
+func (d *searchResultDeduper) init() {
+	if d.seenFileMatches == nil {
+		d.seenFileMatches = make(map[string]*FileMatchResolver)
+		d.seenRepoMatches = make(map[string]*RepositoryResolver)
+		d.seenCommitMatches = make(map[string]*CommitSearchResultResolver)
+		d.seenDiffMatches = make(map[string]*CommitSearchResultResolver)
+	}
+}
+
+// Add adds a SearchResultResolver to the deduper, merging it into
+// a previously added SearchResultResolver if the URL has already been seen
+func (d *searchResultDeduper) Add(r SearchResultResolver) {
+	d.init()
+
+	if fileMatch, ok := r.ToFileMatch(); ok {
+		if prev, seen := d.seenFileMatches[fileMatch.uri]; seen {
+			prev.appendMatches(fileMatch)
+			return
+		}
+		d.seenFileMatches[fileMatch.uri] = fileMatch
+		return
+	}
+
+	if repoMatch, ok := r.ToRepository(); ok {
+		if _, seen := d.seenRepoMatches[repoMatch.URL()]; seen {
+			return
+		}
+		d.seenRepoMatches[repoMatch.URL()] = repoMatch
+		return
+	}
+
+	if commitMatch, ok := r.ToCommitSearchResult(); ok {
+		if commitMatch.DiffPreview() != nil {
+			if _, seen := d.seenDiffMatches[commitMatch.URL()]; seen {
+				return
+			}
+			d.seenDiffMatches[commitMatch.URL()] = commitMatch
+			return
+		} else {
+			if _, seen := d.seenCommitMatches[commitMatch.URL()]; seen {
+				return
+			}
+			d.seenCommitMatches[commitMatch.URL()] = commitMatch
+			return
+		}
+	}
+
+	return
+}
+
+// Deduped returns a slice of SearchResultResolvers, deduplicated from
+// the SearchResultResolvers that were added with Add
+func (d *searchResultDeduper) Deduped() []SearchResultResolver {
+	total := len(d.seenFileMatches) + len(d.seenRepoMatches) + len(d.seenCommitMatches) + len(d.seenDiffMatches)
+	r := make([]SearchResultResolver, 0, total)
+	for _, v := range d.seenFileMatches {
+		r = append(r, v)
+	}
+	for _, v := range d.seenRepoMatches {
+		r = append(r, v)
+	}
+	for _, v := range d.seenCommitMatches {
+		r = append(r, v)
+	}
+	for _, v := range d.seenDiffMatches {
+		r = append(r, v)
+	}
+	return r
+}
+
 // unionMerge performs a merge of file match results, merging line matches when
-// they occur in the same file, and taking care to update match counts.
+// they occur in the same file.
 func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
-	var count int // count non-overlapping files when we merge.
-	var merged []SearchResultResolver
-	rightFileMatches := make(map[string]*FileMatchResolver)
-	rightRepoMatches := make(map[string]*RepositoryResolver)
-	rightCommitMatches := make(map[string]*CommitSearchResultResolver)
-	rightDiffMatches := make(map[string]*CommitSearchResultResolver)
+	var dedup searchResultDeduper
 
-	// accumulate matches for the right subexpression in a lookup.
-	for _, r := range right.SearchResults {
-		if fileMatch, ok := r.ToFileMatch(); ok {
-			rightFileMatches[fileMatch.uri] = fileMatch
-			continue
-		}
-		if repoMatch, ok := r.ToRepository(); ok {
-			rightRepoMatches[repoMatch.URL()] = repoMatch
-			continue
-		}
-		if commitMatch, ok := r.ToCommitSearchResult(); ok {
-			if commitMatch.DiffPreview() != nil {
-				rightDiffMatches[commitMatch.URL()] = commitMatch
-			} else {
-				rightCommitMatches[commitMatch.URL()] = commitMatch
-			}
-			continue
-		}
-		merged = append(merged, r)
+	// Register all the left results in the dedupper
+	for _, leftResult := range left.SearchResults {
+		dedup.Add(leftResult)
 	}
 
-	for _, leftMatch := range left.SearchResults {
-		if leftFileMatch, ok := leftMatch.ToFileMatch(); ok {
-			rightFileMatch := rightFileMatches[leftFileMatch.uri]
-			if rightFileMatch == nil {
-				// no overlap with existing matches.
-				merged = append(merged, leftMatch)
-				count++
-				continue
-			}
-			// merge line matches with a file match that already exists.
-			rightFileMatch.appendMatches(leftFileMatch)
-			rightFileMatches[leftFileMatch.uri] = rightFileMatch
-			continue
-		}
-
-		if leftRepoMatch, ok := leftMatch.ToRepository(); ok {
-			rightRepoMatch := rightRepoMatches[string(leftRepoMatch.URL())]
-			if rightRepoMatch == nil {
-				// no overlap with existing matches.
-				merged = append(merged, leftMatch)
-				count++
-			}
-			continue
-		}
-
-		if leftCommitMatch, ok := leftMatch.ToCommitSearchResult(); ok {
-			if leftCommitMatch.DiffPreview() != nil {
-				rightDiffMatch := rightDiffMatches[leftCommitMatch.URL()]
-				if rightDiffMatch == nil {
-					merged = append(merged, leftCommitMatch)
-					count++
-				}
-			} else {
-				rightCommitMatch := rightCommitMatches[leftCommitMatch.URL()]
-				if rightCommitMatch == nil {
-					merged = append(merged, leftCommitMatch)
-					count++
-				}
-			}
-			continue
-		}
-		merged = append(merged, leftMatch)
+	for _, rightResult := range right.SearchResults {
+		dedup.Add(rightResult)
 	}
 
-	for _, v := range rightFileMatches {
-		merged = append(merged, v)
-	}
-	for _, v := range rightRepoMatches {
-		merged = append(merged, v)
-	}
-	for _, v := range rightCommitMatches {
-		merged = append(merged, v)
-	}
-	for _, v := range rightDiffMatches {
-		merged = append(merged, v)
-	}
-
-	left.SearchResults = merged
+	left.SearchResults = dedup.Deduped()
 	left.Stats.Update(&right.Stats)
 	return left
 }
