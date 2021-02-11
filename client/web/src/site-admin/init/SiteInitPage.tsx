@@ -14,7 +14,7 @@ const initSite = async (args: SignUpArguments): Promise<void> => {
     pingUrl.searchParams.set('hostname', window.location.hostname)
 
     await fetch(pingUrl.toString(), {
-        credentials: 'include'
+        credentials: 'include',
     })
         .then() // no op
         .catch((error): void => {
