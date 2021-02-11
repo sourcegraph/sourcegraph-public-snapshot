@@ -67,6 +67,7 @@ const FeedbackPromptContent: React.FunctionComponent = () => {
                 <>
                     <h3>What's on your mind?</h3>
                     <TextAreaAutosize
+                        role="menuitem"
                         onChange={handleTextChange}
                         value={text}
                         minRows={3}
@@ -109,6 +110,7 @@ const FeedbackPromptContent: React.FunctionComponent = () => {
                         </Alert>
                     )}
                     <LoaderButton
+                        role="menuitem"
                         className="w-100 btn btn-block btn-secondary mt-3"
                         loading={loading}
                         label="Send"

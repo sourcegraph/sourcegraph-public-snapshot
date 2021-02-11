@@ -18,11 +18,11 @@ interface Props {
 export const IconRadioButtons: React.FunctionComponent<Props> = ({ name, icons, selected, onChange, disabled }) => {
     const handleChange = useCallback(
         (event: React.ChangeEvent<HTMLInputElement>) => onChange(Number(event.target.value)),
-        []
+        [onChange]
     )
 
     return (
-        <ul className="icon-radio-buttons d-flex justify-content-around">
+        <ul className="icon-radio-buttons d-flex justify-content-around" role="menuitem">
             {Object.values(icons).map(({ icon, name: iconName, value }) => (
                 <li key={iconName} className="d-flex">
                     <label
