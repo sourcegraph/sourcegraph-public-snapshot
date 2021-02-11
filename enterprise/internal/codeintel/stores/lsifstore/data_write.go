@@ -95,7 +95,7 @@ func (s *Store) WriteReferences(ctx context.Context, bundleID int, monikerLocati
 	return s.writeDefinitionReferences(ctx, bundleID, "lsif_data_references", monikerLocations)
 }
 
-func (s *Store) WriteSymbol(ctx context.Context, bundleID int, symbols []*lsifstore.Symbols) (err error) {
+func (s *Store) WriteSymbols(ctx context.Context, bundleID int, symbols []*Symbol) (err error) {
 	// TODO(beyang): observability
 
 	// NEXT
