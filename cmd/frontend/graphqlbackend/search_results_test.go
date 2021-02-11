@@ -570,8 +570,8 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 	type testCase struct {
 		descr                             string
 		searchResults                     []SearchResultResolver
-		expectedDynamicFilterStrsRegexp   map[string]struct{}
-		expectedDynamicFilterStrsGlobbing map[string]struct{}
+		expectedDynamicFilterStrsRegexp   map[string]int
+		expectedDynamicFilterStrsGlobbing map[string]int
 	}
 
 	tests := []testCase{
@@ -579,103 +579,106 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 		{
 			descr:         "single repo match",
 			searchResults: []SearchResultResolver{repoMatch},
-			expectedDynamicFilterStrsRegexp: map[string]struct{}{
-				`repo:^testRepo$`: {},
+			expectedDynamicFilterStrsRegexp: map[string]int{
+				`repo:^testRepo$`: 1,
 			},
-			expectedDynamicFilterStrsGlobbing: map[string]struct{}{
-				`repo:testRepo`: {},
+			expectedDynamicFilterStrsGlobbing: map[string]int{
+				`repo:testRepo`: 1,
 			},
 		},
 
 		{
 			descr:         "single file match without revision in query",
 			searchResults: []SearchResultResolver{fileMatch("/testFile.md")},
-			expectedDynamicFilterStrsRegexp: map[string]struct{}{
-				`repo:^testRepo$`: {},
-				`lang:markdown`:   {},
+			expectedDynamicFilterStrsRegexp: map[string]int{
+				`repo:^testRepo$`: 1,
+				`lang:markdown`:   1,
 			},
-			expectedDynamicFilterStrsGlobbing: map[string]struct{}{
-				`repo:testRepo`: {},
-				`lang:markdown`: {},
+			expectedDynamicFilterStrsGlobbing: map[string]int{
+				`repo:testRepo`: 1,
+				`lang:markdown`: 1,
 			},
 		},
 
 		{
 			descr:         "single file match with specified revision",
 			searchResults: []SearchResultResolver{fileMatchRev},
-			expectedDynamicFilterStrsRegexp: map[string]struct{}{
-				`repo:^testRepo$@develop3.0`: {},
-				`lang:markdown`:              {},
+			expectedDynamicFilterStrsRegexp: map[string]int{
+				`repo:^testRepo$@develop3.0`: 1,
+				`lang:markdown`:              1,
 			},
-			expectedDynamicFilterStrsGlobbing: map[string]struct{}{
-				`repo:testRepo@develop3.0`: {},
-				`lang:markdown`:            {},
+			expectedDynamicFilterStrsGlobbing: map[string]int{
+				`repo:testRepo@develop3.0`: 1,
+				`lang:markdown`:            1,
 			},
 		},
 		{
 			descr:         "file match from a language with two file extensions, using first extension",
 			searchResults: []SearchResultResolver{fileMatch("/testFile.ts")},
-			expectedDynamicFilterStrsRegexp: map[string]struct{}{
-				`repo:^testRepo$`: {},
-				`lang:typescript`: {},
+			expectedDynamicFilterStrsRegexp: map[string]int{
+				`repo:^testRepo$`: 1,
+				`lang:typescript`: 1,
 			},
-			expectedDynamicFilterStrsGlobbing: map[string]struct{}{
-				`repo:testRepo`:   {},
-				`lang:typescript`: {},
+			expectedDynamicFilterStrsGlobbing: map[string]int{
+				`repo:testRepo`:   1,
+				`lang:typescript`: 1,
 			},
 		},
 		{
 			descr:         "file match from a language with two file extensions, using second extension",
 			searchResults: []SearchResultResolver{fileMatch("/testFile.tsx")},
-			expectedDynamicFilterStrsRegexp: map[string]struct{}{
-				`repo:^testRepo$`: {},
-				`lang:typescript`: {},
+			expectedDynamicFilterStrsRegexp: map[string]int{
+				`repo:^testRepo$`: 1,
+				`lang:typescript`: 1,
 			},
-			expectedDynamicFilterStrsGlobbing: map[string]struct{}{
-				`repo:testRepo`:   {},
-				`lang:typescript`: {},
+			expectedDynamicFilterStrsGlobbing: map[string]int{
+				`repo:testRepo`:   1,
+				`lang:typescript`: 1,
 			},
 		},
 		{
 			descr:         "file match which matches one of the common file filters",
 			searchResults: []SearchResultResolver{fileMatch("/anything/node_modules/testFile.md")},
-			expectedDynamicFilterStrsRegexp: map[string]struct{}{
-				`repo:^testRepo$`:          {},
-				`-file:(^|/)node_modules/`: {},
-				`lang:markdown`:            {},
+			expectedDynamicFilterStrsRegexp: map[string]int{
+				`repo:^testRepo$`:          1,
+				`-file:(^|/)node_modules/`: 1,
+				`lang:markdown`:            1,
 			},
-			expectedDynamicFilterStrsGlobbing: map[string]struct{}{
-				`repo:testRepo`: {},
-				`-file:node_modules/** -file:**/node_modules/**`: {},
-				`lang:markdown`: {},
+			expectedDynamicFilterStrsGlobbing: map[string]int{
+				`repo:testRepo`: 1,
+				`-file:node_modules/** -file:**/node_modules/**`: 1,
+				`lang:markdown`: 1,
 			},
 		},
 		{
 			descr:         "file match which matches one of the common file filters",
 			searchResults: []SearchResultResolver{fileMatch("/node_modules/testFile.md")},
-			expectedDynamicFilterStrsRegexp: map[string]struct{}{
-				`repo:^testRepo$`:          {},
-				`-file:(^|/)node_modules/`: {},
-				`lang:markdown`:            {},
+			expectedDynamicFilterStrsRegexp: map[string]int{
+				`repo:^testRepo$`:          1,
+				`-file:(^|/)node_modules/`: 1,
+				`lang:markdown`:            1,
 			},
-			expectedDynamicFilterStrsGlobbing: map[string]struct{}{
-				`repo:testRepo`: {},
-				`-file:node_modules/** -file:**/node_modules/**`: {},
-				`lang:markdown`: {},
+			expectedDynamicFilterStrsGlobbing: map[string]int{
+				`repo:testRepo`: 1,
+				`-file:node_modules/** -file:**/node_modules/**`: 1,
+				`lang:markdown`: 1,
 			},
 		},
 		{
-			descr:         "file match which matches one of the common file filters",
-			searchResults: []SearchResultResolver{fileMatch("/foo_test.go")},
-			expectedDynamicFilterStrsRegexp: map[string]struct{}{
-				`repo:^testRepo$`:  {},
-				`-file:_test\.go$`: {},
-				`lang:go`:          {},
+			descr: "file match which matches one of the common file filters",
+			searchResults: []SearchResultResolver{
+				fileMatch("/foo_test.go"),
+				fileMatch("/foo.go"),
 			},
-			expectedDynamicFilterStrsGlobbing: map[string]struct{}{
-				`repo:testRepo`:    {},
-				`-file:**_test.go`: {},
-				`lang:go`:          {},
+			expectedDynamicFilterStrsRegexp: map[string]int{
+				`repo:^testRepo$`:  2,
+				`-file:_test\.go$`: 1,
+				`lang:go`:          2,
+			},
+			expectedDynamicFilterStrsGlobbing: map[string]int{
+				`repo:testRepo`:    2,
+				`-file:**_test.go`: 1,
+				`lang:go`:          2,
 			},
 		},
 
@@ -686,17 +689,17 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 				fileMatch("playground/react/lib/app.js.map"),
 				fileMatch("assets/javascripts/bootstrap.min.js"),
 			},
-			expectedDynamicFilterStrsRegexp: map[string]struct{}{
-				`repo:^testRepo$`:  {},
-				`-file:\.min\.js$`: {},
-				`-file:\.js\.map$`: {},
-				`lang:javascript`:  {},
+			expectedDynamicFilterStrsRegexp: map[string]int{
+				`repo:^testRepo$`:  3,
+				`-file:\.min\.js$`: 1,
+				`-file:\.js\.map$`: 2,
+				`lang:javascript`:  1,
 			},
-			expectedDynamicFilterStrsGlobbing: map[string]struct{}{
-				`repo:testRepo`:   {},
-				`-file:**.min.js`: {},
-				`-file:**.js.map`: {},
-				`lang:javascript`: {},
+			expectedDynamicFilterStrsGlobbing: map[string]int{
+				`repo:testRepo`:   3,
+				`-file:**.min.js`: 1,
+				`-file:**.js.map`: 2,
+				`lang:javascript`: 1,
 			},
 		},
 
@@ -704,19 +707,19 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 		{
 			descr:                             "no results",
 			searchResults:                     []SearchResultResolver{},
-			expectedDynamicFilterStrsRegexp:   map[string]struct{}{},
-			expectedDynamicFilterStrsGlobbing: map[string]struct{}{},
+			expectedDynamicFilterStrsRegexp:   map[string]int{},
+			expectedDynamicFilterStrsGlobbing: map[string]int{},
 		},
 		{
 			descr:         "values containing spaces are quoted",
 			searchResults: []SearchResultResolver{fileMatch("/.gitignore")},
-			expectedDynamicFilterStrsRegexp: map[string]struct{}{
-				`repo:^testRepo$`:    {},
-				`lang:"ignore list"`: {},
+			expectedDynamicFilterStrsRegexp: map[string]int{
+				`repo:^testRepo$`:    1,
+				`lang:"ignore list"`: 1,
 			},
-			expectedDynamicFilterStrsGlobbing: map[string]struct{}{
-				`repo:testRepo`:      {},
-				`lang:"ignore list"`: {},
+			expectedDynamicFilterStrsGlobbing: map[string]int{
+				`repo:testRepo`:      1,
+				`lang:"ignore list"`: 1,
 			},
 		},
 	}
@@ -724,16 +727,16 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 	mockDecodedViewerFinalSettings = &schema.Settings{}
 	defer func() { mockDecodedViewerFinalSettings = nil }()
 
-	var expectedDynamicFilterStrs map[string]struct{}
+	var expectedDynamicFilterStrs map[string]int
 	for _, test := range tests {
 		t.Run(test.descr, func(t *testing.T) {
 			for _, globbing := range []bool{true, false} {
 				mockDecodedViewerFinalSettings.SearchGlobbing = &globbing
 				actualDynamicFilters := (&SearchResultsResolver{SearchResults: test.searchResults}).DynamicFilters(context.Background())
-				actualDynamicFilterStrs := make(map[string]struct{})
+				actualDynamicFilterStrs := make(map[string]int)
 
 				for _, filter := range actualDynamicFilters {
-					actualDynamicFilterStrs[filter.Value()] = struct{}{}
+					actualDynamicFilterStrs[filter.Value()] = int(filter.Count())
 				}
 
 				if globbing {
