@@ -1,6 +1,6 @@
 ---
 - labels:
-    job: frontend
+    job: sourcegraph-frontend
   targets:
     # frontend
     - 127.0.0.1:6063

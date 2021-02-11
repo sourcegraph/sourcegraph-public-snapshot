@@ -46,6 +46,7 @@ export const BrandLogo: React.FunctionComponent<Props> = ({
                 'brand-logo--spin': variant === 'symbol' && !branding?.disableSymbolSpin,
             })}
             src={customBrandingLogoUrl || sourcegraphLogoUrl}
+            alt={customBrandingLogoUrl ? 'Logo' : 'Sourcegraph logo'}
         />
     )
 }

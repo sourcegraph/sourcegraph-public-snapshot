@@ -252,7 +252,7 @@ func (f *APIAlertManagersFunc) SetDefaultHook(hook func(context.Context) (v1.Ale
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// AlertManagers method of the parent MockAPI instance inovkes the hook at
+// AlertManagers method of the parent MockAPI instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
 func (f *APIAlertManagersFunc) PushHook(hook func(context.Context) (v1.AlertManagersResult, error)) {
@@ -357,7 +357,7 @@ func (f *APIAlertsFunc) SetDefaultHook(hook func(context.Context) (v1.AlertsResu
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Alerts method of the parent MockAPI instance inovkes the hook at the
+// Alerts method of the parent MockAPI instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
 func (f *APIAlertsFunc) PushHook(hook func(context.Context) (v1.AlertsResult, error)) {
@@ -463,7 +463,7 @@ func (f *APICleanTombstonesFunc) SetDefaultHook(hook func(context.Context) error
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// CleanTombstones method of the parent MockAPI instance inovkes the hook at
+// CleanTombstones method of the parent MockAPI instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
 func (f *APICleanTombstonesFunc) PushHook(hook func(context.Context) error) {
@@ -565,7 +565,7 @@ func (f *APIConfigFunc) SetDefaultHook(hook func(context.Context) (v1.ConfigResu
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Config method of the parent MockAPI instance inovkes the hook at the
+// Config method of the parent MockAPI instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
 func (f *APIConfigFunc) PushHook(hook func(context.Context) (v1.ConfigResult, error)) {
@@ -670,7 +670,7 @@ func (f *APIDeleteSeriesFunc) SetDefaultHook(hook func(context.Context, []string
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// DeleteSeries method of the parent MockAPI instance inovkes the hook at
+// DeleteSeries method of the parent MockAPI instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
 func (f *APIDeleteSeriesFunc) PushHook(hook func(context.Context, []string, time.Time, time.Time) error) {
@@ -781,7 +781,7 @@ func (f *APIFlagsFunc) SetDefaultHook(hook func(context.Context) (v1.FlagsResult
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Flags method of the parent MockAPI instance inovkes the hook at the front
+// Flags method of the parent MockAPI instance invokes the hook at the front
 // of the queue and discards it. After the queue is empty, the default hook
 // function is invoked for any future action.
 func (f *APIFlagsFunc) PushHook(hook func(context.Context) (v1.FlagsResult, error)) {
@@ -886,7 +886,7 @@ func (f *APILabelNamesFunc) SetDefaultHook(hook func(context.Context, time.Time,
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// LabelNames method of the parent MockAPI instance inovkes the hook at the
+// LabelNames method of the parent MockAPI instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
 func (f *APILabelNamesFunc) PushHook(hook func(context.Context, time.Time, time.Time) ([]string, v1.Warnings, error)) {
@@ -1000,7 +1000,7 @@ func (f *APILabelValuesFunc) SetDefaultHook(hook func(context.Context, string, t
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// LabelValues method of the parent MockAPI instance inovkes the hook at the
+// LabelValues method of the parent MockAPI instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
 func (f *APILabelValuesFunc) PushHook(hook func(context.Context, string, time.Time, time.Time) (model.LabelValues, v1.Warnings, error)) {
@@ -1117,7 +1117,7 @@ func (f *APIMetadataFunc) SetDefaultHook(hook func(context.Context, string, stri
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Metadata method of the parent MockAPI instance inovkes the hook at the
+// Metadata method of the parent MockAPI instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
 func (f *APIMetadataFunc) PushHook(hook func(context.Context, string, string) (map[string][]v1.Metadata, error)) {
@@ -1228,7 +1228,7 @@ func (f *APIQueryFunc) SetDefaultHook(hook func(context.Context, string, time.Ti
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Query method of the parent MockAPI instance inovkes the hook at the front
+// Query method of the parent MockAPI instance invokes the hook at the front
 // of the queue and discards it. After the queue is empty, the default hook
 // function is invoked for any future action.
 func (f *APIQueryFunc) PushHook(hook func(context.Context, string, time.Time) (model.Value, v1.Warnings, error)) {
@@ -1342,7 +1342,7 @@ func (f *APIQueryRangeFunc) SetDefaultHook(hook func(context.Context, string, v1
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// QueryRange method of the parent MockAPI instance inovkes the hook at the
+// QueryRange method of the parent MockAPI instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
 func (f *APIQueryRangeFunc) PushHook(hook func(context.Context, string, v1.Range) (model.Value, v1.Warnings, error)) {
@@ -1456,7 +1456,7 @@ func (f *APIRulesFunc) SetDefaultHook(hook func(context.Context) (v1.RulesResult
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Rules method of the parent MockAPI instance inovkes the hook at the front
+// Rules method of the parent MockAPI instance invokes the hook at the front
 // of the queue and discards it. After the queue is empty, the default hook
 // function is invoked for any future action.
 func (f *APIRulesFunc) PushHook(hook func(context.Context) (v1.RulesResult, error)) {
@@ -1561,7 +1561,7 @@ func (f *APIRuntimeinfoFunc) SetDefaultHook(hook func(context.Context) (v1.Runti
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Runtimeinfo method of the parent MockAPI instance inovkes the hook at the
+// Runtimeinfo method of the parent MockAPI instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
 func (f *APIRuntimeinfoFunc) PushHook(hook func(context.Context) (v1.RuntimeinfoResult, error)) {
@@ -1666,7 +1666,7 @@ func (f *APISeriesFunc) SetDefaultHook(hook func(context.Context, []string, time
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Series method of the parent MockAPI instance inovkes the hook at the
+// Series method of the parent MockAPI instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
 func (f *APISeriesFunc) PushHook(hook func(context.Context, []string, time.Time, time.Time) ([]model.LabelSet, v1.Warnings, error)) {
@@ -1783,7 +1783,7 @@ func (f *APISnapshotFunc) SetDefaultHook(hook func(context.Context, bool) (v1.Sn
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Snapshot method of the parent MockAPI instance inovkes the hook at the
+// Snapshot method of the parent MockAPI instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
 func (f *APISnapshotFunc) PushHook(hook func(context.Context, bool) (v1.SnapshotResult, error)) {
@@ -1891,7 +1891,7 @@ func (f *APITSDBFunc) SetDefaultHook(hook func(context.Context) (v1.TSDBResult, 
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// TSDB method of the parent MockAPI instance inovkes the hook at the front
+// TSDB method of the parent MockAPI instance invokes the hook at the front
 // of the queue and discards it. After the queue is empty, the default hook
 // function is invoked for any future action.
 func (f *APITSDBFunc) PushHook(hook func(context.Context) (v1.TSDBResult, error)) {
@@ -1996,7 +1996,7 @@ func (f *APITargetsFunc) SetDefaultHook(hook func(context.Context) (v1.TargetsRe
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Targets method of the parent MockAPI instance inovkes the hook at the
+// Targets method of the parent MockAPI instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
 func (f *APITargetsFunc) PushHook(hook func(context.Context) (v1.TargetsResult, error)) {
@@ -2102,7 +2102,7 @@ func (f *APITargetsMetadataFunc) SetDefaultHook(hook func(context.Context, strin
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// TargetsMetadata method of the parent MockAPI instance inovkes the hook at
+// TargetsMetadata method of the parent MockAPI instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
 func (f *APITargetsMetadataFunc) PushHook(hook func(context.Context, string, string, string) ([]v1.MetricMetadata, error)) {

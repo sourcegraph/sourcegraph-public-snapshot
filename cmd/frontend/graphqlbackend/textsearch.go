@@ -354,6 +354,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 	tr.LogFields(
 		trace.Stringer("query", args.Query),
 		trace.Stringer("info", args.PatternInfo),
+		trace.Stringer("global_search_mode", args.Mode),
 	)
 
 	indexedTyp := textRequest

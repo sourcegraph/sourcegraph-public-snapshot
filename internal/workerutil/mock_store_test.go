@@ -129,7 +129,7 @@ func (f *StoreAddExecutionLogEntryFunc) SetDefaultHook(hook func(context.Context
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// AddExecutionLogEntry method of the parent MockStore instance inovkes the
+// AddExecutionLogEntry method of the parent MockStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
 func (f *StoreAddExecutionLogEntryFunc) PushHook(hook func(context.Context, int, ExecutionLogEntry) error) {
@@ -237,7 +237,7 @@ func (f *StoreDequeueFunc) SetDefaultHook(hook func(context.Context, interface{}
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Dequeue method of the parent MockStore instance inovkes the hook at the
+// Dequeue method of the parent MockStore instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
 func (f *StoreDequeueFunc) PushHook(hook func(context.Context, interface{}) (Record, Store, bool, error)) {
@@ -351,7 +351,7 @@ func (f *StoreDoneFunc) SetDefaultHook(hook func(error) error) {
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Done method of the parent MockStore instance inovkes the hook at the
+// Done method of the parent MockStore instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
 func (f *StoreDoneFunc) PushHook(hook func(error) error) {
@@ -453,7 +453,7 @@ func (f *StoreMarkCompleteFunc) SetDefaultHook(hook func(context.Context, int) (
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// MarkComplete method of the parent MockStore instance inovkes the hook at
+// MarkComplete method of the parent MockStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
 func (f *StoreMarkCompleteFunc) PushHook(hook func(context.Context, int) (bool, error)) {
@@ -561,7 +561,7 @@ func (f *StoreMarkErroredFunc) SetDefaultHook(hook func(context.Context, int, st
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// MarkErrored method of the parent MockStore instance inovkes the hook at
+// MarkErrored method of the parent MockStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
 func (f *StoreMarkErroredFunc) PushHook(hook func(context.Context, int, string) (bool, error)) {
@@ -672,7 +672,7 @@ func (f *StoreMarkFailedFunc) SetDefaultHook(hook func(context.Context, int, str
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// MarkFailed method of the parent MockStore instance inovkes the hook at
+// MarkFailed method of the parent MockStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
 func (f *StoreMarkFailedFunc) PushHook(hook func(context.Context, int, string) (bool, error)) {
@@ -783,7 +783,7 @@ func (f *StoreQueuedCountFunc) SetDefaultHook(hook func(context.Context, interfa
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// QueuedCount method of the parent MockStore instance inovkes the hook at
+// QueuedCount method of the parent MockStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
 func (f *StoreQueuedCountFunc) PushHook(hook func(context.Context, interface{}) (int, error)) {

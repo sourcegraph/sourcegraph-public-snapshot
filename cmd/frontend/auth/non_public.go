@@ -71,9 +71,10 @@ var (
 		router.CheckUsernameTaken: {},
 	}
 	anonymousAccessibleUIRoutes = map[string]struct{}{
-		uirouter.RouteSignIn:        {},
-		uirouter.RouteSignUp:        {},
-		uirouter.RoutePasswordReset: {},
+		uirouter.RouteSignIn:             {},
+		uirouter.RouteSignUp:             {},
+		uirouter.RoutePasswordReset:      {},
+		uirouter.RoutePingFromSelfHosted: {},
 	}
 	// Some routes return non-standard HTTP responses when a user is not
 	// signed in.

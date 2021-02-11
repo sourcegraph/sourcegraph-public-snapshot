@@ -4,7 +4,7 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { buildSearchURLQuery } from '../../../shared/src/util/url'
 import { eventLogger } from '../tracking/eventLogger'
 import { SearchType } from './results/SearchResults'
-import { FilterType } from '../../../shared/src/search/query/util'
+import { FilterType } from '../../../shared/src/search/query/filters'
 import { CaseSensitivityProps, PatternTypeProps } from '.'
 import { VersionContextProps } from '../../../shared/src/search/util'
 

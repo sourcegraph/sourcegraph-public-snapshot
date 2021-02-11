@@ -1,16 +1,108 @@
 import { Filter } from './token'
 import { SearchSuggestion } from '../suggestions'
-import {
-    FilterType,
-    isNegatedFilter,
-    resolveNegatedFilter,
-    NegatableFilter,
-    isNegatableFilter,
-    isFilterType,
-    isAliasedFilterType,
-    AliasedFilterType,
-} from './util'
 import { Omit } from 'utility-types'
+
+export enum FilterType {
+    after = 'after',
+    archived = 'archived',
+    author = 'author',
+    before = 'before',
+    case = 'case',
+    committer = 'committer',
+    content = 'content',
+    context = 'context',
+    count = 'count',
+    file = 'file',
+    fork = 'fork',
+    index = 'index',
+    lang = 'lang',
+    message = 'message',
+    patterntype = 'patterntype',
+    repo = 'repo',
+    repogroup = 'repogroup',
+    repohascommitafter = 'repohascommitafter',
+    repohasfile = 'repohasfile',
+    // eslint-disable-next-line unicorn/prevent-abbreviations
+    rev = 'rev',
+    stable = 'stable',
+    timeout = 'timeout',
+    type = 'type',
+    visibility = 'visibility',
+}
+
+/* eslint-disable unicorn/prevent-abbreviations */
+export enum AliasedFilterType {
+    f = 'file',
+    g = 'repogroup',
+    l = 'lang',
+    language = 'lang',
+    m = 'message',
+    msg = 'message',
+    r = 'repo',
+    revision = 'rev',
+    since = 'after',
+    until = 'before',
+}
+/* eslint-enable unicorn/prevent-abbreviations */
+
+export const isFilterType = (filter: string): filter is FilterType => filter in FilterType
+export const isAliasedFilterType = (filter: string): boolean => filter in AliasedFilterType
+
+export const filterTypeKeys: FilterType[] = Object.keys(FilterType) as FilterType[]
+export const filterTypeKeysWithAliases: (FilterType | AliasedFilterType)[] = [
+    ...filterTypeKeys,
+    ...Object.keys(AliasedFilterType),
+] as (FilterType | AliasedFilterType)[]
+
+export enum NegatedFilters {
+    author = '-author',
+    committer = '-committer',
+    content = '-content',
+    f = '-f',
+    file = '-file',
+    l = '-l',
+    lang = '-lang',
+    message = '-message',
+    r = '-r',
+    repo = '-repo',
+    repohasfile = '-repohasfile',
+}
+
+/** The list of filters that are able to be negated. */
+export type NegatableFilter =
+    | FilterType.repo
+    | FilterType.file
+    | FilterType.repohasfile
+    | FilterType.lang
+    | FilterType.content
+    | FilterType.committer
+    | FilterType.author
+    | FilterType.message
+
+export const isNegatableFilter = (filter: FilterType): filter is NegatableFilter =>
+    Object.keys(NegatedFilters).includes(filter)
+
+/** The list of all negated filters. i.e. all valid filters that have `-` as a suffix. */
+export const negatedFilters = Object.values(NegatedFilters)
+
+export const isNegatedFilter = (filter: string): filter is NegatedFilters =>
+    negatedFilters.includes(filter as NegatedFilters)
+
+const negatedFilterToNegatableFilter: { [key: string]: NegatableFilter } = {
+    '-author': FilterType.author,
+    '-committer': FilterType.committer,
+    '-content': FilterType.content,
+    '-f': FilterType.file,
+    '-file': FilterType.file,
+    '-l': FilterType.lang,
+    '-lang': FilterType.lang,
+    '-message': FilterType.message,
+    '-r': FilterType.repo,
+    '-repo': FilterType.repo,
+    '-repohasfile': FilterType.repohasfile,
+}
+
+export const resolveNegatedFilter = (filter: NegatedFilters): NegatableFilter => negatedFilterToNegatableFilter[filter]
 
 interface BaseFilterDefinition {
     alias?: string
@@ -139,6 +231,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     [FilterType.context]: {
         description: 'Search only repositories within a specified context',
         singular: true,
+        suggestions: 'SearchContext',
     },
     [FilterType.repohascommitafter]: {
         description: '"string specifying time frame" (filter out stale repositories without recent commits)',
@@ -273,9 +366,3 @@ export const validateFilter = (
     }
     return { valid: true }
 }
-
-/** Whether a given filter type may only be used 0 or 1 times in a query. */
-export const isSingularFilter = (filter: string): boolean =>
-    Object.keys(FILTERS)
-        .filter(key => FILTERS[key as FilterType].singular)
-        .includes(filter)

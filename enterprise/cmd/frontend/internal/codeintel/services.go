@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
@@ -36,7 +37,7 @@ var services struct {
 
 var once sync.Once
 
-func initServices(ctx context.Context) error {
+func initServices(ctx context.Context, db dbutil.DB) error {
 	once.Do(func() {
 		if err := config.UploadStoreConfig.Validate(); err != nil {
 			services.err = fmt.Errorf("failed to load config: %s", err)
@@ -54,7 +55,7 @@ func initServices(ctx context.Context) error {
 		codeIntelDB := mustInitializeCodeIntelDB()
 
 		// Initialize stores
-		dbStore := store.NewWithDB(dbconn.Global, observationContext)
+		dbStore := store.NewWithDB(db, observationContext)
 		lsifStore := lsifstore.NewStore(codeIntelDB, observationContext)
 		uploadStore, err := uploadstore.CreateLazy(context.Background(), config.UploadStoreConfig, observationContext)
 		if err != nil {

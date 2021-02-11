@@ -147,6 +147,7 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/subscriptions").Methods("GET").Name(routeSubscriptions)
 	r.PathPrefix("/stats").Methods("GET").Name(routeStats)
 	r.PathPrefix("/views").Methods("GET").Name(routeViews)
+	r.Path("/ping-from-self-hosted").Methods("GET", "OPTIONS").Name(uirouter.RoutePingFromSelfHosted)
 
 	// Repogroup pages. Must mirror web/src/Layout.tsx
 	if envvar.SourcegraphDotComMode() {
@@ -230,6 +231,7 @@ func initRouter(router *mux.Router) {
 	router.Get(routeSubscriptions).Handler(handler(serveBrandedPageString("Subscriptions", nil)))
 	router.Get(routeStats).Handler(handler(serveBrandedPageString("Stats", nil)))
 	router.Get(routeViews).Handler(handler(serveBrandedPageString("View", nil)))
+	router.Get(uirouter.RoutePingFromSelfHosted).Handler(handler(servePingFromSelfHosted))
 
 	router.Get(routeUserSettings).Handler(handler(serveBrandedPageString("User settings", nil)))
 	router.Get(routeUserRedirect).Handler(handler(serveBrandedPageString("User", nil)))

@@ -73,6 +73,7 @@ func TestRepos_Add(t *testing.T) {
 	ctx := testContext()
 
 	const repoName = "my/repo"
+	const newName = "my/repo2"
 
 	calledRepoLookup := false
 	repoupdater.MockRepoLookup = func(args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
@@ -81,13 +82,18 @@ func TestRepos_Add(t *testing.T) {
 			t.Errorf("got %q, want %q", args.Repo, repoName)
 		}
 		return &protocol.RepoLookupResult{
-			Repo: &protocol.RepoInfo{Name: repoName, Description: "d"},
+			Repo: &protocol.RepoInfo{Name: newName, Description: "d"},
 		}, nil
 	}
 	defer func() { repoupdater.MockRepoLookup = nil }()
 
-	if err := s.Add(ctx, repoName); err != nil {
+	// The repoName could change if it has been renamed on the code host
+	addedName, err := s.Add(ctx, repoName)
+	if err != nil {
 		t.Fatal(err)
+	}
+	if addedName != newName {
+		t.Fatalf("Want %q, got %q", newName, addedName)
 	}
 	if !calledRepoLookup {
 		t.Error("!calledRepoLookup")

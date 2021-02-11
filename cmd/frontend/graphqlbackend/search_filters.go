@@ -24,8 +24,7 @@ type SearchFilters struct {
 	// Globbing is true if the user has enabled globbing support.
 	Globbing bool
 
-	filters          map[string]*streaming.Filter
-	repoToMatchCount map[string]int32
+	filters map[string]*streaming.Filter
 }
 
 // commonFileFilters are common filters used. It is used by SearchFilters to
@@ -77,7 +76,6 @@ func (s *SearchFilters) Update(event SearchEvent) {
 	// Initialize state on first call.
 	if s.filters == nil {
 		s.filters = map[string]*streaming.Filter{}
-		s.repoToMatchCount = make(map[string]int32)
 	}
 
 	add := func(value string, label string, count int32, limitHit bool, kind string) {
@@ -92,7 +90,7 @@ func (s *SearchFilters) Update(event SearchEvent) {
 			}
 			s.filters[value] = sf
 		} else {
-			sf.Count = int(count)
+			sf.Count += int(count)
 		}
 	}
 	important := func(value string) {
@@ -114,9 +112,7 @@ func (s *SearchFilters) Update(event SearchEvent) {
 			filter = filter + fmt.Sprintf(`@%s`, rev)
 		}
 		limitHit := event.Stats.Status.Get(repo.IDInt32())&search.RepoStatusLimitHit != 0
-		// Increment number of matches per repo. Add will override previous entry for uri
-		s.repoToMatchCount[uri] += lineMatchCount
-		add(filter, uri, s.repoToMatchCount[uri], limitHit, "repo")
+		add(filter, uri, lineMatchCount, limitHit, "repo")
 	}
 
 	addFileFilter := func(fileMatchPath string, lineMatchCount int32, limitHit bool) {

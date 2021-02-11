@@ -24,7 +24,7 @@ import (
 
 // SetDerivedState will update the external state fields on the Changeset based
 // on the current state of the changeset and associated events.
-func SetDerivedState(ctx context.Context, c *campaigns.Changeset, es []*campaigns.ChangesetEvent) {
+func SetDerivedState(ctx context.Context, repoStore *database.RepoStore, c *campaigns.Changeset, es []*campaigns.ChangesetEvent) {
 	// Copy so that we can sort without mutating the argument
 	events := make(ChangesetEvents, len(es))
 	copy(events, es)
@@ -63,7 +63,7 @@ func SetDerivedState(ctx context.Context, c *campaigns.Changeset, es []*campaign
 	// not part of the metadata that we get from the provider's API.
 	//
 	// To update this, first we need gitserver's view of the repo.
-	repo, err := changesetRepoName(ctx, c)
+	repo, err := changesetRepoName(ctx, repoStore, c)
 	if err != nil {
 		log15.Warn("Retrieving repo name for changeset's repo", "err", err)
 		return
@@ -610,9 +610,9 @@ func computeRev(ctx context.Context, repo api.RepoName, getOid, getRef func() (s
 }
 
 // changesetRepoName looks up a api.RepoName based on the RepoID within a changeset.
-func changesetRepoName(ctx context.Context, c *campaigns.Changeset) (api.RepoName, error) {
+func changesetRepoName(ctx context.Context, repoStore *database.RepoStore, c *campaigns.Changeset) (api.RepoName, error) {
 	// We need to use an internal actor here as the repo-updater otherwise has no access to the repo.
-	repo, err := database.GlobalRepos.Get(actor.WithActor(ctx, &actor.Actor{Internal: true}), c.RepoID)
+	repo, err := repoStore.Get(actor.WithActor(ctx, &actor.Actor{Internal: true}), c.RepoID)
 	if err != nil {
 		return "", err
 	}

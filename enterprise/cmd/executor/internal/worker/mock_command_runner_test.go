@@ -86,7 +86,7 @@ func (f *RunnerRunFunc) SetDefaultHook(hook func(context.Context, command.Comman
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Run method of the parent MockRunner instance inovkes the hook at the
+// Run method of the parent MockRunner instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
 func (f *RunnerRunFunc) PushHook(hook func(context.Context, command.CommandSpec) error) {
@@ -191,7 +191,7 @@ func (f *RunnerSetupFunc) SetDefaultHook(hook func(context.Context, []string, []
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Setup method of the parent MockRunner instance inovkes the hook at the
+// Setup method of the parent MockRunner instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
 func (f *RunnerSetupFunc) PushHook(hook func(context.Context, []string, []string) error) {
@@ -299,7 +299,7 @@ func (f *RunnerTeardownFunc) SetDefaultHook(hook func(context.Context) error) {
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Teardown method of the parent MockRunner instance inovkes the hook at the
+// Teardown method of the parent MockRunner instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
 func (f *RunnerTeardownFunc) PushHook(hook func(context.Context) error) {

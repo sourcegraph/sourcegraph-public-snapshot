@@ -144,7 +144,7 @@ func DeployType() string {
 	if e := os.Getenv("DEPLOY_TYPE"); e != "" {
 		return e
 	}
-	// Default to Kubernetes cluster so that every Kubernetes c
+	// Default to Kubernetes cluster so that every Kubernetes
 	// cluster deployment doesn't need to be configured with DEPLOY_TYPE.
 	return DeployKubernetes
 }
@@ -231,6 +231,13 @@ func CodeIntelAutoIndexingEnabled() bool {
 		return *enabled
 	}
 	return false
+}
+
+func ProductResearchPageEnabled() bool {
+	if enabled := Get().ProductResearchPageEnabled; enabled != nil {
+		return *enabled
+	}
+	return true
 }
 
 func ExternalURL() string {

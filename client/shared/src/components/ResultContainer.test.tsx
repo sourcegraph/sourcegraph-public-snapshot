@@ -111,7 +111,7 @@ describe('ResultContainer', () => {
         expect(expandedItems.length).toBe(1)
 
         const header = container.querySelector('.result-container__header--collapsible')
-        expect(header).toBeTruthy()
+        expect(header).toBeVisible()
 
         fireEvent.click(header!)
 
@@ -122,19 +122,19 @@ describe('ResultContainer', () => {
     it('displays the expand label when collapsed', () => {
         const { container } = render(<ResultContainer {...defaultProps} />)
         const header = getByTestId(container, 'result-container-header')
-        expect(header).toBeTruthy()
-        expect(getByText(container, 'Show matches')).toBeTruthy()
+        expect(header).toBeVisible()
+        expect(getByText(container, 'Show matches')).toBeVisible()
     })
 
     it('displays the collapse label when expanded', () => {
         const { container } = render(<ResultContainer {...defaultProps} />)
 
         const clickableHeader = container.querySelector('.result-container__header--collapsible')
-        expect(clickableHeader).toBeTruthy()
+        expect(clickableHeader).toBeVisible()
 
         fireEvent.click(clickableHeader!)
 
-        expect(getByText(container, 'Hide matches')).toBeTruthy()
+        expect(getByText(container, 'Hide matches')).toBeVisible()
     })
 
     it('displays all results by default, when allExpanded is true', () => {
@@ -151,7 +151,7 @@ describe('ResultContainer', () => {
         expect(expandedItems.length).toBe(5)
 
         const header = container.querySelector('.result-container__header--collapsible')
-        expect(header).toBeTruthy()
+        expect(header).toBeVisible()
         fireEvent.click(header!)
 
         expandedItems = container.querySelectorAll('.file-match-children__item')

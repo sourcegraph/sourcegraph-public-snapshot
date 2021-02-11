@@ -22,7 +22,7 @@ Site admins can [configure Sourcegraph to respect Bitbucket Server's repository 
 
 We recommend installing the [Sourcegraph Bitbucket Server plugin](https://github.com/sourcegraph/bitbucket-server-plugin/tree/master) which adds the following features to your Bitbucket Server instance:
 
-- **Native code intelligence**: users don't need to install the [Sourcegraph browser extensin](#browser-extension) to get hover tooltips, go-to-definition, find-references, and code search while browsing files and viewing pull requests on Bitbucket Server. Additionally, activated [Sourcegraph extensions](../extensions/index.md) will be able to add information to Bitbucket Server code views and pull requests, such as test coverage data or trace/log information.
+- **Native code intelligence**: users don't need to install the [Sourcegraph browser extension](#browser-extension) to get hover tooltips, go-to-definition, find-references, and code search while browsing files and viewing pull requests on Bitbucket Server. Additionally, activated [Sourcegraph extensions](../extensions/index.md) will be able to add information to Bitbucket Server code views and pull requests, such as test coverage data or trace/log information.
 - **Fast permission syncing** between Sourcegraph and Bitbucket Server
 - **Webhooks with configurable scope**, which are used by and highly recommended for usage with [campaigns](../campaigns/index.md)
 
