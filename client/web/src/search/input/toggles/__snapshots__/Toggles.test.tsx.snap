@@ -36,6 +36,7 @@ Array [
     navbarSearchQuery="(case:yes foo) or (case:no bar)"
     onToggle={[Function]}
     patternType="literal"
+    selectedSearchContextSpec="global"
     setCaseSensitivity={[Function]}
     setPatternType={[Function]}
     settingsCascade={
@@ -44,6 +45,7 @@ Array [
         "subjects": null,
       }
     }
+    showSearchContext={false}
     title="Case sensitivity"
   >
     <div
@@ -110,6 +112,7 @@ Array [
     navbarSearchQuery="(foo patterntype:literal) or (bar patterntype:structural)"
     onToggle={[Function]}
     patternType="literal"
+    selectedSearchContextSpec="global"
     setCaseSensitivity={[Function]}
     setPatternType={[Function]}
     settingsCascade={
@@ -118,6 +121,7 @@ Array [
         "subjects": null,
       }
     }
+    showSearchContext={false}
     title="Case sensitivity"
   >
     <div
@@ -176,6 +180,7 @@ Array [
     navbarSearchQuery="(foo patterntype:literal) or (bar patterntype:structural)"
     onToggle={[Function]}
     patternType="literal"
+    selectedSearchContextSpec="global"
     setCaseSensitivity={[Function]}
     setPatternType={[Function]}
     settingsCascade={
@@ -184,6 +189,7 @@ Array [
         "subjects": null,
       }
     }
+    showSearchContext={false}
     title="Regular expression"
   >
     <div

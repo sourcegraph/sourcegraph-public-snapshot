@@ -19,6 +19,8 @@ describe('Query input toggle state', () => {
                     settingsCascade={{ subjects: null, final: {} }}
                     copyQueryButton={false}
                     versionContext={undefined}
+                    selectedSearchContextSpec="global"
+                    showSearchContext={false}
                 />
             ).find('.test-case-sensitivity-toggle')
         ).toMatchSnapshot()
@@ -38,6 +40,8 @@ describe('Query input toggle state', () => {
                     settingsCascade={{ subjects: null, final: {} }}
                     copyQueryButton={false}
                     versionContext={undefined}
+                    selectedSearchContextSpec="global"
+                    showSearchContext={false}
                 />
             ).find('.test-case-sensitivity-toggle')
         ).toMatchSnapshot()
@@ -57,6 +61,8 @@ describe('Query input toggle state', () => {
                     settingsCascade={{ subjects: null, final: {} }}
                     copyQueryButton={false}
                     versionContext={undefined}
+                    selectedSearchContextSpec="global"
+                    showSearchContext={false}
                 />
             ).find('.test-regexp-toggle')
         ).toMatchSnapshot()
