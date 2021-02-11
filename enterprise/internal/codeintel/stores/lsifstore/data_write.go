@@ -98,7 +98,7 @@ func (s *Store) WriteReferences(ctx context.Context, bundleID int, monikerLocati
 func (s *Store) WriteSymbols(ctx context.Context, bundleID int, symbols []*Symbol) (err error) {
 	// TODO(beyang): observability
 
-	// NEXT
+	// NEXT NEXT
 	return nil
 }
 
