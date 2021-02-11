@@ -669,7 +669,7 @@ func getRewirerMappingCurrentState(state *campaigns.ChangesetState) (*sqlf.Query
 	case campaigns.ChangesetStateProcessing:
 		q = sqlf.Sprintf("reconciler_state = %s", campaigns.ReconcilerStateCompleted)
 	case campaigns.ChangesetStateUnpublished:
-		q = sqlf.Sprintf("publication_state = %s", campaigns.ChangesetPublicationStateUnpublished)
+		q = sqlf.Sprintf("(publication_state IS NULL OR publication_state = %s)", campaigns.ChangesetPublicationStateUnpublished)
 	case campaigns.ChangesetStateDraft:
 		q = sqlf.Sprintf("external_state = %s", campaigns.ChangesetExternalStateDraft)
 	case campaigns.ChangesetStateOpen:
