@@ -52,7 +52,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                     </code>
                 </DropdownToggle>
                 <DropdownMenu>
-                    <SearchContextMenu {...props} />
+                    <SearchContextMenu {...props} closeMenu={toggleOpen} />
                 </DropdownMenu>
             </ButtonDropdown>
             <div className="search-context-dropdown__separator" />
