@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import React, { useCallback, useEffect, useState } from 'react'
-import { ButtonDropdown, Dropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
+import { Dropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { FilterType } from '../../../../shared/src/search/query/filters'
 import { scanSearchQuery } from '../../../../shared/src/search/query/scanner'
 import { SearchContextProps } from '..'
