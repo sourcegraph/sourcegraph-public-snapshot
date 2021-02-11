@@ -4,7 +4,7 @@ import { discreteValueAliases } from '../../../shared/src/search/query/filters'
 import { VersionContext } from '../schema/site.schema'
 import { SearchPatternType } from '../../../shared/src/graphql-operations'
 import { Observable } from 'rxjs'
-import { ISavedSearch } from '../../../shared/src/graphql/schema'
+import { ISavedSearch, ISearchContext } from '../../../shared/src/graphql/schema'
 import { EventLogResult } from './backend'
 import { AggregateStreamingSearchResults, StreamSearchOptions } from './stream'
 import { findFilter, FilterKind } from '../../../shared/src/search/query/validate'
@@ -177,6 +177,10 @@ export interface OnboardingTourProps {
 
 export interface SearchContextProps {
     showSearchContext: boolean
+    availableSearchContexts: ISearchContext[]
+    defaultSearchContextSpec: string
+    selectedSearchContextSpec: string
+    setSelectedSearchContextSpec: (spec: string) => void
 }
 
 export interface ShowQueryBuilderProps {
@@ -223,4 +227,16 @@ export function resolveVersionContext(
     }
 
     return versionContext
+}
+
+export function resolveSearchContextSpec(
+    spec: string,
+    availableSearchContexts: ISearchContext[],
+    defaultSpec: string
+): string {
+    if (availableSearchContexts.map(item => item.spec).includes(spec)) {
+        return spec
+    }
+
+    return defaultSpec
 }

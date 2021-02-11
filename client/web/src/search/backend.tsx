@@ -225,7 +225,7 @@ const repogroupSuggestions = defer(() =>
     refCount()
 )
 
-const searchContextSuggestions = defer(() =>
+export const fetchSearchContexts = defer(() =>
     requestGraphQL<SearchContextsResult, SearchContextsVariables>(gql`
         query SearchContexts {
             searchContexts {
@@ -239,7 +239,7 @@ const searchContextSuggestions = defer(() =>
     `)
 ).pipe(
     map(dataOrThrowErrors),
-    map(({ searchContexts }) => searchContexts),
+    map(({ searchContexts }) => searchContexts as GQL.ISearchContext[]),
     publishReplay(1),
     refCount()
 )
@@ -247,7 +247,7 @@ const searchContextSuggestions = defer(() =>
 export function fetchSuggestions(query: string): Observable<SearchSuggestion[]> {
     return combineLatest([
         repogroupSuggestions,
-        searchContextSuggestions,
+        fetchSearchContexts,
         queryGraphQL(
             gql`
                 query SearchSuggestions($query: String!) {

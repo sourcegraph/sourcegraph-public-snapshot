@@ -1,15 +1,18 @@
 import classNames from 'classnames'
 import React, { useCallback, useEffect, useState } from 'react'
 import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
-import { scanSearchQuery } from '../../../../shared/src/search/query/scanner'
 import { FilterType } from '../../../../shared/src/search/query/filters'
+import { scanSearchQuery } from '../../../../shared/src/search/query/scanner'
+import { SearchContextProps } from '..'
 import { SearchContextMenu } from './SearchContextMenu'
 
-interface SearchContextDropdownProps {
+export interface SearchContextDropdownProps extends Omit<SearchContextProps, 'showSearchContext'> {
     query: string
 }
 
-export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdownProps> = ({ query }) => {
+export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdownProps> = props => {
+    const { query, selectedSearchContextSpec } = props
+
     const [isOpen, setIsOpen] = useState(false)
     const toggleOpen = useCallback(() => setIsOpen(value => !value), [])
     const [isDisabled, setIsDisabled] = useState(false)
@@ -25,7 +28,6 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         setIsDisabled(isDisabled)
     }, [query])
 
-    const context = 'global'
     return (
         <>
             <ButtonDropdown isOpen={isOpen} toggle={toggleOpen}>
@@ -39,11 +41,18 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                 >
                     <code className="search-context-dropdown__button-content">
                         <span className="search-filter-keyword">context:</span>
-                        {context}
+                        {selectedSearchContextSpec.startsWith('@') ? (
+                            <>
+                                <span className="search-keyword">@</span>
+                                {selectedSearchContextSpec.slice(1)}
+                            </>
+                        ) : (
+                            selectedSearchContextSpec
+                        )}
                     </code>
                 </DropdownToggle>
                 <DropdownMenu>
-                    <SearchContextMenu />
+                    <SearchContextMenu {...props} />
                 </DropdownMenu>
             </ButtonDropdown>
             <div className="search-context-dropdown__separator" />

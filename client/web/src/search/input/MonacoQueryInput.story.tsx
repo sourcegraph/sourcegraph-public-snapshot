@@ -31,6 +31,32 @@ const defaultProps: MonacoQueryInputProps = {
     setCaseSensitivity: () => {},
     versionContext: undefined,
     showSearchContext: false,
+    selectedSearchContextSpec: 'global',
+    setSelectedSearchContextSpec: () => {},
+    availableSearchContexts: [
+        {
+            __typename: 'SearchContext',
+            id: '1',
+            spec: 'global',
+            autoDefined: true,
+            description: 'All repositories on Sourcegraph',
+        },
+        {
+            __typename: 'SearchContext',
+            id: '2',
+            spec: '@username',
+            autoDefined: true,
+            description: 'Your repositories on Sourcegraph',
+        },
+        {
+            __typename: 'SearchContext',
+            id: '2',
+            spec: '@username/test-version-1.5',
+            autoDefined: true,
+            description: 'Only code in version 1.5',
+        },
+    ],
+    defaultSearchContextSpec: 'global',
     copyQueryButton: false,
     onChange: () => {},
     onSubmit: () => {},
@@ -98,7 +124,31 @@ add(
     'with search contexts',
     () => (
         <WebStory>
-            {props => <MonacoQueryInput {...defaultProps} showSearchContext={true} isLightTheme={props.isLightTheme} />}
+            {props => (
+                <MonacoQueryInput
+                    {...defaultProps}
+                    showSearchContext={true}
+                    isLightTheme={props.isLightTheme}
+                    selectedSearchContextSpec="global"
+                />
+            )}
+        </WebStory>
+    ),
+    {}
+)
+
+add(
+    'with search contexts, user context selected',
+    () => (
+        <WebStory>
+            {props => (
+                <MonacoQueryInput
+                    {...defaultProps}
+                    showSearchContext={true}
+                    isLightTheme={props.isLightTheme}
+                    selectedSearchContextSpec="@username/test-version-1.5"
+                />
+            )}
         </WebStory>
     ),
     {}
@@ -114,6 +164,7 @@ add(
                     showSearchContext={true}
                     isLightTheme={props.isLightTheme}
                     queryState={{ query: 'hello context:global' }}
+                    selectedSearchContextSpec="@username"
                 />
             )}
         </WebStory>

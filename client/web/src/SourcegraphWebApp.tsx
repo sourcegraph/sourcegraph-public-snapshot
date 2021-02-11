@@ -36,7 +36,13 @@ import { RepoContainerRoute } from './repo/RepoContainer'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
 import { LayoutRouteProps } from './routes'
-import { search, fetchSavedSearches, fetchRecentSearches, fetchRecentFileViews } from './search/backend'
+import {
+    search,
+    fetchSavedSearches,
+    fetchRecentSearches,
+    fetchRecentFileViews,
+    fetchSearchContexts,
+} from './search/backend'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { ThemePreference } from './theme'
@@ -46,7 +52,7 @@ import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
-import { resolveVersionContext, parseSearchURL } from './search'
+import { resolveVersionContext, parseSearchURL, resolveSearchContextSpec } from './search'
 import { KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
 import { QueryState } from './search/helpers'
 import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
@@ -71,6 +77,7 @@ import {
     updateCodeMonitor,
 } from './enterprise/code-monitoring/backend'
 import { aggregateStreamingSearch } from './search/stream'
+import { ISearchContext } from '../../shared/src/graphql/schema'
 
 export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
@@ -160,6 +167,9 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     showEnterpriseHomePanels: boolean
 
     showSearchContext: boolean
+    availableSearchContexts: ISearchContext[]
+    selectedSearchContextSpec: string
+    defaultSearchContextSpec: string
 
     /**
      * Whether globbing is enabled for filters.
@@ -263,6 +273,9 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             showRepogroupHomepage: false,
             showOnboardingTour: false,
             showSearchContext: false,
+            availableSearchContexts: [],
+            selectedSearchContextSpec: 'global',
+            defaultSearchContextSpec: 'global', // global is default for now, user will be able to change this at some point
             showEnterpriseHomePanels: false,
             globbing: false,
             showMultilineSearchConsole: false,
@@ -304,6 +317,12 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         this.subscriptions.add(
             fromEvent<MediaQueryListEvent>(this.darkThemeMediaList, 'change').subscribe(event => {
                 this.setState({ systemIsLightTheme: !event.matches })
+            })
+        )
+
+        this.subscriptions.add(
+            fetchSearchContexts.subscribe(contexts => {
+                this.setState({ availableSearchContexts: contexts })
             })
         )
 
@@ -417,6 +436,10 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     showRepogroupHomepage={this.state.showRepogroupHomepage}
                                     showOnboardingTour={this.state.showOnboardingTour}
                                     showSearchContext={this.state.showSearchContext}
+                                    selectedSearchContextSpec={this.state.selectedSearchContextSpec}
+                                    setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
+                                    availableSearchContexts={this.state.availableSearchContexts}
+                                    defaultSearchContextSpec={this.state.defaultSearchContextSpec}
                                     showEnterpriseHomePanels={this.state.showEnterpriseHomePanels}
                                     globbing={this.state.globbing}
                                     showMultilineSearchConsole={this.state.showMultilineSearchConsole}
@@ -484,6 +507,16 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         }
 
         this.extensionsController.services.workspace.versionContext.next(resolvedVersionContext)
+    }
+
+    private setSelectedSearchContextSpec = (spec: string): void => {
+        this.setState(state => ({
+            selectedSearchContextSpec: resolveSearchContextSpec(
+                spec,
+                state.availableSearchContexts,
+                state.defaultSearchContextSpec
+            ),
+        }))
     }
 }
 

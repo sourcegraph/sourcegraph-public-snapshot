@@ -1,24 +1,39 @@
+import classNames from 'classnames'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import React from 'react'
+import React, { useCallback } from 'react'
 import { DropdownItem } from 'reactstrap'
+import { SearchContextProps } from '..'
 
-const SearchContextMenuItem: React.FunctionComponent<{ spec: string; description: string; isDefault?: boolean }> = ({
-    spec,
-    description,
-    isDefault = false,
+const SearchContextMenuItem: React.FunctionComponent<{
+    spec: string
+    description: string
+    selected: boolean
+    isDefault: boolean
+    setSelectedSearchContextSpec: (spec: string) => void
+}> = ({ spec, description, selected, isDefault, setSelectedSearchContextSpec }) => {
+    const setContext = useCallback(() => setSelectedSearchContextSpec(spec), [spec, setSelectedSearchContextSpec])
+    return (
+        <DropdownItem
+            className={classNames('search-context-menu__item', { 'search-context-menu__item--selected': selected })}
+            onClick={setContext}
+        >
+            <span className="search-context-menu__item-name" title={spec}>
+                {spec}
+            </span>
+            <span className="search-context-menu__item-description" title={description}>
+                {description}
+            </span>
+            {isDefault && <span className="search-context-menu__item-default">Default</span>}
+        </DropdownItem>
+    )
+}
+
+export const SearchContextMenu: React.FunctionComponent<Omit<SearchContextProps, 'showSearchContext'>> = ({
+    availableSearchContexts,
+    selectedSearchContextSpec,
+    defaultSearchContextSpec,
+    setSelectedSearchContextSpec,
 }) => (
-    <DropdownItem className="search-context-menu__item">
-        <span className="search-context-menu__item-name" title={spec}>
-            {spec}
-        </span>
-        <span className="search-context-menu__item-description" title={description}>
-            {description}
-        </span>
-        {isDefault && <span className="search-context-menu__item-default">Default</span>}
-    </DropdownItem>
-)
-
-export const SearchContextMenu: React.FunctionComponent<{}> = () => (
     <div className="search-context-menu">
         <div className="search-context-menu__header d-flex">
             <span aria-hidden="true" className="search-context-menu__header-prompt">
@@ -27,13 +42,16 @@ export const SearchContextMenu: React.FunctionComponent<{}> = () => (
             <input type="search" placeholder="Find a context" className="search-context-menu__header-input" />
         </div>
         <div className="search-context-menu__list">
-            <SearchContextMenuItem spec="global" description="All repositories on Sourcegraph" isDefault={true} />
-            <SearchContextMenuItem spec="@username" description="Your repositories on Sourcegraph" />
-            <SearchContextMenuItem
-                spec="@username/context1"
-                description="A test context with a very very long description lorem ipsum solor sit amet"
-            />
-            <SearchContextMenuItem spec="@username/contextwithveryverylongname" description="Another test context" />
+            {availableSearchContexts.map(context => (
+                <SearchContextMenuItem
+                    key={context.id}
+                    spec={context.spec}
+                    description={context.description}
+                    isDefault={context.spec === defaultSearchContextSpec}
+                    selected={context.spec === selectedSearchContextSpec}
+                    setSelectedSearchContextSpec={setSelectedSearchContextSpec}
+                />
+            ))}
         </div>
         <div className="search-context-menu__footer">
             <button type="button" className="btn btn-link btn-sm search-context-menu__footer-button">
