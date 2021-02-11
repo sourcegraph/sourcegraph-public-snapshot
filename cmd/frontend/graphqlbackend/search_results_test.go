@@ -592,7 +592,7 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 			searchResults: []SearchResultResolver{fileMatch("/testFile.md")},
 			expectedDynamicFilterStrsRegexp: map[string]int{
 				`repo:^testRepo$`: 1,
-				`lang:markdown`: 1,
+				`lang:markdown`:   1,
 			},
 			expectedDynamicFilterStrsGlobbing: map[string]int{
 				`repo:testRepo`: 1,
@@ -605,11 +605,11 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 			searchResults: []SearchResultResolver{fileMatchRev},
 			expectedDynamicFilterStrsRegexp: map[string]int{
 				`repo:^testRepo$@develop3.0`: 1,
-				`lang:markdown`: 1,
+				`lang:markdown`:              1,
 			},
 			expectedDynamicFilterStrsGlobbing: map[string]int{
 				`repo:testRepo@develop3.0`: 1,
-				`lang:markdown`: 1,
+				`lang:markdown`:            1,
 			},
 		},
 		{
@@ -620,7 +620,7 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 				`lang:typescript`: 1,
 			},
 			expectedDynamicFilterStrsGlobbing: map[string]int{
-				`repo:testRepo`: 1,
+				`repo:testRepo`:   1,
 				`lang:typescript`: 1,
 			},
 		},
@@ -632,7 +632,7 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 				`lang:typescript`: 1,
 			},
 			expectedDynamicFilterStrsGlobbing: map[string]int{
-				`repo:testRepo`: 1,
+				`repo:testRepo`:   1,
 				`lang:typescript`: 1,
 			},
 		},
@@ -640,9 +640,9 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 			descr:         "file match which matches one of the common file filters",
 			searchResults: []SearchResultResolver{fileMatch("/anything/node_modules/testFile.md")},
 			expectedDynamicFilterStrsRegexp: map[string]int{
-				`repo:^testRepo$`: 1,
+				`repo:^testRepo$`:          1,
 				`-file:(^|/)node_modules/`: 1,
-				`lang:markdown`: 1,
+				`lang:markdown`:            1,
 			},
 			expectedDynamicFilterStrsGlobbing: map[string]int{
 				`repo:testRepo`: 1,
@@ -654,9 +654,9 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 			descr:         "file match which matches one of the common file filters",
 			searchResults: []SearchResultResolver{fileMatch("/node_modules/testFile.md")},
 			expectedDynamicFilterStrsRegexp: map[string]int{
-				`repo:^testRepo$`: 1,
+				`repo:^testRepo$`:          1,
 				`-file:(^|/)node_modules/`: 1,
-				`lang:markdown`: 1,
+				`lang:markdown`:            1,
 			},
 			expectedDynamicFilterStrsGlobbing: map[string]int{
 				`repo:testRepo`: 1,
@@ -665,20 +665,20 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 			},
 		},
 		{
-			descr:         "file match which matches one of the common file filters",
+			descr: "file match which matches one of the common file filters",
 			searchResults: []SearchResultResolver{
 				fileMatch("/foo_test.go"),
 				fileMatch("/foo.go"),
 			},
 			expectedDynamicFilterStrsRegexp: map[string]int{
-				`repo:^testRepo$`: 2,
+				`repo:^testRepo$`:  2,
 				`-file:_test\.go$`: 1,
-				`lang:go`: 2,
+				`lang:go`:          2,
 			},
 			expectedDynamicFilterStrsGlobbing: map[string]int{
-				`repo:testRepo`: 2,
+				`repo:testRepo`:    2,
 				`-file:**_test.go`: 1,
-				`lang:go`: 2,
+				`lang:go`:          2,
 			},
 		},
 
@@ -690,13 +690,13 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 				fileMatch("assets/javascripts/bootstrap.min.js"),
 			},
 			expectedDynamicFilterStrsRegexp: map[string]int{
-				`repo:^testRepo$`: 3,
+				`repo:^testRepo$`:  3,
 				`-file:\.min\.js$`: 1,
 				`-file:\.js\.map$`: 2,
-				`lang:javascript`: 1,
+				`lang:javascript`:  1,
 			},
 			expectedDynamicFilterStrsGlobbing: map[string]int{
-				`repo:testRepo`: 3,
+				`repo:testRepo`:   3,
 				`-file:**.min.js`: 1,
 				`-file:**.js.map`: 2,
 				`lang:javascript`: 1,
@@ -714,11 +714,11 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 			descr:         "values containing spaces are quoted",
 			searchResults: []SearchResultResolver{fileMatch("/.gitignore")},
 			expectedDynamicFilterStrsRegexp: map[string]int{
-				`repo:^testRepo$`: 1,
+				`repo:^testRepo$`:    1,
 				`lang:"ignore list"`: 1,
 			},
 			expectedDynamicFilterStrsGlobbing: map[string]int{
-				`repo:testRepo`: 1,
+				`repo:testRepo`:      1,
 				`lang:"ignore list"`: 1,
 			},
 		},

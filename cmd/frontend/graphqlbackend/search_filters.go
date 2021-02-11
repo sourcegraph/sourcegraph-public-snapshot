@@ -24,7 +24,7 @@ type SearchFilters struct {
 	// Globbing is true if the user has enabled globbing support.
 	Globbing bool
 
-	filters          map[string]*streaming.Filter
+	filters map[string]*streaming.Filter
 }
 
 // commonFileFilters are common filters used. It is used by SearchFilters to
