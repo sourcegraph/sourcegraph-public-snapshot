@@ -62,6 +62,7 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
         const onInputKeyDown = (event: KeyboardEvent): void => {
             if (event.key === 'ArrowDown') {
                 getFirstMenuItem()?.focus()
+                event.stopPropagation()
             }
         }
         const currentInput = inputElement.current
@@ -74,6 +75,7 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
         const onFirstMenuItemKeyDown = (event: KeyboardEvent): void => {
             if (event.key === 'ArrowUp') {
                 focusInputElement()
+                event.stopPropagation()
             }
         }
         firstMenuItem?.addEventListener('keydown', onFirstMenuItemKeyDown)
