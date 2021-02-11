@@ -26,7 +26,7 @@ export const PlainQueryInput: React.FunctionComponent<MonacoQueryInputProps> = (
         <div className="query-input2 d-flex">
             {props.showSearchContext && (
                 <div className="query-input2__search-context-dropdown-container">
-                    <SearchContextDropdown query={queryState.query} />
+                    <SearchContextDropdown {...props} query={queryState.query} />
                 </div>
             )}
             <input
