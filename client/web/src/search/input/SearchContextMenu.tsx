@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import React, { useCallback } from 'react'
+import React, { useCallback, useRef, useEffect } from 'react'
 import { DropdownItem } from 'reactstrap'
 import { SearchContextProps } from '..'
 
@@ -34,6 +34,9 @@ export interface SearchContextMenuProps extends Omit<SearchContextProps, 'showSe
     closeMenu: () => void
 }
 
+const getFirstMenuItem = (): HTMLButtonElement | null =>
+    document.querySelector('.search-context-menu__item:first-child')
+
 export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> = ({
     availableSearchContexts,
     selectedSearchContextSpec,
@@ -41,10 +44,41 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
     setSelectedSearchContextSpec,
     closeMenu,
 }) => {
+    const inputElement = useRef<HTMLInputElement | null>(null)
+
     const reset = useCallback(() => {
         setSelectedSearchContextSpec(defaultSearchContextSpec)
         closeMenu()
     }, [closeMenu, defaultSearchContextSpec, setSelectedSearchContextSpec])
+
+    const focusInputElement = (): void => {
+        // Focus the input in the next run-loop to override the browser focusing the first dropdown item
+        // if the user opened the dropdown using a keyboard
+        setTimeout(() => inputElement.current?.focus(), 0)
+    }
+
+    useEffect(() => {
+        focusInputElement()
+        const onInputKeyDown = (event: KeyboardEvent): void => {
+            if (event.key === 'ArrowDown') {
+                getFirstMenuItem()?.focus()
+            }
+        }
+        const currentInput = inputElement.current
+        currentInput?.addEventListener('keydown', onInputKeyDown)
+        return () => currentInput?.removeEventListener('keydown', onInputKeyDown)
+    }, [])
+
+    useEffect(() => {
+        const firstMenuItem = getFirstMenuItem()
+        const onFirstMenuItemKeyDown = (event: KeyboardEvent): void => {
+            if (event.key === 'ArrowUp') {
+                focusInputElement()
+            }
+        }
+        firstMenuItem?.addEventListener('keydown', onFirstMenuItemKeyDown)
+        return () => firstMenuItem?.removeEventListener('keydown', onFirstMenuItemKeyDown)
+    }, [])
 
     return (
         <div className="search-context-menu">
@@ -52,7 +86,12 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
                 <span aria-hidden="true" className="search-context-menu__header-prompt">
                     <ChevronRightIcon className="icon-inline" />
                 </span>
-                <input type="search" placeholder="Find a context" className="search-context-menu__header-input" />
+                <input
+                    ref={inputElement}
+                    type="search"
+                    placeholder="Find a context"
+                    className="search-context-menu__header-input"
+                />
             </div>
             <div className="search-context-menu__list">
                 {availableSearchContexts.map(context => (
