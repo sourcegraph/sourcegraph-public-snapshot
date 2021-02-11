@@ -100,6 +100,8 @@
 // 1528395781_remove_user_repos_table.up.sql (57B)
 // 1528395782_normalize_spec_fields_on_changeset_specs.down.sql (1.922kB)
 // 1528395782_normalize_spec_fields_on_changeset_specs.up.sql (2.764kB)
+// 1528395783_insights_query_runner_jobs.down.sql (127B)
+// 1528395783_insights_query_runner_jobs.up.sql (671B)
 
 package migrations
 
@@ -2168,6 +2170,46 @@ func _1528395782_normalize_spec_fields_on_changeset_specsUpSql() (*asset, error)
 	return a, nil
 }
 
+var __1528395783_insights_query_runner_jobsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\xc8\xcc\x2b\xce\x4c\xcf\x28\x29\x8e\x2f\x2c\x4d\x2d\xaa\x8c\x2f\x2a\xcd\xcb\x4b\x2d\x8a\xcf\xca\x4f\x2a\xb6\x86\x68\xf0\xf4\x73\x71\x8d\x20\x4a\x43\x7c\x71\x49\x62\x49\x6a\x7c\x52\x49\x51\x6a\xaa\x35\x17\x97\xb3\xbf\xaf\xaf\x67\x88\x35\x17\x20\x00\x00\xff\xff\xbd\x57\xed\x70\x7f\x00\x00\x00")
+
+func _1528395783_insights_query_runner_jobsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395783_insights_query_runner_jobsDownSql,
+		"1528395783_insights_query_runner_jobs.down.sql",
+	)
+}
+
+func _1528395783_insights_query_runner_jobsDownSql() (*asset, error) {
+	bytes, err := _1528395783_insights_query_runner_jobsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395783_insights_query_runner_jobs.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xd0, 0x36, 0x7d, 0xe4, 0x66, 0x88, 0x86, 0x15, 0xe3, 0xff, 0x22, 0x26, 0xd6, 0x25, 0x32, 0x1a, 0xff, 0xd6, 0x73, 0xae, 0xb7, 0x84, 0x7d, 0x27, 0x52, 0x7c, 0x4, 0x5a, 0x40, 0x20, 0x3a, 0x76}}
+	return a, nil
+}
+
+var __1528395783_insights_query_runner_jobsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x84\x92\xc1\x6e\x9b\x40\x10\x86\xef\x3c\xc5\xdc\x9c\x48\x55\xe9\xa1\xa7\xfa\xe4\xb4\xdb\x68\x5b\x8c\x2b\x20\x52\xa2\xaa\x5a\x2d\x30\xc6\x9b\xc0\xae\x33\x33\xab\xa6\x7d\xfa\xca\x80\xed\x43\x23\x87\x13\xd2\x7c\xff\x37\x03\x33\x37\xea\x56\xe7\xcb\x24\xf9\x5c\xa8\x55\xa5\xa0\x5a\xdd\x64\x0a\xf4\x57\xc8\x37\x15\xa8\x7b\x5d\x56\x25\x38\xcf\xae\xdb\x09\x9b\xe7\x88\xf4\xc7\x50\xf4\x1e\xc9\x3c\x86\x9a\xaf\x12\x00\x00\xd7\x42\xa9\x0a\xbd\xca\xe0\x47\xa1\xd7\xab\xe2\x01\xbe\xab\x87\x77\x63\x89\x91\x1c\xb2\x71\x2d\x08\xbe\xc8\x28\xcd\xef\xb2\xec\x58\xb4\xd4\xec\x26\xeb\xab\x75\xb1\x82\x70\x7e\x46\xa4\xc5\xad\x8d\xbd\xc0\xe2\x39\x62\xc4\x76\x31\xa1\x5b\xeb\xfa\x48\x68\x06\x64\xb6\x1d\x8e\xe8\x49\x42\x82\xad\xb1\x32\x4b\xdc\x80\x2c\x76\xd8\xcb\xdf\x39\xea\xbc\xe3\xdd\x99\xf8\x0f\xd8\x53\x68\x90\xd9\xd8\xad\x20\xbd\x06\xf8\x38\x18\x42\x46\xe1\xa9\x85\xf3\xf2\xf1\xf4\x29\xa7\x81\x3f\x9c\xe1\x79\x5a\x7e\x13\xc6\x17\x6c\xa2\xb8\xe0\x4d\x1f\x3a\x86\x47\x0e\xfe\xe7\xaf\xe4\x7a\x79\xdc\x96\xce\xbf\xa8\xfb\x0b\xfb\x31\xe3\x2f\x34\xb5\x10\x22\x6c\xf2\x0b\x24\xdc\x95\x3a\xbf\x85\x89\xbc\x1a\x63\xd7\x87\xab\xd8\xac\xd7\x2a\xaf\x0e\xd9\xe9\x32\x2e\x18\x74\x09\x8b\x12\x11\xd0\x0b\xd2\x9e\x1c\x63\xea\x0e\xaf\xde\xf6\xe9\x31\x96\xd6\xb6\x79\xea\x28\x44\xdf\xa6\xa3\x61\x12\xa4\xbf\x03\x3d\x21\xbd\xef\xc2\xa7\x6f\xa1\x5e\xcc\x8d\x75\xb5\x4c\xfe\x05\x00\x00\xff\xff\x63\xd6\x50\xe6\x9f\x02\x00\x00")
+
+func _1528395783_insights_query_runner_jobsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395783_insights_query_runner_jobsUpSql,
+		"1528395783_insights_query_runner_jobs.up.sql",
+	)
+}
+
+func _1528395783_insights_query_runner_jobsUpSql() (*asset, error) {
+	bytes, err := _1528395783_insights_query_runner_jobsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395783_insights_query_runner_jobs.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x51, 0xf6, 0x24, 0x86, 0x1c, 0x13, 0x23, 0x81, 0xcb, 0x48, 0xc3, 0x34, 0xf, 0xf7, 0x74, 0x8f, 0x61, 0xde, 0xc3, 0x71, 0xa6, 0x2a, 0x9, 0xf2, 0x4f, 0xfb, 0xd1, 0xf9, 0x77, 0xb1, 0x8, 0x39}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2359,6 +2401,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395781_remove_user_repos_table.up.sql":                                              _1528395781_remove_user_repos_tableUpSql,
 	"1528395782_normalize_spec_fields_on_changeset_specs.down.sql":                           _1528395782_normalize_spec_fields_on_changeset_specsDownSql,
 	"1528395782_normalize_spec_fields_on_changeset_specs.up.sql":                             _1528395782_normalize_spec_fields_on_changeset_specsUpSql,
+	"1528395783_insights_query_runner_jobs.down.sql":                                         _1528395783_insights_query_runner_jobsDownSql,
+	"1528395783_insights_query_runner_jobs.up.sql":                                           _1528395783_insights_query_runner_jobsUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2505,6 +2549,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395781_remove_user_repos_table.up.sql":                                              {_1528395781_remove_user_repos_tableUpSql, map[string]*bintree{}},
 	"1528395782_normalize_spec_fields_on_changeset_specs.down.sql":                           {_1528395782_normalize_spec_fields_on_changeset_specsDownSql, map[string]*bintree{}},
 	"1528395782_normalize_spec_fields_on_changeset_specs.up.sql":                             {_1528395782_normalize_spec_fields_on_changeset_specsUpSql, map[string]*bintree{}},
+	"1528395783_insights_query_runner_jobs.down.sql":                                         {_1528395783_insights_query_runner_jobsDownSql, map[string]*bintree{}},
+	"1528395783_insights_query_runner_jobs.up.sql":                                           {_1528395783_insights_query_runner_jobsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
