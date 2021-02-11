@@ -11,7 +11,6 @@ import { SourcegraphContext } from '../../jscontext'
 const initSite = async (args: SignUpArguments): Promise<void> => {
     const pingUrl = new URL('https://sourcegraph.com/ping-from-self-hosted')
     pingUrl.searchParams.set('email', args.email)
-    pingUrl.searchParams.set('hostname', window.location.hostname)
 
     await fetch(pingUrl.toString(), {
         credentials: 'include',

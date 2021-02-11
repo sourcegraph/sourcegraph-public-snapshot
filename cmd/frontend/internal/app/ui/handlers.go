@@ -392,7 +392,6 @@ func servePingFromSelfHosted(w http.ResponseWriter, r *http.Request) error {
 		w.WriteHeader(http.StatusNoContent)
 		return nil
 	}
-	hostname := r.URL.Query().Get("hostname")
 	email := r.URL.Query().Get("email")
 	cookie, err := r.Cookie("sourcegraphSourceUrl")
 	var sourceURL string
@@ -400,8 +399,7 @@ func servePingFromSelfHosted(w http.ResponseWriter, r *http.Request) error {
 		sourceURL = cookie.Value
 	}
 	hubspotutil.SyncUser(email, hubspotutil.SelfHostedSiteInitEventID, &hubspot.ContactProperties{
-		FirstSourceURL:       sourceURL,
-		InstallationHostname: hostname,
+		FirstSourceURL: sourceURL,
 	})
 	return nil
 }
