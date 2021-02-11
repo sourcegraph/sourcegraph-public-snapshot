@@ -354,10 +354,49 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     const modeSelect: JSX.Element = (
         <Form className="mt-4">
             <label className="d-flex flex-row align-items-baseline">
-                <input type="radio" value="all" checked={selectionState.radio === 'all'} onChange={handleRadioSelect} />
+                <input
+                    type="radio"
+                    value="all"
+                    disabled={true}
+                    checked={selectionState.radio === 'all'}
+                    onChange={handleRadioSelect}
+                />
                 <div className="d-flex flex-column ml-2">
-                    <p className="mb-0">Sync all my repositories</p>
-                    <p className="text-muted">Will sync all current and future public and private repositories</p>
+                    <p
+                        className="mb-0 user-settings-repos__text-coming-soon
+"
+                    >
+                        Sync all my repositories (coming soon)
+                    </p>
+                    <p
+                        className="user-settings-repos__text-coming-soon
+"
+                    >
+                        Will sync all current and future public and private repositories
+                    </p>
+                </div>
+            </label>
+            <label className="d-flex flex-row align-items-baseline">
+                <input
+                    type="radio"
+                    value="all"
+                    disabled={true}
+                    checked={selectionState.radio === 'org'}
+                    onChange={handleRadioSelect}
+                />
+                <div className="d-flex flex-column ml-2">
+                    <p
+                        className="mb-0 user-settings-repos__text-coming-soon
+"
+                    >
+                        Sync all repositories from selected organizations or users (coming soon)
+                    </p>
+                    <p
+                        className="user-settings-repos__text-coming-soon
+"
+                    >
+                        Will sync all current and future public and private repositories
+                    </p>
                 </div>
             </label>
             <label className="d-flex flex-row align-items-baseline">
@@ -368,7 +407,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     onChange={handleRadioSelect}
                 />
                 <div className="d-flex flex-column ml-2">
-                    <p className="mb-0">Sync selected repositories</p>
+                    <p className="mb-0">Sync selected public repositories</p>
                 </div>
             </label>
         </Form>
@@ -516,6 +555,10 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                                 connected code hosts
                             </Link>
                         </p>
+                        <div className="alert alert-primary">
+                            Coming soon: search your private repositories with Sourcegraph Cloud.{' '}
+                            <a href="">Get updated when this feature launches</a>
+                        </div>
                         {
                             // display radio button for 'all' or 'selected' repos
                             modeSelect
@@ -548,6 +591,35 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                                 </div>
                             )
                         }
+                    </div>
+                </li>
+                <li className="list-group-item p-0 user-settings-repos__container" key="body2">
+                    <div className="p-4" key="description">
+                        <h3>Other repositories</h3>
+                        <p className="text-muted">Public code on GitHub and GitLab</p>
+                        <input
+                            id="add-public-repos"
+                            className="mr-2 mt-2"
+                            type="checkbox"
+                            onChange={() => {}}
+                            checked={false}
+                        />
+                        <label htmlFor="add-public-repos">Sync specific public repositories by URL</label>
+
+                        {true && (
+                            <div className="form-group ml-4 mt-3">
+                                <p>Repositories to sync</p>
+                                <textarea
+                                    className="form-control add-public-repos__textarea"
+                                    onChange={() => {}}
+                                    value="lel"
+                                    disabled={false}
+                                    autoFocus={true}
+                                    rows={5}
+                                />
+                                <p className="text-muted">Specify with complete URLs. One repository per line.</p>
+                            </div>
+                        )}
                     </div>
                 </li>
             </ul>

@@ -74,6 +74,10 @@
     &__filter-input {
         max-width: 30% !important;
     }
+
+    &__text-coming-soon {
+        color: var(--color-text-3);
+    }
 }
 
 @keyframes shimmer {
