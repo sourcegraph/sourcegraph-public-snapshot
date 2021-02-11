@@ -205,6 +205,12 @@ const GitLabSchemaJSON = `{
       "type": "boolean",
       "default": false,
       "deprecationMessage": "DEPRECATED: The cloud_default flag should be set in the database instead"
+    },
+    "cloudDefault": {
+      "title": "CloudDefault",
+      "description": "Only to be used in development to override the cloud_default column",
+      "type": "boolean",
+      "default": false
     }
   },
   "definitions": {
