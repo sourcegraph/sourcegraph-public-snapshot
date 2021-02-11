@@ -43,6 +43,11 @@ func (s *serializer) MarshalLocations(locations []LocationData) ([]byte, error) 
 	return s.withEncoder(func(encoder *gob.Encoder) error { return encoder.Encode(&locations) })
 }
 
+// MarshalSymbols transforms a slice of symbols into a string of bytes writable to disk.
+func (s *serializer) MarshalSymbol(symbol *Symbol) ([]byte, error) {
+	return s.withEncoder(func(encoder *gob.Encoder) error { return encoder.Encode(&symbol) })
+}
+
 // withEncoder creates a gob encoded, calls the given function with it, then compressed the encoded output.
 func (s *serializer) withEncoder(f func(encoder *gob.Encoder) error) ([]byte, error) {
 	gzipWriter := s.writers.Get().(*gzip.Writer)
@@ -82,6 +87,12 @@ func (s *serializer) UnmarshalResultChunkData(data []byte) (resultChunk ResultCh
 func (s *serializer) UnmarshalLocations(data []byte) (locations []LocationData, err error) {
 	err = s.withDecoder(data, func(decoder *gob.Decoder) error { return decoder.Decode(&locations) })
 	return locations, err
+}
+
+// UnmarshalSymbol is the inverse of MarshalSymbol.
+func (s *serializer) UnmarshalSymbol(data []byte) (symbols []*Symbol, err error) {
+	err = s.withDecoder(data, func(decoder *gob.Decoder) error { return decoder.Decode(&symbols) })
+	return symbols, err
 }
 
 // withDecoder creates a gob decoder with the given encoded data and calls the given function with it.

@@ -11,13 +11,6 @@ type QualifiedDocumentData struct {
 	KeyedDocumentData
 }
 
-// func (s *Store) scanAllDocumentData(rows *sql.Rows, path string, queryErr error) (map[string][]QualifiedDocumentData, error) {
-// 	if queryErr != nil {
-// 		return nil, queryErr
-// 	}
-// 	defer func() { err = basestore.CloseRows(rows, err) }()
-// }
-
 // scanDocumentData reads qualified document data from the given row object.
 func (s *Store) scanDocumentData(rows *sql.Rows, queryErr error) (_ []QualifiedDocumentData, err error) {
 	if queryErr != nil {
@@ -180,6 +173,38 @@ func (s *Store) scanFirstLocations(rows *sql.Rows, queryErr error) (_ MonikerLoc
 	}
 
 	return MonikerLocations{}, false, nil
+}
+
+func (s *Store) scanSymbols(rows *sql.Rows, queryErr error) (_ []*Symbol, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	var symbols []*Symbol
+	for rows.Next() {
+		record, err := s.scanSingleSymbol(rows)
+		if err != nil {
+			return nil, err
+		}
+		symbols = append(symbols, record)
+	}
+	return symbols, nil
+}
+
+func (s *Store) scanSingleSymbol(rows *sql.Rows) (*Symbol, error) {
+	var rawData []byte
+	var record Symbol
+	if err := rows.Scan(&rawData); err != nil {
+		return nil, err
+	}
+
+	data, err := s.serializer.UnmarshalSymbol(rawData)
+	if err != nil {
+		return nil, err
+	}
+
+	return &record, nil
 }
 
 // scanSingleMonikerLocationsObject populates a moniker locations value from the

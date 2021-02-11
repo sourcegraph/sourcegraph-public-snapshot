@@ -96,16 +96,25 @@ func (s *Store) WriteReferences(ctx context.Context, bundleID int, monikerLocati
 }
 
 func (s *Store) WriteSymbols(ctx context.Context, bundleID int, symbols []*Symbol) (err error) {
-	// TODO(beyang): observability
+	inserter := func(inserter *batch.BatchInserter) error {
+		for _, symbol := range symbols {
+			data, err := s.serializer.MarshalSymbol(symbol)
+			if err != nil {
+				return err
+			}
 
-	// NEXT NEXT
-	return nil
+			if err := inserter.Insert(ctx, bundleID, data); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	return withBatchInserter(ctx, s.Handle().DB(), "lsif_data_symbols", []string{"dump_id", "data"}, inserter)
 }
 
 func (s *Store) writeDefinitionReferences(ctx context.Context, bundleID int, tableName string, monikerLocations chan MonikerLocations) error {
 	inserter := func(inserter *batch.BatchInserter) error {
 		for v := range monikerLocations {
-			// logg.Printf("# monikerLocation: %+v", v)
 			data, err := s.serializer.MarshalLocations(v.Locations)
 			if err != nil {
 				return err

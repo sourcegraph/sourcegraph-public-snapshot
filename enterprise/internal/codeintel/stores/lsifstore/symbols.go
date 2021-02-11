@@ -30,6 +30,11 @@ type SymbolLocation struct {
 	Range Range
 }
 
+func (s *Store) Symbols2(ctx context.Context, bundleID int, path string) ([]*Symbol, error) {
+	// NEXT
+	return nil, nil
+}
+
 // Symbols returns all LSIF document symbols in documents prefixed by path.
 func (s *Store) Symbols(ctx context.Context, bundleID int, path string) ([]*Symbol, error) {
 	const limit = 10000
