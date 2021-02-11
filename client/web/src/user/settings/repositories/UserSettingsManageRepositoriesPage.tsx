@@ -377,6 +377,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 </div>
             </label>
             <label className="d-flex flex-row align-items-baseline">
+                {/* TODO: @artem add this functionality after pe-GA */}
                 <input
                     type="radio"
                     value="all"
@@ -591,35 +592,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                                 </div>
                             )
                         }
-                    </div>
-                </li>
-                <li className="list-group-item p-0 user-settings-repos__container" key="body2">
-                    <div className="p-4" key="description">
-                        <h3>Other repositories</h3>
-                        <p className="text-muted">Public code on GitHub and GitLab</p>
-                        <input
-                            id="add-public-repos"
-                            className="mr-2 mt-2"
-                            type="checkbox"
-                            onChange={() => {}}
-                            checked={false}
-                        />
-                        <label htmlFor="add-public-repos">Sync specific public repositories by URL</label>
-
-                        {true && (
-                            <div className="form-group ml-4 mt-3">
-                                <p>Repositories to sync</p>
-                                <textarea
-                                    className="form-control add-public-repos__textarea"
-                                    onChange={() => {}}
-                                    value="lel"
-                                    disabled={false}
-                                    autoFocus={true}
-                                    rows={5}
-                                />
-                                <p className="text-muted">Specify with complete URLs. One repository per line.</p>
-                            </div>
-                        )}
                     </div>
                 </li>
             </ul>
