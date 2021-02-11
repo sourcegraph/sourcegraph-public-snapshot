@@ -61,6 +61,7 @@ func newAPIValues(h *ContactProperties) *apiProperties {
 	apiProps.set("latest_ping", h.LatestPing)
 	apiProps.set("anonymous_user_id", h.AnonymousUserID)
 	apiProps.set("first_source_url", h.FirstSourceURL)
+	apiProps.set("installation_hostname", h.InstallationHostname)
 	return apiProps
 }
 

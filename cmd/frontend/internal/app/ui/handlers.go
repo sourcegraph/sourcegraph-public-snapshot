@@ -385,7 +385,8 @@ func searchBadgeHandler() *httputil.ReverseProxy {
 
 func servePingFromSelfHosted(w http.ResponseWriter, r *http.Request) error {
 	// CORS to allow request from anywhere
-	w.Header().Add("Access-Control-Allow-Origin", "*")
+	w.Header().Add("Access-Control-Allow-Origin", r.Host)
+	w.Header().Add("Access-Control-Allow-Credentials", "true")
 	if r.Method == http.MethodOptions {
 		// CORS preflight request, respond 204 and allow origin header
 		w.WriteHeader(http.StatusNoContent)
