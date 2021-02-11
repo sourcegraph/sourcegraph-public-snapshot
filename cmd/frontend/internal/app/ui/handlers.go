@@ -385,13 +385,13 @@ func searchBadgeHandler() *httputil.ReverseProxy {
 
 func servePingFromSelfHosted(w http.ResponseWriter, r *http.Request) error {
 	// CORS to allow request from anywhere
-	w.Header().Add("Access-Control-Allow-Origin", "*")
+	w.Header().Add("Access-Control-Allow-Origin", r.Host)
+	w.Header().Add("Access-Control-Allow-Credentials", "true")
 	if r.Method == http.MethodOptions {
 		// CORS preflight request, respond 204 and allow origin header
 		w.WriteHeader(http.StatusNoContent)
 		return nil
 	}
-	hostname := r.URL.Query().Get("hostname")
 	email := r.URL.Query().Get("email")
 	cookie, err := r.Cookie("sourcegraphSourceUrl")
 	var sourceURL string
@@ -399,8 +399,7 @@ func servePingFromSelfHosted(w http.ResponseWriter, r *http.Request) error {
 		sourceURL = cookie.Value
 	}
 	hubspotutil.SyncUser(email, hubspotutil.SelfHostedSiteInitEventID, &hubspot.ContactProperties{
-		FirstSourceURL:       sourceURL,
-		InstallationHostname: hostname,
+		FirstSourceURL: sourceURL,
 	})
 	return nil
 }
