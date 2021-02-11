@@ -24,6 +24,7 @@ import (
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -1408,6 +1409,247 @@ func TestSearchContext(t *testing.T) {
 			if numGetByNameCalls != tt.numContexts {
 				t.Fatalf("got %d, want %d", numGetByNameCalls, tt.numContexts)
 			}
+		})
+	}
+}
+
+func TestUnionMerge(t *testing.T) {
+	fileResolver := func(uri string, lineMatches []*lineMatch, symbolMatches []*searchSymbolResult) *FileMatchResolver {
+		return &FileMatchResolver{
+			FileMatch: FileMatch{
+				uri:          uri,
+				JLineMatches: lineMatches,
+				symbols:      symbolMatches,
+			},
+		}
+	}
+
+	repoResolver := func(url string) *RepositoryResolver {
+		return &RepositoryResolver{
+			innerRepo: &types.Repo{
+				Name: api.RepoName(url),
+			},
+		}
+	}
+
+	commitResolver := func(url string) *CommitSearchResultResolver {
+		return &CommitSearchResultResolver{
+			url: url,
+		}
+	}
+
+	diffResolver := func(url string) *CommitSearchResultResolver {
+		return &CommitSearchResultResolver{
+			url:         url,
+			diffPreview: &highlightedString{},
+		}
+	}
+
+	cases := []struct {
+		left  SearchResultsResolver
+		right SearchResultsResolver
+		want  autogold.Value
+	}{
+		{
+			left: SearchResultsResolver{
+				SearchResults: []SearchResultResolver{
+					diffResolver("a"),
+					commitResolver("a"),
+					repoResolver("a"),
+					fileResolver("a", nil, nil),
+				},
+			},
+			right: SearchResultsResolver{},
+			want: autogold.Want("RightEmpty", &SearchResultsResolver{SearchResults: []SearchResultResolver{
+				&CommitSearchResultResolver{url: "a"},
+				&CommitSearchResultResolver{
+					diffPreview: &highlightedString{},
+					url:         "a",
+				},
+				&FileMatchResolver{FileMatch: FileMatch{uri: "a"}},
+				&RepositoryResolver{innerRepo: &types.Repo{Name: api.RepoName("a")}},
+			}}),
+		},
+		{
+			left: SearchResultsResolver{},
+			right: SearchResultsResolver{
+				SearchResults: []SearchResultResolver{
+					diffResolver("a"),
+					commitResolver("a"),
+					repoResolver("a"),
+					fileResolver("a", nil, nil),
+				},
+			},
+			want: autogold.Want("LeftEmpty", &SearchResultsResolver{SearchResults: []SearchResultResolver{
+				&CommitSearchResultResolver{url: "a"},
+				&CommitSearchResultResolver{
+					diffPreview: &highlightedString{},
+					url:         "a",
+				},
+				&FileMatchResolver{FileMatch: FileMatch{uri: "a"}},
+				&RepositoryResolver{innerRepo: &types.Repo{Name: api.RepoName("a")}},
+			}}),
+		},
+		{
+			left: SearchResultsResolver{
+				SearchResults: []SearchResultResolver{
+					diffResolver("a"),
+					commitResolver("a"),
+					repoResolver("a"),
+					fileResolver("a", nil, nil),
+				},
+			},
+			right: SearchResultsResolver{
+				SearchResults: []SearchResultResolver{
+					diffResolver("b"),
+					commitResolver("b"),
+					repoResolver("b"),
+					fileResolver("b", nil, nil),
+				},
+			},
+			want: autogold.Want("AllUnique", &SearchResultsResolver{SearchResults: []SearchResultResolver{
+				&CommitSearchResultResolver{url: "a"},
+				&CommitSearchResultResolver{url: "b"},
+				&CommitSearchResultResolver{
+					diffPreview: &highlightedString{},
+					url:         "a",
+				},
+				&CommitSearchResultResolver{
+					diffPreview: &highlightedString{},
+					url:         "b",
+				},
+				&FileMatchResolver{FileMatch: FileMatch{uri: "a"}},
+				&FileMatchResolver{FileMatch: FileMatch{uri: "b"}},
+				&RepositoryResolver{innerRepo: &types.Repo{Name: api.RepoName("a")}},
+				&RepositoryResolver{innerRepo: &types.Repo{Name: api.RepoName("b")}},
+			}}),
+		},
+		{
+			left: SearchResultsResolver{
+				SearchResults: []SearchResultResolver{
+					fileResolver("b", []*lineMatch{
+						{JPreview: "a"},
+						{JPreview: "b"},
+					}, nil),
+				},
+			},
+			right: SearchResultsResolver{
+				SearchResults: []SearchResultResolver{
+					fileResolver("b", []*lineMatch{
+						{JPreview: "c"},
+						{JPreview: "d"},
+					}, nil),
+				},
+			},
+			want: autogold.Want("MergeLineMatches", &SearchResultsResolver{SearchResults: []SearchResultResolver{
+				&FileMatchResolver{FileMatch: FileMatch{
+					JLineMatches: []*lineMatch{
+						{
+							JPreview: "c",
+						},
+						{JPreview: "d"},
+						{JPreview: "a"},
+						{JPreview: "b"},
+					},
+					uri: "b",
+				}},
+			}}),
+		},
+		{
+			left: SearchResultsResolver{
+				SearchResults: []SearchResultResolver{
+					fileResolver("a", []*lineMatch{
+						{JPreview: "a"},
+						{JPreview: "b"},
+					}, nil),
+				},
+			},
+			right: SearchResultsResolver{
+				SearchResults: []SearchResultResolver{
+					fileResolver("b", []*lineMatch{
+						{JPreview: "c"},
+						{JPreview: "d"},
+					}, nil),
+				},
+			},
+			want: autogold.Want("NoMergeLineMatchesUniqueFiles", &SearchResultsResolver{SearchResults: []SearchResultResolver{
+				&FileMatchResolver{FileMatch: FileMatch{
+					JLineMatches: []*lineMatch{
+						{
+							JPreview: "a",
+						},
+						{JPreview: "b"},
+					},
+					uri: "a",
+				}},
+				&FileMatchResolver{FileMatch: FileMatch{
+					JLineMatches: []*lineMatch{
+						{JPreview: "c"},
+						{JPreview: "d"},
+					},
+					uri: "b",
+				}},
+			}}),
+		},
+		{
+			left: SearchResultsResolver{
+				SearchResults: []SearchResultResolver{
+					fileResolver("a", nil, []*searchSymbolResult{
+						{symbol: protocol.Symbol{Name: "a"}},
+						{symbol: protocol.Symbol{Name: "b"}},
+					}),
+				},
+			},
+			right: SearchResultsResolver{
+				SearchResults: []SearchResultResolver{
+					fileResolver("a", nil, []*searchSymbolResult{
+						{symbol: protocol.Symbol{Name: "c"}},
+						{symbol: protocol.Symbol{Name: "d"}},
+					}),
+				},
+			},
+			want: autogold.Want("MergeSymbols", &SearchResultsResolver{SearchResults: []SearchResultResolver{
+				&FileMatchResolver{FileMatch: FileMatch{
+					symbols: []*searchSymbolResult{
+						{
+							symbol: protocol.Symbol{Name: "c"},
+						},
+						{symbol: protocol.Symbol{Name: "d"}},
+						{symbol: protocol.Symbol{Name: "a"}},
+						{symbol: protocol.Symbol{Name: "b"}},
+					},
+					uri: "a",
+				}},
+			}}),
+		},
+	}
+
+	resultToString := func(r SearchResultResolver) string {
+		switch v := r.(type) {
+		case *FileMatchResolver:
+			return fmt.Sprintf("File:%s", v.uri)
+		case *RepositoryResolver:
+			return fmt.Sprintf("Repository:%s", v.URL())
+		case *CommitSearchResultResolver:
+			if v.diffPreview != nil {
+				return fmt.Sprintf("Diff:%s", v.url)
+			}
+			return fmt.Sprintf("Commit:%s", v.url)
+		}
+		return "unknown"
+	}
+
+	sortResultsResolver := func(r *SearchResultsResolver) {
+		sort.Slice(r.SearchResults, func(i, j int) bool {
+			return resultToString(r.SearchResults[i]) < resultToString(r.SearchResults[j])
+		})
+	}
+
+	for _, tc := range cases {
+		t.Run("", func(t *testing.T) {
+			got := unionMerge(&tc.left, &tc.right)
+			sortResultsResolver(got)
+			tc.want.Equal(t, got)
 		})
 	}
 }
