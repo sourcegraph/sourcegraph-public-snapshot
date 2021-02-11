@@ -11,7 +11,9 @@ const SearchContextMenuItem: React.FunctionComponent<{
     isDefault: boolean
     setSelectedSearchContextSpec: (spec: string) => void
 }> = ({ spec, description, selected, isDefault, setSelectedSearchContextSpec }) => {
-    const setContext = useCallback(() => setSelectedSearchContextSpec(spec), [spec, setSelectedSearchContextSpec])
+    const setContext = useCallback(() => {
+        setSelectedSearchContextSpec(spec)
+    }, [setSelectedSearchContextSpec, spec])
     return (
         <DropdownItem
             className={classNames('search-context-menu__item', { 'search-context-menu__item--selected': selected })}
@@ -28,39 +30,55 @@ const SearchContextMenuItem: React.FunctionComponent<{
     )
 }
 
-export const SearchContextMenu: React.FunctionComponent<Omit<SearchContextProps, 'showSearchContext'>> = ({
+export interface SearchContextMenuProps extends Omit<SearchContextProps, 'showSearchContext'> {
+    closeMenu: () => void
+}
+
+export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> = ({
     availableSearchContexts,
     selectedSearchContextSpec,
     defaultSearchContextSpec,
     setSelectedSearchContextSpec,
-}) => (
-    <div className="search-context-menu">
-        <div className="search-context-menu__header d-flex">
-            <span aria-hidden="true" className="search-context-menu__header-prompt">
-                <ChevronRightIcon className="icon-inline" />
-            </span>
-            <input type="search" placeholder="Find a context" className="search-context-menu__header-input" />
+    closeMenu,
+}) => {
+    const reset = useCallback(() => {
+        setSelectedSearchContextSpec(defaultSearchContextSpec)
+        closeMenu()
+    }, [closeMenu, defaultSearchContextSpec, setSelectedSearchContextSpec])
+
+    return (
+        <div className="search-context-menu">
+            <div className="search-context-menu__header d-flex">
+                <span aria-hidden="true" className="search-context-menu__header-prompt">
+                    <ChevronRightIcon className="icon-inline" />
+                </span>
+                <input type="search" placeholder="Find a context" className="search-context-menu__header-input" />
+            </div>
+            <div className="search-context-menu__list">
+                {availableSearchContexts.map(context => (
+                    <SearchContextMenuItem
+                        key={context.id}
+                        spec={context.spec}
+                        description={context.description}
+                        isDefault={context.spec === defaultSearchContextSpec}
+                        selected={context.spec === selectedSearchContextSpec}
+                        setSelectedSearchContextSpec={setSelectedSearchContextSpec}
+                    />
+                ))}
+            </div>
+            <div className="search-context-menu__footer">
+                <button
+                    type="button"
+                    onClick={reset}
+                    className="btn btn-link btn-sm search-context-menu__footer-button"
+                >
+                    Reset
+                </button>
+                <span className="flex-grow-1" />
+                <button type="button" className="btn btn-link btn-sm search-context-menu__footer-button">
+                    Manage contexts
+                </button>
+            </div>
         </div>
-        <div className="search-context-menu__list">
-            {availableSearchContexts.map(context => (
-                <SearchContextMenuItem
-                    key={context.id}
-                    spec={context.spec}
-                    description={context.description}
-                    isDefault={context.spec === defaultSearchContextSpec}
-                    selected={context.spec === selectedSearchContextSpec}
-                    setSelectedSearchContextSpec={setSelectedSearchContextSpec}
-                />
-            ))}
-        </div>
-        <div className="search-context-menu__footer">
-            <button type="button" className="btn btn-link btn-sm search-context-menu__footer-button">
-                Reset
-            </button>
-            <span className="flex-grow-1" />
-            <button type="button" className="btn btn-link btn-sm search-context-menu__footer-button">
-                Manage contexts
-            </button>
-        </div>
-    </div>
-)
+    )
+}

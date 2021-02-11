@@ -50,7 +50,7 @@ const defaultProps: MonacoQueryInputProps = {
         },
         {
             __typename: 'SearchContext',
-            id: '2',
+            id: '3',
             spec: '@username/test-version-1.5',
             autoDefined: true,
             description: 'Only code in version 1.5',
