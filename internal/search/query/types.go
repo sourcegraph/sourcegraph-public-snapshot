@@ -3,7 +3,6 @@ package query
 import (
 	"fmt"
 	"regexp"
-	"strings"
 )
 
 type ExpectedOperand struct {
@@ -46,11 +45,7 @@ type QueryInfo interface {
 type Q []Node
 
 func (q Q) String() string {
-	var v []string
-	for _, node := range q {
-		v = append(v, node.String())
-	}
-	return strings.Join(v, " ")
+	return toString(q)
 }
 
 func (q Q) RegexpPatterns(field string) (values, negatedValues []string) {
