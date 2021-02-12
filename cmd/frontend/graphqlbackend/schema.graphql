@@ -5270,6 +5270,8 @@ type DocSymbol {
     definitions: LocationConnection!
 
     children: [DocSymbol!]!
+
+    root: DocSymbol!
 }
 
 type DocSymbolConnection {

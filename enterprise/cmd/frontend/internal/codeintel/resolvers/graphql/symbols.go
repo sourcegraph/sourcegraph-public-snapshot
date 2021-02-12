@@ -84,3 +84,7 @@ func (r *docSymbolResolver) Children(ctx context.Context) ([]gql.DocSymbolResolv
 	}
 	return childrenResolvers, nil
 }
+
+func (r *docSymbolResolver) Root(ctx context.Context) (gql.DocSymbolResolver, error) {
+	return newDocSymbolResolver(r.adjustedSymbol.Root, r.locationResolver), nil
+}

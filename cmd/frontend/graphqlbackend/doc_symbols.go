@@ -48,4 +48,5 @@ type DocSymbolResolver interface {
 	Tags(ctx context.Context) ([]string, error) /* enum SymbolTag */
 	Definitions(ctx context.Context) (LocationConnectionResolver, error)
 	Children(ctx context.Context) ([]DocSymbolResolver, error)
+	Root(ctx context.Context) (DocSymbolResolver, error)
 }

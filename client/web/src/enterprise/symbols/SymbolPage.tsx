@@ -73,5 +73,13 @@ export const SymbolPage: React.FunctionComponent<SymbolRouteProps> = ({
         return <div>Symbol not found</div>
     }
     console.log('# symbol', symbol)
-    return <div>Symbol: {symbol.text}</div>
+    return (
+        <>
+            <div>Symbol: {symbol.text}</div>
+            <div>Definition</div>
+            <div>{symbol.detail}</div>
+            <div>Examples</div>
+            <div>Children</div>
+        </>
+    )
 }

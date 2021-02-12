@@ -5277,6 +5277,8 @@ type DocSymbol {
     definitions: LocationConnection!
 
     children: [DocSymbol!]!
+
+    root: DocSymbol!
 }
 
 type DocSymbolConnection {
@@ -6129,7 +6131,7 @@ type GitTree implements TreeEntry {
         query: String
     ): SymbolConnection!
     docSymbols(first: Int): DocSymbolConnection!
-    docSymbol(id: ID!)
+    docSymbol(id: String!): DocSymbol
     """
     Whether this tree entry is a single child
     """

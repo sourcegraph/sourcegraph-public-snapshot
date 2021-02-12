@@ -4,6 +4,8 @@ import { gql } from '../../../../shared/src/graphql/graphql'
 import { SymbolIcon } from '../../../../shared/src/symbols/SymbolIcon'
 // import { SymbolsSidebarContainerSymbolFields } from '../../graphql-operations'
 
+export const SymbolSidebarContainerSymbolGQLFragment = gql`TODO`
+
 export interface SymbolsSidebarOptions {
     // containerSymbol: SymbolsSidebarContainerSymbolFields
     containerSymbol: any

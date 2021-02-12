@@ -56,6 +56,7 @@ type AdjustedSymbol struct {
 	Monikers          []lsifstore.MonikerData
 
 	Children []*AdjustedSymbol
+	Root     *AdjustedSymbol
 }
 
 // TODO(beyang): should merge with AdjustedLocation?
@@ -238,7 +239,7 @@ func (r *queryResolver) Symbols(ctx context.Context, path string) ([]*AdjustedSy
 
 		adjustedSymbols := make([]*AdjustedSymbol, len(symbols))
 		for i, symbol := range symbols {
-			adjustedSymbol, err := r.adjustSymbol(ctx, symbol.Dump, symbol.Symbol)
+			adjustedSymbol, err := r.adjustSymbol(ctx, symbol.Dump, symbol.Symbol, nil)
 			if err != nil {
 				return nil, err
 			}
@@ -480,7 +481,12 @@ func (r *queryResolver) adjustLocations(ctx context.Context, locations []codeint
 	return adjustedLocations, nil
 }
 
-func (r *queryResolver) adjustSymbol(ctx context.Context, dump store.Dump, symbol *lsifstore.Symbol) (*AdjustedSymbol, error) {
+func (r *queryResolver) adjustSymbol(ctx context.Context, dump store.Dump, symbol *lsifstore.Symbol, adjustedRoot *AdjustedSymbol) (*AdjustedSymbol, error) {
+	adjustedSymbol := &AdjustedSymbol{}
+	if adjustedRoot == nil {
+		adjustedRoot = adjustedSymbol
+	}
+
 	adjustedLocations, err := r.adjustSymbolLocations(ctx, dump, symbol.Locations)
 	if err != nil {
 		return nil, err
@@ -490,13 +496,14 @@ func (r *queryResolver) adjustSymbol(ctx context.Context, dump store.Dump, symbo
 		adjustedChildren = make([]*AdjustedSymbol, len(symbol.Children))
 	}
 	for i, child := range symbol.Children {
-		adjustedChild, err := r.adjustSymbol(ctx, dump, child)
+		adjustedChild, err := r.adjustSymbol(ctx, dump, child, adjustedRoot)
 		if err != nil {
 			return nil, err
 		}
 		adjustedChildren[i] = adjustedChild
 	}
-	return &AdjustedSymbol{
+
+	*adjustedSymbol = AdjustedSymbol{
 		Dump:              dump,
 		Identifier:        symbol.Identifier,
 		Text:              symbol.Text,
@@ -506,7 +513,10 @@ func (r *queryResolver) adjustSymbol(ctx context.Context, dump store.Dump, symbo
 		AdjustedLocations: adjustedLocations,
 		Monikers:          symbol.Monikers,
 		Children:          adjustedChildren,
-	}, nil
+		Root:              adjustedRoot,
+	}
+
+	return adjustedSymbol, nil
 }
 
 func (r *queryResolver) adjustSymbolLocations(ctx context.Context, dump store.Dump, locations []lsifstore.SymbolLocation) ([]AdjustedSymbolLocation, error) {
