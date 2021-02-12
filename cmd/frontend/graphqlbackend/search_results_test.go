@@ -1745,4 +1745,3 @@ func TestSearchResultDeduper(t *testing.T) {
 		})
 	}
 }
-
