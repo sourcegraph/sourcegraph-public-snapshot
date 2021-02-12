@@ -23,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -139,34 +138,6 @@ func (fm *FileMatchResolver) ResultCount() int32 {
 		return 1 // 1 to count "empty" results like type:path results
 	}
 	return int32(rc)
-}
-
-func (fm *FileMatchResolver) Select(t filter.SelectPath) SearchResultResolver {
-	switch t.Type {
-	case filter.Repository:
-		return fm.Repository()
-	case filter.File:
-		fm.JLineMatches = nil
-		fm.symbols = nil
-		return fm
-	case filter.Symbol:
-		// Only return file match if symbols exist
-		if len(fm.symbols) > 0 {
-			fm.JLineMatches = nil
-			return fm
-		}
-		return nil
-	case filter.Content:
-		// Only return file match if line matches exist
-		if len(fm.JLineMatches) > 0 {
-			fm.symbols = nil
-			return fm
-		}
-		return nil
-	case filter.Commit:
-		return nil
-	}
-	return nil
 }
 
 // lineMatch is the struct used by vscode to receive search results for a line

@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -85,14 +84,6 @@ func MarshalRepositoryID(repo api.RepoID) graphql.ID { return relay.MarshalID("R
 func UnmarshalRepositoryID(id graphql.ID) (repo api.RepoID, err error) {
 	err = relay.UnmarshalSpec(id, &repo)
 	return
-}
-
-func (r *RepositoryResolver) Select(path filter.SelectPath) SearchResultResolver {
-	switch path.Type {
-	case filter.Repository:
-		return r
-	}
-	return nil
 }
 
 // repo makes sure the repo is hydrated before returning it.
