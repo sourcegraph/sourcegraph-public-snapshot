@@ -1952,7 +1952,6 @@ func (r *searchResolver) selectResults(results []SearchResultResolver) []SearchR
 		}
 		dedup.Add(current)
 	}
-
 	return dedup.Results()
 }
 
