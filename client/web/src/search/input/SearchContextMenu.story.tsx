@@ -48,3 +48,9 @@ const defaultProps: SearchContextMenuProps = {
 }
 
 add('default', () => <WebStory>{() => <SearchContextMenu {...defaultProps} />}</WebStory>, {})
+
+add(
+    'empty',
+    () => <WebStory>{() => <SearchContextMenu {...defaultProps} availableSearchContexts={[]} />}</WebStory>,
+    {}
+)
