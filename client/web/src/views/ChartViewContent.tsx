@@ -24,6 +24,7 @@ import {
 } from 'recharts'
 import { createLinkClickHandler } from '../../../shared/src/components/linkClickHandler'
 import niceTicks from 'nice-ticks'
+import { eventLogger } from '../tracking/eventLogger'
 
 /** Wraps the children in a link if an href is passed. */
 const MaybeLink: React.FunctionComponent<React.AnchorHTMLAttributes<unknown>> = ({ children, ...props }) =>
@@ -51,8 +52,15 @@ export const CartesianChartViewContent: React.FunctionComponent<{
     content: LineChartContent<any, string> | BarChartContent<any, string>
     animate?: boolean
     history: H.History
-}> = ({ content, animate, history }) => {
-    const linkHandler = useMemo(() => createLinkClickHandler(history), [history])
+    viewID: string
+}> = ({ content, animate, history, viewID }) => {
+    const linkHandler = useMemo(() => {
+        const linkHandler = createLinkClickHandler(history)
+        return (event: React.MouseEvent<unknown, MouseEvent>): void => {
+            eventLogger.log('InsightDataPointClick', { insightType: viewID.split('.')[0] })
+            linkHandler(event)
+        }
+    }, [history, viewID])
 
     // Unwrap union type
     const series: typeof content.series[number][] = content.series
@@ -68,6 +76,7 @@ export const CartesianChartViewContent: React.FunctionComponent<{
         <ResponsiveContainer width="100%">
             <ChartComponent
                 className="cartesian-chart-view-content"
+                data-view-id={viewID}
                 data={content.data}
                 // Chart is weirdly shifted to the right by default
                 margin={{ top: 5, bottom: 5, left: -20, right: 20 }}
@@ -177,8 +186,15 @@ export const PieChartViewContent: React.FunctionComponent<{
     content: PieChartContent<any>
     animate?: boolean
     history: H.History
-}> = ({ content, history, animate }) => {
-    const linkHandler = useMemo(() => createLinkClickHandler(history), [history])
+    viewID: string
+}> = ({ content, history, animate, viewID }) => {
+    const linkHandler = useMemo(() => {
+        const linkHandler = createLinkClickHandler(history)
+        return (event: React.MouseEvent<unknown, MouseEvent>): void => {
+            eventLogger.log('InsightDataPointClick', { insightType: viewID.split('.')[0] })
+            linkHandler(event)
+        }
+    }, [history, viewID])
 
     // Track hovered element to wrap it with a link
     const [activeIndex, setActiveIndex] = useState<number>()
@@ -225,6 +241,7 @@ export const ChartViewContent: React.FunctionComponent<{
     content: ChartContent
     animate?: boolean
     history: H.History
+    viewID: string
 }> = ({ content, ...props }) => (
     <>
         {content.chart === 'line' || content.chart === 'bar' ? (

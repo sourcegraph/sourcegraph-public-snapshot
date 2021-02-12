@@ -2,7 +2,6 @@ package usagestats
 
 import (
 	"context"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -10,13 +9,11 @@ import (
 
 func GetExtensionsUsageStatistics(ctx context.Context) (*types.ExtensionsUsageStatistics, error) {
 	stats := types.ExtensionsUsageStatistics{}
-	stats.UsageStatisticsByExtension = map[string]*types.ExtensionUsageStatistics{}
 
 	// Query for evaluating success of individual extensions
 	extensionsQuery := `
 	SELECT
 		argument ->> 'extension_id'::text          AS extension_id,
-		DATE_TRUNC('week', $1::timestamp)          AS week_start,
 		COUNT(DISTINCT user_id)                    AS user_count,
 		COUNT(*)::decimal/COUNT(DISTINCT user_id)  AS average_activations
 	FROM event_logs
@@ -26,6 +23,7 @@ func GetExtensionsUsageStatistics(ctx context.Context) (*types.ExtensionsUsageSt
 	GROUP BY extension_id;
 	`
 
+	usageStatisticsByExtension := []*types.ExtensionUsageStatistics{}
 	rows, err := dbconn.Global.QueryContext(ctx, extensionsQuery, timeNow())
 
 	if err != nil {
@@ -34,23 +32,19 @@ func GetExtensionsUsageStatistics(ctx context.Context) (*types.ExtensionsUsageSt
 	defer rows.Close()
 
 	for rows.Next() {
-		var extensionID string
-		var weekStart time.Time
-		var userCount int32
-		var averageActivations float64
+		extensionUsageStatistics := types.ExtensionUsageStatistics{}
 
-		err := rows.Scan(&extensionID, &weekStart, &userCount, &averageActivations)
-		if err != nil {
+		if err := rows.Scan(
+			&extensionUsageStatistics.ExtensionID,
+			&extensionUsageStatistics.UserCount,
+			&extensionUsageStatistics.AverageActivations,
+		); err != nil {
 			return nil, err
 		}
 
-		extensionUsageStatistics := types.ExtensionUsageStatistics{
-			WeekStart:          weekStart,
-			UserCount:          &userCount,
-			AverageActivations: &averageActivations,
-		}
-		stats.UsageStatisticsByExtension[extensionID] = &extensionUsageStatistics
+		usageStatisticsByExtension = append(usageStatisticsByExtension, &extensionUsageStatistics)
 	}
+	stats.UsageStatisticsByExtension = usageStatisticsByExtension
 
 	if err := rows.Err(); err != nil {
 		return nil, err

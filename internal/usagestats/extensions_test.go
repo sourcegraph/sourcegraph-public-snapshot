@@ -29,11 +29,11 @@ func TestExtensionsUsageStatistics(t *testing.T) {
 		INSERT INTO event_logs
 			(id, name, argument, url, user_id, anonymous_user_id, source, version, timestamp)
 		VALUES
-			(1, 'ExtensionActivation', '{"extension_id": "codecov"}', 'https://sourcegraph.test:3443/search', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(2, 'ExtensionActivation', '{"extension_id": "link-preview-expander"}', 'https://sourcegraph.test:3443/search', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(3, 'ExtensionActivation', '{"extension_id": "link-preview-expander"}', 'https://sourcegraph.test:3443/search', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(4, 'ExtensionActivation', '{"extension_id": "link-preview-expander"}', 'https://sourcegraph.test:3443/search', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(5, 'ExtensionActivation', '{"extension_id": "link-preview-expander"}', 'https://sourcegraph.test:3443/search', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '8 days')
+			(1, 'ExtensionActivation', '{"extension_id": "sourcegraph/codecov"}', 'https://sourcegraph.test:3443/search', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			(2, 'ExtensionActivation', '{"extension_id": "sourcegraph/link-preview-expander"}', 'https://sourcegraph.test:3443/search', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			(3, 'ExtensionActivation', '{"extension_id": "sourcegraph/link-preview-expander"}', 'https://sourcegraph.test:3443/search', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			(4, 'ExtensionActivation', '{"extension_id": "sourcegraph/link-preview-expander"}', 'https://sourcegraph.test:3443/search', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			(5, 'ExtensionActivation', '{"extension_id": "sourcegraph/link-preview-expander"}', 'https://sourcegraph.test:3443/search', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '8 days')
 	`, now)
 	if err != nil {
 		t.Fatal(err)
@@ -49,16 +49,19 @@ func TestExtensionsUsageStatistics(t *testing.T) {
 	oneInt := int32(1)
 	twoInt := int32(2)
 
-	usageStatisticsByExtension := map[string]*types.ExtensionUsageStatistics{
-		"codecov": {
-			WeekStart:          weekStart,
+	codecovID := "sourcegraph/codecov"
+	lpeID := "sourcegraph/link-preview-expander"
+
+	usageStatisticsByExtension := []*types.ExtensionUsageStatistics{
+		{
 			UserCount:          &oneInt,
 			AverageActivations: &oneFloat,
+			ExtensionID:        &codecovID,
 		},
-		"link-preview-expander": {
-			WeekStart:          weekStart,
+		{
 			UserCount:          &twoInt,
 			AverageActivations: &oneAndAHalfFloat,
+			ExtensionID:        &lpeID,
 		},
 	}
 

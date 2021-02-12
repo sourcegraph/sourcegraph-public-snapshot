@@ -5,6 +5,7 @@ import { ExtensionsControllerProps } from '../../../shared/src/extensions/contro
 import { CaseSensitivityProps, PatternTypeProps, CopyQueryButtonProps } from '../search'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { VersionContextProps } from '../../../shared/src/search/util'
+import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 
 interface Props
     extends RouteComponentProps<{}>,
@@ -13,7 +14,8 @@ interface Props
         PatternTypeProps,
         CaseSensitivityProps,
         CopyQueryButtonProps,
-        VersionContextProps {
+        VersionContextProps,
+        TelemetryProps {
     globbing: boolean
 }
 
