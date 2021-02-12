@@ -35,6 +35,7 @@ const (
 	FieldMax       = "max"    // Deprecated alias for count
 	FieldTimeout   = "timeout"
 	FieldCombyRule = "rule"
+	FieldSelect    = "select"
 )
 
 var allFields = map[string]struct{}{
@@ -74,4 +75,5 @@ var allFields = map[string]struct{}{
 	FieldCombyRule:          empty,
 	FieldRev:                empty,
 	"revision":              empty,
+	FieldSelect:             empty,
 }

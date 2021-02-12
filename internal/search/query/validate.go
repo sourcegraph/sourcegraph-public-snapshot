@@ -8,6 +8,8 @@ import (
 
 	"github.com/go-enry/go-enry/v2"
 	"github.com/pkg/errors"
+
+	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 )
 
 // exists traverses every node in nodes and returns early as soon as fn is satisfied.
@@ -211,6 +213,11 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 		return fmt.Errorf("unrecognized field %q", field)
 	}
 
+	isValidSelect := func() error {
+		_, err := filter.SelectPathFromString(value)
+		return err
+	}
+
 	satisfies := func(fns ...func() error) error {
 		for _, fn := range fns {
 			if err := fn(); err != nil {
@@ -284,6 +291,9 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 	case
 		FieldRev:
 		return satisfies(isSingular, isNotNegated)
+	case
+		FieldSelect:
+		return satisfies(isSingular, isNotNegated, isValidSelect)
 	default:
 		return isUnrecognizedField()
 	}

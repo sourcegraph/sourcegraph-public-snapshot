@@ -35,6 +35,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -847,6 +848,7 @@ func (r *searchResolver) evaluate(ctx context.Context, q query.Q) (*SearchResult
 	if err != nil {
 		return nil, err
 	}
+	result.SearchResults = r.selectResults(result.SearchResults)
 	r.sortResults(ctx, result.SearchResults)
 	return result, nil
 }
@@ -1922,6 +1924,35 @@ func compareSearchResults(left, right SearchResultResolver, exactFilePatterns ma
 		return compareFileLengths(afile, bfile, exactFilePatterns)
 	}
 	return arepo < brepo
+}
+
+func (r *searchResolver) selectResults(results []SearchResultResolver) []SearchResultResolver {
+	value, _ := r.Query.StringValue(query.FieldSelect)
+	if value == "" {
+		return results
+	}
+	sm, _ := filter.SelectPathFromString(value) // Invariant: select is validated.
+
+	var dedup searchResultDeduper
+	for _, result := range results {
+		var current SearchResultResolver
+		switch v := result.(type) {
+		case *FileMatchResolver:
+			current = v.Select(sm)
+		case *RepositoryResolver:
+			current = v.Select(sm)
+		case *CommitSearchResultResolver:
+			current = v.Select(sm)
+		default:
+			current = result
+		}
+
+		if current == nil {
+			continue
+		}
+		dedup.Add(current)
+	}
+	return dedup.Results()
 }
 
 func (r *searchResolver) sortResults(ctx context.Context, results []SearchResultResolver) {
