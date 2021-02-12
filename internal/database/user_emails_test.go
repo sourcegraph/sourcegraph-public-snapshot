@@ -525,10 +525,6 @@ func TestUserEmails_GetLatestVerificationSentEmail(t *testing.T) {
 	}
 }
 
-func strptr(s string) *string {
-	return &s
-}
-
 func TestUserEmails_GetVerifiedEmails(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
