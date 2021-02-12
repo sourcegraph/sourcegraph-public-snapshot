@@ -34,30 +34,45 @@ type Resolver interface {
 }
 
 type resolver struct {
-	dbStore       DBStore
-	lsifStore     LSIFStore
-	codeIntelAPI  CodeIntelAPI
-	indexEnqueuer IndexEnqueuer
-	hunkCache     HunkCache
-	operations    *operations
+	dbStore         DBStore
+	lsifStore       LSIFStore
+	gitserverClient GitserverClient
+	codeIntelAPI    CodeIntelAPI
+	indexEnqueuer   IndexEnqueuer
+	hunkCache       HunkCache
+	operations      *operations
 }
 
 // NewResolver creates a new resolver with the given services.
 func NewResolver(
 	dbStore DBStore,
 	lsifStore LSIFStore,
+	gitserverClient GitserverClient,
 	codeIntelAPI CodeIntelAPI,
 	indexEnqueuer IndexEnqueuer,
 	hunkCache HunkCache,
 	observationContext *observation.Context,
 ) Resolver {
+	return newResolver(dbStore, lsifStore, gitserverClient, codeIntelAPI, indexEnqueuer, hunkCache, observationContext)
+}
+
+func newResolver(
+	dbStore DBStore,
+	lsifStore LSIFStore,
+	gitserverClient GitserverClient,
+	codeIntelAPI CodeIntelAPI,
+	indexEnqueuer IndexEnqueuer,
+	hunkCache HunkCache,
+	observationContext *observation.Context,
+) *resolver {
 	return &resolver{
-		dbStore:       dbStore,
-		lsifStore:     lsifStore,
-		codeIntelAPI:  codeIntelAPI,
-		indexEnqueuer: indexEnqueuer,
-		hunkCache:     hunkCache,
-		operations:    newOperations(observationContext),
+		dbStore:         dbStore,
+		lsifStore:       lsifStore,
+		gitserverClient: gitserverClient,
+		codeIntelAPI:    codeIntelAPI,
+		indexEnqueuer:   indexEnqueuer,
+		hunkCache:       hunkCache,
+		operations:      newOperations(observationContext),
 	}
 }
 
@@ -109,7 +124,7 @@ func (r *resolver) IndexConfiguration(ctx context.Context, repositoryID int) ([]
 	}
 
 	var indented bytes.Buffer
-	json.Indent(&indented, marshaled, "", "\t")
+	_ = json.Indent(&indented, marshaled, "", "\t")
 	return indented.Bytes(), nil
 }
 
@@ -151,8 +166,12 @@ func (r *resolver) QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataA
 	})
 	defer endObservation()
 
-	dumps, err := r.codeIntelAPI.FindClosestDumps(
+	cachedCommitChecker := newCachedCommitChecker(r.gitserverClient)
+	cachedCommitChecker.set(int(args.Repo.ID), string(args.Commit))
+
+	dumps, err := r.findClosestDumps(
 		ctx,
+		cachedCommitChecker,
 		int(args.Repo.ID),
 		string(args.Commit),
 		args.Path,
@@ -167,6 +186,7 @@ func (r *resolver) QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataA
 		r.dbStore,
 		r.lsifStore,
 		r.codeIntelAPI,
+		cachedCommitChecker,
 		NewPositionAdjuster(args.Repo, string(args.Commit), r.hunkCache),
 		int(args.Repo.ID),
 		string(args.Commit),
