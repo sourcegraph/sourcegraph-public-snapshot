@@ -55,15 +55,27 @@ func (s *Store) With(other basestore.ShareableStore) *Store {
 var _ Interface = &Store{}
 
 // SeriesPoint describes a single insights' series data point.
+//
+// Some fields that could be queried (series ID, repo ID/names) are omitted as they are primarily
+// only useful for filtering the data you get back, and would inflate the data size considerably
+// otherwise.
 type SeriesPoint struct {
-	Time  time.Time
-	Value float64
+	Time     time.Time
+	Value    float64
+	Metadata []byte
+}
+
+func (s *SeriesPoint) String() string {
+	return fmt.Sprintf("SeriesPoint{Time: %q, Value: %v, Metadata: %s}", s.Time, s.Value, s.Metadata)
 }
 
 // SeriesPointsOpts describes options for querying insights' series data points.
 type SeriesPointsOpts struct {
 	// SeriesID is the unique series ID to query, if non-nil.
-	SeriesID *int32
+	SeriesID *string
+
+	// TODO(slimsag): Add ability to filter based on repo ID, name, original name.
+	// TODO(slimsag): Add ability to do limited filtering based on metadata.
 
 	// Time ranges to query from/to, if non-nil.
 	From, To *time.Time
@@ -80,6 +92,7 @@ func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]Seri
 		err := sc.Scan(
 			&point.Time,
 			&point.Value,
+			&point.Metadata,
 		)
 		if err != nil {
 			return err
@@ -91,8 +104,12 @@ func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]Seri
 }
 
 var seriesPointsQueryFmtstr = `
--- source: enterprise/internal/insights/store/series_points.go
-SELECT time, value FROM series_points
+-- source: enterprise/internal/insights/store/store.go:SeriesPoints
+SELECT time,
+	value,
+	m.metadata
+FROM series_points p
+INNER JOIN metadata m ON p.metadata_id = m.id
 WHERE %s
 ORDER BY time DESC
 `

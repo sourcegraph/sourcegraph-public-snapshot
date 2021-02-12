@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -73,8 +72,8 @@ SELECT time,
 			t.Fatal(err)
 		}
 		autogold.Want("SeriesPoints(2).len", int(913)).Equal(t, len(points))
-		autogold.Want("SeriesPoints(2)[len()-1]", "{Time:2020-01-01 00:00:00 +0000 UTC Value:-20.00716650672132}").Equal(t, fmt.Sprintf("%+v", points[len(points)-1]))
-		autogold.Want("SeriesPoints(2)[0]", "{Time:2020-06-01 00:00:00 +0000 UTC Value:-37.8750440811433}").Equal(t, fmt.Sprintf("%+v", points[0]))
+		autogold.Want("SeriesPoints(2)[len()-1].String()", `SeriesPoint{Time: "2020-01-01 00:00:00 +0000 UTC", Value: -20.00716650672132, Metadata: {"hello": "world", "languages": ["Go", "Python", "Java"]}}`).Equal(t, points[len(points)-1].String())
+		autogold.Want("SeriesPoints(2)[0].String()", `SeriesPoint{Time: "2020-06-01 00:00:00 +0000 UTC", Value: -37.8750440811433, Metadata: {"hello": "world", "languages": ["Go", "Python", "Java"]}}`).Equal(t, points[0].String())
 	})
 
 	t.Run("subset of data", func(t *testing.T) {
@@ -87,8 +86,8 @@ SELECT time,
 			t.Fatal(err)
 		}
 		autogold.Want("SeriesPoints(3).len", int(551)).Equal(t, len(points))
-		autogold.Want("SeriesPoints(3)[0]", "{Time:2020-05-31 20:00:00 +0000 UTC Value:-11.269436460802638}").Equal(t, fmt.Sprintf("%+v", points[0]))
-		autogold.Want("SeriesPoints(3)[len()-1]", "{Time:2020-03-01 04:00:00 +0000 UTC Value:35.85710033014749}").Equal(t, fmt.Sprintf("%+v", points[len(points)-1]))
+		autogold.Want("SeriesPoints(3)[0].String()", `SeriesPoint{Time: "2020-05-31 20:00:00 +0000 UTC", Value: -11.269436460802638, Metadata: {"hello": "world", "languages": ["Go", "Python", "Java"]}}`).Equal(t, points[0].String())
+		autogold.Want("SeriesPoints(3)[len()-1].String()", `SeriesPoint{Time: "2020-03-01 04:00:00 +0000 UTC", Value: 35.85710033014749, Metadata: {"hello": "world", "languages": ["Go", "Python", "Java"]}}`).Equal(t, points[len(points)-1].String())
 	})
 
 	t.Run("latest 3 points", func(t *testing.T) {
@@ -100,9 +99,9 @@ SELECT time,
 			t.Fatal(err)
 		}
 		autogold.Want("SeriesPoints(4).len", int(3)).Equal(t, len(points))
-		autogold.Want("SeriesPoints(4)[0]", "{Time:2020-06-01 00:00:00 +0000 UTC Value:-37.8750440811433}").Equal(t, fmt.Sprintf("%+v", points[0]))
-		autogold.Want("SeriesPoints(4)[1]", "{Time:2020-05-31 20:00:00 +0000 UTC Value:-11.269436460802638}").Equal(t, fmt.Sprintf("%+v", points[1]))
-		autogold.Want("SeriesPoints(4)[2]", "{Time:2020-05-31 16:00:00 +0000 UTC Value:17.838503552871998}").Equal(t, fmt.Sprintf("%+v", points[2]))
+		autogold.Want("SeriesPoints(4)[0].String()", `SeriesPoint{Time: "2020-06-01 00:00:00 +0000 UTC", Value: -37.8750440811433, Metadata: {"hello": "world", "languages": ["Go", "Python", "Java"]}}`).Equal(t, points[0].String())
+		autogold.Want("SeriesPoints(4)[1].String()", `SeriesPoint{Time: "2020-05-31 20:00:00 +0000 UTC", Value: -11.269436460802638, Metadata: {"hello": "world", "languages": ["Go", "Python", "Java"]}}`).Equal(t, points[1].String())
+		autogold.Want("SeriesPoints(4)[2].String()", `SeriesPoint{Time: "2020-05-31 16:00:00 +0000 UTC", Value: 17.838503552871998, Metadata: {"hello": "world", "languages": ["Go", "Python", "Java"]}}`).Equal(t, points[2].String())
 	})
 
 }
