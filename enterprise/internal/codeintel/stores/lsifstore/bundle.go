@@ -203,13 +203,13 @@ func (s *Store) Hover(ctx context.Context, bundleID int, path string, line, char
 }
 
 // Diagnostics returns the diagnostics for the documents that have the given path prefix. This method
-// also returns the size of the complete result set to aid in pagination (along with skip and take).
-func (s *Store) Diagnostics(ctx context.Context, bundleID int, prefix string, skip, take int) (_ []Diagnostic, _ int, err error) {
+// also returns the size of the complete result set to aid in pagination.
+func (s *Store) Diagnostics(ctx context.Context, bundleID int, prefix string, limit, offset int) (_ []Diagnostic, _ int, err error) {
 	ctx, endObservation := s.operations.diagnostics.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("prefix", prefix),
-		log.Int("skip", skip),
-		log.Int("take", take),
+		log.Int("limit", limit),
+		log.Int("offset", offset),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -218,19 +218,17 @@ func (s *Store) Diagnostics(ctx context.Context, bundleID int, prefix string, sk
 		return nil, 0, err
 	}
 
-	// TODO(efritz) - this is inefficient for large documents. We need to store the total number of diagnostics
-	// along-side the document so that we can determine which documents to skip and how many to retrieve. Right
-	// now we pull back every matching document, which can be large in large indexes.
 	totalCount := 0
-
-	diagnostics := make([]Diagnostic, 0, take)
 	for _, documentData := range documentData {
 		totalCount += len(documentData.Document.Diagnostics)
+	}
 
+	diagnostics := make([]Diagnostic, 0, limit)
+	for _, documentData := range documentData {
 		for _, diagnostic := range documentData.Document.Diagnostics {
-			skip--
+			offset--
 
-			if skip < 0 && len(diagnostics) < take {
+			if offset < 0 && len(diagnostics) < limit {
 				diagnostics = append(diagnostics, Diagnostic{
 					DumpID:         bundleID,
 					Path:           documentData.Path,
