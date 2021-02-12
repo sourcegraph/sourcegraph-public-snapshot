@@ -1931,7 +1931,7 @@ func (r *searchResolver) selectResults(results []SearchResultResolver) []SearchR
 	if value == "" {
 		return results
 	}
-	sm, _ := filter.SelectPathFromString(value) // error checked during query parsing
+	sm, _ := filter.SelectPathFromString(value) // Invariant: select is validated.
 
 	var dedup searchResultDeduper
 
