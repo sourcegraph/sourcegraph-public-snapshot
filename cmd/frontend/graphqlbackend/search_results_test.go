@@ -24,6 +24,7 @@ import (
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -1407,6 +1408,254 @@ func TestSearchContext(t *testing.T) {
 			}
 			if numGetByNameCalls != tt.numContexts {
 				t.Fatalf("got %d, want %d", numGetByNameCalls, tt.numContexts)
+			}
+		})
+	}
+}
+
+func commitResult(url string) *CommitSearchResultResolver {
+	return &CommitSearchResultResolver{
+		url: url,
+	}
+}
+
+func diffResult(url string) *CommitSearchResultResolver {
+	return &CommitSearchResultResolver{
+		url:         url,
+		diffPreview: &highlightedString{},
+	}
+}
+
+func repoResult(url string) *RepositoryResolver {
+	return &RepositoryResolver{
+		innerRepo: &types.Repo{
+			Name: api.RepoName(url),
+		},
+	}
+}
+
+func fileResult(uri string, lineMatches []*lineMatch, symbolMatches []*searchSymbolResult) *FileMatchResolver {
+	return &FileMatchResolver{
+		FileMatch: FileMatch{
+			uri:          uri,
+			JLineMatches: lineMatches,
+			symbols:      symbolMatches,
+		},
+	}
+}
+
+func TestUnionMerge(t *testing.T) {
+	cases := []struct {
+		left  SearchResultsResolver
+		right SearchResultsResolver
+		want  SearchResultsResolver
+	}{
+		{
+			left: SearchResultsResolver{
+				SearchResults: []SearchResultResolver{
+					diffResult("a"),
+					commitResult("a"),
+					repoResult("a"),
+					fileResult("a", nil, nil),
+				},
+			},
+			right: SearchResultsResolver{},
+			want: SearchResultsResolver{
+				SearchResults: []SearchResultResolver{
+					&CommitSearchResultResolver{url: "a"},
+					&CommitSearchResultResolver{
+						diffPreview: &highlightedString{},
+						url:         "a",
+					},
+					&FileMatchResolver{FileMatch: FileMatch{uri: "a"}},
+					&RepositoryResolver{innerRepo: &types.Repo{Name: api.RepoName("a")}},
+				},
+			}},
+		{
+			left: SearchResultsResolver{},
+			right: SearchResultsResolver{
+				SearchResults: []SearchResultResolver{
+					diffResult("a"),
+					commitResult("a"),
+					repoResult("a"),
+					fileResult("a", nil, nil),
+				},
+			},
+			want: SearchResultsResolver{SearchResults: []SearchResultResolver{
+				&CommitSearchResultResolver{url: "a"},
+				&CommitSearchResultResolver{
+					diffPreview: &highlightedString{},
+					url:         "a",
+				},
+				&FileMatchResolver{FileMatch: FileMatch{uri: "a"}},
+				&RepositoryResolver{innerRepo: &types.Repo{Name: api.RepoName("a")}},
+			},
+			}},
+		{
+			left: SearchResultsResolver{
+				SearchResults: []SearchResultResolver{
+					diffResult("a"),
+					commitResult("a"),
+					repoResult("a"),
+					fileResult("a", nil, nil),
+				},
+			},
+			right: SearchResultsResolver{
+				SearchResults: []SearchResultResolver{
+					diffResult("b"),
+					commitResult("b"),
+					repoResult("b"),
+					fileResult("b", nil, nil),
+				},
+			},
+			want: SearchResultsResolver{SearchResults: []SearchResultResolver{
+				&CommitSearchResultResolver{url: "a"},
+				&CommitSearchResultResolver{url: "b"},
+				&CommitSearchResultResolver{
+					diffPreview: &highlightedString{},
+					url:         "a",
+				},
+				&CommitSearchResultResolver{
+					diffPreview: &highlightedString{},
+					url:         "b",
+				},
+				&FileMatchResolver{FileMatch: FileMatch{uri: "a"}},
+				&FileMatchResolver{FileMatch: FileMatch{uri: "b"}},
+				&RepositoryResolver{innerRepo: &types.Repo{Name: api.RepoName("a")}},
+				&RepositoryResolver{innerRepo: &types.Repo{Name: api.RepoName("b")}},
+			}},
+		},
+		{
+			left: SearchResultsResolver{
+				SearchResults: []SearchResultResolver{
+					fileResult("b", []*lineMatch{
+						{JPreview: "a"},
+						{JPreview: "b"},
+					}, nil),
+				},
+			},
+			right: SearchResultsResolver{
+				SearchResults: []SearchResultResolver{
+					fileResult("b", []*lineMatch{
+						{JPreview: "c"},
+						{JPreview: "d"},
+					}, nil),
+				},
+			},
+			want: SearchResultsResolver{SearchResults: []SearchResultResolver{
+				&FileMatchResolver{FileMatch: FileMatch{
+					JLineMatches: []*lineMatch{
+						{JPreview: "a"},
+						{JPreview: "b"},
+						{JPreview: "c"},
+						{JPreview: "d"},
+					},
+					uri: "b",
+				}},
+			}},
+		},
+		{
+			left: SearchResultsResolver{
+				SearchResults: []SearchResultResolver{
+					fileResult("a", []*lineMatch{
+						{JPreview: "a"},
+						{JPreview: "b"},
+					}, nil),
+				},
+			},
+			right: SearchResultsResolver{
+				SearchResults: []SearchResultResolver{
+					fileResult("b", []*lineMatch{
+						{JPreview: "c"},
+						{JPreview: "d"},
+					}, nil),
+				},
+			},
+			want: SearchResultsResolver{SearchResults: []SearchResultResolver{
+				&FileMatchResolver{FileMatch: FileMatch{
+					JLineMatches: []*lineMatch{
+						{JPreview: "a"},
+						{JPreview: "b"},
+					},
+					uri: "a",
+				}},
+				&FileMatchResolver{FileMatch: FileMatch{
+					JLineMatches: []*lineMatch{
+						{JPreview: "c"},
+						{JPreview: "d"},
+					},
+					uri: "b",
+				}},
+			}},
+		},
+		{
+			left: SearchResultsResolver{
+				SearchResults: []SearchResultResolver{
+					fileResult("a", nil, []*searchSymbolResult{
+						{symbol: protocol.Symbol{Name: "a"}},
+						{symbol: protocol.Symbol{Name: "b"}},
+					}),
+				},
+			},
+			right: SearchResultsResolver{
+				SearchResults: []SearchResultResolver{
+					fileResult("a", nil, []*searchSymbolResult{
+						{symbol: protocol.Symbol{Name: "c"}},
+						{symbol: protocol.Symbol{Name: "d"}},
+					}),
+				},
+			},
+			want: SearchResultsResolver{SearchResults: []SearchResultResolver{
+				&FileMatchResolver{FileMatch: FileMatch{
+					symbols: []*searchSymbolResult{
+						{symbol: protocol.Symbol{Name: "a"}},
+						{symbol: protocol.Symbol{Name: "b"}},
+						{symbol: protocol.Symbol{Name: "c"}},
+						{symbol: protocol.Symbol{Name: "d"}},
+					},
+					uri: "a",
+				}},
+			}}},
+	}
+
+	resultToString := func(r SearchResultResolver) string {
+		switch v := r.(type) {
+		case *FileMatchResolver:
+			return fmt.Sprintf("File:%s", v.uri)
+		case *RepositoryResolver:
+			return fmt.Sprintf("Repository:%s", v.URL())
+		case *CommitSearchResultResolver:
+			if v.diffPreview != nil {
+				return fmt.Sprintf("Diff:%s", v.url)
+			}
+			return fmt.Sprintf("Commit:%s", v.url)
+		}
+		return "unknown"
+	}
+
+	sortResultsResolver := func(r *SearchResultsResolver) {
+		sort.Slice(r.SearchResults, func(i, j int) bool {
+			return resultToString(r.SearchResults[i]) < resultToString(r.SearchResults[j])
+		})
+
+		for _, res := range r.SearchResults {
+			if fm, ok := res.(*FileMatchResolver); ok {
+				sort.Slice(fm.JLineMatches, func(i, j int) bool {
+					return fm.JLineMatches[i].JPreview < fm.JLineMatches[j].JPreview
+				})
+				sort.Slice(fm.symbols, func(i, j int) bool {
+					return fm.symbols[i].symbol.Name < fm.symbols[j].symbol.Name
+				})
+			}
+		}
+	}
+
+	for _, tc := range cases {
+		t.Run("", func(t *testing.T) {
+			got := unionMerge(&tc.left, &tc.right)
+			sortResultsResolver(got)
+			if !reflect.DeepEqual(got.SearchResults, tc.want.SearchResults) {
+				t.Fatal(cmp.Diff(got.SearchResults, tc.want.SearchResults))
 			}
 		})
 	}
