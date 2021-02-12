@@ -1,6 +1,6 @@
 import { escapeRegExp } from 'lodash'
 import { replaceRange } from '../../../shared/src/util/strings'
-import { discreteValueAliases } from '../../../shared/src/search/query/filters'
+import { discreteValueAliases, FilterType } from '../../../shared/src/search/query/filters'
 import { VersionContext } from '../schema/site.schema'
 import { SearchPatternType } from '../../../shared/src/graphql-operations'
 import { Observable } from 'rxjs'
@@ -9,6 +9,7 @@ import { EventLogResult } from './backend'
 import { AggregateStreamingSearchResults, StreamSearchOptions } from './stream'
 import { findFilter, FilterKind } from '../../../shared/src/search/query/validate'
 import { VersionContextProps } from '../../../shared/src/search/util'
+import { scanSearchQuery } from '../../../shared/src/search/query/scanner'
 
 /**
  * Parses the query out of the URL search params (the 'q' parameter). In non-interactive mode, if the 'q' parameter is not present, it
@@ -239,4 +240,14 @@ export function resolveSearchContextSpec(
     }
 
     return defaultSpec
+}
+
+export function isContextFilterInQuery(query: string): boolean {
+    const scannedQuery = scanSearchQuery(query)
+    return (
+        scannedQuery.type === 'success' &&
+        scannedQuery.term.some(
+            token => token.type === 'filter' && token.field.value.toLowerCase() === FilterType.context
+        )
+    )
 }

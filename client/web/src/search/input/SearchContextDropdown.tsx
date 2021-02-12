@@ -1,9 +1,7 @@
 import classNames from 'classnames'
 import React, { useCallback, useEffect, useState } from 'react'
 import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
-import { FilterType } from '../../../../shared/src/search/query/filters'
-import { scanSearchQuery } from '../../../../shared/src/search/query/scanner'
-import { SearchContextProps } from '..'
+import { isContextFilterInQuery, SearchContextProps } from '..'
 import { SearchContextMenu } from './SearchContextMenu'
 
 export interface SearchContextDropdownProps extends Omit<SearchContextProps, 'showSearchContext'> {
@@ -18,15 +16,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
     const [isDisabled, setIsDisabled] = useState(false)
 
     // Disable the dropdown if the query contains a context filter
-    useEffect(() => {
-        const scannedQuery = scanSearchQuery(query)
-        const isDisabled =
-            scannedQuery.type === 'success' &&
-            scannedQuery.term.some(
-                token => token.type === 'filter' && token.field.value.toLowerCase() === FilterType.context
-            )
-        setIsDisabled(isDisabled)
-    }, [query])
+    useEffect(() => setIsDisabled(isContextFilterInQuery(query)), [query])
 
     return (
         <>
