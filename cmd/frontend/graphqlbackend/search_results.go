@@ -1934,7 +1934,6 @@ func (r *searchResolver) selectResults(results []SearchResultResolver) []SearchR
 	sm, _ := filter.SelectPathFromString(value) // Invariant: select is validated.
 
 	var dedup searchResultDeduper
-
 	for _, result := range results {
 		var current SearchResultResolver
 
