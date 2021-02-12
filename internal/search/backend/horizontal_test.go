@@ -131,11 +131,10 @@ func TestDoStreamSearch(t *testing.T) {
 	}
 	defer searcher.Close()
 
-	c := searcher.StreamSearch(context.Background(), nil, nil)
-	for event := range c {
-		if event.Error == nil {
-			t.Fatalf("received non-nil error, but expected an error")
-		}
+	c := make(chan *zoekt.SearchResult)
+	err := searcher.StreamSearch(context.Background(), nil, nil, ZoektStreamerFunc(c))
+	if err == nil {
+		t.Fatalf("received non-nil error, but expected an error")
 	}
 }
 
@@ -344,8 +343,8 @@ func (s *mockSearcher) Search(context.Context, query.Q, *zoekt.SearchOptions) (*
 	return res, s.searchError
 }
 
-func (s *mockSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions) <-chan StreamSearchEvent {
-	return (&StreamSearchAdapter{s}).StreamSearch(ctx, q, opts)
+func (s *mockSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, streamer ZoektStreamer) error {
+	return (&StreamSearchAdapter{s}).StreamSearch(ctx, q, opts, streamer)
 }
 
 func (s *mockSearcher) List(context.Context, query.Q) (*zoekt.RepoList, error) {

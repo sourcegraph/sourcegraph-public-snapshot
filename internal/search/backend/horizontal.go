@@ -9,7 +9,6 @@ import (
 
 	"github.com/google/zoekt"
 	"github.com/google/zoekt/query"
-	"golang.org/x/sync/errgroup"
 )
 
 // HorizontalSearcher is a StreamSearcher which aggregates searches over
@@ -37,17 +36,16 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	c2 := make(chan *zoekt.SearchResult, len(clients))
-	g, ctx := errgroup.WithContext(ctx)
+	type StreamSearchEvent struct {
+		SearchResult *zoekt.SearchResult
+		Error        error
+	}
+	c2 := make(chan StreamSearchEvent, len(clients))
 	for _, c := range clients {
-		g.Go(func() error {
+		go func(c StreamSearcher) {
 			sr, err := c.Search(ctx, q, opts)
-			if err != nil {
-				return err
-			}
-			c2 <- sr
-			return nil
-		})
+			c2 <- StreamSearchEvent{SearchResult: sr, Error: err}
+		}(c)
 	}
 
 	// During rebalancing a repository can appear on more than one replica.
@@ -55,12 +53,19 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 
 	for range clients {
 		r := <-c2
-		if r != nil {
-			r.Files = dedupper.Dedup(r.Files)
+
+		// Stop stream if we encounter an error.
+		if r.Error != nil {
+			return r.Error
 		}
-		streamer.Send(r)
+
+		if r.SearchResult != nil {
+			r.SearchResult.Files = dedupper.Dedup(r.SearchResult.Files)
+		}
+
+		streamer.Send(r.SearchResult)
 	}
-	return g.Wait()
+	return nil
 }
 
 // Search aggregates search over every endpoint in Map.
@@ -81,7 +86,6 @@ func AggregateStreamSearch(ctx context.Context, streamSearch func(context.Contex
 	ctx, cancel := context.WithCancel(ctx)
 
 	events := make(chan *zoekt.SearchResult)
-	defer close(events)
 
 	done := make(chan struct{})
 	go func() {
@@ -112,6 +116,7 @@ func AggregateStreamSearch(ctx context.Context, streamSearch func(context.Contex
 	if err != nil {
 		return nil, err
 	}
+	close(events)
 	<-done
 
 	aggregate.Duration = time.Since(start)

@@ -416,10 +416,11 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 	}()
 
 	// Start event stream
-	err = args.Zoekt.Client.StreamSearch(ctx, finalQuery, &searchOpts, backend.ZoektStreamerFunc(events))
-	if err != nil {
+	err = func() error {
+		defer close(events)
+		err = args.Zoekt.Client.StreamSearch(ctx, finalQuery, &searchOpts, backend.ZoektStreamerFunc(events))
 		return err
-	}
+	}()
 	<-done
 
 	mkStatusMap := func(mask search.RepoStatus) search.RepoStatusMap {
