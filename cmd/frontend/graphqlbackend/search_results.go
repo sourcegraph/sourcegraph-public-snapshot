@@ -1936,7 +1936,6 @@ func (r *searchResolver) selectResults(results []SearchResultResolver) []SearchR
 	var dedup searchResultDeduper
 	for _, result := range results {
 		var current SearchResultResolver
-
 		switch v := result.(type) {
 		case *FileMatchResolver:
 			current = v.Select(sm)
