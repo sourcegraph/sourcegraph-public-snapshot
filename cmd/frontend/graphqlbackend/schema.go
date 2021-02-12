@@ -6129,6 +6129,7 @@ type GitTree implements TreeEntry {
         query: String
     ): SymbolConnection!
     docSymbols(first: Int): DocSymbolConnection!
+    docSymbol(id: ID!)
     """
     Whether this tree entry is a single child
     """

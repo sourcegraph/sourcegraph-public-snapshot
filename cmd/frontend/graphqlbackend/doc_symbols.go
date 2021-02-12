@@ -23,6 +23,18 @@ func (r *GitTreeEntryResolver) DocSymbols(ctx context.Context, args *docSymbolsA
 	return symbolsConnection, nil
 }
 
+type docSymbolArgs struct {
+	LSIFSymbolArgs
+}
+
+func (r *GitTreeEntryResolver) DocSymbol(ctx context.Context, args *docSymbolArgs) (DocSymbolResolver, error) {
+	lsifResolver, err := r.LSIF(ctx, &struct{ ToolName *string }{})
+	if err != nil {
+		return nil, err
+	}
+	return lsifResolver.Symbol(ctx, &args.LSIFSymbolArgs)
+}
+
 type DocSymbolConnectionResolver interface {
 	Nodes(ctx context.Context) ([]DocSymbolResolver, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
