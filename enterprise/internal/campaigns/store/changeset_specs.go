@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"sort"
 	"strconv"
 
@@ -100,6 +101,7 @@ func (s *Store) createChangesetSpecQuery(c *campaigns.ChangesetSpec) (*sqlf.Quer
 			title = &c.Spec.Title
 		}
 	}
+	log.Printf("externalID: %v\nheadRef: %v\ntitle: %v\n", externalID, headRef, title)
 
 	if c.RandID == "" {
 		if c.RandID, err = basex.Encode(strconv.Itoa(seededRand.Int())); err != nil {

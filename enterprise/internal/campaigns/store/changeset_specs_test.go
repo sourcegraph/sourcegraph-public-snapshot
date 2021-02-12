@@ -678,7 +678,131 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 }
 
 func testStoreChangesetSpecsCurrentState(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
-	// TODO: set up test scenarios and, well, test them.
+	repoStore := database.ReposWith(s)
+	esStore := database.ExternalServicesWith(s)
+
+	// Let's set up a campaign with one of every changeset state.
+
+	// First up, let's create a repo.
+	repo := ct.TestRepo(t, esStore, extsvc.KindGitHub)
+	if err := repoStore.Create(ctx, repo); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create a user.
+	user := ct.CreateTestUser(t, false)
+
+	// Next, we need old and new campaign specs.
+	oldCampaignSpec := ct.CreateCampaignSpec(t, ctx, s, "text", user.ID)
+	newCampaignSpec := ct.CreateCampaignSpec(t, ctx, s, "text", user.ID)
+
+	// That's enough to create a campaign, so let's do that.
+	campaign := ct.CreateCampaign(t, ctx, s, "text", user.ID, oldCampaignSpec.ID)
+
+	// Now for some changeset oldSpecs.
+	var (
+		changesets = map[campaigns.ChangesetState][]*campaigns.Changeset{}
+		oldSpecs   = map[campaigns.ChangesetState][]*campaigns.ChangesetSpec{}
+		newSpecs   = map[campaigns.ChangesetState][]*campaigns.ChangesetSpec{}
+
+		states = map[campaigns.ChangesetState][]*ct.TestChangesetOpts{
+			campaigns.ChangesetStateRetrying: {
+				{ReconcilerState: campaigns.ReconcilerStateErrored},
+			},
+			campaigns.ChangesetStateFailed: {
+				{ReconcilerState: campaigns.ReconcilerStateFailed},
+			},
+			campaigns.ChangesetStateProcessing: {
+				{ReconcilerState: campaigns.ReconcilerStateCompleted},
+			},
+			campaigns.ChangesetStateUnpublished: {
+				{PublicationState: campaigns.ChangesetPublicationStateUnpublished},
+				{},
+			},
+			campaigns.ChangesetStateDraft: {
+				{ExternalState: campaigns.ChangesetExternalStateDraft},
+			},
+			campaigns.ChangesetStateOpen: {
+				{ExternalState: campaigns.ChangesetExternalStateOpen},
+			},
+			campaigns.ChangesetStateClosed: {
+				{ExternalState: campaigns.ChangesetExternalStateClosed},
+			},
+			campaigns.ChangesetStateMerged: {
+				{ExternalState: campaigns.ChangesetExternalStateMerged},
+			},
+			campaigns.ChangesetStateDeleted: {
+				{ExternalState: campaigns.ChangesetExternalStateDeleted},
+			},
+		}
+	)
+	for state, optses := range states {
+		for i, opts := range optses {
+			specOpts := ct.TestSpecOpts{
+				User:         user.ID,
+				Repo:         repo.ID,
+				CampaignSpec: oldCampaignSpec.ID,
+				Title:        string(state),
+				Published:    true,
+				HeadRef:      fmt.Sprintf("%s-%d", state, i),
+			}
+			if opts.ExternalState != "" {
+				opts.ExternalServiceType = repo.ExternalRepo.ServiceType
+				opts.ExternalID = fmt.Sprintf("%s-%d", state, i)
+			}
+			oldSpec := ct.CreateChangesetSpec(t, ctx, s, specOpts)
+
+			specOpts.CampaignSpec = newCampaignSpec.ID
+			newSpec := ct.CreateChangesetSpec(t, ctx, s, specOpts)
+
+			opts.Repo = repo.ID
+			opts.Campaign = campaign.ID
+			opts.CurrentSpec = oldSpec.ID
+			opts.OwnedByCampaign = campaign.ID
+			opts.Metadata = map[string]interface{}{"Title": string(state)}
+
+			changesets[state] = append(changesets[state], ct.CreateChangeset(t, ctx, s, *opts))
+			oldSpecs[state] = append(oldSpecs[state], oldSpec)
+			newSpecs[state] = append(newSpecs[state], newSpec)
+		}
+	}
+
+	// OK, there's lots of good stuff here. Let's work our way through the
+	// rewirer options and see what we get.
+	for state := range states {
+		t.Run(string(state), func(t *testing.T) {
+			mappings, err := s.GetRewirerMappings(ctx, GetRewirerMappingsOpts{
+				CampaignSpecID: newCampaignSpec.ID,
+				CampaignID:     campaign.ID,
+				CurrentState:   &state,
+			})
+			if err != nil {
+				t.Errorf("unexpected error: %+v", err)
+			}
+
+			t.Logf("mappings: %s", cmp.Diff(nil, mappings))
+
+			have := []int64{}
+			for _, mapping := range mappings {
+				have = append(have, mapping.ChangesetID)
+			}
+
+			want := []int64{}
+			for _, spec := range changesets[state] {
+				want = append(want, spec.ID)
+			}
+
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Errorf("unexpected changeset specs (-have +want):\n%s", diff)
+			}
+		})
+	}
+}
+
+func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
+	// This test only tests that CurrentState and TextSearch are AND-ed
+	// together. Other tests for those fields are handled in their respective
+	// unit tests.
 }
 
 func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
