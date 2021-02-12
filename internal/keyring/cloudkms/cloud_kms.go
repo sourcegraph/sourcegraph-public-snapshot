@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"hash/crc32"
 	"io/ioutil"
 	"strings"
@@ -44,7 +43,6 @@ func (k *Key) Decrypt(ctx context.Context, cipherText []byte) (*keyring.Secret, 
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(string(buf))
 	ek := encryptedKey{}
 	err = json.Unmarshal(buf, &ek)
 	if err != nil {
@@ -99,7 +97,7 @@ func (k *Key) Encrypt(ctx context.Context, plaintext []byte) ([]byte, error) {
 	enc := base64.NewEncoder(base64.StdEncoding, &buf)
 	_, err = enc.Write(jsonKey)
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 	err = enc.Close() // call close to ensure the whole write is flushed
 	return buf.Bytes(), err
