@@ -1,7 +1,6 @@
 import React from 'react'
 import { TabsWithLocalStorageViewStatePersistence } from './Tabs'
 import { mount } from 'enzyme'
-import sinon from 'sinon'
 
 describe('Tab', () => {
     test('Tabs with local storage persistenc', () => {
