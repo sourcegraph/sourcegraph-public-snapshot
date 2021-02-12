@@ -1950,7 +1950,6 @@ func (r *searchResolver) selectResults(results []SearchResultResolver) []SearchR
 		if current == nil {
 			continue
 		}
-
 		dedup.Add(current)
 	}
 
