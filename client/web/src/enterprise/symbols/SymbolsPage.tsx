@@ -12,7 +12,7 @@ import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable
 //     useEffect(() => {
 //         eventLogger.logViewEvent('Symbols')
 //     }, [])
-
+//
 //     const data = useObservable(
 //         useMemo(
 //             () =>
@@ -25,17 +25,19 @@ import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable
 //             [repo.id, resolvedRev.commitID, viewOptions]
 //         )
 //     )
-
+//
 //     return data ? <ContainerSymbolsList symbols={data} history={history} /> : <LoadingSpinner className="m-3" />
 // }
 
 const SymbolsPageSymbolsGQLFragment = gql`
     fragment DocSymbolFields on DocSymbol {
+        id
         text
         detail
         kind
         tags
         children {
+            id
             text
             kind
             tags
@@ -75,11 +77,13 @@ const queryRepositorySymbols = memoizeObservable(queryRepositorySymbolsUncached,
 
 export interface SymbolsRouteProps extends Pick<RepoRevisionContainerContext, 'repo' | 'revision' | 'resolvedRev'> {}
 
-export const SymbolsPage: React.FunctionComponent<SymbolsRouteProps> = ({ repo, revision, ...props }) => {
+export const SymbolsPage: React.FunctionComponent<SymbolsRouteProps> = ({ repo, revision }) => {
     const docSymbols = useObservable(queryRepositorySymbols({ repo: repo.id, commitID: revision, path: '' }))
+
+    console.log('### SymbolsPage', repo, revision)
     function urlForSymbol(symbol: DocSymbolFields): string {
         // TODO(beyang): this is a hack
-        return `/${repo.name}/-/docs/${symbol.text}`
+        return `/${repo.name}/-/docs/${symbol.id}`
     }
     return (
         <>

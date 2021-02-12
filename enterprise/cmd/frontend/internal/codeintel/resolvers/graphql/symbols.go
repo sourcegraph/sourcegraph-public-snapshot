@@ -40,6 +40,10 @@ func newDocSymbolResolver(symbol *resolvers.AdjustedSymbol, locationResolver *Ca
 	return &docSymbolResolver{adjustedSymbol: symbol, locationResolver: locationResolver}
 }
 
+func (r *docSymbolResolver) ID(ctx context.Context) (string, error) {
+	return r.adjustedSymbol.Identifier, nil
+}
+
 func (r *docSymbolResolver) Text(ctx context.Context) (string, error) {
 	return r.adjustedSymbol.Text, nil
 }

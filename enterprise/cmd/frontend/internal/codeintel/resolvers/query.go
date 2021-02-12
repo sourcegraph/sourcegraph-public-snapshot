@@ -46,12 +46,16 @@ type AdjustedCodeIntelligenceRange struct {
 type AdjustedSymbol struct {
 	Dump store.Dump
 
-	Text              string
-	Detail            string
-	Kind              protocol.SymbolKind
+	Identifier string
+	Text       string
+	Detail     string
+	Kind       protocol.SymbolKind
+
 	Tags              []protocol.SymbolTag
 	AdjustedLocations []AdjustedSymbolLocation
-	Children          []*AdjustedSymbol
+	Monikers          []lsifstore.MonikerData
+
+	Children []*AdjustedSymbol
 }
 
 // TODO(beyang): should merge with AdjustedLocation?
@@ -494,11 +498,13 @@ func (r *queryResolver) adjustSymbol(ctx context.Context, dump store.Dump, symbo
 	}
 	return &AdjustedSymbol{
 		Dump:              dump,
+		Identifier:        symbol.Identifier,
 		Text:              symbol.Text,
 		Detail:            symbol.Detail,
 		Kind:              symbol.Kind,
 		Tags:              symbol.Tags,
 		AdjustedLocations: adjustedLocations,
+		Monikers:          symbol.Monikers,
 		Children:          adjustedChildren,
 	}, nil
 }

@@ -34,8 +34,6 @@ export const SymbolsArea: React.FunctionComponent<Props> = ({
 }) => {
     const sidebarOptions = {}
 
-    console.log('# props', props)
-
     return (
         <>
             {sidebarOptions && (
@@ -51,9 +49,8 @@ export const SymbolsArea: React.FunctionComponent<Props> = ({
             )}
             <div>
                 <Switch>
-                    <Route path={match.url} exact={true} render={(routeProps: any) => <SymbolsPage {...props} />} />
-                    {/* NEXT */}
                     <Route path={`${match.url}/:symbolID`} render={(routeProps: any) => <SymbolPage {...props} />} />
+                    <Route path={match.url} exact={true} render={(routeProps: any) => <SymbolsPage {...props} />} />
                 </Switch>
             </div>
         </>

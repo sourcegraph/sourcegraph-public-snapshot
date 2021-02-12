@@ -5261,6 +5261,8 @@ enum SymbolTag {
 }
 
 type DocSymbol {
+    id: String!
+
     """
     The name of the symbol.
     """

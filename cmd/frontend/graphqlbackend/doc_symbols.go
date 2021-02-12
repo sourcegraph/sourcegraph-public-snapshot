@@ -29,6 +29,7 @@ type DocSymbolConnectionResolver interface {
 }
 
 type DocSymbolResolver interface {
+	ID(ctx context.Context) (string, error)
 	Text(ctx context.Context) (string, error)
 	Detail(ctx context.Context) (string, error)
 	Kind(ctx context.Context) (string, error)   /* enum SymbolKind */
