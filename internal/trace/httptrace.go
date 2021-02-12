@@ -34,6 +34,7 @@ const (
 	originKey
 	sourceKey
 	isInternalKey
+	anonymousUIDKey
 )
 
 // trackOrigin specifies a URL value. When an incoming request has the request header "Origin" set
@@ -68,11 +69,11 @@ func Init(shouldInitSentry bool) {
 // a request to /.api/graphql?Foobar would have the name `Foobar`. If the request had no
 // name, or the context is not a GraphQL request, "unknown" is returned.
 func GraphQLRequestName(ctx context.Context) string {
-	v := ctx.Value(graphQLRequestNameKey)
-	if v == nil {
-		return "unknown"
+	v, ok := ctx.Value(graphQLRequestNameKey).(string)
+	if ok {
+		return v
 	}
-	return v.(string)
+	return "unknown"
 }
 
 // WithGraphQLRequestName sets the GraphQL request name in the context.
@@ -83,13 +84,31 @@ func WithGraphQLRequestName(ctx context.Context, name string) context.Context {
 // IsInternalRequest returns true if the request was handled by our internal API
 // handler.
 func IsInternalRequest(ctx context.Context) bool {
-	return ctx.Value(isInternalKey).(bool)
+	v, ok := ctx.Value(isInternalKey).(bool)
+	if ok {
+		return v
+	}
+	return false
 }
 
 // WithIsInternal sets whether or not the request was handled by our internal or
 // external API handler.
 func WithIsInternal(ctx context.Context, isInternal bool) context.Context {
 	return context.WithValue(ctx, isInternalKey, isInternal)
+}
+
+// AnonymousUID sets the anonymous UID associated with the request.
+func AnonymousUID(ctx context.Context) string {
+	v, ok := ctx.Value(anonymousUIDKey).(string)
+	if ok {
+		return v
+	}
+	return "unknown"
+}
+
+// WithAnonymousUID fetches the anonymous UID associated with the request.
+func WithAnonymousUID(ctx context.Context, uid string) context.Context {
+	return context.WithValue(ctx, anonymousUIDKey, uid)
 }
 
 // RequestOrigin returns the request origin (the value of the request header "Origin") for a request context.
