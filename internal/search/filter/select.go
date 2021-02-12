@@ -29,6 +29,5 @@ func SelectPathFromString(s string) (SelectPath, error) {
 	if _, ok := validSelectors[SelectType(s)]; !ok {
 		return SelectPath{}, fmt.Errorf("invalid select type '%s'", s)
 	}
-
 	return SelectPath{SelectType(s)}, nil
 }
