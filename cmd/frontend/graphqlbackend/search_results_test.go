@@ -1444,6 +1444,38 @@ func fileResult(uri string, lineMatches []*lineMatch, symbolMatches []*searchSym
 	}
 }
 
+func resultToString(r SearchResultResolver) string {
+	switch v := r.(type) {
+	case *FileMatchResolver:
+		return fmt.Sprintf("File:%s", v.uri)
+	case *RepositoryResolver:
+		return fmt.Sprintf("Repository:%s", v.URL())
+	case *CommitSearchResultResolver:
+		if v.diffPreview != nil {
+			return fmt.Sprintf("Diff:%s", v.url)
+		}
+		return fmt.Sprintf("Commit:%s", v.url)
+	}
+	return "unknown"
+}
+
+func sortResultResolvers(rs []SearchResultResolver) {
+	sort.Slice(rs, func(i, j int) bool {
+		return resultToString(rs[i]) < resultToString(rs[j])
+	})
+
+	for _, res := range rs {
+		if fm, ok := res.(*FileMatchResolver); ok {
+			sort.Slice(fm.JLineMatches, func(i, j int) bool {
+				return fm.JLineMatches[i].JPreview < fm.JLineMatches[j].JPreview
+			})
+			sort.Slice(fm.symbols, func(i, j int) bool {
+				return fm.symbols[i].symbol.Name < fm.symbols[j].symbol.Name
+			})
+		}
+	}
+}
+
 func TestUnionMerge(t *testing.T) {
 	cases := []struct {
 		left  SearchResultsResolver
@@ -1618,45 +1650,98 @@ func TestUnionMerge(t *testing.T) {
 			}}},
 	}
 
-	resultToString := func(r SearchResultResolver) string {
+	for _, tc := range cases {
+		t.Run("", func(t *testing.T) {
+			got := unionMerge(&tc.left, &tc.right)
+			sortResultResolvers(got.SearchResults)
+			if !reflect.DeepEqual(got.SearchResults, tc.want.SearchResults) {
+				t.Fatal(cmp.Diff(got.SearchResults, tc.want.SearchResults))
+			}
+		})
+	}
+}
+
+func TestSearchResultDeduper(t *testing.T) {
+	url := func(r SearchResultResolver) string {
 		switch v := r.(type) {
 		case *FileMatchResolver:
-			return fmt.Sprintf("File:%s", v.uri)
-		case *RepositoryResolver:
-			return fmt.Sprintf("Repository:%s", v.URL())
+			return v.uri
 		case *CommitSearchResultResolver:
-			if v.diffPreview != nil {
-				return fmt.Sprintf("Diff:%s", v.url)
-			}
-			return fmt.Sprintf("Commit:%s", v.url)
+			return v.url
+		case *RepositoryResolver:
+			return v.URL()
 		}
-		return "unknown"
+		return ""
 	}
 
-	sortResultsResolver := func(r *SearchResultsResolver) {
-		sort.Slice(r.SearchResults, func(i, j int) bool {
-			return resultToString(r.SearchResults[i]) < resultToString(r.SearchResults[j])
-		})
-
-		for _, res := range r.SearchResults {
-			if fm, ok := res.(*FileMatchResolver); ok {
-				sort.Slice(fm.JLineMatches, func(i, j int) bool {
-					return fm.JLineMatches[i].JPreview < fm.JLineMatches[j].JPreview
-				})
-				sort.Slice(fm.symbols, func(i, j int) bool {
-					return fm.symbols[i].symbol.Name < fm.symbols[j].symbol.Name
-				})
+	resultType := func(r SearchResultResolver) string {
+		switch v := r.(type) {
+		case *FileMatchResolver:
+			return "File"
+		case *CommitSearchResultResolver:
+			if v.diffPreview != nil {
+				return "Diff"
 			}
+			return "Commit"
+		case *RepositoryResolver:
+			return "Repo"
 		}
+		return ""
+	}
+
+	cases := []struct {
+		input []SearchResultResolver
+		want  autogold.Value
+	}{
+		{
+			[]SearchResultResolver{},
+			autogold.Want("Empty", ""),
+		},
+		{
+			[]SearchResultResolver{commitResult("a")},
+			autogold.Want("SingleCommit", "Commit:a"),
+		},
+		{
+			[]SearchResultResolver{commitResult("a"), commitResult("a")},
+			autogold.Want("DuplicateCommits", "Commit:a"),
+		},
+		{
+			[]SearchResultResolver{commitResult("a"), diffResult("a")},
+			autogold.Want("SharedURLCommitDiff", "Commit:a, Diff:a"),
+		},
+		{
+			[]SearchResultResolver{commitResult("a"), diffResult("b")},
+			autogold.Want("DifferentURLCommitDiff", "Commit:a, Diff:b"),
+		},
+		{
+			[]SearchResultResolver{commitResult("a"), diffResult("a"), repoResult("a"), fileResult("a", nil, nil)},
+			autogold.Want("EachTypeSameURL", "Commit:a, Diff:a, File:a, Repo:/a"),
+		},
+		{
+			[]SearchResultResolver{commitResult("a"), commitResult("b"), commitResult("a"), commitResult("b")},
+			autogold.Want("FourCommitsTwoURLs", "Commit:a, Commit:b"),
+		},
+	}
+
+	toString := func(srrs []SearchResultResolver) string {
+		var searchResultStrings []string
+		for _, srr := range srrs {
+			searchResultStrings = append(searchResultStrings, fmt.Sprintf("%s:%s", resultType(srr), url(srr)))
+		}
+		return strings.Join(searchResultStrings, ", ")
 	}
 
 	for _, tc := range cases {
 		t.Run("", func(t *testing.T) {
-			got := unionMerge(&tc.left, &tc.right)
-			sortResultsResolver(got)
-			if !reflect.DeepEqual(got.SearchResults, tc.want.SearchResults) {
-				t.Fatal(cmp.Diff(got.SearchResults, tc.want.SearchResults))
+			dedup := NewDeduper()
+			for _, r := range tc.input {
+				dedup.Add(r)
 			}
+
+			deduped := dedup.Results()
+			sortResultResolvers(deduped)
+
+			tc.want.Equal(t, toString(deduped))
 		})
 	}
 }
