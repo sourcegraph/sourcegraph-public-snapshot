@@ -3,45 +3,46 @@ import { SearchSuggestion } from '../suggestions'
 import { Omit } from 'utility-types'
 
 export enum FilterType {
+    after = 'after',
+    archived = 'archived',
+    author = 'author',
+    before = 'before',
+    case = 'case',
+    committer = 'committer',
+    content = 'content',
+    context = 'context',
+    count = 'count',
+    file = 'file',
+    fork = 'fork',
+    index = 'index',
+    lang = 'lang',
+    message = 'message',
+    patterntype = 'patterntype',
     repo = 'repo',
     repogroup = 'repogroup',
-    repohasfile = 'repohasfile',
     repohascommitafter = 'repohascommitafter',
-    file = 'file',
-    type = 'type',
-    case = 'case',
-    lang = 'lang',
-    fork = 'fork',
-    archived = 'archived',
-    visibility = 'visibility',
-    count = 'count',
-    timeout = 'timeout',
-    before = 'before',
-    after = 'after',
-    author = 'author',
-    committer = 'committer',
-    message = 'message',
-    content = 'content',
-    patterntype = 'patterntype',
-    index = 'index',
-    stable = 'stable',
-    context = 'context',
+    repohasfile = 'repohasfile',
     // eslint-disable-next-line unicorn/prevent-abbreviations
     rev = 'rev',
+    select = 'select',
+    stable = 'stable',
+    timeout = 'timeout',
+    type = 'type',
+    visibility = 'visibility',
 }
 
 /* eslint-disable unicorn/prevent-abbreviations */
 export enum AliasedFilterType {
-    r = 'repo',
-    g = 'repogroup',
     f = 'file',
+    g = 'repogroup',
     l = 'lang',
     language = 'lang',
-    until = 'before',
-    since = 'after',
     m = 'message',
     msg = 'message',
+    r = 'repo',
     revision = 'rev',
+    since = 'after',
+    until = 'before',
 }
 /* eslint-enable unicorn/prevent-abbreviations */
 
@@ -55,17 +56,17 @@ export const filterTypeKeysWithAliases: (FilterType | AliasedFilterType)[] = [
 ] as (FilterType | AliasedFilterType)[]
 
 export enum NegatedFilters {
-    repo = '-repo',
-    file = '-file',
-    lang = '-lang',
-    r = '-r',
-    f = '-f',
-    l = '-l',
-    repohasfile = '-repohasfile',
-    content = '-content',
-    committer = '-committer',
     author = '-author',
+    committer = '-committer',
+    content = '-content',
+    f = '-f',
+    file = '-file',
+    l = '-l',
+    lang = '-lang',
     message = '-message',
+    r = '-r',
+    repo = '-repo',
+    repohasfile = '-repohasfile',
 }
 
 /** The list of filters that are able to be negated. */
@@ -89,17 +90,17 @@ export const isNegatedFilter = (filter: string): filter is NegatedFilters =>
     negatedFilters.includes(filter as NegatedFilters)
 
 const negatedFilterToNegatableFilter: { [key: string]: NegatableFilter } = {
-    '-repo': FilterType.repo,
-    '-file': FilterType.file,
-    '-lang': FilterType.lang,
-    '-r': FilterType.repo,
-    '-f': FilterType.file,
-    '-l': FilterType.lang,
-    '-repohasfile': FilterType.repohasfile,
-    '-content': FilterType.content,
-    '-committer': FilterType.committer,
     '-author': FilterType.author,
+    '-committer': FilterType.committer,
+    '-content': FilterType.content,
+    '-f': FilterType.file,
+    '-file': FilterType.file,
+    '-l': FilterType.lang,
+    '-lang': FilterType.lang,
     '-message': FilterType.message,
+    '-r': FilterType.repo,
+    '-repo': FilterType.repo,
+    '-repohasfile': FilterType.repohasfile,
 }
 
 export const resolveNegatedFilter = (filter: NegatedFilters): NegatableFilter => negatedFilterToNegatableFilter[filter]
@@ -145,6 +146,7 @@ export const LANGUAGES: string[] = [
     'swift',
     'typescript',
 ]
+export const SELECTORS: string[] = ['repo', 'file', 'content', 'symbol', 'commit']
 
 export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     Record<Exclude<FilterType, NegatableFilter>, BaseFilterDefinition> = {
@@ -244,6 +246,11 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     },
     [FilterType.rev]: {
         description: 'Search a revision (branch, commit hash, or tag) instead of the default branch.',
+        singular: true,
+    },
+    [FilterType.select]: {
+        discreteValues: SELECTORS,
+        description: 'Selects the kind of result to display.',
         singular: true,
     },
     [FilterType.stable]: {

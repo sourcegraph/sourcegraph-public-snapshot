@@ -144,7 +144,7 @@ func DeployType() string {
 	if e := os.Getenv("DEPLOY_TYPE"); e != "" {
 		return e
 	}
-	// Default to Kubernetes cluster so that every Kubernetes c
+	// Default to Kubernetes cluster so that every Kubernetes
 	// cluster deployment doesn't need to be configured with DEPLOY_TYPE.
 	return DeployKubernetes
 }
