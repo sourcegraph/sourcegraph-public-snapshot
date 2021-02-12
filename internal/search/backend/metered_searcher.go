@@ -38,18 +38,7 @@ func NewMeteredSearcher(hostname string, z StreamSearcher) StreamSearcher {
 	}
 }
 
-func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions) <-chan StreamSearchEvent {
-	c := make(chan StreamSearchEvent)
-
-	go func() {
-		defer close(c)
-		m.doStreamSearch(ctx, q, opts, c)
-	}()
-
-	return c
-}
-
-func (m *meteredSearcher) doStreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, c chan<- StreamSearchEvent) {
+func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, c ZoektStreamer) error {
 	start := time.Now()
 
 	// isLeaf is true if this is a zoekt.Searcher which does a network
@@ -121,14 +110,8 @@ func (m *meteredSearcher) doStreamSearch(ctx context.Context, q query.Q, opts *z
 		code  = "200" // final code to record
 		first = true
 	)
-	for event := range m.StreamSearcher.StreamSearch(ctx, q, opts) {
-		zsr, err := event.SearchResult, event.Error
 
-		if err != nil {
-			code = "error"
-			tr.SetError(err)
-		}
-
+	obs := ZoektStreamObserver(func(zsr *zoekt.SearchResult) {
 		if first && isLeaf {
 			first = false
 			tr.LogFields(
@@ -156,12 +139,15 @@ func (m *meteredSearcher) doStreamSearch(ctx context.Context, q query.Q, opts *z
 				log.Int64("stats.wait_ms", zsr.Stats.Wait.Milliseconds()),
 			)
 		}
+	})
 
-		c <- event
+	err := m.StreamSearcher.StreamSearch(ctx, q, opts, WithObserver(c, obs))
+	if err != nil {
+		return err
 	}
-
 	// Record total duration of stream
 	requestDuration.WithLabelValues(m.hostname, cat, code).Observe(time.Since(start).Seconds())
+	return nil
 }
 
 func (m *meteredSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {

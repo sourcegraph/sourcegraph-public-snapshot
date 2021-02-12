@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/zoekt"
 	"github.com/google/zoekt/query"
+	"golang.org/x/sync/errgroup"
 )
 
 // HorizontalSearcher is a StreamSearcher which aggregates searches over
@@ -27,32 +28,26 @@ type HorizontalSearcher struct {
 
 // StreamSearch does a search which merges the stream from every endpoint in
 // Map. The channel needs to be read until closed.
-func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions) <-chan StreamSearchEvent {
-	results := make(chan StreamSearchEvent)
-	go func() {
-		defer close(results)
-		s.doStreamSearch(ctx, q, opts, results)
-	}()
-
-	return results
-}
-
-func (s *HorizontalSearcher) doStreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, results chan<- StreamSearchEvent) {
+func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, streamer ZoektStreamer) error {
 	clients, err := s.searchers()
 	if err != nil {
-		results <- StreamSearchEvent{Error: err}
-		return
+		return err
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	c2 := make(chan StreamSearchEvent, len(clients))
+	c2 := make(chan *zoekt.SearchResult, len(clients))
+	g, ctx := errgroup.WithContext(ctx)
 	for _, c := range clients {
-		go func(c StreamSearcher) {
+		g.Go(func() error {
 			sr, err := c.Search(ctx, q, opts)
-			c2 <- StreamSearchEvent{SearchResult: sr, Error: err}
-		}(c)
+			if err != nil {
+				return err
+			}
+			c2 <- sr
+			return nil
+		})
 	}
 
 	// During rebalancing a repository can appear on more than one replica.
@@ -60,19 +55,12 @@ func (s *HorizontalSearcher) doStreamSearch(ctx context.Context, q query.Q, opts
 
 	for range clients {
 		r := <-c2
-
-		// Stop stream if we encounter an error.
-		if r.Error != nil {
-			results <- r
-			return
+		if r != nil {
+			r.Files = dedupper.Dedup(r.Files)
 		}
-
-		if r.SearchResult != nil {
-			r.SearchResult.Files = dedupper.Dedup(r.SearchResult.Files)
-		}
-
-		results <- r
+		streamer.Send(r)
 	}
+	return g.Wait()
 }
 
 // Search aggregates search over every endpoint in Map.
@@ -82,7 +70,7 @@ func (s *HorizontalSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.
 
 // AggregateStreamSearch aggregates the stream events into a single batch
 // result.
-func AggregateStreamSearch(ctx context.Context, streamSearch func(context.Context, query.Q, *zoekt.SearchOptions) <-chan StreamSearchEvent, q query.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
+func AggregateStreamSearch(ctx context.Context, streamSearch func(context.Context, query.Q, *zoekt.SearchOptions, ZoektStreamer) error, q query.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
 	start := time.Now()
 
 	aggregate := &zoekt.SearchResult{
@@ -91,31 +79,40 @@ func AggregateStreamSearch(ctx context.Context, streamSearch func(context.Contex
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
-	events := streamSearch(ctx, q, opts)
-	defer func() {
-		cancel()
-		// Drain events
-		for range events {
+
+	events := make(chan *zoekt.SearchResult)
+	defer close(events)
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		defer func() {
+			cancel()
+			// Drain events
+			for range events {
+			}
+		}()
+
+		for event := range events {
+			aggregate.Files = append(aggregate.Files, event.Files...)
+			aggregate.Stats.Add(event.Stats)
+
+			if len(event.Files) > 0 {
+				for k, v := range event.RepoURLs {
+					aggregate.RepoURLs[k] = v
+				}
+				for k, v := range event.LineFragments {
+					aggregate.LineFragments[k] = v
+				}
+			}
 		}
 	}()
 
-	for event := range events {
-		if event.Error != nil {
-			return nil, event.Error
-		}
-
-		aggregate.Files = append(aggregate.Files, event.SearchResult.Files...)
-		aggregate.Stats.Add(event.SearchResult.Stats)
-
-		if len(event.SearchResult.Files) > 0 {
-			for k, v := range event.SearchResult.RepoURLs {
-				aggregate.RepoURLs[k] = v
-			}
-			for k, v := range event.SearchResult.LineFragments {
-				aggregate.LineFragments[k] = v
-			}
-		}
+	err := streamSearch(ctx, q, opts, ZoektStreamerFunc(events))
+	if err != nil {
+		return nil, err
 	}
+	<-done
 
 	aggregate.Duration = time.Since(start)
 
