@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Query input toggle state case toggle for case subexpressions 1`] = `
+exports[`Toggles Query input toggle state case toggle for case subexpressions 1`] = `
 Array [
   <QueryInputToggle
     activeClassName="test-case-sensitivity-toggle--active"
@@ -76,7 +76,7 @@ Array [
 ]
 `;
 
-exports[`Query input toggle state case toggle for patterntype subexpressions 1`] = `
+exports[`Toggles Query input toggle state case toggle for patterntype subexpressions 1`] = `
 Array [
   <QueryInputToggle
     activeClassName="test-case-sensitivity-toggle--active"
@@ -152,7 +152,7 @@ Array [
 ]
 `;
 
-exports[`Query input toggle state regexp toggle for patterntype subexpressions 1`] = `
+exports[`Toggles Query input toggle state regexp toggle for patterntype subexpressions 1`] = `
 Array [
   <QueryInputToggle
     activeClassName="test-regexp-toggle--active"
