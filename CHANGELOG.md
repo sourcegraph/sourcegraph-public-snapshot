@@ -24,6 +24,9 @@ All notable changes to Sourcegraph are documented in this file.
 - Experimental: The webapp can now stream search results to the client, improving search performance. To enable it, add `{ "experimentalFeatures": { "searchStreaming": true } }` in user settings. [#16097](https://github.com/sourcegraph/sourcegraph/pull/16097)
 - New product research sign-up page. This can be accessed by all users in their user settings. [#17945](https://github.com/sourcegraph/sourcegraph/pull/17945)
 - New site config option `productResearchPage.enabled` to disable access to the product research sign-up page. [#17945](https://github.com/sourcegraph/sourcegraph/pull/17945)
+- Pings now contain Sourcegraph extension activation statistics. [#16421](https://github.com/sourcegraph/sourcegraph/pull/16421)
+- Pings now contain aggregate Sourcegraph extension activation statistics: the number of users and number of activations per (public) extension per week, and the number of total extension users per week and average extensions activated per user. [#16421](https://github.com/sourcegraph/sourcegraph/pull/16421)
+- Pings now contain aggregate code insights usage data: total insight views, interactions, edits, creations, removals, and counts of unique users that view and create insights. [#16421](https://github.com/sourcegraph/sourcegraph/pull/17805)
 
 ### Changed
 
