@@ -24,6 +24,7 @@ export enum FilterType {
     repohasfile = 'repohasfile',
     // eslint-disable-next-line unicorn/prevent-abbreviations
     rev = 'rev',
+    select = 'select',
     stable = 'stable',
     timeout = 'timeout',
     type = 'type',
@@ -145,6 +146,7 @@ export const LANGUAGES: string[] = [
     'swift',
     'typescript',
 ]
+export const SELECTORS: string[] = ['repo', 'file', 'content', 'symbol', 'commit']
 
 export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     Record<Exclude<FilterType, NegatableFilter>, BaseFilterDefinition> = {
@@ -244,6 +246,11 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     },
     [FilterType.rev]: {
         description: 'Search a revision (branch, commit hash, or tag) instead of the default branch.',
+        singular: true,
+    },
+    [FilterType.select]: {
+        discreteValues: SELECTORS,
+        description: 'Selects the kind of result to display.',
         singular: true,
     },
     [FilterType.stable]: {
