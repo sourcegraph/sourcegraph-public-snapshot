@@ -19,15 +19,18 @@ import (
 	"github.com/graph-gophers/graphql-go/trace"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
@@ -36,13 +39,13 @@ import (
 )
 
 var (
-	graphqlFieldHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+	graphqlFieldHistogram = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Name:    "src_graphql_field_seconds",
 		Help:    "GraphQL field resolver latencies in seconds.",
 		Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
 	}, []string{"type", "field", "error", "source", "request_name"})
 
-	codeIntelSearchHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+	codeIntelSearchHistogram = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Name:    "src_graphql_code_intel_search_seconds",
 		Help:    "Code intel search latencies in seconds.",
 		Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
@@ -51,9 +54,43 @@ var (
 	cf = httpcli.NewExternalHTTPClientFactory()
 )
 
-func init() {
-	prometheus.MustRegister(graphqlFieldHistogram)
-	prometheus.MustRegister(codeIntelSearchHistogram)
+var traceGraphQLQueriesSample = func() int {
+	rate, _ := strconv.Atoi(os.Getenv("TRACE_GRAPHQL_QUERIES_SAMPLE"))
+	return rate
+}()
+
+type honeycombTracer struct{}
+
+func (h honeycombTracer) TraceQuery(ctx context.Context, queryString string, operationName string, variables map[string]interface{}, varTypes map[string]*introspection.Type) (context.Context, trace.TraceQueryFinishFunc) {
+	return ctx, func(queryErrors []*gqlerrors.QueryError) {
+		if !honey.Enabled() || traceGraphQLQueriesSample <= 0 || len(queryErrors) > 0 {
+			return
+		}
+
+		cost, err := estimateQueryCost(queryString)
+		if err != nil {
+			log15.Warn("estimating GraphQL cost", "error", err)
+			return
+		}
+		a := actor.FromContext(ctx)
+
+		ev := honey.Event("graphql-cost")
+		ev.SampleRate = uint(traceGraphQLQueriesSample)
+
+		ev.AddField("query", queryString)
+		ev.AddField("cost", cost)
+		ev.AddField("costVersion", costEstimateVersion)
+		ev.AddField("anonymous", !a.IsAuthenticated())
+		ev.AddField("operationName", operationName)
+		ev.AddField("isInternal", sgtrace.IsInternalRequest(ctx))
+
+		_ = ev.Send()
+	}
+}
+
+func (h honeycombTracer) TraceField(ctx context.Context, label, typeName, fieldName string, trivial bool, args map[string]interface{}) (context.Context, trace.TraceFieldFinishFunc) {
+	// We don't need to trace fields in honeycomb
+	return ctx, func(queryError *gqlerrors.QueryError) {}
 }
 
 type prometheusTracer struct {
@@ -377,6 +414,7 @@ func NewSchema(db dbutil.DB, campaigns CampaignsResolver, codeIntel CodeIntelRes
 		Schema,
 		resolver,
 		graphql.Tracer(prometheusTracer{}),
+		graphql.Tracer(honeycombTracer{}),
 		graphql.UseStringDescriptions(),
 	)
 }

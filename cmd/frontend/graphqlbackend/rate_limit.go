@@ -9,6 +9,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Included in tracing so that we can differentiate different costs as we tweak
+// the algorithm
+const costEstimateVersion = 1
+
 // estimateQueryCost estimates the cost of the query based on the method used by GitHub as described here:
 // https://developer.github.com/v4/guides/resource-limitations/#calculating-a-rate-limit-score-before-running-the-call
 func estimateQueryCost(query string) (int, error) {
