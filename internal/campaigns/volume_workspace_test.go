@@ -5,6 +5,7 @@ import (
 	"context"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -28,12 +29,26 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	zip := f.Name()
+	defaultArchive := &fakeRepoArchive{mockPath: f.Name()}
 	f.Close()
-	defer os.Remove(zip)
+	defer os.Remove(defaultArchive.Path())
+
+	archiveWithAdditionalFiles := &fakeRepoArchive{
+		mockPath:                f.Name(),
+		mockAdditionalFilePaths: map[string]string{},
+	}
+	for _, name := range []string{".gitignore", "another-file"} {
+		// Since we don't read the files and mock the Docker commands,
+		// we don't need to create them.
+		path := filepath.Join(os.TempDir(), "additional-file"+name)
+		// Instead we create a real-looking path that we sanitize so
+		// it doesn't trip up the globbing expecations below:
+		path = strings.ReplaceAll(path, string(os.PathSeparator), "-")
+
+		archiveWithAdditionalFiles.mockAdditionalFilePaths[name] = path
+	}
 
 	wc := &dockerVolumeWorkspaceCreator{}
-
 	// We'll set up a fake repository with just enough fields defined for init()
 	// and friends.
 	repo := &graphql.Repository{
@@ -41,6 +56,7 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 	}
 
 	for name, tc := range map[string]struct {
+		archive      *fakeRepoArchive
 		expectations []*expect.Expectation
 		steps        []Step
 		wantErr      bool
@@ -258,10 +274,65 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		"additional files": {
+			archive: archiveWithAdditionalFiles,
+			expectations: []*expect.Expectation{
+				expect.NewGlob(
+					expect.Behaviour{Stdout: []byte(volumeID)},
+					"docker", "volume", "create",
+				),
+				expect.NewGlob(
+					expect.Success,
+					"docker", "run", "--rm", "--init", "--workdir", "/work",
+					"--user", "0:0",
+					"--mount", "type=volume,source="+volumeID+",target=/work",
+					dockerVolumeWorkspaceImage,
+					"sh", "-c", "touch /work/*; chown -R 0:0 /work",
+				),
+				expect.NewGlob(
+					expect.Success,
+					"docker", "run", "--rm", "--init",
+					"--workdir", "/work",
+					"--mount", "type=bind,source=*,target=/tmp/zip,ro",
+					"--user", "0:0",
+					"--mount", "type=volume,source="+volumeID+",target=/work",
+					dockerVolumeWorkspaceImage,
+					"sh", "-c", "unzip /tmp/zip; rm /work/*",
+				),
+				expect.NewGlob(
+					expect.Success,
+					"docker", "run", "--rm", "--init",
+					"--workdir", "/work",
+					"--user", "0:0",
+					"--mount", "type=volume,source="+volumeID+",target=/work",
+					"--mount", "type=bind,source="+archiveWithAdditionalFiles.mockAdditionalFilePaths[".gitignore"]+",target=/tmp/.gitignore,ro",
+					"--mount", "type=bind,source="+archiveWithAdditionalFiles.mockAdditionalFilePaths["another-file"]+",target=/tmp/another-file,ro",
+					dockerVolumeWorkspaceImage,
+					"sh", "-c", "cp /tmp/.gitignore /work/.gitignore && cp /tmp/another-file /work/another-file;",
+				),
+				expect.NewGlob(
+					expect.Success,
+					"docker", "run", "--rm", "--init", "--workdir", "/work",
+					"--mount", "type=bind,source=*,target=/run.sh,ro",
+					"--user", "0:0",
+					"--mount", "type=volume,source="+volumeID+",target=/work",
+					dockerVolumeWorkspaceImage,
+					"sh", "/run.sh",
+				),
+			},
+			steps: []Step{
+				{image: &mockImage{uidGid: docker.Root}},
+			},
+		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			expect.Commands(t, tc.expectations...)
-			w, err := wc.Create(ctx, repo, tc.steps, zip)
+			a := defaultArchive
+			if tc.archive != nil {
+				a = tc.archive
+			}
+
+			w, err := wc.Create(ctx, repo, tc.steps, a)
 			if tc.wantErr {
 				if err == nil {
 					t.Error("unexpected nil error")

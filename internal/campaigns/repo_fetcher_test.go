@@ -9,9 +9,12 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/campaigns/graphql"
 )
@@ -58,7 +61,7 @@ func TestRepoFetcher_Fetch(t *testing.T) {
 			deleteZips: false,
 		}
 
-		zip := rf.Checkout(repo)
+		zip := rf.Checkout(repo, "")
 		err := zip.Fetch(context.Background())
 		if err != nil {
 			t.Errorf("unexpected error: %s", err)
@@ -91,9 +94,7 @@ func TestRepoFetcher_Fetch(t *testing.T) {
 	})
 
 	t.Run("delete on close", func(t *testing.T) {
-		callback := func(_ http.ResponseWriter, _ *http.Request) {}
-
-		ts := httptest.NewServer(newZipArchivesMux(t, callback, archive))
+		ts := httptest.NewServer(newZipArchivesMux(t, nil, archive))
 		defer ts.Close()
 
 		var clientBuffer bytes.Buffer
@@ -105,7 +106,7 @@ func TestRepoFetcher_Fetch(t *testing.T) {
 			deleteZips: true,
 		}
 
-		zip := rf.Checkout(repo)
+		zip := rf.Checkout(repo, "")
 
 		err := zip.Fetch(context.Background())
 		if err != nil {
@@ -169,7 +170,7 @@ func TestRepoFetcher_Fetch(t *testing.T) {
 			deleteZips: false,
 		}
 
-		zip := rf.Checkout(repo)
+		zip := rf.Checkout(repo, "")
 		if err := zip.Fetch(ctx); err == nil {
 			t.Error("error is nil")
 		}
@@ -208,7 +209,7 @@ func TestRepoFetcher_Fetch(t *testing.T) {
 			dir:        workspaceTmpDir(t),
 			deleteZips: false,
 		}
-		zip := rf.Checkout(repo)
+		zip := rf.Checkout(repo, "")
 
 		err := zip.Fetch(context.Background())
 		if err != nil {
@@ -216,6 +217,82 @@ func TestRepoFetcher_Fetch(t *testing.T) {
 		}
 
 		wantZipFile := repo.Slug() + ".zip"
+		ok, err := dirContains(rf.dir, wantZipFile)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !ok {
+			t.Fatalf("temp dir doesnt contain zip file")
+		}
+	})
+
+	t.Run("path in repository", func(t *testing.T) {
+		additionalFiles := mockRepoAdditionalFiles{
+			repo: repo,
+			additionalFiles: map[string]string{
+				".gitignore":     "node_modules",
+				".gitattributes": "* -text",
+				"a/.gitignore":   "node_modules-in-a",
+			},
+		}
+
+		path := "a/b"
+		archive := mockRepoArchive{
+			repo: repo,
+			path: path,
+			files: map[string]string{
+				"a/b/1.txt": "this is 1",
+				"a/b/2.txt": "this is 1",
+			},
+		}
+
+		var requestedArchivePath string
+		callback := func(w http.ResponseWriter, r *http.Request) {
+			s := strings.SplitN(r.URL.Path, "/raw/", 2)
+			requestedArchivePath = s[1]
+		}
+
+		var requestedFiles []string
+		middle := func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				s := strings.SplitN(r.URL.Path, "/raw/", 2)
+				requestedFiles = append(requestedFiles, s[1])
+
+				next.ServeHTTP(w, r)
+			})
+		}
+
+		mux := newZipArchivesMux(t, callback, archive)
+		handleAdditionalFiles(mux, additionalFiles, middle)
+
+		ts := httptest.NewServer(mux)
+		defer ts.Close()
+
+		var clientBuffer bytes.Buffer
+		client := api.NewClient(api.ClientOpts{Endpoint: ts.URL, Out: &clientBuffer})
+
+		rf := &repoFetcher{
+			client:     client,
+			dir:        workspaceTmpDir(t),
+			deleteZips: false,
+		}
+		zip := rf.Checkout(repo, path)
+
+		err := zip.Fetch(context.Background())
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		if !cmp.Equal(path, requestedArchivePath) {
+			t.Errorf("wrong paths requested (-want +got):\n%s", cmp.Diff(path, requestedArchivePath))
+		}
+
+		wantRequestedFiles := []string{".gitignore", ".gitattributes", "a/.gitignore"}
+		if !cmp.Equal(wantRequestedFiles, requestedFiles, cmpopts.SortSlices(sortStrings)) {
+			t.Errorf("wrong paths requested (-want +got):\n%s", cmp.Diff(wantRequestedFiles, requestedFiles))
+		}
+
+		wantZipFile := repo.SlugForPath(path) + ".zip"
 		ok, err := dirContains(rf.dir, wantZipFile)
 		if err != nil {
 			t.Fatal(err)

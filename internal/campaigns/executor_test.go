@@ -26,11 +26,6 @@ import (
 	"github.com/sourcegraph/src-cli/internal/campaigns/graphql"
 )
 
-type mockRepoArchive struct {
-	repo  *graphql.Repository
-	files map[string]string
-}
-
 func TestExecutor_Integration(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("Test doesn't work on Windows because dummydocker is written in bash")
@@ -62,7 +57,8 @@ func TestExecutor_Integration(t *testing.T) {
 	tests := []struct {
 		name string
 
-		archives []mockRepoArchive
+		archives        []mockRepoArchive
+		additionalFiles []mockRepoAdditionalFiles
 
 		// We define the steps only once per test case so there's less duplication
 		steps []Step
@@ -299,10 +295,26 @@ repository_name=github.com/sourcegraph/src-cli`,
 		{
 			name: "workspaces",
 			archives: []mockRepoArchive{
-				{repo: srcCLIRepo, files: map[string]string{
+				{repo: srcCLIRepo, path: "", files: map[string]string{
+					".gitignore":      "node_modules",
 					"message.txt":     "root-dir",
 					"a/message.txt":   "a-dir",
+					"a/.gitignore":    "node_modules-in-a",
 					"a/b/message.txt": "b-dir",
+				}},
+				{repo: srcCLIRepo, path: "a", files: map[string]string{
+					"a/message.txt":   "a-dir",
+					"a/.gitignore":    "node_modules-in-a",
+					"a/b/message.txt": "b-dir",
+				}},
+				{repo: srcCLIRepo, path: "a/b", files: map[string]string{
+					"a/b/message.txt": "b-dir",
+				}},
+			},
+			additionalFiles: []mockRepoAdditionalFiles{
+				{repo: srcCLIRepo, additionalFiles: map[string]string{
+					".gitignore":   "node_modules",
+					"a/.gitignore": "node_modules-in-a",
 				}},
 			},
 			steps: []Step{
@@ -314,6 +326,23 @@ repository_name=github.com/sourcegraph/src-cli`,
 							Value: "${{ step.stdout }}",
 						},
 					},
+				},
+				{
+					Run:       `if [[ -f ".gitignore" ]]; then echo "yes" >> gitignore-exists; fi`,
+					Container: "doesntmatter:13",
+				},
+				{
+					Run:       `if [[ $(basename $(pwd)) == "a" && -f "../.gitignore" ]]; then echo "yes" >> gitignore-exists; fi`,
+					Container: "doesntmatter:13",
+				},
+				// In `a/b` we want the `.gitignore` file in the root folder and in `a` to be fetched:
+				{
+					Run:       `if [[ $(basename $(pwd)) == "b" && -f "../../.gitignore" ]]; then echo "yes" >> gitignore-exists; fi`,
+					Container: "doesntmatter:13",
+				},
+				{
+					Run:       `if [[ $(basename $(pwd)) == "b" && -f "../.gitignore" ]]; then echo "yes" >> gitignore-exists-in-a; fi`,
+					Container: "doesntmatter:13",
 				},
 			},
 			tasks: []*Task{
@@ -338,9 +367,9 @@ repository_name=github.com/sourcegraph/src-cli`,
 
 			wantFilesChanged: filesByRepository{
 				srcCLIRepo.ID: filesByBranch{
-					"workspace-root-dir": []string{"hello.txt"},
-					"workspace-a-dir":    []string{"a/hello.txt"},
-					"workspace-b-dir":    []string{"a/b/hello.txt"},
+					"workspace-root-dir": []string{"hello.txt", "gitignore-exists"},
+					"workspace-a-dir":    []string{"a/hello.txt", "a/gitignore-exists"},
+					"workspace-b-dir":    []string{"a/b/hello.txt", "a/b/gitignore-exists", "a/b/gitignore-exists-in-a"},
 				},
 			},
 		},
@@ -348,7 +377,18 @@ repository_name=github.com/sourcegraph/src-cli`,
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			ts := httptest.NewServer(newZipArchivesMux(t, nil, tc.archives...))
+			mux := newZipArchivesMux(t, nil, tc.archives...)
+
+			middle := func(next http.Handler) http.Handler {
+				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					fmt.Printf("PATH=%q\n", r.URL.Path)
+					next.ServeHTTP(w, r)
+				})
+			}
+			for _, additionalFiles := range tc.additionalFiles {
+				handleAdditionalFiles(mux, additionalFiles, middle)
+			}
+			ts := httptest.NewServer(mux)
 			defer ts.Close()
 
 			var clientBuffer bytes.Buffer
@@ -369,6 +409,7 @@ repository_name=github.com/sourcegraph/src-cli`,
 				Parallelism: runtime.GOMAXPROCS(0),
 				Timeout:     tc.executorTimeout,
 			}
+
 			if opts.Timeout == 0 {
 				opts.Timeout = 30 * time.Second
 			}
@@ -397,7 +438,7 @@ repository_name=github.com/sourcegraph/src-cli`,
 					}
 
 					task.Steps = tc.steps
-					task.Archive = repoFetcher.Checkout(task.Repository)
+					task.Archive = repoFetcher.Checkout(task.Repository, task.Path)
 					executor.AddTask(task)
 				}
 
@@ -844,12 +885,21 @@ func addToPath(t *testing.T, relPath string) {
 	os.Setenv("PATH", fmt.Sprintf("%s%c%s", dummyDockerPath, os.PathListSeparator, os.Getenv("PATH")))
 }
 
+type mockRepoArchive struct {
+	repo  *graphql.Repository
+	path  string
+	files map[string]string
+}
+
 func newZipArchivesMux(t *testing.T, callback http.HandlerFunc, archives ...mockRepoArchive) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	for _, archive := range archives {
 		files := archive.files
 		path := fmt.Sprintf("/%s@%s/-/raw", archive.repo.Name, archive.repo.BaseRef())
+		if archive.path != "" {
+			path = path + "/" + archive.path
+		}
 
 		downloadName := filepath.Base(archive.repo.Name)
 		mediaType := mime.FormatMediaType("Attachment", map[string]string{
@@ -882,6 +932,30 @@ func newZipArchivesMux(t *testing.T, callback http.HandlerFunc, archives ...mock
 	}
 
 	return mux
+}
+
+type middleware func(http.Handler) http.Handler
+
+type mockRepoAdditionalFiles struct {
+	repo            *graphql.Repository
+	additionalFiles map[string]string
+}
+
+func handleAdditionalFiles(mux *http.ServeMux, files mockRepoAdditionalFiles, middle middleware) {
+	for name, content := range files.additionalFiles {
+		path := fmt.Sprintf("/%s@%s/-/raw/%s", files.repo.Name, files.repo.BaseRef(), name)
+		handler := func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "text/plain")
+
+			w.Write([]byte(content))
+		}
+
+		if middle != nil {
+			mux.Handle(path, middle(http.HandlerFunc(handler)))
+		} else {
+			mux.HandleFunc(path, handler)
+		}
+	}
 }
 
 // inMemoryExecutionCache provides an in-memory cache for testing purposes.

@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/pkg/errors"
@@ -18,10 +19,11 @@ import (
 // RepoFetcher abstracts the process of retrieving an archive for the given
 // repository.
 type RepoFetcher interface {
-	// Checkout returns a RepoZip for the given repository that's possibly
-	// unfetched. Users need to call `Fetch()` on the RepoZip before using it
-	// and `Close()` once they're done using it.
-	Checkout(*graphql.Repository) RepoZip
+	// Checkout returns a RepoZip for the given repository and the given
+	// relative path in the repository. The RepoZip is possibly unfetched.
+	// Users need to call `Fetch()` on the RepoZip before using it and
+	// `Close()` once // they're done using it.
+	Checkout(repo *graphql.Repository, path string) RepoZip
 }
 
 // repoFetcher is the concrete implementation of the RepoFetcher interface used
@@ -37,7 +39,19 @@ type repoFetcher struct {
 
 var _ RepoFetcher = &repoFetcher{}
 
-func (rf *repoFetcher) zipFor(repo *graphql.Repository) *repoZip {
+// AdditionalWorkspaceFiles is a list of files the RepoFetcher *tries* to fetch
+// when the desired archive is subdirectory in the given repository. It makes
+// sense to also fetch these files, even if the steps are executed in a
+// subdirectory, since they might influence some global state, such as
+// `.gitignore`.
+//
+// If the file is not found, that's not an error.
+var AdditionalWorkspaceFiles = []string{
+	".gitignore",
+	".gitattributes",
+}
+
+func (rf *repoFetcher) zipFor(repo *graphql.Repository, workspacePath string) *repoZip {
 	rf.zipsMu.Lock()
 	defer rf.zipsMu.Unlock()
 
@@ -45,17 +59,63 @@ func (rf *repoFetcher) zipFor(repo *graphql.Repository) *repoZip {
 		rf.zips = make(map[string]*repoZip)
 	}
 
-	path := filepath.Join(rf.dir, repo.Slug()+".zip")
-	zip, ok := rf.zips[path]
+	slug := repo.SlugForPath(workspacePath)
+
+	zipPath := filepath.Join(rf.dir, slug+".zip")
+	zip, ok := rf.zips[zipPath]
 	if !ok {
-		zip = &repoZip{path: path, repo: repo, client: rf.client, deleteOnClose: rf.deleteZips}
-		rf.zips[path] = zip
+		zip = &repoZip{
+			zipPath:       zipPath,
+			repo:          repo,
+			client:        rf.client,
+			deleteOnClose: rf.deleteZips,
+			pathInRepo:    workspacePath,
+		}
+
+		if workspacePath != "" {
+			// We're doing another loop here to catch all
+			// AdditionalWorkspaceFiles on the way *up* from the workspace to the
+			// root.
+			//
+			// Example: path = /examples/cool/project3
+			//
+			// Then we want to fetch the following files:
+			//
+			// /.gitignore
+			// /.gitattributes
+			// /examples/.gitignore
+			// /examples/.gitattributes
+			// /examples/cool/.gitignore
+			// /examples/cool/.gitattributes
+
+			// Split on '/' because the path comes from Sourcegraph and always
+			// has a "/".
+			pathComponents := strings.Split(workspacePath, "/")
+
+			var currentPath string
+			for _, component := range pathComponents {
+				for _, name := range []string{".gitignore", ".gitattributes"} {
+					filename := path.Join(currentPath, name)
+					localPath := filepath.Join(rf.dir, repo.SlugForPath(filename))
+
+					zip.additionalFiles = append(zip.additionalFiles, &additionalFile{
+						filename:  filename,
+						localPath: localPath,
+						fetched:   false,
+					})
+				}
+
+				currentPath = path.Join(currentPath, component)
+			}
+		}
+
+		rf.zips[zipPath] = zip
 	}
 	return zip
 }
 
-func (rf *repoFetcher) Checkout(repo *graphql.Repository) RepoZip {
-	zip := rf.zipFor(repo)
+func (rf *repoFetcher) Checkout(repo *graphql.Repository, path string) RepoZip {
+	zip := rf.zipFor(repo, path)
 	zip.mu.Lock()
 	defer zip.mu.Unlock()
 
@@ -74,6 +134,12 @@ type RepoZip interface {
 
 	// Path must return the path to the archive on the filesystem.
 	Path() string
+
+	// AdditionalFilePaths returns a map of filenames that should be put into
+	// the workspace's root. The value of each entry in the map is the location
+	// on the local filesystem. WorkspaceCreators need to copy the files into
+	// the workspaces.
+	AdditionalFilePaths() map[string]string
 }
 
 var _ RepoZip = &repoZip{}
@@ -84,15 +150,29 @@ type repoZip struct {
 	mu sync.Mutex
 
 	deleteOnClose bool
-	path          string
-	repo          *graphql.Repository
+
+	repo       *graphql.Repository
+	pathInRepo string
 
 	client api.Client
+
+	// zipPath is the path of the downloaded ZIP archive on the local filesystem.
+	zipPath string
+	// additionalFiles can contain a list of additional files that need to be copied
+	// into the unzipped archive before using it as a workspace.
+	additionalFiles []*additionalFile
 
 	// uses is the number of *active* tasks that currently use the archive.
 	uses int
 	// checkouts is the number of tasks that *will* make use of the archive.
 	checkouts int
+}
+
+type additionalFile struct {
+	filename  string
+	localPath string
+
+	fetched bool
 }
 
 func (rz *repoZip) Close() error {
@@ -101,17 +181,34 @@ func (rz *repoZip) Close() error {
 
 	rz.uses -= 1
 	if rz.uses == 0 && rz.checkouts == 0 && rz.deleteOnClose {
-		return os.Remove(rz.path)
+		for _, addFile := range rz.additionalFiles {
+			if addFile.fetched {
+				if err := os.Remove(addFile.localPath); err != nil {
+					return err
+				}
+			}
+		}
+		return os.Remove(rz.zipPath)
 	}
 
 	return nil
 }
 
 func (rz *repoZip) Path() string {
-	return rz.path
+	return rz.zipPath
 }
 
-func (rz *repoZip) Fetch(ctx context.Context) error {
+func (rz *repoZip) AdditionalFilePaths() map[string]string {
+	paths := map[string]string{}
+	for _, f := range rz.additionalFiles {
+		if f.fetched {
+			paths[f.filename] = f.localPath
+		}
+	}
+	return paths
+}
+
+func (rz *repoZip) Fetch(ctx context.Context) (err error) {
 	rz.mu.Lock()
 	defer rz.mu.Unlock()
 
@@ -122,7 +219,30 @@ func (rz *repoZip) Fetch(ctx context.Context) error {
 		return nil
 	}
 
-	exists, err := fileExists(rz.path)
+	if err := rz.fetchArchiveAndFiles(ctx); err != nil {
+		return err
+	}
+
+	rz.uses += 1
+	rz.checkouts -= 1
+	return nil
+}
+
+func (rz *repoZip) fetchArchiveAndFiles(ctx context.Context) (err error) {
+	defer func() {
+		if err != nil {
+			// If the context got cancelled, or we ran out of disk space, or ...
+			// while we were downloading the file, we remove the partially
+			// downloaded file.
+			os.Remove(rz.zipPath)
+
+			for _, addFile := range rz.additionalFiles {
+				os.Remove(addFile.localPath)
+			}
+		}
+	}()
+
+	exists, err := fileExists(rz.zipPath)
 	if err != nil {
 		return err
 	}
@@ -132,55 +252,87 @@ func (rz *repoZip) Fetch(ctx context.Context) error {
 		// giving us a temporary place on the filesystem to keep the archive.
 		// Since it's never mounted into the containers being run, we can keep
 		// these directories 0700 without issue.
-		if err := os.MkdirAll(filepath.Dir(rz.path), 0700); err != nil {
+		if err := os.MkdirAll(filepath.Dir(rz.zipPath), 0700); err != nil {
 			return err
 		}
 
-		err = fetchRepositoryArchive(ctx, rz.client, rz.repo, rz.path)
+		ok, err := fetchRepositoryFile(ctx, rz.client, rz.repo, rz.pathInRepo, rz.zipPath)
 		if err != nil {
-			// If the context got cancelled, or we ran out of disk space, or ...
-			// while we were downloading the file, we remove the partially
-			// downloaded file.
-			os.Remove(rz.path)
-
 			return errors.Wrap(err, "fetching ZIP archive")
+		}
+		if !ok {
+			return errors.New("failed to download repository archive: not found")
 		}
 	}
 
-	rz.uses += 1
-	rz.checkouts -= 1
+	for _, addFile := range rz.additionalFiles {
+		exists, err := fileExists(addFile.localPath)
+		if err != nil {
+			return err
+		}
+
+		if exists {
+			addFile.fetched = true
+			continue
+		}
+
+		ok, err := fetchRepositoryFile(ctx, rz.client, rz.repo, addFile.filename, addFile.localPath)
+		if err != nil {
+			return errors.Wrapf(err, "fetching %s for repository archive", addFile.filename)
+		}
+		// We don't return an error here, because downloading the additional
+		// files is best effort. If they don't exist we skip them.
+		addFile.fetched = ok
+	}
+
 	return nil
 }
 
-func fetchRepositoryArchive(ctx context.Context, client api.Client, repo *graphql.Repository, dest string) error {
-	req, err := client.NewHTTPRequest(ctx, "GET", repositoryZipArchivePath(repo), nil)
+// fetchRepositoryInFile fetches the given `pathInRepo` using the Sourcegraph's
+// raw endpoint and writes it to `dest`.
+// If `pathInRepo` is empty and `dest` ends in `.zip` a ZIP archive of the
+// whole repository is downloaded.
+func fetchRepositoryFile(ctx context.Context, client api.Client, repo *graphql.Repository, pathInRepo string, dest string) (bool, error) {
+	endpoint := repositoryRawFileEndpoint(repo, pathInRepo)
+	req, err := client.NewHTTPRequest(ctx, "GET", endpoint, nil)
 	if err != nil {
-		return err
+		return false, err
 	}
-	req.Header.Set("Accept", "application/zip")
+
+	if strings.HasSuffix(dest, ".zip") {
+		req.Header.Set("Accept", "application/zip")
+	}
+
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return err
+		return false, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unable to fetch archive (HTTP %d from %s)", resp.StatusCode, req.URL.String())
+		if resp.StatusCode == http.StatusNotFound {
+			return false, nil
+		}
+		return false, fmt.Errorf("unable to fetch archive (HTTP %d from %s)", resp.StatusCode, req.URL.String())
 	}
 
 	f, err := os.Create(dest)
 	if err != nil {
-		return err
+		return false, err
 	}
 	defer f.Close()
 
 	if _, err := io.Copy(f, resp.Body); err != nil {
-		return err
+		return false, err
 	}
 
-	return nil
+	return true, nil
 }
 
-func repositoryZipArchivePath(repo *graphql.Repository) string {
-	return path.Join("", repo.Name+"@"+repo.BaseRef(), "-", "raw")
+func repositoryRawFileEndpoint(repo *graphql.Repository, pathInRepo string) string {
+	p := path.Join(repo.Name+"@"+repo.BaseRef(), "-", "raw")
+	if pathInRepo != "" {
+		p = path.Join(p, pathInRepo)
+	}
+	return p
 }

@@ -1,6 +1,8 @@
 package graphql
 
 import (
+	"crypto/sha256"
+	"encoding/base64"
 	"sort"
 	"strings"
 )
@@ -79,6 +81,17 @@ func (r *Repository) Rev() string {
 
 func (r *Repository) Slug() string {
 	return strings.ReplaceAll(r.Name, "/", "-") + "-" + r.Rev()
+}
+
+func (r *Repository) SlugForPath(path string) string {
+	name := r.Name
+	if path != "" {
+		// Since path can contain os.PathSeparator or other characters that
+		// don't translate well between Windows and Unix systems, we hash it.
+		hash := sha256.Sum256([]byte(path))
+		name = name + "-" + base64.RawURLEncoding.EncodeToString(hash[:32])
+	}
+	return strings.ReplaceAll(name, "/", "-") + "-" + r.Rev()
 }
 
 func (r *Repository) SearchResultPaths() (list fileMatchPathList) {

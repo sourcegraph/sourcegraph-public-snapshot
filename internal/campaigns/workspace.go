@@ -11,8 +11,8 @@ import (
 // per-changeset persistent storage when executing campaign steps and are
 // responsible for ultimately generating a diff.
 type WorkspaceCreator interface {
-	// Create creates a new workspace for the given repository and ZIP file.
-	Create(ctx context.Context, repo *graphql.Repository, steps []Step, zip string) (Workspace, error)
+	// Create creates a new workspace for the given repository and archive file.
+	Create(ctx context.Context, repo *graphql.Repository, steps []Step, archive RepoZip) (Workspace, error)
 }
 
 // Workspace implementations manage per-changeset storage when executing

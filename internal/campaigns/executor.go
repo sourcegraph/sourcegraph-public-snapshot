@@ -56,7 +56,15 @@ type Executor interface {
 
 type Task struct {
 	Repository *graphql.Repository
-	Path       string
+
+	// Path is the folder relative to the repository's root in which the steps
+	// should be executed.
+	Path string
+	// OnlyFetchWorkspace determines whether the repository archive contains
+	// the complete repository or just the files in Path (and additional files,
+	// see RepoFetcher).
+	// If Path is "" then this setting has no effect.
+	OnlyFetchWorkspace bool
 
 	Steps   []Step
 	Outputs map[string]interface{}
@@ -65,6 +73,13 @@ type Task struct {
 	TransformChanges *TransformChanges  `json:"-"`
 
 	Archive RepoZip `json:"-"`
+}
+
+func (t *Task) ArchivePathToFetch() string {
+	if t.OnlyFetchWorkspace {
+		return t.Path
+	}
+	return ""
 }
 
 func (t *Task) cacheKey() ExecutionCacheKey {

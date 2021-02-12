@@ -30,15 +30,14 @@ func TestDockerBindWorkspaceCreator_Create(t *testing.T) {
 		DefaultBranch: &graphql.Branch{Name: "main", Target: graphql.Target{OID: "d34db33f"}},
 	}
 
-	archive := mockRepoArchive{
-		repo: repo,
-		files: map[string]string{
-			"README.md": "# Welcome to the README\n",
-		},
+	filesInZip := map[string]string{
+		"README.md": "# Welcome to the README\n",
 	}
 
+	fakeFilesTmpDir := workspaceTmpDir(t)
+
 	// Create a zip file for all the other tests to use.
-	f, err := ioutil.TempFile(workspaceTmpDir(t), "repo-zip-*")
+	f, err := ioutil.TempFile(fakeFilesTmpDir, "repo-zip-*")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -46,7 +45,7 @@ func TestDockerBindWorkspaceCreator_Create(t *testing.T) {
 	t.Cleanup(func() { os.Remove(archivePath) })
 
 	zw := zip.NewWriter(f)
-	for name, body := range archive.files {
+	for name, body := range filesInZip {
 		f, err := zw.Create(name)
 		if err != nil {
 			t.Fatal(err)
@@ -58,11 +57,34 @@ func TestDockerBindWorkspaceCreator_Create(t *testing.T) {
 	zw.Close()
 	f.Close()
 
+	// Create "additional files" for the tests to use
+	additionalFiles := map[string]string{
+		".gitignore":   "This is the gitignore\n",
+		"another-file": "This is another file",
+	}
+	additionalFilePaths := map[string]string{}
+	for name, content := range additionalFiles {
+		f, err := ioutil.TempFile(fakeFilesTmpDir, name+"-*")
+		if err != nil {
+			t.Fatal(err)
+		}
+		filePath := f.Name()
+		t.Cleanup(func() { os.Remove(filePath) })
+
+		if _, err := f.Write([]byte(content)); err != nil {
+			t.Fatal(err)
+		}
+
+		additionalFilePaths[name] = filePath
+		f.Close()
+	}
+
 	t.Run("success", func(t *testing.T) {
 		testTempDir := workspaceTmpDir(t)
 
+		archive := &fakeRepoArchive{mockPath: archivePath}
 		creator := &dockerBindWorkspaceCreator{dir: testTempDir}
-		workspace, err := creator.Create(context.Background(), repo, nil, archivePath)
+		workspace, err := creator.Create(context.Background(), repo, nil, archive)
 		if err != nil {
 			t.Fatalf("unexpected error: %s", err)
 		}
@@ -72,8 +94,8 @@ func TestDockerBindWorkspaceCreator_Create(t *testing.T) {
 			t.Fatalf("error walking workspace: %s", err)
 		}
 
-		if !cmp.Equal(archive.files, haveUnzippedFiles) {
-			t.Fatalf("wrong files in workspace:\n%s", cmp.Diff(archive.files, haveUnzippedFiles))
+		if !cmp.Equal(filesInZip, haveUnzippedFiles) {
+			t.Fatalf("wrong files in workspace:\n%s", cmp.Diff(filesInZip, haveUnzippedFiles))
 		}
 	})
 
@@ -89,9 +111,42 @@ func TestDockerBindWorkspaceCreator_Create(t *testing.T) {
 		t.Cleanup(func() { os.Remove(badZipFile) })
 		badZip.Close()
 
+		badArchive := &fakeRepoArchive{mockPath: badZipFile}
+
 		creator := &dockerBindWorkspaceCreator{dir: testTempDir}
-		if _, err := creator.Create(context.Background(), repo, nil, badZipFile); err == nil {
+		if _, err := creator.Create(context.Background(), repo, nil, badArchive); err == nil {
 			t.Error("unexpected nil error")
+		}
+	})
+
+	t.Run("additional files", func(t *testing.T) {
+		testTempDir := workspaceTmpDir(t)
+
+		archive := &fakeRepoArchive{
+			mockPath:                archivePath,
+			mockAdditionalFilePaths: additionalFilePaths,
+		}
+
+		creator := &dockerBindWorkspaceCreator{dir: testTempDir}
+		workspace, err := creator.Create(context.Background(), repo, nil, archive)
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		haveUnzippedFiles, err := readWorkspaceFiles(workspace)
+		if err != nil {
+			t.Fatalf("error walking workspace: %s", err)
+		}
+
+		wantFiles := map[string]string{}
+		for name, content := range filesInZip {
+			wantFiles[name] = content
+		}
+		for name, content := range additionalFiles {
+			wantFiles[name] = content
+		}
+		if !cmp.Equal(wantFiles, haveUnzippedFiles) {
+			t.Fatalf("wrong files in workspace:\n%s", cmp.Diff(wantFiles, haveUnzippedFiles))
 		}
 	})
 }
@@ -250,7 +305,7 @@ func readWorkspaceFiles(workspace Workspace) (map[string]string, error) {
 			return err
 		}
 
-		if strings.HasPrefix(rel, ".git") {
+		if rel == ".git" || strings.HasPrefix(rel, ".git"+string(os.PathSeparator)) {
 			return nil
 		}
 
@@ -274,4 +329,21 @@ func dirContains(dir, filename string) (bool, error) {
 	}
 
 	return false, nil
+}
+
+var _ RepoZip = &fakeRepoArchive{}
+
+type fakeRepoArchive struct {
+	mockPath                string
+	mockAdditionalFilePaths map[string]string
+}
+
+func (f *fakeRepoArchive) Fetch(context.Context) error { return nil }
+func (f *fakeRepoArchive) Close() error                { return nil }
+func (f *fakeRepoArchive) Path() string                { return f.mockPath }
+func (f *fakeRepoArchive) AdditionalFilePaths() map[string]string {
+	if f.mockAdditionalFilePaths != nil {
+		return f.mockAdditionalFilePaths
+	}
+	return map[string]string{}
 }

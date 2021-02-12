@@ -259,14 +259,14 @@ func (svc *Service) BuildTasks(ctx context.Context, repos []*graphql.Repository,
 	// rootWorkspace contains all the repositories that didn't match a
 	// `workspaces` configuration.
 	rootWorkspace := map[*graphql.Repository]struct{}{}
-	// fileLocationWorkspace maps filenames to repositories in which the
-	// workspaces should be at the location of the files.
-	fileLocationWorkspace := make(map[string][]*graphql.Repository, 0)
+	// reposByWorkspaceConfig maps workspace config to repositories in which
+	// the workspace config should be used.
+	reposByWorkspaceConfig := make(map[int][]*graphql.Repository, len(workspaceConfigs))
 
 	for _, repo := range repos {
 		matched := false
 
-		for _, conf := range workspaceConfigs {
+		for i, conf := range workspaceConfigs {
 			if !conf.glob.Match(repo.Name) {
 				continue
 			}
@@ -275,10 +275,10 @@ func (svc *Service) BuildTasks(ctx context.Context, repos []*graphql.Repository,
 				return nil, fmt.Errorf("repository %s matches multiple workspaces.in globs in campaign spec. glob: %q", repo.Name, conf.In)
 			}
 
-			if rs, ok := fileLocationWorkspace[conf.RootAtLocationOf]; ok {
-				fileLocationWorkspace[conf.RootAtLocationOf] = append(rs, repo)
+			if rs, ok := reposByWorkspaceConfig[i]; ok {
+				reposByWorkspaceConfig[i] = append(rs, repo)
 			} else {
-				fileLocationWorkspace[conf.RootAtLocationOf] = []*graphql.Repository{repo}
+				reposByWorkspaceConfig[i] = []*graphql.Repository{repo}
 			}
 			matched = true
 		}
@@ -290,8 +290,9 @@ func (svc *Service) BuildTasks(ctx context.Context, repos []*graphql.Repository,
 
 	var tasks []*Task
 
-	for fileName, repos := range fileLocationWorkspace {
-		repoDirs, err := svc.FindDirectoriesInRepos(ctx, fileName, repos...)
+	for configIndex, repos := range reposByWorkspaceConfig {
+		workspaceConfig := workspaceConfigs[configIndex]
+		repoDirs, err := svc.FindDirectoriesInRepos(ctx, workspaceConfig.RootAtLocationOf, repos...)
 		if err != nil {
 			return nil, err
 		}
@@ -309,11 +310,12 @@ func (svc *Service) BuildTasks(ctx context.Context, repos []*graphql.Repository,
 				}
 
 				tasks = append(tasks, &Task{
-					Repository:       repo,
-					Path:             d,
-					Steps:            spec.Steps,
-					TransformChanges: spec.TransformChanges,
-					Template:         spec.ChangesetTemplate,
+					Repository:         repo,
+					Path:               d,
+					Steps:              spec.Steps,
+					TransformChanges:   spec.TransformChanges,
+					Template:           spec.ChangesetTemplate,
+					OnlyFetchWorkspace: workspaceConfig.OnlyFetchWorkspace,
 				})
 			}
 		}

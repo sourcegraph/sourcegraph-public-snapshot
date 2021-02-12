@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -21,10 +22,14 @@ type dockerBindWorkspaceCreator struct {
 
 var _ WorkspaceCreator = &dockerBindWorkspaceCreator{}
 
-func (wc *dockerBindWorkspaceCreator) Create(ctx context.Context, repo *graphql.Repository, steps []Step, zip string) (Workspace, error) {
-	w, err := wc.unzipToWorkspace(ctx, repo, zip)
+func (wc *dockerBindWorkspaceCreator) Create(ctx context.Context, repo *graphql.Repository, steps []Step, archive RepoZip) (Workspace, error) {
+	w, err := wc.unzipToWorkspace(ctx, repo, archive.Path())
 	if err != nil {
 		return nil, errors.Wrap(err, "unzipping the repository")
+	}
+
+	if err := wc.copyToWorkspace(ctx, w, archive.AdditionalFilePaths()); err != nil {
+		return nil, errors.Wrap(err, "copying additional files into workspace")
 	}
 
 	return w, errors.Wrap(wc.prepareGitRepo(ctx, w), "preparing local git repo")
@@ -54,6 +59,44 @@ func (wc *dockerBindWorkspaceCreator) unzipToWorkspace(ctx context.Context, repo
 	}
 
 	return &dockerBindWorkspace{dir: workspace}, nil
+}
+
+func (wc *dockerBindWorkspaceCreator) copyToWorkspace(ctx context.Context, w *dockerBindWorkspace, files map[string]string) error {
+	for name, src := range files {
+		srcStat, err := os.Stat(src)
+		if err != nil {
+			return err
+		}
+
+		if !srcStat.Mode().IsRegular() {
+			return fmt.Errorf("%s is not a regular file", src)
+		}
+
+		srcFile, err := os.Open(src)
+		if err != nil {
+			return err
+		}
+
+		destPath := path.Join(w.dir, name)
+
+		destFile, err := prepareCopyDestinationFile(srcStat, destPath)
+		if err != nil {
+			return err
+		}
+		_, err = io.Copy(destFile, srcFile)
+		if err != nil {
+			return err
+		}
+
+		if cerr := destFile.Close(); cerr != nil {
+			return errors.Wrap(cerr, "closing destination file failed")
+		}
+		if cerr := srcFile.Close(); cerr != nil {
+			return errors.Wrap(cerr, "closing source file failed")
+		}
+	}
+
+	return nil
 }
 
 type dockerBindWorkspace struct {
@@ -151,29 +194,10 @@ func unzip(zipFile, dest string) error {
 			continue
 		}
 
-		if err := mkdirAll(dest, filepath.Dir(f.Name), 0777); err != nil {
-			return err
-		}
-
-		outFile, err := os.OpenFile(fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+		outFile, err := prepareCopyDestinationFile(f.FileInfo(), fpath)
 		if err != nil {
 			return err
 		}
-
-		// Since the container might not run as the same user, we need to ensure
-		// that the file is globally writable. If the execute bit is normally
-		// set on the zipped up file, let's ensure we propagate that to the
-		// group and other permission bits too.
-		if f.Mode()&0111 != 0 {
-			if err := os.Chmod(outFile.Name(), 0777); err != nil {
-				return err
-			}
-		} else {
-			if err := os.Chmod(outFile.Name(), 0666); err != nil {
-				return err
-			}
-		}
-
 		rc, err := f.Open()
 		if err != nil {
 			outFile.Close()
@@ -194,6 +218,37 @@ func unzip(zipFile, dest string) error {
 	}
 
 	return nil
+}
+
+type moder interface {
+	Mode() os.FileMode
+}
+
+func prepareCopyDestinationFile(sourceInfo moder, dest string) (*os.File, error) {
+	if err := mkdirAll(filepath.Dir(dest), "", 0777); err != nil {
+		return nil, err
+	}
+
+	outFile, err := os.OpenFile(dest, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, sourceInfo.Mode())
+	if err != nil {
+		return nil, errors.Wrap(err, "opening destination file failed")
+	}
+
+	// Since the container might not run as the same user, we need to ensure
+	// that the file is globally writable. If the execute bit is normally
+	// set on the zipped up file, let's ensure we propagate that to the
+	// group and other permission bits too.
+	if sourceInfo.Mode()&0111 != 0 {
+		err = os.Chmod(outFile.Name(), 0777)
+	} else {
+		err = os.Chmod(outFile.Name(), 0666)
+	}
+	if err != nil {
+		outFile.Close()
+		return nil, err
+	}
+
+	return outFile, nil
 }
 
 // Technically, this is a misnomer, since it might be a socket or block special,

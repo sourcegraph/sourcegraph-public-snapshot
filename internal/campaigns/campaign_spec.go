@@ -64,8 +64,9 @@ type ImportChangeset struct {
 }
 
 type WorkspaceConfiguration struct {
-	RootAtLocationOf string `json:"rootAtLocationOf,omitempty" yaml:"rootAtLocationOf"`
-	In               string `json:"in,omitempty" yaml:"in"`
+	RootAtLocationOf   string `json:"rootAtLocationOf,omitempty" yaml:"rootAtLocationOf"`
+	In                 string `json:"in,omitempty" yaml:"in"`
+	OnlyFetchWorkspace bool   `json:"onlyFetchWorkspace,omitempty" yaml:"onlyFetchWorkspace"`
 
 	glob glob.Glob
 }

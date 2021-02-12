@@ -237,7 +237,7 @@ func campaignsExecute(ctx context.Context, out *output.Output, svc *campaigns.Se
 
 	fetcher := svc.NewRepoFetcher(flags.cacheDir, flags.cleanArchives)
 	for _, task := range tasks {
-		task.Archive = fetcher.Checkout(task.Repository)
+		task.Archive = fetcher.Checkout(task.Repository, task.ArchivePathToFetch())
 	}
 
 	opts := campaigns.ExecutorOpts{

@@ -59,7 +59,7 @@ func runSteps(ctx context.Context, opts *executionOpts) (result executionResult,
 	defer opts.archive.Close()
 
 	opts.reportProgress("Initializing workspace")
-	workspace, err := opts.wc.Create(ctx, opts.repo, opts.steps, opts.archive.Path())
+	workspace, err := opts.wc.Create(ctx, opts.repo, opts.steps, opts.archive)
 	if err != nil {
 		return executionResult{}, errors.Wrap(err, "creating workspace")
 	}

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"sort"
 	"strings"
 	"testing"
 
@@ -236,8 +237,8 @@ func TestService_FindDirectoriesInRepos(t *testing.T) {
 	}
 
 	want := map[*graphql.Repository][]string{
-		repos[0]: []string{"examples/project3", "project1", "project2"},
-		repos[1]: []string{"docs/client1", ".", "docs/client2/examples"},
+		repos[0]: {"examples/project3", "project1", "project2"},
+		repos[1]: {"docs/client1", ".", "docs/client2/examples"},
 	}
 
 	if !cmp.Equal(want, results, cmpopts.SortSlices(sortStrings)) {
@@ -308,6 +309,11 @@ func TestService_BuildTasks(t *testing.T) {
 		{ID: "repo-id-2", Name: "bitbucket.sgdev.org/SOUR/automation-testing"},
 	}
 
+	type wantTask struct {
+		Path               string
+		ArchivePathToFetch string
+	}
+
 	tests := map[string]struct {
 		spec  *CampaignSpec
 		repos []*graphql.Repository
@@ -317,17 +323,17 @@ func TestService_BuildTasks(t *testing.T) {
 		wantNumTasks int
 
 		// tasks per repository ID and in which path they are executed
-		wantTasks map[string][]string
+		wantTasks map[string][]wantTask
 	}{
 		"no workspace configuration": {
 			spec:          &CampaignSpec{},
 			repos:         repos,
 			searchResults: filesInRepos{},
 			wantNumTasks:  len(repos),
-			wantTasks: map[string][]string{
-				repos[0].ID: []string{""},
-				repos[1].ID: []string{""},
-				repos[2].ID: []string{""},
+			wantTasks: map[string][]wantTask{
+				repos[0].ID: {{Path: ""}},
+				repos[1].ID: {{Path: ""}},
+				repos[2].ID: {{Path: ""}},
 			},
 		},
 
@@ -340,10 +346,10 @@ func TestService_BuildTasks(t *testing.T) {
 			searchResults: filesInRepos{},
 			repos:         repos,
 			wantNumTasks:  len(repos),
-			wantTasks: map[string][]string{
-				repos[0].ID: []string{""},
-				repos[1].ID: []string{""},
-				repos[2].ID: []string{""},
+			wantTasks: map[string][]wantTask{
+				repos[0].ID: {{Path: ""}},
+				repos[1].ID: {{Path: ""}},
+				repos[2].ID: {{Path: ""}},
 			},
 		},
 
@@ -354,13 +360,13 @@ func TestService_BuildTasks(t *testing.T) {
 				},
 			},
 			searchResults: filesInRepos{
-				[]string{},
-				[]string{},
+				{},
+				{},
 			},
 			repos:        repos,
 			wantNumTasks: 1,
-			wantTasks: map[string][]string{
-				repos[1].ID: []string{""},
+			wantTasks: map[string][]wantTask{
+				repos[1].ID: {{Path: ""}},
 			},
 		},
 
@@ -371,12 +377,12 @@ func TestService_BuildTasks(t *testing.T) {
 				},
 			},
 			searchResults: filesInRepos{
-				[]string{
+				{
 					"a/b/package.json",
 					"a/b/c/package.json.json",
 					"d/e/f/package.json",
 				},
-				[]string{
+				{
 					"a/b/package.json",
 					"a/b/c/package.json.json",
 					"d/e/f/package.json",
@@ -384,10 +390,49 @@ func TestService_BuildTasks(t *testing.T) {
 			},
 			repos:        repos,
 			wantNumTasks: 7,
-			wantTasks: map[string][]string{
-				repos[0].ID: []string{"a/b", "a/b/c", "d/e/f"},
-				repos[1].ID: []string{""},
-				repos[2].ID: []string{"a/b", "a/b/c", "d/e/f"},
+			wantTasks: map[string][]wantTask{
+				repos[0].ID: {{Path: "a/b"}, {Path: "a/b/c"}, {Path: "d/e/f"}},
+				repos[1].ID: {{Path: ""}},
+				repos[2].ID: {{Path: "a/b"}, {Path: "a/b/c"}, {Path: "d/e/f"}},
+			},
+		},
+
+		"workspace configuration matches repo with OnlyFetchWorkspace": {
+			spec: &CampaignSpec{
+				Workspaces: []WorkspaceConfiguration{
+					{
+						OnlyFetchWorkspace: true,
+						In:                 "*automation-testing",
+						RootAtLocationOf:   "package.json",
+					},
+				},
+			},
+			searchResults: filesInRepos{
+				{
+					"a/b/package.json",
+					"a/b/c/package.json.json",
+					"d/e/f/package.json",
+				},
+				{
+					"a/b/package.json",
+					"a/b/c/package.json.json",
+					"d/e/f/package.json",
+				},
+			},
+			repos:        repos,
+			wantNumTasks: 7,
+			wantTasks: map[string][]wantTask{
+				repos[0].ID: {
+					{Path: "a/b", ArchivePathToFetch: "a/b"},
+					{Path: "a/b/c", ArchivePathToFetch: "a/b/c"},
+					{Path: "d/e/f", ArchivePathToFetch: "d/e/f"},
+				},
+				repos[1].ID: {{Path: ""}},
+				repos[2].ID: {
+					{Path: "a/b", ArchivePathToFetch: "a/b"},
+					{Path: "a/b/c", ArchivePathToFetch: "a/b/c"},
+					{Path: "d/e/f", ArchivePathToFetch: "d/e/f"},
+				},
 			},
 		},
 	}
@@ -408,13 +453,20 @@ func TestService_BuildTasks(t *testing.T) {
 				t.Fatalf("wrong number of tasks. want=%d, got=%d", tt.wantNumTasks, have)
 			}
 
-			haveTasks := map[string][]string{}
+			haveTasks := map[string][]wantTask{}
 			for _, task := range tasks {
-				haveTasks[task.Repository.ID] = append(haveTasks[task.Repository.ID], task.Path)
+				haveTasks[task.Repository.ID] = append(haveTasks[task.Repository.ID], wantTask{
+					Path:               task.Path,
+					ArchivePathToFetch: task.ArchivePathToFetch(),
+				})
 			}
 
-			if !cmp.Equal(tt.wantTasks, haveTasks, cmpopts.SortSlices(sortStrings)) {
-				t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(tt.wantTasks, haveTasks))
+			for _, tasks := range haveTasks {
+				sort.Slice(tasks, func(i, j int) bool { return tasks[i].Path < tasks[j].Path })
+			}
+
+			if diff := cmp.Diff(tt.wantTasks, haveTasks); diff != "" {
+				t.Errorf("mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}
