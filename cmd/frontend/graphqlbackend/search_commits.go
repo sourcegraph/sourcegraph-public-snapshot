@@ -47,7 +47,6 @@ func (r *CommitSearchResultResolver) Select(path filter.SelectPath) SearchResult
 	case filter.Commit:
 		return r
 	}
-
 	return nil
 }
 
