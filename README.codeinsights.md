@@ -103,6 +103,23 @@ SELECT time,
     FROM generate_series(TIMESTAMP '2020-01-01 00:00:00', TIMESTAMP '2020-06-01 00:00:00', INTERVAL '10 min') AS time;
 ```
 
+## Querying all data
+
+```
+SELECT series_id,
+	time,
+	value,
+	m.metadata,
+	repo_id,
+	repo_name.name,
+	original_repo_name.name
+FROM series_points p
+INNER JOIN metadata m ON p.metadata_id = m.id
+INNER JOIN repo_names repo_name on p.repo_name_id = repo_name.id
+INNER JOIN repo_names original_repo_name on p.original_repo_name_id = original_repo_name.id
+ORDER BY time DESC;
+```
+
 ## Example Global Settings
 
 ```
