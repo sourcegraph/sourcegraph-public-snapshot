@@ -3,6 +3,7 @@ import TickIcon from 'mdi-react/TickIcon'
 import React, { useCallback, useEffect, useState } from 'react'
 import TextAreaAutosize from 'react-textarea-autosize'
 import { Alert, ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
+import { Link } from '../../../../shared/src/components/Link'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import { LoaderButton } from '../../components/LoaderButton'
 import { SubmitHappinessFeedbackResult, SubmitHappinessFeedbackVariables } from '../../graphql-operations'
@@ -51,16 +52,19 @@ const FeedbackPromptContent: React.FunctionComponent = () => {
     return (
         <>
             {data && (
-                <div className="feedback-prompt__success">
+                <div className="feedback-prompt__success p-2">
                     <TickIcon className="feedback-prompt__success--tick" />
                     <h3>We've received your feedback!</h3>
                     <p className="d-inline">
-                        Thank you for your help.{' '}
+                        Thank you for your help.
                         {window.context.productResearchPageEnabled && (
                             <>
+                                {' '}
                                 Want to help keep making Sourcegraph better?{' '}
-                                <a href="/settings/product-research">Join us for occasional user research.</a> and share
-                                your feedback on our latest features and ideas.
+                                <Link to="/user/settings/product-research">
+                                    Join us for occasional user research
+                                </Link>{' '}
+                                and share your feedback on our latest features and ideas.
                             </>
                         )}
                     </p>
@@ -138,15 +142,15 @@ export const FeedbackPrompt: React.FunctionComponent = () => {
         <ButtonDropdown isOpen={isOpen} toggle={handleToggle} className="border feedback-prompt">
             <DropdownToggle
                 caret={false}
-                className="btn btn-link text-decoration-none"
+                className="btn btn-link text-decoration-none feedback-prompt__toggle"
                 nav={true}
                 aria-label="Feedback"
             >
                 <MessageDrawIcon className="d-lg-none icon-inline" />
                 <span className="d-none d-lg-block">Feedback</span>
             </DropdownToggle>
-            <DropdownMenu right={true} className="p-3 feedback-prompt__menu align-middle">
-                {isOpen && <FeedbackPromptContent />}
+            <DropdownMenu right={true} className="web-content feedback-prompt__menu" renderOnMount={false}>
+                <FeedbackPromptContent />
             </DropdownMenu>
         </ButtonDropdown>
     )
