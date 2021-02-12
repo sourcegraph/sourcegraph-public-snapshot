@@ -27,159 +27,8 @@ type changesetApplyPreviewConnectionResolver struct {
 	campaignSpecID int64
 
 	once     sync.Once
-	mappings *rewirerMappings
+	mappings *rewirerMappingsFacade
 	err      error
-}
-
-// rewirerMappings wraps store.RewirerMappings to provide memoised pagination
-// and filtering functionality.
-type rewirerMappings struct {
-	All store.RewirerMappings
-
-	// Inputs from outside the resolver that we need to build other resolvers.
-	campaignSpecID int64
-	store          *store.Store
-
-	// Calculated within the type with the dry run.
-	campaign *campaigns.Campaign
-
-	// Cache of filtered pages.
-	pagesMu sync.Mutex
-	pages   map[rewirerMappingPageOpts]*rewirerMappingPage
-
-	// Cache of rewirer mapping resolvers.
-	resolversMu sync.Mutex
-	resolvers   map[*store.RewirerMapping]*changesetApplyPreviewResolver
-}
-
-// newRewirerMappings creates a new rewirer mappings object, which includes dry
-// running the campaign reconciliation.
-func newRewirerMappings(ctx context.Context, s *store.Store, opts store.GetRewirerMappingsOpts, campaignSpecID int64) (*rewirerMappings, error) {
-	rm := &rewirerMappings{
-		campaignSpecID: campaignSpecID,
-		store:          s,
-		pages:          make(map[rewirerMappingPageOpts]*rewirerMappingPage),
-		resolvers:      make(map[*store.RewirerMapping]*changesetApplyPreviewResolver),
-	}
-
-	svc := service.New(rm.store)
-	campaignSpec, err := rm.store.GetCampaignSpec(ctx, store.GetCampaignSpecOpts{ID: campaignSpecID})
-	if err != nil {
-		return nil, err
-	}
-	// Dry-run reconcile the campaign with the new campaign spec.
-	if rm.campaign, _, err = svc.ReconcileCampaign(ctx, campaignSpec); err != nil {
-		return nil, err
-	}
-
-	opts = store.GetRewirerMappingsOpts{
-		CampaignSpecID: campaignSpecID,
-		CampaignID:     rm.campaign.ID,
-		TextSearch:     opts.TextSearch,
-		CurrentState:   opts.CurrentState,
-	}
-	if rm.All, err = rm.store.GetRewirerMappings(ctx, opts); err != nil {
-		return nil, err
-	}
-	if err := rm.All.Hydrate(ctx, rm.store); err != nil {
-		return nil, err
-	}
-
-	return rm, nil
-}
-
-type rewirerMappingPageOpts struct {
-	*database.LimitOffset
-	Op *campaigns.ReconcilerOperation
-}
-
-type rewirerMappingPage struct {
-	Mappings store.RewirerMappings
-
-	// TotalCount represents the total count of filtered results, but not
-	// necessarily the full set of results.
-	TotalCount int
-}
-
-// Page applies the given filter, and paginates the results.
-func (rw *rewirerMappings) Page(ctx context.Context, opts rewirerMappingPageOpts) (*rewirerMappingPage, error) {
-	rw.pagesMu.Lock()
-	defer rw.pagesMu.Unlock()
-
-	if page := rw.pages[opts]; page != nil {
-		return page, nil
-	}
-
-	var filtered store.RewirerMappings
-	if opts.Op != nil {
-		for _, mapping := range rw.All {
-			res, ok := rw.Resolver(mapping).ToVisibleChangesetApplyPreview()
-			if !ok {
-				continue
-			}
-
-			ops, err := res.Operations(ctx)
-			if err != nil {
-				return nil, err
-			}
-
-			for _, op := range ops {
-				if op == *opts.Op {
-					filtered = append(filtered, mapping)
-					break
-				}
-			}
-		}
-	} else {
-		filtered = rw.All
-	}
-
-	page := store.RewirerMappings{}
-	if limit, offset := opts.LimitOffset.Limit, opts.LimitOffset.Offset; limit <= 0 || offset < 0 || offset > len(filtered) {
-		// The limit and/or offset are outside the possible bounds, so we have
-		// nothing to do here: the empty mappings slice is correct.
-	} else {
-		if end := limit + offset; end > len(filtered) {
-			page = filtered[offset:]
-		} else {
-			page = filtered[offset:end]
-		}
-	}
-
-	rw.pages[opts] = &rewirerMappingPage{
-		Mappings:   page,
-		TotalCount: len(filtered),
-	}
-	return rw.pages[opts], nil
-}
-
-func (rw *rewirerMappings) Resolver(mapping *store.RewirerMapping) *changesetApplyPreviewResolver {
-	rw.resolversMu.Lock()
-	defer rw.resolversMu.Unlock()
-
-	if resolver := rw.resolvers[mapping]; resolver != nil {
-		return resolver
-	}
-
-	// We build the resolver without a preloadedNextSync, since not all callers
-	// will have calculated that.
-	rw.resolvers[mapping] = &changesetApplyPreviewResolver{
-		store:             rw.store,
-		mapping:           mapping,
-		preloadedCampaign: rw.campaign,
-		campaignSpecID:    rw.campaignSpecID,
-	}
-	return rw.resolvers[mapping]
-}
-
-func (rw *rewirerMappings) ResolverWithNextSync(mapping *store.RewirerMapping, nextSync time.Time) graphqlbackend.ChangesetApplyPreviewResolver {
-	// As the apply target resolvers don't cache the preloaded next sync value
-	// when creating the changeset resolver, we can shallow copy and update the
-	// field rather than having to build a whole new resolver.
-	resolver := *rw.Resolver(mapping)
-	resolver.preloadedNextSync = nextSync
-
-	return &resolver
 }
 
 func (r *changesetApplyPreviewConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
@@ -377,10 +226,175 @@ func (r *changesetApplyPreviewConnectionResolver) Stats(ctx context.Context) (gr
 	return stats, nil
 }
 
-func (r *changesetApplyPreviewConnectionResolver) compute(ctx context.Context) (*rewirerMappings, error) {
+func (r *changesetApplyPreviewConnectionResolver) compute(ctx context.Context) (*rewirerMappingsFacade, error) {
 	r.once.Do(func() {
-		r.mappings, r.err = newRewirerMappings(ctx, r.store, r.opts, r.campaignSpecID)
+		r.mappings = newRewirerMappingsFacade(r.store, r.campaignSpecID)
+		r.err = r.mappings.compute(ctx, r.opts)
 	})
 
 	return r.mappings, r.err
+}
+
+// rewirerMappingsFacade wraps store.RewirerMappings to provide memoised pagination
+// and filtering functionality.
+type rewirerMappingsFacade struct {
+	All store.RewirerMappings
+
+	// Inputs from outside the resolver that we need to build other resolvers.
+	campaignSpecID int64
+	store          *store.Store
+
+	// Calculated within the type with the dry run.
+	campaign *campaigns.Campaign
+
+	// Cache of filtered pages.
+	pagesMu sync.Mutex
+	pages   map[rewirerMappingPageOpts]*rewirerMappingPage
+
+	// Cache of rewirer mapping resolvers.
+	resolversMu sync.Mutex
+	resolvers   map[*store.RewirerMapping]graphqlbackend.ChangesetApplyPreviewResolver
+}
+
+// newRewirerMappingsFacade creates a new rewirer mappings object, which
+// includes dry running the campaign reconciliation.
+func newRewirerMappingsFacade(s *store.Store, campaignSpecID int64) *rewirerMappingsFacade {
+	return &rewirerMappingsFacade{
+		campaignSpecID: campaignSpecID,
+		store:          s,
+		pages:          make(map[rewirerMappingPageOpts]*rewirerMappingPage),
+		resolvers:      make(map[*store.RewirerMapping]graphqlbackend.ChangesetApplyPreviewResolver),
+	}
+}
+
+func (rmf *rewirerMappingsFacade) compute(ctx context.Context, opts store.GetRewirerMappingsOpts) error {
+	svc := service.New(rmf.store)
+	campaignSpec, err := rmf.store.GetCampaignSpec(ctx, store.GetCampaignSpecOpts{ID: rmf.campaignSpecID})
+	if err != nil {
+		return err
+	}
+	// Dry-run reconcile the campaign with the new campaign spec.
+	if rmf.campaign, _, err = svc.ReconcileCampaign(ctx, campaignSpec); err != nil {
+		return err
+	}
+
+	opts = store.GetRewirerMappingsOpts{
+		CampaignSpecID: rmf.campaignSpecID,
+		CampaignID:     rmf.campaign.ID,
+		TextSearch:     opts.TextSearch,
+		CurrentState:   opts.CurrentState,
+	}
+	if rmf.All, err = rmf.store.GetRewirerMappings(ctx, opts); err != nil {
+		return err
+	}
+	if err := rmf.All.Hydrate(ctx, rmf.store); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type rewirerMappingPageOpts struct {
+	*database.LimitOffset
+	Op *campaigns.ReconcilerOperation
+}
+
+type rewirerMappingPage struct {
+	Mappings store.RewirerMappings
+
+	// TotalCount represents the total count of filtered results, but not
+	// necessarily the full set of results.
+	TotalCount int
+}
+
+// Page applies the given filter, and paginates the results.
+func (rmf *rewirerMappingsFacade) Page(ctx context.Context, opts rewirerMappingPageOpts) (*rewirerMappingPage, error) {
+	rmf.pagesMu.Lock()
+	defer rmf.pagesMu.Unlock()
+
+	if page := rmf.pages[opts]; page != nil {
+		return page, nil
+	}
+
+	var filtered store.RewirerMappings
+	if opts.Op != nil {
+		filtered = store.RewirerMappings{}
+		for _, mapping := range rmf.All {
+			res, ok := rmf.Resolver(mapping).ToVisibleChangesetApplyPreview()
+			if !ok {
+				continue
+			}
+
+			ops, err := res.Operations(ctx)
+			if err != nil {
+				return nil, err
+			}
+
+			for _, op := range ops {
+				if op == *opts.Op {
+					filtered = append(filtered, mapping)
+					break
+				}
+			}
+		}
+	} else {
+		filtered = rmf.All
+	}
+
+	var page store.RewirerMappings
+	if lo := opts.LimitOffset; lo != nil {
+		if limit, offset := lo.Limit, lo.Offset; limit < 0 || offset < 0 || offset > len(filtered) {
+			// The limit and/or offset are outside the possible bounds, so we
+			// just need to make the slice not nil.
+			page = store.RewirerMappings{}
+		} else if limit == 0 {
+			page = filtered[offset:]
+		} else {
+			if end := limit + offset; end > len(filtered) {
+				page = filtered[offset:]
+			} else {
+				page = filtered[offset:end]
+			}
+		}
+	} else {
+		page = filtered
+	}
+
+	rmf.pages[opts] = &rewirerMappingPage{
+		Mappings:   page,
+		TotalCount: len(filtered),
+	}
+	return rmf.pages[opts], nil
+}
+
+func (rmf *rewirerMappingsFacade) Resolver(mapping *store.RewirerMapping) graphqlbackend.ChangesetApplyPreviewResolver {
+	rmf.resolversMu.Lock()
+	defer rmf.resolversMu.Unlock()
+
+	if resolver := rmf.resolvers[mapping]; resolver != nil {
+		return resolver
+	}
+
+	// We build the resolver without a preloadedNextSync, since not all callers
+	// will have calculated that.
+	rmf.resolvers[mapping] = &changesetApplyPreviewResolver{
+		store:             rmf.store,
+		mapping:           mapping,
+		preloadedCampaign: rmf.campaign,
+		campaignSpecID:    rmf.campaignSpecID,
+	}
+	return rmf.resolvers[mapping]
+}
+
+func (rmf *rewirerMappingsFacade) ResolverWithNextSync(mapping *store.RewirerMapping, nextSync time.Time) graphqlbackend.ChangesetApplyPreviewResolver {
+	// As the apply target resolvers don't cache the preloaded next sync value
+	// when creating the changeset resolver, we can shallow copy and update the
+	// field rather than having to build a whole new resolver.
+	//
+	// Since objects can only end up in the resolvers map via Resolver(), it's
+	// safe to type-assert to *changesetApplyPreviewResolver here.
+	resolver := *rmf.Resolver(mapping).(*changesetApplyPreviewResolver)
+	resolver.preloadedNextSync = nextSync
+
+	return &resolver
 }
