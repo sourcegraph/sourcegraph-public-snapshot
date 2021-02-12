@@ -5,10 +5,13 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/hubspot/hubspotutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -113,6 +116,57 @@ func (r *schemaResolver) SubmitSurvey(ctx context.Context, args *struct {
 	// 	// Log an error, but don't return one if the only failure was in submitting survey results to HubSpot.
 	// 	log15.Error("Unable to submit survey results to Sourcegraph remote", "error", err)
 	// }
+
+	return &EmptyResponse{}, nil
+}
+
+// FeedbackSubmissionInput contains a happiness feedback response.
+type HappinessFeedbackSubmissionInput struct {
+	// Score is the user's happiness rating, from 1-4.
+	Score int32
+	// Feedback is the answer to "What's going well? What could be better?".
+	Feedback *string
+	// The URL that the happiness feedback was submitted from
+	CurrentURL string
+}
+
+type happinessFeedbackSubmissionForHubSpot struct {
+	Username   *string `url:"happiness_username"`
+	Score      int32   `url:"happiness_score"`
+	Feedback   *string `url:"happiness_feedback"`
+	CurrentURL string  `url:"happiness_current_url"`
+	SiteID     string  `url:"site_id"`
+}
+
+// SubmitHappinessFeedback records a new happiness feedback response by the current user.
+func (r *schemaResolver) SubmitHappinessFeedback(ctx context.Context, args *struct {
+	Input *HappinessFeedbackSubmissionInput
+}) (*EmptyResponse, error) {
+	var username *string
+
+	// If user is authenticated, use their uid and set the optional username field.
+	actor := actor.FromContext(ctx)
+	if actor.IsAuthenticated() {
+		user, err := database.GlobalUsers.GetByID(ctx, 12345)
+		if err != nil && !errcode.IsNotFound(err) {
+			return nil, err
+		}
+		if user != nil {
+			username = &user.Username
+		}
+	}
+
+	// // Submit form to HubSpot
+	if err := hubspotutil.Client().SubmitForm(hubspotutil.FeedbackFormID, &happinessFeedbackSubmissionForHubSpot{
+		Username:   username,
+		Score:      args.Input.Score,
+		Feedback:   args.Input.Feedback,
+		CurrentURL: args.Input.CurrentURL,
+		SiteID:     siteid.Get(),
+	}); err != nil {
+		// Log an error, but don't return one if the only failure was in submitting feedback results to HubSpot.
+		log15.Error("Unable to submit happiness feedback results to Sourcegraph remote", "error", err)
+	}
 
 	return &EmptyResponse{}, nil
 }

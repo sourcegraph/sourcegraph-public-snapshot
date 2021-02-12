@@ -4,27 +4,22 @@ import React, { useCallback, useEffect, useState } from 'react'
 import TextAreaAutosize from 'react-textarea-autosize'
 import { Alert, ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { gql } from '../../../../shared/src/graphql/graphql'
-import { AuthenticatedUser } from '../../auth'
 import { LoaderButton } from '../../components/LoaderButton'
-import { SubmitSurveyResult, SubmitSurveyVariables } from '../../graphql-operations'
+import { SubmitHappinessFeedbackResult, SubmitHappinessFeedbackVariables } from '../../graphql-operations'
 import { useLocalStorage } from '../../hooks/useLocalStorage'
 import { useMutation } from '../../hooks/useMutation'
 import { IconRadioButtons } from '../IconRadioButtons'
 import { Happy, Sad, VeryHappy, VerySad } from './FeedbackIcons'
 
-interface User {
-    user: Pick<AuthenticatedUser, 'username' | 'email' | 'organizations'> | null
-}
-
-const SUBMIT_FEEDBACK_QUERY = gql`
-    mutation SubmitSurvey($input: SurveySubmissionInput!) {
-        submitSurvey(input: $input) {
+const SUBMIT_HAPPINESS_FEEDBACK_QUERY = gql`
+    mutation SubmitHappinessFeedback($input: HappinessFeedbackSubmissionInput!) {
+        submitHappinessFeedback(input: $input) {
             alwaysNil
         }
     }
 `
 
-const FeedbackPromptContent: React.FunctionComponent<User> = ({ user }) => {
+const FeedbackPromptContent: React.FunctionComponent = () => {
     const [rating, setRating] = useLocalStorage<number | undefined>('feedbackPromptRating', undefined)
     const [text, setText] = useLocalStorage<string>('feedbackPromptText', '')
     const handleRateChange = useCallback((value: number) => setRating(value), [setRating])
@@ -32,15 +27,16 @@ const FeedbackPromptContent: React.FunctionComponent<User> = ({ user }) => {
         (event: React.ChangeEvent<HTMLTextAreaElement>) => setText(event.target.value),
         [setText]
     )
-    const [submitFeedback, { loading, data, error }] = useMutation<SubmitSurveyResult, SubmitSurveyVariables>(
-        SUBMIT_FEEDBACK_QUERY
-    )
+    const [submitFeedback, { loading, data, error }] = useMutation<
+        SubmitHappinessFeedbackResult,
+        SubmitHappinessFeedbackVariables
+    >(SUBMIT_HAPPINESS_FEEDBACK_QUERY)
 
     const handleSubmit = useCallback((): void => {
         if (rating) {
-            console.log('feedback')
-            // TODO: Add user payload
-            // return submitFeedback({ input: { score: rating, reason: text } })
+            return submitFeedback({
+                input: { score: rating, feedback: text, currentURL: window.location.href },
+            })
         }
     }, [rating, submitFeedback, text])
 
@@ -82,6 +78,7 @@ const FeedbackPromptContent: React.FunctionComponent<User> = ({ user }) => {
                         maxRows={6}
                         placeholder="What's going well? What could be better?"
                         className="form-control feedback-prompt__textarea"
+                        autoFocus={true}
                     />
                     <IconRadioButtons
                         role="menuitem"
@@ -133,7 +130,7 @@ const FeedbackPromptContent: React.FunctionComponent<User> = ({ user }) => {
     )
 }
 
-export const FeedbackPrompt: React.FunctionComponent<User> = ({ user }) => {
+export const FeedbackPrompt: React.FunctionComponent = () => {
     const [isOpen, setIsOpen] = useState(false)
     const handleToggle = useCallback(() => setIsOpen(open => !open), [])
 
@@ -149,7 +146,7 @@ export const FeedbackPrompt: React.FunctionComponent<User> = ({ user }) => {
                 <span className="d-none d-lg-block">Feedback</span>
             </DropdownToggle>
             <DropdownMenu right={true} className="p-3 feedback-prompt__menu align-middle">
-                {isOpen && <FeedbackPromptContent user={user} />}
+                {isOpen && <FeedbackPromptContent />}
             </DropdownMenu>
         </ButtonDropdown>
     )
