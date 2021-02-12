@@ -166,7 +166,6 @@ func (fm *FileMatchResolver) Select(t filter.SelectPath) SearchResultResolver {
 	case filter.Commit:
 		return nil
 	}
-
 	return nil
 }
 
