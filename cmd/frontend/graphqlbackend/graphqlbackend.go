@@ -62,6 +62,7 @@ var traceGraphQLQueriesSample = func() int {
 type honeycombTracer struct{}
 
 func (h honeycombTracer) TraceQuery(ctx context.Context, queryString string, operationName string, variables map[string]interface{}, varTypes map[string]*introspection.Type) (context.Context, trace.TraceQueryFinishFunc) {
+	start := time.Now()
 	return ctx, func(queryErrors []*gqlerrors.QueryError) {
 		if !honey.Enabled() || traceGraphQLQueriesSample <= 0 || len(queryErrors) > 0 {
 			return
@@ -72,7 +73,13 @@ func (h honeycombTracer) TraceQuery(ctx context.Context, queryString string, ope
 			log15.Warn("estimating GraphQL cost", "error", err)
 			return
 		}
+
 		a := actor.FromContext(ctx)
+		anonymous := !a.IsAuthenticated()
+		uid := a.UIDString()
+		if anonymous {
+			uid = sgtrace.AnonymousUID(ctx)
+		}
 
 		ev := honey.Event("graphql-cost")
 		ev.SampleRate = uint(traceGraphQLQueriesSample)
@@ -80,9 +87,11 @@ func (h honeycombTracer) TraceQuery(ctx context.Context, queryString string, ope
 		ev.AddField("query", queryString)
 		ev.AddField("cost", cost)
 		ev.AddField("costVersion", costEstimateVersion)
-		ev.AddField("anonymous", !a.IsAuthenticated())
+		ev.AddField("anonymous", anonymous)
+		ev.AddField("uid", uid)
 		ev.AddField("operationName", operationName)
 		ev.AddField("isInternal", sgtrace.IsInternalRequest(ctx))
+		ev.AddField("durationMicroseconds", time.Since(start).Microseconds())
 
 		_ = ev.Send()
 	}

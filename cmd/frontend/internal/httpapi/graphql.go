@@ -30,6 +30,9 @@ func serveGraphQL(schema *graphql.Schema, isInternal bool) func(w http.ResponseW
 		r = r.WithContext(trace.WithGraphQLRequestName(r.Context(), requestName))
 		r = r.WithContext(trace.WithRequestSource(r.Context(), guessSource(r)))
 		r = r.WithContext(trace.WithIsInternal(r.Context(), isInternal))
+		if cookie, err := r.Cookie("sourcegraphAnonymousUid"); err == nil && cookie.Value != "" {
+			r = r.WithContext(trace.WithAnonymousUID(r.Context(), cookie.Value))
+		}
 
 		if r.Header.Get("Content-Encoding") == "gzip" {
 			gzipReader, err := gzip.NewReader(r.Body)
