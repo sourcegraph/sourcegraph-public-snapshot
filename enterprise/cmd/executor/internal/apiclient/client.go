@@ -159,7 +159,7 @@ func (c *Client) Ping(ctx context.Context, jobIDs []int) (err error) {
 }
 
 func (c *Client) Heartbeat(ctx context.Context, jobIDs []int) (err error) {
-	strJobIDs := make([]string, len(jobIDs))
+	strJobIDs := make([]string, 0, len(jobIDs))
 	for _, jobID := range jobIDs {
 		strJobIDs = append(strJobIDs, strconv.FormatInt(int64(jobID), 10))
 	}

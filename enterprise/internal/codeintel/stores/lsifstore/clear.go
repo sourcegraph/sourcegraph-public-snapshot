@@ -20,7 +20,7 @@ var tableNames = []string{
 }
 
 func (s *Store) Clear(ctx context.Context, bundleIDs ...int) (err error) {
-	var stringIDs []string
+	stringIDs := make([]string, 0, len(bundleIDs))
 	for _, bundleID := range bundleIDs {
 		stringIDs = append(stringIDs, fmt.Sprintf("%d", bundleID))
 	}

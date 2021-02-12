@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -58,7 +59,7 @@ func TestDiagnostics(t *testing.T) {
 	}
 
 	setMockDBStoreGetDumpByID(t, mockDBStore, map[int]store.Dump{42: testDump1})
-	setmockLSIFStoreDiagnostics(t, mockLSIFStore, 42, "sub1", 1, 3, sourceDiagnostics, 5)
+	setmockLSIFStoreDiagnostics(t, mockLSIFStore, 42, "sub1", 3, 1, sourceDiagnostics, 5)
 
 	api := New(mockDBStore, mockLSIFStore, mockGitserverClient, &observation.TestContext)
 	diagnostics, _, err := api.Diagnostics(context.Background(), "sub1", 42, 3, 1)
