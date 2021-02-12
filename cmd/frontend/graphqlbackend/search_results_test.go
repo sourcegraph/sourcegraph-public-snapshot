@@ -1574,9 +1574,7 @@ func TestUnionMerge(t *testing.T) {
 			want: SearchResultsResolver{SearchResults: []SearchResultResolver{
 				&FileMatchResolver{FileMatch: FileMatch{
 					JLineMatches: []*lineMatch{
-						{
-							JPreview: "a",
-						},
+						{JPreview: "a"},
 						{JPreview: "b"},
 					},
 					uri: "a",
