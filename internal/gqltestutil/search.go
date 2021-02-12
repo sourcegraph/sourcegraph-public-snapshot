@@ -257,26 +257,26 @@ query Search($query: String!) {
 	search(query: $query) {
 		results {
 			results {
-        __typename
+				__typename
 				... on CommitSearchResult {
 					url
 				}
 				... on FileMatch {
-          file {
-            path
-          }
-          repository {
-            name
-          }
-          lineMatches {
-            offsetAndLengths
-          }
-          symbols {
-            name
-          }
+					file {
+						path
+					}
+					repository {
+						name
+					}
+					lineMatches {
+						offsetAndLengths
+					}
+					symbols {
+						name
+					}
 				}
 				... on Repository {
-          name
+					name
 				}
 			}
 		}
