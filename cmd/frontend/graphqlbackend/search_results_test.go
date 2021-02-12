@@ -1733,12 +1733,12 @@ func TestSearchResultDeduper(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run("", func(t *testing.T) {
-			var dedup searchResultDeduper
+			dedup := NewDeduper()
 			for _, r := range tc.input {
 				dedup.Add(r)
 			}
 
-			deduped := dedup.Deduped()
+			deduped := dedup.Dedupe()
 			sortResultResolvers(deduped)
 
 			tc.want.Equal(t, toString(deduped))
