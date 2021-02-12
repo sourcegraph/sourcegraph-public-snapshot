@@ -154,7 +154,7 @@ export const FeedbackPrompt: React.FunctionComponent = () => {
                 <MessageDrawIcon className="d-lg-none icon-inline" />
                 <span className="d-none d-lg-block">Feedback</span>
             </DropdownToggle>
-            <DropdownMenu right={true} className="web-content feedback-prompt__menu" renderOnMount={true}>
+            <DropdownMenu right={true} className="web-content feedback-prompt__menu" renderOnMount={false}>
                 <FeedbackPromptContent closePrompt={forceClose} />
             </DropdownMenu>
         </ButtonDropdown>
