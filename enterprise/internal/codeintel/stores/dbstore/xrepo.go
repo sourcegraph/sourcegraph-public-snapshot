@@ -87,7 +87,7 @@ func (s *Store) ReferenceIDsAndFilters(ctx context.Context, repositoryID int, co
 	defer endObservation(1, observation.Args{})
 
 	if len(monikers) == 0 {
-		return nil, 0, nil
+		return PackageReferenceScannerFromSlice(), 0, nil
 	}
 
 	qs := make([]*sqlf.Query, 0, len(monikers))
@@ -119,7 +119,7 @@ func (s *Store) ReferenceIDsAndFilters(ctx context.Context, repositoryID int, co
 		return nil, 0, err
 	}
 
-	return &packageReferenceScanner{rows}, totalCount, nil
+	return packageReferenceScannerFromRows(rows), totalCount, nil
 }
 
 const referenceIDsAndFiltersCTEDefinitions = `

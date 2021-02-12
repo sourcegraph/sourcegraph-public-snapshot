@@ -21,12 +21,19 @@ type PackageReferenceScanner interface {
 	Close() error
 }
 
-type packageReferenceScanner struct {
+type rowScanner struct {
 	rows *sql.Rows
 }
 
+// packageReferenceScannerFromRows creates a PackageReferenceScanner that feeds the given values.
+func packageReferenceScannerFromRows(rows *sql.Rows) PackageReferenceScanner {
+	return &rowScanner{
+		rows: rows,
+	}
+}
+
 // Next reads the next package reference value from the database cursor.
-func (s *packageReferenceScanner) Next() (reference lsifstore.PackageReference, _ bool, _ error) {
+func (s *rowScanner) Next() (reference lsifstore.PackageReference, _ bool, _ error) {
 	if !s.rows.Next() {
 		return lsifstore.PackageReference{}, false, nil
 	}
@@ -39,6 +46,31 @@ func (s *packageReferenceScanner) Next() (reference lsifstore.PackageReference, 
 }
 
 // Close the underlying row object.
-func (s *packageReferenceScanner) Close() error {
+func (s *rowScanner) Close() error {
 	return basestore.CloseRows(s.rows, nil)
+}
+
+type sliceScanner struct {
+	references []lsifstore.PackageReference
+}
+
+// PackageReferenceScannerFromSlice creates a PackageReferenceScanner that feeds the given values.
+func PackageReferenceScannerFromSlice(references ...lsifstore.PackageReference) PackageReferenceScanner {
+	return &sliceScanner{
+		references: references,
+	}
+}
+
+func (s *sliceScanner) Next() (lsifstore.PackageReference, bool, error) {
+	if len(s.references) == 0 {
+		return lsifstore.PackageReference{}, false, nil
+	}
+
+	next := s.references[0]
+	s.references = s.references[1:]
+	return next, true, nil
+}
+
+func (s *sliceScanner) Close() error {
+	return nil
 }
