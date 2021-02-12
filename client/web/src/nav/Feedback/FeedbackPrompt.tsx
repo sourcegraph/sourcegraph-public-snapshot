@@ -20,7 +20,11 @@ const SUBMIT_HAPPINESS_FEEDBACK_QUERY = gql`
     }
 `
 
-const FeedbackPromptContent: React.FunctionComponent = () => {
+interface Props {
+    closePrompt: () => void
+}
+
+const FeedbackPromptContent: React.FunctionComponent<Props> = ({ closePrompt }) => {
     const [rating, setRating] = useLocalStorage<number | undefined>('feedbackPromptRating', undefined)
     const [text, setText] = useLocalStorage<string>('feedbackPromptText', '')
     const handleRateChange = useCallback((value: number) => setRating(value), [setRating])
@@ -61,7 +65,7 @@ const FeedbackPromptContent: React.FunctionComponent = () => {
                             <>
                                 {' '}
                                 Want to help keep making Sourcegraph better?{' '}
-                                <Link to="/user/settings/product-research">
+                                <Link to="/user/settings/product-research" onClick={closePrompt}>
                                     Join us for occasional user research
                                 </Link>{' '}
                                 and share your feedback on our latest features and ideas.
@@ -137,20 +141,21 @@ const FeedbackPromptContent: React.FunctionComponent = () => {
 export const FeedbackPrompt: React.FunctionComponent = () => {
     const [isOpen, setIsOpen] = useState(false)
     const handleToggle = useCallback(() => setIsOpen(open => !open), [])
+    const forceClose = useCallback(() => setIsOpen(false), [])
 
     return (
-        <ButtonDropdown isOpen={isOpen} toggle={handleToggle} className="border feedback-prompt">
+        <ButtonDropdown isOpen={isOpen} toggle={handleToggle} className="border feedback-prompt mx-1">
             <DropdownToggle
                 caret={false}
-                className="btn btn-link text-decoration-none feedback-prompt__toggle"
+                className="btn btn-link text-decoration-none py-1 feedback-prompt__toggle"
                 nav={true}
                 aria-label="Feedback"
             >
                 <MessageDrawIcon className="d-lg-none icon-inline" />
                 <span className="d-none d-lg-block">Feedback</span>
             </DropdownToggle>
-            <DropdownMenu right={true} className="web-content feedback-prompt__menu" renderOnMount={false}>
-                <FeedbackPromptContent />
+            <DropdownMenu right={true} className="web-content feedback-prompt__menu" renderOnMount={true}>
+                <FeedbackPromptContent closePrompt={forceClose} />
             </DropdownMenu>
         </ButtonDropdown>
     )
