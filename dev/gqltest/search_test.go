@@ -912,42 +912,42 @@ func TestSearch(t *testing.T) {
 		}{
 			{
 				`select repo`,
-				`repo:torvalds/linux patterntype:literal balloonboard select:repo`,
+				`repo:go-diff patterntype:literal HunkNoChunksize select:repo`,
 				counts{Repo: 1},
 			},
 			{
 				`select file`,
-				`repo:torvalds/linux patterntype:literal balloonboard select:file`,
+				`repo:go-diff patterntype:literal HunkNoChunksize select:file`,
 				counts{File: 1},
 			},
 			{
 				`or statement merges file`,
-				`repo:torvalds/linux balloonboard or balloon3_pin_config selec:file`,
+				`repo:go-diff HunkNoChunksize or ParseHunksAndPrintHunks select:file`,
 				counts{File: 1},
 			},
 			{
 				`select content`,
-				`repo:torvalds/linux patterntype:literal balloonboard select:content`,
+				`repo:go-diff patterntype:literal HunkNoChunksize select:content`,
 				counts{Content: 1},
 			},
 			{
 				`no select`,
-				`repo:torvalds/linux patterntype:literal balloonboard`,
+				`repo:go-diff patterntype:literal HunkNoChunksize`,
 				counts{Content: 1},
 			},
 			{
 				`select commit, no results`,
-				`repo:torvalds/linux patterntype:literal balloonboard select:commit`,
+				`repo:go-diff patterntype:literal HunkNoChunksize select:commit`,
 				counts{},
 			},
 			{
 				`select symbol, no results`,
-				`repo:torvalds/linux patterntype:literal balloonboard select:symbol`,
+				`repo:go-diff patterntype:literal HunkNoChunksize select:symbol`,
 				counts{},
 			},
 			{
 				`select symbol`,
-				`repo:^torvalds/linux$ patterntype:literal type:symbol balloon3_has`,
+				`repo:go-diff patterntype:literal type:symbol HunkNoChunksize select:symbol`,
 				counts{Symbol: 1},
 			},
 			// TODO (@camdencheek): Enable this test once #17483 is fixed
