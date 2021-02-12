@@ -4,13 +4,36 @@ import React, { FormEvent, useCallback, useMemo, useState } from 'react'
 import { DropdownItem } from 'reactstrap'
 import { SearchContextProps } from '..'
 
+const HighlightedSearchTerm: React.FunctionComponent<{ text: string; searchFilter: string }> = ({
+    text,
+    searchFilter,
+}) => {
+    if (searchFilter.length > 0) {
+        const index = text.toLowerCase().indexOf(searchFilter.toLowerCase())
+        if (index > -1) {
+            const before = text.slice(0, index)
+            const highlighted = text.slice(index, index + searchFilter.length)
+            const after = text.slice(index + searchFilter.length)
+            return (
+                <>
+                    {before}
+                    <strong>{highlighted}</strong>
+                    {after}
+                </>
+            )
+        }
+    }
+    return <>{text}</>
+}
+
 const SearchContextMenuItem: React.FunctionComponent<{
     spec: string
     description: string
     selected: boolean
     isDefault: boolean
     setSelectedSearchContextSpec: (spec: string) => void
-}> = ({ spec, description, selected, isDefault, setSelectedSearchContextSpec }) => {
+    searchFilter: string
+}> = ({ spec, description, selected, isDefault, setSelectedSearchContextSpec, searchFilter }) => {
     const setContext = useCallback(() => {
         setSelectedSearchContextSpec(spec)
     }, [setSelectedSearchContextSpec, spec])
@@ -20,8 +43,8 @@ const SearchContextMenuItem: React.FunctionComponent<{
             onClick={setContext}
         >
             <span className="search-context-menu__item-name" title={spec}>
-                {spec}
-            </span>
+                <HighlightedSearchTerm text={spec} searchFilter={searchFilter} />
+            </span>{' '}
             <span className="search-context-menu__item-description" title={description}>
                 {description}
             </span>
@@ -80,6 +103,7 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
                         isDefault={context.spec === defaultSearchContextSpec}
                         selected={context.spec === selectedSearchContextSpec}
                         setSelectedSearchContextSpec={setSelectedSearchContextSpec}
+                        searchFilter={searchFilter}
                     />
                 ))}
                 {filteredList.length === 0 && (
