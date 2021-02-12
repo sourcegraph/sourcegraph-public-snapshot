@@ -76,4 +76,29 @@ describe('SearchContextMenu', () => {
 
         sinon.assert.calledOnce(closeMenu)
     })
+
+    it('should reset back to default when pressing enter on Reset button', () => {
+        const setSelectedSearchContextSpec = sinon.spy()
+        const closeMenu = sinon.spy()
+
+        const root = mount(
+            <UncontrolledDropdown>
+                <DropdownMenu>
+                    <SearchContextMenu
+                        {...defaultProps}
+                        setSelectedSearchContextSpec={setSelectedSearchContextSpec}
+                        selectedSearchContextSpec="@username"
+                        closeMenu={closeMenu}
+                    />
+                </DropdownMenu>
+            </UncontrolledDropdown>
+        )
+        const button = root.find('.search-context-menu__footer-button').at(0)
+        button.simulate('keydown', { key: 'Enter' })
+
+        sinon.assert.calledOnce(setSelectedSearchContextSpec)
+        sinon.assert.calledWithExactly(setSelectedSearchContextSpec, 'global')
+
+        sinon.assert.calledOnce(closeMenu)
+    })
 })

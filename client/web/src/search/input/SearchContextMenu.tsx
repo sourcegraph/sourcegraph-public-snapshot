@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import React, { useCallback, useRef, useEffect } from 'react'
+import React, { useCallback, useRef, useEffect, KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { DropdownItem } from 'reactstrap'
 import { SearchContextProps } from '..'
 
@@ -57,6 +57,17 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
         setTimeout(() => inputElement.current?.focus(), 0)
     }
 
+    // Triggering the reset button using a keyboard does not trigger a click event (for some reason).
+    // We have to manually check for space and enter keypress and trigger the reset.
+    const onResetButtonKeyDown = useCallback(
+        (event: ReactKeyboardEvent<HTMLButtonElement>): void => {
+            if (event.key === ' ' || event.key === 'Enter') {
+                reset()
+            }
+        },
+        [reset]
+    )
+
     useEffect(() => {
         focusInputElement()
         const onInputKeyDown = (event: KeyboardEvent): void => {
@@ -111,6 +122,7 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
                 <button
                     type="button"
                     onClick={reset}
+                    onKeyDown={onResetButtonKeyDown}
                     className="btn btn-link btn-sm search-context-menu__footer-button"
                 >
                     Reset
