@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-// definitionsLimit is the maximum number of records that can be returned from DefinitionDumps.
+// DefinitionDumpsLimit is the maximum number of records that can be returned from DefinitionDumps.
 const DefinitionDumpsLimit = 10
 
 // DefinitionDumps returns the set of dumps that define at least one of the given monikers.
