@@ -38,8 +38,8 @@ INSERT INTO repo_names(name) VALUES ('github.com/gorilla/mux-renamed');
 INSERT INTO metadata(metadata) VALUES ('{"hello": "world", "languages": ["Go", "Python", "Java"]}');
 SELECT setseed(0.5);
 INSERT INTO series_points(
-	series_id,
     time,
+	series_id,
     value,
     metadata_id,
     repo_id,
