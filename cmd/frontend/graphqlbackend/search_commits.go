@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -38,16 +37,6 @@ type CommitSearchResultResolver struct {
 	url            string
 	detail         string
 	matches        []*searchResultMatchResolver
-}
-
-func (r *CommitSearchResultResolver) Select(path filter.SelectPath) SearchResultResolver {
-	switch path.Type {
-	case filter.Repository:
-		return r.commit.Repository()
-	case filter.Commit:
-		return r
-	}
-	return nil
 }
 
 func (r *CommitSearchResultResolver) Commit() *GitCommitResolver         { return r.commit }
