@@ -11,6 +11,7 @@ type operations struct {
 	addUploadPart                          *observation.Operation
 	calculateVisibleUploads                *observation.Operation
 	commitGraphMetadata                    *observation.Operation
+	definitionDumps                        *observation.Operation
 	deleteIndexByID                        *observation.Operation
 	deleteIndexesWithoutRepository         *observation.Operation
 	deleteOldIndexes                       *observation.Operation
@@ -50,6 +51,7 @@ type operations struct {
 	markRepositoryAsDirty                  *observation.Operation
 	packageReferencePager                  *observation.Operation
 	queueSize                              *observation.Operation
+	referenceIDsAndFilters                 *observation.Operation
 	repoName                               *observation.Operation
 	repoUsageStatistics                    *observation.Operation
 	requeue                                *observation.Operation
@@ -83,6 +85,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		addUploadPart:                          op("AddUploadPart"),
 		calculateVisibleUploads:                op("CalculateVisibleUploads"),
 		commitGraphMetadata:                    op("CommitGraphMetadata"),
+		definitionDumps:                        op("DefinitionDumps"),
 		deleteIndexByID:                        op("DeleteIndexByID"),
 		deleteIndexesWithoutRepository:         op("DeleteIndexesWithoutRepository"),
 		deleteOldIndexes:                       op("DeleteOldIndexes"),
@@ -122,6 +125,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		markRepositoryAsDirty:                  op("MarkRepositoryAsDirty"),
 		packageReferencePager:                  op("PackageReferencePager"),
 		queueSize:                              op("QueueSize"),
+		referenceIDsAndFilters:                 op("ReferenceIDsAndFilters"),
 		repoName:                               op("RepoName"),
 		repoUsageStatistics:                    op("RepoUsageStatistics"),
 		requeue:                                op("Requeue"),
