@@ -47,7 +47,7 @@ func (c *Client) GetMergeRequestResourceStateEvents(ctx context.Context, project
 
 		header, _, err := c.do(ctx, req, &page)
 		if err != nil {
-			if errors.Is(err, HTTPError(404)) {
+			if e, ok := err.(HTTPError); ok && e.Code() == http.StatusNotFound {
 				return []*ResourceStateEvent{}, nil
 			}
 			return nil, errors.Wrap(err, "requesting rse page")
