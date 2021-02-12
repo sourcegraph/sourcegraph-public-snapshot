@@ -92,7 +92,6 @@ func (r *RepositoryResolver) Select(path filter.SelectPath) SearchResultResolver
 	case filter.Repository:
 		return r
 	}
-
 	return nil
 }
 
