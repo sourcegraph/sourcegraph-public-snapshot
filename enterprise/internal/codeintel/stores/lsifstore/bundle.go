@@ -394,7 +394,7 @@ func (s *Store) BulkMonikerResults(ctx context.Context, tableName string, upload
 	if totalCount > limit {
 		max = limit
 	}
-	
+
 	locations := make([]Location, 0, max)
 outer:
 	for _, monikerLocations := range locationData {
