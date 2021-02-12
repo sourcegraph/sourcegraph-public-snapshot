@@ -178,6 +178,57 @@ func (s *Store) References(ctx context.Context, bundleID int, path string, line,
 	return allLocations, nil
 }
 
+// PagedReferences returns the set of locations referencing the symbol at the given position.
+func (s *Store) PagedReferences(ctx context.Context, bundleID int, path string, line, character, limit, offset int) (_ []Location, _ int, err error) {
+	ctx, endObservation := s.operations.pagedReferences.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("bundleID", bundleID),
+		log.String("path", path),
+		log.Int("line", line),
+		log.Int("character", character),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	documentData, exists, err := s.scanFirstDocumentData(s.Store.Query(ctx, sqlf.Sprintf(documentQuery, bundleID, path)))
+	if err != nil || !exists {
+		return nil, 0, err
+	}
+
+	ranges := FindRanges(documentData.Document.Ranges, line, character)
+	orderedResultIDs := extractResultIDs(ranges, func(r RangeData) ID { return r.ReferenceResultID })
+	locationsMap, err := s.locations(ctx, bundleID, orderedResultIDs)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	totalCount := 0
+	for _, locations := range locationsMap {
+		totalCount += len(locations)
+	}
+
+	max := totalCount
+	if totalCount > limit {
+		max = limit
+	}
+
+	locations := make([]Location, 0, max)
+outer:
+	for _, resultID := range orderedResultIDs {
+		for _, location := range locationsMap[resultID] {
+			offset--
+			if offset >= 0 {
+				continue
+			}
+
+			locations = append(locations, location)
+			if len(locations) >= limit {
+				break outer
+			}
+		}
+	}
+
+	return locations, totalCount, nil
+}
+
 // Hover returns the hover text of the symbol at the given position.
 func (s *Store) Hover(ctx context.Context, bundleID int, path string, line, character int) (_ string, _ Range, _ bool, err error) {
 	ctx, endObservation := s.operations.hover.With(ctx, &err, observation.Args{LogFields: []log.Field{
