@@ -199,24 +199,33 @@ func (s *Store) PagedReferences(ctx context.Context, bundleID int, path string, 
 		return nil, 0, err
 	}
 
-	var allLocations []Location
+	totalCount := 0
+	for _, locations := range locationsMap {
+		totalCount += len(locations)
+	}
+
+	max := totalCount
+	if totalCount > limit {
+		max = limit
+	}
+
+	locations := make([]Location, 0, max)
+outer:
 	for _, resultID := range orderedResultIDs {
-		allLocations = append(allLocations, locationsMap[resultID]...)
+		for _, location := range locationsMap[resultID] {
+			offset--
+			if offset >= 0 {
+				continue
+			}
+
+			locations = append(locations, location)
+			if len(locations) >= limit {
+				break outer
+			}
+		}
 	}
 
-	totalCount := len(allLocations)
-
-	if offset > len(allLocations) {
-		allLocations = nil
-	} else {
-		allLocations = allLocations[offset:]
-	}
-
-	if limit < len(allLocations) {
-		allLocations = allLocations[:limit]
-	}
-
-	return allLocations, totalCount, nil
+	return locations, totalCount, nil
 }
 
 // Hover returns the hover text of the symbol at the given position.

@@ -244,7 +244,7 @@ func TestDatabasePagedReferences(t *testing.T) {
 		{5, 0, expected},
 		{2, 0, expected[:2]},
 		{2, 1, expected[1:]},
-		{5, 5, nil},
+		{5, 5, expected[:0]},
 	}
 
 	for i, testCase := range testCases {
