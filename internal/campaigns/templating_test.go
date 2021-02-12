@@ -188,6 +188,50 @@ ${{ step.stderr}}
 	}
 }
 
+func TestRenderStepMap(t *testing.T) {
+	stepCtx := &StepContext{
+		PreviousStep: StepResult{
+			files: &StepChanges{
+				Modified: []string{"go.mod"},
+				Added:    []string{"main.go.swp"},
+				Deleted:  []string{".DS_Store"},
+				Renamed:  []string{"new-filename.txt"},
+			},
+			Stdout: bytes.NewBufferString("this is previous step's stdout"),
+			Stderr: bytes.NewBufferString("this is previous step's stderr"),
+		},
+		Outputs: map[string]interface{}{},
+		Repository: graphql.Repository{
+			Name: "github.com/sourcegraph/src-cli",
+			FileMatches: map[string]bool{
+				"README.md": true,
+				"main.go":   true,
+			},
+		},
+	}
+
+	input := map[string]string{
+		"/tmp/my-file.txt":        `${{ previous_step.modified_files }}`,
+		"/tmp/my-other-file.txt":  `${{ previous_step.added_files }}`,
+		"/tmp/my-other-file2.txt": `${{ previous_step.deleted_files }}`,
+	}
+
+	have, err := renderStepMap(input, stepCtx)
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	want := map[string]string{
+		"/tmp/my-file.txt":        "[go.mod]",
+		"/tmp/my-other-file.txt":  "[main.go.swp]",
+		"/tmp/my-other-file2.txt": "[.DS_Store]",
+	}
+
+	if diff := cmp.Diff(want, have); diff != "" {
+		t.Fatalf("wrong output:\n%s", diff)
+	}
+}
+
 func TestRenderChangesetTemplateField(t *testing.T) {
 	// To avoid bugs due to differences between test setup and actual code, we
 	// do the actual parsing of YAML here to get an interface{} which we'll put

@@ -27,7 +27,7 @@ func parseAsTemplate(name, input string, stepCtx *StepContext) (*template.Templa
 func renderStepMap(m map[string]string, stepCtx *StepContext) (map[string]string, error) {
 	rendered := make(map[string]string, len(m))
 
-	for k, v := range rendered {
+	for k, v := range m {
 		var out bytes.Buffer
 
 		if err := renderStepTemplate(k, v, &out, stepCtx); err != nil {

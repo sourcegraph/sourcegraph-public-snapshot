@@ -21,6 +21,7 @@ All notable changes to `src-cli` are documented in this file.
 ### Fixed
 
 - When `docker` becomes unresponsive `src campaign [apply|preview]` would get stuck and ignore Ctrl-C signals. That is now fixed.
+- The `steps.files` attributes in campaign specs have been broken since 3.23.2 and now work again.
 
 ### Removed
 
