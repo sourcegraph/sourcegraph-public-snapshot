@@ -1,0 +1,111 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Tab Tabs with local storage persistenc 1`] = `
+<TabsWithLocalStorageViewStatePersistence
+  className="tab-bar"
+  id="tab"
+  onSelectTab={[Function]}
+  storageKey="repo-revision-sidebar-last-tab"
+  tabBarEndFragment={
+    <React.Fragment>
+      <div>
+        fragment
+      </div>
+    </React.Fragment>
+  }
+  tabClassName="tab-bar__tab--h5like"
+  tabs={
+    Array [
+      Object {
+        "id": "files",
+        "label": "Files",
+      },
+    ]
+  }
+>
+  <Tabs
+    activeTab="files"
+    className="tab-bar"
+    id="tab"
+    onSelectTab={[Function]}
+    storageKey="repo-revision-sidebar-last-tab"
+    tabBarEndFragment={
+      <React.Fragment>
+        <div>
+          fragment
+        </div>
+      </React.Fragment>
+    }
+    tabClassName="tab-bar__tab--h5like"
+    tabComponent={[Function]}
+    tabs={
+      Array [
+        Object {
+          "id": "files",
+          "label": "Files",
+        },
+      ]
+    }
+  >
+    <div
+      className="tabs tab-bar"
+      id="tab"
+    >
+      <TabBar
+        activeTab="files"
+        endFragment={
+          <React.Fragment>
+            <div>
+              fragment
+            </div>
+          </React.Fragment>
+        }
+        tabClassName="tab-bar__tab--h5like"
+        tabComponent={[Function]}
+        tabs={
+          Array [
+            Object {
+              "id": "files",
+              "label": "Files",
+            },
+          ]
+        }
+      >
+        <div
+          className="tab-bar "
+          role="tablist"
+        >
+          <Component
+            className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--active tab-bar__tab--h5like"
+            key="files"
+            role="tab"
+            selected={true}
+            tab={
+              Object {
+                "id": "files",
+                "label": "Files",
+              }
+            }
+            tabIndex={0}
+          >
+            <button
+              aria-controls="files"
+              aria-selected={true}
+              className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--active tab-bar__tab--h5like"
+              data-test-tab="files"
+              onClick={[Function]}
+              role="tab"
+              type="button"
+            >
+              Files
+            </button>
+          </Component>
+          <div>
+            fragment
+          </div>
+        </div>
+      </TabBar>
+    </div>
+  </Tabs>
+</TabsWithLocalStorageViewStatePersistence>
+`;
