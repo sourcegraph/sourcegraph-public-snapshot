@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
@@ -336,6 +337,91 @@ func (s *Store) MonikerResults(ctx context.Context, bundleID int, tableName, sch
 const monikerResultsQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/bundles.go:MonikerResults
 SELECT scheme, identifier, data FROM %s WHERE dump_id = %s AND scheme = %s AND identifier = %s
+`
+
+// BulkMonikerResults returns the locations within one of the given bundles that define or reference
+// one of the given monikers. This method also returns the size of the complete result set to aid in
+// pagination.
+func (s *Store) BulkMonikerResults(ctx context.Context, tableName string, uploadIDs []int, monikers []MonikerData, limit, offset int) (_ []Location, _ int, err error) {
+	strUploadIDs := make([]string, 0, len(uploadIDs))
+	for _, id := range uploadIDs {
+		strUploadIDs = append(strUploadIDs, strconv.Itoa(id))
+	}
+	strMonikers := make([]string, 0, len(monikers))
+	for _, arg := range monikers {
+		strMonikers = append(strMonikers, fmt.Sprintf("%s:%s", arg.Scheme, arg.Identifier))
+	}
+
+	ctx, endObservation := s.operations.bulkMonikerResults.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("tableName", tableName),
+		log.String("uploadIDs", strings.Join(strUploadIDs, ", ")),
+		log.String("monikers", strings.Join(strMonikers, ", ")),
+		log.Int("limit", limit),
+		log.Int("offset", offset),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	if len(uploadIDs) == 0 || len(monikers) == 0 {
+		return nil, 0, nil
+	}
+
+	idQueries := make([]*sqlf.Query, 0, len(uploadIDs))
+	for _, id := range uploadIDs {
+		idQueries = append(idQueries, sqlf.Sprintf("%s", id))
+	}
+
+	monikerQueries := make([]*sqlf.Query, 0, len(monikers))
+	for _, arg := range monikers {
+		monikerQueries = append(monikerQueries, sqlf.Sprintf("(%s, %s)", arg.Scheme, arg.Identifier))
+	}
+
+	locationData, err := s.scanQualifiedMonikerLocations(s.Store.Query(ctx, sqlf.Sprintf(
+		bulkMonikerResultsQuery,
+		sqlf.Sprintf(fmt.Sprintf("lsif_data_%s", tableName)),
+		sqlf.Join(idQueries, ", "),
+		sqlf.Join(monikerQueries, ", "),
+	)))
+	if err != nil {
+		return nil, 0, err
+	}
+
+	totalCount := 0
+	for _, monikerLocations := range locationData {
+		totalCount += len(monikerLocations.Locations)
+	}
+
+	max := totalCount
+	if totalCount > limit {
+		max = limit
+	}
+
+	locations := make([]Location, 0, max)
+outer:
+	for _, monikerLocations := range locationData {
+		for _, row := range monikerLocations.Locations {
+			offset--
+			if offset >= 0 {
+				continue
+			}
+
+			locations = append(locations, Location{
+				DumpID: monikerLocations.DumpID,
+				Path:   row.URI,
+				Range:  newRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
+			})
+
+			if len(locations) >= limit {
+				break outer
+			}
+		}
+	}
+
+	return locations, totalCount, nil
+}
+
+const bulkMonikerResultsQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/bundle.go:BulkMonikerResults
+SELECT dump_id, scheme, identifier, data FROM %s WHERE dump_id IN (%s) AND (scheme, identifier) IN (%s) ORDER BY (scheme, identifier, dump_id)
 `
 
 // PackageInformation looks up package information data by identifier.

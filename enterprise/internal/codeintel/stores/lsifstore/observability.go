@@ -8,6 +8,7 @@ import (
 )
 
 type operations struct {
+	bulkMonikerResults *observation.Operation
 	clear              *observation.Operation
 	definitions        *observation.Operation
 	diagnostics        *observation.Operation
@@ -42,6 +43,7 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	return &operations{
+		bulkMonikerResults: op("BulkMonikerResults"),
 		clear:              op("Clear"),
 		definitions:        op("Definitions"),
 		diagnostics:        op("Diagnostics"),
