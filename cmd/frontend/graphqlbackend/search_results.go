@@ -524,13 +524,12 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResultsReso
 // unionMerge performs a merge of file match results, merging line matches when
 // they occur in the same file.
 func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
-  dedup := NewDeduper()
+	dedup := NewDeduper()
 
-	// Register all the left results in the dedupper
+	// Add results to maps for deduping
 	for _, leftResult := range left.SearchResults {
 		dedup.Add(leftResult)
 	}
-
 	for _, rightResult := range right.SearchResults {
 		dedup.Add(rightResult)
 	}
