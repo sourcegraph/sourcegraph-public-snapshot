@@ -77,7 +77,7 @@ describe('SearchContextMenu', () => {
         sinon.assert.calledOnce(closeMenu)
     })
 
-    it('should filter list when searching', () => {
+    it('should filter list by spec when searching', () => {
         const root = mount(
             <UncontrolledDropdown>
                 <DropdownMenu>
@@ -93,19 +93,10 @@ describe('SearchContextMenu', () => {
             currentTarget: { value: '@user' },
         } as ChangeEvent<HTMLInputElement>)
 
-        let items = root.find(DropdownItem)
+        const items = root.find(DropdownItem)
         expect(items.length).toBe(2)
         expect(items.at(0).text()).toBe('@usernameYour repositories on Sourcegraph')
         expect(items.at(1).text()).toBe('@username/test-version-1.5Only code in version 1.5')
-
-        // Search by description
-        searchInput.invoke('onInput')?.({
-            currentTarget: { value: 'version 1.5' },
-        } as ChangeEvent<HTMLInputElement>)
-
-        items = root.find(DropdownItem)
-        expect(items.length).toBe(1)
-        expect(items.at(0).text()).toBe('@username/test-version-1.5Only code in version 1.5')
     })
 
     it('should show message if search does not find anything', () => {
@@ -122,6 +113,26 @@ describe('SearchContextMenu', () => {
         // Search by spec
         searchInput.invoke('onInput')?.({
             currentTarget: { value: 'nothing' },
+        } as ChangeEvent<HTMLInputElement>)
+
+        const items = root.find(DropdownItem)
+        expect(items.length).toBe(1)
+        expect(items.at(0).text()).toBe('No contexts found')
+    })
+
+    it('should not search by description', () => {
+        const root = mount(
+            <UncontrolledDropdown>
+                <DropdownMenu>
+                    <SearchContextMenu {...defaultProps} />
+                </DropdownMenu>
+            </UncontrolledDropdown>
+        )
+
+        const searchInput = root.find('input')
+
+        searchInput.invoke('onInput')?.({
+            currentTarget: { value: 'version 1.5' },
         } as ChangeEvent<HTMLInputElement>)
 
         const items = root.find(DropdownItem)

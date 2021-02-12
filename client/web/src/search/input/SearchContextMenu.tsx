@@ -54,11 +54,7 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
 
     const filteredList = useMemo(
         () =>
-            availableSearchContexts.filter(
-                context =>
-                    context.spec.toLowerCase().includes(searchFilter.toLowerCase()) ||
-                    context.description.toLowerCase().includes(searchFilter.toLowerCase())
-            ),
+            availableSearchContexts.filter(context => context.spec.toLowerCase().includes(searchFilter.toLowerCase())),
         [availableSearchContexts, searchFilter]
     )
 
