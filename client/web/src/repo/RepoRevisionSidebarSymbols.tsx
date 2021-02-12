@@ -81,19 +81,21 @@ export class RepoRevisionSidebarSymbols extends React.PureComponent<Props> {
 
     public render(): JSX.Element | null {
         return (
-            <FilteredSymbolsConnection
-                className="repo-revision-sidebar-symbols"
-                compact={true}
-                noun="symbol"
-                pluralNoun="symbols"
-                queryConnection={this.fetchSymbols}
-                nodeComponent={SymbolNode}
-                nodeComponentProps={{ location: this.props.location }}
-                defaultFirst={100}
-                useURLQuery={false}
-                history={this.props.history}
-                location={this.props.location}
-            />
+            <div id="symbols" role="tabpanel" tabIndex={0} aria-labelledby="symbols" hidden={false}>
+                <FilteredSymbolsConnection
+                    className="repo-revision-sidebar-symbols"
+                    compact={true}
+                    noun="symbol"
+                    pluralNoun="symbols"
+                    queryConnection={this.fetchSymbols}
+                    nodeComponent={SymbolNode}
+                    nodeComponentProps={{ location: this.props.location }}
+                    defaultFirst={100}
+                    useURLQuery={false}
+                    history={this.props.history}
+                    location={this.props.location}
+                />
+            </div>
         )
     }
 

@@ -36,7 +36,7 @@ interface TabBarProps<ID extends string, T extends Tab<ID>> {
     endFragment?: React.ReactFragment
 
     /** The component used to render the tab (in the tab bar, not the active tab's content area). */
-    tabComponent: React.ComponentType<{ tab: T; className: string; role: string }>
+    tabComponent: React.ComponentType<{ tab: T; className: string; role: string; selected: boolean; tabIndex: number }>
 
     tabClassName?: string
 }
@@ -70,6 +70,8 @@ class TabBar<ID extends string, T extends Tab<ID>> extends React.PureComponent<T
                                 this.props.tabClassName
                             )}
                             role="tab"
+                            selected={this.props.activeTab === tab.id}
+                            tabIndex={this.props.activeTab === tab.id ? 0 : -1}
                         />
                     ))}
                 {this.props.endFragment}
@@ -132,7 +134,13 @@ class Tabs<ID extends string, T extends Tab<ID>> extends React.PureComponent<
         activeTab: ID | undefined
 
         /** The component used to render the tab (in the tab bar, not the active tab's content area). */
-        tabComponent: React.ComponentType<{ tab: T; className: string; role: string }>
+        tabComponent: React.ComponentType<{
+            tab: T
+            className: string
+            role: string
+            selected: boolean
+            tabIndex: number
+        }>
     }
 > {
     public render(): JSX.Element | null {
@@ -219,11 +227,23 @@ export class TabsWithLocalStorageViewStatePersistence<ID extends string, T exten
         )
     }
 
-    private renderTab = ({ tab, className, role }: { tab: T; className: string; role: string }): JSX.Element => (
+    private renderTab = ({
+        tab,
+        className,
+        role,
+        selected,
+    }: {
+        tab: T
+        className: string
+        role: string
+        selected: boolean
+    }): JSX.Element => (
         <button
             type="button"
             className={className}
             role={role}
+            aria-selected={selected}
+            aria-controls={tab.id}
             data-test-tab={tab.id}
             onClick={() => this.onSelectTab(tab.id)}
         >

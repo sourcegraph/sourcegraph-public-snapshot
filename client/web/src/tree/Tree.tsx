@@ -294,7 +294,15 @@ export class Tree extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="tree" tabIndex={1} onKeyDown={this.onKeyDown} ref={this.setTreeElement}>
+            <div
+                className="tree"
+                id="files"
+                role="tabpanel"
+                aria-labelledby="Tree"
+                tabIndex={0}
+                onKeyDown={this.onKeyDown}
+                ref={this.setTreeElement}
+            >
                 <TreeRoot
                     ref={reference => {
                         if (reference) {
