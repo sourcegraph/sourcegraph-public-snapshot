@@ -102,6 +102,14 @@ func Router() *mux.Router {
 	return uirouter.Router
 }
 
+// InitRouter create the router that serves pages for our web app
+// and assigns it to uirouter.Router.
+// The router can be accessed by calling Router().
+func InitRouter() {
+	router := newRouter()
+	initRouter(router)
+}
+
 var mockServeRepo func(w http.ResponseWriter, r *http.Request)
 
 func newRouter() *mux.Router {
@@ -139,6 +147,7 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/subscriptions").Methods("GET").Name(routeSubscriptions)
 	r.PathPrefix("/stats").Methods("GET").Name(routeStats)
 	r.PathPrefix("/views").Methods("GET").Name(routeViews)
+	r.Path("/ping-from-self-hosted").Methods("GET", "OPTIONS").Name(uirouter.RoutePingFromSelfHosted)
 
 	// Repogroup pages. Must mirror web/src/Layout.tsx
 	if envvar.SourcegraphDotComMode() {
@@ -183,10 +192,6 @@ func newRouter() *mux.Router {
 	return r
 }
 
-func init() {
-	initRouter()
-}
-
 // brandNameSubtitle returns a string with the specified title sequence and the brand name as the
 // last title component. This function indirectly calls conf.Get(), so should not be invoked from
 // any function that is invoked by an init function.
@@ -194,10 +199,10 @@ func brandNameSubtitle(titles ...string) string {
 	return strings.Join(append(titles, globals.Branding().BrandName), " - ")
 }
 
-func initRouter() {
-	// basic pages with static titles
-	router := newRouter()
+func initRouter(router *mux.Router) {
 	uirouter.Router = router // make accessible to other packages
+
+	// basic pages with static titles
 	router.Get(routeHome).Handler(handler(serveHome))
 	router.Get(routeThreads).Handler(handler(serveBrandedPageString("Threads", nil)))
 	router.Get(routeInsights).Handler(handler(serveBrandedPageString("Insights", nil)))
@@ -226,6 +231,7 @@ func initRouter() {
 	router.Get(routeSubscriptions).Handler(handler(serveBrandedPageString("Subscriptions", nil)))
 	router.Get(routeStats).Handler(handler(serveBrandedPageString("Stats", nil)))
 	router.Get(routeViews).Handler(handler(serveBrandedPageString("View", nil)))
+	router.Get(uirouter.RoutePingFromSelfHosted).Handler(handler(servePingFromSelfHosted))
 
 	router.Get(routeUserSettings).Handler(handler(serveBrandedPageString("User settings", nil)))
 	router.Get(routeUserRedirect).Handler(handler(serveBrandedPageString("User", nil)))
@@ -256,10 +262,10 @@ func initRouter() {
 	}, nil)))
 
 	// streaming search
-	router.Get(routeSearchStream).HandlerFunc(search.ServeStream)
+	router.Get(routeSearchStream).Handler(search.StreamHandler())
 
 	// search badge
-	router.Get(routeSearchBadge).Handler(searchBadgeHandler)
+	router.Get(routeSearchBadge).Handler(searchBadgeHandler())
 
 	if envvar.SourcegraphDotComMode() {
 		// about subdomain

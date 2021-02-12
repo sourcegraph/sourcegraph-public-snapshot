@@ -5,7 +5,8 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestGroupSiteUsageStats(t *testing.T) {
@@ -118,42 +119,12 @@ func TestGroupSiteUsageStatsMonthsOnly(t *testing.T) {
 	}
 }
 
-func TestGroupAggregatedStats(t *testing.T) {
+func TestGroupAggregateSearchStats(t *testing.T) {
 	t1 := time.Now().UTC()
 	t2 := t1.Add(time.Hour)
 	t3 := t2.Add(time.Hour)
 
-	codeIntelStats, searchStats := groupAggreatedStats([]types.AggregatedEvent{
-		{
-			Name:           "codeintel.lsifHover",
-			Month:          t1,
-			Week:           t2,
-			Day:            t3,
-			TotalMonth:     11,
-			TotalWeek:      12,
-			TotalDay:       13,
-			UniquesMonth:   14,
-			UniquesWeek:    15,
-			UniquesDay:     16,
-			LatenciesMonth: []float64{11, 12, 13},
-			LatenciesWeek:  []float64{14, 15, 16},
-			LatenciesDay:   []float64{17, 18, 19},
-		},
-		{
-			Name:           "codeintel.lsifDefinitions",
-			Month:          t1,
-			Week:           t2,
-			Day:            t3,
-			TotalMonth:     21,
-			TotalWeek:      22,
-			TotalDay:       23,
-			UniquesMonth:   24,
-			UniquesWeek:    25,
-			UniquesDay:     26,
-			LatenciesMonth: []float64{21, 22, 23},
-			LatenciesWeek:  []float64{24, 25, 26},
-			LatenciesDay:   []float64{27, 28, 29},
-		},
+	searchStats := groupAggregatedSearchStats([]types.AggregatedEvent{
 		{
 			Name:           "search.latencies.structural",
 			Month:          t1,
@@ -188,78 +159,6 @@ func TestGroupAggregatedStats(t *testing.T) {
 
 	intptr := func(i int32) *int32 {
 		return &i
-	}
-
-	expectedCodeIntelStats := &types.CodeIntelUsageStatistics{
-		Daily: []*types.CodeIntelUsagePeriod{
-			{
-				StartTime: t3,
-				Hover: &types.CodeIntelEventCategoryStatistics{
-					LSIF: &types.CodeIntelEventStatistics{
-						UsersCount:  16,
-						EventsCount: intptr(13),
-					},
-					LSP:    codeIntelEventStatistics(),
-					Search: codeIntelEventStatistics(),
-				},
-				Definitions: &types.CodeIntelEventCategoryStatistics{
-					LSIF: &types.CodeIntelEventStatistics{
-						UsersCount:  26,
-						EventsCount: intptr(23),
-					},
-					LSP:    codeIntelEventStatistics(),
-					Search: codeIntelEventStatistics(),
-				},
-				References: newCodeIntelEventCategory(),
-			},
-		},
-		Weekly: []*types.CodeIntelUsagePeriod{
-			{
-				StartTime: t2,
-				Hover: &types.CodeIntelEventCategoryStatistics{
-					LSIF: &types.CodeIntelEventStatistics{
-						UsersCount:  15,
-						EventsCount: intptr(12),
-					},
-					LSP:    codeIntelEventStatistics(),
-					Search: codeIntelEventStatistics(),
-				},
-				Definitions: &types.CodeIntelEventCategoryStatistics{
-					LSIF: &types.CodeIntelEventStatistics{
-						UsersCount:  25,
-						EventsCount: intptr(22),
-					},
-					LSP:    codeIntelEventStatistics(),
-					Search: codeIntelEventStatistics(),
-				},
-				References: newCodeIntelEventCategory(),
-			},
-		},
-		Monthly: []*types.CodeIntelUsagePeriod{
-			{
-				StartTime: t1,
-				Hover: &types.CodeIntelEventCategoryStatistics{
-					LSIF: &types.CodeIntelEventStatistics{
-						UsersCount:  14,
-						EventsCount: intptr(11),
-					},
-					LSP:    codeIntelEventStatistics(),
-					Search: codeIntelEventStatistics(),
-				},
-				Definitions: &types.CodeIntelEventCategoryStatistics{
-					LSIF: &types.CodeIntelEventStatistics{
-						UsersCount:  24,
-						EventsCount: intptr(21),
-					},
-					LSP:    codeIntelEventStatistics(),
-					Search: codeIntelEventStatistics(),
-				},
-				References: newCodeIntelEventCategory(),
-			},
-		},
-	}
-	if diff := cmp.Diff(expectedCodeIntelStats, codeIntelStats); diff != "" {
-		t.Fatal(diff)
 	}
 
 	expectedSearchStats := &types.SearchUsageStatistics{
@@ -385,6 +284,60 @@ func TestGroupAggregatedStats(t *testing.T) {
 		},
 	}
 	if diff := cmp.Diff(expectedSearchStats, searchStats); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
+func TestGroupAggregatedCodeIntelStats(t *testing.T) {
+	lang1 := "go"
+	lang2 := "typescript"
+	t1 := time.Now().UTC().Add(time.Hour)
+
+	codeIntelStats := groupAggregatedCodeIntelStats([]types.CodeIntelAggregatedEvent{
+		{Name: "codeintel.lsifHover", Week: t1, TotalWeek: 10, UniquesWeek: 1},
+		{Name: "codeintel.searchDefinitions", Week: t1, TotalWeek: 20, UniquesWeek: 2, LanguageID: &lang1},
+		{Name: "codeintel.lsifDefinitions", Week: t1, TotalWeek: 30, UniquesWeek: 3},
+		{Name: "codeintel.searchReferences.xrepo", Week: t1, TotalWeek: 40, UniquesWeek: 4, LanguageID: &lang2},
+	})
+
+	expectedCodeIntelStats := &types.NewCodeIntelUsageStatistics{
+		StartOfWeek: t1,
+		EventSummaries: []types.CodeIntelEventSummary{
+			{
+				Action:          types.HoverAction,
+				Source:          types.PreciseSource,
+				LanguageID:      "",
+				CrossRepository: false,
+				WAUs:            1,
+				TotalActions:    10,
+			},
+			{
+				Action:          types.DefinitionsAction,
+				Source:          types.SearchSource,
+				LanguageID:      "go",
+				CrossRepository: false,
+				WAUs:            2,
+				TotalActions:    20,
+			},
+			{
+				Action:          types.DefinitionsAction,
+				Source:          types.PreciseSource,
+				LanguageID:      "",
+				CrossRepository: false,
+				WAUs:            3,
+				TotalActions:    30,
+			},
+			{
+				Action:          types.ReferencesAction,
+				Source:          types.SearchSource,
+				LanguageID:      "typescript",
+				CrossRepository: true,
+				WAUs:            4,
+				TotalActions:    40,
+			},
+		},
+	}
+	if diff := cmp.Diff(expectedCodeIntelStats, codeIntelStats); diff != "" {
 		t.Fatal(diff)
 	}
 }

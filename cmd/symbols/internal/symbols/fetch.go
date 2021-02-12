@@ -10,7 +10,6 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
@@ -59,7 +58,7 @@ func (s *Service) fetchRepositoryArchive(ctx context.Context, repo api.RepoName,
 		span.Finish()
 	}
 
-	r, err := s.FetchTar(ctx, gitserver.Repo{Name: repo}, commitID)
+	r, err := s.FetchTar(ctx, repo, commitID)
 	if err != nil {
 		return nil, nil, err
 	}

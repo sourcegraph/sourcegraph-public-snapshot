@@ -319,6 +319,6 @@ export class TabsWithURLViewStatePersistence<ID extends string, T extends Tab<ID
         >
             {tab.label}
         </Link>
-        /* eslint:enable react/jsx-no-bind */
+        /* eslint-enable react/jsx-no-bind */
     )
 }

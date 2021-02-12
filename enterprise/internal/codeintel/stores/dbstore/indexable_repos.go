@@ -3,10 +3,15 @@ package dbstore
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
+	"github.com/opentracing/opentracing-go/log"
+
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // IndexableRepository marks a repository for eligibility to be indexed automatically.
@@ -38,7 +43,7 @@ type IndexableRepositoryQueryOptions struct {
 	now                         time.Time
 }
 
-// scanIndexableRepositories scans a slice of indexable repositories from the return value of `*store.query`.
+// scanIndexableRepositories scans a slice of indexable repositories from the return value of `*Store.query`.
 func scanIndexableRepositories(rows *sql.Rows, queryErr error) (_ []IndexableRepository, err error) {
 	if queryErr != nil {
 		return nil, queryErr
@@ -65,7 +70,16 @@ func scanIndexableRepositories(rows *sql.Rows, queryErr error) (_ []IndexableRep
 }
 
 // IndexableRepositories returns the metadata of all indexable repositories.
-func (s *store) IndexableRepositories(ctx context.Context, opts IndexableRepositoryQueryOptions) ([]IndexableRepository, error) {
+func (s *Store) IndexableRepositories(ctx context.Context, opts IndexableRepositoryQueryOptions) (_ []IndexableRepository, err error) {
+	ctx, endObservation := s.operations.indexableRepositories.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("limit", opts.Limit),
+		log.Int("minimumSearchCount", opts.MinimumSearchCount),
+		log.Float64("minimumSearchRatio", opts.MinimumSearchRatio),
+		log.Int("minimumPreciseCount", opts.MinimumPreciseCount),
+		log.String("minimumTimeSinceLastEnqueue", fmt.Sprintf("%s", opts.MinimumTimeSinceLastEnqueue)),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	if opts.now.IsZero() {
 		opts.now = time.Now()
 	}
@@ -96,7 +110,7 @@ func (s *store) IndexableRepositories(ctx context.Context, opts IndexableReposit
 		conds = append(conds, sqlf.Sprintf(
 			"(last_index_enqueued_at IS NULL OR %s - last_index_enqueued_at >= (%s || ' second')::interval)",
 			opts.now,
-			opts.MinimumTimeSinceLastEnqueue/time.Second,
+			strconv.Itoa(int(opts.MinimumTimeSinceLastEnqueue/time.Second)),
 		))
 	}
 
@@ -104,24 +118,32 @@ func (s *store) IndexableRepositories(ctx context.Context, opts IndexableReposit
 		conds = append(conds, sqlf.Sprintf("true"))
 	}
 
-	return scanIndexableRepositories(s.Store.Query(ctx, sqlf.Sprintf(`
-		SELECT
-			repository_id,
-			search_count,
-			precise_count,
-			last_index_enqueued_at,
-			enabled
-		FROM lsif_indexable_repositories
-		WHERE enabled is not false AND (enabled is true OR (%s))
-		LIMIT %s
-	`, sqlf.Join(conds, " AND "), opts.Limit)))
+	return scanIndexableRepositories(s.Store.Query(ctx, sqlf.Sprintf(indexableRepositoriesQuery, sqlf.Join(conds, " AND "), opts.Limit)))
 }
+
+const indexableRepositoriesQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/indexable_repos.go:IndexableRepositories
+SELECT
+	repository_id,
+	search_count,
+	precise_count,
+	last_index_enqueued_at,
+	enabled
+FROM lsif_indexable_repositories
+WHERE enabled is not false AND (enabled is true OR (%s))
+LIMIT %s
+`
 
 // UpdateIndexableRepository updates the metadata for an indexable repository. If the repository is not
 // already marked as indexable, a new record will be created.
-func (s *store) UpdateIndexableRepository(ctx context.Context, indexableRepository UpdateableIndexableRepository, now time.Time) error {
+func (s *Store) UpdateIndexableRepository(ctx context.Context, indexableRepository UpdateableIndexableRepository, now time.Time) (err error) {
+	ctx, endObservation := s.operations.updateIndexableRepository.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", indexableRepository.RepositoryID),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	// Ensure that record exists before we attempt to update it
-	err := s.Store.Exec(ctx, sqlf.Sprintf(`
+	err = s.Store.Exec(ctx, sqlf.Sprintf(`
 		INSERT INTO lsif_indexable_repositories (repository_id)
 		VALUES (%s)
 		ON CONFLICT DO NOTHING
@@ -149,22 +171,25 @@ func (s *store) UpdateIndexableRepository(ctx context.Context, indexableReposito
 		return nil
 	}
 
-	return s.Store.Exec(ctx, sqlf.Sprintf(`
-		UPDATE lsif_indexable_repositories
-		SET %s, last_updated_at = %s
-		WHERE repository_id = %s
-	`, sqlf.Join(pairs, ","), now, indexableRepository.RepositoryID))
+	return s.Store.Exec(ctx, sqlf.Sprintf(updateIndexableRepositoryQuery, sqlf.Join(pairs, ","), now, indexableRepository.RepositoryID))
 }
+
+const updateIndexableRepositoryQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/indexable_repos.go:UpdateIndexableRepository
+UPDATE lsif_indexable_repositories SET %s, last_updated_at = %s WHERE repository_id = %s
+`
 
 // ResetIndexableRepositories zeroes the event counts for indexable repositories that have not been updated
 // since lastUpdatedBefore.
-func (s *store) ResetIndexableRepositories(ctx context.Context, lastUpdatedBefore time.Time) error {
-	return s.Store.Exec(ctx, sqlf.Sprintf(
-		`
-		UPDATE lsif_indexable_repositories
-		SET search_count = 0, precise_count = 0
-		WHERE last_updated_at < %s
-	`,
-		lastUpdatedBefore,
-	))
+func (s *Store) ResetIndexableRepositories(ctx context.Context, lastUpdatedBefore time.Time) (err error) {
+	// TODO - should be a duration ago instead
+	ctx, endObservation := s.operations.resetIndexableRepositories.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	defer endObservation(1, observation.Args{})
+
+	return s.Store.Exec(ctx, sqlf.Sprintf(resetIndexableRepositoriesQuery, lastUpdatedBefore))
 }
+
+const resetIndexableRepositoriesQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/indexable_repos.go:ResetIndexableRepositories
+UPDATE lsif_indexable_repositories SET search_count = 0, precise_count = 0 WHERE last_updated_at < %s
+`

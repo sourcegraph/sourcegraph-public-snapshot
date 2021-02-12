@@ -2,7 +2,7 @@ import { startCase } from 'lodash'
 import assert from 'assert'
 import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 import { Driver, createDriverForTest } from '../../../shared/src/testing/driver'
-import { testSingleFilePage } from './shared'
+import { closeInstallPageTab, testSingleFilePage } from './shared'
 import { retry } from '../../../shared/src/testing/utils'
 import { getConfig } from '../../../shared/src/testing/config'
 import { fromEvent } from 'rxjs'
@@ -71,7 +71,7 @@ describe('Sourcegraph browser extension on github.com', function () {
                     const { token, lineId, goToDefinitionURL } = tokens[side]
                     it(`provides hover tooltips on token "${token}" in the ${side} part`, async () => {
                         await driver.page.goto(`https://github.com/gorilla/mux/pull/117/files?diff=${diffType}`)
-                        await driver.page.bringToFront()
+                        await closeInstallPageTab(driver.browser)
                         // The browser extension takes a bit to initialize and register all event listeners.
                         // Waiting here saves one retry cycle below in the common case.
                         // If it's not enough, the retry will catch it.

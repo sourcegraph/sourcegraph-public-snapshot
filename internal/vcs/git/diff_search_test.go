@@ -2,6 +2,7 @@ package git
 
 import (
 	"context"
+	"os/exec"
 	"reflect"
 	"strings"
 	"testing"
@@ -9,11 +10,18 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
 func TestRepository_RawLogDiffSearch(t *testing.T) {
 	t.Parallel()
+
+	// We depend on newer versions of git. Log git version so if this fails we
+	// can compare.
+	if version, err := exec.Command("git", "version").CombinedOutput(); err != nil {
+		t.Fatal(err)
+	} else {
+		t.Log(string(version))
+	}
 
 	expiredCtx, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Minute))
 	defer cancel()
@@ -182,7 +190,7 @@ func TestRepository_RawLogDiffSearch_empty(t *testing.T) {
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m empty --allow-empty --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
 	tests := map[string]struct {
-		repo gitserver.Repo
+		repo api.RepoName
 		want map[*RawLogDiffSearchOptions][]*LogCommitSearchResult
 	}{
 		"commit": {

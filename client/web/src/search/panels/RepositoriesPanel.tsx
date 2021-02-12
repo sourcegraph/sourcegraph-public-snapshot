@@ -2,13 +2,12 @@ import classNames from 'classnames'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { AuthenticatedUser } from '../../auth'
 import { EventLogResult } from '../backend'
-import { FILTERS } from '../../../../shared/src/search/parser/filters'
-import { FilterType } from '../../../../shared/src/search/interactive/util'
+import { FilterType, FILTERS } from '../../../../shared/src/search/query/filters'
 import { Link } from '../../../../shared/src/components/Link'
 import { LoadingPanelView } from './LoadingPanelView'
 import { Observable } from 'rxjs'
 import { PanelContainer } from './PanelContainer'
-import { scanSearchQuery } from '../../../../shared/src/search/parser/scanner'
+import { scanSearchQuery } from '../../../../shared/src/search/query/scanner'
 import { parseSearchURLQuery } from '..'
 import { ShowMoreButton } from './ShowMoreButton'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
@@ -127,25 +126,18 @@ function processRepositories(eventLogResult: EventLogResult): string[] | null {
     for (const node of eventLogResult.nodes) {
         const url = new URL(node.url)
         const queryFromURL = parseSearchURLQuery(url.search)
-        const parsedQuery = scanSearchQuery(queryFromURL || '')
-        if (parsedQuery.type === 'success') {
-            for (const token of parsedQuery.token.members) {
+        const scannedQuery = scanSearchQuery(queryFromURL || '')
+        if (scannedQuery.type === 'success') {
+            for (const token of scannedQuery.term) {
                 if (
                     token.type === 'filter' &&
-                    (token.filterType.value === FilterType.repo ||
-                        token.filterType.value === FILTERS[FilterType.repo].alias)
+                    (token.field.value === FilterType.repo || token.field.value === FILTERS[FilterType.repo].alias)
                 ) {
-                    if (
-                        token.filterValue?.type === 'literal' &&
-                        !recentlySearchedRepos.includes(token.filterValue.value)
-                    ) {
-                        recentlySearchedRepos.push(token.filterValue.value)
+                    if (token.value?.type === 'literal' && !recentlySearchedRepos.includes(token.value.value)) {
+                        recentlySearchedRepos.push(token.value.value)
                     }
-                    if (
-                        token.filterValue?.type === 'quoted' &&
-                        !recentlySearchedRepos.includes(token.filterValue.quotedValue)
-                    ) {
-                        recentlySearchedRepos.push(token.filterValue.quotedValue)
+                    if (token.value?.type === 'quoted' && !recentlySearchedRepos.includes(token.value.quotedValue)) {
+                        recentlySearchedRepos.push(token.value.quotedValue)
                     }
                 }
             }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/pkg/errors"
@@ -18,19 +19,28 @@ func (c *Client) GetMergeRequestNotes(ctx context.Context, project *Project, iid
 		return MockGetMergeRequestNotes(c, ctx, project, iid)
 	}
 
-	url := fmt.Sprintf("projects/%d/merge_requests/%d/notes", project.ID, iid)
+	baseURL := fmt.Sprintf("projects/%d/merge_requests/%d/notes", project.ID, iid)
+	currentPage := "1"
 	return func() ([]*Note, error) {
 		page := []*Note{}
 
 		// If there aren't any further pages, we'll return the empty slice we
 		// just created.
-		if url == "" {
+		if currentPage == "" {
 			return page, nil
 		}
 
 		time.Sleep(c.rateLimitMonitor.RecommendedWaitForBackgroundOp(1))
 
-		req, err := http.NewRequest("GET", url, nil)
+		url, err := url.Parse(baseURL)
+		if err != nil {
+			return nil, err
+		}
+		q := url.Query()
+		q.Add("page", currentPage)
+		url.RawQuery = q.Encode()
+
+		req, err := http.NewRequest("GET", url.String(), nil)
 		if err != nil {
 			return nil, errors.Wrap(err, "creating notes request")
 		}
@@ -40,10 +50,10 @@ func (c *Client) GetMergeRequestNotes(ctx context.Context, project *Project, iid
 			return nil, errors.Wrap(err, "requesting notes page")
 		}
 
-		// If there's another page, this will be a URL. If there's not, then
+		// If there's another page, this will be a page number. If there's not, then
 		// this will be an empty string, and we can detect that next iteration
 		// to short circuit.
-		url = header.Get("X-Next-Page")
+		currentPage = header.Get("X-Next-Page")
 
 		return page, nil
 	}
@@ -53,10 +63,12 @@ func (c *Client) GetMergeRequestNotes(ctx context.Context, project *Project, iid
 type SystemNoteBody string
 
 const (
-	SystemNoteBodyReviewApproved               SystemNoteBody = "approved this merge request"
-	SystemNoteBodyReviewUnapproved             SystemNoteBody = "unapproved this merge request"
-	SystemNoteBodyReviewUnmarkedWorkInProgress SystemNoteBody = "unmarked as a **Work In Progress**"
-	SystemNoteBodyReviewMarkedWorkInProgress   SystemNoteBody = "marked as a **Work In Progress**"
+	SystemNoteBodyReviewApproved         SystemNoteBody = "approved this merge request"
+	SystemNoteBodyReviewUnapproved       SystemNoteBody = "unapproved this merge request"
+	SystemNoteBodyUnmarkedWorkInProgress SystemNoteBody = "unmarked as a **Work In Progress**"
+	SystemNoteBodyMarkedWorkInProgress   SystemNoteBody = "marked as a **Work In Progress**"
+	SystemNoteBodyMarkedDraft            SystemNoteBody = "marked this merge request as **draft**"
+	SystemNoteBodyMarkedReady            SystemNoteBody = "marked this merge request as **ready**"
 )
 
 type Note struct {
@@ -67,32 +79,53 @@ type Note struct {
 	System    bool           `json:"system"`
 }
 
-func (n *Note) Key() string {
-	return fmt.Sprintf("Note:%d", n.ID)
-}
-
 // Notes are not strongly typed, but also provide the only real method we have
 // of getting historical approval events. We'll define a couple of fake types to
 // better match what other external services provide, and a function to convert
 // a Note into one of those types if the Note is a system approval comment.
 
 type ReviewApprovedEvent struct{ *Note }
+
+func (e *ReviewApprovedEvent) Key() string {
+	return fmt.Sprintf("approved:%s:%s", e.Author.Username, e.CreatedAt.Time.Truncate(time.Second))
+}
+
 type ReviewUnapprovedEvent struct{ *Note }
+
+func (e *ReviewUnapprovedEvent) Key() string {
+	return fmt.Sprintf("unapproved:%s:%s", e.Author.Username, e.CreatedAt.Time.Truncate(time.Second))
+}
+
 type MarkWorkInProgressEvent struct{ *Note }
+
+func (e *MarkWorkInProgressEvent) Key() string {
+	return fmt.Sprintf("wip:%s", e.CreatedAt.Time.Truncate(time.Second))
+}
+
 type UnmarkWorkInProgressEvent struct{ *Note }
+
+func (e *UnmarkWorkInProgressEvent) Key() string {
+	return fmt.Sprintf("unwip:%s", e.CreatedAt.Time.Truncate(time.Second))
+}
+
+type keyer interface {
+	Key() string
+}
 
 // ToEvent returns a pointer to a more specific struct, or
 // nil if the Note is not of a known kind.
-func (n *Note) ToEvent() interface{} {
+func (n *Note) ToEvent() keyer {
 	if n.System {
 		switch n.Body {
 		case SystemNoteBodyReviewApproved:
 			return &ReviewApprovedEvent{n}
 		case SystemNoteBodyReviewUnapproved:
 			return &ReviewUnapprovedEvent{n}
-		case SystemNoteBodyReviewUnmarkedWorkInProgress:
+		case SystemNoteBodyMarkedReady,
+			SystemNoteBodyUnmarkedWorkInProgress:
 			return &UnmarkWorkInProgressEvent{n}
-		case SystemNoteBodyReviewMarkedWorkInProgress:
+		case SystemNoteBodyMarkedDraft,
+			SystemNoteBodyMarkedWorkInProgress:
 			return &MarkWorkInProgressEvent{n}
 		}
 	}

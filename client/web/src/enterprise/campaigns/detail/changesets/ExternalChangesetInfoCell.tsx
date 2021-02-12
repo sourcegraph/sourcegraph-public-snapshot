@@ -1,15 +1,14 @@
 import React from 'react'
 import {
     ExternalChangesetFields,
-    ChangesetExternalState,
-    ChangesetPublicationState,
+    GitBranchChangesetDescriptionFields,
+    ChangesetState,
 } from '../../../../graphql-operations'
 import { LinkOrSpan } from '../../../../../../shared/src/components/LinkOrSpan'
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import { ChangesetLabel } from './ChangesetLabel'
 import { Link } from '../../../../../../shared/src/components/Link'
 import { ChangesetLastSynced } from './ChangesetLastSynced'
-import { ChangesetReconcilerState } from '../../../../../../shared/src/graphql/schema'
 import classNames from 'classnames'
 
 export interface ExternalChangesetInfoCellProps {
@@ -27,12 +26,7 @@ export const ExternalChangesetInfoCell: React.FunctionComponent<ExternalChangese
         <div className="m-0">
             <h3 className="m-0 d-block d-md-inline">
                 <LinkOrSpan
-                    /* Deleted changesets most likely don't exist on the codehost anymore and would return 404 pages */
-                    to={
-                        node.externalURL && node.externalState !== ChangesetExternalState.DELETED
-                            ? node.externalURL.url
-                            : undefined
-                    }
+                    to={node.externalURL?.url ?? undefined}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="mr-2"
@@ -49,7 +43,7 @@ export const ExternalChangesetInfoCell: React.FunctionComponent<ExternalChangese
                             {node.externalID && <> (#{node.externalID}) </>}
                         </>
                     )}
-                    {node.externalURL && node.externalState !== ChangesetExternalState.DELETED && (
+                    {node.externalURL?.url && (
                         <>
                             {' '}
                             <ExternalLinkIcon size="1rem" />
@@ -69,9 +63,19 @@ export const ExternalChangesetInfoCell: React.FunctionComponent<ExternalChangese
             <span className="mr-2 d-block d-mdinline-block">
                 <Link to={node.repository.url} target="_blank" rel="noopener noreferrer">
                     {node.repository.name}
-                </Link>
+                </Link>{' '}
+                {hasHeadReference(node) && (
+                    <div className="d-block d-sm-inline-block">
+                        <span className="badge badge-secondary text-monospace">{headReference(node)}</span>
+                    </div>
+                )}
             </span>
-            {node.publicationState === ChangesetPublicationState.PUBLISHED && (
+            {![
+                ChangesetState.FAILED,
+                ChangesetState.PROCESSING,
+                ChangesetState.RETRYING,
+                ChangesetState.UNPUBLISHED,
+            ].includes(node.state) && (
                 <ChangesetLastSynced changeset={node} viewerCanAdminister={viewerCanAdminister} />
             )}
         </div>
@@ -79,12 +83,24 @@ export const ExternalChangesetInfoCell: React.FunctionComponent<ExternalChangese
 )
 
 function isImporting(node: ExternalChangesetFields): boolean {
-    return (
-        [ChangesetReconcilerState.QUEUED, ChangesetReconcilerState.PROCESSING].includes(node.reconcilerState) &&
-        !node.title
-    )
+    return node.state === ChangesetState.PROCESSING && !hasHeadReference(node)
 }
 
 function importingFailed(node: ExternalChangesetFields): boolean {
-    return node.reconcilerState === ChangesetReconcilerState.ERRORED && !node.title
+    return node.state === ChangesetState.FAILED && !hasHeadReference(node)
+}
+
+function headReference(node: ExternalChangesetFields): string | undefined {
+    if (hasHeadReference(node)) {
+        return node.currentSpec?.description.headRef
+    }
+    return undefined
+}
+
+function hasHeadReference(
+    node: ExternalChangesetFields
+): node is ExternalChangesetFields & {
+    currentSpec: ExternalChangesetFields & { description: GitBranchChangesetDescriptionFields }
+} {
+    return node.currentSpec?.description.__typename === 'GitBranchChangesetDescription'
 }

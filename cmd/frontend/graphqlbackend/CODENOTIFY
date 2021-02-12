@@ -6,6 +6,13 @@ site_monitoring.go @bobheadxi
 # Search
 *search*.go @keegancsmith
 *zoekt*.go @keegancsmith
+*search*.go @rvantonder
+*zoekt*.go @rvantonder
 
 # Campaigns
 campaigns.go @LawnGnome
+campaigns.go @eseliger
+
+# Insights
+insights.go @slimsag
+insights.go @felixfbecker

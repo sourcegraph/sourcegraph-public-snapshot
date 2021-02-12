@@ -7,7 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 func TestNewPreCreateExternalServiceHook(t *testing.T) {
@@ -70,6 +70,6 @@ type mockExternalServicesStore struct {
 }
 
 // Count returns the number of external services currently configured.
-func (m *mockExternalServicesStore) Count(_ context.Context, _ db.ExternalServicesListOptions) (int, error) {
+func (m *mockExternalServicesStore) Count(_ context.Context, _ database.ExternalServicesListOptions) (int, error) {
 	return m.extSvcCount, m.err
 }

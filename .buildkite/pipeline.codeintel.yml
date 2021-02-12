@@ -1,0 +1,9 @@
+env:
+  VAGRANT_RUN_ENV: "CI"
+steps:
+- label: ':docker::brain: Code Intel'
+  command:
+    - .buildkite/vagrant-run.sh sourcegraph-code-intel-test
+  artifact_paths: ./*.log
+  agents:
+    queue: 'baremetal'

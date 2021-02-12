@@ -43,6 +43,7 @@ import {
     GitCommitFields,
     RepositoryCommitResult,
     RepositoryCommitVariables,
+    RepositoryFields,
     Scalars,
 } from '../../graphql-operations'
 
@@ -87,7 +88,7 @@ interface Props
         PlatformContextProps,
         ExtensionsControllerProps,
         ThemeProps {
-    repo: GQL.IRepository
+    repo: RepositoryFields
 
     onDidUpdateExternalLinks: (externalLinks: ExternalLinkFields[] | undefined) => void
 }

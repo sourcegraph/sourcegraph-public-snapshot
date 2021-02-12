@@ -17,11 +17,12 @@ import { Timestamp } from '../../components/time/Timestamp'
 import { eventLogger } from '../../tracking/eventLogger'
 import { ErrorAlert } from '../../components/alerts'
 import * as H from 'history'
+import { Scalars, SettingsAreaRepositoryFields } from '../../graphql-operations'
 
 /**
  * Fetches a repository's text search index information.
  */
-function fetchRepositoryTextSearchIndex(id: GQL.ID): Observable<GQL.IRepositoryTextSearchIndex | null> {
+function fetchRepositoryTextSearchIndex(id: Scalars['ID']): Observable<GQL.IRepositoryTextSearchIndex | null> {
     return queryGraphQL(
         gql`
             query RepositoryTextSearchIndex($id: ID!) {
@@ -70,7 +71,7 @@ function fetchRepositoryTextSearchIndex(id: GQL.ID): Observable<GQL.IRepositoryT
 }
 
 const TextSearchIndexedReference: React.FunctionComponent<{
-    repo: GQL.IRepository
+    repo: SettingsAreaRepositoryFields
     indexedRef: GQL.IRepositoryTextSearchIndexedRef
 }> = ({ repo, indexedRef }) => {
     let Icon: React.ComponentType<{ className?: string }>
@@ -113,7 +114,7 @@ const TextSearchIndexedReference: React.FunctionComponent<{
 }
 
 interface Props extends RouteComponentProps<{}> {
-    repo: GQL.IRepository
+    repo: SettingsAreaRepositoryFields
     history: H.History
 }
 

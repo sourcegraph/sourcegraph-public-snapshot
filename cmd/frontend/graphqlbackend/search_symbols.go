@@ -4,24 +4,22 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"sort"
 	"strings"
-	"sync"
+	"unicode/utf8"
 
 	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-lsp"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gituri"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -40,20 +38,25 @@ func (s *searchSymbolResult) uri() *gituri.URI {
 	return s.baseURI.WithFilePath(s.symbol.Path)
 }
 
-var mockSearchSymbols func(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, common *searchResultsCommon, err error)
+var mockSearchSymbols func(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, stats *streaming.Stats, err error)
 
 // searchSymbols searches the given repos in parallel for symbols matching the given search query
 // it can be used for both search suggestions and search results
 //
 // May return partial results and an error
-func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, common *searchResultsCommon, err error) {
+func searchSymbols(ctx context.Context, args *search.TextParameters, limit int, stream Streamer) (err error) {
 	if mockSearchSymbols != nil {
-		return mockSearchSymbols(ctx, args, limit)
+		results, stats, err := mockSearchSymbols(ctx, args, limit)
+		stream.Send(SearchEvent{
+			Results: fileMatchResultsToSearchResults(results),
+			Stats:   statsDeref(stats),
+		})
+		return err
 	}
 
 	repos, err := getRepos(ctx, args.RepoPromise)
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
 
 	tr, ctx := trace.New(ctx, "Search symbols", fmt.Sprintf("query: %+v, numRepoRevs: %d", args.PatternInfo, len(repos)))
@@ -63,96 +66,35 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 	}()
 
 	if args.PatternInfo.Pattern == "" {
-		return nil, nil, nil
+		return nil
 	}
 
-	ctx, cancelAll := context.WithCancel(ctx)
-	defer cancelAll()
+	ctx, stream, cancel := WithLimit(ctx, stream, limit)
+	defer cancel()
 
-	common = &searchResultsCommon{partial: make(map[api.RepoName]struct{})}
-
-	indexed, err := newIndexedSearchRequest(ctx, args, symbolRequest)
+	indexed, err := newIndexedSearchRequest(ctx, args, symbolRequest, stream)
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
 
-	common.repos = make([]*types.Repo, len(repos))
-	for i, repo := range repos {
-		common.repos[i] = repo.Repo
-	}
-
-	var searcherRepos []*search.RepositoryRevisions
-	if indexed.DisableUnindexedSearch {
-		tr.LazyPrintf("disabling unindexed search")
-		common.missing = make([]*types.Repo, len(indexed.Unindexed))
-		for i, r := range indexed.Unindexed {
-			common.missing[i] = r.Repo
-		}
-	} else {
-		// Limit the number of unindexed repositories searched for a single
-		// query. Searching more than this will merely flood the system and
-		// network with requests that will timeout.
-		searcherRepos, common.missing = limitSearcherRepos(indexed.Unindexed, maxUnindexedRepoRevSearchesPerQuery)
-		if len(common.missing) > 0 {
-			tr.LazyPrintf("limiting unindexed repos searched to %d", maxUnindexedRepoRevSearchesPerQuery)
-		}
-	}
-
-	var (
-		run = parallel.NewRun(conf.SearchSymbolsParallelism())
-		mu  sync.Mutex
-
-		unflattened       [][]*FileMatchResolver
-		flattenedSize     int
-		overLimitCanceled bool
-	)
-
-	addMatches := func(matches []*FileMatchResolver) {
-		if len(matches) > 0 {
-			common.resultCount += int32(len(matches))
-			sort.Slice(matches, func(i, j int) bool {
-				a, b := matches[i].uri, matches[j].uri
-				return a > b
-			})
-			unflattened = append(unflattened, matches)
-			flattenedSize += len(matches)
-
-			if flattenedSize > int(args.PatternInfo.FileMatchLimit) {
-				tr.LazyPrintf("cancel due to result size: %d > %d", flattenedSize, args.PatternInfo.FileMatchLimit)
-				overLimitCanceled = true
-				common.limitHit = true
-				cancelAll()
-			}
-		}
-	}
+	run := parallel.NewRun(conf.SearchSymbolsParallelism())
 
 	run.Acquire()
 	goroutine.Go(func() {
 		defer run.Release()
-		matches, limitHit, reposLimitHit, searchErr := indexed.Search(ctx)
-		mu.Lock()
-		defer mu.Unlock()
-		if ctx.Err() == nil {
-			for _, repo := range indexed.Repos() {
-				common.searched = append(common.searched, repo.Repo)
-				common.indexed = append(common.indexed, repo.Repo)
-			}
-			for repo := range reposLimitHit {
-				common.partial[api.RepoName(repo)] = struct{}{}
+
+		err := indexed.Search(ctx, stream)
+		if err != nil {
+			tr.LogFields(otlog.Error(err))
+			// Only record error if we haven't timed out.
+			if ctx.Err() == nil {
+				cancel()
+				run.Error(err)
 			}
 		}
-		if limitHit {
-			common.limitHit = true
-		}
-		tr.LogFields(otlog.Object("searchErr", searchErr), otlog.Error(err), otlog.Bool("overLimitCanceled", overLimitCanceled))
-		if searchErr != nil && err == nil && !overLimitCanceled {
-			err = searchErr
-			tr.LazyPrintf("cancel indexed symbol search due to error: %v", err)
-		}
-		addMatches(matches)
 	})
 
-	for _, repoRevs := range searcherRepos {
+	for _, repoRevs := range indexed.Unindexed {
 		repoRevs := repoRevs
 		if ctx.Err() != nil {
 			break
@@ -163,32 +105,25 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 		run.Acquire()
 		goroutine.Go(func() {
 			defer run.Release()
-			repoSymbols, repoErr := searchSymbolsInRepo(ctx, repoRevs, args.PatternInfo, limit)
-			if repoErr != nil {
-				tr.LogFields(otlog.String("repo", string(repoRevs.Repo.Name)), otlog.String("repoErr", repoErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(repoErr)), otlog.Bool("temporary", errcode.IsTemporary(repoErr)))
-			}
-			mu.Lock()
-			defer mu.Unlock()
-			limitHit := symbolCount(res) > limit
-			repoErr = handleRepoSearchResult(common, repoRevs, limitHit, false, repoErr)
-			if repoErr != nil {
-				if ctx.Err() == nil || errors.Cause(repoErr) != ctx.Err() {
-					// Only record error if it's not directly caused by a context error.
-					run.Error(repoErr)
+
+			matches, err := searchSymbolsInRepo(ctx, repoRevs, args.PatternInfo, limit)
+			stats, err := handleRepoSearchResult(repoRevs, len(matches) > limit, false, err)
+			stream.Send(SearchEvent{
+				Results: fileMatchResultsToSearchResults(matches),
+				Stats:   stats,
+			})
+			if err != nil {
+				tr.LogFields(otlog.String("repo", string(repoRevs.Repo.Name)), otlog.Error(err))
+				// Only record error if we haven't timed out.
+				if ctx.Err() == nil {
+					cancel()
+					run.Error(err)
 				}
-			} else {
-				common.searched = append(common.searched, repoRevs.Repo)
-			}
-			if repoSymbols != nil {
-				addMatches(repoSymbols)
 			}
 		})
 	}
-	err = run.Wait()
-	flattened := flattenFileMatches(unflattened, int(args.PatternInfo.FileMatchLimit))
-	res2 := limitSymbolResults(flattened, limit)
-	common.limitHit = symbolCount(res2) < symbolCount(res)
-	return res2, common, err
+
+	return run.Wait()
 }
 
 // limitSymbolResults returns a new version of res containing no more than limit symbol matches.
@@ -237,7 +172,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 	// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation
 	// down by a lot (if we're looping over many repos). This means that it'll fail if a
 	// repo is not on gitserver.
-	commitID, err := git.ResolveRevision(ctx, repoRevs.GitserverRepo(), nil, inputRev, git.ResolveRevisionOptions{})
+	commitID, err := git.ResolveRevision(ctx, repoRevs.GitserverRepo(), inputRev, git.ResolveRevisionOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -247,7 +182,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 		return nil, err
 	}
 
-	repoResolver := NewRepositoryResolver(repoRevs.Repo)
+	repoResolver := NewRepositoryResolver(repoRevs.Repo.ToRepo())
 	commitResolver := &GitCommitResolver{
 		repoResolver: repoResolver,
 		oid:          GitObjectID(commitID),
@@ -281,13 +216,14 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 			fileMatch.symbols = append(fileMatch.symbols, symbolRes)
 		} else {
 			fileMatch := &FileMatchResolver{
-				JPath:   symbolRes.symbol.Path,
-				symbols: []*searchSymbolResult{symbolRes},
-				uri:     uri,
-				Repo:    repoResolver,
-				// Don't get commit from GitCommitResolver.OID() because we don't want to
-				// slow search results down when they are coming from zoekt.
-				CommitID: api.CommitID(symbolRes.commit.oid),
+				FileMatch: FileMatch{
+					JPath:    symbolRes.symbol.Path,
+					symbols:  []*searchSymbolResult{symbolRes},
+					uri:      uri,
+					Repo:     repoRevs.Repo,
+					CommitID: api.CommitID(symbolRes.commit.OID()),
+				},
+				RepoResolver: repoResolver,
 			}
 			fileMatchesByURI[uri] = fileMatch
 			fileMatches = append(fileMatches, fileMatch)
@@ -299,7 +235,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 // makeFileMatchURIFromSymbol makes a git://repo?rev#path URI from a symbol
 // search result to use in a fileMatchResolver
 func makeFileMatchURIFromSymbol(symbolResult *searchSymbolResult, inputRev string) string {
-	uri := "git:/" + string(symbolResult.commit.repoResolver.URL())
+	uri := "git:/" + string(symbolResult.commit.Repository().URL())
 	if inputRev != "" {
 		uri += "?" + inputRev
 	}
@@ -307,26 +243,58 @@ func makeFileMatchURIFromSymbol(symbolResult *searchSymbolResult, inputRev strin
 	return uri
 }
 
-func symbolRange(s protocol.Symbol) lsp.Range {
-	ch := ctagsSymbolCharacter(s)
-	return lsp.Range{
-		Start: lsp.Position{Line: s.Line - 1, Character: ch},
-		End:   lsp.Position{Line: s.Line - 1, Character: ch + len(s.Name)},
+// unescapePattern expects a regexp pattern of the form /^ ... $/ and unescapes
+// the pattern inside it.
+func unescapePattern(pattern string) string {
+	pattern = strings.TrimSuffix(strings.TrimPrefix(pattern, "/^"), "$/")
+	var start int
+	var r rune
+	var escaped []rune
+	buf := []byte(pattern)
+
+	next := func() rune {
+		r, start := utf8.DecodeRune(buf)
+		buf = buf[start:]
+		return r
 	}
+
+	for len(buf) > 0 {
+		r = next()
+		if r == '\\' && len(buf[start:]) > 0 {
+			r = next()
+			if r == '/' || r == '\\' {
+				escaped = append(escaped, r)
+				continue
+			}
+			escaped = append(escaped, '\\', r)
+			continue
+		}
+		escaped = append(escaped, r)
+	}
+	return string(escaped)
 }
 
-// ctagsSymbolCharacter only outputs the line number, not the character (or range). Use the regexp it provides to
-// guess the character.
-func ctagsSymbolCharacter(s protocol.Symbol) int {
+// computeSymbolOffset calculates a symbol offset based on the the only Symbol
+// data member that currently exposes line content: the symbols Pattern member,
+// which has the form /^ ... $/. We find the offset of the symbol name in this
+// line, after escaping the Pattern.
+func computeSymbolOffset(s protocol.Symbol) int {
 	if s.Pattern == "" {
 		return 0
 	}
-	pattern := strings.TrimPrefix(s.Pattern, "/^")
-	i := strings.Index(pattern, s.Name)
+	i := strings.Index(unescapePattern(s.Pattern), s.Name)
 	if i >= 0 {
 		return i
 	}
 	return 0
+}
+
+func symbolRange(s protocol.Symbol) lsp.Range {
+	offset := computeSymbolOffset(s)
+	return lsp.Range{
+		Start: lsp.Position{Line: s.Line - 1, Character: offset},
+		End:   lsp.Position{Line: s.Line - 1, Character: offset + len(s.Name)},
+	}
 }
 
 func ctagsKindToLSPSymbolKind(kind string) lsp.SymbolKind {

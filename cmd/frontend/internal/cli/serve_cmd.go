@@ -2,19 +2,19 @@ package cli
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"log"
-	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
+	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/tmpfriend"
 
@@ -23,19 +23,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/loghandlers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
-	"github.com/sourcegraph/sourcegraph/internal/processrestart"
-	"github.com/sourcegraph/sourcegraph/internal/secret"
+	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/sysreq"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
@@ -84,11 +85,11 @@ func defaultExternalURL(nginxAddr, httpAddr string) *url.URL {
 	return &url.URL{Scheme: "http", Host: hostPort}
 }
 
-// InitDB initializes the global database connection and sets the
+// InitDB initializes and returns the global database connection and sets the
 // version of the frontend in our versions table.
-func InitDB() error {
+func InitDB() (*sql.DB, error) {
 	if err := dbconn.SetupGlobalConnection(""); err != nil {
-		return fmt.Errorf("failed to connect to frontend database: %s", err)
+		return nil, fmt.Errorf("failed to connect to frontend database: %s", err)
 	}
 
 	ctx := context.Background()
@@ -100,16 +101,16 @@ func InitDB() error {
 		// it's missing, we run the migrations and try to update the version again.
 
 		err := backend.UpdateServiceVersion(ctx, "frontend", version.Version())
-		if err != nil && !dbutil.IsPostgresError(err, "undefined_table") {
-			return err
+		if err != nil && !dbutil.IsPostgresError(err, "42P01") {
+			return nil, err
 		}
 
 		if !migrate {
-			return nil
+			return dbconn.Global, nil
 		}
 
-		if err := dbconn.MigrateDB(dbconn.Global, "frontend"); err != nil {
-			return err
+		if err := dbconn.MigrateDB(dbconn.Global, dbconn.Frontend); err != nil {
+			return nil, err
 		}
 
 		migrate = false
@@ -117,13 +118,20 @@ func InitDB() error {
 }
 
 // Main is the main entrypoint for the frontend server program.
-func Main(enterpriseSetupHook func() enterprise.Services) error {
+func Main(enterpriseSetupHook func(db dbutil.DB) enterprise.Services) error {
 	log.SetFlags(0)
 	log.SetPrefix("")
 
-	if err := InitDB(); err != nil {
+	if err := profiler.Init(); err != nil {
+		log.Fatalf("failed to initialize profiling: %v", err)
+	}
+
+	db, err := InitDB()
+	if err != nil {
 		log.Fatalf("ERROR: %v", err)
 	}
+
+	ui.InitRouter()
 
 	if err := handleConfigOverrides(); err != nil {
 		log.Fatal("applying config overrides:", err)
@@ -139,7 +147,7 @@ func Main(enterpriseSetupHook func() enterprise.Services) error {
 	trace.Init(true)
 
 	// Run enterprise setup hook
-	enterprise := enterpriseSetupHook()
+	enterprise := enterpriseSetupHook(db)
 
 	if len(os.Args) >= 2 {
 		switch os.Args[1] {
@@ -195,8 +203,6 @@ func Main(enterpriseSetupHook func() enterprise.Services) error {
 	globals.WatchExternalURL(defaultExternalURL(nginxAddr, httpAddr))
 	globals.WatchPermissionsUserMapping()
 
-	goroutine.Go(func() { bg.MigrateAllSettingsMOTDToNotices(context.Background()) })
-	goroutine.Go(func() { bg.MigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(context.Background()) })
 	goroutine.Go(func() { bg.CheckRedisCacheEvictionPolicy() })
 	goroutine.Go(func() { bg.DeleteOldCacheDataInRedis() })
 	goroutine.Go(func() { bg.DeleteOldEventLogsInPostgres(context.Background()) })
@@ -208,66 +214,25 @@ func Main(enterpriseSetupHook func() enterprise.Services) error {
 		return errors.New("dbconn.Global is nil when trying to parse GraphQL schema")
 	}
 
-	err := secret.Init()
+	schema, err := graphqlbackend.NewSchema(db, enterprise.CampaignsResolver, enterprise.CodeIntelResolver, enterprise.InsightsResolver, enterprise.AuthzResolver, enterprise.CodeMonitorsResolver, enterprise.LicenseResolver)
 	if err != nil {
 		return err
 	}
 
-	schema, err := graphqlbackend.NewSchema(enterprise.CampaignsResolver, enterprise.CodeIntelResolver, enterprise.AuthzResolver, enterprise.CodeMonitorsResolver)
+	server, err := makeExternalAPI(schema, enterprise)
 	if err != nil {
 		return err
 	}
 
-	// Create the external HTTP handler.
-	externalHandler, err := newExternalHTTPHandler(schema, enterprise.GitHubWebhook, enterprise.GitLabWebhook, enterprise.BitbucketServerWebhook, enterprise.NewCodeIntelUploadHandler, enterprise.NewExecutorProxyHandler)
+	internalAPI, err := makeInternalAPI(schema, enterprise)
 	if err != nil {
 		return err
 	}
 
-	// The internal HTTP handler does not include the auth handlers.
-	internalHandler := newInternalHTTPHandler(schema, enterprise.NewCodeIntelUploadHandler)
-
-	// serve will serve externalHandler on l. It additionally handles graceful restarts.
-	srv := &httpServers{}
-
-	// Start HTTP server.
-	l, err := net.Listen("tcp", httpAddr)
-	if err != nil {
-		return err
+	routines := []goroutine.BackgroundRoutine{server}
+	if internalAPI != nil {
+		routines = append(routines, internalAPI)
 	}
-	log15.Debug("HTTP running", "on", httpAddr)
-	srv.GoServe(l, &http.Server{
-		Handler:      externalHandler,
-		ReadTimeout:  75 * time.Second,
-		WriteTimeout: 10 * time.Minute,
-	})
-
-	if httpAddrInternal != "" {
-		l, err := net.Listen("tcp", httpAddrInternal)
-		if err != nil {
-			return err
-		}
-
-		log15.Debug("HTTP (internal) running", "on", httpAddrInternal)
-		srv.GoServe(l, &http.Server{
-			Handler:     internalHandler,
-			ReadTimeout: 75 * time.Second,
-			// Higher since for internal RPCs which can have large responses
-			// (eg git archive). Should match the timeout used for git archive
-			// in gitserver.
-			WriteTimeout: time.Hour,
-		})
-	}
-
-	go func() {
-		<-processrestart.WillRestart
-		// Block forever so we don't return from main func and exit this process. Package processrestart takes care
-		// of killing and restarting this process externally.
-		srv.wg.Add(1)
-
-		log15.Debug("Stopping HTTP server due to imminent restart")
-		srv.Close()
-	}()
 
 	if printLogo {
 		fmt.Println(" ")
@@ -276,61 +241,56 @@ func Main(enterpriseSetupHook func() enterprise.Services) error {
 	}
 	fmt.Printf("✱ Sourcegraph is ready at: %s\n", globals.ExternalURL())
 
-	srv.Wait()
+	goroutine.MonitorBackgroundRoutines(context.Background(), routines...)
 	return nil
 }
 
-type httpServers struct {
-	mu      sync.Mutex
-	wg      sync.WaitGroup
-	servers []*http.Server
-	wrapper func(http.Handler) http.Handler
-}
-
-// SetWrapper will set the wrapper for serve. All handlers served by are
-// passed through w.
-func (s *httpServers) SetWrapper(w func(http.Handler) http.Handler) {
-	s.mu.Lock()
-	s.wrapper = w
-	s.mu.Unlock()
-}
-
-// GoServe serves srv in a new goroutine. If serve returns an error other than
-// http.ErrServerClosed it will fatal.
-func (s *httpServers) GoServe(l net.Listener, srv *http.Server) {
-	s.addServer(srv)
-	s.wg.Add(1)
-	go func() {
-		defer s.wg.Done()
-		if err := srv.Serve(l); err != http.ErrServerClosed {
-			log.Fatal(err)
-		}
-	}()
-}
-
-func (s *httpServers) addServer(srv *http.Server) *http.Server {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.wrapper != nil {
-		srv.Handler = s.wrapper(srv.Handler)
+func makeExternalAPI(schema *graphql.Schema, enterprise enterprise.Services) (goroutine.BackgroundRoutine, error) {
+	// Create the external HTTP handler.
+	externalHandler, err := newExternalHTTPHandler(schema, enterprise.GitHubWebhook, enterprise.GitLabWebhook, enterprise.BitbucketServerWebhook, enterprise.NewCodeIntelUploadHandler, enterprise.NewExecutorProxyHandler)
+	if err != nil {
+		return nil, err
 	}
-	s.servers = append(s.servers, srv)
-	return srv
-}
 
-// Close closes all servers added
-func (s *httpServers) Close() {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	for _, srv := range s.servers {
-		srv.Close()
+	listener, err := httpserver.NewListener(httpAddr)
+	if err != nil {
+		return nil, err
 	}
-	s.servers = nil
+
+	server := httpserver.New(listener, &http.Server{
+		Handler:      externalHandler,
+		ReadTimeout:  75 * time.Second,
+		WriteTimeout: 10 * time.Minute,
+	})
+
+	log15.Debug("HTTP running", "on", httpAddr)
+	return server, nil
 }
 
-// Wait waits until all servers are closed.
-func (s *httpServers) Wait() {
-	s.wg.Wait()
+func makeInternalAPI(schema *graphql.Schema, enterprise enterprise.Services) (goroutine.BackgroundRoutine, error) {
+	if httpAddrInternal == "" {
+		return nil, nil
+	}
+
+	listener, err := httpserver.NewListener(httpAddrInternal)
+	if err != nil {
+		return nil, err
+	}
+
+	// The internal HTTP handler does not include the auth handlers.
+	internalHandler := newInternalHTTPHandler(schema, enterprise.NewCodeIntelUploadHandler)
+
+	server := httpserver.New(listener, &http.Server{
+		Handler:     internalHandler,
+		ReadTimeout: 75 * time.Second,
+		// Higher since for internal RPCs which can have large responses
+		// (eg git archive). Should match the timeout used for git archive
+		// in gitserver.
+		WriteTimeout: time.Hour,
+	})
+
+	log15.Debug("HTTP (internal) running", "on", httpAddrInternal)
+	return server, nil
 }
 
 func isAllowedOrigin(origin string, allowedOrigins []string) bool {

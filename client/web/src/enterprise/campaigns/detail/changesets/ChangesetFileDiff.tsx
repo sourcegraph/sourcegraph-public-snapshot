@@ -12,6 +12,7 @@ import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '../../..
 import { HoverMerged } from '../../../../../../shared/src/api/client/types/hover'
 import { ActionItemAction } from '../../../../../../shared/src/actions/ActionItem'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
+import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 
 export interface ChangesetFileDiffProps extends ThemeProps {
     changesetID: Scalars['ID']
@@ -38,6 +39,7 @@ export const ChangesetFileDiff: React.FunctionComponent<ChangesetFileDiffProps> 
     updateOnChange,
     queryExternalChangesetWithFileDiffs = _queryExternalChangesetWithFileDiffs,
 }) => {
+    const [isNotImplemented, setIsNotImplemented] = useState<boolean>(false)
     const [range, setRange] = useState<
         (NonNullable<ExternalChangesetFileDiffsFields['diff']> & { __typename: 'RepositoryComparison' })['range']
     >()
@@ -51,18 +53,25 @@ export const ChangesetFileDiff: React.FunctionComponent<ChangesetFileDiffProps> 
                 externalChangeset: changesetID,
                 isLightTheme,
             }).pipe(
-                map(changeset => {
-                    if (!changeset.diff) {
-                        throw new Error('The given changeset has no diff')
-                    }
-                    return changeset.diff
-                }),
+                map(changeset => changeset.diff),
                 tap(diff => {
-                    if (diff.__typename === 'RepositoryComparison') {
+                    if (!diff) {
+                        setIsNotImplemented(true)
+                    } else if (diff.__typename === 'RepositoryComparison') {
                         setRange(diff.range)
                     }
                 }),
-                map(diff => diff.fileDiffs)
+                map(
+                    diff =>
+                        diff?.fileDiffs ?? {
+                            totalCount: 0,
+                            pageInfo: {
+                                endCursor: null,
+                                hasNextPage: false,
+                            },
+                            nodes: [],
+                        }
+                )
             ),
         [changesetID, isLightTheme, queryExternalChangesetWithFileDiffs]
     )
@@ -89,6 +98,10 @@ export const ChangesetFileDiff: React.FunctionComponent<ChangesetFileDiffProps> 
             },
         }
     }, [extensionInfo, range, repositoryID, repositoryName])
+
+    if (isNotImplemented) {
+        return <DiffRenderingNotSupportedAlert />
+    }
 
     return (
         <FileDiffConnection
@@ -130,3 +143,10 @@ function commitOIDForGitRevision(revision: GitRefSpecFields): string {
             return revision.object.oid
     }
 }
+
+const DiffRenderingNotSupportedAlert: React.FunctionComponent<{}> = () => (
+    <div className="alert alert-info mb-0">
+        <InfoCircleOutlineIcon className="icon-inline" /> Diffs for processing, merged, closed and deleted changesets
+        are currently only available on the code host.
+    </div>
+)

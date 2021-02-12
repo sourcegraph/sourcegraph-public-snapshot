@@ -2,11 +2,11 @@ package resolvers
 
 import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/state"
 )
 
 type changesetCountsResolver struct {
-	counts *ee.ChangesetCounts
+	counts *state.ChangesetCounts
 }
 
 func (r *changesetCountsResolver) Date() graphqlbackend.DateTime {

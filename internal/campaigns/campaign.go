@@ -26,8 +26,6 @@ type Campaign struct {
 	NamespaceUserID int32
 	NamespaceOrgID  int32
 
-	ChangesetIDs []int64
-
 	ClosedAt time.Time
 
 	CreatedAt time.Time
@@ -37,18 +35,7 @@ type Campaign struct {
 // Clone returns a clone of a Campaign.
 func (c *Campaign) Clone() *Campaign {
 	cc := *c
-	cc.ChangesetIDs = c.ChangesetIDs[:len(c.ChangesetIDs):len(c.ChangesetIDs)]
 	return &cc
-}
-
-// RemoveChangesetID removes the given id from the Campaigns ChangesetIDs slice.
-// If the id is not in ChangesetIDs calling this method doesn't have an effect.
-func (c *Campaign) RemoveChangesetID(id int64) {
-	for i := len(c.ChangesetIDs) - 1; i >= 0; i-- {
-		if c.ChangesetIDs[i] == id {
-			c.ChangesetIDs = append(c.ChangesetIDs[:i], c.ChangesetIDs[i+1:]...)
-		}
-	}
 }
 
 // Closed returns true when the ClosedAt timestamp has been set.

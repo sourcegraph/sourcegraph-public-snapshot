@@ -13,7 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	githubsvc "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"golang.org/x/oauth2"
@@ -224,7 +224,7 @@ func TestGetOrCreateUser(t *testing.T) {
 					allowOrgs:   ci.allowOrgs,
 				}
 				tok := &oauth2.Token{AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness"}
-				actr, _, err := s.GetOrCreateUser(ctx, tok)
+				actr, _, err := s.GetOrCreateUser(ctx, tok, "", "")
 				if got, exp := actr, c.expActor; !reflect.DeepEqual(got, exp) {
 					t.Errorf("expected actor %v, got %v", exp, got)
 				}
@@ -241,8 +241,8 @@ func TestGetOrCreateUser(t *testing.T) {
 	}
 }
 
-func u(username, email string, emailIsVerified bool) db.NewUser {
-	return db.NewUser{
+func u(username, email string, emailIsVerified bool) database.NewUser {
+	return database.NewUser{
 		Username:        username,
 		Email:           email,
 		EmailIsVerified: emailIsVerified,

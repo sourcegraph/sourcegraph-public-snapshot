@@ -1,10 +1,10 @@
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useMemo, useState, useEffect, useCallback } from 'react'
-import { escapeRegExp, uniqueId } from 'lodash'
+import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react'
+import { escapeRegExp } from 'lodash'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { Observable, NEVER, ObservableInput, of } from 'rxjs'
-import { catchError, map, startWith } from 'rxjs/operators'
+import { NEVER, ObservableInput, of } from 'rxjs'
+import { catchError } from 'rxjs/operators'
 import { redirectToExternalHost } from '.'
 import {
     isRepoNotFoundErrorLike,
@@ -13,19 +13,16 @@ import {
 } from '../../../shared/src/backend/errors'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
-import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { ErrorLike, isErrorLike, asError } from '../../../shared/src/util/errors'
-import { makeRepoURI } from '../../../shared/src/util/url'
+import { encodeURIPathComponent, makeRepoURI } from '../../../shared/src/util/url'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
 import {
     searchQueryForRepoRevision,
     PatternTypeProps,
     CaseSensitivityProps,
-    InteractiveSearchProps,
-    repoFilterForRepoRevision,
     CopyQueryButtonProps,
     quoteIfNeeded,
 } from '../search'
@@ -41,26 +38,26 @@ import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
 import { ErrorMessage } from '../components/alerts'
 import { QueryState } from '../search/helpers'
-import { FiltersToTypeAndValue, FilterType } from '../../../shared/src/search/interactive/util'
 import * as H from 'history'
 import { VersionContextProps } from '../../../shared/src/search/util'
 import { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
-import { useObservable, useEventObservable } from '../../../shared/src/util/useObservable'
+import { useObservable } from '../../../shared/src/util/useObservable'
 import { repeatUntil } from '../../../shared/src/util/rxjs/repeatUntil'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { Link } from '../../../shared/src/components/Link'
 import { UncontrolledPopover } from 'reactstrap'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import { RepositoriesPopover } from './RepositoriesPopover'
-import { displayRepoName, splitPath } from '../../../shared/src/components/RepoFileLink'
+import { displayRepoName } from '../../../shared/src/components/RepoFileLink'
 import { AuthenticatedUser } from '../auth'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
-import { ExternalLinkFields } from '../graphql-operations'
+import { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
 import { browserExtensionInstalled } from '../tracking/analyticsUtils'
 import { InstallBrowserExtensionAlert } from './actions/InstallBrowserExtensionAlert'
 import { IS_CHROME } from '../marketing/util'
 import { useLocalStorage } from '../util/useLocalStorage'
 import { Settings } from '../schema/settings.schema'
+import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.
@@ -79,7 +76,7 @@ export interface RepoContainerContext
         CopyQueryButtonProps,
         VersionContextProps,
         BreadcrumbSetters {
-    repo: GQL.IRepository
+    repo: RepositoryFields
     authenticatedUser: AuthenticatedUser | null
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
@@ -87,7 +84,6 @@ export interface RepoContainerContext
     /** The URL route match for {@link RepoContainer}. */
     routePrefix: string
 
-    onDidUpdateRepository: (update: Partial<GQL.IRepository>) => void
     onDidUpdateExternalLinks: (externalLinks: ExternalLinkFields[] | undefined) => void
 
     globbing: boolean
@@ -111,7 +107,6 @@ interface RepoContainerProps
         ExtensionAlertProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        InteractiveSearchProps,
         CopyQueryButtonProps,
         VersionContextProps,
         BreadcrumbSetters,
@@ -152,7 +147,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
     )
 
     // Fetch repository upon mounting the component.
-    const initialRepoOrError = useObservable(
+    const repoOrError = useObservable(
         useMemo(
             () =>
                 fetchRepository({ repoName }).pipe(
@@ -168,22 +163,6 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                     )
                 ),
             [repoName]
-        )
-    )
-
-    // Allow partial updates of the repository from components further down the tree.
-    const [nextRepoOrErrorUpdate, repoOrError] = useEventObservable(
-        useCallback(
-            (repoOrErrorUpdates: Observable<Partial<GQL.IRepository>>) =>
-                repoOrErrorUpdates.pipe(
-                    map((update): GQL.IRepository | ErrorLike | undefined =>
-                        isErrorLike(initialRepoOrError) || initialRepoOrError === undefined
-                            ? initialRepoOrError
-                            : { ...initialRepoOrError, ...update }
-                    ),
-                    startWith(initialRepoOrError)
-                ),
-            [initialRepoOrError]
         )
     )
 
@@ -208,27 +187,16 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
     const [externalLinks, setExternalLinks] = useState<ExternalLinkFields[] | undefined>()
 
     // The lifecycle props for repo header contributions.
-    const [repoHeaderContributionsLifecycleProps, setRepoHeaderContributionsLifecycleProps] = useState<
-        RepoHeaderContributionsLifecycleProps
-    >()
+    const [
+        repoHeaderContributionsLifecycleProps,
+        setRepoHeaderContributionsLifecycleProps,
+    ] = useState<RepoHeaderContributionsLifecycleProps>()
 
-    const repositoryBreadcrumbSetters = props.useBreadcrumb(
-        useMemo(
-            () => ({
-                key: 'repositories',
-                element: <>Repositories</>,
-            }),
-            []
-        )
-    )
-
-    const childBreadcrumbSetters = repositoryBreadcrumbSetters.useBreadcrumb(
+    const childBreadcrumbSetters = props.useBreadcrumb(
         useMemo(() => {
             if (isErrorLike(repoOrError) || !repoOrError) {
                 return
             }
-
-            const [repoDirectory, repoBase] = splitPath(displayRepoName(repoOrError.name))
 
             return {
                 key: 'repository',
@@ -240,10 +208,9 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                                     ? resolvedRevisionOrError.rootTreeURL
                                     : repoOrError.url
                             }
-                            className="repo-header__repo"
+                            className="font-weight-bold text-nowrap test-repo-header-repo-link"
                         >
-                            {repoDirectory ? `${repoDirectory}/` : ''}
-                            <span className="font-weight-semibold">{repoBase}</span>
+                            <SourceRepositoryIcon className="icon-inline" /> {displayRepoName(repoOrError.name)}
                         </Link>
                         <button
                             type="button"
@@ -292,48 +259,16 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
     }, [props.extensionsController.services.workspace.roots, repoName, resolvedRevisionOrError, revision])
 
     // Update the navbar query to reflect the current repo / revision
-    const { splitSearchModes, interactiveSearchMode, globbing, onFiltersInQueryChange, onNavbarQueryChange } = props
+    const { globbing, onNavbarQueryChange } = props
     useEffect(() => {
-        if (splitSearchModes && interactiveSearchMode) {
-            const filters: FiltersToTypeAndValue = {
-                [uniqueId('repo')]: {
-                    type: FilterType.repo,
-                    value: repoFilterForRepoRevision(repoName, globbing, revision),
-                    editable: false,
-                },
-            }
-            if (filePath) {
-                filters[uniqueId('file')] = {
-                    type: FilterType.file,
-                    value: globbing ? filePath : `^${escapeRegExp(filePath)}`,
-                    editable: false,
-                }
-            }
-            onFiltersInQueryChange(filters)
-            onNavbarQueryChange({
-                query: '',
-                cursorPosition: 0,
-            })
-        } else {
-            let query = searchQueryForRepoRevision(repoName, globbing, revision)
-            if (filePath) {
-                query = `${query.trimEnd()} file:${quoteIfNeeded(globbing ? filePath : '^' + escapeRegExp(filePath))}`
-            }
-            onNavbarQueryChange({
-                query,
-                cursorPosition: query.length,
-            })
+        let query = searchQueryForRepoRevision(repoName, globbing, revision)
+        if (filePath) {
+            query = `${query.trimEnd()} file:${quoteIfNeeded(globbing ? filePath : '^' + escapeRegExp(filePath))}`
         }
-    }, [
-        revision,
-        filePath,
-        repoName,
-        onFiltersInQueryChange,
-        onNavbarQueryChange,
-        splitSearchModes,
-        globbing,
-        interactiveSearchMode,
-    ])
+        onNavbarQueryChange({
+            query,
+        })
+    }, [revision, filePath, repoName, onNavbarQueryChange, globbing])
 
     const isBrowserExtensionInstalled = useObservable(browserExtensionInstalled)
     const codeHostIntegrationMessaging =
@@ -362,14 +297,18 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
 
     // Increment hovers that the user has seen. Enable browser extension discoverability
     // features after hover count threshold is reached (e.g. alerts, popovers)
+    // Store hover count in ref to avoid circular dependency
+    // hoverCount -> onHoverShown -> WebHoverOverlay (onHoverShown in useEffect deps) -> onHoverShown()
+    const hoverCountReference = useRef(hoverCount)
+    hoverCountReference.current = hoverCount
     const onHoverShown = useCallback(() => {
-        const count = hoverCount + 1
+        const count = hoverCountReference.current + 1
         if (count > HOVER_THRESHOLD) {
             // No need to keep updating localStorage
             return
         }
         setHoverCount(count)
-    }, [hoverCount, setHoverCount])
+    }, [setHoverCount])
 
     const onPopoverDismissed = useCallback(() => {
         setHasDismissedPopover(true)
@@ -401,7 +340,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         )
     }
 
-    const repoMatchURL = '/' + repoName.split('/').map(encodeURIComponent).join('/')
+    const repoMatchURL = '/' + encodeURIPathComponent(repoName)
 
     const context: RepoContainerContext = {
         ...props,
@@ -411,7 +350,6 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         repo: repoOrError,
         routePrefix: repoMatchURL,
         onDidUpdateExternalLinks: setExternalLinks,
-        onDidUpdateRepository: nextRepoOrErrorUpdate,
     }
 
     return (

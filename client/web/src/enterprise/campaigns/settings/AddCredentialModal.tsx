@@ -2,17 +2,17 @@ import React, { useCallback, useState } from 'react'
 import * as H from 'history'
 import Dialog from '@reach/dialog'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import LockIcon from 'mdi-react/LockIcon'
 import { Form } from '../../../../../branded/src/components/Form'
 import { asError, isErrorLike } from '../../../../../shared/src/util/errors'
 import { ErrorAlert } from '../../../components/alerts'
 import { createCampaignsCredential } from './backend'
-import { ExternalServiceKind } from '../../../graphql-operations'
+import { ExternalServiceKind, Scalars } from '../../../graphql-operations'
 
 export interface AddCredentialModalProps {
     onCancel: () => void
     afterCreate: () => void
     history: H.History
+    userID: Scalars['ID']
     externalServiceKind: ExternalServiceKind
     externalServiceURL: string
 }
@@ -25,6 +25,7 @@ const modalTitles: Record<ExternalServiceKind, string> = {
     // These are just for type completeness and serve as placeholders for a bright future.
     [ExternalServiceKind.BITBUCKETCLOUD]: 'Unsupported',
     [ExternalServiceKind.GITOLITE]: 'Unsupported',
+    [ExternalServiceKind.PERFORCE]: 'Unsupported',
     [ExternalServiceKind.PHABRICATOR]: 'Unsupported',
     [ExternalServiceKind.AWSCODECOMMIT]: 'Unsupported',
     [ExternalServiceKind.OTHER]: 'Unsupported',
@@ -71,6 +72,7 @@ const helpTexts: Record<ExternalServiceKind, JSX.Element> = {
     // These are just for type completeness and serve as placeholders for a bright future.
     [ExternalServiceKind.BITBUCKETCLOUD]: <span>Unsupported</span>,
     [ExternalServiceKind.GITOLITE]: <span>Unsupported</span>,
+    [ExternalServiceKind.PERFORCE]: <span>Unsupported</span>,
     [ExternalServiceKind.PHABRICATOR]: <span>Unsupported</span>,
     [ExternalServiceKind.AWSCODECOMMIT]: <span>Unsupported</span>,
     [ExternalServiceKind.OTHER]: <span>Unsupported</span>,
@@ -80,6 +82,7 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
     onCancel,
     afterCreate,
     history,
+    userID,
     externalServiceKind,
     externalServiceURL,
 }) => {
@@ -96,13 +99,13 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
             event.preventDefault()
             setIsLoading(true)
             try {
-                await createCampaignsCredential({ credential, externalServiceKind, externalServiceURL })
+                await createCampaignsCredential({ user: userID, credential, externalServiceKind, externalServiceURL })
                 afterCreate()
             } catch (error) {
                 setIsLoading(asError(error))
             }
         },
-        [afterCreate, credential, externalServiceKind, externalServiceURL]
+        [afterCreate, userID, credential, externalServiceKind, externalServiceURL]
     )
 
     return (
@@ -130,11 +133,6 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
                             onChange={onChangeCredential}
                         />
                         <p className="form-text">{helpTexts[externalServiceKind]}</p>
-                        <p className="form-text">
-                            <i>
-                                <LockIcon className="icon-inline" /> Access tokens are encrypted before storing.
-                            </i>
-                        </p>
                     </div>
                     <div className="d-flex justify-content-end">
                         <button

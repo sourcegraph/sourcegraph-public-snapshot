@@ -1,0 +1,72 @@
+$changeset-backdrop: #f3faff;
+
+.visible-changeset-apply-preview-node {
+    &__current-state,
+    &__action,
+    &__information,
+    &__show-details {
+        @include media-breakpoint-down(xs) {
+            // Make it full width in the current row.
+            grid-column: 1 / -1;
+        }
+    }
+    &__bg-expanded {
+        background-color: $changeset-backdrop;
+        @include media-breakpoint-up(sm) {
+            border-top: 1px solid var(--border-color-2);
+            padding: 1.5rem;
+        }
+    }
+    &__status-cell {
+        color: $gray-11;
+        @include media-breakpoint-up(sm) {
+            background-color: var(--oc-blue-0);
+        }
+    }
+    &__list-cell {
+        @include media-breakpoint-up(sm) {
+            padding: 0.5rem;
+        }
+        @include media-breakpoint-down(xs) {
+            padding-top: 0.25rem;
+            padding-bottom: 0.25rem;
+        }
+    }
+    &__expanded-section {
+        grid-column: 1 / -1;
+    }
+    &__commit-change-entry {
+        color: $gray-10;
+    }
+    &__tab-link {
+        &--active {
+            background-color: $changeset-backdrop !important;
+            border-bottom: 1px solid $changeset-backdrop !important;
+        }
+    }
+    &__change-indicator {
+        width: 0.5rem !important;
+        height: 0.5rem !important;
+        vertical-align: middle;
+    }
+}
+
+.theme-dark {
+    .visible-changeset-apply-preview-node {
+        &__status-cell {
+            color: var(--body-color);
+            @include media-breakpoint-up(sm) {
+                background-color: var(--oc-gray-7);
+            }
+        }
+        &__bg-expanded {
+            background-color: var(--oc-gray-7);
+        }
+        &__tab-link {
+            &--active {
+                background-color: var(--oc-gray-7) !important;
+                border-bottom: 1px solid var(--oc-gray-7) !important;
+            }
+        }
+    }
+}

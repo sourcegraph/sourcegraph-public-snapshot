@@ -3,7 +3,8 @@
 @import './QueryInput';
 @import './LazyMonacoQueryInput';
 @import './InfoDropdown';
-@import './interactive/InteractiveModeInput';
+@import './SearchContextDropdown.scss';
+@import './SearchContextMenu.scss';
 @import './SearchOnboardingTour';
 @import '../panels/HomePanels.scss';
 
@@ -31,12 +32,6 @@
         position: relative;
         padding-left: 0.5rem;
         padding-right: 0.5rem;
-
-        &:hover {
-            .toggle-container__copy-query-button {
-                opacity: 1;
-            }
-        }
 
         &--with-content-below {
             flex-grow: 0;

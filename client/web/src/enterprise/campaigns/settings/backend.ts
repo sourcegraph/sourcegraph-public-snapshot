@@ -24,11 +24,13 @@ export function createCampaignsCredential(args: CreateCampaignsCredentialVariabl
     return requestGraphQL<CreateCampaignsCredentialResult, CreateCampaignsCredentialVariables>(
         gql`
             mutation CreateCampaignsCredential(
+                $user: ID!
                 $credential: String!
                 $externalServiceKind: ExternalServiceKind!
                 $externalServiceURL: String!
             ) {
                 createCampaignsCredential(
+                    user: $user
                     credential: $credential
                     externalServiceKind: $externalServiceKind
                     externalServiceURL: $externalServiceURL
@@ -61,15 +63,19 @@ export function deleteCampaignsCredential(id: Scalars['ID']): Promise<void> {
 }
 
 export const queryUserCampaignsCodeHosts = ({
+    user,
     first,
     after,
-}: Partial<UserCampaignsCodeHostsVariables>): Observable<CampaignsCodeHostsFields> =>
+}: UserCampaignsCodeHostsVariables): Observable<CampaignsCodeHostsFields> =>
     requestGraphQL<UserCampaignsCodeHostsResult, UserCampaignsCodeHostsVariables>(
         gql`
-            query UserCampaignsCodeHosts($first: Int, $after: String) {
-                currentUser {
-                    campaignsCodeHosts(first: $first, after: $after) {
-                        ...CampaignsCodeHostsFields
+            query UserCampaignsCodeHosts($user: ID!, $first: Int, $after: String) {
+                node(id: $user) {
+                    __typename
+                    ... on User {
+                        campaignsCodeHosts(first: $first, after: $after) {
+                            ...CampaignsCodeHostsFields
+                        }
                     }
                 }
             }
@@ -96,15 +102,19 @@ export const queryUserCampaignsCodeHosts = ({
             ${campaignsCredentialFieldsFragment}
         `,
         {
-            first: first ?? null,
-            after: after ?? null,
+            user,
+            first,
+            after,
         }
     ).pipe(
         map(dataOrThrowErrors),
         map(data => {
-            if (data.currentUser === null) {
-                throw new Error('Current user not found')
+            if (data.node === null) {
+                throw new Error('User not found')
             }
-            return data.currentUser.campaignsCodeHosts
+            if (data.node.__typename !== 'User') {
+                throw new Error(`Node is a ${data.node.__typename}, not a User`)
+            }
+            return data.node.campaignsCodeHosts
         })
     )

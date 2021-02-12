@@ -74,24 +74,21 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<SiteAdminAreaProps> = 
     return (
         <div className="site-admin-area d-flex container my-3">
             <SiteAdminSidebar className="flex-0 mr-3" groups={props.sideBarGroups} />
-            <div className="flex-1">
+            <div className="flex-bounded">
                 <ErrorBoundary location={props.location}>
                     <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
                         <Switch>
                             {props.routes.map(
                                 /* eslint-disable react/jsx-no-bind */
-                                ({ render, path, exact, condition = () => true }) =>
-                                    condition(context) && (
-                                        <Route
-                                            // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                            key="hardcoded-key"
-                                            path={props.match.url + path}
-                                            exact={exact}
-                                            render={routeComponentProps =>
-                                                render({ ...context, ...routeComponentProps })
-                                            }
-                                        />
-                                    )
+                                ({ render, path, exact, condition = () => true }) => (
+                                    <Route
+                                        // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                        key="hardcoded-key"
+                                        path={props.match.url + path}
+                                        exact={exact}
+                                        render={routeComponentProps => render({ ...context, ...routeComponentProps })}
+                                    />
+                                )
                                 /* eslint-enable react/jsx-no-bind */
                             )}
                             <Route component={NotFoundPage} />

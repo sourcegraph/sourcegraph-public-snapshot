@@ -5,17 +5,27 @@ package search
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
-	"io"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-// ServeStream is an http handler which streams back search results.
-func ServeStream(w http.ResponseWriter, r *http.Request) {
+// StreamHandler is an http handler which streams back search results.
+func StreamHandler() http.Handler {
+	return &streamHandler{
+		newSearchResolver: defaultNewSearchResolver,
+	}
+}
+
+type streamHandler struct {
+	newSearchResolver func(context.Context, *graphqlbackend.SearchArgs) (searchResolver, error)
+}
+
+func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
 
@@ -25,136 +35,141 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	tr, ctx := trace.New(ctx, "search.ServeStream", args.Query,
+		trace.Tag{Key: "version", Value: args.Version},
+		trace.Tag{Key: "pattern_type", Value: args.PatternType},
+		trace.Tag{Key: "version_context", Value: args.VersionContext},
+	)
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	eventWriter, err := newEventStreamWriter(w)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	search, err := graphqlbackend.NewSearchImplementer(ctx, &graphqlbackend.SearchArgs{
-		Query:          args.Query,
-		Version:        args.Version,
-		PatternType:    strPtr(args.PatternType),
-		VersionContext: strPtr(args.VersionContext),
-	})
-	if err != nil {
-		eventWriter.Event("error", err.Error())
-		return
+	// Always send a final done event so clients know the stream is shutting
+	// down.
+	defer eventWriter.Event("done", map[string]interface{}{})
+
+	// Log events to trace
+	eventWriter.StatHook = eventStreamOTHook(tr.LogFields)
+
+	events, inputs, results := h.startSearch(ctx, args)
+
+	progress := progressAggregator{
+		Start: time.Now(),
+		Limit: inputs.MaxResults(),
 	}
 
-	resultsResolver, err := search.Results(ctx)
-	if err != nil {
-		eventWriter.Event("error", err.Error())
-		return
+	sendProgress := func() {
+		_ = eventWriter.Event("progress", progress.Current())
 	}
 
-	const filematchesChunk = 1000
-	filematchesBuf := make([]eventFileMatch, 0, filematchesChunk)
-	flushFileMatchesBuf := func() {
-		if len(filematchesBuf) > 0 {
-			if err := eventWriter.Event("filematches", filematchesBuf); err != nil {
+	filters := &graphqlbackend.SearchFilters{
+		Globbing: false, // TODO
+	}
+
+	const matchesChunk = 1000
+	matchesBuf := make([]interface{}, 0, matchesChunk)
+	flushMatchesBuf := func() {
+		if len(matchesBuf) > 0 {
+			if err := eventWriter.Event("matches", matchesBuf); err != nil {
 				// EOF
 				return
 			}
-			filematchesBuf = filematchesBuf[:0]
+			matchesBuf = matchesBuf[:0]
+		}
+
+		if progress.Dirty {
+			sendProgress()
 		}
 	}
 
-	const symbolmatchesChunk = 1000
-	symbolmatchesBuf := make([]eventSymbolMatch, 0, symbolmatchesChunk)
-	flushSymbolMatchesBuf := func() {
-		if len(symbolmatchesBuf) > 0 {
-			if err := eventWriter.Event("symbolmatches", symbolmatchesBuf); err != nil {
-				// EOF
-				return
-			}
-			symbolmatchesBuf = symbolmatchesBuf[:0]
-		}
-	}
+	flushTicker := time.NewTicker(100 * time.Millisecond)
+	defer flushTicker.Stop()
 
-	const repomatchesChunk = 1000
-	repomatchesBuf := make([]eventRepoMatch, 0, repomatchesChunk)
-	flushRepoMatchesBuf := func() {
-		if len(repomatchesBuf) > 0 {
-			if err := eventWriter.Event("repomatches", repomatchesBuf); err != nil {
-				// EOF
-				return
-			}
-			repomatchesBuf = repomatchesBuf[:0]
-		}
-	}
+	pingTicker := time.NewTicker(5 * time.Second)
+	defer pingTicker.Stop()
 
-	const commitmatchesChunk = 1000
-	commitmatchesBuf := make([]eventCommitMatch, 0, commitmatchesChunk)
-	flushCommitMatchesBuf := func() {
-		if len(commitmatchesBuf) > 0 {
-			if err := eventWriter.Event("commitmatches", commitmatchesBuf); err != nil {
-				// EOF
-				return
-			}
-			commitmatchesBuf = commitmatchesBuf[:0]
-		}
-	}
+	first := true
 
-	for _, result := range resultsResolver.Results() {
-		if fm, ok := result.ToFileMatch(); ok {
-			if syms := fm.Symbols(); len(syms) > 0 {
-				// Inlining to avoid exporting a bunch of stuff from
-				// graphqlbackend
-				symbols := make([]symbol, 0, len(syms))
-				for _, sym := range syms {
-					u, err := sym.URL(ctx)
-					if err != nil {
-						continue
+	for {
+		var event graphqlbackend.SearchEvent
+		var ok bool
+		select {
+		case event, ok = <-events:
+		case <-flushTicker.C:
+			ok = true
+			flushMatchesBuf()
+		case <-pingTicker.C:
+			ok = true
+			sendProgress()
+		}
+
+		if !ok {
+			break
+		}
+
+		progress.Update(event)
+		filters.Update(event)
+
+		for _, result := range event.Results {
+			if fm, ok := result.ToFileMatch(); ok {
+				if syms := fm.Symbols(); len(syms) > 0 {
+					// Inlining to avoid exporting a bunch of stuff from
+					// graphqlbackend
+					symbols := make([]symbol, 0, len(syms))
+					for _, sym := range syms {
+						u, err := sym.URL(ctx)
+						if err != nil {
+							continue
+						}
+						symbols = append(symbols, symbol{
+							URL:           u,
+							Name:          sym.Name(),
+							ContainerName: fromStrPtr(sym.ContainerName()),
+							Kind:          sym.Kind(),
+						})
 					}
-					symbols = append(symbols, symbol{
-						URL:           u,
-						Name:          sym.Name(),
-						ContainerName: fromStrPtr(sym.ContainerName()),
-						Kind:          sym.Kind(),
-					})
+					matchesBuf = append(matchesBuf, fromSymbolMatch(fm, symbols))
+				} else {
+					matchesBuf = append(matchesBuf, fromFileMatch(fm))
 				}
-				symbolmatchesBuf = append(symbolmatchesBuf, fromSymbolMatch(fm, symbols))
-				if len(symbolmatchesBuf) == cap(symbolmatchesBuf) {
-					flushSymbolMatchesBuf()
-				}
-			} else {
-				filematchesBuf = append(filematchesBuf, fromFileMatch(fm))
-				if len(filematchesBuf) == cap(filematchesBuf) {
-					flushFileMatchesBuf()
-				}
+			}
+			if repo, ok := result.ToRepository(); ok {
+				matchesBuf = append(matchesBuf, fromRepository(repo))
+			}
+			if commit, ok := result.ToCommitSearchResult(); ok {
+				matchesBuf = append(matchesBuf, fromCommit(commit))
+			}
+			if len(matchesBuf) == cap(matchesBuf) {
+				flushMatchesBuf()
 			}
 		}
-		if repo, ok := result.ToRepository(); ok {
-			repomatchesBuf = append(repomatchesBuf, fromRepository(repo))
-			if len(repomatchesBuf) == cap(repomatchesBuf) {
-				flushRepoMatchesBuf()
-			}
-		}
-		if commit, ok := result.ToCommitSearchResult(); ok {
-			commitmatchesBuf = append(commitmatchesBuf, fromCommit(commit))
-			if len(commitmatchesBuf) == cap(commitmatchesBuf) {
-				flushCommitMatchesBuf()
-			}
+
+		// Instantly send results if we have not sent any yet.
+		if first && len(matchesBuf) > 0 {
+			first = false
+			flushMatchesBuf()
 		}
 	}
 
-	flushFileMatchesBuf()
-	flushSymbolMatchesBuf()
-	flushRepoMatchesBuf()
-	flushCommitMatchesBuf()
+	flushMatchesBuf()
 
-	// Send dynamic filters once. When this is true streaming we may want to
-	// send updated filters as we find more results.
-	if filters := resultsResolver.DynamicFilters(ctx); len(filters) > 0 {
+	// Send dynamic filters once.
+	if filters := filters.Compute(); len(filters) > 0 {
 		buf := make([]eventFilter, 0, len(filters))
 		for _, f := range filters {
 			buf = append(buf, eventFilter{
-				Value:    f.Value(),
-				Label:    f.Label(),
-				Count:    int(f.Count()),
-				LimitHit: f.LimitHit(),
-				Kind:     f.Kind(),
+				Value:    f.Value,
+				Label:    f.Label,
+				Count:    f.Count,
+				LimitHit: f.IsLimitHit,
+				Kind:     f.Kind,
 			})
 		}
 
@@ -162,6 +177,12 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 			// EOF
 			return
 		}
+	}
+
+	resultsResolver, err := results()
+	if err != nil {
+		_ = eventWriter.Event("error", err.Error())
+		return
 	}
 
 	if alert := resultsResolver.Alert(); alert != nil {
@@ -181,8 +202,58 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	// TODO stats
-	_ = eventWriter.Event("done", map[string]interface{}{})
+	_ = eventWriter.Event("progress", progress.Final())
+}
+
+// startSearch will start a search. It returns the events channel which
+// streams out search events. Once events is closed you can call results which
+// will return the results resolver and error.
+func (h *streamHandler) startSearch(ctx context.Context, a *args) (events <-chan graphqlbackend.SearchEvent, inputs graphqlbackend.SearchInputs, results func() (*graphqlbackend.SearchResultsResolver, error)) {
+	eventsC := make(chan graphqlbackend.SearchEvent)
+
+	search, err := h.newSearchResolver(ctx, &graphqlbackend.SearchArgs{
+		Query:          a.Query,
+		Version:        a.Version,
+		PatternType:    strPtr(a.PatternType),
+		VersionContext: strPtr(a.VersionContext),
+
+		Stream: graphqlbackend.StreamFunc(func(event graphqlbackend.SearchEvent) {
+			eventsC <- event
+		}),
+	})
+	if err != nil {
+		close(eventsC)
+		return eventsC, graphqlbackend.SearchInputs{}, func() (*graphqlbackend.SearchResultsResolver, error) {
+			return nil, err
+		}
+	}
+
+	type finalResult struct {
+		resultsResolver *graphqlbackend.SearchResultsResolver
+		err             error
+	}
+	final := make(chan finalResult, 1)
+	go func() {
+		defer close(final)
+		defer close(eventsC)
+
+		r, err := search.Results(ctx)
+		final <- finalResult{resultsResolver: r, err: err}
+	}()
+
+	return eventsC, search.Inputs(), func() (*graphqlbackend.SearchResultsResolver, error) {
+		f := <-final
+		return f.resultsResolver, f.err
+	}
+}
+
+type searchResolver interface {
+	Results(context.Context) (*graphqlbackend.SearchResultsResolver, error)
+	Inputs() graphqlbackend.SearchInputs
+}
+
+func defaultNewSearchResolver(ctx context.Context, args *graphqlbackend.SearchArgs) (searchResolver, error) {
+	return graphqlbackend.NewSearchImplementer(ctx, args)
 }
 
 type args struct {
@@ -245,8 +316,9 @@ func fromFileMatch(fm *graphqlbackend.FileMatchResolver) eventFileMatch {
 	}
 
 	return eventFileMatch{
+		Type:        fileMatch,
 		Path:        fm.JPath,
-		Repository:  fm.Repo.Name(),
+		Repository:  string(fm.Repo.Name),
 		Branches:    branches,
 		Version:     string(fm.CommitID),
 		LineMatches: lineMatches,
@@ -260,8 +332,9 @@ func fromSymbolMatch(fm *graphqlbackend.FileMatchResolver, symbols []symbol) eve
 	}
 
 	return eventSymbolMatch{
+		Type:       symbolMatch,
 		Path:       fm.JPath,
-		Repository: fm.Repo.Name(),
+		Repository: string(fm.Repo.Name),
 		Branches:   branches,
 		Version:    string(fm.CommitID),
 		Symbols:    symbols,
@@ -275,6 +348,7 @@ func fromRepository(repo *graphqlbackend.RepositoryResolver) eventRepoMatch {
 	}
 
 	return eventRepoMatch{
+		Type:       repoMatch,
 		Repository: repo.Name(),
 		Branches:   branches,
 	}
@@ -293,6 +367,7 @@ func fromCommit(commit *graphqlbackend.CommitSearchResultResolver) eventCommitMa
 		}
 	}
 	return eventCommitMatch{
+		Type:    commitMatch,
 		Icon:    commit.Icon(),
 		Label:   commit.Label().Text(),
 		URL:     commit.URL(),
@@ -302,62 +377,11 @@ func fromCommit(commit *graphqlbackend.CommitSearchResultResolver) eventCommitMa
 	}
 }
 
-type eventStreamWriter struct {
-	w     io.Writer
-	enc   *json.Encoder
-	flush func()
-}
-
-func newEventStreamWriter(w http.ResponseWriter) (*eventStreamWriter, error) {
-	flusher, ok := w.(http.Flusher)
-	if !ok {
-		return nil, errors.New("http flushing not supported")
-	}
-
-	w.Header().Set("Content-Type", "text/event-stream")
-	w.Header().Set("Cache-Control", "no-cache")
-	w.Header().Set("Connection", "keep-alive")
-
-	return &eventStreamWriter{
-		w:     w,
-		enc:   json.NewEncoder(w),
-		flush: flusher.Flush,
-	}, nil
-}
-
-func (e *eventStreamWriter) Event(event string, data interface{}) error {
-	if event != "" {
-		// event: $event\n
-		if _, err := e.w.Write([]byte("event: ")); err != nil {
-			return err
-		}
-		if _, err := e.w.Write([]byte(event)); err != nil {
-			return err
-		}
-		if _, err := e.w.Write([]byte("\n")); err != nil {
-			return err
-		}
-	}
-
-	// data: json(data)\n\n
-	if _, err := e.w.Write([]byte("data: ")); err != nil {
-		return err
-	}
-	if err := e.enc.Encode(data); err != nil {
-		return err
-	}
-	// Encode writes a newline, so only need to write one newline.
-	if _, err := e.w.Write([]byte("\n")); err != nil {
-		return err
-	}
-
-	e.flush()
-
-	return nil
-}
-
 // eventFileMatch is a subset of zoekt.FileMatch for our event API.
 type eventFileMatch struct {
+	// Type is always fileMatch. Included here for marshalling.
+	Type matchType `json:"type"`
+
 	Path       string   `json:"name"`
 	Repository string   `json:"repository"`
 	Branches   []string `json:"branches,omitempty"`
@@ -375,12 +399,18 @@ type eventLineMatch struct {
 
 // eventRepoMatch is a subset of zoekt.FileMatch for our event API.
 type eventRepoMatch struct {
+	// Type is always repoMatch. Included here for marshalling.
+	Type matchType `json:"type"`
+
 	Repository string   `json:"repository"`
 	Branches   []string `json:"branches,omitempty"`
 }
 
 // eventSymbolMatch is eventFileMatch but with Symbols instead of LineMatches
 type eventSymbolMatch struct {
+	// Type is always symbolMatch. Included here for marshalling.
+	Type matchType `json:"type"`
+
 	Path       string   `json:"name"`
 	Repository string   `json:"repository"`
 	Branches   []string `json:"branches,omitempty"`
@@ -401,6 +431,9 @@ type symbol struct {
 // into what is actually useful in a commit result / or if we should have a
 // "type" for that.
 type eventCommitMatch struct {
+	// Type is always commitMatch. Included here for marshalling.
+	Type matchType `json:"type"`
+
 	Icon    string `json:"icon"`
 	Label   string `json:"label"`
 	URL     string `json:"url"`

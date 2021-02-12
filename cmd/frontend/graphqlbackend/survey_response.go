@@ -6,12 +6,13 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/hubspot/hubspotutil"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type surveyResponseResolver struct {
@@ -89,7 +90,7 @@ func (r *schemaResolver) SubmitSurvey(ctx context.Context, args *struct {
 	actor := actor.FromContext(ctx)
 	if actor.IsAuthenticated() {
 		uid = &actor.UID
-		e, _, err := db.UserEmails.GetPrimaryEmail(ctx, actor.UID)
+		e, _, err := database.GlobalUserEmails.GetPrimaryEmail(ctx, actor.UID)
 		if err != nil && !errcode.IsNotFound(err) {
 			return nil, err
 		}
@@ -98,7 +99,7 @@ func (r *schemaResolver) SubmitSurvey(ctx context.Context, args *struct {
 		}
 	}
 
-	_, err := db.SurveyResponses.Create(ctx, uid, email, int(input.Score), input.Reason, input.Better)
+	_, err := database.GlobalSurveyResponses.Create(ctx, uid, email, int(input.Score), input.Reason, input.Better)
 	if err != nil {
 		return nil, err
 	}

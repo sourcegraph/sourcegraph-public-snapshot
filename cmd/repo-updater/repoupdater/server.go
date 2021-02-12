@@ -9,35 +9,37 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // Server is a repoupdater server.
 type Server struct {
-	repos.Store
+	*repos.Store
 	*repos.Syncer
 	SourcegraphDotComMode bool
 	GithubDotComSource    interface {
-		GetRepo(ctx context.Context, nameWithOwner string) (*repos.Repo, error)
+		GetRepo(ctx context.Context, nameWithOwner string) (*types.Repo, error)
 	}
 	GitLabDotComSource interface {
-		GetRepo(ctx context.Context, projectWithNamespace string) (*repos.Repo, error)
+		GetRepo(ctx context.Context, projectWithNamespace string) (*types.Repo, error)
 	}
 	Scheduler interface {
-		UpdateOnce(id api.RepoID, name api.RepoName, url string)
+		UpdateOnce(id api.RepoID, name api.RepoName)
 		ScheduleInfo(id api.RepoID) *protocol.RepoUpdateSchedulerInfoResult
 	}
 	GitserverClient interface {
@@ -75,7 +77,6 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/enqueue-repo-update", s.handleEnqueueRepoUpdate)
 	mux.HandleFunc("/exclude-repo", s.handleExcludeRepo)
 	mux.HandleFunc("/sync-external-service", s.handleExternalServiceSync)
-	mux.HandleFunc("/status-messages", s.handleStatusMessages)
 	mux.HandleFunc("/enqueue-changeset-sync", s.handleEnqueueChangesetSync)
 	mux.HandleFunc("/schedule-perms-sync", s.handleSchedulePermsSync)
 	return mux
@@ -89,7 +90,7 @@ func (s *Server) handleRepoExternalServices(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	rs, err := s.Store.ListRepos(r.Context(), repos.StoreListReposArgs{
+	rs, err := s.Store.RepoStore.List(r.Context(), database.ReposListOptions{
 		IDs: []api.RepoID{req.ID},
 	})
 	if err != nil {
@@ -110,11 +111,12 @@ func (s *Server) handleRepoExternalServices(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	args := repos.StoreListExternalServicesArgs{
-		IDs: svcIDs,
+	args := database.ExternalServicesListOptions{
+		IDs:              svcIDs,
+		OrderByDirection: "ASC",
 	}
 
-	es, err := s.Store.ListExternalServices(r.Context(), args)
+	es, err := s.Store.ExternalServiceStore.List(r.Context(), args)
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
 		return
@@ -132,7 +134,7 @@ func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rs, err := s.Store.ListRepos(r.Context(), repos.StoreListReposArgs{
+	rs, err := s.Store.RepoStore.List(r.Context(), database.ReposListOptions{
 		IDs: []api.RepoID{req.ID},
 	})
 	if err != nil {
@@ -147,24 +149,44 @@ func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	args := repos.StoreListExternalServicesArgs{
-		Kinds: repos.Repos(rs).Kinds(),
+	args := database.ExternalServicesListOptions{
+		Kinds:            types.Repos(rs).Kinds(),
+		OrderByDirection: "ASC",
 	}
 
-	es, err := s.Store.ListExternalServices(r.Context(), args)
+	es, err := s.Store.ExternalServiceStore.List(r.Context(), args)
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
 		return
 	}
 
+	tmp := make([]*types.Repo, len(rs))
+	for i, r := range rs {
+		tmp[i] = &types.Repo{
+			ID:           r.ID,
+			ExternalRepo: r.ExternalRepo,
+			Name:         api.RepoName(r.Name),
+			Private:      r.Private,
+			URI:          r.URI,
+			Description:  r.Description,
+			Fork:         r.Fork,
+			Archived:     r.Archived,
+			Cloned:       r.Cloned,
+			CreatedAt:    r.CreatedAt,
+			UpdatedAt:    r.UpdatedAt,
+			DeletedAt:    r.DeletedAt,
+			Metadata:     r.Metadata,
+		}
+	}
+
 	for _, e := range es {
-		if err := e.Exclude(rs...); err != nil {
+		if err := e.Exclude(tmp...); err != nil {
 			respond(w, http.StatusInternalServerError, err)
 			return
 		}
 	}
 
-	err = s.Store.UpsertExternalServices(r.Context(), es...)
+	err = s.Store.ExternalServiceStore.Upsert(r.Context(), es...)
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
 		return
@@ -200,7 +222,7 @@ func respond(w http.ResponseWriter, code int, v interface{}) {
 	}
 }
 
-func newExternalServices(es ...*repos.ExternalService) []api.ExternalService {
+func newExternalServices(es ...*types.ExternalService) []api.ExternalService {
 	svcs := make([]api.ExternalService, 0, len(es))
 
 	for _, e := range es {
@@ -291,7 +313,7 @@ func (s *Server) enqueueRepoUpdate(ctx context.Context, req *protocol.RepoUpdate
 		tr.Finish()
 	}()
 
-	rs, err := s.Store.ListRepos(ctx, repos.StoreListReposArgs{Names: []string{string(req.Repo)}})
+	rs, err := s.Store.RepoStore.List(ctx, database.ReposListOptions{Names: []string{string(req.Repo)}})
 	if err != nil {
 		return nil, http.StatusInternalServerError, errors.Wrap(err, "store.list-repos")
 	}
@@ -301,17 +323,12 @@ func (s *Server) enqueueRepoUpdate(ctx context.Context, req *protocol.RepoUpdate
 	}
 
 	repo := rs[0]
-	if req.URL == "" {
-		if urls := repo.CloneURLs(); len(urls) > 0 {
-			req.URL = urls[0]
-		}
-	}
-	s.Scheduler.UpdateOnce(repo.ID, req.Repo, req.URL)
+
+	s.Scheduler.UpdateOnce(repo.ID, repo.Name)
 
 	return &protocol.RepoUpdateResponse{
 		ID:   repo.ID,
-		Name: repo.Name,
-		URL:  req.URL,
+		Name: string(repo.Name),
 	}, http.StatusOK, nil
 }
 
@@ -370,7 +387,7 @@ func externalServiceValidate(ctx context.Context, req *protocol.ExternalServiceS
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	src, err := repos.NewSource(&repos.ExternalService{
+	src, err := repos.NewSource(&types.ExternalService{
 		ID:          req.ExternalService.ID,
 		Kind:        req.ExternalService.Kind,
 		DisplayName: req.ExternalService.DisplayName,
@@ -429,27 +446,38 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		return mockRepoLookup(args)
 	}
 
-	list, err := s.Store.ListRepos(ctx, repos.StoreListReposArgs{
+	list, err := s.Store.RepoStore.List(ctx, database.ReposListOptions{
 		Names: []string{string(args.Repo)},
 	})
 	if err != nil {
 		return nil, err
 	}
-	var repo *repos.Repo
+	var repo *types.Repo
 	if len(list) > 0 {
 		repo = list[0]
 	}
 
-	// If we are sourcegraph.com we don't run a global Sync since there are
-	// too many repos. Instead we use an incremental approach where we check
+	// If we are sourcegraph.com we don't sync our site level code hosts in the background
+	// since there are too many repos. Instead we use an incremental approach where we check
 	// for changes everytime a user browses a repo. RepoLookup is the signal
 	// we rely on to check metadata.
+
 	codehost := extsvc.CodeHostOf(args.Repo, extsvc.PublicCodeHosts...)
 	if s.SourcegraphDotComMode && codehost != nil {
+		if repo == nil {
+			// Try and find this repo on the remote host. Block on the remote
+			// request.
+			return s.remoteRepoSync(ctx, codehost, string(args.Repo))
+		}
+
 		// TODO a queue with single flighting to speak to remote for args.Repo?
-		if repo != nil {
-			// We have (potentially stale) data we can return to the user right
-			// now. Do that rather than blocking.
+
+		// We have (potentially stale) data we can return to the user right now. Do that
+		// rather than blocking. This should only happen for public repos, private repos
+		// are ignored since if they do exist in our DB they would have been added by a
+		// user owned code host connection in which case they'll be kept up to date by
+		// our background syncer.
+		if !repo.Private {
 			go func() {
 				ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 				defer cancel()
@@ -459,11 +487,11 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 					return
 				}
 
-				// Since we don't support private repositories on Cloud,
-				// we can safely assume that when a repository stored in the database is not accessible anymore,
-				// no other external service should have access to it, we can then remove it.
+				// Since we are only dealing with public repos here we can safely assume that
+				// when a repository stored in the database is not accessible anymore, no other
+				// external service should have access to it, we can then remove it.
 				if repoResult.ErrorNotFound || repoResult.ErrorUnauthorized {
-					err = s.Store.UpsertRepos(ctx, repo.With(func(r *repos.Repo) {
+					err = s.Store.UpsertRepos(ctx, repo.With(func(r *types.Repo) {
 						r.DeletedAt = s.Now()
 					}))
 					if err != nil {
@@ -471,10 +499,6 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 					}
 				}
 			}()
-		} else {
-			// Try and find this repo on the remote host. Block on the remote
-			// request.
-			return s.remoteRepoSync(ctx, codehost, string(args.Repo))
 		}
 	}
 
@@ -497,7 +521,7 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 // remoteRepoSync is used by Sourcegraph.com to incrementally sync metadata
 // for remoteName on codehost.
 func (s *Server) remoteRepoSync(ctx context.Context, codehost *extsvc.CodeHost, remoteName string) (*protocol.RepoLookupResult, error) {
-	var repo *repos.Repo
+	var repo *types.Repo
 	var err error
 	switch codehost {
 	case extsvc.GitHubDotCom:
@@ -509,14 +533,16 @@ func (s *Server) remoteRepoSync(ctx context.Context, codehost *extsvc.CodeHost, 
 					ErrorNotFound: true,
 				}, nil
 			}
-			if isUnauthorized(err) {
-				return &protocol.RepoLookupResult{
-					ErrorUnauthorized: true,
-				}, nil
-			}
+			// This check needs to come before isUnauthorized since GitHub returns 403 when
+			// rate limit has been exceeded.
 			if isTemporarilyUnavailable(err) {
 				return &protocol.RepoLookupResult{
 					ErrorTemporarilyUnavailable: true,
+				}, nil
+			}
+			if isUnauthorized(err) {
+				return &protocol.RepoLookupResult{
+					ErrorUnauthorized: true,
 				}, nil
 			}
 			return nil, err
@@ -559,66 +585,6 @@ func (s *Server) remoteRepoSync(ctx context.Context, codehost *extsvc.CodeHost, 
 	return &protocol.RepoLookupResult{
 		Repo: repoInfo,
 	}, nil
-}
-
-func (s *Server) handleStatusMessages(w http.ResponseWriter, r *http.Request) {
-	resp := protocol.StatusMessagesResponse{
-		Messages: []protocol.StatusMessage{},
-	}
-
-	notCloned, err := s.Store.CountNotClonedRepos(r.Context())
-	if err != nil {
-		respond(w, http.StatusInternalServerError, err)
-		return
-	}
-
-	if notCloned != 0 {
-		resp.Messages = append(resp.Messages, protocol.StatusMessage{
-			Cloning: &protocol.CloningProgress{
-				Message: fmt.Sprintf("%d repositories enqueued for cloning...", notCloned),
-			},
-		})
-	}
-
-	for _, e := range s.Syncer.SyncErrors() {
-		if multiErr, ok := errors.Cause(e).(*multierror.Error); ok {
-			for _, e := range multiErr.Errors {
-				if sourceErr, ok := e.(*repos.SourceError); ok {
-					resp.Messages = append(resp.Messages, protocol.StatusMessage{
-						ExternalServiceSyncError: &protocol.ExternalServiceSyncError{
-							Message:           sourceErr.Err.Error(),
-							ExternalServiceId: sourceErr.ExtSvc.ID,
-						},
-					})
-				} else {
-					resp.Messages = append(resp.Messages, protocol.StatusMessage{
-						SyncError: &protocol.SyncError{Message: e.Error()},
-					})
-				}
-			}
-		} else {
-			resp.Messages = append(resp.Messages, protocol.StatusMessage{
-				SyncError: &protocol.SyncError{Message: e.Error()},
-			})
-		}
-	}
-
-	messagesSummary := func() string {
-		cappedMsg := resp.Messages
-		if len(cappedMsg) > 10 {
-			cappedMsg = cappedMsg[:10]
-		}
-
-		jMsg, err := json.MarshalIndent(cappedMsg, "", " ")
-		if err != nil {
-			return "error summarizing messages for logging"
-		}
-		return string(jMsg)
-	}
-
-	log15.Debug("TRACE handleStatusMessages", "messages", log15.Lazy{Fn: messagesSummary})
-
-	respond(w, http.StatusOK, resp)
 }
 
 func (s *Server) handleEnqueueChangesetSync(w http.ResponseWriter, r *http.Request) {
@@ -668,7 +634,7 @@ func (s *Server) handleSchedulePermsSync(w http.ResponseWriter, r *http.Request)
 	respond(w, http.StatusOK, nil)
 }
 
-func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
+func newRepoInfo(r *types.Repo) (*protocol.RepoInfo, error) {
 	urls := r.CloneURLs()
 	if len(urls) == 0 {
 		return nil, fmt.Errorf("no clone urls for repo id=%q name=%q", r.ID, r.Name)

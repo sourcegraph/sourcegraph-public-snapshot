@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -47,7 +47,7 @@ func (r *settingsCascade) Subjects(ctx context.Context) ([]*settingsSubject, err
 		subjects = append(subjects, r.subject)
 
 	case r.subject.user != nil:
-		orgs, err := db.Orgs.GetByUserID(ctx, r.subject.user.user.ID)
+		orgs, err := database.GlobalOrgs.GetByUserID(ctx, r.subject.user.user.ID)
 		if err != nil {
 			return nil, err
 		}

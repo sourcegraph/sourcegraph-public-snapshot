@@ -3,6 +3,7 @@ import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
+import { Scalars } from '../../../../shared/src/graphql-operations'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../../shared/src/util/errors'
@@ -19,7 +20,7 @@ import {
 interface Props extends RouteComponentProps<{}> {}
 
 interface FilterParameters {
-    user?: GQL.ID
+    user?: Scalars['ID']
     serviceType?: string
     serviceID?: string
     clientID?: string

@@ -1,12 +1,12 @@
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useMemo } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import * as GQL from '../../../../shared/src/graphql/schema'
 import { HeroPage } from '../../components/HeroPage'
 import { RepositoryStatsContributorsPage } from './RepositoryStatsContributorsPage'
 import { RepositoryStatsNavbar } from './RepositoryStatsNavbar'
 import { PatternTypeProps } from '../../search'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
+import { RepositoryFields } from '../../graphql-operations'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
@@ -17,7 +17,7 @@ const NotFoundPage: React.FunctionComponent = () => (
 )
 
 interface Props extends RouteComponentProps<{}>, BreadcrumbSetters, Omit<PatternTypeProps, 'setPatternType'> {
-    repo: GQL.IRepository
+    repo: RepositoryFields
     globbing: boolean
 }
 
@@ -28,7 +28,7 @@ export interface RepositoryStatsAreaPageProps {
     /**
      * The active repository.
      */
-    repo: GQL.IRepository
+    repo: RepositoryFields
 }
 
 const showNavbar = false

@@ -10,7 +10,9 @@ import { Link } from '../../../shared/src/components/Link'
 import GearIcon from 'mdi-react/GearIcon'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { PageHeader } from '../components/PageHeader'
-import { BreadcrumbsProps, BreadcrumbSetters, Breadcrumbs } from '../components/Breadcrumbs'
+import { BreadcrumbsProps, BreadcrumbSetters } from '../components/Breadcrumbs'
+import { StatusBadge } from '../components/StatusBadge'
+import { Page } from '../components/Page'
 
 interface InsightsPageProps
     extends ExtensionsControllerProps,
@@ -40,28 +42,21 @@ export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props =>
     )
     return (
         <div className="w-100">
-            <Breadcrumbs breadcrumbs={props.breadcrumbs} location={props.location} />
-            <div className="container mt-3 web-content">
+            <Page>
                 <PageHeader
-                    icon={InsightsIcon}
-                    title={
-                        <>
-                            Insights{' '}
-                            <sup>
-                                <span className="badge badge-info text-uppercase">Prototype</span>
-                            </sup>
-                        </>
-                    }
+                    annotation={<StatusBadge status="prototype" feedback={{ mailto: 'support@sourcegraph.com' }} />}
+                    path={[{ icon: InsightsIcon, text: 'Code insights' }]}
                     actions={
                         <>
-                            <Link to="/user/settings" className="btn btn-secondary mr-1">
-                                <GearIcon className="icon-inline" /> Configure insights
-                            </Link>
-                            <Link to="/extensions?query=category:Insights" className="btn btn-secondary">
+                            <Link to="/extensions?query=category:Insights" className="btn btn-secondary mr-1">
                                 <PlusIcon className="icon-inline" /> Add more insights
+                            </Link>
+                            <Link to="/user/settings" className="btn btn-secondary">
+                                <GearIcon className="icon-inline" /> Configure insights
                             </Link>
                         </>
                     }
+                    className="mb-3"
                 />
                 {views === undefined ? (
                     <div className="d-flex w-100">
@@ -70,7 +65,7 @@ export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props =>
                 ) : (
                     <ViewGrid {...props} views={views} />
                 )}
-            </div>
+            </Page>
         </div>
     )
 }

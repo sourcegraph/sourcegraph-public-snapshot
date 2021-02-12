@@ -1,74 +1,176 @@
-import React from 'react'
+import classNames from 'classnames'
+import MenuLeftIcon from 'mdi-react/MenuLeftIcon'
+import MenuRightIcon from 'mdi-react/MenuRightIcon'
+import React, { useCallback, useLayoutEffect, useRef, useState } from 'react'
 import { SearchFilters } from '../../../../shared/src/api/protocol'
-import * as GQL from '../../../../shared/src/graphql/schema'
 import { QuickLink } from '../../schema/settings.schema'
 import { FilterChip } from '../FilterChip'
-import { isSearchResults } from '../helpers'
 import { QuickLinks } from '../QuickLinks'
 
-export interface SearchScopeWithOptionalName {
+export interface DynamicSearchFilter {
     name?: string
+
     value: string
+
+    count?: number
+    limitHit?: boolean
 }
 
-export const SearchResultsFilterBars: React.FunctionComponent<{
+export interface SearchResultsFilterBarsProps {
     navbarSearchQuery: string
-    results?: GQL.ISearchResults
-    filters: SearchScopeWithOptionalName[]
+    searchSucceeded: boolean
+    resultsLimitHit: boolean
+    genericFilters: DynamicSearchFilter[]
     extensionFilters: SearchFilters[] | undefined
+    repoFilters?: DynamicSearchFilter[] | undefined
     quickLinks?: QuickLink[] | undefined
     onFilterClick: (value: string) => void
     onShowMoreResultsClick: (value: string) => void
     calculateShowMoreResultsCount: () => number
-}> = ({
+}
+
+const FilterCarousel: React.FunctionComponent<{ children: JSX.Element | JSX.Element[] }> = ({ children }) => {
+    const amountToScroll = 0.9 // Scroll 90% with every button press
+
+    const filtersReference = useRef<HTMLDivElement | null>(null)
+
+    const computeCanScrollBack = (): boolean =>
+        filtersReference.current ? filtersReference.current.scrollLeft > 0 : false
+    const computeCanScrollForward = (): boolean =>
+        filtersReference.current
+            ? filtersReference.current.scrollLeft + filtersReference.current.clientWidth <
+              filtersReference.current.scrollWidth
+            : false
+
+    const [canScrollBack, setCanScrollBack] = useState(false)
+    const [canScrollForward, setCanScrollForward] = useState(false)
+
+    // WARNING for i18n/l10n: If/when we end up supporting right-to-left (eg. Arabic, Hebrew),
+    // this logic has to be reversed in RTL mode, as scrollLeft will be increasingly **negative**.
+    const onBackClicked = useCallback(() => {
+        if (canScrollBack && filtersReference.current) {
+            const width = filtersReference.current.clientWidth
+            const offset = filtersReference.current.scrollLeft
+            filtersReference.current.scrollTo({
+                top: 0,
+                left: Math.max(offset - width * amountToScroll, 0),
+                behavior: 'smooth',
+            })
+        }
+    }, [canScrollBack])
+    const onForwardClicked = useCallback(() => {
+        if (canScrollForward && filtersReference.current) {
+            const width = filtersReference.current.clientWidth
+            const offset = filtersReference.current.scrollLeft
+            filtersReference.current.scrollTo({
+                top: 0,
+                left: Math.max(offset + width * amountToScroll, 0),
+                behavior: 'smooth',
+            })
+        }
+    }, [canScrollForward])
+
+    useLayoutEffect(() => {
+        const updateCanScroll = (): void => {
+            setCanScrollBack(computeCanScrollBack)
+            setCanScrollForward(computeCanScrollForward)
+        }
+
+        updateCanScroll()
+        const current = filtersReference.current
+
+        current?.addEventListener('scroll', updateCanScroll)
+        window.addEventListener('resize', updateCanScroll)
+
+        return () => {
+            current?.removeEventListener('scroll', updateCanScroll)
+            window.removeEventListener('resize', updateCanScroll)
+        }
+    }, [])
+
+    return (
+        <div className="d-flex search-results-filter-bars__carousel">
+            <button
+                type="button"
+                className={classNames('btn', 'btn-link', 'search-results-filter-bars__scroll', {
+                    'search-results-filter-bars__scroll--disabled': !canScrollBack,
+                })}
+                onClick={onBackClicked}
+            >
+                <span className="sr-only">Back</span>
+                <MenuLeftIcon />
+            </button>
+            <div className="search-results-filter-bars__filters" ref={filtersReference}>
+                {children}
+            </div>
+            <button
+                type="button"
+                className={classNames('btn', 'btn-link', 'search-results-filter-bars__scroll', {
+                    'search-results-filter-bars__scroll--disabled': !canScrollForward,
+                })}
+                onClick={onForwardClicked}
+            >
+                <span className="sr-only">Forward</span>
+                <MenuRightIcon />
+            </button>
+        </div>
+    )
+}
+
+export const SearchResultsFilterBars: React.FunctionComponent<SearchResultsFilterBarsProps> = ({
     navbarSearchQuery,
-    results,
-    filters,
+    searchSucceeded,
+    resultsLimitHit,
+    genericFilters,
     extensionFilters,
+    repoFilters,
     quickLinks,
     onFilterClick,
     onShowMoreResultsClick,
     calculateShowMoreResultsCount,
 }) => (
     <div className="search-results-filter-bars">
-        {((isSearchResults(results) && filters.length > 0) || extensionFilters) && (
+        {((searchSucceeded && genericFilters.length > 0) || (extensionFilters && extensionFilters.length > 0)) && (
             <div className="search-results-filter-bars__row" data-testid="filters-bar">
                 Filters:
-                <div className="search-results-filter-bars__filters">
-                    {extensionFilters
-                        ?.filter(filter => filter.value !== '')
-                        .map(filter => (
-                            <FilterChip
-                                query={navbarSearchQuery}
-                                onFilterChosen={onFilterClick}
-                                key={filter.name + filter.value}
-                                value={filter.value}
-                                name={filter.name}
-                            />
-                        ))}
-                    {filters
-                        .filter(filter => filter.value !== '')
-                        .map(filter => (
-                            <FilterChip
-                                query={navbarSearchQuery}
-                                onFilterChosen={onFilterClick}
-                                key={String(filter.name) + filter.value}
-                                value={filter.value}
-                                name={filter.name}
-                            />
-                        ))}
-                </div>
+                <FilterCarousel>
+                    <>
+                        {extensionFilters
+                            ?.filter(filter => filter.value !== '')
+                            .map(filter => (
+                                <FilterChip
+                                    query={navbarSearchQuery}
+                                    onFilterChosen={onFilterClick}
+                                    key={filter.name + filter.value}
+                                    value={filter.value}
+                                    name={filter.name}
+                                />
+                            ))}
+                        {genericFilters
+                            .filter(filter => filter.value !== '')
+                            .map(filter => (
+                                <FilterChip
+                                    query={navbarSearchQuery}
+                                    onFilterChosen={onFilterClick}
+                                    key={String(filter.name) + filter.value}
+                                    value={filter.value}
+                                    name={filter.name}
+                                    count={filter.count}
+                                    limitHit={filter.limitHit}
+                                />
+                            ))}
+                    </>
+                </FilterCarousel>
             </div>
         )}
-        {isSearchResults(results) && results.dynamicFilters.filter(filter => filter.kind === 'repo').length > 0 && (
+        {searchSucceeded && repoFilters && repoFilters.length > 0 && (
             <div className="search-results-filter-bars__row" data-testid="repo-filters-bar">
                 Repositories:
-                <div className="search-results-filter-bars__filters">
-                    {results.dynamicFilters
-                        .filter(filter => filter.kind === 'repo' && filter.value !== '')
-                        .map(filter => (
+                <FilterCarousel>
+                    <>
+                        {repoFilters.map(filter => (
                             <FilterChip
-                                name={filter.label}
+                                name={filter.name}
                                 query={navbarSearchQuery}
                                 onFilterChosen={onFilterClick}
                                 key={filter.value}
@@ -77,17 +179,18 @@ export const SearchResultsFilterBars: React.FunctionComponent<{
                                 limitHit={filter.limitHit}
                             />
                         ))}
-                    {results.limitHit && !/\brepo:/.test(navbarSearchQuery) && (
-                        <FilterChip
-                            name="Show more"
-                            query={navbarSearchQuery}
-                            onFilterChosen={onShowMoreResultsClick}
-                            key={`count:${calculateShowMoreResultsCount()}`}
-                            value={`count:${calculateShowMoreResultsCount()}`}
-                            showMore={true}
-                        />
-                    )}
-                </div>
+                        {resultsLimitHit && !/\brepo:/.test(navbarSearchQuery) && (
+                            <FilterChip
+                                name="Show more"
+                                query={navbarSearchQuery}
+                                onFilterChosen={onShowMoreResultsClick}
+                                key={`count:${calculateShowMoreResultsCount()}`}
+                                value={`count:${calculateShowMoreResultsCount()}`}
+                                showMore={true}
+                            />
+                        )}
+                    </>
+                </FilterCarousel>
             </div>
         )}
         <QuickLinks

@@ -5,6 +5,10 @@
 - [How to debug live code](debug_live_code.md)
 - [Set up local development with Zoekt and Sourcegraph](zoekt_local_dev.md)
 
+## New features
+
+- [How to add support for a language](add_support_for_a_language.md)
+
 ## [Troubleshooting](troubleshooting_local_development.md)
 
 - [Problems with node_modules or Javascript packages](troubleshooting_local_development.md#problems-with-nodemodules-or-javascript-packages)
@@ -20,6 +24,10 @@
 ## Implementing Sourcegraph
 
 - [Developing the product documentation](documentation_implementation.md)
+- [Observability](../background-information/observability/index.md)
+  - [How to find monitoring](find_monitoring.md)
+  - [How to add monitoring](add_monitoring.md)
+  - [Set up local Sourcegraph monitoring development](monitoring_local_dev.md)
 
 ## Testing Sourcegraph
 
@@ -39,7 +47,7 @@ Sometimes you will want to develop Sourcegraph but it just so happens you will b
 train or perhaps a beach, and you will have no WiFi. And you may raise your fist toward heaven and
 say something like, "Why, we can put a man on the moon, so why can't we develop high-quality code
 search without an Internet connection?" But lower your hand back to your keyboard and fret no
-further, for the year is 2019, and you *can* develop Sourcegraph with no connectivity by setting the
+further, you *can* develop Sourcegraph with no connectivity by setting the
 `OFFLINE` environment variable:
 
 ```bash

@@ -1,6 +1,7 @@
 import { from } from 'rxjs'
 import { first, map, switchMap } from 'rxjs/operators'
 import { SettingsEdit } from '../api/client/services/settings'
+import { Scalars } from '../graphql-operations'
 import { dataOrThrowErrors, gql } from '../graphql/graphql'
 import * as GQL from '../graphql/schema'
 import { PlatformContext } from '../platform/context'
@@ -13,11 +14,11 @@ import { isErrorLike } from '../util/errors'
  */
 export function updateSettings(
     { settings, requestGraphQL }: Pick<PlatformContext, 'settings' | 'requestGraphQL'>,
-    subjectToUpdate: GQL.ID,
+    subjectToUpdate: Scalars['ID'],
     args: SettingsEdit | string,
     applySettingsEdit: (
         { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
-        subject: GQL.ID,
+        subject: Scalars['ID'],
         lastID: number | null,
         edit: GQL.ISettingsEdit | string
     ) => Promise<void>
@@ -69,7 +70,7 @@ function toGQLKeyPath(keyPath: (string | number)[]): GQL.IKeyPathSegment[] {
  */
 export function mutateSettings(
     { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
-    subject: GQL.ID,
+    subject: Scalars['ID'],
     lastID: number | null,
     edit: GQL.IConfigurationEdit | string
 ): Promise<void> {
@@ -88,7 +89,7 @@ export function mutateSettings(
  */
 function editSettings(
     { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
-    subject: GQL.ID,
+    subject: Scalars['ID'],
     lastID: number | null,
     edit: GQL.IConfigurationEdit
 ): Promise<void> {
@@ -126,7 +127,7 @@ function editSettings(
  */
 export function overwriteSettings(
     { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
-    subject: GQL.ID,
+    subject: Scalars['ID'],
     lastID: number | null,
     contents: string
 ): Promise<void> {

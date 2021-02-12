@@ -31,12 +31,18 @@ import { updateUserSessionStores } from './marketing/util'
 import { OrgAreaRoute } from './org/area/OrgArea'
 import { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
 import { createPlatformContext } from './platform/context'
-import { fetchHighlightedFileLines } from './repo/backend'
+import { fetchHighlightedFileLineRanges } from './repo/backend'
 import { RepoContainerRoute } from './repo/RepoContainer'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
 import { LayoutRouteProps } from './routes'
-import { search, searchStream, fetchSavedSearches, fetchRecentSearches, fetchRecentFileViews } from './search/backend'
+import {
+    search,
+    fetchSavedSearches,
+    fetchRecentSearches,
+    fetchRecentFileViews,
+    fetchSearchContexts,
+} from './search/backend'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { ThemePreference } from './theme'
@@ -46,18 +52,11 @@ import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
-import {
-    parseSearchURLPatternType,
-    searchURLIsCaseSensitive,
-    parseSearchURLVersionContext,
-    resolveVersionContext,
-} from './search'
+import { resolveVersionContext, parseSearchURL, resolveSearchContextSpec } from './search'
 import { KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
 import { QueryState } from './search/helpers'
 import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
-import { FiltersToTypeAndValue } from '../../shared/src/search/interactive/util'
-import { generateFiltersQuery } from '../../shared/src/util/url'
 import { NotificationType } from '../../shared/src/api/client/services/notifications'
 import { VersionContext } from './schema/site.schema'
 import { globbingEnabledFromSettings } from './util/globbing'
@@ -69,6 +68,16 @@ import {
 } from './util/settings'
 import { SearchPatternType } from '../../shared/src/graphql-operations'
 import { HTTPStatusError } from '../../shared/src/backend/fetch'
+import {
+    createCodeMonitor,
+    deleteCodeMonitor,
+    fetchCodeMonitor,
+    fetchUserCodeMonitors,
+    toggleCodeMonitorEnabled,
+    updateCodeMonitor,
+} from './enterprise/code-monitoring/backend'
+import { aggregateStreamingSearch } from './search/stream'
+import { ISearchContext } from '../../shared/src/graphql/schema'
 
 export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
@@ -116,6 +125,12 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     navbarSearchQueryState: QueryState
 
     /**
+     * The current parsed search query, with all UI-configurable parameters
+     * (eg. pattern type, case sensitivity, version context) removed
+     */
+    parsedSearchQuery: string
+
+    /**
      * The current search pattern type.
      */
     searchPatternType: SearchPatternType
@@ -124,26 +139,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      * Whether the current search is case sensitive.
      */
     searchCaseSensitivity: boolean
-
-    /**
-     * filtersInQuery is the source of truth for the filter values currently in the query.
-     *
-     * The data structure is a map, where the key is a uniquely assigned string in the form `repoType-numberOfFilterAdded`.
-     * The value is a data structure containing the fields {`type`, `value`, `editable`}.
-     * `type` is the field type of the filter (repo, file, etc.) `value` is the current value for that particular filter,
-     * and `editable` is whether the corresponding filter input is currently editable in the UI.
-     * */
-    filtersInQuery: FiltersToTypeAndValue
-
-    /**
-     * Whether interactive search mode is activated
-     */
-    interactiveSearchMode: boolean
-
-    /**
-     * Whether to display the option to toggle between interactive and omni search modes.
-     */
-    splitSearchModes: boolean
 
     /**
      * Whether to display the copy query button.
@@ -165,16 +160,16 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      */
     previousVersionContext: string | null
 
-    /**
-     * Whether the experimental search streaming API should be used.
-     */
-    searchStreaming: boolean
-
     showRepogroupHomepage: boolean
 
     showOnboardingTour: boolean
 
     showEnterpriseHomePanels: boolean
+
+    showSearchContext: boolean
+    availableSearchContexts: ISearchContext[]
+    selectedSearchContextSpec: string
+    defaultSearchContextSpec: string
 
     /**
      * Whether globbing is enabled for filters.
@@ -190,6 +185,16 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      * Whether we show the mulitiline editor at /search/query-builder
      */
     showQueryBuilder: boolean
+
+    /**
+     * Wether to enable enable contextual syntax highlighting and hovers for search queries
+     */
+    enableSmartQuery: boolean
+
+    /**
+     * Whether the code monitoring feature flag is enabled.
+     */
+    enableCodeMonitoring: boolean
 }
 
 const notificationClassNames = {
@@ -201,7 +206,6 @@ const notificationClassNames = {
 }
 
 const LIGHT_THEME_LOCAL_STORAGE_KEY = 'light-theme'
-const SEARCH_MODE_KEY = 'sg-search-mode'
 const LAST_VERSION_CONTEXT_KEY = 'sg-last-version-context'
 
 /** Reads the stored theme preference from localStorage */
@@ -240,15 +244,15 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         super(props)
         this.subscriptions.add(this.extensionsController)
 
+        const parsedSearchURL = parseSearchURL(window.location.search)
         // The patternType in the URL query parameter. If none is provided, default to literal.
         // This will be updated with the default in settings when the web app mounts.
-        const urlPatternType = parseSearchURLPatternType(window.location.search) || SearchPatternType.literal
-        const urlCase = searchURLIsCaseSensitive(window.location.search)
-        const currentSearchMode = localStorage.getItem(SEARCH_MODE_KEY)
+        const urlPatternType = parsedSearchURL.patternType || SearchPatternType.literal
+        const urlCase = parsedSearchURL.caseSensitive
         const availableVersionContexts = window.context.experimentalFeatures.versionContexts
         const previousVersionContext = localStorage.getItem(LAST_VERSION_CONTEXT_KEY)
         const resolvedVersionContext = availableVersionContexts
-            ? parseSearchURLVersionContext(window.location.search) ||
+            ? resolveVersionContext(parsedSearchURL.versionContext || undefined, availableVersionContexts) ||
               resolveVersionContext(previousVersionContext || undefined, availableVersionContexts) ||
               undefined
             : undefined
@@ -256,25 +260,28 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         this.state = {
             themePreference: readStoredThemePreference(),
             systemIsLightTheme: !this.darkThemeMediaList.matches,
-            navbarSearchQueryState: { query: '', cursorPosition: 0 },
+            navbarSearchQueryState: { query: '' },
             settingsCascade: EMPTY_SETTINGS_CASCADE,
             viewerSubject: SITE_SUBJECT_NO_ADMIN,
+            parsedSearchQuery: parsedSearchURL.query || '',
             searchPatternType: urlPatternType,
             searchCaseSensitivity: urlCase,
-            filtersInQuery: {},
-            splitSearchModes: false,
-            interactiveSearchMode: currentSearchMode ? currentSearchMode === 'interactive' : false,
             copyQueryButton: false,
             versionContext: resolvedVersionContext,
             availableVersionContexts,
             previousVersionContext,
-            searchStreaming: false,
             showRepogroupHomepage: false,
             showOnboardingTour: false,
+            showSearchContext: false,
+            availableSearchContexts: [],
+            selectedSearchContextSpec: 'global',
+            defaultSearchContextSpec: 'global', // global is default for now, user will be able to change this at some point
             showEnterpriseHomePanels: false,
             globbing: false,
             showMultilineSearchConsole: false,
             showQueryBuilder: false,
+            enableSmartQuery: false,
+            enableCodeMonitoring: false,
         }
     }
 
@@ -313,6 +320,12 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             })
         )
 
+        this.subscriptions.add(
+            fetchSearchContexts.subscribe(contexts => {
+                this.setState({ availableSearchContexts: contexts })
+            })
+        )
+
         /**
          * Listens for uncaught 401 errors when a user when a user was previously authenticated.
          *
@@ -346,28 +359,6 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         localStorage.setItem(LIGHT_THEME_LOCAL_STORAGE_KEY, this.state.themePreference)
         document.documentElement.classList.toggle('theme-light', this.isLightTheme())
         document.documentElement.classList.toggle('theme-dark', !this.isLightTheme())
-    }
-
-    private toggleSearchMode = (event: React.MouseEvent<HTMLAnchorElement>): void => {
-        event.preventDefault()
-        localStorage.setItem(SEARCH_MODE_KEY, this.state.interactiveSearchMode ? 'plain' : 'interactive')
-
-        eventLogger.log('SearchModeToggled', { mode: this.state.interactiveSearchMode ? 'plain' : 'interactive' })
-
-        if (this.state.interactiveSearchMode) {
-            const queries = [this.state.navbarSearchQueryState.query, generateFiltersQuery(this.state.filtersInQuery)]
-            const newQuery = queries.filter(query => query.length > 0).join(' ')
-
-            this.setState(state => ({
-                interactiveSearchMode: !state.interactiveSearchMode,
-                navbarSearchQueryState: { query: newQuery, cursorPosition: newQuery.length },
-                filtersInQuery: {},
-            }))
-        } else {
-            this.setState(state => ({
-                interactiveSearchMode: !state.interactiveSearchMode,
-            }))
-        }
     }
 
     public render(): React.ReactFragment | null {
@@ -424,37 +415,47 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     // Search query
                                     navbarSearchQueryState={this.state.navbarSearchQueryState}
                                     onNavbarQueryChange={this.onNavbarQueryChange}
-                                    fetchHighlightedFileLines={fetchHighlightedFileLines}
-                                    searchRequest={this.state.searchStreaming ? searchStream : search}
-                                    searchStreaming={this.state.searchStreaming}
+                                    fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                                    searchRequest={search}
+                                    parsedSearchQuery={this.state.parsedSearchQuery}
+                                    setParsedSearchQuery={this.setParsedSearchQuery}
+                                    patternType={this.state.searchPatternType}
+                                    setPatternType={this.setPatternType}
+                                    caseSensitive={this.state.searchCaseSensitivity}
+                                    setCaseSensitivity={this.setCaseSensitivity}
+                                    versionContext={this.state.versionContext}
+                                    setVersionContext={this.setVersionContext}
+                                    availableVersionContexts={this.state.availableVersionContexts}
+                                    previousVersionContext={this.state.previousVersionContext}
+                                    copyQueryButton={this.state.copyQueryButton}
                                     // Extensions
                                     platformContext={this.platformContext}
                                     extensionsController={this.extensionsController}
                                     telemetryService={eventLogger}
                                     isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                                    patternType={this.state.searchPatternType}
-                                    caseSensitive={this.state.searchCaseSensitivity}
-                                    splitSearchModes={this.state.splitSearchModes}
-                                    interactiveSearchMode={this.state.interactiveSearchMode}
-                                    toggleSearchMode={this.toggleSearchMode}
-                                    filtersInQuery={this.state.filtersInQuery}
-                                    onFiltersInQueryChange={this.onFiltersInQueryChange}
-                                    setPatternType={this.setPatternType}
-                                    setCaseSensitivity={this.setCaseSensitivity}
-                                    copyQueryButton={this.state.copyQueryButton}
-                                    versionContext={this.state.versionContext}
-                                    setVersionContext={this.setVersionContext}
-                                    availableVersionContexts={this.state.availableVersionContexts}
-                                    previousVersionContext={this.state.previousVersionContext}
                                     showRepogroupHomepage={this.state.showRepogroupHomepage}
                                     showOnboardingTour={this.state.showOnboardingTour}
+                                    showSearchContext={this.state.showSearchContext}
+                                    selectedSearchContextSpec={this.state.selectedSearchContextSpec}
+                                    setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
+                                    availableSearchContexts={this.state.availableSearchContexts}
+                                    defaultSearchContextSpec={this.state.defaultSearchContextSpec}
                                     showEnterpriseHomePanels={this.state.showEnterpriseHomePanels}
                                     globbing={this.state.globbing}
                                     showMultilineSearchConsole={this.state.showMultilineSearchConsole}
                                     showQueryBuilder={this.state.showQueryBuilder}
+                                    enableSmartQuery={this.state.enableSmartQuery}
+                                    enableCodeMonitoring={this.state.enableCodeMonitoring}
                                     fetchSavedSearches={fetchSavedSearches}
                                     fetchRecentSearches={fetchRecentSearches}
                                     fetchRecentFileViews={fetchRecentFileViews}
+                                    createCodeMonitor={createCodeMonitor}
+                                    fetchUserCodeMonitors={fetchUserCodeMonitors}
+                                    fetchCodeMonitor={fetchCodeMonitor}
+                                    updateCodeMonitor={updateCodeMonitor}
+                                    deleteCodeMonitor={deleteCodeMonitor}
+                                    toggleCodeMonitorEnabled={toggleCodeMonitorEnabled}
+                                    streamSearch={aggregateStreamingSearch}
                                 />
                             )}
                         />
@@ -479,8 +480,8 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         this.setState({ navbarSearchQueryState })
     }
 
-    private onFiltersInQueryChange = (filtersInQuery: FiltersToTypeAndValue): void => {
-        this.setState({ filtersInQuery })
+    private setParsedSearchQuery = (query: string): void => {
+        this.setState({ parsedSearchQuery: query })
     }
 
     private setPatternType = (patternType: SearchPatternType): void => {
@@ -506,6 +507,16 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         }
 
         this.extensionsController.services.workspace.versionContext.next(resolvedVersionContext)
+    }
+
+    private setSelectedSearchContextSpec = (spec: string): void => {
+        this.setState(state => ({
+            selectedSearchContextSpec: resolveSearchContextSpec(
+                spec,
+                state.availableSearchContexts,
+                state.defaultSearchContextSpec
+            ),
+        }))
     }
 }
 

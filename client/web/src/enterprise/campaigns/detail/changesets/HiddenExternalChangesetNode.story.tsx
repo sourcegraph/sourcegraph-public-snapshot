@@ -2,34 +2,29 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { HiddenExternalChangesetNode } from './HiddenExternalChangesetNode'
 import { addHours } from 'date-fns'
-import {
-    ChangesetExternalState,
-    ChangesetReconcilerState,
-    ChangesetPublicationState,
-} from '../../../../graphql-operations'
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
+import { ChangesetState } from '../../../../graphql-operations'
 
 const { add } = storiesOf('web/campaigns/HiddenExternalChangesetNode', module).addDecorator(story => (
     <div className="p-3 container web-content campaign-changesets__grid">{story()}</div>
 ))
 
-add('All external states', () => {
+add('All states', () => {
     const now = new Date()
     return (
         <EnterpriseWebStory>
             {props => (
                 <>
-                    {Object.values(ChangesetExternalState).map((externalState, index) => (
+                    {Object.values(ChangesetState).map((state, index) => (
                         <HiddenExternalChangesetNode
                             key={index}
                             {...props}
                             node={{
+                                __typename: 'HiddenExternalChangeset',
                                 id: 'somechangeset',
                                 updatedAt: now.toISOString(),
                                 nextSyncAt: addHours(now, 1).toISOString(),
-                                externalState,
-                                publicationState: ChangesetPublicationState.PUBLISHED,
-                                reconcilerState: ChangesetReconcilerState.COMPLETED,
+                                state,
                             }}
                         />
                     ))}

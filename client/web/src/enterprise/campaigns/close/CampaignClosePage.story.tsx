@@ -10,12 +10,11 @@ import {
 import { of } from 'rxjs'
 import { subDays } from 'date-fns'
 import {
-    ChangesetExternalState,
-    ChangesetPublicationState,
-    ChangesetReconcilerState,
     ChangesetCheckState,
     ChangesetReviewState,
     CampaignFields,
+    ChangesetSpecType,
+    ChangesetState,
 } from '../../../graphql-operations'
 import { useMemo, useCallback } from '@storybook/addons'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
@@ -52,6 +51,7 @@ const campaignDefaults: CampaignFields = {
         namespaceName: 'alice',
         url: '/users/alice',
     },
+    diffStat: { added: 1000, changed: 2000, deleted: 1000 },
     viewerCanAdminister: true,
     closedAt: null,
     description: '## What this campaign does\n\nTruly awesome things for example.',
@@ -64,6 +64,7 @@ const campaignDefaults: CampaignFields = {
     },
     currentSpec: {
         originalInput: 'name: awesome-campaign\ndescription: somestring',
+        supersedingCampaignSpec: null,
     },
 }
 
@@ -78,41 +79,33 @@ const queryChangesets: typeof _queryChangesets = () =>
             {
                 __typename: 'HiddenExternalChangeset',
                 createdAt: subDays(now, 5).toISOString(),
-                externalState: ChangesetExternalState.OPEN,
+                state: ChangesetState.OPEN,
                 id: 'someh1',
                 nextSyncAt: null,
-                publicationState: ChangesetPublicationState.UNPUBLISHED,
-                reconcilerState: ChangesetReconcilerState.QUEUED,
                 updatedAt: subDays(now, 5).toISOString(),
             },
             {
                 __typename: 'HiddenExternalChangeset',
                 createdAt: subDays(now, 5).toISOString(),
-                externalState: ChangesetExternalState.OPEN,
+                state: ChangesetState.OPEN,
                 id: 'someh2',
                 nextSyncAt: null,
-                publicationState: ChangesetPublicationState.PUBLISHED,
-                reconcilerState: ChangesetReconcilerState.PROCESSING,
                 updatedAt: subDays(now, 5).toISOString(),
             },
             {
                 __typename: 'HiddenExternalChangeset',
                 createdAt: subDays(now, 5).toISOString(),
-                externalState: ChangesetExternalState.OPEN,
+                state: ChangesetState.OPEN,
                 id: 'someh3',
                 nextSyncAt: null,
-                publicationState: ChangesetPublicationState.UNPUBLISHED,
-                reconcilerState: ChangesetReconcilerState.ERRORED,
                 updatedAt: subDays(now, 5).toISOString(),
             },
             {
                 __typename: 'HiddenExternalChangeset',
                 createdAt: subDays(now, 5).toISOString(),
-                externalState: ChangesetExternalState.OPEN,
+                state: ChangesetState.OPEN,
                 id: 'someh4',
                 nextSyncAt: null,
-                publicationState: ChangesetPublicationState.PUBLISHED,
-                reconcilerState: ChangesetReconcilerState.COMPLETED,
                 updatedAt: subDays(now, 5).toISOString(),
             },
             {
@@ -138,13 +131,19 @@ const queryChangesets: typeof _queryChangesets = () =>
                 title: 'Add prettier to all projects',
                 createdAt: subDays(now, 5).toISOString(),
                 updatedAt: subDays(now, 5).toISOString(),
-                externalState: ChangesetExternalState.OPEN,
+                state: ChangesetState.OPEN,
                 nextSyncAt: null,
                 id: 'somev1',
-                reconcilerState: ChangesetReconcilerState.COMPLETED,
-                publicationState: ChangesetPublicationState.PUBLISHED,
                 error: null,
-                currentSpec: { id: 'spec-rand-id-1' },
+                syncerError: null,
+                currentSpec: {
+                    id: 'spec-rand-id-1',
+                    type: ChangesetSpecType.BRANCH,
+                    description: {
+                        __typename: 'GitBranchChangesetDescription',
+                        headRef: 'my-branch',
+                    },
+                },
             },
             {
                 __typename: 'ExternalChangeset',
@@ -167,13 +166,19 @@ const queryChangesets: typeof _queryChangesets = () =>
                 title: 'Add prettier to all projects',
                 createdAt: subDays(now, 5).toISOString(),
                 updatedAt: subDays(now, 5).toISOString(),
-                externalState: null,
+                state: ChangesetState.OPEN,
                 nextSyncAt: null,
                 id: 'somev2',
-                reconcilerState: ChangesetReconcilerState.ERRORED,
-                publicationState: ChangesetPublicationState.UNPUBLISHED,
                 error: 'Cannot create PR, insufficient token scope.',
-                currentSpec: { id: 'spec-rand-id-2' },
+                syncerError: null,
+                currentSpec: {
+                    id: 'spec-rand-id-2',
+                    type: ChangesetSpecType.BRANCH,
+                    description: {
+                        __typename: 'GitBranchChangesetDescription',
+                        headRef: 'my-branch',
+                    },
+                },
             },
         ],
     })

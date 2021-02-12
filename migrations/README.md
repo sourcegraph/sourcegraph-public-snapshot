@@ -4,13 +4,15 @@ The children of this directory contain migrations for each Postgres database ins
 
 - `frontend` is the main database (things should go here unless there is a good reason)
 - `codeintel` is a database containing only processed LSIF data (which can become extremely large)
+- `codeinsights` is a TimescaleDB database, containing only Code Insights time series data.
 
 The migration path for each database instance is the same and is described below. Each of the database instances described here are deployed separately, but are designed to be _overlayable_ to reduce friction during development. That is, we assume that the names in each database do not overlap so that the same connection parameters can be used for both database instances. Each database also has a uniquely named schema versions table:
 
-| database    | schema version table name     |
-| ----------- | ----------------------------- |
-| `frontend`  | `schema_migrations`           |
-| `codeintel` | `codeintel_schema_migrations` |
+| database       | schema version table name        |
+| -------------- | -------------------------------- |
+| `frontend`     | `schema_migrations`              |
+| `codeintel`    | `codeintel_schema_migrations`    |
+| `codeinsights` | `codeinsights_schema_migrations` |
 
 Migrations are handled by the [migrate](https://github.com/golang-migrate/migrate/tree/master/cmd/migrate#installation) tool. Migrations get applied automatically at application startup. The CLI tool can also be used to manually test migrations.
 
@@ -22,7 +24,7 @@ Up migrations happen automatically on server start-up after running the generate
 - run `./dev/db/migrate.sh <db_name> up` to move forward to the latest migration
 - run `./dev/db/migrate.sh <db_name> down 1` to rollback the previous migration
 
-If a migration fails and you need to revert to a previous state `./dev/db/migrate.sh <db_name> force` may be helpful. Alternatively use the `dropdb` and `createdb` commands to wipe your local database and start from a clean state.
+If a migration fails, and you need to revert to a previous state `./dev/db/migrate.sh <db_name> force` may be helpful. Alternatively use the `dropdb` and `createdb` commands to wipe your local database and start from a clean state.
 
 **Note:** if you find that you need to run a down migration, that almost certainly means the migration was not backward-compatible, and you should fix this before merging the migration into `main`.
 
@@ -44,7 +46,7 @@ After adding SQL statements to those files, embed them into the Go code and upda
 
 ```
 go generate ./migrations/...
-go generate ./internal/db/
+go generate ./internal/database/
 ```
 
 Alternatively, regenerate everything in the repository via `./dev/generate.sh`.
@@ -62,6 +64,40 @@ For example, a non-nullable column can be added to an existing table with the fo
 - Deploy to Sourcegraph.com
 
 We have a hard requirement (enforced by CI) that rolling upgrades are always possible on Sourcegraph.com. When possible, this same standard should be kept between minor release versions to ensure a smooth upgrade process for private instances (although there will be exceptions due to feature velocity and a monthly release cadence).
+
+### Rebasing a migration
+
+On longer running branches, you might find that your migration now conflicts with another migration added while you were working on your branch. Don't despair! Here are some handy tips when rebasing a branch on `main` that has a migration conflict:
+
+1. It's usually easiest to separate out your migration into a separate commit, with nothing else in it. (You probably want this to be the first commit on your branch, for rebasing simplicity.)
+2. Before you rebase, you should migrate down to the version before your migration. `./dev/db/migrate.sh <database> down 1` will usually take care of this for you.
+3. Once you start rebasing, you'll get an error like this on your migration commit:
+
+   ```
+   Auto-merging migrations/frontend/bindata.go
+   CONFLICT (content): Merge conflict in migrations/frontend/bindata.go
+   Auto-merging internal/database/schema.md
+   error: could not apply 4931031d10... Add migrations.
+   Resolve all conflicts manually, mark them as resolved with
+   "git add/rm <conflicted_files>", then run "git rebase --continue".
+   You can instead skip this commit: run "git rebase --skip".
+   To abort and get back to the state before "git rebase", run "git rebase --abort".
+   Could not apply 4931031d10... Add migrations.
+   ```
+
+   We need to renumber your migration, and regenerate the generated files.
+
+4. You can renumber your migration by `git mv`-ing the relevant up and down files, or with this script: `./dev/db/rebase_migration.sh <database> <either your up or down file>`
+5. Once done, you need to regenerate the schema and bindata. If you use `rebase_migration.sh`, it will suggest what to do, but it's roughly:
+
+   ```bash
+   rm migrations/<database>/bindata.go
+   go generate ./migrations/<database>
+   ./dev/db/migrate.sh <database> up
+   go generate ./internal/<database>
+   ```
+
+6. From there, `git add` your updated files, and you should be able to continue your rebase.
 
 ## Customer rollbacks
 
@@ -83,6 +119,12 @@ Running down migrations in a rollback **should NOT** be necessary if all migrati
   kubectl exec $(kubectl get pod -l app=pgsql-codeintel -o jsonpath='{.items[0].metadata.name}') -- psql -U sg -c 'SELECT * FROM codeintel_schema_migrations'
   ```
 
+  **codeinsights database**:
+
+  ```
+  kubectl exec $(kubectl get pod -l app=codeinsights-db -o jsonpath='{.items[0].metadata.name}') -- psql -U sg -c 'SELECT * FROM codeinsights_schema_migrations'
+  ```
+
   For each dirty database, follow the steps in the _Dirty schema_ section below.
 
 - For each database `<db_name>` with the schema version table `<schema_version_table_name>`, do the following:
@@ -93,7 +135,7 @@ Running down migrations in a rollback **should NOT** be necessary if all migrati
     update <schema_version_table_name> set version=$VERSION;
     ```
     where `$VERSION` is the numerical prefix of the migration script corresponding to the first migration you _didn't_ just apply. In other words, it is the numerical prefix of the last migration script as of the rolled-back-to commit.
-  - Restart frontend frontend pods. On restart, they should spin up successfully.
+  - Restart frontend pods. On restart, they should spin up successfully.
 
 ## Troubleshooting
 

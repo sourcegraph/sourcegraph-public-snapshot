@@ -9,8 +9,8 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 )
 
 // dbSubscription describes an product subscription row in the product_subscriptions DB
@@ -79,7 +79,7 @@ type dbSubscriptionsListOptions struct {
 	UserID          int32 // only list product subscriptions for this user
 	Query           string
 	IncludeArchived bool
-	*db.LimitOffset
+	*database.LimitOffset
 }
 
 func (o dbSubscriptionsListOptions) sqlConditions() []*sqlf.Query {
@@ -105,7 +105,7 @@ func (s dbSubscriptions) List(ctx context.Context, opt dbSubscriptionsListOption
 	return s.list(ctx, opt.sqlConditions(), opt.LimitOffset)
 }
 
-func (dbSubscriptions) list(ctx context.Context, conds []*sqlf.Query, limitOffset *db.LimitOffset) ([]*dbSubscription, error) {
+func (dbSubscriptions) list(ctx context.Context, conds []*sqlf.Query, limitOffset *database.LimitOffset) ([]*dbSubscription, error) {
 	q := sqlf.Sprintf(`
 WITH %s
 SELECT product_subscriptions.id, product_subscriptions.user_id, billing_subscription_id, product_subscriptions.created_at, product_subscriptions.archived_at

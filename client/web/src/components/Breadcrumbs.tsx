@@ -99,9 +99,7 @@ interface BreadcrumbAtDepth {
  *
  */
 export const useBreadcrumbs = (): BreadcrumbsProps & BreadcrumbSetters => {
-    const [breadcrumbsByDepth, setBreadcrumbsByDepth] = useState<BreadcrumbAtDepth[]>([
-        { depth: 0, breadcrumb: { key: 'home', element: <Link to="/search">Home</Link>, divider: null } },
-    ])
+    const [breadcrumbsByDepth, setBreadcrumbsByDepth] = useState<BreadcrumbAtDepth[]>([])
 
     /**
      * @param depth The relative depth of the next breadcrumb to be added with the
@@ -158,8 +156,7 @@ export const Breadcrumbs: React.FC<{ breadcrumbs: BreadcrumbAtDepth[]; location:
             .map(({ breadcrumb }) => breadcrumb)
             .filter(isDefined)
             .map((breadcrumb, index, validBreadcrumbs) => {
-                const divider =
-                    breadcrumb.divider === undefined ? <ChevronRightIcon className="icon-inline" /> : breadcrumb.divider
+                const divider = breadcrumb.divider ?? <ChevronRightIcon className="icon-inline" />
                 // When the last breadcrumbs is a link and the hash is empty (to allow user to reset hash),
                 // render link breadcrumbs as plain text
                 return (
@@ -170,7 +167,7 @@ export const Breadcrumbs: React.FC<{ breadcrumbs: BreadcrumbAtDepth[]; location:
                             breadcrumb.className
                         )}
                     >
-                        <span className="font-weight-semibold">{divider}</span>
+                        {index !== 0 && <span className="font-weight-semibold">{divider}</span>}
                         {isElementBreadcrumb(breadcrumb) ? (
                             breadcrumb.element
                         ) : index === validBreadcrumbs.length - 1 && !location.hash ? (

@@ -20,6 +20,24 @@ func (e ErrCampaignsDisabled) Extensions() map[string]interface{} {
 	return map[string]interface{}{"code": "ErrCampaignsDisabled"}
 }
 
+type ErrCampaignsDisabledForUser struct{}
+
+func (e ErrCampaignsDisabledForUser) Error() string {
+	return "campaigns are disabled for non-site-admin users"
+}
+
+func (e ErrCampaignsDisabledForUser) Extensions() map[string]interface{} {
+	return map[string]interface{}{"code": "ErrCampaignsDisabledForUser"}
+}
+
+// ErrCampaignsUnlicensed wraps an underlying licensing.featureNotActivatedError
+// to add an error code.
+type ErrCampaignsUnlicensed struct{ error }
+
+func (e ErrCampaignsUnlicensed) Extensions() map[string]interface{} {
+	return map[string]interface{}{"code": "ErrCampaignsUnlicensed"}
+}
+
 type ErrCampaignsDotCom struct{}
 
 func (e ErrCampaignsDotCom) Error() string {

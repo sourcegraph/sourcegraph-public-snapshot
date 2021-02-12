@@ -8,18 +8,14 @@
 
         &-subtitle {
             opacity: 0.75;
-            font-size: 20px;
+            font-size: 1.25rem;
         }
     }
 
     &__avatar {
-        width: 6rem;
+        width: 3rem;
+        height: auto;
+        max-height: 10rem;
         margin-right: 1rem;
-        .user-avatar {
-            // Scale proportionally.
-            width: 100%;
-            height: auto;
-            max-height: 10rem;
-        }
     }
 }

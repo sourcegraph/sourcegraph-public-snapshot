@@ -125,6 +125,7 @@ $hr-margin-y: 0.25rem;
 @import './card';
 @import './dropdown';
 @import './modal';
+@import './meter';
 @import './popover';
 @import './nav';
 @import './type';
@@ -136,14 +137,10 @@ $hr-margin-y: 0.25rem;
 @import './forms';
 @import './highlight';
 @import './web-content';
+@import '~@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css';
 
 * {
     box-sizing: border-box;
-}
-
-html {
-    // Base for layout rem values
-    font-size: 16px;
 }
 
 // Our simple popovers only need these styles. We don't want the caret or special font sizes from

@@ -17,7 +17,11 @@ import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { eventLogger } from '../../tracking/eventLogger'
 import { NavItemDescriptor } from '../../util/contributions'
 import { UserAreaRouteContext } from '../area/UserArea'
-import { HAS_SEEN_TOUR_KEY, HAS_CANCELLED_TOUR_KEY } from '../../search/input/SearchOnboardingTour'
+import {
+    HAS_SEEN_TOUR_KEY,
+    HAS_CANCELLED_TOUR_KEY,
+    HAS_COMPLETED_TOUR_KEY,
+} from '../../search/input/SearchOnboardingTour'
 import { OnboardingTourProps } from '../../search'
 import { AuthenticatedUser } from '../../auth'
 import { UserAreaUserFields } from '../../graphql-operations'
@@ -42,6 +46,7 @@ export interface UserSettingsSidebarProps extends UserAreaRouteContext, Onboardi
 function reEnableSearchTour(): void {
     localStorage.setItem(HAS_SEEN_TOUR_KEY, 'false')
     localStorage.setItem(HAS_CANCELLED_TOUR_KEY, 'false')
+    localStorage.setItem(HAS_COMPLETED_TOUR_KEY, 'false')
 }
 
 /** Sidebar for user account pages. */

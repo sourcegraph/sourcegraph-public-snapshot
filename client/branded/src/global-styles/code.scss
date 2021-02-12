@@ -1,5 +1,5 @@
 $code-font-family: sfmono-regular, consolas, menlo, dejavu sans mono, monospace;
-$code-font-size: 12px;
+$code-font-size: (12/14) + em;
 
 .theme-dark {
     --code-bg: var(--color-bg-2);
@@ -10,10 +10,10 @@ $code-font-size: 12px;
 }
 
 code,
-.code {
+.text-code {
     font-family: $code-font-family;
     font-size: $code-font-size;
-    line-height: 16px;
+    line-height: (16/12);
     white-space: pre;
 }
 
@@ -24,9 +24,9 @@ code,
 kbd {
     font-family: SFMono-Regular, Consolas, Menlo, DejaVu Sans Mono, monospace;
     display: inline-block;
-    line-height: 16px;
+    line-height: (16/12);
     height: 1.125rem;
-    font-size: 12px;
+    font-size: $code-font-size;
     padding: 0 0.25rem;
     margin: 0 0.125rem;
     vertical-align: middle;
@@ -34,4 +34,12 @@ kbd {
     color: var(--body-color);
     background-color: var(--color-bg-2);
     box-shadow: inset 0 -2px 0 var(--color-bg-3);
+}
+
+.search-filter-keyword {
+    color: var(--search-filter-keyword-color);
+}
+
+.search-keyword {
+    color: var(--search-keyword-color);
 }

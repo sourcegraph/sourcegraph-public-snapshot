@@ -4,7 +4,6 @@ import (
 	"context"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -49,11 +48,7 @@ func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*git.Commi
 		if r.after != nil {
 			after = *r.after
 		}
-		cachedRepo, err := backend.CachedGitRepo(ctx, r.repo.repo)
-		if err != nil {
-			return nil, err
-		}
-		return git.Commits(ctx, *cachedRepo, git.CommitsOptions{
+		return git.Commits(ctx, r.repo.innerRepo.Name, git.CommitsOptions{
 			Range:        r.revisionRange,
 			N:            uint(n),
 			MessageQuery: query,
@@ -80,7 +75,7 @@ func (r *gitCommitConnectionResolver) Nodes(ctx context.Context) ([]*GitCommitRe
 
 	resolvers := make([]*GitCommitResolver, len(commits))
 	for i, commit := range commits {
-		resolvers[i] = toGitCommitResolver(r.repo, commit)
+		resolvers[i] = toGitCommitResolver(r.repo, commit.ID, commit)
 	}
 
 	return resolvers, nil

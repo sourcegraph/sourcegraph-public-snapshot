@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 // All SAML endpoints are under this path prefix.
@@ -137,12 +138,21 @@ func samlSPHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		actor, safeErrMsg, err := getOrCreateUser(r.Context(), info)
+		allowSignup := p.config.AllowSignup == nil || *p.config.AllowSignup
+		actor, safeErrMsg, err := getOrCreateUser(r.Context(), allowSignup, info)
 		if err != nil {
 			log15.Error("Error looking up SAML-authenticated user.", "err", err, "userErr", safeErrMsg)
 			http.Error(w, safeErrMsg, http.StatusInternalServerError)
 			return
 		}
+
+		user, err := database.GlobalUsers.GetByID(r.Context(), actor.UID)
+		if err != nil {
+			log15.Error("Error retrieving SAML-authenticated user from database.", "error", err)
+			http.Error(w, "Failed to retrieve user: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
 		var exp time.Duration
 		// 🚨 SECURITY: TODO(sqs): We *should* uncomment the line below to make our own sessions
 		// only last for as long as the IdP said the authn grant is active for. Unfortunately,
@@ -154,7 +164,7 @@ func samlSPHandler(w http.ResponseWriter, r *http.Request) {
 		// if info.SessionNotOnOrAfter != nil {
 		// 	exp = time.Until(*info.SessionNotOnOrAfter)
 		// }
-		if err := session.SetActor(w, r, actor, exp); err != nil {
+		if err := session.SetActor(w, r, actor, exp, user.CreatedAt); err != nil {
 			log15.Error("Error setting SAML-authenticated actor in session.", "err", err)
 			http.Error(w, "Error starting SAML-authenticated session. Try signing in again.", http.StatusInternalServerError)
 			return
@@ -188,7 +198,7 @@ func samlSPHandler(w http.ResponseWriter, r *http.Request) {
 		// If this is an SP-initiated logout, then the actor has already been cleared from the
 		// session (but there's no harm in clearing it again). If it's an IdP-initiated logout,
 		// then it hasn't, and we must clear it here.
-		if err := session.SetActor(w, r, nil, 0); err != nil {
+		if err := session.SetActor(w, r, nil, 0, time.Time{}); err != nil {
 			log15.Error("Error clearing actor from session in SAML logout handler.", "err", err)
 			http.Error(w, "Error signing out of SAML-authenticated session.", http.StatusInternalServerError)
 			return

@@ -5,11 +5,22 @@ import (
 	"errors"
 
 	"github.com/graph-gophers/graphql-go"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
 
 type CodeMonitorsResolver interface {
-	Monitors(ctx context.Context, userID graphql.ID, args *ListMonitorsArgs) (MonitorConnectionResolver, error)
+	// Query
+	Monitors(ctx context.Context, userID int32, args *ListMonitorsArgs) (MonitorConnectionResolver, error)
+	MonitorByID(ctx context.Context, id graphql.ID) (MonitorResolver, error)
+
+	// Mutations
+	CreateCodeMonitor(ctx context.Context, args *CreateCodeMonitorArgs) (MonitorResolver, error)
+	ToggleCodeMonitor(ctx context.Context, args *ToggleCodeMonitorArgs) (MonitorResolver, error)
+	DeleteCodeMonitor(ctx context.Context, args *DeleteCodeMonitorArgs) (*EmptyResponse, error)
+	UpdateCodeMonitor(ctx context.Context, args *UpdateCodeMonitorArgs) (MonitorResolver, error)
+	ResetTriggerQueryTimestamps(ctx context.Context, args *ResetTriggerQueryTimestampsArgs) (*EmptyResponse, error)
+	TriggerTestEmailAction(ctx context.Context, args *TriggerTestEmailActionArgs) (*EmptyResponse, error)
 }
 
 type MonitorConnectionResolver interface {
@@ -36,7 +47,7 @@ type MonitorTrigger interface {
 type MonitorQueryResolver interface {
 	ID() graphql.ID
 	Query() string
-	Events(ctx context.Context, args *ListEventsArgs) MonitorTriggerEventConnectionResolver
+	Events(ctx context.Context, args *ListEventsArgs) (MonitorTriggerEventConnectionResolver, error)
 }
 
 type MonitorTriggerEventConnectionResolver interface {
@@ -47,9 +58,9 @@ type MonitorTriggerEventConnectionResolver interface {
 
 type MonitorTriggerEventResolver interface {
 	ID() graphql.ID
-	Status() string
+	Status() (string, error)
 	Message() *string
-	Timestamp() DateTime
+	Timestamp() (DateTime, error)
 	Actions(ctx context.Context, args *ListActionArgs) (MonitorActionConnectionResolver, error)
 }
 
@@ -68,12 +79,18 @@ type MonitorEmailResolver interface {
 	Enabled() bool
 	Priority() string
 	Header() string
-	Recipient(ctx context.Context) (MonitorEmailRecipient, error)
+	Recipients(ctx context.Context, args *ListRecipientsArgs) (MonitorActionEmailRecipientsConnectionResolver, error)
 	Events(ctx context.Context, args *ListEventsArgs) (MonitorActionEventConnectionResolver, error)
 }
 
 type MonitorEmailRecipient interface {
 	ToUser() (*UserResolver, bool)
+}
+
+type MonitorActionEmailRecipientsConnectionResolver interface {
+	Nodes(ctx context.Context) ([]NamespaceResolver, error)
+	TotalCount(ctx context.Context) (int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
 type MonitorActionEventConnectionResolver interface {
@@ -84,7 +101,7 @@ type MonitorActionEventConnectionResolver interface {
 
 type MonitorActionEventResolver interface {
 	ID() graphql.ID
-	Status() string
+	Status() (string, error)
 	Message() *string
 	Timestamp() DateTime
 }
@@ -104,6 +121,82 @@ type ListActionArgs struct {
 	After *string
 }
 
+type ListRecipientsArgs struct {
+	First int32
+	After *string
+}
+
+type CreateCodeMonitorArgs struct {
+	Monitor *CreateMonitorArgs
+	Trigger *CreateTriggerArgs
+	Actions []*CreateActionArgs
+}
+
+type CreateTriggerArgs struct {
+	Query string
+}
+
+type CreateActionArgs struct {
+	Email *CreateActionEmailArgs
+}
+
+type CreateActionEmailArgs struct {
+	Enabled    bool
+	Priority   string
+	Recipients []graphql.ID
+	Header     string
+}
+
+type ToggleCodeMonitorArgs struct {
+	Id      graphql.ID
+	Enabled bool
+}
+
+type DeleteCodeMonitorArgs struct {
+	Id graphql.ID
+}
+
+type ResetTriggerQueryTimestampsArgs struct {
+	Id graphql.ID
+}
+
+type TriggerTestEmailActionArgs struct {
+	Namespace   graphql.ID
+	Description string
+	Email       *CreateActionEmailArgs
+}
+
+type CreateMonitorArgs struct {
+	Namespace   graphql.ID
+	Description string
+	Enabled     bool
+}
+
+type EditActionEmailArgs struct {
+	Id     *graphql.ID
+	Update *CreateActionEmailArgs
+}
+
+type EditActionArgs struct {
+	Email *EditActionEmailArgs
+}
+
+type EditTriggerArgs struct {
+	Id     graphql.ID
+	Update *CreateTriggerArgs
+}
+
+type EditMonitorArgs struct {
+	Id     graphql.ID
+	Update *CreateMonitorArgs
+}
+
+type UpdateCodeMonitorArgs struct {
+	Monitor *EditMonitorArgs
+	Trigger *EditTriggerArgs
+	Actions []*EditActionArgs
+}
+
 var DefaultCodeMonitorsResolver = &defaultCodeMonitorsResolver{}
 
 var codeMonitorsOnlyInEnterprise = errors.New("code monitors are only available in enterprise")
@@ -111,6 +204,34 @@ var codeMonitorsOnlyInEnterprise = errors.New("code monitors are only available 
 type defaultCodeMonitorsResolver struct {
 }
 
-func (d defaultCodeMonitorsResolver) Monitors(ctx context.Context, userID graphql.ID, args *ListMonitorsArgs) (MonitorConnectionResolver, error) {
+func (d defaultCodeMonitorsResolver) MonitorByID(ctx context.Context, id graphql.ID) (MonitorResolver, error) {
+	return nil, codeMonitorsOnlyInEnterprise
+}
+
+func (d defaultCodeMonitorsResolver) Monitors(ctx context.Context, userID int32, args *ListMonitorsArgs) (MonitorConnectionResolver, error) {
+	return nil, codeMonitorsOnlyInEnterprise
+}
+
+func (d defaultCodeMonitorsResolver) CreateCodeMonitor(ctx context.Context, args *CreateCodeMonitorArgs) (MonitorResolver, error) {
+	return nil, codeMonitorsOnlyInEnterprise
+}
+
+func (d defaultCodeMonitorsResolver) ToggleCodeMonitor(ctx context.Context, args *ToggleCodeMonitorArgs) (MonitorResolver, error) {
+	return nil, codeMonitorsOnlyInEnterprise
+}
+
+func (d defaultCodeMonitorsResolver) DeleteCodeMonitor(ctx context.Context, args *DeleteCodeMonitorArgs) (*EmptyResponse, error) {
+	return nil, codeMonitorsOnlyInEnterprise
+}
+
+func (d defaultCodeMonitorsResolver) UpdateCodeMonitor(ctx context.Context, args *UpdateCodeMonitorArgs) (MonitorResolver, error) {
+	return nil, codeMonitorsOnlyInEnterprise
+}
+
+func (d defaultCodeMonitorsResolver) ResetTriggerQueryTimestamps(ctx context.Context, args *ResetTriggerQueryTimestampsArgs) (*EmptyResponse, error) {
+	return nil, codeMonitorsOnlyInEnterprise
+}
+
+func (d defaultCodeMonitorsResolver) TriggerTestEmailAction(ctx context.Context, args *TriggerTestEmailActionArgs) (*EmptyResponse, error) {
 	return nil, codeMonitorsOnlyInEnterprise
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/gorilla/csrf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -19,7 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
+	"github.com/sourcegraph/sourcegraph/internal/database/globalstatedb"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -85,6 +86,10 @@ type JSContext struct {
 
 	CampaignsEnabled bool `json:"campaignsEnabled"`
 
+	CodeIntelAutoIndexingEnabled bool `json:"codeIntelAutoIndexingEnabled"`
+
+	ProductResearchPageEnabled bool `json:"productResearchPageEnabled"`
+
 	ExperimentalFeatures schema.ExperimentalFeatures `json:"experimentalFeatures"`
 }
 
@@ -133,6 +138,12 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		sentryDSN = &siteConfig.Log.Sentry.Dsn
 	}
 
+	// Check if campaigns are enabled for this user.
+	campaignsEnabled := conf.CampaignsEnabled()
+	if conf.Get().CampaignsRestrictToAdmins && backend.CheckCurrentUserIsSiteAdmin(req.Context()) != nil {
+		campaignsEnabled = false
+	}
+
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
 	// not they are logged in, for example on an auth.public=false private
 	// server. Including secret fields here is OK if it is based on the user's
@@ -169,7 +180,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 		ResetPasswordEnabled: userpasswd.ResetPasswordEnabled(),
 
-		ExternalServicesUserModeEnabled: conf.ExternalServiceUserMode(),
+		ExternalServicesUserModeEnabled: conf.ExternalServiceUserMode() != conf.ExternalServiceModeDisabled,
 
 		AllowSignup: conf.AuthAllowSignup(),
 
@@ -177,7 +188,11 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 		Branding: globals.Branding(),
 
-		CampaignsEnabled: conf.CampaignsEnabled(),
+		CampaignsEnabled: campaignsEnabled,
+
+		CodeIntelAutoIndexingEnabled: conf.CodeIntelAutoIndexingEnabled(),
+
+		ProductResearchPageEnabled: conf.ProductResearchPageEnabled(),
 
 		ExperimentalFeatures: conf.ExperimentalFeatures(),
 	}

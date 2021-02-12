@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -12,19 +11,21 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/debugproxies"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/prometheusutil"
+	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
 )
 
 var grafanaURLFromEnv = env.Get("GRAFANA_SERVER_URL", "", "URL at which Grafana can be reached")
 var jaegerURLFromEnv = env.Get("JAEGER_SERVER_URL", "", "URL at which Jaeger UI can be reached")
 
 func init() {
-	conf.ContributeWarning(newPrometheusValidator(prometheusutil.PrometheusURL))
+	conf.ContributeWarning(newPrometheusValidator(srcprometheus.NewClient(srcprometheus.PrometheusURL)))
 }
 
 func addNoK8sClientHandler(r *mux.Router) {
@@ -163,49 +164,38 @@ func adminOnly(next http.Handler) http.Handler {
 	})
 }
 
-// newPrometheusValidator renders problems with the Prometheus deployment and configuration
+// newPrometheusValidator renders problems with the Prometheus deployment and relevant site configuration
 // as reported by `prom-wrapper` inside the `sourcegraph/prometheus` container if Prometheus is enabled.
-func newPrometheusValidator(prometheusURL string) conf.Validator {
-	return func(c conf.Unified) (problems conf.Problems) {
-		// no need to validate prometheus config if no `observability.*`` settings are configured
-		observabilityNotConfigured := len(c.ObservabilityAlerts) == 0 && len(c.ObservabilitySilenceAlerts) == 0
-		if prometheusURL == "" || observabilityNotConfigured {
-			return
+//
+// It also accepts the error from creating `srcprometheus.Client` as an parameter, to validate
+// Prometheus configuration.
+func newPrometheusValidator(prom srcprometheus.Client, promErr error) conf.Validator {
+	return func(c conf.Unified) conf.Problems {
+		// surface new prometheus client error if it was unexpected
+		prometheusUnavailable := promErr != nil && errors.Is(promErr, srcprometheus.ErrPrometheusUnavailable)
+		if promErr != nil && !prometheusUnavailable {
+			return conf.NewSiteProblems(fmt.Sprintf("Prometheus (`PROMETHEUS_URL`) might be misconfigured: %v", promErr))
 		}
 
-		// set up request to fetch status from grafana-wrapper
-		promURL, err := url.Parse(prometheusURL)
-		if err != nil {
-			return // don't report problem, since activeAlertsAlert will report this
-		}
-		promURL.Path = "/prom-wrapper/config-subscriber"
-		req, err := http.NewRequest("GET", promURL.String(), nil)
-		if err != nil {
-			return // don't report problem, since activeAlertsAlert will report this
+		// no need to validate prometheus config if no `observability.*` settings are configured
+		observabilityNotConfigured := len(c.ObservabilityAlerts) == 0 && len(c.ObservabilitySilenceAlerts) == 0
+		if observabilityNotConfigured {
+			// no observability configuration, no checks to make
+			return nil
+		} else if prometheusUnavailable {
+			// no prometheus, but observability is configured
+			return conf.NewSiteProblems("`observability.alerts` or `observability.silenceAlerts` are configured, but Prometheus is not available")
 		}
 
 		// use a short timeout to avoid having this block problems from loading
 		ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 		defer cancel()
-		resp, err := http.DefaultClient.Do(req.WithContext(ctx))
+
+		// get reported problems
+		status, err := prom.GetConfigStatus(ctx)
 		if err != nil {
-			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("`observability.alerts`: Unable to fetch configuration status: %v", err)))
-			return
+			return conf.NewSiteProblems(fmt.Sprintf("`observability`: failed to fetch alerting configuration status: %v", err))
 		}
-		if resp.StatusCode != 200 {
-			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("`observability.alerts`: Unable to fetch configuration status: status code %d", resp.StatusCode)))
-			return
-		}
-
-		var promConfigStatus struct {
-			Problems conf.Problems `json:"problems"`
-		}
-		defer resp.Body.Close()
-		if err := json.NewDecoder(resp.Body).Decode(&promConfigStatus); err != nil {
-			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("`observability.alerts`: unable to read Prometheus status: %v", err)))
-			return
-		}
-
-		return promConfigStatus.Problems
+		return status.Problems
 	}
 }

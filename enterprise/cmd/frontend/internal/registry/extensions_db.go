@@ -11,8 +11,8 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 )
 
 // dbExtension describes an extension in the extension registry.
@@ -186,7 +186,7 @@ type dbExtensionsListOptions struct {
 	Category               string // matches the latest release's manifest's categories array
 	Tag                    string // matches the latest release's manifest's tags array
 	PrioritizeExtensionIDs []string
-	*db.LimitOffset
+	*database.LimitOffset
 }
 
 // extensionIsWIPExpr is the SQL expression for whether the extension is a WIP extension.
@@ -269,7 +269,7 @@ WHERE (%s)
 		sqlf.Join(conds, ") AND ("))
 }
 
-func (s dbExtensions) list(ctx context.Context, conds, order []*sqlf.Query, limitOffset *db.LimitOffset) ([]*dbExtension, error) {
+func (s dbExtensions) list(ctx context.Context, conds, order []*sqlf.Query, limitOffset *database.LimitOffset) ([]*dbExtension, error) {
 	order = append(order, sqlf.Sprintf("TRUE"))
 	q := sqlf.Sprintf(`
 SELECT x.id, x.uuid, x.publisher_user_id, x.publisher_org_id, x.name, x.created_at, x.updated_at,

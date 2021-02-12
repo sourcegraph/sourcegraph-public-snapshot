@@ -6,15 +6,18 @@ import (
 	"log"
 
 	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor-queue/internal/queues/codeintel"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/apiserver"
+	apiserver "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor-queue/internal/server"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 )
@@ -46,10 +49,22 @@ func main() {
 		}
 	}
 
+	// Initialize tracing/metrics
+	observationContext := &observation.Context{
+		Logger:     log15.Root(),
+		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Registerer: prometheus.DefaultRegisterer,
+	}
+
+	// Start debug server
+	go debugserver.NewServerRoutine().Start()
+
+	// Connect to databases
 	db := connectToDatabase()
 
+	// Initialize queues
 	queueOptions := map[string]apiserver.QueueOptions{
-		"codeintel": codeintel.QueueOptions(db, codeintelConfig),
+		"codeintel": codeintel.QueueOptions(db, codeintelConfig, observationContext),
 	}
 
 	for queueName, options := range queueOptions {
@@ -68,21 +83,8 @@ func main() {
 		}))
 	}
 
-	server, err := apiserver.NewServer(serviceConfig.ServerOptions(queueOptions))
-	if err != nil {
-		log.Fatalf("failed to create listener: %s", err)
-	}
-
-	debugServer, err := debugserver.NewServerRoutine()
-	if err != nil {
-		log.Fatalf("Failed to create listener: %s", err)
-	}
-	go debugServer.Start()
-
-	goroutine.MonitorBackgroundRoutines(
-		context.Background(),
-		server,
-	)
+	server := apiserver.NewServer(serviceConfig.ServerOptions(queueOptions), observationContext)
+	goroutine.MonitorBackgroundRoutines(context.Background(), server)
 }
 
 func connectToDatabase() *sql.DB {

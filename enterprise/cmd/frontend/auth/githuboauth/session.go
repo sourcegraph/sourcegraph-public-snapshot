@@ -10,15 +10,18 @@ import (
 	"github.com/dghubble/gologin/github"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"golang.org/x/oauth2"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	esauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	githubsvc "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"golang.org/x/oauth2"
+	"github.com/sourcegraph/sourcegraph/internal/hubspot"
+	"github.com/sourcegraph/sourcegraph/internal/hubspot/hubspotutil"
 )
 
 type sessionIssuerHelper struct {
@@ -28,7 +31,7 @@ type sessionIssuerHelper struct {
 	allowOrgs   []string
 }
 
-func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token) (actr *actor.Actor, safeErrMsg string, err error) {
+func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL string) (actr *actor.Actor, safeErrMsg string, err error) {
 	ghUser, err := github.UserFromContext(ctx)
 	if ghUser == nil {
 		if err != nil {
@@ -66,7 +69,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	)
 	for i, verifiedEmail := range verifiedEmails {
 		userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, auth.GetAndSaveUserOp{
-			UserProps: db.NewUser{
+			UserProps: database.NewUser{
 				Username:        login,
 				Email:           verifiedEmail,
 				EmailIsVerified: true,
@@ -83,6 +86,10 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 			CreateIfNotExist:    s.allowSignup,
 		})
 		if err == nil {
+			go hubspotutil.SyncUser(verifiedEmail, hubspotutil.SignupEventID, &hubspot.ContactProperties{
+				AnonymousUserID: anonymousUserID,
+				FirstSourceURL:  firstSourceURL,
+			})
 			return actor.FromUser(userID), "", nil // success
 		}
 		if i == 0 {

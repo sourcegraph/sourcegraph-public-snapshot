@@ -226,10 +226,13 @@ func (e *ChangesetEvent) Timestamp() time.Time {
 		t = ev.CreatedAt.Time
 	case *gitlab.UnmarkWorkInProgressEvent:
 		t = ev.CreatedAt.Time
-	case *gitlabwebhooks.MergeRequestCloseEvent,
-		*gitlabwebhooks.MergeRequestMergeEvent,
-		*gitlabwebhooks.MergeRequestReopenEvent,
-		*gitlabwebhooks.PipelineEvent:
+	case *gitlab.MergeRequestClosedEvent:
+		t = ev.CreatedAt.Time
+	case *gitlab.MergeRequestReopenedEvent:
+		t = ev.CreatedAt.Time
+	case *gitlab.MergeRequestMergedEvent:
+		t = ev.CreatedAt.Time
+	case *gitlabwebhooks.PipelineEvent:
 		// These events do not inherently have timestamps from GitLab, so we
 		// fall back to the event record we created when we received the
 		// webhook.
@@ -617,38 +620,99 @@ func (e *ChangesetEvent) Update(o *ChangesetEvent) error {
 
 	case *gitlab.ReviewApprovedEvent:
 		o := o.Metadata.(*gitlab.ReviewApprovedEvent)
-		// We always get the full event, so safe to replace it
-		*e = *o
+		if e.CreatedAt.IsZero() {
+			e.CreatedAt = o.CreatedAt
+		}
+		if !e.System {
+			e.System = o.System
+		}
+		if e.Body == "" {
+			e.Body = o.Body
+		}
+		if e.Author.ID == 0 {
+			e.Author = o.Author
+		}
 
 	case *gitlab.ReviewUnapprovedEvent:
 		o := o.Metadata.(*gitlab.ReviewUnapprovedEvent)
-		// We always get the full event, so safe to replace it
-		*e = *o
+		if e.CreatedAt.IsZero() {
+			e.CreatedAt = o.CreatedAt
+		}
+		if !e.System {
+			e.System = o.System
+		}
+		if e.Body == "" {
+			e.Body = o.Body
+		}
+		if e.Author.ID == 0 {
+			e.Author = o.Author
+		}
 
 	case *gitlab.MarkWorkInProgressEvent:
 		o := o.Metadata.(*gitlab.MarkWorkInProgressEvent)
-		// We always get the full event, so safe to replace it
-		*e = *o
+		if e.CreatedAt.IsZero() {
+			e.CreatedAt = o.CreatedAt
+		}
+		if !e.System {
+			e.System = o.System
+		}
+		if e.Body == "" {
+			e.Body = o.Body
+		}
+		if e.Author.ID == 0 {
+			e.Author = o.Author
+		}
 
 	case *gitlab.UnmarkWorkInProgressEvent:
 		o := o.Metadata.(*gitlab.UnmarkWorkInProgressEvent)
-		// We always get the full event, so safe to replace it
-		*e = *o
+		if e.CreatedAt.IsZero() {
+			e.CreatedAt = o.CreatedAt
+		}
+		if !e.System {
+			e.System = o.System
+		}
+		if e.Body == "" {
+			e.Body = o.Body
+		}
+		if e.Author.ID == 0 {
+			e.Author = o.Author
+		}
 
-	case *gitlabwebhooks.MergeRequestCloseEvent:
-		o := o.Metadata.(*gitlabwebhooks.MergeRequestCloseEvent)
-		// We always get the full event, so safe to replace it
-		*e = *o
+	case *gitlab.MergeRequestClosedEvent:
+		o := o.Metadata.(*gitlab.MergeRequestClosedEvent)
+		if e.CreatedAt.IsZero() {
+			e.CreatedAt = o.CreatedAt
+		}
+		if e.ResourceID == 0 {
+			e.ResourceID = o.ResourceID
+		}
+		if e.User.ID == 0 {
+			e.User = o.User
+		}
 
-	case *gitlabwebhooks.MergeRequestMergeEvent:
-		o := o.Metadata.(*gitlabwebhooks.MergeRequestMergeEvent)
-		// We always get the full event, so safe to replace it
-		*e = *o
+	case *gitlab.MergeRequestReopenedEvent:
+		o := o.Metadata.(*gitlab.MergeRequestReopenedEvent)
+		if e.CreatedAt.IsZero() {
+			e.CreatedAt = o.CreatedAt
+		}
+		if e.ResourceID == 0 {
+			e.ResourceID = o.ResourceID
+		}
+		if e.User.ID == 0 {
+			e.User = o.User
+		}
 
-	case *gitlabwebhooks.MergeRequestReopenEvent:
-		o := o.Metadata.(*gitlabwebhooks.MergeRequestReopenEvent)
-		// We always get the full event, so safe to replace it
-		*e = *o
+	case *gitlab.MergeRequestMergedEvent:
+		o := o.Metadata.(*gitlab.MergeRequestMergedEvent)
+		if e.CreatedAt.IsZero() {
+			e.CreatedAt = o.CreatedAt
+		}
+		if e.ResourceID == 0 {
+			e.ResourceID = o.ResourceID
+		}
+		if e.User.ID == 0 {
+			e.User = o.User
+		}
 
 	case *gitlabwebhooks.PipelineEvent:
 		o := o.Metadata.(*gitlabwebhooks.PipelineEvent)

@@ -1,17 +1,17 @@
 import * as H from 'history'
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect } from 'react'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { AuthenticatedUser } from '../auth'
 import {
-    parseSearchURLQuery,
     PatternTypeProps,
-    InteractiveSearchProps,
     CaseSensitivityProps,
     CopyQueryButtonProps,
     OnboardingTourProps,
+    ParsedSearchQueryProps,
+    SearchContextProps,
 } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { showDotComMarketing } from '../util/features'
@@ -20,11 +20,7 @@ import { ThemeProps } from '../../../shared/src/theme'
 import { ThemePreferenceProps } from '../theme'
 import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
 import { QueryState } from '../search/helpers'
-import { InteractiveModeInput } from '../search/input/interactive/InteractiveModeInput'
-import { FiltersToTypeAndValue } from '../../../shared/src/search/interactive/util'
-import { SearchModeToggle } from '../search/input/interactive/SearchModeToggle'
 import { Link } from '../../../shared/src/components/Link'
-import { convertPlainTextToInteractiveQuery } from '../search/input/helpers'
 import { VersionContextDropdown } from './VersionContextDropdown'
 import { VersionContextProps } from '../../../shared/src/search/util'
 import { VersionContext } from '../schema/site.schema'
@@ -43,11 +39,12 @@ interface Props
         ThemePreferenceProps,
         ExtensionAlertAnimationProps,
         ActivationProps,
+        Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
         PatternTypeProps,
         CaseSensitivityProps,
-        InteractiveSearchProps,
         CopyQueryButtonProps,
         VersionContextProps,
+        SearchContextProps,
         OnboardingTourProps {
     history: H.History
     location: H.Location<{ query: string }>
@@ -62,6 +59,9 @@ interface Props
     // Whether globbing is enabled for filters.
     globbing: boolean
 
+    // Whether to additionally highlight or provide hovers for tokens, e.g., regexp character sets.
+    enableSmartQuery: boolean
+
     /**
      * Which variation of the global navbar to render.
      *
@@ -72,9 +72,6 @@ interface Props
      */
     variant: 'default' | 'low-profile' | 'low-profile-with-logo' | 'no-search-input'
 
-    splitSearchModes: boolean
-    interactiveSearchMode: boolean
-    toggleSearchMode: (event: React.MouseEvent<HTMLAnchorElement>) => void
     setVersionContext: (versionContext: string | undefined) => void
     availableVersionContexts: VersionContext[] | undefined
 
@@ -88,8 +85,6 @@ interface Props
 export const GlobalNavbar: React.FunctionComponent<Props> = ({
     authRequired,
     isSearchRelatedPage,
-    splitSearchModes,
-    interactiveSearchMode,
     navbarSearchQueryState,
     versionContext,
     setVersionContext,
@@ -97,7 +92,6 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     caseSensitive,
     patternType,
     onNavbarQueryChange,
-    onFiltersInQueryChange,
     hideNavLinks,
     variant,
     isLightTheme,
@@ -110,32 +104,22 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     // Workaround: can't put this in optional parameter value because of https://github.com/babel/babel/issues/11166
     branding = branding ?? window.context?.branding
 
-    const query = useMemo(() => parseSearchURLQuery(location.search || ''), [location.search])
+    const query = props.parsedSearchQuery
 
     useEffect(() => {
         // On a non-search related page or non-repo page, we clear the query in
-        // the main query input and interactive mode UI to avoid misleading users
+        // the main query input to avoid misleading users
         // that the query is relevant in any way on those pages.
         if (!isSearchRelatedPage) {
-            onNavbarQueryChange({ query: '', cursorPosition: 0 })
-            onFiltersInQueryChange({})
+            onNavbarQueryChange({ query: '' })
             return
         }
         // Do nothing if there is no query in the URL
         if (!query) {
             return
         }
-        // If the URL contains a query, update the query state to reflect it
-        if (interactiveSearchMode) {
-            let filtersInQuery: FiltersToTypeAndValue = {}
-            const { filtersInQuery: newFiltersInQuery, navbarQuery } = convertPlainTextToInteractiveQuery(query)
-            filtersInQuery = { ...filtersInQuery, ...newFiltersInQuery }
-            onNavbarQueryChange({ query: navbarQuery, cursorPosition: navbarQuery.length })
-            onFiltersInQueryChange(filtersInQuery)
-        } else {
-            onNavbarQueryChange({ query, cursorPosition: query.length })
-        }
-    }, [interactiveSearchMode, isSearchRelatedPage, location, onFiltersInQueryChange, onNavbarQueryChange, query])
+        onNavbarQueryChange({ query })
+    }, [isSearchRelatedPage, onNavbarQueryChange, query])
 
     const logo = (
         <LinkOrSpan to={authRequired ? undefined : '/search'} className="global-navbar__logo-link">
@@ -187,27 +171,8 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                     {logo}
                     {authRequired ? (
                         <div className="flex-1" />
-                    ) : splitSearchModes && interactiveSearchMode ? (
-                        <InteractiveModeInput
-                            {...props}
-                            navbarSearchState={navbarSearchQueryState}
-                            onNavbarQueryChange={onNavbarQueryChange}
-                            lowProfile={!isSearchRelatedPage}
-                            versionContext={versionContext}
-                            location={location}
-                            history={history}
-                            setVersionContext={setVersionContext}
-                            availableVersionContexts={availableVersionContexts}
-                            isLightTheme={isLightTheme}
-                            patternType={patternType}
-                            caseSensitive={caseSensitive}
-                            onFiltersInQueryChange={onFiltersInQueryChange}
-                        />
                     ) : (
                         <div className="global-navbar__search-box-container d-none d-sm-flex flex-row">
-                            {splitSearchModes && (
-                                <SearchModeToggle {...props} interactiveSearchMode={interactiveSearchMode} />
-                            )}
                             <VersionContextDropdown
                                 history={history}
                                 navbarSearchQuery={navbarSearchQueryState.query}

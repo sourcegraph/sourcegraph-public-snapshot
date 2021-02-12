@@ -2,8 +2,13 @@ package lsifstore
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/opentracing/opentracing-go/log"
+
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 var tableNames = []string{
@@ -14,7 +19,17 @@ var tableNames = []string{
 	"lsif_data_references",
 }
 
-func (s *store) Clear(ctx context.Context, bundleIDs ...int) (err error) {
+func (s *Store) Clear(ctx context.Context, bundleIDs ...int) (err error) {
+	var stringIDs []string
+	for _, bundleID := range bundleIDs {
+		stringIDs = append(stringIDs, fmt.Sprintf("%d", bundleID))
+	}
+
+	ctx, endObservation := s.operations.clear.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("bundleIDs", strings.Join(stringIDs, ", ")),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	if len(bundleIDs) == 0 {
 		return nil
 	}
@@ -33,10 +48,15 @@ func (s *store) Clear(ctx context.Context, bundleIDs ...int) (err error) {
 	}()
 
 	for _, tableName := range tableNames {
-		if err := tx.Exec(ctx, sqlf.Sprintf(`DELETE FROM "`+tableName+`" WHERE dump_id IN (%s)`, sqlf.Join(ids, ","))); err != nil {
+		if err := tx.Exec(ctx, sqlf.Sprintf(clearQuery, sqlf.Sprintf(tableName), sqlf.Join(ids, ","))); err != nil {
 			return err
 		}
 	}
 
 	return nil
 }
+
+const clearQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/clear.go:Clear
+DELETE FROM %s WHERE dump_id IN (%s)
+`

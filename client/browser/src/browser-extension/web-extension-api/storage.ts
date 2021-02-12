@@ -31,7 +31,7 @@ export const observeStorageKey = <A extends browser.storage.AreaName, K extends 
     key: K
 ): Observable<ExtensionStorageItems[A][K] | undefined> => {
     if (getPlatformName() !== 'chrome-extension' && areaName === 'managed') {
-        // Accessing managed storage throws an error on Firefox.
+        // Accessing managed storage throws an error on Firefox and on Safari.
         return of(undefined)
     }
     return concat(

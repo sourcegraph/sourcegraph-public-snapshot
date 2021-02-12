@@ -1,21 +1,19 @@
 import React, { Fragment, useMemo } from 'react'
-import { scanSearchQuery } from '../../../shared/src/search/parser/scanner'
+import { scanSearchQuery } from '../../../shared/src/search/query/scanner'
 
 // A read-only syntax highlighted search query
 export const SyntaxHighlightedSearchQuery: React.FunctionComponent<{ query: string }> = ({ query }) => {
     const tokens = useMemo(() => {
-        const parsedQuery = scanSearchQuery(query)
-        return parsedQuery.type === 'success'
-            ? parsedQuery.token.members.map(token => {
+        const scannedQuery = scanSearchQuery(query)
+        return scannedQuery.type === 'success'
+            ? scannedQuery.term.map(token => {
                   if (token.type === 'filter') {
                       return (
                           <Fragment key={token.range.start}>
                               <span className="search-filter-keyword">
-                                  {query.slice(token.filterType.range.start, token.filterType.range.end)}:
+                                  {query.slice(token.field.range.start, token.field.range.end)}:
                               </span>
-                              {token.filterValue ? (
-                                  <>{query.slice(token.filterValue.range.start, token.filterValue.range.end)}</>
-                              ) : null}
+                              {token.value ? <>{query.slice(token.value.range.start, token.value.range.end)}</> : null}
                           </Fragment>
                       )
                   }

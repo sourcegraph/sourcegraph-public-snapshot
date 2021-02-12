@@ -7,11 +7,11 @@ import {
     parseSearchURLQuery,
     parseSearchURLPatternType,
     PatternTypeProps,
-    InteractiveSearchProps,
     CaseSensitivityProps,
     parseSearchURL,
     resolveVersionContext,
-    SearchStreamingProps,
+    MutableVersionContextProps,
+    ParsedSearchQueryProps,
 } from '..'
 import { Contributions, Evaluated } from '../../../../shared/src/api/protocol'
 import { FetchFileParameters } from '../../../../shared/src/components/CodeExcerpt'
@@ -24,21 +24,20 @@ import { ErrorLike, isErrorLike, asError } from '../../../../shared/src/util/err
 import { PageTitle } from '../../components/PageTitle'
 import { Settings } from '../../schema/settings.schema'
 import { ThemeProps } from '../../../../shared/src/theme'
-import { EventLogger } from '../../tracking/eventLogger'
+import { eventLogger, EventLogger } from '../../tracking/eventLogger'
 import { isSearchResults, submitSearch, toggleSearchFilter, getSearchTypeFromQuery, QueryState } from '../helpers'
 import { queryTelemetryData } from '../queryTelemetry'
-import { SearchResultsFilterBars, SearchScopeWithOptionalName } from './SearchResultsFilterBars'
+import { DynamicSearchFilter, SearchResultsFilterBars } from './SearchResultsFilterBars'
 import { SearchResultsList } from './SearchResultsList'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
-import { VersionContextProps } from '../../../../shared/src/search/util'
-import { VersionContext } from '../../schema/site.schema'
-import AlertOutlineIcon from 'mdi-react/AlertOutlineIcon'
-import CloseIcon from 'mdi-react/CloseIcon'
 import { Remote } from 'comlink'
 import { FlatExtensionHostAPI } from '../../../../shared/src/api/contract'
 import { DeployType } from '../../jscontext'
 import { AuthenticatedUser } from '../../auth'
 import { SearchPatternType } from '../../../../shared/src/graphql-operations'
+import { shouldDisplayPerformanceWarning } from '../backend'
+import { VersionContextWarning } from './VersionContextWarning'
+import { CodeMonitoringProps } from '../../enterprise/code-monitoring'
 
 export interface SearchResultsProps
     extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI' | 'services'>,
@@ -46,17 +45,17 @@ export interface SearchResultsProps
         SettingsCascadeProps,
         TelemetryProps,
         ThemeProps,
+        Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
         PatternTypeProps,
         CaseSensitivityProps,
-        InteractiveSearchProps,
-        VersionContextProps,
-        SearchStreamingProps {
+        MutableVersionContextProps,
+        Pick<CodeMonitoringProps, 'enableCodeMonitoring'> {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
     navbarSearchQueryState: QueryState
     telemetryService: Pick<EventLogger, 'log' | 'logViewEvent'>
-    fetchHighlightedFileLines: (parameters: FetchFileParameters, force?: boolean) => Observable<string[]>
+    fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     searchRequest: (
         query: string,
         version: string,
@@ -66,9 +65,6 @@ export interface SearchResultsProps
     ) => Observable<GQL.ISearchResults | ErrorLike>
     isSourcegraphDotCom: boolean
     deployType: DeployType
-    setVersionContext: (versionContext: string | undefined) => void
-    availableVersionContexts: VersionContext[] | undefined
-    previousVersionContext: string | null
 }
 
 interface SearchResultsState {
@@ -76,9 +72,11 @@ interface SearchResultsState {
     resultsOrError?: GQL.ISearchResults
     allExpanded: boolean
 
+    /* The time when loading the search results started. */
+    loadingStarted: number
+
     // Saved Queries
     showSavedQueryModal: boolean
-    didSaveQuery: boolean
 
     /** The contributions, merged from all extensions, or undefined before the initial emission. */
     contributions?: Evaluated<Contributions>
@@ -96,14 +94,14 @@ export type SearchType = 'diff' | 'commit' | 'symbol' | 'repo' | 'path' | null
 // The latest supported version of our search syntax. Users should never be able to determine the search version.
 // The version is set based on the release tag of the instance. Anything before 3.9.0 will not pass a version parameter,
 // and will therefore default to V1.
-const LATEST_VERSION = 'V2'
+export const LATEST_VERSION = 'V2'
 
 export class SearchResults extends React.Component<SearchResultsProps, SearchResultsState> {
     public state: SearchResultsState = {
-        didSaveQuery: false,
         showSavedQueryModal: false,
         allExpanded: false,
         showVersionContextWarning: false,
+        loadingStarted: 0,
     }
     /** Emits on componentDidUpdate with the new props */
     private componentUpdates = new Subject<SearchResultsProps>()
@@ -134,7 +132,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
             this.componentUpdates
                 .pipe(
                     startWith(this.props),
-                    map(props => parseSearchURL(props.location.search)),
+                    map(props => parseSearchURL(props.location.search, { appendCaseFilter: true })),
                     // Search when a new search query was specified in the URL
                     distinctUntilChanged((a, b) => isEqual(a, b)),
                     filter(
@@ -151,9 +149,6 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                         const query_data = queryTelemetryData(query, caseSensitive)
                         this.props.telemetryService.log('SearchResultsQueried', {
                             code_search: { query_data },
-                            ...(this.props.splitSearchModes
-                                ? { mode: this.props.interactiveSearchMode ? 'interactive' : 'plain' }
-                                : {}),
                         })
                         if (query_data.query?.field_type && query_data.query.field_type.value_diff > 0) {
                             this.props.telemetryService.log('DiffSearchResultsQueried')
@@ -165,6 +160,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                             [
                                 {
                                     resultsOrError: undefined,
+                                    loadingStarted: Date.now(),
                                     didSave: false,
                                     activeType: getSearchTypeFromQuery(query),
                                 },
@@ -172,7 +168,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                             // Do async search request
                             this.props
                                 .searchRequest(
-                                    caseSensitive ? `${query} case:yes` : query,
+                                    query,
                                     LATEST_VERSION,
                                     patternType,
                                     resolveVersionContext(versionContext, this.props.availableVersionContexts),
@@ -270,26 +266,29 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
     }
 
     private showSaveQueryModal = (): void => {
-        this.setState({ showSavedQueryModal: true, didSaveQuery: false })
-    }
-
-    private onDidCreateSavedQuery = (): void => {
-        this.props.telemetryService.log('SavedQueryCreated')
-        this.setState({ showSavedQueryModal: false, didSaveQuery: true })
+        this.setState({ showSavedQueryModal: true })
     }
 
     private onModalClose = (): void => {
         this.props.telemetryService.log('SavedQueriesToggleCreating', { queries: { creating: false } })
-        this.setState({ didSaveQuery: false, showSavedQueryModal: false })
+        this.setState({ showSavedQueryModal: false })
     }
 
     private onDismissWarning = (): void => {
         this.setState({ showVersionContextWarning: false })
     }
 
+    private onFirstResultLoad = (): void => {
+        const patternType = parseSearchURLPatternType(this.props.location.search)
+        eventLogger.log(`search.latencies.frontend.${patternType || 'unknown'}.first-result`, {
+            durationMs: Date.now() - this.state.loadingStarted,
+        })
+    }
+
     public render(): JSX.Element | null {
         const query = parseSearchURLQuery(this.props.location.search)
         const filters = this.getFilters()
+        const repoFilters = this.getRepoFilters()
         const extensionFilters = this.state.contributions?.searchFilters
 
         const quickLinks =
@@ -298,52 +297,43 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         return (
             <div className="test-search-results search-results d-flex flex-column w-100">
                 <PageTitle key="page-title" title={query} />
-                {!this.props.interactiveSearchMode && (
-                    <SearchResultsFilterBars
-                        navbarSearchQuery={this.props.navbarSearchQueryState.query}
-                        results={this.state.resultsOrError}
-                        filters={filters}
-                        extensionFilters={extensionFilters}
-                        quickLinks={quickLinks}
-                        onFilterClick={this.onDynamicFilterClicked}
-                        onShowMoreResultsClick={this.showMoreResults}
-                        calculateShowMoreResultsCount={this.calculateCount}
-                    />
-                )}
+                <SearchResultsFilterBars
+                    navbarSearchQuery={this.props.navbarSearchQueryState.query}
+                    searchSucceeded={isSearchResults(this.state.resultsOrError)}
+                    resultsLimitHit={isSearchResults(this.state.resultsOrError) && this.state.resultsOrError.limitHit}
+                    genericFilters={filters}
+                    extensionFilters={extensionFilters}
+                    repoFilters={repoFilters}
+                    quickLinks={quickLinks}
+                    onFilterClick={this.onDynamicFilterClicked}
+                    onShowMoreResultsClick={this.showMoreResults}
+                    calculateShowMoreResultsCount={this.calculateCount}
+                />
                 {this.state.showVersionContextWarning && (
-                    <div className="mt-2 mx-2">
-                        <div className="d-flex alert alert-warning mb-0 justify-content-between">
-                            <div>
-                                <AlertOutlineIcon className="icon-inline mr-2" />
-                                This link changed your version context to{' '}
-                                <strong>{this.props.versionContext || 'default'}</strong>. You can switch contexts with
-                                the selector to the left of the search bar.
-                            </div>
-                            <div onClick={this.onDismissWarning}>
-                                <CloseIcon className="icon-inline ml-2" />
-                            </div>
-                        </div>
-                    </div>
+                    <VersionContextWarning
+                        versionContext={this.props.versionContext}
+                        onDismissWarning={this.onDismissWarning}
+                    />
                 )}
                 <SearchResultsList
                     {...this.props}
                     resultsOrError={this.state.resultsOrError}
+                    onFirstResultLoad={this.onFirstResultLoad}
                     onShowMoreResultsClick={this.showMoreResults}
                     onExpandAllResultsToggle={this.onExpandAllResultsToggle}
                     allExpanded={this.state.allExpanded}
                     showSavedQueryModal={this.state.showSavedQueryModal}
                     onSaveQueryClick={this.showSaveQueryModal}
                     onSavedQueryModalClose={this.onModalClose}
-                    onDidCreateSavedQuery={this.onDidCreateSavedQuery}
-                    didSave={this.state.didSaveQuery}
+                    shouldDisplayPerformanceWarning={shouldDisplayPerformanceWarning}
                 />
             </div>
         )
     }
 
     /** Combines dynamic filters and search scopes into a list de-duplicated by value. */
-    private getFilters(): SearchScopeWithOptionalName[] {
-        const filters = new Map<string, SearchScopeWithOptionalName>()
+    private getFilters(): DynamicSearchFilter[] {
+        const filters = new Map<string, DynamicSearchFilter>()
 
         if (isSearchResults(this.state.resultsOrError) && this.state.resultsOrError.dynamicFilters) {
             let dynamicFilters = this.state.resultsOrError.dynamicFilters
@@ -377,6 +367,21 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
 
         return [...filters.values()]
     }
+
+    private getRepoFilters(): DynamicSearchFilter[] | undefined {
+        if (isSearchResults(this.state.resultsOrError) && this.state.resultsOrError.dynamicFilters) {
+            return this.state.resultsOrError.dynamicFilters
+                .filter(filter => filter.kind === 'repo' && filter.value !== '')
+                .map(filter => ({
+                    name: filter.label,
+                    value: filter.value,
+                    count: filter.count,
+                    limitHit: filter.limitHit,
+                }))
+        }
+        return undefined
+    }
+
     private showMoreResults = (): void => {
         // Requery with an increased max result count.
         const parameters = new URLSearchParams(this.props.location.search)

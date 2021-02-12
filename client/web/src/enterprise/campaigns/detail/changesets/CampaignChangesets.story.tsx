@@ -6,11 +6,10 @@ import { addHours } from 'date-fns'
 import { of } from 'rxjs'
 import {
     ChangesetFields,
-    ChangesetExternalState,
-    ChangesetReconcilerState,
-    ChangesetPublicationState,
     ChangesetCheckState,
     ChangesetReviewState,
+    ChangesetSpecType,
+    ChangesetState,
 } from '../../../../graphql-operations'
 import { queryExternalChangesetWithFileDiffs } from '../backend'
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
@@ -21,16 +20,14 @@ const { add } = storiesOf('web/campaigns/CampaignChangesets', module).addDecorat
 
 const now = new Date()
 const nodes: ChangesetFields[] = [
-    ...Object.values(ChangesetExternalState).map(
-        (externalState): ChangesetFields => ({
+    ...Object.values(ChangesetState).map(
+        (state): ChangesetFields => ({
             __typename: 'ExternalChangeset',
-            id: 'somechangeset' + externalState,
+            id: 'somechangeset' + state,
             updatedAt: now.toISOString(),
             nextSyncAt: addHours(now, 1).toISOString(),
-            externalState,
+            state,
             title: 'Changeset title on code host',
-            reconcilerState: ChangesetReconcilerState.COMPLETED,
-            publicationState: ChangesetPublicationState.PUBLISHED,
             body: 'This changeset does the following things:\nIs awesome\nIs useful',
             checkState: ChangesetCheckState.PENDING,
             createdAt: now.toISOString(),
@@ -51,38 +48,56 @@ const nodes: ChangesetFields[] = [
             },
             reviewState: ChangesetReviewState.COMMENTED,
             error: null,
-            currentSpec: { id: 'spec-rand-id-1' },
+            syncerError: null,
+            currentSpec: {
+                id: 'spec-rand-id-1',
+                type: ChangesetSpecType.BRANCH,
+                description: {
+                    __typename: 'GitBranchChangesetDescription',
+                    headRef: 'my-branch',
+                },
+            },
         })
     ),
-    ...Object.values(ChangesetExternalState).map(
-        (externalState): ChangesetFields => ({
+    ...Object.values(ChangesetState).map(
+        (state): ChangesetFields => ({
             __typename: 'HiddenExternalChangeset' as const,
-            id: 'somehiddenchangeset' + externalState,
+            id: 'somehiddenchangeset' + state,
             updatedAt: now.toISOString(),
             nextSyncAt: addHours(now, 1).toISOString(),
-            externalState,
+            state,
             createdAt: now.toISOString(),
-            reconcilerState: ChangesetReconcilerState.COMPLETED,
-            publicationState: ChangesetPublicationState.PUBLISHED,
         })
     ),
 ]
 const queryChangesets = () => of({ totalCount: nodes.length, nodes, pageInfo: { endCursor: null, hasNextPage: false } })
 
-const queryEmptyExternalChangesetWithFileDiffs: typeof queryExternalChangesetWithFileDiffs = () =>
-    of({
-        diff: {
-            __typename: 'PreviewRepositoryComparison',
-            fileDiffs: {
-                nodes: [],
-                totalCount: 0,
-                pageInfo: {
-                    endCursor: null,
-                    hasNextPage: false,
+const queryEmptyExternalChangesetWithFileDiffs: typeof queryExternalChangesetWithFileDiffs = ({
+    externalChangeset,
+}) => {
+    switch (externalChangeset) {
+        case 'somechangesetCLOSED':
+        case 'somechangesetMERGED':
+        case 'somechangesetDELETED':
+            return of({
+                diff: null,
+            })
+        default:
+            return of({
+                diff: {
+                    __typename: 'PreviewRepositoryComparison',
+                    fileDiffs: {
+                        nodes: [],
+                        totalCount: 0,
+                        pageInfo: {
+                            endCursor: null,
+                            hasNextPage: false,
+                        },
+                    },
                 },
-            },
-        },
-    })
+            })
+    }
+}
 
 add('List of changesets', () => (
     <EnterpriseWebStory>
@@ -95,6 +110,23 @@ add('List of changesets', () => (
                 platformContext={undefined as any}
                 campaignID="campaignid"
                 viewerCanAdminister={boolean('viewerCanAdminister', true)}
+            />
+        )}
+    </EnterpriseWebStory>
+))
+
+add('List of expanded changesets', () => (
+    <EnterpriseWebStory>
+        {props => (
+            <CampaignChangesets
+                {...props}
+                queryChangesets={queryChangesets}
+                queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
+                extensionsController={undefined as any}
+                platformContext={undefined as any}
+                campaignID="campaignid"
+                viewerCanAdminister={boolean('viewerCanAdminister', true)}
+                expandByDefault={true}
             />
         )}
     </EnterpriseWebStory>

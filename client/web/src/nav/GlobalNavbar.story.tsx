@@ -38,22 +38,24 @@ const defaultProps = (
     setVersionContext: () => undefined,
     availableVersionContexts: [],
     globbing: false,
+    enableSmartQuery: false,
+    parsedSearchQuery: 'r:golang/oauth2 test f:travis',
     patternType: SearchPatternType.literal,
     setPatternType: () => undefined,
     caseSensitive: false,
     setCaseSensitivity: () => undefined,
     platformContext: {} as any,
     keyboardShortcuts: [],
-    filtersInQuery: {} as any,
-    onFiltersInQueryChange: () => undefined,
-    splitSearchModes: false,
-    interactiveSearchMode: false,
-    toggleSearchMode: () => undefined,
     copyQueryButton: false,
     versionContext: undefined,
+    showSearchContext: false,
+    selectedSearchContextSpec: '',
+    setSelectedSearchContextSpec: () => undefined,
+    availableSearchContexts: [],
+    defaultSearchContextSpec: '',
     showOnboardingTour: false,
     isLightTheme: props.isLightTheme,
-    navbarSearchQueryState: { cursorPosition: 0, query: '' },
+    navbarSearchQueryState: { query: '' },
     onNavbarQueryChange: () => {},
     isExtensionAlertAnimating: false,
     showCampaigns: true,
@@ -91,18 +93,27 @@ add('Auth required', () => (
     </WebStory>
 ))
 
-add('Authenticated viewer', () => (
-    <WebStory>
-        {webProps => (
-            <GlobalNavbar
-                {...defaultProps(webProps)}
-                authRequired={false}
-                authenticatedUser={
-                    { username: 'alice', organizations: { nodes: [{ name: 'acme' }] } } as AuthenticatedUser
-                }
-                variant="default"
-                isSearchRelatedPage={false}
-            />
-        )}
-    </WebStory>
-))
+add(
+    'Authenticated viewer',
+    () => (
+        <WebStory>
+            {webProps => (
+                <GlobalNavbar
+                    {...defaultProps(webProps)}
+                    authRequired={false}
+                    authenticatedUser={
+                        { username: 'alice', organizations: { nodes: [{ name: 'acme' }] } } as AuthenticatedUser
+                    }
+                    variant="default"
+                    isSearchRelatedPage={false}
+                />
+            )}
+        </WebStory>
+    ),
+    {
+        design: {
+            type: 'figma',
+            url: 'https://www.figma.com/file/SFhXbl23TJ2j5tOF51NDtF/%F0%9F%93%9AWeb?node-id=985%3A1281',
+        },
+    }
+)

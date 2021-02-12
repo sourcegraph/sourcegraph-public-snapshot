@@ -1,0 +1,32 @@
+.preview-node-indicator {
+    &__container {
+        width: calc(0.25rem + 2 * 0.375rem);
+    }
+    &__attach-bar {
+        width: 0.25rem;
+        height: calc(50% - 0.5rem);
+        background-color: var(--oc-lime-6);
+    }
+    &__attach-icon {
+        color: var(--oc-lime-9);
+        height: 1rem;
+    }
+    &__update-bar {
+        width: 0.25rem;
+        height: calc(50% - 0.5rem);
+        background-color: var(--oc-yellow-5);
+    }
+    &__update-icon {
+        color: var(--oc-orange-9);
+        height: 1rem;
+    }
+    &__detach-bar {
+        width: 0.25rem;
+        height: calc(50% - 0.5rem);
+        background-color: var(--danger);
+    }
+    &__detach-icon {
+        color: var(--oc-red-9);
+        height: 1rem;
+    }
+}

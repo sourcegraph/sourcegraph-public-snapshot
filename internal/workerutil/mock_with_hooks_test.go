@@ -73,7 +73,7 @@ func (f *WithHooksPostHandleFunc) SetDefaultHook(hook func(context.Context, Reco
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// PostHandle method of the parent MockWithHooks instance inovkes the hook
+// PostHandle method of the parent MockWithHooks instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
 func (f *WithHooksPostHandleFunc) PushHook(hook func(context.Context, Record)) {
@@ -175,7 +175,7 @@ func (f *WithHooksPreHandleFunc) SetDefaultHook(hook func(context.Context, Recor
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// PreHandle method of the parent MockWithHooks instance inovkes the hook at
+// PreHandle method of the parent MockWithHooks instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
 func (f *WithHooksPreHandleFunc) PushHook(hook func(context.Context, Record)) {

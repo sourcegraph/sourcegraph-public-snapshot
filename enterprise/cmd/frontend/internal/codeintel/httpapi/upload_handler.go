@@ -8,31 +8,32 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"regexp"
 	"strconv"
 
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/codeintelutils"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
 type UploadHandler struct {
-	store       store.Store
+	dbStore     DBStore
 	uploadStore uploadstore.Store
 	internal    bool
 }
 
-func NewUploadHandler(store store.Store, uploadStore uploadstore.Store, internal bool) http.Handler {
+func NewUploadHandler(dbStore DBStore, uploadStore uploadstore.Store, internal bool) http.Handler {
 	handler := &UploadHandler{
-		store:       store,
+		dbStore:     dbStore,
 		uploadStore: uploadStore,
 		internal:    internal,
 	}
@@ -40,7 +41,7 @@ func NewUploadHandler(store store.Store, uploadStore uploadstore.Store, internal
 	return http.HandlerFunc(handler.handleEnqueue)
 }
 
-var revhashPattern = regexp.MustCompile(`^[a-z0-9]{40}$`)
+var revhashPattern = lazyregexp.New(`^[a-z0-9]{40}$`)
 
 // POST /upload
 func (h *UploadHandler) handleEnqueue(w http.ResponseWriter, r *http.Request) {
@@ -98,10 +99,11 @@ func (h *UploadHandler) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 // UploadArgs are common arguments required to enqueue an upload for both
 // single-payload and multipart uploads.
 type UploadArgs struct {
-	Commit       string
-	Root         string
-	RepositoryID int
-	Indexer      string
+	Commit            string
+	Root              string
+	RepositoryID      int
+	Indexer           string
+	AssociatedIndexID int
 }
 
 type enqueuePayload struct {
@@ -131,10 +133,11 @@ func (h *UploadHandler) handleEnqueueErr(w http.ResponseWriter, r *http.Request,
 	ctx := r.Context()
 
 	uploadArgs := UploadArgs{
-		Commit:       getQuery(r, "commit"),
-		Root:         sanitizeRoot(getQuery(r, "root")),
-		RepositoryID: repositoryID,
-		Indexer:      getQuery(r, "indexerName"),
+		Commit:            getQuery(r, "commit"),
+		Root:              sanitizeRoot(getQuery(r, "root")),
+		RepositoryID:      repositoryID,
+		Indexer:           getQuery(r, "indexerName"),
+		AssociatedIndexID: getQueryInt(r, "associatedIndexId"),
 	}
 
 	if !hasQuery(r, "multiPart") && !hasQuery(r, "uploadId") {
@@ -153,7 +156,7 @@ func (h *UploadHandler) handleEnqueueErr(w http.ResponseWriter, r *http.Request,
 		return nil, clientError("no uploadId supplied")
 	}
 
-	upload, exists, err := h.store.GetUploadByID(ctx, getQueryInt(r, "uploadId"))
+	upload, exists, err := h.dbStore.GetUploadByID(ctx, getQueryInt(r, "uploadId"))
 	if err != nil {
 		return nil, err
 	}
@@ -209,7 +212,7 @@ func (h *UploadHandler) handleEnqueueSinglePayload(r *http.Request, uploadArgs U
 		r.Body = ioutil.NopCloser(io.MultiReader(bytes.NewReader(buf.Bytes()), r.Body))
 	}
 
-	tx, err := h.store.Transact(ctx)
+	tx, err := h.dbStore.Transact(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -218,13 +221,14 @@ func (h *UploadHandler) handleEnqueueSinglePayload(r *http.Request, uploadArgs U
 	}()
 
 	id, err := tx.InsertUpload(ctx, store.Upload{
-		Commit:        uploadArgs.Commit,
-		Root:          uploadArgs.Root,
-		RepositoryID:  uploadArgs.RepositoryID,
-		Indexer:       uploadArgs.Indexer,
-		State:         "uploading",
-		NumParts:      1,
-		UploadedParts: []int{0},
+		Commit:            uploadArgs.Commit,
+		Root:              uploadArgs.Root,
+		RepositoryID:      uploadArgs.RepositoryID,
+		Indexer:           uploadArgs.Indexer,
+		AssociatedIndexID: &uploadArgs.AssociatedIndexID,
+		State:             "uploading",
+		NumParts:          1,
+		UploadedParts:     []int{0},
 	})
 	if err != nil {
 		return nil, err
@@ -256,14 +260,15 @@ func (h *UploadHandler) handleEnqueueSinglePayload(r *http.Request, uploadArgs U
 func (h *UploadHandler) handleEnqueueMultipartSetup(r *http.Request, uploadArgs UploadArgs, numParts int) (interface{}, error) {
 	ctx := r.Context()
 
-	id, err := h.store.InsertUpload(ctx, store.Upload{
-		Commit:        uploadArgs.Commit,
-		Root:          uploadArgs.Root,
-		RepositoryID:  uploadArgs.RepositoryID,
-		Indexer:       uploadArgs.Indexer,
-		State:         "uploading",
-		NumParts:      numParts,
-		UploadedParts: nil,
+	id, err := h.dbStore.InsertUpload(ctx, store.Upload{
+		Commit:            uploadArgs.Commit,
+		Root:              uploadArgs.Root,
+		RepositoryID:      uploadArgs.RepositoryID,
+		Indexer:           uploadArgs.Indexer,
+		AssociatedIndexID: &uploadArgs.AssociatedIndexID,
+		State:             "uploading",
+		NumParts:          numParts,
+		UploadedParts:     nil,
 	})
 	if err != nil {
 		return nil, err
@@ -285,7 +290,7 @@ func (h *UploadHandler) handleEnqueueMultipartSetup(r *http.Request, uploadArgs 
 func (h *UploadHandler) handleEnqueueMultipartUpload(r *http.Request, upload store.Upload, partIndex int) (_ interface{}, err error) {
 	ctx := r.Context()
 
-	tx, err := h.store.Transact(ctx)
+	tx, err := h.dbStore.Transact(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -313,7 +318,7 @@ func (h *UploadHandler) handleEnqueueMultipartFinalize(r *http.Request, upload s
 		return nil, clientError("upload is missing %d parts", upload.NumParts-len(upload.UploadedParts))
 	}
 
-	tx, err := h.store.Transact(ctx)
+	tx, err := h.dbStore.Transact(ctx)
 	if err != nil {
 		return nil, err
 	}

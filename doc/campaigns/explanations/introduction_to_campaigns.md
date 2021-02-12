@@ -1,18 +1,5 @@
 # Introduction to campaigns
 
-<style>
-
-img.screenshot {
-    display: block;
-    margin: 1em auto;
-    max-width: 600px;
-    margin-bottom: 0.5em;
-    border: 1px solid lightgrey;
-    border-radius: 10px;
-}
-
-</style>
-
 ## Overview
 
 Campaigns let you make large-scale code changes across many repositories and code hosts. The campaign lets you create pull requests on all affected repositories, and it tracks their progress until they're all merged. You can preview the changes and update them at any time.
@@ -52,13 +39,13 @@ A single campaign can span many repositories and many code hosts.
 
 ## Concepts
 
-- A **campaign** is group of related changes to code, along with a title and description.
+- {#campaign} A **campaign** is group of related changes to code, along with a title and description.
 - {#campaign-spec} A **campaign spec** is a YAML file describing the campaign: repositories to change, commands to run, and a template for changesets and commits. You describe your high-level intent in the campaign spec, such as "lint files in all repositories with a `package.json` file".
-- The campaign has associated **changesets**, which is a generic term for pull requests, merge requests, or any other reviewable chunk of code. (Code hosts use different terms for this, which is why we chose a generic term.)
-- A **published changeset** means the commit, branch, and changeset have been created on the code host. An **unpublished changeset** is just a preview that you can view in the campaign but does not exist on the code host yet.
-- A **spec** (campaign spec or changeset spec) is a "record of intent". When you provide a spec for a thing, the system will continuously try to reconcile the actual thing with your desired intent (as described by the spec). This involves creating, updating, and deleting things as needed.
-- A campaign has many **changeset specs**, which are produced by executing the campaign spec (i.e., running the commands on each selected repository) and then using its changeset template to produce a list of changesets, including the diffs, commit messages, changeset title, and changeset body. You don't need to view or edit the raw changeset specs; you will edit the campaign spec and view the changesets in the UI.
-- The **campaign controller** reconciles the actual state of the campaign's changesets on the code host so that they match your desired intent (as described in the changeset specs).
+- {#changesets} The campaign has associated **changesets**, which is a generic term for pull requests, merge requests, or any other reviewable chunk of code. (Code hosts use different terms for this, which is why we chose a generic term.)
+- {#published-changeset} A **published changeset** means the commit, branch, and changeset have been created on the code host. An **unpublished changeset** is just a preview that you can view in the campaign but does not exist on the code host yet.
+- {#spec} A **spec** (campaign spec or changeset spec) is a "record of intent". When you provide a spec for a thing, the system will continuously try to reconcile the actual thing with your desired intent (as described by the spec). This involves creating, updating, and deleting things as needed.
+- {#changeset-spec} A campaign has many **changeset specs**, which are produced by executing the campaign spec (i.e., running the commands on each selected repository) and then using its changeset template to produce a list of changesets, including the diffs, commit messages, changeset title, and changeset body. You don't need to view or edit the raw changeset specs; you will edit the campaign spec and view the changesets in the UI.
+- {#campaign-controller} The **campaign controller** reconciles the actual state of the campaign's changesets on the code host so that they match your desired intent (as described in the changeset specs).
 
 To learn about the internals of campaigns, see [Campaigns](../../../dev/background-information/campaigns/index.md) in the developer documentation.
 
@@ -70,3 +57,4 @@ To learn about the internals of campaigns, see [Campaigns](../../../dev/backgrou
 - Campaign steps are run locally (in the [Sourcegraph CLI](https://github.com/sourcegraph/src-cli)). Sourcegraph does not yet support executing campaign steps on the server. For this reason, the APIs for creating and updating a campaign require you to upload all of the changeset specs (which are produced by executing the campaign spec locally). {#server-execution}
 - It is not yet possible for multiple users to edit the same campaign that was created under an organization.
 - It is not yet possible to reuse a branch in a repository across multiple campaigns.
+- The only type of user credential supported by Sourcegraph right now is a personal access token. Further credential types may be supported in the future.

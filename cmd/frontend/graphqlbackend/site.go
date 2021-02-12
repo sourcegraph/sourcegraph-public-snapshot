@@ -10,11 +10,12 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 
@@ -82,7 +83,7 @@ func (r *siteResolver) settingsSubject() api.SettingsSubject {
 }
 
 func (r *siteResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
-	settings, err := db.Settings.GetLatest(ctx, r.settingsSubject())
+	settings, err := database.GlobalSettings.GetLatest(ctx, r.settingsSubject())
 	if err != nil {
 		return nil, err
 	}

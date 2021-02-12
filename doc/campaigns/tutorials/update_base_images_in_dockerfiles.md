@@ -4,20 +4,6 @@
 .markdown-body pre.chroma {
   font-size: 0.75em;
 }
-
-img.screenshot {
-    max-width: 600px;
-    margin: 1em;
-    margin-bottom: 0.5em;
-    border: 1px solid lightgrey;
-    border-radius: 10px;
-}
-
-img.center {
-  display: block;
-  margin: auto
-}
-
 </style>
 
 <p class="lead">
@@ -90,9 +76,7 @@ changesetTemplate:
 
 1. In your terminal, run this command:
 
-    <pre>src campaign preview -f update-dart-base-images-2-10.campaign.yaml -namespace <em>USERNAME_OR_ORG</em></pre>
-
-    > The `namespace` is either your Sourcegraph username or the name of a Sourcegraph organisation under which you want to create the campaign. If you're not sure what to choose, use your username.
+    <pre>src campaign preview -f update-dart-base-images-2-10.campaign.yaml</pre>
 1. Wait for it to run and compute the changes for each repository.
     <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/tutorials/update_base_images_in_dockerfiles_wait_run.png" class="screenshot">
 1. Open the preview URL that the command printed out.

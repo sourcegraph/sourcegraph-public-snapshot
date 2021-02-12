@@ -2,8 +2,10 @@ package app
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 )
 
@@ -31,7 +33,7 @@ func serveSignOut(w http.ResponseWriter, r *http.Request) {
 	if err := session.InvalidateSessionCurrentUser(r); err != nil {
 		log15.Error("Error in signout.", "err", err)
 	}
-	if err := session.SetActor(w, r, nil, 0); err != nil {
+	if err := session.SetActor(w, r, nil, 0, time.Time{}); err != nil {
 		log15.Error("Error in signout.", "err", err)
 	}
 	if ssoSignOutHandler != nil {

@@ -8,11 +8,14 @@ import (
 
 	"cloud.google.com/go/pubsub"
 	"github.com/inconshreveable/log15"
+	"google.golang.org/api/option"
+
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
 // PubSubProjectID is used to create a new pubsub client.
 var PubSubProjectID = env.Get("PUBSUB_PROJECT_ID", "", "Pub/sub project ID is the id of the pubsub project.")
+var PubSubCredentialsFile = env.Get("PUBSUB_CREDENTIALS_FILE", "", "Pub/sub project credentials file.")
 
 var client *pubsub.Client
 
@@ -26,7 +29,7 @@ func init() {
 		return
 	}
 	ctx := context.Background()
-	pClient, err := pubsub.NewClient(ctx, PubSubProjectID)
+	pClient, err := pubsub.NewClient(ctx, PubSubProjectID, option.WithCredentialsFile(PubSubCredentialsFile))
 	if err != nil {
 		log15.Error("failed to create pubsub client.", "error", err)
 		return

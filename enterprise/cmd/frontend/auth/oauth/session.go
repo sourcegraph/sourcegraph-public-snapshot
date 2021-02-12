@@ -7,11 +7,13 @@ import (
 
 	goauth2 "github.com/dghubble/gologin/oauth2"
 	"github.com/inconshreveable/log15"
+	"golang.org/x/oauth2"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"golang.org/x/oauth2"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 type SessionData struct {
@@ -24,7 +26,7 @@ type SessionData struct {
 }
 
 type SessionIssuerHelper interface {
-	GetOrCreateUser(ctx context.Context, token *oauth2.Token) (actr *actor.Actor, safeErrMsg string, err error)
+	GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL string) (actr *actor.Actor, safeErrMsg string, err error)
 	DeleteStateCookie(w http.ResponseWriter)
 	SessionData(token *oauth2.Token) SessionData
 }
@@ -40,7 +42,15 @@ func SessionIssuer(s SessionIssuerHelper, sessionKey string) http.Handler {
 			return
 		}
 
-		actr, safeErrMsg, err := s.GetOrCreateUser(ctx, token)
+		getCookie := func(name string) string {
+			c, err := r.Cookie(name)
+			if err != nil {
+				return ""
+			}
+			return c.Value
+		}
+
+		actr, safeErrMsg, err := s.GetOrCreateUser(ctx, token, getCookie("sourcegraphAnonymousUid"), getCookie("sourcegraphSourceUrl"))
 		if err != nil {
 			log15.Error("OAuth failed: error looking up or creating user from OAuth token.", "error", err, "userErr", safeErrMsg)
 			http.Error(w, safeErrMsg, http.StatusInternalServerError)
@@ -56,7 +66,15 @@ func SessionIssuer(s SessionIssuerHelper, sessionKey string) http.Handler {
 			http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: OAuth token was expired.", http.StatusInternalServerError)
 			return
 		}
-		if err := session.SetActor(w, r, actr, expiryDuration); err != nil { // TODO: test session expiration
+
+		user, err := database.GlobalUsers.GetByID(r.Context(), actr.UID)
+		if err != nil {
+			log15.Error("OAuth failed: error retrieving user from database.", "error", err)
+			http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not initiate session.", http.StatusInternalServerError)
+			return
+		}
+
+		if err := session.SetActor(w, r, actr, expiryDuration, user.CreatedAt); err != nil { // TODO: test session expiration
 			log15.Error("OAuth failed: could not initiate session.", "error", err)
 			http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not initiate session.", http.StatusInternalServerError)
 			return

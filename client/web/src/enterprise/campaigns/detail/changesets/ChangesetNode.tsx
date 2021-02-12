@@ -19,7 +19,10 @@ export interface ChangesetNodeProps extends ThemeProps {
     extensionInfo?: {
         hoverifier: Hoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>
     } & ExtensionsControllerProps
+    /** For testing purposes. */
     queryExternalChangesetWithFileDiffs?: typeof queryExternalChangesetWithFileDiffs
+    /** For testing purposes. */
+    expandByDefault?: boolean
 }
 
 export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({ node, ...props }) => {

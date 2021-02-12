@@ -7,7 +7,7 @@ export const EmptyChangesetListElement: React.FunctionComponent<{}> = () => (
             <p>This can occur for several reasons:</p>
             <p>
                 <strong>
-                    The query specified in <span className="text-monospace">repositorieMatchingQuery:</span> may not
+                    The query specified in <span className="text-monospace">repositoriesMatchingQuery:</span> may not
                     have matched any repositories.
                 </strong>
             </p>

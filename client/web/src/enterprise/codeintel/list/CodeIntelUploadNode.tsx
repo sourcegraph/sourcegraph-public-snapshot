@@ -2,12 +2,12 @@ import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import React, { FunctionComponent } from 'react'
 import { Link } from '../../../../../shared/src/components/Link'
 import { LsifUploadFields } from '../../../graphql-operations'
+import { CodeIntelState } from '../shared/CodeIntelState'
 import { CodeIntelUploadOrIndexCommit } from '../shared/CodeIntelUploadOrIndexCommit'
+import { CodeIntelUploadOrIndexRepository } from '../shared/CodeIntelUploadOrIndexerRepository'
 import { CodeIntelUploadOrIndexIndexer } from '../shared/CodeIntelUploadOrIndexIndexer'
 import { CodeIntelUploadOrIndexLastActivity } from '../shared/CodeIntelUploadOrIndexLastActivity'
-import { CodeIntelUploadRoot } from '../shared/CodeIntelUploadRoot'
-import { CodeIntelUploadOrIndexRepository } from '../shared/CodeInteUploadOrIndexerRepository'
-import { CodeIntelState } from './CodeIntelState'
+import { CodeIntelUploadOrIndexRoot } from '../shared/CodeIntelUploadOrIndexRoot'
 
 export interface CodeIntelUploadNodeProps {
     node: LsifUploadFields
@@ -27,7 +27,7 @@ export const CodeIntelUploadNode: FunctionComponent<CodeIntelUploadNodeProps> = 
 
             <div>
                 <span className="mr-2 d-block d-mdinline-block">
-                    Directory <CodeIntelUploadRoot node={node} /> indexed at commit{' '}
+                    Directory <CodeIntelUploadOrIndexRoot node={node} /> indexed at commit{' '}
                     <CodeIntelUploadOrIndexCommit node={node} /> by <CodeIntelUploadOrIndexIndexer node={node} />
                 </span>
 
@@ -36,6 +36,7 @@ export const CodeIntelUploadNode: FunctionComponent<CodeIntelUploadNodeProps> = 
                 </small>
             </div>
         </div>
+
         <span className="d-none d-md-inline codeintel-upload-node__state">
             <CodeIntelState node={node} />
         </span>

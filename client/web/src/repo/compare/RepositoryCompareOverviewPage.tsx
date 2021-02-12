@@ -21,9 +21,10 @@ import { RepositoryCompareDiffPage } from './RepositoryCompareDiffPage'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { ErrorAlert } from '../../components/alerts'
 import * as H from 'history'
+import { Scalars } from '../../graphql-operations'
 
 function queryRepositoryComparison(args: {
-    repo: GQL.ID
+    repo: Scalars['ID']
     base: string | null
     head: string | null
 }): Observable<GQL.IGitRevisionRange> {
@@ -82,10 +83,10 @@ interface Props
         ExtensionsControllerProps,
         ThemeProps {
     /** The base of the comparison. */
-    base: { repoName: string; repoID: GQL.ID; revision?: string | null }
+    base: { repoName: string; repoID: Scalars['ID']; revision?: string | null }
 
     /** The head of the comparison. */
-    head: { repoName: string; repoID: GQL.ID; revision?: string | null }
+    head: { repoName: string; repoID: Scalars['ID']; revision?: string | null }
     hoverifier: Hoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>
     history: H.History
 }

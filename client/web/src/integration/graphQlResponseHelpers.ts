@@ -1,9 +1,11 @@
+import { encodeURIPathComponent } from '../../../shared/src/util/url'
 import {
     TreeEntriesResult,
     BlobResult,
     FileExternalLinksResult,
     RepositoryRedirectResult,
     ResolveRevResult,
+    ExternalServiceKind,
 } from '../graphql-operations'
 
 export const createTreeEntriesResult = (url: string, toplevelFiles: string[]): TreeEntriesResult => ({
@@ -45,12 +47,12 @@ export const createBlobContentResult = (
 
 export const createFileExternalLinksResult = (
     url: string,
-    serviceType: string = 'github'
+    serviceKind: ExternalServiceKind = ExternalServiceKind.GITHUB
 ): FileExternalLinksResult => ({
     repository: {
         commit: {
             file: {
-                externalURLs: [{ url, serviceType }],
+                externalURLs: [{ url, serviceKind }],
             },
         },
     },
@@ -58,14 +60,14 @@ export const createFileExternalLinksResult = (
 
 export const createRepositoryRedirectResult = (
     repoName: string,
-    serviceType: string = 'github'
+    serviceKind: ExternalServiceKind = ExternalServiceKind.GITHUB
 ): RepositoryRedirectResult => ({
     repositoryRedirect: {
         __typename: 'Repository',
         id: `RepositoryID:${repoName}`,
         name: repoName,
-        url: `/${repoName}`,
-        externalURLs: [{ url: new URL(`https://${repoName}`).href, serviceType }],
+        url: `/${encodeURIPathComponent(repoName)}`,
+        externalURLs: [{ url: new URL(`https://${encodeURIPathComponent(repoName)}`).href, serviceKind }],
         description: 'bla',
         viewerCanAdminister: false,
         defaultBranch: { displayName: 'master' },
@@ -78,7 +80,7 @@ export const createResolveRevisionResult = (treeUrl: string, oid = '1'.repeat(40
         mirrorInfo: { cloneInProgress: false, cloneProgress: '', cloned: true },
         commit: {
             oid,
-            tree: { url: treeUrl },
+            tree: { url: '/' + treeUrl },
         },
         defaultBranch: { abbrevName: 'master' },
     },

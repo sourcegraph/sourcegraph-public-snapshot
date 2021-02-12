@@ -18,10 +18,22 @@ const icons: Partial<Record<ConsoleMessageType, string>> = {
 }
 
 /**
- * Formats a console message that was logged in a Puppeteer Chrome instance for output on the NodeJS terminal.
- * Tries to mirror Chrome's console output as closely as possible and makes sense.
+ * Formats a console message that was logged in a Puppeteer Chrome instance for
+ * output on the NodeJS terminal. Tries to mirror Chrome's console output as
+ * closely as possible and makes sense.
  */
-export async function formatPuppeteerConsoleMessage(page: Page, message: ConsoleMessage): Promise<string> {
+export async function formatPuppeteerConsoleMessage(
+    page: Page,
+    message: ConsoleMessage,
+    simple?: boolean
+): Promise<string> {
+    // Firefox tests with `puppeteer-firefox`: It does not support
+    // `argumentHandle.evaluateHandle` so messages will be broken, until we
+    // migrate away from `puppeteer-firefox` which is deprecated.
+    if (simple) {
+        return `Browser console (${message.type()}): ${message.text()}`
+    }
+
     const color = colors[message.type()] ?? identity
     const icon = icons[message.type()] ?? ''
     const formattedLocation =

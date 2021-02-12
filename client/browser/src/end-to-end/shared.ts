@@ -1,6 +1,7 @@
 import expect from 'expect'
 import { Driver } from '../../../shared/src/testing/driver'
 import { retry } from '../../../shared/src/testing/utils'
+import puppeteer from 'puppeteer'
 import assert from 'assert'
 
 /**
@@ -36,20 +37,37 @@ export function testSingleFilePage({
             await getDriver().page.goto(url)
 
             // Make sure the tab is active, because it might not be active if the install page has opened.
-            await getDriver().page.bringToFront()
+            await closeInstallPageTab(getDriver().page.browser())
 
             await getDriver().page.waitForSelector('.code-view-toolbar .open-on-sourcegraph', { timeout: 10000 })
             expect(await getDriver().page.$$('.code-view-toolbar .open-on-sourcegraph')).toHaveLength(1)
-            await getDriver().page.click('.code-view-toolbar .open-on-sourcegraph')
 
-            // The button opens a new tab, so get the new page whose opener is the current page, and get its url.
-            const currentPageTarget = getDriver().page.target()
-            const newTarget = await getDriver().browser.waitForTarget(target => target.opener() === currentPageTarget)
-            const newPage = await newTarget.page()
-            expect(newPage.url()).toBe(
-                `${sourcegraphBaseUrl}/${repoName}@4fb7cd90793ee6ab445f466b900e6bffb9b63d78/-/blob/call_opt.go?utm_source=chrome-extension`
-            )
-            await newPage.close()
+            // TODO: Uncomment this portion of the test once we migrate from puppeteer-firefox to puppeteer
+            // We want to assert that Sourcegraph is opened in a new tab, but the old version of Firefox used
+            // by puppeteer-firefox doesn't support the latest version of Sourcegraph. For now,
+            // simply assert on the link.
+
+            // await getDriver().page.click('.code-view-toolbar .open-on-sourcegraph')
+
+            // // The button opens a new tab, so get the new page whose opener is the current page, and get its url.
+            // const currentPageTarget = getDriver().page.target()
+            // const newTarget = await getDriver().browser.waitForTarget(target => target.opener() === currentPageTarget)
+            // const newPage = await newTarget.page()
+            // expect(newPage.url()).toBe(
+            //     `${sourcegraphBaseUrl}/${repoName}@4fb7cd90793ee6ab445f466b900e6bffb9b63d78/-/blob/call_opt.go?utm_source=chrome-extension`
+            // )
+            // await newPage.close()
+
+            await retry(async () => {
+                assert.strictEqual(
+                    await getDriver().page.evaluate(
+                        () => document.querySelector<HTMLAnchorElement>('.code-view-toolbar .open-on-sourcegraph')?.href
+                    ),
+                    `${sourcegraphBaseUrl}/${repoName}@4fb7cd90793ee6ab445f466b900e6bffb9b63d78/-/blob/call_opt.go?utm_source=${
+                        getDriver().browserType
+                    }-extension`
+                )
+            })
         })
 
         it('shows hover tooltips when hovering a token', async () => {
@@ -79,4 +97,20 @@ export function testSingleFilePage({
             })
         })
     })
+}
+
+/**
+ * Find a tab that contains the browser extension's after-install page (url
+ * ending in `/after_install.html`) and, if found, close it.
+ *
+ * The after-install page is opened automatically when the browser extension is
+ * installed. In tests, this means that it's opened automatically every time we
+ * start the browser (with the browser extension loaded).
+ */
+export async function closeInstallPageTab(browser: puppeteer.Browser): Promise<void> {
+    const pages = await browser.pages()
+    const installPage = pages.find(page => page.url().endsWith('/after_install.html'))
+    if (installPage) {
+        await installPage.close()
+    }
 }

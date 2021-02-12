@@ -11,7 +11,7 @@ import (
 )
 
 // SubstituteAliases substitutes field name aliases for their canonical names.
-func SubstituteAliases(nodes []Node) []Node {
+func SubstituteAliases(searchType SearchType) func(nodes []Node) []Node {
 	aliases := map[string]string{
 		"r":        FieldRepo,
 		"g":        FieldRepoGroup,
@@ -24,15 +24,24 @@ func SubstituteAliases(nodes []Node) []Node {
 		"msg":      FieldMessage,
 		"revision": FieldRev,
 	}
-	return MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
-		if field == "content" {
-			return Pattern{Value: value, Negated: negated, Annotation: annotation}
-		}
-		if canonical, ok := aliases[field]; ok {
-			field = canonical
-		}
-		return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
-	})
+	var mapper func(nodes []Node) []Node
+	mapper = func(nodes []Node) []Node {
+		return MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
+			if field == "content" {
+				if searchType == SearchTypeRegex {
+					annotation.Labels.set(Regexp)
+				} else {
+					annotation.Labels.set(Literal)
+				}
+				return Pattern{Value: value, Negated: negated, Annotation: annotation}
+			}
+			if canonical, ok := aliases[field]; ok {
+				field = canonical
+			}
+			return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
+		})
+	}
+	return mapper
 }
 
 // LowercaseFieldNames performs strings.ToLower on every field name.
@@ -687,4 +696,50 @@ func ellipsesForHoles(nodes []Node) []Node {
 			Annotation: annotation,
 		}
 	})
+}
+
+func OverrideField(nodes []Node, field, value string) []Node {
+	// First remove any fields that exist.
+	nodes = MapField(nodes, field, func(_ string, _ bool) Node {
+		return nil
+	})
+	return newOperator(append(nodes, Parameter{Field: field, Value: value}), And)
+}
+
+// OmitQueryField removes all fields `field` from a query. The `field` string
+// should be the canonical name and not an alias ("repo", not "r").
+func OmitQueryField(q Q, field string) string {
+	return StringHuman(MapField(q, field, func(_ string, _ bool) Node {
+		return nil
+	}))
+}
+
+// addRegexpField adds a new expr to the query with the given field and pattern
+// value. The nonnegated field is assumed to associate with a regexp value. The
+// pattern value is assumed to be unquoted.
+//
+// It tries to remove redundancy in the result. For example, given
+// a query like "x:foo", if given a field "x" with pattern "foobar" to add,
+// it will return a query "x:foobar" instead of "x:foo x:foobar". It is not
+// guaranteed to always return the simplest query.
+func AddRegexpField(q Q, field, pattern string) string {
+	var modified bool
+	q = MapParameter(q, func(gotField, value string, negated bool, annotation Annotation) Node {
+		if field == gotField && strings.Contains(pattern, value) {
+			value = pattern
+			modified = true
+		}
+		return Parameter{
+			Field:      gotField,
+			Value:      value,
+			Negated:    negated,
+			Annotation: annotation,
+		}
+	})
+
+	if !modified {
+		// use newOperator to reduce And nodes when adding a parameter to the query toplevel.
+		q = newOperator(append(q, Parameter{Field: field, Value: pattern}), And)
+	}
+	return StringHuman(q)
 }

@@ -3,6 +3,7 @@ package campaigns
 import (
 	"time"
 
+	"github.com/sourcegraph/campaignutils/env"
 	"github.com/sourcegraph/campaignutils/overridable"
 	"github.com/sourcegraph/campaignutils/yaml"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -67,9 +68,9 @@ type CampaignSpecOn struct {
 }
 
 type CampaignSpecStep struct {
-	Run       string            `json:"run" yaml:"run"`
-	Container string            `json:"container" yaml:"container"`
-	Env       map[string]string `json:"env,omitempty" yaml:"env,omitempty"`
+	Run       string          `json:"run" yaml:"run"`
+	Container string          `json:"container" yaml:"container"`
+	Env       env.Environment `json:"env,omitempty" yaml:"env,omitempty"`
 }
 
 type CampaignImportChangeset struct {

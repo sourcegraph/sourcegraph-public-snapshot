@@ -8,22 +8,24 @@ import (
 	"os"
 	"regexp"
 	"testing"
-	"time"
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/db"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	authzGitHub "github.com/sourcegraph/sourcegraph/internal/authz/github"
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	extsvcGitHub "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 var updateRegex = flag.String("update", "", "Update testdata of tests matching the given regex")
@@ -67,20 +69,16 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 	cli := extsvcGitHub.NewV3Client(uri, &auth.OAuthBearerToken{Token: token}, doer)
 
 	testDB := dbtest.NewDB(t, *dsn)
-	ctx := context.Background()
+	ctx := actor.WithInternalActor(context.Background())
 
-	clock := func() time.Time {
-		return time.Now().UTC().Truncate(time.Microsecond)
-	}
+	reposStore := repos.NewStore(testDB, sql.TxOptions{})
 
-	reposStore := repos.NewDBStore(testDB, sql.TxOptions{})
-
-	svc := repos.ExternalService{
+	svc := types.ExternalService{
 		Kind:      extsvc.KindGitHub,
-		CreatedAt: clock(),
+		CreatedAt: timeutil.Now(),
 		Config:    `{"url": "https://github.com", "authorization": {}}`,
 	}
-	err = reposStore.UpsertExternalServices(ctx, &svc)
+	err = reposStore.ExternalServiceStore.Upsert(ctx, &svc)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -90,7 +88,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 	authz.SetProviders(false, []authz.Provider{provider})
 	defer authz.SetProviders(true, nil)
 
-	repo := repos.Repo{
+	repo := types.Repo{
 		Name:    "github.com/sourcegraph-vcr-repos/private-org-repo-1",
 		Private: true,
 		URI:     "github.com/sourcegraph-vcr-repos/private-org-repo-1",
@@ -98,19 +96,19 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "https://github.com/",
 		},
-		Sources: map[string]*repos.SourceInfo{
+		Sources: map[string]*types.SourceInfo{
 			svc.URN(): {
 				ID: svc.URN(),
 			},
 		},
 	}
-	err = reposStore.InsertRepos(ctx, &repo)
+	err = reposStore.RepoStore.Create(ctx, &repo)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	dbconn.Global = testDB
-	newUser := db.NewUser{
+	newUser := database.NewUser{
 		Email:           "sourcegraph-vcr-bob@sourcegraph.com",
 		Username:        "sourcegraph-vcr-bob",
 		EmailIsVerified: true,
@@ -120,13 +118,13 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 		ServiceID:   "https://github.com/",
 		AccountID:   "66464926",
 	}
-	userID, err := db.ExternalAccounts.CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{})
+	userID, err := database.GlobalExternalAccounts.CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	permsStore := edb.NewPermsStore(testDB, clock)
-	syncer := NewPermsSyncer(reposStore, permsStore, clock, nil)
+	permsStore := edb.Perms(testDB, timeutil.Now)
+	syncer := NewPermsSyncer(reposStore, permsStore, timeutil.Now, nil)
 
 	err = syncer.syncRepoPerms(ctx, repo.ID, false)
 	if err != nil {

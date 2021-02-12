@@ -19,6 +19,7 @@ import { useObservable } from '../../../../shared/src/util/useObservable'
 import { ErrorLike, asError, isErrorLike } from '../../../../shared/src/util/errors'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { Link } from '../../../../shared/src/components/Link'
+import { Scalars } from '../../graphql-operations'
 
 interface Props extends ActivationProps, ThemeProps {
     history: H.History
@@ -27,6 +28,10 @@ interface Props extends ActivationProps, ThemeProps {
     /** For testing only */
     _fetchOverview?: () => Observable<{
         repositories: number | null
+        repositoryStats: {
+            gitDirBytes: Scalars['BigInt']
+            indexedLinesCount: Scalars['BigInt']
+        }
         users: number
         orgs: number
         surveyResponses: {
@@ -40,6 +45,10 @@ interface Props extends ActivationProps, ThemeProps {
 
 const fetchOverview = (): Observable<{
     repositories: number | null
+    repositoryStats: {
+        gitDirBytes: Scalars['BigInt']
+        indexedLinesCount: Scalars['BigInt']
+    }
     users: number
     orgs: number
     surveyResponses: {
@@ -51,6 +60,10 @@ const fetchOverview = (): Observable<{
         query Overview {
             repositories {
                 totalCount(precise: true)
+            }
+            repositoryStats {
+                gitDirBytes
+                indexedLinesCount
             }
             users {
                 totalCount
@@ -67,6 +80,7 @@ const fetchOverview = (): Observable<{
         map(dataOrThrowErrors),
         map(data => ({
             repositories: data.repositories.totalCount,
+            repositoryStats: data.repositoryStats,
             users: data.users.totalCount,
             orgs: data.organizations.totalCount,
             surveyResponses: data.surveyResponses,
@@ -174,6 +188,28 @@ export const SiteAdminOverviewPage: React.FunctionComponent<Props> = ({
                             >
                                 {numberWithCommas(info.repositories)}{' '}
                                 {pluralize('repository', info.repositories, 'repositories')}
+                            </Link>
+                        )}
+                        {info.repositoryStats !== null && (
+                            <Link
+                                to="/site-admin/repositories"
+                                className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+                            >
+                                {BigInt(info.repositoryStats.gitDirBytes).toLocaleString()}{' '}
+                                {pluralize('byte stored', BigInt(info.repositoryStats.gitDirBytes), 'bytes stored')}
+                            </Link>
+                        )}
+                        {info.repositoryStats !== null && (
+                            <Link
+                                to="/site-admin/repositories"
+                                className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+                            >
+                                {BigInt(info.repositoryStats.indexedLinesCount).toLocaleString()}{' '}
+                                {pluralize(
+                                    'line of code indexed',
+                                    BigInt(info.repositoryStats.indexedLinesCount),
+                                    'lines of code indexed'
+                                )}
                             </Link>
                         )}
                         {info.users > 1 && (

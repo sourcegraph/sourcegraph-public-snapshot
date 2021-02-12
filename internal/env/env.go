@@ -61,6 +61,19 @@ func findName() (string, string) {
 	return origName, name
 }
 
+// Ensure behaves like Get except that it sets the environment variable if it doesn't exist.
+func Ensure(name, defaultValue, description string) string {
+	value := Get(name, defaultValue, description)
+	if value == defaultValue {
+		err := os.Setenv(name, value)
+		if err != nil {
+			panic(fmt.Sprintf("failed to set %s environment variable: %v", name, err))
+		}
+	}
+
+	return value
+}
+
 func init() {
 	lvl, _ := log15.LvlFromString(LogLevel)
 	lvlFilterStderr := func(maxLvl log15.Lvl) io.Writer {

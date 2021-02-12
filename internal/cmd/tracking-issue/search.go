@@ -136,7 +136,6 @@ func unmarshalPullRequest(n SearchNode) *PullRequest {
 		CreatedAt:  n.CreatedAt,
 		UpdatedAt:  n.UpdatedAt,
 		ClosedAt:   n.ClosedAt,
-		BeganAt:    n.Commits.Nodes[0].Commit.AuthoredDate,
 	}
 
 	for _, assignee := range n.Assignees.Nodes {

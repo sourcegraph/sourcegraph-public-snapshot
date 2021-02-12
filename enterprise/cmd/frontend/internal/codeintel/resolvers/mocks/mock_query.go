@@ -111,7 +111,7 @@ func (f *QueryResolverDefinitionsFunc) SetDefaultHook(hook func(context.Context,
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Definitions method of the parent MockQueryResolver instance inovkes the
+// Definitions method of the parent MockQueryResolver instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
 func (f *QueryResolverDefinitionsFunc) PushHook(hook func(context.Context, int, int) ([]resolvers.AdjustedLocation, error)) {
@@ -223,7 +223,7 @@ func (f *QueryResolverDiagnosticsFunc) SetDefaultHook(hook func(context.Context,
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Diagnostics method of the parent MockQueryResolver instance inovkes the
+// Diagnostics method of the parent MockQueryResolver instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
 func (f *QueryResolverDiagnosticsFunc) PushHook(hook func(context.Context, int) ([]resolvers.AdjustedDiagnostic, int, error)) {
@@ -334,7 +334,7 @@ func (f *QueryResolverHoverFunc) SetDefaultHook(hook func(context.Context, int, 
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Hover method of the parent MockQueryResolver instance inovkes the hook at
+// Hover method of the parent MockQueryResolver instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
 func (f *QueryResolverHoverFunc) PushHook(hook func(context.Context, int, int) (string, lsifstore.Range, bool, error)) {
@@ -451,7 +451,7 @@ func (f *QueryResolverRangesFunc) SetDefaultHook(hook func(context.Context, int,
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Ranges method of the parent MockQueryResolver instance inovkes the hook
+// Ranges method of the parent MockQueryResolver instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
 func (f *QueryResolverRangesFunc) PushHook(hook func(context.Context, int, int) ([]resolvers.AdjustedCodeIntelligenceRange, error)) {
@@ -563,7 +563,7 @@ func (f *QueryResolverReferencesFunc) SetDefaultHook(hook func(context.Context, 
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// References method of the parent MockQueryResolver instance inovkes the
+// References method of the parent MockQueryResolver instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
 func (f *QueryResolverReferencesFunc) PushHook(hook func(context.Context, int, int, int, string) ([]resolvers.AdjustedLocation, string, error)) {

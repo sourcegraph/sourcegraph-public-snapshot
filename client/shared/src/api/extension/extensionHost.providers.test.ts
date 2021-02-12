@@ -1,8 +1,11 @@
 import { TestScheduler } from 'rxjs/testing'
-import { RegisteredProvider, callProviders } from './flatExtensionApi'
+import { RegisteredProvider, callProviders, providersForDocument, mergeProviderResults } from './flatExtensionApi'
 import { Observable } from 'rxjs'
 import { LOADING } from '@sourcegraph/codeintellify'
 import { TextDocumentIdentifier } from '../client/types/textDocument'
+import { fromHoverMerged, HoverMerged } from '../client/types/hover'
+import { DocumentHighlight, Hover } from 'sourcegraph'
+import { MarkupKind, Range } from '@sourcegraph/extension-api-classes'
 
 const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))
 
@@ -11,8 +14,8 @@ type Provider = RegisteredProvider<number | Observable<number>>
 const getResultsFromProviders = (providersObservable: Observable<Provider[]>, document: TextDocumentIdentifier) =>
     callProviders(
         providersObservable,
-        document,
-        value => value,
+        providers => providersForDocument(document, providers, ({ selector }) => selector),
+        ({ provider }) => provider,
         results => results,
         false // < -- logErrors
     )
@@ -148,6 +151,89 @@ describe('callProviders()', () => {
                     d: { isLoading: false, result: [3] },
                 })
             )
+        })
+    })
+})
+
+describe('mergeProviderResults()', () => {
+    describe('document highlight results', () => {
+        function mergeDocumentHighlightResults(results: (typeof LOADING | DocumentHighlight[] | null | undefined)[]) {
+            return mergeProviderResults(results)
+        }
+
+        const range1 = new Range(1, 2, 3, 4)
+        const range2 = new Range(2, 3, 4, 5)
+        const range3 = new Range(3, 4, 5, 6)
+
+        it('merges non DocumentHighlight values into empty arrays', () => {
+            expect(mergeDocumentHighlightResults([LOADING])).toStrictEqual([])
+            expect(mergeDocumentHighlightResults([null])).toStrictEqual([])
+            expect(mergeDocumentHighlightResults([undefined])).toStrictEqual([])
+            // and yes, there can be several
+            expect(mergeDocumentHighlightResults([null, LOADING])).toStrictEqual([])
+        })
+
+        it('merges a DocumentHighlight into result', () => {
+            const highlight1: DocumentHighlight = { range: range1 }
+            const highlight2: DocumentHighlight = { range: range2 }
+            const highlight3: DocumentHighlight = { range: range3 }
+            const merged: DocumentHighlight[] = [highlight1, highlight2, highlight3]
+            expect(mergeDocumentHighlightResults([[highlight1], [highlight2, highlight3]])).toEqual(merged)
+        })
+
+        it('omits non DocumentHighlight values from document highlight result', () => {
+            const highlight: DocumentHighlight = { range: range1 }
+            const merged: DocumentHighlight[] = [highlight]
+            expect(mergeDocumentHighlightResults([[highlight], null, LOADING, undefined])).toEqual(merged)
+        })
+    })
+
+    describe('hover results', () => {
+        function mergeHoverResults(results: (typeof LOADING | Hover | null | undefined)[]) {
+            return fromHoverMerged(mergeProviderResults(results))
+        }
+
+        it('merges non Hover values into nulls', () => {
+            expect(mergeHoverResults([LOADING])).toBe(null)
+            expect(mergeHoverResults([null])).toBe(null)
+            expect(mergeHoverResults([undefined])).toBe(null)
+            // and yes, there can be several
+            expect(mergeHoverResults([null, LOADING])).toBe(null)
+        })
+
+        it('merges a Hover into result', () => {
+            const hover: Hover = { contents: { value: 'a', kind: MarkupKind.PlainText } }
+            const merged: HoverMerged = { contents: [hover.contents], alerts: [] }
+            expect(mergeHoverResults([hover])).toEqual(merged)
+        })
+
+        it('omits non Hover values from hovers result', () => {
+            const hover: Hover = { contents: { value: 'a', kind: MarkupKind.PlainText } }
+            const merged: HoverMerged = { contents: [hover.contents], alerts: [] }
+            expect(mergeHoverResults([hover, null, LOADING, undefined])).toEqual(merged)
+        })
+
+        it('merges Hovers with ranges', () => {
+            const hover1: Hover = {
+                contents: { value: 'c1' },
+                // TODO this is weird to cast to ranges
+                range: ({ start: { line: 1, character: 2 }, end: { line: 3, character: 4 } } as unknown) as Range,
+            }
+            const hover2: Hover = {
+                contents: { value: 'c2' },
+                // TODO this is weird to cast to ranges
+                range: ({ start: { line: 1, character: 2 }, end: { line: 3, character: 4 } } as unknown) as Range,
+            }
+            const merged: HoverMerged = {
+                contents: [
+                    { value: 'c1', kind: MarkupKind.PlainText },
+                    { value: 'c2', kind: MarkupKind.PlainText },
+                ],
+                range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
+                alerts: [],
+            }
+
+            expect(mergeHoverResults([hover1, hover2])).toEqual(merged)
         })
     })
 })

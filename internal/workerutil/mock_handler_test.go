@@ -62,7 +62,7 @@ func (f *HandlerHandleFunc) SetDefaultHook(hook func(context.Context, Store, Rec
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Handle method of the parent MockHandler instance inovkes the hook at the
+// Handle method of the parent MockHandler instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
 func (f *HandlerHandleFunc) PushHook(hook func(context.Context, Store, Record) error) {

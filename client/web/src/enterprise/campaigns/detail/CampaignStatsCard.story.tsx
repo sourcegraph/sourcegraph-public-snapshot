@@ -21,6 +21,7 @@ add('All states', () => (
                     total: 100,
                     unpublished: 55,
                 }}
+                diff={{ added: 1000, changed: 2000, deleted: 1000 }}
                 closedAt={null}
             />
         )}
@@ -40,6 +41,7 @@ add('Campaign closed', () => (
                     total: 100,
                     unpublished: 60,
                 }}
+                diff={{ added: 1000, changed: 2000, deleted: 1000 }}
                 closedAt={new Date().toISOString()}
             />
         )}
@@ -59,6 +61,7 @@ add('Campaign done', () => (
                     total: 100,
                     unpublished: 0,
                 }}
+                diff={{ added: 1000, changed: 2000, deleted: 1000 }}
                 closedAt={null}
             />
         )}

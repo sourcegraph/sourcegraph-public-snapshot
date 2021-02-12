@@ -1,20 +1,18 @@
 import * as React from 'react'
-import * as H from 'history'
 import { SearchType } from './SearchResults'
 import { NavLink } from 'react-router-dom'
 import { toggleSearchType } from '../helpers'
-import { buildSearchURLQuery, generateFiltersQuery } from '../../../../shared/src/util/url'
+import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { constant } from 'lodash'
-import { PatternTypeProps, CaseSensitivityProps, parseSearchURLQuery, InteractiveSearchProps } from '..'
-import { scanSearchQuery } from '../../../../shared/src/search/parser/scanner'
+import { PatternTypeProps, CaseSensitivityProps, ParsedSearchQueryProps } from '..'
+import { scanSearchQuery } from '../../../../shared/src/search/query/scanner'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 
 interface Props
     extends Omit<PatternTypeProps, 'setPatternType'>,
         Omit<CaseSensitivityProps, 'setCaseSensitivity'>,
-        Pick<InteractiveSearchProps, 'filtersInQuery'>,
+        Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
         VersionContextProps {
-    location: H.Location
     type: SearchType
     query: string
 }
@@ -28,31 +26,29 @@ const typeToProse: Record<Exclude<SearchType, null>, string> = {
 }
 
 export const SearchResultTabHeader: React.FunctionComponent<Props> = ({
-    location,
     type,
     query,
-    filtersInQuery,
+    parsedSearchQuery,
     patternType,
     caseSensitive,
     versionContext,
 }) => {
-    const fullQuery = [query, generateFiltersQuery(filtersInQuery)].filter(query => query.length > 0).join(' ')
-    const caseToggledQuery = toggleSearchType(fullQuery, type)
+    const caseToggledQuery = toggleSearchType(query, type)
     const builtURLQuery = buildSearchURLQuery(caseToggledQuery, patternType, caseSensitive, versionContext)
 
-    const currentQuery = parseSearchURLQuery(location.search) || ''
-    const parsedQuery = scanSearchQuery(currentQuery)
+    const currentQuery = parsedSearchQuery
+    const scannedQuery = scanSearchQuery(currentQuery)
     let typeInQuery: SearchType = null
 
-    if (parsedQuery.type === 'success') {
+    if (scannedQuery.type === 'success') {
         // Parse any `type:` filter that exists in a query so
         // we can check whether this tab should be active.
-        for (const token of parsedQuery.token.members) {
-            if (token.type === 'filter' && token.filterType.value === 'type' && token.filterValue) {
+        for (const token of scannedQuery.term) {
+            if (token.type === 'filter' && token.field.value === 'type' && token.value) {
                 typeInQuery =
-                    token.filterValue.type === 'literal'
-                        ? (token.filterValue.value as SearchType)
-                        : (token.filterValue.quotedValue as SearchType)
+                    token.value.type === 'literal'
+                        ? (token.value.value as SearchType)
+                        : (token.value.quotedValue as SearchType)
             }
         }
     }

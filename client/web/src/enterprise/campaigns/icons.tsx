@@ -21,7 +21,11 @@ type Icon = React.FunctionComponent<{
  * The base campaign icon, which may have its class and viewBox overridden by
  * the exported components.
  */
-const BaseCampaignsIcon: BaseIcon = React.memo(function BaseCampaignsIcon({ className = '', viewBox = '0 0 20 20' }) {
+const BaseCampaignsIcon: BaseIcon = React.memo(function BaseCampaignsIcon({
+    className = '',
+    viewBox = '0 0 20 20',
+    ...props
+}) {
     return (
         <svg
             width="20"
@@ -29,6 +33,7 @@ const BaseCampaignsIcon: BaseIcon = React.memo(function BaseCampaignsIcon({ clas
             fill="currentColor"
             className={className}
             viewBox={viewBox}
+            {...props}
             xmlns="http://www.w3.org/2000/svg"
         >
             <path
@@ -56,7 +61,7 @@ const BaseCampaignsIcon: BaseIcon = React.memo(function BaseCampaignsIcon({ clas
  * 20x20. If the icon's left side needs to be flush with the left edge, use
  * {@link CampaignsIconFlushLeft} instead.
  */
-export const CampaignsIcon: Icon = ({ className }) => <BaseCampaignsIcon className={className} />
+export const CampaignsIcon: Icon = props => <BaseCampaignsIcon {...props} />
 
 /**
  * The same icon as {@link CampaignsIcon}, except the icon has no internal
@@ -64,23 +69,14 @@ export const CampaignsIcon: Icon = ({ className }) => <BaseCampaignsIcon classNa
  * should be flush with the left edges of other content displayed above and/or
  * below it.
  */
-export const CampaignsIconFlushLeft: Icon = ({ className }) => (
-    <BaseCampaignsIcon className={className} viewBox="2 0 20 20" />
-)
+export const CampaignsIconFlushLeft: Icon = props => <BaseCampaignsIcon {...props} viewBox="2 0 20 20" />
 
 /**
  * The base component for the navbar version of the campaigns icon, with
  * different proportions and bounding box.
  */
-const BaseCampaignsIconNav: BaseIcon = ({ className = '', viewBox }) => (
-    <svg
-        width="20"
-        height="20"
-        className={className}
-        viewBox={viewBox}
-        fill="currentColor"
-        xmlns="http://www.w3.org/2000/svg"
-    >
+const BaseCampaignsIconNav: BaseIcon = props => (
+    <svg width="20" height="20" {...props} fill="currentColor" xmlns="http://www.w3.org/2000/svg">
         <path
             fillRule="evenodd"
             clipRule="evenodd"
@@ -104,14 +100,10 @@ const BaseCampaignsIconNav: BaseIcon = ({ className = '', viewBox }) => (
  * The nav icon with a viewbox set up to align the icon with the other icons on
  * the global navbar.
  */
-export const CampaignsIconNav: Icon = ({ className }) => (
-    <BaseCampaignsIconNav className={className} viewBox="0 -3 38 38" />
-)
+export const CampaignsIconNav: Icon = props => <BaseCampaignsIconNav {...props} viewBox="0 -3 38 38" />
 
 /**
  * The nav icon with a viewbox set up to align the icon with the other icons on
  * the namespace navbar.
  */
-export const CampaignsIconNamespaceNav: Icon = ({ className }) => (
-    <BaseCampaignsIconNav className={className} viewBox="0 0 36 36" />
-)
+export const CampaignsIconNamespaceNav: Icon = props => <BaseCampaignsIconNav {...props} viewBox="0 0 36 36" />

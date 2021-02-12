@@ -21,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/billing"
-	db_ "github.com/sourcegraph/sourcegraph/internal/db"
+	db_ "github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 func init() {

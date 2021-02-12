@@ -1,130 +1,142 @@
 import AddIcon from 'mdi-react/AddIcon'
-import * as React from 'react'
+import React, { useCallback, useEffect, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Observable, Subject } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { gql } from '../../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../../shared/src/graphql/schema'
-import { createAggregateError } from '../../../../../shared/src/util/errors'
-import { queryGraphQL } from '../../../backend/graphql'
+import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
+import { requestGraphQL } from '../../../backend/graphql'
 import { PageTitle } from '../../../components/PageTitle'
 import { accessTokenFragment, AccessTokenNode, AccessTokenNodeProps } from '../../../settings/tokens/AccessTokenNode'
-import { eventLogger } from '../../../tracking/eventLogger'
-import { UserAreaRouteContext } from '../../area/UserArea'
 import { FilteredConnection } from '../../../components/FilteredConnection'
-import * as H from 'history'
+import {
+    AccessTokenFields,
+    AccessTokensConnectionFields,
+    AccessTokensResult,
+    AccessTokensVariables,
+    CreateAccessTokenResult,
+} from '../../../graphql-operations'
+import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
+import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
 
-interface Props extends UserAreaRouteContext, RouteComponentProps<{}> {
+interface Props
+    extends Pick<UserSettingsAreaRouteContext, 'user'>,
+        Pick<RouteComponentProps<{}>, 'history' | 'location' | 'match'>,
+        TelemetryProps {
     /**
      * The newly created token, if any. This component must call onDidPresentNewToken
      * when it is finished presenting the token secret to the user.
      */
-    newToken?: GQL.ICreateAccessTokenResult
+    newToken?: CreateAccessTokenResult['createAccessToken']
 
     /**
      * Called when the newly created access token has been presented to the user and may be purged
      * from all state (and not displayed to the user anymore).
      */
     onDidPresentNewToken: () => void
-    history: H.History
 }
-
-interface State {}
 
 /**
  * Displays access tokens whose subject is a specific user.
  */
-export class UserSettingsTokensPage extends React.PureComponent<Props, State> {
-    private static clearNewTokenTimer: number | undefined = undefined
+export const UserSettingsTokensPage: React.FunctionComponent<Props> = ({
+    telemetryService,
+    history,
+    location,
+    match,
+    user,
+    newToken,
+    onDidPresentNewToken,
+}) => {
+    useEffect(() => {
+        telemetryService.logViewEvent('UserSettingsTokens')
+    }, [telemetryService])
 
-    public state: State = {}
+    useEffect(
+        () => () => {
+            // Clear the newly created access token value from our application state; we assume the user
+            // has already stored it elsewhere.
+            onDidPresentNewToken()
+        },
+        [onDidPresentNewToken]
+    )
 
-    private accessTokenUpdates = new Subject<void>()
+    const accessTokenUpdates = useMemo(() => new Subject<void>(), [])
+    const onDeleteAccessToken = useCallback(() => {
+        accessTokenUpdates.next()
+    }, [accessTokenUpdates])
 
-    public componentDidMount(): void {
-        eventLogger.logViewEvent('UserSettingsTokens')
+    const queryUserAccessTokens = useCallback(
+        (args: { first?: number }) => queryAccessTokens({ first: args.first ?? null, user: user.id }),
+        [user.id]
+    )
 
-        if (UserSettingsTokensPage.clearNewTokenTimer !== undefined) {
-            clearTimeout(UserSettingsTokensPage.clearNewTokenTimer)
-        }
-    }
-
-    public componentWillUnmount(): void {
-        // Clear the newly created access token value from our application state; we assume the user
-        // has already stored it elsewhere.
-        this.props.onDidPresentNewToken()
-    }
-
-    public render(): JSX.Element | null {
-        const nodeProps: Omit<AccessTokenNodeProps, 'node'> = {
-            onDidUpdate: this.onDidUpdateAccessToken,
-            newToken: this.props.newToken,
-            history: this.props.history,
-        }
-
-        return (
-            <div className="user-settings-tokens-page">
-                <PageTitle title="Access tokens" />
-                <div className="d-flex justify-content-between align-items-center">
-                    <h2>Access tokens</h2>
-                    <Link className="btn btn-primary ml-2" to={`${this.props.match.url}/new`}>
-                        <AddIcon className="icon-inline" /> Generate new token
-                    </Link>
-                </div>
-                <p>Access tokens may be used to access the Sourcegraph API.</p>
-                <FilteredConnection<GQL.IAccessToken, Omit<AccessTokenNodeProps, 'node'>>
-                    listClassName="list-group list-group-flush"
-                    noun="access token"
-                    pluralNoun="access tokens"
-                    queryConnection={this.queryAccessTokens}
-                    nodeComponent={AccessTokenNode}
-                    nodeComponentProps={nodeProps}
-                    updates={this.accessTokenUpdates}
-                    hideSearch={true}
-                    noSummaryIfAllNodesVisible={true}
-                    history={this.props.history}
-                    location={this.props.location}
-                />
+    return (
+        <div className="user-settings-tokens-page">
+            <PageTitle title="Access tokens" />
+            <div className="d-flex justify-content-between align-items-center">
+                <h2>Access tokens</h2>
+                <Link className="btn btn-primary ml-2" to={`${match.url}/new`}>
+                    <AddIcon className="icon-inline" /> Generate new token
+                </Link>
             </div>
-        )
-    }
+            <p>Access tokens may be used to access the Sourcegraph API.</p>
+            <FilteredConnection<AccessTokenFields, Omit<AccessTokenNodeProps, 'node'>>
+                listClassName="list-group list-group-flush"
+                noun="access token"
+                pluralNoun="access tokens"
+                queryConnection={queryUserAccessTokens}
+                nodeComponent={AccessTokenNode}
+                nodeComponentProps={{
+                    afterDelete: onDeleteAccessToken,
+                    showSubject: false,
+                    newToken,
+                    history,
+                }}
+                updates={accessTokenUpdates}
+                hideSearch={true}
+                noSummaryIfAllNodesVisible={true}
+                history={history}
+                location={location}
+            />
+        </div>
+    )
+}
 
-    private queryAccessTokens = (args: { first?: number }): Observable<GQL.IAccessTokenConnection> =>
-        queryGraphQL(
-            gql`
-                query AccessTokens($user: ID!, $first: Int) {
-                    node(id: $user) {
-                        ... on User {
-                            accessTokens(first: $first) {
-                                nodes {
-                                    ...AccessTokenFields
-                                }
-                                totalCount
-                                pageInfo {
-                                    hasNextPage
-                                }
-                            }
+const queryAccessTokens = (variables: AccessTokensVariables): Observable<AccessTokensConnectionFields> =>
+    requestGraphQL<AccessTokensResult, AccessTokensVariables>(
+        gql`
+            query AccessTokens($user: ID!, $first: Int) {
+                node(id: $user) {
+                    __typename
+                    ... on User {
+                        accessTokens(first: $first) {
+                            ...AccessTokensConnectionFields
                         }
                     }
                 }
-                ${accessTokenFragment}
-            `,
-            { ...args, user: this.props.user.id }
-        ).pipe(
-            map(({ data, errors }) => {
-                if (!data || !data.node) {
-                    throw createAggregateError(errors)
+            }
+            fragment AccessTokensConnectionFields on AccessTokenConnection {
+                nodes {
+                    ...AccessTokenFields
                 }
-                const user = data.node as GQL.IUser
-                if (!user.accessTokens) {
-                    throw createAggregateError(errors)
+                totalCount
+                pageInfo {
+                    hasNextPage
                 }
-                return user.accessTokens
-            })
-        )
-
-    private onDidUpdateAccessToken = (): void => {
-        this.accessTokenUpdates.next()
-    }
-}
+            }
+            ${accessTokenFragment}
+        `,
+        variables
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => {
+            if (!data.node) {
+                throw new Error('User not found')
+            }
+            if (data.node.__typename !== 'User') {
+                throw new Error(`Mode is a ${data.node.__typename}, not a User`)
+            }
+            return data.node.accessTokens
+        })
+    )

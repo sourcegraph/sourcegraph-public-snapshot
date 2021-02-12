@@ -10,9 +10,9 @@ import (
 // IndexesResolver wraps store.GetIndexes so that the underlying function can be
 // invoked lazily and its results memoized.
 type IndexesResolver struct {
-	store store.Store
-	opts  store.GetIndexesOptions
-	once  sync.Once
+	dbStore DBStore
+	opts    store.GetIndexesOptions
+	once    sync.Once
 	//
 	Indexes    []store.Index
 	TotalCount int
@@ -22,8 +22,8 @@ type IndexesResolver struct {
 
 // NewIndexesResolver creates a new IndexesResolver which wil invoke store.GetIndexes
 // with the given options.
-func NewIndexesResolver(store store.Store, opts store.GetIndexesOptions) *IndexesResolver {
-	return &IndexesResolver{store: store, opts: opts}
+func NewIndexesResolver(dbStore DBStore, opts store.GetIndexesOptions) *IndexesResolver {
+	return &IndexesResolver{dbStore: dbStore, opts: opts}
 }
 
 // Resolve ensures that store.GetIndexes has been invoked. This function returns the
@@ -35,7 +35,7 @@ func (r *IndexesResolver) Resolve(ctx context.Context) error {
 }
 
 func (r *IndexesResolver) resolve(ctx context.Context) error {
-	indexes, totalCount, err := r.store.GetIndexes(ctx, r.opts)
+	indexes, totalCount, err := r.dbStore.GetIndexes(ctx, r.opts)
 	if err != nil {
 		return err
 	}

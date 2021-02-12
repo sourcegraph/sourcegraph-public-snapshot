@@ -7,9 +7,9 @@ import { isErrorLike } from '../../../../../shared/src/util/errors'
 import { refreshAuthenticatedUser } from '../../../auth'
 import { PageTitle } from '../../../components/PageTitle'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { UserAreaRouteContext } from '../../area/UserArea'
 import { EditUserProfilePage as EditUserProfilePageFragment } from '../../../graphql-operations'
 import { EditUserProfileForm } from './EditUserProfileForm'
+import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
 
 export const EditUserProfilePageGQLFragment = gql`
     fragment EditUserProfilePage on User {
@@ -18,11 +18,10 @@ export const EditUserProfilePageGQLFragment = gql`
         displayName
         avatarURL
         viewerCanChangeUsername
-        siteAdmin
     }
 `
 
-interface Props extends Pick<UserAreaRouteContext, 'onUserUpdate' | 'activation'> {
+interface Props extends Pick<UserSettingsAreaRouteContext, 'onUserUpdate' | 'activation' | 'authenticatedUser'> {
     user: EditUserProfilePageFragment
 
     history: H.History
@@ -31,6 +30,7 @@ interface Props extends Pick<UserAreaRouteContext, 'onUserUpdate' | 'activation'
 
 export const UserSettingsProfilePage: React.FunctionComponent<Props> = ({
     user,
+    authenticatedUser,
     onUserUpdate: parentOnUpdate,
     ...props
 }) => {
@@ -75,6 +75,7 @@ export const UserSettingsProfilePage: React.FunctionComponent<Props> = ({
             {user && !isErrorLike(user) && (
                 <EditUserProfileForm
                     user={user}
+                    authenticatedUser={authenticatedUser}
                     initialValue={user}
                     onUpdate={onUpdate}
                     after={

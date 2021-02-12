@@ -13,7 +13,7 @@ func TestPeriodicGoroutine(t *testing.T) {
 	clock := glock.NewMockClock()
 	handler := NewMockHandler()
 
-	goroutine := newPeriodicGoroutine(context.Background(), time.Second, handler, clock)
+	goroutine := newPeriodicGoroutine(context.Background(), time.Second, handler, nil, clock)
 	go goroutine.Start()
 	clock.BlockingAdvance(time.Second)
 	clock.BlockingAdvance(time.Second)
@@ -30,7 +30,7 @@ func TestPeriodicGoroutineError(t *testing.T) {
 	handler := NewMockHandlerWithErrorHandler()
 	handler.HandleFunc.PushReturn(errors.New("oops"))
 
-	goroutine := newPeriodicGoroutine(context.Background(), time.Second, handler, clock)
+	goroutine := newPeriodicGoroutine(context.Background(), time.Second, handler, nil, clock)
 	go goroutine.Start()
 	clock.BlockingAdvance(time.Second)
 	clock.BlockingAdvance(time.Second)
@@ -54,7 +54,7 @@ func TestPeriodicGoroutineContextError(t *testing.T) {
 		return ctx.Err()
 	})
 
-	goroutine := newPeriodicGoroutine(context.Background(), time.Second, handler, clock)
+	goroutine := newPeriodicGoroutine(context.Background(), time.Second, handler, nil, clock)
 	go goroutine.Start()
 	goroutine.Stop()
 
@@ -71,7 +71,7 @@ func TestPeriodicGoroutineFinalizer(t *testing.T) {
 	clock := glock.NewMockClock()
 	handler := NewMockHandlerWithFinalizer()
 
-	goroutine := newPeriodicGoroutine(context.Background(), time.Second, handler, clock)
+	goroutine := newPeriodicGoroutine(context.Background(), time.Second, handler, nil, clock)
 	go goroutine.Start()
 	clock.BlockingAdvance(time.Second)
 	clock.BlockingAdvance(time.Second)

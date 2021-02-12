@@ -10,10 +10,11 @@ import (
 
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
+	"golang.org/x/time/rate"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"golang.org/x/time/rate"
 )
 
 // Account represents a row in the `user_external_accounts` table. See the GraphQL API's
@@ -79,6 +80,7 @@ const (
 	KindGitHub          = "GITHUB"
 	KindGitLab          = "GITLAB"
 	KindGitolite        = "GITOLITE"
+	KindPerforce        = "PERFORCE"
 	KindPhabricator     = "PHABRICATOR"
 	KindOther           = "OTHER"
 )
@@ -110,6 +112,9 @@ const (
 	// TypeGitolite is the (api.ExternalRepoSpec).ServiceType value for Gitolite projects.
 	TypeGitolite = "gitolite"
 
+	// TypePerforce is the (api.ExternalRepoSpec).ServiceType value for Perforce projects.
+	TypePerforce = "perforce"
+
 	// TypePhabricator is the (api.ExternalRepoSpec).ServiceType value for Phabricator projects.
 	TypePhabricator = "phabricator"
 
@@ -135,6 +140,8 @@ func KindToType(kind string) string {
 		return TypeGitolite
 	case KindPhabricator:
 		return TypePhabricator
+	case KindPerforce:
+		return TypePerforce
 	case KindOther:
 		return TypeOther
 	default:
@@ -158,6 +165,8 @@ func TypeToKind(t string) string {
 		return KindGitLab
 	case TypeGitolite:
 		return KindGitolite
+	case TypePerforce:
+		return KindPerforce
 	case TypePhabricator:
 		return KindPhabricator
 	case TypeOther:
@@ -189,6 +198,8 @@ func ParseServiceType(s string) (string, bool) {
 		return TypeGitLab, true
 	case TypeGitolite:
 		return TypeGitolite, true
+	case TypePerforce:
+		return TypePerforce, true
 	case TypePhabricator:
 		return TypePhabricator, true
 	case TypeOther:
@@ -214,6 +225,8 @@ func ParseServiceKind(s string) (string, bool) {
 		return KindGitLab, true
 	case KindGitolite:
 		return KindGitolite, true
+	case KindPerforce:
+		return KindPerforce, true
 	case KindPhabricator:
 		return KindPhabricator, true
 	case KindOther:
@@ -248,6 +261,8 @@ func ParseConfig(kind, config string) (cfg interface{}, _ error) {
 		cfg = &schema.GitLabConnection{}
 	case KindGitolite:
 		cfg = &schema.GitoliteConnection{}
+	case KindPerforce:
+		cfg = &schema.PerforceConnection{}
 	case KindPhabricator:
 		cfg = &schema.PhabricatorConnection{}
 	case KindOther:
@@ -313,6 +328,8 @@ func ExtractBaseURL(kind, config string) (*url.URL, error) {
 		rawURL = c.Url
 	case *schema.GitoliteConnection:
 		rawURL = c.Host
+	case *schema.PerforceConnection:
+		return nil, errors.New("BaseURL unavailable for Perforce")
 	case *schema.PhabricatorConnection:
 		rawURL = c.Url
 	case *schema.OtherExternalServiceConnection:

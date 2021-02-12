@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
@@ -35,7 +35,7 @@ func CheckOrgAccess(ctx context.Context, orgID int32) error {
 var ErrNotAnOrgMember = errors.New("current user is not an org member")
 
 func checkUserIsOrgMember(ctx context.Context, userID, orgID int32) error {
-	resp, err := db.OrgMembers.GetByOrgIDAndUserID(ctx, orgID, userID)
+	resp, err := database.GlobalOrgMembers.GetByOrgIDAndUserID(ctx, orgID, userID)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return ErrNotAnOrgMember

@@ -46,10 +46,10 @@ func TestPromiseGetConcurrent(t *testing.T) {
 	cancel()
 
 	out, err = p.Get(ctx)
-	if err != nil {
-		t.Fatal("error should have been nil, because we canceled the context after the first call to get")
+	if err != context.Canceled {
+		t.Fatalf("got %s, but error should have been \"context canceled\"", err)
 	}
-	if ok := reflect.DeepEqual(in, out); !ok {
-		t.Fatalf("got %+v, expected %+v", out, in)
+	if out != nil {
+		t.Fatalf("got %+v, expected nil", out)
 	}
 }

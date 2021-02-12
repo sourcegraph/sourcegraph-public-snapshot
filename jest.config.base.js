@@ -37,6 +37,7 @@ const config = {
   moduleNameMapper: {
     '\\.s?css$': 'identity-obj-proxy',
     '\\.ya?ml$': 'identity-obj-proxy',
+    '\\.svg$': 'identity-obj-proxy',
     '^worker-loader': 'identity-obj-proxy',
     // monaco-editor uses the "module" field in package.json, which isn't supported by Jest
     // https://github.com/facebook/jest/issues/2702
@@ -58,7 +59,11 @@ const config = {
     // Enzyme setup file
     path.join(__dirname, 'client/shared/dev/enzymeSetup.js'),
   ],
-  setupFilesAfterEnv: [require.resolve('core-js/stable'), require.resolve('regenerator-runtime/runtime')],
+  setupFilesAfterEnv: [
+    require.resolve('core-js/stable'),
+    require.resolve('regenerator-runtime/runtime'),
+    require.resolve('@testing-library/jest-dom'),
+  ],
   globalSetup: path.join(__dirname, 'client/shared/dev/jestGlobalSetup.js'),
   snapshotSerializers: [path.join(__dirname, 'client/shared/dev/enzymeSerializer.js')],
 }

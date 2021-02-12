@@ -24,6 +24,11 @@ const queryExternalServices: typeof _queryExternalServices = () =>
                 kind: ExternalServiceKind.GITHUB,
                 displayName: 'GitHub.com',
                 config: '{"githubconfig":true}',
+                warning: null,
+                lastSyncError: null,
+                repoCount: 0,
+                lastSyncAt: '0001-01-01T00:00:00Z',
+                nextSyncAt: '0001-01-01T00:00:00Z',
             },
         ],
     })

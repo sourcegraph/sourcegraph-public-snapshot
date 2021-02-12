@@ -29,7 +29,10 @@
     },
   ],
   "editor.formatOnSave": true,
-  "go.docsTool": "gogetdoc",
+  "go.useLanguageServer": true,
+  "gopls": {
+    "local": "github.com/sourcegraph/sourcegraph",
+  },
   "jest.pathToJest": "yarn -s test",
   "jest.showCoverageOnLoad": false,
   "jest.autoEnable": false, // until we confirm people like it

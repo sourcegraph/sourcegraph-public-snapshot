@@ -3,7 +3,6 @@ package debugserver
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"net/http/pprof"
 	"os"
@@ -13,10 +12,11 @@ import (
 	"github.com/felixge/fgprof"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"golang.org/x/net/trace"
+
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
-	"golang.org/x/net/trace"
 )
 
 var addr = env.Get("SRC_PROF_HTTP", ":6060", "net/http/pprof http bind address.")
@@ -37,6 +37,9 @@ func init() {
 			}
 		}
 	}
+
+	// ensure we're exporting metadata for this service
+	registerMetadataGauge()
 }
 
 // Endpoint is a handler for the debug server. It will be displayed on the
@@ -74,9 +77,9 @@ type Dumper interface {
 }
 
 // NewServerRoutine returns a background routine that exposes pprof and metrics endpoints.
-func NewServerRoutine(extra ...Endpoint) (goroutine.BackgroundRoutine, error) {
+func NewServerRoutine(extra ...Endpoint) goroutine.BackgroundRoutine {
 	if addr == "" {
-		return goroutine.NoopRoutine(), nil
+		return goroutine.NoopRoutine()
 	}
 
 	// we're protected by adminOnly on the front of this
@@ -127,16 +130,11 @@ func NewServerRoutine(extra ...Endpoint) (goroutine.BackgroundRoutine, error) {
 		}
 	})
 
-	return httpserver.NewFromAddr(addr, handler, httpserver.Options{})
+	return httpserver.NewFromAddr(addr, &http.Server{Handler: handler})
 }
 
 // Start runs a debug server (pprof, prometheus, etc) if it is configured (via
 // SRC_PROF_HTTP environment variable). It is blocking.
 func Start(extra ...Endpoint) {
-	debugServer, err := NewServerRoutine(extra...)
-	if err != nil {
-		log.Fatalf("Failed to create listener: %s", err)
-	}
-
-	debugServer.Start()
+	NewServerRoutine(extra...).Start()
 }

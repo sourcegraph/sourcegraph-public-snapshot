@@ -19,6 +19,11 @@ import {
     DeleteCampaignVariables,
     CampaignByNamespaceResult,
     CampaignByNamespaceVariables,
+    ChangesetDiffResult,
+    ChangesetDiffVariables,
+    ReenqueueChangesetVariables,
+    ReenqueueChangesetResult,
+    ChangesetFields,
 } from '../../../graphql-operations'
 import { requestGraphQL } from '../../../backend/graphql'
 
@@ -58,6 +63,10 @@ const campaignFragment = gql`
             url
         }
 
+        diffStat {
+            ...DiffStatFields
+        }
+
         updatedAt
         closedAt
         viewerCanAdminister
@@ -68,10 +77,16 @@ const campaignFragment = gql`
 
         currentSpec {
             originalInput
+            supersedingCampaignSpec {
+                createdAt
+                applyURL
+            }
         }
     }
 
     ${changesetsStatsFragment}
+
+    ${diffStatFields}
 `
 
 const changesetLabelFragment = gql`
@@ -113,9 +128,7 @@ export const hiddenExternalChangesetFieldsFragment = gql`
         createdAt
         updatedAt
         nextSyncAt
-        externalState
-        publicationState
-        reconcilerState
+        state
     }
 `
 export const externalChangesetFieldsFragment = gql`
@@ -124,12 +137,11 @@ export const externalChangesetFieldsFragment = gql`
         id
         title
         body
-        publicationState
-        reconcilerState
-        externalState
+        state
         reviewState
         checkState
         error
+        syncerError
         labels {
             ...ChangesetLabelFields
         }
@@ -150,6 +162,13 @@ export const externalChangesetFieldsFragment = gql`
         nextSyncAt
         currentSpec {
             id
+            type
+            description {
+                __typename
+                ... on GitBranchChangesetDescription {
+                    headRef
+                }
+            }
         }
     }
 
@@ -178,12 +197,11 @@ export const queryChangesets = ({
     campaign,
     first,
     after,
-    externalState,
+    state,
     reviewState,
     checkState,
-    publicationState,
-    reconcilerState,
     onlyPublishedByThisCampaign,
+    search,
 }: CampaignChangesetsVariables): Observable<
     (CampaignChangesetsResult['node'] & { __typename: 'Campaign' })['changesets']
 > =>
@@ -193,12 +211,11 @@ export const queryChangesets = ({
                 $campaign: ID!
                 $first: Int
                 $after: String
-                $externalState: ChangesetExternalState
+                $state: ChangesetState
                 $reviewState: ChangesetReviewState
                 $checkState: ChangesetCheckState
-                $publicationState: ChangesetPublicationState
-                $reconcilerState: [ChangesetReconcilerState!]
                 $onlyPublishedByThisCampaign: Boolean
+                $search: String
             ) {
                 node(id: $campaign) {
                     __typename
@@ -206,12 +223,11 @@ export const queryChangesets = ({
                         changesets(
                             first: $first
                             after: $after
-                            externalState: $externalState
-                            publicationState: $publicationState
-                            reconcilerState: $reconcilerState
+                            state: $state
                             reviewState: $reviewState
                             checkState: $checkState
                             onlyPublishedByThisCampaign: $onlyPublishedByThisCampaign
+                            search: $search
                         ) {
                             totalCount
                             pageInfo {
@@ -232,12 +248,11 @@ export const queryChangesets = ({
             campaign,
             first,
             after,
-            externalState,
+            state,
             reviewState,
             checkState,
-            publicationState,
-            reconcilerState,
             onlyPublishedByThisCampaign,
+            search,
         }
     ).pipe(
         map(dataOrThrowErrors),
@@ -264,6 +279,26 @@ export async function syncChangeset(changeset: Scalars['ID']): Promise<void> {
         { changeset }
     ).toPromise()
     dataOrThrowErrors(result)
+}
+
+export async function reenqueueChangeset(changeset: Scalars['ID']): Promise<ChangesetFields> {
+    return requestGraphQL<ReenqueueChangesetResult, ReenqueueChangesetVariables>(
+        gql`
+            mutation ReenqueueChangeset($changeset: ID!) {
+                reenqueueChangeset(changeset: $changeset) {
+                    ...ChangesetFields
+                }
+            }
+
+            ${changesetFieldsFragment}
+        `,
+        { changeset }
+    )
+        .pipe(
+            map(dataOrThrowErrors),
+            map(data => data.reenqueueChangeset)
+        )
+        .toPromise()
 }
 
 // Because thats the name in the API:
@@ -424,4 +459,56 @@ export async function deleteCampaign(campaign: Scalars['ID']): Promise<void> {
         { campaign }
     ).toPromise()
     dataOrThrowErrors(result)
+}
+
+const changesetDiffFragment = gql`
+    fragment ChangesetDiffFields on ExternalChangeset {
+        currentSpec {
+            description {
+                ... on GitBranchChangesetDescription {
+                    commits {
+                        diff
+                    }
+                }
+            }
+        }
+    }
+`
+
+export async function getChangesetDiff(changeset: Scalars['ID']): Promise<string> {
+    return requestGraphQL<ChangesetDiffResult, ChangesetDiffVariables>(
+        gql`
+            query ChangesetDiff($changeset: ID!) {
+                node(id: $changeset) {
+                    __typename
+                    ...ChangesetDiffFields
+                }
+            }
+
+            ${changesetDiffFragment}
+        `,
+        { changeset }
+    )
+        .pipe(
+            map(dataOrThrowErrors),
+            map(({ node }) => {
+                if (!node) {
+                    throw new Error(`Changeset with ID ${changeset} does not exist`)
+                } else if (node.__typename === 'HiddenExternalChangeset') {
+                    throw new Error(`You do not have permission to view changeset ${changeset}`)
+                } else if (node.__typename !== 'ExternalChangeset') {
+                    throw new Error(`The given ID is a ${node.__typename}, not an ExternalChangeset`)
+                }
+
+                const commits = node.currentSpec?.description.commits
+                if (!commits) {
+                    throw new Error(`No commit available for changeset ID ${changeset}`)
+                } else if (commits.length !== 1) {
+                    throw new Error(`Unexpected number of commits on changeset ${changeset}: ${commits.length}`)
+                }
+
+                return commits[0].diff
+            })
+        )
+        .toPromise()
 }

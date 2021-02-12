@@ -11,6 +11,15 @@ type changesetsStatsResolver struct {
 
 var _ graphqlbackend.ChangesetsStatsResolver = &changesetsStatsResolver{}
 
+func (r *changesetsStatsResolver) Retrying() int32 {
+	return r.stats.Retrying
+}
+func (r *changesetsStatsResolver) Failed() int32 {
+	return r.stats.Failed
+}
+func (r *changesetsStatsResolver) Processing() int32 {
+	return r.stats.Processing
+}
 func (r *changesetsStatsResolver) Unpublished() int32 {
 	return r.stats.Unpublished
 }

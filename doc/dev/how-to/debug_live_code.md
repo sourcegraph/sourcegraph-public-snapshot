@@ -18,6 +18,8 @@ Requires "Debugger for Chrome" extension.
 
 ## Debug Go code
 
+Instructions for attaching with Goland [here](#attaching-via-goland)
+
 Install [Delve](https://github.com/derekparker/delve):
 
 ```bash
@@ -50,3 +52,7 @@ Delve will pause the process once it attaches the debugger. Most used [commands]
 - `s` to step into the next function call
 - `stepout` to step out of the current function call
 - `Ctrl-D` to exit
+
+## Attaching via Goland
+
+After running with `env DELVE=true dev/start.sh` you may use Run | Attach to Process in Goland to debug a running Go binary (⌥⇧F5 on macOS).

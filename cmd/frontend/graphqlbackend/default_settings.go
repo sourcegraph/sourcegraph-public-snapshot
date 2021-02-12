@@ -6,6 +6,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
@@ -67,7 +68,7 @@ func (r *defaultSettingsResolver) LatestSettings(ctx context.Context) (*settings
 	for id := range builtinExtensions {
 		extensionIDs = append(extensionIDs, id)
 	}
-	extensionIDs = ExtensionRegistry.FilterRemoteExtensions(extensionIDs)
+	extensionIDs = ExtensionRegistry().FilterRemoteExtensions(extensionIDs)
 	extensions := map[string]bool{}
 	for _, id := range extensionIDs {
 		extensions[id] = true

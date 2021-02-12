@@ -1,19 +1,18 @@
 name: Changelog progress
 on:
-  push:
-    branches:
-      - main
-      - master
+  schedule:
+  - cron: "0 0 * * *"   # Every day 00:00 UTC (4pm PST)
 jobs:
   sync-progress-channel:
     runs-on: ubuntu-latest
     name: Sync changelog to progress channel
     env:
       WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL_PROGRESS_CHANNEL }}
-      DIFF_PATH: CHANGELOG.md  # when testing and you want this to fire on any diff, set this to .
+      # # Replace with this URL for testing:
+      # WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL_TEST_CHANNEL }}
     steps:
       - uses: actions/checkout@v2
         with:
-          fetch-depth: 2
-      - run: ./dev/report_progress_to_slack.sh
+          fetch-depth: 1000
+      - run: ./dev/report_progress_to_slack.py
         shell: bash

@@ -9,7 +9,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
 func TestHumanReadableBranchName(t *testing.T) {
@@ -45,7 +44,7 @@ func TestRepository_ListBranches(t *testing.T) {
 		"git checkout -b b1",
 	}
 	tests := map[string]struct {
-		repo         gitserver.Repo
+		repo         api.RepoName
 		wantBranches []*Branch
 	}{
 		"git cmd": {
@@ -99,7 +98,7 @@ func TestRepository_Branches_MergedInto(t *testing.T) {
 	}
 
 	for label, test := range map[string]struct {
-		repo         gitserver.Repo
+		repo         api.RepoName
 		wantBranches map[string][]*Branch
 	}{
 		"git cmd": {
@@ -138,7 +137,7 @@ func TestRepository_Branches_ContainsCommit(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		repo                 gitserver.Repo
+		repo                 api.RepoName
 		commitToWantBranches map[string][]*Branch
 	}{
 		"git cmd": {
@@ -189,7 +188,7 @@ func TestRepository_Branches_BehindAheadCounts(t *testing.T) {
 	sort.Sort(Branches(gitBranches))
 
 	tests := map[string]struct {
-		repo         gitserver.Repo
+		repo         api.RepoName
 		wantBranches []*Branch
 	}{
 		"git cmd": {
@@ -244,7 +243,7 @@ func TestRepository_Branches_IncludeCommit(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		repo         gitserver.Repo
+		repo         api.RepoName
 		wantBranches []*Branch
 	}{
 		"git cmd": {
@@ -278,7 +277,7 @@ func TestRepository_ListTags(t *testing.T) {
 		dateEnv + " git tag --annotate -m foo t2",
 	}
 	tests := map[string]struct {
-		repo     gitserver.Repo
+		repo     api.RepoName
 		wantTags []*Tag
 	}{
 		"git cmd": {

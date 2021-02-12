@@ -264,25 +264,25 @@ func TestChangesetEvent(t *testing.T) {
 				{
 					ChangesetID: 1234,
 					Kind:        ChangesetEventKindGitLabApproved,
-					Key:         notes[1].Key(),
+					Key:         notes[1].ToEvent().Key(),
 					Metadata:    notes[1].ToEvent(),
 				},
 				{
 					ChangesetID: 1234,
 					Kind:        ChangesetEventKindGitLabUnapproved,
-					Key:         notes[2].Key(),
+					Key:         notes[2].ToEvent().Key(),
 					Metadata:    notes[2].ToEvent(),
 				},
 				{
 					ChangesetID: 1234,
 					Kind:        ChangesetEventKindGitLabMarkWorkInProgress,
-					Key:         notes[3].Key(),
+					Key:         notes[3].ToEvent().Key(),
 					Metadata:    notes[3].ToEvent(),
 				},
 				{
 					ChangesetID: 1234,
 					Kind:        ChangesetEventKindGitLabUnmarkWorkInProgress,
-					Key:         notes[4].Key(),
+					Key:         notes[4].ToEvent().Key(),
 					Metadata:    notes[4].ToEvent(),
 				},
 				{

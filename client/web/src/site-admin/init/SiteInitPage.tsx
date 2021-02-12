@@ -9,6 +9,16 @@ import { AuthenticatedUser } from '../../auth'
 import { SourcegraphContext } from '../../jscontext'
 
 const initSite = async (args: SignUpArguments): Promise<void> => {
+    const pingUrl = new URL('https://sourcegraph.com/ping-from-self-hosted')
+    pingUrl.searchParams.set('email', args.email)
+
+    await fetch(pingUrl.toString(), {
+        credentials: 'include',
+    })
+        .then() // no op
+        .catch((error): void => {
+            console.error(error)
+        })
     const response = await fetch('/-/site-init', {
         credentials: 'same-origin',
         method: 'POST',

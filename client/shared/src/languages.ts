@@ -93,7 +93,7 @@ function getModeFromExtension(extension: string): string | undefined {
         case 'csx':
             return 'csharp'
 
-        // C++
+        // C/C++
         case 'c':
         case 'cc':
         case 'cpp':
@@ -103,6 +103,9 @@ function getModeFromExtension(extension: string): string | undefined {
         case 'hh':
         case 'h':
         case 'hpp':
+        // https://github.com/sourcegraph/customer/issues/124
+        case 'pc':
+        case 'pcc':
             return 'cpp'
 
         // CUDA

@@ -10,14 +10,15 @@ import (
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
+	"golang.org/x/oauth2"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"golang.org/x/oauth2"
 )
 
 func init() {

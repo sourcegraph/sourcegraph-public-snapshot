@@ -17,15 +17,18 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/confdb"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/confdb"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func printConfigValidation() {
@@ -98,7 +101,7 @@ func handleConfigOverrides() error {
 		if err != nil {
 			return errors.Wrap(err, "reading GLOBAL_SETTINGS_FILE")
 		}
-		currentSettings, err := db.Settings.GetLatest(ctx, api.SettingsSubject{Site: true})
+		currentSettings, err := database.GlobalSettings.GetLatest(ctx, api.SettingsSubject{Site: true})
 		if err != nil {
 			return errors.Wrap(err, "could not fetch current settings")
 		}
@@ -110,7 +113,7 @@ func handleConfigOverrides() error {
 			if currentSettings != nil {
 				lastID = &currentSettings.ID
 			}
-			_, err = db.Settings.CreateIfUpToDate(ctx, api.SettingsSubject{Site: true}, lastID, nil, globalSettings)
+			_, err = database.GlobalSettings.CreateIfUpToDate(ctx, api.SettingsSubject{Site: true}, lastID, nil, globalSettings)
 			if err != nil {
 				return errors.Wrap(err, "writing global setting override to database")
 			}
@@ -124,19 +127,19 @@ func handleConfigOverrides() error {
 		}
 		confGet := func() *conf.Unified { return parsed }
 
-		extsvc, err := ioutil.ReadFile(overrideExtSvcConfig)
+		extsvcConfig, err := ioutil.ReadFile(overrideExtSvcConfig)
 		if err != nil {
 			return errors.Wrap(err, "reading EXTSVC_CONFIG_FILE")
 		}
 		var rawConfigs map[string][]*json.RawMessage
-		if err := jsonc.Unmarshal(string(extsvc), &rawConfigs); err != nil {
+		if err := jsonc.Unmarshal(string(extsvcConfig), &rawConfigs); err != nil {
 			return errors.Wrap(err, "parsing EXTSVC_CONFIG_FILE")
 		}
 		if len(rawConfigs) == 0 {
 			log.Warn("EXTSVC_CONFIG_FILE contains zero external service configurations")
 		}
 
-		existing, err := db.ExternalServices.List(ctx, db.ExternalServicesListOptions{
+		existing, err := database.GlobalExternalServices.List(ctx, database.ExternalServicesListOptions{
 			// NOTE: External services loaded from config file do not have namespace specified.
 			// Therefore, we only need to load those from database.
 			NoNamespace: true,
@@ -166,10 +169,32 @@ func handleConfigOverrides() error {
 				if err != nil {
 					return errors.Wrap(err, fmt.Sprintf("marshaling extsvc config ([%v][%v])", key, i))
 				}
+
+				// In development we can set the value of the cloud_default column by setting the
+				// CloudDefault value in config.
+				var cloudDefault bool
+				switch key {
+				case extsvc.KindGitHub:
+					var c schema.GitHubConnection
+					if err = json.Unmarshal(marshaledCfg, &c); err != nil {
+						return err
+					}
+					cloudDefault = c.CloudDefault
+
+				case extsvc.KindGitLab:
+					var c schema.GitLabConnection
+					if err = json.Unmarshal(marshaledCfg, &c); err != nil {
+						return err
+					}
+					cloudDefault = c.CloudDefault
+
+				}
+
 				toAdd[&types.ExternalService{
-					Kind:        key,
-					DisplayName: fmt.Sprintf("%s #%d", key, i+1),
-					Config:      string(marshaledCfg),
+					Kind:         key,
+					DisplayName:  fmt.Sprintf("%s #%d", key, i+1),
+					Config:       string(marshaledCfg),
+					CloudDefault: cloudDefault,
 				}] = true
 			}
 		}
@@ -197,14 +222,14 @@ func handleConfigOverrides() error {
 		// Apply the delta update.
 		for extSvc := range toRemove {
 			log.Debug("Deleting external service", "id", extSvc.ID, "displayName", extSvc.DisplayName)
-			err := db.ExternalServices.Delete(ctx, extSvc.ID)
+			err := database.GlobalExternalServices.Delete(ctx, extSvc.ID)
 			if err != nil {
 				return errors.Wrap(err, "ExternalServices.Delete")
 			}
 		}
 		for extSvc := range toAdd {
 			log.Debug("Adding external service", "displayName", extSvc.DisplayName)
-			if err := db.ExternalServices.Create(ctx, confGet, extSvc); err != nil {
+			if err := database.GlobalExternalServices.Create(ctx, confGet, extSvc); err != nil {
 				return errors.Wrap(err, "ExternalServices.Create")
 			}
 		}
@@ -213,8 +238,8 @@ func handleConfigOverrides() error {
 		for id, extSvc := range toUpdate {
 			log.Debug("Updating external service", "id", id, "displayName", extSvc.DisplayName)
 
-			update := &db.ExternalServiceUpdate{DisplayName: &extSvc.DisplayName, Config: &extSvc.Config}
-			if err := db.ExternalServices.Update(ctx, ps, id, update); err != nil {
+			update := &database.ExternalServiceUpdate{DisplayName: &extSvc.DisplayName, Config: &extSvc.Config, CloudDefault: &extSvc.CloudDefault}
+			if err := database.GlobalExternalServices.Update(ctx, ps, id, update); err != nil {
 				return errors.Wrap(err, "ExternalServices.Update")
 			}
 		}
@@ -340,9 +365,10 @@ func serviceConnections() conftypes.ServiceConnections {
 		}
 
 		serviceConnectionsVal = conftypes.ServiceConnections{
-			GitServers:           gitServers(),
-			PostgresDSN:          dbutil.PostgresDSN("", username, os.Getenv),
-			CodeIntelPostgresDSN: dbutil.PostgresDSN("codeintel", username, os.Getenv),
+			GitServers:               gitServers(),
+			PostgresDSN:              dbutil.PostgresDSN("", username, os.Getenv),
+			CodeIntelPostgresDSN:     dbutil.PostgresDSN("codeintel", username, os.Getenv),
+			CodeInsightsTimescaleDSN: dbutil.PostgresDSN("codeinsights", username, os.Getenv),
 		}
 
 		// We set this envvar in development to disable the following check

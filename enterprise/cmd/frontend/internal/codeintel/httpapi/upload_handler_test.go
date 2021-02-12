@@ -16,12 +16,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
-	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore/mocks"
 	uploadstoremocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestMain(m *testing.M) {
@@ -37,11 +37,11 @@ const testCommit = "deadbeef01deadbeef02deadbeef03deadbeef04"
 func TestHandleEnqueueSinglePayload(t *testing.T) {
 	setupRepoMocks(t)
 
-	mockStore := storemocks.NewMockStore()
+	mockDBStore := NewMockDBStore()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
-	mockStore.TransactFunc.SetDefaultReturn(mockStore, nil)
-	mockStore.InsertUploadFunc.SetDefaultReturn(42, nil)
+	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
+	mockDBStore.InsertUploadFunc.SetDefaultReturn(42, nil)
 
 	testURL, err := url.Parse("http://test.com/upload")
 	if err != nil {
@@ -66,7 +66,7 @@ func TestHandleEnqueueSinglePayload(t *testing.T) {
 	}
 
 	h := &UploadHandler{
-		store:       mockStore,
+		dbStore:     mockDBStore,
 		uploadStore: mockUploadStore,
 	}
 	h.handleEnqueue(w, r)
@@ -78,10 +78,10 @@ func TestHandleEnqueueSinglePayload(t *testing.T) {
 		t.Errorf("unexpected response payload (-want +got):\n%s", diff)
 	}
 
-	if len(mockStore.InsertUploadFunc.History()) != 1 {
-		t.Errorf("unexpected number of InsertUpload calls. want=%d have=%d", 1, len(mockStore.InsertUploadFunc.History()))
+	if len(mockDBStore.InsertUploadFunc.History()) != 1 {
+		t.Errorf("unexpected number of InsertUpload calls. want=%d have=%d", 1, len(mockDBStore.InsertUploadFunc.History()))
 	} else {
-		call := mockStore.InsertUploadFunc.History()[0]
+		call := mockDBStore.InsertUploadFunc.History()[0]
 		if call.Arg1.Commit != testCommit {
 			t.Errorf("unexpected commit. want=%q have=%q", testCommit, call.Arg1.Commit)
 		}
@@ -118,11 +118,11 @@ func TestHandleEnqueueSinglePayload(t *testing.T) {
 func TestHandleEnqueueSinglePayloadNoIndexerName(t *testing.T) {
 	setupRepoMocks(t)
 
-	mockStore := storemocks.NewMockStore()
+	mockDBStore := NewMockDBStore()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
-	mockStore.TransactFunc.SetDefaultReturn(mockStore, nil)
-	mockStore.InsertUploadFunc.SetDefaultReturn(42, nil)
+	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
+	mockDBStore.InsertUploadFunc.SetDefaultReturn(42, nil)
 
 	testURL, err := url.Parse("http://test.com/upload")
 	if err != nil {
@@ -153,7 +153,7 @@ func TestHandleEnqueueSinglePayloadNoIndexerName(t *testing.T) {
 	}
 
 	h := &UploadHandler{
-		store:       mockStore,
+		dbStore:     mockDBStore,
 		uploadStore: mockUploadStore,
 	}
 	h.handleEnqueue(w, r)
@@ -184,11 +184,11 @@ func TestHandleEnqueueSinglePayloadNoIndexerName(t *testing.T) {
 func TestHandleEnqueueMultipartSetup(t *testing.T) {
 	setupRepoMocks(t)
 
-	mockStore := storemocks.NewMockStore()
+	mockDBStore := NewMockDBStore()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
-	mockStore.TransactFunc.SetDefaultReturn(mockStore, nil)
-	mockStore.InsertUploadFunc.SetDefaultReturn(42, nil)
+	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
+	mockDBStore.InsertUploadFunc.SetDefaultReturn(42, nil)
 
 	testURL, err := url.Parse("http://test.com/upload")
 	if err != nil {
@@ -210,7 +210,7 @@ func TestHandleEnqueueMultipartSetup(t *testing.T) {
 	}
 
 	h := &UploadHandler{
-		store:       mockStore,
+		dbStore:     mockDBStore,
 		uploadStore: mockUploadStore,
 	}
 	h.handleEnqueue(w, r)
@@ -222,10 +222,10 @@ func TestHandleEnqueueMultipartSetup(t *testing.T) {
 		t.Errorf("unexpected response payload (-want +got):\n%s", diff)
 	}
 
-	if len(mockStore.InsertUploadFunc.History()) != 1 {
-		t.Errorf("unexpected number of InsertUpload calls. want=%d have=%d", 1, len(mockStore.InsertUploadFunc.History()))
+	if len(mockDBStore.InsertUploadFunc.History()) != 1 {
+		t.Errorf("unexpected number of InsertUpload calls. want=%d have=%d", 1, len(mockDBStore.InsertUploadFunc.History()))
 	} else {
-		call := mockStore.InsertUploadFunc.History()[0]
+		call := mockDBStore.InsertUploadFunc.History()[0]
 		if call.Arg1.Commit != testCommit {
 			t.Errorf("unexpected commit. want=%q have=%q", testCommit, call.Arg1.Commit)
 		}
@@ -242,7 +242,7 @@ func TestHandleEnqueueMultipartSetup(t *testing.T) {
 }
 
 func TestHandleEnqueueMultipartUpload(t *testing.T) {
-	mockStore := storemocks.NewMockStore()
+	mockDBStore := NewMockDBStore()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
 	upload := store.Upload{
@@ -251,8 +251,8 @@ func TestHandleEnqueueMultipartUpload(t *testing.T) {
 		UploadedParts: []int{0, 1, 2, 3, 4},
 	}
 
-	mockStore.TransactFunc.SetDefaultReturn(mockStore, nil)
-	mockStore.GetUploadByIDFunc.SetDefaultReturn(upload, true, nil)
+	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
+	mockDBStore.GetUploadByIDFunc.SetDefaultReturn(upload, true, nil)
 
 	testURL, err := url.Parse("http://test.com/upload")
 	if err != nil {
@@ -275,7 +275,7 @@ func TestHandleEnqueueMultipartUpload(t *testing.T) {
 	}
 
 	h := &UploadHandler{
-		store:       mockStore,
+		dbStore:     mockDBStore,
 		uploadStore: mockUploadStore,
 	}
 	h.handleEnqueue(w, r)
@@ -284,10 +284,10 @@ func TestHandleEnqueueMultipartUpload(t *testing.T) {
 		t.Errorf("unexpected status code. want=%d have=%d", http.StatusNoContent, w.Code)
 	}
 
-	if len(mockStore.AddUploadPartFunc.History()) != 1 {
-		t.Errorf("unexpected number of AddUploadPart calls. want=%d have=%d", 1, len(mockStore.AddUploadPartFunc.History()))
+	if len(mockDBStore.AddUploadPartFunc.History()) != 1 {
+		t.Errorf("unexpected number of AddUploadPart calls. want=%d have=%d", 1, len(mockDBStore.AddUploadPartFunc.History()))
 	} else {
-		call := mockStore.AddUploadPartFunc.History()[0]
+		call := mockDBStore.AddUploadPartFunc.History()[0]
 		if call.Arg1 != 42 {
 			t.Errorf("unexpected commit. want=%q have=%q", 42, call.Arg1)
 		}
@@ -316,7 +316,7 @@ func TestHandleEnqueueMultipartUpload(t *testing.T) {
 }
 
 func TestHandleEnqueueMultipartFinalize(t *testing.T) {
-	mockStore := storemocks.NewMockStore()
+	mockDBStore := NewMockDBStore()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
 	upload := store.Upload{
@@ -324,8 +324,8 @@ func TestHandleEnqueueMultipartFinalize(t *testing.T) {
 		NumParts:      5,
 		UploadedParts: []int{0, 1, 2, 3, 4},
 	}
-	mockStore.TransactFunc.SetDefaultReturn(mockStore, nil)
-	mockStore.GetUploadByIDFunc.SetDefaultReturn(upload, true, nil)
+	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
+	mockDBStore.GetUploadByIDFunc.SetDefaultReturn(upload, true, nil)
 
 	testURL, err := url.Parse("http://test.com/upload")
 	if err != nil {
@@ -343,7 +343,7 @@ func TestHandleEnqueueMultipartFinalize(t *testing.T) {
 	}
 
 	h := &UploadHandler{
-		store:       mockStore,
+		dbStore:     mockDBStore,
 		uploadStore: mockUploadStore,
 	}
 	h.handleEnqueue(w, r)
@@ -352,10 +352,10 @@ func TestHandleEnqueueMultipartFinalize(t *testing.T) {
 		t.Errorf("unexpected status code. want=%d have=%d", http.StatusNoContent, w.Code)
 	}
 
-	if len(mockStore.MarkQueuedFunc.History()) != 1 {
-		t.Errorf("unexpected number of MarkQueued calls. want=%d have=%d", 1, len(mockStore.MarkQueuedFunc.History()))
+	if len(mockDBStore.MarkQueuedFunc.History()) != 1 {
+		t.Errorf("unexpected number of MarkQueued calls. want=%d have=%d", 1, len(mockDBStore.MarkQueuedFunc.History()))
 	} else {
-		if call := mockStore.MarkQueuedFunc.History()[0]; call.Arg1 != 42 {
+		if call := mockDBStore.MarkQueuedFunc.History()[0]; call.Arg1 != 42 {
 			t.Errorf("unexpected upload id. want=%d have=%d", 42, call.Arg1)
 		}
 	}
@@ -383,7 +383,7 @@ func TestHandleEnqueueMultipartFinalize(t *testing.T) {
 }
 
 func TestHandleEnqueueMultipartFinalizeIncompleteUpload(t *testing.T) {
-	mockStore := storemocks.NewMockStore()
+	mockDBStore := NewMockDBStore()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
 	upload := store.Upload{
@@ -391,7 +391,7 @@ func TestHandleEnqueueMultipartFinalizeIncompleteUpload(t *testing.T) {
 		NumParts:      5,
 		UploadedParts: []int{0, 1, 3, 4},
 	}
-	mockStore.GetUploadByIDFunc.SetDefaultReturn(upload, true, nil)
+	mockDBStore.GetUploadByIDFunc.SetDefaultReturn(upload, true, nil)
 
 	testURL, err := url.Parse("http://test.com/upload")
 	if err != nil {
@@ -409,7 +409,7 @@ func TestHandleEnqueueMultipartFinalizeIncompleteUpload(t *testing.T) {
 	}
 
 	h := &UploadHandler{
-		store:       mockStore,
+		dbStore:     mockDBStore,
 		uploadStore: mockUploadStore,
 	}
 	h.handleEnqueue(w, r)
@@ -419,7 +419,7 @@ func TestHandleEnqueueMultipartFinalizeIncompleteUpload(t *testing.T) {
 	}
 }
 
-func setupRepoMocks(t *testing.T) {
+func setupRepoMocks(t testing.TB) {
 	t.Cleanup(func() {
 		backend.Mocks.Repos.GetByName = nil
 		backend.Mocks.Repos.ResolveRev = nil

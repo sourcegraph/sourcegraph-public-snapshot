@@ -3,8 +3,8 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type userEventLogResolver struct {

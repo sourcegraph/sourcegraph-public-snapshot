@@ -4,6 +4,10 @@ Sourcegraph can be configured to enforce repository permissions from code hosts.
 
 Currently, GitHub, GitHub Enterprise, GitLab and Bitbucket Server permissions are supported. Check our [product direction](https://about.sourcegraph.com/direction) for plans to support other code hosts. If your desired code host is not yet on the roadmap, please [open a feature request](https://github.com/sourcegraph/sourcegraph/issues/new?template=feature_request.md).
 
+If the Sourcegraph instance is configured to sync repositories from multiple code hosts (regardless of whether they are the same code host, e.g. `GitHub + GitHub` or `GitHub + GitLab`), setting up permissions for each code host will make repository permissions apply holistically on Sourcegraph. 
+
+Setting up a unified SSO for code hosts and Sourcegraph is also possible: how to [Set up Sourcegraph with two GitLab and Keycloak using SAML](https://unknwon.io/posts/200915_setup-sourcegraph-gitlab-keycloak/).
+
 > NOTE: Site admin users bypass all permission checks and have access to every repository on Sourcegraph.
 
 ## GitHub
@@ -206,6 +210,20 @@ Please contact [support@sourcegraph.com](mailto:support@sourcegraph.com) if you 
 A complete sync means a repository or user has done a repository-centric or user-centric syncing respectively, which presists the most accurate permissions from code hosts to Sourcegraph.
 
 An incremental sync is in fact a side effect of a complete sync because a user may grant or lose access to repositories and we react to such changes as soon as we know to improve permissions accuracy.
+
+## Faster permissions syncing via GitHub webhooks
+
+Sourcegraph 3.22+ can speed up permissions syncing by receiving webhooks from GitHub for events related to user and repo permissions. To set up webhooks, follow the guide in the [GitHub Code Host Docs](../external_service/github.md#webhooks). These events will enqueue permissions syncs for the repositories or users mentioned, meaning things like publicising / privatising repos, or adding collaborators will be reflected in your Sourcegraph searches more quickly. For this to work the user must have logged in via the [GitHub OAuth provider](../auth.md#github) 
+
+The events we consume are:
+
+* [public](https://developer.github.com/webhooks/event-payloads/#public)
+* [repository](https://developer.github.com/webhooks/event-payloads/#repository)
+* [member](https://developer.github.com/webhooks/event-payloads/#member)
+* [membership](https://developer.github.com/webhooks/event-payloads/#membership)
+* [team_add](https://developer.github.com/webhooks/event-payloads/#team_add)
+* [organization](https://developer.github.com/webhooks/event-payloads/#organization)
+
 
 ## Explicit permissions API
 

@@ -3,9 +3,11 @@ package codeintel
 import (
 	"fmt"
 	"net/url"
+	"strconv"
+	"strings"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/apiclient"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 )
 
 const defaultOutfile = "dump.lsif"
@@ -25,13 +27,18 @@ func transformRecord(index store.Index, config *Config) (apiclient.Job, error) {
 	if index.Indexer != "" {
 		dockerSteps = append(dockerSteps, apiclient.DockerStep{
 			Image:    index.Indexer,
-			Commands: index.IndexerArgs,
+			Commands: append(index.LocalSteps, strings.Join(index.IndexerArgs, " ")),
 			Dir:      index.Root,
 			Env:      nil,
 		})
 	}
 
 	srcEndpoint, err := makeURL(config.FrontendURL, config.FrontendUsername, config.FrontendPassword)
+	if err != nil {
+		return apiclient.Job{}, err
+	}
+
+	redactedSrcEndpoint, err := makeURL(config.FrontendURL, "USERNAME_REMOVED", "PASSWORD_REMOVED")
 	if err != nil {
 		return apiclient.Job{}, err
 	}
@@ -61,12 +68,26 @@ func transformRecord(index store.Index, config *Config) (apiclient.Job, error) {
 					"-root", root,
 					"-upload-route", uploadRoute,
 					"-file", outfile,
+					"-associated-index-id", strconv.Itoa(index.ID),
 				},
 				Dir: index.Root,
 				Env: []string{
 					fmt.Sprintf("SRC_ENDPOINT=%s", srcEndpoint),
 				},
 			},
+		},
+		RedactedValues: map[string]string{
+			// 🚨 SECURITY: Catch leak of upload endpoint. This is necessary in addition
+			// to the below in case the username or password contains illegal URL characters,
+			// which are then urlencoded and are not replaceable via byte comparison.
+			srcEndpoint: redactedSrcEndpoint,
+
+			// 🚨 SECURITY: Catch uses of fragments pulled from URL to construct another target
+			// (in src-cli). We only pass the constructed URL to src-cli, which we trust not to
+			// ship the values to a third party, but not to trust to ensure the values are absent
+			// from the command's stdout or stderr streams.
+			config.FrontendUsername: "USERNAME_REMOVED",
+			config.FrontendPassword: "PASSWORD_REMOVED",
 		},
 	}, nil
 }

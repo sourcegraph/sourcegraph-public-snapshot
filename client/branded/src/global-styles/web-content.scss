@@ -6,10 +6,10 @@
         color: var(--body-color);
 
         --body-color: #{$gray-06};
-        --link-color: #329af0;
+        --link-color: var(--web-content-link-color);
     }
     .theme-light & {
-        --link-color: #1c7cd6;
+        --link-color: var(--web-content-link-color);
     }
 
     h1,
@@ -48,14 +48,6 @@
         .theme-light & {
             color: $gray-13;
         }
-    }
-
-    .search-filter-keyword {
-        color: var(--search-filter-keyword-color);
-    }
-
-    .search-keyword {
-        color: var(--search-keyword-color);
     }
 
     // Search examples that link to the results page should use this class.

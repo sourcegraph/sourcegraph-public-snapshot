@@ -6,8 +6,9 @@ import (
 	"net/http"
 
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 // latestPingHandler fetches the most recent ping data from the event log
@@ -20,7 +21,7 @@ func latestPingHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	ping, err := db.EventLogs.LatestPing(r.Context())
+	ping, err := database.GlobalEventLogs.LatestPing(r.Context())
 	switch err {
 	case sql.ErrNoRows:
 		_, _ = io.WriteString(w, "{}")

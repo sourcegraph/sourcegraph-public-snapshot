@@ -4,7 +4,7 @@ import { HiddenExternalChangesetFields } from '../../../../graphql-operations'
 import { ChangesetLastSynced } from './ChangesetLastSynced'
 
 export interface HiddenExternalChangesetInfoCellProps {
-    node: Pick<HiddenExternalChangesetFields, 'id' | 'nextSyncAt' | 'updatedAt'>
+    node: Pick<HiddenExternalChangesetFields, 'id' | 'nextSyncAt' | 'updatedAt' | '__typename'>
     className?: string
 }
 

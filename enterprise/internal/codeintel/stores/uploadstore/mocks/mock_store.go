@@ -46,7 +46,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		GetFunc: &StoreGetFunc{
-			defaultHook: func(context.Context, string, int64) (io.ReadCloser, error) {
+			defaultHook: func(context.Context, string) (io.ReadCloser, error) {
 				return nil, nil
 			},
 		},
@@ -109,7 +109,7 @@ func (f *StoreComposeFunc) SetDefaultHook(hook func(context.Context, string, ...
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Compose method of the parent MockStore instance inovkes the hook at the
+// Compose method of the parent MockStore instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
 func (f *StoreComposeFunc) PushHook(hook func(context.Context, string, ...string) (int64, error)) {
@@ -227,7 +227,7 @@ func (f *StoreDeleteFunc) SetDefaultHook(hook func(context.Context, string) erro
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Delete method of the parent MockStore instance inovkes the hook at the
+// Delete method of the parent MockStore instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
 func (f *StoreDeleteFunc) PushHook(hook func(context.Context, string) error) {
@@ -311,31 +311,31 @@ func (c StoreDeleteFuncCall) Results() []interface{} {
 // StoreGetFunc describes the behavior when the Get method of the parent
 // MockStore instance is invoked.
 type StoreGetFunc struct {
-	defaultHook func(context.Context, string, int64) (io.ReadCloser, error)
-	hooks       []func(context.Context, string, int64) (io.ReadCloser, error)
+	defaultHook func(context.Context, string) (io.ReadCloser, error)
+	hooks       []func(context.Context, string) (io.ReadCloser, error)
 	history     []StoreGetFuncCall
 	mutex       sync.Mutex
 }
 
 // Get delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockStore) Get(v0 context.Context, v1 string, v2 int64) (io.ReadCloser, error) {
-	r0, r1 := m.GetFunc.nextHook()(v0, v1, v2)
-	m.GetFunc.appendCall(StoreGetFuncCall{v0, v1, v2, r0, r1})
+func (m *MockStore) Get(v0 context.Context, v1 string) (io.ReadCloser, error) {
+	r0, r1 := m.GetFunc.nextHook()(v0, v1)
+	m.GetFunc.appendCall(StoreGetFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the Get method of the
 // parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreGetFunc) SetDefaultHook(hook func(context.Context, string, int64) (io.ReadCloser, error)) {
+func (f *StoreGetFunc) SetDefaultHook(hook func(context.Context, string) (io.ReadCloser, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Get method of the parent MockStore instance inovkes the hook at the front
+// Get method of the parent MockStore instance invokes the hook at the front
 // of the queue and discards it. After the queue is empty, the default hook
 // function is invoked for any future action.
-func (f *StoreGetFunc) PushHook(hook func(context.Context, string, int64) (io.ReadCloser, error)) {
+func (f *StoreGetFunc) PushHook(hook func(context.Context, string) (io.ReadCloser, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -344,7 +344,7 @@ func (f *StoreGetFunc) PushHook(hook func(context.Context, string, int64) (io.Re
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *StoreGetFunc) SetDefaultReturn(r0 io.ReadCloser, r1 error) {
-	f.SetDefaultHook(func(context.Context, string, int64) (io.ReadCloser, error) {
+	f.SetDefaultHook(func(context.Context, string) (io.ReadCloser, error) {
 		return r0, r1
 	})
 }
@@ -352,12 +352,12 @@ func (f *StoreGetFunc) SetDefaultReturn(r0 io.ReadCloser, r1 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *StoreGetFunc) PushReturn(r0 io.ReadCloser, r1 error) {
-	f.PushHook(func(context.Context, string, int64) (io.ReadCloser, error) {
+	f.PushHook(func(context.Context, string) (io.ReadCloser, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreGetFunc) nextHook() func(context.Context, string, int64) (io.ReadCloser, error) {
+func (f *StoreGetFunc) nextHook() func(context.Context, string) (io.ReadCloser, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -396,9 +396,6 @@ type StoreGetFuncCall struct {
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
 	Arg1 string
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 int64
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 io.ReadCloser
@@ -410,7 +407,7 @@ type StoreGetFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c StoreGetFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
@@ -443,7 +440,7 @@ func (f *StoreInitFunc) SetDefaultHook(hook func(context.Context) error) {
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Init method of the parent MockStore instance inovkes the hook at the
+// Init method of the parent MockStore instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
 func (f *StoreInitFunc) PushHook(hook func(context.Context) error) {
@@ -545,7 +542,7 @@ func (f *StoreUploadFunc) SetDefaultHook(hook func(context.Context, string, io.R
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Upload method of the parent MockStore instance inovkes the hook at the
+// Upload method of the parent MockStore instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
 func (f *StoreUploadFunc) PushHook(hook func(context.Context, string, io.Reader) (int64, error)) {

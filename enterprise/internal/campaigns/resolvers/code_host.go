@@ -2,13 +2,13 @@ package resolvers
 
 import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 type campaignsCodeHostResolver struct {
 	externalServiceKind string
 	externalServiceURL  string
-	credential          *db.UserCredential
+	credential          *database.UserCredential
 }
 
 var _ graphqlbackend.CampaignsCodeHostResolver = &campaignsCodeHostResolver{}

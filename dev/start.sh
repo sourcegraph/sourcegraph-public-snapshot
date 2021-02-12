@@ -61,6 +61,11 @@ export CODEINTEL_PGSSLMODE="${PGSSLMODE:-}"
 export CODEINTEL_PGDATASOURCE="${PGDATASOURCE:-}"
 export CODEINTEL_PG_ALLOW_SINGLE_DB=true
 
+# Code Insights uses a separate database, because it's easier to run TimescaleDB in
+# Docker than install as a Postgres extension in dev environments.
+export CODEINSIGHTS_PGDATASOURCE=postgres://postgres:password@127.0.0.1:5435/postgres
+export DB_STARTUP_TIMEOUT=30s # codeinsights-db needs more time to start in some instances.
+
 # Default to "info" level debugging, and "condensed" log format (nice for human readers)
 export SRC_LOG_LEVEL=${SRC_LOG_LEVEL:-info}
 export SRC_LOG_FORMAT=${SRC_LOG_FORMAT:-condensed}
@@ -165,7 +170,7 @@ EOF
 # Kick off all build processes in parallel
 goreman --set-ports=false --exit-on-error -f "${tmp_install_procfile}" start
 
-# Once we've built the Go code and the frontend coce, we build the frontend
+# Once we've built the Go code and the frontend code, we build the frontend
 # code once in the background to make sure editor codeintel works.
 # This is fast if no changes were made.
 # Don't fail if it errors as this is only for codeintel, not for the build.

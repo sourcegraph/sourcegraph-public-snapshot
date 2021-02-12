@@ -1,27 +1,10 @@
 # Using Sourcegraph extensions
 
-[Sourcegraph extensions](index.md) add the following kinds of features to Sourcegraph and (using the [Chrome/Firefox browser extensions](../integration/browser_extension.md)) your code host and review tools:
-
-- Go to definition
-- Find references
-- Hovers
-- Line overlays, decorations, and annotations
-- Toolbar buttons
-
-The [Sourcegraph.com extension registry](https://sourcegraph.com/extensions) contains all publicly available Sourcegraph extensions. You can use these extensions on Sourcegraph.com and on your own self-hosted Sourcegraph instance.
-
-If you've used Sourcegraph before, you've used a Sourcegraph extension. For example, try hovering over tokens or toggling Git blame on [`tuf_store.go`](https://sourcegraph.com/github.com/theupdateframework/notary/-/blob/server/storage/tuf_store.go). Or see a [demo video of code coverage overlays](https://www.youtube.com/watch?v=j1eWBa3rWH8). These features (and many others) are provided by extensions. You could improve these features, or add new features, just by improving or creating extensions to Sourcegraph.
-
-Screenshots of test coverage and Git blame extensions:
-
-<div style="text-align:center;margin:20px 0;display:flex">
-<a href="https://github.com/sourcegraph/sourcegraph-codecov" target="_blank"><img src="https://user-images.githubusercontent.com/1976/45107396-53d56880-b0ee-11e8-96e9-ca83e991101c.png" style="padding:15px"></a>
-<a href="https://github.com/sourcegraph/sourcegraph-git-extras" target="_blank"><img src="https://user-images.githubusercontent.com/1976/47624533-f3a1e800-dada-11e8-81d9-3d4bd67fc08a.png" style="padding:15px"></a>
-</div>
-
 ## Usage
 
 To view all available extensions on your Sourcegraph instance, click **User menu > Extensions** in the top navigation bar.
+
+> Don't see an extension you need? You can also [author your own extension](authoring/index.md) or [share your idea](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aopen+is%3Aissue+label%3Aextension-request) with an issue labeled `extension-request`.
 
 To enable/disable an extension for yourself, click **User menu > Extensions**, find the extension, and toggle the slider.
 
@@ -54,5 +37,4 @@ On a self-hosted Sourcegraph instance, add the same JSON above to global setting
 <div style="text-align:center;margin:20px 0;display:flex">
 <img src="https://sourcegraphstatic.com/docs/images/extensions/all-users-global-settings.png" style="padding:15px"></a>
 </div>
-
 

@@ -28,8 +28,8 @@ import { GlobalDebug } from '../../components/GlobalDebug'
 import { ShortcutProvider } from '../../components/ShortcutProvider'
 import { CodeHost } from './codeHost'
 import { DOMFunctions } from './codeViews'
-import { IS_LIGHT_THEME } from './consts'
 import { NotificationClassNameProps } from '../../../../../shared/src/notifications/NotificationItem'
+import { isExternalLink } from '../../../../../shared/src/util/url'
 
 /**
  * Initializes extensions for a page. It creates the {@link PlatformContext} and extensions controller.
@@ -120,6 +120,8 @@ export const applyDecorations = (
     codeView: HTMLElement,
     decorations: TextDocumentDecoration[],
     previousDecorations: DecorationMapByLine,
+    isLightTheme: boolean,
+    previousIsLightTheme: boolean,
     part?: DiffPart
 ): DecorationMapByLine => {
     const decorationsByLine = groupDecorationsByLine(decorations)
@@ -138,7 +140,7 @@ export const applyDecorations = (
     }
     for (const [lineNumber, decorationsForLine] of decorationsByLine) {
         const previousDecorationsForLine = previousDecorations.get(lineNumber)
-        if (isEqual(decorationsForLine, previousDecorationsForLine)) {
+        if (previousIsLightTheme === isLightTheme && isEqual(decorationsForLine, previousDecorationsForLine)) {
             // No change in this line
             continue
         }
@@ -168,7 +170,7 @@ export const applyDecorations = (
         cleanupDecorationsForLineElement(lineElement)
 
         for (const decoration of decorationsForLine) {
-            const style = decorationStyleForTheme(decoration, IS_LIGHT_THEME)
+            const style = decorationStyleForTheme(decoration, isLightTheme)
             if (style.backgroundColor) {
                 let backgroundElement: HTMLElement
                 if (decoration.isWholeLine) {
@@ -180,7 +182,7 @@ export const applyDecorations = (
             }
 
             if (decoration.after) {
-                const style = decorationAttachmentStyleForTheme(decoration.after, IS_LIGHT_THEME)
+                const style = decorationAttachmentStyleForTheme(decoration.after, isLightTheme)
 
                 const linkTo = (url: string) => (element: HTMLElement): HTMLElement => {
                     const link = document.createElement('a')
@@ -188,7 +190,7 @@ export const applyDecorations = (
 
                     // External URLs should open in a new tab, whereas relative URLs
                     // should not.
-                    link.setAttribute('target', /^https?:\/\//.test(url) ? '_blank' : '')
+                    link.setAttribute('target', isExternalLink(url) ? '_blank' : '')
 
                     // Avoid leaking referrer URLs (which contain repository and path names, etc.) to external sites.
                     link.setAttribute('rel', 'noreferrer noopener')

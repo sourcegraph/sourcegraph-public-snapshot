@@ -6,14 +6,13 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
-	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
-	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore/mocks"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestDiagnostics(t *testing.T) {
-	mockStore := storemocks.NewMockStore()
-	mockBundleStore := bundlemocks.NewMockStore()
+	mockDBStore := NewMockDBStore()
+	mockLSIFStore := NewMockLSIFStore()
 	mockGitserverClient := NewMockGitserverClient()
 
 	sourceDiagnostics := []lsifstore.Diagnostic{
@@ -58,10 +57,10 @@ func TestDiagnostics(t *testing.T) {
 		},
 	}
 
-	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1})
-	setMockBundleStoreDiagnostics(t, mockBundleStore, 42, "sub1", 1, 3, sourceDiagnostics, 5)
+	setMockDBStoreGetDumpByID(t, mockDBStore, map[int]store.Dump{42: testDump1})
+	setmockLSIFStoreDiagnostics(t, mockLSIFStore, 42, "sub1", 1, 3, sourceDiagnostics, 5)
 
-	api := testAPI(mockStore, mockBundleStore, mockGitserverClient)
+	api := New(mockDBStore, mockLSIFStore, mockGitserverClient, &observation.TestContext)
 	diagnostics, _, err := api.Diagnostics(context.Background(), "sub1", 42, 3, 1)
 	if err != nil {
 		t.Fatalf("expected error getting diagnostics: %s", err)
@@ -129,12 +128,12 @@ func TestDiagnostics(t *testing.T) {
 }
 
 func TestDiagnosticsUnknownDump(t *testing.T) {
-	mockStore := storemocks.NewMockStore()
-	mockBundleStore := bundlemocks.NewMockStore()
+	mockDBStore := NewMockDBStore()
+	mockLSIFStore := NewMockLSIFStore()
 	mockGitserverClient := NewMockGitserverClient()
-	setMockStoreGetDumpByID(t, mockStore, nil)
+	setMockDBStoreGetDumpByID(t, mockDBStore, nil)
 
-	api := testAPI(mockStore, mockBundleStore, mockGitserverClient)
+	api := New(mockDBStore, mockLSIFStore, mockGitserverClient, &observation.TestContext)
 	if _, _, err := api.Diagnostics(context.Background(), "sub1", 42, 0, 10); err != ErrMissingDump {
 		t.Fatalf("unexpected error getting diagnostics. want=%q have=%q", ErrMissingDump, err)
 	}

@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
@@ -35,9 +35,9 @@ type Hunk struct {
 }
 
 // BlameFile returns Git blame information about a file.
-func BlameFile(ctx context.Context, repo gitserver.Repo, path string, opt *BlameOptions) ([]*Hunk, error) {
+func BlameFile(ctx context.Context, repo api.RepoName, path string, opt *BlameOptions) ([]*Hunk, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: BlameFile")
-	span.SetTag("repo", repo.Name)
+	span.SetTag("repo", repo)
 	span.SetTag("path", path)
 	span.SetTag("opt", opt)
 	defer span.Finish()

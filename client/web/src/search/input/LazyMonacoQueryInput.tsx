@@ -1,5 +1,6 @@
 import React, { Suspense } from 'react'
 import { MonacoQueryInputProps } from './MonacoQueryInput'
+import { SearchContextDropdown } from './SearchContextDropdown'
 import { lazyComponent } from '../../util/lazyComponent'
 import { Toggles } from './toggles/Toggles'
 
@@ -17,17 +18,21 @@ export const PlainQueryInput: React.FunctionComponent<MonacoQueryInputProps> = (
 }) => {
     const onInputChange = React.useCallback(
         (event: React.ChangeEvent<HTMLInputElement>) => {
-            // cursorPosition is only used for legacy suggestions, it's OK to set it to 0 here.
-            onChange({ query: event.target.value, cursorPosition: 0 })
+            onChange({ query: event.target.value })
         },
         [onChange]
     )
     return (
         <div className="query-input2 d-flex">
+            {props.showSearchContext && (
+                <div className="query-input2__search-context-dropdown-container">
+                    <SearchContextDropdown {...props} query={queryState.query} />
+                </div>
+            )}
             <input
                 type="text"
                 autoFocus={autoFocus}
-                className="form-control code lazy-monaco-query-input--intermediate-input"
+                className="form-control text-code lazy-monaco-query-input--intermediate-input"
                 value={queryState.query}
                 onChange={onInputChange}
                 spellCheck={false}

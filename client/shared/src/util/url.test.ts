@@ -10,6 +10,7 @@ import {
     toAbsoluteBlobURL,
     appendSubtreeQueryParameter,
     RepoFile,
+    encodeURIPathComponent,
 } from './url'
 import { SearchPatternType } from '../graphql-operations'
 
@@ -31,12 +32,33 @@ describe('parseRepoURI', () => {
             repoName: 'github.com/gorilla/mux',
         })
     })
+    test('should parse repo with spaces', () => {
+        const parsed = parseRepoURI('git://sourcegraph.visualstudio.com/Test%20Repo')
+        assertDeepStrictEqual(parsed, {
+            repoName: 'sourcegraph.visualstudio.com/Test Repo',
+        })
+    })
+
+    test('should parse repo with plus sign', () => {
+        const parsed = parseRepoURI('git://git.launchpad.net/ubuntu/+source/qemu')
+        assertDeepStrictEqual(parsed, {
+            repoName: 'git.launchpad.net/ubuntu/+source/qemu',
+        })
+    })
 
     test('should parse repo with revision', () => {
         const parsed = parseRepoURI('git://github.com/gorilla/mux?branch')
         assertDeepStrictEqual(parsed, {
             repoName: 'github.com/gorilla/mux',
             revision: 'branch',
+        })
+    })
+
+    test('should parse repo with revision with special characters', () => {
+        const parsed = parseRepoURI('git://github.com/gorilla/mux?my%2Fbranch')
+        assertDeepStrictEqual(parsed, {
+            repoName: 'github.com/gorilla/mux',
+            revision: 'my/branch',
         })
     })
 
@@ -55,6 +77,15 @@ describe('parseRepoURI', () => {
             repoName: 'github.com/gorilla/mux',
             revision: 'branch',
             filePath: 'mux.go',
+        })
+    })
+
+    test('should parse repo with revision and file with spaces', () => {
+        const parsed = parseRepoURI('git://github.com/gorilla/mux?branch#my%20file.go')
+        assertDeepStrictEqual(parsed, {
+            repoName: 'github.com/gorilla/mux',
+            revision: 'branch',
+            filePath: 'my file.go',
         })
     })
 
@@ -103,13 +134,21 @@ describe('parseRepoURI', () => {
         })
     })
 
-    test('should parse a file with special characters', () => {
+    test('should parse a file with spaces', () => {
         const parsed = parseRepoURI('git://github.com/gorilla/mux?branch#space%20here.go')
         assertDeepStrictEqual(parsed, {
             repoName: 'github.com/gorilla/mux',
             revision: 'branch',
             filePath: 'space here.go',
         })
+    })
+})
+
+describe('encodeURIPathComponent', () => {
+    it('encodes all special characters except slashes and the plus sign', () => {
+        expect(encodeURIPathComponent('hello world+/+some_special_characters_:_#_?_%_@')).toBe(
+            'hello%20world+/+some_special_characters_%3A_%23_%3F_%25_%40'
+        )
     })
 })
 
@@ -357,6 +396,11 @@ describe('buildSearchURLQuery', () => {
                 buildSearchURLQuery('type:diff patternType:literal foo', SearchPatternType.regexp, false, undefined)
             ).toBe('q=type:diff+foo&patternType=literal')
         })
+        it('overrides the patternType parameter if using a quoted value', () => {
+            expect(buildSearchURLQuery('patternType:"literal" foo', SearchPatternType.regexp, false, undefined)).toBe(
+                'q=foo&patternType=literal'
+            )
+        })
     })
     it('builds the URL query with a case parameter if caseSensitive is true', () =>
         expect(buildSearchURLQuery('foo', SearchPatternType.literal, true, undefined)).toBe(
@@ -364,6 +408,10 @@ describe('buildSearchURLQuery', () => {
         ))
     it('appends the case parameter if `case:yes` exists in the query', () =>
         expect(buildSearchURLQuery('foo case:yes', SearchPatternType.literal, false, undefined)).toBe(
+            'q=foo+&patternType=literal&case=yes'
+        ))
+    it('removes the case parameter if using a quoted value', () =>
+        expect(buildSearchURLQuery('foo case:"yes"', SearchPatternType.literal, true, undefined)).toBe(
             'q=foo+&patternType=literal&case=yes'
         ))
     it('removes the case parameter case:no exists in the query and caseSensitive is true', () =>

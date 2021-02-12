@@ -26,7 +26,7 @@ Our guiding principle is to ensure all repositories configured by a site adminis
 
 ## Discovery
 
-Before we can clone a repository, we first must discover that is exists. This is configured by a site administrator setting code host configuration. Typically a code host will have an API as well as git endpoints. A code host configuration typically will specify how to communicate with the API and which repositories to ask the API for. For example:
+Before we can clone a repository, we first must discover that it exists. This is configured by a site administrator setting code host configuration. Typically a code host will have an API as well as git endpoints. A code host configuration typically will specify how to communicate with the API and which repositories to ask the API for. For example:
 
 ``` json
 {
@@ -61,6 +61,7 @@ We keep a list of all repositories on Sourcegraph in the [`repo` table](https://
 We can't clone all repositories concurrently due to resource constraints in Sourcegraph and on the code host. So `repo-updater` has an [update scheduler](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/cmd/repo-updater/repos/scheduler.go). Cloning and fetching are treated in the same way, but priority is given to newly discovered repositories.
 
 The scheduler is divided into two parts:
+
 - [`updateQueue`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/cmd/repo-updater/repos/scheduler.go#L392:6) is a priority queue of repositories to clone/fetch on `gitserver`.
 - [`schedule`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/cmd/repo-updater/repos/scheduler.go#L567:6) which places repositories onto the `updateQueue` when it thinks it should be updated. This is what paces out updates for a repository. It contains heuristics such that recently updated repositories are more frequently checked.
 

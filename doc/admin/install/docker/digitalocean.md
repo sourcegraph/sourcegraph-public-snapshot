@@ -2,7 +2,8 @@
 
 This tutorial shows you how to deploy Sourcegraph to a single node running on DigitalOcean.
 
-> NOTE: Trying to decide how to deploy Sourcegraph? See [our recommendations](../index.md) for how to chose a deployment type that suits your needs.
+> NOTE: We *do not* recommend using this method for a production instance. If deploying a production instance, see [our recommendations](../index.md) for how to chose a deployment type that suits your needs. We recommend [Docker Compose](../docker-compose/digitalocean.md) for most initial production deployments.
+
 
 ---
 
@@ -16,7 +17,7 @@ This tutorial shows you how to deploy Sourcegraph to a single node running on Di
 1. Run the Sourcegraph Docker image as a daemon:
 
    ```
-   docker run -d --publish 80:7080 --publish 443:7443 --restart unless-stopped --volume /root/.sourcegraph/config:/etc/sourcegraph --volume /root/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.21.2
+   docker run -d --publish 80:7080 --publish 443:7443 --restart unless-stopped --volume /root/.sourcegraph/config:/etc/sourcegraph --volume /root/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.24.1
    ```
 1. Navigate to the droplet's IP address to finish initializing Sourcegraph. If you have configured a
    DNS entry for the IP, configure `externalURL` to reflect that.

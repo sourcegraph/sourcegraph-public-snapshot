@@ -20,7 +20,7 @@ func TestHorizontalSearcher(t *testing.T) {
 
 	searcher := &HorizontalSearcher{
 		Map: &endpoints,
-		Dial: func(endpoint string) zoekt.Searcher {
+		Dial: func(endpoint string) StreamSearcher {
 			var rle zoekt.RepoListEntry
 			rle.Repository.Name = endpoint
 			client := &mockSearcher{
@@ -33,7 +33,7 @@ func TestHorizontalSearcher(t *testing.T) {
 				listResult: &zoekt.RepoList{Repos: []*zoekt.RepoListEntry{&rle}},
 			}
 			// Return metered searcher to test that codepath
-			return NewMeteredSearcher(endpoint, client)
+			return NewMeteredSearcher(endpoint, &StreamSearchAdapter{client})
 		},
 	}
 	defer searcher.Close()
@@ -114,6 +114,31 @@ func TestHorizontalSearcher(t *testing.T) {
 	searcher.Close()
 }
 
+func TestDoStreamSearch(t *testing.T) {
+	var endpoints atomicMap
+	endpoints.Store(prefixMap{"1"})
+
+	searcher := &HorizontalSearcher{
+		Map: &endpoints,
+		Dial: func(endpoint string) StreamSearcher {
+			client := &mockSearcher{
+				searchResult: nil,
+				searchError:  fmt.Errorf("test error"),
+			}
+			// Return metered searcher to test that codepath
+			return NewMeteredSearcher(endpoint, &StreamSearchAdapter{client})
+		},
+	}
+	defer searcher.Close()
+
+	c := searcher.StreamSearch(context.Background(), nil, nil)
+	for event := range c {
+		if event.Error == nil {
+			t.Fatalf("received non-nil error, but expected an error")
+		}
+	}
+}
+
 func TestSyncSearchers(t *testing.T) {
 	// This test exists to ensure we test the slow path for
 	// HorizontalSearcher.searchers. The slow-path is
@@ -130,7 +155,7 @@ func TestSyncSearchers(t *testing.T) {
 	dialNumCounter := 0
 	searcher := &HorizontalSearcher{
 		Map: &endpoints,
-		Dial: func(endpoint string) zoekt.Searcher {
+		Dial: func(endpoint string) StreamSearcher {
 			dialNumCounter++
 			return &mock{
 				dialNum: dialNumCounter,
@@ -317,6 +342,10 @@ func (s *mockSearcher) Search(context.Context, query.Q, *zoekt.SearchOptions) (*
 		res = &sr
 	}
 	return res, s.searchError
+}
+
+func (s *mockSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions) <-chan StreamSearchEvent {
+	return (&StreamSearchAdapter{s}).StreamSearch(ctx, q, opts)
 }
 
 func (s *mockSearcher) List(context.Context, query.Q) (*zoekt.RepoList, error) {

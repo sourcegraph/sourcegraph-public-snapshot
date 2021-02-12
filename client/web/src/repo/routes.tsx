@@ -88,7 +88,7 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
         path: routePath,
         exact: routePath === '',
         render: ({
-            repo: { name: repoName, id: repoID, description: repoDescription },
+            repo,
             resolvedRev: { commitID, defaultBranch },
             match,
             patternType,
@@ -111,7 +111,7 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
 
             // Redirect tree and blob routes pointing to the root to the repo page
             if (match.params.objectType && filePath.replace(/\/+$/g, '') === '') {
-                return <Redirect to={toRepoURL({ repoName, revision: context.revision })} />
+                return <Redirect to={toRepoURL({ repoName: repo.name, revision: context.revision })} />
             }
 
             const objectType: 'blob' | 'tree' = match.params.objectType || 'tree'
@@ -130,9 +130,6 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
             }
 
             const repoRevisionProps = {
-                repoID,
-                repoDescription,
-                repoName,
                 commitID,
                 filePath,
                 patternType,
@@ -149,6 +146,8 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                     <RepoRevisionSidebar
                         {...context}
                         {...repoRevisionProps}
+                        repoID={repo.id}
+                        repoName={repo.name}
                         className="repo-revision-container__sidebar"
                         isDir={objectType === 'tree'}
                         defaultBranch={defaultBranch || 'HEAD'}
@@ -159,13 +158,15 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                                 <BlobPage
                                     {...context}
                                     {...repoRevisionProps}
+                                    repoID={repo.id}
+                                    repoName={repo.name}
                                     mode={mode}
                                     repoHeaderContributionsLifecycleProps={
                                         context.repoHeaderContributionsLifecycleProps
                                     }
                                 />
                             ) : (
-                                <TreePage {...context} {...repoRevisionProps} />
+                                <TreePage {...context} {...repoRevisionProps} repo={repo} />
                             )}
                         </div>
                     )}

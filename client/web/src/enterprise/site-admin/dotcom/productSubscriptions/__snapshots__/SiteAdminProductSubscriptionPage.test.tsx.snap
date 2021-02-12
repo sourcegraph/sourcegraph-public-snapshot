@@ -175,7 +175,7 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
     >
       
       <ul
-        className="filtered-connection__nodes "
+        className="filtered-connection__nodes"
       >
         <SiteAdminProductLicenseNode
           node={

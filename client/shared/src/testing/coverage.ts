@@ -57,15 +57,7 @@ export async function recordCoverage(browser: Browser): Promise<void> {
                 }
                 return
             }
-            await Promise.all(
-                Object.values(coverage).map(async fileCoverage => {
-                    await writeFile(
-                        `.nyc_output/${uuid.v4()}.json`,
-                        JSON.stringify({ [fileCoverage.path]: fileCoverage }),
-                        { flag: 'wx' }
-                    )
-                })
-            )
+            await writeFile(`.nyc_output/${uuid.v4()}.json`, JSON.stringify(coverage), { flag: 'wx' })
         })
     )
 }

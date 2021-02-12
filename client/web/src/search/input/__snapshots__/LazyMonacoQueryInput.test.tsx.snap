@@ -5,7 +5,7 @@ exports[`PlainQueryInput empty 1`] = `
   className="query-input2 d-flex"
 >
   <input
-    className="form-control code lazy-monaco-query-input--intermediate-input"
+    className="form-control text-code lazy-monaco-query-input--intermediate-input"
     onChange={[Function]}
     spellCheck={false}
     type="text"
@@ -21,7 +21,7 @@ exports[`PlainQueryInput empty 1`] = `
         aria-checked={true}
         aria-disabled={false}
         aria-label="Case sensitivity toggle"
-        className="btn btn-icon icon-inline toggle-container__toggle test-regexp-toggle test-case-sensitivity-toggle toggle-container__toggle--active test-case-sensitivity-toggle--active"
+        className="btn btn-icon icon-inline toggle-container__toggle test-case-sensitivity-toggle toggle-container__toggle--active test-case-sensitivity-toggle--active"
         data-tooltip="Disable case sensitivity"
         onClick={[Function]}
         role="checkbox"
@@ -41,8 +41,9 @@ exports[`PlainQueryInput empty 1`] = `
       </div>
       <div
         aria-checked={true}
+        aria-disabled={false}
         aria-label="Regular expression toggle"
-        className="btn btn-icon icon-inline toggle-container__toggle test-regexp-toggle test-regexp-toggle toggle-container__toggle--active test-regexp-toggle--active"
+        className="btn btn-icon icon-inline toggle-container__toggle toggle-container__regexp-button test-regexp-toggle toggle-container__toggle--active test-regexp-toggle--active"
         data-tooltip="Disable regular expression"
         onClick={[Function]}
         role="checkbox"
@@ -62,8 +63,9 @@ exports[`PlainQueryInput empty 1`] = `
       </div>
       <div
         aria-checked={false}
+        aria-disabled={false}
         aria-label="Structural search toggle"
-        className="btn btn-icon icon-inline toggle-container__toggle test-regexp-toggle test-structural-search-toggle test-structural-search-toggle--active"
+        className="btn btn-icon icon-inline toggle-container__toggle test-structural-search-toggle test-structural-search-toggle--active"
         data-tooltip="Enable structural search"
         onClick={[Function]}
         role="checkbox"
@@ -91,7 +93,7 @@ exports[`PlainQueryInput with query 1`] = `
   className="query-input2 d-flex"
 >
   <input
-    className="form-control code lazy-monaco-query-input--intermediate-input"
+    className="form-control text-code lazy-monaco-query-input--intermediate-input"
     onChange={[Function]}
     spellCheck={false}
     type="text"
@@ -107,7 +109,7 @@ exports[`PlainQueryInput with query 1`] = `
         aria-checked={true}
         aria-disabled={false}
         aria-label="Case sensitivity toggle"
-        className="btn btn-icon icon-inline toggle-container__toggle test-regexp-toggle test-case-sensitivity-toggle toggle-container__toggle--active test-case-sensitivity-toggle--active"
+        className="btn btn-icon icon-inline toggle-container__toggle test-case-sensitivity-toggle toggle-container__toggle--active test-case-sensitivity-toggle--active"
         data-tooltip="Disable case sensitivity"
         onClick={[Function]}
         role="checkbox"
@@ -127,8 +129,9 @@ exports[`PlainQueryInput with query 1`] = `
       </div>
       <div
         aria-checked={true}
+        aria-disabled={false}
         aria-label="Regular expression toggle"
-        className="btn btn-icon icon-inline toggle-container__toggle test-regexp-toggle test-regexp-toggle toggle-container__toggle--active test-regexp-toggle--active"
+        className="btn btn-icon icon-inline toggle-container__toggle toggle-container__regexp-button test-regexp-toggle toggle-container__toggle--active test-regexp-toggle--active"
         data-tooltip="Disable regular expression"
         onClick={[Function]}
         role="checkbox"
@@ -148,8 +151,9 @@ exports[`PlainQueryInput with query 1`] = `
       </div>
       <div
         aria-checked={false}
+        aria-disabled={false}
         aria-label="Structural search toggle"
-        className="btn btn-icon icon-inline toggle-container__toggle test-regexp-toggle test-structural-search-toggle test-structural-search-toggle--active"
+        className="btn btn-icon icon-inline toggle-container__toggle test-structural-search-toggle test-structural-search-toggle--active"
         data-tooltip="Enable structural search"
         onClick={[Function]}
         role="checkbox"

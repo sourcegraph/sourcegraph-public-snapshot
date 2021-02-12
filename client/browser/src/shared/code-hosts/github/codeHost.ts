@@ -25,6 +25,8 @@ import { commentTextFieldResolver } from './textFields'
 import { setElementTooltip } from './tooltip'
 import { getFileContainers, parseURL } from './util'
 import { NotificationType } from '../../../../../shared/src/api/client/services/notifications'
+import { defer, of } from 'rxjs'
+import { observeSystemIsLightTheme } from '../../../../../shared/src/theme'
 
 /**
  * Creates the mount element for the CodeViewToolbar on code views containing
@@ -308,6 +310,13 @@ export const githubCodeHost: CodeHost = {
             privateRepository: window.location.hostname !== 'github.com' || repoHeaderHasPrivateMarker,
         }
     },
+    isLightTheme: defer(() => {
+        const mode = document.documentElement.dataset.colorMode as 'auto' | 'light' | 'dark' | undefined
+        if (mode === 'auto') {
+            return observeSystemIsLightTheme()
+        }
+        return of(mode !== 'dark')
+    }),
     getViewContextOnSourcegraphMount: createOpenOnSourcegraphIfNotExists,
     viewOnSourcegraphButtonClassProps: {
         className: 'btn btn-sm tooltipped tooltipped-s',

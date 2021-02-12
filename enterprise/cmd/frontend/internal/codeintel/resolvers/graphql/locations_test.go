@@ -6,17 +6,18 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -27,15 +28,15 @@ const numPaths = 10   // per commit
 
 func TestCachedLocationResolver(t *testing.T) {
 	t.Cleanup(func() {
-		db.Mocks.Repos.Get = nil
+		database.Mocks.Repos.Get = nil
 		git.Mocks.ResolveRevision = nil
 		backend.Mocks.Repos.GetCommit = nil
 	})
 
 	var repoCalls uint32
-	db.Mocks.Repos.Get = func(v0 context.Context, id api.RepoID) (*types.Repo, error) {
+	database.Mocks.Repos.Get = func(v0 context.Context, id api.RepoID) (*types.Repo, error) {
 		atomic.AddUint32(&repoCalls, 1)
-		return &types.Repo{ID: id}, nil
+		return &types.Repo{ID: id, CreatedAt: time.Now()}, nil
 	}
 
 	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
@@ -43,7 +44,7 @@ func TestCachedLocationResolver(t *testing.T) {
 	}
 
 	var commitCalls uint32
-	backend.Mocks.Repos.GetCommit = func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*git.Commit, error) {
+	git.Mocks.GetCommit = func(commitID api.CommitID) (*git.Commit, error) {
 		atomic.AddUint32(&commitCalls, 1)
 		return &git.Commit{ID: commitID}, nil
 	}
@@ -85,8 +86,13 @@ func TestCachedLocationResolver(t *testing.T) {
 					errs <- err
 					return
 				}
-				if repositoryResolver.Type().ID != repositoryID {
-					errs <- fmt.Errorf("unexpected repository id. want=%d have=%d", repositoryID, repositoryResolver.Type().ID)
+				repoID, err := gql.UnmarshalRepositoryID(repositoryResolver.ID())
+				if err != nil {
+					errs <- err
+					return
+				}
+				if repoID != repositoryID {
+					errs <- fmt.Errorf("unexpected repository id. want=%d have=%d", repositoryID, repoID)
 					return
 				}
 			}
@@ -135,8 +141,11 @@ func TestCachedLocationResolver(t *testing.T) {
 		t.Errorf("unexpected number of repo calls. want=%d have=%d", len(repositoryIDs), val)
 	}
 
-	if val := atomic.LoadUint32(&commitCalls); val != uint32(len(repositoryIDs)*len(commits)) {
-		t.Errorf("unexpected number of commit calls. want=%d have=%d", len(commits), val)
+	// We don't need to load commits from git-server unless we ask for fields like author or committer.
+	// Since we already know this commit exists, and we only need it's already known commit ID, we assert
+	// that zero calls to git.GetCommit where done. Check the gitCommitResolver lazy loading logic.
+	if val := atomic.LoadUint32(&commitCalls); val != 0 {
+		t.Errorf("unexpected number of commit calls. want=%d have=%d", 0, val)
 	}
 
 	close(resolvers)
@@ -156,12 +165,12 @@ func TestCachedLocationResolver(t *testing.T) {
 
 func TestCachedLocationResolverUnknownRepository(t *testing.T) {
 	t.Cleanup(func() {
-		db.Mocks.Repos.Get = nil
+		database.Mocks.Repos.Get = nil
 		git.Mocks.ResolveRevision = nil
 	})
 
-	db.Mocks.Repos.Get = func(v0 context.Context, id api.RepoID) (*types.Repo, error) {
-		return nil, &db.RepoNotFoundErr{ID: id}
+	database.Mocks.Repos.Get = func(v0 context.Context, id api.RepoID) (*types.Repo, error) {
+		return nil, &database.RepoNotFoundErr{ID: id}
 	}
 
 	repositoryResolver, err := NewCachedLocationResolver().Repository(context.Background(), 50)
@@ -184,11 +193,11 @@ func TestCachedLocationResolverUnknownRepository(t *testing.T) {
 
 func TestCachedLocationResolverUnknownCommit(t *testing.T) {
 	t.Cleanup(func() {
-		db.Mocks.Repos.Get = nil
+		database.Mocks.Repos.Get = nil
 		git.Mocks.ResolveRevision = nil
 	})
 
-	db.Mocks.Repos.Get = func(v0 context.Context, id api.RepoID) (*types.Repo, error) {
+	database.Mocks.Repos.Get = func(v0 context.Context, id api.RepoID) (*types.Repo, error) {
 		return &types.Repo{ID: id}, nil
 	}
 
@@ -216,12 +225,12 @@ func TestCachedLocationResolverUnknownCommit(t *testing.T) {
 
 func TestResolveLocations(t *testing.T) {
 	t.Cleanup(func() {
-		db.Mocks.Repos.Get = nil
+		database.Mocks.Repos.Get = nil
 		git.Mocks.ResolveRevision = nil
 		backend.Mocks.Repos.GetCommit = nil
 	})
 
-	db.Mocks.Repos.Get = func(v0 context.Context, id api.RepoID) (*types.Repo, error) {
+	database.Mocks.Repos.Get = func(v0 context.Context, id api.RepoID) (*types.Repo, error) {
 		return &types.Repo{ID: id, Name: api.RepoName(fmt.Sprintf("repo%d", id))}, nil
 	}
 

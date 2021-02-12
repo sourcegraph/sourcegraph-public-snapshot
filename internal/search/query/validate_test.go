@@ -1,11 +1,11 @@
 package query
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/internal/search/query/types"
 )
 
 func TestAndOrQuery_Validation(t *testing.T) {
@@ -14,6 +14,10 @@ func TestAndOrQuery_Validation(t *testing.T) {
 		searchType SearchType // nil value is regexp
 		want       string
 	}{
+		{
+			input: "index:foo",
+			want:  `invalid value "foo" for field "index". Valid values are: yes, only, no`,
+		},
 		{
 			input: "case:yes case:no",
 			want:  `field "case" may not be used more than once`,
@@ -76,12 +80,24 @@ func TestAndOrQuery_Validation(t *testing.T) {
 			input: "repo:foo author:rob@saucegraph.com",
 			want:  `your query contains the field 'author', which requires type:commit or type:diff in the query`,
 		},
+		{
+			input: "repohasfile:README type:symbol yolo",
+			want:  "repohasfile is not compatible for type:symbol. Subscribe to https://github.com/sourcegraph/sourcegraph/issues/4610 for updates",
+		},
+		{
+			input: "foo context:a context:b",
+			want:  `field "context" may not be used more than once`,
+		},
+		{
+			input: "-context:a",
+			want:  `field "context" does not support negation`,
+		},
 	}
 	for _, c := range cases {
 		t.Run("validate and/or query", func(t *testing.T) {
 			_, err := ProcessAndOr(c.input, ParserOptions{c.searchType, false})
 			if err == nil {
-				t.Fatal("expected test to fail")
+				t.Fatal(fmt.Sprintf("expected test for %s to fail", c.input))
 			}
 			if diff := cmp.Diff(c.want, err.Error()); diff != "" {
 				t.Fatal(diff)
@@ -158,23 +174,6 @@ func TestAndOrQuery_RegexpPatterns(t *testing.T) {
 			t.Error(diff)
 		}
 	})
-}
-
-func TestAndOrQuery_CaseInsensitiveFields(t *testing.T) {
-	query, err := ProcessAndOr("repoHasFile:foo", ParserOptions{SearchTypeRegex, false})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	values, _ := query.RegexpPatterns(FieldRepoHasFile)
-	if len(values) != 1 || values[0] != "foo" {
-		t.Errorf("unexpected values: want {\"foo\"}, got %v", values)
-	}
-
-	fields := types.Fields(query.Fields())
-	if got, want := fields.String(), `repohasfile~"foo"`; got != want {
-		t.Errorf("unexpected parsed query:\ngot:  %s\nwant: %s", got, want)
-	}
 }
 
 func TestPartitionSearchPattern(t *testing.T) {

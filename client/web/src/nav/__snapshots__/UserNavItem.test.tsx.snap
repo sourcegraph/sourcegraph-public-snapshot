@@ -44,6 +44,7 @@ exports[`UserNavItem simple 1`] = `
       themePreference="light"
     >
       <ButtonDropdown
+        aria-label="User. Open menu"
         className="py-0"
         isOpen={false}
         toggle={[Function]}
@@ -52,6 +53,7 @@ exports[`UserNavItem simple 1`] = `
           a11y={true}
           active={false}
           addonType={false}
+          aria-label="User. Open menu"
           className="py-0"
           direction="down"
           group={true}
@@ -63,12 +65,12 @@ exports[`UserNavItem simple 1`] = `
         >
           <Manager>
             <div
+              aria-label="User. Open menu"
               className="py-0 btn-group"
               onKeyDown={[Function]}
             >
               <DropdownToggle
                 aria-haspopup={true}
-                caret={true}
                 className="bg-transparent d-flex align-items-center test-user-nav-item-toggle"
                 color="secondary"
                 nav={true}
@@ -80,7 +82,7 @@ exports[`UserNavItem simple 1`] = `
                     <a
                       aria-expanded={false}
                       aria-haspopup={true}
-                      className="bg-transparent d-flex align-items-center test-user-nav-item-toggle dropdown-toggle nav-link"
+                      className="bg-transparent d-flex align-items-center test-user-nav-item-toggle nav-link"
                       href="#"
                       onClick={[Function]}
                     >
@@ -88,47 +90,50 @@ exports[`UserNavItem simple 1`] = `
                         className="position-relative"
                       >
                         <div
-                          className=""
-                        />
-                        <UserAvatar
-                          className="icon-inline"
-                          size={48}
-                          targetID="target-user-avatar"
-                          user={
-                            Object {
-                              "avatarURL": null,
-                              "organizations": Object {
-                                "nodes": Array [
-                                  Object {
-                                    "displayName": "Acme Corp",
-                                    "id": "0",
-                                    "name": "acme",
-                                    "settingsURL": "/organizations/acme/settings",
-                                    "url": "/organizations/acme",
-                                  },
-                                  Object {
-                                    "displayName": "Beta Inc",
-                                    "id": "1",
-                                    "name": "beta",
-                                    "settingsURL": "/organizations/beta/settings",
-                                    "url": "/organizations/beta",
-                                  },
-                                ],
-                              },
-                              "session": Object {
-                                "canSignOut": true,
-                              },
-                              "settingsURL": "#",
-                              "siteAdmin": true,
-                              "username": "alice",
-                            }
-                          }
+                          className="align-items-center d-flex"
                         >
-                          <Memo(AccountCircleIcon)
-                            className="user-avatar icon-inline"
-                            id="target-user-avatar"
+                          <UserAvatar
+                            className="icon-inline"
+                            targetID="target-user-avatar"
+                            user={
+                              Object {
+                                "avatarURL": null,
+                                "organizations": Object {
+                                  "nodes": Array [
+                                    Object {
+                                      "displayName": "Acme Corp",
+                                      "id": "0",
+                                      "name": "acme",
+                                      "settingsURL": "/organizations/acme/settings",
+                                      "url": "/organizations/acme",
+                                    },
+                                    Object {
+                                      "displayName": "Beta Inc",
+                                      "id": "1",
+                                      "name": "beta",
+                                      "settingsURL": "/organizations/beta/settings",
+                                      "url": "/organizations/beta",
+                                    },
+                                  ],
+                                },
+                                "session": Object {
+                                  "canSignOut": true,
+                                },
+                                "settingsURL": "#",
+                                "siteAdmin": true,
+                                "username": "alice",
+                              }
+                            }
+                          >
+                            <Memo(AccountCircleIcon)
+                              className="user-avatar icon-inline"
+                              id="target-user-avatar"
+                            />
+                          </UserAvatar>
+                          <Memo(MenuDownIcon)
+                            className="icon-inline"
                           />
-                        </UserAvatar>
+                        </div>
                       </div>
                     </a>
                   </InnerReference>

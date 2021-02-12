@@ -234,6 +234,8 @@ export function createViewerService(modelService: Pick<ModelService, 'removeMode
             const updates: ViewerUpdate[] = [...viewers.keys()].map(viewerId => ({ type: 'deleted', viewerId }))
             viewers.clear()
             viewerUpdates.next(updates)
+            // The active viewer will have been removed
+            activeViewerUpdates.next(undefined)
         },
     }
 }

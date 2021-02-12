@@ -38,8 +38,8 @@ export function defaultPatternTypeFromSettings(settingsCascade: SettingsCascadeO
         const defaultPatternType =
             settingsCascade.final &&
             !isErrorLike(settingsCascade.final) &&
-            settingsCascade.final['search.defaultPatternType']
-        return defaultPatternType || 'literal'
+            (settingsCascade.final['search.defaultPatternType'] as SearchPatternType.literal)
+        return defaultPatternType || SearchPatternType.literal
     }
     return
 }
@@ -47,38 +47,41 @@ export function defaultPatternTypeFromSettings(settingsCascade: SettingsCascadeO
 export function experimentalFeaturesFromSettings(
     settingsCascade: SettingsCascadeOrError
 ): {
-    splitSearchModes: boolean
     copyQueryButton: boolean
-    searchStreaming: boolean
     showRepogroupHomepage: boolean
     showOnboardingTour: boolean
     showEnterpriseHomePanels: boolean
     showMultilineSearchConsole: boolean
+    showSearchContext: boolean
     showQueryBuilder: boolean
+    enableSmartQuery: boolean
+    enableCodeMonitoring: boolean
 } {
     const experimentalFeatures: SettingsExperimentalFeatures =
         (settingsCascade.final && !isErrorLike(settingsCascade.final) && settingsCascade.final.experimentalFeatures) ||
         {}
 
     const {
-        splitSearchModes = false,
         copyQueryButton = false,
-        searchStreaming = false,
         showRepogroupHomepage = false,
         showOnboardingTour = true, // Default to true if not set
         showEnterpriseHomePanels = true, // Default to true if not set
+        showSearchContext = false,
         showMultilineSearchConsole = false,
         showQueryBuilder = false,
+        enableSmartQuery = true,
+        codeMonitoring = false,
     } = experimentalFeatures
 
     return {
-        splitSearchModes,
         copyQueryButton,
-        searchStreaming,
         showRepogroupHomepage,
         showOnboardingTour,
+        showSearchContext,
         showEnterpriseHomePanels,
         showMultilineSearchConsole,
         showQueryBuilder,
+        enableSmartQuery,
+        enableCodeMonitoring: codeMonitoring,
     }
 }

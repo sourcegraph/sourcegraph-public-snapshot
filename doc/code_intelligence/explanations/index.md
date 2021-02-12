@@ -1,6 +1,6 @@
 # Explanations
 
-- [Basic code intelligence](basic_code_intelligence.md)
+- [Search-based code intelligence](search_based_code_intelligence.md)
 - [Precise code intelligence](precise_code_intelligence.md)
 - [Features](features.md)
   - [Hover tooltips](./features.md#hover-tooltips-with-documentation-and-type-signatures)

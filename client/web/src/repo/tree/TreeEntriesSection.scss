@@ -6,8 +6,10 @@
     //
     // See also MIN_ENTRIES_FOR_COLUMN_LAYOUT.
     &--columns {
-        column-gap: 2.25rem;
+        column-gap: 1.5rem;
         column-width: 13rem;
+        column-rule: 1px solid var(--border-color);
+        border-right: solid 1px var(--border-color);
 
         @media (max-width: $media-sm) {
             column-count: 1;
@@ -15,12 +17,14 @@
         @media (max-width: $media-md) {
             column-count: 3;
         }
-        @media (max-width: $media-lg) {
+        @media (min-width: $media-md) {
             column-count: 4;
         }
-        @media (min-width: $media-lg) {
-            column-count: 5;
-        }
+    }
+
+    &--no-decorations {
+        column-rule: none;
+        border-right: none;
     }
 }
 
@@ -31,8 +35,16 @@
     white-space: nowrap;
 
     margin-left: -0.25rem;
+    margin-right: -0.25rem;
     padding: 0.125rem 0.25rem;
+
+    break-inside: avoid-column;
+
     &:hover {
         background-color: var(--color-bg-1);
+    }
+
+    &--no-columns {
+        max-width: 18rem;
     }
 }

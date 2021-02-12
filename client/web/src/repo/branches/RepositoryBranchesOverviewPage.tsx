@@ -15,6 +15,7 @@ import { gitReferenceFragments, GitReferenceNode } from '../GitReference'
 import { RepositoryBranchesAreaPageProps } from './RepositoryBranchesArea'
 import { ErrorAlert } from '../../components/alerts'
 import * as H from 'history'
+import { Scalars } from '../../../../shared/src/graphql-operations'
 
 interface Data {
     defaultBranch: GQL.IGitRef | null
@@ -23,7 +24,7 @@ interface Data {
 }
 
 const queryGitBranches = memoizeObservable(
-    (args: { repo: GQL.ID; first: number }): Observable<Data> =>
+    (args: { repo: Scalars['ID']; first: number }): Observable<Data> =>
         queryGraphQL(
             gql`
                 query RepositoryGitBranchesOverview($repo: ID!, $first: Int!, $withBehindAhead: Boolean!) {

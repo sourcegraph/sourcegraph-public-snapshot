@@ -2,7 +2,7 @@
 
 exports[`ActionItem "open" command renders as link 1`] = `
 <a
-  className="action-item"
+  className="action-item test-action-item"
   href="https://example.com/bar"
   onClick={[Function]}
   onKeyPress={[Function]}
@@ -17,7 +17,7 @@ exports[`ActionItem "open" command renders as link 1`] = `
 
 exports[`ActionItem "open" command renders as link that opens in a new tab, but without icon for a different origin as the alt action and a primary action defined 1`] = `
 <a
-  className="action-item"
+  className="action-item test-action-item"
   href="https://other.com/foo"
   onClick={[Function]}
   onKeyPress={[Function]}
@@ -34,7 +34,7 @@ exports[`ActionItem "open" command renders as link that opens in a new tab, but 
 
 exports[`ActionItem "open" command renders as link with icon and opens a new tab for a different origin 1`] = `
 <a
-  className="action-item"
+  className="action-item test-action-item"
   href="https://other.com/foo"
   onClick={[Function]}
   onKeyPress={[Function]}
@@ -53,7 +53,7 @@ exports[`ActionItem "open" command renders as link with icon and opens a new tab
 exports[`ActionItem actionItem variant 1`] = `
 <a
   aria-label="d"
-  className="action-item action-item--variant-action-item"
+  className="action-item test-action-item action-item--variant-action-item"
   data-tooltip="d"
   href=""
   onAuxClick={[Function]}
@@ -74,7 +74,7 @@ exports[`ActionItem actionItem variant 1`] = `
 exports[`ActionItem non-actionItem variant 1`] = `
 <a
   aria-label="d"
-  className="action-item"
+  className="action-item test-action-item"
   data-tooltip="d"
   href=""
   onAuxClick={[Function]}
@@ -95,7 +95,7 @@ exports[`ActionItem non-actionItem variant 1`] = `
 exports[`ActionItem non-pressed actionItem 1`] = `
 <a
   aria-pressed={false}
-  className="action-item action-item--variant-action-item"
+  className="action-item test-action-item action-item--variant-action-item"
   href=""
   onAuxClick={[Function]}
   onClick={[Function]}
@@ -126,7 +126,7 @@ exports[`ActionItem noop command 1`] = `
 exports[`ActionItem pressed toggle actionItem 1`] = `
 <a
   aria-pressed={true}
-  className="action-item action-item--variant-action-item action-item--pressed"
+  className="action-item test-action-item action-item--variant-action-item action-item--pressed"
   href=""
   onAuxClick={[Function]}
   onClick={[Function]}
@@ -143,7 +143,7 @@ exports[`ActionItem pressed toggle actionItem 1`] = `
 exports[`ActionItem run command 1`] = `
 <a
   aria-label="d"
-  className="action-item action-item--variant-action-item disabled"
+  className="action-item test-action-item action-item--variant-action-item disabled"
   data-tooltip="d"
   href=""
   onAuxClick={[Function]}
@@ -164,7 +164,7 @@ exports[`ActionItem run command 1`] = `
 exports[`ActionItem run command 2`] = `
 <a
   aria-label="d"
-  className="action-item action-item--variant-action-item"
+  className="action-item test-action-item action-item--variant-action-item"
   data-tooltip="d"
   href=""
   onAuxClick={[Function]}
@@ -185,7 +185,7 @@ exports[`ActionItem run command 2`] = `
 exports[`ActionItem run command with error 1`] = `
 <a
   aria-label="d"
-  className="action-item action-item--variant-action-item"
+  className="action-item test-action-item action-item--variant-action-item"
   data-tooltip="d"
   href=""
   onAuxClick={[Function]}
@@ -206,7 +206,7 @@ exports[`ActionItem run command with error 1`] = `
 exports[`ActionItem run command with error with showInlineError 1`] = `
 <a
   aria-label="Error: x"
-  className="action-item action-item--variant-action-item"
+  className="action-item test-action-item action-item--variant-action-item"
   data-tooltip="Error: x"
   href=""
   onAuxClick={[Function]}
@@ -227,7 +227,7 @@ exports[`ActionItem run command with error with showInlineError 1`] = `
 exports[`ActionItem run command with showLoadingSpinnerDuringExecution 1`] = `
 <a
   aria-label="d"
-  className="action-item action-item--loading action-item--variant-action-item disabled"
+  className="action-item test-action-item action-item--loading action-item--variant-action-item disabled"
   data-tooltip="d"
   href=""
   onAuxClick={[Function]}
@@ -255,7 +255,7 @@ exports[`ActionItem run command with showLoadingSpinnerDuringExecution 1`] = `
 exports[`ActionItem run command with showLoadingSpinnerDuringExecution 2`] = `
 <a
   aria-label="d"
-  className="action-item action-item--variant-action-item"
+  className="action-item test-action-item action-item--variant-action-item"
   data-tooltip="d"
   href=""
   onAuxClick={[Function]}
@@ -276,7 +276,7 @@ exports[`ActionItem run command with showLoadingSpinnerDuringExecution 2`] = `
 exports[`ActionItem title element 1`] = `
 <a
   aria-label="d"
-  className="action-item action-item--variant-action-item"
+  className="action-item test-action-item action-item--variant-action-item"
   data-tooltip="d"
   href=""
   onAuxClick={[Function]}

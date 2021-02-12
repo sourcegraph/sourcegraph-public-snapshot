@@ -4,11 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"os"
+	"path/filepath"
 	"reflect"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/hexops/autogold"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
@@ -67,7 +70,7 @@ func foo(go string) {}
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
 			p.Languages = tt.Languages
-			matches, _, err := structuralSearch(context.Background(), zf, p.Pattern, p.CombyRule, p.Languages, p.IncludePatterns, "repo_foo")
+			matches, _, err := structuralSearch(context.Background(), zf, p.Pattern, p.CombyRule, "", p.Languages, p.IncludePatterns, "repo_foo")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -83,6 +86,64 @@ func foo(go string) {}
 			}
 		})
 	}
+}
+
+func TestMatcherLookupByExtension(t *testing.T) {
+	// If we are not on CI skip the test.
+	if os.Getenv("CI") == "" {
+		t.Skip("Not on CI, skipping comby-dependent test")
+	}
+
+	input := map[string]string{
+		"file_without_extension": `
+/* This foo(plain.empty) {} is in a Go comment should not match in Go, but should match in plaintext */
+func foo(go.empty) {}
+`,
+		"file.go": `
+/* This foo(plain.go) {} is in a Go comment should not match in Go, but should match in plaintext */
+func foo(go.go) {}
+`,
+		"file.txt": `
+/* This foo(plain.txt) {} is in a Go comment should not match in Go, but should match in plaintext */
+func foo(go.txt) {}
+`,
+	}
+
+	zipData, err := testutil.CreateZip(input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	zf, cleanup, err := testutil.TempZipFileOnDisk(zipData)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cleanup()
+
+	test := func(language, filename string) string {
+		var languages []string
+		if language != "" {
+			languages = []string{language}
+		}
+
+		extension := filepath.Ext(filename)
+		matches, _, err := structuralSearch(context.Background(), zf, "foo(:[args])", "", extension, languages, []string{}, "repo_foo")
+		if err != nil {
+			return "ERROR"
+		}
+		var got []string
+		for _, fileMatches := range matches {
+			for _, m := range fileMatches.LineMatches {
+				got = append(got, m.Preview)
+			}
+		}
+		sort.Strings(got)
+		return strings.Join(got, " ")
+	}
+
+	autogold.Want("No language and no file extension => .generic matcher", "foo(go.empty) foo(go.go) foo(go.txt) foo(plain.empty) foo(plain.go) foo(plain.txt)").Equal(t, test("", "file_without_extension"))
+	autogold.Want("No language and .go file extension => .go matcher", "foo(go.empty) foo(go.go) foo(go.txt)").Equal(t, test("", "a/b/c/file.go"))
+	autogold.Want("Language Go and no file extension => .go matcher", "foo(go.empty) foo(go.go) foo(go.txt)").Equal(t, test("go", ""))
+	autogold.Want("Language .go and .txt file extension => .go matcher", "foo(go.empty) foo(go.go) foo(go.txt)").Equal(t, test("go", "file.txt"))
 }
 
 // Tests that structural search correctly infers the Go matcher from the .go
@@ -119,7 +180,7 @@ func foo(real string) {}
 		Pattern:         pattern,
 		IncludePatterns: includePatterns,
 	}
-	m, _, err := structuralSearch(context.Background(), zf, p.Pattern, p.CombyRule, p.Languages, p.IncludePatterns, "foo")
+	m, _, err := structuralSearch(context.Background(), zf, p.Pattern, p.CombyRule, "", p.Languages, p.IncludePatterns, "foo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -219,7 +280,7 @@ func TestIncludePatterns(t *testing.T) {
 		Pattern:         "",
 		IncludePatterns: includePatterns,
 	}
-	fileMatches, _, err := structuralSearch(context.Background(), zf, p.Pattern, p.CombyRule, p.Languages, p.IncludePatterns, "foo")
+	fileMatches, _, err := structuralSearch(context.Background(), zf, p.Pattern, p.CombyRule, "", p.Languages, p.IncludePatterns, "foo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -260,7 +321,7 @@ func TestRule(t *testing.T) {
 		CombyRule:       `where :[args] == "success"`,
 	}
 
-	got, _, err := structuralSearch(context.Background(), zf, p.Pattern, p.CombyRule, p.Languages, p.IncludePatterns, "repo")
+	got, _, err := structuralSearch(context.Background(), zf, p.Pattern, p.CombyRule, "", p.Languages, p.IncludePatterns, "repo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -414,7 +475,7 @@ func bar() {
 	defer cleanup()
 
 	t.Run("Strutural search match count", func(t *testing.T) {
-		matches, _, err := structuralSearch(context.Background(), zf, p.Pattern, p.CombyRule, p.Languages, p.IncludePatterns, "repo_foo")
+		matches, _, err := structuralSearch(context.Background(), zf, p.Pattern, p.CombyRule, "", p.Languages, p.IncludePatterns, "repo_foo")
 		if err != nil {
 			t.Fatal(err)
 		}

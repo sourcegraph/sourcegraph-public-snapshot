@@ -4,7 +4,7 @@
 
 We are working on creating language specific guides for use with LSIF indexers, so make sure to check for the documentation for your language! If there isn't a guide for your language, this general guide will help you through the precise code intelligence setup process.
 
-> NOTE: First make sure to complete the steps in the [quickstart guide](../lsif_quickstart.md).
+> NOTE: First make sure to complete the [how-to guides on indexing](../how-to/index.md).
 
 ## Benefits of CI integration
 
@@ -189,7 +189,7 @@ Your CI machines will need two command-line tools installed. Depending on your b
 ### Add steps to your CI
 
 1. **Generate the LSIF file** for a project within your repository by running the LSIF indexer in the project directory (see docs for your LSIF indexer).
-1. **[Upload that generated LSIF file](../lsif_quickstart.md#upload-the-data)** to your Sourcegraph instance.
+1. **[Upload that generated LSIF file](../how-to/index.md)** to your Sourcegraph instance.
 
 ## Recommended upload frequency
 

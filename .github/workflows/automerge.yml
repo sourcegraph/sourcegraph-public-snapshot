@@ -17,6 +17,7 @@ on:
   check_suite:
     types:
       - completed
+  status: {}
 
 jobs:
   automerge:
@@ -27,6 +28,7 @@ jobs:
         env:
           MERGE_LABELS: automerge
           MERGE_METHOD: squash
+          MERGE_RETRIES: 1
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
         with:
           args: "--trace"

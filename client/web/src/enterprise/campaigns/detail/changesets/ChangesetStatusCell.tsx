@@ -1,39 +1,41 @@
 import React from 'react'
-import { ChangesetFields } from '../../../../graphql-operations'
+import { ChangesetFields, ChangesetState } from '../../../../graphql-operations'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import SourcePullIcon from 'mdi-react/SourcePullIcon'
 import SourceMergeIcon from 'mdi-react/SourceMergeIcon'
 import DeleteIcon from 'mdi-react/DeleteIcon'
+import AutorenewIcon from 'mdi-react/AutorenewIcon'
 import ErrorIcon from 'mdi-react/ErrorIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import classNames from 'classnames'
-import { computeChangesetUIState, ChangesetUIState } from '../../utils'
 
 export interface ChangesetStatusCellProps {
     className?: string
-    changeset: Pick<ChangesetFields, 'publicationState' | 'externalState' | 'reconcilerState'>
+    state: ChangesetFields['state']
 }
 
 export const ChangesetStatusCell: React.FunctionComponent<ChangesetStatusCellProps> = ({
-    changeset,
+    state,
     className = 'd-flex',
 }) => {
-    switch (computeChangesetUIState(changeset)) {
-        case ChangesetUIState.ERRORED:
+    switch (state) {
+        case ChangesetState.FAILED:
             return <ChangesetStatusError className={className} />
-        case ChangesetUIState.PROCESSING:
+        case ChangesetState.RETRYING:
+            return <ChangesetStatusRetrying className={className} />
+        case ChangesetState.PROCESSING:
             return <ChangesetStatusProcessing className={className} />
-        case ChangesetUIState.UNPUBLISHED:
+        case ChangesetState.UNPUBLISHED:
             return <ChangesetStatusUnpublished className={className} />
-        case ChangesetUIState.OPEN:
+        case ChangesetState.OPEN:
             return <ChangesetStatusOpen className={className} />
-        case ChangesetUIState.DRAFT:
+        case ChangesetState.DRAFT:
             return <ChangesetStatusDraft className={className} />
-        case ChangesetUIState.CLOSED:
+        case ChangesetState.CLOSED:
             return <ChangesetStatusClosed className={className} />
-        case ChangesetUIState.MERGED:
+        case ChangesetState.MERGED:
             return <ChangesetStatusMerged className={className} />
-        case ChangesetUIState.DELETED:
+        case ChangesetState.DELETED:
             return <ChangesetStatusDeleted className={className} />
     }
 }
@@ -41,73 +43,79 @@ export const ChangesetStatusCell: React.FunctionComponent<ChangesetStatusCellPro
 const iconClassNames = 'm-0 text-nowrap flex-column align-items-center justify-content-center'
 
 export const ChangesetStatusUnpublished: React.FunctionComponent<{ label?: JSX.Element; className?: string }> = ({
-    label = <span className="text-muted">Unpublished</span>,
+    label = <span>Unpublished</span>,
     className,
 }) => (
-    <div
-        className={classNames(iconClassNames, 'text-muted', className)}
-        data-tooltip="Set published: true to publish to code host"
-    >
+    <div className={classNames(iconClassNames, className)} data-tooltip="Set published: true to publish to code host">
         <SourceBranchIcon />
         {label}
     </div>
 )
 export const ChangesetStatusClosed: React.FunctionComponent<{ label?: JSX.Element; className?: string }> = ({
-    label = <span className="text-muted">Closed</span>,
+    label = <span>Closed</span>,
     className,
 }) => (
-    <div className={classNames(iconClassNames, 'text-danger', className)}>
-        <SourcePullIcon />
+    <div className={classNames(iconClassNames, className)}>
+        <SourcePullIcon className="text-danger" />
         {label}
     </div>
 )
 export const ChangesetStatusMerged: React.FunctionComponent<{ label?: JSX.Element; className?: string }> = ({
-    label = <span className="text-muted">Merged</span>,
+    label = <span>Merged</span>,
     className,
 }) => (
-    <div className={classNames(iconClassNames, 'text-merged', className)}>
-        <SourceMergeIcon />
+    <div className={classNames(iconClassNames, className)}>
+        <SourceMergeIcon className="text-merged" />
         {label}
     </div>
 )
 export const ChangesetStatusOpen: React.FunctionComponent<{ label?: JSX.Element; className?: string }> = ({
-    label = <span className="text-muted">Open</span>,
+    label = <span>Open</span>,
     className,
 }) => (
-    <div className={classNames(iconClassNames, 'text-success', className)}>
-        <SourcePullIcon />
+    <div className={classNames(iconClassNames, className)}>
+        <SourcePullIcon className="text-success" />
         {label}
     </div>
 )
 export const ChangesetStatusDraft: React.FunctionComponent<{ label?: JSX.Element; className?: string }> = ({
-    label = <span className="text-muted">Draft</span>,
+    label = <span>Draft</span>,
     className,
 }) => (
-    <div className={classNames(iconClassNames, 'text-muted', className)}>
+    <div className={classNames(iconClassNames, className)}>
         <SourcePullIcon />
         {label}
     </div>
 )
 export const ChangesetStatusDeleted: React.FunctionComponent<{ label?: JSX.Element; className?: string }> = ({
-    label = <span className="text-muted">Deleted</span>,
+    label = <span>Deleted</span>,
     className,
 }) => (
-    <div className={classNames(iconClassNames, 'text-muted', className)}>
+    <div className={classNames(iconClassNames, className)}>
         <DeleteIcon />
         {label}
     </div>
 )
 export const ChangesetStatusError: React.FunctionComponent<{ label?: JSX.Element; className?: string }> = ({
-    label = <span className="text-danger">Error</span>,
+    label = <span className="text-danger">Failed</span>,
     className,
 }) => (
-    <div className={classNames(iconClassNames, 'text-danger', className)}>
-        <ErrorIcon />
+    <div className={classNames(iconClassNames, className)}>
+        <ErrorIcon className="text-danger" />
+        {label}
+    </div>
+)
+export const ChangesetStatusRetrying: React.FunctionComponent<{ label?: JSX.Element; className?: string }> = ({
+    label = <span>Retrying</span>,
+    className,
+}) => (
+    <div className={classNames(iconClassNames, className)}>
+        <AutorenewIcon />
         {label}
     </div>
 )
 export const ChangesetStatusProcessing: React.FunctionComponent<{ label?: JSX.Element; className?: string }> = ({
-    label = <span className="text-muted">Processing</span>,
+    label = <span>Processing</span>,
     className,
 }) => (
     <div className={classNames(iconClassNames, className)}>

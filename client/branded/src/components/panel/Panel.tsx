@@ -33,7 +33,7 @@ interface Props
     location: H.Location
     history: H.History
     repoName?: string
-    fetchHighlightedFileLines: (parameters: FetchFileParameters, force?: boolean) => Observable<string[]>
+    fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
 
 interface State {

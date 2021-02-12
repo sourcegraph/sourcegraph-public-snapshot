@@ -3,16 +3,19 @@ import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs'
 import { Tab, TabsWithLocalStorageViewStatePersistence } from '../../../branded/src/components/Tabs'
-import * as GQL from '../../../shared/src/graphql/schema'
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { SingleValueCard } from '../components/SingleValueCard'
 import { Timestamp } from '../components/time/Timestamp'
 import {
+    SurveyResponseAggregateFields,
+    SurveyResponseFields,
+    UserWithSurveyResponseFields,
+} from '../graphql-operations'
+import {
     fetchAllSurveyResponses,
     fetchAllUsersWithSurveyResponses,
     fetchSurveyResponseAggregates,
-    SurveyResponseConnectionAggregates,
 } from '../marketing/backend'
 import { eventLogger } from '../tracking/eventLogger'
 import { userURL } from '../user'
@@ -22,7 +25,7 @@ interface SurveyResponseNodeProps {
     /**
      * The survey response to display in this list item.
      */
-    node: GQL.ISurveyResponse
+    node: SurveyResponseFields
 }
 
 interface SurveyResponseNodeState {}
@@ -85,7 +88,7 @@ class SurveyResponseNode extends React.PureComponent<SurveyResponseNodeProps, Su
     }
 }
 
-const UserSurveyResponsesHeader: React.FunctionComponent<{ nodes: GQL.IUser[] }> = () => (
+const UserSurveyResponsesHeader: React.FunctionComponent<{ nodes: UserWithSurveyResponseFields[] }> = () => (
     <thead>
         <tr>
             <th>User</th>
@@ -100,7 +103,7 @@ interface UserSurveyResponseNodeProps {
     /**
      * The survey response to display in this list item.
      */
-    node: GQL.IUser
+    node: UserWithSurveyResponseFields
 }
 
 interface UserSurveyResponseNodeState {
@@ -187,7 +190,7 @@ class UserSurveyResponseNode extends React.PureComponent<UserSurveyResponseNodeP
 }
 
 interface SiteAdminSurveyResponsesSummaryState {
-    summary?: SurveyResponseConnectionAggregates
+    summary?: SurveyResponseAggregateFields
 }
 
 class SiteAdminSurveyResponsesSummary extends React.PureComponent<{}, SiteAdminSurveyResponsesSummaryState> {
@@ -258,8 +261,8 @@ type surveyResultsDisplays = 'chronological' | 'by-user'
 
 interface State {}
 
-class FilteredSurveyResponseConnection extends FilteredConnection<GQL.ISurveyResponse, {}> {}
-class FilteredUserSurveyResponseConnection extends FilteredConnection<GQL.IUser, {}> {}
+class FilteredSurveyResponseConnection extends FilteredConnection<SurveyResponseFields, {}> {}
+class FilteredUserSurveyResponseConnection extends FilteredConnection<UserWithSurveyResponseFields, {}> {}
 
 /**
  * A page displaying the survey responses on this site.

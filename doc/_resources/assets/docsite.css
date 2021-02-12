@@ -25,7 +25,10 @@ The document content can set class names and IDs on elements (for example, Markd
 
     --note-color: #bce8f1;
     --warning-color: #faebcc;
+    --warning-badge-color: #f59f00;
+    --critical-badge-color: #f03e3e;
     --experimental-color: #b200f8;
+    --feature-color: #38757F;
 
     --table-row-bg-1: var(--body-bg);
 }
@@ -109,6 +112,12 @@ nav.links a {
     border: 0;
 }
 
+/* Use to provide different videos for dark and light theme */
+.theme-light .theme-dark-only,
+.theme-dark .theme-light-only {
+    display: none !important;
+}
+
 /* FONTS */
 body {
     font-family: var(--base-font-family);
@@ -142,7 +151,6 @@ body > div#page {
     flex-direction: column;
     min-height: 100vh;
     justify-content: space-between;
-    overflow: hidden;
 }
 /* Responsive */
 @media (max-width: 800px /* == var(--sidebar-breakpoint-width) */) {
@@ -337,6 +345,7 @@ body > #sidebar .external a, body > #page > footer .external a {
         margin-top: calc(4.25*var(--spacing));
         margin-left: calc(2*var(--spacing));
         width: 30%;
+        /* Note: all ancestors up to <html> (the scrolling element) must be overflow: visible (default) for this to work. */
 		position: sticky;
 		top: calc(2*var(--spacing));
 		max-height: 100vh;
@@ -422,6 +431,26 @@ body > #page > main > #content {
 .badge-experimental {
     color: #ffffff;
     background-color: var(--experimental-color);
+}
+
+.badge-feature {
+    color: var(--feature-color);
+    background-color: var(--note-color);
+}
+
+.badge-note {
+    color: #000000;
+    background-color: var(--note-color);
+}
+
+.badge-warning {
+    color: #ffffff;
+    background-color: var(--warning-badge-color);
+}
+
+.badge-critical {
+    color: #ffffff;
+    background-color: var(--critical-badge-color);
 }
 
 /* MARKDOWN */
@@ -546,6 +575,7 @@ body > #page > main > #content {
 .markdown-body aside.experimental {
     border-color: var(--experimental-color);
 }
+
 .markdown-body table {
     display: block;
     width: 100%;
@@ -691,6 +721,20 @@ body > #page > main > #content {
     left: -15px;
     padding-right: 20px;
     font-size: 1rem;
+}
+
+img.screenshot {
+    display: block;
+    margin: 1em auto;
+    max-width: 600px;
+    margin-bottom: 0.5em;
+    border: 1px solid lightgrey;
+    border-radius: 10px;
+}
+
+img.center {
+  display: block;
+  margin: auto
 }
 
 /* SYNTAX HIGLIGHTING */

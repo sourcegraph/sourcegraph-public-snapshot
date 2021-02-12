@@ -70,6 +70,8 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         render: lazyComponent(() => import('./SiteAdminRegistryExtensionsPage'), 'SiteAdminRegistryExtensionsPage'),
         exact: true,
     },
+
+    // Code intelligence upload routes
     {
         path: '/code-intelligence/uploads',
         render: lazyComponent(() => import('../codeintel/list/CodeIntelUploadsPage'), 'CodeIntelUploadsPage'),
@@ -80,16 +82,22 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         render: lazyComponent(() => import('../codeintel/detail/CodeIntelUploadPage'), 'CodeIntelUploadPage'),
         exact: true,
     },
+
+    // Auto indexing routes
     {
         path: '/code-intelligence/indexes',
         render: lazyComponent(() => import('../codeintel/list/CodeIntelIndexesPage'), 'CodeIntelIndexesPage'),
         exact: true,
+        condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
     },
     {
         path: '/code-intelligence/indexes/:id',
         render: lazyComponent(() => import('../codeintel/detail/CodeIntelIndexPage'), 'CodeIntelIndexPage'),
         exact: true,
+        condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
     },
+
+    // Legacy routes
     {
         path: '/lsif-uploads/:id',
         render: lazyComponent(() => import('./SiteAdminLsifUploadPage'), 'SiteAdminLsifUploadPage'),

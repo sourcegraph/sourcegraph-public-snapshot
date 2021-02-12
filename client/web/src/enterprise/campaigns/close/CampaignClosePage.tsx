@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react'
 import * as H from 'history'
 import { PageTitle } from '../../../components/PageTitle'
-import { CampaignHeader } from '../detail/CampaignHeader'
 import { CampaignCloseAlert } from './CampaignCloseAlert'
 import { CampaignChangesetsResult, CampaignFields, Scalars } from '../../../graphql-operations'
 import {
@@ -19,15 +18,15 @@ import { useObservable } from '../../../../../shared/src/util/useObservable'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { HeroPage } from '../../../components/HeroPage'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
 import { CampaignInfoByline } from '../detail/CampaignInfoByline'
 import { ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
+import { CampaignsIcon } from '../icons'
+import { PageHeader } from '../../../components/PageHeader'
 
 export interface CampaignClosePageProps
     extends ThemeProps,
         TelemetryProps,
         PlatformContextProps,
-        BreadcrumbSetters,
         ExtensionsControllerProps {
     /**
      * The namespace ID.
@@ -59,7 +58,6 @@ export const CampaignClosePage: React.FunctionComponent<CampaignClosePageProps> 
     isLightTheme,
     platformContext,
     telemetryService,
-    useBreadcrumb,
     fetchCampaignByNamespace = _fetchCampaignByNamespace,
     queryChangesets,
     queryExternalChangesetWithFileDiffs,
@@ -86,19 +84,6 @@ export const CampaignClosePage: React.FunctionComponent<CampaignClosePageProps> 
         []
     )
 
-    useBreadcrumb(
-        useMemo(
-            () =>
-                campaign
-                    ? {
-                          link: { to: campaign.url, label: campaign.name },
-                          key: 'CampaignClosePage',
-                      }
-                    : null,
-            [campaign]
-        )
-    )
-
     // Is loading.
     if (campaign === undefined) {
         return (
@@ -116,13 +101,24 @@ export const CampaignClosePage: React.FunctionComponent<CampaignClosePageProps> 
     return (
         <>
             <PageTitle title="Preview close" />
-            <CampaignHeader name={campaign.name} namespace={campaign.namespace} className="test-campaign-close-page" />
-            <CampaignInfoByline
-                createdAt={campaign.createdAt}
-                initialApplier={campaign.initialApplier}
-                lastAppliedAt={campaign.lastAppliedAt}
-                lastApplier={campaign.lastApplier}
-                className="mb-3"
+            <PageHeader
+                path={[
+                    {
+                        icon: CampaignsIcon,
+                        to: '/campaigns',
+                    },
+                    { to: `${campaign.namespace.url}/campaigns`, text: campaign.namespace.namespaceName },
+                    { text: campaign.name },
+                ]}
+                byline={
+                    <CampaignInfoByline
+                        createdAt={campaign.createdAt}
+                        initialApplier={campaign.initialApplier}
+                        lastAppliedAt={campaign.lastAppliedAt}
+                        lastApplier={campaign.lastApplier}
+                    />
+                }
+                className="test-campaign-close-page mb-3"
             />
             {totalCount !== undefined && (
                 <CampaignCloseAlert

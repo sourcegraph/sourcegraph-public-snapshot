@@ -35,6 +35,7 @@ const ChangesetSpecSchemaJSON = `{
         "baseRef": {
           "type": "string",
           "description": "The full name of the Git ref in the base repository that this changeset is based on (and is proposing to be merged into). This ref must exist on the base repository.",
+          "pattern": "^refs\\/heads\\/\\S+$",
           "examples": ["refs/heads/master"]
         },
         "baseRev": {
@@ -50,6 +51,7 @@ const ChangesetSpecSchemaJSON = `{
         "headRef": {
           "type": "string",
           "description": "The full name of the Git ref that holds the changes proposed by this changeset. This ref will be created or updated with the commits.",
+          "pattern": "^refs\\/heads\\/\\S+$",
           "examples": ["refs/heads/fix-foo"]
         },
         "title": { "type": "string", "description": "The title of the changeset on the code host." },

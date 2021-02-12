@@ -21,8 +21,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestatsdeprecated"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
@@ -99,12 +99,12 @@ func hasFindRefsOccurred(ctx context.Context) (_ bool, err error) {
 
 func getTotalUsersCount(ctx context.Context) (_ int, err error) {
 	defer recordOperation("getTotalUsersCount")(&err)
-	return db.Users.Count(ctx, &db.UsersListOptions{})
+	return database.GlobalUsers.Count(ctx, &database.UsersListOptions{})
 }
 
 func getTotalReposCount(ctx context.Context) (_ int, err error) {
 	defer recordOperation("getTotalReposCount")(&err)
-	return db.Repos.Count(ctx, db.ReposListOptions{})
+	return database.GlobalRepos.Count(ctx, database.ReposListOptions{})
 }
 
 func getUsersActiveTodayCount(ctx context.Context) (_ int, err error) {
@@ -114,7 +114,7 @@ func getUsersActiveTodayCount(ctx context.Context) (_ int, err error) {
 
 func getInitialSiteAdminEmail(ctx context.Context) (_ string, err error) {
 	defer recordOperation("getInitialSiteAdminEmail")(&err)
-	return db.UserEmails.GetInitialSiteAdminEmail(ctx)
+	return database.GlobalUserEmails.GetInitialSiteAdminEmail(ctx)
 }
 
 func getAndMarshalCampaignsUsageJSON(ctx context.Context) (_ json.RawMessage, err error) {
@@ -167,6 +167,17 @@ func getAndMarshalRepositoriesJSON(ctx context.Context) (_ json.RawMessage, err 
 	return json.Marshal(repos)
 }
 
+func getAndMarshalRetentionStatisticsJSON(ctx context.Context) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalRetentionStatisticsJSON")(&err)
+
+	retentionStatistics, err := usagestats.GetRetentionStatistics(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(retentionStatistics)
+}
+
 func getAndMarshalSearchOnboardingJSON(ctx context.Context) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalSearchOnboardingJSON")(&err)
 
@@ -178,25 +189,26 @@ func getAndMarshalSearchOnboardingJSON(ctx context.Context) (_ json.RawMessage, 
 	return json.Marshal(searchOnboarding)
 }
 
-func getAndMarshalAggregatedUsageJSON(ctx context.Context) (_ json.RawMessage, _ json.RawMessage, err error) {
-	defer recordOperation("getAndMarshalAggregatedUsageJSON")(&err)
+func getAndMarshalAggregatedCodeIntelUsageJSON(ctx context.Context) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalAggregatedCodeIntelUsageJSON")(&err)
 
-	codeIntelUsage, searchUsage, err := usagestats.GetAggregatedStats(ctx)
+	codeIntelUsage, err := usagestats.GetAggregatedCodeIntelStats(ctx)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	serializedCodeIntelUsage, err := json.Marshal(codeIntelUsage)
+	return json.Marshal(codeIntelUsage)
+}
+
+func getAndMarshalAggregatedSearchUsageJSON(ctx context.Context) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalAggregatedSearchUsageJSON")(&err)
+
+	searchUsage, err := usagestats.GetAggregatedSearchStats(ctx)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	serializedSearchUsage, err := json.Marshal(searchUsage)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return serializedCodeIntelUsage, serializedSearchUsage, nil
+	return json.Marshal(searchUsage)
 }
 
 func getDependencyVersions(ctx context.Context, logFunc func(string, ...interface{})) (json.RawMessage, error) {
@@ -272,23 +284,25 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		ClientVersionString: version.Version(),
 		LicenseKey:          conf.Get().LicenseKey,
 		CodeIntelUsage:      []byte("{}"),
+		NewCodeIntelUsage:   []byte("{}"),
 		SearchUsage:         []byte("{}"),
 		CampaignsUsage:      []byte("{}"),
 		GrowthStatistics:    []byte("{}"),
 		SavedSearches:       []byte("{}"),
 		HomepagePanels:      []byte("{}"),
 		Repositories:        []byte("{}"),
+		RetentionStatistics: []byte("{}"),
 		SearchOnboarding:    []byte("{}"),
 	}
 
 	totalUsers, err := getTotalUsersCount(ctx)
 	if err != nil {
-		logFunc("telemetry: db.Users.Count failed", "error", err)
+		logFunc("telemetry: database.Users.Count failed", "error", err)
 	}
 	r.TotalUsers = int32(totalUsers)
 	r.InitialAdminEmail, err = getInitialSiteAdminEmail(ctx)
 	if err != nil {
-		logFunc("telemetry: db.UserEmails.GetInitialSiteAdminEmail failed", "error", err)
+		logFunc("telemetry: database.UserEmails.GetInitialSiteAdminEmail failed", "error", err)
 	}
 
 	r.DependencyVersions, err = getDependencyVersions(ctx, logFunc)
@@ -350,6 +364,11 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 			logFunc("telemetry: updatecheck.getAndMarshalRepositoriesJSON failed", "error", err)
 		}
 
+		r.RetentionStatistics, err = getAndMarshalRetentionStatisticsJSON(ctx)
+		if err != nil {
+			logFunc("telemetry: updatecheck.getAndMarshalRetentionStatisticsJSON failed", "error", err)
+		}
+
 		r.ExternalServices, err = externalServiceKinds(ctx)
 		if err != nil {
 			logFunc("telemetry: externalServicesKinds failed", "error", err)
@@ -376,13 +395,28 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			r.CodeIntelUsage, r.SearchUsage, err = getAndMarshalAggregatedUsageJSON(ctx)
+			r.NewCodeIntelUsage, err = getAndMarshalAggregatedCodeIntelUsageJSON(ctx)
 			if err != nil {
-				logFunc("telemetry: updatecheck.getAndMarshalAggregatedUsageJSON failed", "error", err)
+				logFunc("telemetry: updatecheck.getAndMarshalAggregatedCodeIntelUsageJSON failed", "error", err)
 			}
 		}()
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			r.SearchUsage, err = getAndMarshalAggregatedSearchUsageJSON(ctx)
+			if err != nil {
+				logFunc("telemetry: updatecheck.getAndMarshalAggregatedSearchUsageJSON failed", "error", err)
+			}
+		}()
+
 		wg.Wait()
 	} else {
+		r.Repositories, err = getAndMarshalRepositoriesJSON(ctx)
+		if err != nil {
+			logFunc("telemetry: updatecheck.getAndMarshalRepositoriesJSON failed", "error", err)
+		}
+
 		r.Activity, err = getAndMarshalSiteActivityJSON(ctx, true)
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalSiteActivityJSON failed", "error", err)
@@ -393,13 +427,14 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = db.EventLogs.Insert(ctx, &db.Event{
+
+	err = database.GlobalEventLogs.Insert(ctx, &database.Event{
 		UserID:          0,
 		Name:            "ping",
 		URL:             "",
 		AnonymousUserID: "backend",
 		Source:          "BACKEND",
-		Argument:        json.RawMessage(contents),
+		Argument:        contents,
 		Timestamp:       time.Now().UTC(),
 	})
 
@@ -417,7 +452,7 @@ func authProviderTypes() []string {
 
 func externalServiceKinds(ctx context.Context) (kinds []string, err error) {
 	defer recordOperation("externalServiceKinds")(&err)
-	kinds, err = db.ExternalServices.DistinctKinds(ctx)
+	kinds, err = database.GlobalExternalServices.DistinctKinds(ctx)
 	return kinds, err
 }
 

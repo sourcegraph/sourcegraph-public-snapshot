@@ -21,6 +21,7 @@ import { ThemeProps } from '../../../../../shared/src/theme'
 import { ErrorAlert } from '../../../components/alerts'
 import { useEventObservable } from '../../../../../shared/src/util/useObservable'
 import * as H from 'history'
+import { Scalars } from '../../../../../shared/src/graphql-operations'
 
 export enum PaymentValidity {
     Valid = 'Valid',
@@ -33,7 +34,7 @@ export enum PaymentValidity {
  */
 export interface ProductSubscriptionFormData {
     /** The customer account (user) owning the product subscription. */
-    accountID: GQL.ID
+    accountID: Scalars['ID']
     productSubscription: GQL.IProductSubscriptionInput
     paymentToken: string | null
 }
@@ -45,13 +46,13 @@ interface Props extends ThemeProps {
      * The ID of the account associated with the subscription, or null if there is none (in which case this form
      * can only be used to price out a subscription, not to buy).
      */
-    accountID: GQL.ID | null
+    accountID: Scalars['ID'] | null
 
     /**
      * The existing product subscription to edit, if this form is editing an existing subscription,
      * or null if this is a new subscription.
      */
-    subscriptionID: GQL.ID | null
+    subscriptionID: Scalars['ID'] | null
 
     /** Called when the user submits the form (to buy or update the subscription). */
     onSubmit: (args: ProductSubscriptionFormData) => void

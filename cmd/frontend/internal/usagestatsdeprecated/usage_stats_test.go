@@ -10,7 +10,7 @@ import (
 
 	"github.com/gomodule/redigo/redis"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func init() {

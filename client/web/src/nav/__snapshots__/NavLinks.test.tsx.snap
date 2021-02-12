@@ -15,78 +15,15 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
     </a>
   </li>
   <li
-    class="nav-item"
+    class="nav-item d-none d-lg-block"
   >
     <a
       class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
-      href="/extensions"
-    >
-      <svg
-        class="mdi-icon icon-inline d-lg-none"
-        data-tooltip="Extensions"
-        fill="currentColor"
-        height="24"
-        viewBox="0 0 24 24"
-        width="24"
-      >
-        <path
-          d="M22,13.5C22,15.26 20.7,16.72 19,16.96V20A2,2 0 0,1 17,22H13.2V21.7A2.7,2.7 0 0,0 10.5,19C9,19 7.8,20.21 7.8,21.7V22H4A2,2 0 0,1 2,20V16.2H2.3C3.79,16.2 5,15 5,13.5C5,12 3.79,10.8 2.3,10.8H2V7A2,2 0 0,1 4,5H7.04C7.28,3.3 8.74,2 10.5,2C12.26,2 13.72,3.3 13.96,5H17A2,2 0 0,1 19,7V10.04C20.7,10.28 22,11.74 22,13.5M17,15H18.5A1.5,1.5 0 0,0 20,13.5A1.5,1.5 0 0,0 18.5,12H17V7H12V5.5A1.5,1.5 0 0,0 10.5,4A1.5,1.5 0 0,0 9,5.5V7H4V9.12C5.76,9.8 7,11.5 7,13.5C7,15.5 5.75,17.2 4,17.88V20H6.12C6.8,18.25 8.5,17 10.5,17C12.5,17 14.2,18.25 14.88,20H17V15Z"
-        />
-      </svg>
-      <svg
-        class="mdi-icon icon-inline d-none d-lg-inline-block"
-        fill="currentColor"
-        height="24"
-        viewBox="0 0 24 24"
-        width="24"
-      >
-        <path
-          d="M22,13.5C22,15.26 20.7,16.72 19,16.96V20A2,2 0 0,1 17,22H13.2V21.7A2.7,2.7 0 0,0 10.5,19C9,19 7.8,20.21 7.8,21.7V22H4A2,2 0 0,1 2,20V16.2H2.3C3.79,16.2 5,15 5,13.5C5,12 3.79,10.8 2.3,10.8H2V7A2,2 0 0,1 4,5H7.04C7.28,3.3 8.74,2 10.5,2C12.26,2 13.72,3.3 13.96,5H17A2,2 0 0,1 19,7V10.04C20.7,10.28 22,11.74 22,13.5M17,15H18.5A1.5,1.5 0 0,0 20,13.5A1.5,1.5 0 0,0 18.5,12H17V7H12V5.5A1.5,1.5 0 0,0 10.5,4A1.5,1.5 0 0,0 9,5.5V7H4V9.12C5.76,9.8 7,11.5 7,13.5C7,15.5 5.75,17.2 4,17.88V20H6.12C6.8,18.25 8.5,17 10.5,17C12.5,17 14.2,18.25 14.88,20H17V15Z"
-        />
-      </svg>
-      <span
-        class="d-none d-lg-inline-block ml-1"
-      >
-        Extensions
-      </span>
-    </a>
-  </li>
-  <li
-    class="nav-item"
-  >
-    <a
-      class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      data-testid="campaigns"
       href="/campaigns"
     >
       <svg
-        class="icon-inline d-lg-none"
-        fill="currentColor"
-        height="20"
-        viewBox="0 -3 38 38"
-        width="20"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          clip-rule="evenodd"
-          d="M5.829 6.76a1.932 1.932 0 100-3.863 1.932 1.932 0 000 3.863zm0 2.898a4.829 4.829 0 100-9.658 4.829 4.829 0 000 9.658z"
-          fill-rule="evenodd"
-        />
-        <path
-          d="M22.473 1.867H30.2v7.726h-7.726V1.867zM22.473 13.07H30.2v7.727h-7.726V13.07zM22.473 24.274H30.2V32h-7.726v-7.726z"
-        />
-        <path
-          clip-rule="evenodd"
-          d="M12.014 5.795c0-.8.648-1.449 1.448-1.449h5.795a1.449 1.449 0 110 2.897h-5.795c-.8 0-1.448-.648-1.448-1.448zM6.544 11.047a1.449 1.449 0 00-1.6 1.28l1.44.16-1.44-.16v.011l-.003.023-.008.08c-.006.066-.015.162-.024.283-.018.242-.04.587-.055 1.013a28.23 28.23 0 00.087 3.36c.226 2.602.915 6.018 2.937 8.546 2.08 2.599 5.13 3.566 7.48 3.918a18.29 18.29 0 003.957.15c.111-.008.2-.017.263-.023l.076-.008.023-.003h.008l.003-.001s.002 0-.178-1.438l.18 1.438a1.449 1.449 0 00-.358-2.875M7.824 12.646l-.001.012-.006.055-.02.231a25.333 25.333 0 00.03 3.902c.212 2.43.835 5.14 2.314 6.987 1.42 1.776 3.62 2.56 5.646 2.863a15.408 15.408 0 003.303.127 7.78 7.78 0 00.193-.017l.043-.005h.006M6.544 11.046a1.449 1.449 0 011.28 1.6l-1.28-1.6z"
-          fill-rule="evenodd"
-        />
-        <path
-          clip-rule="evenodd"
-          d="M5.692 11.214a1.449 1.449 0 00-.58 1.965l1.272-.692-1.272.692v.002l.002.002.003.006.008.014.023.04a8.703 8.703 0 00.353.551 12.492 12.492 0 005.602 4.416c2.047.807 4.203 1.038 5.803 1.079a21.55 21.55 0 001.986-.04 16.55 16.55 0 00.742-.067l.047-.006.014-.002h.008l-.193-1.436.192 1.435a1.45 1.45 0 00-.383-2.871h-.002l-.027.003a13.35 13.35 0 01-.594.053c-.416.028-1.012.052-1.716.035-1.424-.037-3.205-.244-4.814-.878a9.594 9.594 0 01-4.286-3.373 5.756 5.756 0 01-.221-.345l-.005-.008a1.449 1.449 0 00-1.962-.575z"
-          fill-rule="evenodd"
-        />
-      </svg>
-      <svg
-        class="icon-inline d-none d-lg-inline-block"
+        class="icon-inline"
         fill="currentColor"
         height="20"
         viewBox="0 -3 38 38"
@@ -113,11 +50,100 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
         />
       </svg>
       <span
-        class="d-none d-lg-inline-block ml-1"
+        class="inline-block ml-1"
       >
         Campaigns
       </span>
     </a>
+  </li>
+  <li
+    class="nav-item d-lg-none"
+  >
+    <div
+      class="menu-nav-item btn-group"
+    >
+      <a
+        aria-expanded="false"
+        aria-haspopup="true"
+        class="bg-transparent nav-link"
+        href="#"
+      >
+        <svg
+          class="mdi-icon icon-inline"
+          fill="currentColor"
+          height="24"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"
+          />
+        </svg>
+        <svg
+          class="mdi-icon icon-inline"
+          fill="currentColor"
+          height="24"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M7,10L12,15L17,10H7Z"
+          />
+        </svg>
+      </a>
+      <div
+        aria-hidden="true"
+        class="menu-nav-item__dropdown-menu dropdown-menu"
+        role="menu"
+        tabindex="-1"
+      >
+        <button
+          class="dropdown-item"
+          role="menuitem"
+          tabindex="0"
+          type="button"
+        >
+          <a
+            class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+            data-testid="campaigns"
+            href="/campaigns"
+          >
+            <svg
+              class="icon-inline"
+              fill="currentColor"
+              height="20"
+              viewBox="0 -3 38 38"
+              width="20"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                clip-rule="evenodd"
+                d="M5.829 6.76a1.932 1.932 0 100-3.863 1.932 1.932 0 000 3.863zm0 2.898a4.829 4.829 0 100-9.658 4.829 4.829 0 000 9.658z"
+                fill-rule="evenodd"
+              />
+              <path
+                d="M22.473 1.867H30.2v7.726h-7.726V1.867zM22.473 13.07H30.2v7.727h-7.726V13.07zM22.473 24.274H30.2V32h-7.726v-7.726z"
+              />
+              <path
+                clip-rule="evenodd"
+                d="M12.014 5.795c0-.8.648-1.449 1.448-1.449h5.795a1.449 1.449 0 110 2.897h-5.795c-.8 0-1.448-.648-1.448-1.448zM6.544 11.047a1.449 1.449 0 00-1.6 1.28l1.44.16-1.44-.16v.011l-.003.023-.008.08c-.006.066-.015.162-.024.283-.018.242-.04.587-.055 1.013a28.23 28.23 0 00.087 3.36c.226 2.602.915 6.018 2.937 8.546 2.08 2.599 5.13 3.566 7.48 3.918a18.29 18.29 0 003.957.15c.111-.008.2-.017.263-.023l.076-.008.023-.003h.008l.003-.001s.002 0-.178-1.438l.18 1.438a1.449 1.449 0 00-.358-2.875M7.824 12.646l-.001.012-.006.055-.02.231a25.333 25.333 0 00.03 3.902c.212 2.43.835 5.14 2.314 6.987 1.42 1.776 3.62 2.56 5.646 2.863a15.408 15.408 0 003.303.127 7.78 7.78 0 00.193-.017l.043-.005h.006M6.544 11.046a1.449 1.449 0 011.28 1.6l-1.28-1.6z"
+                fill-rule="evenodd"
+              />
+              <path
+                clip-rule="evenodd"
+                d="M5.692 11.214a1.449 1.449 0 00-.58 1.965l1.272-.692-1.272.692v.002l.002.002.003.006.008.014.023.04a8.703 8.703 0 00.353.551 12.492 12.492 0 005.602 4.416c2.047.807 4.203 1.038 5.803 1.079a21.55 21.55 0 001.986-.04 16.55 16.55 0 00.742-.067l.047-.006.014-.002h.008l-.193-1.436.192 1.435a1.45 1.45 0 00-.383-2.871h-.002l-.027.003a13.35 13.35 0 01-.594.053c-.416.028-1.012.052-1.716.035-1.424-.037-3.205-.244-4.814-.878a9.594 9.594 0 01-4.286-3.373 5.756 5.756 0 01-.221-.345l-.005-.008a1.449 1.449 0 00-1.962-.575z"
+                fill-rule="evenodd"
+              />
+            </svg>
+            <span
+              class="inline-block ml-1"
+            >
+              Campaigns
+            </span>
+          </a>
+        </button>
+      </div>
+    </div>
   </li>
   <li
     class="nav-item"
@@ -194,7 +220,7 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
     class="nav-item"
   >
     <span
-      class="command-list__popover-button btn btn-link "
+      class="command-list__popover-button test-command-list-button btn btn-link "
       id="command-list-popover-button-7"
       role="button"
     >
@@ -226,32 +252,45 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
     class="nav-item"
   >
     <div
+      aria-label="User. Open menu"
       class="py-0 btn-group"
     >
       <a
         aria-expanded="false"
         aria-haspopup="true"
-        class="bg-transparent d-flex align-items-center test-user-nav-item-toggle dropdown-toggle nav-link"
+        class="bg-transparent d-flex align-items-center test-user-nav-item-toggle nav-link"
         href="#"
       >
         <div
           class="position-relative"
         >
           <div
-            class=""
-          />
-          <svg
-            class="mdi-icon user-avatar icon-inline"
-            fill="currentColor"
-            height="24"
-            id="target-user-avatar"
-            viewBox="0 0 24 24"
-            width="24"
+            class="align-items-center d-flex"
           >
-            <path
-              d="M12,19.2C9.5,19.2 7.29,17.92 6,16C6.03,14 10,12.9 12,12.9C14,12.9 17.97,14 18,16C16.71,17.92 14.5,19.2 12,19.2M12,5A3,3 0 0,1 15,8A3,3 0 0,1 12,11A3,3 0 0,1 9,8A3,3 0 0,1 12,5M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12C22,6.47 17.5,2 12,2Z"
-            />
-          </svg>
+            <svg
+              class="mdi-icon user-avatar icon-inline"
+              fill="currentColor"
+              height="24"
+              id="target-user-avatar"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="M12,19.2C9.5,19.2 7.29,17.92 6,16C6.03,14 10,12.9 12,12.9C14,12.9 17.97,14 18,16C16.71,17.92 14.5,19.2 12,19.2M12,5A3,3 0 0,1 15,8A3,3 0 0,1 12,11A3,3 0 0,1 9,8A3,3 0 0,1 12,5M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12C22,6.47 17.5,2 12,2Z"
+              />
+            </svg>
+            <svg
+              class="mdi-icon icon-inline"
+              fill="currentColor"
+              height="24"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="M7,10L12,15L17,10H7Z"
+              />
+            </svg>
+          </div>
         </div>
       </a>
       <div
@@ -438,78 +477,15 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
   class="nav-links nav align-items-center pl-2 pr-1"
 >
   <li
-    class="nav-item"
+    class="nav-item d-none d-lg-block"
   >
     <a
       class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
-      href="/extensions"
-    >
-      <svg
-        class="mdi-icon icon-inline d-lg-none"
-        data-tooltip="Extensions"
-        fill="currentColor"
-        height="24"
-        viewBox="0 0 24 24"
-        width="24"
-      >
-        <path
-          d="M22,13.5C22,15.26 20.7,16.72 19,16.96V20A2,2 0 0,1 17,22H13.2V21.7A2.7,2.7 0 0,0 10.5,19C9,19 7.8,20.21 7.8,21.7V22H4A2,2 0 0,1 2,20V16.2H2.3C3.79,16.2 5,15 5,13.5C5,12 3.79,10.8 2.3,10.8H2V7A2,2 0 0,1 4,5H7.04C7.28,3.3 8.74,2 10.5,2C12.26,2 13.72,3.3 13.96,5H17A2,2 0 0,1 19,7V10.04C20.7,10.28 22,11.74 22,13.5M17,15H18.5A1.5,1.5 0 0,0 20,13.5A1.5,1.5 0 0,0 18.5,12H17V7H12V5.5A1.5,1.5 0 0,0 10.5,4A1.5,1.5 0 0,0 9,5.5V7H4V9.12C5.76,9.8 7,11.5 7,13.5C7,15.5 5.75,17.2 4,17.88V20H6.12C6.8,18.25 8.5,17 10.5,17C12.5,17 14.2,18.25 14.88,20H17V15Z"
-        />
-      </svg>
-      <svg
-        class="mdi-icon icon-inline d-none d-lg-inline-block"
-        fill="currentColor"
-        height="24"
-        viewBox="0 0 24 24"
-        width="24"
-      >
-        <path
-          d="M22,13.5C22,15.26 20.7,16.72 19,16.96V20A2,2 0 0,1 17,22H13.2V21.7A2.7,2.7 0 0,0 10.5,19C9,19 7.8,20.21 7.8,21.7V22H4A2,2 0 0,1 2,20V16.2H2.3C3.79,16.2 5,15 5,13.5C5,12 3.79,10.8 2.3,10.8H2V7A2,2 0 0,1 4,5H7.04C7.28,3.3 8.74,2 10.5,2C12.26,2 13.72,3.3 13.96,5H17A2,2 0 0,1 19,7V10.04C20.7,10.28 22,11.74 22,13.5M17,15H18.5A1.5,1.5 0 0,0 20,13.5A1.5,1.5 0 0,0 18.5,12H17V7H12V5.5A1.5,1.5 0 0,0 10.5,4A1.5,1.5 0 0,0 9,5.5V7H4V9.12C5.76,9.8 7,11.5 7,13.5C7,15.5 5.75,17.2 4,17.88V20H6.12C6.8,18.25 8.5,17 10.5,17C12.5,17 14.2,18.25 14.88,20H17V15Z"
-        />
-      </svg>
-      <span
-        class="d-none d-lg-inline-block ml-1"
-      >
-        Extensions
-      </span>
-    </a>
-  </li>
-  <li
-    class="nav-item"
-  >
-    <a
-      class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      data-testid="campaigns"
       href="/campaigns"
     >
       <svg
-        class="icon-inline d-lg-none"
-        fill="currentColor"
-        height="20"
-        viewBox="0 -3 38 38"
-        width="20"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          clip-rule="evenodd"
-          d="M5.829 6.76a1.932 1.932 0 100-3.863 1.932 1.932 0 000 3.863zm0 2.898a4.829 4.829 0 100-9.658 4.829 4.829 0 000 9.658z"
-          fill-rule="evenodd"
-        />
-        <path
-          d="M22.473 1.867H30.2v7.726h-7.726V1.867zM22.473 13.07H30.2v7.727h-7.726V13.07zM22.473 24.274H30.2V32h-7.726v-7.726z"
-        />
-        <path
-          clip-rule="evenodd"
-          d="M12.014 5.795c0-.8.648-1.449 1.448-1.449h5.795a1.449 1.449 0 110 2.897h-5.795c-.8 0-1.448-.648-1.448-1.448zM6.544 11.047a1.449 1.449 0 00-1.6 1.28l1.44.16-1.44-.16v.011l-.003.023-.008.08c-.006.066-.015.162-.024.283-.018.242-.04.587-.055 1.013a28.23 28.23 0 00.087 3.36c.226 2.602.915 6.018 2.937 8.546 2.08 2.599 5.13 3.566 7.48 3.918a18.29 18.29 0 003.957.15c.111-.008.2-.017.263-.023l.076-.008.023-.003h.008l.003-.001s.002 0-.178-1.438l.18 1.438a1.449 1.449 0 00-.358-2.875M7.824 12.646l-.001.012-.006.055-.02.231a25.333 25.333 0 00.03 3.902c.212 2.43.835 5.14 2.314 6.987 1.42 1.776 3.62 2.56 5.646 2.863a15.408 15.408 0 003.303.127 7.78 7.78 0 00.193-.017l.043-.005h.006M6.544 11.046a1.449 1.449 0 011.28 1.6l-1.28-1.6z"
-          fill-rule="evenodd"
-        />
-        <path
-          clip-rule="evenodd"
-          d="M5.692 11.214a1.449 1.449 0 00-.58 1.965l1.272-.692-1.272.692v.002l.002.002.003.006.008.014.023.04a8.703 8.703 0 00.353.551 12.492 12.492 0 005.602 4.416c2.047.807 4.203 1.038 5.803 1.079a21.55 21.55 0 001.986-.04 16.55 16.55 0 00.742-.067l.047-.006.014-.002h.008l-.193-1.436.192 1.435a1.45 1.45 0 00-.383-2.871h-.002l-.027.003a13.35 13.35 0 01-.594.053c-.416.028-1.012.052-1.716.035-1.424-.037-3.205-.244-4.814-.878a9.594 9.594 0 01-4.286-3.373 5.756 5.756 0 01-.221-.345l-.005-.008a1.449 1.449 0 00-1.962-.575z"
-          fill-rule="evenodd"
-        />
-      </svg>
-      <svg
-        class="icon-inline d-none d-lg-inline-block"
+        class="icon-inline"
         fill="currentColor"
         height="20"
         viewBox="0 -3 38 38"
@@ -536,11 +512,100 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
         />
       </svg>
       <span
-        class="d-none d-lg-inline-block ml-1"
+        class="inline-block ml-1"
       >
         Campaigns
       </span>
     </a>
+  </li>
+  <li
+    class="nav-item d-lg-none"
+  >
+    <div
+      class="menu-nav-item btn-group"
+    >
+      <a
+        aria-expanded="false"
+        aria-haspopup="true"
+        class="bg-transparent nav-link"
+        href="#"
+      >
+        <svg
+          class="mdi-icon icon-inline"
+          fill="currentColor"
+          height="24"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"
+          />
+        </svg>
+        <svg
+          class="mdi-icon icon-inline"
+          fill="currentColor"
+          height="24"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M7,10L12,15L17,10H7Z"
+          />
+        </svg>
+      </a>
+      <div
+        aria-hidden="true"
+        class="menu-nav-item__dropdown-menu dropdown-menu"
+        role="menu"
+        tabindex="-1"
+      >
+        <button
+          class="dropdown-item"
+          role="menuitem"
+          tabindex="0"
+          type="button"
+        >
+          <a
+            class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+            data-testid="campaigns"
+            href="/campaigns"
+          >
+            <svg
+              class="icon-inline"
+              fill="currentColor"
+              height="20"
+              viewBox="0 -3 38 38"
+              width="20"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                clip-rule="evenodd"
+                d="M5.829 6.76a1.932 1.932 0 100-3.863 1.932 1.932 0 000 3.863zm0 2.898a4.829 4.829 0 100-9.658 4.829 4.829 0 000 9.658z"
+                fill-rule="evenodd"
+              />
+              <path
+                d="M22.473 1.867H30.2v7.726h-7.726V1.867zM22.473 13.07H30.2v7.727h-7.726V13.07zM22.473 24.274H30.2V32h-7.726v-7.726z"
+              />
+              <path
+                clip-rule="evenodd"
+                d="M12.014 5.795c0-.8.648-1.449 1.448-1.449h5.795a1.449 1.449 0 110 2.897h-5.795c-.8 0-1.448-.648-1.448-1.448zM6.544 11.047a1.449 1.449 0 00-1.6 1.28l1.44.16-1.44-.16v.011l-.003.023-.008.08c-.006.066-.015.162-.024.283-.018.242-.04.587-.055 1.013a28.23 28.23 0 00.087 3.36c.226 2.602.915 6.018 2.937 8.546 2.08 2.599 5.13 3.566 7.48 3.918a18.29 18.29 0 003.957.15c.111-.008.2-.017.263-.023l.076-.008.023-.003h.008l.003-.001s.002 0-.178-1.438l.18 1.438a1.449 1.449 0 00-.358-2.875M7.824 12.646l-.001.012-.006.055-.02.231a25.333 25.333 0 00.03 3.902c.212 2.43.835 5.14 2.314 6.987 1.42 1.776 3.62 2.56 5.646 2.863a15.408 15.408 0 003.303.127 7.78 7.78 0 00.193-.017l.043-.005h.006M6.544 11.046a1.449 1.449 0 011.28 1.6l-1.28-1.6z"
+                fill-rule="evenodd"
+              />
+              <path
+                clip-rule="evenodd"
+                d="M5.692 11.214a1.449 1.449 0 00-.58 1.965l1.272-.692-1.272.692v.002l.002.002.003.006.008.014.023.04a8.703 8.703 0 00.353.551 12.492 12.492 0 005.602 4.416c2.047.807 4.203 1.038 5.803 1.079a21.55 21.55 0 001.986-.04 16.55 16.55 0 00.742-.067l.047-.006.014-.002h.008l-.193-1.436.192 1.435a1.45 1.45 0 00-.383-2.871h-.002l-.027.003a13.35 13.35 0 01-.594.053c-.416.028-1.012.052-1.716.035-1.424-.037-3.205-.244-4.814-.878a9.594 9.594 0 01-4.286-3.373 5.756 5.756 0 01-.221-.345l-.005-.008a1.449 1.449 0 00-1.962-.575z"
+                fill-rule="evenodd"
+              />
+            </svg>
+            <span
+              class="inline-block ml-1"
+            >
+              Campaigns
+            </span>
+          </a>
+        </button>
+      </div>
+    </div>
   </li>
   <li
     class="nav-item"
@@ -617,7 +682,7 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
     class="nav-item"
   >
     <span
-      class="command-list__popover-button btn btn-link "
+      class="command-list__popover-button test-command-list-button btn btn-link "
       id="command-list-popover-button-8"
       role="button"
     >
@@ -649,32 +714,45 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
     class="nav-item"
   >
     <div
+      aria-label="User. Open menu"
       class="py-0 btn-group"
     >
       <a
         aria-expanded="false"
         aria-haspopup="true"
-        class="bg-transparent d-flex align-items-center test-user-nav-item-toggle dropdown-toggle nav-link"
+        class="bg-transparent d-flex align-items-center test-user-nav-item-toggle nav-link"
         href="#"
       >
         <div
           class="position-relative"
         >
           <div
-            class=""
-          />
-          <svg
-            class="mdi-icon user-avatar icon-inline"
-            fill="currentColor"
-            height="24"
-            id="target-user-avatar"
-            viewBox="0 0 24 24"
-            width="24"
+            class="align-items-center d-flex"
           >
-            <path
-              d="M12,19.2C9.5,19.2 7.29,17.92 6,16C6.03,14 10,12.9 12,12.9C14,12.9 17.97,14 18,16C16.71,17.92 14.5,19.2 12,19.2M12,5A3,3 0 0,1 15,8A3,3 0 0,1 12,11A3,3 0 0,1 9,8A3,3 0 0,1 12,5M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12C22,6.47 17.5,2 12,2Z"
-            />
-          </svg>
+            <svg
+              class="mdi-icon user-avatar icon-inline"
+              fill="currentColor"
+              height="24"
+              id="target-user-avatar"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="M12,19.2C9.5,19.2 7.29,17.92 6,16C6.03,14 10,12.9 12,12.9C14,12.9 17.97,14 18,16C16.71,17.92 14.5,19.2 12,19.2M12,5A3,3 0 0,1 15,8A3,3 0 0,1 12,11A3,3 0 0,1 9,8A3,3 0 0,1 12,5M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12C22,6.47 17.5,2 12,2Z"
+              />
+            </svg>
+            <svg
+              class="mdi-icon icon-inline"
+              fill="currentColor"
+              height="24"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="M7,10L12,15L17,10H7Z"
+              />
+            </svg>
+          </div>
         </div>
       </a>
       <div
@@ -871,78 +949,15 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
     </a>
   </li>
   <li
-    class="nav-item"
+    class="nav-item d-none d-lg-block"
   >
     <a
       class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
-      href="/extensions"
-    >
-      <svg
-        class="mdi-icon icon-inline d-lg-none"
-        data-tooltip="Extensions"
-        fill="currentColor"
-        height="24"
-        viewBox="0 0 24 24"
-        width="24"
-      >
-        <path
-          d="M22,13.5C22,15.26 20.7,16.72 19,16.96V20A2,2 0 0,1 17,22H13.2V21.7A2.7,2.7 0 0,0 10.5,19C9,19 7.8,20.21 7.8,21.7V22H4A2,2 0 0,1 2,20V16.2H2.3C3.79,16.2 5,15 5,13.5C5,12 3.79,10.8 2.3,10.8H2V7A2,2 0 0,1 4,5H7.04C7.28,3.3 8.74,2 10.5,2C12.26,2 13.72,3.3 13.96,5H17A2,2 0 0,1 19,7V10.04C20.7,10.28 22,11.74 22,13.5M17,15H18.5A1.5,1.5 0 0,0 20,13.5A1.5,1.5 0 0,0 18.5,12H17V7H12V5.5A1.5,1.5 0 0,0 10.5,4A1.5,1.5 0 0,0 9,5.5V7H4V9.12C5.76,9.8 7,11.5 7,13.5C7,15.5 5.75,17.2 4,17.88V20H6.12C6.8,18.25 8.5,17 10.5,17C12.5,17 14.2,18.25 14.88,20H17V15Z"
-        />
-      </svg>
-      <svg
-        class="mdi-icon icon-inline d-none d-lg-inline-block"
-        fill="currentColor"
-        height="24"
-        viewBox="0 0 24 24"
-        width="24"
-      >
-        <path
-          d="M22,13.5C22,15.26 20.7,16.72 19,16.96V20A2,2 0 0,1 17,22H13.2V21.7A2.7,2.7 0 0,0 10.5,19C9,19 7.8,20.21 7.8,21.7V22H4A2,2 0 0,1 2,20V16.2H2.3C3.79,16.2 5,15 5,13.5C5,12 3.79,10.8 2.3,10.8H2V7A2,2 0 0,1 4,5H7.04C7.28,3.3 8.74,2 10.5,2C12.26,2 13.72,3.3 13.96,5H17A2,2 0 0,1 19,7V10.04C20.7,10.28 22,11.74 22,13.5M17,15H18.5A1.5,1.5 0 0,0 20,13.5A1.5,1.5 0 0,0 18.5,12H17V7H12V5.5A1.5,1.5 0 0,0 10.5,4A1.5,1.5 0 0,0 9,5.5V7H4V9.12C5.76,9.8 7,11.5 7,13.5C7,15.5 5.75,17.2 4,17.88V20H6.12C6.8,18.25 8.5,17 10.5,17C12.5,17 14.2,18.25 14.88,20H17V15Z"
-        />
-      </svg>
-      <span
-        class="d-none d-lg-inline-block ml-1"
-      >
-        Extensions
-      </span>
-    </a>
-  </li>
-  <li
-    class="nav-item"
-  >
-    <a
-      class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      data-testid="campaigns"
       href="/campaigns"
     >
       <svg
-        class="icon-inline d-lg-none"
-        fill="currentColor"
-        height="20"
-        viewBox="0 -3 38 38"
-        width="20"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          clip-rule="evenodd"
-          d="M5.829 6.76a1.932 1.932 0 100-3.863 1.932 1.932 0 000 3.863zm0 2.898a4.829 4.829 0 100-9.658 4.829 4.829 0 000 9.658z"
-          fill-rule="evenodd"
-        />
-        <path
-          d="M22.473 1.867H30.2v7.726h-7.726V1.867zM22.473 13.07H30.2v7.727h-7.726V13.07zM22.473 24.274H30.2V32h-7.726v-7.726z"
-        />
-        <path
-          clip-rule="evenodd"
-          d="M12.014 5.795c0-.8.648-1.449 1.448-1.449h5.795a1.449 1.449 0 110 2.897h-5.795c-.8 0-1.448-.648-1.448-1.448zM6.544 11.047a1.449 1.449 0 00-1.6 1.28l1.44.16-1.44-.16v.011l-.003.023-.008.08c-.006.066-.015.162-.024.283-.018.242-.04.587-.055 1.013a28.23 28.23 0 00.087 3.36c.226 2.602.915 6.018 2.937 8.546 2.08 2.599 5.13 3.566 7.48 3.918a18.29 18.29 0 003.957.15c.111-.008.2-.017.263-.023l.076-.008.023-.003h.008l.003-.001s.002 0-.178-1.438l.18 1.438a1.449 1.449 0 00-.358-2.875M7.824 12.646l-.001.012-.006.055-.02.231a25.333 25.333 0 00.03 3.902c.212 2.43.835 5.14 2.314 6.987 1.42 1.776 3.62 2.56 5.646 2.863a15.408 15.408 0 003.303.127 7.78 7.78 0 00.193-.017l.043-.005h.006M6.544 11.046a1.449 1.449 0 011.28 1.6l-1.28-1.6z"
-          fill-rule="evenodd"
-        />
-        <path
-          clip-rule="evenodd"
-          d="M5.692 11.214a1.449 1.449 0 00-.58 1.965l1.272-.692-1.272.692v.002l.002.002.003.006.008.014.023.04a8.703 8.703 0 00.353.551 12.492 12.492 0 005.602 4.416c2.047.807 4.203 1.038 5.803 1.079a21.55 21.55 0 001.986-.04 16.55 16.55 0 00.742-.067l.047-.006.014-.002h.008l-.193-1.436.192 1.435a1.45 1.45 0 00-.383-2.871h-.002l-.027.003a13.35 13.35 0 01-.594.053c-.416.028-1.012.052-1.716.035-1.424-.037-3.205-.244-4.814-.878a9.594 9.594 0 01-4.286-3.373 5.756 5.756 0 01-.221-.345l-.005-.008a1.449 1.449 0 00-1.962-.575z"
-          fill-rule="evenodd"
-        />
-      </svg>
-      <svg
-        class="icon-inline d-none d-lg-inline-block"
+        class="icon-inline"
         fill="currentColor"
         height="20"
         viewBox="0 -3 38 38"
@@ -969,11 +984,100 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
         />
       </svg>
       <span
-        class="d-none d-lg-inline-block ml-1"
+        class="inline-block ml-1"
       >
         Campaigns
       </span>
     </a>
+  </li>
+  <li
+    class="nav-item d-lg-none"
+  >
+    <div
+      class="menu-nav-item btn-group"
+    >
+      <a
+        aria-expanded="false"
+        aria-haspopup="true"
+        class="bg-transparent nav-link"
+        href="#"
+      >
+        <svg
+          class="mdi-icon icon-inline"
+          fill="currentColor"
+          height="24"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"
+          />
+        </svg>
+        <svg
+          class="mdi-icon icon-inline"
+          fill="currentColor"
+          height="24"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M7,10L12,15L17,10H7Z"
+          />
+        </svg>
+      </a>
+      <div
+        aria-hidden="true"
+        class="menu-nav-item__dropdown-menu dropdown-menu"
+        role="menu"
+        tabindex="-1"
+      >
+        <button
+          class="dropdown-item"
+          role="menuitem"
+          tabindex="0"
+          type="button"
+        >
+          <a
+            class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+            data-testid="campaigns"
+            href="/campaigns"
+          >
+            <svg
+              class="icon-inline"
+              fill="currentColor"
+              height="20"
+              viewBox="0 -3 38 38"
+              width="20"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                clip-rule="evenodd"
+                d="M5.829 6.76a1.932 1.932 0 100-3.863 1.932 1.932 0 000 3.863zm0 2.898a4.829 4.829 0 100-9.658 4.829 4.829 0 000 9.658z"
+                fill-rule="evenodd"
+              />
+              <path
+                d="M22.473 1.867H30.2v7.726h-7.726V1.867zM22.473 13.07H30.2v7.727h-7.726V13.07zM22.473 24.274H30.2V32h-7.726v-7.726z"
+              />
+              <path
+                clip-rule="evenodd"
+                d="M12.014 5.795c0-.8.648-1.449 1.448-1.449h5.795a1.449 1.449 0 110 2.897h-5.795c-.8 0-1.448-.648-1.448-1.448zM6.544 11.047a1.449 1.449 0 00-1.6 1.28l1.44.16-1.44-.16v.011l-.003.023-.008.08c-.006.066-.015.162-.024.283-.018.242-.04.587-.055 1.013a28.23 28.23 0 00.087 3.36c.226 2.602.915 6.018 2.937 8.546 2.08 2.599 5.13 3.566 7.48 3.918a18.29 18.29 0 003.957.15c.111-.008.2-.017.263-.023l.076-.008.023-.003h.008l.003-.001s.002 0-.178-1.438l.18 1.438a1.449 1.449 0 00-.358-2.875M7.824 12.646l-.001.012-.006.055-.02.231a25.333 25.333 0 00.03 3.902c.212 2.43.835 5.14 2.314 6.987 1.42 1.776 3.62 2.56 5.646 2.863a15.408 15.408 0 003.303.127 7.78 7.78 0 00.193-.017l.043-.005h.006M6.544 11.046a1.449 1.449 0 011.28 1.6l-1.28-1.6z"
+                fill-rule="evenodd"
+              />
+              <path
+                clip-rule="evenodd"
+                d="M5.692 11.214a1.449 1.449 0 00-.58 1.965l1.272-.692-1.272.692v.002l.002.002.003.006.008.014.023.04a8.703 8.703 0 00.353.551 12.492 12.492 0 005.602 4.416c2.047.807 4.203 1.038 5.803 1.079a21.55 21.55 0 001.986-.04 16.55 16.55 0 00.742-.067l.047-.006.014-.002h.008l-.193-1.436.192 1.435a1.45 1.45 0 00-.383-2.871h-.002l-.027.003a13.35 13.35 0 01-.594.053c-.416.028-1.012.052-1.716.035-1.424-.037-3.205-.244-4.814-.878a9.594 9.594 0 01-4.286-3.373 5.756 5.756 0 01-.221-.345l-.005-.008a1.449 1.449 0 00-1.962-.575z"
+                fill-rule="evenodd"
+              />
+            </svg>
+            <span
+              class="inline-block ml-1"
+            >
+              Campaigns
+            </span>
+          </a>
+        </button>
+      </div>
+    </div>
   </li>
   <li
     class="nav-item"
@@ -1050,7 +1154,7 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
     class="nav-item"
   >
     <span
-      class="command-list__popover-button btn btn-link "
+      class="command-list__popover-button test-command-list-button btn btn-link "
       id="command-list-popover-button-5"
       role="button"
     >
@@ -1082,32 +1186,45 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
     class="nav-item"
   >
     <div
+      aria-label="User. Open menu"
       class="py-0 btn-group"
     >
       <a
         aria-expanded="false"
         aria-haspopup="true"
-        class="bg-transparent d-flex align-items-center test-user-nav-item-toggle dropdown-toggle nav-link"
+        class="bg-transparent d-flex align-items-center test-user-nav-item-toggle nav-link"
         href="#"
       >
         <div
           class="position-relative"
         >
           <div
-            class=""
-          />
-          <svg
-            class="mdi-icon user-avatar icon-inline"
-            fill="currentColor"
-            height="24"
-            id="target-user-avatar"
-            viewBox="0 0 24 24"
-            width="24"
+            class="align-items-center d-flex"
           >
-            <path
-              d="M12,19.2C9.5,19.2 7.29,17.92 6,16C6.03,14 10,12.9 12,12.9C14,12.9 17.97,14 18,16C16.71,17.92 14.5,19.2 12,19.2M12,5A3,3 0 0,1 15,8A3,3 0 0,1 12,11A3,3 0 0,1 9,8A3,3 0 0,1 12,5M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12C22,6.47 17.5,2 12,2Z"
-            />
-          </svg>
+            <svg
+              class="mdi-icon user-avatar icon-inline"
+              fill="currentColor"
+              height="24"
+              id="target-user-avatar"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="M12,19.2C9.5,19.2 7.29,17.92 6,16C6.03,14 10,12.9 12,12.9C14,12.9 17.97,14 18,16C16.71,17.92 14.5,19.2 12,19.2M12,5A3,3 0 0,1 15,8A3,3 0 0,1 12,11A3,3 0 0,1 9,8A3,3 0 0,1 12,5M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12C22,6.47 17.5,2 12,2Z"
+              />
+            </svg>
+            <svg
+              class="mdi-icon icon-inline"
+              fill="currentColor"
+              height="24"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="M7,10L12,15L17,10H7Z"
+              />
+            </svg>
+          </div>
         </div>
       </a>
       <div
@@ -1275,78 +1392,15 @@ exports[`NavLinks authed self-hosted /search 1`] = `
   class="nav-links nav align-items-center pl-2 pr-1"
 >
   <li
-    class="nav-item"
+    class="nav-item d-none d-lg-block"
   >
     <a
       class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
-      href="/extensions"
-    >
-      <svg
-        class="mdi-icon icon-inline d-lg-none"
-        data-tooltip="Extensions"
-        fill="currentColor"
-        height="24"
-        viewBox="0 0 24 24"
-        width="24"
-      >
-        <path
-          d="M22,13.5C22,15.26 20.7,16.72 19,16.96V20A2,2 0 0,1 17,22H13.2V21.7A2.7,2.7 0 0,0 10.5,19C9,19 7.8,20.21 7.8,21.7V22H4A2,2 0 0,1 2,20V16.2H2.3C3.79,16.2 5,15 5,13.5C5,12 3.79,10.8 2.3,10.8H2V7A2,2 0 0,1 4,5H7.04C7.28,3.3 8.74,2 10.5,2C12.26,2 13.72,3.3 13.96,5H17A2,2 0 0,1 19,7V10.04C20.7,10.28 22,11.74 22,13.5M17,15H18.5A1.5,1.5 0 0,0 20,13.5A1.5,1.5 0 0,0 18.5,12H17V7H12V5.5A1.5,1.5 0 0,0 10.5,4A1.5,1.5 0 0,0 9,5.5V7H4V9.12C5.76,9.8 7,11.5 7,13.5C7,15.5 5.75,17.2 4,17.88V20H6.12C6.8,18.25 8.5,17 10.5,17C12.5,17 14.2,18.25 14.88,20H17V15Z"
-        />
-      </svg>
-      <svg
-        class="mdi-icon icon-inline d-none d-lg-inline-block"
-        fill="currentColor"
-        height="24"
-        viewBox="0 0 24 24"
-        width="24"
-      >
-        <path
-          d="M22,13.5C22,15.26 20.7,16.72 19,16.96V20A2,2 0 0,1 17,22H13.2V21.7A2.7,2.7 0 0,0 10.5,19C9,19 7.8,20.21 7.8,21.7V22H4A2,2 0 0,1 2,20V16.2H2.3C3.79,16.2 5,15 5,13.5C5,12 3.79,10.8 2.3,10.8H2V7A2,2 0 0,1 4,5H7.04C7.28,3.3 8.74,2 10.5,2C12.26,2 13.72,3.3 13.96,5H17A2,2 0 0,1 19,7V10.04C20.7,10.28 22,11.74 22,13.5M17,15H18.5A1.5,1.5 0 0,0 20,13.5A1.5,1.5 0 0,0 18.5,12H17V7H12V5.5A1.5,1.5 0 0,0 10.5,4A1.5,1.5 0 0,0 9,5.5V7H4V9.12C5.76,9.8 7,11.5 7,13.5C7,15.5 5.75,17.2 4,17.88V20H6.12C6.8,18.25 8.5,17 10.5,17C12.5,17 14.2,18.25 14.88,20H17V15Z"
-        />
-      </svg>
-      <span
-        class="d-none d-lg-inline-block ml-1"
-      >
-        Extensions
-      </span>
-    </a>
-  </li>
-  <li
-    class="nav-item"
-  >
-    <a
-      class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      data-testid="campaigns"
       href="/campaigns"
     >
       <svg
-        class="icon-inline d-lg-none"
-        fill="currentColor"
-        height="20"
-        viewBox="0 -3 38 38"
-        width="20"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          clip-rule="evenodd"
-          d="M5.829 6.76a1.932 1.932 0 100-3.863 1.932 1.932 0 000 3.863zm0 2.898a4.829 4.829 0 100-9.658 4.829 4.829 0 000 9.658z"
-          fill-rule="evenodd"
-        />
-        <path
-          d="M22.473 1.867H30.2v7.726h-7.726V1.867zM22.473 13.07H30.2v7.727h-7.726V13.07zM22.473 24.274H30.2V32h-7.726v-7.726z"
-        />
-        <path
-          clip-rule="evenodd"
-          d="M12.014 5.795c0-.8.648-1.449 1.448-1.449h5.795a1.449 1.449 0 110 2.897h-5.795c-.8 0-1.448-.648-1.448-1.448zM6.544 11.047a1.449 1.449 0 00-1.6 1.28l1.44.16-1.44-.16v.011l-.003.023-.008.08c-.006.066-.015.162-.024.283-.018.242-.04.587-.055 1.013a28.23 28.23 0 00.087 3.36c.226 2.602.915 6.018 2.937 8.546 2.08 2.599 5.13 3.566 7.48 3.918a18.29 18.29 0 003.957.15c.111-.008.2-.017.263-.023l.076-.008.023-.003h.008l.003-.001s.002 0-.178-1.438l.18 1.438a1.449 1.449 0 00-.358-2.875M7.824 12.646l-.001.012-.006.055-.02.231a25.333 25.333 0 00.03 3.902c.212 2.43.835 5.14 2.314 6.987 1.42 1.776 3.62 2.56 5.646 2.863a15.408 15.408 0 003.303.127 7.78 7.78 0 00.193-.017l.043-.005h.006M6.544 11.046a1.449 1.449 0 011.28 1.6l-1.28-1.6z"
-          fill-rule="evenodd"
-        />
-        <path
-          clip-rule="evenodd"
-          d="M5.692 11.214a1.449 1.449 0 00-.58 1.965l1.272-.692-1.272.692v.002l.002.002.003.006.008.014.023.04a8.703 8.703 0 00.353.551 12.492 12.492 0 005.602 4.416c2.047.807 4.203 1.038 5.803 1.079a21.55 21.55 0 001.986-.04 16.55 16.55 0 00.742-.067l.047-.006.014-.002h.008l-.193-1.436.192 1.435a1.45 1.45 0 00-.383-2.871h-.002l-.027.003a13.35 13.35 0 01-.594.053c-.416.028-1.012.052-1.716.035-1.424-.037-3.205-.244-4.814-.878a9.594 9.594 0 01-4.286-3.373 5.756 5.756 0 01-.221-.345l-.005-.008a1.449 1.449 0 00-1.962-.575z"
-          fill-rule="evenodd"
-        />
-      </svg>
-      <svg
-        class="icon-inline d-none d-lg-inline-block"
+        class="icon-inline"
         fill="currentColor"
         height="20"
         viewBox="0 -3 38 38"
@@ -1373,11 +1427,100 @@ exports[`NavLinks authed self-hosted /search 1`] = `
         />
       </svg>
       <span
-        class="d-none d-lg-inline-block ml-1"
+        class="inline-block ml-1"
       >
         Campaigns
       </span>
     </a>
+  </li>
+  <li
+    class="nav-item d-lg-none"
+  >
+    <div
+      class="menu-nav-item btn-group"
+    >
+      <a
+        aria-expanded="false"
+        aria-haspopup="true"
+        class="bg-transparent nav-link"
+        href="#"
+      >
+        <svg
+          class="mdi-icon icon-inline"
+          fill="currentColor"
+          height="24"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"
+          />
+        </svg>
+        <svg
+          class="mdi-icon icon-inline"
+          fill="currentColor"
+          height="24"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M7,10L12,15L17,10H7Z"
+          />
+        </svg>
+      </a>
+      <div
+        aria-hidden="true"
+        class="menu-nav-item__dropdown-menu dropdown-menu"
+        role="menu"
+        tabindex="-1"
+      >
+        <button
+          class="dropdown-item"
+          role="menuitem"
+          tabindex="0"
+          type="button"
+        >
+          <a
+            class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+            data-testid="campaigns"
+            href="/campaigns"
+          >
+            <svg
+              class="icon-inline"
+              fill="currentColor"
+              height="20"
+              viewBox="0 -3 38 38"
+              width="20"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                clip-rule="evenodd"
+                d="M5.829 6.76a1.932 1.932 0 100-3.863 1.932 1.932 0 000 3.863zm0 2.898a4.829 4.829 0 100-9.658 4.829 4.829 0 000 9.658z"
+                fill-rule="evenodd"
+              />
+              <path
+                d="M22.473 1.867H30.2v7.726h-7.726V1.867zM22.473 13.07H30.2v7.727h-7.726V13.07zM22.473 24.274H30.2V32h-7.726v-7.726z"
+              />
+              <path
+                clip-rule="evenodd"
+                d="M12.014 5.795c0-.8.648-1.449 1.448-1.449h5.795a1.449 1.449 0 110 2.897h-5.795c-.8 0-1.448-.648-1.448-1.448zM6.544 11.047a1.449 1.449 0 00-1.6 1.28l1.44.16-1.44-.16v.011l-.003.023-.008.08c-.006.066-.015.162-.024.283-.018.242-.04.587-.055 1.013a28.23 28.23 0 00.087 3.36c.226 2.602.915 6.018 2.937 8.546 2.08 2.599 5.13 3.566 7.48 3.918a18.29 18.29 0 003.957.15c.111-.008.2-.017.263-.023l.076-.008.023-.003h.008l.003-.001s.002 0-.178-1.438l.18 1.438a1.449 1.449 0 00-.358-2.875M7.824 12.646l-.001.012-.006.055-.02.231a25.333 25.333 0 00.03 3.902c.212 2.43.835 5.14 2.314 6.987 1.42 1.776 3.62 2.56 5.646 2.863a15.408 15.408 0 003.303.127 7.78 7.78 0 00.193-.017l.043-.005h.006M6.544 11.046a1.449 1.449 0 011.28 1.6l-1.28-1.6z"
+                fill-rule="evenodd"
+              />
+              <path
+                clip-rule="evenodd"
+                d="M5.692 11.214a1.449 1.449 0 00-.58 1.965l1.272-.692-1.272.692v.002l.002.002.003.006.008.014.023.04a8.703 8.703 0 00.353.551 12.492 12.492 0 005.602 4.416c2.047.807 4.203 1.038 5.803 1.079a21.55 21.55 0 001.986-.04 16.55 16.55 0 00.742-.067l.047-.006.014-.002h.008l-.193-1.436.192 1.435a1.45 1.45 0 00-.383-2.871h-.002l-.027.003a13.35 13.35 0 01-.594.053c-.416.028-1.012.052-1.716.035-1.424-.037-3.205-.244-4.814-.878a9.594 9.594 0 01-4.286-3.373 5.756 5.756 0 01-.221-.345l-.005-.008a1.449 1.449 0 00-1.962-.575z"
+                fill-rule="evenodd"
+              />
+            </svg>
+            <span
+              class="inline-block ml-1"
+            >
+              Campaigns
+            </span>
+          </a>
+        </button>
+      </div>
+    </div>
   </li>
   <li
     class="nav-item"
@@ -1454,7 +1597,7 @@ exports[`NavLinks authed self-hosted /search 1`] = `
     class="nav-item"
   >
     <span
-      class="command-list__popover-button btn btn-link "
+      class="command-list__popover-button test-command-list-button btn btn-link "
       id="command-list-popover-button-6"
       role="button"
     >
@@ -1486,32 +1629,45 @@ exports[`NavLinks authed self-hosted /search 1`] = `
     class="nav-item"
   >
     <div
+      aria-label="User. Open menu"
       class="py-0 btn-group"
     >
       <a
         aria-expanded="false"
         aria-haspopup="true"
-        class="bg-transparent d-flex align-items-center test-user-nav-item-toggle dropdown-toggle nav-link"
+        class="bg-transparent d-flex align-items-center test-user-nav-item-toggle nav-link"
         href="#"
       >
         <div
           class="position-relative"
         >
           <div
-            class=""
-          />
-          <svg
-            class="mdi-icon user-avatar icon-inline"
-            fill="currentColor"
-            height="24"
-            id="target-user-avatar"
-            viewBox="0 0 24 24"
-            width="24"
+            class="align-items-center d-flex"
           >
-            <path
-              d="M12,19.2C9.5,19.2 7.29,17.92 6,16C6.03,14 10,12.9 12,12.9C14,12.9 17.97,14 18,16C16.71,17.92 14.5,19.2 12,19.2M12,5A3,3 0 0,1 15,8A3,3 0 0,1 12,11A3,3 0 0,1 9,8A3,3 0 0,1 12,5M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12C22,6.47 17.5,2 12,2Z"
-            />
-          </svg>
+            <svg
+              class="mdi-icon user-avatar icon-inline"
+              fill="currentColor"
+              height="24"
+              id="target-user-avatar"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="M12,19.2C9.5,19.2 7.29,17.92 6,16C6.03,14 10,12.9 12,12.9C14,12.9 17.97,14 18,16C16.71,17.92 14.5,19.2 12,19.2M12,5A3,3 0 0,1 15,8A3,3 0 0,1 12,11A3,3 0 0,1 9,8A3,3 0 0,1 12,5M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12C22,6.47 17.5,2 12,2Z"
+              />
+            </svg>
+            <svg
+              class="mdi-icon icon-inline"
+              fill="currentColor"
+              height="24"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="M7,10L12,15L17,10H7Z"
+              />
+            </svg>
+          </div>
         </div>
       </a>
       <div
@@ -1689,78 +1845,15 @@ exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
     </a>
   </li>
   <li
-    class="nav-item"
+    class="nav-item d-none d-lg-block"
   >
     <a
       class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
-      href="/extensions"
-    >
-      <svg
-        class="mdi-icon icon-inline d-lg-none"
-        data-tooltip="Extensions"
-        fill="currentColor"
-        height="24"
-        viewBox="0 0 24 24"
-        width="24"
-      >
-        <path
-          d="M22,13.5C22,15.26 20.7,16.72 19,16.96V20A2,2 0 0,1 17,22H13.2V21.7A2.7,2.7 0 0,0 10.5,19C9,19 7.8,20.21 7.8,21.7V22H4A2,2 0 0,1 2,20V16.2H2.3C3.79,16.2 5,15 5,13.5C5,12 3.79,10.8 2.3,10.8H2V7A2,2 0 0,1 4,5H7.04C7.28,3.3 8.74,2 10.5,2C12.26,2 13.72,3.3 13.96,5H17A2,2 0 0,1 19,7V10.04C20.7,10.28 22,11.74 22,13.5M17,15H18.5A1.5,1.5 0 0,0 20,13.5A1.5,1.5 0 0,0 18.5,12H17V7H12V5.5A1.5,1.5 0 0,0 10.5,4A1.5,1.5 0 0,0 9,5.5V7H4V9.12C5.76,9.8 7,11.5 7,13.5C7,15.5 5.75,17.2 4,17.88V20H6.12C6.8,18.25 8.5,17 10.5,17C12.5,17 14.2,18.25 14.88,20H17V15Z"
-        />
-      </svg>
-      <svg
-        class="mdi-icon icon-inline d-none d-lg-inline-block"
-        fill="currentColor"
-        height="24"
-        viewBox="0 0 24 24"
-        width="24"
-      >
-        <path
-          d="M22,13.5C22,15.26 20.7,16.72 19,16.96V20A2,2 0 0,1 17,22H13.2V21.7A2.7,2.7 0 0,0 10.5,19C9,19 7.8,20.21 7.8,21.7V22H4A2,2 0 0,1 2,20V16.2H2.3C3.79,16.2 5,15 5,13.5C5,12 3.79,10.8 2.3,10.8H2V7A2,2 0 0,1 4,5H7.04C7.28,3.3 8.74,2 10.5,2C12.26,2 13.72,3.3 13.96,5H17A2,2 0 0,1 19,7V10.04C20.7,10.28 22,11.74 22,13.5M17,15H18.5A1.5,1.5 0 0,0 20,13.5A1.5,1.5 0 0,0 18.5,12H17V7H12V5.5A1.5,1.5 0 0,0 10.5,4A1.5,1.5 0 0,0 9,5.5V7H4V9.12C5.76,9.8 7,11.5 7,13.5C7,15.5 5.75,17.2 4,17.88V20H6.12C6.8,18.25 8.5,17 10.5,17C12.5,17 14.2,18.25 14.88,20H17V15Z"
-        />
-      </svg>
-      <span
-        class="d-none d-lg-inline-block ml-1"
-      >
-        Extensions
-      </span>
-    </a>
-  </li>
-  <li
-    class="nav-item"
-  >
-    <a
-      class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      data-testid="campaigns"
       href="/campaigns"
     >
       <svg
-        class="icon-inline d-lg-none"
-        fill="currentColor"
-        height="20"
-        viewBox="0 -3 38 38"
-        width="20"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          clip-rule="evenodd"
-          d="M5.829 6.76a1.932 1.932 0 100-3.863 1.932 1.932 0 000 3.863zm0 2.898a4.829 4.829 0 100-9.658 4.829 4.829 0 000 9.658z"
-          fill-rule="evenodd"
-        />
-        <path
-          d="M22.473 1.867H30.2v7.726h-7.726V1.867zM22.473 13.07H30.2v7.727h-7.726V13.07zM22.473 24.274H30.2V32h-7.726v-7.726z"
-        />
-        <path
-          clip-rule="evenodd"
-          d="M12.014 5.795c0-.8.648-1.449 1.448-1.449h5.795a1.449 1.449 0 110 2.897h-5.795c-.8 0-1.448-.648-1.448-1.448zM6.544 11.047a1.449 1.449 0 00-1.6 1.28l1.44.16-1.44-.16v.011l-.003.023-.008.08c-.006.066-.015.162-.024.283-.018.242-.04.587-.055 1.013a28.23 28.23 0 00.087 3.36c.226 2.602.915 6.018 2.937 8.546 2.08 2.599 5.13 3.566 7.48 3.918a18.29 18.29 0 003.957.15c.111-.008.2-.017.263-.023l.076-.008.023-.003h.008l.003-.001s.002 0-.178-1.438l.18 1.438a1.449 1.449 0 00-.358-2.875M7.824 12.646l-.001.012-.006.055-.02.231a25.333 25.333 0 00.03 3.902c.212 2.43.835 5.14 2.314 6.987 1.42 1.776 3.62 2.56 5.646 2.863a15.408 15.408 0 003.303.127 7.78 7.78 0 00.193-.017l.043-.005h.006M6.544 11.046a1.449 1.449 0 011.28 1.6l-1.28-1.6z"
-          fill-rule="evenodd"
-        />
-        <path
-          clip-rule="evenodd"
-          d="M5.692 11.214a1.449 1.449 0 00-.58 1.965l1.272-.692-1.272.692v.002l.002.002.003.006.008.014.023.04a8.703 8.703 0 00.353.551 12.492 12.492 0 005.602 4.416c2.047.807 4.203 1.038 5.803 1.079a21.55 21.55 0 001.986-.04 16.55 16.55 0 00.742-.067l.047-.006.014-.002h.008l-.193-1.436.192 1.435a1.45 1.45 0 00-.383-2.871h-.002l-.027.003a13.35 13.35 0 01-.594.053c-.416.028-1.012.052-1.716.035-1.424-.037-3.205-.244-4.814-.878a9.594 9.594 0 01-4.286-3.373 5.756 5.756 0 01-.221-.345l-.005-.008a1.449 1.449 0 00-1.962-.575z"
-          fill-rule="evenodd"
-        />
-      </svg>
-      <svg
-        class="icon-inline d-none d-lg-inline-block"
+        class="icon-inline"
         fill="currentColor"
         height="20"
         viewBox="0 -3 38 38"
@@ -1787,11 +1880,100 @@ exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
         />
       </svg>
       <span
-        class="d-none d-lg-inline-block ml-1"
+        class="inline-block ml-1"
       >
         Campaigns
       </span>
     </a>
+  </li>
+  <li
+    class="nav-item d-lg-none"
+  >
+    <div
+      class="menu-nav-item btn-group"
+    >
+      <a
+        aria-expanded="false"
+        aria-haspopup="true"
+        class="bg-transparent nav-link"
+        href="#"
+      >
+        <svg
+          class="mdi-icon icon-inline"
+          fill="currentColor"
+          height="24"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"
+          />
+        </svg>
+        <svg
+          class="mdi-icon icon-inline"
+          fill="currentColor"
+          height="24"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M7,10L12,15L17,10H7Z"
+          />
+        </svg>
+      </a>
+      <div
+        aria-hidden="true"
+        class="menu-nav-item__dropdown-menu dropdown-menu"
+        role="menu"
+        tabindex="-1"
+      >
+        <button
+          class="dropdown-item"
+          role="menuitem"
+          tabindex="0"
+          type="button"
+        >
+          <a
+            class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+            data-testid="campaigns"
+            href="/campaigns"
+          >
+            <svg
+              class="icon-inline"
+              fill="currentColor"
+              height="20"
+              viewBox="0 -3 38 38"
+              width="20"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                clip-rule="evenodd"
+                d="M5.829 6.76a1.932 1.932 0 100-3.863 1.932 1.932 0 000 3.863zm0 2.898a4.829 4.829 0 100-9.658 4.829 4.829 0 000 9.658z"
+                fill-rule="evenodd"
+              />
+              <path
+                d="M22.473 1.867H30.2v7.726h-7.726V1.867zM22.473 13.07H30.2v7.727h-7.726V13.07zM22.473 24.274H30.2V32h-7.726v-7.726z"
+              />
+              <path
+                clip-rule="evenodd"
+                d="M12.014 5.795c0-.8.648-1.449 1.448-1.449h5.795a1.449 1.449 0 110 2.897h-5.795c-.8 0-1.448-.648-1.448-1.448zM6.544 11.047a1.449 1.449 0 00-1.6 1.28l1.44.16-1.44-.16v.011l-.003.023-.008.08c-.006.066-.015.162-.024.283-.018.242-.04.587-.055 1.013a28.23 28.23 0 00.087 3.36c.226 2.602.915 6.018 2.937 8.546 2.08 2.599 5.13 3.566 7.48 3.918a18.29 18.29 0 003.957.15c.111-.008.2-.017.263-.023l.076-.008.023-.003h.008l.003-.001s.002 0-.178-1.438l.18 1.438a1.449 1.449 0 00-.358-2.875M7.824 12.646l-.001.012-.006.055-.02.231a25.333 25.333 0 00.03 3.902c.212 2.43.835 5.14 2.314 6.987 1.42 1.776 3.62 2.56 5.646 2.863a15.408 15.408 0 003.303.127 7.78 7.78 0 00.193-.017l.043-.005h.006M6.544 11.046a1.449 1.449 0 011.28 1.6l-1.28-1.6z"
+                fill-rule="evenodd"
+              />
+              <path
+                clip-rule="evenodd"
+                d="M5.692 11.214a1.449 1.449 0 00-.58 1.965l1.272-.692-1.272.692v.002l.002.002.003.006.008.014.023.04a8.703 8.703 0 00.353.551 12.492 12.492 0 005.602 4.416c2.047.807 4.203 1.038 5.803 1.079a21.55 21.55 0 001.986-.04 16.55 16.55 0 00.742-.067l.047-.006.014-.002h.008l-.193-1.436.192 1.435a1.45 1.45 0 00-.383-2.871h-.002l-.027.003a13.35 13.35 0 01-.594.053c-.416.028-1.012.052-1.716.035-1.424-.037-3.205-.244-4.814-.878a9.594 9.594 0 01-4.286-3.373 5.756 5.756 0 01-.221-.345l-.005-.008a1.449 1.449 0 00-1.962-.575z"
+                fill-rule="evenodd"
+              />
+            </svg>
+            <span
+              class="inline-block ml-1"
+            >
+              Campaigns
+            </span>
+          </a>
+        </button>
+      </div>
+    </div>
   </li>
   <li
     class="nav-item mx-1"
@@ -1831,7 +2013,7 @@ exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
     class="nav-item"
   >
     <span
-      class="command-list__popover-button btn btn-link "
+      class="command-list__popover-button test-command-list-button btn btn-link "
       id="command-list-popover-button-3"
       role="button"
     >
@@ -1867,78 +2049,15 @@ exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
   class="nav-links nav align-items-center pl-2 pr-1"
 >
   <li
-    class="nav-item"
+    class="nav-item d-none d-lg-block"
   >
     <a
       class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
-      href="/extensions"
-    >
-      <svg
-        class="mdi-icon icon-inline d-lg-none"
-        data-tooltip="Extensions"
-        fill="currentColor"
-        height="24"
-        viewBox="0 0 24 24"
-        width="24"
-      >
-        <path
-          d="M22,13.5C22,15.26 20.7,16.72 19,16.96V20A2,2 0 0,1 17,22H13.2V21.7A2.7,2.7 0 0,0 10.5,19C9,19 7.8,20.21 7.8,21.7V22H4A2,2 0 0,1 2,20V16.2H2.3C3.79,16.2 5,15 5,13.5C5,12 3.79,10.8 2.3,10.8H2V7A2,2 0 0,1 4,5H7.04C7.28,3.3 8.74,2 10.5,2C12.26,2 13.72,3.3 13.96,5H17A2,2 0 0,1 19,7V10.04C20.7,10.28 22,11.74 22,13.5M17,15H18.5A1.5,1.5 0 0,0 20,13.5A1.5,1.5 0 0,0 18.5,12H17V7H12V5.5A1.5,1.5 0 0,0 10.5,4A1.5,1.5 0 0,0 9,5.5V7H4V9.12C5.76,9.8 7,11.5 7,13.5C7,15.5 5.75,17.2 4,17.88V20H6.12C6.8,18.25 8.5,17 10.5,17C12.5,17 14.2,18.25 14.88,20H17V15Z"
-        />
-      </svg>
-      <svg
-        class="mdi-icon icon-inline d-none d-lg-inline-block"
-        fill="currentColor"
-        height="24"
-        viewBox="0 0 24 24"
-        width="24"
-      >
-        <path
-          d="M22,13.5C22,15.26 20.7,16.72 19,16.96V20A2,2 0 0,1 17,22H13.2V21.7A2.7,2.7 0 0,0 10.5,19C9,19 7.8,20.21 7.8,21.7V22H4A2,2 0 0,1 2,20V16.2H2.3C3.79,16.2 5,15 5,13.5C5,12 3.79,10.8 2.3,10.8H2V7A2,2 0 0,1 4,5H7.04C7.28,3.3 8.74,2 10.5,2C12.26,2 13.72,3.3 13.96,5H17A2,2 0 0,1 19,7V10.04C20.7,10.28 22,11.74 22,13.5M17,15H18.5A1.5,1.5 0 0,0 20,13.5A1.5,1.5 0 0,0 18.5,12H17V7H12V5.5A1.5,1.5 0 0,0 10.5,4A1.5,1.5 0 0,0 9,5.5V7H4V9.12C5.76,9.8 7,11.5 7,13.5C7,15.5 5.75,17.2 4,17.88V20H6.12C6.8,18.25 8.5,17 10.5,17C12.5,17 14.2,18.25 14.88,20H17V15Z"
-        />
-      </svg>
-      <span
-        class="d-none d-lg-inline-block ml-1"
-      >
-        Extensions
-      </span>
-    </a>
-  </li>
-  <li
-    class="nav-item"
-  >
-    <a
-      class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      data-testid="campaigns"
       href="/campaigns"
     >
       <svg
-        class="icon-inline d-lg-none"
-        fill="currentColor"
-        height="20"
-        viewBox="0 -3 38 38"
-        width="20"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          clip-rule="evenodd"
-          d="M5.829 6.76a1.932 1.932 0 100-3.863 1.932 1.932 0 000 3.863zm0 2.898a4.829 4.829 0 100-9.658 4.829 4.829 0 000 9.658z"
-          fill-rule="evenodd"
-        />
-        <path
-          d="M22.473 1.867H30.2v7.726h-7.726V1.867zM22.473 13.07H30.2v7.727h-7.726V13.07zM22.473 24.274H30.2V32h-7.726v-7.726z"
-        />
-        <path
-          clip-rule="evenodd"
-          d="M12.014 5.795c0-.8.648-1.449 1.448-1.449h5.795a1.449 1.449 0 110 2.897h-5.795c-.8 0-1.448-.648-1.448-1.448zM6.544 11.047a1.449 1.449 0 00-1.6 1.28l1.44.16-1.44-.16v.011l-.003.023-.008.08c-.006.066-.015.162-.024.283-.018.242-.04.587-.055 1.013a28.23 28.23 0 00.087 3.36c.226 2.602.915 6.018 2.937 8.546 2.08 2.599 5.13 3.566 7.48 3.918a18.29 18.29 0 003.957.15c.111-.008.2-.017.263-.023l.076-.008.023-.003h.008l.003-.001s.002 0-.178-1.438l.18 1.438a1.449 1.449 0 00-.358-2.875M7.824 12.646l-.001.012-.006.055-.02.231a25.333 25.333 0 00.03 3.902c.212 2.43.835 5.14 2.314 6.987 1.42 1.776 3.62 2.56 5.646 2.863a15.408 15.408 0 003.303.127 7.78 7.78 0 00.193-.017l.043-.005h.006M6.544 11.046a1.449 1.449 0 011.28 1.6l-1.28-1.6z"
-          fill-rule="evenodd"
-        />
-        <path
-          clip-rule="evenodd"
-          d="M5.692 11.214a1.449 1.449 0 00-.58 1.965l1.272-.692-1.272.692v.002l.002.002.003.006.008.014.023.04a8.703 8.703 0 00.353.551 12.492 12.492 0 005.602 4.416c2.047.807 4.203 1.038 5.803 1.079a21.55 21.55 0 001.986-.04 16.55 16.55 0 00.742-.067l.047-.006.014-.002h.008l-.193-1.436.192 1.435a1.45 1.45 0 00-.383-2.871h-.002l-.027.003a13.35 13.35 0 01-.594.053c-.416.028-1.012.052-1.716.035-1.424-.037-3.205-.244-4.814-.878a9.594 9.594 0 01-4.286-3.373 5.756 5.756 0 01-.221-.345l-.005-.008a1.449 1.449 0 00-1.962-.575z"
-          fill-rule="evenodd"
-        />
-      </svg>
-      <svg
-        class="icon-inline d-none d-lg-inline-block"
+        class="icon-inline"
         fill="currentColor"
         height="20"
         viewBox="0 -3 38 38"
@@ -1965,11 +2084,100 @@ exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
         />
       </svg>
       <span
-        class="d-none d-lg-inline-block ml-1"
+        class="inline-block ml-1"
       >
         Campaigns
       </span>
     </a>
+  </li>
+  <li
+    class="nav-item d-lg-none"
+  >
+    <div
+      class="menu-nav-item btn-group"
+    >
+      <a
+        aria-expanded="false"
+        aria-haspopup="true"
+        class="bg-transparent nav-link"
+        href="#"
+      >
+        <svg
+          class="mdi-icon icon-inline"
+          fill="currentColor"
+          height="24"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"
+          />
+        </svg>
+        <svg
+          class="mdi-icon icon-inline"
+          fill="currentColor"
+          height="24"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M7,10L12,15L17,10H7Z"
+          />
+        </svg>
+      </a>
+      <div
+        aria-hidden="true"
+        class="menu-nav-item__dropdown-menu dropdown-menu"
+        role="menu"
+        tabindex="-1"
+      >
+        <button
+          class="dropdown-item"
+          role="menuitem"
+          tabindex="0"
+          type="button"
+        >
+          <a
+            class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+            data-testid="campaigns"
+            href="/campaigns"
+          >
+            <svg
+              class="icon-inline"
+              fill="currentColor"
+              height="20"
+              viewBox="0 -3 38 38"
+              width="20"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                clip-rule="evenodd"
+                d="M5.829 6.76a1.932 1.932 0 100-3.863 1.932 1.932 0 000 3.863zm0 2.898a4.829 4.829 0 100-9.658 4.829 4.829 0 000 9.658z"
+                fill-rule="evenodd"
+              />
+              <path
+                d="M22.473 1.867H30.2v7.726h-7.726V1.867zM22.473 13.07H30.2v7.727h-7.726V13.07zM22.473 24.274H30.2V32h-7.726v-7.726z"
+              />
+              <path
+                clip-rule="evenodd"
+                d="M12.014 5.795c0-.8.648-1.449 1.448-1.449h5.795a1.449 1.449 0 110 2.897h-5.795c-.8 0-1.448-.648-1.448-1.448zM6.544 11.047a1.449 1.449 0 00-1.6 1.28l1.44.16-1.44-.16v.011l-.003.023-.008.08c-.006.066-.015.162-.024.283-.018.242-.04.587-.055 1.013a28.23 28.23 0 00.087 3.36c.226 2.602.915 6.018 2.937 8.546 2.08 2.599 5.13 3.566 7.48 3.918a18.29 18.29 0 003.957.15c.111-.008.2-.017.263-.023l.076-.008.023-.003h.008l.003-.001s.002 0-.178-1.438l.18 1.438a1.449 1.449 0 00-.358-2.875M7.824 12.646l-.001.012-.006.055-.02.231a25.333 25.333 0 00.03 3.902c.212 2.43.835 5.14 2.314 6.987 1.42 1.776 3.62 2.56 5.646 2.863a15.408 15.408 0 003.303.127 7.78 7.78 0 00.193-.017l.043-.005h.006M6.544 11.046a1.449 1.449 0 011.28 1.6l-1.28-1.6z"
+                fill-rule="evenodd"
+              />
+              <path
+                clip-rule="evenodd"
+                d="M5.692 11.214a1.449 1.449 0 00-.58 1.965l1.272-.692-1.272.692v.002l.002.002.003.006.008.014.023.04a8.703 8.703 0 00.353.551 12.492 12.492 0 005.602 4.416c2.047.807 4.203 1.038 5.803 1.079a21.55 21.55 0 001.986-.04 16.55 16.55 0 00.742-.067l.047-.006.014-.002h.008l-.193-1.436.192 1.435a1.45 1.45 0 00-.383-2.871h-.002l-.027.003a13.35 13.35 0 01-.594.053c-.416.028-1.012.052-1.716.035-1.424-.037-3.205-.244-4.814-.878a9.594 9.594 0 01-4.286-3.373 5.756 5.756 0 01-.221-.345l-.005-.008a1.449 1.449 0 00-1.962-.575z"
+                fill-rule="evenodd"
+              />
+            </svg>
+            <span
+              class="inline-block ml-1"
+            >
+              Campaigns
+            </span>
+          </a>
+        </button>
+      </div>
+    </div>
   </li>
   <li
     class="nav-item mx-1"
@@ -2009,7 +2217,7 @@ exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
     class="nav-item"
   >
     <span
-      class="command-list__popover-button btn btn-link "
+      class="command-list__popover-button test-command-list-button btn btn-link "
       id="command-list-popover-button-4"
       role="button"
     >
@@ -2055,78 +2263,15 @@ exports[`NavLinks unauthed self-hosted /foo 1`] = `
     </a>
   </li>
   <li
-    class="nav-item"
+    class="nav-item d-none d-lg-block"
   >
     <a
       class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
-      href="/extensions"
-    >
-      <svg
-        class="mdi-icon icon-inline d-lg-none"
-        data-tooltip="Extensions"
-        fill="currentColor"
-        height="24"
-        viewBox="0 0 24 24"
-        width="24"
-      >
-        <path
-          d="M22,13.5C22,15.26 20.7,16.72 19,16.96V20A2,2 0 0,1 17,22H13.2V21.7A2.7,2.7 0 0,0 10.5,19C9,19 7.8,20.21 7.8,21.7V22H4A2,2 0 0,1 2,20V16.2H2.3C3.79,16.2 5,15 5,13.5C5,12 3.79,10.8 2.3,10.8H2V7A2,2 0 0,1 4,5H7.04C7.28,3.3 8.74,2 10.5,2C12.26,2 13.72,3.3 13.96,5H17A2,2 0 0,1 19,7V10.04C20.7,10.28 22,11.74 22,13.5M17,15H18.5A1.5,1.5 0 0,0 20,13.5A1.5,1.5 0 0,0 18.5,12H17V7H12V5.5A1.5,1.5 0 0,0 10.5,4A1.5,1.5 0 0,0 9,5.5V7H4V9.12C5.76,9.8 7,11.5 7,13.5C7,15.5 5.75,17.2 4,17.88V20H6.12C6.8,18.25 8.5,17 10.5,17C12.5,17 14.2,18.25 14.88,20H17V15Z"
-        />
-      </svg>
-      <svg
-        class="mdi-icon icon-inline d-none d-lg-inline-block"
-        fill="currentColor"
-        height="24"
-        viewBox="0 0 24 24"
-        width="24"
-      >
-        <path
-          d="M22,13.5C22,15.26 20.7,16.72 19,16.96V20A2,2 0 0,1 17,22H13.2V21.7A2.7,2.7 0 0,0 10.5,19C9,19 7.8,20.21 7.8,21.7V22H4A2,2 0 0,1 2,20V16.2H2.3C3.79,16.2 5,15 5,13.5C5,12 3.79,10.8 2.3,10.8H2V7A2,2 0 0,1 4,5H7.04C7.28,3.3 8.74,2 10.5,2C12.26,2 13.72,3.3 13.96,5H17A2,2 0 0,1 19,7V10.04C20.7,10.28 22,11.74 22,13.5M17,15H18.5A1.5,1.5 0 0,0 20,13.5A1.5,1.5 0 0,0 18.5,12H17V7H12V5.5A1.5,1.5 0 0,0 10.5,4A1.5,1.5 0 0,0 9,5.5V7H4V9.12C5.76,9.8 7,11.5 7,13.5C7,15.5 5.75,17.2 4,17.88V20H6.12C6.8,18.25 8.5,17 10.5,17C12.5,17 14.2,18.25 14.88,20H17V15Z"
-        />
-      </svg>
-      <span
-        class="d-none d-lg-inline-block ml-1"
-      >
-        Extensions
-      </span>
-    </a>
-  </li>
-  <li
-    class="nav-item"
-  >
-    <a
-      class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      data-testid="campaigns"
       href="/campaigns"
     >
       <svg
-        class="icon-inline d-lg-none"
-        fill="currentColor"
-        height="20"
-        viewBox="0 -3 38 38"
-        width="20"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          clip-rule="evenodd"
-          d="M5.829 6.76a1.932 1.932 0 100-3.863 1.932 1.932 0 000 3.863zm0 2.898a4.829 4.829 0 100-9.658 4.829 4.829 0 000 9.658z"
-          fill-rule="evenodd"
-        />
-        <path
-          d="M22.473 1.867H30.2v7.726h-7.726V1.867zM22.473 13.07H30.2v7.727h-7.726V13.07zM22.473 24.274H30.2V32h-7.726v-7.726z"
-        />
-        <path
-          clip-rule="evenodd"
-          d="M12.014 5.795c0-.8.648-1.449 1.448-1.449h5.795a1.449 1.449 0 110 2.897h-5.795c-.8 0-1.448-.648-1.448-1.448zM6.544 11.047a1.449 1.449 0 00-1.6 1.28l1.44.16-1.44-.16v.011l-.003.023-.008.08c-.006.066-.015.162-.024.283-.018.242-.04.587-.055 1.013a28.23 28.23 0 00.087 3.36c.226 2.602.915 6.018 2.937 8.546 2.08 2.599 5.13 3.566 7.48 3.918a18.29 18.29 0 003.957.15c.111-.008.2-.017.263-.023l.076-.008.023-.003h.008l.003-.001s.002 0-.178-1.438l.18 1.438a1.449 1.449 0 00-.358-2.875M7.824 12.646l-.001.012-.006.055-.02.231a25.333 25.333 0 00.03 3.902c.212 2.43.835 5.14 2.314 6.987 1.42 1.776 3.62 2.56 5.646 2.863a15.408 15.408 0 003.303.127 7.78 7.78 0 00.193-.017l.043-.005h.006M6.544 11.046a1.449 1.449 0 011.28 1.6l-1.28-1.6z"
-          fill-rule="evenodd"
-        />
-        <path
-          clip-rule="evenodd"
-          d="M5.692 11.214a1.449 1.449 0 00-.58 1.965l1.272-.692-1.272.692v.002l.002.002.003.006.008.014.023.04a8.703 8.703 0 00.353.551 12.492 12.492 0 005.602 4.416c2.047.807 4.203 1.038 5.803 1.079a21.55 21.55 0 001.986-.04 16.55 16.55 0 00.742-.067l.047-.006.014-.002h.008l-.193-1.436.192 1.435a1.45 1.45 0 00-.383-2.871h-.002l-.027.003a13.35 13.35 0 01-.594.053c-.416.028-1.012.052-1.716.035-1.424-.037-3.205-.244-4.814-.878a9.594 9.594 0 01-4.286-3.373 5.756 5.756 0 01-.221-.345l-.005-.008a1.449 1.449 0 00-1.962-.575z"
-          fill-rule="evenodd"
-        />
-      </svg>
-      <svg
-        class="icon-inline d-none d-lg-inline-block"
+        class="icon-inline"
         fill="currentColor"
         height="20"
         viewBox="0 -3 38 38"
@@ -2153,11 +2298,100 @@ exports[`NavLinks unauthed self-hosted /foo 1`] = `
         />
       </svg>
       <span
-        class="d-none d-lg-inline-block ml-1"
+        class="inline-block ml-1"
       >
         Campaigns
       </span>
     </a>
+  </li>
+  <li
+    class="nav-item d-lg-none"
+  >
+    <div
+      class="menu-nav-item btn-group"
+    >
+      <a
+        aria-expanded="false"
+        aria-haspopup="true"
+        class="bg-transparent nav-link"
+        href="#"
+      >
+        <svg
+          class="mdi-icon icon-inline"
+          fill="currentColor"
+          height="24"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"
+          />
+        </svg>
+        <svg
+          class="mdi-icon icon-inline"
+          fill="currentColor"
+          height="24"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M7,10L12,15L17,10H7Z"
+          />
+        </svg>
+      </a>
+      <div
+        aria-hidden="true"
+        class="menu-nav-item__dropdown-menu dropdown-menu"
+        role="menu"
+        tabindex="-1"
+      >
+        <button
+          class="dropdown-item"
+          role="menuitem"
+          tabindex="0"
+          type="button"
+        >
+          <a
+            class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+            data-testid="campaigns"
+            href="/campaigns"
+          >
+            <svg
+              class="icon-inline"
+              fill="currentColor"
+              height="20"
+              viewBox="0 -3 38 38"
+              width="20"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                clip-rule="evenodd"
+                d="M5.829 6.76a1.932 1.932 0 100-3.863 1.932 1.932 0 000 3.863zm0 2.898a4.829 4.829 0 100-9.658 4.829 4.829 0 000 9.658z"
+                fill-rule="evenodd"
+              />
+              <path
+                d="M22.473 1.867H30.2v7.726h-7.726V1.867zM22.473 13.07H30.2v7.727h-7.726V13.07zM22.473 24.274H30.2V32h-7.726v-7.726z"
+              />
+              <path
+                clip-rule="evenodd"
+                d="M12.014 5.795c0-.8.648-1.449 1.448-1.449h5.795a1.449 1.449 0 110 2.897h-5.795c-.8 0-1.448-.648-1.448-1.448zM6.544 11.047a1.449 1.449 0 00-1.6 1.28l1.44.16-1.44-.16v.011l-.003.023-.008.08c-.006.066-.015.162-.024.283-.018.242-.04.587-.055 1.013a28.23 28.23 0 00.087 3.36c.226 2.602.915 6.018 2.937 8.546 2.08 2.599 5.13 3.566 7.48 3.918a18.29 18.29 0 003.957.15c.111-.008.2-.017.263-.023l.076-.008.023-.003h.008l.003-.001s.002 0-.178-1.438l.18 1.438a1.449 1.449 0 00-.358-2.875M7.824 12.646l-.001.012-.006.055-.02.231a25.333 25.333 0 00.03 3.902c.212 2.43.835 5.14 2.314 6.987 1.42 1.776 3.62 2.56 5.646 2.863a15.408 15.408 0 003.303.127 7.78 7.78 0 00.193-.017l.043-.005h.006M6.544 11.046a1.449 1.449 0 011.28 1.6l-1.28-1.6z"
+                fill-rule="evenodd"
+              />
+              <path
+                clip-rule="evenodd"
+                d="M5.692 11.214a1.449 1.449 0 00-.58 1.965l1.272-.692-1.272.692v.002l.002.002.003.006.008.014.023.04a8.703 8.703 0 00.353.551 12.492 12.492 0 005.602 4.416c2.047.807 4.203 1.038 5.803 1.079a21.55 21.55 0 001.986-.04 16.55 16.55 0 00.742-.067l.047-.006.014-.002h.008l-.193-1.436.192 1.435a1.45 1.45 0 00-.383-2.871h-.002l-.027.003a13.35 13.35 0 01-.594.053c-.416.028-1.012.052-1.716.035-1.424-.037-3.205-.244-4.814-.878a9.594 9.594 0 01-4.286-3.373 5.756 5.756 0 01-.221-.345l-.005-.008a1.449 1.449 0 00-1.962-.575z"
+                fill-rule="evenodd"
+              />
+            </svg>
+            <span
+              class="inline-block ml-1"
+            >
+              Campaigns
+            </span>
+          </a>
+        </button>
+      </div>
+    </div>
   </li>
   <li
     class="nav-item mx-1"
@@ -2185,7 +2419,7 @@ exports[`NavLinks unauthed self-hosted /foo 1`] = `
     class="nav-item"
   >
     <span
-      class="command-list__popover-button btn btn-link "
+      class="command-list__popover-button test-command-list-button btn btn-link "
       id="command-list-popover-button-1"
       role="button"
     >
@@ -2221,78 +2455,15 @@ exports[`NavLinks unauthed self-hosted /search 1`] = `
   class="nav-links nav align-items-center pl-2 pr-1"
 >
   <li
-    class="nav-item"
+    class="nav-item d-none d-lg-block"
   >
     <a
       class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
-      href="/extensions"
-    >
-      <svg
-        class="mdi-icon icon-inline d-lg-none"
-        data-tooltip="Extensions"
-        fill="currentColor"
-        height="24"
-        viewBox="0 0 24 24"
-        width="24"
-      >
-        <path
-          d="M22,13.5C22,15.26 20.7,16.72 19,16.96V20A2,2 0 0,1 17,22H13.2V21.7A2.7,2.7 0 0,0 10.5,19C9,19 7.8,20.21 7.8,21.7V22H4A2,2 0 0,1 2,20V16.2H2.3C3.79,16.2 5,15 5,13.5C5,12 3.79,10.8 2.3,10.8H2V7A2,2 0 0,1 4,5H7.04C7.28,3.3 8.74,2 10.5,2C12.26,2 13.72,3.3 13.96,5H17A2,2 0 0,1 19,7V10.04C20.7,10.28 22,11.74 22,13.5M17,15H18.5A1.5,1.5 0 0,0 20,13.5A1.5,1.5 0 0,0 18.5,12H17V7H12V5.5A1.5,1.5 0 0,0 10.5,4A1.5,1.5 0 0,0 9,5.5V7H4V9.12C5.76,9.8 7,11.5 7,13.5C7,15.5 5.75,17.2 4,17.88V20H6.12C6.8,18.25 8.5,17 10.5,17C12.5,17 14.2,18.25 14.88,20H17V15Z"
-        />
-      </svg>
-      <svg
-        class="mdi-icon icon-inline d-none d-lg-inline-block"
-        fill="currentColor"
-        height="24"
-        viewBox="0 0 24 24"
-        width="24"
-      >
-        <path
-          d="M22,13.5C22,15.26 20.7,16.72 19,16.96V20A2,2 0 0,1 17,22H13.2V21.7A2.7,2.7 0 0,0 10.5,19C9,19 7.8,20.21 7.8,21.7V22H4A2,2 0 0,1 2,20V16.2H2.3C3.79,16.2 5,15 5,13.5C5,12 3.79,10.8 2.3,10.8H2V7A2,2 0 0,1 4,5H7.04C7.28,3.3 8.74,2 10.5,2C12.26,2 13.72,3.3 13.96,5H17A2,2 0 0,1 19,7V10.04C20.7,10.28 22,11.74 22,13.5M17,15H18.5A1.5,1.5 0 0,0 20,13.5A1.5,1.5 0 0,0 18.5,12H17V7H12V5.5A1.5,1.5 0 0,0 10.5,4A1.5,1.5 0 0,0 9,5.5V7H4V9.12C5.76,9.8 7,11.5 7,13.5C7,15.5 5.75,17.2 4,17.88V20H6.12C6.8,18.25 8.5,17 10.5,17C12.5,17 14.2,18.25 14.88,20H17V15Z"
-        />
-      </svg>
-      <span
-        class="d-none d-lg-inline-block ml-1"
-      >
-        Extensions
-      </span>
-    </a>
-  </li>
-  <li
-    class="nav-item"
-  >
-    <a
-      class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      data-testid="campaigns"
       href="/campaigns"
     >
       <svg
-        class="icon-inline d-lg-none"
-        fill="currentColor"
-        height="20"
-        viewBox="0 -3 38 38"
-        width="20"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          clip-rule="evenodd"
-          d="M5.829 6.76a1.932 1.932 0 100-3.863 1.932 1.932 0 000 3.863zm0 2.898a4.829 4.829 0 100-9.658 4.829 4.829 0 000 9.658z"
-          fill-rule="evenodd"
-        />
-        <path
-          d="M22.473 1.867H30.2v7.726h-7.726V1.867zM22.473 13.07H30.2v7.727h-7.726V13.07zM22.473 24.274H30.2V32h-7.726v-7.726z"
-        />
-        <path
-          clip-rule="evenodd"
-          d="M12.014 5.795c0-.8.648-1.449 1.448-1.449h5.795a1.449 1.449 0 110 2.897h-5.795c-.8 0-1.448-.648-1.448-1.448zM6.544 11.047a1.449 1.449 0 00-1.6 1.28l1.44.16-1.44-.16v.011l-.003.023-.008.08c-.006.066-.015.162-.024.283-.018.242-.04.587-.055 1.013a28.23 28.23 0 00.087 3.36c.226 2.602.915 6.018 2.937 8.546 2.08 2.599 5.13 3.566 7.48 3.918a18.29 18.29 0 003.957.15c.111-.008.2-.017.263-.023l.076-.008.023-.003h.008l.003-.001s.002 0-.178-1.438l.18 1.438a1.449 1.449 0 00-.358-2.875M7.824 12.646l-.001.012-.006.055-.02.231a25.333 25.333 0 00.03 3.902c.212 2.43.835 5.14 2.314 6.987 1.42 1.776 3.62 2.56 5.646 2.863a15.408 15.408 0 003.303.127 7.78 7.78 0 00.193-.017l.043-.005h.006M6.544 11.046a1.449 1.449 0 011.28 1.6l-1.28-1.6z"
-          fill-rule="evenodd"
-        />
-        <path
-          clip-rule="evenodd"
-          d="M5.692 11.214a1.449 1.449 0 00-.58 1.965l1.272-.692-1.272.692v.002l.002.002.003.006.008.014.023.04a8.703 8.703 0 00.353.551 12.492 12.492 0 005.602 4.416c2.047.807 4.203 1.038 5.803 1.079a21.55 21.55 0 001.986-.04 16.55 16.55 0 00.742-.067l.047-.006.014-.002h.008l-.193-1.436.192 1.435a1.45 1.45 0 00-.383-2.871h-.002l-.027.003a13.35 13.35 0 01-.594.053c-.416.028-1.012.052-1.716.035-1.424-.037-3.205-.244-4.814-.878a9.594 9.594 0 01-4.286-3.373 5.756 5.756 0 01-.221-.345l-.005-.008a1.449 1.449 0 00-1.962-.575z"
-          fill-rule="evenodd"
-        />
-      </svg>
-      <svg
-        class="icon-inline d-none d-lg-inline-block"
+        class="icon-inline"
         fill="currentColor"
         height="20"
         viewBox="0 -3 38 38"
@@ -2319,11 +2490,100 @@ exports[`NavLinks unauthed self-hosted /search 1`] = `
         />
       </svg>
       <span
-        class="d-none d-lg-inline-block ml-1"
+        class="inline-block ml-1"
       >
         Campaigns
       </span>
     </a>
+  </li>
+  <li
+    class="nav-item d-lg-none"
+  >
+    <div
+      class="menu-nav-item btn-group"
+    >
+      <a
+        aria-expanded="false"
+        aria-haspopup="true"
+        class="bg-transparent nav-link"
+        href="#"
+      >
+        <svg
+          class="mdi-icon icon-inline"
+          fill="currentColor"
+          height="24"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"
+          />
+        </svg>
+        <svg
+          class="mdi-icon icon-inline"
+          fill="currentColor"
+          height="24"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M7,10L12,15L17,10H7Z"
+          />
+        </svg>
+      </a>
+      <div
+        aria-hidden="true"
+        class="menu-nav-item__dropdown-menu dropdown-menu"
+        role="menu"
+        tabindex="-1"
+      >
+        <button
+          class="dropdown-item"
+          role="menuitem"
+          tabindex="0"
+          type="button"
+        >
+          <a
+            class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+            data-testid="campaigns"
+            href="/campaigns"
+          >
+            <svg
+              class="icon-inline"
+              fill="currentColor"
+              height="20"
+              viewBox="0 -3 38 38"
+              width="20"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                clip-rule="evenodd"
+                d="M5.829 6.76a1.932 1.932 0 100-3.863 1.932 1.932 0 000 3.863zm0 2.898a4.829 4.829 0 100-9.658 4.829 4.829 0 000 9.658z"
+                fill-rule="evenodd"
+              />
+              <path
+                d="M22.473 1.867H30.2v7.726h-7.726V1.867zM22.473 13.07H30.2v7.727h-7.726V13.07zM22.473 24.274H30.2V32h-7.726v-7.726z"
+              />
+              <path
+                clip-rule="evenodd"
+                d="M12.014 5.795c0-.8.648-1.449 1.448-1.449h5.795a1.449 1.449 0 110 2.897h-5.795c-.8 0-1.448-.648-1.448-1.448zM6.544 11.047a1.449 1.449 0 00-1.6 1.28l1.44.16-1.44-.16v.011l-.003.023-.008.08c-.006.066-.015.162-.024.283-.018.242-.04.587-.055 1.013a28.23 28.23 0 00.087 3.36c.226 2.602.915 6.018 2.937 8.546 2.08 2.599 5.13 3.566 7.48 3.918a18.29 18.29 0 003.957.15c.111-.008.2-.017.263-.023l.076-.008.023-.003h.008l.003-.001s.002 0-.178-1.438l.18 1.438a1.449 1.449 0 00-.358-2.875M7.824 12.646l-.001.012-.006.055-.02.231a25.333 25.333 0 00.03 3.902c.212 2.43.835 5.14 2.314 6.987 1.42 1.776 3.62 2.56 5.646 2.863a15.408 15.408 0 003.303.127 7.78 7.78 0 00.193-.017l.043-.005h.006M6.544 11.046a1.449 1.449 0 011.28 1.6l-1.28-1.6z"
+                fill-rule="evenodd"
+              />
+              <path
+                clip-rule="evenodd"
+                d="M5.692 11.214a1.449 1.449 0 00-.58 1.965l1.272-.692-1.272.692v.002l.002.002.003.006.008.014.023.04a8.703 8.703 0 00.353.551 12.492 12.492 0 005.602 4.416c2.047.807 4.203 1.038 5.803 1.079a21.55 21.55 0 001.986-.04 16.55 16.55 0 00.742-.067l.047-.006.014-.002h.008l-.193-1.436.192 1.435a1.45 1.45 0 00-.383-2.871h-.002l-.027.003a13.35 13.35 0 01-.594.053c-.416.028-1.012.052-1.716.035-1.424-.037-3.205-.244-4.814-.878a9.594 9.594 0 01-4.286-3.373 5.756 5.756 0 01-.221-.345l-.005-.008a1.449 1.449 0 00-1.962-.575z"
+                fill-rule="evenodd"
+              />
+            </svg>
+            <span
+              class="inline-block ml-1"
+            >
+              Campaigns
+            </span>
+          </a>
+        </button>
+      </div>
+    </div>
   </li>
   <li
     class="nav-item mx-1"
@@ -2351,7 +2611,7 @@ exports[`NavLinks unauthed self-hosted /search 1`] = `
     class="nav-item"
   >
     <span
-      class="command-list__popover-button btn btn-link "
+      class="command-list__popover-button test-command-list-button btn btn-link "
       id="command-list-popover-button-2"
       role="button"
     >

@@ -15,15 +15,15 @@
     align-items: center;
 }
 
+// TODO find a better way to scale icons that is not proportional to the font size
+// 14px font size -> 20px icon size
+$icon-inline-size: (20em / 14);
+
 svg.icon-inline,
 img.icon-inline,
 .icon-inline svg {
-    // TODO find a better way to scale icons that is not proportional to the font size
-    // 14px font size -> 20px icon size
-    // stylelint-disable-next-line declaration-property-unit-whitelist
-    width: (20em / 14);
-    // stylelint-disable-next-line declaration-property-unit-whitelist
-    height: (20em / 14);
+    width: $icon-inline-size;
+    height: $icon-inline-size;
     // Match color of the text
     fill: currentColor;
 }

@@ -6,9 +6,6 @@ import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/scr
 import { subDays, addDays } from 'date-fns'
 import {
     ChangesetCheckState,
-    ChangesetExternalState,
-    ChangesetPublicationState,
-    ChangesetReconcilerState,
     ChangesetReviewState,
     ChangesetCountsOverTimeVariables,
     ChangesetCountsOverTimeResult,
@@ -23,7 +20,12 @@ import {
     ListCampaign,
     CampaignByNamespaceResult,
 } from '../graphql-operations'
-import { ExternalServiceKind, SharedGraphQlOperations } from '../../../shared/src/graphql-operations'
+import {
+    ChangesetSpecOperation,
+    ChangesetState,
+    ExternalServiceKind,
+    SharedGraphQlOperations,
+} from '../../../shared/src/graphql-operations'
 
 const campaignListNode: ListCampaign = {
     id: 'campaign123',
@@ -176,8 +178,9 @@ const CampaignChangesets: (variables: CampaignChangesetsVariables) => CampaignCh
                         deleted: 23,
                     },
                     error: null,
+                    syncerError: null,
                     externalID: '123',
-                    externalState: ChangesetExternalState.OPEN,
+                    state: ChangesetState.OPEN,
                     externalURL: {
                         url: 'http://test.test/123',
                     },
@@ -190,8 +193,6 @@ const CampaignChangesets: (variables: CampaignChangesetsVariables) => CampaignCh
                         },
                     ],
                     nextSyncAt: null,
-                    publicationState: ChangesetPublicationState.PUBLISHED,
-                    reconcilerState: ChangesetReconcilerState.COMPLETED,
                     repository: {
                         id: 'repo123',
                         name: 'github.com/sourcegraph/repo',
@@ -199,7 +200,14 @@ const CampaignChangesets: (variables: CampaignChangesetsVariables) => CampaignCh
                     },
                     reviewState: ChangesetReviewState.APPROVED,
                     title: 'The changeset title',
-                    currentSpec: { id: 'spec-rand-id-1' },
+                    currentSpec: {
+                        id: 'spec-rand-id-1',
+                        type: ChangesetSpecType.BRANCH,
+                        description: {
+                            __typename: 'GitBranchChangesetDescription',
+                            headRef: 'my-branch',
+                        },
+                    },
                 },
             ],
         },
@@ -264,6 +272,7 @@ function mockCommonGraphQLResponses(
                     namespaceName: entityType === 'user' ? 'alice' : 'test-org',
                     url: namespaceURL,
                 },
+                diffStat: { added: 1000, changed: 2000, deleted: 1000 },
                 url: `${namespaceURL}/campaigns/test-campaign`,
                 viewerCanAdminister: true,
                 lastAppliedAt: subDays(new Date(), 5).toISOString(),
@@ -273,45 +282,54 @@ function mockCommonGraphQLResponses(
                 },
                 currentSpec: {
                     originalInput: 'name: awesome-campaign\ndescription: somesttring',
+                    supersedingCampaignSpec: null,
                 },
                 ...campaignOverrides,
             },
         }),
-        CampaignsByUser: () => ({
-            node: {
-                __typename: 'User',
-                campaigns: {
-                    nodes: [campaignListNode],
-                    pageInfo: {
-                        endCursor: null,
-                        hasNextPage: false,
-                    },
-                    totalCount: 1,
-                },
-            },
-        }),
-        CampaignsByOrg: () => ({
-            node: {
-                __typename: 'Org',
-                campaigns: {
-                    nodes: [
-                        {
-                            ...campaignListNode,
-                            url: '/organizations/test-org/campaigns/test-campaign',
-                            namespace: {
-                                namespaceName: 'test-org',
-                                url: '/organizations/test-org',
-                            },
-                        },
-                    ],
-                    pageInfo: {
-                        endCursor: null,
-                        hasNextPage: false,
-                    },
-                    totalCount: 1,
-                },
-            },
-        }),
+        CampaignsByNamespace: () =>
+            entityType === 'user'
+                ? {
+                      node: {
+                          __typename: 'User',
+                          campaigns: {
+                              nodes: [campaignListNode],
+                              pageInfo: {
+                                  endCursor: null,
+                                  hasNextPage: false,
+                              },
+                              totalCount: 1,
+                          },
+                          allCampaigns: {
+                              totalCount: 1,
+                          },
+                      },
+                  }
+                : {
+                      node: {
+                          __typename: 'Org',
+                          campaigns: {
+                              nodes: [
+                                  {
+                                      ...campaignListNode,
+                                      url: '/organizations/test-org/campaigns/test-campaign',
+                                      namespace: {
+                                          namespaceName: 'test-org',
+                                          url: '/organizations/test-org',
+                                      },
+                                  },
+                              ],
+                              pageInfo: {
+                                  endCursor: null,
+                                  hasNextPage: false,
+                              },
+                              totalCount: 1,
+                          },
+                          allCampaigns: {
+                              totalCount: 1,
+                          },
+                      },
+                  },
     }
 }
 
@@ -332,10 +350,17 @@ describe('Campaigns', () => {
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
 
+    const campaignLicenseGraphQlResults = {
+        AreCampaignsLicensed: () => ({
+            enterpriseLicenseHasFeature: true,
+        }),
+    }
+
     describe('Campaigns list', () => {
         it('lists global campaigns', async () => {
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
+                ...campaignLicenseGraphQlResults,
                 Campaigns: () => ({
                     campaigns: {
                         nodes: [campaignListNode],
@@ -343,6 +368,9 @@ describe('Campaigns', () => {
                             endCursor: null,
                             hasNextPage: false,
                         },
+                        totalCount: 1,
+                    },
+                    allCampaigns: {
                         totalCount: 1,
                     },
                 }),
@@ -368,6 +396,7 @@ describe('Campaigns', () => {
         it('lists user campaigns', async () => {
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
+                ...campaignLicenseGraphQlResults,
                 ...mockCommonGraphQLResponses('user'),
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/users/alice/campaigns')
@@ -386,6 +415,7 @@ describe('Campaigns', () => {
         it('lists org campaigns', async () => {
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
+                ...campaignLicenseGraphQlResults,
                 ...mockCommonGraphQLResponses('org'),
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/campaigns')
@@ -408,6 +438,7 @@ describe('Campaigns', () => {
             it(`displays a single campaign for ${entityType}`, async () => {
                 testContext.overrideGraphQL({
                     ...commonWebGraphQlResults,
+                    ...campaignLicenseGraphQlResults,
                     ...mockCommonGraphQLResponses(entityType),
                     CampaignChangesets,
                     ChangesetCountsOverTime,
@@ -442,6 +473,7 @@ describe('Campaigns', () => {
                 // Change overrides to make campaign appear closed.
                 testContext.overrideGraphQL({
                     ...commonWebGraphQlResults,
+                    ...campaignLicenseGraphQlResults,
                     ...mockCommonGraphQLResponses(entityType, { closedAt: subDays(new Date(), 1).toISOString() }),
                     CampaignChangesets,
                     ChangesetCountsOverTime,
@@ -522,52 +554,90 @@ describe('Campaigns', () => {
                                           namespaceName: 'test-org',
                                           url: '/organizations/test-org',
                                       },
+                            supersedingCampaignSpec: null,
                             viewerCanAdminister: true,
+                            applyPreview: {
+                                stats: {
+                                    close: 10,
+                                    detach: 10,
+                                    import: 10,
+                                    publish: 10,
+                                    publishDraft: 10,
+                                    push: 10,
+                                    reopen: 10,
+                                    undraft: 10,
+                                    update: 10,
+
+                                    added: 5,
+                                    modified: 10,
+                                    removed: 3,
+                                },
+                            },
+                            viewerCampaignsCodeHosts: {
+                                totalCount: 0,
+                                nodes: [],
+                            },
                         },
                     }),
-                    CampaignSpecChangesetSpecs: () => ({
+                    CampaignSpecApplyPreview: () => ({
                         node: {
                             __typename: 'CampaignSpec',
-                            changesetSpecs: {
+                            applyPreview: {
                                 nodes: [
                                     {
-                                        __typename: 'VisibleChangesetSpec',
-                                        description: {
-                                            __typename: 'GitBranchChangesetDescription',
-                                            baseRef: 'main',
-                                            headRef: 'head-ref',
-                                            baseRepository: {
-                                                name: 'github.com/sourcegraph/repo',
-                                                url: 'http://test.test/repo',
-                                            },
-                                            published: true,
-                                            body: 'Body',
-                                            commits: [
-                                                {
-                                                    subject: 'Commit message',
-                                                    body: 'And the more explanatory body.',
-                                                    author: {
-                                                        avatarURL: null,
-                                                        displayName: 'john',
-                                                        email: 'john@test.not',
-                                                        user: {
-                                                            displayName: 'lejohn',
-                                                            url: '/users/lejohn',
-                                                            username: 'john',
-                                                        },
-                                                    },
-                                                },
-                                            ],
-                                            diffStat: {
-                                                added: 10,
-                                                changed: 2,
-                                                deleted: 9,
-                                            },
-                                            title: 'Changeset title',
+                                        __typename: 'VisibleChangesetApplyPreview',
+                                        operations: [ChangesetSpecOperation.PUSH, ChangesetSpecOperation.PUBLISH],
+                                        delta: {
+                                            titleChanged: false,
+                                            baseRefChanged: false,
+                                            diffChanged: false,
+                                            bodyChanged: false,
+                                            authorEmailChanged: false,
+                                            authorNameChanged: false,
+                                            commitMessageChanged: false,
                                         },
-                                        expiresAt: addDays(new Date(), 3).toISOString(),
-                                        id: 'changesetspec123',
-                                        type: ChangesetSpecType.BRANCH,
+                                        targets: {
+                                            __typename: 'VisibleApplyPreviewTargetsAttach',
+                                            changesetSpec: {
+                                                __typename: 'VisibleChangesetSpec',
+                                                description: {
+                                                    __typename: 'GitBranchChangesetDescription',
+                                                    baseRef: 'main',
+                                                    headRef: 'head-ref',
+                                                    baseRepository: {
+                                                        name: 'github.com/sourcegraph/repo',
+                                                        url: 'http://test.test/repo',
+                                                    },
+                                                    published: true,
+                                                    body: 'Body',
+                                                    commits: [
+                                                        {
+                                                            subject: 'Commit message',
+                                                            body: 'And the more explanatory body.',
+                                                            author: {
+                                                                avatarURL: null,
+                                                                displayName: 'john',
+                                                                email: 'john@test.not',
+                                                                user: {
+                                                                    displayName: 'lejohn',
+                                                                    url: '/users/lejohn',
+                                                                    username: 'john',
+                                                                },
+                                                            },
+                                                        },
+                                                    ],
+                                                    diffStat: {
+                                                        added: 10,
+                                                        changed: 2,
+                                                        deleted: 9,
+                                                    },
+                                                    title: 'Changeset title',
+                                                },
+                                                expiresAt: addDays(new Date(), 3).toISOString(),
+                                                id: 'changesetspec123',
+                                                type: ChangesetSpecType.BRANCH,
+                                            },
+                                        },
                                     },
                                 ],
                                 pageInfo: {
@@ -600,7 +670,7 @@ describe('Campaigns', () => {
                 await driver.page.waitForSelector('.test-campaign-apply-page')
 
                 // Expand one changeset.
-                await driver.page.click('.test-campaigns-expand-changeset-spec')
+                await driver.page.click('.test-campaigns-expand-preview')
                 // Expect one diff to be rendered.
                 await driver.page.waitForSelector('.test-file-diff-node')
 
@@ -670,7 +740,8 @@ describe('Campaigns', () => {
                 ...commonWebGraphQlResults,
                 ...mockCommonGraphQLResponses('user'),
                 UserCampaignsCodeHosts: () => ({
-                    currentUser: {
+                    node: {
+                        __typename: 'User',
                         campaignsCodeHosts: {
                             totalCount: 1,
                             pageInfo: {

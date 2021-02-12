@@ -18,6 +18,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 )
@@ -70,11 +71,11 @@ func TestRequest(t *testing.T) {
 			Name:         "UnclonedRepoWithoutURL",
 			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/nicksnyder/go-i18n", "args": ["testcommand"]}`)),
 			ExpectedCode: http.StatusNotFound,
-			ExpectedBody: `{"cloneInProgress":false}`, // no way for it to know the clone URL to start cloning
+			ExpectedBody: `{"cloneInProgress":true}`, // we now fetch the URL from GetRemoteURL so it works.
 		},
 		{
 			Name:         "UnclonedRepoWithURL",
-			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "my-go-i18n", "url": "https://github.com/nicksnyder/go-i18n.git", "args": ["testcommand"]}`)),
+			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/nicksnyder/go-i18n", "url": "https://github.com/nicksnyder/go-i18n.git", "args": ["testcommand"]}`)),
 			ExpectedCode: http.StatusNotFound,
 			ExpectedBody: `{"cloneInProgress":true}`,
 		},
@@ -102,21 +103,30 @@ func TestRequest(t *testing.T) {
 		},
 	}
 
-	s := &Server{ReposDir: "/testroot", skipCloneForTests: true}
+	s := &Server{
+		ReposDir:          "/testroot",
+		skipCloneForTests: true,
+		GetRemoteURLFunc: func(ctx context.Context, name api.RepoName) (string, error) {
+			return "https://" + string(name) + ".git", nil
+		},
+		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
+			return &GitRepoSyncer{}, nil
+		},
+	}
 	h := s.Handler()
 
 	repoCloned = func(dir GitDir) bool {
 		return dir == s.dir("github.com/gorilla/mux") || dir == s.dir("my-mux")
 	}
 
-	testRepoExists = func(ctx context.Context, url string) error {
+	testGitRepoExists = func(ctx context.Context, url string) error {
 		if url == "https://github.com/nicksnyder/go-i18n.git" {
 			return nil
 		}
 		return errors.New("not cloneable")
 	}
 	defer func() {
-		testRepoExists = nil
+		testGitRepoExists = nil
 	}()
 
 	runCommandMock = func(ctx context.Context, cmd *exec.Cmd) (int, error) {
@@ -127,6 +137,82 @@ func TestRequest(t *testing.T) {
 			return 42, nil
 		case "testerror":
 			return 0, errors.New("testerror")
+		}
+		return 0, nil
+	}
+	defer func() { runCommandMock = nil }()
+
+	for _, test := range tests {
+		t.Run(test.Name, func(t *testing.T) {
+			w := httptest.ResponseRecorder{Body: new(bytes.Buffer)}
+			h.ServeHTTP(&w, test.Request)
+
+			res := w.Result()
+			if res.StatusCode != test.ExpectedCode {
+				t.Errorf("wrong status: expected %d, got %d", test.ExpectedCode, w.Code)
+			}
+
+			body, err := ioutil.ReadAll(res.Body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if strings.TrimSpace(string(body)) != test.ExpectedBody {
+				t.Errorf("wrong body: expected %q, got %q", test.ExpectedBody, string(body))
+			}
+
+			for k, v := range test.ExpectedTrailers {
+				if got := res.Trailer.Get(k); got != v[0] {
+					t.Errorf("wrong trailer %q: expected %q, got %q", k, v[0], got)
+				}
+			}
+		})
+	}
+}
+
+func TestServer_handleP4Exec(t *testing.T) {
+	tests := []Test{
+		{
+			Name:         "Command",
+			Request:      httptest.NewRequest("POST", "/p4-exec", strings.NewReader(`{"args": ["users"]}`)),
+			ExpectedCode: http.StatusOK,
+			ExpectedBody: "admin <admin@joe-perforce-server> (admin) accessed 2021/01/31",
+			ExpectedTrailers: http.Header{
+				"X-Exec-Error":       {""},
+				"X-Exec-Exit-Status": {"42"},
+				"X-Exec-Stderr":      {"teststderr"},
+			},
+		},
+		{
+			Name:         "Error",
+			Request:      httptest.NewRequest("POST", "/p4-exec", strings.NewReader(`{"args": ["bad_command"]}`)),
+			ExpectedCode: http.StatusBadRequest,
+			ExpectedBody: "subcommand \"bad_command\" is not allowed",
+		},
+		{
+			Name:         "EmptyBody",
+			Request:      httptest.NewRequest("POST", "/p4-exec", nil),
+			ExpectedCode: http.StatusBadRequest,
+			ExpectedBody: `EOF`,
+		},
+		{
+			Name:         "EmptyInput",
+			Request:      httptest.NewRequest("POST", "/p4-exec", strings.NewReader("{}")),
+			ExpectedCode: http.StatusBadRequest,
+			ExpectedBody: `args must be greater than or equal to 1`,
+		},
+	}
+
+	s := &Server{
+		skipCloneForTests: true,
+	}
+	h := s.Handler()
+
+	runCommandMock = func(ctx context.Context, cmd *exec.Cmd) (int, error) {
+		switch cmd.Args[1] {
+		case "users":
+			_, _ = cmd.Stdout.Write([]byte("admin <admin@joe-perforce-server> (admin) accessed 2021/01/31"))
+			_, _ = cmd.Stderr.Write([]byte("teststderr"))
+			return 42, nil
 		}
 		return 0, nil
 	}
@@ -357,6 +443,12 @@ func runCmd(t *testing.T, dir string, cmd string, arg ...string) string {
 	return string(b)
 }
 
+func staticGetRemoteURL(remote string) func(context.Context, api.RepoName) (string, error) {
+	return func(context.Context, api.RepoName) (string, error) {
+		return remote, nil
+	}
+}
+
 func TestCloneRepo(t *testing.T) {
 	remote := tmpDir(t)
 
@@ -379,12 +471,16 @@ func TestCloneRepo(t *testing.T) {
 
 	s := &Server{
 		ReposDir:         reposDir,
+		GetRemoteURLFunc: staticGetRemoteURL(remote),
+		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
+			return &GitRepoSyncer{}, nil
+		},
 		ctx:              context.Background(),
 		locker:           &RepositoryLocker{},
 		cloneLimiter:     mutablelimiter.New(1),
 		cloneableLimiter: mutablelimiter.New(1),
 	}
-	_, err := s.cloneRepo(context.Background(), "example.com/foo/bar", remote, nil)
+	_, err := s.cloneRepo(context.Background(), "example.com/foo/bar", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -408,7 +504,7 @@ func TestCloneRepo(t *testing.T) {
 	}
 
 	// Test blocking with a failure (already exists since we didn't specify overwrite)
-	_, err = s.cloneRepo(context.Background(), "example.com/foo/bar", remote, &cloneOptions{Block: true})
+	_, err = s.cloneRepo(context.Background(), "example.com/foo/bar", &cloneOptions{Block: true})
 	if !os.IsExist(errors.Cause(err)) {
 		t.Fatalf("expected clone repo to fail with already exists: %s", err)
 	}
@@ -416,7 +512,7 @@ func TestCloneRepo(t *testing.T) {
 	// Test blocking with overwrite. First add random file to GIT_DIR. If the
 	// file is missing after cloning we know the directory was replaced
 	mkFiles(t, string(dst), "HELLO")
-	_, err = s.cloneRepo(context.Background(), "example.com/foo/bar", remote, &cloneOptions{Block: true, Overwrite: true})
+	_, err = s.cloneRepo(context.Background(), "example.com/foo/bar", &cloneOptions{Block: true, Overwrite: true})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -498,12 +594,16 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 
 		server := &Server{
 			ReposDir:         reposDir,
+			GetRemoteURLFunc: staticGetRemoteURL(remote),
+			GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
+				return &GitRepoSyncer{}, nil
+			},
 			ctx:              ctx,
 			locker:           &RepositoryLocker{},
 			cloneLimiter:     mutablelimiter.New(1),
 			cloneableLimiter: mutablelimiter.New(1),
 		}
-		if _, err := server.cloneRepo(ctx, "example.com/foo/bar", remote, nil); err == nil {
+		if _, err := server.cloneRepo(ctx, "example.com/foo/bar", nil); err == nil {
 			t.Fatal("expected an error, got none")
 		}
 	})
@@ -522,12 +622,16 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 
 		server := &Server{
 			ReposDir:         reposDir,
+			GetRemoteURLFunc: staticGetRemoteURL(remote),
+			GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
+				return &GitRepoSyncer{}, nil
+			},
 			ctx:              ctx,
 			locker:           &RepositoryLocker{},
 			cloneLimiter:     mutablelimiter.New(1),
 			cloneableLimiter: mutablelimiter.New(1),
 		}
-		if _, err := server.cloneRepo(ctx, "example.com/foo/bar", remote, nil); err == nil {
+		if _, err := server.cloneRepo(ctx, "example.com/foo/bar", nil); err == nil {
 			t.Fatal("expected an error, got none")
 		}
 	})
@@ -548,6 +652,10 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 
 		s := &Server{
 			ReposDir:         reposDir,
+			GetRemoteURLFunc: staticGetRemoteURL(remote),
+			GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
+				return &GitRepoSyncer{}, nil
+			},
 			ctx:              ctx,
 			locker:           &RepositoryLocker{},
 			cloneLimiter:     mutablelimiter.New(1),
@@ -556,7 +664,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		testRepoCorrupter = func(_ context.Context, tmpDir GitDir) {
 			cmd("sh", "-c", fmt.Sprintf("rm %s/HEAD", tmpDir))
 		}
-		if _, err := s.cloneRepo(ctx, "example.com/foo/bar", remote, nil); err != nil {
+		if _, err := s.cloneRepo(ctx, "example.com/foo/bar", nil); err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
 
@@ -594,6 +702,10 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 
 		s := &Server{
 			ReposDir:         reposDir,
+			GetRemoteURLFunc: staticGetRemoteURL(remote),
+			GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
+				return &GitRepoSyncer{}, nil
+			},
 			ctx:              ctx,
 			locker:           &RepositoryLocker{},
 			cloneLimiter:     mutablelimiter.New(1),
@@ -602,7 +714,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		testRepoCorrupter = func(_ context.Context, tmpDir GitDir) {
 			cmd("sh", "-c", fmt.Sprintf(": > %s/HEAD", tmpDir))
 		}
-		if _, err := s.cloneRepo(ctx, "example.com/foo/bar", remote, nil); err != nil {
+		if _, err := s.cloneRepo(ctx, "example.com/foo/bar", nil); err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
 

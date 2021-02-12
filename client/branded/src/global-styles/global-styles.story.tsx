@@ -15,6 +15,7 @@ import { Menu, MenuButton, MenuList, MenuLink } from '@reach/menu-button'
 import 'storybook-addon-designs'
 import { BrandedStory } from '../components/BrandedStory'
 import { CodeSnippet } from '../components/CodeSnippet'
+import { number } from '@storybook/addon-knobs'
 
 const semanticColors = ['primary', 'secondary', 'success', 'danger', 'warning', 'info', 'merged'] as const
 
@@ -1110,3 +1111,50 @@ add('List groups', () => (
         </div>
     </>
 ))
+
+add('Meter', () => {
+    const min = number('min', 0)
+    const max = number('max', 1)
+    const high = number('high', 0.8)
+    const low = number('low', 0.2)
+    const optimum = number('optimum', 1)
+    const value = number('value', 0.1)
+
+    return (
+        <>
+            <h1>Meter</h1>
+            <p>
+                The HTML{' '}
+                <a
+                    href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meter"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    <code>{'<meter>'}</code>
+                </a>{' '}
+                element represents either a scalar value within a known range or a fractional value.
+            </p>
+            <h2>Examples</h2>
+            <hr />
+            <div className="pb-3">
+                <h3>Optimum</h3>
+                <meter min={0} max={1} optimum={1} value={1} />
+            </div>
+            <hr />
+            <div className="pb-3">
+                <h3>Sub optimum</h3>
+                <meter min={0} max={1} high={0.8} low={0.2} optimum={1} value={0.6} />
+            </div>
+            <hr />
+            <div className="pb-3">
+                <h3>Sub sub optimum</h3>
+                <meter min={0} max={1} high={0.8} low={0.2} optimum={1} value={0.1} />
+            </div>
+            <hr />
+            <div className="pb-3">
+                <h3>Customize with knobs</h3>
+                <meter min={min} max={max} high={high} low={low} optimum={optimum} value={value} />
+            </div>
+        </>
+    )
+})

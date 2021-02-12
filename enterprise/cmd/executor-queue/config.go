@@ -3,7 +3,7 @@ package main
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/apiserver"
+	apiserver "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor-queue/internal/server"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 

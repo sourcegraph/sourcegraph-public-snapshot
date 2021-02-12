@@ -16,7 +16,6 @@ describe('PlainQueryInput', () => {
                         location={history.location}
                         queryState={{
                             query: '',
-                            cursorPosition: 0,
                         }}
                         patternType={SearchPatternType.regexp}
                         setPatternType={noop}
@@ -27,9 +26,14 @@ describe('PlainQueryInput', () => {
                         isLightTheme={false}
                         settingsCascade={{ subjects: [], final: {} }}
                         copyQueryButton={false}
+                        showSearchContext={false}
+                        selectedSearchContextSpec=""
+                        setSelectedSearchContextSpec={noop}
+                        availableSearchContexts={[]}
+                        defaultSearchContextSpec=""
                         versionContext={undefined}
                         globbing={false}
-                        showOnboardingTour={false}
+                        enableSmartQuery={false}
                     />
                 )
                 .toJSON()
@@ -44,7 +48,6 @@ describe('PlainQueryInput', () => {
                         location={history.location}
                         queryState={{
                             query: 'repo:jsonrpc2 file:async.go asyncHandler',
-                            cursorPosition: 0,
                         }}
                         patternType={SearchPatternType.regexp}
                         setPatternType={noop}
@@ -55,9 +58,14 @@ describe('PlainQueryInput', () => {
                         isLightTheme={false}
                         settingsCascade={{ subjects: [], final: {} }}
                         copyQueryButton={false}
+                        showSearchContext={false}
+                        selectedSearchContextSpec=""
+                        setSelectedSearchContextSpec={noop}
+                        availableSearchContexts={[]}
+                        defaultSearchContextSpec=""
                         versionContext={undefined}
                         globbing={false}
-                        showOnboardingTour={false}
+                        enableSmartQuery={false}
                     />
                 )
                 .toJSON()

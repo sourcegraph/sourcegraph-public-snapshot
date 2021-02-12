@@ -32,16 +32,6 @@ $body-bg-color-light: #ffffff;
     }
 }
 
-.command-list {
-    @import 'bootstrap/scss/list-group';
-    @import 'bootstrap/scss/forms';
-    @import 'bootstrap/scss/input-group';
-
-    a {
-        cursor: pointer;
-    }
-}
-
 .command-list-popover {
     isolation: isolate;
     z-index: 1100; // high enough to prevent most things from obscuring it

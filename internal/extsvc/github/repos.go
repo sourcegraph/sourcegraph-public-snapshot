@@ -373,6 +373,53 @@ func (c *V3Client) ListAffiliatedRepositories(ctx context.Context, visibility Vi
 	return repos, len(repos) > 0, 1, err
 }
 
+type repoResponse struct {
+	Viewer struct {
+		Repositories struct {
+			Nodes    []*Repository `json:"nodes"`
+			PageInfo struct {
+				EndCursor string `json:"endCursor"`
+			} `json:"pageInfo"`
+		} `json:"repositories"`
+	} `json:"viewer"`
+}
+
+func (c *V4Client) ListAffiliatedRepositories(ctx context.Context, visibility Visibility, after string) (
+	repos []*Repository,
+	endCursor string,
+	rateLimitCost int,
+	err error) {
+	res := repoResponse{}
+	args := make(map[string]interface{})
+	if after != "" {
+		args["after"] = after
+	}
+	err = c.requestGraphQL(ctx, `query GetAffiliatedRepos($after: String) {
+		viewer {
+			repositories(
+				first: 100,
+				after: $after,
+				ownerAffiliations: [
+					OWNER,
+					COLLABORATOR,
+					ORGANIZATION_MEMBER
+				]) {
+				  nodes {
+					nameWithOwner
+					isPrivate
+				  }
+				  pageInfo {
+					endCursor
+				  }
+			}
+		}
+	}`,
+		args,
+		&res,
+	)
+	return res.Viewer.Repositories.Nodes, res.Viewer.Repositories.PageInfo.EndCursor, 1, err
+}
+
 // ListOrgRepositories lists GitHub repositories from the specified organization.
 // org is the name of the organization. page is the page of results to return.
 // Pages are 1-indexed (so the first call should be for page 1).

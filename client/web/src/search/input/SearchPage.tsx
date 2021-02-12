@@ -2,13 +2,14 @@ import * as H from 'history'
 import React, { useCallback, useEffect, useMemo } from 'react'
 import {
     PatternTypeProps,
-    InteractiveSearchProps,
     CaseSensitivityProps,
     CopyQueryButtonProps,
     RepogroupHomepageProps,
     OnboardingTourProps,
     HomePanelsProps,
     ShowQueryBuilderProps,
+    ParsedSearchQueryProps,
+    SearchContextProps,
 } from '..'
 import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
@@ -43,15 +44,16 @@ export interface SearchPageProps
         ThemeProps,
         ThemePreferenceProps,
         ActivationProps,
+        Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
         PatternTypeProps,
         CaseSensitivityProps,
         KeyboardShortcutsProps,
         TelemetryProps,
         ExtensionsControllerProps<'executeCommand' | 'services'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
-        InteractiveSearchProps,
         CopyQueryButtonProps,
         VersionContextProps,
+        SearchContextProps,
         RepogroupHomepageProps,
         OnboardingTourProps,
         HomePanelsProps,
@@ -66,6 +68,9 @@ export interface SearchPageProps
 
     // Whether globbing is enabled for filters.
     globbing: boolean
+
+    // Whether to additionally highlight or provide hovers for tokens, e.g., regexp character sets.
+    enableSmartQuery: boolean
 }
 
 /**
@@ -130,6 +135,7 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
                                         <img
                                             className="search-page__repogroup-list-icon mr-2"
                                             src={repogroup.homepageIcon}
+                                            alt={`${repogroup.name} icon`}
                                         />
                                         <div className="d-flex flex-column">
                                             <Link
