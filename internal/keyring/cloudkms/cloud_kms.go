@@ -1,12 +1,10 @@
 package cloudkms
 
 import (
-	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
 	"hash/crc32"
-	"io/ioutil"
 	"strings"
 
 	kms "cloud.google.com/go/kms/apiv1"
@@ -34,27 +32,26 @@ type Key struct {
 }
 
 // Decrypt a secret, it must have been encrypted with the same Key
+// encrypted secrets are a base64 encoded string containing the key name and a checksum
 func (k *Key) Decrypt(ctx context.Context, cipherText []byte) (*keyring.Secret, error) {
-	// unmarshal base64 encoded string into encryptedKey
-	buf, err := ioutil.ReadAll(base64.NewDecoder(
-		base64.StdEncoding,
-		bytes.NewReader(cipherText),
-	))
+	buf, err := base64.StdEncoding.DecodeString(string(cipherText))
 	if err != nil {
 		return nil, err
 	}
-	ek := encryptedKey{}
-	err = json.Unmarshal(buf, &ek)
+	// unmarshal the encrypted value into encryptedValue, this struct contains the raw
+	// ciphertext, the key name, and a crc32 checksum
+	ev := encryptedValue{}
+	err = json.Unmarshal(buf, &ev)
 	if err != nil {
 		return nil, err
 	}
-	if !strings.HasPrefix(ek.KeyName, k.name) {
+	if !strings.HasPrefix(ev.KeyName, k.name) {
 		return nil, errors.New("invalid key name, are you trying to decrypt something with the wrong key?")
 	}
 	// decrypt ciphertext
 	res, err := k.client.Decrypt(ctx, &kmspb.DecryptRequest{
 		Name:       k.name,
-		Ciphertext: ek.Ciphertext,
+		Ciphertext: ev.Ciphertext,
 	})
 	if err != nil {
 		return nil, err
@@ -67,7 +64,8 @@ func (k *Key) Decrypt(ctx context.Context, cipherText []byte) (*keyring.Secret, 
 	return &s, nil
 }
 
-// Encrypt a secret
+// Encrypt a secret, storing it as a base64 encoded json blob, this json contains
+// the key name, ciphertext, & checksum.
 func (k *Key) Encrypt(ctx context.Context, plaintext []byte) ([]byte, error) {
 	// encrypt plaintext
 	res, err := k.client.Encrypt(ctx, &kmspb.EncryptRequest{
@@ -83,27 +81,20 @@ func (k *Key) Encrypt(ctx context.Context, plaintext []byte) ([]byte, error) {
 		res.CiphertextCrc32C.GetValue() != int64(crc32Sum(res.Ciphertext)) {
 		return nil, errors.New("invalid checksum, request corrupted in transit")
 	}
-	ek := encryptedKey{
+	ek := encryptedValue{
 		KeyName:    res.Name,
 		Ciphertext: res.Ciphertext,
 		Checksum:   crc32Sum(plaintext),
 	}
-	// marshal to JSON & base64 encode
 	jsonKey, err := json.Marshal(ek)
 	if err != nil {
 		return nil, err
 	}
-	var buf bytes.Buffer
-	enc := base64.NewEncoder(base64.StdEncoding, &buf)
-	_, err = enc.Write(jsonKey)
-	if err != nil {
-		return nil, err
-	}
-	err = enc.Close() // call close to ensure the whole write is flushed
-	return buf.Bytes(), err
+	buf := base64.StdEncoding.EncodeToString(jsonKey)
+	return []byte(buf), err
 }
 
-type encryptedKey struct {
+type encryptedValue struct {
 	KeyName    string
 	Ciphertext []byte
 	Checksum   uint32
