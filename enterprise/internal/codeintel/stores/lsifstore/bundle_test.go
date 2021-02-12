@@ -181,38 +181,6 @@ func TestDatabaseDefinitions(t *testing.T) {
 	}
 }
 
-func TestDatabaseReferences(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	populateTestStore(t)
-	store := NewStore(dbconn.Global, &observation.TestContext)
-
-	// `func (w *Writer) EmitRange(start, end Pos) (string, error) {`
-	//                   ^^^^^^^^^
-	//
-	// -> `\t\trangeID, err := i.w.EmitRange(lspRange(ipos, ident.Name, isQuotedPkgName))`
-	//                             ^^^^^^^^^
-	//
-	// -> `\t\t\trangeID, err = i.w.EmitRange(lspRange(ipos, ident.Name, false))`
-	//                              ^^^^^^^^^
-
-	if actual, err := store.References(context.Background(), testBundleID, "protocol/writer.go", 85, 20); err != nil {
-		t.Fatalf("unexpected error %s", err)
-	} else {
-		expected := []Location{
-			{DumpID: testBundleID, Path: "internal/index/indexer.go", Range: newRange(380, 22, 380, 31)},
-			{DumpID: testBundleID, Path: "internal/index/indexer.go", Range: newRange(529, 22, 529, 31)},
-			{DumpID: testBundleID, Path: "protocol/writer.go", Range: newRange(85, 17, 85, 26)},
-		}
-
-		if diff := cmp.Diff(expected, actual); diff != "" {
-			t.Errorf("unexpected reference locations (-want +got):\n%s", diff)
-		}
-	}
-}
-
 func TestDatabasePagedReferences(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -322,64 +290,6 @@ func TestDatabaseMonikersByPosition(t *testing.T) {
 
 		if diff := cmp.Diff(expected, actual); diff != "" {
 			t.Errorf("unexpected moniker result (-want +got):\n%s", diff)
-		}
-	}
-}
-
-func TestDatabaseMonikerResults(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	populateTestStore(t)
-	store := NewStore(dbconn.Global, &observation.TestContext)
-
-	edgeDefinitionLocations := []Location{
-		{DumpID: testBundleID, Path: "protocol/protocol.go", Range: newRange(410, 5, 410, 9)},
-		{DumpID: testBundleID, Path: "protocol/protocol.go", Range: newRange(411, 1, 411, 8)},
-	}
-
-	edgeReferenceLocations := []Location{
-		{DumpID: testBundleID, Path: "protocol/protocol.go", Range: newRange(507, 1, 507, 5)},
-		{DumpID: testBundleID, Path: "protocol/protocol.go", Range: newRange(530, 1, 530, 5)},
-		{DumpID: testBundleID, Path: "protocol/protocol.go", Range: newRange(516, 8, 516, 12)},
-		{DumpID: testBundleID, Path: "protocol/protocol.go", Range: newRange(410, 5, 410, 9)},
-		{DumpID: testBundleID, Path: "protocol/protocol.go", Range: newRange(470, 8, 470, 12)},
-		{DumpID: testBundleID, Path: "internal/index/helper.go", Range: newRange(78, 8, 78, 12)},
-	}
-
-	markdownReferenceLocations := []Location{
-		{DumpID: testBundleID, Path: "internal/index/helper.go", Range: newRange(78, 6, 78, 16)},
-	}
-
-	testCases := []struct {
-		tableName          string
-		scheme             string
-		identifier         string
-		skip               int
-		take               int
-		expectedLocations  []Location
-		expectedTotalCount int
-	}{
-		{"definitions", "gomod", "github.com/sourcegraph/lsif-go/protocol:Edge", 0, 5, edgeDefinitionLocations, 2},
-		{"definitions", "gomod", "github.com/sourcegraph/lsif-go/protocol:Edge", 0, 1, edgeDefinitionLocations[:1], 2},
-		{"definitions", "gomod", "github.com/sourcegraph/lsif-go/protocol:Edge", 1, 5, edgeDefinitionLocations[1:], 2},
-		{"references", "gomod", "github.com/sourcegraph/lsif-go/protocol:Edge", 0, 5, edgeReferenceLocations[:5], 29},
-		{"references", "gomod", "github.com/sourcegraph/lsif-go/protocol:Edge", 2, 2, edgeReferenceLocations[2:4], 29},
-		{"references", "gomod", "github.com/slimsag/godocmd:ToMarkdown", 0, 5, markdownReferenceLocations, 1},
-	}
-
-	for i, testCase := range testCases {
-		if actual, totalCount, err := store.MonikerResults(context.Background(), testBundleID, testCase.tableName, testCase.scheme, testCase.identifier, testCase.skip, testCase.take); err != nil {
-			t.Fatalf("unexpected error for test case #%d: %s", i, err)
-		} else {
-			if totalCount != testCase.expectedTotalCount {
-				t.Errorf("unexpected moniker result total count for test case #%d. want=%d have=%d", i, testCase.expectedTotalCount, totalCount)
-			}
-
-			if diff := cmp.Diff(testCase.expectedLocations, actual); diff != "" {
-				t.Errorf("unexpected moniker result locations for test case #%d (-want +got):\n%s", i, diff)
-			}
 		}
 	}
 }

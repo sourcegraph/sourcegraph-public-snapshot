@@ -84,38 +84,6 @@ func scanFirstDump(rows *sql.Rows, err error) (Dump, bool, error) {
 	return dumps[0], true, nil
 }
 
-// GetDumpByID returns a dump by its identifier and boolean flag indicating its existence.
-func (s *Store) GetDumpByID(ctx context.Context, id int) (_ Dump, _ bool, err error) {
-	ctx, endObservation := s.operations.getDumpByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("id", id),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	return scanFirstDump(s.Store.Query(ctx, sqlf.Sprintf(getDumpByIDQuery, id)))
-}
-
-const getDumpByIDQuery = `
--- source: enterprise/internal/codeintel/stores/dbstore/dumps.go:GetDumpByID
-SELECT
-	d.id,
-	d.commit,
-	d.root,
-	` + visibleAtTipFragment + ` AS visible_at_tip,
-	d.uploaded_at,
-	d.state,
-	d.failure_message,
-	d.started_at,
-	d.finished_at,
-	d.process_after,
-	d.num_resets,
-	d.num_failures,
-	d.repository_id,
-	d.repository_name,
-	d.indexer,
-	d.associated_index_id
-FROM lsif_dumps_with_repository_name d WHERE d.id = %s
-`
-
 const visibleAtTipFragment = `EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip WHERE repository_id = d.repository_id AND upload_id = d.id)`
 
 // GetDumpsByIDs returns a set of dumps by identifiers.

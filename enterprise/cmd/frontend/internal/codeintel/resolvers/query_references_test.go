@@ -41,7 +41,6 @@ func TestReferences(t *testing.T) {
 	resolver := newQueryResolver(
 		mockDBStore,
 		mockLSIFStore,
-		nil,
 		newCachedCommitChecker(mockGitserverClient),
 		mockPositionAdjuster,
 		42,
@@ -157,7 +156,6 @@ func TestReferencesRemote(t *testing.T) {
 	resolver := newQueryResolver(
 		mockDBStore,
 		mockLSIFStore,
-		nil,
 		newCachedCommitChecker(mockGitserverClient),
 		mockPositionAdjuster,
 		42,
