@@ -16,6 +16,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/repotrackutil"
@@ -32,6 +33,7 @@ const (
 	graphQLRequestNameKey
 	originKey
 	sourceKey
+	isInternalKey
 )
 
 // trackOrigin specifies a URL value. When an incoming request has the request header "Origin" set
@@ -41,13 +43,13 @@ const (
 var trackOrigin = "https://gitlab.com"
 
 var metricLabels = []string{"route", "method", "code", "repo", "origin"}
-var requestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+var requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Name:    "src_http_request_duration_seconds",
 	Help:    "The HTTP request latencies in seconds.",
 	Buckets: UserLatencyBuckets,
 }, metricLabels)
 
-var requestHeartbeat = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+var requestHeartbeat = promauto.NewGaugeVec(prometheus.GaugeOpts{
 	Name: "src_http_requests_last_timestamp_unixtime",
 	Help: "Last time a request finished for a http endpoint.",
 }, metricLabels)
@@ -56,9 +58,6 @@ func Init(shouldInitSentry bool) {
 	if origin := os.Getenv("METRICS_TRACK_ORIGIN"); origin != "" {
 		trackOrigin = origin
 	}
-
-	prometheus.MustRegister(requestDuration)
-	prometheus.MustRegister(requestHeartbeat)
 
 	if shouldInitSentry {
 		sentry.Init()
@@ -79,6 +78,18 @@ func GraphQLRequestName(ctx context.Context) string {
 // WithGraphQLRequestName sets the GraphQL request name in the context.
 func WithGraphQLRequestName(ctx context.Context, name string) context.Context {
 	return context.WithValue(ctx, graphQLRequestNameKey, name)
+}
+
+// IsInternalRequest returns true if the request was handled by our internal API
+// handler.
+func IsInternalRequest(ctx context.Context) bool {
+	return ctx.Value(isInternalKey).(bool)
+}
+
+// WithIsInternal sets whether or not the request was handled by our internal or
+// external API handler.
+func WithIsInternal(ctx context.Context, isInternal bool) context.Context {
+	return context.WithValue(ctx, isInternalKey, isInternal)
 }
 
 // RequestOrigin returns the request origin (the value of the request header "Origin") for a request context.
