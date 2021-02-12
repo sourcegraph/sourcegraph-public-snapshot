@@ -49,7 +49,12 @@ export const SymbolsArea: React.FunctionComponent<Props> = ({
             )}
             <div>
                 <Switch>
-                    <Route path={`${match.url}/:symbolID`} render={(routeProps: any) => <SymbolPage {...props} />} />
+                    <Route
+                        path={`${match.url}/:symbolID`}
+                        render={(routeProps: RouteComponentProps<SymbolRouteProps>) => (
+                            <SymbolPage {...props} {...routeProps} />
+                        )}
+                    />
                     <Route path={match.url} exact={true} render={(routeProps: any) => <SymbolsPage {...props} />} />
                 </Switch>
             </div>

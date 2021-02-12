@@ -7,6 +7,11 @@ import { DocumentSymbolResult, DocumentSymbolVariables, SymbolPageSymbolFields }
 import { map } from 'rxjs/operators'
 import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
 import { useObservable } from '../../../../shared/src/util/useObservable'
+import { RouteComponentProps } from 'react-router'
+
+export interface SymbolRouteProps {
+    symbolID: string
+}
 
 const SymbolPageSymbolsGQLFragment = gql`
     fragment SymbolPageSymbolFields on DocSymbol {
@@ -24,18 +29,16 @@ const SymbolPageSymbolsGQLFragment = gql`
     }
 `
 
-const querySymbolUncached = (vars: DocumentSymbolVariables): Observable<SymbolPageSymbolFields[] | null> =>
+const querySymbolUncached = (vars: DocumentSymbolVariables): Observable<SymbolPageSymbolFields | null | undefined> =>
     requestGraphQL<DocumentSymbolResult, DocumentSymbolVariables>(
         gql`
-            query DocumentSymbol($repo: ID!, $commitID: String!) {
+            query DocumentSymbol($repo: ID!, $commitID: String!, $symbolID: String!) {
                 node(id: $repo) {
                     ... on Repository {
                         commit(rev: $commitID) {
                             tree(path: "") {
-                                docSymbols {
-                                    nodes {
-                                        ...SymbolPageSymbolFields
-                                    }
+                                docSymbol(id: $symbolID) {
+                                    ...SymbolPageSymbolFields
                                 }
                             }
                         }
@@ -47,15 +50,28 @@ const querySymbolUncached = (vars: DocumentSymbolVariables): Observable<SymbolPa
         vars
     ).pipe(
         map(dataOrThrowErrors),
-        map(data => data.node?.commit?.tree?.docSymbols?.nodes || null)
+        map(data => data.node?.commit?.tree?.docSymbol)
     )
 
 const querySymbol = memoizeObservable(querySymbolUncached, parameters => JSON.stringify(parameters))
 
-export interface SymbolRouteProps extends Pick<RepoRevisionContainerContext, 'repo' | 'revision'> {}
+export interface SymbolRouteProps
+    extends Pick<RepoRevisionContainerContext, 'repo' | 'revision'>,
+        RouteComponentProps<SymbolRouteProps> {
+    symbolID: string
+}
 
-export const SymbolPage: React.FunctionComponent<SymbolRouteProps> = ({ repo, revision }) => {
-    const symbols = useObservable(querySymbol({ repo: repo.id, commitID: revision }))
-    console.log('# symbols', symbols)
-    return <div>Symbol page</div>
+export const SymbolPage: React.FunctionComponent<SymbolRouteProps> = ({
+    repo,
+    revision,
+    match: {
+        params: { symbolID },
+    },
+}) => {
+    const symbol = useObservable(querySymbol({ repo: repo.id, commitID: revision, symbolID }))
+    if (!symbol) {
+        return <div>Symbol not found</div>
+    }
+    console.log('# symbol', symbol)
+    return <div>Symbol: {symbol.text}</div>
 }
