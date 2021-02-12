@@ -39,12 +39,14 @@ INSERT INTO metadata(metadata) VALUES ('{"hello": "world", "languages": ["Go", "
 SELECT setseed(0.5);
 INSERT INTO series_points(
     time,
+	series_id,
     value,
     metadata_id,
     repo_id,
     repo_name_id,
     original_repo_name_id)
 SELECT time,
+    'somehash',
     random()*80 - 40,
     (SELECT id FROM metadata WHERE metadata = '{"hello": "world", "languages": ["Go", "Python", "Java"]}'),
     2,
