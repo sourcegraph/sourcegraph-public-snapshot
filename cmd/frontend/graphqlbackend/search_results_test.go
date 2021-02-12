@@ -1738,7 +1738,7 @@ func TestSearchResultDeduper(t *testing.T) {
 				dedup.Add(r)
 			}
 
-			deduped := dedup.Dedupe()
+			deduped := dedup.Results()
 			sortResultResolvers(deduped)
 
 			tc.want.Equal(t, toString(deduped))

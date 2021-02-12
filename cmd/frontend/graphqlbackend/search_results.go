@@ -533,7 +533,7 @@ func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 		dedup.Add(rightResult)
 	}
 
-	left.SearchResults = dedup.Dedupe()
+	left.SearchResults = dedup.Results()
 	left.Stats.Update(&right.Stats)
 	return left
 }

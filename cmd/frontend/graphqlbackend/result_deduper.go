@@ -53,9 +53,9 @@ func (d *searchResultDeduper) Add(r SearchResultResolver) {
 	}
 }
 
-// Dedupe returns a slice of SearchResultResolvers, deduplicated from
+// Results returns a slice of SearchResultResolvers, deduplicated from
 // the SearchResultResolvers that were added with Add
-func (d *searchResultDeduper) Dedupe() []SearchResultResolver {
+func (d *searchResultDeduper) Results() []SearchResultResolver {
 	total := len(d.seenFileMatches) + len(d.seenRepoMatches) + len(d.seenCommitMatches) + len(d.seenDiffMatches)
 	r := make([]SearchResultResolver, 0, total)
 	for _, v := range d.seenFileMatches {
