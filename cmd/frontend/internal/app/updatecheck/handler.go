@@ -411,9 +411,14 @@ func reserializeNewCodeIntelUsage(payload json.RawMessage) (json.RawMessage, err
 	}
 
 	return json.Marshal(jsonCodeIntelUsage{
-		StartOfWeek:    codeIntelUsage.StartOfWeek,
-		WAUs:           &codeIntelUsage.WAUs,
-		EventSummaries: eventSummaries,
+		StartOfWeek:                    codeIntelUsage.StartOfWeek,
+		WAUs:                           codeIntelUsage.WAUs,
+		PreciseWAUs:                    codeIntelUsage.PreciseWAUs,
+		SearchBasedWAUs:                codeIntelUsage.SearchBasedWAUs,
+		CrossRepositoryWAUs:            codeIntelUsage.CrossRepositoryWAUs,
+		PreciseCrossRepositoryWAUs:     codeIntelUsage.PreciseCrossRepositoryWAUs,
+		SearchBasedCrossRepositoryWAUs: codeIntelUsage.SearchBasedCrossRepositoryWAUs,
+		EventSummaries:                 eventSummaries,
 	})
 }
 
@@ -439,8 +444,13 @@ func reserializeOldCodeIntelUsage(payload json.RawMessage) (json.RawMessage, err
 	references := week.References
 
 	return json.Marshal(jsonCodeIntelUsage{
-		StartOfWeek: week.StartTime,
-		WAUs:        nil,
+		StartOfWeek:                    week.StartTime,
+		WAUs:                           nil,
+		PreciseWAUs:                    nil,
+		SearchBasedWAUs:                nil,
+		CrossRepositoryWAUs:            nil,
+		PreciseCrossRepositoryWAUs:     nil,
+		SearchBasedCrossRepositoryWAUs: nil,
 		EventSummaries: []jsonEventSummary{
 			{Action: "hover", Source: "precise", WAUs: hover.LSIF.UsersCount, TotalActions: unwrap(hover.LSIF.EventsCount)},
 			{Action: "hover", Source: "search", WAUs: hover.Search.UsersCount, TotalActions: unwrap(hover.Search.EventsCount)},
@@ -453,9 +463,14 @@ func reserializeOldCodeIntelUsage(payload json.RawMessage) (json.RawMessage, err
 }
 
 type jsonCodeIntelUsage struct {
-	StartOfWeek    time.Time          `json:"start_time"`
-	WAUs           *int32             `json:"waus"`
-	EventSummaries []jsonEventSummary `json:"event_summaries"`
+	StartOfWeek                    time.Time          `json:"start_time"`
+	WAUs                           *int32             `json:"waus"`
+	PreciseWAUs                    *int32             `json:"precise_waus"`
+	SearchBasedWAUs                *int32             `json:"search_waus"`
+	CrossRepositoryWAUs            *int32             `json:"xrepo_waus"`
+	PreciseCrossRepositoryWAUs     *int32             `json:"precise_xrepo_waus"`
+	SearchBasedCrossRepositoryWAUs *int32             `json:"search_xrepo_waus"`
+	EventSummaries                 []jsonEventSummary `json:"event_summaries"`
 }
 
 type jsonEventSummary struct {
