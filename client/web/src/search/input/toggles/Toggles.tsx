@@ -91,10 +91,19 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
                     caseSensitive: newCaseSensitive,
                     versionContext,
                     activation,
+                    selectedSearchContextSpec,
                 })
             }
         },
-        [caseSensitive, hasGlobalQueryBehavior, history, navbarSearchQuery, patternType, versionContext]
+        [
+            caseSensitive,
+            hasGlobalQueryBehavior,
+            history,
+            navbarSearchQuery,
+            patternType,
+            versionContext,
+            selectedSearchContextSpec,
+        ]
     )
 
     const toggleCaseSensitivity = useCallback((): void => {

@@ -1,6 +1,7 @@
 /* eslint-disable id-length */
 import { Observable, fromEvent, Subscription, OperatorFunction, pipe, Subscriber, Notification } from 'rxjs'
 import { defaultIfEmpty, map, materialize, scan } from 'rxjs/operators'
+import { isContextFilterInQuery } from '.'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, isErrorLike } from '../../../shared/src/util/errors'
 import { SearchPatternType } from '../graphql-operations'
@@ -459,6 +460,7 @@ export interface StreamSearchOptions {
     patternType: SearchPatternType
     caseSensitive: boolean
     versionContext: string | undefined
+    searchContextSpec: string | undefined
     trace: string | undefined
 }
 
@@ -474,11 +476,18 @@ function search({
     patternType,
     caseSensitive,
     versionContext,
+    searchContextSpec,
     trace,
 }: StreamSearchOptions): Observable<SearchEvent> {
     return new Observable<SearchEvent>(observer => {
+        console.trace()
+        let finalQuery = `${query} ${caseSensitive ? 'case:yes' : ''}`
+        if (searchContextSpec && !isContextFilterInQuery(finalQuery)) {
+            finalQuery = `context:${searchContextSpec} ${finalQuery}`
+        }
+
         const parameters = [
-            ['q', caseSensitive ? `${query} case:yes` : query],
+            ['q', finalQuery],
             ['v', version],
             ['t', patternType as string],
         ]

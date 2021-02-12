@@ -5,14 +5,15 @@ import { buildSearchURLQuery } from '../../../shared/src/util/url'
 import { eventLogger } from '../tracking/eventLogger'
 import { SearchType } from './results/SearchResults'
 import { FilterType } from '../../../shared/src/search/query/filters'
-import { CaseSensitivityProps, PatternTypeProps } from '.'
+import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '.'
 import { VersionContextProps } from '../../../shared/src/search/util'
 
 export interface SubmitSearchParameters
     extends Partial<Pick<ActivationProps, 'activation'>>,
         Pick<PatternTypeProps, 'patternType'>,
         Pick<CaseSensitivityProps, 'caseSensitive'>,
-        VersionContextProps {
+        VersionContextProps,
+        Pick<SearchContextProps, 'selectedSearchContextSpec'> {
     history: H.History
     query: string
     source: 'home' | 'nav' | 'repo' | 'tree' | 'filter' | 'type' | 'scopePage' | 'repogroupPage' | 'excludedResults'
@@ -29,11 +30,19 @@ export function submitSearch({
     patternType,
     caseSensitive,
     versionContext,
+    selectedSearchContextSpec,
     activation,
     source,
     searchParameters,
 }: SubmitSearchParameters): void {
-    let searchQueryParameter = buildSearchURLQuery(query, patternType, caseSensitive, versionContext, searchParameters)
+    let searchQueryParameter = buildSearchURLQuery(
+        query,
+        patternType,
+        caseSensitive,
+        versionContext,
+        selectedSearchContextSpec,
+        searchParameters
+    )
 
     // Check if `trace` is set in the query parameters, and retain it if present.
     const existingParameters = new URLSearchParams(history.location.search)

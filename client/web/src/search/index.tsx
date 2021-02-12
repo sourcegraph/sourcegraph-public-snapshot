@@ -51,6 +51,12 @@ function parseSearchURLVersionContext(query: string): string | undefined {
     return context ?? undefined
 }
 
+function parseSearchURLSearchContextSpec(query: string): string | undefined {
+    const searchParameters = new URLSearchParams(query)
+    const context = searchParameters.get('context')
+    return context ?? undefined
+}
+
 function searchURLIsCaseSensitive(query: string): boolean {
     const globalCase = findFilter(parseSearchURLQuery(query) || '', 'case', FilterKind.Global)
     if (globalCase?.value && globalCase.value.type === 'literal') {
@@ -67,6 +73,7 @@ export interface ParsedSearchURL {
     patternType: SearchPatternType | undefined
     caseSensitive: boolean
     versionContext: string | undefined
+    searchContextSpec: string | undefined
 }
 
 /**
@@ -80,11 +87,15 @@ export interface ParsedSearchURL {
  */
 export function parseSearchURL(
     urlSearchQuery: string,
-    { appendCaseFilter = false }: { appendCaseFilter?: boolean } = {}
+    {
+        appendCaseFilter = false,
+        appendContextFilter = false,
+    }: { appendCaseFilter?: boolean; appendContextFilter?: boolean } = {}
 ): ParsedSearchURL {
     let finalQuery = parseSearchURLQuery(urlSearchQuery) || ''
     let patternType = parseSearchURLPatternType(urlSearchQuery)
     let caseSensitive = searchURLIsCaseSensitive(urlSearchQuery)
+    const searchContextSpec = parseSearchURLSearchContextSpec(urlSearchQuery)
 
     const globalPatternType = findFilter(finalQuery, 'patterntype', FilterKind.Global)
     if (globalPatternType?.value && globalPatternType.value.type === 'literal') {
@@ -110,11 +121,16 @@ export function parseSearchURL(
         finalQuery = caseSensitive ? `${finalQuery} case:yes` : finalQuery
     }
 
+    if (appendContextFilter && searchContextSpec && !isContextFilterInQuery(finalQuery)) {
+        finalQuery = `context:${searchContextSpec} ${finalQuery}`
+    }
+
     return {
         query: finalQuery,
         patternType,
         caseSensitive,
         versionContext: parseSearchURLVersionContext(urlSearchQuery),
+        searchContextSpec,
     }
 }
 
