@@ -96,3 +96,12 @@ func StringHuman(nodes []Node) string {
 	}
 	return stringHumanParameters(parameters) + " " + stringHumanPattern([]Node{pattern})
 }
+
+// toString returns a string representation of a query's structure.
+func toString(nodes []Node) string {
+	var result []string
+	for _, node := range nodes {
+		result = append(result, node.String())
+	}
+	return strings.Join(result, " ")
+}
