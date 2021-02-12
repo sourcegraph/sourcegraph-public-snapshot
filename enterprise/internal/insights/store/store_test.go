@@ -38,6 +38,7 @@ INSERT INTO repo_names(name) VALUES ('github.com/gorilla/mux-renamed');
 INSERT INTO metadata(metadata) VALUES ('{"hello": "world", "languages": ["Go", "Python", "Java"]}');
 SELECT setseed(0.5);
 INSERT INTO series_points(
+	series_id,
     time,
     value,
     metadata_id,
@@ -45,6 +46,7 @@ INSERT INTO series_points(
     repo_name_id,
     original_repo_name_id)
 SELECT time,
+    'somehash',
     random()*80 - 40,
     (SELECT id FROM metadata WHERE metadata = '{"hello": "world", "languages": ["Go", "Python", "Java"]}'),
     2,
