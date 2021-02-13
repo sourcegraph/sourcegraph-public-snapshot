@@ -76,6 +76,14 @@ func alertForQuery(queryString string, err error) *searchAlert {
 }
 
 func alertForTimeout(usedTime time.Duration, suggestTime time.Duration, r *searchResolver) *searchAlert {
+	q, err := query.ParseLiteral(r.rawQuery()) // Invariant: query is already validated; guard against error anyway.
+	if err != nil {
+		return &searchAlert{
+			prometheusType: "timed_out",
+			title:          "Timed out while searching",
+			description:    fmt.Sprintf("We weren't able to find any results in %s. Try adding timeout: with a higher value.", roundStr(usedTime.String())),
+		}
+	}
 	return &searchAlert{
 		prometheusType: "timed_out",
 		title:          "Timed out while searching",
@@ -83,7 +91,7 @@ func alertForTimeout(usedTime time.Duration, suggestTime time.Duration, r *searc
 		proposedQueries: []*searchQueryDescription{
 			{
 				description: "query with longer timeout",
-				query:       fmt.Sprintf("timeout:%v %s", suggestTime, query.OmitQueryField(r.Query, query.FieldTimeout)),
+				query:       fmt.Sprintf("timeout:%v %s", suggestTime, query.OmitQueryField(q, query.FieldTimeout)),
 				patternType: r.PatternType,
 			},
 		},
@@ -408,6 +416,14 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 	// If globbing is active we return a simple alert for now. The alert is still
 	// helpful but it doesn't contain any proposed queries.
 	if getBoolPtr(r.UserSettings.SearchGlobbing, false) {
+		return buildAlert(proposedQueries, description)
+	}
+
+	q, err := query.ParseLiteral(r.rawQuery()) // Invariant: query is already validated; guard against error anyway.
+	if err != nil || !query.IsBasic(q) {
+		// If the query is not basic, the assumptions that other logic
+		// makes to propose queries do not hold. Return a default alert
+		// without proposed queries.
 		return buildAlert(proposedQueries, description)
 	}
 
