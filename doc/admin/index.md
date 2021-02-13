@@ -38,6 +38,7 @@ Site administrators are the admins responsible for deploying, managing, and conf
 - [Pings](pings.md)
 - [Usage statistics](usage_statistics.md)
 - [User feedback surveys](user_surveys.md)
+- [Beta and prototype features](beta_and_prototype_features.md)
 
 ## Integrations
 
