@@ -7,10 +7,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -18,11 +16,7 @@ var _ graphqlbackend.InsightConnectionResolver = &insightConnectionResolver{}
 
 type insightConnectionResolver struct {
 	store        store.Interface
-	settingStore *database.SettingStore
-
-	// We use our own mock here because database.Mocks.Settings.GetLatest is a global which means
-	// we could not run our tests in parallel.
-	mocksSettingsGetLatest func(ctx context.Context, subject api.SettingsSubject) (*api.Settings, error)
+	settingStore discovery.SettingStore
 
 	// cache results because they are used by multiple fields
 	once     sync.Once
@@ -61,36 +55,9 @@ func (r *insightConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.
 
 func (r *insightConnectionResolver) compute(ctx context.Context) ([]*schema.Insight, int64, error) {
 	r.once.Do(func() {
-		settingsGetLatest := r.settingStore.GetLatest
-		if r.mocksSettingsGetLatest != nil {
-			settingsGetLatest = r.mocksSettingsGetLatest
-		}
-
-		// Get latest Global user settings.
-		//
-		// FUTURE: include user/org settings.
-		subject := api.SettingsSubject{Site: true}
-		globalSettingsRaw, err := settingsGetLatest(ctx, subject)
-		if err != nil {
-			r.err = err
-			return
-		}
-		globalSettings, err := parseUserSettings(globalSettingsRaw)
-		r.insights = globalSettings.Insights
+		r.insights, r.err = discovery.Discover(ctx, r.settingStore)
 	})
 	return r.insights, r.next, r.err
-}
-
-func parseUserSettings(settings *api.Settings) (*schema.Settings, error) {
-	if settings == nil {
-		// Settings have never been saved for this subject; equivalent to `{}`.
-		return &schema.Settings{}, nil
-	}
-	var v schema.Settings
-	if err := jsonc.Unmarshal(settings.Contents, &v); err != nil {
-		return nil, err
-	}
-	return &v, nil
 }
 
 // InsightResolver is also defined here as it is covered by the same tests.
