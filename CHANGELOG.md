@@ -17,9 +17,13 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
-- Importing changesets was broken in the previous release and caused a SIGSEGV error.
-
 ### Removed
+
+## 3.24.5
+
+### Fixed
+
+- Importing changesets was broken in the previous release and caused a SIGSEGV error.
 
 ## 3.24.4
 
