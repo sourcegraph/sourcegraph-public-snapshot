@@ -91,7 +91,7 @@ func (h honeycombTracer) TraceQuery(ctx context.Context, queryString string, ope
 		ev.AddField("uid", uid)
 		ev.AddField("operationName", operationName)
 		ev.AddField("isInternal", sgtrace.IsInternalRequest(ctx))
-		ev.AddField("durationMicroseconds", time.Since(start).Microseconds())
+		ev.AddField("durationSeconds", time.Since(start).Seconds())
 
 		_ = ev.Send()
 	}
