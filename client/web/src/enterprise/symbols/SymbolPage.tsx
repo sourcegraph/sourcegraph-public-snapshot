@@ -1,30 +1,48 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Observable } from 'rxjs'
 import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
 import { requestGraphQL } from '../../backend/graphql'
 import { RepoRevisionContainerContext } from '../../repo/RepoRevisionContainer'
-import { DocumentSymbolResult, DocumentSymbolVariables, SymbolPageSymbolFields } from '../../graphql-operations'
 import { map } from 'rxjs/operators'
 import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
 import { useObservable } from '../../../../shared/src/util/useObservable'
 import { RouteComponentProps } from 'react-router'
+import { SymbolsSidebarOptionsSetterProps } from './SymbolsArea'
+import {
+    DocSymbolFieldsFragment,
+    DocumentSymbolResult,
+    DocumentSymbolVariables,
+    SymbolPageSymbolFields,
+} from '../../graphql-operations'
 
-export interface SymbolRouteProps {
-    symbolID: string
+export interface Symbol extends DocSymbolFieldsFragment {
+    children?: Symbol[]
 }
 
 const SymbolPageSymbolsGQLFragment = gql`
-    fragment SymbolPageSymbolFields on DocSymbol {
+    fragment DocSymbolFieldsFragment on DocSymbol {
         id
         text
         detail
         kind
         tags
+    }
+    fragment DocSymbolHierarchyFragment on DocSymbol {
+        ...DocSymbolFieldsFragment
         children {
-            id
-            text
-            kind
-            tags
+            ...DocSymbolFieldsFragment
+            children {
+                ...DocSymbolFieldsFragment
+                children {
+                    ...DocSymbolFieldsFragment
+                }
+            }
+        }
+    }
+    fragment SymbolPageSymbolFields on DocSymbol {
+        ...DocSymbolHierarchyFragment
+        root {
+            ...DocSymbolHierarchyFragment
         }
     }
 `
@@ -55,24 +73,31 @@ const querySymbolUncached = (vars: DocumentSymbolVariables): Observable<SymbolPa
 
 const querySymbol = memoizeObservable(querySymbolUncached, parameters => JSON.stringify(parameters))
 
-export interface SymbolRouteProps
-    extends Pick<RepoRevisionContainerContext, 'repo' | 'revision'>,
-        RouteComponentProps<SymbolRouteProps> {
+export interface SymbolRouteProps {
     symbolID: string
 }
 
-export const SymbolPage: React.FunctionComponent<SymbolRouteProps> = ({
+export interface Props
+    extends Pick<RepoRevisionContainerContext, 'repo' | 'revision'>,
+        SymbolsSidebarOptionsSetterProps,
+        RouteComponentProps<SymbolRouteProps> {}
+
+export const SymbolPage: React.FunctionComponent<Props> = ({
     repo,
     revision,
     match: {
         params: { symbolID },
     },
+    setSidebarOptions,
 }) => {
     const symbol = useObservable(querySymbol({ repo: repo.id, commitID: revision, symbolID }))
+    useEffect(() => {
+        setSidebarOptions({ containerSymbol: symbol?.root as Symbol })
+        return () => setSidebarOptions(null)
+    }, [symbol || null]) // TODO(beyang): may want to specify dependencies
     if (!symbol) {
         return <div>Symbol not found</div>
     }
-    console.log('# symbol', symbol)
     return (
         <>
             <div>Symbol: {symbol.text}</div>

@@ -1,12 +1,12 @@
-import React, { useEffect, useMemo, useState } from 'react'
-import { requestGraphQL } from '../../backend/graphql'
-import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
-import { DocumentSymbolsResult, DocumentSymbolsVariables, DocSymbolFields } from '../../graphql-operations'
+import React from 'react'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { RepoRevisionContainerContext } from '../../repo/RepoRevisionContainer'
-import { useObservable } from '../../../../shared/src/util/useObservable'
+import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
 import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
+import { useObservable } from '../../../../shared/src/util/useObservable'
+import { requestGraphQL } from '../../backend/graphql'
+import { DocumentSymbolsVariables, DocSymbolFields, DocumentSymbolsResult } from '../../graphql-operations'
+import { RepoRevisionContainerContext } from '../../repo/RepoRevisionContainer'
 
 // export const SymbolsPage: React.FunctionComponent<Props> = ({ repo, resolvedRev, viewOptions, history, ...props }) => {
 //     useEffect(() => {
@@ -80,7 +80,6 @@ export interface SymbolsRouteProps extends Pick<RepoRevisionContainerContext, 'r
 export const SymbolsPage: React.FunctionComponent<SymbolsRouteProps> = ({ repo, revision }) => {
     const docSymbols = useObservable(queryRepositorySymbols({ repo: repo.id, commitID: revision, path: '' }))
 
-    console.log('### SymbolsPage', repo, revision)
     function urlForSymbol(symbol: DocSymbolFields): string {
         // TODO(beyang): this is a hack
         return `/${repo.name}/-/docs/${symbol.id}`

@@ -21,7 +21,7 @@ func findSymbol(symbols []*resolvers.AdjustedSymbol, id string) *resolvers.Adjus
 		if symbol.Identifier == id {
 			return symbol
 		}
-		if !strings.HasPrefix(symbol.Identifier, id) {
+		if !strings.HasPrefix(id, symbol.Identifier) {
 			continue
 		}
 		foundSymbol := findSymbol(symbol.Children, id)

@@ -1,23 +1,34 @@
 import React from 'react'
-import { Link, NavLink } from 'react-router-dom'
-import { gql } from '../../../../shared/src/graphql/graphql'
-import { SymbolIcon } from '../../../../shared/src/symbols/SymbolIcon'
-// import { SymbolsSidebarContainerSymbolFields } from '../../graphql-operations'
-
-export const SymbolSidebarContainerSymbolGQLFragment = gql`TODO`
+import { Symbol } from './SymbolPage'
+import {
+    DocSymbolFields,
+    DocSymbolFieldsFragment,
+    DocSymbolHierarchyFragment,
+    RepositoryFields,
+    SymbolPageSymbolFields,
+} from '../../graphql-operations'
 
 export interface SymbolsSidebarOptions {
-    // containerSymbol: SymbolsSidebarContainerSymbolFields
-    containerSymbol: any
+    containerSymbol?: Symbol
 }
 
-interface Props extends SymbolsSidebarOptions {
-    allSymbolsURL: string
+interface Props {
     className?: string
+    containerSymbol?: Symbol
+    repo: RepositoryFields
 }
 
-export const SymbolsSidebar: React.FunctionComponent<Props> = ({ containerSymbol, allSymbolsURL, className = '' }) => (
-    <div>I am the sidebar</div>
+export const SymbolsSidebar: React.FunctionComponent<Props> = ({ containerSymbol, repo, className = '' }) => (
+    <div>
+        {containerSymbol ? (
+            <ul>
+                <SymbolsHierarchy repo={repo} containerSymbol={containerSymbol} />
+            </ul>
+        ) : (
+            <span>Loading</span>
+        )}
+    </div>
+
     // <nav className={className}>
     //     <header className="mb-2">
     //         <Link to={allSymbolsURL} className="d-block small p-2 pb-1 pl-3">
@@ -38,3 +49,28 @@ export const SymbolsSidebar: React.FunctionComponent<Props> = ({ containerSymbol
     //     )}
     // </nav>
 )
+
+function urlForSymbol(symbol: Symbol, repo: RepositoryFields): string {
+    // TODO(beyang): this is a hack
+    return `/${repo.name}/-/docs/${symbol.id}`
+}
+
+interface SymbolsHierarchyProps {
+    containerSymbol: Symbol
+    repo: RepositoryFields
+}
+
+export const SymbolsHierarchy: React.FunctionComponent<SymbolsHierarchyProps> = ({ containerSymbol, repo }) => {
+    return (
+        <li>
+            <a href={urlForSymbol(containerSymbol, repo)}>
+                {containerSymbol?.kind} {containerSymbol?.text}
+            </a>
+            {containerSymbol?.children?.map(child => (
+                <ul key={child.kind + ':' + child.id}>
+                    <SymbolsHierarchy repo={repo} containerSymbol={child} />
+                </ul>
+            ))}
+        </li>
+    )
+}
