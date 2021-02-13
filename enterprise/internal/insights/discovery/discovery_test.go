@@ -58,28 +58,28 @@ func TestDiscover(t *testing.T) {
 		t.Fatal(err)
 	}
 	autogold.Want("insights", []*schema.Insight{
-		&schema.Insight{
+		{
 			Description: "fmt.Errorf/fmt.Printf usage",
 			Series: []*schema.InsightSeries{
-				&schema.InsightSeries{
+				{
 					Label:  "fmt.Errorf",
 					Search: "errorf",
 				},
-				&schema.InsightSeries{
+				{
 					Label:  "printf",
 					Search: "fmt.Printf",
 				},
 			},
 			Title: "fmt usage",
 		},
-		&schema.Insight{
+		{
 			Description: "gitserver exec & close usage",
 			Series: []*schema.InsightSeries{
-				&schema.InsightSeries{
+				{
 					Label:  "exec",
 					Search: "gitserver.Exec",
 				},
-				&schema.InsightSeries{
+				{
 					Label:  "close",
 					Search: "gitserver.Close",
 				},
