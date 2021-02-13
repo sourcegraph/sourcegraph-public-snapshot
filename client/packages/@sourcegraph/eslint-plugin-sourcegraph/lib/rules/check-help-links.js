@@ -73,7 +73,7 @@ module.exports = {
 
         // Go find the link target in the attribute array.
         const target = node.attributes.reduce(
-          (target, attr) => target ?? (attr.name && attr.name.name === attrName ? attr.value.value : undefined),
+          (target, attr) => target || (attr.name && attr.name.name === attrName ? attr.value.value : undefined),
           undefined
         )
 
