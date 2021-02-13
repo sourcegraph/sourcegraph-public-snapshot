@@ -665,13 +665,13 @@ func getRewirerMappingCurrentState(state *campaigns.ChangesetState) (*sqlf.Query
 	var q *sqlf.Query
 	switch *state {
 	case campaigns.ChangesetStateRetrying:
-		q = sqlf.Sprintf("reconciler_state = %s", campaigns.ReconcilerStateErrored)
+		q = sqlf.Sprintf("reconciler_state = %s", campaigns.ReconcilerStateErrored.ToDB())
 	case campaigns.ChangesetStateFailed:
-		q = sqlf.Sprintf("reconciler_state = %s", campaigns.ReconcilerStateFailed)
+		q = sqlf.Sprintf("reconciler_state = %s", campaigns.ReconcilerStateFailed.ToDB())
 	case campaigns.ChangesetStateProcessing:
-		q = sqlf.Sprintf("reconciler_state = %s", campaigns.ReconcilerStateCompleted)
+		q = sqlf.Sprintf("reconciler_state = %s", campaigns.ReconcilerStateCompleted.ToDB())
 	case campaigns.ChangesetStateUnpublished:
-		q = sqlf.Sprintf("(publication_state IS NULL OR publication_state = %s)", campaigns.ChangesetPublicationStateUnpublished)
+		q = sqlf.Sprintf("publication_state = %s", campaigns.ChangesetPublicationStateUnpublished)
 	case campaigns.ChangesetStateDraft:
 		q = sqlf.Sprintf("external_state = %s", campaigns.ChangesetExternalStateDraft)
 	case campaigns.ChangesetStateOpen:

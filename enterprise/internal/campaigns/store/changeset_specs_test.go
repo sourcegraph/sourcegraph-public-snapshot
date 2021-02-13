@@ -693,78 +693,56 @@ func testStoreChangesetSpecsCurrentState(t *testing.T, ctx context.Context, s *S
 	user := ct.CreateTestUser(t, false)
 
 	// Next, we need old and new campaign specs.
-	oldCampaignSpec := ct.CreateCampaignSpec(t, ctx, s, "text", user.ID)
-	newCampaignSpec := ct.CreateCampaignSpec(t, ctx, s, "text", user.ID)
+	oldCampaignSpec := ct.CreateCampaignSpec(t, ctx, s, "old", user.ID)
+	newCampaignSpec := ct.CreateCampaignSpec(t, ctx, s, "new", user.ID)
 
 	// That's enough to create a campaign, so let's do that.
 	campaign := ct.CreateCampaign(t, ctx, s, "text", user.ID, oldCampaignSpec.ID)
 
-	// Now for some changeset oldSpecs.
+	// Now for some changeset specs.
 	var (
-		changesets = map[campaigns.ChangesetState][]*campaigns.Changeset{}
-		oldSpecs   = map[campaigns.ChangesetState][]*campaigns.ChangesetSpec{}
-		newSpecs   = map[campaigns.ChangesetState][]*campaigns.ChangesetSpec{}
+		changesets = map[campaigns.ChangesetState]*campaigns.Changeset{}
+		oldSpecs   = map[campaigns.ChangesetState]*campaigns.ChangesetSpec{}
+		newSpecs   = map[campaigns.ChangesetState]*campaigns.ChangesetSpec{}
 
-		states = map[campaigns.ChangesetState][]*ct.TestChangesetOpts{
-			campaigns.ChangesetStateRetrying: {
-				{ReconcilerState: campaigns.ReconcilerStateErrored},
-			},
-			campaigns.ChangesetStateFailed: {
-				{ReconcilerState: campaigns.ReconcilerStateFailed},
-			},
-			campaigns.ChangesetStateProcessing: {
-				{ReconcilerState: campaigns.ReconcilerStateCompleted},
-			},
-			campaigns.ChangesetStateUnpublished: {
-				{PublicationState: campaigns.ChangesetPublicationStateUnpublished},
-				{},
-			},
-			campaigns.ChangesetStateDraft: {
-				{ExternalState: campaigns.ChangesetExternalStateDraft},
-			},
-			campaigns.ChangesetStateOpen: {
-				{ExternalState: campaigns.ChangesetExternalStateOpen},
-			},
-			campaigns.ChangesetStateClosed: {
-				{ExternalState: campaigns.ChangesetExternalStateClosed},
-			},
-			campaigns.ChangesetStateMerged: {
-				{ExternalState: campaigns.ChangesetExternalStateMerged},
-			},
-			campaigns.ChangesetStateDeleted: {
-				{ExternalState: campaigns.ChangesetExternalStateDeleted},
-			},
+		// The keys are the desired current state that we'll search for; the
+		// values the changeset options we need to set on the changeset.
+		states = map[campaigns.ChangesetState]*ct.TestChangesetOpts{
+			campaigns.ChangesetStateRetrying:    {ReconcilerState: campaigns.ReconcilerStateErrored},
+			campaigns.ChangesetStateFailed:      {ReconcilerState: campaigns.ReconcilerStateFailed},
+			campaigns.ChangesetStateProcessing:  {ReconcilerState: campaigns.ReconcilerStateCompleted},
+			campaigns.ChangesetStateUnpublished: {PublicationState: campaigns.ChangesetPublicationStateUnpublished},
+			campaigns.ChangesetStateDraft:       {ExternalState: campaigns.ChangesetExternalStateDraft},
+			campaigns.ChangesetStateOpen:        {ExternalState: campaigns.ChangesetExternalStateOpen},
+			campaigns.ChangesetStateClosed:      {ExternalState: campaigns.ChangesetExternalStateClosed},
+			campaigns.ChangesetStateMerged:      {ExternalState: campaigns.ChangesetExternalStateMerged},
+			campaigns.ChangesetStateDeleted:     {ExternalState: campaigns.ChangesetExternalStateDeleted},
 		}
 	)
-	for state, optses := range states {
-		for i, opts := range optses {
-			specOpts := ct.TestSpecOpts{
-				User:         user.ID,
-				Repo:         repo.ID,
-				CampaignSpec: oldCampaignSpec.ID,
-				Title:        string(state),
-				Published:    true,
-				HeadRef:      fmt.Sprintf("%s-%d", state, i),
-			}
-			if opts.ExternalState != "" {
-				opts.ExternalServiceType = repo.ExternalRepo.ServiceType
-				opts.ExternalID = fmt.Sprintf("%s-%d", state, i)
-			}
-			oldSpec := ct.CreateChangesetSpec(t, ctx, s, specOpts)
-
-			specOpts.CampaignSpec = newCampaignSpec.ID
-			newSpec := ct.CreateChangesetSpec(t, ctx, s, specOpts)
-
-			opts.Repo = repo.ID
-			opts.Campaign = campaign.ID
-			opts.CurrentSpec = oldSpec.ID
-			opts.OwnedByCampaign = campaign.ID
-			opts.Metadata = map[string]interface{}{"Title": string(state)}
-
-			changesets[state] = append(changesets[state], ct.CreateChangeset(t, ctx, s, *opts))
-			oldSpecs[state] = append(oldSpecs[state], oldSpec)
-			newSpecs[state] = append(newSpecs[state], newSpec)
+	for state, opts := range states {
+		specOpts := ct.TestSpecOpts{
+			User:         user.ID,
+			Repo:         repo.ID,
+			CampaignSpec: oldCampaignSpec.ID,
+			Title:        string(state),
+			Published:    true,
+			HeadRef:      string(state),
 		}
+		oldSpecs[state] = ct.CreateChangesetSpec(t, ctx, s, specOpts)
+
+		specOpts.CampaignSpec = newCampaignSpec.ID
+		newSpecs[state] = ct.CreateChangesetSpec(t, ctx, s, specOpts)
+
+		if opts.ExternalState != "" {
+			opts.ExternalID = string(state)
+		}
+		opts.ExternalServiceType = repo.ExternalRepo.ServiceType
+		opts.Repo = repo.ID
+		opts.Campaign = campaign.ID
+		opts.CurrentSpec = oldSpecs[state].ID
+		opts.OwnedByCampaign = campaign.ID
+		opts.Metadata = map[string]interface{}{"Title": string(state)}
+		changesets[state] = ct.CreateChangeset(t, ctx, s, *opts)
 	}
 
 	// OK, there's lots of good stuff here. Let's work our way through the
@@ -780,20 +758,14 @@ func testStoreChangesetSpecsCurrentState(t *testing.T, ctx context.Context, s *S
 				t.Errorf("unexpected error: %+v", err)
 			}
 
-			t.Logf("mappings: %s", cmp.Diff(nil, mappings))
-
 			have := []int64{}
 			for _, mapping := range mappings {
 				have = append(have, mapping.ChangesetID)
 			}
 
-			want := []int64{}
-			for _, spec := range changesets[state] {
-				want = append(want, spec.ID)
-			}
-
+			want := []int64{changesets[state].ID}
 			if diff := cmp.Diff(have, want); diff != "" {
-				t.Errorf("unexpected changeset specs (-have +want):\n%s", diff)
+				t.Errorf("unexpected changesets (-have +want):\n%s", diff)
 			}
 		})
 	}
