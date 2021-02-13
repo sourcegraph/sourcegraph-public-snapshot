@@ -1205,8 +1205,6 @@ github.com/shurcooL/highlight_go v0.0.0-20191220051317-782971ddf21b h1:rBIwpb5gg
 github.com/shurcooL/highlight_go v0.0.0-20191220051317-782971ddf21b/go.mod h1:UDKB5a1T23gOMUJrI+uSuH0VRDStOiUVSjBTRDVBVag=
 github.com/shurcooL/httpfs v0.0.0-20190707220628-8d4bc4ba7749 h1:bUGsEnyNbVPw06Bs80sCeARAlK8lhwqGyi6UT8ymuGk=
 github.com/shurcooL/httpfs v0.0.0-20190707220628-8d4bc4ba7749/go.mod h1:ZY1cvUeJuFPAdZ/B6v7RHavJWZn2YPVFQ1OSXhCGOkg=
-github.com/shurcooL/httpgzip v0.0.0-20190720172056-320755c1c1b0 h1:mj/nMDAwTBiaCqMEs4cYCqF7pO6Np7vhy1D1wcQGz+E=
-github.com/shurcooL/httpgzip v0.0.0-20190720172056-320755c1c1b0/go.mod h1:919LwcH0M7/W4fcZ0/jy0qGght1GIhqyS/EgWGH2j5Q=
 github.com/shurcooL/octicon v0.0.0-20191102190552-cbb32d6a785c h1:p3w+lTqXulfa3aDeycxmcLJDNxyUB89gf2/XqqK3eO0=
 github.com/shurcooL/octicon v0.0.0-20191102190552-cbb32d6a785c/go.mod h1:eWdoE5JD4R5UVWDucdOPg1g2fqQRq78IQa9zlOV1vpQ=
 github.com/shurcooL/sanitized_anchor_name v1.0.0 h1:PdmoCO6wvbs+7yrJyMORt4/BmY5IYyJwS/kOiWx8mHo=
@@ -1253,6 +1251,8 @@ github.com/sourcegraph/gosyntect v0.0.0-20200429204402-842ed26129d0 h1:AEImdu3+4
 github.com/sourcegraph/gosyntect v0.0.0-20200429204402-842ed26129d0/go.mod h1:WiNJKgKTnR3psOIGzVZQjLqZjJZuoL3F8tCh25Uk8dU=
 github.com/sourcegraph/graphql-go v0.0.0-20201007040903-ec61a5417d66 h1:BJFJIKMLgYynYNHS1ufZ/JhMAIK2j5Elbk2rNbSRfm4=
 github.com/sourcegraph/graphql-go v0.0.0-20201007040903-ec61a5417d66/go.mod h1:9CQHMSxwO4MprSdzoIEobiHpoLtHm77vfxsvsIN5Vuc=
+github.com/sourcegraph/httpgzip v0.0.0-20210213125624-48ebf036a6a1 h1:o9U79WCNQjxxK2RYhIvflq7PK6JBbG70O2qG2haR26M=
+github.com/sourcegraph/httpgzip v0.0.0-20210213125624-48ebf036a6a1/go.mod h1:RqWagzxNGCvucQQC9vX6aps474LCCOgshDpUTTyb+O8=
 github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf h1:oAdWFqhStsWiiMP/vkkHiMXqFXzl1XfUNOdxKJbd6bI=
 github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf/go.mod h1:ppFaPm6kpcHnZGqQTFhUIAQRIEhdQDWP1PCv4/ON354=
 github.com/sourcegraph/lsif-protocol v1.0.0 h1:NLxbnHuN2o4fibjRUrXTwuojD4+kDFPXra9PA1V6tQM=
