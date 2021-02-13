@@ -68,16 +68,6 @@ func containsPattern(node Node) bool {
 	})
 }
 
-// containsField returns true if the field exists in the query.
-func containsField(nodes []Node, field string) bool {
-	return exists(nodes, func(node Node) bool {
-		if p, ok := node.(Parameter); ok && p.Field == field {
-			return true
-		}
-		return false
-	})
-}
-
 // ContainsRegexpMetasyntax returns true if a string is a valid regular
 // expression and contains regex metasyntax (i.e., it is not a literal).
 func ContainsRegexpMetasyntax(input string) bool {
@@ -360,7 +350,7 @@ func validateRepoHasFile(nodes []Node) error {
 		if field == FieldRepoHasFile {
 			seenRepoHasFile = true
 		}
-		if field == FieldType && strings.ToLower(value) == "symbol" {
+		if field == FieldType && strings.EqualFold(value, "symbol") {
 			seenTypeSymbol = true
 		}
 	})
@@ -465,9 +455,8 @@ func ParseYesNoOnly(s string) YesNoOnly {
 		if b, err := strconv.ParseBool(s); err == nil {
 			if b {
 				return Yes
-			} else {
-				return No
 			}
+			return No
 		}
 		return Invalid
 	}
