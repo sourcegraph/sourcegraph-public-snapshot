@@ -425,8 +425,12 @@ func (svc *Service) ValidateChangesetSpecs(repos []*graphql.Repository, specs []
 
 	byRepoAndBranch := make(map[string]map[string][]*ChangesetSpec)
 	for _, spec := range specs {
-		_, ok := byRepoAndBranch[spec.HeadRepository]
-		if !ok {
+		// We don't need to validate imported changesets, as they can
+		// never have a critical branch name overlap.
+		if spec.ExternalChangeset != nil {
+			continue
+		}
+		if _, ok := byRepoAndBranch[spec.HeadRepository]; !ok {
 			byRepoAndBranch[spec.HeadRepository] = make(map[string][]*ChangesetSpec)
 		}
 

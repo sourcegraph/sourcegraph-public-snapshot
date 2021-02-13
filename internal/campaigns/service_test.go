@@ -537,6 +537,16 @@ func TestService_ValidateChangesetSpecs(t *testing.T) {
 			},
 		},
 
+		"imported changeset": {
+			repos: []*graphql.Repository{repo1},
+			specs: []*ChangesetSpec{
+				{ExternalChangeset: &ExternalChangeset{
+					ExternalID: "123",
+				}},
+			},
+			// This should not fail validation ever.
+		},
+
 		"duplicate branches": {
 			repos: []*graphql.Repository{repo1, repo2},
 			specs: []*ChangesetSpec{
