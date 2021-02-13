@@ -310,6 +310,18 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 			},
 		},
 		{
+			name:          "this query is not basic, so return a default alert without suggestions",
+			cancelContext: false,
+			repoRevs:      1,
+			query:         "a or (b and c)",
+			wantAlert: &searchAlert{
+				prometheusType:  "over_repo_limit",
+				title:           "Too many matching repositories",
+				proposedQueries: nil,
+				description:     "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results.",
+			},
+		},
+		{
 			name:          "should return smart alert",
 			cancelContext: false,
 			repoRevs:      1,
@@ -337,7 +349,8 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 			}
 			sr := searchResolver{
 				SearchInputs: &SearchInputs{
-					Query: q,
+					OriginalQuery: test.query,
+					Query:         q,
 					UserSettings: &schema.Settings{
 						SearchGlobbing: &test.globbing,
 					}},

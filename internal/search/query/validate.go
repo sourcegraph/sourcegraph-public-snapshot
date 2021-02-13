@@ -12,6 +12,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 )
 
+// IsBasic returns whether a query is a basic query. A basic query is one which
+// does not have a DNF-expansion. I.e., there is only one disjunct. A basic
+// query implies that it has no subexpressions that we need to evaluate. IsBasic
+// is used in our codebase where legacy code has not been updated to handle
+// queries with multiple expressions (like alerts), and assume only one
+// evaluatable query.
+func IsBasic(nodes []Node) bool {
+	return len(Dnf(nodes)) == 1
+}
+
 // exists traverses every node in nodes and returns early as soon as fn is satisfied.
 func exists(nodes []Node, fn func(node Node) bool) bool {
 	found := false
