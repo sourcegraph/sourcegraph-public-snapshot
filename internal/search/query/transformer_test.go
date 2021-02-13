@@ -1007,10 +1007,10 @@ func TestConcatRevFiltersTopLevelAnd(t *testing.T) {
 	}
 }
 
-func TestOmitQueryField(t *testing.T) {
+func TestQueryField(t *testing.T) {
 	test := func(input, field string) string {
 		q, _ := ParseLiteral(input)
-		return OmitQueryField(q, field)
+		return OmitField(q, field)
 	}
 
 	autogold.Want("omit repo", "pattern").Equal(t, test("repo:stuff pattern", "repo"))

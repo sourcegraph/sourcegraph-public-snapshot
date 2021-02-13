@@ -91,7 +91,7 @@ func alertForTimeout(usedTime time.Duration, suggestTime time.Duration, r *searc
 		proposedQueries: []*searchQueryDescription{
 			{
 				description: "query with longer timeout",
-				query:       fmt.Sprintf("timeout:%v %s", suggestTime, query.OmitQueryField(q, query.FieldTimeout)),
+				query:       fmt.Sprintf("timeout:%v %s", suggestTime, query.OmitField(q, query.FieldTimeout)),
 				patternType: r.PatternType,
 			},
 		},
@@ -153,7 +153,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 
 	// TODO(sqs): handle -repo:foo fields.
 
-	withoutRepoFields := query.OmitQueryField(r.Query, query.FieldRepo)
+	withoutRepoFields := query.OmitField(r.Query, query.FieldRepo)
 
 	switch {
 	case len(repoGroupFilters) > 1:
@@ -183,7 +183,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			proposedQueries = []*searchQueryDescription{
 				{
 					description: fmt.Sprintf("include repositories outside of repogroup:%s", repoGroupFilters[0]),
-					query:       query.OmitQueryField(r.Query, query.FieldRepoGroup),
+					query:       query.OmitField(r.Query, query.FieldRepoGroup),
 					patternType: r.PatternType,
 				},
 			}
@@ -238,7 +238,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			proposedQueries = []*searchQueryDescription{
 				{
 					description: fmt.Sprintf("include repositories outside of repogroup:%s", repoGroupFilters[0]),
-					query:       query.OmitQueryField(r.Query, query.FieldRepoGroup),
+					query:       query.OmitField(r.Query, query.FieldRepoGroup),
 					patternType: r.PatternType,
 				},
 			}
