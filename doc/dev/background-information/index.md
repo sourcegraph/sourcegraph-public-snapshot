@@ -16,6 +16,7 @@
 - [Developing code intelligence](codeintel/index.md)
 - [Developing code monitoring](codemonitoring/index.md)
 - [Developing observability](observability/index.md)
+- [Developing Sourcegraph extensions](sourcegraph_extensions.md)
 - [Dependencies and generated code](dependencies_and_codegen.md)
 
 ## Tools
