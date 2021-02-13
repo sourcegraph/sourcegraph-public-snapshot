@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
@@ -177,6 +178,57 @@ func (s *Store) References(ctx context.Context, bundleID int, path string, line,
 	return allLocations, nil
 }
 
+// PagedReferences returns the set of locations referencing the symbol at the given position.
+func (s *Store) PagedReferences(ctx context.Context, bundleID int, path string, line, character, limit, offset int) (_ []Location, _ int, err error) {
+	ctx, endObservation := s.operations.pagedReferences.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("bundleID", bundleID),
+		log.String("path", path),
+		log.Int("line", line),
+		log.Int("character", character),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	documentData, exists, err := s.scanFirstDocumentData(s.Store.Query(ctx, sqlf.Sprintf(documentQuery, bundleID, path)))
+	if err != nil || !exists {
+		return nil, 0, err
+	}
+
+	ranges := FindRanges(documentData.Document.Ranges, line, character)
+	orderedResultIDs := extractResultIDs(ranges, func(r RangeData) ID { return r.ReferenceResultID })
+	locationsMap, err := s.locations(ctx, bundleID, orderedResultIDs)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	totalCount := 0
+	for _, locations := range locationsMap {
+		totalCount += len(locations)
+	}
+
+	max := totalCount
+	if totalCount > limit {
+		max = limit
+	}
+
+	locations := make([]Location, 0, max)
+outer:
+	for _, resultID := range orderedResultIDs {
+		for _, location := range locationsMap[resultID] {
+			offset--
+			if offset >= 0 {
+				continue
+			}
+
+			locations = append(locations, location)
+			if len(locations) >= limit {
+				break outer
+			}
+		}
+	}
+
+	return locations, totalCount, nil
+}
+
 // Hover returns the hover text of the symbol at the given position.
 func (s *Store) Hover(ctx context.Context, bundleID int, path string, line, character int) (_ string, _ Range, _ bool, err error) {
 	ctx, endObservation := s.operations.hover.With(ctx, &err, observation.Args{LogFields: []log.Field{
@@ -202,13 +254,13 @@ func (s *Store) Hover(ctx context.Context, bundleID int, path string, line, char
 }
 
 // Diagnostics returns the diagnostics for the documents that have the given path prefix. This method
-// also returns the size of the complete result set to aid in pagination (along with skip and take).
-func (s *Store) Diagnostics(ctx context.Context, bundleID int, prefix string, skip, take int) (_ []Diagnostic, _ int, err error) {
+// also returns the size of the complete result set to aid in pagination.
+func (s *Store) Diagnostics(ctx context.Context, bundleID int, prefix string, limit, offset int) (_ []Diagnostic, _ int, err error) {
 	ctx, endObservation := s.operations.diagnostics.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("prefix", prefix),
-		log.Int("skip", skip),
-		log.Int("take", take),
+		log.Int("limit", limit),
+		log.Int("offset", offset),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -217,19 +269,17 @@ func (s *Store) Diagnostics(ctx context.Context, bundleID int, prefix string, sk
 		return nil, 0, err
 	}
 
-	// TODO(efritz) - this is inefficient for large documents. We need to store the total number of diagnostics
-	// along-side the document so that we can determine which documents to skip and how many to retrieve. Right
-	// now we pull back every matching document, which can be large in large indexes.
 	totalCount := 0
-
-	diagnostics := make([]Diagnostic, 0, take)
 	for _, documentData := range documentData {
 		totalCount += len(documentData.Document.Diagnostics)
+	}
 
+	diagnostics := make([]Diagnostic, 0, limit)
+	for _, documentData := range documentData {
 		for _, diagnostic := range documentData.Document.Diagnostics {
-			skip--
+			offset--
 
-			if skip < 0 && len(diagnostics) < take {
+			if offset < 0 && len(diagnostics) < limit {
 				diagnostics = append(diagnostics, Diagnostic{
 					DumpID:         bundleID,
 					Path:           documentData.Path,
@@ -336,6 +386,91 @@ func (s *Store) MonikerResults(ctx context.Context, bundleID int, tableName, sch
 const monikerResultsQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/bundles.go:MonikerResults
 SELECT scheme, identifier, data FROM %s WHERE dump_id = %s AND scheme = %s AND identifier = %s
+`
+
+// BulkMonikerResults returns the locations within one of the given bundles that define or reference
+// one of the given monikers. This method also returns the size of the complete result set to aid in
+// pagination.
+func (s *Store) BulkMonikerResults(ctx context.Context, tableName string, uploadIDs []int, monikers []MonikerData, limit, offset int) (_ []Location, _ int, err error) {
+	strUploadIDs := make([]string, 0, len(uploadIDs))
+	for _, id := range uploadIDs {
+		strUploadIDs = append(strUploadIDs, strconv.Itoa(id))
+	}
+	strMonikers := make([]string, 0, len(monikers))
+	for _, arg := range monikers {
+		strMonikers = append(strMonikers, fmt.Sprintf("%s:%s", arg.Scheme, arg.Identifier))
+	}
+
+	ctx, endObservation := s.operations.bulkMonikerResults.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("tableName", tableName),
+		log.String("uploadIDs", strings.Join(strUploadIDs, ", ")),
+		log.String("monikers", strings.Join(strMonikers, ", ")),
+		log.Int("limit", limit),
+		log.Int("offset", offset),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	if len(uploadIDs) == 0 || len(monikers) == 0 {
+		return nil, 0, nil
+	}
+
+	idQueries := make([]*sqlf.Query, 0, len(uploadIDs))
+	for _, id := range uploadIDs {
+		idQueries = append(idQueries, sqlf.Sprintf("%s", id))
+	}
+
+	monikerQueries := make([]*sqlf.Query, 0, len(monikers))
+	for _, arg := range monikers {
+		monikerQueries = append(monikerQueries, sqlf.Sprintf("(%s, %s)", arg.Scheme, arg.Identifier))
+	}
+
+	locationData, err := s.scanQualifiedMonikerLocations(s.Store.Query(ctx, sqlf.Sprintf(
+		bulkMonikerResultsQuery,
+		sqlf.Sprintf(fmt.Sprintf("lsif_data_%s", tableName)),
+		sqlf.Join(idQueries, ", "),
+		sqlf.Join(monikerQueries, ", "),
+	)))
+	if err != nil {
+		return nil, 0, err
+	}
+
+	totalCount := 0
+	for _, monikerLocations := range locationData {
+		totalCount += len(monikerLocations.Locations)
+	}
+
+	max := totalCount
+	if totalCount > limit {
+		max = limit
+	}
+
+	locations := make([]Location, 0, max)
+outer:
+	for _, monikerLocations := range locationData {
+		for _, row := range monikerLocations.Locations {
+			offset--
+			if offset >= 0 {
+				continue
+			}
+
+			locations = append(locations, Location{
+				DumpID: monikerLocations.DumpID,
+				Path:   row.URI,
+				Range:  newRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
+			})
+
+			if len(locations) >= limit {
+				break outer
+			}
+		}
+	}
+
+	return locations, totalCount, nil
+}
+
+const bulkMonikerResultsQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/bundle.go:BulkMonikerResults
+SELECT dump_id, scheme, identifier, data FROM %s WHERE dump_id IN (%s) AND (scheme, identifier) IN (%s) ORDER BY (scheme, identifier, dump_id)
 `
 
 // PackageInformation looks up package information data by identifier.

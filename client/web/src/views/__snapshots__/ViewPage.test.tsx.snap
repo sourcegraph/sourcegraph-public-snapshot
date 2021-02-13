@@ -84,6 +84,12 @@ exports[`ViewPage renders view 1`] = `
           "subjects": Array [],
         }
       }
+      telemetryService={
+        Object {
+          "log": [Function],
+          "logViewEvent": [Function],
+        }
+      }
     />
   </div>
 </div>

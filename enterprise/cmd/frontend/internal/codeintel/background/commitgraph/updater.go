@@ -48,7 +48,7 @@ func NewUpdater(
 func (u *Updater) Handle(ctx context.Context) error {
 	repositoryIDs, err := u.dbStore.DirtyRepositories(ctx)
 	if err != nil {
-		return errors.Wrap(err, "store.DirtyRepositories")
+		return errors.Wrap(err, "dbstore.DirtyRepositories")
 	}
 
 	var updateErr error
@@ -75,7 +75,7 @@ func (u *Updater) HandleError(err error) {
 func (u *Updater) tryUpdate(ctx context.Context, repositoryID, dirtyToken int) (err error) {
 	ok, unlock, err := u.dbStore.Lock(ctx, repositoryID, false)
 	if err != nil || !ok {
-		return errors.Wrap(err, "store.Lock")
+		return errors.Wrap(err, "dbstore.Lock")
 	}
 	defer func() {
 		err = unlock(err)
@@ -117,7 +117,7 @@ func (u *Updater) update(ctx context.Context, repositoryID, dirtyToken int) (err
 	// then bulk update the denormalized view in Postgres. We call this with an empty graph as well
 	// so that we end up clearing the stale data and bulk inserting nothing.
 	if err := u.dbStore.CalculateVisibleUploads(ctx, repositoryID, commitGraph, tipCommit, dirtyToken, time.Now()); err != nil {
-		return errors.Wrap(err, "store.CalculateVisibleUploads")
+		return errors.Wrap(err, "dbstore.CalculateVisibleUploads")
 	}
 
 	return nil
@@ -170,7 +170,7 @@ func (u *Updater) getOldestCommitDate(ctx context.Context, repositoryID int) (ti
 		Limit:        commitDateBatchSize,
 	})
 	if err != nil {
-		return time.Time{}, false, errors.Wrap(err, "store.GetUploads")
+		return time.Time{}, false, errors.Wrap(err, "dbstore.GetUploads")
 	}
 
 outer:

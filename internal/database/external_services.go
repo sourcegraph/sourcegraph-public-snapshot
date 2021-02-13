@@ -650,8 +650,9 @@ RETURNING *
 
 // ExternalServiceUpdate contains optional fields to update.
 type ExternalServiceUpdate struct {
-	DisplayName *string
-	Config      *string
+	DisplayName  *string
+	Config       *string
+	CloudDefault *bool
 }
 
 // Update updates an external service.
@@ -724,6 +725,12 @@ func (e *ExternalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 		unrestricted := !gjson.GetBytes(normalized, "authorization").Exists()
 		q := sqlf.Sprintf(`config = %s, next_sync_at = NOW(), unrestricted = %s`, update.Config, unrestricted)
 		if err := execUpdate(ctx, tx.DB(), q); err != nil {
+			return err
+		}
+	}
+
+	if update.CloudDefault != nil {
+		if err := execUpdate(ctx, tx.DB(), sqlf.Sprintf("cloud_default=%s", update.CloudDefault)); err != nil {
 			return err
 		}
 	}

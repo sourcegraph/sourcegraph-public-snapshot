@@ -1,7 +1,7 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { WebStory } from '../../components/WebStory'
-import { SearchContextMenu } from './SearchContextMenu'
+import { SearchContextMenu, SearchContextMenuProps } from './SearchContextMenu'
 
 const { add } = storiesOf('web/search/input/SearchContextMenu', module)
     .addParameters({
@@ -17,4 +17,40 @@ const { add } = storiesOf('web/search/input/SearchContextMenu', module)
         </div>
     ))
 
-add('default', () => <WebStory>{() => <SearchContextMenu />}</WebStory>, {})
+const defaultProps: SearchContextMenuProps = {
+    availableSearchContexts: [
+        {
+            __typename: 'SearchContext',
+            id: '1',
+            spec: 'global',
+            autoDefined: true,
+            description: 'All repositories on Sourcegraph',
+        },
+        {
+            __typename: 'SearchContext',
+            id: '2',
+            spec: '@username',
+            autoDefined: true,
+            description: 'Your repositories on Sourcegraph',
+        },
+        {
+            __typename: 'SearchContext',
+            id: '3',
+            spec: '@username/test-version-1.5',
+            autoDefined: true,
+            description: 'Only code in version 1.5',
+        },
+    ],
+    defaultSearchContextSpec: 'global',
+    selectedSearchContextSpec: 'global',
+    setSelectedSearchContextSpec: () => {},
+    closeMenu: () => {},
+}
+
+add('default', () => <WebStory>{() => <SearchContextMenu {...defaultProps} />}</WebStory>, {})
+
+add(
+    'empty',
+    () => <WebStory>{() => <SearchContextMenu {...defaultProps} availableSearchContexts={[]} />}</WebStory>,
+    {}
+)

@@ -24,20 +24,20 @@ func TestCreateFilter(t *testing.T) {
 				t.Fatalf("unexpected error creating filter: %s", filter)
 			}
 
-			buckets, numFilterFunctions, err := decodeFilter(filter)
+			test, err := Decode(filter)
 			if err != nil {
 				t.Fatalf("unexpected error decoding filter: %s", err)
 			}
 
 			for _, v := range readTestWords(t, testCase.includeFile) {
-				if !testFilter(buckets, numFilterFunctions, v) {
+				if !test(v) {
 					t.Errorf("expected %s to be in bloom filter", v)
 				}
 			}
 
 			for _, excludeFile := range testCase.excludeFiles {
 				for _, v := range readTestWords(t, excludeFile) {
-					if testFilter(buckets, numFilterFunctions, v) {
+					if test(v) {
 						t.Errorf("expected %s not to be in bloom filter", v)
 					}
 				}
@@ -75,19 +75,19 @@ func TestTestTypeScriptGeneratedBloomFilters(t *testing.T) {
 		name := fmt.Sprintf("filter=%s", testCase.filterFile)
 
 		t.Run(name, func(t *testing.T) {
-			buckets, numFilterFunctions, err := decodeFilter(readTestFilter(t, "stress", testCase.filterFile))
+			test, err := Decode(readTestFilter(t, "stress", testCase.filterFile))
 			if err != nil {
 				t.Fatalf("unexpected error decoding filter: %s", err)
 			}
 
 			for _, v := range readTestWords(t, testCase.includeFile) {
-				if !testFilter(buckets, numFilterFunctions, v) {
+				if !test(v) {
 					t.Errorf("expected %s to be in bloom filter", v)
 				}
 			}
 
 			for _, v := range readTestWords(t, testCase.excludeFile) {
-				if testFilter(buckets, numFilterFunctions, v) {
+				if test(v) {
 					t.Errorf("expected %s not to be in bloom filter", v)
 				}
 			}

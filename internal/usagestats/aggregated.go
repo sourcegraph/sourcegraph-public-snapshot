@@ -67,11 +67,27 @@ func GetAggregatedCodeIntelStats(ctx context.Context) (*types.NewCodeIntelUsageS
 	}
 	stats := groupAggregatedCodeIntelStats(codeIntelEvents)
 
-	usersCount, err := database.GlobalEventLogs.CodeIntelligenceCombinedWAU(ctx)
-	if err != nil {
-		return nil, err
+	pairs := []struct {
+		fetch  func(ctx context.Context) (int, error)
+		target **int32
+	}{
+		{database.GlobalEventLogs.CodeIntelligenceWAUs, &stats.WAUs},
+		{database.GlobalEventLogs.CodeIntelligencePreciseWAUs, &stats.PreciseWAUs},
+		{database.GlobalEventLogs.CodeIntelligenceSearchBasedWAUs, &stats.SearchBasedWAUs},
+		{database.GlobalEventLogs.CodeIntelligenceCrossRepositoryWAUs, &stats.CrossRepositoryWAUs},
+		{database.GlobalEventLogs.CodeIntelligencePreciseCrossRepositoryWAUs, &stats.PreciseCrossRepositoryWAUs},
+		{database.GlobalEventLogs.CodeIntelligenceSearchBasedCrossRepositoryWAUs, &stats.SearchBasedCrossRepositoryWAUs},
 	}
-	stats.WAUs = int32(usersCount)
+
+	for _, pair := range pairs {
+		count, err := pair.fetch(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		v := int32(count)
+		*pair.target = &v
+	}
 
 	return stats, nil
 }

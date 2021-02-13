@@ -307,8 +307,9 @@ export async function getCompletionItems(
         if (resolvedFilter.definition.discreteValues) {
             return {
                 suggestions: resolvedFilter.definition.discreteValues.map(
-                    (label): Monaco.languages.CompletionItem => ({
+                    (label, index): Monaco.languages.CompletionItem => ({
                         label,
+                        sortText: index.toString(), // suggestions sort by order in the list, not alphabetically.
                         kind: Monaco.languages.CompletionItemKind.Value,
                         insertText: `${label} `,
                         filterText: label,

@@ -187,6 +187,8 @@ type pingRequest struct {
 	CodeIntelUsage       json.RawMessage `json:"codeIntelUsage"`
 	NewCodeIntelUsage    json.RawMessage `json:"newCodeIntelUsage"`
 	SearchUsage          json.RawMessage `json:"searchUsage"`
+	ExtensionsUsage      json.RawMessage `json:"extensionsUsage"`
+	CodeInsightsUsage    json.RawMessage `json:"codeInsightsUsage"`
 	InitialAdminEmail    string          `json:"initAdmin"`
 	TotalUsers           int32           `json:"totalUsers"`
 	HasRepos             bool            `json:"repos"`
@@ -288,6 +290,8 @@ type pingPayload struct {
 	Repositories         json.RawMessage `json:"repositories"`
 	SearchOnboarding     json.RawMessage `json:"search_onboarding"`
 	DependencyVersions   json.RawMessage `json:"dependency_versions"`
+	ExtensionsUsage      json.RawMessage `json:"extensions_usage"`
+	CodeInsightsUsage    json.RawMessage `json:"code_insights_usage"`
 	InstallerEmail       string          `json:"installer_email"`
 	AuthProviders        string          `json:"auth_providers"`
 	ExtServices          string          `json:"ext_services"`
@@ -370,6 +374,8 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		SearchOnboarding:     pr.SearchOnboarding,
 		InstallerEmail:       pr.InitialAdminEmail,
 		DependencyVersions:   pr.DependencyVersions,
+		ExtensionsUsage:      pr.ExtensionsUsage,
+		CodeInsightsUsage:    pr.CodeInsightsUsage,
 		AuthProviders:        strings.Join(pr.AuthProviders, ","),
 		ExtServices:          strings.Join(pr.ExternalServices, ","),
 		BuiltinSignupAllowed: strconv.FormatBool(pr.BuiltinSignupAllowed),
@@ -411,9 +417,14 @@ func reserializeNewCodeIntelUsage(payload json.RawMessage) (json.RawMessage, err
 	}
 
 	return json.Marshal(jsonCodeIntelUsage{
-		StartOfWeek:    codeIntelUsage.StartOfWeek,
-		WAUs:           &codeIntelUsage.WAUs,
-		EventSummaries: eventSummaries,
+		StartOfWeek:                    codeIntelUsage.StartOfWeek,
+		WAUs:                           codeIntelUsage.WAUs,
+		PreciseWAUs:                    codeIntelUsage.PreciseWAUs,
+		SearchBasedWAUs:                codeIntelUsage.SearchBasedWAUs,
+		CrossRepositoryWAUs:            codeIntelUsage.CrossRepositoryWAUs,
+		PreciseCrossRepositoryWAUs:     codeIntelUsage.PreciseCrossRepositoryWAUs,
+		SearchBasedCrossRepositoryWAUs: codeIntelUsage.SearchBasedCrossRepositoryWAUs,
+		EventSummaries:                 eventSummaries,
 	})
 }
 
@@ -439,8 +450,13 @@ func reserializeOldCodeIntelUsage(payload json.RawMessage) (json.RawMessage, err
 	references := week.References
 
 	return json.Marshal(jsonCodeIntelUsage{
-		StartOfWeek: week.StartTime,
-		WAUs:        nil,
+		StartOfWeek:                    week.StartTime,
+		WAUs:                           nil,
+		PreciseWAUs:                    nil,
+		SearchBasedWAUs:                nil,
+		CrossRepositoryWAUs:            nil,
+		PreciseCrossRepositoryWAUs:     nil,
+		SearchBasedCrossRepositoryWAUs: nil,
 		EventSummaries: []jsonEventSummary{
 			{Action: "hover", Source: "precise", WAUs: hover.LSIF.UsersCount, TotalActions: unwrap(hover.LSIF.EventsCount)},
 			{Action: "hover", Source: "search", WAUs: hover.Search.UsersCount, TotalActions: unwrap(hover.Search.EventsCount)},
@@ -453,9 +469,14 @@ func reserializeOldCodeIntelUsage(payload json.RawMessage) (json.RawMessage, err
 }
 
 type jsonCodeIntelUsage struct {
-	StartOfWeek    time.Time          `json:"start_time"`
-	WAUs           *int32             `json:"waus"`
-	EventSummaries []jsonEventSummary `json:"event_summaries"`
+	StartOfWeek                    time.Time          `json:"start_time"`
+	WAUs                           *int32             `json:"waus"`
+	PreciseWAUs                    *int32             `json:"precise_waus"`
+	SearchBasedWAUs                *int32             `json:"search_waus"`
+	CrossRepositoryWAUs            *int32             `json:"xrepo_waus"`
+	PreciseCrossRepositoryWAUs     *int32             `json:"precise_xrepo_waus"`
+	SearchBasedCrossRepositoryWAUs *int32             `json:"search_xrepo_waus"`
+	EventSummaries                 []jsonEventSummary `json:"event_summaries"`
 }
 
 type jsonEventSummary struct {
