@@ -299,7 +299,7 @@ class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureCom
                     <button
                         type="button"
                         className={classNames(
-                            'btn btn-secondary btn-sm filtered-connection__show-more',
+                            'btn btn-secondary btn-sm filtered-connection__show-more position-sticky',
                             this.props.showMoreClassName
                         )}
                         onClick={this.onClickShowMore}
