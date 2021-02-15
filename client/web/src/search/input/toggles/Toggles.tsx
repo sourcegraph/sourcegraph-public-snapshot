@@ -65,7 +65,6 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
         settingsCascade,
         className,
         copyQueryButton,
-        showSearchContext,
         selectedSearchContextSpec,
     } = props
 
@@ -135,12 +134,7 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
         submitOnToggle({ newPatternType })
     }, [patternType, setPatternType, settingsCascade.final, submitOnToggle])
 
-    const fullQuery = getFullQuery(
-        navbarSearchQuery,
-        showSearchContext ? selectedSearchContextSpec : '',
-        caseSensitive,
-        patternType
-    )
+    const fullQuery = getFullQuery(navbarSearchQuery, selectedSearchContextSpec || '', caseSensitive, patternType)
 
     return (
         <div className={classNames('toggle-container', className)}>

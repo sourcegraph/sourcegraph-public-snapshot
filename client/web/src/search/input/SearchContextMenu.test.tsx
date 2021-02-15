@@ -31,29 +31,29 @@ describe('SearchContextMenu', () => {
         ],
         defaultSearchContextSpec: 'global',
         selectedSearchContextSpec: 'global',
-        setSelectedSearchContextSpec: () => {},
+        selectSearchContextSpec: () => {},
         closeMenu: () => {},
     }
 
     it('should select item when clicking on it', () => {
-        const setSelectedSearchContextSpec = sinon.spy()
+        const selectSearchContextSpec = sinon.spy()
 
         const root = mount(
             <UncontrolledDropdown>
                 <DropdownMenu>
-                    <SearchContextMenu {...defaultProps} setSelectedSearchContextSpec={setSelectedSearchContextSpec} />
+                    <SearchContextMenu {...defaultProps} selectSearchContextSpec={selectSearchContextSpec} />
                 </DropdownMenu>
             </UncontrolledDropdown>
         )
         const item = root.find(DropdownItem).at(1)
         item.simulate('click')
 
-        sinon.assert.calledOnce(setSelectedSearchContextSpec)
-        sinon.assert.calledWithExactly(setSelectedSearchContextSpec, '@username')
+        sinon.assert.calledOnce(selectSearchContextSpec)
+        sinon.assert.calledWithExactly(selectSearchContextSpec, '@username')
     })
 
     it('should reset back to default when clicking on Reset button', () => {
-        const setSelectedSearchContextSpec = sinon.spy()
+        const selectSearchContextSpec = sinon.spy()
         const closeMenu = sinon.spy()
 
         const root = mount(
@@ -61,7 +61,7 @@ describe('SearchContextMenu', () => {
                 <DropdownMenu>
                     <SearchContextMenu
                         {...defaultProps}
-                        setSelectedSearchContextSpec={setSelectedSearchContextSpec}
+                        selectSearchContextSpec={selectSearchContextSpec}
                         selectedSearchContextSpec="@username"
                         closeMenu={closeMenu}
                     />
@@ -71,8 +71,8 @@ describe('SearchContextMenu', () => {
         const button = root.find('.search-context-menu__footer-button').at(0)
         button.simulate('click')
 
-        sinon.assert.calledOnce(setSelectedSearchContextSpec)
-        sinon.assert.calledWithExactly(setSelectedSearchContextSpec, 'global')
+        sinon.assert.calledOnce(selectSearchContextSpec)
+        sinon.assert.calledWithExactly(selectSearchContextSpec, 'global')
 
         sinon.assert.calledOnce(closeMenu)
     })

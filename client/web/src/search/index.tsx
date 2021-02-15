@@ -196,7 +196,7 @@ export interface SearchContextProps {
     showSearchContext: boolean
     availableSearchContexts: ISearchContext[]
     defaultSearchContextSpec: string
-    selectedSearchContextSpec: string
+    selectedSearchContextSpec?: string
     setSelectedSearchContextSpec: (spec: string) => void
 }
 

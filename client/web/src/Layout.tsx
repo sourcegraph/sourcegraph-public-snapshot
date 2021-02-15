@@ -88,7 +88,8 @@ export interface LayoutProps
         SearchContextProps,
         HomePanelsProps,
         SearchStreamingProps,
-        CodeMonitoringProps {
+        CodeMonitoringProps,
+        SearchContextProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
     extensionsAreaRoutes: readonly ExtensionsAreaRoute[]
@@ -145,21 +146,24 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const minimalNavLinks = routeMatch === '/cncf'
     const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
 
-    // Update parsedSearchQuery, patternType, caseSensitivity and versionContext based on current URL
+    // Update parsedSearchQuery, patternType, caseSensitivity, versionContext, and selectedSearchContextSpec based on current URL
     const {
         parsedSearchQuery: currentQuery,
         patternType: currentPatternType,
         caseSensitive: currentCaseSensitive,
         versionContext: currentVersionContext,
+        selectedSearchContextSpec,
         location,
         setParsedSearchQuery,
         setPatternType,
         setCaseSensitivity,
         setVersionContext,
+        setSelectedSearchContextSpec,
     } = props
-    const { query = '', patternType, caseSensitive, versionContext } = useMemo(() => parseSearchURL(location.search), [
-        location.search,
-    ])
+    const { query = '', patternType, caseSensitive, versionContext, searchContextSpec } = useMemo(
+        () => parseSearchURL(location.search),
+        [location.search]
+    )
     useEffect(() => {
         if (query !== currentQuery) {
             setParsedSearchQuery(query)
@@ -178,6 +182,10 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             if (versionContext !== currentVersionContext) {
                 setVersionContext(versionContext)
             }
+
+            if (searchContextSpec !== selectedSearchContextSpec) {
+                setSelectedSearchContextSpec(searchContextSpec || '')
+            }
         }
     }, [
         caseSensitive,
@@ -185,6 +193,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         currentPatternType,
         currentQuery,
         currentVersionContext,
+        selectedSearchContextSpec,
         patternType,
         query,
         setCaseSensitivity,
@@ -192,6 +201,8 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         setPatternType,
         setVersionContext,
         versionContext,
+        searchContextSpec,
+        setSelectedSearchContextSpec,
     ])
 
     // Hack! Hardcode these routes into cmd/frontend/internal/app/ui/router.go

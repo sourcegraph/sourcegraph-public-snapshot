@@ -1,6 +1,8 @@
 import { mount } from 'enzyme'
 import React from 'react'
+import * as H from 'history'
 import { ButtonDropdown, DropdownToggle } from 'reactstrap'
+import { SearchPatternType } from '../../graphql-operations'
 import { SearchContextDropdown, SearchContextDropdownProps } from './SearchContextDropdown'
 
 describe('SearchContextDropdown', () => {
@@ -10,6 +12,10 @@ describe('SearchContextDropdown', () => {
         defaultSearchContextSpec: '',
         selectedSearchContextSpec: '',
         setSelectedSearchContextSpec: () => {},
+        history: H.createMemoryHistory(),
+        caseSensitive: true,
+        patternType: SearchPatternType.literal,
+        versionContext: undefined,
     }
 
     it('should start closed', () => {
