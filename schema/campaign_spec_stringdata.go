@@ -80,6 +80,11 @@ const CampaignSpecSchemaJSON = `{
             "type": "string",
             "description": "The repositories in which to apply the workspace configuration. Supports globbing.",
             "examples": ["github.com/sourcegraph/src-cli", "github.com/sourcegraph/*"]
+          },
+          "onlyFetchWorkspace": {
+            "type": "boolean",
+            "description": "If this is true only the files in the workspace (and additional .gitignore) are downloaded instead of an archive of the full repository.",
+            "default": false
           }
         }
       }
@@ -221,8 +226,14 @@ const CampaignSpecSchemaJSON = `{
       "additionalProperties": false,
       "required": ["title", "branch", "commit", "published"],
       "properties": {
-        "title": { "type": "string", "description": "The title of the changeset." },
-        "body": { "type": "string", "description": "The body (description) of the changeset." },
+        "title": {
+          "type": "string",
+          "description": "The title of the changeset."
+        },
+        "body": {
+          "type": "string",
+          "description": "The body (description) of the changeset."
+        },
         "branch": {
           "type": "string",
           "description": "The name of the Git branch to create or update on each repository with the changes."

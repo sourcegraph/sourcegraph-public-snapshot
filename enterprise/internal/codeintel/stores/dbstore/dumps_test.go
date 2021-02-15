@@ -77,6 +77,77 @@ func TestGetDumpByID(t *testing.T) {
 	}
 }
 
+func TestGetDumpsByIDs(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	store := testStore()
+
+	// Dumps do not exist initially
+	if dumps, err := store.GetDumpsByIDs(context.Background(), []int{1, 2}); err != nil {
+		t.Fatalf("unexpected error getting dump: %s", err)
+	} else if len(dumps) > 0 {
+		t.Fatal("unexpected record")
+	}
+
+	uploadedAt := time.Unix(1587396557, 0).UTC()
+	startedAt := uploadedAt.Add(time.Minute)
+	finishedAt := uploadedAt.Add(time.Minute * 2)
+	expectedAssociatedIndexID := 42
+	expected1 := Dump{
+		ID:                1,
+		Commit:            makeCommit(1),
+		Root:              "sub/",
+		VisibleAtTip:      true,
+		UploadedAt:        uploadedAt,
+		State:             "completed",
+		FailureMessage:    nil,
+		StartedAt:         &startedAt,
+		FinishedAt:        &finishedAt,
+		RepositoryID:      50,
+		RepositoryName:    "n-50",
+		Indexer:           "lsif-go",
+		AssociatedIndexID: &expectedAssociatedIndexID,
+	}
+	expected2 := Dump{
+		ID:                2,
+		Commit:            makeCommit(2),
+		Root:              "other/",
+		VisibleAtTip:      false,
+		UploadedAt:        uploadedAt,
+		State:             "completed",
+		FailureMessage:    nil,
+		StartedAt:         &startedAt,
+		FinishedAt:        &finishedAt,
+		RepositoryID:      50,
+		RepositoryName:    "n-50",
+		Indexer:           "lsif-tsc",
+		AssociatedIndexID: nil,
+	}
+
+	insertUploads(t, dbconn.Global, dumpToUpload(expected1), dumpToUpload(expected2))
+	insertVisibleAtTip(t, dbconn.Global, 50, 1)
+
+	if dumps, err := store.GetDumpsByIDs(context.Background(), []int{1}); err != nil {
+		t.Fatalf("unexpected error getting dump: %s", err)
+	} else if len(dumps) != 1 {
+		t.Fatal("expected one record")
+	} else if diff := cmp.Diff(expected1, dumps[0]); diff != "" {
+		t.Errorf("unexpected dump (-want +got):\n%s", diff)
+	}
+
+	if dumps, err := store.GetDumpsByIDs(context.Background(), []int{1, 2}); err != nil {
+		t.Fatalf("unexpected error getting dump: %s", err)
+	} else if len(dumps) != 2 {
+		t.Fatal("expected two records")
+	} else if diff := cmp.Diff(expected1, dumps[0]); diff != "" {
+		t.Errorf("unexpected dump (-want +got):\n%s", diff)
+	} else if diff := cmp.Diff(expected2, dumps[1]); diff != "" {
+		t.Errorf("unexpected dump (-want +got):\n%s", diff)
+	}
+}
+
 func TestFindClosestDumps(t *testing.T) {
 	if testing.Short() {
 		t.Skip()

@@ -7,6 +7,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
+
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -36,7 +37,7 @@ func (api *CodeIntelAPI) Diagnostics(ctx context.Context, prefix string, uploadI
 	}
 
 	pathInBundle := strings.TrimPrefix(prefix, dump.Root)
-	diagnostics, totalCount, err := api.lsifStore.Diagnostics(ctx, dump.ID, pathInBundle, offset, limit)
+	diagnostics, totalCount, err := api.lsifStore.Diagnostics(ctx, dump.ID, pathInBundle, limit, offset)
 	if err != nil {
 		if err == lsifstore.ErrNotFound {
 			log15.Warn("Bundle does not exist")

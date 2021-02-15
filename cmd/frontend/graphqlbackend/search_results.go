@@ -35,6 +35,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -521,94 +522,19 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResultsReso
 }
 
 // unionMerge performs a merge of file match results, merging line matches when
-// they occur in the same file, and taking care to update match counts.
+// they occur in the same file.
 func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
-	var count int // count non-overlapping files when we merge.
-	var merged []SearchResultResolver
-	rightFileMatches := make(map[string]*FileMatchResolver)
-	rightRepoMatches := make(map[string]*RepositoryResolver)
-	rightCommitMatches := make(map[string]*CommitSearchResultResolver)
-	rightDiffMatches := make(map[string]*CommitSearchResultResolver)
+	dedup := NewDeduper()
 
-	// accumulate matches for the right subexpression in a lookup.
-	for _, r := range right.SearchResults {
-		if fileMatch, ok := r.ToFileMatch(); ok {
-			rightFileMatches[fileMatch.uri] = fileMatch
-			continue
-		}
-		if repoMatch, ok := r.ToRepository(); ok {
-			rightRepoMatches[repoMatch.URL()] = repoMatch
-			continue
-		}
-		if commitMatch, ok := r.ToCommitSearchResult(); ok {
-			if commitMatch.DiffPreview() != nil {
-				rightDiffMatches[commitMatch.URL()] = commitMatch
-			} else {
-				rightCommitMatches[commitMatch.URL()] = commitMatch
-			}
-			continue
-		}
-		merged = append(merged, r)
+	// Add results to maps for deduping
+	for _, leftResult := range left.SearchResults {
+		dedup.Add(leftResult)
+	}
+	for _, rightResult := range right.SearchResults {
+		dedup.Add(rightResult)
 	}
 
-	for _, leftMatch := range left.SearchResults {
-		if leftFileMatch, ok := leftMatch.ToFileMatch(); ok {
-			rightFileMatch := rightFileMatches[leftFileMatch.uri]
-			if rightFileMatch == nil {
-				// no overlap with existing matches.
-				merged = append(merged, leftMatch)
-				count++
-				continue
-			}
-			// merge line matches with a file match that already exists.
-			rightFileMatch.appendMatches(leftFileMatch)
-			rightFileMatches[leftFileMatch.uri] = rightFileMatch
-			continue
-		}
-
-		if leftRepoMatch, ok := leftMatch.ToRepository(); ok {
-			rightRepoMatch := rightRepoMatches[string(leftRepoMatch.URL())]
-			if rightRepoMatch == nil {
-				// no overlap with existing matches.
-				merged = append(merged, leftMatch)
-				count++
-			}
-			continue
-		}
-
-		if leftCommitMatch, ok := leftMatch.ToCommitSearchResult(); ok {
-			if leftCommitMatch.DiffPreview() != nil {
-				rightDiffMatch := rightDiffMatches[leftCommitMatch.URL()]
-				if rightDiffMatch == nil {
-					merged = append(merged, leftCommitMatch)
-					count++
-				}
-			} else {
-				rightCommitMatch := rightCommitMatches[leftCommitMatch.URL()]
-				if rightCommitMatch == nil {
-					merged = append(merged, leftCommitMatch)
-					count++
-				}
-			}
-			continue
-		}
-		merged = append(merged, leftMatch)
-	}
-
-	for _, v := range rightFileMatches {
-		merged = append(merged, v)
-	}
-	for _, v := range rightRepoMatches {
-		merged = append(merged, v)
-	}
-	for _, v := range rightCommitMatches {
-		merged = append(merged, v)
-	}
-	for _, v := range rightDiffMatches {
-		merged = append(merged, v)
-	}
-
-	left.SearchResults = merged
+	left.SearchResults = dedup.Results()
 	left.Stats.Update(&right.Stats)
 	return left
 }
@@ -922,6 +848,7 @@ func (r *searchResolver) evaluate(ctx context.Context, q query.Q) (*SearchResult
 	if err != nil {
 		return nil, err
 	}
+	result.SearchResults = r.selectResults(result.SearchResults)
 	r.sortResults(ctx, result.SearchResults)
 	return result, nil
 }
@@ -1782,7 +1709,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		wg.Add(1)
 		goroutine.Go(func() {
 			defer wg.Done()
-			agg.doFilePathSearch(ctx, &argsIndexed)
+			_ = agg.doFilePathSearch(ctx, &argsIndexed)
 		})
 		// On sourcegraph.com and for unscoped queries, determineRepos returns the subset
 		// of indexed default searchrepos. No need to call searcher, because
@@ -1839,14 +1766,14 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
-				agg.doRepoSearch(ctx, &args, int32(limit))
+				_ = agg.doRepoSearch(ctx, &args, int32(limit))
 			})
 		case "symbol":
 			wg := waitGroup(len(resultTypes) == 1)
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
-				agg.doSymbolSearch(ctx, &args, limit)
+				_ = agg.doSymbolSearch(ctx, &args, limit)
 			})
 		case "file", "path":
 			if searchedFileContentsOrPaths || args.Mode == search.NoFilePath {
@@ -1858,21 +1785,21 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
-				agg.doFilePathSearch(ctx, &args)
+				_ = agg.doFilePathSearch(ctx, &args)
 			})
 		case "diff":
 			wg := waitGroup(len(resultTypes) == 1)
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
-				agg.doDiffSearch(ctx, &args)
+				_ = agg.doDiffSearch(ctx, &args)
 			})
 		case "commit":
 			wg := waitGroup(len(resultTypes) == 1)
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
-				agg.doCommitSearch(ctx, &args)
+				_ = agg.doCommitSearch(ctx, &args)
 			})
 		}
 	}
@@ -1997,6 +1924,35 @@ func compareSearchResults(left, right SearchResultResolver, exactFilePatterns ma
 		return compareFileLengths(afile, bfile, exactFilePatterns)
 	}
 	return arepo < brepo
+}
+
+func (r *searchResolver) selectResults(results []SearchResultResolver) []SearchResultResolver {
+	value, _ := r.Query.StringValue(query.FieldSelect)
+	if value == "" {
+		return results
+	}
+	sm, _ := filter.SelectPathFromString(value) // Invariant: select is validated.
+
+	dedup := NewDeduper()
+	for _, result := range results {
+		var current SearchResultResolver
+		switch v := result.(type) {
+		case *FileMatchResolver:
+			current = v.Select(sm)
+		case *RepositoryResolver:
+			current = v.Select(sm)
+		case *CommitSearchResultResolver:
+			current = v.Select(sm)
+		default:
+			current = result
+		}
+
+		if current == nil {
+			continue
+		}
+		dedup.Add(current)
+	}
+	return dedup.Results()
 }
 
 func (r *searchResolver) sortResults(ctx context.Context, results []SearchResultResolver) {

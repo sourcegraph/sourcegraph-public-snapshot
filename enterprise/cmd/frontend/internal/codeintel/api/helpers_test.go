@@ -321,19 +321,19 @@ func setMultimockLSIFStoreHover(t testing.TB, mockLSIFStore *MockLSIFStore, spec
 	})
 }
 
-func setmockLSIFStoreDiagnostics(t testing.TB, mockLSIFStore *MockLSIFStore, expectedDumpID int, expectedPrefix string, expectedSkip, expectedTake int, diagnostics []lsifstore.Diagnostic, totalCount int) {
-	mockLSIFStore.DiagnosticsFunc.SetDefaultHook(func(ctx context.Context, dumpID int, prefix string, skip, take int) ([]lsifstore.Diagnostic, int, error) {
+func setmockLSIFStoreDiagnostics(t testing.TB, mockLSIFStore *MockLSIFStore, expectedDumpID int, expectedPrefix string, expectedLimit, expectedOffset int, diagnostics []lsifstore.Diagnostic, totalCount int) {
+	mockLSIFStore.DiagnosticsFunc.SetDefaultHook(func(ctx context.Context, dumpID int, prefix string, limit, offset int) ([]lsifstore.Diagnostic, int, error) {
 		if dumpID != expectedDumpID {
 			t.Errorf("unexpected id for Diagnostics. want=%d have=%d", expectedDumpID, dumpID)
 		}
 		if prefix != expectedPrefix {
 			t.Errorf("unexpected prefix for Diagnostics. want=%s have=%s", expectedPrefix, prefix)
 		}
-		if skip != expectedSkip {
-			t.Errorf("unexpected skip for Diagnostics. want=%d have=%d", expectedSkip, skip)
+		if limit != expectedLimit {
+			t.Errorf("unexpected limit for Diagnostics. want=%d have=%d", expectedLimit, limit)
 		}
-		if take != expectedTake {
-			t.Errorf("unexpected take for Diagnostics. want=%d have=%d", expectedTake, take)
+		if offset != expectedOffset {
+			t.Errorf("unexpected take for Diagnostics. want=%d have=%d", expectedOffset, offset)
 		}
 		return diagnostics, totalCount, nil
 	})

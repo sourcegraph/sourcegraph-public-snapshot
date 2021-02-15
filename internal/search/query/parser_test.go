@@ -227,15 +227,6 @@ func TestParse(t *testing.T) {
 		var queryGrammar, queryHeuristic []Node
 		var err error
 		var resultGrammar, resultHeuristic string
-
-		toString := func(nodes []Node) string {
-			var resultStr []string
-			for _, node := range nodes {
-				resultStr = append(resultStr, node.String())
-			}
-			return strings.Join(resultStr, " ")
-		}
-
 		queryGrammar, err = parseAndOrGrammar(input) // Parse without heuristic.
 		if err != nil {
 			resultGrammar = err.Error()

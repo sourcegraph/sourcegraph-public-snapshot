@@ -46,6 +46,7 @@ describe('getCompletionItems()', () => {
             '-committer',
             'content',
             '-content',
+            'context',
             'count',
             'file',
             '-file',
@@ -59,7 +60,6 @@ describe('getCompletionItems()', () => {
             'repo',
             '-repo',
             'repogroup',
-            'context',
             'repohascommitafter',
             'repohasfile',
             '-repohasfile',
@@ -110,6 +110,7 @@ describe('getCompletionItems()', () => {
             '-committer',
             'content',
             '-content',
+            'context',
             'count',
             'file',
             '-file',
@@ -123,7 +124,6 @@ describe('getCompletionItems()', () => {
             'repo',
             '-repo',
             'repogroup',
-            'context',
             'repohascommitafter',
             'repohasfile',
             '-repohasfile',
@@ -154,6 +154,7 @@ describe('getCompletionItems()', () => {
             '-committer',
             'content',
             '-content',
+            'context',
             'count',
             'file',
             '-file',
@@ -167,7 +168,6 @@ describe('getCompletionItems()', () => {
             'repo',
             '-repo',
             'repogroup',
-            'context',
             'repohascommitafter',
             'repohasfile',
             '-repohasfile',
@@ -206,6 +206,7 @@ describe('getCompletionItems()', () => {
             '-committer',
             'content',
             '-content',
+            'context',
             'count',
             'file',
             '-file',
@@ -219,7 +220,6 @@ describe('getCompletionItems()', () => {
             'repo',
             '-repo',
             'repogroup',
-            'context',
             'repohascommitafter',
             'repohasfile',
             '-repohasfile',
@@ -249,6 +249,7 @@ describe('getCompletionItems()', () => {
             '-committer',
             'content',
             '-content',
+            'context',
             'count',
             'file',
             '-file',
@@ -262,7 +263,6 @@ describe('getCompletionItems()', () => {
             'repo',
             '-repo',
             'repogroup',
-            'context',
             'repohascommitafter',
             'repohasfile',
             '-repohasfile',
@@ -319,6 +319,21 @@ describe('getCompletionItems()', () => {
             'swift',
             'typescript',
         ])
+    })
+
+    test('returns completions in order of discrete value definition, not alphabetically', async () => {
+        expect(
+            (
+                await getCompletionItems(
+                    toSuccess(scanSearchQuery('select:')),
+                    {
+                        column: 8,
+                    },
+                    of([]),
+                    false
+                )
+            )?.suggestions.map(({ label }) => label)
+        ).toStrictEqual(['repo', 'file', 'content', 'symbol', 'commit'])
     })
 
     test('returns dynamically fetched completions', async () => {
