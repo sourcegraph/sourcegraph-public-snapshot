@@ -501,7 +501,7 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as site admi
               </InnerReference>
             </Reference>
           </DropdownToggle>
-
+          <DropdownMenu
             className="status-messages-nav-item__dropdown-menu"
             flip={true}
             right={true}
