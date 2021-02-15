@@ -198,7 +198,7 @@ func (s *Store) RecordSeriesPoint(ctx context.Context, v RecordSeriesPointArgs) 
 	if v.Metadata != nil {
 		jsonMetadata, err := json.Marshal(v.Metadata)
 		if err != nil {
-			return errors.Wrap(err, "upserting>encoding metadata")
+			return errors.Wrap(err, "upserting: encoding metadata")
 		}
 		row := txStore.QueryRow(ctx, sqlf.Sprintf(upsertMetadataFmtStr, jsonMetadata, jsonMetadata))
 		metadataID = new(int32)
