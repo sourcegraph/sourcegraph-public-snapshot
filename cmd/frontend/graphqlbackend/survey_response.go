@@ -7,6 +7,7 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -131,7 +132,7 @@ type HappinessFeedbackSubmissionInput struct {
 }
 
 type happinessFeedbackSubmissionForHubSpot struct {
-	Username   *string `url:"happiness_username"`
+	Email      *string `url:"email"`
 	Score      int32   `url:"happiness_score"`
 	Feedback   *string `url:"happiness_feedback"`
 	CurrentURL string  `url:"happiness_current_url"`
@@ -142,23 +143,27 @@ type happinessFeedbackSubmissionForHubSpot struct {
 func (r *schemaResolver) SubmitHappinessFeedback(ctx context.Context, args *struct {
 	Input *HappinessFeedbackSubmissionInput
 }) (*EmptyResponse, error) {
-	var username *string
+	var email *string
 
-	// If user is authenticated, use their uid and set the optional username field.
-	actor := actor.FromContext(ctx)
-	if actor.IsAuthenticated() {
-		user, err := database.GlobalUsers.GetByID(ctx, 12345)
-		if err != nil && !errcode.IsNotFound(err) {
-			return nil, err
-		}
-		if user != nil {
-			username = &user.Username
+	// If we are on Sourcegraph.com, we want to capture the email of the user
+	if envvar.SourcegraphDotComMode() {
+		actor := actor.FromContext(ctx)
+
+		// If user is authenticated, use their uid and set the email field.
+		if actor.IsAuthenticated() {
+			e, _, err := database.GlobalUserEmails.GetPrimaryEmail(ctx, actor.UID)
+			if err != nil && !errcode.IsNotFound(err) {
+				return nil, err
+			}
+			if e != "" {
+				email = &e
+			}
 		}
 	}
 
 	// // Submit form to HubSpot
-	if err := hubspotutil.Client().SubmitForm(hubspotutil.FeedbackFormID, &happinessFeedbackSubmissionForHubSpot{
-		Username:   username,
+	if err := hubspotutil.Client().SubmitForm(hubspotutil.HappinessFeedbackFormID, &happinessFeedbackSubmissionForHubSpot{
+		Email:      email,
 		Score:      args.Input.Score,
 		Feedback:   args.Input.Feedback,
 		CurrentURL: args.Input.CurrentURL,
