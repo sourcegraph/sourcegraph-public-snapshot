@@ -132,6 +132,7 @@ func TestDoStreamSearch(t *testing.T) {
 	defer searcher.Close()
 
 	c := make(chan *zoekt.SearchResult)
+	defer close(c)
 	err := searcher.StreamSearch(context.Background(), nil, nil, ZoektStreamerFunc(c))
 	if err == nil {
 		t.Fatalf("received non-nil error, but expected an error")

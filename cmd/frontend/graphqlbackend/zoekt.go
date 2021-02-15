@@ -304,12 +304,6 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 		}
 	}
 
-	// Ensure we always drain events
-	defer func() {
-		cancel()
-		for range events {
-		}
-	}()
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
@@ -418,8 +412,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 	// Start event stream
 	err = func() error {
 		defer close(events)
-		err = args.Zoekt.Client.StreamSearch(ctx, finalQuery, &searchOpts, backend.ZoektStreamerFunc(events))
-		return err
+		return args.Zoekt.Client.StreamSearch(ctx, finalQuery, &searchOpts, backend.ZoektStreamerFunc(events))
 	}()
 	<-done
 

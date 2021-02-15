@@ -36,15 +36,15 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	type StreamSearchEvent struct {
+	type searchResultWithError struct {
 		SearchResult *zoekt.SearchResult
 		Error        error
 	}
-	c2 := make(chan StreamSearchEvent, len(clients))
+	c2 := make(chan searchResultWithError, len(clients))
 	for _, c := range clients {
 		go func(c StreamSearcher) {
 			sr, err := c.Search(ctx, q, opts)
-			c2 <- StreamSearchEvent{SearchResult: sr, Error: err}
+			c2 <- searchResultWithError{SearchResult: sr, Error: err}
 		}(c)
 	}
 
