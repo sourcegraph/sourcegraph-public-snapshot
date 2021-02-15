@@ -572,6 +572,29 @@ Indexes:
 
 ```
 
+# Table "public.insights_query_runner_jobs"
+```
+     Column      |           Type           |                                Modifiers                                
+-----------------+--------------------------+-------------------------------------------------------------------------
+ id              | integer                  | not null default nextval('insights_query_runner_jobs_id_seq'::regclass)
+ series_id       | text                     | not null
+ search_query    | text                     | not null
+ state           | text                     | default 'queued'::text
+ failure_message | text                     | 
+ started_at      | timestamp with time zone | 
+ finished_at     | timestamp with time zone | 
+ process_after   | timestamp with time zone | 
+ num_resets      | integer                  | not null default 0
+ num_failures    | integer                  | not null default 0
+ execution_logs  | json[]                   | 
+Indexes:
+    "insights_query_runner_jobs_pkey" PRIMARY KEY, btree (id)
+    "insights_query_runner_jobs_state_btree" btree (state)
+
+```
+
+See [enterprise/internal/insights/background/queryrunner/worker.go:Job](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/internal/insights/background/queryrunner/worker.go+type+Job&patternType=literal)
+
 # Table "public.lsif_dirty_repositories"
 ```
     Column     |           Type           | Modifiers 
