@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/zoekt"
 	"github.com/google/zoekt/query"
+	"golang.org/x/sync/errgroup"
 )
 
 // HorizontalSearcher is a StreamSearcher which aggregates searches over
@@ -33,39 +34,35 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 		return err
 	}
 
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	type searchResultWithError struct {
-		SearchResult *zoekt.SearchResult
-		Error        error
-	}
-	c2 := make(chan searchResultWithError, len(clients))
-	for _, c := range clients {
-		go func(c StreamSearcher) {
-			sr, err := c.Search(ctx, q, opts)
-			c2 <- searchResultWithError{SearchResult: sr, Error: err}
-		}(c)
-	}
-
 	// During rebalancing a repository can appear on more than one replica.
+	var mu sync.Mutex
 	dedupper := dedupper{}
 
-	for range clients {
-		r := <-c2
+	g, ctx := errgroup.WithContext(context.Background())
+	for _, c := range clients {
+		c := c
+		g.Go(func() error {
+			sr, err := c.Search(ctx, q, opts)
+			if err != nil {
+				return err
+			}
 
-		// Stop stream if we encounter an error.
-		if r.Error != nil {
-			return r.Error
-		}
+			// This shouldn't happen, but skip event if sr is nil.
+			if sr == nil {
+				return nil
+			}
 
-		if r.SearchResult != nil {
-			r.SearchResult.Files = dedupper.Dedup(r.SearchResult.Files)
-		}
+			mu.Lock()
+			defer mu.Unlock()
 
-		streamer.Send(r.SearchResult)
+			sr.Files = dedupper.Dedup(sr.Files)
+			streamer.Send(sr)
+
+			return nil
+		})
 	}
-	return nil
+
+	return g.Wait()
 }
 
 // Search aggregates search over every endpoint in Map.
@@ -78,46 +75,34 @@ func (s *HorizontalSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.
 func AggregateStreamSearch(ctx context.Context, streamSearch func(context.Context, query.Q, *zoekt.SearchOptions, ZoektStreamer) error, q query.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
 	start := time.Now()
 
+	var mu sync.Mutex
 	aggregate := &zoekt.SearchResult{
 		RepoURLs:      map[string]string{},
 		LineFragments: map[string]string{},
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
-	events := make(chan *zoekt.SearchResult)
+	err := streamSearch(ctx, q, opts, ZoektStreamFunc(func(event *zoekt.SearchResult) {
+		mu.Lock()
+		defer mu.Unlock()
 
-	done := make(chan struct{})
-	go func() {
-		defer close(done)
-		defer func() {
-			cancel()
-			// Drain events
-			for range events {
+		aggregate.Files = append(aggregate.Files, event.Files...)
+		aggregate.Stats.Add(event.Stats)
+
+		if len(event.Files) > 0 {
+			for k, v := range event.RepoURLs {
+				aggregate.RepoURLs[k] = v
 			}
-		}()
-
-		for event := range events {
-			aggregate.Files = append(aggregate.Files, event.Files...)
-			aggregate.Stats.Add(event.Stats)
-
-			if len(event.Files) > 0 {
-				for k, v := range event.RepoURLs {
-					aggregate.RepoURLs[k] = v
-				}
-				for k, v := range event.LineFragments {
-					aggregate.LineFragments[k] = v
-				}
+			for k, v := range event.LineFragments {
+				aggregate.LineFragments[k] = v
 			}
 		}
-	}()
-
-	err := streamSearch(ctx, q, opts, ZoektStreamerFunc(events))
+	}))
 	if err != nil {
 		return nil, err
 	}
-	close(events)
-	<-done
 
 	aggregate.Duration = time.Since(start)
 

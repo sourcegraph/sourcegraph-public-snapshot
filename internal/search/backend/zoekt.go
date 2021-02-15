@@ -33,6 +33,14 @@ func WithObserver(s ZoektStreamer, o ZoektStreamObserver) ZoektStreamer {
 	return &ZoektStreamerWithObserver{s, o}
 }
 
+// StreamFunc is a convenience function to create a stream receiver from a
+// function.
+type ZoektStreamFunc func(*zoekt.SearchResult)
+
+func (f ZoektStreamFunc) Send(event *zoekt.SearchResult) {
+	f(event)
+}
+
 // StreamSearcher is an optional interface which sends results over a channel
 // as they are found.
 //
