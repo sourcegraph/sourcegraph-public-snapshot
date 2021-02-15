@@ -135,7 +135,7 @@ const FeedbackPromptContent: React.FunctionComponent<Props> = ({ closePrompt }) 
                         loading={loading}
                         label="Send"
                         onClick={handleSubmit}
-                        disabled={!rating}
+                        disabled={!rating || loading}
                     />
                 </>
             )}
