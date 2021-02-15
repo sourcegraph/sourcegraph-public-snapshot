@@ -50,7 +50,7 @@ export const IconRadioButtons: React.FunctionComponent<Props> = ({
                             value={value}
                             checked={value === selected}
                             aria-label={iconName}
-                            className="icon-radio-buttons__label__input"
+                            className="icon-radio-buttons__input"
                         />
                         {icon}
                     </label>

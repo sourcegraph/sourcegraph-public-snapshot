@@ -22,12 +22,6 @@
             filter: none;
         }
 
-        &__input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
         &--active {
             border: none;
             transform: scale(1.6);
@@ -36,5 +30,11 @@
             filter: grayscale(1);
             border: none;
         }
+    }
+
+    &__input {
+        opacity: 0;
+        width: 0;
+        height: 0;
     }
 }
