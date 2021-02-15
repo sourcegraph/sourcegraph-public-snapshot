@@ -183,28 +183,34 @@ func (s *Store) RecordSeriesPoint(ctx context.Context, v RecordSeriesPointArgs) 
 
 	// Upsert the repository name into a separate table, so we get a small ID we can reference
 	// many times from the series_points table without storing the repo name multiple times.
-	var repoNameID *int32
+	var repoNameID *int
 	if v.RepoName != nil {
-		row := txStore.QueryRow(ctx, sqlf.Sprintf(upsertRepoNameFmtStr, *v.RepoName, *v.RepoName))
-		repoNameID = new(int32)
-		if err := row.Scan(repoNameID); err != nil {
+		repoNameIDValue, ok, err := basestore.ScanFirstInt(txStore.Query(ctx, sqlf.Sprintf(upsertRepoNameFmtStr, *v.RepoName, *v.RepoName)))
+		if err != nil {
 			return errors.Wrap(err, "upserting repo name ID")
 		}
+		if !ok {
+			return errors.Wrap(err, "repo name ID not found (this should never happen)")
+		}
+		repoNameID = &repoNameIDValue
 	}
 
 	// Upsert the metadata into a separate table, so we get a small ID we can reference many times
 	// from the series_points table without storing the metadata multiple times.
-	var metadataID *int32
+	var metadataID *int
 	if v.Metadata != nil {
 		jsonMetadata, err := json.Marshal(v.Metadata)
 		if err != nil {
 			return errors.Wrap(err, "upserting: encoding metadata")
 		}
-		row := txStore.QueryRow(ctx, sqlf.Sprintf(upsertMetadataFmtStr, jsonMetadata, jsonMetadata))
-		metadataID = new(int32)
-		if err := row.Scan(metadataID); err != nil {
+		metadataIDValue, ok, err := basestore.ScanFirstInt(txStore.Query(ctx, sqlf.Sprintf(upsertMetadataFmtStr, jsonMetadata, jsonMetadata)))
+		if err != nil {
 			return errors.Wrap(err, "upserting metadata ID")
 		}
+		if !ok {
+			return errors.Wrap(err, "metadata ID not found (this should never happen)")
+		}
+		metadataID = &metadataIDValue
 	}
 
 	// Insert the actual data point.
