@@ -526,11 +526,15 @@ func TestSearch(t *testing.T) {
 			wantAlert  *gqltestutil.SearchAlert
 		}{
 			{
-				name:  "Global search, structural, index only, nonzero result",
+				name:  "Structural, index only, nonzero result",
 				query: `repo:^github\.com/sgtest/go-diff$ make(:[1]) index:only patterntype:structural count:3`,
 			},
 			{
-				name:  "Global search, structural, unindexed, nonzero result",
+				name:  "Structural, index only, backcompat, nonzero result",
+				query: `repo:^github\.com/sgtest/go-diff$ make(:[1]) lang:go rule:'where "backcompat" == "backcompat"' patterntype:structural`,
+			},
+			{
+				name:  "Structural, unindexed, nonzero result",
 				query: `repo:^github\.com/sgtest/go-diff$@adde71 make(:[1]) index:no patterntype:structural count:3`,
 			},
 			{
