@@ -593,7 +593,7 @@ Indexes:
 
 ```
 
-See enterprise/internal/insights/background/queryrunner/worker.go:Job
+See [enterprise/internal/insights/background/queryrunner/worker.go:Job](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/internal/insights/background/queryrunner/worker.go+type+Job&patternType=literal)
 
 # Table "public.lsif_dirty_repositories"
 ```

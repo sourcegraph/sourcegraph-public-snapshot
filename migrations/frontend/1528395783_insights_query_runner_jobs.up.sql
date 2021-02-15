@@ -15,6 +15,6 @@ CREATE TABLE IF NOT EXISTS insights_query_runner_jobs(
 );
 CREATE INDEX insights_query_runner_jobs_state_btree ON insights_query_runner_jobs USING btree (state);
 
-COMMENT ON TABLE insights_query_runner_jobs IS 'See enterprise/internal/insights/background/queryrunner/worker.go:Job';
+COMMENT ON TABLE insights_query_runner_jobs IS 'See [enterprise/internal/insights/background/queryrunner/worker.go:Job](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/internal/insights/background/queryrunner/worker.go+type+Job&patternType=literal)';
 
 COMMIT;
