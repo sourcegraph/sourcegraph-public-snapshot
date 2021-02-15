@@ -52,7 +52,6 @@ export const SymbolsArea: React.FunctionComponent<Props> = ({
                 />
             )}
             <div>
-                Main area
                 <Switch>
                     <Route
                         path={`${match.url}/:symbolID+`}

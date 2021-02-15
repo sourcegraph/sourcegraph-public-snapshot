@@ -14,6 +14,8 @@ import {
     DocumentSymbolVariables,
     SymbolPageSymbolFields,
 } from '../../graphql-operations'
+import { Markdown } from '../../../../shared/src/components/Markdown'
+import { renderMarkdown } from '../../../../shared/src/util/markdown'
 
 export interface Symbol extends DocSymbolFieldsFragment {
     children?: Symbol[]
@@ -26,6 +28,11 @@ const SymbolPageSymbolsGQLFragment = gql`
         detail
         kind
         tags
+        hover {
+            markdown {
+                text
+            }
+        }
     }
     fragment DocSymbolHierarchyFragment on DocSymbol {
         ...DocSymbolFieldsFragment
@@ -88,6 +95,7 @@ export const SymbolPage: React.FunctionComponent<Props> = ({
     match: {
         params: { symbolID },
     },
+    history,
     setSidebarOptions,
 }) => {
     const symbol = useObservable(querySymbol({ repo: repo.id, commitID: revision, symbolID }))
@@ -98,8 +106,21 @@ export const SymbolPage: React.FunctionComponent<Props> = ({
     if (!symbol) {
         return <div>Symbol not found</div>
     }
+
+    const hoverParts = symbol.hover?.markdown.text.split('---', 2)
+    const hoverSig = hoverParts?.[0]
+    const hoverDoc = hoverParts?.[1]
+
     return (
         <>
+            {hoverSig && (
+                <Markdown
+                    dangerousInnerHTML={renderMarkdown(hoverSig)}
+                    history={history}
+                    className={`symbol-hover__signature`}
+                />
+            )}
+            {hoverDoc && <Markdown dangerousInnerHTML={renderMarkdown(hoverDoc)} history={history} />}
             <div>Symbol: {symbol.text}</div>
             <div>Definition</div>
             <div>Detail: {symbol.detail}</div>

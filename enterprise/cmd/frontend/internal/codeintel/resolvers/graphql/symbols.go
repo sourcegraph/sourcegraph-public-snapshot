@@ -86,8 +86,9 @@ func (r *docSymbolResolver) Hover(ctx context.Context) (gql.HoverResolver, error
 	if len(r.adjustedSymbol.AdjustedLocations) == 0 {
 		return nil, nil
 	}
-	// NEXT: need to create a new QueryResolver instance (with a particular path) to serve Hover
+
 	hover, err := r.queryResolver.Hover(ctx, &gql.LSIFQueryPositionArgs{
+		Path:      r.adjustedSymbol.AdjustedLocations[0].Path,
 		Line:      int32(r.adjustedSymbol.AdjustedLocations[0].AdjustedRange.Start.Line),
 		Character: int32(r.adjustedSymbol.AdjustedLocations[0].AdjustedRange.Start.Character + 1),
 	})

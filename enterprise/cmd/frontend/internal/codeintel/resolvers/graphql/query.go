@@ -102,7 +102,7 @@ func (r *QueryResolver) References(ctx context.Context, args *gql.LSIFPagedQuery
 }
 
 func (r *QueryResolver) Hover(ctx context.Context, args *gql.LSIFQueryPositionArgs) (gql.HoverResolver, error) {
-	text, rx, exists, err := r.resolver.Hover(ctx, int(args.Line), int(args.Character))
+	text, rx, exists, err := r.resolver.Hover(ctx, args.Path, int(args.Line), int(args.Character))
 	if err != nil || !exists {
 		return nil, err
 	}

@@ -256,6 +256,7 @@ type LSIFRangesArgs struct {
 }
 
 type LSIFQueryPositionArgs struct {
+	Path      string
 	Line      int32
 	Character int32
 }

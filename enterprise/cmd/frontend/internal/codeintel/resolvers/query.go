@@ -75,7 +75,7 @@ type QueryResolver interface {
 	Definitions(ctx context.Context, line, character int) ([]AdjustedLocation, error)
 	References(ctx context.Context, line, character, limit int, rawCursor string) ([]AdjustedLocation, string, error)
 	Symbols(ctx context.Context, path string) ([]*AdjustedSymbol, error)
-	Hover(ctx context.Context, line, character int) (string, lsifstore.Range, bool, error)
+	Hover(ctx context.Context, path string, line, character int) (string, lsifstore.Range, bool, error)
 	Diagnostics(ctx context.Context, limit int) ([]AdjustedDiagnostic, int, error)
 }
 
@@ -336,12 +336,15 @@ const slowHoverRequestThreshold = time.Second
 // Hover returns the hover text and range for the symbol at the given position. If there are
 // multiple bundles associated with this resolver, the hover text and range from the first
 // bundle with any results will be returned.
-func (r *queryResolver) Hover(ctx context.Context, line, character int) (_ string, _ lsifstore.Range, _ bool, err error) {
+func (r *queryResolver) Hover(ctx context.Context, path string, line, character int) (_ string, _ lsifstore.Range, _ bool, err error) {
+	if path == "" {
+		path = r.path
+	}
 	ctx, endObservation := observeResolver(ctx, &err, "Hover", r.operations.hover, slowHoverRequestThreshold, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", r.repositoryID),
 			log.String("commit", r.commit),
-			log.String("path", r.path),
+			log.String("path", path),
 			log.String("uploadIDs", strings.Join(r.uploadIDs(), ", ")),
 			log.Int("line", line),
 			log.Int("character", character),
@@ -352,7 +355,7 @@ func (r *queryResolver) Hover(ctx context.Context, line, character int) (_ strin
 	position := lsifstore.Position{Line: line, Character: character}
 
 	for i := range r.uploads {
-		adjustedPath, adjustedPosition, ok, err := r.positionAdjuster.AdjustPosition(ctx, r.uploads[i].Commit, r.path, position, false)
+		adjustedPath, adjustedPosition, ok, err := r.positionAdjuster.AdjustPosition(ctx, r.uploads[i].Commit, path, position, false)
 		if err != nil {
 			return "", lsifstore.Range{}, false, err
 		}
@@ -368,7 +371,7 @@ func (r *queryResolver) Hover(ctx context.Context, line, character int) (_ strin
 			continue
 		}
 
-		if _, adjustedRange, ok, err := r.positionAdjuster.AdjustRange(ctx, r.uploads[i].Commit, r.path, rn, true); err != nil {
+		if _, adjustedRange, ok, err := r.positionAdjuster.AdjustRange(ctx, r.uploads[i].Commit, path, rn, true); err != nil {
 			return "", lsifstore.Range{}, false, err
 		} else if ok {
 			return text, adjustedRange, true, nil
