@@ -84,7 +84,7 @@ const FeedbackPromptContent: React.FunctionComponent<Props> = ({ closePrompt }) 
             {data && (
                 <div className="feedback-prompt__success">
                     <TickIcon className="feedback-prompt__success--tick" />
-                    <h3>We've received your feedback!</h3>
+                    <h3>We‘ve received your feedback!</h3>
                     <p className="d-inline">
                         Thank you for your help.
                         {window.context.productResearchPageEnabled && (
@@ -102,7 +102,7 @@ const FeedbackPromptContent: React.FunctionComponent<Props> = ({ closePrompt }) 
             )}
             {!data && (
                 <>
-                    <h3>What's on your mind?</h3>
+                    <h3>What‘s on your mind?</h3>
                     <TextAreaAutosize
                         role="menuitem"
                         tabIndex={0}
@@ -110,7 +110,7 @@ const FeedbackPromptContent: React.FunctionComponent<Props> = ({ closePrompt }) 
                         value={text}
                         minRows={3}
                         maxRows={6}
-                        placeholder="What's going well? What could be better?"
+                        placeholder="What‘s going well? What could be better?"
                         className="form-control feedback-prompt__textarea"
                         autoFocus={true}
                     />
@@ -143,9 +143,10 @@ const FeedbackPromptContent: React.FunctionComponent<Props> = ({ closePrompt }) 
     )
 }
 
-export const FeedbackPrompt: React.FunctionComponent = () => {
-    const [isOpen, setIsOpen] = useState(false)
+export const FeedbackPrompt: React.FunctionComponent<{ open?: boolean }> = ({ open }) => {
+    const [isOpen, setIsOpen] = useState(() => !!open)
     const handleToggle = useCallback(() => setIsOpen(open => !open), [])
+
     const forceClose = useCallback(() => setIsOpen(false), [])
 
     return (

@@ -1,11 +1,11 @@
 .feedback-prompt {
     margin: 0 0.375rem;
 
-    &__toggle.btn:not(:disabled) {
-        cursor: text;
-    }
     &__toggle {
         border: 1px solid var(--border-color);
+        &:hover {
+            border: 1px solid var(--link-hover-color);
+        }
     }
     &__menu {
         text-align: center;

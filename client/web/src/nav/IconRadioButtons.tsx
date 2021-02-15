@@ -52,7 +52,7 @@ export const IconRadioButtons: React.FunctionComponent<Props> = ({
                             aria-label={iconName}
                             className="icon-radio-buttons__input"
                         />
-                        {icon}
+                        <span className="icon-radio-buttons__label--emoji">{icon}</span>
                     </label>
                 </li>
             ))}
