@@ -45,18 +45,21 @@ const FeedbackPromptContent: React.FunctionComponent<Props> = ({ closePrompt }) 
         }
     }, [rating, submitFeedback, text])
 
-    useEffect(() => {
-        if (data) {
-            // Reset local storage for future submissions
-            setText('')
-            setRating(undefined)
-        }
-    }, [data, setRating, setText])
+    useEffect(
+        () => () => {
+            if (data) {
+                // Reset local storage for future submissions
+                setText('')
+                setRating(undefined)
+            }
+        },
+        [data, setRating, setText]
+    )
 
     return (
         <>
             {data && (
-                <div className="feedback-prompt__success p-2">
+                <div className="feedback-prompt__success">
                     <TickIcon className="feedback-prompt__success--tick" />
                     <h3>We've received your feedback!</h3>
                     <p className="d-inline">
@@ -119,14 +122,14 @@ const FeedbackPromptContent: React.FunctionComponent<Props> = ({ closePrompt }) 
                     />
 
                     {error && (
-                        <Alert className="mt-3 feedback-prompt__alert" color="danger">
+                        <Alert className="feedback-prompt__alert" color="danger">
                             Something went wrong while sending your feedback. Please try again.
                         </Alert>
                     )}
                     <LoaderButton
                         role="menuitem"
                         tabIndex={0}
-                        className="w-100 btn btn-block btn-secondary mt-3"
+                        className="btn btn-block btn-secondary feedback-prompt__button"
                         loading={loading}
                         label="Send"
                         onClick={handleSubmit}
@@ -144,10 +147,11 @@ export const FeedbackPrompt: React.FunctionComponent = () => {
     const forceClose = useCallback(() => setIsOpen(false), [])
 
     return (
-        <ButtonDropdown isOpen={isOpen} toggle={handleToggle} className="border feedback-prompt mx-1">
+        <ButtonDropdown isOpen={isOpen} toggle={handleToggle} className="feedback-prompt">
             <DropdownToggle
+                tag="button"
                 caret={false}
-                className="btn btn-link text-decoration-none py-1 feedback-prompt__toggle"
+                className="btn btn-link text-decoration-none feedback-prompt__toggle"
                 nav={true}
                 aria-label="Feedback"
             >
