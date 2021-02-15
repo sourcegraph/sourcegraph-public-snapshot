@@ -52,7 +52,7 @@ describe('SearchContextMenu', () => {
         sinon.assert.calledWithExactly(selectSearchContextSpec, '@username')
     })
 
-    it('should reset back to default when clicking on Reset button', () => {
+    it('should close menu when pressing Escape button', () => {
         const selectSearchContextSpec = sinon.spy()
         const closeMenu = sinon.spy()
 
@@ -68,12 +68,8 @@ describe('SearchContextMenu', () => {
                 </DropdownMenu>
             </UncontrolledDropdown>
         )
-        const button = root.find('.search-context-menu__footer-button').at(0)
-        button.simulate('click')
-
-        sinon.assert.calledOnce(selectSearchContextSpec)
-        sinon.assert.calledWithExactly(selectSearchContextSpec, 'global')
-
+        const button = root.find('.search-context-menu__header-input').at(0)
+        button.simulate('keydown', { key: 'Escape' })
         sinon.assert.calledOnce(closeMenu)
     })
 

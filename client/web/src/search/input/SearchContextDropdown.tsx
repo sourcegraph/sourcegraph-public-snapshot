@@ -1,8 +1,8 @@
 import * as H from 'history'
 import classNames from 'classnames'
 import React, { useCallback, useEffect, useState } from 'react'
-import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { CaseSensitivityProps, isContextFilterInQuery, PatternTypeProps, SearchContextProps } from '..'
+import { Dropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { SearchContextMenu } from './SearchContextMenu'
 import { submitSearch } from '../helpers'
 import { VersionContextProps } from '../../../../shared/src/search/util'
@@ -64,7 +64,11 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
 
     return (
         <>
-            <ButtonDropdown isOpen={isOpen} toggle={toggleOpen}>
+            <Dropdown
+                isOpen={isOpen}
+                toggle={toggleOpen}
+                a11y={false} /* Override default keyboard events in reactstrap */
+            >
                 <DropdownToggle
                     className={classNames('search-context-dropdown__button', 'dropdown-toggle', {
                         'search-context-dropdown__button--open': isOpen,
@@ -92,7 +96,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                         closeMenu={toggleOpen}
                     />
                 </DropdownMenu>
-            </ButtonDropdown>
+            </Dropdown>
             <div className="search-context-dropdown__separator" />
         </>
     )
