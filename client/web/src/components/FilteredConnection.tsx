@@ -350,6 +350,9 @@ interface FilteredConnectionDisplayProps extends ConnectionDisplayProps {
     /** Hides the filter input field. */
     hideSearch?: boolean
 
+    /** Hides filters and search when the list of nodes is empty  */
+    hideControlsWhenEmpty?: boolean
+
     /** Autofocuses the filter input field. */
     autoFocus?: boolean
 
@@ -823,6 +826,13 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
             errors.push(this.state.connectionOrError.error)
         }
 
+        const shouldShowControls =
+            this.state.connectionOrError &&
+            !isErrorLike(this.state.connectionOrError) &&
+            this.state.connectionOrError.nodes &&
+            this.state.connectionOrError.nodes.length > 0 &&
+            this.props.hideControlsWhenEmpty
+
         const compactnessClass = `filtered-connection--${this.props.compact ? 'compact' : 'noncompact'}`
         return (
             <div
@@ -832,7 +842,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                     this.props.className
                 )}
             >
-                {(!this.props.hideSearch || this.props.filters) && (
+                {shouldShowControls && (!this.props.hideSearch || this.props.filters) && (
                     <Form
                         className="w-100 d-inline-flex justify-content-between flex-row filtered-connection__form"
                         onSubmit={this.onSubmit}

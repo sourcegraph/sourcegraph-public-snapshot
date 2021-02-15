@@ -57,6 +57,18 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     const [hasRepos, setHasRepos] = useState(false)
     const [pendingOrError, setPendingOrError] = useState<Status>()
 
+    const emptyElement: JSX.Element = (
+        <div className="border rounded p-3">
+            <h3>You have not added any repositories to Sourcegraph</h3>
+            <small>
+                <Link className="text-primary" to={`${routingPrefix}/repositories`}>
+                    Add repositories
+                </Link>{' '}
+                to start searching your code with Sourcegraph.
+            </small>
+        </div>
+    )
+
     const filters =
         useObservable<FilteredConnectionFilter[]>(
             useMemo(
@@ -193,6 +205,8 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                 history={history}
                 location={location}
                 totalCountSummaryComponent={TotalCountSummary}
+                emptyElement={emptyElement}
+                hideControlsWhenEmpty={true}
                 inputClassName="user-settings-repos__filter-input"
             />
         )
