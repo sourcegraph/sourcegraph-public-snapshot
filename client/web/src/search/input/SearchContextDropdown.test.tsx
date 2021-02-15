@@ -1,6 +1,6 @@
 import { mount } from 'enzyme'
 import React from 'react'
-import { ButtonDropdown, DropdownToggle } from 'reactstrap'
+import { Dropdown, DropdownToggle } from 'reactstrap'
 import { SearchContextDropdown, SearchContextDropdownProps } from './SearchContextDropdown'
 
 describe('SearchContextDropdown', () => {
@@ -14,28 +14,28 @@ describe('SearchContextDropdown', () => {
 
     it('should start closed', () => {
         const element = mount(<SearchContextDropdown {...defaultProps} />)
-        const button = element.find(ButtonDropdown)
+        const button = element.find(Dropdown)
         expect(button.prop('isOpen')).toBe(false)
     })
 
     it('should open when toggle event happens', () => {
         const element = mount(<SearchContextDropdown {...defaultProps} />)
-        let button = element.find(ButtonDropdown)
+        let button = element.find(Dropdown)
         button.invoke('toggle')?.(new MouseEvent('click') as any)
 
-        button = element.find(ButtonDropdown)
+        button = element.find(Dropdown)
         expect(button.prop('isOpen')).toBe(true)
     })
 
     it('should close if toggle event happens again', () => {
         const element = mount(<SearchContextDropdown {...defaultProps} />)
-        let button = element.find(ButtonDropdown)
+        let button = element.find(Dropdown)
         button.invoke('toggle')?.(new MouseEvent('click') as any)
 
-        button = element.find(ButtonDropdown)
+        button = element.find(Dropdown)
         button.invoke('toggle')?.(new MouseEvent('click') as any)
 
-        button = element.find(ButtonDropdown)
+        button = element.find(Dropdown)
         expect(button.prop('isOpen')).toBe(false)
     })
 
