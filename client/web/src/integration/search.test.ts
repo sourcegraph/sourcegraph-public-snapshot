@@ -365,4 +365,68 @@ describe('Search', () => {
             expect(results).toEqual(['github.com/sourcegraph/sourcegraph'])
         })
     })
+
+    describe('Search contexts', () => {
+        const viewerSettingsWithSearchContexts: Partial<WebGraphQlOperations> = {
+            ViewerSettings: () => ({
+                viewerSettings: {
+                    subjects: [
+                        {
+                            __typename: 'DefaultSettings',
+                            settingsURL: null,
+                            viewerCanAdminister: false,
+                            latestSettings: {
+                                id: 0,
+                                contents: JSON.stringify({ experimentalFeatures: { showSearchContext: true } }),
+                            },
+                        },
+                        {
+                            __typename: 'Site',
+                            id: siteGQLID,
+                            siteID,
+                            latestSettings: {
+                                id: 470,
+                                contents: JSON.stringify({ experimentalFeatures: { showSearchContext: true } }),
+                            },
+                            settingsURL: '/site-admin/global-settings',
+                            viewerCanAdminister: true,
+                        },
+                    ],
+                    final: JSON.stringify({}),
+                },
+            }),
+        }
+
+        test('Streaming search with single repo result', async () => {
+            testContext.overrideGraphQL({
+                ...commonSearchGraphQLResults,
+                ...viewerSettingsWithSearchContexts,
+                SearchContexts: () => ({
+                    searchContexts: [
+                        {
+                            __typename: 'SearchContext',
+                            id: '1',
+                            spec: 'global',
+                            description: '',
+                            autoDefined: true,
+                        },
+                        {
+                            __typename: 'SearchContext',
+                            id: '2',
+                            spec: '@user',
+                            description: '',
+                            autoDefined: true,
+                        },
+                    ],
+                }),
+            })
+
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp&context=%40user')
+            await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
+            const selectedSearchContextSpec = await driver.page.evaluate(
+                () => document.querySelector('.test-selected-search-context-spec')?.textContent
+            )
+            expect(selectedSearchContextSpec).toStrictEqual('context:@user')
+        })
+    })
 })

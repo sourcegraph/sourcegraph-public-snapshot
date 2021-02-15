@@ -77,7 +77,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                     disabled={isDisabled}
                     data-tooltip={isDisabled ? 'Overridden by query' : ''}
                 >
-                    <code className="search-context-dropdown__button-content">
+                    <code className="search-context-dropdown__button-content test-selected-search-context-spec">
                         <span className="search-filter-keyword">context:</span>
                         {selectedSearchContextSpec?.startsWith('@') ? (
                             <>
