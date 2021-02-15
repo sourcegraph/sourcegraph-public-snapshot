@@ -43,13 +43,11 @@ func gatherSymbols(state *State) ([]*lsifstore.Symbol, error) {
 		symbols = append(symbols, symbol)
 	}
 
-	// log.Printf("# symbols (%d): %v", len(symbols), symbols)
-
 	return symbols, nil
 }
 
 func convertSymbol(state *State, filename string, parentID string, ds *protocol.RangeBasedDocumentSymbol) (*lsifstore.Symbol, error) {
-	rng := state.RangeData[int(ds.ID)] // TODO(beyang): sketchy conversion
+	rng := state.RangeData[int(ds.ID)] // TODO(beyang): uint to int conversion
 	if rng.Tag == nil {
 		return nil, errors.New("RangeBasedDocumentSymbol range has no tag")
 	}
@@ -66,6 +64,21 @@ func convertSymbol(state *State, filename string, parentID string, ds *protocol.
 			children[i] = symbolChild
 		}
 	}
+
+	var symbolMonikers []lsifstore.MonikerData
+	monikers := state.Monikers.Get(int(ds.ID)) // TODO(beyang): uint to int conversion
+	if monikers != nil && monikers.Len() > 0 {
+		symbolMonikers = make([]lsifstore.MonikerData, 0, monikers.Len())
+		monikers.Each(func(m int) {
+			moniker := state.MonikerData[m]
+			symbolMonikers = append(symbolMonikers, lsifstore.MonikerData{
+				Kind:       moniker.Kind,
+				Scheme:     moniker.Scheme,
+				Identifier: moniker.Identifier,
+			})
+		})
+	}
+
 	return &lsifstore.Symbol{
 		Identifier: symbolID,
 		Text:       rng.Tag.Text,
@@ -81,6 +94,7 @@ func convertSymbol(state *State, filename string, parentID string, ds *protocol.
 				},
 			},
 		},
+		Monikers: symbolMonikers,
 		Children: children,
 	}, nil
 }
