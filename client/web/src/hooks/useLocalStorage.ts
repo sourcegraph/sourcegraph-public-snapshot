@@ -1,5 +1,11 @@
 import { useState } from 'react'
 
+/**
+ * useState wrapper that defers to localStorage
+ *
+ * @param key localStorage key to get and set from
+ * @param initialValue used when unable to find a value in localStorage
+ */
 export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T) => void] {
     const [storedValue, setStoredValue] = useState<T>(() => {
         try {

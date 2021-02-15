@@ -1,10 +1,14 @@
 .icon-radio-buttons {
     padding: 0 4rem;
+    display: flex;
+    justify-content: space-around;
 
     &__label {
+        display: flex;
+        justify-content: center;
+        align-items: center;
         height: 2.25rem;
         width: 2.25rem;
-        display: block;
         cursor: pointer;
         margin: 0;
         border-radius: 50%;
@@ -18,11 +22,12 @@
             filter: none;
         }
 
-        &--input {
+        &__input {
             opacity: 0;
             width: 0;
             height: 0;
         }
+
         &--active {
             border: none;
             transform: scale(1.6);
