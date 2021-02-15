@@ -860,7 +860,7 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore *repos.Store) func(
 						Repo: api.RepoName("github.com/foo/bar"),
 					},
 					githubDotComSource: &fakeRepoSource{
-						err: github.ErrNotFound,
+						err: github.ErrRepoNotFound,
 					},
 					result: &protocol.RepoLookupResult{ErrorNotFound: true},
 					err:    fmt.Sprintf("repository not found (name=%s notfound=%v)", api.RepoName("github.com/foo/bar"), true),
@@ -973,7 +973,7 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore *repos.Store) func(
 						Repo: api.RepoName(githubRepository.Name),
 					},
 					githubDotComSource: &fakeRepoSource{
-						err: github.ErrNotFound,
+						err: github.ErrRepoNotFound,
 					},
 					stored: []*types.Repo{githubRepository},
 					result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
