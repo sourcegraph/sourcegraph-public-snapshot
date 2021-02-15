@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import React, { useCallback, useEffect, useState } from 'react'
-import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
+import { Dropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { isContextFilterInQuery, SearchContextProps } from '..'
 import { SearchContextMenu } from './SearchContextMenu'
 
@@ -20,7 +20,11 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
 
     return (
         <>
-            <ButtonDropdown isOpen={isOpen} toggle={toggleOpen}>
+            <Dropdown
+                isOpen={isOpen}
+                toggle={toggleOpen}
+                a11y={false} /* Override default keyboard events in reactstrap */
+            >
                 <DropdownToggle
                     className={classNames('search-context-dropdown__button', 'dropdown-toggle', {
                         'search-context-dropdown__button--open': isOpen,
@@ -44,7 +48,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                 <DropdownMenu>
                     <SearchContextMenu {...props} closeMenu={toggleOpen} />
                 </DropdownMenu>
-            </ButtonDropdown>
+            </Dropdown>
             <div className="search-context-dropdown__separator" />
         </>
     )
