@@ -8,6 +8,7 @@ import (
 	"github.com/hexops/autogold"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
@@ -104,4 +105,59 @@ SELECT time,
 		autogold.Want("SeriesPoints(4)[2].String()", `SeriesPoint{Time: "2020-05-31 16:00:00 +0000 UTC", Value: 17.838503552871998, Metadata: {"hello": "world", "languages": ["Go", "Python", "Java"]}}`).Equal(t, points[2].String())
 	})
 
+}
+
+func TestRecordSeriesPoints(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+
+	ctx := context.Background()
+	clock := timeutil.Now
+	timescale, cleanup := dbtesting.TimescaleDB(t)
+	defer cleanup()
+	store := NewWithClock(timescale, clock)
+
+	time := func(s string) time.Time {
+		v, err := time.Parse(time.RFC3339, s)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return v
+	}
+	optionalString := func(v string) *string { return &v }
+	optionalRepoID := func(v api.RepoID) *api.RepoID { return &v }
+
+	// Record some data points.
+	for _, record := range []RecordSeriesPointArgs{
+		{
+			SeriesID: "one",
+			Point:    SeriesPoint{Time: time("2020-03-01T00:00:00Z"), Value: 1.1},
+			RepoName: optionalString("repo1"),
+			RepoID:   optionalRepoID(3),
+			Metadata: map[string]interface{}{"some": "data"},
+		},
+		{
+			SeriesID: "two",
+			Point:    SeriesPoint{Time: time("2020-03-02T00:00:00Z"), Value: 2.2},
+			Metadata: []interface{}{"some", "data", "two"},
+		},
+	} {
+		if err := store.RecordSeriesPoint(ctx, record); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// Confirm we get the expected data back.
+	points, err := store.SeriesPoints(ctx, SeriesPointsOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	autogold.Want("len(points)", int(2)).Equal(t, len(points))
+	autogold.Want("points[0].String()", `SeriesPoint{Time: "2020-03-02 00:00:00 +0000 UTC", Value: 2.2, Metadata: ["some", "data", "two"]}`).Equal(t, points[0].String())
+	autogold.Want("points[1].String()", `SeriesPoint{Time: "2020-03-01 00:00:00 +0000 UTC", Value: 1.1, Metadata: {"some": "data"}}`).Equal(t, points[1].String())
+
+	// Confirm the data point with repository name got recorded correctly.
+	// TODO(slimsag): future: once we support querying by repo ID/names, add tests to ensure that information is inserted properly here.
 }

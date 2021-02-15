@@ -3,11 +3,14 @@ package store
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/pkg/errors"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -17,6 +20,7 @@ import (
 // for actual API usage.
 type Interface interface {
 	SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]SeriesPoint, error)
+	RecordSeriesPoint(ctx context.Context, v RecordSeriesPointArgs) error
 }
 
 var _ Interface = &Store{}
@@ -139,6 +143,127 @@ func seriesPointsQuery(opts SeriesPointsOpts) *sqlf.Query {
 		sqlf.Join(preds, "\n AND "),
 	)
 }
+
+// RecordSeriesPointArgs describes arguments for the RecordSeriesPoint method.
+type RecordSeriesPointArgs struct {
+	// SeriesID is the unique series ID to query. It should describe the series of data uniquely,
+	// but is not a DB table primary key ID.
+	SeriesID string
+
+	// Point is the actual data point recorded and at what time.
+	Point SeriesPoint
+
+	// Repository name and DB ID to associate with this data point, if any.
+	//
+	// Both must be specified if one is specified.
+	RepoName *string
+	RepoID   *api.RepoID
+
+	// Metadata contains arbitrary JSON metadata to associate with the data point, if any.
+	//
+	// See the DB schema comments for intended use cases. This should generally be small,
+	// low-cardinality data to avoid inflating the table.
+	Metadata interface{}
+}
+
+// RecordSeriesPoint records a data point for the specfied series ID (which is a unique ID for the
+// series, not a DB table primary key ID).
+func (s *Store) RecordSeriesPoint(ctx context.Context, v RecordSeriesPointArgs) (err error) {
+	// Start transaction.
+	var txStore *basestore.Store
+	txStore, err = s.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = txStore.Done(err) }()
+
+	if (v.RepoName != nil && v.RepoID == nil) || (v.RepoID != nil && v.RepoName == nil) {
+		return errors.New("RepoName and RepoID must be mutually specified")
+	}
+
+	// Upsert the repository name into a separate table, so we get a small ID we can reference
+	// many times from the series_points table without storing the repo name multiple times.
+	var repoNameID *int
+	if v.RepoName != nil {
+		repoNameIDValue, ok, err := basestore.ScanFirstInt(txStore.Query(ctx, sqlf.Sprintf(upsertRepoNameFmtStr, *v.RepoName, *v.RepoName)))
+		if err != nil {
+			return errors.Wrap(err, "upserting repo name ID")
+		}
+		if !ok {
+			return errors.Wrap(err, "repo name ID not found (this should never happen)")
+		}
+		repoNameID = &repoNameIDValue
+	}
+
+	// Upsert the metadata into a separate table, so we get a small ID we can reference many times
+	// from the series_points table without storing the metadata multiple times.
+	var metadataID *int
+	if v.Metadata != nil {
+		jsonMetadata, err := json.Marshal(v.Metadata)
+		if err != nil {
+			return errors.Wrap(err, "upserting: encoding metadata")
+		}
+		metadataIDValue, ok, err := basestore.ScanFirstInt(txStore.Query(ctx, sqlf.Sprintf(upsertMetadataFmtStr, jsonMetadata, jsonMetadata)))
+		if err != nil {
+			return errors.Wrap(err, "upserting metadata ID")
+		}
+		if !ok {
+			return errors.Wrap(err, "metadata ID not found (this should never happen)")
+		}
+		metadataID = &metadataIDValue
+	}
+
+	// Insert the actual data point.
+	return txStore.Exec(ctx, sqlf.Sprintf(
+		recordSeriesPointFmtstr,
+		v.SeriesID,    // series_id
+		v.Point.Time,  // time
+		v.Point.Value, // value
+		metadataID,    // metadata_id
+		v.RepoID,      // repo_id
+		repoNameID,    // repo_name_id
+		repoNameID,    // original_repo_name_id
+	))
+}
+
+const upsertRepoNameFmtStr = `
+-- source: enterprise/internal/insights/store/store.go:RecordSeriesPoint
+WITH e AS(
+	INSERT INTO repo_names(name)
+	VALUES (%s)
+	ON CONFLICT DO NOTHING
+	RETURNING id
+)
+SELECT * FROM e
+UNION
+	SELECT id FROM repo_names WHERE name = %s;
+`
+
+const upsertMetadataFmtStr = `
+-- source: enterprise/internal/insights/store/store.go:RecordSeriesPoint
+WITH e AS(
+    INSERT INTO metadata(metadata)
+    VALUES (%s)
+    ON CONFLICT DO NOTHING
+    RETURNING id
+)
+SELECT * FROM e
+UNION
+	SELECT id FROM metadata WHERE metadata = %s;
+`
+
+const recordSeriesPointFmtstr = `
+-- source: enterprise/internal/insights/store/store.go:RecordSeriesPoint
+INSERT INTO series_points(
+	series_id,
+	time,
+	value,
+	metadata_id,
+	repo_id,
+	repo_name_id,
+	original_repo_name_id)
+VALUES (%s, %s, %s, %s, %s, %s, %s);
+`
 
 func (s *Store) query(ctx context.Context, q *sqlf.Query, sc scanFunc) error {
 	rows, err := s.Store.Query(ctx, q)
