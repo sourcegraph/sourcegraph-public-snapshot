@@ -191,20 +191,18 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
           tabindex="0"
         />
         <ul
-          class="icon-radio-buttons d-flex justify-content-around"
+          class="icon-radio-buttons"
           role="menuitem"
         >
           <li
             class="d-flex"
           >
             <label
-              class="icon-radio-buttons__label d-flex justify-content-center align-items-center"
-              for="Very sad"
+              class="icon-radio-buttons__label"
             >
               <input
                 aria-label="Very sad"
-                class="icon-radio-buttons__label--input"
-                id="Very sad"
+                class="icon-radio-buttons__input"
                 name="emoji-selector"
                 type="radio"
                 value="1"
@@ -231,13 +229,11 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
             class="d-flex"
           >
             <label
-              class="icon-radio-buttons__label d-flex justify-content-center align-items-center"
-              for="Sad"
+              class="icon-radio-buttons__label"
             >
               <input
                 aria-label="Sad"
-                class="icon-radio-buttons__label--input"
-                id="Sad"
+                class="icon-radio-buttons__input"
                 name="emoji-selector"
                 type="radio"
                 value="2"
@@ -272,13 +268,11 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
             class="d-flex"
           >
             <label
-              class="icon-radio-buttons__label d-flex justify-content-center align-items-center"
-              for="Happy"
+              class="icon-radio-buttons__label"
             >
               <input
                 aria-label="Happy"
-                class="icon-radio-buttons__label--input"
-                id="Happy"
+                class="icon-radio-buttons__input"
                 name="emoji-selector"
                 type="radio"
                 value="3"
@@ -313,13 +307,11 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
             class="d-flex"
           >
             <label
-              class="icon-radio-buttons__label d-flex justify-content-center align-items-center"
-              for="Very Happy"
+              class="icon-radio-buttons__label"
             >
               <input
                 aria-label="Very Happy"
-                class="icon-radio-buttons__label--input"
-                id="Very Happy"
+                class="icon-radio-buttons__input"
                 name="emoji-selector"
                 type="radio"
                 value="4"
@@ -867,20 +859,18 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
           tabindex="0"
         />
         <ul
-          class="icon-radio-buttons d-flex justify-content-around"
+          class="icon-radio-buttons"
           role="menuitem"
         >
           <li
             class="d-flex"
           >
             <label
-              class="icon-radio-buttons__label d-flex justify-content-center align-items-center"
-              for="Very sad"
+              class="icon-radio-buttons__label"
             >
               <input
                 aria-label="Very sad"
-                class="icon-radio-buttons__label--input"
-                id="Very sad"
+                class="icon-radio-buttons__input"
                 name="emoji-selector"
                 type="radio"
                 value="1"
@@ -907,13 +897,11 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
             class="d-flex"
           >
             <label
-              class="icon-radio-buttons__label d-flex justify-content-center align-items-center"
-              for="Sad"
+              class="icon-radio-buttons__label"
             >
               <input
                 aria-label="Sad"
-                class="icon-radio-buttons__label--input"
-                id="Sad"
+                class="icon-radio-buttons__input"
                 name="emoji-selector"
                 type="radio"
                 value="2"
@@ -948,13 +936,11 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
             class="d-flex"
           >
             <label
-              class="icon-radio-buttons__label d-flex justify-content-center align-items-center"
-              for="Happy"
+              class="icon-radio-buttons__label"
             >
               <input
                 aria-label="Happy"
-                class="icon-radio-buttons__label--input"
-                id="Happy"
+                class="icon-radio-buttons__input"
                 name="emoji-selector"
                 type="radio"
                 value="3"
@@ -989,13 +975,11 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
             class="d-flex"
           >
             <label
-              class="icon-radio-buttons__label d-flex justify-content-center align-items-center"
-              for="Very Happy"
+              class="icon-radio-buttons__label"
             >
               <input
                 aria-label="Very Happy"
-                class="icon-radio-buttons__label--input"
-                id="Very Happy"
+                class="icon-radio-buttons__input"
                 name="emoji-selector"
                 type="radio"
                 value="4"
@@ -1553,20 +1537,18 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
           tabindex="0"
         />
         <ul
-          class="icon-radio-buttons d-flex justify-content-around"
+          class="icon-radio-buttons"
           role="menuitem"
         >
           <li
             class="d-flex"
           >
             <label
-              class="icon-radio-buttons__label d-flex justify-content-center align-items-center"
-              for="Very sad"
+              class="icon-radio-buttons__label"
             >
               <input
                 aria-label="Very sad"
-                class="icon-radio-buttons__label--input"
-                id="Very sad"
+                class="icon-radio-buttons__input"
                 name="emoji-selector"
                 type="radio"
                 value="1"
@@ -1593,13 +1575,11 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
             class="d-flex"
           >
             <label
-              class="icon-radio-buttons__label d-flex justify-content-center align-items-center"
-              for="Sad"
+              class="icon-radio-buttons__label"
             >
               <input
                 aria-label="Sad"
-                class="icon-radio-buttons__label--input"
-                id="Sad"
+                class="icon-radio-buttons__input"
                 name="emoji-selector"
                 type="radio"
                 value="2"
@@ -1634,13 +1614,11 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
             class="d-flex"
           >
             <label
-              class="icon-radio-buttons__label d-flex justify-content-center align-items-center"
-              for="Happy"
+              class="icon-radio-buttons__label"
             >
               <input
                 aria-label="Happy"
-                class="icon-radio-buttons__label--input"
-                id="Happy"
+                class="icon-radio-buttons__input"
                 name="emoji-selector"
                 type="radio"
                 value="3"
@@ -1675,13 +1653,11 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
             class="d-flex"
           >
             <label
-              class="icon-radio-buttons__label d-flex justify-content-center align-items-center"
-              for="Very Happy"
+              class="icon-radio-buttons__label"
             >
               <input
                 aria-label="Very Happy"
-                class="icon-radio-buttons__label--input"
-                id="Very Happy"
+                class="icon-radio-buttons__input"
                 name="emoji-selector"
                 type="radio"
                 value="4"
@@ -2210,20 +2186,18 @@ exports[`NavLinks authed self-hosted /search 1`] = `
           tabindex="0"
         />
         <ul
-          class="icon-radio-buttons d-flex justify-content-around"
+          class="icon-radio-buttons"
           role="menuitem"
         >
           <li
             class="d-flex"
           >
             <label
-              class="icon-radio-buttons__label d-flex justify-content-center align-items-center"
-              for="Very sad"
+              class="icon-radio-buttons__label"
             >
               <input
                 aria-label="Very sad"
-                class="icon-radio-buttons__label--input"
-                id="Very sad"
+                class="icon-radio-buttons__input"
                 name="emoji-selector"
                 type="radio"
                 value="1"
@@ -2250,13 +2224,11 @@ exports[`NavLinks authed self-hosted /search 1`] = `
             class="d-flex"
           >
             <label
-              class="icon-radio-buttons__label d-flex justify-content-center align-items-center"
-              for="Sad"
+              class="icon-radio-buttons__label"
             >
               <input
                 aria-label="Sad"
-                class="icon-radio-buttons__label--input"
-                id="Sad"
+                class="icon-radio-buttons__input"
                 name="emoji-selector"
                 type="radio"
                 value="2"
@@ -2291,13 +2263,11 @@ exports[`NavLinks authed self-hosted /search 1`] = `
             class="d-flex"
           >
             <label
-              class="icon-radio-buttons__label d-flex justify-content-center align-items-center"
-              for="Happy"
+              class="icon-radio-buttons__label"
             >
               <input
                 aria-label="Happy"
-                class="icon-radio-buttons__label--input"
-                id="Happy"
+                class="icon-radio-buttons__input"
                 name="emoji-selector"
                 type="radio"
                 value="3"
@@ -2332,13 +2302,11 @@ exports[`NavLinks authed self-hosted /search 1`] = `
             class="d-flex"
           >
             <label
-              class="icon-radio-buttons__label d-flex justify-content-center align-items-center"
-              for="Very Happy"
+              class="icon-radio-buttons__label"
             >
               <input
                 aria-label="Very Happy"
-                class="icon-radio-buttons__label--input"
-                id="Very Happy"
+                class="icon-radio-buttons__input"
                 name="emoji-selector"
                 type="radio"
                 value="4"
@@ -2877,20 +2845,18 @@ exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
           tabindex="0"
         />
         <ul
-          class="icon-radio-buttons d-flex justify-content-around"
+          class="icon-radio-buttons"
           role="menuitem"
         >
           <li
             class="d-flex"
           >
             <label
-              class="icon-radio-buttons__label d-flex justify-content-center align-items-center"
-              for="Very sad"
+              class="icon-radio-buttons__label"
             >
               <input
                 aria-label="Very sad"
-                class="icon-radio-buttons__label--input"
-                id="Very sad"
+                class="icon-radio-buttons__input"
                 name="emoji-selector"
                 type="radio"
                 value="1"
@@ -2917,13 +2883,11 @@ exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
             class="d-flex"
           >
             <label
-              class="icon-radio-buttons__label d-flex justify-content-center align-items-center"
-              for="Sad"
+              class="icon-radio-buttons__label"
             >
               <input
                 aria-label="Sad"
-                class="icon-radio-buttons__label--input"
-                id="Sad"
+                class="icon-radio-buttons__input"
                 name="emoji-selector"
                 type="radio"
                 value="2"
@@ -2958,13 +2922,11 @@ exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
             class="d-flex"
           >
             <label
-              class="icon-radio-buttons__label d-flex justify-content-center align-items-center"
-              for="Happy"
+              class="icon-radio-buttons__label"
             >
               <input
                 aria-label="Happy"
-                class="icon-radio-buttons__label--input"
-                id="Happy"
+                class="icon-radio-buttons__input"
                 name="emoji-selector"
                 type="radio"
                 value="3"
@@ -2999,13 +2961,11 @@ exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
             class="d-flex"
           >
             <label
-              class="icon-radio-buttons__label d-flex justify-content-center align-items-center"
-              for="Very Happy"
+              class="icon-radio-buttons__label"
             >
               <input
                 aria-label="Very Happy"
-                class="icon-radio-buttons__label--input"
-                id="Very Happy"
+                class="icon-radio-buttons__input"
                 name="emoji-selector"
                 type="radio"
                 value="4"
@@ -3295,20 +3255,18 @@ exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
           tabindex="0"
         />
         <ul
-          class="icon-radio-buttons d-flex justify-content-around"
+          class="icon-radio-buttons"
           role="menuitem"
         >
           <li
             class="d-flex"
           >
             <label
-              class="icon-radio-buttons__label d-flex justify-content-center align-items-center"
-              for="Very sad"
+              class="icon-radio-buttons__label"
             >
               <input
                 aria-label="Very sad"
-                class="icon-radio-buttons__label--input"
-                id="Very sad"
+                class="icon-radio-buttons__input"
                 name="emoji-selector"
                 type="radio"
                 value="1"
@@ -3335,13 +3293,11 @@ exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
             class="d-flex"
           >
             <label
-              class="icon-radio-buttons__label d-flex justify-content-center align-items-center"
-              for="Sad"
+              class="icon-radio-buttons__label"
             >
               <input
                 aria-label="Sad"
-                class="icon-radio-buttons__label--input"
-                id="Sad"
+                class="icon-radio-buttons__input"
                 name="emoji-selector"
                 type="radio"
                 value="2"
@@ -3376,13 +3332,11 @@ exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
             class="d-flex"
           >
             <label
-              class="icon-radio-buttons__label d-flex justify-content-center align-items-center"
-              for="Happy"
+              class="icon-radio-buttons__label"
             >
               <input
                 aria-label="Happy"
-                class="icon-radio-buttons__label--input"
-                id="Happy"
+                class="icon-radio-buttons__input"
                 name="emoji-selector"
                 type="radio"
                 value="3"
@@ -3417,13 +3371,11 @@ exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
             class="d-flex"
           >
             <label
-              class="icon-radio-buttons__label d-flex justify-content-center align-items-center"
-              for="Very Happy"
+              class="icon-radio-buttons__label"
             >
               <input
                 aria-label="Very Happy"
-                class="icon-radio-buttons__label--input"
-                id="Very Happy"
+                class="icon-radio-buttons__input"
                 name="emoji-selector"
                 type="radio"
                 value="4"
@@ -3723,20 +3675,18 @@ exports[`NavLinks unauthed self-hosted /foo 1`] = `
           tabindex="0"
         />
         <ul
-          class="icon-radio-buttons d-flex justify-content-around"
+          class="icon-radio-buttons"
           role="menuitem"
         >
           <li
             class="d-flex"
           >
             <label
-              class="icon-radio-buttons__label d-flex justify-content-center align-items-center"
-              for="Very sad"
+              class="icon-radio-buttons__label"
             >
               <input
                 aria-label="Very sad"
-                class="icon-radio-buttons__label--input"
-                id="Very sad"
+                class="icon-radio-buttons__input"
                 name="emoji-selector"
                 type="radio"
                 value="1"
@@ -3763,13 +3713,11 @@ exports[`NavLinks unauthed self-hosted /foo 1`] = `
             class="d-flex"
           >
             <label
-              class="icon-radio-buttons__label d-flex justify-content-center align-items-center"
-              for="Sad"
+              class="icon-radio-buttons__label"
             >
               <input
                 aria-label="Sad"
-                class="icon-radio-buttons__label--input"
-                id="Sad"
+                class="icon-radio-buttons__input"
                 name="emoji-selector"
                 type="radio"
                 value="2"
@@ -3804,13 +3752,11 @@ exports[`NavLinks unauthed self-hosted /foo 1`] = `
             class="d-flex"
           >
             <label
-              class="icon-radio-buttons__label d-flex justify-content-center align-items-center"
-              for="Happy"
+              class="icon-radio-buttons__label"
             >
               <input
                 aria-label="Happy"
-                class="icon-radio-buttons__label--input"
-                id="Happy"
+                class="icon-radio-buttons__input"
                 name="emoji-selector"
                 type="radio"
                 value="3"
@@ -3845,13 +3791,11 @@ exports[`NavLinks unauthed self-hosted /foo 1`] = `
             class="d-flex"
           >
             <label
-              class="icon-radio-buttons__label d-flex justify-content-center align-items-center"
-              for="Very Happy"
+              class="icon-radio-buttons__label"
             >
               <input
                 aria-label="Very Happy"
-                class="icon-radio-buttons__label--input"
-                id="Very Happy"
+                class="icon-radio-buttons__input"
                 name="emoji-selector"
                 type="radio"
                 value="4"
@@ -4129,20 +4073,18 @@ exports[`NavLinks unauthed self-hosted /search 1`] = `
           tabindex="0"
         />
         <ul
-          class="icon-radio-buttons d-flex justify-content-around"
+          class="icon-radio-buttons"
           role="menuitem"
         >
           <li
             class="d-flex"
           >
             <label
-              class="icon-radio-buttons__label d-flex justify-content-center align-items-center"
-              for="Very sad"
+              class="icon-radio-buttons__label"
             >
               <input
                 aria-label="Very sad"
-                class="icon-radio-buttons__label--input"
-                id="Very sad"
+                class="icon-radio-buttons__input"
                 name="emoji-selector"
                 type="radio"
                 value="1"
@@ -4169,13 +4111,11 @@ exports[`NavLinks unauthed self-hosted /search 1`] = `
             class="d-flex"
           >
             <label
-              class="icon-radio-buttons__label d-flex justify-content-center align-items-center"
-              for="Sad"
+              class="icon-radio-buttons__label"
             >
               <input
                 aria-label="Sad"
-                class="icon-radio-buttons__label--input"
-                id="Sad"
+                class="icon-radio-buttons__input"
                 name="emoji-selector"
                 type="radio"
                 value="2"
@@ -4210,13 +4150,11 @@ exports[`NavLinks unauthed self-hosted /search 1`] = `
             class="d-flex"
           >
             <label
-              class="icon-radio-buttons__label d-flex justify-content-center align-items-center"
-              for="Happy"
+              class="icon-radio-buttons__label"
             >
               <input
                 aria-label="Happy"
-                class="icon-radio-buttons__label--input"
-                id="Happy"
+                class="icon-radio-buttons__input"
                 name="emoji-selector"
                 type="radio"
                 value="3"
@@ -4251,13 +4189,11 @@ exports[`NavLinks unauthed self-hosted /search 1`] = `
             class="d-flex"
           >
             <label
-              class="icon-radio-buttons__label d-flex justify-content-center align-items-center"
-              for="Very Happy"
+              class="icon-radio-buttons__label"
             >
               <input
                 aria-label="Very Happy"
-                class="icon-radio-buttons__label--input"
-                id="Very Happy"
+                class="icon-radio-buttons__input"
                 name="emoji-selector"
                 type="radio"
                 value="4"
